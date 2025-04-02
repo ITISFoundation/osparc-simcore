@@ -600,14 +600,14 @@ qx.Class.define("osparc.utils.Utils", {
     expirationMessage: function(daysToExpiration) {
       let msg = "";
       if (daysToExpiration === 0) {
-        msg = qx.locale.Manager.tr("This account will expire Today.");
+        msg = qx.locale.Manager.tr("Your account will expire today.");
       } else if (daysToExpiration === 1) {
-        msg = qx.locale.Manager.tr("This account will expire Tomorrow.");
+        msg = qx.locale.Manager.tr("Your account will expire tomorrow.");
       } else {
-        msg = qx.locale.Manager.tr("This account will expire in ") + daysToExpiration + qx.locale.Manager.tr(" days.");
+        msg = qx.locale.Manager.tr("Your account will expire in ") + daysToExpiration + qx.locale.Manager.tr(" days.");
       }
       msg += "</br>";
-      msg += qx.locale.Manager.tr("Please contact us by email:");
+      msg += qx.locale.Manager.tr("Please contact us via email:");
       msg += "</br>";
       const supportEmail = osparc.store.VendorInfo.getInstance().getSupportEmail();
       msg += supportEmail;

@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.61.3
+  version: 0.61.5
 servers:
 - url: ''
   description: webserver
@@ -1180,22 +1180,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_MyProfileGet_'
-    put:
-      tags:
-      - users
-      summary: Replace My Profile
-      description: Use PATCH instead
-      operationId: replace_my_profile
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/MyProfilePatch'
-        required: true
-      responses:
-        '204':
-          description: Successful Response
-      deprecated: true
     patch:
       tags:
       - users
@@ -6177,6 +6161,38 @@ paths:
           type: string
           format: path
           title: Path
+      responses:
+        '202':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_TaskGet_'
+  /v0/storage/locations/{location_id}/-/paths:batchDelete:
+    post:
+      tags:
+      - storage
+      summary: Batch Delete Paths
+      description: Deletes Paths
+      operationId: batch_delete_paths
+      parameters:
+      - name: location_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Location Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              uniqueItems: true
+              items:
+                type: string
+                format: path
+              title: Paths
       responses:
         '202':
           description: Successful Response
@@ -11734,6 +11750,9 @@ components:
         last_name: Crespo
     MyProfilePrivacyGet:
       properties:
+        hideUsername:
+          type: boolean
+          title: Hideusername
         hideFullname:
           type: boolean
           title: Hidefullname
@@ -11742,11 +11761,17 @@ components:
           title: Hideemail
       type: object
       required:
+      - hideUsername
       - hideFullname
       - hideEmail
       title: MyProfilePrivacyGet
     MyProfilePrivacyPatch:
       properties:
+        hideUsername:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Hideusername
         hideFullname:
           anyOf:
           - type: boolean

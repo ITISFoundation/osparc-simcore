@@ -19,7 +19,10 @@ from simcore_service_webserver.db.plugin import (
     is_service_enabled,
     is_service_responsive,
 )
-from simcore_service_webserver.login.storage import AsyncpgStorage, get_plugin_storage
+from simcore_service_webserver.login._login_repository_legacy import (
+    AsyncpgStorage,
+    get_plugin_storage,
+)
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 

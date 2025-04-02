@@ -15,7 +15,7 @@ from typing import Any
 from unittest.mock import MagicMock, Mock
 
 import pytest
-import simcore_service_webserver.login._auth_api
+import simcore_service_webserver.login._auth_service
 from aiohttp.test_utils import TestClient
 from aiopg.sa.connection import SAConnection
 from common_library.users_enums import UserRole, UserStatus
@@ -503,6 +503,7 @@ async def test_profile_workflow(
     assert updated_profile.user_name == "odei123"
 
     assert updated_profile.privacy != my_profile.privacy
+    assert updated_profile.privacy.hide_username == my_profile.privacy.hide_username
     assert updated_profile.privacy.hide_email == my_profile.privacy.hide_email
     assert updated_profile.privacy.hide_fullname != my_profile.privacy.hide_fullname
 
@@ -728,7 +729,7 @@ async def test_search_and_pre_registration(
 
     # Emulating registration of pre-register user
     new_user = (
-        await simcore_service_webserver.login._auth_api.create_user(  # noqa: SLF001
+        await simcore_service_webserver.login._auth_service.create_user(  # noqa: SLF001
             client.app,
             email=account_request_form["email"],
             password=DEFAULT_TEST_PASSWORD,

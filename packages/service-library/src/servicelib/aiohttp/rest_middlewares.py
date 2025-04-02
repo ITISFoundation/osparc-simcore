@@ -51,14 +51,13 @@ def error_middleware_factory(
             "request.path": f"{request.path}",
         }
 
-        user_error_msg = _FMSG_INTERNAL_ERROR_USER_FRIENDLY.format(
-            error_code=error_code
-        )
+        user_error_msg = _FMSG_INTERNAL_ERROR_USER_FRIENDLY
         http_error = create_http_error(
             err,
             user_error_msg,
             web.HTTPInternalServerError,
             skip_internal_error_details=_is_prod,
+            error_code=error_code,
         )
         _logger.exception(
             **create_troubleshotting_log_kwargs(

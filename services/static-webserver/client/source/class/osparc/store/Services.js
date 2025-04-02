@@ -51,7 +51,7 @@ qx.Class.define("osparc.store.Services", {
       const services = this.__servicesCached;
       if (key in services) {
         const latestMetadata = Object.values(services[key])[0];
-        if (!osparc.service.Utils.isRetired(latestMetadata)) {
+        if (!osparc.service.Utils.isDeprecated(latestMetadata)) {
           return latestMetadata;
         }
       }
@@ -99,7 +99,7 @@ qx.Class.define("osparc.store.Services", {
     },
 
     getService: function(key, version, useCache = true) {
-      return new Promise(resolve => {
+      return new Promise((resolve, reject) => {
         if (
           useCache &&
           this.__isInCache(key, version) &&
@@ -120,7 +120,10 @@ qx.Class.define("osparc.store.Services", {
             this.__addToCache(service)
             resolve(service);
           })
-          .catch(console.error);
+          .catch(err => {
+            console.error(err);
+            reject();
+          });
       });
     },
 
@@ -165,8 +168,8 @@ qx.Class.define("osparc.store.Services", {
                 continue;
               }
               if (excludeDeprecated) {
-                if (osparc.service.Utils.isRetired(serviceLatest)) {
-                  // first check if a previous version of this service isn't retired
+                if (osparc.service.Utils.isDeprecated(serviceLatest)) {
+                  // first check if a previous version of this service isn't deprecated
                   // getService to get its history
                   await this.getService(serviceLatest["key"], serviceLatest["version"]);
                   const serviceMetadata = this.__servicesCached[key][serviceLatest["version"]];
@@ -182,7 +185,7 @@ qx.Class.define("osparc.store.Services", {
                     }
                   }
                 }
-                if (osparc.service.Utils.isRetired(serviceLatest)) {
+                if (osparc.service.Utils.isDeprecated(serviceLatest)) {
                   // do not add retired services
                   continue;
                 }
@@ -265,7 +268,7 @@ qx.Class.define("osparc.store.Services", {
     },
 
     getInaccessibleServicesMsg: function(inaccessibleServices, workbench) {
-      let msg = qx.locale.Manager.tr("Some services are not accessible:<br>");
+      let msg = qx.locale.Manager.tr("Some services are inaccessible:<br>");
       Object.values(workbench).forEach(node => {
         const inaccessibleService = inaccessibleServices.find(srv => srv.key === node.key && srv.version === node.version);
         if (inaccessibleService) {

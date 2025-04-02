@@ -58,9 +58,7 @@ qx.Class.define("osparc.widget.StudyDataManager", {
       if (!title) {
         title = osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + qx.locale.Manager.tr(" Files");
       }
-      return osparc.ui.window.Window.popUpInWindow(studyDataManager, title, osparc.dashboard.ResourceDetails.WIDTH, osparc.dashboard.ResourceDetails.HEIGHT).set({
-        maxHeight: document.documentElement.clientHeight,
-      });
+      return osparc.ui.window.Window.popUpInWindow(studyDataManager, title, osparc.dashboard.ResourceDetails.WIDTH, osparc.dashboard.ResourceDetails.HEIGHT);
     },
   },
 
@@ -98,7 +96,7 @@ qx.Class.define("osparc.widget.StudyDataManager", {
       treeFolderView.getChildControl("folder-tree").setBackgroundColor("window-popup-background");
 
       const selectedFileLayout = treeFolderView.getChildControl("folder-viewer").getChildControl("selected-file-layout");
-      selectedFileLayout.addListener("fileDeleted", e => this.__fileDeleted(e.getData()), this);
+      selectedFileLayout.addListener("pathsDeleted", e => treeFolderView.pathsDeleted(e.getData()), this);
     },
 
     __reloadTree: function() {
@@ -117,36 +115,5 @@ qx.Class.define("osparc.widget.StudyDataManager", {
       const folderViewer = treeFolderView.getChildControl("folder-viewer");
       folderViewer.resetFolder();
     },
-
-    __fileDeleted: function(fileMetadata) {
-      // After deleting a file, try to keep the user in the same folder.
-      // If the folder doesn't longer exist, open the closest available parent
-
-      const path = fileMetadata["fileUuid"].split("/");
-
-      const treeFolderView = this.getChildControl("tree-folder-view");
-      const foldersTree = treeFolderView.getChildControl("folder-tree");
-      foldersTree.resetCache();
-
-      const openSameFolder = () => {
-        if (!this.getStudyId()) {
-          // drop first, which is the study id
-          path.shift();
-        }
-        // drop last, which is the file
-        path.pop();
-        treeFolderView.openPath(path);
-      };
-
-      if (this.getNodeId()) {
-        foldersTree.populateNodeTree(this.getStudyId(), this.getNodeId())
-          .then(() => openSameFolder())
-          .catch(err => console.error(err));
-      } else if (this.getStudyId()) {
-        foldersTree.populateStudyTree(this.getStudyId())
-          .then(() => openSameFolder())
-          .catch(err => console.error(err));
-      }
-    }
   }
 });

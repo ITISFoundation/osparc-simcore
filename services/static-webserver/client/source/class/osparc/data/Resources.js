@@ -1190,10 +1190,6 @@ qx.Class.define("osparc.data.Resources", {
           copy: {
             method: "PUT",
             url: statics.API + "/storage/locations/{toLoc}/files/{fileName}?extra_location={fromLoc}&extra_source={fileUuid}"
-          },
-          delete: {
-            method: "DELETE",
-            url: statics.API + "/storage/locations/{locationId}/files/{fileUuid}"
           }
         }
       },
@@ -1219,6 +1215,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/storage/locations/{locationId}/paths?file_filter={path}&cursor={cursor}&size=1000"
           },
+          batchDelete: {
+            method: "POST",
+            url: statics.API + "/storage/locations/{locationId}/-/paths:batchDelete"
+          },
           requestSize: {
             method: "POST",
             url: statics.API + "/storage/locations/0/paths/{pathId}:size"
@@ -1239,26 +1239,6 @@ qx.Class.define("osparc.data.Resources", {
             method: "PUT",
             url: statics.API + "/storage/locations/{locationId}/files/{fileUuid}?file_size={fileSize}"
           }
-        }
-      },
-      /*
-       * STORAGE ASYNC
-       */
-      "storageAsyncJobs": {
-        useCache: false,
-        endpoints: {
-          jobStatus: {
-            method: "GET",
-            url: statics.API + "/storage/async-jobs/{jobId}/status"
-          },
-          jobResult: {
-            method: "GET",
-            url: statics.API + "/storage/async-jobs/{jobId}/result"
-          },
-          abortJob: {
-            method: "POST",
-            url: statics.API + "/storage/async-jobs/{jobId}/abort"
-          },
         }
       },
       /*
@@ -1491,7 +1471,7 @@ qx.Class.define("osparc.data.Resources", {
                 if ("status" in err && err.status === 401) {
                   // Unauthorized again, the cookie might have expired.
                   // We can assume that all calls after this will respond with 401, so bring the user ot the login page.
-                  qx.core.Init.getApplication().logout(qx.locale.Manager.tr("You were logged out. Your cookie might have expired."));
+                  qx.core.Init.getApplication().logout(qx.locale.Manager.tr("You have been logged out. Your cookie might have expired."));
                 }
               });
           }

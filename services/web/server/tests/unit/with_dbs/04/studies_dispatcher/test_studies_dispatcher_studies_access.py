@@ -18,7 +18,10 @@ import redis.asyncio as aioredis
 from aiohttp import ClientResponse, ClientSession, web
 from aiohttp.test_utils import TestClient, TestServer
 from faker import Faker
+from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobStatus
+from models_library.progress_bar import ProgressReport
 from models_library.projects_state import ProjectLocked, ProjectStatus
+from models_library.users import UserID
 from pytest_mock import MockerFixture
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.assert_checks import assert_status
@@ -26,15 +29,17 @@ from pytest_simcore.helpers.webserver_login import UserInfoDict, UserRole
 from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsystem
 from pytest_simcore.helpers.webserver_projects import NewProject, delete_all_projects
 from servicelib.aiohttp import status
-from servicelib.aiohttp.long_running_tasks.client import LRTask
-from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
+    AsyncJobComposedResult,
+)
 from servicelib.rest_responses import unwrap_envelope
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
-from simcore_service_webserver.projects.models import ProjectDict
-from simcore_service_webserver.projects.projects_service import (
+from simcore_service_webserver.projects._projects_service import (
     submit_delete_project_task,
 )
+from simcore_service_webserver.projects.models import ProjectDict
+from simcore_service_webserver.projects.utils import NodesMap
 from simcore_service_webserver.users.api import (
     delete_user_without_projects,
     get_user_role,
@@ -136,14 +141,14 @@ def mocks_on_projects_api(mocker: MockerFixture) -> None:
     All projects in this module are UNLOCKED
     """
     mocker.patch(
-        "simcore_service_webserver.projects.projects_service._get_project_lock_state",
+        "simcore_service_webserver.projects._projects_service._get_project_lock_state",
         return_value=ProjectLocked(value=False, status=ProjectStatus.CLOSED),
     )
 
 
 @pytest.fixture
 async def storage_subsystem_mock_override(
-    storage_subsystem_mock: MockedStorageSubsystem, mocker: MockerFixture
+    storage_subsystem_mock: MockedStorageSubsystem, mocker: MockerFixture, faker: Faker
 ) -> None:
     """
     Mocks functions that require storage client
@@ -160,21 +165,37 @@ async def storage_subsystem_mock_override(
     )
 
     async def _mock_copy_data_from_project(
-        app, src_prj, dst_prj, nodes_map, user_id
-    ) -> AsyncGenerator[LRTask, None]:
+        app: web.Application,
+        *,
+        source_project: ProjectDict,
+        destination_project: ProjectDict,
+        nodes_map: NodesMap,
+        user_id: UserID,
+        product_name: str,
+    ) -> AsyncGenerator[AsyncJobComposedResult, None]:
         print(
-            f"MOCK copying data project {src_prj['uuid']} -> {dst_prj['uuid']} "
+            f"MOCK copying data project {source_project['uuid']} -> {destination_project['uuid']} "
             f"with {len(nodes_map)} s3 objects by user={user_id}"
         )
 
-        yield LRTask(TaskProgress(message="pytest mocked fct, started"))
+        yield AsyncJobComposedResult(
+            AsyncJobStatus(
+                job_id=faker.uuid4(cast_to=None),
+                progress=ProgressReport(actual_value=0),
+                done=False,
+            )
+        )
 
         async def _mock_result():
             return None
 
-        yield LRTask(
-            TaskProgress(message="pytest mocked fct, finished", percent=1.0),
-            _result=_mock_result(),
+        yield AsyncJobComposedResult(
+            AsyncJobStatus(
+                job_id=faker.uuid4(cast_to=None),
+                progress=ProgressReport(actual_value=1),
+                done=True,
+            ),
+            _mock_result(),
         )
 
     mock.side_effect = _mock_copy_data_from_project

@@ -42,6 +42,6 @@ class RedisSettings(BaseCustomSettings):
                 ),
                 host=self.REDIS_HOST,
                 port=self.REDIS_PORT,
-                path=f"/{db_index}",
+                path=f"{db_index}",
             )
         )

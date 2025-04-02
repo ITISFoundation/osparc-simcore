@@ -8,7 +8,14 @@ import random
 import sys
 import textwrap
 import warnings
-from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable, Iterator
+from collections.abc import (
+    AsyncGenerator,
+    AsyncIterable,
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    Iterator,
+)
 from copy import deepcopy
 from decimal import Decimal
 from pathlib import Path
@@ -30,8 +37,11 @@ from aiohttp.test_utils import TestClient, TestServer
 from aiopg.sa import create_engine
 from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
+from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobStatus
 from models_library.products import ProductName
+from models_library.progress_bar import ProgressReport
 from models_library.services_enums import ServiceState
+from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
 from pytest_docker.plugin import Services
 from pytest_mock import MockerFixture
@@ -44,9 +54,10 @@ from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsy
 from pytest_simcore.helpers.webserver_projects import NewProject
 from redis import Redis
 from servicelib.aiohttp.application_keys import APP_AIOPG_ENGINE_KEY
-from servicelib.aiohttp.long_running_tasks.client import LRTask
-from servicelib.aiohttp.long_running_tasks.server import ProgressPercent, TaskProgress
 from servicelib.common_aiopg_utils import DSN
+from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
+    AsyncJobComposedResult,
+)
 from settings_library.email import SMTPSettings
 from settings_library.redis import RedisDatabase, RedisSettings
 from simcore_postgres_database.models.groups_extra_properties import (
@@ -63,6 +74,7 @@ from simcore_service_webserver.application_settings_utils import AppConfigDict
 from simcore_service_webserver.constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.db.plugin import get_database_engine
 from simcore_service_webserver.projects.models import ProjectDict
+from simcore_service_webserver.projects.utils import NodesMap
 from simcore_service_webserver.statics._constants import (
     FRONTEND_APP_DEFAULT,
     FRONTEND_APPS_AVAILABLE,
@@ -336,29 +348,47 @@ def disable_static_webserver(monkeypatch: pytest.MonkeyPatch) -> Callable:
 
 
 @pytest.fixture
-async def storage_subsystem_mock(mocker: MockerFixture) -> MockedStorageSubsystem:
+async def storage_subsystem_mock(
+    mocker: MockerFixture, faker: Faker
+) -> MockedStorageSubsystem:
     """
     Patches client calls to storage service
 
     Patched functions are exposed within projects but call storage subsystem
     """
 
-    async def _mock_copy_data_from_project(app, src_prj, dst_prj, nodes_map, user_id):
+    async def _mock_copy_data_from_project(
+        app: web.Application,
+        *,
+        source_project: ProjectDict,
+        destination_project: ProjectDict,
+        nodes_map: NodesMap,
+        user_id: UserID,
+        product_name: str,
+    ) -> AsyncGenerator[AsyncJobComposedResult, None]:
         print(
-            f"MOCK copying data project {src_prj['uuid']} -> {dst_prj['uuid']} "
+            f"MOCK copying data project {source_project['uuid']} -> {destination_project['uuid']} "
             f"with {len(nodes_map)} s3 objects by user={user_id}"
         )
 
-        yield LRTask(TaskProgress(message="pytest mocked fct, started"))
+        yield AsyncJobComposedResult(
+            AsyncJobStatus(
+                job_id=faker.uuid4(cast_to=None),
+                progress=ProgressReport(actual_value=0),
+                done=False,
+            )
+        )
 
-        async def _mock_result():
+        async def _mock_result() -> None:
             return None
 
-        yield LRTask(
-            TaskProgress(
-                message="pytest mocked fct, finished", percent=ProgressPercent(1.0)
+        yield AsyncJobComposedResult(
+            AsyncJobStatus(
+                job_id=faker.uuid4(cast_to=None),
+                progress=ProgressReport(actual_value=1),
+                done=True,
             ),
-            _result=_mock_result(),
+            _mock_result(),
         )
 
     mock = mocker.patch(
@@ -375,7 +405,7 @@ async def storage_subsystem_mock(mocker: MockerFixture) -> MockedStorageSubsyste
     )
 
     mock2 = mocker.patch(
-        "simcore_service_webserver.projects.projects_service.storage_api.delete_data_folders_of_project_node",
+        "simcore_service_webserver.projects._projects_service.storage_service.delete_data_folders_of_project_node",
         autospec=True,
         return_value=None,
     )
@@ -392,7 +422,7 @@ async def storage_subsystem_mock(mocker: MockerFixture) -> MockedStorageSubsyste
 @pytest.fixture
 def asyncpg_storage_system_mock(mocker):
     return mocker.patch(
-        "simcore_service_webserver.login.storage.AsyncpgStorage.delete_user",
+        "simcore_service_webserver.login._login_repository_legacy.AsyncpgStorage.delete_user",
         return_value="",
     )
 
@@ -417,7 +447,7 @@ async def mocked_dynamic_services_interface(
         )
 
     mock["director_v2.api.create_or_update_pipeline"] = mocker.patch(
-        "simcore_service_webserver.director_v2.api.create_or_update_pipeline",
+        "simcore_service_webserver.director_v2.director_v2_service.create_or_update_pipeline",
         autospec=True,
         return_value=None,
     )
@@ -723,7 +753,6 @@ async def app_products_names(
     priority = 1
     for name in FRONTEND_APPS_AVAILABLE:
         if name != FRONTEND_APP_DEFAULT:
-
             async with asyncpg_engine.begin() as conn:
                 result = await conn.execute(
                     products.insert().values(

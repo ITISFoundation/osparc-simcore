@@ -13,9 +13,11 @@ from typing import Any
 
 import pytest
 import yaml
+from models_library.products import ProductName
 from pytest_mock import MockFixture, MockType
 from pytest_simcore.helpers.webserver_projects import empty_project_data
 from simcore_service_webserver.application_settings_utils import AppConfigDict
+from simcore_service_webserver.constants import FRONTEND_APP_DEFAULT
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -86,3 +88,8 @@ def disabled_setup_garbage_collector(mocker: MockFixture) -> MockType:
         autospec=True,
         return_value=False,
     )
+
+
+@pytest.fixture(scope="session")
+def product_name() -> ProductName:
+    return ProductName(FRONTEND_APP_DEFAULT)

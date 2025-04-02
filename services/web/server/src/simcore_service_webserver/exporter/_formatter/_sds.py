@@ -8,9 +8,9 @@ from aiohttp import web
 from servicelib.pools import non_blocking_process_pool_executor
 
 from ...catalog import catalog_service
+from ...projects._projects_service import get_project_for_user
 from ...projects.exceptions import BaseProjectError
 from ...projects.models import ProjectDict
-from ...projects.projects_service import get_project_for_user
 from ...scicrunch.db import ResearchResourceRepository
 from ..exceptions import SDSException
 from .template_json import write_template_json

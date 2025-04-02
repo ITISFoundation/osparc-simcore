@@ -34,13 +34,13 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
         versionLabel.set({
           textColor: "text-on-warning", // because the background is always yellow
           backgroundColor: osparc.service.StatusUI.getColor("deprecated"),
-          toolTipText: qx.locale.Manager.tr("Service deprecated, please update")
+          toolTipText: qx.locale.Manager.tr("This service is deprecated. Please update.")
         });
       } else if (isRetired) {
         versionLabel.set({
           textColor: "text-on-warning", // because the background is always red
           backgroundColor: osparc.service.StatusUI.getColor("retired"),
-          toolTipText: qx.locale.Manager.tr("Service retired, please update")
+          toolTipText: qx.locale.Manager.tr("This service has been retired. Please update.")
         });
       }
     }
@@ -66,16 +66,16 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
         .then(resp => {
           const services = resp["services"];
           if (osparc.study.Utils.getCantExecuteServices(services).length) {
-            msg += this.tr("Some services are not accessible. Please contact service owner:");
+            msg += this.tr("Some services are inaccessible. Please contact the service owner:");
             msg += "<br><br>";
           }
           if (osparc.study.Utils.anyServiceRetired(services)) {
-            msg += this.tr("Services marked in red are retired: you cannot use them anymore.");
+            msg += this.tr("Services marked in red are retired and can no longer be used.");
             if (canIWrite) {
               msg += "<br>" + this.tr("If the Update button is disabled, they might require manual intervention to be updated:");
               msg += "<br>- " + this.tr("Open the study");
               msg += "<br>- " + this.tr("Click on the retired service, download the data");
-              msg += "<br>- " + this.tr("Upload the data to an updated version");
+              msg += "<br>- " + this.tr("Upload the data to a newer version");
             }
             msg += "<br><br>";
           }
@@ -91,7 +91,7 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
             msg += this.tr("All services are up to date to their latest compatible version.");
             msg += "<br>";
           } else if (canIWrite) {
-            msg += this.tr("Use the Update buttons to bring the services to their latest compatible version.");
+            msg += this.tr("Click Update to upgrade services to the latest compatible version.");
             msg += "<br>";
           } else {
             msg += this.tr("Some services are not up to date.");

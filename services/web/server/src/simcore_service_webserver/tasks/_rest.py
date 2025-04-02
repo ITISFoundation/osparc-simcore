@@ -125,7 +125,7 @@ async def get_async_job_status(request: web.Request) -> web.Response:
     return create_data_response(
         TaskStatus(
             task_progress=TaskProgress(
-                task_id=_task_id, percent=async_job_rpc_status.progress.actual_value
+                task_id=_task_id, percent=async_job_rpc_status.progress.percent_value
             ),
             done=async_job_rpc_status.done,
             started=None,

@@ -8,6 +8,7 @@ from common_library.json_serialization import json_dumps
 from jsonschema import ValidationError as JsonSchemaValidationError
 from models_library.api_schemas_long_running_tasks.base import ProgressPercent
 from models_library.api_schemas_webserver.projects import ProjectGet
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_access import Owner
 from models_library.projects_nodes_io import NodeID
@@ -28,9 +29,9 @@ from simcore_postgres_database.webserver_models import ProjectType as ProjectTyp
 
 from ..application_settings import get_application_settings
 from ..catalog import catalog_service
-from ..director_v2 import api as director_v2_api
-from ..dynamic_scheduler import api as dynamic_scheduler_api
-from ..folders import _folders_repository as _folders_repository
+from ..director_v2 import director_v2_service
+from ..dynamic_scheduler import api as dynamic_scheduler_service
+from ..folders import _folders_repository as folders_folders_repository
 from ..redis import get_redis_lock_manager_client_sdk
 from ..storage.api import (
     copy_data_folders_from_project,
@@ -39,11 +40,10 @@ from ..storage.api import (
 from ..users.api import get_user_fullname
 from ..workspaces.api import check_user_workspace_access, get_user_workspace
 from ..workspaces.errors import WorkspaceAccessForbiddenError
-from . import _folders_db as project_to_folders_db
-from . import projects_service
-from ._metadata_api import set_project_ancestors
+from . import _folders_repository, _projects_service
+from ._metadata_service import set_project_ancestors
 from ._permalink_service import update_or_pop_permalink_in_project
-from .db import ProjectDBAPI
+from ._projects_repository_legacy import ProjectDBAPI
 from .exceptions import (
     ParentNodeNotFoundError,
     ParentProjectNotFoundError,
@@ -72,12 +72,13 @@ async def _prepare_project_copy(
     app: web.Application,
     *,
     user_id: UserID,
+    product_name: ProductName,
     src_project_uuid: ProjectID,
     as_template: bool,
     deep_copy: bool,
     task_progress: TaskProgress,
 ) -> tuple[ProjectDict, CopyProjectNodesCoro | None, CopyFileCoro | None]:
-    source_project = await projects_service.get_project_for_user(
+    source_project = await _projects_service.get_project_for_user(
         app,
         project_uuid=f"{src_project_uuid}",
         user_id=user_id,
@@ -122,6 +123,7 @@ async def _prepare_project_copy(
             new_project,
             nodes_map,
             user_id,
+            product_name,
             task_progress,
         )
     return new_project, copy_project_nodes_coro, copy_file_coro
@@ -156,6 +158,7 @@ async def _copy_files_from_source_project(
     new_project: ProjectDict,
     nodes_map: NodesMap,
     user_id: UserID,
+    product_name: str,
     task_progress: TaskProgress,
 ):
     _projects_repository = ProjectDBAPI.get_from_app_context(app)
@@ -169,20 +172,26 @@ async def _copy_files_from_source_project(
 
     async def _copy() -> None:
         starting_value = task_progress.percent
-        async for long_running_task in copy_data_folders_from_project(
-            app, source_project, new_project, nodes_map, user_id
+        async for async_job_composed_result in copy_data_folders_from_project(
+            app,
+            source_project=source_project,
+            destination_project=new_project,
+            nodes_map=nodes_map,
+            user_id=user_id,
+            product_name=product_name,
         ):
             task_progress.update(
-                message=long_running_task.progress.message,
+                message=async_job_composed_result.status.progress.composed_message,
                 percent=TypeAdapter(ProgressPercent).validate_python(
                     (
                         starting_value
-                        + long_running_task.progress.percent * (1.0 - starting_value)
+                        + async_job_composed_result.status.progress.percent_value
+                        * (1.0 - starting_value)
                     ),
                 ),
             )
-            if long_running_task.done():
-                await long_running_task.result()
+            if async_job_composed_result.done:
+                await async_job_composed_result.result()
 
     if needs_lock_source_project:
         await with_project_locked(
@@ -192,7 +201,7 @@ async def _copy_files_from_source_project(
             owner=Owner(
                 user_id=user_id, **await get_user_fullname(app, user_id=user_id)
             ),
-            notification_cb=projects_service.create_user_notification_cb(
+            notification_cb=_projects_service.create_user_notification_cb(
                 user_id, ProjectID(f"{source_project['uuid']}"), app
             ),
         )(_copy)()
@@ -293,7 +302,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
                 )
             if folder_id := predefined_project.get("folderId", None):
                 # Check user has access to folder
-                await _folders_repository.get_for_user_or_workspace(
+                await folders_folders_repository.get_for_user_or_workspace(
                     request.app,
                     folder_id=folder_id,
                     product_name=product_name,
@@ -312,6 +321,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             ) = await _prepare_project_copy(
                 request.app,
                 user_id=user_id,
+                product_name=product_name,
                 src_project_uuid=from_study,
                 as_template=as_template,
                 deep_copy=copy_data,
@@ -322,7 +332,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
 
             # 1.2 does project belong to some folder?
             workspace_id = new_project["workspaceId"]
-            prj_to_folder_db = await project_to_folders_db.get_project_to_folder(
+            prj_to_folder_db = await _folders_repository.get_project_to_folder(
                 request.app,
                 project_id=from_study,
                 private_workspace_user_id_or_none=(
@@ -369,7 +379,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
 
         # 3.2 move project to proper folder
         if folder_id:
-            await project_to_folders_db.insert_project_to_folder(
+            await _folders_repository.insert_project_to_folder(
                 request.app,
                 project_id=new_project["uuid"],
                 folder_id=folder_id,
@@ -390,13 +400,13 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             )
 
         # update the network information in director-v2
-        await dynamic_scheduler_api.update_projects_networks(
+        await dynamic_scheduler_service.update_projects_networks(
             request.app, project_id=ProjectID(new_project["uuid"])
         )
         task_progress.update()
 
         # This is a new project and every new graph needs to be reflected in the pipeline tables
-        await director_v2_api.create_or_update_pipeline(
+        await director_v2_service.create_or_update_pipeline(
             request.app, user_id, new_project["uuid"], product_name
         )
         # get the latest state of the project (lastChangeDate for instance)
@@ -404,7 +414,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             project_uuid=new_project["uuid"]
         )
         # Appends state
-        new_project = await projects_service.add_project_states_for_user(
+        new_project = await _projects_service.add_project_states_for_user(
             user_id=user_id,
             project=new_project,
             is_template=as_template,
@@ -460,7 +470,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
 
     except (ParentProjectNotFoundError, ParentNodeNotFoundError) as exc:
         if project_uuid := new_project.get("uuid"):
-            await projects_service.submit_delete_project_task(
+            await _projects_service.submit_delete_project_task(
                 app=request.app,
                 project_uuid=project_uuid,
                 user_id=user_id,
@@ -474,7 +484,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             f"{user_id=}",
         )
         if project_uuid := new_project.get("uuid"):
-            await projects_service.submit_delete_project_task(
+            await _projects_service.submit_delete_project_task(
                 app=request.app,
                 project_uuid=project_uuid,
                 user_id=user_id,

@@ -423,20 +423,17 @@ async def test_cannot_share_tag_with_everyone(
     assert error
 
 
-@pytest.fixture
-def product_name() -> str:
-    return "osparc"
-
-
 @pytest.mark.parametrize(
     "user_role,expected_status",
     [
         (
             role,
             # granted only to:
-            status.HTTP_403_FORBIDDEN
-            if role < UserRole.TESTER
-            else status.HTTP_201_CREATED,
+            (
+                status.HTTP_403_FORBIDDEN
+                if role < UserRole.TESTER
+                else status.HTTP_201_CREATED
+            ),
         )
         for role in UserRole
         if role >= UserRole.USER

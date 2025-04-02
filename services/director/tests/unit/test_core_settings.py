@@ -4,7 +4,10 @@
 # pylint: disable=too-many-arguments
 
 
+import datetime
+
 import pytest
+from pydantic import ValidationError
 from pytest_simcore.helpers.monkeypatch_envs import (
     setenvs_from_dict,
     setenvs_from_envfile,
@@ -35,6 +38,16 @@ def test_valid_web_application_settings(app_environment: EnvVarsDict):
         )
         == f"{settings.DIRECTOR_DEFAULT_MAX_MEMORY}"
     )
+
+
+def test_invalid_client_timeout_raises(
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setenv(
+        "DIRECTOR_REGISTRY_CLIENT_TIMEOUT", f"{datetime.timedelta(seconds=-10)}"
+    )
+    with pytest.raises(ValidationError):
+        ApplicationSettings.create_from_envs()
 
 
 def test_docker_container_env_sample(monkeypatch: pytest.MonkeyPatch):

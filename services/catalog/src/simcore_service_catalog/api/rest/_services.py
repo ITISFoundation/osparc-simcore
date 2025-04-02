@@ -64,21 +64,23 @@ def _build_cache_key(fct, *_, **kwargs):
     return f"{fct.__name__}_{kwargs['user_id']}_{kwargs['x_simcore_products_name']}_{kwargs['details']}"
 
 
-#
-# Routes
-#
-
 router = APIRouter()
 
 
-# NOTE: this call is pretty expensive and can be called several times
-# (when e2e runs or by the webserver when listing projects) therefore
-# a cache is setup here
-@router.get("", response_model=list[ServiceGet], **RESPONSE_MODEL_POLICY)
+@router.get(
+    "",
+    response_model=list[ServiceGet],
+    **RESPONSE_MODEL_POLICY,
+    deprecated=True,
+    description="Use instead rpc._service.list_services_paginated -> PageRpcServicesGetV2",
+)
 @cancel_on_disconnect
 @cached(
     ttl=LIST_SERVICES_CACHING_TTL,
     key_builder=_build_cache_key,
+    # NOTE: this call is pretty expensive and can be called several times
+    # (when e2e runs or by the webserver when listing projects) therefore
+    # a cache is setup here
 )
 async def list_services(
     request: Request,  # pylint:disable=unused-argument
@@ -192,6 +194,8 @@ async def list_services(
     "/{service_key:path}/{service_version}",
     response_model=ServiceGet,
     **RESPONSE_MODEL_POLICY,
+    deprecated=True,
+    description="Use instead rpc._service.get_service -> ServiceGetV2",
 )
 async def get_service(
     user_id: int,
@@ -226,12 +230,12 @@ async def get_service(
     )
     if service_in_db:
         # we have full access, let's add the access to the output
-        service_access_rights: list[
-            ServiceAccessRightsAtDB
-        ] = await services_repo.get_service_access_rights(
-            service_in_manifest.key,
-            service_in_manifest.version,
-            product_name=x_simcore_products_name,
+        service_access_rights: list[ServiceAccessRightsAtDB] = (
+            await services_repo.get_service_access_rights(
+                service_in_manifest.key,
+                service_in_manifest.version,
+                product_name=x_simcore_products_name,
+            )
         )
         service_data["access_rights"] = {
             rights.gid: rights for rights in service_access_rights

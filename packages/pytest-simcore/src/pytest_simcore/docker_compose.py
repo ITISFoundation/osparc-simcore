@@ -2,10 +2,10 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-""" Fixtures to create docker-compose.yaml configuration files (as in Makefile)
+"""Fixtures to create docker-compose.yaml configuration files (as in Makefile)
 
-    - Basically runs `docker compose config
-    - Services in stack can be selected using 'core_services_selection', 'ops_services_selection' fixtures
+- Basically runs `docker compose config
+- Services in stack can be selected using 'core_services_selection', 'ops_services_selection' fixtures
 
 """
 
@@ -390,6 +390,10 @@ def _filter_services_and_dump(
             service.pop("build", None)
         if "environment" in service:
             service["environment"] = _minio_fix(service["environment"])
+
+        if name == "postgres":
+            # NOTE: # -c fsync=off is not recommended for production as this disable writing to disk https://pythonspeed.com/articles/faster-db-tests/
+            service["command"] += ["-c", "fsync=off"]
 
     # updates current docker-compose (also versioned ... do not change by hand)
     with docker_compose_path.open("wt") as fh:
