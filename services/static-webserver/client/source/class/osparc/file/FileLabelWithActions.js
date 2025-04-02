@@ -226,6 +226,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
         pollTasks.createPollingTask(fetchPromise, interval)
           .then(task => {
             const taskUI = new osparc.task.TaskUI();
+            taskUI.setIcon("@FontAwesome5Solid/trash/14");
             taskUI.setTitle(this.tr("Deleting files"));
             taskUI.setTask(task);
             osparc.task.TasksContainer.getInstance().addTaskUI(taskUI);
