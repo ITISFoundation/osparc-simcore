@@ -119,7 +119,11 @@ qx.Class.define("osparc.data.Roles", {
         longLabel: qx.locale.Manager.tr("User: Read access"),
         canDo: [
           qx.locale.Manager.tr("- can use it")
-        ]
+        ],
+        accessRights: {
+          "execute": true,
+          "write": false
+        },
       },
       "write": {
         label: qx.locale.Manager.tr("Editor"),
@@ -127,15 +131,12 @@ qx.Class.define("osparc.data.Roles", {
         canDo: [
           qx.locale.Manager.tr("- can make changes"),
           qx.locale.Manager.tr("- can share it")
-        ]
+        ],
+        accessRights: {
+          "execute": true,
+          "write": true
+        },
       },
-      "delete": {
-        label: qx.locale.Manager.tr("Owner"),
-        longLabel: qx.locale.Manager.tr("Owner: Read/Write/Delete access"),
-        canDo: [
-          qx.locale.Manager.tr("- can delete it")
-        ]
-      }
     },
 
     WALLET: {

@@ -46,20 +46,6 @@ qx.Class.define("osparc.share.CollaboratorsService", {
       }
       return canWrite;
     },
-
-    getCollaboratorAccessRight: function() {
-      return {
-        "execute": true,
-        "write": false
-      };
-    },
-
-    getOwnerAccessRight: function() {
-      return {
-        "execute": true,
-        "write": true
-      };
-    },
   },
 
   members: {
@@ -68,9 +54,10 @@ qx.Class.define("osparc.share.CollaboratorsService", {
         return;
       }
 
+      const readAccessRole = osparc.data.Roles.SERVICE["read"];
       const newAccessRights = this._serializedDataCopy["accessRights"];
       gids.forEach(gid => {
-        newAccessRights[gid] = this.self().getCollaboratorAccessRight();
+        newAccessRights[gid] = readAccessRole.accessRights;
       });
       osparc.store.Services.patchServiceData(this._serializedDataCopy, "accessRights", newAccessRights)
         .then(() => {
@@ -124,11 +111,12 @@ qx.Class.define("osparc.share.CollaboratorsService", {
     },
 
     _promoteToEditor: function(collaborator, item) {
+      const writeAccessRole = osparc.data.Roles.SERVICE["write"];
       this.__make(
         collaborator["gid"],
-        this.self().getOwnerAccessRight(),
-        this.tr(`Successfully promoted to ${osparc.data.Roles.SERVICE["write"].label}`),
-        this.tr(`Something went wrong while promoting to ${osparc.data.Roles.SERVICE["write"].label}`),
+        writeAccessRole.accessRights,
+        this.tr(`Successfully promoted to ${writeAccessRole.label}`),
+        this.tr(`Something went wrong while promoting to ${writeAccessRole.label}`),
         item
       );
     },
@@ -138,11 +126,12 @@ qx.Class.define("osparc.share.CollaboratorsService", {
     },
 
     _demoteToUser: function(collaborator, item) {
+      const readAccessRole = osparc.data.Roles.SERVICE["read"];
       this.__make(
         collaborator["gid"],
-        this.self().getCollaboratorAccessRight(),
-        this.tr(`Successfully demoted to ${osparc.data.Roles.SERVICE["read"].label}`),
-        this.tr(`Something went wrong while demoting ${osparc.data.Roles.SERVICE["read"].label}`),
+        readAccessRole.accessRights,
+        this.tr(`Successfully demoted to ${readAccessRole.label}`),
+        this.tr(`Something went wrong while demoting ${readAccessRole.label}`),
         item
       );
     },
