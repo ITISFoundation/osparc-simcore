@@ -57,3 +57,4 @@ def register_celery_types() -> None:
     _register_pydantic_types(FileUploadCompletionBody)
     _register_pydantic_types(FileMetaData)
     _register_pydantic_types(FoldersBody)
+    register_type(set, _class_full_name(set), encoder=list, decoder=set)

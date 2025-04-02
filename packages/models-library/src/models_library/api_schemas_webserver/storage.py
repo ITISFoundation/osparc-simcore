@@ -35,5 +35,9 @@ class ListPathsQueryParams(InputSchema, CursorQueryParameters):
     ] = DEFAULT_NUMBER_OF_PATHS_PER_PAGE
 
 
+class BatchDeletePathsBodyParams(InputSchema):
+    paths: set[Path]
+
+
 class DataExportPost(InputSchema):
     paths: list[StorageFileID]

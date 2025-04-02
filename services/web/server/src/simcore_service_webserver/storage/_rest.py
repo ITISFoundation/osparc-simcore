@@ -12,6 +12,7 @@ from aiohttp import ClientTimeout, web
 from models_library.api_schemas_long_running_tasks.tasks import (
     TaskGet,
 )
+from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobGet
 from models_library.api_schemas_storage.storage_schemas import (
     FileUploadCompleteResponse,
     FileUploadCompletionBody,
@@ -19,7 +20,9 @@ from models_library.api_schemas_storage.storage_schemas import (
     LinkType,
 )
 from models_library.api_schemas_webserver.storage import (
+    BatchDeletePathsBodyParams,
     DataExportPost,
+    StorageLocationPathParams,
     StoragePathComputeSizeParams,
 )
 from models_library.projects_nodes_io import LocationID
@@ -37,6 +40,9 @@ from servicelib.aiohttp.rest_responses import create_data_response
 from servicelib.common_headers import X_FORWARDED_PROTO
 from servicelib.rabbitmq.rpc_interfaces.storage.paths import (
     compute_path_size as remote_compute_path_size,
+)
+from servicelib.rabbitmq.rpc_interfaces.storage.paths import (
+    delete_paths as remote_delete_paths,
 )
 from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import start_data_export
 from servicelib.request_keys import RQT_USERID_KEY
@@ -169,6 +175,23 @@ async def list_paths(request: web.Request) -> web.Response:
     return create_data_response(payload, status=resp_status)
 
 
+def _create_data_response_from_async_job(
+    request: web.Request,
+    async_job: AsyncJobGet,
+) -> web.Response:
+    async_job_id = f"{async_job.job_id}"
+    return create_data_response(
+        TaskGet(
+            task_id=async_job_id,
+            task_name=async_job_id,
+            status_href=f"{request.url.with_path(str(request.app.router['get_async_job_status'].url_for(task_id=async_job_id)))}",
+            abort_href=f"{request.url.with_path(str(request.app.router['abort_async_job'].url_for(task_id=async_job_id)))}",
+            result_href=f"{request.url.with_path(str(request.app.router['get_async_job_result'].url_for(task_id=async_job_id)))}",
+        ),
+        status=status.HTTP_202_ACCEPTED,
+    )
+
+
 @routes.post(
     f"{_storage_locations_prefix}/{{location_id}}/paths/{{path}}:size",
     name="compute_path_size",
@@ -190,17 +213,29 @@ async def compute_path_size(request: web.Request) -> web.Response:
         path=path_params.path,
     )
 
-    _job_id = f"{async_job.job_id}"
-    return create_data_response(
-        TaskGet(
-            task_id=_job_id,
-            task_name=_job_id,
-            status_href=f"{request.url.with_path(str(request.app.router['get_async_job_status'].url_for(task_id=_job_id)))}",
-            abort_href=f"{request.url.with_path(str(request.app.router['abort_async_job'].url_for(task_id=_job_id)))}",
-            result_href=f"{request.url.with_path(str(request.app.router['get_async_job_result'].url_for(task_id=_job_id)))}",
-        ),
-        status=status.HTTP_202_ACCEPTED,
+    return _create_data_response_from_async_job(request, async_job)
+
+
+@routes.post(
+    f"{_storage_locations_prefix}/{{location_id}}/-/paths:batchDelete",
+    name="batch_delete_paths",
+)
+@login_required
+@permission_required("storage.files.*")
+async def batch_delete_paths(request: web.Request):
+    req_ctx = RequestContext.model_validate(request)
+    path_params = parse_request_path_parameters_as(StorageLocationPathParams, request)
+    body = await parse_request_body_as(BatchDeletePathsBodyParams, request)
+
+    rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
+    async_job, _ = await remote_delete_paths(
+        rabbitmq_rpc_client,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+        location_id=path_params.location_id,
+        paths=body.paths,
     )
+    return _create_data_response_from_async_job(request, async_job)
 
 
 @routes.get(

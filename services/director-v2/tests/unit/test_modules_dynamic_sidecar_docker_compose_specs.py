@@ -227,7 +227,7 @@ EXPECTED_LABELS: list[str] = sorted(
         f"{to_simcore_runtime_docker_label_key('user-id')}={USER_ID}",
         f"{to_simcore_runtime_docker_label_key('node-id')}={NODE_ID}",
         f"{to_simcore_runtime_docker_label_key('swarm-stack-name')}={SWARM_STACK_NAME}",
-        f"{to_simcore_runtime_docker_label_key('cpu-limit')}=0",
+        f"{to_simcore_runtime_docker_label_key('cpu-limit')}=0.0",
         f"{to_simcore_runtime_docker_label_key('memory-limit')}=0",
     ]
 )

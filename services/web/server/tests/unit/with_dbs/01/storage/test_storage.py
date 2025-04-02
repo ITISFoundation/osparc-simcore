@@ -44,6 +44,7 @@ from models_library.api_schemas_storage.storage_schemas import (
 )
 from models_library.api_schemas_webserver._base import OutputSchema
 from models_library.api_schemas_webserver.storage import (
+    BatchDeletePathsBodyParams,
     DataExportPost,
 )
 from models_library.generics import Envelope
@@ -185,6 +186,51 @@ async def test_compute_path_size(
     )
 
     resp = await client.post(f"{url}")
+    data, error = await assert_status(resp, expected)
+    if not error:
+        TypeAdapter(TaskGet).validate_python(data)
+
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_202_ACCEPTED),
+        (UserRole.USER, status.HTTP_202_ACCEPTED),
+        (UserRole.TESTER, status.HTTP_202_ACCEPTED),
+    ],
+)
+@pytest.mark.parametrize(
+    "backend_result_or_exception",
+    [
+        AsyncJobGet(job_id=AsyncJobId(f"{_faker.uuid4()}")),
+    ],
+    ids=lambda x: type(x).__name__,
+)
+async def test_batch_delete_paths(
+    client: TestClient,
+    logged_user: dict[str, Any],
+    expected: int,
+    location_id: LocationID,
+    faker: Faker,
+    create_storage_paths_rpc_client_mock: Callable[[str, Any], None],
+    backend_result_or_exception: Any,
+):
+    create_storage_paths_rpc_client_mock(
+        submit.__name__,
+        backend_result_or_exception,
+    )
+
+    body = BatchDeletePathsBodyParams(
+        paths={Path(f"{faker.file_path(absolute=False)}")}
+    )
+
+    assert client.app
+    url = client.app.router["batch_delete_paths"].url_for(
+        location_id=f"{location_id}",
+    )
+
+    resp = await client.post(f"{url}", json=body.model_dump(mode="json"))
     data, error = await assert_status(resp, expected)
     if not error:
         TypeAdapter(TaskGet).validate_python(data)
