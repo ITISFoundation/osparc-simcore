@@ -1,7 +1,6 @@
 import contextlib
 import logging
 from dataclasses import dataclass
-import queue
 from typing import Any, Final
 from uuid import uuid4
 
