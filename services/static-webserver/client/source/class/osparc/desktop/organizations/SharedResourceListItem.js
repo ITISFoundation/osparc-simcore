@@ -90,11 +90,11 @@ qx.Class.define("osparc.desktop.organizations.SharedResourceListItem", {
       return control || this.base(arguments, id);
     },
 
-    __getRoleInfo: function(i) {
+    __getRoleInfo: function(id) {
       if (this.__resourceType === "service") {
-        return osparc.data.Roles.SERVICES[i];
+        return osparc.data.Roles.SERVICES[id];
       }
-      return osparc.data.Roles.STUDY[i];
+      return osparc.data.Roles.STUDY[id];
     },
 
     // overridden
@@ -102,11 +102,11 @@ qx.Class.define("osparc.desktop.organizations.SharedResourceListItem", {
       const accessRights = this.getAccessRights();
       const role = this.getChildControl("role");
       if (this.self().canDelete(accessRights)) {
-        role.setValue(this.__getRoleInfo(3).label);
+        role.setValue(this.__getRoleInfo("delete").label);
       } else if (this.self().canWrite(accessRights)) {
-        role.setValue(this.__getRoleInfo(2).label);
+        role.setValue(this.__getRoleInfo("write").label);
       } else {
-        role.setValue(this.__getRoleInfo(1).label);
+        role.setValue(this.__getRoleInfo("read").label);
       }
     },
 
