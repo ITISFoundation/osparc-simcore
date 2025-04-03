@@ -222,8 +222,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
         const dataStore = osparc.store.Data.getInstance();
         const fetchPromise = dataStore.deleteFiles(paths);
         const pollTasks = osparc.store.PollTasks.getInstance();
-        const interval = 1000;
-        pollTasks.createPollingTask(fetchPromise, interval)
+        pollTasks.createPollingTask(fetchPromise)
           .then(task => {
             const taskUI = new osparc.task.TaskUI();
             taskUI.setIcon("@FontAwesome5Solid/trash/14");

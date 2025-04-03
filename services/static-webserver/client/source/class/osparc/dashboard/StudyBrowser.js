@@ -1899,9 +1899,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         pollTask: true
       };
       const fetchPromise = osparc.data.Resources.fetch("studies", "duplicate", params, options);
-      const interval = 1000;
       const pollTasks = osparc.store.PollTasks.getInstance();
-      pollTasks.createPollingTask(fetchPromise, interval)
+      pollTasks.createPollingTask(fetchPromise)
         .then(task => this.__taskDuplicateReceived(task, studyData["name"]))
         .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while duplicating")));
     },
