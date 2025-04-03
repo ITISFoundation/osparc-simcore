@@ -1,7 +1,8 @@
-from typing import Annotated
+from typing import Annotated, Self
 
 from models_library.groups import GroupID
 from models_library.projects import ProjectID
+from pydantic import model_validator  # Added for validation
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -10,12 +11,14 @@ from pydantic import (
     StringConstraints,
 )
 
+from ..access_rights import AccessRights
 from ._base import InputSchema, OutputSchema
 
 
 class ProjectsGroupsPathParams(BaseModel):
     project_id: ProjectID
     group_id: GroupID
+
     model_config = ConfigDict(extra="forbid")
 
 
@@ -35,6 +38,13 @@ class ProjectShare(InputSchema):
     read: bool
     write: bool
     delete: bool
+
+    @model_validator(mode="after")
+    def check_access_constraints(self) -> Self:
+        AccessRights(
+            read=self.read, write=self.write, delete=self.delete
+        ).check_access_constraints()
+        return self
 
 
 class ProjectShareAccepted(OutputSchema):
