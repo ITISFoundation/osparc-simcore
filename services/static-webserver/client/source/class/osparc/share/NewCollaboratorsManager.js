@@ -280,18 +280,14 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       potentialCollaborators.forEach(potentialCollaborator => {
         // do not list the potentialCollaborators that are already collaborators
         if (existingCollaborators.includes(potentialCollaborator.getGroupId())) {
-          console.log("already collaborator", potentialCollaborator.getLabel());
           return;
         }
         // do not list the potentialCollaborators that were selected
-        console.log("selected?", potentialCollaborator.getGroupId(), this.__selectedCollaborators);
         if (potentialCollaborator.getGroupId() in this.__selectedCollaborators) {
-          console.log("already selected", potentialCollaborator.getLabel());
           return;
         }
         // do not list the potentialCollaborators that were already listed
         if (potentialCollaboratorList.getChildren().find(c => "groupId" in c && c["groupId"] === potentialCollaborator.getGroupId())) {
-          console.log("already listed", potentialCollaborator.getLabel());
           return;
         }
         // maybe, do not list the organizations
