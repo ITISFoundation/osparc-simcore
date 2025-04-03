@@ -368,10 +368,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     },
 
     __attachToTemplateEventHandler: function(task, toTemplateCard) {
-      const finished = (msg, msgLevel) => {
-        if (msg) {
-          osparc.FlashMessenger.logAs(msg, msgLevel);
-        }
+      const finished = () => {
         this._resourcesContainer.removeNonResourceCard(toTemplateCard);
       };
 
@@ -388,18 +385,20 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         }
       }, this);
       task.addListener("resultReceived", e => {
-        const msg = this.tr("Template created");
-        finished(msg, "INFO");
+        finished();
         this.reloadResources();
+        const msg = this.tr("Template created");
+        osparc.FlashMessenger.logAs(msg, "INFO");
       });
       task.addListener("taskAborted", () => {
+        finished();
         const msg = this.tr("Study to Template cancelled");
-        finished(msg, "WARNING");
+        osparc.FlashMessenger.logAs(msg, "WARNING");
       });
       task.addListener("pollingError", e => {
+        finished();
         const err = e.getData();
-        const msg = this.tr("Something went wrong while publishing the study<br>") + err.message;
-        finished(msg, "ERROR");
+        osparc.FlashMessenger.logError(err);
       });
     },
     // TASKS //

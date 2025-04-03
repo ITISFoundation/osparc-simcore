@@ -251,10 +251,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
             }
             progressWindow.open();
 
-            const finished = (msg, msgLevel) => {
-              if (msg) {
-                osparc.FlashMessenger.logAs(msg, msgLevel);
-              }
+            const finished = () => {
               progressWindow.close();
             };
 
@@ -268,14 +265,17 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
               }
             }, this);
             task.addListener("resultReceived", e => {
+              finished();
+              osparc.FlashMessenger.logAs(this.tr("Items successfully deleted"), "INFO");
               this.fireDataEvent("pathsDeleted", paths);
-              finished(this.tr("Items successfully deleted"), "INFO");
             });
-            task.addListener("taskAborted", () => finished(this.tr("Deletion aborted"), "WARNING"));
+            task.addListener("taskAborted", () => {
+              finished();
+              osparc.FlashMessenger.logAs(this.tr("Deletion aborted"), "WARNING");
+            });
             task.addListener("pollingError", e => {
               const err = e.getData();
-              const msg = this.tr("Something went wrong while deleting the files<br>") + err.message;
-              finished(msg, "ERROR");
+              osparc.FlashMessenger.logError(err);
             });
           })
           .catch(err => osparc.FlashMessenger.logError(err, this.tr("Unsuccessful files deletion")));
