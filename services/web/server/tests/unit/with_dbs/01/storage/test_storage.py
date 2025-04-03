@@ -464,7 +464,7 @@ async def test_data_export(
     )
 
     _body = DataExportPost(
-        paths=[f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}"]
+        paths=[Path(f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}")]
     )
     response = await client.post(
         f"/{API_VERSION}/storage/locations/0/data-export", data=_body.model_dump_json()
@@ -671,7 +671,7 @@ async def test_get_async_job_links(
     )
 
     _body = DataExportPost(
-        paths=[f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}"]
+        paths=[Path(f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}")]
     )
     response = await client.post(
         f"/{API_VERSION}/storage/locations/0/data-export", data=_body.model_dump_json()

@@ -62,7 +62,7 @@ async def deep_copy_files_from_project(
     return body.destination
 
 
-async def data_export(
+async def export_data(
     task: Task,
     task_id: TaskID,
     *,
