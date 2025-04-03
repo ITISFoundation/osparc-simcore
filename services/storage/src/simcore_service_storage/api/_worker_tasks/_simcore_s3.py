@@ -17,7 +17,6 @@ from ...dsm import get_dsm_provider
 from ...modules.celery.models import TaskID, TaskId
 from ...modules.celery.utils import get_celery_worker, get_fastapi_app
 from ...simcore_s3_dsm import SimcoreS3DataManager
-from ...utils.progress_utils import get_tqdm_progress, set_tqdm_absolute_progress
 
 _logger = logging.getLogger(__name__)
 
@@ -69,34 +68,35 @@ async def export_data(
     user_id: UserID,
     paths_to_export: list[S3ObjectKey],
 ) -> StorageFileID:
-    _logger.info("Exporting (for user='%s') selection: %s", user_id, paths_to_export)
+    with log_context(
+        _logger,
+        logging.INFO,
+        f"'{task_id}' export data (for {user_id=}) fom selection: {paths_to_export}",
+    ):
+        dsm = get_dsm_provider(get_fastapi_app(task.app)).get(
+            SimcoreS3DataManager.get_location_id()
+        )
+        assert isinstance(dsm, SimcoreS3DataManager)  # nosec
 
-    dsm = get_dsm_provider(get_fastapi_app(task.app)).get(
-        SimcoreS3DataManager.get_location_id()
-    )
-    assert isinstance(dsm, SimcoreS3DataManager)  # nosec
-
-    try:
-        for path_to_export in paths_to_export:
-            await dsm.can_read_file(user_id=user_id, file_id=path_to_export)
-    except FileAccessRightError as err:
-        raise AccessRightError(
-            user_id=user_id,
-            file_id=path_to_export,
-            location_id=SimcoreS3DataManager.get_location_id(),
-        ) from err
-
-    with get_tqdm_progress(total=1, description=f"{task.name}") as pbar:
+        try:
+            for path_to_export in paths_to_export:
+                await dsm.can_read_file(user_id=user_id, file_id=path_to_export)
+        except FileAccessRightError as err:
+            raise AccessRightError(
+                user_id=user_id,
+                file_id=path_to_export,
+                location_id=SimcoreS3DataManager.get_location_id(),
+            ) from err
 
         async def _progress_cb(report: ProgressReport) -> None:
-            set_tqdm_absolute_progress(pbar, report)
             assert task.name  # nosec
-            await get_celery_worker(task.app).set_task_progress(
-                task.name, task_id, report
-            )
+            get_celery_worker(task.app).set_task_progress(task.name, task_id, report)
+            _logger.debug("'%s' progress %s", task_id, report.percent_value)
 
         async with ProgressBarData(
-            num_steps=1, description="data export", progress_report_cb=_progress_cb
+            num_steps=1,
+            description=f"'{task_id}' export data",
+            progress_report_cb=_progress_cb,
         ) as progress_bar:
             return await dsm.create_s3_export(
                 user_id, paths_to_export, progress_bar=progress_bar

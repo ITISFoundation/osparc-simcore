@@ -514,7 +514,7 @@ async def _request_start_data_export(
     rpc_client: RabbitMQRPCClient,
     user_id: UserID,
     product_name: ProductName,
-    paths_to_export: list[SimcoreS3FileID],
+    paths_to_export: list[Path],
     *,
     client_timeout: datetime.timedelta = datetime.timedelta(seconds=60),
 ) -> dict[str, Any]:
@@ -601,7 +601,7 @@ async def test_start_data_export(
         storage_rabbitmq_rpc_client,
         user_id,
         product_name,
-        paths_to_export=list(paths_to_export),
+        paths_to_export=[Path(x) for x in paths_to_export],
     )
 
     assert re.fullmatch(
@@ -628,7 +628,9 @@ async def test_start_data_export_access_error(
             storage_rabbitmq_rpc_client,
             user_id,
             product_name,
-            paths_to_export=[f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}"],
+            paths_to_export=[
+                Path(f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}")
+            ],
             client_timeout=datetime.timedelta(seconds=60),
         )
 
