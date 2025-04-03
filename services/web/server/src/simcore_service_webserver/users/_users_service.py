@@ -132,7 +132,14 @@ async def get_user_id_from_gid(app: web.Application, primary_gid: GroupID) -> Us
 async def search_users_as_admin(
     app: web.Application, email_glob: str, *, include_products: bool = False
 ) -> list[UserForAdminGet]:
-    # NOTE: this search is deploy-wide i.e. independent of the product!
+    """
+    WARNING: this information is reserved for admin users. Note that the returned model include UserForAdminGet
+
+    NOTE: Functions in the service layer typically validate the caller's access rights
+    using parameters like product_name and user_id. However, this function skips
+    such checks as it is designed for scenarios (e.g., background tasks) where
+    no caller or context is available.
+    """
 
     def _glob_to_sql_like(glob_pattern: str) -> str:
         # Escape SQL LIKE special characters in the glob pattern
