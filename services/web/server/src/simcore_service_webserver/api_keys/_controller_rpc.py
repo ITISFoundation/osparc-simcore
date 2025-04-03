@@ -1,6 +1,7 @@
+from datetime import timedelta
+
 from aiohttp import web
 from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
-from models_library.api_schemas_webserver.auth import ApiKeyCreateRequest
 from models_library.products import ProductName
 from models_library.rpc.webserver.auth.api_keys import ApiKeyGet
 from models_library.users import UserID
@@ -20,14 +21,15 @@ async def create_api_key(
     *,
     user_id: UserID,
     product_name: ProductName,
-    api_key: ApiKeyCreateRequest,
+    display_name: str,
+    expiration: timedelta | None = None,
 ) -> ApiKeyGet:
     created_api_key: ApiKey = await _service.create_api_key(
         app,
         user_id=user_id,
         product_name=product_name,
-        display_name=api_key.display_name,
-        expiration=api_key.expiration,
+        display_name=display_name,
+        expiration=expiration,
     )
 
     return ApiKeyGet.model_validate(created_api_key)
