@@ -6,6 +6,8 @@ from fastapi import FastAPI
 from fastapi_pagination import create_page
 from models_library.api_schemas_webserver.licensed_items import LicensedItemRpcGetPage
 from models_library.licenses import LicensedItemID
+from models_library.products import ProductName
+from models_library.projects import ProjectID
 from models_library.resource_tracker_licensed_items_checkouts import (
     LicensedItemCheckoutID,
 )
@@ -26,6 +28,7 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     NotEnoughAvailableSeatsError,
 )
+from servicelib.rabbitmq.rpc_interfaces.webserver import projects as projects_rpc
 from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions import (
     ping as _ping,
 )
@@ -41,6 +44,7 @@ from servicelib.rabbitmq.rpc_interfaces.webserver.licenses.licensed_items import
 from servicelib.rabbitmq.rpc_interfaces.webserver.licenses.licensed_items import (
     release_licensed_item_for_wallet as _release_licensed_item_for_wallet,
 )
+from simcore_service_api_server.models.api_resources import RelativeResourceName
 
 from ..exceptions.backend_errors import (
     CanNotCheckoutServiceIsNotRunningError,
@@ -93,7 +97,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
 
     @_exception_mapper(rpc_exception_map={})
     async def get_licensed_items(
-        self, *, product_name: str, page_params: PaginationParams
+        self, *, product_name: ProductName, page_params: PaginationParams
     ) -> Page[LicensedItemGet]:
         licensed_items_page = await _get_licensed_items(
             rabbitmq_rpc_client=self._client,
@@ -109,7 +113,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
     async def get_available_licensed_items_for_wallet(
         self,
         *,
-        product_name: str,
+        product_name: ProductName,
         wallet_id: WalletID,
         user_id: UserID,
         page_params: PaginationParams,
@@ -137,7 +141,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
     async def checkout_licensed_item_for_wallet(
         self,
         *,
-        product_name: str,
+        product_name: ProductName,
         user_id: UserID,
         wallet_id: WalletID,
         licensed_item_id: LicensedItemID,
@@ -174,7 +178,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
     async def release_licensed_item_for_wallet(
         self,
         *,
-        product_name: str,
+        product_name: ProductName,
         user_id: UserID,
         licensed_item_checkout_id: LicensedItemCheckoutID,
     ) -> LicensedItemCheckoutGet:
@@ -199,6 +203,21 @@ class WbApiRpcClient(SingletonInAppStateMixin):
 
     async def ping(self) -> str:
         return await _ping(self._client)
+
+    async def mark_project_as_job(
+        self,
+        product_name: ProductName,
+        user_id: UserID,
+        project_uuid: ProjectID,
+        job_parent_resource_name: RelativeResourceName,
+    ):
+        await projects_rpc.mark_project_as_job(
+            rpc_client=self._client,
+            product_name=product_name,
+            user_id=user_id,
+            project_uuid=project_uuid,
+            job_parent_resource_name=job_parent_resource_name,
+        )
 
 
 def setup(app: FastAPI, rabbitmq_rmp_client: RabbitMQRPCClient):

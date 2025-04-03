@@ -25,7 +25,7 @@ from simcore_service_api_server.models.schemas.model_adapter import (
 )
 async def test_get_wallet(
     client: AsyncClient,
-    mocked_webserver_service_api_base,
+    mocked_webserver_rest_api_base,
     create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
@@ -45,7 +45,7 @@ async def test_get_wallet(
         return response
 
     create_respx_mock_from_capture(
-        respx_mocks=[mocked_webserver_service_api_base],
+        respx_mocks=[mocked_webserver_rest_api_base],
         capture_path=project_tests_dir / "mocks" / capture,
         side_effects_callbacks=[_get_wallet_side_effect],
     )
@@ -65,14 +65,14 @@ async def test_get_wallet(
 
 async def test_get_default_wallet(
     client: AsyncClient,
-    mocked_webserver_service_api_base,
+    mocked_webserver_rest_api_base,
     create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
 ):
 
     create_respx_mock_from_capture(
-        respx_mocks=[mocked_webserver_service_api_base],
+        respx_mocks=[mocked_webserver_rest_api_base],
         capture_path=project_tests_dir / "mocks" / "get_default_wallet.json",
         side_effects_callbacks=[],
     )

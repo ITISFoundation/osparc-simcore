@@ -127,10 +127,7 @@ qx.Class.define("osparc.task.TaskUI", {
           if ("message" in data["task_progress"] && !this.getChildControl("subtitle").getValue()) {
             this.getChildControl("subtitle").setValue(data["task_progress"]["message"]);
           }
-          if ("percent" in data["task_progress"]) {
-            const progress = data["task_progress"]["percent"];
-            this.getChildControl("progress").setValue(progress*100 + "%");
-          }
+          this.getChildControl("progress").setValue((osparc.data.PollTask.extractProgress(data) * 100) + "%");
         }
       }, this);
 
