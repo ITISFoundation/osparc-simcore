@@ -72,15 +72,20 @@ async def share_project(request: web.Request):
         )
 
         _logger.debug(
-            "Send email with confirmation link %s to %s ",
+            "Send email with confirmation link %s to %s with %s ",
             confirmation_link,
             body_params.sharee_email,
+            (
+                f"message {body_params.sharer_message}"
+                if body_params.sharer_message
+                else "no message"
+            ),
         )
 
+        data = ProjectShareAccepted(sharee_email=body_params.sharee_email, confirmation_link=confirmation_link)  # type: ignore
+
         return web.json_response(
-            Envelope[ProjectShareAccepted]
-            .from_data({"confirmation_link": confirmation_link})
-            .model_dump(),
+            Envelope[ProjectShareAccepted].from_data(data).model_dump(),
             dumps=json_dumps,
             status=status.HTTP_202_ACCEPTED,
         )

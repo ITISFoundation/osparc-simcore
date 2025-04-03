@@ -12,6 +12,7 @@ from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver.projects_access_rights import (
     ProjectShareAccepted,
 )
+from pytest_mock import MockType
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
@@ -21,8 +22,10 @@ from simcore_service_webserver.projects.models import ProjectDict
 
 
 @pytest.fixture
-def mock_catalog_api_get_services_for_user_in_product(mocker: MockerFixture):
-    mocker.patch(
+def mock_catalog_api_get_services_for_user_in_product(
+    mocker: MockerFixture,
+) -> MockType:
+    return mocker.patch(
         "simcore_service_webserver.projects._controller.projects_rest.catalog_service.get_services_for_user_in_product",
         spec=True,
         return_value=[],
@@ -30,8 +33,8 @@ def mock_catalog_api_get_services_for_user_in_product(mocker: MockerFixture):
 
 
 @pytest.fixture
-def mock_project_uses_available_services(mocker: MockerFixture):
-    mocker.patch(
+def mock_project_uses_available_services(mocker: MockerFixture) -> MockType:
+    return mocker.patch(
         "simcore_service_webserver.projects._controller.projects_rest.project_uses_available_services",
         spec=True,
         return_value=True,
@@ -47,8 +50,8 @@ async def test_projects_groups_full_workflow(  # noqa: PLR0915
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     expected: HTTPStatus,
-    mock_catalog_api_get_services_for_user_in_product,
-    mock_project_uses_available_services,
+    mock_catalog_api_get_services_for_user_in_product: MockType,
+    mock_project_uses_available_services: MockType,
 ):
     assert client.app
     # check the default project permissions
@@ -261,8 +264,8 @@ async def test_share_project(
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
-    mock_catalog_api_get_services_for_user_in_product,
-    mock_project_uses_available_services,
+    mock_catalog_api_get_services_for_user_in_product: MockType,
+    mock_project_uses_available_services: MockType,
 ):
     assert client.app
 
@@ -297,3 +300,19 @@ async def test_share_project(
     assert data[0]["read"] is True
     assert data[0]["write"] is True
     assert data[0]["delete"] is True
+
+    # check an invalid
+    url = client.app.router["share_project"].url_for(
+        project_id=f"{user_project['uuid']}"
+    )
+    resp = await client.post(
+        f"{url}",
+        json={
+            "shareeEmail": "sharee@email.com",
+            # invalid access rights combination
+            "read": True,
+            "write": False,
+            "delete": True,
+        },
+    )
+    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
