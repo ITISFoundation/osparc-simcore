@@ -25,7 +25,9 @@ async def _get_node_from_db(
         project_id,
     )
     rows_count = await connection.scalar(
-        sa.select(sa.func.count()).select_from(
+        sa.select(sa.func.count())
+        .select_from(comp_tasks)
+        .where(
             (comp_tasks.c.node_id == node_uuid)
             & (comp_tasks.c.project_id == project_id),
         )
@@ -84,9 +86,10 @@ class DBManager:
         _logger.debug(message)
 
         node_configuration = json.loads(json_configuration)
-        async with DBContextManager(
-            self._db_engine
-        ) as engine, engine.begin() as connection:
+        async with (
+            DBContextManager(self._db_engine) as engine,
+            engine.begin() as connection,
+        ):
             # update the necessary parts
             await connection.execute(
                 comp_tasks.update()
@@ -108,9 +111,10 @@ class DBManager:
         _logger.debug(
             "Getting ports configuration of node %s from comp_tasks table", node_uuid
         )
-        async with DBContextManager(
-            self._db_engine
-        ) as engine, engine.connect() as connection:
+        async with (
+            DBContextManager(self._db_engine) as engine,
+            engine.connect() as connection,
+        ):
             node = await _get_node_from_db(project_id, node_uuid, connection)
             node_json_config = json.dumps(
                 {
@@ -124,9 +128,10 @@ class DBManager:
         return node_json_config
 
     async def get_project_owner_user_id(self, project_id: ProjectID) -> UserID:
-        async with DBContextManager(
-            self._db_engine
-        ) as engine, engine.connect() as connection:
+        async with (
+            DBContextManager(self._db_engine) as engine,
+            engine.connect() as connection,
+        ):
             prj_owner = await connection.scalar(
                 sa.select(projects.c.prj_owner).where(
                     projects.c.uuid == f"{project_id}"
