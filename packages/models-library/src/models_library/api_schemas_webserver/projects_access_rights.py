@@ -6,6 +6,7 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     EmailStr,
+    Field,
     HttpUrl,
     StringConstraints,
     model_validator,
@@ -31,10 +32,12 @@ class ProjectsGroupsBodyParams(InputSchema):
 class ProjectShare(InputSchema):
     sharee_email: EmailStr
     sharer_message: Annotated[
-        str, StringConstraints(max_length=500, strip_whitespace=True)
+        str,
+        StringConstraints(max_length=500, strip_whitespace=True),
+        Field(description="An optional message from sharer to sharee"),
     ] = ""
 
-    # sharing access
+    # Sharing access rights
     read: bool
     write: bool
     delete: bool
