@@ -96,7 +96,7 @@ class DummyFileData:
 
 @pytest.mark.xfail(reason="Under dev")
 async def test_list_files_legacy(
-    client: AsyncClient, mocked_storage_service_api_base: MockRouter
+    client: AsyncClient, mocked_storage_rest_api_base: MockRouter
 ):
     response = await client.get(f"{API_VTAG}/files")
 
@@ -117,7 +117,7 @@ async def test_list_files_legacy(
 @pytest.mark.xfail(reason="Under dev")
 async def test_list_files_with_pagination(
     client: AsyncClient,
-    mocked_storage_service_api_base: MockRouter,
+    mocked_storage_rest_api_base: MockRouter,
 ):
     response = await client.get(f"{API_VTAG}/files/page")
 
@@ -146,7 +146,7 @@ async def test_list_files_with_pagination(
 
 @pytest.mark.xfail(reason="Under dev")
 async def test_upload_content(
-    client: AsyncClient, mocked_storage_service_api_base: MockRouter, tmp_path: Path
+    client: AsyncClient, mocked_storage_rest_api_base: MockRouter, tmp_path: Path
 ):
     upload_path = tmp_path / "test_upload_content.txt"
     upload_path.write_text("test_upload_content")
@@ -166,7 +166,7 @@ async def test_upload_content(
 
 @pytest.mark.xfail(reason="Under dev")
 async def test_get_file(
-    client: AsyncClient, mocked_storage_service_api_base: MockRouter, tmp_path: Path
+    client: AsyncClient, mocked_storage_rest_api_base: MockRouter, tmp_path: Path
 ):
     response = await client.get(
         f"{API_VTAG}/files/3fa85f64-5717-4562-b3fc-2c963f66afa6"
@@ -183,7 +183,7 @@ async def test_get_file(
 
 async def test_delete_file(
     client: AsyncClient,
-    mocked_storage_service_api_base: respx.MockRouter,
+    mocked_storage_rest_api_base: respx.MockRouter,
     create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
@@ -205,7 +205,7 @@ async def test_delete_file(
         return capture.response_body
 
     create_respx_mock_from_capture(
-        respx_mocks=[mocked_storage_service_api_base],
+        respx_mocks=[mocked_storage_rest_api_base],
         capture_path=project_tests_dir / "mocks" / "delete_file.json",
         side_effects_callbacks=[search_side_effect, delete_side_effect],
     )
@@ -218,7 +218,7 @@ async def test_delete_file(
 
 @pytest.mark.xfail(reason="Under dev")
 async def test_download_content(
-    client: AsyncClient, mocked_storage_service_api_base: MockRouter, tmp_path: Path
+    client: AsyncClient, mocked_storage_rest_api_base: MockRouter, tmp_path: Path
 ):
     response = await client.get(
         f"{API_VTAG}/files/3fa85f64-5717-4562-b3fc-2c963f66afa6/content"
@@ -297,7 +297,7 @@ async def test_get_upload_links(
 async def test_search_file(
     query: dict[str, str],
     client: AsyncClient,
-    mocked_storage_service_api_base: respx.MockRouter,
+    mocked_storage_rest_api_base: respx.MockRouter,
     create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
@@ -325,7 +325,7 @@ async def test_search_file(
         return response
 
     create_respx_mock_from_capture(
-        respx_mocks=[mocked_storage_service_api_base],
+        respx_mocks=[mocked_storage_rest_api_base],
         capture_path=project_tests_dir / "mocks" / "search_file_checksum.json",
         side_effects_callbacks=[side_effect_callback],
     )

@@ -2,12 +2,15 @@
 # pylint:disable=unused-argument
 
 from collections.abc import Awaitable, Callable
+from typing import cast
 
 import pytest
+from common_library.errors_classes import OsparcErrorMixin
 from faker import Faker
 from models_library.rabbitmq_basic_types import RPCMethodName
 from servicelib.rabbitmq import (
     RabbitMQRPCClient,
+    RPCInterfaceError,
     RPCNamespace,
     RPCRouter,
     RPCServerError,
@@ -18,15 +21,21 @@ pytest_simcore_core_services_selection = [
 ]
 
 
-router = RPCRouter()
+class MyServiceError(OsparcErrorMixin, Exception): ...
 
 
-class MyBaseError(Exception):
-    ...
+class MyDomainError(MyServiceError):
+    msg_template = "This could happen"
 
 
-class MyExpectedError(MyBaseError):
-    ...
+def raise_my_expected_error():
+    raise MyDomainError(user_id=33, project_id=3)
+
+
+router = RPCRouter()  # Server-side
+
+
+class MyExpectedRpcError(RPCInterfaceError): ...
 
 
 @router.expose()
@@ -41,10 +50,13 @@ async def an_int_method(a_global_arg: str, *, a_global_kwarg: str) -> int:
     return 34
 
 
-@router.expose(reraise_if_error_type=(MyBaseError,))
-async def raising_expected_error(a_global_arg: str, *, a_global_kwarg: str) -> int:
-    msg = "This could happen"
-    raise MyExpectedError(msg)
+@router.expose(reraise_if_error_type=(MyExpectedRpcError,))
+async def raising_expected_error(a_global_arg: str, *, a_global_kwarg: str):
+    try:
+        raise_my_expected_error()
+    except MyDomainError as exc:
+        # NOTE how it is adapted from a domain exception to an interface exception
+        raise MyExpectedRpcError.from_domain_error(exc) from exc
 
 
 @router.expose()
@@ -55,7 +67,7 @@ async def raising_unexpected_error(a_global_arg: str, *, a_global_kwarg: str) ->
 
 @pytest.fixture
 def router_namespace(faker: Faker) -> RPCNamespace:
-    return faker.pystr()
+    return cast(RPCNamespace, faker.pystr())
 
 
 async def test_exposed_methods(
@@ -100,10 +112,18 @@ async def test_exposed_methods(
     assert "builtins.ValueError" in f"{exc_info.value}"
 
     # This error was classified int he interface
-    with pytest.raises(MyBaseError) as exc_info:
+    with pytest.raises(RPCInterfaceError) as exc_info:
         await rpc_client.request(
             router_namespace,
             RPCMethodName(raising_expected_error.__name__),
         )
 
-    assert isinstance(exc_info.value, MyExpectedError)
+    assert isinstance(exc_info.value, MyExpectedRpcError)
+    assert exc_info.value.error_context() == {
+        "message": "This could happen [MyServiceError.MyDomainError]",
+        "code": "RuntimeError.BaseRPCError.RPCServerError",
+        "domain_error_message": "This could happen",
+        "domain_error_code": "MyServiceError.MyDomainError",
+        "user_id": 33,
+        "project_id": 3,
+    }

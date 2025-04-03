@@ -13,6 +13,7 @@ import httpx
 import pytest
 from fastapi.encoders import jsonable_encoder
 from pydantic import TypeAdapter
+from pytest_mock import MockType
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
 from pytest_simcore.helpers.httpx_calls_capture_parameters import PathDescription
 from respx import MockRouter
@@ -33,7 +34,8 @@ class MockedBackendApiDict(TypedDict):
 @pytest.fixture
 def mocked_backend(
     project_tests_dir: Path,
-    mocked_webserver_service_api_base: MockRouter,
+    mocked_webserver_rest_api_base: MockRouter,
+    mocked_webserver_rpc_api: dict[str, MockType],
 ) -> MockedBackendApiDict | None:
     # load
     captures = {
@@ -85,7 +87,7 @@ def mocked_backend(
         if group:
             # mock this entrypoint using https://lundberg.github.io/respx/guide/#iterable
             cc = [c] + [captures[_] for _ in group]
-            mocked_webserver_service_api_base.request(
+            mocked_webserver_rest_api_base.request(
                 method=c.method.upper(),
                 url=None,
                 path__regex=f"^{c.path.to_path_regex()}$",
@@ -94,7 +96,7 @@ def mocked_backend(
                 side_effect=[_.as_response() for _ in cc],
             )
         else:
-            mocked_webserver_service_api_base.request(
+            mocked_webserver_rest_api_base.request(
                 method=c.method.upper(),
                 url=None,
                 path__regex=f"^{c.path.to_path_regex()}$",
@@ -102,7 +104,7 @@ def mocked_backend(
             ).mock(return_value=c.as_response())
 
     return MockedBackendApiDict(
-        webserver=mocked_webserver_service_api_base,
+        webserver=mocked_webserver_rest_api_base,
     )
 
 
