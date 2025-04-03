@@ -265,9 +265,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
                 if ("message" in data["task_progress"] && data["task_progress"]["message"]) {
                   progressWindow.setMessage(data["task_progress"]["message"]);
                 }
-                if ("percent" in data["task_progress"]) {
-                  progressWindow.setProgress(data["task_progress"]["percent"]*100);
-                }
+                progressWindow.setProgress(osparc.data.PollTask.extractProgress(data) * 100);
               }
             }, this);
             task.addListener("resultReceived", e => {

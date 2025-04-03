@@ -99,7 +99,16 @@ qx.Class.define("osparc.data.PollTask", {
       } catch (_) {
         return href;
       }
-    }
+    },
+
+    extractProgress: function(updateData) {
+      if ("task_progress" in updateData) {
+        const taskProgress = updateData["task_progress"];
+        const percent = taskProgress["percent"] ? parseFloat(taskProgress["percent"].toFixed(3)) : taskProgress["percent"];
+        return percent;
+      }
+      return 0;
+    },
   },
 
   members: {
