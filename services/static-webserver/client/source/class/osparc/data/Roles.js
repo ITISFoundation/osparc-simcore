@@ -170,7 +170,7 @@ qx.Class.define("osparc.data.Roles", {
         label: qx.locale.Manager.tr("Viewer"),
         longLabel: qx.locale.Manager.tr("Viewer: Read access"),
         canDo: [
-          qx.locale.Manager.tr("- can inspect the content and open ") + osparc.product.Utils.getStudyAlias({plural: true})
+          qx.locale.Manager.tr("- can inspect the content and open ") + osparc.product.Utils.getStudyAlias({plural: true}) + qx.locale.Manager.tr(" without making changes")
         ]
       },
       "write": {
