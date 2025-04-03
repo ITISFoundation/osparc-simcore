@@ -121,12 +121,12 @@ qx.Class.define("osparc.dashboard.ListButtonTaskPlaceholder", {
       task.addListener("updateReceived", e => {
         const updateData = e.getData();
         if ("task_progress" in updateData) {
-          const progress = updateData["task_progress"];
+          const taskProgress = updateData["task_progress"];
           this.getChildControl("progress-bar").set({
             value: osparc.data.PollTask.extractProgress(updateData) * 100
           });
           this.getChildControl("state-label").set({
-            value: progress["message"]
+            value: taskProgress["message"]
           });
         }
       }, this);

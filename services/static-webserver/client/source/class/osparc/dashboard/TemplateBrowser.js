@@ -378,12 +378,12 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       task.addListener("updateReceived", e => {
         const updateData = e.getData();
         if ("task_progress" in updateData && toTemplateCard) {
-          const progress = updateData["task_progress"];
+          const taskProgress = updateData["task_progress"];
           toTemplateCard.getChildControl("progress-bar").set({
             value: osparc.data.PollTask.extractProgress(updateData) * 100
           });
           toTemplateCard.getChildControl("state-label").set({
-            value: progress["message"]
+            value: taskProgress["message"]
           });
         }
       }, this);
