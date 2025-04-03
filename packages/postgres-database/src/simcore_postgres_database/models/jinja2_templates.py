@@ -1,5 +1,11 @@
-""" Collection of jinja2 templates for customizable docs (e.g. emails, sites)
+"""Jinja2 templates table
 
+- Collection of jinja2 templates for customizable docs (e.g. emails, sites)
+
+Migration strategy:
+- The primary key is `id`, which is unique and sufficient for migration.
+- No foreign key dependencies exist.
+- No additional changes are required; this table can be migrated as is.
 """
 
 import sqlalchemy as sa

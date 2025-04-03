@@ -1,10 +1,15 @@
-""" User's confirmations table
+"""User's confirmations table
 
-    - Keeps a list of tokens to identify an action (registration, invitation, reset, etc) authorized
-    by link to a a user in the framework
-    - These tokens have an expiration date defined by configuration
+- Keeps a list of tokens to identify an action (registration, invitation, reset, etc) authorized
+by link to a a user in the framework
+- These tokens have an expiration date defined by configuration
 
+Migration strategy:
+- The primary key is `code`, which is unique and sufficient for migration.
+- Ensure `user_id` foreign key references are valid in the target database.
+- No additional changes are required; this table can be migrated as is.
 """
+
 import enum
 
 import sqlalchemy as sa

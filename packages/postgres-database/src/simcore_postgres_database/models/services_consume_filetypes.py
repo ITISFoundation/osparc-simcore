@@ -1,22 +1,22 @@
 """
-    Establishes which services can consume a given filetype
+Services consume filetypes table
 
-    The relation is N-N because
-    - a service could handle one or more filetypes and
-    - one filetype could be handled by one or more services
+- Links services to the file types they consume.
+- Establishes which services can consume a given filetype
+- The relation is N-N because
+  - a service could handle one or more filetypes and
+  - one filetype could be handled by one or more services
+
+Migration strategy:
+- Composite primary key (`service_key`, `filetype_id`) is unique and sufficient for migration.
+- Ensure foreign key references to `services` and `filetypes` are valid in the target database.
+- No additional changes are required; this table can be migrated as is.
 """
+
 import sqlalchemy as sa
 
 from ._common import RefActions
 from .base import metadata
-
-#
-# TODO: This information SHALL be defined in service metadata upon publication
-#       and the catalog service, using e.g. a background task,
-#       can automatically fill this table with services that elligable (e.g. shared with everybody)
-#       to consume given filetypes. Notice also that service "matching" will also be determined in a near
-#       future by more complex metadata
-#
 
 services_consume_filetypes = sa.Table(
     "services_consume_filetypes",

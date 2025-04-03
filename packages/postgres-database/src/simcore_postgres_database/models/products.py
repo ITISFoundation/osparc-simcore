@@ -1,8 +1,13 @@
 """Products table
 
+- Represents products in the system.
 - List of products served by the simcore platform
 - Products have a name and an associated host (defined by a regex)
 - Every product has a front-end with exactly the same name
+
+Migration strategy:
+- The primary key is `id`, which is unique and sufficient for migration.
+- Ensure foreign key references (if any) are valid in the target database.
 """
 
 from typing import Literal
@@ -122,6 +127,7 @@ _LOGIN_SETTINGS_SERVER_DEFAULT = json_dumps(LOGIN_SETTINGS_DEFAULT)
 #
 # NOTE: a default entry is created in the table Product
 # see packages/postgres-database/src/simcore_postgres_database/migration/versions/350103a7efbd_modified_products_table.py
+
 
 products = sa.Table(
     "products",

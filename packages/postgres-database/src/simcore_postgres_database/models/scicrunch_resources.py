@@ -1,4 +1,15 @@
-""" Stores SOME of the information associated to Research Resource Identifiers (RRIDs) as defined in https://scicrunch.org/resources
+"""Scicrunch resources table
+
+- Stores resources fetched from Scicrunch.
+- Stores SOME of the information associated to Research Resource Identifiers (RRIDs) as defined in https://scicrunch.org/resources
+
+Migration strategy:
+- The primary key is `id`, which is unique and sufficient for migration.
+- No foreign key dependencies exist.
+- No additional changes are required; this table can be migrated as is.
+"""
+
+"""
 """
 
 import sqlalchemy as sa
