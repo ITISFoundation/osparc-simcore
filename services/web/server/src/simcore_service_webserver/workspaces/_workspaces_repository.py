@@ -81,29 +81,25 @@ def _create_base_select_query(
 ) -> Select:
     # any other access
     access_rights_subquery = (
-        (
-            select(
-                workspaces_access_rights.c.workspace_id,
-                func.jsonb_object_agg(
-                    workspaces_access_rights.c.gid,
-                    func.jsonb_build_object(
-                        "read",
-                        workspaces_access_rights.c.read,
-                        "write",
-                        workspaces_access_rights.c.write,
-                        "delete",
-                        workspaces_access_rights.c.delete,
-                    ),
-                )
-                .filter(
-                    workspaces_access_rights.c.read  # Filters out entries where "read" is False
-                )
-                .label("access_rights"),
-            ).group_by(workspaces_access_rights.c.workspace_id)
-        )
-        .subquery("access_rights_subquery")
-        .lateral()
-    )
+        select(
+            workspaces_access_rights.c.workspace_id,
+            func.jsonb_object_agg(
+                workspaces_access_rights.c.gid,
+                func.jsonb_build_object(
+                    "read",
+                    workspaces_access_rights.c.read,
+                    "write",
+                    workspaces_access_rights.c.write,
+                    "delete",
+                    workspaces_access_rights.c.delete,
+                ),
+            )
+            .filter(
+                workspaces_access_rights.c.read  # Filters out entries where "read" is False
+            )
+            .label("access_rights"),
+        ).group_by(workspaces_access_rights.c.workspace_id)
+    ).subquery("access_rights_subquery")
 
     # caller's access rights
     my_access_rights_subquery = create_my_workspace_access_rights_subquery(
