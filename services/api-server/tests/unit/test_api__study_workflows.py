@@ -14,10 +14,10 @@ from typing import TypedDict
 
 import httpx
 import pytest
+import respx
 from fastapi.encoders import jsonable_encoder
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.httpx_calls_capture_models import CreateRespxMockCallback
-from respx import MockRouter
 from simcore_sdk.node_ports_common.filemanager import UploadedFile
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.pagination import OnePage
@@ -196,17 +196,18 @@ def test_py_path(tmp_path: Path) -> Path:
 
 
 class MockedBackendApiDict(TypedDict):
-    webserver: MockRouter | None
-    storage: MockRouter | None
-    director_v2: MockRouter | None
+    webserver: respx.MockRouter | None
+    storage: respx.MockRouter | None
+    director_v2: respx.MockRouter | None
 
 
 @pytest.fixture
 def mocked_backend(
     project_tests_dir: Path,
-    mocked_webserver_service_api_base: MockRouter,
-    mocked_storage_service_api_base: MockRouter,
-    mocked_directorv2_service_api_base: MockRouter,
+    mocked_webserver_rest_api_base: respx.MockRouter,
+    mocked_webserver_rpc_api: respx.MockRouter,
+    mocked_storage_rest_api_base: respx.MockRouter,
+    mocked_directorv2_rest_api_base: respx.MockRouter,
     create_respx_mock_from_capture: CreateRespxMockCallback,
     mocker: MockerFixture,
 ) -> MockedBackendApiDict:
@@ -218,17 +219,17 @@ def mocked_backend(
 
     create_respx_mock_from_capture(
         respx_mocks=[
-            mocked_webserver_service_api_base,
-            mocked_storage_service_api_base,
-            mocked_directorv2_service_api_base,
+            mocked_webserver_rest_api_base,
+            mocked_storage_rest_api_base,
+            mocked_directorv2_rest_api_base,
         ],
         capture_path=project_tests_dir / "mocks" / "run_study_workflow.json",
         side_effects_callbacks=[],
     )
     return MockedBackendApiDict(
-        webserver=mocked_webserver_service_api_base,
-        storage=mocked_storage_service_api_base,
-        director_v2=mocked_directorv2_service_api_base,
+        webserver=mocked_webserver_rest_api_base,
+        storage=mocked_storage_rest_api_base,
+        director_v2=mocked_directorv2_rest_api_base,
     )
 
 

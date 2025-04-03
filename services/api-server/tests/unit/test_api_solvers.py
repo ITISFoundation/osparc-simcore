@@ -26,7 +26,7 @@ from simcore_service_api_server._meta import API_VTAG
 )
 async def test_get_solver_pricing_plan(
     client: AsyncClient,
-    mocked_webserver_service_api_base,
+    mocked_webserver_rest_api_base,
     create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
@@ -35,7 +35,7 @@ async def test_get_solver_pricing_plan(
 ):
 
     respx_mock = create_respx_mock_from_capture(
-        respx_mocks=[mocked_webserver_service_api_base],
+        respx_mocks=[mocked_webserver_rest_api_base],
         capture_path=project_tests_dir / "mocks" / capture,
         side_effects_callbacks=[],
     )

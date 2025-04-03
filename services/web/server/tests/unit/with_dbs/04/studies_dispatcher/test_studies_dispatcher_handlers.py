@@ -7,7 +7,6 @@
 import asyncio
 import re
 import urllib.parse
-from collections.abc import AsyncIterator
 from typing import Any
 
 import pytest
@@ -89,7 +88,7 @@ def web_server(redis_service: RedisSettings, web_server: TestServer) -> TestServ
 @pytest.fixture(autouse=True)
 async def director_v2_automock(
     director_v2_service_mock: aioresponses,
-) -> AsyncIterator[aioresponses]:
+) -> aioresponses:
     return director_v2_service_mock
 
 
