@@ -1,6 +1,7 @@
 import contextlib
 import logging
 from dataclasses import dataclass
+import queue
 from typing import Any, Final
 from uuid import uuid4
 
@@ -46,7 +47,7 @@ class CeleryTaskQueueClient:
     _task_store: TaskStore
 
     async def send_task(
-        self, task_name: str, *, task_context: TaskContext, **task_params
+        self, task_name: str, *, task_context: TaskContext, task_queue: str = "default", **task_params
     ) -> TaskUUID:
         with log_context(
             _logger,
@@ -55,7 +56,7 @@ class CeleryTaskQueueClient:
         ):
             task_uuid = uuid4()
             task_id = build_task_id(task_context, task_uuid)
-            self._celery_app.send_task(task_name, task_id=task_id, kwargs=task_params)
+            self._celery_app.send_task(task_name, task_id=task_id, kwargs=task_params, queue=task_queue)
             await self._task_store.set_task(
                 task_id, TaskData(status=TaskState.PENDING.name)
             )
