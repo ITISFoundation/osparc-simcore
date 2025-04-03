@@ -49,7 +49,7 @@ async def set_comp_task_inputs(
     inputs_schema: dict[str, Any],
     inputs: dict[str, Any],
 ) -> None:
-    async with aiopg_engine.begin() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(
             comp_tasks.update()
             .where(comp_tasks.c.node_id == f"{node_id}")
