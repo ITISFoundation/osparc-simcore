@@ -79,7 +79,6 @@ from ._projects_repository_legacy_utils import (
     ANY_USER_ID_SENTINEL,
     BaseProjectDB,
     ProjectAccessRights,
-    assemble_array_groups,
     convert_to_db_names,
     convert_to_schema_names,
     create_project_access_rights,
@@ -656,7 +655,6 @@ class ProjectDBAPI(BaseProjectDB):
             user_groups_proxy: list[RowProxy] = await self._list_user_groups(
                 conn, user_id
             )
-            user_groups_array_str = assemble_array_groups(user_groups_proxy)
             user_groups: list[int] = [group.gid for group in user_groups_proxy]
 
             ###
@@ -668,7 +666,6 @@ class ProjectDBAPI(BaseProjectDB):
                 user_id=user_id,
                 workspace_query=workspace_query,
                 is_search_by_multi_columns=search_by_multi_columns is not None,
-                user_groups_array_str=user_groups_array_str,
                 user_groups=user_groups,
             )
 

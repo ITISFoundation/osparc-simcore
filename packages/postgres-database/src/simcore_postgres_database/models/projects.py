@@ -1,6 +1,5 @@
-""" Projects table
+"""Projects table"""
 
-"""
 import enum
 
 import sqlalchemy as sa
@@ -170,6 +169,14 @@ projects = sa.Table(
         nullable=False,
         server_default=sa.text("'{}'::jsonb"),
         doc="DEPRECATED: Read/write/delete access rights of each group (gid) on this project",
+    ),
+    ### INDEXES ----------------------------
+    sa.Index("idx_projects_type", "type"),
+    sa.Index(
+        "idx_projects_last_change_date_desc",
+        "last_change_date",
+        postgresql_using="btree",
+        postgresql_ops={"last_change_date": "DESC"},
     ),
 )
 
