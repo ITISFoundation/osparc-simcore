@@ -59,7 +59,7 @@ def get_inspect_job_side_effect(job_id: str) -> SideEffectCallback:
 )
 async def test_get_solver_job_wallet(
     client: AsyncClient,
-    mocked_webserver_service_api_base,
+    mocked_webserver_rest_api_base,
     create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
@@ -94,7 +94,7 @@ async def test_get_solver_job_wallet(
         return response
 
     create_respx_mock_from_capture(
-        respx_mocks=[mocked_webserver_service_api_base],
+        respx_mocks=[mocked_webserver_rest_api_base],
         capture_path=project_tests_dir / "mocks" / capture,
         side_effects_callbacks=[_get_job_wallet_side_effect, _get_wallet_side_effect],
     )
@@ -131,7 +131,7 @@ async def test_get_solver_job_wallet(
 )
 async def test_get_solver_job_pricing_unit(
     client: AsyncClient,
-    mocked_webserver_service_api_base,
+    mocked_webserver_rest_api_base,
     create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
@@ -169,7 +169,7 @@ async def test_get_solver_job_pricing_unit(
         return capture.response_body
 
     create_respx_mock_from_capture(
-        respx_mocks=[mocked_webserver_service_api_base],
+        respx_mocks=[mocked_webserver_rest_api_base],
         capture_path=project_tests_dir / "mocks" / capture_file,
         side_effects_callbacks=(
             [_get_job_side_effect, _get_pricing_unit_side_effect]
@@ -202,8 +202,8 @@ async def test_get_solver_job_pricing_unit(
 )
 async def test_start_solver_job_pricing_unit_with_payment(
     client: AsyncClient,
-    mocked_webserver_service_api_base,
-    mocked_directorv2_service_api_base,
+    mocked_webserver_rest_api_base,
+    mocked_directorv2_rest_api_base,
     mocked_groups_extra_properties,
     create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
@@ -256,8 +256,8 @@ async def test_start_solver_job_pricing_unit_with_payment(
     _put_pricing_plan_and_unit_side_effect.was_called = False
     create_respx_mock_from_capture(
         respx_mocks=[
-            mocked_webserver_service_api_base,
-            mocked_directorv2_service_api_base,
+            mocked_webserver_rest_api_base,
+            mocked_directorv2_rest_api_base,
         ],
         capture_path=project_tests_dir / "mocks" / capture_name,
         side_effects_callbacks=callbacks,
@@ -279,8 +279,8 @@ async def test_start_solver_job_pricing_unit_with_payment(
 
 async def test_get_solver_job_pricing_unit_no_payment(
     client: AsyncClient,
-    mocked_webserver_service_api_base,
-    mocked_directorv2_service_api_base,
+    mocked_webserver_rest_api_base,
+    mocked_directorv2_rest_api_base,
     mocked_groups_extra_properties,
     create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
@@ -293,8 +293,8 @@ async def test_get_solver_job_pricing_unit_no_payment(
 
     create_respx_mock_from_capture(
         respx_mocks=[
-            mocked_directorv2_service_api_base,
-            mocked_webserver_service_api_base,
+            mocked_directorv2_rest_api_base,
+            mocked_webserver_rest_api_base,
         ],
         capture_path=project_tests_dir / "mocks" / "start_job_no_payment.json",
         side_effects_callbacks=[
@@ -314,8 +314,8 @@ async def test_get_solver_job_pricing_unit_no_payment(
 
 async def test_start_solver_job_conflict(
     client: AsyncClient,
-    mocked_webserver_service_api_base,
-    mocked_directorv2_service_api_base,
+    mocked_webserver_rest_api_base,
+    mocked_directorv2_rest_api_base,
     mocked_groups_extra_properties,
     create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
@@ -328,8 +328,8 @@ async def test_start_solver_job_conflict(
 
     create_respx_mock_from_capture(
         respx_mocks=[
-            mocked_directorv2_service_api_base,
-            mocked_webserver_service_api_base,
+            mocked_directorv2_rest_api_base,
+            mocked_webserver_rest_api_base,
         ],
         capture_path=project_tests_dir / "mocks" / "start_solver_job.json",
         side_effects_callbacks=[
@@ -350,7 +350,7 @@ async def test_start_solver_job_conflict(
 
 async def test_stop_job(
     client: AsyncClient,
-    mocked_directorv2_service_api_base,
+    mocked_directorv2_rest_api_base,
     mocked_groups_extra_properties,
     create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
@@ -372,7 +372,7 @@ async def test_stop_job(
         return jsonable_encoder(task)
 
     create_respx_mock_from_capture(
-        respx_mocks=[mocked_directorv2_service_api_base],
+        respx_mocks=[mocked_directorv2_rest_api_base],
         capture_path=project_tests_dir / "mocks" / "stop_job.json",
         side_effects_callbacks=[
             _stop_job_side_effect,
@@ -396,8 +396,8 @@ async def test_stop_job(
 )
 async def test_get_solver_job_outputs(
     client: AsyncClient,
-    mocked_webserver_service_api_base,
-    mocked_storage_service_api_base,
+    mocked_webserver_rest_api_base,
+    mocked_storage_rest_api_base,
     mocked_groups_extra_properties,
     mocked_solver_job_outputs,
     create_respx_mock_from_capture: CreateRespxMockCallback,
@@ -433,8 +433,8 @@ async def test_get_solver_job_outputs(
 
     create_respx_mock_from_capture(
         respx_mocks=[
-            mocked_webserver_service_api_base,
-            mocked_storage_service_api_base,
+            mocked_webserver_rest_api_base,
+            mocked_storage_rest_api_base,
         ],
         capture_path=project_tests_dir / "mocks" / "get_solver_outputs.json",
         side_effects_callbacks=[_sf, _sf, _sf, _wallet_side_effect, _sf],

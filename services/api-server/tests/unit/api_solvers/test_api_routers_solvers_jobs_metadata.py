@@ -11,6 +11,7 @@ import pytest
 from faker import Faker
 from models_library.basic_regex import UUID_RE_BASE
 from pydantic import TypeAdapter
+from pytest_mock import MockType
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
@@ -37,8 +38,9 @@ def _as_path_regex(initial_path: str):
 
 @pytest.fixture
 def mocked_backend(
-    mocked_webserver_service_api: MockRouter,
-    mocked_catalog_service_api: MockRouter,
+    mocked_webserver_rest_api: MockRouter,
+    mocked_webserver_rpc_api: dict[str, MockType],
+    mocked_catalog_rest_api: MockRouter,
     project_tests_dir: Path,
 ) -> MockedBackendApiDict:
     mock_name = "for_test_get_and_update_job_metadata.json"
@@ -52,7 +54,7 @@ def mocked_backend(
 
     capture = captures["get_service"]
     assert capture.host == "catalog"
-    mocked_catalog_service_api.request(
+    mocked_catalog_rest_api.request(
         method=capture.method,
         path=capture.path,
         name=capture.name,
@@ -66,7 +68,7 @@ def mocked_backend(
         assert capture.host == "webserver"
         capture_path_regex = _as_path_regex(capture.path.removeprefix("/v0"))
 
-        route = mocked_webserver_service_api.request(
+        route = mocked_webserver_rest_api.request(
             method=capture.method,
             path__regex=capture_path_regex,
             name=capture.name,
@@ -86,7 +88,7 @@ def mocked_backend(
             )
 
     return MockedBackendApiDict(
-        webserver=mocked_webserver_service_api, catalog=mocked_catalog_service_api
+        webserver=mocked_webserver_rest_api, catalog=mocked_catalog_rest_api
     )
 
 
