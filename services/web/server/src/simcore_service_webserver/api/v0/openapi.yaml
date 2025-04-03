@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.61.5
+  version: 0.63.0
 servers:
 - url: ''
   description: webserver
@@ -4351,6 +4351,153 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Payment Required
+  /v0/projects/{project_id}:share:
+    post:
+      tags:
+      - projects
+      - groups
+      summary: Share Project
+      operationId: share_project
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Project Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectShare'
+      responses:
+        '202':
+          description: The request to share the project has been accepted, but the
+            actual sharing process has to be confirmd.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ProjectShareAccepted_'
+  /v0/projects/{project_id}/groups/{group_id}:
+    post:
+      tags:
+      - projects
+      - groups
+      summary: Create Project Group
+      operationId: create_project_group
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Project Id
+      - name: group_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: Group Id
+          minimum: 0
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectsGroupsBodyParams'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ProjectGroupGet_'
+    put:
+      tags:
+      - projects
+      - groups
+      summary: Replace Project Group
+      operationId: replace_project_group
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Project Id
+      - name: group_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: Group Id
+          minimum: 0
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectsGroupsBodyParams'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ProjectGroupGet_'
+    delete:
+      tags:
+      - projects
+      - groups
+      summary: Delete Project Group
+      operationId: delete_project_group
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Project Id
+      - name: group_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: Group Id
+          minimum: 0
+      responses:
+        '204':
+          description: Successful Response
+  /v0/projects/{project_id}/groups:
+    get:
+      tags:
+      - projects
+      - groups
+      summary: List Project Groups
+      operationId: list_project_groups
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Project Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_ProjectGroupGet__'
   /v0/projects/{project_uuid}/comments:
     post:
       tags:
@@ -4541,124 +4688,6 @@ paths:
       responses:
         '204':
           description: Successful Response
-  /v0/projects/{project_id}/groups/{group_id}:
-    post:
-      tags:
-      - projects
-      - groups
-      summary: Create Project Group
-      operationId: create_project_group
-      parameters:
-      - name: project_id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-          title: Project Id
-      - name: group_id
-        in: path
-        required: true
-        schema:
-          type: integer
-          exclusiveMinimum: true
-          title: Group Id
-          minimum: 0
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/_ProjectsGroupsBodyParams'
-      responses:
-        '201':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_ProjectGroupGet_'
-    put:
-      tags:
-      - projects
-      - groups
-      summary: Replace Project Group
-      operationId: replace_project_group
-      parameters:
-      - name: project_id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-          title: Project Id
-      - name: group_id
-        in: path
-        required: true
-        schema:
-          type: integer
-          exclusiveMinimum: true
-          title: Group Id
-          minimum: 0
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/_ProjectsGroupsBodyParams'
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_ProjectGroupGet_'
-    delete:
-      tags:
-      - projects
-      - groups
-      summary: Delete Project Group
-      operationId: delete_project_group
-      parameters:
-      - name: project_id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-          title: Project Id
-      - name: group_id
-        in: path
-        required: true
-        schema:
-          type: integer
-          exclusiveMinimum: true
-          title: Group Id
-          minimum: 0
-      responses:
-        '204':
-          description: Successful Response
-  /v0/projects/{project_id}/groups:
-    get:
-      tags:
-      - projects
-      - groups
-      summary: List Project Groups
-      operationId: list_project_groups
-      parameters:
-      - name: project_id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-          title: Project Id
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_list_ProjectGroupGet__'
   /v0/projects/{project_id}/metadata:
     get:
       tags:
@@ -9428,6 +9457,19 @@ components:
           title: Error
       type: object
       title: Envelope[ProjectNodeServicesGet]
+    Envelope_ProjectShareAccepted_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/ProjectShareAccepted'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[ProjectShareAccepted]
     Envelope_ProjectState_:
       properties:
         data:
@@ -13927,6 +13969,48 @@ components:
       required:
       - value
       title: ProjectRunningState
+    ProjectShare:
+      properties:
+        shareeEmail:
+          type: string
+          format: email
+          title: Shareeemail
+        sharerMessage:
+          type: string
+          maxLength: 500
+          title: Sharermessage
+          description: An optional message from sharer to sharee
+          default: ''
+        read:
+          type: boolean
+          title: Read
+        write:
+          type: boolean
+          title: Write
+        delete:
+          type: boolean
+          title: Delete
+      type: object
+      required:
+      - shareeEmail
+      - read
+      - write
+      - delete
+      title: ProjectShare
+    ProjectShareAccepted:
+      properties:
+        shareeEmail:
+          type: string
+          format: email
+          title: Shareeemail
+        confirmationLink:
+          type: string
+          title: Confirmationlink
+      type: object
+      required:
+      - shareeEmail
+      - confirmationLink
+      title: ProjectShareAccepted
     ProjectState:
       properties:
         locked:
@@ -14002,6 +14086,23 @@ components:
       - created
       - modified
       title: ProjectsCommentsAPI
+    ProjectsGroupsBodyParams:
+      properties:
+        read:
+          type: boolean
+          title: Read
+        write:
+          type: boolean
+          title: Write
+        delete:
+          type: boolean
+          title: Delete
+      type: object
+      required:
+      - read
+      - write
+      - delete
+      title: ProjectsGroupsBodyParams
     PutWalletBodyParams:
       properties:
         name:
@@ -16271,24 +16372,6 @@ components:
       - project_id
       - node_id
       title: _ProjectNodePreview
-    _ProjectsGroupsBodyParams:
-      properties:
-        read:
-          type: boolean
-          title: Read
-        write:
-          type: boolean
-          title: Write
-        delete:
-          type: boolean
-          title: Delete
-      additionalProperties: false
-      type: object
-      required:
-      - read
-      - write
-      - delete
-      title: _ProjectsGroupsBodyParams
     _WalletsGroupsBodyParams:
       properties:
         read:

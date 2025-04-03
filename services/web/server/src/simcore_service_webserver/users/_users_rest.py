@@ -172,7 +172,7 @@ async def search_users_for_admin(request: web.Request) -> web.Response:
         UsersForAdminSearchQueryParams, request
     )
 
-    found = await _users_service.search_users(
+    found = await _users_service.search_users_as_admin(
         request.app, email_glob=query_params.email, include_products=True
     )
 
