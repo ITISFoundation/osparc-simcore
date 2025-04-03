@@ -149,14 +149,8 @@ async def create_and_upload_export(
     *,
     source_object_keys: set[StorageFileID],
     destination_object_keys: StorageFileID,
-    progress_bar: ProgressBarData | None,
+    progress_bar: ProgressBarData,
 ) -> None:
-
-    if progress_bar is None:
-        progress_bar = ProgressBarData(
-            num_steps=1, description="create and upload export"
-        )
-
     archive_entries: ArchiveEntries = [
         (
             s3_object,

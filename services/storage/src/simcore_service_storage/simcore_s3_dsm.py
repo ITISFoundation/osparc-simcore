@@ -1246,7 +1246,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         user_id: UserID,
         object_keys: list[S3ObjectKey],
         *,
-        progress_bar: ProgressBarData | None,
+        progress_bar: ProgressBarData,
     ) -> StorageFileID:
         source_object_keys: set[StorageFileID] = set()
 
