@@ -10,7 +10,7 @@ class AccessRights(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    def check_access_constraints(self):
+    def verify_access_integrity(self):
         """Helper function that checks extra constraints in access-rights flags"""
         if self.write and not self.read:
             msg = "Write access requires read access"

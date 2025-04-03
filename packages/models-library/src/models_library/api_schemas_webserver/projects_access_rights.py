@@ -43,7 +43,7 @@ class ProjectShare(InputSchema):
     def check_access_constraints(self) -> Self:
         AccessRights(
             read=self.read, write=self.write, delete=self.delete
-        ).check_access_constraints()
+        ).verify_access_integrity()
         return self
 
 
