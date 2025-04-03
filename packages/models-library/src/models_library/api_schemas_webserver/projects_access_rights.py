@@ -40,7 +40,7 @@ class ProjectShare(InputSchema):
     delete: bool
 
     @model_validator(mode="after")
-    def check_access_constraints(self) -> Self:
+    def _validate_access_rights(self) -> Self:
         AccessRights(
             read=self.read, write=self.write, delete=self.delete
         ).verify_access_integrity()
