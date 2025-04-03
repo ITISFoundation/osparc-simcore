@@ -3,7 +3,7 @@ from typing import Annotated, Final, TypeAlias, TypeVar
 
 from aiocache import cached  # type: ignore[import-untyped]
 from fastapi import APIRouter, Depends, Header, Query, Request
-from fastapi_pagination import Page, Params
+from fastapi_pagination import LimitOffsetPage, Params
 from fastapi_pagination.api import create_page, resolve_params
 from fastapi_pagination.bases import RawParams
 from fastapi_pagination.customization import CustomizedPage, UseParamsFields
@@ -32,9 +32,9 @@ _PENNSIEVE_CACHING_TTL_S: Final[int] = (
 
 _T = TypeVar("_T")
 _CustomPage = CustomizedPage[
-    Page[_T],
+    LimitOffsetPage[_T],
     UseParamsFields(
-        size=Query(
+        limit=Query(
             DEFAULT_NUMBER_OF_PATHS_PER_PAGE, ge=1, le=MAX_NUMBER_OF_PATHS_PER_PAGE
         ),
     ),
