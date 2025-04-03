@@ -175,7 +175,6 @@ async def list_projects_full_depth(
     product_name: str,
     # attrs filter
     trashed: bool | None,
-    tag_ids_list: list[int],
     # pagination
     offset: NonNegativeInt,
     limit: int,
