@@ -82,7 +82,6 @@ def define_task(
     app: Celery,
     fn: Callable[Concatenate[AbortableTask, TaskId, P], Coroutine[Any, Any, R]],
     task_name: str | None = None,
-    task_queue: str | None = None,
 ) -> None: ...
 
 
@@ -91,7 +90,6 @@ def define_task(
     app: Celery,
     fn: Callable[Concatenate[AbortableTask, P], R],
     task_name: str | None = None,
-    task_queue: str | None = None,
 ) -> None: ...
 
 
@@ -102,7 +100,6 @@ def define_task(  # type: ignore[misc]
         | Callable[Concatenate[AbortableTask, P], R]
     ),
     task_name: str | None = None,
-    task_queue: str | None = None,
 ) -> None:
     """Decorator to define a celery task with error handling and abortable support"""
     wrapped_fn: Callable[Concatenate[AbortableTask, P], R]
@@ -117,5 +114,4 @@ def define_task(  # type: ignore[misc]
         name=task_name or fn.__name__,
         bind=True,
         base=AbortableTask,
-        queue=task_queue,
     )(wrapped_fn)

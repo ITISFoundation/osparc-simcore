@@ -1199,15 +1199,15 @@ services:
       CELERY_CONCURRENCY: 100
     networks: *storage_networks
 
-  sto-worker-low-prio:
+  sto-worker-cpu-bound:
     image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-master-github-latest}
     init: true
-    hostname: "sto-worker-low-prio-{{.Node.Hostname}}-{{.Task.Slot}}"
+    hostname: "sto-worker-cpu-bound-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       <<: *storage_environment
       STORAGE_WORKER_MODE: "true"
       CELERY_CONCURRENCY: 1
-      CELERY_QUEUES: "low-prio"
+      CELERY_QUEUES: "cpu-bound"
     networks: *storage_networks
 
   rabbit:
