@@ -95,7 +95,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(2)).set({
             paddingLeft: 8,
           });
-          const title = new qx.ui.basic.Label(this.tr("Set following Role:"));
+          const title = new qx.ui.basic.Label(this.tr("Set the following Role:"));
           control.add(title);
           this.add(control);
           break;
