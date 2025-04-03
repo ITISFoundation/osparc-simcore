@@ -20,7 +20,7 @@ def setup_worker_tasks(app: Celery) -> None:
         logging.INFO,
         msg="Storage setup Worker Tasks",
     ):
-        define_task(app, export_data, task_queue="low_prio")
+        define_task(app, export_data, task_queue="low-prio")
         define_task(app, compute_path_size)
         define_task(app, delete_paths)
         define_task(app, complete_upload_file)
