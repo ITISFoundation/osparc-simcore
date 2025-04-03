@@ -1,9 +1,12 @@
+from pathlib import Path
+
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobGet,
     AsyncJobNameData,
 )
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from models_library.api_schemas_storage.storage_schemas import FoldersBody
+from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.users import UserID
 from pydantic import TypeAdapter
@@ -16,7 +19,7 @@ async def copy_folders_from_project(
     client: RabbitMQRPCClient,
     *,
     user_id: UserID,
-    product_name: str,
+    product_name: ProductName,
     body: FoldersBody,
 ) -> tuple[AsyncJobGet, AsyncJobNameData]:
     job_id_data = AsyncJobNameData(user_id=user_id, product_name=product_name)
@@ -34,8 +37,8 @@ async def start_data_export(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     user_id: UserID,
-    product_name: str,
-    paths_to_export: list[str],
+    product_name: ProductName,
+    paths_to_export: list[Path],
 ) -> tuple[AsyncJobGet, AsyncJobNameData]:
     job_id_data = AsyncJobNameData(user_id=user_id, product_name=product_name)
     async_job_rpc_get = await submit(

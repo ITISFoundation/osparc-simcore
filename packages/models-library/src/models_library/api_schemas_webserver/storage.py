@@ -38,4 +38,4 @@ class BatchDeletePathsBodyParams(InputSchema):
 
 
 class DataExportPost(InputSchema):
-    paths: list[str]
+    paths: list[Path]
