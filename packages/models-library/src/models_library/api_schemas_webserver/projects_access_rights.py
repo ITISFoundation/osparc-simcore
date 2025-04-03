@@ -27,7 +27,9 @@ class ProjectsGroupsBodyParams(InputSchema):
 
 class ProjectShare(InputSchema):
     sharee_email: EmailStr
-    sharer_message: Annotated[str, StringConstraints(max_length=500)]
+    sharer_message: Annotated[
+        str, StringConstraints(max_length=500, strip_whitespace=True)
+    ] = ""
 
     # sharing access
     read: bool
