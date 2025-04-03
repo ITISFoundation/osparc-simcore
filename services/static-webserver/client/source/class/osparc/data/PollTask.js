@@ -161,7 +161,7 @@ qx.Class.define("osparc.data.PollTask", {
           .then(res => res.json())
           .then(result => {
             if ("error" in result && result["error"]) {
-              throw new Error(result["error"]["message"]);
+              throw new Error(result["error"]);
             }
             if ("data" in result && result["data"]) {
               const resultData = result["data"];
