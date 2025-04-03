@@ -2,13 +2,13 @@ from typing import Annotated, Self
 
 from models_library.groups import GroupID
 from models_library.projects import ProjectID
-from pydantic import model_validator  # Added for validation
 from pydantic import (
     BaseModel,
     ConfigDict,
     EmailStr,
     HttpUrl,
     StringConstraints,
+    model_validator,
 )
 
 from ..access_rights import AccessRights
