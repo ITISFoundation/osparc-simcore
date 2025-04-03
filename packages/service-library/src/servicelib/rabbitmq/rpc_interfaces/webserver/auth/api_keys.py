@@ -25,7 +25,8 @@ async def create_api_key(
         TypeAdapter(RPCMethodName).validate_python("create_api_key"),
         user_id=user_id,
         product_name=product_name,
-        api_key=api_key,
+        display_name=api_key.display_name,
+        expiration=api_key.expiration,
     )
     assert isinstance(result, ApiKeyGet)  # nosec
     return result
