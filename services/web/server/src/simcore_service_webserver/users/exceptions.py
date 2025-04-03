@@ -3,8 +3,7 @@ from typing import Any
 from ..errors import WebServerBaseError
 
 
-class UsersBaseError(WebServerBaseError):
-    ...
+class UsersBaseError(WebServerBaseError): ...
 
 
 class UserNotFoundError(UsersBaseError):
@@ -64,3 +63,4 @@ class BillingDetailsNotFoundError(UsersBaseError):
 
 class MissingGroupExtraPropertiesForProductError(UsersBaseError):
     msg_template = "Missing group_extra_property for product_name={product_name}"
+    tip = "Add a new row in group_extra_property table and assign it to this product"
