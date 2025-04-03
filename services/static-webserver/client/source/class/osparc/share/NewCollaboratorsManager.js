@@ -77,7 +77,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
         }
         case "potential-collaborators-list": {
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
-            minHeight: 100,
+            minHeight: 160,
           });
           const scrollContainer = new qx.ui.container.Scroll();
           scrollContainer.add(control);
@@ -311,8 +311,18 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       this.getChildControl("potential-collaborators-list").setEnabled(false);
       this.getChildControl("share-button").setFetching(true);
 
+      let newAccessRights = null;
+      if (this.__resourceData["resourceType"] === "study") {
+        const selected = this.getChildControl("access-rights-selector").getSelection()[0];
+        if (selected) {
+          newAccessRights = osparc.data.Roles.STUDY[selected.getModel()];
+        }
+      }
       if (Object.keys(this.__selectedCollaborators).length) {
-        this.fireDataEvent("addCollaborators", Object.keys(this.__selectedCollaborators));
+        this.fireDataEvent("addCollaborators", {
+          selectedGids: Object.keys(this.__selectedCollaborators),
+          newAccessRights,
+        });
       }
     }
   }

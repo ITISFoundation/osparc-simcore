@@ -98,8 +98,11 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
         const showOrganizations = false;
         const collaboratorsManager = new osparc.share.NewCollaboratorsManager(serializedData, showOrganizations);
         collaboratorsManager.addListener("addCollaborators", e => {
+          const {
+            selectedGids,
+          } = e.getData();
           const cb = () => collaboratorsManager.close();
-          this.__addMembers(e.getData(), cb);
+          this.__addMembers(selectedGids, cb);
         }, this);
       }, this);
       vBox.add(addMemberBtn);

@@ -78,19 +78,22 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
   },
 
   members: {
-    _addEditors: function(gids) {
+    _addEditors: function(gids, newAccessRights) {
       if (gids.length === 0) {
         return;
       }
 
       const readAccessRole = osparc.data.Roles.STUDY["read"];
-      const writeAccessRole = osparc.data.Roles.STUDY["read"];
+      const writeAccessRole = osparc.data.Roles.STUDY["write"];
+      if (!newAccessRights) {
+        newAccessRights = this._resourceType === "study" ? writeAccessRole.accessRights : readAccessRole.accessRights;
+      }
       const resourceAlias = this._resourceType === "template" ?
         osparc.product.Utils.getTemplateAlias({firstUpperCase: true}) :
         osparc.product.Utils.getStudyAlias({firstUpperCase: true});
       const newCollaborators = {};
       gids.forEach(gid => {
-        newCollaborators[gid] = this._resourceType === "study" ? writeAccessRole.accessRights : readAccessRole.accessRights
+        newCollaborators[gid] = newAccessRights;
       });
       osparc.store.Study.addCollaborators(this._serializedDataCopy, newCollaborators)
         .then(() => {

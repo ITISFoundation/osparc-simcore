@@ -99,11 +99,13 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
         collaboratorsManager.setCaption("Add Members");
         collaboratorsManager.getActionButton().setLabel(this.tr("Add"));
         collaboratorsManager.addListener("addCollaborators", e => {
-          const selectedMembers = e.getData();
-          if (selectedMembers.length) {
+          const {
+            selectedGids,
+          } = e.getData();
+          if (selectedGids.length) {
             const promises = [];
             const usersStore = osparc.store.Users.getInstance();
-            selectedMembers.forEach(selectedMemberGId => promises.push(usersStore.getUser(selectedMemberGId)));
+            selectedGids.forEach(selectedMemberGId => promises.push(usersStore.getUser(selectedMemberGId)));
             Promise.all(promises)
               .then(values => {
                 values.forEach(user => {

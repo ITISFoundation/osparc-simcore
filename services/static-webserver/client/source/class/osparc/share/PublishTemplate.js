@@ -59,11 +59,13 @@ qx.Class.define("osparc.share.PublishTemplate", {
       this._add(this.__selectedCollabs);
 
       addCollaborators.addListener("addCollaborators", e => {
-        const gids = e.getData();
-        if (gids.length) {
+        const {
+          selectedGids,
+        } = e.getData();
+        if (selectedGids.length) {
           const potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators(false, true)
           const currentGids = this.getSelectedGroups();
-          gids.forEach(gid => {
+          selectedGids.forEach(gid => {
             if (gid in potentialCollaborators && !currentGids.includes(gid)) {
               const collabButton = new qx.ui.toolbar.Button(potentialCollaborators[gid].getLabel(), "@MaterialIcons/close/12");
               collabButton.gid = gid;
