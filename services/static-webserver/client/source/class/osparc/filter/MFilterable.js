@@ -29,6 +29,10 @@ qx.Mixin.define("osparc.filter.MFilterable", {
       const msgName = osparc.utils.Utils.capitalize(filterGroupId, "filter");
       qx.event.message.Bus.getInstance().subscribe(msgName, this.__subscriber, this);
     },
+    unsubscribeToFilterGroup: function(filterGroupId) {
+      const msgName = osparc.utils.Utils.capitalize(filterGroupId, "filter");
+      qx.event.message.Bus.getInstance().unsubscribe(msgName, this.__subscriber, this);
+    },
     /**
      * Subscriber function for incoming messages. It implements the common filtering workflow of every
      * filterable GUI element: If the filter state is appropriate, compare it with the own state and act
