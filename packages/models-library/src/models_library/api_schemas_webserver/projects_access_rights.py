@@ -41,7 +41,7 @@ class ProjectShare(InputSchema):
 
     @model_validator(mode="after")
     def _validate_access_rights(self) -> Self:
-        AccessRights(
+        AccessRights.model_construct(
             read=self.read, write=self.write, delete=self.delete
         ).verify_access_integrity()
         return self
