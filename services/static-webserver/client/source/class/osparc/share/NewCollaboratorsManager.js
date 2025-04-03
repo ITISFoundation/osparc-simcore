@@ -9,7 +9,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
   extend: osparc.ui.window.SingletonWindow,
 
   construct: function(resourceData, showOrganizations = true) {
-    this.base(arguments, "collaboratorsManager", this.tr("New collaborators"));
+    this.base(arguments, "newCollaboratorsManager", this.tr("New collaborators"));
 
     this.set({
       layout: new qx.ui.layout.VBox(5),
@@ -29,7 +29,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
 
     this.__renderLayout();
 
-    this.__selectedCollaborators = [];
+    this.__selectedCollaborators = {};
     this.__potentialCollaborators = {};
     this.__reloadPotentialCollaborators();
 
@@ -95,7 +95,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(2)).set({
             paddingLeft: 8,
           });
-          const title = new qx.ui.basic.Label(this.tr("Give access:"));
+          const title = new qx.ui.basic.Label(this.tr("Set following Role:"));
           control.add(title);
           this.add(control);
           break;
@@ -217,30 +217,35 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
     __reloadPotentialCollaborators: function() {
       const includeProductEveryone = this.__showProductEveryone();
       this.__potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators(false, includeProductEveryone);
-      const potentialCollaborators = Object.values(this.__potentialCollaborators);
-      this.__addPotentialCollaborators(potentialCollaborators);
+      this.__addPotentialCollaborators();
     },
 
-    __collaboratorButton: function(collaborator) {
+    __collaboratorButton: function(collaborator, preSelected = false) {
       const collaboratorButton = new osparc.filter.CollaboratorToggleButton(collaborator);
       collaboratorButton.groupId = collaborator.getGroupId();
+      collaboratorButton.setValue(preSelected);
+      if (!preSelected) {
+        collaboratorButton.subscribeToFilterGroup("collaboratorsManager");
+      }
+
       collaboratorButton.addListener("changeValue", e => {
         const selected = e.getData();
         if (selected) {
-          this.__selectedCollaborators.push(collaborator.getGroupId());
-        } else {
-          const idx = this.__selectedCollaborators.indexOf(collaborator.getGroupId());
-          if (idx > -1) {
-            this.__selectedCollaborators.splice(idx, 1);
-          }
+          this.__selectedCollaborators[collaborator.getGroupId()] = collaborator;
+          collaboratorButton.unsubscribeToFilterGroup("collaboratorsManager");
+        } else if (collaborator.getGroupId() in this.__selectedCollaborators) {
+          delete this.__selectedCollaborators[collaborator.getGroupId()];
+          collaboratorButton.subscribeToFilterGroup("collaboratorsManager");
         }
-        this.getChildControl("share-button").setEnabled(Boolean(this.__selectedCollaborators.length));
+        this.getChildControl("share-button").setEnabled(Boolean(Object.keys(this.__selectedCollaborators).length));
       }, this);
-      collaboratorButton.subscribeToFilterGroup("collaboratorsManager");
       return collaboratorButton;
     },
 
-    __addPotentialCollaborators: function(potentialCollaborators) {
+    __addPotentialCollaborators: function(foundCollaborators = []) {
+      const potentialCollaborators = Object.values(this.__potentialCollaborators).concat(foundCollaborators);
+      const potentialCollaboratorList = this.getChildControl("potential-collaborators-list");
+
       // sort them first
       potentialCollaborators.sort((a, b) => {
         if (a["collabType"] > b["collabType"]) {
@@ -275,32 +280,40 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       potentialCollaborators.forEach(potentialCollaborator => {
         // do not list the potentialCollaborators that are already collaborators
         if (existingCollaborators.includes(potentialCollaborator.getGroupId())) {
+          console.log("already collaborator", potentialCollaborator.getLabel());
           return;
         }
-        // do not list those that were already listed
-        if (this.getChildControl("potential-collaborators-list").getChildren().find(c => "groupId" in c && c["groupId"] === potentialCollaborator.getGroupId())) {
+        // do not list the potentialCollaborators that were selected
+        console.log("selected?", potentialCollaborator.getGroupId(), this.__selectedCollaborators);
+        if (potentialCollaborator.getGroupId() in this.__selectedCollaborators) {
+          console.log("already selected", potentialCollaborator.getLabel());
           return;
         }
+        // do not list the potentialCollaborators that were already listed
+        if (potentialCollaboratorList.getChildren().find(c => "groupId" in c && c["groupId"] === potentialCollaborator.getGroupId())) {
+          console.log("already listed", potentialCollaborator.getLabel());
+          return;
+        }
+        // maybe, do not list the organizations
         if (this.__showOrganizations === false && potentialCollaborator["collabType"] !== 2) {
           return;
         }
-        this.getChildControl("potential-collaborators-list").add(this.__collaboratorButton(potentialCollaborator));
+        potentialCollaboratorList.add(this.__collaboratorButton(potentialCollaborator));
       });
 
       // move it to last position
       const searching = this.getChildControl("searching-collaborators");
-      this.getChildControl("potential-collaborators-list").remove(searching);
-      this.getChildControl("potential-collaborators-list").add(searching);
+      potentialCollaboratorList.remove(searching);
+      potentialCollaboratorList.add(searching);
     },
 
     __shareClicked: function() {
       this.getChildControl("potential-collaborators-list").setEnabled(false);
       this.getChildControl("share-button").setFetching(true);
 
-      if (this.__selectedCollaborators.length) {
-        this.fireDataEvent("addCollaborators", this.__selectedCollaborators);
+      if (Object.keys(this.__selectedCollaborators).length) {
+        this.fireDataEvent("addCollaborators", Object.keys(this.__selectedCollaborators));
       }
-      // The parent class will close the window
     }
   }
 });
