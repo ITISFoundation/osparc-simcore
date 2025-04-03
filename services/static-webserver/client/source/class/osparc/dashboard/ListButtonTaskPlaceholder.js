@@ -23,7 +23,10 @@ qx.Class.define("osparc.dashboard.ListButtonTaskPlaceholder", {
 
     this.setPriority(osparc.dashboard.CardBase.CARD_PRIORITY.PLACEHOLDER);
 
-    this.__layout = this.getChildControl("progress-layout")
+    const layout = this._getLayout();
+    layout.setColumnFlex(osparc.dashboard.ListButtonBase.POS.PROGRESS, 1);
+    layout.setColumnFlex(osparc.dashboard.ListButtonBase.POS.SPACER, 0);
+
     this.set({
       appearance: "pb-new",
       cursor: "not-allowed",
@@ -41,7 +44,6 @@ qx.Class.define("osparc.dashboard.ListButtonTaskPlaceholder", {
   },
 
   members: {
-    __layout: null,
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -61,7 +63,7 @@ qx.Class.define("osparc.dashboard.ListButtonTaskPlaceholder", {
             alignY: "middle",
             marginBottom: 5
           });
-          this.__layout.addAt(control, 0);
+          this.getChildControl("progress-layout").addAt(control, 0);
           break;
         case "progress-bar":
           control = new qx.ui.indicator.ProgressBar().set({
@@ -76,7 +78,7 @@ qx.Class.define("osparc.dashboard.ListButtonTaskPlaceholder", {
           control.getChildControl("progress").set({
             backgroundColor: "strong-main"
           });
-          this.__layout.addAt(control, 1);
+          this.getChildControl("progress-layout").addAt(control, 1);
           break;
       }
       return control || this.base(arguments, id);
