@@ -315,7 +315,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       if (this.__resourceData["resourceType"] === "study") {
         const selected = this.getChildControl("access-rights-selector").getSelection()[0];
         if (selected) {
-          newAccessRights = osparc.data.Roles.STUDY[selected.getModel()];
+          newAccessRights = osparc.data.Roles.STUDY[selected.getModel()].accessRights;
         }
       }
       if (Object.keys(this.__selectedCollaborators).length) {
