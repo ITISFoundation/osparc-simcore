@@ -9,6 +9,9 @@ from http import HTTPStatus
 
 import pytest
 from aiohttp.test_utils import TestClient
+from models_library.api_schemas_webserver.projects_access_rights import (
+    ProjectShareAccepted,
+)
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
@@ -271,14 +274,16 @@ async def test_share_project(
         f"{url}",
         json={
             "shareeEmail": "sharee@email.com",
+            "sharerMessage": "hi there, this is the project we talked about",
             "read": True,
             "write": False,
             "delete": False,
         },
     )
     data, error = await assert_status(resp, status.HTTP_202_ACCEPTED)
-    assert data["shareeEmail"] == "sharee@email.com"
-    assert data["confirmationLink"]
+    shared = ProjectShareAccepted.model_validate(data)
+    assert shared.sharee_email == "sharee@email.com"
+    assert shared.confirmation_link
     assert not error
 
     # Verify that only logged_user["primary_gid"] has access to the project

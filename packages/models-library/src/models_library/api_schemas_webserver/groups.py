@@ -8,9 +8,7 @@ from pydantic import (
     AnyUrl,
     BaseModel,
     ConfigDict,
-    EmailStr,
     Field,
-    HttpUrl,
     TypeAdapter,
     ValidationError,
     field_validator,
@@ -385,17 +383,3 @@ class GroupUserUpdate(InputSchema):
             }
         }
     )
-
-
-class ProjectShare(InputSchema):
-    sharee_email: EmailStr
-
-    # sharing access
-    read: bool
-    write: bool
-    delete: bool
-
-
-class ProjectShareAccepted(OutputSchema):
-    sharee_email: EmailStr
-    confirmation_link: HttpUrl

@@ -12,9 +12,9 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 from ..constants import APP_SETTINGS_KEY
 from ..rabbitmq import setup_rabbitmq
 from ._controller import (
+    access_rights_rest,
     comments_rest,
     folders_rest,
-    groups_rest,
     metadata_rest,
     nodes_pricing_unit_rest,
     nodes_rest,
@@ -62,7 +62,7 @@ def setup_projects(app: web.Application) -> bool:
     app.router.add_routes(projects_states_rest.routes)
     app.router.add_routes(projects_rest.routes)
     app.router.add_routes(comments_rest.routes)
-    app.router.add_routes(groups_rest.routes)
+    app.router.add_routes(access_rights_rest.routes)
     app.router.add_routes(metadata_rest.routes)
     app.router.add_routes(ports_rest.routes)
     app.router.add_routes(nodes_rest.routes)

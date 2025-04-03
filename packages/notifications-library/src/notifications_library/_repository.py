@@ -3,15 +3,16 @@ from collections.abc import AsyncIterable
 import sqlalchemy as sa
 from models_library.products import ProductName
 from models_library.users import UserID
-from notifications_library._models import (
-    JinjaTemplateDbGet,
-    UserData,
-)
 from simcore_postgres_database.models.jinja2_templates import jinja2_templates
 from simcore_postgres_database.models.products_to_templates import products_to_templates
 from simcore_postgres_database.models.users import users
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 from sqlalchemy.ext.asyncio import AsyncEngine
+
+from ._models import (
+    JinjaTemplateDbGet,
+    UserData,
+)
 
 
 class _BaseRepo:

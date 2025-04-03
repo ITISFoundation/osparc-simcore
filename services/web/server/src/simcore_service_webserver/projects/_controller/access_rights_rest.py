@@ -1,21 +1,21 @@
 import logging
 
 from aiohttp import web
-from models_library.api_schemas_webserver.groups import (
+from common_library.json_serialization import json_dumps
+from models_library.api_schemas_webserver.projects_access_rights import (
+    ProjectsGroupsBodyParams,
+    ProjectsGroupsPathParams,
     ProjectShare,
     ProjectShareAccepted,
 )
 from models_library.basic_types import IDStr
-from models_library.groups import GroupID
-from models_library.projects import ProjectID
-from pydantic import BaseModel, ConfigDict
+from models_library.generics import Envelope
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
 )
 from servicelib.logging_utils import log_context
-from simcore_service_webserver.login._login_service import envelope_response
 
 from ..._meta import api_version_prefix as VTAG
 from ...application_settings_utils import requires_dev_feature_enabled
@@ -77,23 +77,13 @@ async def share_project(request: web.Request):
             body_params.sharee_email,
         )
 
-        return envelope_response(
-            data=ProjectShareAccepted(confirmation_link=confirmation_link),  # type: ignore
+        return web.json_response(
+            Envelope[ProjectShareAccepted]
+            .from_data({"confirmation_link": confirmation_link})
+            .model_dump(),
+            dumps=json_dumps,
             status=status.HTTP_202_ACCEPTED,
         )
-
-
-class _ProjectsGroupsPathParams(BaseModel):
-    project_id: ProjectID
-    group_id: GroupID
-    model_config = ConfigDict(extra="forbid")
-
-
-class _ProjectsGroupsBodyParams(BaseModel):
-    read: bool
-    write: bool
-    delete: bool
-    model_config = ConfigDict(extra="forbid")
 
 
 @routes.post(
@@ -104,8 +94,8 @@ class _ProjectsGroupsBodyParams(BaseModel):
 @handle_plugin_requests_exceptions
 async def create_project_group(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
-    path_params = parse_request_path_parameters_as(_ProjectsGroupsPathParams, request)
-    body_params = await parse_request_body_as(_ProjectsGroupsBodyParams, request)
+    path_params = parse_request_path_parameters_as(ProjectsGroupsPathParams, request)
+    body_params = await parse_request_body_as(ProjectsGroupsBodyParams, request)
 
     project_groups: ProjectGroupGet = await _groups_service.create_project_group(
         request.app,
@@ -150,8 +140,8 @@ async def list_project_groups(request: web.Request):
 @handle_plugin_requests_exceptions
 async def replace_project_group(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
-    path_params = parse_request_path_parameters_as(_ProjectsGroupsPathParams, request)
-    body_params = await parse_request_body_as(_ProjectsGroupsBodyParams, request)
+    path_params = parse_request_path_parameters_as(ProjectsGroupsPathParams, request)
+    body_params = await parse_request_body_as(ProjectsGroupsBodyParams, request)
 
     new_project_group = await _groups_service.replace_project_group(
         app=request.app,
@@ -175,7 +165,7 @@ async def replace_project_group(request: web.Request):
 @handle_plugin_requests_exceptions
 async def delete_project_group(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
-    path_params = parse_request_path_parameters_as(_ProjectsGroupsPathParams, request)
+    path_params = parse_request_path_parameters_as(ProjectsGroupsPathParams, request)
 
     await _groups_service.delete_project_group(
         app=request.app,
