@@ -347,7 +347,11 @@ class PennsieveApiClient(BaseServiceClientApi):
                 DatasetMetaData(
                     id=d["content"]["id"],
                     display_name=d["content"]["name"],
-                    size=(ByteSize(sz) if (sz := d.get("storage", 0)) > 0 else None),
+                    size=(
+                        ByteSize(sz)
+                        if (sz := d.get("storage", 0)) > 0  # NOSONAR
+                        else None
+                    ),
                 )
                 for d in dataset_page["datasets"]
             ],
