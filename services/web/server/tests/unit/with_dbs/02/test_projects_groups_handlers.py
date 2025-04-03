@@ -316,3 +316,43 @@ async def test_share_project(
         },
     )
     await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+
+@pytest.mark.parametrize(
+    "user_role,expected_status",
+    [
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
+        (UserRole.USER, status.HTTP_202_ACCEPTED),
+        (UserRole.TESTER, status.HTTP_202_ACCEPTED),
+        (UserRole.ADMIN, status.HTTP_202_ACCEPTED),
+    ],
+)
+async def test_share_project_with_roles(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    mock_catalog_api_get_services_for_user_in_product: MockType,
+    mock_project_uses_available_services: MockType,
+    user_role: UserRole,
+    expected_status: HTTPStatus,
+):
+    assert client.app
+
+    assert logged_user["role"] == user_role
+
+    # Attempt to share the project
+    url = client.app.router["share_project"].url_for(
+        project_id=f"{user_project['uuid']}"
+    )
+    resp = await client.post(
+        f"{url}",
+        json={
+            "shareeEmail": "sharee@email.com",
+            "sharerMessage": "Sharing project with role test",
+            "read": True,
+            "write": False,
+            "delete": False,
+        },
+    )
+    await assert_status(resp, expected_status)
