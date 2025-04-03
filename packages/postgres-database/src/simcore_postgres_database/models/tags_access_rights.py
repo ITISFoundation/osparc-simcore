@@ -1,3 +1,13 @@
+"""Tags access rights table
+
+- Defines access rights for tags.
+
+Migration strategy:
+- Composite primary key (`tag_id`, `user_id`) is unique and sufficient for migration.
+- Ensure foreign key references to `tags` and `users` are valid in the target database.
+- No additional changes are required; this table can be migrated as is.
+"""
+
 import sqlalchemy as sa
 
 from ._common import RefActions, column_created_datetime, column_modified_datetime

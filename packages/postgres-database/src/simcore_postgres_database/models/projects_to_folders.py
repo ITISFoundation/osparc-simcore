@@ -1,3 +1,13 @@
+"""Projects to folders table
+
+- Links projects to folders.
+
+Migration strategy:
+- Composite primary key (`project_id`, `folder_id`) is unique and sufficient for migration.
+- Ensure foreign key references to `projects` and `folders` are valid in the target database.
+- No additional changes are required; this table can be migrated as is.
+"""
+
 import sqlalchemy as sa
 
 from ._common import RefActions, column_created_datetime, column_modified_datetime
