@@ -28,7 +28,7 @@ from aiohttp import ClientSession
 from aws_library.s3._client import _AWS_MAX_ITEMS_PER_PAGE, S3ObjectKey, SimcoreS3API
 from aws_library.s3._constants import (
     MULTIPART_UPLOADS_MIN_TOTAL_SIZE,
-    STREAM_REDER_CHUNK,
+    STREAM_READER_CHUNK_SIZE,
 )
 from aws_library.s3._errors import (
     S3BucketInvalidError,
@@ -1902,7 +1902,7 @@ async def test_workflow_compress_s3_objects_and_local_files_in_a_single_archive_
                 get_zip_bytes_iter(
                     archive_entries,
                     progress_bar=progress_bar,
-                    chunk_size=STREAM_REDER_CHUNK,
+                    chunk_size=STREAM_READER_CHUNK_SIZE,
                 )
             ),
         )
