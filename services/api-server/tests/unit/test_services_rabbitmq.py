@@ -327,7 +327,7 @@ async def log_streamer_with_distributor(
     app: FastAPI,
     project_id: ProjectID,
     user_id: UserID,
-    mocked_directorv2_service_api_base: respx.MockRouter,
+    mocked_directorv2_rest_api_base: respx.MockRouter,
     computation_done: Callable[[], bool],
     log_distributor: LogDistributor,
 ) -> AsyncIterable[LogStreamer]:
@@ -342,7 +342,7 @@ async def log_streamer_with_distributor(
             status_code=status.HTTP_200_OK, json=jsonable_encoder(task)
         )
 
-    mocked_directorv2_service_api_base.get(f"/v2/computations/{project_id}").mock(
+    mocked_directorv2_rest_api_base.get(f"/v2/computations/{project_id}").mock(
         side_effect=_get_computation
     )
 
