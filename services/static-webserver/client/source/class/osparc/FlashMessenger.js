@@ -113,7 +113,7 @@ qx.Class.define("osparc.FlashMessenger", {
           releaseTag: osparc.utils.Utils.getReleaseTag(),
           studyId: osparc.store.Store.getInstance().getCurrentStudy() || "",
         }
-        osparc.utils.Utils.copyTextToClipboard(JSON.stringify(dataToClipboard));
+        osparc.utils.Utils.copyTextToClipboard(osparc.utils.Utils.prettifyJson(JSON.stringify(dataToClipboard)));
       });
       return errorLabel;
     },
