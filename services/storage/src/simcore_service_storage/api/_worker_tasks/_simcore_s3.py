@@ -9,6 +9,7 @@ from models_library.api_schemas_storage.storage_schemas import FoldersBody
 from models_library.progress_bar import ProgressReport
 from models_library.projects_nodes_io import StorageFileID
 from models_library.users import UserID
+from pydantic import TypeAdapter
 from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
 from simcore_service_storage.exceptions.errors import FileAccessRightError
@@ -77,6 +78,11 @@ async def export_data(
             SimcoreS3DataManager.get_location_id()
         )
         assert isinstance(dsm, SimcoreS3DataManager)  # nosec
+
+        paths_to_export = [
+            TypeAdapter(StorageFileID).validate_python(path_to_export)
+            for path_to_export in paths_to_export
+        ]
 
         try:
             for path_to_export in paths_to_export:

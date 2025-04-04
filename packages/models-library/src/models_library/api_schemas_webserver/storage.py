@@ -1,7 +1,7 @@
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, BeforeValidator, Field
 
 from ..api_schemas_storage.storage_schemas import (
     DEFAULT_NUMBER_OF_PATHS_PER_PAGE,
@@ -37,5 +37,18 @@ class BatchDeletePathsBodyParams(InputSchema):
     paths: set[Path]
 
 
+def _ensure_valid_path(value: Any) -> str:
+    try:
+        Path(value)
+    except Exception as e:
+        msg = f"Provided {value=} is nto a valid path"
+        raise ValueError(msg) from e
+
+    return value
+
+
+PathToExport = Annotated[str, BeforeValidator(_ensure_valid_path)]
+
+
 class DataExportPost(InputSchema):
-    paths: list[Path]
+    paths: list[PathToExport]
