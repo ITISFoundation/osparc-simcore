@@ -17,6 +17,7 @@ from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
 from models_library.basic_types import IDStr
 from models_library.folders import FolderQuery, FolderScope
+from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_comments import CommentID, ProjectsCommentsDB
@@ -354,7 +355,7 @@ class ProjectDBAPI(BaseProjectDB):
         user_id: UserID,
         workspace_query: WorkspaceQuery,
         is_search_by_multi_columns: bool,
-        user_groups: list[int],
+        user_groups: list[GroupID],
     ) -> sql.Select | None:
         private_workspace_query = None
         if workspace_query.workspace_scope is not WorkspaceScope.SHARED:
@@ -402,10 +403,12 @@ class ProjectDBAPI(BaseProjectDB):
                     ).label("access_rights"),
                 )
                 .where(
-                    project_to_groups.c.read,  # Filters out entries where "read" is False
-                    project_to_groups.c.gid.in_(
-                        user_groups
-                    ),  # Filters gid to be in user_groups
+                    (
+                        project_to_groups.c.read
+                    )  # Filters out entries where "read" is False
+                    & (
+                        project_to_groups.c.gid.in_(user_groups)
+                    )  # Filters gid to be in user_groups
                 )
                 .group_by(project_to_groups.c.project_uuid)
             ).subquery("my_access_rights_subquery")
@@ -457,7 +460,7 @@ class ProjectDBAPI(BaseProjectDB):
         product_name: ProductName,
         workspace_query: WorkspaceQuery,
         is_search_by_multi_columns: bool,
-        user_groups: list[int],
+        user_groups: list[GroupID],
     ) -> sql.Select | None:
 
         if workspace_query.workspace_scope is not WorkspaceScope.PRIVATE:
@@ -655,7 +658,7 @@ class ProjectDBAPI(BaseProjectDB):
             user_groups_proxy: list[RowProxy] = await self._list_user_groups(
                 conn, user_id
             )
-            user_groups: list[int] = [group.gid for group in user_groups_proxy]
+            user_groups: list[GroupID] = [group.gid for group in user_groups_proxy]
 
             ###
             # Private workspace query
