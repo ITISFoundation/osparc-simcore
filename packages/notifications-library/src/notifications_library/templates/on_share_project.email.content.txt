@@ -1,10 +1,10 @@
 Dear {{ user.first_name }},
 
-Great news! {{ sharer_username }} has shared a {{ product.ui.project_alias }} with you on {{ product.display_name }}.
+Great news! {{ sharer.user_name }} has shared a {{ product.ui.project_alias }} with you on {{ product.display_name }}.
 
 To view the {{ product.ui.project_alias }} and accept the sharing, follow below:
 
-{{ sharer_message }}
+{{ sharer.message }}
 {{ accept_link }}
 
 Please don't hesitate to contact us at {{ product.support_email }} if you need further help.
