@@ -11,11 +11,13 @@
 
 import asyncio
 import logging
+from collections.abc import AsyncIterator
 from contextlib import suppress
 from pprint import pformat
 from typing import Final
 
 from fastapi import FastAPI, HTTPException
+from fastapi_lifespan_manager import State
 from models_library.services import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from packaging.version import Version
@@ -213,29 +215,23 @@ async def _sync_services_task(app: FastAPI) -> None:
             )
 
 
-async def _start_registry_sync_task(app: FastAPI) -> None:
+async def setup_background_task(app: FastAPI) -> AsyncIterator[State]:
+    # FIXME: check director service is in place and ready. Hand-shake??
+    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/1728
+
     # FIXME: added this variable to overcome the state in which the
     # task cancelation is ignored and the exceptions enter in a loop
     # that never stops the background task. This flag is an additional
     # mechanism to enforce stopping the background task
-    app.state.registry_syncer_running = True
     task = asyncio.create_task(_sync_services_task(app))
-    app.state.registry_sync_task = task
+
     _logger.info("registry syncing task started")
 
+    yield {"registry_syncer_running": True, "registry_sync_task": task}
 
-async def _stop_registry_sync_task(app: FastAPI) -> None:
-    if task := app.state.registry_sync_task:
-        with suppress(asyncio.CancelledError):
-            app.state.registry_syncer_running = False
-            task.cancel()
-            await task
-        app.state.registry_sync_task = None
+    with suppress(asyncio.CancelledError):
+        app.state.registry_syncer_running = False
+        task.cancel()
+        await task
+
     _logger.info("registry syncing task stopped")
-
-
-def setup_background_task(app: FastAPI):
-    # FIXME: check director service is in place and ready. Hand-shake??
-    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/1728
-    app.add_event_handler("startup", _start_registry_sync_task)
-    app.add_event_handler("shutdown", _stop_registry_sync_task)

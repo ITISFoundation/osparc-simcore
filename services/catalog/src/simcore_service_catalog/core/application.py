@@ -1,7 +1,9 @@
 import logging
+from collections.abc import AsyncIterator
 
 from fastapi import FastAPI
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi_lifespan_manager import LifespanManager, State
 from models_library.basic_types import BootModeEnum
 from servicelib.fastapi import timing_middleware
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
@@ -11,8 +13,6 @@ from servicelib.fastapi.prometheus_instrumentation import (
 )
 from servicelib.fastapi.tracing import initialize_tracing
 from simcore_service_catalog.core.background_tasks import setup_background_task
-from simcore_service_catalog.infrastructure.director import setup_director
-from simcore_service_catalog.infrastructure.postgres import setup_postgres_database
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from .._meta import (
@@ -27,7 +27,10 @@ from .._meta import (
 from ..api.rest.routes import setup_rest_api_routes
 from ..api.rpc.routes import setup_rpc_api_routes
 from ..exceptions.handlers import setup_exception_handlers
-from ..infrastructure.rabbitmq import setup_rabbitmq
+from ..infrastructure.director import director_lifespan
+from ..infrastructure.postgres import postgres_lifespan
+from ..infrastructure.rabbitmq import rabbitmq_lifespan
+from ..repository.setup import setup_repository
 from ..service.function_services import setup_function_services
 from .settings import ApplicationSettings
 
@@ -44,13 +47,31 @@ _NOISY_LOGGERS = (
 )
 
 
-def _flush_started_banner() -> None:
+async def _setup_banner(app: FastAPI) -> AsyncIterator[State]:
     # WARNING: this function is spied in the tests
+    assert app
     print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201
 
+    yield {}
 
-def _flush_finished_banner() -> None:
     print(APP_FINISHED_BANNER_MSG, flush=True)  # noqa: T201
+
+
+def _create_app_lifespan(settings: ApplicationSettings):
+    app_lifespan = LifespanManager()
+
+    app_lifespan.add(_setup_banner)
+
+    postgres_lifespan.add(setup_repository)
+    app_lifespan.include(postgres_lifespan)
+
+    app_lifespan.include(director_lifespan)
+    app_lifespan.add(rabbitmq_lifespan)
+
+    app_lifespan.add(setup_function_services)
+    app_lifespan.add(setup_background_task)
+
+    return app_lifespan
 
 
 def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
@@ -76,6 +97,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
         openapi_url=f"/api/{API_VTAG}/openapi.json",
         docs_url="/dev/doc",
         redoc_url=None,  # default disabled
+        lifespan=_create_app_lifespan(settings),
     )
     override_fastapi_openapi_method(app)
 
@@ -84,15 +106,6 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
     if settings.CATALOG_TRACING:
         initialize_tracing(app, settings.CATALOG_TRACING, APP_NAME)
-
-    # STARTUP-EVENT
-    app.add_event_handler("startup", _flush_started_banner)
-
-    setup_postgres_database(app)
-    setup_director(app)
-    setup_function_services(app)
-    setup_rabbitmq(app)
-    setup_background_task(app)
 
     if app.state.settings.CATALOG_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)
@@ -112,9 +125,6 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     # ROUTES
     setup_rest_api_routes(app, vtag=API_VTAG)
     setup_rpc_api_routes(app)
-
-    # SHUTDOWN-EVENT
-    app.add_event_handler("shutdown", _flush_finished_banner)
 
     # EXCEPTIONS
     setup_exception_handlers(app)

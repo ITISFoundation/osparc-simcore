@@ -1,30 +1,29 @@
-import contextlib
 import logging
+from collections.abc import AsyncIterator
 
 from fastapi import FastAPI
-from servicelib.fastapi.db_asyncpg_engine import close_db_connection, connect_to_db
+from fastapi_lifespan_manager import LifespanManager, State
+from servicelib.fastapi.db_asyncpg_engine import connect_to_postgres_until_ready
 from servicelib.logging_utils import log_catch, log_context
-
-from ..repository.products import setup_default_product
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 _logger = logging.getLogger(__name__)
 
 
-def setup_postgres_database(app: FastAPI):
+postgres_lifespan = LifespanManager()
 
-    async def _():
-        with log_context(_logger, logging.INFO, f"{__name__} startup ..."):
-            # connection
-            await connect_to_db(app, app.state.settings.CATALOG_POSTGRES)
 
-            # configuring default product
-            await setup_default_product(app)
+@postgres_lifespan.add
+async def setup_postgres_database(app: FastAPI) -> AsyncIterator[State]:
 
-        yield
+    with log_context(_logger, logging.INFO, f"{__name__} startup ..."):
+        engine: AsyncEngine = await connect_to_postgres_until_ready(
+            app.state.settings.CATALOG_POSTGRES
+        )
 
-        with log_context(
-            _logger, logging.INFO, f"{__name__} shutdown ..."
-        ), contextlib.suppress(Exception), log_catch(_logger):
-            await close_db_connection(app)
+    yield {"engine": engine}
 
-    return _
+    with log_context(_logger, logging.INFO, f"{__name__} shutdown ..."), log_catch(
+        _logger, reraise=False
+    ):
+        await engine.dispose()

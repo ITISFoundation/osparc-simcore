@@ -13,13 +13,17 @@ from ..logging_utils import log_context
 _logger = logging.getLogger(__name__)
 
 
-async def connect_to_db(app: FastAPI, settings: PostgresSettings) -> None:
+async def connect_to_postgres_until_ready(settings: PostgresSettings) -> AsyncEngine:
     with log_context(
         _logger,
         logging.DEBUG,
-        f"Connecting and migraging {settings.dsn_with_async_sqlalchemy}",
+        f"Connecting to {settings.dsn_with_async_sqlalchemy}",
     ):
-        engine = await create_async_engine_and_pg_database_ready(settings)
+        return await create_async_engine_and_pg_database_ready(settings)
+
+
+async def connect_to_db(app: FastAPI, settings: PostgresSettings) -> None:
+    engine = await connect_to_postgres_until_ready(settings)
 
     app.state.engine = engine
     _logger.debug(
