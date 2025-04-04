@@ -5,8 +5,6 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Any
 
 import pytest
-from aiopg.sa.connection import AsyncConnection
-from aiopg.sa.result import RowProxy
 from faker import Faker
 from pytest_simcore.helpers.faker_factories import random_user
 from simcore_postgres_database.models.users import UserRole, users
@@ -15,6 +13,7 @@ from simcore_postgres_database.utils_user_preferences import (
     FrontendUserPreferencesRepo,
     UserServicesUserPreferencesRepo,
 )
+from sqlalchemy.engine.row import Row
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 
@@ -29,7 +28,9 @@ def preference_two() -> str:
 
 
 @pytest.fixture
-async def product_name(create_fake_product: Callable[..., Awaitable[RowProxy]]) -> str:
+async def product_name(
+    create_fake_product: Callable[[ProductName], Awaitable[Row]],
+) -> str:
     product = await create_fake_product("fake-product")
     return product[0]
 
@@ -203,7 +204,7 @@ async def test__same_preference_name_product_name__different_users(
 
 async def test__same_user_preference_name__different_product_name(
     connection: AsyncConnection,
-    create_fake_product: Callable[..., Awaitable[RowProxy]],
+    create_fake_product: Callable[[ProductName], Awaitable[Row]],
     preference_repo: type[BasePreferencesRepo],
     preference_one: str,
     faker: Faker,
