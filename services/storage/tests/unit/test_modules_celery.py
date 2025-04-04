@@ -5,9 +5,7 @@
 # pylint: disable=unused-variable
 
 import asyncio
-import base64
 import logging
-import pickle
 import time
 from collections.abc import Callable
 from random import randint
@@ -43,6 +41,7 @@ pytest_simcore_ops_services_selection = []
 @pytest.fixture
 def celery_client(
     initialized_app: FastAPI,
+    with_storage_celery_worker: CeleryTaskQueueWorker,
 ) -> CeleryTaskQueueClient:
     return get_celery_client(initialized_app)
 
@@ -57,7 +56,7 @@ async def _fake_file_processor(
 
     for n, file in enumerate(files, start=1):
         with log_context(_logger, logging.INFO, msg=f"Processing file {file}"):
-            await worker.set_task_progress(
+            worker.set_task_progress(
                 task_name=task_name,
                 task_id=task_id,
                 report=ProgressReport(actual_value=n / len(files) * 10),
@@ -109,7 +108,6 @@ def register_celery_tasks() -> Callable[[Celery], None]:
 
 async def test_submitting_task_calling_async_function_results_with_success_state(
     celery_client: CeleryTaskQueueClient,
-    with_storage_celery_worker: CeleryTaskQueueWorker,
 ):
     task_context = TaskContext(user_id=42)
 
@@ -138,7 +136,6 @@ async def test_submitting_task_calling_async_function_results_with_success_state
 
 async def test_submitting_task_with_failure_results_with_error(
     celery_client: CeleryTaskQueueClient,
-    with_storage_celery_worker: CeleryTaskQueueWorker,
 ):
     task_context = TaskContext(user_id=42)
 
@@ -156,13 +153,11 @@ async def test_submitting_task_with_failure_results_with_error(
             assert isinstance(raw_result, Exception)
 
     raw_result = await celery_client.get_task_result(task_context, task_uuid)
-    result = pickle.loads(base64.b64decode(raw_result.args[0]))
-    assert f"{result}" == "Something strange happened: BOOM!"
+    assert f"{raw_result}" == "Something strange happened: BOOM!"
 
 
 async def test_aborting_task_results_with_aborted_state(
     celery_client: CeleryTaskQueueClient,
-    with_storage_celery_worker: CeleryTaskQueueWorker,
 ):
     task_context = TaskContext(user_id=42)
 
@@ -189,7 +184,6 @@ async def test_aborting_task_results_with_aborted_state(
 
 async def test_listing_task_uuids_contains_submitted_task(
     celery_client: CeleryTaskQueueClient,
-    with_storage_celery_worker: CeleryTaskQueueWorker,
 ):
     task_context = TaskContext(user_id=42)
 
