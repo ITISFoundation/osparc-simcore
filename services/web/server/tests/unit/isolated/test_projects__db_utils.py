@@ -16,7 +16,6 @@ from models_library.groups import GroupID
 from models_library.projects_nodes import Node
 from models_library.services import ServiceKey
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from simcore_postgres_database.utils_sql import assemble_array_groups
 from simcore_service_webserver.projects._projects_repository_legacy import (
     ProjectAccessRights,
     convert_to_db_names,
@@ -28,6 +27,7 @@ from simcore_service_webserver.projects._projects_repository_legacy import (
 from simcore_service_webserver.projects._projects_repository_legacy_utils import (
     DB_EXCLUSIVE_COLUMNS,
     SCHEMA_NON_NULL_KEYS,
+    assemble_array_groups,
 )
 from simcore_service_webserver.projects.exceptions import (
     NodeNotFoundError,
