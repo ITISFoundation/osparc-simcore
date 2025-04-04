@@ -16,9 +16,9 @@ from models_library.groups import GroupID
 from models_library.projects_nodes import Node
 from models_library.services import ServiceKey
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from simcore_postgres_database.utils_sql import assemble_array_groups
 from simcore_service_webserver.projects._projects_repository_legacy import (
     ProjectAccessRights,
-    assemble_array_groups,
     convert_to_db_names,
     convert_to_schema_names,
     create_project_access_rights,
