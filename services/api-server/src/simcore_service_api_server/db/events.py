@@ -1,4 +1,5 @@
 import logging
+from typing import cast
 
 from aiopg.sa import Engine, create_engine
 from fastapi import FastAPI
@@ -83,4 +84,4 @@ async def asyncpg_close_db_connection(app: FastAPI) -> None:
 
 
 def get_asyncpg_engine(app: FastAPI) -> AsyncEngine:
-    return app.state.asyncpg_engine
+    return cast(AsyncEngine, app.state.asyncpg_engine)
