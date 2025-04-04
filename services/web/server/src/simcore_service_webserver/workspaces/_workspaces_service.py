@@ -1,6 +1,5 @@
 # pylint: disable=unused-argument
 
-import asyncio
 import logging
 
 from aiohttp import web
@@ -87,9 +86,9 @@ async def update_workspace(
 async def delete_workspace(
     app: web.Application,
     *,
+    product_name: ProductName,
     user_id: UserID,
     workspace_id: WorkspaceID,
-    product_name: ProductName,
 ) -> None:
     await check_user_workspace_access(
         app=app,
@@ -125,12 +124,10 @@ async def delete_workspace(
         ]
 
         # Delete projects properly
-        await asyncio.gather(
-            *(
-                delete_project_by_user(app, project_uuid=project_uuid, user_id=user_id)
-                for project_uuid in workspace_root_projects
+        for project_uuid in workspace_root_projects:
+            await delete_project_by_user(
+                app, project_uuid=project_uuid, user_id=user_id
             )
-        )
 
     # Get all root folders
     for page_params in iter_pagination_params(limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
@@ -154,17 +151,13 @@ async def delete_workspace(
         ]
 
         # Delete folders properly
-        await asyncio.gather(
-            *(
-                delete_folder(
-                    app,
-                    user_id=user_id,
-                    product_name=product_name,
-                    folder_id=folder_id,
-                )
-                for folder_id in workspace_root_folders
+        for folder_id in workspace_root_folders:
+            await delete_folder(
+                app,
+                user_id=user_id,
+                product_name=product_name,
+                folder_id=folder_id,
             )
-        )
 
     await db.delete_workspace(
         app,

@@ -23,7 +23,7 @@ from ..folders._folders_service import list_folders
 from ..folders._trash_service import trash_folder, untrash_folder
 from ..projects._crud_api_read import ProjectTypeAPI, list_projects
 from ..projects._trash_service import trash_project, untrash_project
-from . import _workspaces_repository, _workspaces_service
+from . import _workspaces_repository, _workspaces_service, _workspaces_service_crud_read
 from .errors import WorkspaceNotTrashedError
 
 _logger = logging.getLogger(__name__)
@@ -36,7 +36,7 @@ async def _check_exists_and_access(
     user_id: UserID,
     workspace_id: WorkspaceID,
 ):
-    await _workspaces_service.check_user_workspace_access(
+    await _workspaces_service_crud_read.check_user_workspace_access(
         app=app,
         user_id=user_id,
         workspace_id=workspace_id,
@@ -237,7 +237,7 @@ async def delete_trashed_workspace(
     until_equal_datetime: datetime | None = None,
 ) -> None:
 
-    workspace = await _workspaces_service.get_workspace(
+    workspace = await _workspaces_service_crud_read.get_workspace(
         app,
         user_id=user_id,
         product_name=product_name,
@@ -276,7 +276,7 @@ async def list_trashed_workspaces(
         (
             page_params.total_number_of_items,
             workspaces,
-        ) = await _workspaces_service.list_workspaces(
+        ) = await _workspaces_service_crud_read.list_workspaces(
             app,
             user_id=user_id,
             product_name=product_name,
