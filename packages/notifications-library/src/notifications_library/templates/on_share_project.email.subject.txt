@@ -1,1 +1,1 @@
-A {{ resource_alias }} was shared with you on {{ host }}
+A {{ product.ui.project_alias }} was shared with you on {{ host }}

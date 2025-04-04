@@ -245,6 +245,7 @@ class Product(BaseModel):
                             "ui": {
                                 "logo_url": "https://acme.com/logo",
                                 "strong_color": "#123456",
+                                "project_alias": "study",
                             },
                         },
                         "issues": [

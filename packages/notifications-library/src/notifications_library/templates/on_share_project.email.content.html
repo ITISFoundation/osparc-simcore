@@ -3,9 +3,9 @@
 {% block content %}
 <p>Dear {{ user.first_name }},</p>
 
-<p>Great news! {{ sharer_username }} has shared a {{ resource_alias }} with you on {{ product.display_name }}.</p>
+<p>Great news! {{ sharer_username }} has shared a {{ product.ui.project_alias }} with you on {{ product.display_name }}.</p>
 
-<p>To view the {{ resource_alias }} and accept the sharing, follow below:</p>
+<p>To view the {{ product.ui.project_alias }} and accept the sharing, follow below:</p>
 
 <p>
 {% if sharer_message %}

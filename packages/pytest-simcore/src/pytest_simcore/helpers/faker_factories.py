@@ -260,6 +260,7 @@ def random_product(
             ui=VendorUI(
                 logo_url=fake.url(),
                 strong_color=fake.color(),
+                project_alias="project",
             ),
         ),
         "registration_email_template": registration_email_template,

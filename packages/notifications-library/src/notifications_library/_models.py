@@ -25,6 +25,7 @@ class UserData:
 class ProductUIData:
     logo_url: str
     strong_color: str
+    project_alias: str
 
 
 @dataclass(frozen=True)
