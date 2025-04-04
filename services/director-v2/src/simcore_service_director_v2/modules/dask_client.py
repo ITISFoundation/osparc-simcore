@@ -359,7 +359,7 @@ class DaskClient:
             try:
                 # This instance is created only once so it can be reused in calls below
                 node_ports = await dask_utils.create_node_ports(
-                    db_engine=self.app.state.engine,
+                    db_engine=self.app.state.asyncpg_engine,
                     user_id=user_id,
                     project_id=project_id,
                     node_id=node_id,
@@ -439,14 +439,14 @@ class DaskClient:
         def _get_pipeline_statuses(
             dask_scheduler: distributed.Scheduler,
         ) -> dict[dask.typing.Key, DaskSchedulerTaskState | None]:
-            statuses: dict[
-                dask.typing.Key, DaskSchedulerTaskState | None
-            ] = dask_scheduler.get_task_status(keys=job_ids)
+            statuses: dict[dask.typing.Key, DaskSchedulerTaskState | None] = (
+                dask_scheduler.get_task_status(keys=job_ids)
+            )
             return statuses
 
-        task_statuses: dict[
-            dask.typing.Key, DaskSchedulerTaskState | None
-        ] = await self.backend.client.run_on_scheduler(_get_pipeline_statuses)
+        task_statuses: dict[dask.typing.Key, DaskSchedulerTaskState | None] = (
+            await self.backend.client.run_on_scheduler(_get_pipeline_statuses)
+        )
         assert isinstance(task_statuses, dict)  # nosec
 
         _logger.debug("found dask task statuses: %s", f"{task_statuses=}")
@@ -578,10 +578,10 @@ class DaskClient:
 
         with log_catch(_logger, reraise=False):
             # NOTE: this runs directly on the dask-scheduler and may rise exceptions
-            used_resources_per_worker: dict[
-                str, dict[str, Any]
-            ] = await dask_utils.wrap_client_async_routine(
-                self.backend.client.run_on_scheduler(_get_worker_used_resources)
+            used_resources_per_worker: dict[str, dict[str, Any]] = (
+                await dask_utils.wrap_client_async_routine(
+                    self.backend.client.run_on_scheduler(_get_worker_used_resources)
+                )
             )
 
             # let's update the scheduler info, with default to 0s since sometimes
