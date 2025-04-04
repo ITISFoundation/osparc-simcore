@@ -41,7 +41,7 @@ from notifications_library._email_render import (
     get_user_address,
     render_email_parts,
 )
-from notifications_library._models import ProductData, UserData
+from notifications_library._models import ProductData, SharerData, UserData
 from notifications_library._render import (
     create_render_environment_from_notifications_library,
 )
@@ -135,6 +135,14 @@ def event_extra_data(  # noqa: PLR0911
                 "reason": faker.sentence(),
                 "link": f"{host_url}?reset-password={code}",
             }
+        case "on_share_project":
+            return {
+                "host": host_url,
+                "resource_alias": "Project",
+                "sharer_username": faker.name(),
+                "sharer_message": faker.paragraph(nb_sentences=2),
+                "accept_link": f"{host_url}?code={code}",
+            }
         case "on_unregister":
             return {
                 "host": host_url,
@@ -169,6 +177,7 @@ def event_attachments(event_name: str, faker: Faker) -> list[tuple[bytes, str]]:
         "on_payed",
         "on_registered",
         "on_reset_password",
+        "on_share_project",
         "on_unregister",
     ],
 )
@@ -177,6 +186,7 @@ async def test_email_event(
     smtp_mock_or_none: MagicMock | None,
     user_data: UserData,
     user_email: EmailStr,
+    sharer_data: SharerData,
     product_data: ProductData,
     product_name: ProductName,
     event_name: str,
@@ -193,6 +203,7 @@ async def test_email_event(
         ),
         event_name=event_name,
         user=user_data,
+        sharer=sharer_data,
         product=product_data,
         # extras
         **event_extra_data,
@@ -207,7 +218,7 @@ async def test_email_event(
     msg = compose_email(
         from_,
         to,
-        subject=parts.suject,
+        subject=parts.subject,
         content_text=parts.text_content,
         content_html=parts.html_content,
     )
@@ -245,6 +256,7 @@ async def test_email_with_reply_to(
     smtp_mock_or_none: MagicMock | None,
     user_data: UserData,
     user_email: EmailStr,
+    sharer_data: SharerData,
     support_email: EmailStr,
     product_data: ProductData,
     event_name: str,
@@ -262,6 +274,7 @@ async def test_email_with_reply_to(
         ),
         event_name=event_name,
         user=user_data,
+        sharer=sharer_data,
         product=product_data,
         # extras
         **event_extra_data,
@@ -278,7 +291,7 @@ async def test_email_with_reply_to(
     msg = compose_email(
         from_,
         to,
-        subject=parts.suject,
+        subject=parts.subject,
         content_text=parts.text_content,
         content_html=parts.html_content,
         reply_to=reply_to,

@@ -5,13 +5,13 @@ from typing import NamedTuple
 from jinja2 import Environment
 from jinja2.exceptions import TemplateNotFound
 
-from ._models import ProductData, UserData
+from ._models import ProductData, SharerData, UserData
 
 _logger = logging.getLogger(__name__)
 
 
 class EmailPartsTuple(NamedTuple):
-    suject: str
+    subject: str
     text_content: str
     html_content: str | None
 
@@ -37,11 +37,12 @@ def render_email_parts(
     event_name: str,
     *,
     user: UserData,
+    sharer: SharerData,
     product: ProductData,
     **other_data,
 ) -> EmailPartsTuple:
 
-    data = other_data | {"user": user, "product": product}
+    data = other_data | {"user": user, "sharer": sharer, "product": product}
 
     # NOTE: assumes template convention!
     subject = env.get_template(f"{event_name}.email.subject.txt").render(data)
@@ -58,5 +59,5 @@ def render_email_parts(
         html_content = None
 
     return EmailPartsTuple(
-        suject=subject, text_content=text_content, html_content=html_content
+        subject=subject, text_content=text_content, html_content=html_content
     )

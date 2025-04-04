@@ -214,7 +214,7 @@ class Product(BaseModel):
                             and isinstance(c.server_default.arg, str)  # type: ignore[union-attr]
                         },
                     },
-                    # Example of data in the dabase with a url set with blanks
+                    # Example of data in the database with a url set with blanks
                     {
                         "name": "tis",
                         "display_name": "TI PT",
@@ -245,6 +245,7 @@ class Product(BaseModel):
                             "ui": {
                                 "logo_url": "https://acme.com/logo",
                                 "strong_color": "#123456",
+                                "project_alias": "study",
                             },
                         },
                         "issues": [
