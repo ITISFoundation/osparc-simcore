@@ -11,25 +11,27 @@
 
 import asyncio
 import logging
+from collections.abc import AsyncIterator
 from contextlib import suppress
 from pprint import pformat
 from typing import Final
 
 from fastapi import FastAPI, HTTPException
+from fastapi_lifespan_manager import State
 from models_library.services import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from packaging.version import Version
 from pydantic import ValidationError
-from simcore_service_catalog.api.dependencies.director import get_director_api
-from simcore_service_catalog.services import manifest
+from simcore_service_catalog.api._dependencies.director import get_director_api
+from simcore_service_catalog.service import manifest
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from ..db.repositories.groups import GroupsRepository
-from ..db.repositories.projects import ProjectsRepository
-from ..db.repositories.services import ServicesRepository
 from ..models.services_db import ServiceAccessRightsAtDB, ServiceMetaDataDBCreate
-from ..services import access_rights
+from ..repository.groups import GroupsRepository
+from ..repository.projects import ProjectsRepository
+from ..repository.services import ServicesRepository
+from ..service import access_rights
 
 _logger = logging.getLogger(__name__)
 
@@ -115,9 +117,9 @@ async def _ensure_registry_and_database_are_synced(app: FastAPI) -> None:
     director_api = get_director_api(app)
     services_in_manifest_map = await manifest.get_services_map(director_api)
 
-    services_in_db: set[
-        tuple[ServiceKey, ServiceVersion]
-    ] = await _list_services_in_database(app.state.engine)
+    services_in_db: set[tuple[ServiceKey, ServiceVersion]] = (
+        await _list_services_in_database(app.state.engine)
+    )
 
     # check that the db has all the services at least once
     missing_services_in_db = set(services_in_manifest_map.keys()) - services_in_db
@@ -213,22 +215,23 @@ async def _sync_services_task(app: FastAPI) -> None:
             )
 
 
-async def start_registry_sync_task(app: FastAPI) -> None:
+async def setup_background_task(app: FastAPI) -> AsyncIterator[State]:
+    # FIXME: check director service is in place and ready. Hand-shake??
+    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/1728
+
     # FIXME: added this variable to overcome the state in which the
     # task cancelation is ignored and the exceptions enter in a loop
     # that never stops the background task. This flag is an additional
     # mechanism to enforce stopping the background task
-    app.state.registry_syncer_running = True
     task = asyncio.create_task(_sync_services_task(app))
-    app.state.registry_sync_task = task
+
     _logger.info("registry syncing task started")
 
+    yield {"registry_syncer_running": True, "registry_sync_task": task}
 
-async def stop_registry_sync_task(app: FastAPI) -> None:
-    if task := app.state.registry_sync_task:
-        with suppress(asyncio.CancelledError):
-            app.state.registry_syncer_running = False
-            task.cancel()
-            await task
-        app.state.registry_sync_task = None
+    with suppress(asyncio.CancelledError):
+        app.state.registry_syncer_running = False
+        task.cancel()
+        await task
+
     _logger.info("registry syncing task stopped")

@@ -6,7 +6,7 @@ from models_library.api_schemas_catalog.services_ports import ServicePortGet
 from models_library.services_metadata_published import ServiceMetaDataPublished
 
 from ..._constants import RESPONSE_MODEL_POLICY
-from ..dependencies.services import (
+from .._dependencies.services import (
     AccessInfo,
     check_service_read_access,
     get_service_from_manifest,

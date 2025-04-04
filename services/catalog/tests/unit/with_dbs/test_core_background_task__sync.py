@@ -14,7 +14,7 @@ from pytest_mock import MockerFixture
 from respx.router import MockRouter
 from simcore_postgres_database.models.services import services_meta_data
 from simcore_service_catalog.core.background_tasks import _run_sync_services
-from simcore_service_catalog.db.repositories.services import ServicesRepository
+from simcore_service_catalog.repository.services import ServicesRepository
 from sqlalchemy.ext.asyncio.engine import AsyncEngine
 
 pytest_simcore_core_services_selection = [

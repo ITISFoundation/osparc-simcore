@@ -1,7 +1,9 @@
 import logging
+from collections.abc import AsyncIterator
 
 from fastapi import FastAPI
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi_lifespan_manager import LifespanManager, State
 from models_library.basic_types import BootModeEnum
 from servicelib.fastapi import timing_middleware
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
@@ -10,15 +12,26 @@ from servicelib.fastapi.prometheus_instrumentation import (
     setup_prometheus_instrumentation,
 )
 from servicelib.fastapi.tracing import initialize_tracing
+from simcore_service_catalog.core.background_tasks import setup_background_task
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from .._meta import API_VERSION, API_VTAG, APP_NAME, PROJECT_NAME, SUMMARY
-from ..api.rest.routes import setup_rest_api_routes
-from ..api.rpc.routes import setup_rpc_api_routes
-from ..exceptions.handlers import setup_exception_handlers
-from ..services.function_services import setup_function_services
-from ..services.rabbitmq import setup_rabbitmq
-from .events import create_on_shutdown, create_on_startup
+from .._meta import (
+    API_VERSION,
+    API_VTAG,
+    APP_FINISHED_BANNER_MSG,
+    APP_NAME,
+    APP_STARTED_BANNER_MSG,
+    PROJECT_NAME,
+    SUMMARY,
+)
+from ..api.rest.errors import setup_rest_exception_handlers
+from ..api.rest.routes import setup_rest_routes
+from ..api.rpc.routes import setup_rpc_routes
+from ..infrastructure.director import director_lifespan
+from ..infrastructure.postgres import postgres_lifespan
+from ..infrastructure.rabbitmq import rabbitmq_lifespan
+from ..repository.setup import setup_repository
+from ..service.function_services import setup_function_services
 from .settings import ApplicationSettings
 
 _logger = logging.getLogger(__name__)
@@ -32,6 +45,40 @@ _NOISY_LOGGERS = (
     "httpcore",
     "werkzeug",
 )
+
+
+async def _setup_banner(app: FastAPI) -> AsyncIterator[State]:
+    # WARNING: this function is spied in the tests
+    assert app
+    print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201
+
+    yield {}
+
+    print(APP_FINISHED_BANNER_MSG, flush=True)  # noqa: T201
+
+
+def _create_app_lifespan(settings: ApplicationSettings):
+    assert settings  # nosec
+
+    # app lifespan
+    app_lifespan = LifespanManager()
+    app_lifespan.add(_setup_banner)
+
+    # - postgres lifespan
+    postgres_lifespan.add(setup_repository)
+    app_lifespan.include(postgres_lifespan)
+
+    # - director lifespan
+    app_lifespan.include(director_lifespan)
+
+    # - rabbitmq lifespan
+    rabbitmq_lifespan.add(setup_rpc_routes)
+    app_lifespan.add(rabbitmq_lifespan)
+
+    app_lifespan.add(setup_function_services)
+    app_lifespan.add(setup_background_task)
+
+    return app_lifespan
 
 
 def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
@@ -57,6 +104,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
         openapi_url=f"/api/{API_VTAG}/openapi.json",
         docs_url="/dev/doc",
         redoc_url=None,  # default disabled
+        lifespan=_create_app_lifespan(settings),
     )
     override_fastapi_openapi_method(app)
 
@@ -65,13 +113,6 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
     if settings.CATALOG_TRACING:
         initialize_tracing(app, settings.CATALOG_TRACING, APP_NAME)
-
-    # STARTUP-EVENT
-    app.add_event_handler("startup", create_on_startup(app))
-
-    # PLUGIN SETUP
-    setup_function_services(app)
-    setup_rabbitmq(app)
 
     if app.state.settings.CATALOG_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)
@@ -89,13 +130,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     app.add_middleware(GZipMiddleware)
 
     # ROUTES
-    setup_rest_api_routes(app, vtag=API_VTAG)
-    setup_rpc_api_routes(app)
-
-    # SHUTDOWN-EVENT
-    app.add_event_handler("shutdown", create_on_shutdown(app))
-
-    # EXCEPTIONS
-    setup_exception_handlers(app)
+    setup_rest_routes(app, vtag=API_VTAG)
+    setup_rest_exception_handlers(app)
 
     return app
