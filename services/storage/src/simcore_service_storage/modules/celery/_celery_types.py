@@ -10,7 +10,6 @@ from models_library.api_schemas_storage.storage_schemas import (
 from pydantic import BaseModel
 
 from ...models import FileMetaData
-from ...modules.celery.models import TaskError
 
 
 def _path_encoder(obj):
@@ -30,11 +29,11 @@ def _class_full_name(clz: type) -> str:
     return ".".join([clz.__module__, clz.__qualname__])
 
 
-def _encoder(obj: BaseModel, *args, **kwargs) -> dict[str, Any]:
+def _pydantic_model_encoder(obj: BaseModel, *args, **kwargs) -> dict[str, Any]:
     return obj.model_dump(*args, **kwargs, mode="json")
 
 
-def _decoder(clz: type[BaseModel], data: dict[str, Any]) -> BaseModel:
+def _pydantic_model_decoder(clz: type[BaseModel], data: dict[str, Any]) -> BaseModel:
     return clz(**data)
 
 
@@ -43,8 +42,8 @@ def _register_pydantic_types(*models: type[BaseModel]) -> None:
         register_type(
             model,
             _class_full_name(model),
-            encoder=_encoder,
-            decoder=partial(_decoder, model),
+            encoder=_pydantic_model_encoder,
+            decoder=partial(_pydantic_model_decoder, model),
         )
 
 
@@ -55,8 +54,8 @@ def register_celery_types() -> None:
         _path_encoder,
         _path_decoder,
     )
+    register_type(set, _class_full_name(set), encoder=list, decoder=set)
+
     _register_pydantic_types(FileUploadCompletionBody)
     _register_pydantic_types(FileMetaData)
     _register_pydantic_types(FoldersBody)
-    _register_pydantic_types(TaskError)
-    register_type(set, _class_full_name(set), encoder=list, decoder=set)

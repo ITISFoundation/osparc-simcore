@@ -75,6 +75,7 @@ from simcore_service_storage.modules.celery.signals import (
     on_worker_init,
     on_worker_shutdown,
 )
+from simcore_service_storage.modules.celery.utils import get_celery_worker
 from simcore_service_storage.modules.celery.worker import CeleryTaskQueueWorker
 from simcore_service_storage.modules.s3 import get_s3_client
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
@@ -640,7 +641,7 @@ async def delete_directory(
     client: httpx.AsyncClient,
     user_id: UserID,
     location_id: LocationID,
-) -> Callable[..., Awaitable[None]]:
+) -> Callable[[StorageFileID], Awaitable[None]]:
     async def _dir_remover(directory_s3: StorageFileID) -> None:
         delete_url = url_from_operation_id(
             client,
@@ -1028,7 +1029,7 @@ def with_storage_celery_worker(
     with_storage_celery_worker_controller: TestWorkController,
 ) -> CeleryTaskQueueWorker:
     assert isinstance(with_storage_celery_worker_controller.app, Celery)
-    return CeleryTaskQueueWorker(with_storage_celery_worker_controller.app)
+    return get_celery_worker(with_storage_celery_worker_controller.app)
 
 
 @pytest.fixture

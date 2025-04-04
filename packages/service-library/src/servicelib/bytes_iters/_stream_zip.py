@@ -1,13 +1,16 @@
+import logging
 from collections.abc import AsyncIterable
 from datetime import UTC, datetime
 from stat import S_IFREG
 from typing import TypeAlias
 
 from models_library.bytes_iters import BytesIter, DataSize
-from stream_zip import ZIP_32, AsyncMemberFile, async_stream_zip
+from stream_zip import ZIP_64, AsyncMemberFile, async_stream_zip
 
 from ..progress_bar import ProgressBarData
 from ._models import BytesStreamer
+
+_logger = logging.getLogger(__name__)
 
 FileNameInArchive: TypeAlias = str
 ArchiveFileEntry: TypeAlias = tuple[FileNameInArchive, BytesStreamer]
@@ -22,7 +25,7 @@ async def _member_files_iter(
             file_name,
             datetime.now(UTC),
             S_IFREG | 0o600,
-            ZIP_32,
+            ZIP_64,
             byte_streamer.with_progress_bytes_iter(progress_bar=progress_bar),
         )
 
@@ -42,6 +45,7 @@ async def get_zip_bytes_iter(
         sum(bytes_streamer.data_size for _, bytes_streamer in archive_entries)
     )
     description = f"files: count={len(archive_entries)}, size={total_stream_lenth.human_readable()}"
+    _logger.info("Archiving %s", description)
 
     async with progress_bar.sub_progress(
         steps=total_stream_lenth, description=description, progress_unit="Byte"

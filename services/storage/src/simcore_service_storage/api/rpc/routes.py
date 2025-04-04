@@ -6,14 +6,13 @@ from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RPCRouter
 
 from ...modules.rabbitmq import get_rabbitmq_rpc_server
-from . import _async_jobs, _data_export, _paths, _simcore_s3
+from . import _async_jobs, _paths, _simcore_s3
 
 _logger = logging.getLogger(__name__)
 
 
 ROUTERS: list[RPCRouter] = [
     _async_jobs.router,
-    _data_export.router,
     _paths.router,
     _simcore_s3.router,
 ]

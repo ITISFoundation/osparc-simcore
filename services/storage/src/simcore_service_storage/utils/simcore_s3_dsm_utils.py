@@ -1,8 +1,10 @@
 from contextlib import suppress
 from pathlib import Path
+from uuid import uuid4
 
 import orjson
 from aws_library.s3 import S3MetaData, SimcoreS3API
+from aws_library.s3._constants import STREAM_READER_CHUNK_SIZE
 from models_library.api_schemas_storage.storage_schemas import S3BucketName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import (
@@ -12,9 +14,13 @@ from models_library.projects_nodes_io import (
 )
 from models_library.users import UserID
 from pydantic import ByteSize, NonNegativeInt, TypeAdapter
+from servicelib.bytes_iters import ArchiveEntries, get_zip_bytes_iter
+from servicelib.progress_bar import ProgressBarData
+from servicelib.s3_utils import FileLikeBytesIterReader
 from servicelib.utils import ensure_ends_with
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from ..constants import EXPORTS_S3_PREFIX
 from ..exceptions.errors import FileMetaDataNotFoundError, ProjectAccessRightError
 from ..models import FileMetaData, FileMetaDataAtDB, GenericCursor, PathMetaData
 from ..modules.db.access_layer import AccessLayerRepository
@@ -129,6 +135,42 @@ async def get_directory_file_id(
 def compute_file_id_prefix(file_id: str, levels: int):
     components = file_id.strip("/").split("/")
     return "/".join(components[:levels])
+
+
+def create_random_export_name(user_id: UserID) -> StorageFileID:
+    return TypeAdapter(StorageFileID).validate_python(
+        f"{EXPORTS_S3_PREFIX}/{user_id}/{uuid4()}.zip"
+    )
+
+
+async def create_and_upload_export(
+    s3_client: SimcoreS3API,
+    bucket: S3BucketName,
+    *,
+    source_object_keys: set[StorageFileID],
+    destination_object_keys: StorageFileID,
+    progress_bar: ProgressBarData,
+) -> None:
+    archive_entries: ArchiveEntries = [
+        (
+            s3_object,
+            await s3_client.get_bytes_streamer_from_object(bucket, s3_object),
+        )
+        for s3_object in source_object_keys
+    ]
+
+    async with progress_bar:
+        await s3_client.upload_object_from_file_like(
+            bucket,
+            destination_object_keys,
+            FileLikeBytesIterReader(
+                get_zip_bytes_iter(
+                    archive_entries,
+                    progress_bar=progress_bar,
+                    chunk_size=STREAM_READER_CHUNK_SIZE,
+                )
+            ),
+        )
 
 
 async def list_child_paths_from_s3(

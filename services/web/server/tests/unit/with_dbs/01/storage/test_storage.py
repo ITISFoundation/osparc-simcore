@@ -31,7 +31,7 @@ from models_library.api_schemas_rpc_async_jobs.exceptions import (
     JobNotDoneError,
     JobSchedulerError,
 )
-from models_library.api_schemas_storage.data_export_async_jobs import (
+from models_library.api_schemas_storage.export_data_async_jobs import (
     AccessRightError,
     InvalidFileIdentifierError,
 )
@@ -59,7 +59,7 @@ from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
 from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
     submit,
 )
-from servicelib.rabbitmq.rpc_interfaces.storage.data_export import start_data_export
+from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import start_export_data
 from simcore_postgres_database.models.users import UserRole
 from yarl import URL
 
@@ -427,7 +427,10 @@ def create_storage_rpc_client_mock(
 @pytest.mark.parametrize(
     "backend_result_or_exception, expected_status",
     [
-        (AsyncJobGet(job_id=AsyncJobId(f"{_faker.uuid4()}")), status.HTTP_202_ACCEPTED),
+        (
+            (AsyncJobGet(job_id=AsyncJobId(f"{_faker.uuid4()}")), None),
+            status.HTTP_202_ACCEPTED,
+        ),
         (
             InvalidFileIdentifierError(file_id=Path("/my/file")),
             status.HTTP_404_NOT_FOUND,
@@ -438,11 +441,14 @@ def create_storage_rpc_client_mock(
             ),
             status.HTTP_403_FORBIDDEN,
         ),
-        (JobSchedulerError(exc=_faker.text()), status.HTTP_500_INTERNAL_SERVER_ERROR),
+        (
+            JobSchedulerError(exc=_faker.text()),
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+        ),
     ],
     ids=lambda x: type(x).__name__,
 )
-async def test_data_export(
+async def test_export_data(
     user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
@@ -453,7 +459,7 @@ async def test_data_export(
 ):
     create_storage_rpc_client_mock(
         "simcore_service_webserver.storage._rest",
-        start_data_export.__name__,
+        start_export_data.__name__,
         backend_result_or_exception,
     )
 
@@ -660,8 +666,8 @@ async def test_get_async_job_links(
 ):
     create_storage_rpc_client_mock(
         "simcore_service_webserver.storage._rest",
-        start_data_export.__name__,
-        AsyncJobGet(job_id=AsyncJobId(f"{_faker.uuid4()}")),
+        start_export_data.__name__,
+        (AsyncJobGet(job_id=AsyncJobId(f"{_faker.uuid4()}")), None),
     )
 
     _body = DataExportPost(

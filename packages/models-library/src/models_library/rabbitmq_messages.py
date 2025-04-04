@@ -95,9 +95,9 @@ class ProgressType(StrAutoEnum):
 
 
 class ProgressMessageMixin(RabbitMessageBase):
-    channel_name: Literal[
+    channel_name: Literal["simcore.services.progress.v2"] = (
         "simcore.services.progress.v2"
-    ] = "simcore.services.progress.v2"
+    )
     progress_type: ProgressType = (
         ProgressType.COMPUTATION_RUNNING
     )  # NOTE: backwards compatible
@@ -118,9 +118,9 @@ class ProgressRabbitMessageProject(ProgressMessageMixin, ProjectMessageBase):
 
 
 class InstrumentationRabbitMessage(RabbitMessageBase, NodeMessageBase):
-    channel_name: Literal[
+    channel_name: Literal["simcore.services.instrumentation"] = (
         "simcore.services.instrumentation"
-    ] = "simcore.services.instrumentation"
+    )
     metrics: str
     service_uuid: NodeID
     service_type: str
@@ -210,9 +210,9 @@ class DynamicServiceRunningMessage(RabbitMessageBase):
 
 
 class RabbitResourceTrackingStartedMessage(RabbitResourceTrackingBaseMessage):
-    message_type: Literal[
+    message_type: Literal[RabbitResourceTrackingMessageType.TRACKING_STARTED] = (
         RabbitResourceTrackingMessageType.TRACKING_STARTED
-    ] = RabbitResourceTrackingMessageType.TRACKING_STARTED
+    )
 
     wallet_id: WalletID | None
     wallet_name: str | None
@@ -250,9 +250,9 @@ class RabbitResourceTrackingStartedMessage(RabbitResourceTrackingBaseMessage):
 
 
 class RabbitResourceTrackingHeartbeatMessage(RabbitResourceTrackingBaseMessage):
-    message_type: Literal[
+    message_type: Literal[RabbitResourceTrackingMessageType.TRACKING_HEARTBEAT] = (
         RabbitResourceTrackingMessageType.TRACKING_HEARTBEAT
-    ] = RabbitResourceTrackingMessageType.TRACKING_HEARTBEAT
+    )
 
 
 class SimcorePlatformStatus(StrAutoEnum):
@@ -261,9 +261,9 @@ class SimcorePlatformStatus(StrAutoEnum):
 
 
 class RabbitResourceTrackingStoppedMessage(RabbitResourceTrackingBaseMessage):
-    message_type: Literal[
+    message_type: Literal[RabbitResourceTrackingMessageType.TRACKING_STOPPED] = (
         RabbitResourceTrackingMessageType.TRACKING_STOPPED
-    ] = RabbitResourceTrackingMessageType.TRACKING_STOPPED
+    )
 
     simcore_platform_status: SimcorePlatformStatus = Field(
         ...,
@@ -297,9 +297,9 @@ class CreditsLimit(IntEnum):
 
 
 class WalletCreditsLimitReachedMessage(RabbitMessageBase):
-    channel_name: Literal[
+    channel_name: Literal["io.simcore.service.wallets-credit-limit-reached"] = (
         "io.simcore.service.wallets-credit-limit-reached"
-    ] = "io.simcore.service.wallets-credit-limit-reached"
+    )
     created_at: datetime.datetime = Field(
         default_factory=lambda: arrow.utcnow().datetime,
         description="message creation datetime",

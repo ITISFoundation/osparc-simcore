@@ -27,5 +27,5 @@ class JobAbortedError(BaseAsyncjobRpcError):
 
 class JobError(BaseAsyncjobRpcError):
     msg_template: str = (
-        "Job {job_id} failed with exception type {exc_type} and message {exc_msg}"
+        "Job '{job_id}' failed with exception type '{exc_type}' and message: {exc_msg}"
     )
