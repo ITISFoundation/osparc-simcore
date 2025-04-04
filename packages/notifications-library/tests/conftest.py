@@ -61,7 +61,7 @@ def product_data(
             "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/static-webserver/client/source/resource/osparc/osparc-white.svg",
         ),
         strong_color=vendor.get("ui", {}).get("strong_color", "rgb(131, 0, 191)"),
-        project_alias="project",
+        project_alias=vendor.get("ui", {}).get("project_alias", "project"),
     )
 
     return ProductData(  # type: ignore
