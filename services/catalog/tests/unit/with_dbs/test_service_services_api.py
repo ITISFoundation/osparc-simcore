@@ -16,7 +16,7 @@ from models_library.users import UserID
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.catalog_services import CreateFakeServiceDataCallable
 from respx.router import MockRouter
-from simcore_service_catalog.api.dependencies.director import get_director_api
+from simcore_service_catalog.api._dependencies.director import get_director_api
 from simcore_service_catalog.infrastructure.director import DirectorApi
 from simcore_service_catalog.repository.groups import GroupsRepository
 from simcore_service_catalog.repository.services import ServicesRepository

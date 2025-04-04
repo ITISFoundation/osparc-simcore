@@ -27,7 +27,7 @@ from simcore_service_catalog.repository.groups import GroupsRepository
 
 from ...repository.services import ServicesRepository
 from ...service import services_api
-from ..dependencies.director import get_director_api
+from .._dependencies.director import get_director_api
 
 _logger = logging.getLogger(__name__)
 

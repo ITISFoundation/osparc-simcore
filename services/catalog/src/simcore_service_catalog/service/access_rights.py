@@ -14,7 +14,7 @@ from packaging.version import Version
 from pydantic.types import PositiveInt
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from ..api.dependencies.director import get_director_api
+from ..api._dependencies.director import get_director_api
 from ..models.services_db import ServiceAccessRightsAtDB
 from ..repository.groups import GroupsRepository
 from ..repository.services import ServicesRepository

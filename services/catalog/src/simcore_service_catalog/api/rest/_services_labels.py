@@ -3,7 +3,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends
 from models_library.services import ServiceKey, ServiceVersion
 
-from ..dependencies.director import DirectorApi, get_director_api
+from .._dependencies.director import DirectorApi, get_director_api
 
 router = APIRouter()
 

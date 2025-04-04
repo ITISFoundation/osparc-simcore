@@ -29,10 +29,10 @@ from ...utils.service_resources import (
     merge_service_resources_with_user_specs,
     parse_generic_resource,
 )
-from ..dependencies.database import get_repository
-from ..dependencies.director import DirectorApi, get_director_api
-from ..dependencies.services import get_default_service_resources
-from ..dependencies.user_groups import list_user_groups
+from .._dependencies.database import get_repository
+from .._dependencies.director import DirectorApi, get_director_api
+from .._dependencies.services import get_default_service_resources
+from .._dependencies.user_groups import list_user_groups
 
 router = APIRouter()
 _logger = logging.getLogger(__name__)

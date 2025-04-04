@@ -23,9 +23,9 @@ from ..._constants import (
 from ...models.services_db import ServiceAccessRightsAtDB, ServiceMetaDataDBGet
 from ...repository.groups import GroupsRepository
 from ...repository.services import ServicesRepository
-from ..dependencies.database import get_repository
-from ..dependencies.director import DirectorApi, get_director_api
-from ..dependencies.services import get_service_from_manifest
+from .._dependencies.database import get_repository
+from .._dependencies.director import DirectorApi, get_director_api
+from .._dependencies.services import get_service_from_manifest
 
 _logger = logging.getLogger(__name__)
 
