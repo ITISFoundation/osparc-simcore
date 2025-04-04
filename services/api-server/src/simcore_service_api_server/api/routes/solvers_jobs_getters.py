@@ -52,7 +52,7 @@ from ...services_http.solver_job_outputs import ResultsTypes, get_solver_output_
 from ...services_http.storage import StorageApi, to_file_api_model
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
-from ..dependencies.database import Engine, get_db_engine
+from ..dependencies.database import get_db_asyncpg_engine
 from ..dependencies.rabbitmq import get_log_check_timeout, get_log_distributor
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver_http import AuthSession, get_webserver_session
@@ -263,7 +263,6 @@ async def get_job_outputs(
     version: VersionStr,
     job_id: JobID,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
-    db_engine: Annotated[Engine, Depends(get_db_engine)],
     async_pg_engine: Annotated[AsyncEngine, Depends(get_db_asyncpg_engine)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
