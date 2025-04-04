@@ -17,7 +17,7 @@ from .utils import get_fastapi_app
 
 _logger = logging.getLogger(__name__)
 
-_DEFAULT_TASK_TIMEOUT: Final[timedelta] = timedelta(minutes=1)
+_DEFAULT_TASK_TIMEOUT: Final[timedelta] | None = None
 _DEFAULT_MAX_RETRIES: Final[NonNegativeInt] = 3
 _DEFAULT_WAIT_BEFORE_RETRY: Final[timedelta] = timedelta(seconds=5)
 
