@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import Depends, FastAPI
 from servicelib.fastapi.dependencies import get_app
 
-from ...services.director import DirectorApi
+from ...infrastructure.director import DirectorApi
 
 
 def get_director_api(
@@ -11,3 +11,6 @@ def get_director_api(
 ) -> DirectorApi:
     director: DirectorApi = app.state.director_api
     return director
+
+
+__all__: tuple[str, ...] = ("DirectorApi",)

@@ -35,7 +35,7 @@ from pydantic import ValidationError
 from servicelib.utils import limited_gather
 
 from .._constants import DIRECTOR_CACHING_TTL
-from .director import DirectorApi
+from ..infrastructure.director import DirectorApi
 from .function_services import get_function_service, is_function_service
 
 _logger = logging.getLogger(__name__)

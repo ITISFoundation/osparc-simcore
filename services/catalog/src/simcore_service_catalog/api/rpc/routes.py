@@ -3,7 +3,7 @@ import logging
 from fastapi import FastAPI
 from models_library.api_schemas_catalog import CATALOG_RPC_NAMESPACE
 
-from ...services.rabbitmq import get_rabbitmq_rpc_server
+from ...infrastructure.rabbitmq import get_rabbitmq_rpc_server
 from . import _services
 
 _logger = logging.getLogger(__name__)

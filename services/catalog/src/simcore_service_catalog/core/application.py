@@ -16,8 +16,8 @@ from .._meta import API_VERSION, API_VTAG, APP_NAME, PROJECT_NAME, SUMMARY
 from ..api.rest.routes import setup_rest_api_routes
 from ..api.rpc.routes import setup_rpc_api_routes
 from ..exceptions.handlers import setup_exception_handlers
+from ..infrastructure.rabbitmq import setup_rabbitmq
 from ..services.function_services import setup_function_services
-from ..services.rabbitmq import setup_rabbitmq
 from .events import create_on_shutdown, create_on_startup
 from .settings import ApplicationSettings
 

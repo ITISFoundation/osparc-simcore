@@ -8,7 +8,7 @@ from servicelib.logging_utils import log_context
 
 from .._meta import APP_FINISHED_BANNER_MSG, APP_STARTED_BANNER_MSG
 from ..db.events import setup_default_product
-from ..services.director import close_director, setup_director
+from ..infrastructure.director import close_director, setup_director
 from .background_tasks import start_registry_sync_task, stop_registry_sync_task
 
 _logger = logging.getLogger(__name__)

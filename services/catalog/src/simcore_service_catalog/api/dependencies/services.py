@@ -16,22 +16,21 @@ from ...core.settings import ApplicationSettings
 from ...db.repositories.groups import GroupsRepository
 from ...db.repositories.services import ServicesRepository
 from ...services import manifest
-from ...services.director import DirectorApi
 from .database import get_repository
-from .director import get_director_api
+from .director import DirectorApi, get_director_api
 
 _logger = logging.getLogger(__name__)
 
 
 def get_default_service_resources(
-    app: Annotated[FastAPI, Depends(get_app)]
+    app: Annotated[FastAPI, Depends(get_app)],
 ) -> ResourcesDict:
     app_settings: ApplicationSettings = app.state.settings
     return app_settings.CATALOG_SERVICES_DEFAULT_RESOURCES
 
 
 def get_default_service_specifications(
-    app: Annotated[FastAPI, Depends(get_app)]
+    app: Annotated[FastAPI, Depends(get_app)],
 ) -> ServiceSpecifications:
     app_settings: ApplicationSettings = app.state.settings
     return app_settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS

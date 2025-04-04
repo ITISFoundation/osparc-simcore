@@ -65,7 +65,7 @@ _director_startup_retry_policy: dict[str, Any] = {
 
 
 def _return_data_or_raise_error(
-    request_func: Callable[..., Awaitable[httpx.Response]]
+    request_func: Callable[..., Awaitable[httpx.Response]],
 ) -> Callable[..., Awaitable[list[Any] | dict[str, Any]]]:
     """
     Creates a context for safe inter-process communication (IPC)
