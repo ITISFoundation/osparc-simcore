@@ -8,7 +8,7 @@
 
 import pytest
 from models_library.api_schemas_catalog.services import ServiceMetaDataPublished
-from simcore_service_catalog.services.function_services import (
+from simcore_service_catalog.service.function_services import (
     is_function_service,
     iter_service_docker_data,
 )

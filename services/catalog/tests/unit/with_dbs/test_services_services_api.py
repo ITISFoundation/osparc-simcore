@@ -20,7 +20,7 @@ from simcore_service_catalog.api.dependencies.director import get_director_api
 from simcore_service_catalog.infrastructure.director import DirectorApi
 from simcore_service_catalog.repository.groups import GroupsRepository
 from simcore_service_catalog.repository.services import ServicesRepository
-from simcore_service_catalog.services import manifest, services_api
+from simcore_service_catalog.service import manifest, services_api
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 pytest_simcore_core_services_selection = [

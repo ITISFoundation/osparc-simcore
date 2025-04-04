@@ -28,7 +28,7 @@ from ..api.rest.routes import setup_rest_api_routes
 from ..api.rpc.routes import setup_rpc_api_routes
 from ..exceptions.handlers import setup_exception_handlers
 from ..infrastructure.rabbitmq import setup_rabbitmq
-from ..services.function_services import setup_function_services
+from ..service.function_services import setup_function_services
 from .settings import ApplicationSettings
 
 _logger = logging.getLogger(__name__)

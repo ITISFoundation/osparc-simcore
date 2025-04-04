@@ -24,7 +24,7 @@ from pydantic import TypeAdapter
 
 from ..._constants import RESPONSE_MODEL_POLICY, SIMCORE_SERVICE_SETTINGS_LABELS
 from ...repository.services import ServicesRepository
-from ...services.function_services import is_function_service
+from ...service.function_services import is_function_service
 from ...utils.service_resources import (
     merge_service_resources_with_user_specs,
     parse_generic_resource,

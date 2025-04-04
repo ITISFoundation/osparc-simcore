@@ -15,7 +15,7 @@ from servicelib.fastapi.dependencies import get_app
 from ...core.settings import ApplicationSettings
 from ...repository.groups import GroupsRepository
 from ...repository.services import ServicesRepository
-from ...services import manifest
+from ...service import manifest
 from .database import get_repository
 from .director import DirectorApi, get_director_api
 

@@ -13,7 +13,7 @@ from packaging.version import Version
 from pytest_mock import MockerFixture, MockType
 from simcore_service_catalog.models.services_db import ReleaseDBGet
 from simcore_service_catalog.repository.services import ServicesRepository
-from simcore_service_catalog.services.compatibility import (
+from simcore_service_catalog.service.compatibility import (
     _get_latest_compatible_version,
     evaluate_service_compatibility_map,
 )

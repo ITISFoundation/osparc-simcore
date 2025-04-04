@@ -21,7 +21,7 @@ from models_library.services_types import ServiceKey, ServiceVersion
 from packaging.version import Version
 from pydantic import ValidationError
 from simcore_service_catalog.api.dependencies.director import get_director_api
-from simcore_service_catalog.services import manifest
+from simcore_service_catalog.service import manifest
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -29,7 +29,7 @@ from ..models.services_db import ServiceAccessRightsAtDB, ServiceMetaDataDBCreat
 from ..repository.groups import GroupsRepository
 from ..repository.projects import ProjectsRepository
 from ..repository.services import ServicesRepository
-from ..services import access_rights
+from ..service import access_rights
 
 _logger = logging.getLogger(__name__)
 

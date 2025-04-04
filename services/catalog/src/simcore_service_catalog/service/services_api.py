@@ -29,7 +29,7 @@ from ..models.services_db import (
     ServiceWithHistoryDBGet,
 )
 from ..repository.services import ServicesRepository
-from ..services import manifest
+from ..service import manifest
 from .compatibility import evaluate_service_compatibility_map
 from .function_services import is_function_service
 

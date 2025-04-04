@@ -15,7 +15,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx.router import MockRouter
 from simcore_service_catalog.api.dependencies.director import get_director_api
 from simcore_service_catalog.infrastructure.director import DirectorApi
-from simcore_service_catalog.services import manifest
+from simcore_service_catalog.service import manifest
 
 
 @pytest.fixture
