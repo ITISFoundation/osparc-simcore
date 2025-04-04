@@ -186,7 +186,7 @@ async def _list_user_projects_access_rights_with_read_access(
         assert isinstance(row.access_rights, dict)  # nosec
         assert isinstance(row.uuid, str)  # nosec
 
-        projects_access_rights.append(row.uuid)
+        projects_access_rights.append(ProjectID(row.uuid))
 
     return projects_access_rights
 
