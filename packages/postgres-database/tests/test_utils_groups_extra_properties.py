@@ -11,6 +11,7 @@ import pytest
 import sqlalchemy
 from aiopg.sa.result import RowProxy
 from faker import Faker
+from models_library.products import ProductName
 from simcore_postgres_database.models.groups import GroupType, groups, user_to_groups
 from simcore_postgres_database.models.groups_extra_properties import (
     groups_extra_properties,
@@ -21,6 +22,7 @@ from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraPropertiesRepo,
 )
 from sqlalchemy import literal_column
+from sqlalchemy.engine.row import Row
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 
@@ -84,7 +86,7 @@ async def test_get(
     connection: aiopg.sa.connection.SAConnection,
     registered_user: RowProxy,
     product_name: str,
-    create_fake_product: Callable[..., Awaitable[RowProxy]],
+    create_fake_product: Callable[[ProductName], Awaitable[Row]],
     create_fake_group_extra_properties: Callable[..., Awaitable[GroupExtraProperties]],
 ):
     with pytest.raises(GroupExtraPropertiesNotFoundError):
@@ -106,7 +108,7 @@ async def test_get_v2(
     asyncpg_engine: AsyncEngine,
     registered_user: RowProxy,
     product_name: str,
-    create_fake_product: Callable[..., Awaitable[RowProxy]],
+    create_fake_product: Callable[[ProductName], Awaitable[Row]],
     create_fake_group_extra_properties: Callable[..., Awaitable[GroupExtraProperties]],
 ):
     with pytest.raises(GroupExtraPropertiesNotFoundError):
@@ -157,7 +159,7 @@ async def test_get_aggregated_properties_for_user_returns_properties_in_expected
     connection: aiopg.sa.connection.SAConnection,
     product_name: str,
     registered_user: RowProxy,
-    create_fake_product: Callable[..., Awaitable[RowProxy]],
+    create_fake_product: Callable[[ProductName], Awaitable[Row]],
     create_fake_group: Callable[..., Awaitable[RowProxy]],
     create_fake_group_extra_properties: Callable[..., Awaitable[GroupExtraProperties]],
     everyone_group_id: int,
@@ -227,7 +229,7 @@ async def test_get_aggregated_properties_for_user_returns_properties_in_expected
     connection: aiopg.sa.connection.SAConnection,
     product_name: str,
     registered_user: RowProxy,
-    create_fake_product: Callable[..., Awaitable[RowProxy]],
+    create_fake_product: Callable[[ProductName], Awaitable[Row]],
     create_fake_group: Callable[..., Awaitable[RowProxy]],
     create_fake_group_extra_properties: Callable[..., Awaitable[GroupExtraProperties]],
     everyone_group_id: int,
@@ -274,7 +276,7 @@ async def test_get_aggregated_properties_for_user_returns_property_values_as_tru
     connection: aiopg.sa.connection.SAConnection,
     product_name: str,
     registered_user: RowProxy,
-    create_fake_product: Callable[..., Awaitable[RowProxy]],
+    create_fake_product: Callable[[ProductName], Awaitable[Row]],
     create_fake_group: Callable[..., Awaitable[RowProxy]],
     create_fake_group_extra_properties: Callable[..., Awaitable[GroupExtraProperties]],
     everyone_group_id: int,
@@ -385,7 +387,7 @@ async def test_get_aggregated_properties_for_user_returns_property_values_as_tru
     connection: aiopg.sa.connection.SAConnection,
     product_name: str,
     registered_user: RowProxy,
-    create_fake_product: Callable[..., Awaitable[RowProxy]],
+    create_fake_product: Callable[[ProductName], Awaitable[Row]],
     create_fake_group: Callable[..., Awaitable[RowProxy]],
     create_fake_group_extra_properties: Callable[..., Awaitable[GroupExtraProperties]],
     everyone_group_id: int,
