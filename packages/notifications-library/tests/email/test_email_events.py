@@ -41,7 +41,7 @@ from notifications_library._email_render import (
     get_user_address,
     render_email_parts,
 )
-from notifications_library._models import ProductData, UserData
+from notifications_library._models import ProductData, SharerData, UserData
 from notifications_library._render import (
     create_render_environment_from_notifications_library,
 )
@@ -186,6 +186,7 @@ async def test_email_event(
     smtp_mock_or_none: MagicMock | None,
     user_data: UserData,
     user_email: EmailStr,
+    sharer_data: SharerData,
     product_data: ProductData,
     product_name: ProductName,
     event_name: str,
@@ -202,6 +203,7 @@ async def test_email_event(
         ),
         event_name=event_name,
         user=user_data,
+        sharer=sharer_data,
         product=product_data,
         # extras
         **event_extra_data,

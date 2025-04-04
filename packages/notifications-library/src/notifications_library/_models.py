@@ -22,6 +22,12 @@ class UserData:
 
 
 @dataclass(frozen=True)
+class SharerData:
+    user_name: str
+    message: str
+
+
+@dataclass(frozen=True)
 class ProductUIData:
     logo_url: str
     strong_color: str
