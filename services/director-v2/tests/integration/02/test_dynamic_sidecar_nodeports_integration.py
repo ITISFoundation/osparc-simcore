@@ -16,7 +16,6 @@ from uuid import uuid4
 
 import aioboto3
 import aiodocker
-import aiopg.sa
 import httpx
 import pytest
 import sqlalchemy as sa
@@ -79,6 +78,7 @@ from simcore_service_director_v2.core.dynamic_services_settings.sidecar import (
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.modules import storage as dv2_modules_storage
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.ext.asyncio import AsyncEngine
 from tenacity import TryAgain
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -293,8 +293,8 @@ def workbench_dynamic_services(
 
 
 @pytest.fixture
-async def db_manager(aiopg_engine: aiopg.sa.engine.Engine) -> DBManager:
-    return DBManager(aiopg_engine)
+async def db_manager(sqlalchemy_async_engine: AsyncEngine) -> DBManager:
+    return DBManager(sqlalchemy_async_engine)
 
 
 def _is_docker_r_clone_plugin_installed() -> bool:

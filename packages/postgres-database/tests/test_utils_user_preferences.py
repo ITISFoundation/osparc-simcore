@@ -1,12 +1,10 @@
 # pylint: disable=inconsistent-return-statements
 # pylint: disable=redefined-outer-name
 
-from collections.abc import Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Any
 
 import pytest
-from aiopg.sa.connection import SAConnection
-from aiopg.sa.result import RowProxy
 from faker import Faker
 from pytest_simcore.helpers.faker_factories import random_user
 from simcore_postgres_database.models.users import UserRole, users
@@ -15,6 +13,8 @@ from simcore_postgres_database.utils_user_preferences import (
     FrontendUserPreferencesRepo,
     UserServicesUserPreferencesRepo,
 )
+from sqlalchemy.engine.row import Row
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 
 @pytest.fixture
@@ -28,7 +28,9 @@ def preference_two() -> str:
 
 
 @pytest.fixture
-async def product_name(create_fake_product: Callable[..., Awaitable[RowProxy]]) -> str:
+async def product_name(
+    create_fake_product: Callable[[str], Awaitable[Row]],
+) -> str:
     product = await create_fake_product("fake-product")
     return product[0]
 
@@ -38,8 +40,16 @@ def preference_repo(request: pytest.FixtureRequest) -> type[BasePreferencesRepo]
     return request.param
 
 
+@pytest.fixture
+async def connection(
+    asyncpg_engine: AsyncEngine,
+) -> AsyncIterator[AsyncConnection]:
+    async with asyncpg_engine.begin() as connection:
+        yield connection
+
+
 async def _assert_save_get_preference(
-    connection: SAConnection,
+    connection: AsyncConnection,
     preference_repo: type[BasePreferencesRepo],
     *,
     user_id: int,
@@ -65,7 +75,7 @@ async def _assert_save_get_preference(
 
 
 async def _assert_preference_not_saved(
-    connection: SAConnection,
+    connection: AsyncConnection,
     preference_repo: type[BasePreferencesRepo],
     *,
     user_id: int,
@@ -92,7 +102,7 @@ def _get_random_payload(
     pytest.fail(f"Did not define a casa for {preference_repo=}. Please add one.")
 
 
-async def _get_user_id(connection: SAConnection, faker: Faker) -> int:
+async def _get_user_id(connection: AsyncConnection, faker: Faker) -> int:
     data = random_user(role=faker.random_element(elements=UserRole))
     user_id = await connection.scalar(
         users.insert().values(**data).returning(users.c.id)
@@ -102,7 +112,7 @@ async def _get_user_id(connection: SAConnection, faker: Faker) -> int:
 
 
 async def test_user_preference_repo_workflow(
-    connection: SAConnection,
+    connection: AsyncConnection,
     preference_repo: type[BasePreferencesRepo],
     preference_one: str,
     product_name: str,
@@ -144,7 +154,7 @@ async def test_user_preference_repo_workflow(
 
 
 async def test__same_preference_name_product_name__different_users(
-    connection: SAConnection,
+    connection: AsyncConnection,
     preference_repo: type[BasePreferencesRepo],
     preference_one: str,
     product_name: str,
@@ -193,8 +203,8 @@ async def test__same_preference_name_product_name__different_users(
 
 
 async def test__same_user_preference_name__different_product_name(
-    connection: SAConnection,
-    create_fake_product: Callable[..., Awaitable[RowProxy]],
+    connection: AsyncConnection,
+    create_fake_product: Callable[[str], Awaitable[Row]],
     preference_repo: type[BasePreferencesRepo],
     preference_one: str,
     faker: Faker,
@@ -244,7 +254,7 @@ async def test__same_user_preference_name__different_product_name(
 
 
 async def test__same_product_name_user__different_preference_name(
-    connection: SAConnection,
+    connection: AsyncConnection,
     preference_repo: type[BasePreferencesRepo],
     preference_one: str,
     preference_two: str,
