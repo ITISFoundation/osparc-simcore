@@ -50,7 +50,6 @@ from simcore_postgres_database.models.workspaces_access_rights import (
 )
 from simcore_postgres_database.storage_models import file_meta_data, user_to_groups
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection
-from simcore_postgres_database.utils_sql import assemble_array_groups
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ...exceptions.errors import InvalidFileIdentifierError
@@ -89,112 +88,104 @@ def _aggregate_access_rights(
         return AccessRights.none()
 
 
-access_rights_subquery = (
-    sa.select(
-        project_to_groups.c.project_uuid,
-        sa.func.jsonb_object_agg(
-            project_to_groups.c.gid,
-            sa.func.jsonb_build_object(
-                "read",
-                project_to_groups.c.read,
-                "write",
-                project_to_groups.c.write,
-                "delete",
-                project_to_groups.c.delete,
-            ),
+def my_private_workspace_access_rights_subquery(user_group_ids: list[GroupID]):
+    return (
+        sa.select(
+            project_to_groups.c.project_uuid,
+            sa.func.jsonb_object_agg(
+                project_to_groups.c.gid,
+                sa.func.jsonb_build_object(
+                    "read",
+                    project_to_groups.c.read,
+                    "write",
+                    project_to_groups.c.write,
+                    "delete",
+                    project_to_groups.c.delete,
+                ),
+            ).label("access_rights"),
         )
-        .filter(project_to_groups.c.read)  # Filters out entries where "read" is False
-        .label("access_rights"),
-    ).group_by(project_to_groups.c.project_uuid)
-).subquery("access_rights_subquery")
-
-
-workspace_access_rights_subquery = (
-    sa.select(
-        workspaces_access_rights.c.workspace_id,
-        sa.func.jsonb_object_agg(
-            workspaces_access_rights.c.gid,
-            sa.func.jsonb_build_object(
-                "read",
-                workspaces_access_rights.c.read,
-                "write",
-                workspaces_access_rights.c.write,
-                "delete",
-                workspaces_access_rights.c.delete,
-            ),
+        .where(
+            (project_to_groups.c.read)  # Filters out entries where "read" is False
+            & (
+                project_to_groups.c.gid.in_(user_group_ids)
+            )  # Filters gid to be in user_groups
         )
-        .filter(workspaces_access_rights.c.read)
-        .label("access_rights"),
-    ).group_by(workspaces_access_rights.c.workspace_id)
-).subquery("workspace_access_rights_subquery")
+        .group_by(project_to_groups.c.project_uuid)
+    ).subquery("my_access_rights_subquery")
 
 
-async def _list_projects_access_rights(
+def my_shared_workspace_access_rights_subquery(user_group_ids: list[GroupID]):
+    return (
+        sa.select(
+            workspaces_access_rights.c.workspace_id,
+            sa.func.jsonb_object_agg(
+                workspaces_access_rights.c.gid,
+                sa.func.jsonb_build_object(
+                    "read",
+                    workspaces_access_rights.c.read,
+                    "write",
+                    workspaces_access_rights.c.write,
+                    "delete",
+                    workspaces_access_rights.c.delete,
+                ),
+            ).label("access_rights"),
+        )
+        .where(
+            (
+                workspaces_access_rights.c.read
+            )  # Filters out entries where "read" is False
+            & (
+                workspaces_access_rights.c.gid.in_(user_group_ids)
+            )  # Filters gid to be in user_groups
+        )
+        .group_by(workspaces_access_rights.c.workspace_id)
+    ).subquery("my_workspace_access_rights_subquery")
+
+
+async def _list_user_projects_access_rights_with_read_access(
     connection: AsyncConnection, user_id: UserID
-) -> dict[ProjectID, AccessRights]:
+) -> list[ProjectID]:
     """
     Returns access-rights of user (user_id) over all OWNED or SHARED projects
     """
 
     user_group_ids: list[GroupID] = await _get_user_groups_ids(connection, user_id)
+    _my_access_rights_subquery = my_private_workspace_access_rights_subquery(
+        user_group_ids
+    )
 
     private_workspace_query = (
         sa.select(
             projects.c.uuid,
-            access_rights_subquery.c.access_rights,
         )
-        .select_from(projects.join(access_rights_subquery, isouter=True))
-        .where(
-            (
-                (projects.c.prj_owner == user_id)
-                | sa.text(
-                    f"jsonb_exists_any(access_rights_subquery.access_rights, {assemble_array_groups(user_group_ids)})"
-                )
-            )
-            & (projects.c.workspace_id.is_(None))
-        )
+        .select_from(projects.join(_my_access_rights_subquery))
+        .where(projects.c.workspace_id.is_(None))
+    )
+
+    _my_workspace_access_rights_subquery = my_shared_workspace_access_rights_subquery(
+        user_group_ids
     )
 
     shared_workspace_query = (
-        sa.select(
-            projects.c.uuid,
-            workspace_access_rights_subquery.c.access_rights,
-        )
+        sa.select(projects.c.uuid)
         .select_from(
             projects.join(
-                workspace_access_rights_subquery,
+                _my_workspace_access_rights_subquery,
                 projects.c.workspace_id
-                == workspace_access_rights_subquery.c.workspace_id,
+                == _my_workspace_access_rights_subquery.c.workspace_id,
             )
         )
-        .where(
-            (
-                sa.text(
-                    f"jsonb_exists_any(workspace_access_rights_subquery.access_rights, {assemble_array_groups(user_group_ids)})"
-                )
-            )
-            & (projects.c.workspace_id.is_not(None))
-        )
+        .where(projects.c.workspace_id.is_not(None))
     )
 
     combined_query = sa.union_all(private_workspace_query, shared_workspace_query)
 
-    projects_access_rights = {}
+    projects_access_rights = []
 
     async for row in await connection.stream(combined_query):
-        assert isinstance(row.access_rights, dict)  # nosec
         assert isinstance(row.uuid, str)  # nosec
 
-        if row.access_rights:
-            # NOTE: access_rights should be direclty filtered from result in stm instead calling again user_group_ids
-            projects_access_rights[ProjectID(row.uuid)] = _aggregate_access_rights(
-                row.access_rights, user_group_ids
-            )
-
-        else:
-            # backwards compatibility
-            # - no access_rights defined BUT project is owned
-            projects_access_rights[ProjectID(row.uuid)] = AccessRights.all()
+        projects_access_rights.append(ProjectID(row.uuid))
 
     return projects_access_rights
 
@@ -213,44 +204,40 @@ class AccessLayerRepository(BaseRepository):
 
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             user_group_ids = await _get_user_groups_ids(conn, user_id)
+            _my_access_rights_subquery = my_private_workspace_access_rights_subquery(
+                user_group_ids
+            )
 
             private_workspace_query = (
                 sa.select(
                     projects.c.prj_owner,
-                    access_rights_subquery.c.access_rights,
+                    _my_access_rights_subquery.c.access_rights,
                 )
-                .select_from(projects.join(access_rights_subquery, isouter=True))
+                .select_from(projects.join(_my_access_rights_subquery))
                 .where(
                     (projects.c.uuid == f"{project_id}")
-                    & (
-                        (projects.c.prj_owner == user_id)
-                        | sa.text(
-                            f"jsonb_exists_any(access_rights_subquery.access_rights, {assemble_array_groups(user_group_ids)})"
-                        )
-                    )
                     & (projects.c.workspace_id.is_(None))
                 )
+            )
+
+            _my_workspace_access_rights_subquery = (
+                my_shared_workspace_access_rights_subquery(user_group_ids)
             )
 
             shared_workspace_query = (
                 sa.select(
                     projects.c.prj_owner,
-                    workspace_access_rights_subquery.c.access_rights,
+                    _my_workspace_access_rights_subquery.c.access_rights,
                 )
                 .select_from(
                     projects.join(
-                        workspace_access_rights_subquery,
+                        _my_workspace_access_rights_subquery,
                         projects.c.workspace_id
-                        == workspace_access_rights_subquery.c.workspace_id,
+                        == _my_workspace_access_rights_subquery.c.workspace_id,
                     )
                 )
                 .where(
                     (projects.c.uuid == f"{project_id}")
-                    & (
-                        sa.text(
-                            f"jsonb_exists_any(workspace_access_rights_subquery.access_rights, {assemble_array_groups(user_group_ids)})"
-                        )
-                    )
                     & (projects.c.workspace_id.is_not(None))
                 )
             )
@@ -358,5 +345,6 @@ class AccessLayerRepository(BaseRepository):
     ) -> list[ProjectID]:
         """Returns a list of projects where user has granted read-access"""
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
-            projects_access_rights = await _list_projects_access_rights(conn, user_id)
-        return [pid for pid, access in projects_access_rights.items() if access.read]
+            return await _list_user_projects_access_rights_with_read_access(
+                conn, user_id
+            )
