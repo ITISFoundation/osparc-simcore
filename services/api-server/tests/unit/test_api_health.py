@@ -30,10 +30,10 @@ async def test_check_service_health(
 
 async def test_get_service_state(
     client: AsyncClient,
-    mocked_catalog_service_api_base: MockRouter,
-    mocked_directorv2_service_api_base: MockRouter,
-    mocked_storage_service_api_base: MockRouter,
-    mocked_webserver_service_api_base: MockRouter,
+    mocked_catalog_rest_api_base: MockRouter,
+    mocked_directorv2_rest_api_base: MockRouter,
+    mocked_storage_rest_api_base: MockRouter,
+    mocked_webserver_rest_api_base: MockRouter,
 ):
     response = await client.get(f"{API_VTAG}/state")
     assert response.status_code == status.HTTP_200_OK

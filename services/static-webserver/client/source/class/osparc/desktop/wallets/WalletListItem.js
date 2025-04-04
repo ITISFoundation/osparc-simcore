@@ -280,9 +280,9 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
       if (found) {
         const role = this.getChildControl("role");
         if (found["write"]) {
-          role.setValue(osparc.data.Roles.WALLET[2].label);
+          role.setValue(osparc.data.Roles.WALLET["write"].label);
         } else if (found["read"]) {
-          role.setValue(osparc.data.Roles.WALLET[1].label);
+          role.setValue(osparc.data.Roles.WALLET["read"].label);
         }
       }
     },

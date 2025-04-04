@@ -23,8 +23,8 @@ class MockBackendRouters(NamedTuple):
 
 @pytest.fixture
 def mocked_backend(
-    mocked_webserver_service_api_base: MockRouter,
-    mocked_catalog_service_api_base: MockRouter,
+    mocked_webserver_rest_api_base: MockRouter,
+    mocked_catalog_rest_api_base: MockRouter,
     project_tests_dir: Path,
 ) -> MockBackendRouters:
     mock_name = "on_list_jobs.json"
@@ -35,7 +35,7 @@ def mocked_backend(
     capture = captures[0]
     assert capture.host == "catalog"
     assert capture.name == "get_service"
-    mocked_catalog_service_api_base.request(
+    mocked_catalog_rest_api_base.request(
         method=capture.method,
         path=capture.path,
         name=capture.name,
@@ -47,7 +47,7 @@ def mocked_backend(
     capture = captures[1]
     assert capture.host == "webserver"
     assert capture.name == "list_projects"
-    mocked_webserver_service_api_base.request(
+    mocked_webserver_rest_api_base.request(
         method=capture.method,
         name=capture.name,
         path=capture.path,
@@ -57,8 +57,8 @@ def mocked_backend(
     )
 
     return MockBackendRouters(
-        catalog=mocked_catalog_service_api_base,
-        webserver=mocked_webserver_service_api_base,
+        catalog=mocked_catalog_rest_api_base,
+        webserver=mocked_webserver_rest_api_base,
     )
 
 

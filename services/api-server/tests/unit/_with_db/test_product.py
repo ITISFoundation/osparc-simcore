@@ -26,7 +26,7 @@ from simcore_service_api_server.models.schemas.model_adapter import (
 
 async def test_product_webserver(
     client: httpx.AsyncClient,
-    mocked_webserver_service_api_base: respx.MockRouter,
+    mocked_webserver_rest_api_base: respx.MockRouter,
     create_fake_api_keys: Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB, None]],
     faker: Faker,
 ) -> None:
@@ -64,7 +64,7 @@ async def test_product_webserver(
             ),
         )
 
-    wallet_get_mock = mocked_webserver_service_api_base.get(
+    wallet_get_mock = mocked_webserver_rest_api_base.get(
         path__regex=r"/wallets/(?P<wallet_id>[-+]?\d+)"
     ).mock(side_effect=_check_key_product_compatibility)
 
@@ -80,7 +80,7 @@ async def test_product_webserver(
 
 async def test_product_catalog(
     client: httpx.AsyncClient,
-    mocked_catalog_service_api_base: respx.MockRouter,
+    mocked_catalog_rest_api_base: respx.MockRouter,
     create_fake_api_keys: Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB, None]],
 ) -> None:
     assert client
@@ -99,7 +99,7 @@ async def test_product_catalog(
         assert key.product_name == received_product
         return httpx.Response(status_code=status.HTTP_200_OK)
 
-    respx_mock = mocked_catalog_service_api_base.get(
+    respx_mock = mocked_catalog_rest_api_base.get(
         r"/v0/services/simcore%2Fservices%2Fcomp%2Fisolve/2.0.24"
     ).mock(side_effect=_get_service_side_effect)
 

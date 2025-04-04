@@ -53,7 +53,7 @@ qx.Class.define("osparc.ui.list.MemberListItem", {
       }
 
       if (options.includes("promoteToMember")) {
-        const promoteButton = new qx.ui.menu.Button(this.tr("Promote to ") + osparc.data.Roles.ORG[1].label);
+        const promoteButton = new qx.ui.menu.Button(this.tr("Promote to ") + osparc.data.Roles.ORG["read"].label);
         promoteButton.addListener("execute", () => {
           this.fireDataEvent("promoteToMember", {
             id: this.getKey(),
@@ -63,7 +63,7 @@ qx.Class.define("osparc.ui.list.MemberListItem", {
         menu.add(promoteButton);
       }
       if (options.includes("promoteToManager")) {
-        const promoteButton = new qx.ui.menu.Button(this.tr("Promote to ") + osparc.data.Roles.ORG[2].label);
+        const promoteButton = new qx.ui.menu.Button(this.tr("Promote to ") + osparc.data.Roles.ORG["write"].label);
         promoteButton.addListener("execute", () => {
           this.fireDataEvent("promoteToManager", {
             id: this.getKey(),
@@ -73,7 +73,7 @@ qx.Class.define("osparc.ui.list.MemberListItem", {
         menu.add(promoteButton);
       }
       if (options.includes("promoteToAdministrator")) {
-        const promoteButton = new qx.ui.menu.Button(this.tr("Promote to ") + osparc.data.Roles.ORG[3].label);
+        const promoteButton = new qx.ui.menu.Button(this.tr("Promote to ") + osparc.data.Roles.ORG["delete"].label);
         promoteButton.addListener("execute", () => {
           this.fireDataEvent("promoteToAdministrator", {
             id: this.getKey(),
@@ -83,7 +83,7 @@ qx.Class.define("osparc.ui.list.MemberListItem", {
         menu.add(promoteButton);
       }
       if (options.includes("demoteToUser")) {
-        const demoteButton = new qx.ui.menu.Button(this.tr("Demote to ") + osparc.data.Roles.ORG[0].label);
+        const demoteButton = new qx.ui.menu.Button(this.tr("Demote to ") + osparc.data.Roles.ORG["noRead"].label);
         demoteButton.addListener("execute", () => {
           this.fireDataEvent("demoteToUser", {
             id: this.getKey(),
@@ -93,7 +93,7 @@ qx.Class.define("osparc.ui.list.MemberListItem", {
         menu.add(demoteButton);
       }
       if (options.includes("demoteToMember")) {
-        const demoteButton = new qx.ui.menu.Button(this.tr("Demote to ") + osparc.data.Roles.ORG[1].label);
+        const demoteButton = new qx.ui.menu.Button(this.tr("Demote to ") + osparc.data.Roles.ORG["read"].label);
         demoteButton.addListener("execute", () => {
           this.fireDataEvent("demoteToMember", {
             id: this.getKey(),
@@ -103,7 +103,7 @@ qx.Class.define("osparc.ui.list.MemberListItem", {
         menu.add(demoteButton);
       }
       if (options.includes("demoteToManager")) {
-        const demoteButton = new qx.ui.menu.Button(this.tr("Demote to ") + osparc.data.Roles.ORG[2].label);
+        const demoteButton = new qx.ui.menu.Button(this.tr("Demote to ") + osparc.data.Roles.ORG["write"].label);
         demoteButton.addListener("execute", () => {
           this.fireDataEvent("demoteToManager", {
             id: this.getKey(),
@@ -119,13 +119,13 @@ qx.Class.define("osparc.ui.list.MemberListItem", {
 
       if (options.includes("removeMember")) {
         const accessRights = this.getAccessRights();
-        let currentRole = osparc.data.Roles.ORG[0];
+        let currentRole = osparc.data.Roles.ORG["noRead"];
         if (accessRights.getDelete()) {
-          currentRole = osparc.data.Roles.ORG[3];
+          currentRole = osparc.data.Roles.ORG["delete"];
         } else if (accessRights.getWrite()) {
-          currentRole = osparc.data.Roles.ORG[2];
+          currentRole = osparc.data.Roles.ORG["write"];
         } else if (accessRights.getRead()) {
-          currentRole = osparc.data.Roles.ORG[1];
+          currentRole = osparc.data.Roles.ORG["read"];
         }
         const removeButton = new qx.ui.menu.Button(this.tr("Remove ") + currentRole.label).set({
           textColor: "danger-red"

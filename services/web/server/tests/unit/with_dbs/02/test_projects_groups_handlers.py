@@ -9,6 +9,10 @@ from http import HTTPStatus
 
 import pytest
 from aiohttp.test_utils import TestClient
+from models_library.api_schemas_webserver.projects_access_rights import (
+    ProjectShareAccepted,
+)
+from pytest_mock import MockType
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
@@ -18,8 +22,10 @@ from simcore_service_webserver.projects.models import ProjectDict
 
 
 @pytest.fixture
-def mock_catalog_api_get_services_for_user_in_product(mocker: MockerFixture):
-    mocker.patch(
+def mock_catalog_api_get_services_for_user_in_product(
+    mocker: MockerFixture,
+) -> MockType:
+    return mocker.patch(
         "simcore_service_webserver.projects._controller.projects_rest.catalog_service.get_services_for_user_in_product",
         spec=True,
         return_value=[],
@@ -27,8 +33,8 @@ def mock_catalog_api_get_services_for_user_in_product(mocker: MockerFixture):
 
 
 @pytest.fixture
-def mock_project_uses_available_services(mocker: MockerFixture):
-    mocker.patch(
+def mock_project_uses_available_services(mocker: MockerFixture) -> MockType:
+    return mocker.patch(
         "simcore_service_webserver.projects._controller.projects_rest.project_uses_available_services",
         spec=True,
         return_value=True,
@@ -39,13 +45,13 @@ def mock_project_uses_available_services(mocker: MockerFixture):
     "Driving test for https://github.com/ITISFoundation/osparc-issues/issues/1547"
 )
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
-async def test_projects_groups_full_workflow(
+async def test_projects_groups_full_workflow(  # noqa: PLR0915
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     expected: HTTPStatus,
-    mock_catalog_api_get_services_for_user_in_product,
-    mock_project_uses_available_services,
+    mock_catalog_api_get_services_for_user_in_product: MockType,
+    mock_project_uses_available_services: MockType,
 ):
     assert client.app
     # check the default project permissions
@@ -251,3 +257,102 @@ async def test_projects_groups_full_workflow(
                 "delete": True,
             },
         }
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_share_project(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    mock_catalog_api_get_services_for_user_in_product: MockType,
+    mock_project_uses_available_services: MockType,
+):
+    assert client.app
+
+    # Share the project with a fake email
+    url = client.app.router["share_project"].url_for(
+        project_id=f"{user_project['uuid']}"
+    )
+    resp = await client.post(
+        f"{url}",
+        json={
+            "shareeEmail": "sharee@email.com",
+            "sharerMessage": "hi there, this is the project we talked about",
+            "read": True,
+            "write": False,
+            "delete": False,
+        },
+    )
+    data, error = await assert_status(resp, status.HTTP_202_ACCEPTED)
+    shared = ProjectShareAccepted.model_validate(data)
+    assert shared.sharee_email == "sharee@email.com"
+    assert shared.confirmation_link
+    assert not error
+
+    # Verify that only logged_user["primary_gid"] has access to the project
+    url = client.app.router["list_project_groups"].url_for(
+        project_id=f"{user_project['uuid']}"
+    )
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert len(data) == 1
+    assert data[0]["gid"] == logged_user["primary_gid"]
+    assert data[0]["read"] is True
+    assert data[0]["write"] is True
+    assert data[0]["delete"] is True
+
+    # check an invalid
+    url = client.app.router["share_project"].url_for(
+        project_id=f"{user_project['uuid']}"
+    )
+    resp = await client.post(
+        f"{url}",
+        json={
+            "shareeEmail": "sharee@email.com",
+            # invalid access rights combination
+            "read": True,
+            "write": False,
+            "delete": True,
+        },
+    )
+    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+
+@pytest.mark.parametrize(
+    "user_role,expected_status",
+    [
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
+        (UserRole.USER, status.HTTP_202_ACCEPTED),
+        (UserRole.TESTER, status.HTTP_202_ACCEPTED),
+        (UserRole.ADMIN, status.HTTP_202_ACCEPTED),
+    ],
+)
+async def test_share_project_with_roles(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    mock_catalog_api_get_services_for_user_in_product: MockType,
+    mock_project_uses_available_services: MockType,
+    user_role: UserRole,
+    expected_status: HTTPStatus,
+):
+    assert client.app
+
+    assert logged_user["role"] == user_role.value
+
+    # Attempt to share the project
+    url = client.app.router["share_project"].url_for(
+        project_id=f"{user_project['uuid']}"
+    )
+    resp = await client.post(
+        f"{url}",
+        json={
+            "shareeEmail": "sharee@email.com",
+            "sharerMessage": "Sharing project with role test",
+            "read": True,
+            "write": False,
+            "delete": False,
+        },
+    )
+    await assert_status(resp, expected_status)

@@ -12,6 +12,7 @@ import pytest
 from faker import Faker
 from models_library.basic_regex import UUID_RE_BASE
 from pydantic import TypeAdapter
+from pytest_mock import MockType
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
 from respx import MockRouter
 from servicelib.common_headers import (
@@ -32,7 +33,8 @@ class MockedBackendApiDict(TypedDict):
 
 @pytest.fixture
 def mocked_backend_services_apis_for_delete_non_existing_project(
-    mocked_webserver_service_api: MockRouter,
+    mocked_webserver_rest_api: MockRouter,
+    mocked_webserver_rpc_api: dict[str, MockType],
     project_tests_dir: Path,
 ) -> MockedBackendApiDict:
     mock_name = "delete_project_not_found.json"
@@ -49,12 +51,12 @@ def mocked_backend_services_apis_for_delete_non_existing_project(
             status_code=capture.status_code, json=capture.response_body
         )
 
-    mocked_webserver_service_api.delete(
+    mocked_webserver_rest_api.delete(
         path__regex=rf"/projects/(?P<project_id>{UUID_RE_BASE})$",
         name="delete_project",
     ).mock(side_effect=_response)
 
-    return MockedBackendApiDict(webserver=mocked_webserver_service_api, catalog=None)
+    return MockedBackendApiDict(webserver=mocked_webserver_rest_api, catalog=None)
 
 
 @pytest.mark.acceptance_test(
@@ -84,8 +86,9 @@ async def test_delete_non_existing_solver_job(
 
 @pytest.fixture
 def mocked_backend_services_apis_for_create_and_delete_solver_job(
-    mocked_webserver_service_api: MockRouter,
-    mocked_catalog_service_api: MockRouter,
+    mocked_webserver_rest_api: MockRouter,
+    mocked_webserver_rpc_api: dict[str, MockType],
+    mocked_catalog_rest_api: MockRouter,
     project_tests_dir: Path,
 ) -> MockedBackendApiDict:
     mock_name = "on_create_job.json"
@@ -98,7 +101,7 @@ def mocked_backend_services_apis_for_create_and_delete_solver_job(
     capture = captures[0]
     assert capture.host == "catalog"
     assert capture.method == "GET"
-    mocked_catalog_service_api.request(
+    mocked_catalog_rest_api.request(
         method=capture.method, path=capture.path, name="get_service"  # GET service
     ).respond(status_code=capture.status_code, json=capture.response_body)
 
@@ -106,14 +109,14 @@ def mocked_backend_services_apis_for_create_and_delete_solver_job(
     assert capture.host == "webserver"
     assert capture.method == "DELETE"
 
-    mocked_webserver_service_api.delete(
+    mocked_webserver_rest_api.delete(
         path__regex=rf"/projects/(?P<project_id>{UUID_RE_BASE})$",
         name="delete_project",
     ).respond(status_code=capture.status_code, json=capture.response_body)
 
     return MockedBackendApiDict(
-        catalog=mocked_catalog_service_api,
-        webserver=mocked_webserver_service_api,
+        catalog=mocked_catalog_rest_api,
+        webserver=mocked_webserver_rest_api,
     )
 
 

@@ -18,7 +18,7 @@ from ....security.api import check_password, encrypt_password
 from ....users import api as users_service
 from ....utils import HOUR
 from ....utils_rate_limiting import global_rate_limit_route
-from ... import _confirmation_service
+from ... import _confirmation_service, _confirmation_web
 from ..._constants import (
     MSG_CANT_SEND_MAIL,
     MSG_CHANGE_EMAIL_REQUESTED,
@@ -187,7 +187,9 @@ async def initiate_reset_password(request: web.Request):
             )
 
             # Produce a link so that the front-end can hit `complete_reset_password`
-            link = _confirmation_service.make_confirmation_link(request, confirmation)
+            link = _confirmation_web.make_confirmation_link(
+                request, confirmation["code"]
+            )
 
             # primary reset email with a URL and the normal instructions.
             await send_email_from_template(
@@ -249,7 +251,7 @@ async def initiate_change_email(request: web.Request):
     confirmation = await db.create_confirmation(
         user_id=user["id"], action="CHANGE_EMAIL", data=request_body.email
     )
-    link = _confirmation_service.make_confirmation_link(request, confirmation)
+    link = _confirmation_web.make_confirmation_link(request, confirmation["code"])
     try:
         await send_email_from_template(
             request,

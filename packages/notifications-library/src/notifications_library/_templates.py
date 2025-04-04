@@ -10,7 +10,7 @@ import notifications_library
 from aiofiles.os import wrap as sync_to_async
 from models_library.products import ProductName
 
-from ._db import TemplatesRepo
+from ._repository import TemplatesRepo
 
 _logger = logging.getLogger(__name__)
 

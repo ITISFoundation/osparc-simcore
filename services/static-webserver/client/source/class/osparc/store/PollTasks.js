@@ -33,8 +33,7 @@ qx.Class.define("osparc.store.PollTasks", {
       return osparc.data.Resources.get("tasks")
         .then(tasksData => {
           tasksData.forEach(taskData => {
-            const interval = 1000;
-            this.__addTask(taskData, interval);
+            this.__addTask(taskData);
           });
         })
         .catch(err => console.error(err));
@@ -55,7 +54,7 @@ qx.Class.define("osparc.store.PollTasks", {
       });
     },
 
-    removeTask: function(task) {
+    __removeTask: function(task) {
       const tasks = this.getTasks();
       const index = tasks.findIndex(t => t.getTaskId() === task.getTaskId());
       if (index > -1) {
@@ -63,11 +62,13 @@ qx.Class.define("osparc.store.PollTasks", {
       }
     },
 
-    __addTask: function(taskData, interval = 1000) {
+    __addTask: function(taskData, interval) {
       const tasks = this.getTasks();
       const index = tasks.findIndex(t => t.getTaskId() === taskData["task_id"]);
       if (index === -1) {
         const task = new osparc.data.PollTask(taskData, interval);
+        task.addListener("resultReceived", () => this.__removeTask(task), this);
+        task.addListener("taskAborted", () => this.__removeTask(task), this);
         tasks.push(task);
         return task;
       }

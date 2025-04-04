@@ -42,9 +42,9 @@ openapi_modules = [
         "_nih_sparc",
         "_nih_sparc_redirections",
         "_projects",
+        "_projects_access_rights",
         "_projects_comments",
         "_projects_folders",
-        "_projects_groups",
         "_projects_metadata",
         "_projects_nodes",
         "_projects_nodes_pricing_unit",  # after _projects_nodes

@@ -8,11 +8,8 @@ Codes have expiration date (duration time is configurable)
 
 import logging
 from datetime import datetime
-from urllib.parse import quote
 
-from aiohttp import web
 from models_library.users import UserID
-from yarl import URL
 
 from ._login_repository_legacy import (
     ActionLiteralStr,
@@ -54,19 +51,6 @@ def get_expiration_date(
 ) -> datetime:
     lifetime = cfg.get_confirmation_lifetime(confirmation["action"])
     return confirmation["created_at"] + lifetime
-
-
-def _url_for_confirmation(app: web.Application, code: str) -> URL:
-    # NOTE: this is in a query parameter, and can contain ? for example.
-    safe_code = quote(code, safe="")
-    return app.router["auth_confirmation"].url_for(code=safe_code)
-
-
-def make_confirmation_link(
-    request: web.Request, confirmation: ConfirmationTokenDict
-) -> str:
-    link = _url_for_confirmation(request.app, code=confirmation["code"])
-    return f"{request.scheme}://{request.host}{link}"
 
 
 def is_confirmation_expired(cfg: LoginOptions, confirmation: ConfirmationTokenDict):

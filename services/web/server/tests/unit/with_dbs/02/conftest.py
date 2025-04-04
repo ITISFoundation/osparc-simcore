@@ -270,7 +270,7 @@ def app_environment(
 ) -> EnvVarsDict:
     envs_plugins = setenvs_from_dict(
         monkeypatch,
-        {},
+        {"WEBSERVER_DEV_FEATURES_ENABLED": "1"},
     )
     return app_environment | envs_plugins
 

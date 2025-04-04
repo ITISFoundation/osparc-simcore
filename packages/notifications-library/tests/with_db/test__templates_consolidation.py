@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from notifications_library._db import TemplatesRepo
+from notifications_library._repository import TemplatesRepo
 from notifications_library._templates import _print_tree, consolidate_templates
 from sqlalchemy.ext.asyncio.engine import AsyncEngine
 
