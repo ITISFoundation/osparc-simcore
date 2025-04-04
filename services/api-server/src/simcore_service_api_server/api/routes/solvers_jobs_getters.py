@@ -18,6 +18,7 @@ from pydantic import NonNegativeInt
 from pydantic.types import PositiveInt
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from servicelib.logging_utils import log_context
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..._service_solvers import SolverService
 from ...exceptions.custom_errors import InsufficientCreditsError, MissingWalletError
@@ -263,6 +264,7 @@ async def get_job_outputs(
     job_id: JobID,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     db_engine: Annotated[Engine, Depends(get_db_engine)],
+    async_pg_engine: Annotated[AsyncEngine, Depends(get_db_asyncpg_engine)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
 ):
@@ -289,7 +291,7 @@ async def get_job_outputs(
         user_id=user_id,
         project_uuid=job_id,
         node_uuid=UUID(node_ids[0]),
-        db_engine=db_engine,
+        db_engine=async_pg_engine,
     )
 
     results: dict[str, ArgumentTypes] = {}

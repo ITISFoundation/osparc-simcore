@@ -12,6 +12,7 @@ from simcore_postgres_database.utils_aiopg import (
     raise_if_migration_not_ready,
 )
 from simcore_postgres_database.utils_aiosqlalchemy import get_pg_engine_stateinfo
+from sqlalchemy.ext.asyncio import AsyncEngine
 from tenacity import retry
 
 from .._meta import PROJECT_NAME
@@ -81,5 +82,5 @@ async def asyncpg_close_db_connection(app: FastAPI) -> None:
             await engine.dispose()
 
 
-def get_asyncpg_engine(app: FastAPI):
+def get_asyncpg_engine(app: FastAPI) -> AsyncEngine:
     return app.state.asyncpg_engine
