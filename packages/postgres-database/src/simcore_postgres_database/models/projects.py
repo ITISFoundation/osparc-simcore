@@ -171,13 +171,19 @@ projects = sa.Table(
         doc="DEPRECATED: Read/write/delete access rights of each group (gid) on this project",
     ),
     ### INDEXES ----------------------------
-    sa.Index("idx_projects_type", "type"),
     sa.Index(
         "idx_projects_last_change_date_desc",
         "last_change_date",
         postgresql_using="btree",
         postgresql_ops={"last_change_date": "DESC"},
     ),
+)
+
+# We define the partial index
+sa.Index(
+    "ix_projects_partial_type",
+    projects.c.type,
+    postgresql_where=(projects.c.type == ProjectType.TEMPLATE),
 )
 
 

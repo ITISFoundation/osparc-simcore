@@ -1,15 +1,16 @@
 """add indexes
 
-Revision ID: aa2c85e8a66a
+Revision ID: cf8f743fd0b7
 Revises: 48604dfdc5f4
-Create Date: 2025-04-03 15:45:02.586547+00:00
+Create Date: 2025-04-04 09:46:38.853675+00:00
 
 """
 
+import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "aa2c85e8a66a"
+revision = "cf8f743fd0b7"
 down_revision = "48604dfdc5f4"
 branch_labels = None
 depends_on = None
@@ -28,7 +29,13 @@ def upgrade():
         postgresql_using="btree",
         postgresql_ops={"last_change_date": "DESC"},
     )
-    op.create_index("idx_projects_type", "projects", ["type"], unique=False)
+    op.create_index(
+        "ix_projects_partial_type",
+        "projects",
+        ["type"],
+        unique=False,
+        postgresql_where=sa.text("type = 'TEMPLATE'"),
+    )
     op.create_index(
         "idx_project_to_folders_project_uuid",
         "projects_to_folders",
@@ -68,7 +75,11 @@ def downgrade():
     op.drop_index(
         "idx_project_to_folders_project_uuid", table_name="projects_to_folders"
     )
-    op.drop_index("idx_projects_type", table_name="projects")
+    op.drop_index(
+        "ix_projects_partial_type",
+        table_name="projects",
+        postgresql_where=sa.text("type = 'TEMPLATE'"),
+    )
     op.drop_index(
         "idx_projects_last_change_date_desc",
         table_name="projects",
