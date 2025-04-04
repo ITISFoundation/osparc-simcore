@@ -29,7 +29,7 @@ def preference_two() -> str:
 
 @pytest.fixture
 async def product_name(
-    create_fake_product: Callable[[ProductName], Awaitable[Row]],
+    create_fake_product: Callable[[str], Awaitable[Row]],
 ) -> str:
     product = await create_fake_product("fake-product")
     return product[0]
@@ -204,7 +204,7 @@ async def test__same_preference_name_product_name__different_users(
 
 async def test__same_user_preference_name__different_product_name(
     connection: AsyncConnection,
-    create_fake_product: Callable[[ProductName], Awaitable[Row]],
+    create_fake_product: Callable[[str], Awaitable[Row]],
     preference_repo: type[BasePreferencesRepo],
     preference_one: str,
     faker: Faker,
