@@ -10,7 +10,7 @@ from servicelib.fastapi.prometheus_instrumentation import (
     setup_prometheus_instrumentation,
 )
 from servicelib.fastapi.tracing import initialize_tracing
-from simcore_service_catalog.core.background_tasks import start_registry_sync_task
+from simcore_service_catalog.core.background_tasks import setup_background_task
 from simcore_service_catalog.infrastructure.director import setup_director
 from simcore_service_catalog.infrastructure.postgres import setup_postgres_database
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -92,8 +92,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     setup_director(app)
     setup_function_services(app)
     setup_rabbitmq(app)
-
-    app.add_event_handler("startup", start_registry_sync_task)
+    setup_background_task(app)
 
     if app.state.settings.CATALOG_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)

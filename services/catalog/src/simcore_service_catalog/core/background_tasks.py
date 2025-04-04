@@ -213,7 +213,7 @@ async def _sync_services_task(app: FastAPI) -> None:
             )
 
 
-async def start_registry_sync_task(app: FastAPI) -> None:
+async def _start_registry_sync_task(app: FastAPI) -> None:
     # FIXME: added this variable to overcome the state in which the
     # task cancelation is ignored and the exceptions enter in a loop
     # that never stops the background task. This flag is an additional
@@ -224,7 +224,7 @@ async def start_registry_sync_task(app: FastAPI) -> None:
     _logger.info("registry syncing task started")
 
 
-async def stop_registry_sync_task(app: FastAPI) -> None:
+async def _stop_registry_sync_task(app: FastAPI) -> None:
     if task := app.state.registry_sync_task:
         with suppress(asyncio.CancelledError):
             app.state.registry_syncer_running = False
@@ -232,3 +232,10 @@ async def stop_registry_sync_task(app: FastAPI) -> None:
             await task
         app.state.registry_sync_task = None
     _logger.info("registry syncing task stopped")
+
+
+def setup_background_task(app: FastAPI):
+    # FIXME: check director service is in place and ready. Hand-shake??
+    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/1728
+    app.add_event_handler("startup", _start_registry_sync_task)
+    app.add_event_handler("shutdown", _stop_registry_sync_task)
