@@ -1266,10 +1266,10 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         try:
             destination_object_key = create_random_export_name(user_id)
 
-            # the return type here is not a `StorageFileID` object but contains a link
-            # since most interfaces require a `StorageFileID` the object is not used
-            # also not using the link mans not crossing the boundry of the service, keeping
-            # everything internal
+            # The return type here isn't a `StorageFileID` object, but it includes a link.
+            # Since most interfaces expect a `StorageFileID`, the actual object isn't used.
+            # Avoiding the link also ensures we don't cross the service boundary,
+            # keeping everything internal.
             await self.create_file_upload_links(
                 user_id=user_id,
                 file_id=destination_object_key,
