@@ -17,9 +17,9 @@ from pydantic import TypeAdapter
 from pytest_simcore.helpers.catalog_services import CreateFakeServiceDataCallable
 from respx.router import MockRouter
 from simcore_service_catalog.api.dependencies.director import get_director_api
-from simcore_service_catalog.db.repositories.groups import GroupsRepository
-from simcore_service_catalog.db.repositories.services import ServicesRepository
 from simcore_service_catalog.infrastructure.director import DirectorApi
+from simcore_service_catalog.repositories.groups import GroupsRepository
+from simcore_service_catalog.repositories.services import ServicesRepository
 from simcore_service_catalog.services import manifest, services_api
 from sqlalchemy.ext.asyncio import AsyncEngine
 

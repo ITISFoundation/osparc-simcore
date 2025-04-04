@@ -23,9 +23,9 @@ from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogForbiddenError,
     CatalogItemNotFoundError,
 )
-from simcore_service_catalog.db.repositories.groups import GroupsRepository
+from simcore_service_catalog.repositories.groups import GroupsRepository
 
-from ...db.repositories.services import ServicesRepository
+from ...repositories.services import ServicesRepository
 from ...services import services_api
 from ..dependencies.director import get_director_api
 

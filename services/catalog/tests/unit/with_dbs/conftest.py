@@ -33,7 +33,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import users
 from simcore_service_catalog.core.settings import ApplicationSettings
-from simcore_service_catalog.db.tables import (
+from simcore_service_catalog.repositories._tables import (
     groups,
     services_access_rights,
     services_meta_data,

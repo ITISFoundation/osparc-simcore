@@ -7,7 +7,7 @@ from servicelib.fastapi.db_asyncpg_engine import close_db_connection, connect_to
 from servicelib.logging_utils import log_context
 
 from .._meta import APP_FINISHED_BANNER_MSG, APP_STARTED_BANNER_MSG
-from ..db.events import setup_default_product
+from ..events import setup_default_product
 from ..infrastructure.director import close_director, setup_director
 from .background_tasks import start_registry_sync_task, stop_registry_sync_task
 

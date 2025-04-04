@@ -13,13 +13,13 @@ from models_library.products import ProductName
 from models_library.users import UserID
 from packaging import version
 from pydantic import EmailStr, HttpUrl, TypeAdapter
-from simcore_service_catalog.db.repositories.services import ServicesRepository
 from simcore_service_catalog.models.services_db import (
     ServiceAccessRightsAtDB,
     ServiceMetaDataDBCreate,
     ServiceMetaDataDBGet,
     ServiceMetaDataDBPatch,
 )
+from simcore_service_catalog.repositories.services import ServicesRepository
 from simcore_service_catalog.utils.versioning import is_patch_release
 from sqlalchemy.ext.asyncio import AsyncEngine
 

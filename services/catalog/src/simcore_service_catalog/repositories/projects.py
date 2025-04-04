@@ -4,8 +4,8 @@ import sqlalchemy as sa
 from models_library.services import ServiceKeyVersion
 from pydantic import ValidationError
 
-from ..tables import ProjectType, projects
 from ._base import BaseRepository
+from ._tables import ProjectType, projects
 
 _logger = logging.getLogger(__name__)
 

@@ -4,7 +4,7 @@
 
 
 from simcore_postgres_database.utils import as_postgres_sql_query_str
-from simcore_service_catalog.db.repositories._services_sql import (
+from simcore_service_catalog.repositories._services_sql import (
     AccessRightsClauses,
     can_get_service_stmt,
     get_service_history_stmt,

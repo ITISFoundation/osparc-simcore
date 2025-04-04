@@ -1,6 +1,4 @@
-""" Manages service compatibility policies
-
-"""
+"""Manages service compatibility policies"""
 
 from models_library.products import ProductName
 from models_library.services_history import Compatibility, CompatibleService
@@ -10,8 +8,8 @@ from packaging.specifiers import SpecifierSet
 from packaging.version import Version
 from simcore_service_catalog.utils.versioning import as_version
 
-from ..db.repositories.services import ServicesRepository
 from ..models.services_db import ReleaseDBGet
+from ..repositories.services import ServicesRepository
 
 
 def _get_default_compatibility_specs(target: ServiceVersion | Version) -> SpecifierSet:

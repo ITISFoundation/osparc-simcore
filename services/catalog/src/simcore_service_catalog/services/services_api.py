@@ -20,15 +20,15 @@ from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogForbiddenError,
     CatalogItemNotFoundError,
 )
-from simcore_service_catalog.db.repositories.groups import GroupsRepository
+from simcore_service_catalog.repositories.groups import GroupsRepository
 
-from ..db.repositories.services import ServicesRepository
 from ..infrastructure.director import DirectorApi
 from ..models.services_db import (
     ServiceAccessRightsAtDB,
     ServiceMetaDataDBPatch,
     ServiceWithHistoryDBGet,
 )
+from ..repositories.services import ServicesRepository
 from ..services import manifest
 from .compatibility import evaluate_service_compatibility_map
 from .function_services import is_function_service

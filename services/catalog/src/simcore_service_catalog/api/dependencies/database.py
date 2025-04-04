@@ -6,7 +6,7 @@ from fastapi import Depends
 from fastapi.requests import Request
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from ...db.repositories._base import BaseRepository
+from ...repositories._base import BaseRepository
 
 _logger = logging.getLogger(__name__)
 

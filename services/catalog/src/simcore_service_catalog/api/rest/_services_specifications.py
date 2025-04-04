@@ -10,8 +10,8 @@ from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 
 from ..._constants import RESPONSE_MODEL_POLICY
-from ...db.repositories.groups import GroupsRepository
-from ...db.repositories.services import ServicesRepository
+from ...repositories.groups import GroupsRepository
+from ...repositories.services import ServicesRepository
 from ...services.function_services import is_function_service
 from ..dependencies.database import get_repository
 from ..dependencies.services import get_default_service_specifications

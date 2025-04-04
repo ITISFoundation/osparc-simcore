@@ -24,7 +24,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql import and_, or_
 from sqlalchemy.sql.expression import tuple_
 
-from ...models.services_db import (
+from ..models.services_db import (
     ReleaseDBGet,
     ServiceAccessRightsAtDB,
     ServiceMetaDataDBCreate,
@@ -32,14 +32,7 @@ from ...models.services_db import (
     ServiceMetaDataDBPatch,
     ServiceWithHistoryDBGet,
 )
-from ...models.services_specifications import ServiceSpecificationsAtDB
-from ..tables import (
-    services_access_rights,
-    services_compatibility,
-    services_meta_data,
-    services_specifications,
-    user_to_groups,
-)
+from ..models.services_specifications import ServiceSpecificationsAtDB
 from ._base import BaseRepository
 from ._services_sql import (
     SERVICES_META_DATA_COLS,
@@ -51,6 +44,13 @@ from ._services_sql import (
     latest_services_total_count_stmt,
     list_latest_services_stmt,
     list_services_stmt,
+)
+from ._tables import (
+    services_access_rights,
+    services_compatibility,
+    services_meta_data,
+    services_specifications,
+    user_to_groups,
 )
 
 _logger = logging.getLogger(__name__)

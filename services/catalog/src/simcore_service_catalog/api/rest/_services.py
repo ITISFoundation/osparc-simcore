@@ -20,9 +20,9 @@ from ..._constants import (
     LIST_SERVICES_CACHING_TTL,
     RESPONSE_MODEL_POLICY,
 )
-from ...db.repositories.groups import GroupsRepository
-from ...db.repositories.services import ServicesRepository
 from ...models.services_db import ServiceAccessRightsAtDB, ServiceMetaDataDBGet
+from ...repositories.groups import GroupsRepository
+from ...repositories.services import ServicesRepository
 from ..dependencies.database import get_repository
 from ..dependencies.director import DirectorApi, get_director_api
 from ..dependencies.services import get_service_from_manifest

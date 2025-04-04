@@ -10,8 +10,8 @@ from sqlalchemy.sql import and_, or_
 from sqlalchemy.sql.expression import func
 from sqlalchemy.sql.selectable import Select
 
-from ...models.services_db import ServiceMetaDataDBGet
-from ..tables import (
+from ..models.services_db import ServiceMetaDataDBGet
+from ._tables import (
     services_access_rights,
     services_compatibility,
     services_meta_data,
