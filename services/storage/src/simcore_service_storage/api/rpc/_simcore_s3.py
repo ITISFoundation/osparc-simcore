@@ -30,7 +30,7 @@ async def copy_folders_from_project(
 
 
 @router.expose()
-async def start_data_export(
+async def start_export_data(
     app: FastAPI, job_id_data: AsyncJobNameData, paths_to_export: list[S3ObjectKey]
 ) -> AsyncJobGet:
     task_uuid = await get_celery_client(app).send_task(

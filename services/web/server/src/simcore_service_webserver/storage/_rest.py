@@ -44,7 +44,7 @@ from servicelib.rabbitmq.rpc_interfaces.storage.paths import (
 from servicelib.rabbitmq.rpc_interfaces.storage.paths import (
     delete_paths as remote_delete_paths,
 )
-from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import start_data_export
+from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import start_export_data
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_responses import unwrap_envelope
 from yarl import URL
@@ -54,7 +54,7 @@ from ..login.decorators import login_required
 from ..models import RequestContext
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..security.decorators import permission_required
-from ..tasks._exception_handlers import handle_data_export_exceptions
+from ..tasks._exception_handlers import handle_export_data_exceptions
 from .schemas import StorageFileIDStr
 from .settings import StorageSettings, get_plugin_settings
 
@@ -470,12 +470,12 @@ async def delete_file(request: web.Request) -> web.Response:
 
 
 @routes.post(
-    _storage_locations_prefix + "/{location_id}/data-export", name="data_export"
+    _storage_locations_prefix + "/{location_id}/export-data", name="export_data"
 )
 @login_required
 @permission_required("storage.files.*")
-@handle_data_export_exceptions
-async def data_export(request: web.Request) -> web.Response:
+@handle_export_data_exceptions
+async def export_data(request: web.Request) -> web.Response:
     class _PathParams(BaseModel):
         location_id: LocationID
 
@@ -490,14 +490,14 @@ async def data_export(request: web.Request) -> web.Response:
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
     _req_ctx = RequestContext.model_validate(request)
     _ = parse_request_path_parameters_as(_PathParams, request)
-    data_export_post = await parse_request_body_as(
+    export_data_post = await parse_request_body_as(
         model_schema_cls=DataExportPost, request=request
     )
-    async_job_rpc_get, _ = await start_data_export(
+    async_job_rpc_get, _ = await start_export_data(
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         user_id=_req_ctx.user_id,
         product_name=_req_ctx.product_name,
-        paths_to_export=data_export_post.paths,
+        paths_to_export=export_data_post.paths,
     )
     _job_id = f"{async_job_rpc_get.job_id}"
     return create_data_response(

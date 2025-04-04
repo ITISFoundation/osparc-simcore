@@ -32,7 +32,7 @@ async def copy_folders_from_project(
     return async_job_rpc_get, job_id_data
 
 
-async def start_data_export(
+async def start_export_data(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     user_id: UserID,
@@ -43,7 +43,7 @@ async def start_data_export(
     async_job_rpc_get = await submit(
         rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
-        method_name=TypeAdapter(RPCMethodName).validate_python("start_data_export"),
+        method_name=TypeAdapter(RPCMethodName).validate_python("start_export_data"),
         job_id_data=job_id_data,
         paths_to_export=paths_to_export,
     )

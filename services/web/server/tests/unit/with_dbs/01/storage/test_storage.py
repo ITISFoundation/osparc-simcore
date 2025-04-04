@@ -31,7 +31,7 @@ from models_library.api_schemas_rpc_async_jobs.exceptions import (
     JobNotDoneError,
     JobSchedulerError,
 )
-from models_library.api_schemas_storage.data_export_async_jobs import (
+from models_library.api_schemas_storage.export_data_async_jobs import (
     AccessRightError,
     InvalidFileIdentifierError,
 )
@@ -59,7 +59,7 @@ from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
 from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
     submit,
 )
-from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import start_data_export
+from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import start_export_data
 from simcore_postgres_database.models.users import UserRole
 from yarl import URL
 
@@ -448,7 +448,7 @@ def create_storage_rpc_client_mock(
     ],
     ids=lambda x: type(x).__name__,
 )
-async def test_data_export(
+async def test_export_data(
     user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
@@ -459,7 +459,7 @@ async def test_data_export(
 ):
     create_storage_rpc_client_mock(
         "simcore_service_webserver.storage._rest",
-        start_data_export.__name__,
+        start_export_data.__name__,
         backend_result_or_exception,
     )
 
@@ -467,7 +467,7 @@ async def test_data_export(
         paths=[f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}"]
     )
     response = await client.post(
-        f"/{API_VERSION}/storage/locations/0/data-export", data=_body.model_dump_json()
+        f"/{API_VERSION}/storage/locations/0/export-data", data=_body.model_dump_json()
     )
     assert response.status == expected_status
     if response.status == status.HTTP_202_ACCEPTED:
@@ -666,7 +666,7 @@ async def test_get_async_job_links(
 ):
     create_storage_rpc_client_mock(
         "simcore_service_webserver.storage._rest",
-        start_data_export.__name__,
+        start_export_data.__name__,
         (AsyncJobGet(job_id=AsyncJobId(f"{_faker.uuid4()}")), None),
     )
 
@@ -674,7 +674,7 @@ async def test_get_async_job_links(
         paths=[f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}"]
     )
     response = await client.post(
-        f"/{API_VERSION}/storage/locations/0/data-export", data=_body.model_dump_json()
+        f"/{API_VERSION}/storage/locations/0/export-data", data=_body.model_dump_json()
     )
     assert response.status == status.HTTP_202_ACCEPTED
     response_body_data = Envelope[TaskGet].model_validate(await response.json()).data

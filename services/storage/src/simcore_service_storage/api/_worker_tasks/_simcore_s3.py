@@ -4,7 +4,7 @@ from typing import Any
 
 from aws_library.s3._models import S3ObjectKey
 from celery import Task  # type: ignore[import-untyped]
-from models_library.api_schemas_storage.data_export_async_jobs import AccessRightError
+from models_library.api_schemas_storage.export_data_async_jobs import AccessRightError
 from models_library.api_schemas_storage.storage_schemas import FoldersBody
 from models_library.progress_bar import ProgressReport
 from models_library.projects_nodes_io import StorageFileID

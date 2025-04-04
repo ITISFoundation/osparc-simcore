@@ -6,7 +6,7 @@ from models_library.api_schemas_rpc_async_jobs.exceptions import (
     JobSchedulerError,
     JobStatusError,
 )
-from models_library.api_schemas_storage.data_export_async_jobs import (
+from models_library.api_schemas_storage.export_data_async_jobs import (
     AccessRightError,
     InvalidFileIdentifierError,
 )
@@ -55,6 +55,6 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
 }
 
 
-handle_data_export_exceptions = exception_handling_decorator(
+handle_export_data_exceptions = exception_handling_decorator(
     to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP)
 )

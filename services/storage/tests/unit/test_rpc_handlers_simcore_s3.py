@@ -54,7 +54,7 @@ from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import wait_and_get_result
 from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import (
     copy_folders_from_project,
-    start_data_export,
+    start_export_data,
 )
 from simcore_postgres_database.storage_models import file_meta_data
 from simcore_service_storage.modules.celery.worker import CeleryTaskQueueWorker
@@ -511,7 +511,7 @@ async def test_create_and_delete_folders_from_project(
     )
 
 
-async def _request_start_data_export(
+async def _request_start_export_data(
     rpc_client: RabbitMQRPCClient,
     user_id: UserID,
     product_name: ProductName,
@@ -523,7 +523,7 @@ async def _request_start_data_export(
         logging.INFO,
         f"Data export form {paths_to_export=}",
     ) as ctx:
-        async_job_get, async_job_name = await start_data_export(
+        async_job_get, async_job_name = await start_export_data(
             rpc_client,
             user_id=user_id,
             product_name=product_name,
@@ -533,7 +533,7 @@ async def _request_start_data_export(
         async for async_job_result in wait_and_get_result(
             rpc_client,
             rpc_namespace=STORAGE_RPC_NAMESPACE,
-            method_name=start_data_export.__name__,
+            method_name=start_export_data.__name__,
             job_id=async_job_get.job_id,
             job_id_data=async_job_name,
             client_timeout=client_timeout,
@@ -574,7 +574,7 @@ def task_progress_spy(mocker: MockerFixture) -> Mock:
     ],
     ids=str,
 )
-async def test_start_data_export(
+async def test_start_export_data(
     initialized_app: FastAPI,
     short_dsm_cleaner_interval: int,
     with_storage_celery_worker_controller: TestWorkController,
@@ -598,7 +598,7 @@ async def test_start_data_export(
     for x in src_projects_list.values():
         paths_to_export |= x.keys()
 
-    result = await _request_start_data_export(
+    result = await _request_start_export_data(
         storage_rabbitmq_rpc_client,
         user_id,
         product_name,
@@ -617,7 +617,7 @@ async def test_start_data_export(
     assert progress_updates[-1] == 1
 
 
-async def test_start_data_export_access_error(
+async def test_start_export_data_access_error(
     initialized_app: FastAPI,
     short_dsm_cleaner_interval: int,
     with_storage_celery_worker_controller: TestWorkController,
@@ -630,7 +630,7 @@ async def test_start_data_export_access_error(
         f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}"
     )
     with pytest.raises(JobError) as exc:
-        await _request_start_data_export(
+        await _request_start_export_data(
             storage_rabbitmq_rpc_client,
             user_id,
             product_name,

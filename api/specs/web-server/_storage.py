@@ -36,7 +36,7 @@ from servicelib.fastapi.rest_pagination import CustomizedPathsCursorPage
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.storage.schemas import DatasetMetaData, FileMetaData
 from simcore_service_webserver.tasks._exception_handlers import (
-    _TO_HTTP_ERROR_MAP as data_export_http_error_map,
+    _TO_HTTP_ERROR_MAP as export_data_http_error_map,
 )
 
 router = APIRouter(
@@ -221,18 +221,18 @@ async def is_completed_upload_file(
 
 
 # data export
-_data_export_responses: dict[int | str, dict[str, Any]] = {
+_export_data_responses: dict[int | str, dict[str, Any]] = {
     i.status_code: {"model": EnvelopedError}
-    for i in data_export_http_error_map.values()
+    for i in export_data_http_error_map.values()
 }
 
 
 @router.post(
-    "/storage/locations/{location_id}/data-export",
+    "/storage/locations/{location_id}/export-data",
     response_model=Envelope[TaskGet],
-    name="data_export",
+    name="export_data",
     description="Export data",
-    responses=_data_export_responses,
+    responses=_export_data_responses,
 )
-async def data_export(data_export: DataExportPost, location_id: LocationID):
+async def export_data(export_data: DataExportPost, location_id: LocationID):
     """Trigger data export. Returns async job id for getting status and results"""
