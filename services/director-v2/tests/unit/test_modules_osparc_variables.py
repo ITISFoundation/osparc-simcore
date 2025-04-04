@@ -280,7 +280,6 @@ def compose_spec():
 def test_auto_inject_environments_added_to_all_services_in_compose(
     compose_spec: ComposeSpecLabelDict,
 ):
-
     before = deepcopy(compose_spec)
 
     after = auto_inject_environments(compose_spec)
@@ -290,7 +289,6 @@ def test_auto_inject_environments_added_to_all_services_in_compose(
 
     auto_injected_envs = set(_NEW_ENVIRONMENTS.keys())
     for name, service in compose_spec.get("services", {}).items():
-
         # all services have environment specs
         assert service["environment"], f"expected in {name} service"
 
