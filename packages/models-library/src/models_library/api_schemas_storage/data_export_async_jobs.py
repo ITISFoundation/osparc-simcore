@@ -15,5 +15,5 @@ class InvalidFileIdentifierError(StorageRpcBaseError):
 
 class AccessRightError(StorageRpcBaseError):
     msg_template: str = (
-        "User {user_id} does not have access to file {file_id} with location {location_id}"
+        "User {user_id} does not have access to one or multiple files in {paths_to_download} with location {location_id}"
     )

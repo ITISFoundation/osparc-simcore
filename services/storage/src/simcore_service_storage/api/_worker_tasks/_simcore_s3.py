@@ -12,7 +12,7 @@ from models_library.users import UserID
 from pydantic import TypeAdapter
 from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
-from simcore_service_storage.exceptions.errors import FileAccessRightError
+from simcore_service_storage.exceptions.errors import ProjectAccessRightError
 
 from ...dsm import get_dsm_provider
 from ...modules.celery.models import TaskID, TaskId
@@ -80,19 +80,9 @@ async def export_data(
         assert isinstance(dsm, SimcoreS3DataManager)  # nosec
 
         paths_to_export = [
-            TypeAdapter(StorageFileID).validate_python(path_to_export)
+            TypeAdapter(S3ObjectKey).validate_python(path_to_export)
             for path_to_export in paths_to_export
         ]
-
-        try:
-            for path_to_export in paths_to_export:
-                await dsm.can_read_file(user_id=user_id, file_id=path_to_export)
-        except FileAccessRightError as err:
-            raise AccessRightError(
-                user_id=user_id,
-                file_id=path_to_export,
-                location_id=SimcoreS3DataManager.get_location_id(),
-            ) from err
 
         async def _progress_cb(report: ProgressReport) -> None:
             assert task.name  # nosec
@@ -104,6 +94,13 @@ async def export_data(
             description=f"'{task_id}' export data",
             progress_report_cb=_progress_cb,
         ) as progress_bar:
-            return await dsm.create_s3_export(
-                user_id, paths_to_export, progress_bar=progress_bar
-            )
+            try:
+                return await dsm.create_s3_export(
+                    user_id, paths_to_export, progress_bar=progress_bar
+                )
+            except ProjectAccessRightError as err:
+                raise AccessRightError(
+                    user_id=user_id,
+                    paths_to_download=paths_to_export,
+                    location_id=SimcoreS3DataManager.get_location_id(),
+                ) from err

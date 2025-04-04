@@ -1250,6 +1250,20 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
     ) -> StorageFileID:
         source_object_keys: set[StorageFileID] = set()
 
+        # check access rights
+        for object_key in object_keys:
+            project_id = None
+            with contextlib.suppress(ValueError):
+                project_id = ProjectID(Path(object_key).parts[0])
+
+            accessible_projects_ids = await get_accessible_project_ids(
+                get_db_engine(self.app), user_id=user_id, project_id=project_id
+            )
+            if project_id is None or project_id not in accessible_projects_ids:
+                raise ProjectAccessRightError(
+                    access_right="read", project_id=project_id
+                )
+
         for object_key in object_keys:
             async for meta_data_files in get_s3_client(self.app).list_objects_paginated(
                 self.simcore_bucket_name, object_key
