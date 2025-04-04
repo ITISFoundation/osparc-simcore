@@ -19,7 +19,6 @@ from aiopg.sa.connection import SAConnection
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import ResultProxy, RowProxy
 from faker import Faker
-from models_library.products import ProductName
 from pytest_simcore.helpers import postgres_tools
 from pytest_simcore.helpers.faker_factories import (
     random_group,
@@ -328,10 +327,10 @@ async def create_fake_projects_node(
 @pytest.fixture
 async def create_fake_product(
     asyncpg_engine: AsyncEngine,
-) -> AsyncIterator[Callable[[ProductName], Awaitable[Row]]]:
+) -> AsyncIterator[Callable[[str], Awaitable[Row]]]:
     created_product_names = set()
 
-    async def _creator(product_name: ProductName) -> Row:
+    async def _creator(product_name: str) -> Row:
         async with asyncpg_engine.begin() as connection:
             result = await connection.execute(
                 sa.insert(products)
