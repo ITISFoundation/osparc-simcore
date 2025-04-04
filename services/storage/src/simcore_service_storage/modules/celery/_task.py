@@ -1,8 +1,6 @@
 import asyncio
-import base64
 import inspect
 import logging
-import pickle
 from collections.abc import Callable, Coroutine
 from datetime import timedelta
 from functools import wraps
@@ -13,6 +11,7 @@ from celery.contrib.abortable import AbortableTask  # type: ignore[import-untype
 from pydantic import NonNegativeInt
 
 from . import get_event_loop
+from .errors import encore_celery_transferrable_error
 from .models import TaskId
 from .utils import get_fastapi_app
 
@@ -26,14 +25,6 @@ _DEFAULT_WAIT_BEFORE_RETRY: Final[timedelta] = timedelta(seconds=5)
 T = TypeVar("T")
 P = ParamSpec("P")
 R = TypeVar("R")
-
-
-def _wrap_exception(exc: Exception) -> Exception:
-    return Exception(
-        base64.b64encode(pickle.dumps(exc, protocol=pickle.HIGHEST_PROTOCOL)).decode(
-            "ascii"
-        )
-    )
 
 
 def _async_task_wrapper(
@@ -77,14 +68,10 @@ def _error_handling(max_retries: NonNegativeInt, delay_between_retries: timedelt
                     exc_message,
                 )
 
-                # NOTE: since celery does a wonderful job when serializing exceptions
-                # by running it's magic, it looses the context of some errors
-                # this allows to recreate the same error in the caller side excatly as
-                # it was raised in this context
                 raise task.retry(
                     max_retries=max_retries,
                     countdown=delay_between_retries.total_seconds(),
-                    exc=_wrap_exception(exc),
+                    exc=encore_celery_transferrable_error(exc),
                 )
 
         return wrapper

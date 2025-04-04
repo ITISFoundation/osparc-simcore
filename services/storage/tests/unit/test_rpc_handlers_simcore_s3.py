@@ -30,6 +30,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     FileMetaDataGet,
     FoldersBody,
 )
+from models_library.api_schemas_webserver.storage import PathToExport
 from models_library.basic_types import SHA256Str
 from models_library.products import ProductName
 from models_library.projects_nodes_io import NodeID, NodeIDStr, SimcoreS3FileID
@@ -514,7 +515,7 @@ async def _request_start_data_export(
     rpc_client: RabbitMQRPCClient,
     user_id: UserID,
     product_name: ProductName,
-    paths_to_export: list[Path],
+    paths_to_export: list[PathToExport],
     *,
     client_timeout: datetime.timedelta = datetime.timedelta(seconds=60),
 ) -> dict[str, Any]:
@@ -601,7 +602,9 @@ async def test_start_data_export(
         storage_rabbitmq_rpc_client,
         user_id,
         product_name,
-        paths_to_export=[Path(x) for x in paths_to_export],
+        paths_to_export=[
+            TypeAdapter(PathToExport).validate_python(x) for x in paths_to_export
+        ],
     )
 
     assert re.fullmatch(
@@ -623,16 +626,19 @@ async def test_start_data_export_access_error(
     product_name: ProductName,
     faker: Faker,
 ):
+    path_to_export = TypeAdapter(PathToExport).validate_python(
+        f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}"
+    )
     with pytest.raises(JobError) as exc:
         await _request_start_data_export(
             storage_rabbitmq_rpc_client,
             user_id,
             product_name,
-            paths_to_export=[
-                Path(f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}")
-            ],
+            paths_to_export=[path_to_export],
             client_timeout=datetime.timedelta(seconds=60),
         )
 
     assert isinstance(exc.value, JobError)
     assert exc.value.exc_type == "AccessRightError"
+    assert f" {user_id} " in f"{exc.value}"
+    assert f" {path_to_export} " in f"{exc.value}"

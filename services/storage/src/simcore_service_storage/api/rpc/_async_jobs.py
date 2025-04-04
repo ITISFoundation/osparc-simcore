@@ -1,8 +1,6 @@
 # pylint: disable=unused-argument
 
-import base64
 import logging
-import pickle
 
 from celery.exceptions import CeleryError  # type: ignore[import-untyped]
 from fastapi import FastAPI
@@ -23,6 +21,7 @@ from servicelib.logging_utils import log_catch
 from servicelib.rabbitmq import RPCRouter
 
 from ...modules.celery import get_celery_client
+from ...modules.celery.errors import decode_celery_transferrable_error
 from ...modules.celery.models import TaskState
 
 _logger = logging.getLogger(__name__)
@@ -102,7 +101,7 @@ async def result(
         exc_msg = f"{_result}"  # try to deseialise something
 
         with log_catch(_logger, reraise=False):
-            exception = pickle.loads(base64.b64decode(_result.args[0]))
+            exception = decode_celery_transferrable_error(_result)
             exc_type = type(exception).__name__
             exc_msg = f"{exception}"
 
