@@ -1,4 +1,4 @@
-""" API keys to access public API
+"""API keys to access public API
 
 
 These keys grant the client authorization to the API resources
@@ -10,6 +10,7 @@ These keys grant the client authorization to the API resources
  +--------+                                +---------------+
 
 """
+
 import sqlalchemy as sa
 from sqlalchemy.sql import func
 
@@ -52,7 +53,7 @@ api_keys = sa.Table(
         nullable=False,
         doc="Identified product",
     ),
-    sa.Column("api_key", sa.String(), nullable=False),
+    sa.Column("api_key", sa.String(), nullable=False, index=True),
     sa.Column("api_secret", sa.String(), nullable=False),
     sa.Column(
         "created",
