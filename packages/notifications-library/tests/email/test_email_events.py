@@ -140,6 +140,7 @@ def event_extra_data(  # noqa: PLR0911
                 "host": host_url,
                 "resource_alias": "Project",
                 "sharer_username": "sharer_username",
+                "sharer_message": faker.paragraph(nb_sentences=2),
                 "accept_link": f"{host_url}?code={code}",
             }
         case "on_unregister":

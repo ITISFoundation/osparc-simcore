@@ -5,13 +5,21 @@
 
 <p>Great news! {{ sharer_username }} has shared a {{ resource_alias }} with you on {{ product.display_name }}.</p>
 
-<p>To view the {{ resource_alias }} and accept the sharing, simply click the button below:</p>
+<p>To view the {{ resource_alias }} and accept the sharing, follow below:</p>
 
 <p>
-  <!-- Many email clients strip or ignore certain CSS properties, including them inline -->
+{% if sharer_message %}
+  <div style="border: 1px solid #ccc; padding: 16px; border-radius: 8px; background-color: #f9f9f9;">
+    <p style="margin-top: 0;">{{ sharer_message }}</p>
+    <button class="strong-button" style="border-radius: 4px;">
+      <a href="{{ accept_link }}" style="color: white;">Open</a>
+    </button>
+  </div>
+{% else %}
   <button class="strong-button" style="border-radius: 4px;">
     <a href="{{ accept_link }}" style="color: white;">Open</a>
   </button>
+{% endif %}
 </p>
 
 <p>Please don't hesitate to contact us at {{ product.support_email }} if you need further help.</p>
