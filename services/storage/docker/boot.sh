@@ -54,13 +54,15 @@ if [ "${STORAGE_WORKER_MODE}" = "true" ]; then
       --app=simcore_service_storage.modules.celery.worker_main:app \
       worker --pool=threads \
       --loglevel="${SERVER_LOG_LEVEL}" \
-      --concurrency="${CELERY_CONCURRENCY}"
+      --concurrency="${CELERY_CONCURRENCY}" \
+      --queues="${CELERY_QUEUES:-default}"
   else
     exec celery \
       --app=simcore_service_storage.modules.celery.worker_main:app \
       worker --pool=threads \
       --loglevel="${SERVER_LOG_LEVEL}" \
-      --concurrency="${CELERY_CONCURRENCY}"
+      --concurrency="${CELERY_CONCURRENCY}" \
+      --queues="${CELERY_QUEUES:-default}"
   fi
 else
   if [ "${SC_BOOT_MODE}" = "debug" ]; then
