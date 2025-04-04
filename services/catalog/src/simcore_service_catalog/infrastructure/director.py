@@ -293,7 +293,7 @@ director_lifespan = LifespanManager()
 
 
 @director_lifespan.add
-async def _setup_director(app: FastAPI) -> AsyncIterator[State]:
+async def setup_director(app: FastAPI) -> AsyncIterator[State]:
     settings = app.state.settings.CATALOG_DIRECTOR
 
     with log_context(

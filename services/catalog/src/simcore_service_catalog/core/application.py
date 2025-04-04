@@ -58,14 +58,21 @@ async def _setup_banner(app: FastAPI) -> AsyncIterator[State]:
 
 
 def _create_app_lifespan(settings: ApplicationSettings):
-    app_lifespan = LifespanManager()
+    assert settings  # nosec
 
+    # app lifespan
+    app_lifespan = LifespanManager()
     app_lifespan.add(_setup_banner)
 
+    # - postgres lifespan
     postgres_lifespan.add(setup_repository)
     app_lifespan.include(postgres_lifespan)
 
+    # - director lifespan
     app_lifespan.include(director_lifespan)
+
+    # - rabbitmq lifespan
+    rabbitmq_lifespan.add(setup_rpc_api_routes)
     app_lifespan.add(rabbitmq_lifespan)
 
     app_lifespan.add(setup_function_services)
@@ -124,7 +131,6 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
     # ROUTES
     setup_rest_api_routes(app, vtag=API_VTAG)
-    setup_rpc_api_routes(app)
 
     # EXCEPTIONS
     setup_exception_handlers(app)
