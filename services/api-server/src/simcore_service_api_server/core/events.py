@@ -24,6 +24,7 @@ def create_start_app_handler(app: FastAPI) -> Callable:
             await connect_to_db(app)
             await asyncpg_connect_to_db(app, app.state.settings.API_SERVER_POSTGRES)
             assert app.state.engine  # nosec
+            assert app.state.asyncpg_engine  # nosec
 
         print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201
 
