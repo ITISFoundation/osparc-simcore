@@ -170,15 +170,15 @@ def event_attachments(event_name: str, faker: Faker) -> list[tuple[bytes, str]]:
 @pytest.mark.parametrize(
     "event_name",
     [
-        # "on_account_form",
-        # "on_change_email",
-        # "on_new_code",
-        # "on_new_invitation",
-        # "on_payed",
-        # "on_registered",
-        # "on_reset_password",
+        "on_account_form",
+        "on_change_email",
+        "on_new_code",
+        "on_new_invitation",
+        "on_payed",
+        "on_registered",
+        "on_reset_password",
         "on_share_project",
-        # "on_unregister",
+        "on_unregister",
     ],
 )
 async def test_email_event(
