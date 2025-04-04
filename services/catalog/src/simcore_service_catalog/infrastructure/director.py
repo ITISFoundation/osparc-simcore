@@ -25,7 +25,7 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random
 
 from ..core.settings import ApplicationSettings
-from ..exceptions.errors import DirectorUnresponsiveError
+from ..errors import DirectorUnresponsiveError
 
 _logger = logging.getLogger(__name__)
 

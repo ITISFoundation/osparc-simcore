@@ -6,7 +6,7 @@ from models_library.groups import GroupAtDB
 from pydantic import TypeAdapter
 from pydantic.types import PositiveInt
 
-from ..exceptions.errors import UninitializedGroupError
+from ..errors import UninitializedGroupError
 from ._base import BaseRepository
 from ._tables import GroupType, groups, user_to_groups, users
 

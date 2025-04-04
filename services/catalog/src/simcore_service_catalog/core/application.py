@@ -24,9 +24,9 @@ from .._meta import (
     PROJECT_NAME,
     SUMMARY,
 )
-from ..api.rest.routes import setup_rest_api_routes
-from ..api.rpc.routes import setup_rpc_api_routes
-from ..exceptions.handlers import setup_exception_handlers
+from ..api.rest.errors import setup_rest_exception_handlers
+from ..api.rest.routes import setup_rest_routes
+from ..api.rpc.routes import setup_rpc_routes
 from ..infrastructure.director import director_lifespan
 from ..infrastructure.postgres import postgres_lifespan
 from ..infrastructure.rabbitmq import rabbitmq_lifespan
@@ -72,7 +72,7 @@ def _create_app_lifespan(settings: ApplicationSettings):
     app_lifespan.include(director_lifespan)
 
     # - rabbitmq lifespan
-    rabbitmq_lifespan.add(setup_rpc_api_routes)
+    rabbitmq_lifespan.add(setup_rpc_routes)
     app_lifespan.add(rabbitmq_lifespan)
 
     app_lifespan.add(setup_function_services)
@@ -130,9 +130,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     app.add_middleware(GZipMiddleware)
 
     # ROUTES
-    setup_rest_api_routes(app, vtag=API_VTAG)
-
-    # EXCEPTIONS
-    setup_exception_handlers(app)
+    setup_rest_routes(app, vtag=API_VTAG)
+    setup_rest_exception_handlers(app)
 
     return app
