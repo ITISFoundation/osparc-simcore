@@ -295,5 +295,10 @@ async def test_create_s3_export_abort_upload_upon_error(
 ):
     await _assert_meta_data_entries_count(sqlalchemy_async_engine, count=0)
     with pytest.raises(RuntimeError, match="failing as expected"):
-        await simcore_s3_dsm.create_s3_export(user_id, [], progress_bar=None)
+        async with ProgressBarData(
+            num_steps=1, description="data export"
+        ) as progress_bar:
+            await simcore_s3_dsm.create_s3_export(
+                user_id, [], progress_bar=progress_bar
+            )
     await _assert_meta_data_entries_count(sqlalchemy_async_engine, count=0)
