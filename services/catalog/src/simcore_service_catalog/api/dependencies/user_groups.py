@@ -4,7 +4,7 @@ from fastapi import Depends, Query
 from models_library.groups import GroupAtDB
 from models_library.users import UserID
 
-from ...repositories.groups import GroupsRepository
+from ...repository.groups import GroupsRepository
 from .database import get_repository
 
 

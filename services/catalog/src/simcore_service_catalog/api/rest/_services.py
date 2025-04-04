@@ -21,8 +21,8 @@ from ..._constants import (
     RESPONSE_MODEL_POLICY,
 )
 from ...models.services_db import ServiceAccessRightsAtDB, ServiceMetaDataDBGet
-from ...repositories.groups import GroupsRepository
-from ...repositories.services import ServicesRepository
+from ...repository.groups import GroupsRepository
+from ...repository.services import ServicesRepository
 from ..dependencies.database import get_repository
 from ..dependencies.director import DirectorApi, get_director_api
 from ..dependencies.services import get_service_from_manifest

@@ -9,7 +9,7 @@ from models_library.services import ServiceKey, ServiceVersion
 
 from ..._constants import RESPONSE_MODEL_POLICY
 from ...models.services_db import ServiceAccessRightsAtDB
-from ...repositories.services import ServicesRepository
+from ...repository.services import ServicesRepository
 from ..dependencies.database import get_repository
 from ..dependencies.services import AccessInfo, check_service_read_access
 

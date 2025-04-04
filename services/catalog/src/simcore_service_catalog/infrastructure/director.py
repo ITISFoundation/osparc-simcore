@@ -288,7 +288,7 @@ class DirectorApi:
         return TypeAdapter(ServiceExtras).validate_python(result)
 
 
-async def setup_director(app: FastAPI) -> None:
+async def _initialize_director_client(app: FastAPI) -> None:
     if settings := app.state.settings.CATALOG_DIRECTOR:
         with log_context(
             _logger, logging.DEBUG, "Setup director at %s", f"{settings.base_url=}"
@@ -311,9 +311,15 @@ async def setup_director(app: FastAPI) -> None:
             app.state.director_api = client
 
 
-async def close_director(app: FastAPI) -> None:
+async def _shutdown_director_client(app: FastAPI) -> None:
     client: DirectorApi | None
     if client := app.state.director_api:
         await client.close()
 
     _logger.debug("Director client closed successfully")
+
+
+def setup_director(app: FastAPI):
+
+    app.add_event_handler("startup", _initialize_director_client)
+    app.add_event_handler("shutdown", _shutdown_director_client)

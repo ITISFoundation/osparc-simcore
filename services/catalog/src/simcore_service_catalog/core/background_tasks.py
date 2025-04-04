@@ -26,9 +26,9 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..models.services_db import ServiceAccessRightsAtDB, ServiceMetaDataDBCreate
-from ..repositories.groups import GroupsRepository
-from ..repositories.projects import ProjectsRepository
-from ..repositories.services import ServicesRepository
+from ..repository.groups import GroupsRepository
+from ..repository.projects import ProjectsRepository
+from ..repository.services import ServicesRepository
 from ..services import access_rights
 
 _logger = logging.getLogger(__name__)

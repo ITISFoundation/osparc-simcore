@@ -9,7 +9,7 @@ from packaging.version import Version
 from simcore_service_catalog.utils.versioning import as_version
 
 from ..models.services_db import ReleaseDBGet
-from ..repositories.services import ServicesRepository
+from ..repository.services import ServicesRepository
 
 
 def _get_default_compatibility_specs(target: ServiceVersion | Version) -> SpecifierSet:

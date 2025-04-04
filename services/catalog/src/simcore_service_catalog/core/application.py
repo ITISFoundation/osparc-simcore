@@ -10,15 +10,25 @@ from servicelib.fastapi.prometheus_instrumentation import (
     setup_prometheus_instrumentation,
 )
 from servicelib.fastapi.tracing import initialize_tracing
+from simcore_service_catalog.core.background_tasks import start_registry_sync_task
+from simcore_service_catalog.infrastructure.director import setup_director
+from simcore_service_catalog.infrastructure.postgres import setup_postgres_database
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from .._meta import API_VERSION, API_VTAG, APP_NAME, PROJECT_NAME, SUMMARY
+from .._meta import (
+    API_VERSION,
+    API_VTAG,
+    APP_FINISHED_BANNER_MSG,
+    APP_NAME,
+    APP_STARTED_BANNER_MSG,
+    PROJECT_NAME,
+    SUMMARY,
+)
 from ..api.rest.routes import setup_rest_api_routes
 from ..api.rpc.routes import setup_rpc_api_routes
 from ..exceptions.handlers import setup_exception_handlers
 from ..infrastructure.rabbitmq import setup_rabbitmq
 from ..services.function_services import setup_function_services
-from .events import create_on_shutdown, create_on_startup
 from .settings import ApplicationSettings
 
 _logger = logging.getLogger(__name__)
@@ -32,6 +42,15 @@ _NOISY_LOGGERS = (
     "httpcore",
     "werkzeug",
 )
+
+
+def _flush_started_banner() -> None:
+    # WARNING: this function is spied in the tests
+    print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201
+
+
+def _flush_finished_banner() -> None:
+    print(APP_FINISHED_BANNER_MSG, flush=True)  # noqa: T201
 
 
 def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
@@ -67,11 +86,14 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
         initialize_tracing(app, settings.CATALOG_TRACING, APP_NAME)
 
     # STARTUP-EVENT
-    app.add_event_handler("startup", create_on_startup(app))
+    app.add_event_handler("startup", _flush_started_banner)
 
-    # PLUGIN SETUP
+    setup_postgres_database(app)
+    setup_director(app)
     setup_function_services(app)
     setup_rabbitmq(app)
+
+    app.add_event_handler("startup", start_registry_sync_task)
 
     if app.state.settings.CATALOG_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)
@@ -93,7 +115,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     setup_rpc_api_routes(app)
 
     # SHUTDOWN-EVENT
-    app.add_event_handler("shutdown", create_on_shutdown(app))
+    app.add_event_handler("shutdown", _flush_finished_banner)
 
     # EXCEPTIONS
     setup_exception_handlers(app)

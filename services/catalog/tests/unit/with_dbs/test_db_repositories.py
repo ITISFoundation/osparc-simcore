@@ -19,7 +19,7 @@ from simcore_service_catalog.models.services_db import (
     ServiceMetaDataDBGet,
     ServiceMetaDataDBPatch,
 )
-from simcore_service_catalog.repositories.services import ServicesRepository
+from simcore_service_catalog.repository.services import ServicesRepository
 from simcore_service_catalog.utils.versioning import is_patch_release
 from sqlalchemy.ext.asyncio import AsyncEngine
 

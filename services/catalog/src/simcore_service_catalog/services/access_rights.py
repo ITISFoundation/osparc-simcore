@@ -16,8 +16,8 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..api.dependencies.director import get_director_api
 from ..models.services_db import ServiceAccessRightsAtDB
-from ..repositories.groups import GroupsRepository
-from ..repositories.services import ServicesRepository
+from ..repository.groups import GroupsRepository
+from ..repository.services import ServicesRepository
 from ..utils.versioning import as_version, is_patch_release
 
 _logger = logging.getLogger(__name__)

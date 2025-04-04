@@ -1,12 +1,8 @@
-import logging
-
 from fastapi import FastAPI
 
-from .repositories.products import ProductsRepository
-
-_logger = logging.getLogger(__name__)
+from .products import ProductsRepository
 
 
-async def setup_default_product(app: FastAPI):
+async def setup_repository(app: FastAPI):
     repo = ProductsRepository(db_engine=app.state.engine)
     app.state.default_product_name = await repo.get_default_product_name()
