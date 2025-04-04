@@ -346,7 +346,6 @@ class AccessLayerRepository(BaseRepository):
     ) -> list[ProjectID]:
         """Returns a list of projects where user has granted read-access"""
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
-            projects_access_rights = (
-                await _list_user_projects_access_rights_with_read_access(conn, user_id)
+            return await _list_user_projects_access_rights_with_read_access(
+                conn, user_id
             )
-        return projects_access_rights
