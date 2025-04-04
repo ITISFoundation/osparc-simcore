@@ -267,7 +267,13 @@ qx.Class.define("osparc.share.Collaborators", {
       // pass resourceType, so that, if it's a template testers can share it with product everyone
       serializedDataCopy["resourceType"] = this._resourceType;
       const addCollaborators = new osparc.share.AddCollaborators(serializedDataCopy);
-      addCollaborators.addListener("addCollaborators", e => this._addEditors(e.getData()), this);
+      addCollaborators.addListener("addCollaborators", e => {
+        const {
+          selectedGids,
+          newAccessRights,
+        } = e.getData();
+        this._addEditors(selectedGids, newAccessRights);
+      }, this);
       return addCollaborators;
     },
 

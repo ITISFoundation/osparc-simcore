@@ -166,7 +166,7 @@ qx.Class.define("osparc.file.TreeFolderView", {
               label: this.tr("Total size: ") + size,
             });
           });
-          task.addListener("pollingError", e => totalSize.hide());
+          task.addListener("pollingError", () => totalSize.hide());
         })
         .catch(err => {
           console.error(err);

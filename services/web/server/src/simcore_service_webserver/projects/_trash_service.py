@@ -169,7 +169,6 @@ async def list_explicitly_trashed_projects(
             user_id=user_id,
             product_name=product_name,
             trashed=True,
-            tag_ids_list=[],
             offset=page_params.offset,
             limit=page_params.limit,
             order_by=OrderBy(field=IDStr("trashed"), direction=OrderDirection.ASC),

@@ -38,30 +38,6 @@ qx.Class.define("osparc.share.CollaboratorsTag", {
     canIDelete: function(myAccessRights) {
       return myAccessRights["delete"];
     },
-
-    getViewerAccessRight: function() {
-      return {
-        "read": true,
-        "write": false,
-        "delete": false
-      };
-    },
-
-    getCollaboratorAccessRight: function() {
-      return {
-        "read": true,
-        "write": true,
-        "delete": false
-      };
-    },
-
-    getOwnerAccessRight: function() {
-      return {
-        "read": true,
-        "write": true,
-        "delete": true
-      };
-    }
   },
 
   members: {
@@ -72,8 +48,9 @@ qx.Class.define("osparc.share.CollaboratorsTag", {
         return;
       }
 
+      const readAccessRole = osparc.data.Roles.STUDY["read"];
       const newCollaborators = {};
-      gids.forEach(gid => newCollaborators[gid] = this.self().getViewerAccessRight());
+      gids.forEach(gid => newCollaborators[gid] = readAccessRole.accessRights);
       osparc.store.Tags.getInstance().addCollaborators(this.__tag.getTagId(), newCollaborators)
         .then(() => {
           const text = this.tr("Tag successfully shared");
@@ -121,41 +98,45 @@ qx.Class.define("osparc.share.CollaboratorsTag", {
     },
 
     _promoteToEditor: function(collaborator, item) {
+      const writeAccessRole = osparc.data.Roles.STUDY["write"];
       this.__make(
         collaborator["gid"],
-        this.self().getCollaboratorAccessRight(),
-        this.tr(`Successfully promoted to ${osparc.data.Roles.STUDY[2].label}`),
-        this.tr(`Something went wrong while promoting to ${osparc.data.Roles.STUDY[2].label}`),
+        writeAccessRole.accessRights,
+        this.tr(`Successfully promoted to ${writeAccessRole.label}`),
+        this.tr(`Something went wrong while promoting to ${writeAccessRole.label}`),
         item
       );
     },
 
     _promoteToOwner: function(collaborator, item) {
+      const deleteAccessRole = osparc.data.Roles.STUDY["delete"];
       this.__make(
         collaborator["gid"],
-        this.self().getOwnerAccessRight(),
-        this.tr(`Successfully promoted to ${osparc.data.Roles.STUDY[3].label}`),
-        this.tr(`Something went wrong while promoting to ${osparc.data.Roles.STUDY[3].label}`),
+        deleteAccessRole.accessRights,
+        this.tr(`Successfully promoted to ${deleteAccessRole.label}`),
+        this.tr(`Something went wrong while promoting to ${deleteAccessRole.label}`),
         item
       );
     },
 
     _demoteToUser: async function(collaborator, item) {
+      const readAccessRole = osparc.data.Roles.STUDY["read"];
       this.__make(
         collaborator["gid"],
-        this.self().getViewerAccessRight(),
-        this.tr(`Successfully demoted to ${osparc.data.Roles.STUDY[1].label}`),
-        this.tr(`Something went wrong while demoting to ${osparc.data.Roles.STUDY[1].label}`),
+        readAccessRole.accessRights,
+        this.tr(`Successfully demoted to ${readAccessRole.label}`),
+        this.tr(`Something went wrong while demoting to ${readAccessRole.label}`),
         item
       );
     },
 
     _demoteToEditor: function(collaborator, item) {
+      const writeAccessRole = osparc.data.Roles.STUDY["write"];
       this.__make(
         collaborator["gid"],
-        this.self().getCollaboratorAccessRight(),
-        this.tr(`Successfully demoted to ${osparc.data.Roles.STUDY[2].label}`),
-        this.tr(`Something went wrong while demoting to ${osparc.data.Roles.STUDY[2].label}`),
+        writeAccessRole.accessRights,
+        this.tr(`Successfully demoted to ${writeAccessRole.label}`),
+        this.tr(`Something went wrong while demoting to ${writeAccessRole.label}`),
         item
       );
     }

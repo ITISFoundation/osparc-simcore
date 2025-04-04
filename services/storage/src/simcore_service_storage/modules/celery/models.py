@@ -1,5 +1,5 @@
 from enum import StrEnum, auto
-from typing import Any, Final, Protocol, Self, TypeAlias
+from typing import Any, Final, Protocol, TypeAlias
 from uuid import UUID
 
 from models_library.progress_bar import ProgressReport
@@ -55,26 +55,6 @@ class TaskStatus(BaseModel):
     @property
     def is_done(self) -> bool:
         return self.task_state in _TASK_DONE
-
-    # @model_validator(mode="after") This does not work MB
-    def _check_consistency(self) -> Self:
-        value = self.progress_report.actual_value
-        min_value = 0.0
-        max_value = self.progress_report.total
-
-        valid_states = {
-            TaskState.PENDING: value == min_value,
-            TaskState.RUNNING: min_value <= value <= max_value,
-            TaskState.SUCCESS: value == max_value,
-            TaskState.ABORTED: value == max_value,
-            TaskState.ERROR: value == max_value,
-        }
-
-        if not valid_states.get(self.task_state, True):
-            msg = f"Inconsistent progress actual value for state={self.task_state}: {value}"
-            raise ValueError(msg)
-
-        return self
 
 
 TaskId: TypeAlias = str

@@ -42,7 +42,9 @@ from notifications_library._email_render import (
     render_email_parts,
 )
 from notifications_library._models import ProductData, UserData
-from notifications_library._render import create_render_env_from_package
+from notifications_library._render import (
+    create_render_environment_from_notifications_library,
+)
 from notifications_library.payments import PaymentData
 from pydantic import EmailStr
 from pydantic.json import pydantic_encoder
@@ -65,8 +67,8 @@ def ipinfo(faker: Faker) -> dict[str, Any]:
 
 @pytest.fixture
 def request_form(faker: Faker) -> dict[str, Any]:
-    return AccountRequestInfo(
-        **AccountRequestInfo.model_config["json_schema_extra"]["example"]
+    return AccountRequestInfo.model_validate(
+        AccountRequestInfo.model_json_schema()["example"]
     ).model_dump()
 
 
@@ -126,7 +128,6 @@ def event_extra_data(  # noqa: PLR0911
                 "host": host_url,
                 "link": f"{host_url}?registration={code}",
             }
-
         case "on_reset_password":
             return {
                 "host": host_url,
@@ -187,7 +188,9 @@ async def test_email_event(
     assert product_data.product_name == product_name
 
     parts = render_email_parts(
-        env=create_render_env_from_package(undefined=StrictUndefined),
+        env=create_render_environment_from_notifications_library(
+            undefined=StrictUndefined
+        ),
         event_name=event_name,
         user=user_data,
         product=product_data,
@@ -254,7 +257,9 @@ async def test_email_with_reply_to(
         )
 
     parts = render_email_parts(
-        env=create_render_env_from_package(undefined=StrictUndefined),
+        env=create_render_environment_from_notifications_library(
+            undefined=StrictUndefined
+        ),
         event_name=event_name,
         user=user_data,
         product=product_data,

@@ -37,26 +37,30 @@ from ..models import ProjectTypeAPI
 
 
 class ProjectCreateHeaders(BaseModel):
-
-    simcore_user_agent: str = Field(  # type: ignore[literal-required]
-        default=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
-        description="Optional simcore user agent",
-        alias=X_SIMCORE_USER_AGENT,
-    )
-
-    parent_project_uuid: ProjectID | None = Field(  # type: ignore[literal-required]
-        default=None,
-        description="Optional parent project UUID",
-        alias=X_SIMCORE_PARENT_PROJECT_UUID,
-    )
-    parent_node_id: NodeID | None = Field(  # type: ignore[literal-required]
-        default=None,
-        description="Optional parent node ID",
-        alias=X_SIMCORE_PARENT_NODE_ID,
-    )
+    simcore_user_agent: Annotated[
+        str,
+        Field(
+            description="Optional simcore user agent",
+            alias=X_SIMCORE_USER_AGENT,
+        ),
+    ] = UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+    parent_project_uuid: Annotated[
+        ProjectID | None,
+        Field(
+            description="Optional parent project UUID",
+            alias=X_SIMCORE_PARENT_PROJECT_UUID,
+        ),
+    ] = None
+    parent_node_id: Annotated[
+        NodeID | None,
+        Field(
+            description="Optional parent node ID",
+            alias=X_SIMCORE_PARENT_NODE_ID,
+        ),
+    ] = None
 
     @model_validator(mode="after")
-    def check_parent_valid(self) -> Self:
+    def _check_parent_valid(self) -> Self:
         if (self.parent_project_uuid is None and self.parent_node_id is not None) or (
             self.parent_project_uuid is not None and self.parent_node_id is None
         ):
@@ -68,34 +72,52 @@ class ProjectCreateHeaders(BaseModel):
 
 
 class ProjectCreateQueryParams(BaseModel):
-    from_study: ProjectID | None = Field(
-        None,
-        description="Option to create a project from existing template or study: from_study={study_uuid}",
-    )
-    as_template: bool = Field(
-        default=False,
-        description="Option to create a template from existing project: as_template=true",
-    )
-    copy_data: bool = Field(
-        default=True,
-        description="Option to copy data when creating from an existing template or as a template, defaults to True",
-    )
-    hidden: bool = Field(
-        default=False,
-        description="Enables/disables hidden flag. Hidden projects are by default unlisted",
-    )
+    from_study: Annotated[
+        ProjectID | None,
+        Field(
+            description="Option to create a project from existing template or study: from_study={study_uuid}",
+        ),
+    ] = None
+    as_template: Annotated[
+        bool,
+        Field(
+            description="Option to create a template from existing project: as_template=true",
+        ),
+    ] = False
+    copy_data: Annotated[
+        bool,
+        Field(
+            description="Option to copy data when creating from an existing template or as a template, defaults to True",
+        ),
+    ] = True
+    hidden: Annotated[
+        bool,
+        Field(
+            description="Enables/disables hidden flag. Hidden projects are by default unlisted",
+        ),
+    ] = False
     model_config = ConfigDict(extra="forbid")
 
 
 class ProjectFilters(Filters):
-    trashed: bool | None = Field(
-        default=False,
-        description="Set to true to list trashed, false to list non-trashed (default), None to list all",
-    )
-    search_by_project_name: str | None = Field(
-        default=None,
-        description="A search query to filter projects by their name. This field performs a case-insensitive partial match against the project name field.",
-    )
+    trashed: Annotated[
+        bool | None,
+        Field(
+            description="Set to true to list trashed, false to list non-trashed (default), None to list all",
+        ),
+    ] = False
+    search_by_project_name: Annotated[
+        str | None,
+        Field(
+            description="A search query to filter projects by their name. This field performs a case-insensitive partial match against the project name field.",
+        ),
+    ] = None
+    job_parent_resource_name: Annotated[
+        str | None,
+        Field(
+            description="A search query to filter projects with associated job_parent_resource_name",
+        ),
+    ] = None
 
 
 ProjectsListOrderParams = create_ordering_query_model_class(
@@ -113,28 +135,34 @@ ProjectsListOrderParams = create_ordering_query_model_class(
 
 
 class ProjectsListExtraQueryParams(RequestParameters):
-    project_type: ProjectTypeAPI = Field(default=ProjectTypeAPI.all, alias="type")
-    show_hidden: bool = Field(
-        default=False, description="includes projects marked as hidden in the listing"
-    )
-    search: str | None = Field(
-        default=None,
-        description="Multi column full text search",
-        max_length=100,
-        examples=["My Project"],
-    )
-    folder_id: FolderID | None = Field(
-        default=None,
-        description="Filter projects in specific folder. Default filtering is a root directory.",
-    )
-    workspace_id: WorkspaceID | None = Field(
-        default=None,
-        description="Filter projects in specific workspace. Default filtering is a private workspace.",
-    )
+    project_type: Annotated[ProjectTypeAPI, Field(alias="type")] = ProjectTypeAPI.all
+    show_hidden: Annotated[
+        bool, Field(description="includes projects marked as hidden in the listing")
+    ] = False
+    search: Annotated[
+        str | None,
+        Field(
+            description="Multi column full text search",
+            max_length=100,
+            examples=["My Project"],
+        ),
+    ] = None
+    folder_id: Annotated[
+        FolderID | None,
+        Field(
+            description="Filter projects in specific folder. Default filtering is a root directory.",
+        ),
+    ] = None
+    workspace_id: Annotated[
+        WorkspaceID | None,
+        Field(
+            description="Filter projects in specific workspace. Default filtering is a private workspace.",
+        ),
+    ] = None
 
     @field_validator("search", mode="before")
     @classmethod
-    def search_check_empty_string(cls, v):
+    def _search_check_empty_string(cls, v):
         if not v:
             return None
         return v
@@ -157,27 +185,28 @@ class ProjectsListQueryParams(
 
 
 class ProjectActiveQueryParams(BaseModel):
-    client_session_id: str
+    client_session_id: Annotated[str, Field()]
 
 
 class ProjectSearchExtraQueryParams(
     PageQueryParameters,
     FiltersQueryParameters[ProjectFilters],
 ):
-    text: str | None = Field(
-        default=None,
-        description="Multi column full text search, across all folders and workspaces",
-        max_length=100,
-        examples=["My Project"],
-    )
+    text: Annotated[
+        str | None,
+        Field(
+            description="Multi column full text search, across all folders and workspaces",
+            max_length=100,
+            examples=["My Project"],
+        ),
+    ] = None
     tag_ids: Annotated[
         str | None,
         Field(
-            default=None,
             description="Search by tag ID (multiple tag IDs may be provided separated by column)",
             examples=["1,3"],
         ),
-    ]
+    ] = None
 
     _empty_is_none = field_validator("text", mode="before")(
         empty_str_to_none_pre_validator

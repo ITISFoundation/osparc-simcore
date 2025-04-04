@@ -33,8 +33,7 @@ qx.Class.define("osparc.store.PollTasks", {
       return osparc.data.Resources.get("tasks")
         .then(tasksData => {
           tasksData.forEach(taskData => {
-            const interval = 1000;
-            this.__addTask(taskData, interval);
+            this.__addTask(taskData);
           });
         })
         .catch(err => console.error(err));
@@ -63,7 +62,7 @@ qx.Class.define("osparc.store.PollTasks", {
       }
     },
 
-    __addTask: function(taskData, interval = 1000) {
+    __addTask: function(taskData, interval) {
       const tasks = this.getTasks();
       const index = tasks.findIndex(t => t.getTaskId() === taskData["task_id"]);
       if (index === -1) {

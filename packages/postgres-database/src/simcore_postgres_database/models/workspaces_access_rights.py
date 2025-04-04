@@ -57,4 +57,5 @@ workspaces_access_rights = sa.Table(
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
     sa.UniqueConstraint("workspace_id", "gid"),
+    sa.Index("idx_workspaces_access_rights_gid", "gid"),
 )
