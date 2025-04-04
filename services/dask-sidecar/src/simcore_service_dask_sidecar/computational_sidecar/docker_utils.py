@@ -247,6 +247,11 @@ async def _parse_container_log_file(  # noqa: PLR0913 # pylint: disable=too-many
             )
 
 
+_MINUTE: Final[int] = 60
+_HOUR: Final[int] = 60 * _MINUTE
+_AIODOCKER_LOGS_TIMEOUT_S: Final[int] = 1 * _HOUR
+
+
 async def _parse_container_docker_logs(
     *,
     container: DockerContainer,
@@ -273,7 +278,11 @@ async def _parse_container_docker_logs(
                 async for log_line in cast(
                     AsyncGenerator[str, None],
                     container.log(
-                        stdout=True, stderr=True, follow=True, timestamps=True
+                        stdout=True,
+                        stderr=True,
+                        follow=True,
+                        timestamps=True,
+                        timeout=_AIODOCKER_LOGS_TIMEOUT_S,
                     ),
                 ):
                     log_msg_without_timestamp = log_line.split(" ", maxsplit=1)[1]
