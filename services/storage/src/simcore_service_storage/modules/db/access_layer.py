@@ -183,7 +183,6 @@ async def _list_user_projects_access_rights_with_read_access(
     projects_access_rights = []
 
     async for row in await connection.stream(combined_query):
-        assert isinstance(row.access_rights, dict)  # nosec
         assert isinstance(row.uuid, str)  # nosec
 
         projects_access_rights.append(ProjectID(row.uuid))
@@ -214,7 +213,7 @@ class AccessLayerRepository(BaseRepository):
                     projects.c.prj_owner,
                     _my_access_rights_subquery.c.access_rights,
                 )
-                .select_from(projects.join(_my_access_rights_subquery, isouter=True))
+                .select_from(projects.join(_my_access_rights_subquery))
                 .where(
                     (projects.c.uuid == f"{project_id}")
                     & (projects.c.workspace_id.is_(None))
