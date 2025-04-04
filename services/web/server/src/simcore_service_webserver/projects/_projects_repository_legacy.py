@@ -17,6 +17,7 @@ from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
 from models_library.basic_types import IDStr
 from models_library.folders import FolderQuery, FolderScope
+from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_comments import CommentID, ProjectsCommentsDB
@@ -79,7 +80,6 @@ from ._projects_repository_legacy_utils import (
     ANY_USER_ID_SENTINEL,
     BaseProjectDB,
     ProjectAccessRights,
-    assemble_array_groups,
     convert_to_db_names,
     convert_to_schema_names,
     create_project_access_rights,
@@ -354,9 +354,8 @@ class ProjectDBAPI(BaseProjectDB):
         product_name: ProductName,
         user_id: UserID,
         workspace_query: WorkspaceQuery,
-        project_tags_subquery: sql.Subquery,
         is_search_by_multi_columns: bool,
-        user_groups: list[RowProxy],
+        user_groups: list[GroupID],
     ) -> sql.Select | None:
         private_workspace_query = None
         if workspace_query.workspace_scope is not WorkspaceScope.SHARED:
@@ -378,13 +377,41 @@ class ProjectDBAPI(BaseProjectDB):
                             "delete",
                             project_to_groups.c.delete,
                         ),
-                    )
-                    .filter(
-                        project_to_groups.c.read  # Filters out entries where "read" is False
-                    )
-                    .label("access_rights"),
-                ).group_by(project_to_groups.c.project_uuid)
-            ).subquery("access_rights_subquery")
+                    ).label("access_rights"),
+                )
+                .where(
+                    project_to_groups.c.project_uuid == projects.c.uuid
+                )  # Correlate with main query
+                .where(project_to_groups.c.read)
+                .group_by(project_to_groups.c.project_uuid)
+                .lateral()  # Critical for per-row execution
+            )
+
+            my_access_rights_subquery = (
+                sa.select(
+                    project_to_groups.c.project_uuid,
+                    sa.func.jsonb_object_agg(
+                        project_to_groups.c.gid,
+                        sa.func.jsonb_build_object(
+                            "read",
+                            project_to_groups.c.read,
+                            "write",
+                            project_to_groups.c.write,
+                            "delete",
+                            project_to_groups.c.delete,
+                        ),
+                    ).label("access_rights"),
+                )
+                .where(
+                    (
+                        project_to_groups.c.read
+                    )  # Filters out entries where "read" is False
+                    & (
+                        project_to_groups.c.gid.in_(user_groups)
+                    )  # Filters gid to be in user_groups
+                )
+                .group_by(project_to_groups.c.project_uuid)
+            ).subquery("my_access_rights_subquery")
 
             private_workspace_query = (
                 sa.select(
@@ -393,13 +420,9 @@ class ProjectDBAPI(BaseProjectDB):
                     access_rights_subquery.c.access_rights,
                     projects_to_products.c.product_name,
                     projects_to_folders.c.folder_id,
-                    sa.func.coalesce(
-                        project_tags_subquery.c.tags,
-                        sa.cast(sa.text("'{}'"), sa.ARRAY(sa.Integer)),
-                    ).label("tags"),
                 )
                 .select_from(
-                    projects.join(access_rights_subquery, isouter=True)
+                    projects.join(my_access_rights_subquery)
                     .join(projects_to_products)
                     .join(
                         projects_to_folders,
@@ -409,21 +432,19 @@ class ProjectDBAPI(BaseProjectDB):
                         ),
                         isouter=True,
                     )
-                    .join(project_tags_subquery, isouter=True)
+                    .join(
+                        access_rights_subquery,
+                        access_rights_subquery.c.project_uuid == projects.c.uuid,
+                    )
                 )
                 .where(
-                    (
-                        (projects.c.prj_owner == user_id)
-                        | sa.text(
-                            f"jsonb_exists_any(access_rights_subquery.access_rights, {assemble_array_groups(user_groups)})"
-                        )
-                    )
-                    & (projects.c.workspace_id.is_(None))  # <-- Private workspace
+                    (projects.c.workspace_id.is_(None))  # <-- Private workspace
                     & (projects_to_products.c.product_name == product_name)
                 )
             )
+
             assert (  # nosec
-                access_rights_subquery.description == "access_rights_subquery"
+                my_access_rights_subquery.description == "my_access_rights_subquery"
             )
 
             if is_search_by_multi_columns:
@@ -438,9 +459,8 @@ class ProjectDBAPI(BaseProjectDB):
         *,
         product_name: ProductName,
         workspace_query: WorkspaceQuery,
-        project_tags_subquery: sql.Subquery,
-        user_groups: list[RowProxy],
         is_search_by_multi_columns: bool,
+        user_groups: list[GroupID],
     ) -> sql.Select | None:
 
         if workspace_query.workspace_scope is not WorkspaceScope.PRIVATE:
@@ -450,6 +470,31 @@ class ProjectDBAPI(BaseProjectDB):
             )
 
             workspace_access_rights_subquery = (
+                (
+                    sa.select(
+                        workspaces_access_rights.c.workspace_id,
+                        sa.func.jsonb_object_agg(
+                            workspaces_access_rights.c.gid,
+                            sa.func.jsonb_build_object(
+                                "read",
+                                workspaces_access_rights.c.read,
+                                "write",
+                                workspaces_access_rights.c.write,
+                                "delete",
+                                workspaces_access_rights.c.delete,
+                            ),
+                        ).label("access_rights"),
+                    )
+                    .where(
+                        workspaces_access_rights.c.read,
+                    )
+                    .group_by(workspaces_access_rights.c.workspace_id)
+                )
+                .subquery("workspace_access_rights_subquery")
+                .lateral()
+            )
+
+            my_workspace_access_rights_subquery = (
                 sa.select(
                     workspaces_access_rights.c.workspace_id,
                     sa.func.jsonb_object_agg(
@@ -462,11 +507,14 @@ class ProjectDBAPI(BaseProjectDB):
                             "delete",
                             workspaces_access_rights.c.delete,
                         ),
-                    )
-                    .filter(workspaces_access_rights.c.read)
-                    .label("access_rights"),
-                ).group_by(workspaces_access_rights.c.workspace_id)
-            ).subquery("workspace_access_rights_subquery")
+                    ).label("access_rights"),
+                )
+                .where(
+                    workspaces_access_rights.c.read,
+                    workspaces_access_rights.c.gid.in_(user_groups),
+                )
+                .group_by(workspaces_access_rights.c.workspace_id)
+            ).subquery("my_workspace_access_rights_subquery")
 
             shared_workspace_query = (
                 sa.select(
@@ -475,16 +523,12 @@ class ProjectDBAPI(BaseProjectDB):
                     workspace_access_rights_subquery.c.access_rights,
                     projects_to_products.c.product_name,
                     projects_to_folders.c.folder_id,
-                    sa.func.coalesce(
-                        project_tags_subquery.c.tags,
-                        sa.cast(sa.text("'{}'"), sa.ARRAY(sa.Integer)),
-                    ).label("tags"),
                 )
                 .select_from(
                     projects.join(
-                        workspace_access_rights_subquery,
+                        my_workspace_access_rights_subquery,
                         projects.c.workspace_id
-                        == workspace_access_rights_subquery.c.workspace_id,
+                        == my_workspace_access_rights_subquery.c.workspace_id,
                     )
                     .join(projects_to_products)
                     .join(
@@ -495,20 +539,17 @@ class ProjectDBAPI(BaseProjectDB):
                         ),
                         isouter=True,
                     )
-                    .join(project_tags_subquery, isouter=True)
-                )
-                .where(
-                    (
-                        sa.text(
-                            f"jsonb_exists_any(workspace_access_rights_subquery.access_rights, {assemble_array_groups(user_groups)})"
-                        )
+                    .join(
+                        workspace_access_rights_subquery,
+                        projects.c.workspace_id
+                        == workspace_access_rights_subquery.c.workspace_id,
                     )
-                    & (projects_to_products.c.product_name == product_name)
                 )
+                .where(projects_to_products.c.product_name == product_name)
             )
             assert (  # nosec
-                workspace_access_rights_subquery.description
-                == "workspace_access_rights_subquery"
+                my_workspace_access_rights_subquery.description
+                == "my_workspace_access_rights_subquery"
             )
 
             if workspace_query.workspace_scope == WorkspaceScope.ALL:
@@ -541,9 +582,7 @@ class ProjectDBAPI(BaseProjectDB):
         filter_trashed: bool | None,
         search_by_multi_columns: str | None,
         search_by_project_name: str | None,
-        filter_tag_ids_list: list[int] | None,
         folder_query: FolderQuery,
-        project_tags_subquery: sql.Subquery,
     ) -> list[ColumnElement]:
         attributes_filters: list[ColumnElement] = []
 
@@ -581,14 +620,6 @@ class ProjectDBAPI(BaseProjectDB):
                 projects.c.name.like(f"%{search_by_project_name}%")
             )
 
-        if filter_tag_ids_list:
-            attributes_filters.append(
-                sa.func.coalesce(
-                    project_tags_subquery.c.tags,
-                    sa.cast(sa.text("'{}'"), sa.ARRAY(sa.Integer)),
-                ).op("@>")(filter_tag_ids_list)
-            )
-
         if folder_query.folder_scope is not FolderScope.ALL:
             if folder_query.folder_scope == FolderScope.SPECIFIC:
                 attributes_filters.append(
@@ -614,7 +645,6 @@ class ProjectDBAPI(BaseProjectDB):
         filter_published: bool | None = None,
         filter_hidden: bool | None = False,
         filter_trashed: bool | None = False,
-        filter_tag_ids_list: list[int] | None = None,
         # search
         search_by_multi_columns: str | None = None,
         search_by_project_name: str | None = None,
@@ -624,20 +654,11 @@ class ProjectDBAPI(BaseProjectDB):
         # order
         order_by: OrderBy = DEFAULT_ORDER_BY,
     ) -> tuple[list[ProjectDict], list[ProjectType], int]:
-
-        if filter_tag_ids_list is None:
-            filter_tag_ids_list = []
-
         async with self.engine.acquire() as conn:
-            user_groups: list[RowProxy] = await self._list_user_groups(conn, user_id)
-            project_tags_subquery = (
-                sa.select(
-                    projects_tags.c.project_id,
-                    sa.func.array_agg(projects_tags.c.tag_id).label("tags"),
-                )
-                .where(projects_tags.c.project_id.is_not(None))
-                .group_by(projects_tags.c.project_id)
-            ).subquery("project_tags_subquery")
+            user_groups_proxy: list[RowProxy] = await self._list_user_groups(
+                conn, user_id
+            )
+            user_groups: list[GroupID] = [group.gid for group in user_groups_proxy]
 
             ###
             # Private workspace query
@@ -647,7 +668,6 @@ class ProjectDBAPI(BaseProjectDB):
                 product_name=product_name,
                 user_id=user_id,
                 workspace_query=workspace_query,
-                project_tags_subquery=project_tags_subquery,
                 is_search_by_multi_columns=search_by_multi_columns is not None,
                 user_groups=user_groups,
             )
@@ -658,9 +678,8 @@ class ProjectDBAPI(BaseProjectDB):
             shared_workspace_query = self._create_shared_workspace_query(
                 product_name=product_name,
                 workspace_query=workspace_query,
-                project_tags_subquery=project_tags_subquery,
-                user_groups=user_groups,
                 is_search_by_multi_columns=search_by_multi_columns is not None,
+                user_groups=user_groups,
             )
 
             ###
@@ -674,9 +693,7 @@ class ProjectDBAPI(BaseProjectDB):
                 filter_trashed=filter_trashed,
                 search_by_multi_columns=search_by_multi_columns,
                 search_by_project_name=search_by_project_name,
-                filter_tag_ids_list=filter_tag_ids_list,
                 folder_query=folder_query,
-                project_tags_subquery=project_tags_subquery,
             )
 
             ###
@@ -709,11 +726,13 @@ class ProjectDBAPI(BaseProjectDB):
 
             if order_by.direction == OrderDirection.ASC:
                 combined_query = combined_query.order_by(
-                    sa.asc(getattr(projects.c, order_by.field))
+                    sa.asc(getattr(projects.c, order_by.field)),
+                    projects.c.id,
                 )
             else:
                 combined_query = combined_query.order_by(
-                    sa.desc(getattr(projects.c, order_by.field))
+                    sa.desc(getattr(projects.c, order_by.field)),
+                    projects.c.id,
                 )
 
             prjs, prj_types = await self._execute_without_permission_check(
