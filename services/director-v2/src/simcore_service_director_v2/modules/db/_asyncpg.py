@@ -2,7 +2,7 @@ import logging
 
 from fastapi import FastAPI
 from servicelib.db_asyncpg_utils import (
-    create_async_engine_and_wait_for_database_ready,
+    create_async_engine_and_database_ready,
 )
 from servicelib.logging_utils import log_context
 from settings_library.postgres import PostgresSettings
@@ -17,7 +17,7 @@ async def asyncpg_connect_to_db(app: FastAPI, settings: PostgresSettings) -> Non
         logging.DEBUG,
         f"Connecting and migraging {settings.dsn_with_async_sqlalchemy}",
     ):
-        engine = await create_async_engine_and_wait_for_database_ready(settings)
+        engine = await create_async_engine_and_database_ready(settings)
 
     app.state.asyncpg_engine = engine
     _logger.debug(

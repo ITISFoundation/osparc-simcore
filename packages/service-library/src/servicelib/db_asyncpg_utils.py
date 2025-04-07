@@ -14,7 +14,7 @@ _logger = logging.getLogger(__name__)
 
 
 @retry(**PostgresRetryPolicyUponInitialization(_logger).kwargs)
-async def create_async_engine_and_wait_for_database_ready(
+async def create_async_engine_and_database_ready(
     settings: PostgresSettings,
 ) -> AsyncEngine:
     """

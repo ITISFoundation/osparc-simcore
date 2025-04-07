@@ -15,7 +15,7 @@ from simcore_postgres_database.utils_aiosqlalchemy import (  # type: ignore[impo
 )
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from ..db_asyncpg_utils import create_async_engine_and_wait_for_database_ready
+from ..db_asyncpg_utils import create_async_engine_and_database_ready
 from ..logging_utils import log_context
 
 APP_DB_ASYNC_ENGINE_KEY: Final[str] = f"{__name__ }.AsyncEngine"
@@ -55,7 +55,7 @@ async def connect_to_db(app: web.Application, settings: PostgresSettings) -> Non
         "Connecting app[APP_DB_ASYNC_ENGINE_KEY] to postgres with %s",
         f"{settings=}",
     ):
-        engine = await create_async_engine_and_wait_for_database_ready(settings)
+        engine = await create_async_engine_and_database_ready(settings)
         _set_async_engine_to_app_state(app, engine)
 
     _logger.info(

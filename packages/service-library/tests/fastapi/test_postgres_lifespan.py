@@ -8,6 +8,7 @@ from collections.abc import AsyncIterator
 from typing import Annotated, Any
 
 import pytest
+import servicelib.fastapi.postgres_lifespan
 from asgi_lifespan import LifespanManager as ASGILifespanManager
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager, State
@@ -25,8 +26,9 @@ from settings_library.postgres import PostgresSettings
 
 @pytest.fixture
 def mock_create_async_engine_and_database_ready(mocker: MockerFixture) -> MockType:
-    return mocker.patch(
-        "servicelib.fastapi.postgres_lifespan.create_async_engine_and_database_ready",
+    return mocker.patch.object(
+        servicelib.fastapi.postgres_lifespan,
+        "create_async_engine_and_database_ready",
         return_value=mocker.AsyncMock(),
     )
 
