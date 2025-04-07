@@ -7,8 +7,13 @@ from servicelib.fastapi.postgres_lifespan import (
     PostgresLifespanStateKeys,
     postgres_lifespan,
 )
+from servicelib.fastapi.prometheus_instrumentation import (
+    initialize_prometheus_instrumentation,
+    lifespan_prometheus_instrumentation,
+)
+from servicelib.fastapi.tracing import initialize_tracing
 
-from .._meta import APP_FINISHED_BANNER_MSG, APP_STARTED_BANNER_MSG
+from .._meta import APP_FINISHED_BANNER_MSG, APP_NAME, APP_STARTED_BANNER_MSG
 from ..db.events import setup_database
 from ..services.director import setup_director
 from ..services.function_services import setup_function_services
@@ -33,17 +38,33 @@ async def _setup_app(app: FastAPI) -> AsyncIterator[State]:
 
     settings: ApplicationSettings = app.state.settings
 
+    if settings.CATALOG_TRACING:
+        initialize_tracing(app, settings.CATALOG_TRACING, APP_NAME)
+
     yield {
         PostgresLifespanStateKeys.POSTGRES_SETTINGS: settings.CATALOG_POSTGRES,
+        "prometheus_instrumentation_enabled": settings.CATALOG_PROMETHEUS_INSTRUMENTATION_ENABLED,
     }
 
     flush_finished_banner()
+
+
+async def _setup_prometheus_instrumentation_adapter(
+    app: FastAPI, state: State
+) -> AsyncIterator[State]:
+    enabled = state.get("prometheus_instrumentation_enabled", False)
+    if enabled:
+        initialize_prometheus_instrumentation(app)
+        async for _state in lifespan_prometheus_instrumentation(app):
+            yield _state
 
 
 def create_app_lifespan():
     # app lifespan
     app_lifespan = LifespanManager()
     app_lifespan.add(_setup_app)
+
+    # WARNING: order matters
 
     # - postgres lifespan
     postgres_lifespan.add(setup_database)
@@ -60,5 +81,8 @@ def create_app_lifespan():
 
     # - background task lifespan
     app_lifespan.add(setup_background_task)
+
+    # - prometheus instrumentation lifespan
+    app_lifespan.add(_setup_prometheus_instrumentation_adapter)
 
     return app_lifespan

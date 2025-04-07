@@ -5,17 +5,11 @@ from fastapi.middleware.gzip import GZipMiddleware
 from models_library.basic_types import BootModeEnum
 from servicelib.fastapi import timing_middleware
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
-from servicelib.fastapi.profiler import initialize_profiler
-from servicelib.fastapi.prometheus_instrumentation import (
-    setup_prometheus_instrumentation,
-)
-from servicelib.fastapi.tracing import initialize_tracing
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from .._meta import (
     API_VERSION,
     API_VTAG,
-    APP_NAME,
     PROJECT_NAME,
     SUMMARY,
 )
@@ -65,16 +59,7 @@ def create_app() -> FastAPI:
     # STATE
     app.state.settings = settings
 
-    if settings.CATALOG_TRACING:
-        initialize_tracing(app, settings.CATALOG_TRACING, APP_NAME)
-
     # MIDDLEWARES
-    if settings.CATALOG_PROMETHEUS_INSTRUMENTATION_ENABLED:
-        setup_prometheus_instrumentation(app)
-
-    if settings.CATALOG_PROFILING:
-        initialize_profiler(app)
-
     if settings.SC_BOOT_MODE != BootModeEnum.PRODUCTION:
         # middleware to time requests (ONLY for development)
         app.add_middleware(
