@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% block title %} {% include 'on_new_code.email.subject.txt' %} {% endblock %}
 {% block content %}
-<p>Dear {{ user.first_name }},</p>
+<p>Dear {{ user.first_name or user.user_name }},</p>
 <p>Please find below the Two-factor Authentication sign-in code for your {{ host }} account.</p>
 
 <p>

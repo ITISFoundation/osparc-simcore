@@ -25,6 +25,7 @@ class UsersRepo(_BaseRepo):
     async def get_user_data(self, user_id: UserID) -> UserData:
         query = sa.select(
             # NOTE: careful! privacy applies here!
+            users.c.name,
             users.c.first_name,
             users.c.last_name,
             users.c.email,
@@ -38,7 +39,10 @@ class UsersRepo(_BaseRepo):
             raise ValueError(msg)
 
         return UserData(
-            first_name=row.first_name, last_name=row.last_name, email=row.email
+            user_name=row.name,
+            first_name=row.first_name,
+            last_name=row.last_name,
+            email=row.email,
         )
 
 

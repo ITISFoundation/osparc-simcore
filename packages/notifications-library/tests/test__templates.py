@@ -18,6 +18,7 @@ from notifications_library._templates import (
         "on_payed",
         "on_registered",
         "on_reset_password",
+        "on_share_project",
         "on_unregister",
     ],
 )

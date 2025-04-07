@@ -9,8 +9,14 @@ from typing import Any
 
 import notifications_library
 import pytest
+from faker import Faker
 from models_library.products import ProductName
-from notifications_library._models import ProductData, ProductUIData, UserData
+from notifications_library._models import (
+    ProductData,
+    ProductUIData,
+    SharerData,
+    UserData,
+)
 from notifications_library.payments import PaymentData
 from pydantic import EmailStr
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -61,6 +67,7 @@ def product_data(
             "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/static-webserver/client/source/resource/osparc/osparc-white.svg",
         ),
         strong_color=vendor.get("ui", {}).get("strong_color", "rgb(131, 0, 191)"),
+        project_alias=vendor.get("ui", {}).get("project_alias", "project"),
     )
 
     return ProductData(  # type: ignore
@@ -75,12 +82,21 @@ def product_data(
 
 @pytest.fixture
 def user_data(
-    user_email: EmailStr, user_first_name: str, user_last_name: str
+    user_name: str, user_email: EmailStr, user_first_name: str, user_last_name: str
 ) -> UserData:
     return UserData(
+        user_name=user_name,
         first_name=user_first_name,
         last_name=user_last_name,
         email=user_email,
+    )
+
+
+@pytest.fixture
+def sharer_data(user_name: str, faker: Faker) -> SharerData:
+    return SharerData(
+        user_name=user_name,
+        message=faker.random_element(elements=(faker.sentence(), "")),
     )
 
 

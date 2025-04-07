@@ -1,4 +1,4 @@
-Dear {{ user.first_name }},
+Dear {{ user.first_name or user.user_name }},
 
 We have received your account closure request, and we want to say thank you for being a part of our platform. While we're sad to see you go, we respect your decision.
 
