@@ -13,7 +13,13 @@ def app_environment(
     env_devel_dict: EnvVarsDict,
     external_envfile_dict: EnvVarsDict,
 ) -> EnvVarsDict:
-    return setenvs_from_dict(monkeypatch, {**env_devel_dict, **external_envfile_dict})
+    return setenvs_from_dict(
+        monkeypatch,
+        {
+            **env_devel_dict,
+            **external_envfile_dict,
+        },
+    )
 
 
 @pytest.fixture
