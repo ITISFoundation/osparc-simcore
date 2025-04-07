@@ -46,6 +46,7 @@ from models_library.api_schemas_webserver._base import OutputSchema
 from models_library.api_schemas_webserver.storage import (
     BatchDeletePathsBodyParams,
     DataExportPost,
+    PathToExport,
 )
 from models_library.generics import Envelope
 from models_library.progress_bar import ProgressReport
@@ -671,7 +672,7 @@ async def test_get_async_job_links(
     )
 
     _body = DataExportPost(
-        paths=[f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}"]
+        paths=[PathToExport(f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}")]
     )
     response = await client.post(
         f"/{API_VERSION}/storage/locations/0/export-data", data=_body.model_dump_json()
