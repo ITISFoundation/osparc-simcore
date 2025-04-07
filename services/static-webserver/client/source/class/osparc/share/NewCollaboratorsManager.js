@@ -404,7 +404,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
         if (selectedEmails.length) {
           const dialog = new osparc.ui.window.Confirmation();
           dialog.setCaption(this.tr("Add Message"));
-          dialog.setMessage(this.tr("You can add a message that will be go in the email"));
+          dialog.setMessage(this.tr("Add a message to include in the email (optional)"));
           dialog.getConfirmButton().setLabel(this.tr("Send"));
           const messageEditor = new qx.ui.form.TextArea().set({
             autoSize: true,
