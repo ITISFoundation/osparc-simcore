@@ -451,10 +451,10 @@
               "schema": {
                 "anyOf": [
                   {
-                    "$ref": "#/components/schemas/UserFileToProgramJob"
+                    "$ref": "#/components/schemas/UserFile"
                   },
                   {
-                    "$ref": "#/components/schemas/UserFile"
+                    "$ref": "#/components/schemas/UserFileToProgramJob"
                   }
                 ],
                 "title": "Client File"
@@ -6048,10 +6048,10 @@
           "client_file": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/UserFileToProgramJob"
+                "$ref": "#/components/schemas/UserFile"
               },
               {
-                "$ref": "#/components/schemas/UserFile"
+                "$ref": "#/components/schemas/UserFileToProgramJob"
               }
             ],
             "title": "Client File"
@@ -6068,10 +6068,10 @@
           "client_file": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/UserFileToProgramJob"
+                "$ref": "#/components/schemas/UserFile"
               },
               {
-                "$ref": "#/components/schemas/UserFile"
+                "$ref": "#/components/schemas/UserFileToProgramJob"
               }
             ],
             "title": "Client File"
