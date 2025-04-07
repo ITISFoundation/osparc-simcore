@@ -140,7 +140,7 @@ def event_extra_data(  # noqa: PLR0911
             return {
                 "host": host_url,
                 "resource_alias": "Project",
-                "sharer_data": SharerData(
+                "sharer": SharerData(
                     user_name=faker.name(),
                     message=faker.random_element(elements=(faker.sentence(), "")),
                 ),
