@@ -41,7 +41,8 @@ qx.Class.define("osparc.share.AddCollaborators", {
   },
 
   events: {
-    "addCollaborators": "qx.event.type.Data"
+    "addCollaborators": "qx.event.type.Data",
+    "shareWithEmails": "qx.event.type.Data",
   },
 
   members: {
@@ -98,6 +99,11 @@ qx.Class.define("osparc.share.AddCollaborators", {
         collaboratorsManager.addListener("addCollaborators", e => {
           collaboratorsManager.close();
           this.fireDataEvent("addCollaborators", e.getData());
+        }, this);
+        collaboratorsManager.addListener("shareWithEmails", e => {
+          collaboratorsManager.close();
+          console.log("Sending emails: ", e.getData());
+          this.fireDataEvent("shareWithEmails", e.getData());
         }, this);
       }, this);
 

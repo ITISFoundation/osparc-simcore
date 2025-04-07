@@ -48,7 +48,8 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
   },
 
   events: {
-    "addCollaborators": "qx.event.type.Data"
+    "addCollaborators": "qx.event.type.Data",
+    "shareWithEmails": "qx.event.type.Data",
   },
 
   members: {
@@ -291,7 +292,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       collaboratorButton.addListener("changeValue", e => {
         const selected = e.getData();
         if (!selected && collaborator.email in this.__selectedCollaborators) {
-          delete this.__selectedCollaborators[collaborator.getGroupId()];
+          delete this.__selectedCollaborators[collaborator.email];
           collaboratorButton.subscribeToFilterGroup("collaboratorsManager");
         }
         this.getChildControl("share-button").setEnabled(Boolean(Object.keys(this.__selectedCollaborators).length));
@@ -372,10 +373,48 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
         }
       }
       if (Object.keys(this.__selectedCollaborators).length) {
-        this.fireDataEvent("addCollaborators", {
-          selectedGids: Object.keys(this.__selectedCollaborators),
-          newAccessRights,
-        });
+        const selectedGIds = Object.keys(this.__selectedCollaborators).filter(key => qx.lang.Type.isNumber(key));
+        const selectedEmails = Object.keys(this.__selectedCollaborators).filter(key => osparc.auth.core.Utils.checkEmail(key));
+
+        const addCollaborators = () => {
+          if (selectedGIds.length) {
+            this.fireDataEvent("addCollaborators", {
+              selectedGids: selectedGIds,
+              newAccessRights,
+            });
+          }
+        };
+
+        const sendEmails = message => {
+          if (selectedEmails.length) {
+            this.fireDataEvent("shareWithEmails", {
+              selectedEmails,
+              newAccessRights,
+              message,
+            });
+          }
+        };
+
+        if (selectedEmails.length) {
+          console.log("Inviting users: ", selectedEmails);
+          const dialog = new osparc.ui.window.Confirmation();
+          dialog.setCaption(this.tr("Add Message"));
+          dialog.setMessage(this.tr("You can add a message that will be go in the email"));
+          dialog.getConfirmButton().setLabel(this.tr("Send"));
+          const messageEditor = new qx.ui.form.TextArea().set({
+            autoSize: true,
+            minHeight: 70,
+            maxHeight: 140,
+          });
+          dialog.addWidget(messageEditor);
+          dialog.open();
+          dialog.addListener("close", () => {
+            addCollaborators();
+            sendEmails(messageEditor.getValue());
+          }, this);
+        } else {
+          addCollaborators();
+        }
       }
     }
   }
