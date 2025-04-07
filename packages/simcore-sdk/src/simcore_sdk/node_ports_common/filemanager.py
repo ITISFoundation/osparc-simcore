@@ -59,7 +59,7 @@ async def complete_file_upload(
     uploaded_parts: list[UploadedPart],
     upload_completion_link: AnyUrl,
     client_session: ClientSession | None = None,
-) -> ETag | None:
+) -> ETag:
     async with ClientSessionContextManager(client_session) as session:
         e_tag: ETag | None = await _filemanager_utils.complete_upload(
             session=session,
