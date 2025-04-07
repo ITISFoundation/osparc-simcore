@@ -216,8 +216,10 @@ def service_caching_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.fixture
-def postgres_setup_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("CATALOG_POSTGRES", "null")
+def postgres_setup_disabled(mocker: MockerFixture) -> MockType:
+    return mocker.patch.object(
+        simcore_service_catalog.core.application, "postgres_lifespan"
+    )
 
 
 @pytest.fixture

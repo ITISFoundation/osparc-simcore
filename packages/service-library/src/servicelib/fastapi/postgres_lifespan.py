@@ -25,9 +25,14 @@ async def setup_postgres_database(_, state: State) -> AsyncIterator[State]:
 
     with log_context(_logger, logging.INFO, f"{__name__}"):
 
-        pg_settings: PostgresSettings = state[
+        pg_settings: PostgresSettings | None = state[
             PostgresLifespanStateKeys.POSTGRES_SETTINGS
         ]
+
+        if pg_settings is None or not isinstance(pg_settings, PostgresSettings):
+            msg = f"Invalid {pg_settings=} on startup. Postgres cannot be disabled using settings"
+            raise RuntimeError(msg)
+
         assert isinstance(pg_settings, PostgresSettings)  # nosec
 
         async_engine: AsyncEngine = await create_async_engine_and_database_ready(
