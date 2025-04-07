@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% block title %} {% include 'on_change_email.email.subject.txt' %} {% endblock %}
 {% block content %}
-<p>Dear {{ user.first_name }},</p>
+<p>Dear {{ user.first_name or user.user_name }},</p>
 <p>
   You have requested to change the email address linked to your {{ product.display_name }} account.
   Please follow the on-screen information in the link below:

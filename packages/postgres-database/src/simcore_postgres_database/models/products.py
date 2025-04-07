@@ -32,6 +32,7 @@ from .jinja2_templates import jinja2_templates
 class VendorUI(TypedDict, total=True):
     logo_url: str  # vendor logo url
     strong_color: str  # vendor main color
+    project_alias: str  # project alias for the product (e.g. "project" or "study")
 
 
 class Vendor(TypedDict, total=False):

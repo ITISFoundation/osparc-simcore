@@ -1,4 +1,4 @@
-Dear {{ user.first_name }},
+Dear {{ user.first_name or user.user_name }},
 
 We are delighted to confirm the successful processing of your payment of {{ payment.price_dollars }} USD for the purchase of {{ payment.osparc_credits }} credits. The credits have been added to your {{ product.display_name }} account, and you are all set to utilize them.
 
