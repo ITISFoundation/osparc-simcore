@@ -20,4 +20,5 @@ def encore_celery_transferrable_error(error: Exception) -> TransferrableCeleryEr
 
 def decode_celery_transferrable_error(error: TransferrableCeleryError) -> Exception:
     assert isinstance(error, TransferrableCeleryError)  # nosec
-    return pickle.loads(base64.b64decode(error.args[0]))  # noqa: S301
+    result: Exception = pickle.loads(base64.b64decode(error.args[0]))  # noqa: S301
+    return result
