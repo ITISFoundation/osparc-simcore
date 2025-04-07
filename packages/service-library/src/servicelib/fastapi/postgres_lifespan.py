@@ -1,7 +1,7 @@
 import logging
 from collections.abc import AsyncIterator
+from enum import Enum  # Added import
 
-from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager, State
 from servicelib.logging_utils import log_catch, log_context
 from settings_library.postgres import PostgresSettings
@@ -15,17 +15,26 @@ _logger = logging.getLogger(__name__)
 postgres_lifespan = LifespanManager()
 
 
+class PostgresLifespanStateKeys(str, Enum):
+    POSTGRES_SETTINGS = "postgres_settings"
+    POSTGRES_ASYNC_ENGINE = "postgres.async_engine"
+
+
 @postgres_lifespan.add
-async def setup_postgres_database(app: FastAPI) -> AsyncIterator[State]:
+async def setup_postgres_database(_, state: State) -> AsyncIterator[State]:
+
     with log_context(_logger, logging.INFO, f"{__name__}"):
 
-        pg_settings: PostgresSettings = app.state.settings.CATALOG_POSTGRES
+        pg_settings: PostgresSettings = state[
+            PostgresLifespanStateKeys.POSTGRES_SETTINGS
+        ]
+        assert isinstance(pg_settings, PostgresSettings)  # nosec
 
         async_engine: AsyncEngine = await create_async_engine_and_database_ready(
             pg_settings
         )
 
-        yield {"postgres.async_engine": async_engine}
+        yield {PostgresLifespanStateKeys.POSTGRES_ASYNC_ENGINE: async_engine}
 
         with log_catch(_logger, reraise=False):
             await async_engine.dispose()

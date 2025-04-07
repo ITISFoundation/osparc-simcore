@@ -4,6 +4,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+from collections.abc import AsyncIterator
 from typing import Annotated, Any
 
 import pytest
@@ -14,7 +15,10 @@ from pydantic import Field
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from servicelib.fastapi.postgres_lifespan import postgres_lifespan
+from servicelib.fastapi.postgres_lifespan import (
+    PostgresLifespanStateKeys,
+    postgres_lifespan,
+)
 from settings_library.application import BaseApplicationSettings
 from settings_library.postgres import PostgresSettings
 
@@ -41,32 +45,38 @@ async def test_setup_postgres_database_in_an_app(
 ):
     assert app_environment
 
-    @postgres_lifespan.add
-    async def my_db_setup(app: FastAPI, state: State):
-        app.state.my_db_engine = state["postgres.async_engine"]
-
-        assert (
-            app.state.my_db_engine
-            == mock_create_async_engine_and_database_ready.return_value
-        )
-
-        yield
-
-    # compose lifespans
-    app_lifespan = LifespanManager()
-    app_lifespan.include(postgres_lifespan)
-
-    # define app
-    app = FastAPI(lifespan=app_lifespan)
-
-    # settings
     class AppSettings(BaseApplicationSettings):
         CATALOG_POSTGRES: Annotated[
             PostgresSettings,
             Field(json_schema_extra={"auto_default_from_env": True}),
         ]
 
-    app.state.settings = AppSettings.create_from_envs()
+    async def my_app_settings(app: FastAPI) -> AsyncIterator[State]:
+        app.state.settings = AppSettings.create_from_envs()
+
+        yield {
+            PostgresLifespanStateKeys.POSTGRES_SETTINGS: app.state.settings.CATALOG_POSTGRES
+        }
+
+    async def my_db_setup(app: FastAPI, state: State) -> AsyncIterator[State]:
+        app.state.my_db_engine = state[PostgresLifespanStateKeys.POSTGRES_ASYNC_ENGINE]
+
+        assert (
+            app.state.my_db_engine
+            == mock_create_async_engine_and_database_ready.return_value
+        )
+
+        yield {}
+
+    # compose lifespans
+    app_lifespan = LifespanManager()
+    app_lifespan.add(my_app_settings)
+
+    postgres_lifespan.add(my_db_setup)
+    app_lifespan.include(postgres_lifespan)
+
+    # define app
+    app = FastAPI(lifespan=app_lifespan)
 
     async with ASGILifespanManager(
         app,
@@ -79,11 +89,16 @@ async def test_setup_postgres_database_in_an_app(
         )
 
         # Verify that the async engine is in the lifespan manager state
-        assert "postgres.async_engine" in asgi_manager._state  # noqa: SLF001
+        assert (
+            PostgresLifespanStateKeys.POSTGRES_ASYNC_ENGINE
+            in asgi_manager._state  # noqa: SLF001
+        )
         assert app.state.my_db_engine
         assert (
             app.state.my_db_engine
-            == asgi_manager._state["postgres.async_engine"]  # noqa: SLF001
+            == asgi_manager._state[  # noqa: SLF001
+                PostgresLifespanStateKeys.POSTGRES_ASYNC_ENGINE
+            ]
         )
 
     # Verify that the engine was disposed
