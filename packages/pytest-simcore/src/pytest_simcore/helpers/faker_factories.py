@@ -14,7 +14,6 @@ NOTE: to reduce coupling, please import simcore_postgres_database inside of the 
 
 import itertools
 import json
-import random
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from typing import Any, Final
@@ -261,7 +260,7 @@ def random_product(
             ui=VendorUI(
                 logo_url=fake.url(),
                 strong_color=fake.color(),
-                project_alias=random.choice(["project", "study"]),
+                project_alias=fake.random_element(elements=["project", "study"]),
             ),
         ),
         "registration_email_template": registration_email_template,
