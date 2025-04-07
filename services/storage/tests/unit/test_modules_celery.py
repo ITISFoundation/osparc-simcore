@@ -16,11 +16,11 @@ from celery.contrib.abortable import AbortableTask
 from common_library.errors_classes import OsparcErrorMixin
 from fastapi import FastAPI
 from models_library.progress_bar import ProgressReport
-from pydantic import ValidationError
 from servicelib.logging_utils import log_context
 from simcore_service_storage.modules.celery import get_celery_client, get_event_loop
 from simcore_service_storage.modules.celery._task import register_task
 from simcore_service_storage.modules.celery.client import CeleryTaskQueueClient
+from simcore_service_storage.modules.celery.errors import TransferrableCeleryError
 from simcore_service_storage.modules.celery.models import (
     TaskContext,
     TaskState,
@@ -59,7 +59,7 @@ async def _fake_file_processor(
             worker.set_task_progress(
                 task_name=task_name,
                 task_id=task_id,
-                report=ProgressReport(actual_value=n / len(files) * 10),
+                report=ProgressReport(actual_value=n / len(files)),
             )
             await asyncio.get_event_loop().run_in_executor(None, sleep_for, 1)
 
@@ -85,14 +85,14 @@ def failure_task(task: Task):
     raise MyError(msg=msg)
 
 
-def dreamer_task(task: AbortableTask) -> list[int]:
+async def dreamer_task(task: AbortableTask) -> list[int]:
     numbers = []
     for _ in range(30):
         if task.is_aborted():
             _logger.warning("Alarm clock")
             return numbers
         numbers.append(randint(1, 90))  # noqa: S311
-        time.sleep(0.1)
+        await asyncio.sleep(0.1)
     return numbers
 
 
@@ -144,13 +144,14 @@ async def test_submitting_task_with_failure_results_with_error(
     )
 
     for attempt in Retrying(
-        retry=retry_if_exception_type((AssertionError, ValidationError)),
+        retry=retry_if_exception_type(AssertionError),
         wait=wait_fixed(1),
         stop=stop_after_delay(30),
     ):
+
         with attempt:
             raw_result = await celery_client.get_task_result(task_context, task_uuid)
-            assert isinstance(raw_result, Exception)
+            assert isinstance(raw_result, TransferrableCeleryError)
 
     raw_result = await celery_client.get_task_result(task_context, task_uuid)
     assert f"{raw_result}" == "Something strange happened: BOOM!"
@@ -188,7 +189,7 @@ async def test_listing_task_uuids_contains_submitted_task(
     task_context = TaskContext(user_id=42)
 
     task_uuid = await celery_client.send_task(
-        "dreamer_task",
+        dreamer_task.__name__,
         task_context=task_context,
     )
 
