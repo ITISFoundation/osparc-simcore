@@ -239,8 +239,9 @@ def background_tasks_setup_disabled(mocker: MockerFixture) -> None:
         return _side_effect
 
     for name in ("start_registry_sync_task", "stop_registry_sync_task"):
-        mocker.patch(
-            f"simcore_service_catalog.core.events.{name}",
+        mocker.patch.object(
+            simcore_service_catalog.core.events,
+            name,
             side_effect=_factory(name),
             autospec=True,
         )
@@ -254,8 +255,10 @@ def background_tasks_setup_disabled(mocker: MockerFixture) -> None:
 @pytest.fixture
 def rabbitmq_and_rpc_setup_disabled(mocker: MockerFixture):
     # The following services are affected if rabbitmq is not in place
-    mocker.patch("simcore_service_catalog.core.application.setup_rabbitmq")
-    mocker.patch("simcore_service_catalog.core.application.setup_rpc_api_routes")
+    mocker.patch.object(simcore_service_catalog.core.application, "setup_rabbitmq")
+    mocker.patch.object(
+        simcore_service_catalog.core.application, "setup_rpc_api_routes"
+    )
 
 
 @pytest.fixture

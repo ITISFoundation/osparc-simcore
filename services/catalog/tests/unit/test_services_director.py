@@ -12,6 +12,7 @@ from typing import Any
 import pytest
 from fastapi import FastAPI
 from models_library.services_metadata_published import ServiceMetaDataPublished
+from pytest_mock import MockType
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx.router import MockRouter
@@ -34,6 +35,7 @@ def app_environment(
 
 
 async def test_director_client_high_level_api(
+    postgres_setup_disabled: MockType,
     background_tasks_setup_disabled: None,
     rabbitmq_and_rpc_setup_disabled: None,
     expected_director_list_services: list[dict[str, Any]],
