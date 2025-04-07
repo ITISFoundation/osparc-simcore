@@ -15,6 +15,7 @@ import httpx
 import pytest
 import respx
 import simcore_service_catalog
+import simcore_service_catalog.core.application
 import simcore_service_catalog.core.events
 import yaml
 from asgi_lifespan import LifespanManager
@@ -116,12 +117,12 @@ def spy_app(mocker: MockerFixture) -> AppLifeSpanSpyTargets:
     # work as expected
     return AppLifeSpanSpyTargets(
         on_startup=mocker.spy(
-            simcore_service_catalog.core.events,
-            "_flush_started_banner",
+            simcore_service_catalog.core.application,
+            "flush_started_banner",
         ),
         on_shutdown=mocker.spy(
-            simcore_service_catalog.core.events,
-            "_flush_finished_banner",
+            simcore_service_catalog.core.application,
+            "flush_finished_banner",
         ),
     )
 
@@ -139,7 +140,7 @@ async def app(
 
     # create instance
     assert app_environment
-    app_under_test = create_app(settings=app_settings)
+    app_under_test = create_app()
 
     assert spy_app.on_startup.call_count == 0
     assert spy_app.on_shutdown.call_count == 0
@@ -166,7 +167,7 @@ def client(
 
     # create instance
     assert app_environment
-    app_under_test = create_app(settings=app_settings)
+    app_under_test = create_app()
 
     assert (
         spy_app.on_startup.call_count == 0
