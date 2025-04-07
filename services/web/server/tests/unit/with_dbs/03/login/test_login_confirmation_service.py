@@ -3,13 +3,7 @@ from datetime import timedelta
 from aiohttp.test_utils import make_mocked_request
 from aiohttp.web import Application
 from pytest_simcore.helpers.webserver_login import UserInfoDict
-from simcore_service_webserver.login._confirmation_service import (
-    get_expiration_date,
-    get_or_create_confirmation_without_data,
-    is_confirmation_expired,
-    make_confirmation_link,
-    validate_confirmation_code,
-)
+from simcore_service_webserver.login import _confirmation_service, _confirmation_web
 from simcore_service_webserver.login._login_repository_legacy import AsyncpgStorage
 from simcore_service_webserver.login.settings import LoginOptions
 
@@ -20,7 +14,7 @@ async def test_confirmation_token_workflow(
     # Step 1: Create a new confirmation token
     user_id = registered_user["id"]
     action = "RESET_PASSWORD"
-    confirmation = await get_or_create_confirmation_without_data(
+    confirmation = await _confirmation_service.get_or_create_confirmation_without_data(
         login_options, db, user_id=user_id, action=action
     )
 
@@ -29,11 +23,15 @@ async def test_confirmation_token_workflow(
     assert confirmation["action"] == action
 
     # Step 2: Check that the token is not expired
-    assert not is_confirmation_expired(login_options, confirmation)
+    assert not _confirmation_service.is_confirmation_expired(
+        login_options, confirmation
+    )
 
     # Step 3: Validate the confirmation code
     code = confirmation["code"]
-    validated_confirmation = await validate_confirmation_code(code, db, login_options)
+    validated_confirmation = await _confirmation_service.validate_confirmation_code(
+        code, db, login_options
+    )
 
     assert validated_confirmation is not None
     assert validated_confirmation["code"] == code
@@ -53,7 +51,9 @@ async def test_confirmation_token_workflow(
     )
 
     # Create confirmation link
-    confirmation_link = make_confirmation_link(request, confirmation)
+    confirmation_link = _confirmation_web.make_confirmation_link(
+        request, confirmation["code"]
+    )
 
     # Assertions
     assert confirmation_link.startswith("http://example.com/auth/confirmation/")
@@ -67,8 +67,10 @@ async def test_expired_confirmation_token(
     action = "CHANGE_EMAIL"
 
     # Create a brand new confirmation token
-    confirmation_1 = await get_or_create_confirmation_without_data(
-        login_options, db, user_id=user_id, action=action
+    confirmation_1 = (
+        await _confirmation_service.get_or_create_confirmation_without_data(
+            login_options, db, user_id=user_id, action=action
+        )
     )
 
     assert confirmation_1 is not None
@@ -76,11 +78,15 @@ async def test_expired_confirmation_token(
     assert confirmation_1["action"] == action
 
     # Check that the token is not expired
-    assert not is_confirmation_expired(login_options, confirmation_1)
-    assert get_expiration_date(login_options, confirmation_1)
+    assert not _confirmation_service.is_confirmation_expired(
+        login_options, confirmation_1
+    )
+    assert _confirmation_service.get_expiration_date(login_options, confirmation_1)
 
-    confirmation_2 = await get_or_create_confirmation_without_data(
-        login_options, db, user_id=user_id, action=action
+    confirmation_2 = (
+        await _confirmation_service.get_or_create_confirmation_without_data(
+            login_options, db, user_id=user_id, action=action
+        )
     )
 
     assert confirmation_2 == confirmation_1
@@ -89,8 +95,10 @@ async def test_expired_confirmation_token(
     login_options.CHANGE_EMAIL_CONFIRMATION_LIFETIME = 0
     assert login_options.get_confirmation_lifetime(action) == timedelta(seconds=0)
 
-    confirmation_3 = await get_or_create_confirmation_without_data(
-        login_options, db, user_id=user_id, action=action
+    confirmation_3 = (
+        await _confirmation_service.get_or_create_confirmation_without_data(
+            login_options, db, user_id=user_id, action=action
+        )
     )
 
     # when expired, it gets renewed
@@ -98,14 +106,20 @@ async def test_expired_confirmation_token(
 
     # now all have expired
     assert (
-        await validate_confirmation_code(confirmation_1["code"], db, login_options)
+        await _confirmation_service.validate_confirmation_code(
+            confirmation_1["code"], db, login_options
+        )
         is None
     )
     assert (
-        await validate_confirmation_code(confirmation_2["code"], db, login_options)
+        await _confirmation_service.validate_confirmation_code(
+            confirmation_2["code"], db, login_options
+        )
         is None
     )
     assert (
-        await validate_confirmation_code(confirmation_3["code"], db, login_options)
+        await _confirmation_service.validate_confirmation_code(
+            confirmation_3["code"], db, login_options
+        )
         is None
     )

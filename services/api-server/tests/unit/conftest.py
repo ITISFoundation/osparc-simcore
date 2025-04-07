@@ -37,12 +37,14 @@ from models_library.users import UserID
 from moto.server import ThreadedMotoServer
 from packaging.version import Version
 from pydantic import EmailStr, HttpUrl, TypeAdapter
-from pytest_mock import MockerFixture
+from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.host import get_localhost_ip
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.webserver_rpc_server import WebserverRpcSideEffects
 from pytest_simcore.simcore_webserver_projects_rest_api import GET_PROJECT
 from requests.auth import HTTPBasicAuth
 from respx import MockRouter
+from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.core.settings import ApplicationSettings
 from simcore_service_api_server.db.repositories.api_keys import UserAndProductTuple
@@ -256,7 +258,7 @@ def catalog_service_openapi_specs(osparc_simcore_services_dir: Path) -> dict[str
 
 
 @pytest.fixture
-def mocked_directorv2_service_api_base(
+def mocked_directorv2_rest_api_base(
     app: FastAPI,
     directorv2_service_openapi_specs: dict[str, Any],
     services_mocks_enabled: bool,
@@ -291,7 +293,7 @@ def mocked_directorv2_service_api_base(
 
 
 @pytest.fixture
-def mocked_webserver_service_api_base(
+def mocked_webserver_rest_api_base(
     app: FastAPI,
     webserver_service_openapi_specs: dict[str, Any],
     services_mocks_enabled: bool,
@@ -333,7 +335,36 @@ def mocked_webserver_service_api_base(
 
 
 @pytest.fixture
-def mocked_storage_service_api_base(
+def mocked_webserver_rpc_api(
+    app: FastAPI, mocker: MockerFixture
+) -> dict[str, MockType]:
+    from servicelib.rabbitmq.rpc_interfaces.webserver import projects as projects_rpc
+    from simcore_service_api_server.services_rpc import wb_api_server
+
+    # NOTE: mock_missing_plugins patches `setup_rabbitmq`
+    try:
+        wb_api_server.WbApiRpcClient.get_from_app_state(app)
+    except AttributeError:
+        wb_api_server.setup(
+            app, RabbitMQRPCClient("fake_rpc_client", settings=mocker.MagicMock())
+        )
+
+    settings: ApplicationSettings = app.state.settings
+    assert settings.API_SERVER_WEBSERVER
+
+    side_effects = WebserverRpcSideEffects()
+
+    return {
+        "mark_project_as_job": mocker.patch.object(
+            projects_rpc,
+            "mark_project_as_job",
+            side_effects.mark_project_as_job,
+        ),
+    }
+
+
+@pytest.fixture
+def mocked_storage_rest_api_base(
     app: FastAPI,
     storage_service_openapi_specs: dict[str, Any],
     faker: Faker,
@@ -393,7 +424,7 @@ def mocked_storage_service_api_base(
 
 
 @pytest.fixture
-def mocked_catalog_service_api_base(
+def mocked_catalog_rest_api_base(
     app: FastAPI,
     catalog_service_openapi_specs: dict[str, Any],
     services_mocks_enabled: bool,

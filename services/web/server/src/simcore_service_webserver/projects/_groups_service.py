@@ -1,12 +1,16 @@
+import hashlib
 import logging
 from datetime import datetime
 
+import arrow
 from aiohttp import web
+from models_library.access_rights import AccessRights
+from models_library.basic_types import IDStr
 from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.users import UserID
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, TypeAdapter
 
 from ..users import api as users_service
 from . import _groups_repository
@@ -32,7 +36,7 @@ async def create_project_group(
     *,
     user_id: UserID,
     project_id: ProjectID,
-    group_id: GroupID,
+    sharee_group_id: GroupID,
     read: bool,
     write: bool,
     delete: bool,
@@ -49,7 +53,7 @@ async def create_project_group(
     project_group_db: ProjectGroupGetDB = await _groups_repository.create_project_group(
         app=app,
         project_id=project_id,
-        group_id=group_id,
+        group_id=sharee_group_id,
         read=read,
         write=write,
         delete=delete,
@@ -168,6 +172,51 @@ async def delete_project_group(
     await _groups_repository.delete_project_group(
         app=app, project_id=project_id, group_id=group_id
     )
+
+
+async def create_confirmation_action_to_share_project(
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    user_id: UserID,  # sharer
+    project_id: ProjectID,  # shared
+    sharee_email: EmailStr,  # sharee
+    # access-rights for sharing
+    read: bool,
+    write: bool,
+    delete: bool,
+) -> IDStr:
+    assert app  # nosec
+
+    _logger.debug(
+        "Checking that %s in %s has enough access rights (i.e. ownership) to %s for sharing",
+        f"{user_id=}",
+        f"{product_name=}",
+        f"{project_id=}",
+    )
+
+    sharer_user_id = user_id
+    shared_resource_type = "project"
+    shared_resource_id = project_id
+    shared_resource_access_rights = AccessRights(read=read, write=write, delete=delete)
+    shared_at = arrow.utcnow().datetime
+
+    # action will be a wrapper around create_project_group that gets primary_gid from the email
+    # action needs to be statically registered
+
+    _logger.debug(
+        "Creating confirmation token for action=SHARE with and producing a code:"
+        "\n %s," * 6,
+        sharer_user_id,
+        shared_resource_type,
+        shared_resource_id,
+        shared_resource_access_rights,
+        shared_at,
+        sharee_email,
+    )
+
+    fake_code = hashlib.sha256(sharee_email.encode()).hexdigest()
+    return TypeAdapter(IDStr).validate_python(f"fake{fake_code}")
 
 
 ### Operations without checking permissions

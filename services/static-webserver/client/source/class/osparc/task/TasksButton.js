@@ -106,7 +106,10 @@ qx.Class.define("osparc.task.TasksButton", {
         }
       }
       const tasks = osparc.task.TasksContainer.getInstance();
-      tasks.setTasksContainerPosition(bounds.left+bounds.width, osparc.navigation.NavigationBar.HEIGHT+3);
+      tasks.setTasksContainerPosition(
+        bounds.left + bounds.width - osparc.task.TaskUI.MAX_WIDTH,
+        osparc.navigation.NavigationBar.HEIGHT + 14
+      );
       tasks.getTasksContainer().show();
       document.addEventListener("mousedown", tapListener);
     },
