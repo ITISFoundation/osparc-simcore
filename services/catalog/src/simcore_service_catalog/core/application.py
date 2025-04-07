@@ -14,7 +14,6 @@ from .._meta import (
     SUMMARY,
 )
 from ..api.rest.routes import setup_rest_api_routes
-from ..api.rpc.routes import setup_rpc_api_routes
 from ..exceptions.handlers import setup_exception_handlers
 from . import events
 from .settings import ApplicationSettings
@@ -70,7 +69,6 @@ def create_app() -> FastAPI:
 
     # ROUTES
     setup_rest_api_routes(app, vtag=API_VTAG)
-    setup_rpc_api_routes(app)
 
     # EXCEPTIONS
     setup_exception_handlers(app)

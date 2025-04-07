@@ -14,6 +14,7 @@ from servicelib.fastapi.prometheus_instrumentation import (
 from servicelib.fastapi.tracing import initialize_tracing
 
 from .._meta import APP_FINISHED_BANNER_MSG, APP_NAME, APP_STARTED_BANNER_MSG
+from ..api.rpc.routes import setup_rpc_api_routes
 from ..db.events import setup_database
 from ..services.director import setup_director
 from ..services.function_services import setup_function_services
@@ -72,6 +73,9 @@ def create_app_lifespan():
 
     # - rabbitmq lifespan
     app_lifespan.add(setup_rabbitmq)
+
+    # - rpc api routes lifespan
+    app_lifespan.add(setup_rpc_api_routes)
 
     # - director lifespan
     app_lifespan.add(setup_director)
