@@ -45,9 +45,14 @@ async def list_programs(
 
     SEE get_solvers_page for paginated version of this function
     """
-    programs = await catalog_client.list_programs(
-        user_id=user_id, product_name=product_name
+    services = await catalog_client.list_services(
+        user_id=user_id,
+        product_name=product_name,
+        predicate=None,
+        type_filter="DYNAMIC",
     )
+
+    programs = [service.to_program() for service in services]
 
     for program in programs:
         program.url = url_for(

@@ -97,9 +97,13 @@ async def list_solvers_releases(
     """
     assert await catalog_client.is_responsive()  # nosec
 
-    solvers: list[Solver] = await catalog_client.list_solvers(
-        user_id=user_id, product_name=product_name
+    services = await catalog_client.list_services(
+        user_id=user_id,
+        product_name=product_name,
+        predicate=None,
+        type_filter="COMPUTATIONAL",
     )
+    solvers = [service.to_solver() for service in services]
 
     for solver in solvers:
         solver.url = url_for(

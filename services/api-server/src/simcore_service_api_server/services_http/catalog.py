@@ -5,14 +5,14 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from functools import partial
 from operator import attrgetter
-from typing import Final, Literal, cast
+from typing import Final, Literal
 
 from fastapi import FastAPI, status
 from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
 from models_library.services import ServiceMetaDataPublished, ServiceType
 from models_library.users import UserID
-from pydantic import ConfigDict, TypeAdapter, ValidationError
+from pydantic import ConfigDict, TypeAdapter
 from settings_library.catalog import CatalogSettings
 from settings_library.tracing import TracingSettings
 
@@ -112,14 +112,14 @@ class CatalogApi(BaseServiceClientApi):
     @_exception_mapper(
         http_status_map={status.HTTP_404_NOT_FOUND: ListSolversOrStudiesError}
     )
-    async def _list_services(
+    async def list_services(
         self,
         *,
         user_id: int,
         product_name: str,
-        predicate: Callable[[Solver], bool] | Callable[[Program], bool] | None = None,
+        predicate: Callable[[TruncatedCatalogServiceOut], bool] | None = None,
         type_filter: ServiceTypes,
-    ) -> list[Solver] | list[Program]:
+    ) -> list[TruncatedCatalogServiceOut]:
 
         response = await self.client.get(
             "/services",
@@ -136,77 +136,15 @@ class CatalogApi(BaseServiceClientApi):
             TruncatedCatalogServiceOutListAdapter,
             response,
         )
-        if type_filter == "COMPUTATIONAL":
-            solvers: list[Solver] = []
-            for service in services:
-                try:
-                    if service.service_type == ServiceType.COMPUTATIONAL:
-                        solver = service.to_solver()
-                        if predicate is None or predicate(solver):  # type: ignore
-                            solvers.append(solver)
-                except ValidationError as err:
-                    # NOTE: For the moment, this is necessary because there are no guarantees
-                    #       at the image registry. Therefore we exclude and warn
-                    #       invalid items instead of returning error
-                    _logger.warning(
-                        "Skipping invalid service returned by catalog '%s': %s",
-                        service.model_dump_json(),
-                        err,
-                    )
-            return solvers
-        if type_filter == "DYNAMIC":
-            programs: list[Program] = []
-            for service in services:
-                try:
-                    if service.service_type == ServiceType.DYNAMIC:
-                        program = service.to_program()
-                        if predicate is None or predicate(program):  # type: ignore
-                            programs.append(program)
-                except ValidationError as err:
-                    # NOTE: For the moment, this is necessary because there are no guarantees
-                    #       at the image registry. Therefore we exclude and warn
-                    #       invalid items instead of returning error
-                    _logger.warning(
-                        "Skipping invalid service returned by catalog '%s': %s",
-                        service.model_dump_json(),
-                        err,
-                    )
-            return programs
-        err_msg = f"Invalid {type_filter=}"
-        raise ValueError(err_msg)
 
-    async def list_solvers(
-        self,
-        *,
-        user_id: int,
-        product_name: str,
-        predicate: Callable[[Solver], bool] | None = None,
-    ) -> list[Solver]:
-
-        solvers = await self._list_services(
-            user_id=user_id,
-            product_name=product_name,
-            predicate=predicate,
-            type_filter="COMPUTATIONAL",
-        )
-        assert all(isinstance(s, Solver) for s in solvers)  # nosec
-        return cast(list[Solver], solvers)
-
-    async def list_programs(
-        self,
-        *,
-        user_id: int,
-        product_name: str,
-        predicate: Callable[[Program], bool] | None = None,
-    ) -> list[Program]:
-        programs = await self._list_services(
-            user_id=user_id,
-            product_name=product_name,
-            predicate=predicate,
-            type_filter="DYNAMIC",
-        )
-        assert all(isinstance(s, Program) for s in programs)  # nosec
-        return cast(list[Program], programs)
+        services = [
+            service
+            for service in services
+            if service.service_type == ServiceType(type_filter)
+        ]
+        if predicate is not None:
+            services = [service for service in services if predicate(service)]
+        return services
 
     async def get_solver(
         self, *, user_id: int, name: SolverKeyId, version: VersionStr, product_name: str
@@ -295,9 +233,13 @@ class CatalogApi(BaseServiceClientApi):
     async def list_latest_releases(
         self, *, user_id: UserID, product_name: ProductName
     ) -> list[Solver]:
-        solvers: list[Solver] = await self.list_solvers(
-            user_id=user_id, product_name=product_name
+        services = await self.list_services(
+            user_id=user_id,
+            product_name=product_name,
+            predicate=None,
+            type_filter="COMPUTATIONAL",
         )
+        solvers = [service.to_solver() for service in services]
 
         latest_releases: dict[SolverKeyId, Solver] = {}
         for solver in solvers:
@@ -317,12 +259,14 @@ class CatalogApi(BaseServiceClientApi):
         def _this_solver(solver: Solver) -> bool:
             return solver.id == solver_key
 
-        releases: list[Solver] = await self.list_solvers(
+        services = await self.list_services(
             user_id=user_id,
-            predicate=_this_solver,
+            predicate=None,
             product_name=product_name,
+            type_filter="COMPUTATIONAL",
         )
-        return releases
+        solvers = [service.to_solver() for service in services]
+        return [solver for solver in solvers if _this_solver(solver)]
 
     async def get_latest_release(
         self,
