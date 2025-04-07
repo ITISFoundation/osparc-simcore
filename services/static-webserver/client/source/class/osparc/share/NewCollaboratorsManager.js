@@ -159,9 +159,9 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
         }
         if (inputValue.length > 3) {
           if (this.__shareWithEmailEnabled) {
-            let errorMessage = null
-            osparc.auth.core.Utils.checkEmail(inputValue, null, errorMessage);
-            console.log(errorMessage);
+            if (osparc.auth.core.Utils.checkEmail(inputValue)) {
+              console.log("Valid email");
+            }
           }
           const waitBeforeSearching = 1000;
           this.__searchDelayer = setTimeout(() => {
