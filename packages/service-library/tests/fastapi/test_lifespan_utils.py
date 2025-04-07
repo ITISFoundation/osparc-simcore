@@ -110,7 +110,7 @@ async def test_app_lifespan_composition(
 
             app.state.database_engine = state["postgres"]["engine"]
 
-            yield {}
+            yield {}  # no update
 
             # tear-down stage
             assert app.state.database_engine
@@ -145,14 +145,17 @@ async def test_app_lifespan_composition(
         assert app.state.database_engine
         assert app.state.rpc_server
 
+        # NOTE: these are different states!
+        assert app.state._state != asgi_manager._state  # noqa: SLF001
+
     # Logs shows lifespan execution:
     #     -> postgres_sync_engine starting ...
     #             -> postgres_async_engine starting ...
     #                     -> app database starting ...
     #                             -> rabbitmq starting ...
     #                                     -> app rpc-server starting ...
-    #                                     <- app rpc-server done ()
-    #                             <- rabbitmq done ()
+    #                                     <- app rpc-server done (<1ms)
+    #                             <- rabbitmq done (<1ms)
     #                     <- app database done (1ms)
     #             <- postgres_async_engine done (1ms)
     #     <- postgres_sync_engine done (1ms)
