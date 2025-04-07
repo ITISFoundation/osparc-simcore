@@ -112,11 +112,11 @@ qx.Class.define("osparc.store.Study", {
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
-    sendShareEmails: function(selectedEmails, newAccessRights, message) {
+    sendShareEmails: function(studyData, selectedEmails, newAccessRights, message) {
       const promises = selectedEmails.map(selectedEmail => {
         const params = {
           url: {
-            "studyId": this.__serializedDataCopy["uuid"],
+            "studyId": studyData["uuid"],
           },
           data: {
             shareeEmail: selectedEmail,
