@@ -18,7 +18,7 @@ from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.fastapi.postgres_lifespan import (
     PostgresLifespanStateKeys,
-    postgres_lifespan,
+    postgres_lifespan_manager,
 )
 from settings_library.application import BaseApplicationSettings
 from settings_library.postgres import PostgresSettings
@@ -69,8 +69,8 @@ def app_lifespan(
     app_lifespan = LifespanManager()
     app_lifespan.add(my_app_settings)
 
-    postgres_lifespan.add(my_database_setup)
-    app_lifespan.include(postgres_lifespan)
+    postgres_lifespan_manager.add(my_database_setup)
+    app_lifespan.include(postgres_lifespan_manager)
 
     return app_lifespan
 

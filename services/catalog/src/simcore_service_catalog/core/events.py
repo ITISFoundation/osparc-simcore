@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager, State
 from servicelib.fastapi.postgres_lifespan import (
     PostgresLifespanStateKeys,
-    postgres_lifespan,
+    postgres_lifespan_manager,
 )
 from servicelib.fastapi.prometheus_instrumentation import (
     lifespan_prometheus_instrumentation,
@@ -66,8 +66,8 @@ def create_app_lifespan():
     # WARNING: order matters
 
     # - postgres lifespan
-    postgres_lifespan.add(setup_database)
-    app_lifespan.include(postgres_lifespan)
+    postgres_lifespan_manager.add(setup_database)
+    app_lifespan.include(postgres_lifespan_manager)
 
     # - rabbitmq lifespan
     app_lifespan.add(setup_rabbitmq)

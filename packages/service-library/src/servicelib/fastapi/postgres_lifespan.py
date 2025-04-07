@@ -12,7 +12,7 @@ from ..db_asyncpg_utils import create_async_engine_and_database_ready
 _logger = logging.getLogger(__name__)
 
 
-postgres_lifespan = LifespanManager()
+postgres_lifespan_manager = LifespanManager()
 
 
 class PostgresLifespanStateKeys(str, Enum):
@@ -20,7 +20,7 @@ class PostgresLifespanStateKeys(str, Enum):
     POSTGRES_ASYNC_ENGINE = "postgres.async_engine"
 
 
-@postgres_lifespan.add
+@postgres_lifespan_manager.add
 async def setup_postgres_database(_, state: State) -> AsyncIterator[State]:
 
     with log_context(_logger, logging.INFO, f"{__name__}"):

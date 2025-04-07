@@ -53,7 +53,7 @@ async def test_multiple_lifespan_managers(capsys: pytest.CaptureFixture):
 
 
 @pytest.fixture
-def postgres_lifespan() -> LifespanManager:
+def postgres_lifespan_mng() -> LifespanManager:
     lifespan_manager = LifespanManager()
 
     @lifespan_manager.add
@@ -91,12 +91,12 @@ def rabbitmq_lifespan() -> LifespanManager:
 
 
 async def test_app_lifespan_composition(
-    postgres_lifespan: LifespanManager, rabbitmq_lifespan: LifespanManager
+    postgres_lifespan_mng: LifespanManager, rabbitmq_lifespan: LifespanManager
 ):
     # The app has its own database and rpc-server to initialize
     # this is how you connect the lifespans pre-defined in servicelib
 
-    @postgres_lifespan.add
+    @postgres_lifespan_mng.add
     async def setup_database(app: FastAPI, state: State) -> AsyncIterator[State]:
 
         with log_context(logging.INFO, "app database"):
@@ -126,7 +126,7 @@ async def test_app_lifespan_composition(
 
     # Composes lifepans
     app_lifespan = LifespanManager()
-    app_lifespan.include(postgres_lifespan)
+    app_lifespan.include(postgres_lifespan_mng)
     app_lifespan.include(rabbitmq_lifespan)
 
     app = FastAPI(lifespan=app_lifespan)
