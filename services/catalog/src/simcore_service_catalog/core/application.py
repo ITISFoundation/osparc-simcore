@@ -1,16 +1,10 @@
 import logging
-from collections.abc import AsyncIterator
 
 from fastapi import FastAPI
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi_lifespan_manager import LifespanManager, State
 from models_library.basic_types import BootModeEnum
 from servicelib.fastapi import timing_middleware
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
-from servicelib.fastapi.postgres_lifespan import (
-    PostgresLifespanStateKeys,
-    postgres_lifespan,
-)
 from servicelib.fastapi.profiler import initialize_profiler
 from servicelib.fastapi.prometheus_instrumentation import (
     setup_prometheus_instrumentation,
@@ -27,15 +21,12 @@ from .._meta import (
 )
 from ..api.rest.routes import setup_rest_api_routes
 from ..api.rpc.routes import setup_rpc_api_routes
-from ..db.events import setup_database
 from ..exceptions.handlers import setup_exception_handlers
 from ..services.function_services import setup_function_services
 from ..services.rabbitmq import setup_rabbitmq
+from . import events
 from .events import (
-    create_on_shutdown,
-    create_on_startup,
-    flush_finished_banner,
-    flush_started_banner,
+    _create_on_shutdown,
 )
 from .settings import ApplicationSettings
 
@@ -50,30 +41,6 @@ _NOISY_LOGGERS = (
     "httpcore",
     "werkzeug",
 )
-
-
-async def _main_setup(app: FastAPI) -> AsyncIterator[State]:
-    flush_started_banner()
-
-    settings: ApplicationSettings = app.state.settings
-
-    yield {
-        PostgresLifespanStateKeys.POSTGRES_SETTINGS: settings.CATALOG_POSTGRES,
-    }
-
-    flush_finished_banner()
-
-
-def _create_app_lifespan():
-    # app lifespan
-    app_lifespan = LifespanManager()
-    app_lifespan.add(_main_setup)
-
-    # - postgres lifespan
-    postgres_lifespan.add(setup_database)
-    app_lifespan.include(postgres_lifespan)
-
-    return app_lifespan
 
 
 def create_app() -> FastAPI:
@@ -96,7 +63,7 @@ def create_app() -> FastAPI:
         openapi_url=f"/api/{API_VTAG}/openapi.json",
         docs_url="/dev/doc",
         redoc_url=None,  # default disabled
-        lifespan=_create_app_lifespan(),
+        lifespan=events.create_app_lifespan(),
     )
     override_fastapi_openapi_method(app)
 
@@ -105,9 +72,6 @@ def create_app() -> FastAPI:
 
     if settings.CATALOG_TRACING:
         initialize_tracing(app, settings.CATALOG_TRACING, APP_NAME)
-
-    # STARTUP-EVENT
-    app.add_event_handler("startup", create_on_startup(app))
 
     # PLUGIN SETUP
     setup_function_services(app)
@@ -133,7 +97,7 @@ def create_app() -> FastAPI:
     setup_rpc_api_routes(app)
 
     # SHUTDOWN-EVENT
-    app.add_event_handler("shutdown", create_on_shutdown(app))
+    app.add_event_handler("shutdown", _create_on_shutdown(app))
 
     # EXCEPTIONS
     setup_exception_handlers(app)

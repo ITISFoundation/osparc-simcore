@@ -117,11 +117,11 @@ def spy_app(mocker: MockerFixture) -> AppLifeSpanSpyTargets:
     # work as expected
     return AppLifeSpanSpyTargets(
         on_startup=mocker.spy(
-            simcore_service_catalog.core.application,
+            simcore_service_catalog.core.events,
             "flush_started_banner",
         ),
         on_shutdown=mocker.spy(
-            simcore_service_catalog.core.application,
+            simcore_service_catalog.core.events,
             "flush_finished_banner",
         ),
     )
@@ -217,9 +217,7 @@ def service_caching_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
 
 @pytest.fixture
 def postgres_setup_disabled(mocker: MockerFixture) -> MockType:
-    return mocker.patch.object(
-        simcore_service_catalog.core.application, "postgres_lifespan"
-    )
+    return mocker.patch.object(simcore_service_catalog.core.events, "postgres_lifespan")
 
 
 @pytest.fixture

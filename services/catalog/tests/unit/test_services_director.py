@@ -61,6 +61,7 @@ async def test_director_client_high_level_api(
 
 
 async def test_director_client_low_level_api(
+    postgres_setup_disabled: MockType,
     background_tasks_setup_disabled: None,
     rabbitmq_and_rpc_setup_disabled: None,
     mocked_director_service_api: MockRouter,
