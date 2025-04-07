@@ -1,7 +1,9 @@
 import logging
+from datetime import datetime
 from typing import cast
 
 from aiohttp import web
+from common_library.exclude import UnSet, is_set
 from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.rest_ordering import OrderBy, OrderDirection
@@ -30,6 +32,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.sql import Select, select
 
 from ..db.plugin import get_asyncpg_engine
+from ._workspaces_models import WorkspaceDBGet
 from .errors import WorkspaceAccessForbiddenError, WorkspaceNotFoundError
 
 _logger = logging.getLogger(__name__)
@@ -45,6 +48,7 @@ _WORKSPACE_SELECTION_COLS = (
     workspaces.c.modified,
     workspaces.c.trashed,
     workspaces.c.trashed_by,
+    workspaces.c.product_name,
 )
 
 
@@ -197,6 +201,26 @@ async def get_workspace_for_user(
         return UserWorkspaceWithAccessRights.model_validate(row)
 
 
+async def get_workspace_db_get(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    workspace_id: WorkspaceID,
+):
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        result = await conn.execute(
+            select(
+                *_WORKSPACE_SELECTION_COLS,
+            )
+            .select_from(workspaces)
+            .where(workspaces.c.workspace_id == workspace_id)
+        )
+        row = result.one_or_none()
+        if row is None:
+            raise WorkspaceNotFoundError(reason=f"Workspace {workspace_id} not found.")
+        return WorkspaceDBGet.model_validate(row)
+
+
 async def update_workspace(
     app: web.Application,
     connection: AsyncConnection | None = None,
@@ -241,3 +265,56 @@ async def delete_workspace(
                 & (workspaces.c.product_name == product_name)
             )
         )
+
+
+assert set(WorkspaceDBGet.model_fields.keys()) == {
+    col.name for col in _WORKSPACE_SELECTION_COLS
+}
+
+
+async def list_workspaces_db_get_as_admin(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    # filter
+    trashed_before: datetime | UnSet = UnSet.VALUE,
+    # pagination
+    offset: NonNegativeInt,
+    limit: int,
+    # ordering
+    order_by: OrderBy,
+) -> tuple[int, list[WorkspaceDBGet]]:
+    """
+    NOTE: This is an internal function used for administrative purposes.
+    Ex. It lists trashed workspaces across the application for cleanup tasks.
+    """
+    base_query = select(*_WORKSPACE_SELECTION_COLS).where(
+        workspaces.c.trashed.is_not(None)
+    )
+
+    if is_set(trashed_before):
+        assert isinstance(trashed_before, datetime)  # nosec
+        base_query = base_query.where(workspaces.c.trashed < trashed_before)
+
+    # Select total count from base_query
+    count_query = select(func.count()).select_from(base_query.subquery())
+
+    # Ordering and pagination
+    if order_by.direction == OrderDirection.ASC:
+        list_query = base_query.order_by(
+            asc(getattr(workspaces.c, order_by.field)), workspaces.c.workspace_id
+        )
+    else:
+        list_query = base_query.order_by(
+            desc(getattr(workspaces.c, order_by.field)), workspaces.c.workspace_id
+        )
+    list_query = list_query.offset(offset).limit(limit)
+
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        total_count = await conn.scalar(count_query)
+
+        result = await conn.stream(list_query)
+        workspaces_list: list[WorkspaceDBGet] = [
+            WorkspaceDBGet.model_validate(row) async for row in result
+        ]
+        return cast(int, total_count), workspaces_list

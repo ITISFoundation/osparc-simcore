@@ -17,8 +17,8 @@ from models_library.workspaces import (
     WorkspaceUpdates,
 )
 
-from ..folders.service import delete_folder, list_folders  # <-- MD: wrong
-from ..projects.api import delete_project_by_user, list_projects  # <-- MD: wrong
+from ..folders.service import delete_folder, list_folders
+from ..projects.api import delete_project_by_user, list_projects
 from ..projects.models import ProjectTypeAPI
 from ..users.api import get_user
 from . import _workspaces_repository as db

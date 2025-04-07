@@ -12,6 +12,7 @@ from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from models_library.users import UserID
+from models_library.workspaces import WorkspaceID
 from simcore_postgres_database.utils_repos import transaction_context
 from sqlalchemy.ext.asyncio import AsyncConnection
 
@@ -229,7 +230,7 @@ async def list_explicitly_trashed_folders(
             user_id=user_id,
             product_name=product_name,
             text=None,
-            trashed=True,  # NOTE: lists only expliclty trashed!
+            trashed=True,  # NOTE: lists only explicitly trashed!
             offset=page_params.offset,
             limit=page_params.limit,
             order_by=OrderBy(field=IDStr("trashed"), direction=OrderDirection.ASC),
@@ -300,7 +301,7 @@ async def batch_delete_trashed_folders_as_admin(
         (
             page_params.total_number_of_items,
             expired_trashed_folders,
-        ) = await _folders_repository.list_trashed_folders(
+        ) = await _folders_repository.list_folders_db_as_admin(
             app,
             trashed_explicitly=True,
             trashed_before=trashed_before,
@@ -325,4 +326,49 @@ async def batch_delete_trashed_folders_as_admin(
     if errors:
         raise FolderBatchDeleteError(
             errors=errors, trashed_before=trashed_before, product_name=product_name
+        )
+
+
+async def batch_delete_folders_with_content_in_root_workspace_as_admin(
+    app: web.Application,
+    *,
+    workspace_id: WorkspaceID,
+    product_name: ProductName,
+    fail_fast: bool,
+) -> None:
+    """
+    Deletes all projects in the workspace root.
+
+    Raises:
+        ProjectsBatchDeleteError: If there are errors during the deletion process.
+    """
+    deleted_folder_ids: list[FolderID] = []
+    errors: list[tuple[FolderID, Exception]] = []
+
+    for page_params in iter_pagination_params(limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
+        (
+            page_params.total_number_of_items,
+            folders_for_deletion,
+        ) = await _folders_repository.list_folders_db_as_admin(
+            app,
+            shared_workspace_id=workspace_id,  # <-- Workspace filter
+            offset=page_params.offset,
+            limit=page_params.limit,
+            order_by=OrderBy(field=IDStr("id")),
+        )
+        # BATCH delete
+        for folder in folders_for_deletion:
+            try:
+                await _folders_repository.delete_recursively(
+                    app, folder_id=folder.folder_id, product_name=product_name
+                )
+                deleted_folder_ids.append(folder.folder_id)
+            except Exception as err:  # pylint: disable=broad-exception-caught
+                if fail_fast:
+                    raise
+                errors.append((folder.folder_id, err))
+
+    if errors:
+        raise FolderBatchDeleteError(
+            errors=errors,
         )

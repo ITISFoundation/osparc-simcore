@@ -260,13 +260,14 @@ async def list_(  # pylint: disable=too-many-arguments,too-many-branches
         return cast(int, total_count), folders
 
 
-async def list_trashed_folders(
+async def list_folders_db_as_admin(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
     # filter
     trashed_explicitly: bool | UnSet = UnSet.VALUE,
     trashed_before: datetime | UnSet = UnSet.VALUE,
+    shared_workspace_id: WorkspaceID | UnSet = UnSet.VALUE,  # <-- Workspace filter
     # pagination
     offset: NonNegativeInt,
     limit: int,
@@ -275,7 +276,6 @@ async def list_trashed_folders(
 ) -> tuple[int, list[FolderDB]]:
     """
     NOTE: this is app-wide i.e. no product, user or workspace filtered
-    TODO: check with MD about workspaces
     """
     base_query = sql.select(*_FOLDER_DB_MODEL_COLS).where(
         folders_v2.c.trashed.is_not(None)
@@ -290,6 +290,10 @@ async def list_trashed_folders(
     if is_set(trashed_before):
         assert isinstance(trashed_before, datetime)  # nosec
         base_query = base_query.where(folders_v2.c.trashed < trashed_before)
+
+    if is_set(shared_workspace_id):
+        assert isinstance(shared_workspace_id, int)  # nosec
+        base_query = base_query.where(folders_v2.c.workspace_id == shared_workspace_id)
 
     # Select total count from base_query
     count_query = sql.select(sql.func.count()).select_from(base_query.subquery())

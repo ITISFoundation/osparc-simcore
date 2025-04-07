@@ -20,11 +20,19 @@ from simcore_postgres_database.utils_repos import transaction_context
 
 from ..db.plugin import get_asyncpg_engine
 from ..folders._folders_service import list_folders
-from ..folders._trash_service import trash_folder, untrash_folder
+from ..folders._trash_service import (
+    batch_delete_folders_with_content_in_root_workspace_as_admin,
+    trash_folder,
+    untrash_folder,
+)
 from ..projects._crud_api_read import ProjectTypeAPI, list_projects
-from ..projects._trash_service import trash_project, untrash_project
+from ..projects._trash_service import (
+    batch_delete_projects_in_root_workspace_as_admin,
+    trash_project,
+    untrash_project,
+)
 from . import _workspaces_repository, _workspaces_service, _workspaces_service_crud_read
-from .errors import WorkspaceNotTrashedError
+from .errors import WorkspaceBatchDeleteError, WorkspaceNotTrashedError
 
 _logger = logging.getLogger(__name__)
 
@@ -301,3 +309,63 @@ async def list_trashed_workspaces(
         )
 
     return trashed_workspace_ids
+
+
+async def batch_delete_trashed_workspaces_as_admin(
+    app: web.Application,
+    *,
+    trashed_before: datetime,
+    fail_fast: bool,
+) -> list[WorkspaceID]:
+
+    deleted_workspace_ids: list[WorkspaceID] = []
+    errors: list[tuple[WorkspaceID, Exception]] = []
+
+    for page_params in iter_pagination_params(limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
+        (
+            page_params.total_number_of_items,
+            expired_trashed_workspaces,
+        ) = await _workspaces_repository.list_workspaces_db_get_as_admin(
+            app,
+            trashed_before=trashed_before,
+            offset=page_params.offset,
+            limit=page_params.limit,
+            order_by=OrderBy(field=IDStr("trashed"), direction=OrderDirection.ASC),
+        )
+        # BATCH delete
+        for trashed_workspace in expired_trashed_workspaces:
+            assert trashed_workspace.trashed  # nosec
+            deleted_workspace_ids.append(trashed_workspace.workspace_id)
+
+            try:
+                await batch_delete_projects_in_root_workspace_as_admin(
+                    app, workspace_id=trashed_workspace.workspace_id, fail_fast=False
+                )
+            except Exception as err:  # pylint: disable=broad-exception-caught
+                if fail_fast:
+                    raise
+                errors.append((trashed_workspace.workspace_id, err))
+
+            try:
+                workspace_db_get = await _workspaces_repository.get_workspace_db_get(
+                    app, workspace_id=trashed_workspace.workspace_id
+                )
+
+                await batch_delete_folders_with_content_in_root_workspace_as_admin(
+                    app,
+                    workspace_id=trashed_workspace.workspace_id,
+                    product_name=workspace_db_get.product_name,
+                    fail_fast=False,
+                )
+            except Exception as err:  # pylint: disable=broad-exception-caught
+                if fail_fast:
+                    raise
+                errors.append((trashed_workspace.workspace_id, err))
+
+    if errors:
+        raise WorkspaceBatchDeleteError(
+            errors=errors,
+            deleted_workspace_ids=deleted_workspace_ids,
+        )
+
+    return deleted_workspace_ids

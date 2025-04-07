@@ -15,6 +15,10 @@ class WorkspaceAccessForbiddenError(WorkspacesValueError):
     msg_template = "Workspace access forbidden. {reason}"
 
 
+class WorkspaceBatchDeleteError(WorkspacesValueError):
+    msg_template = "One or more workspaces could not be deleted: {errors}"
+
+
 # Workspace groups
 
 

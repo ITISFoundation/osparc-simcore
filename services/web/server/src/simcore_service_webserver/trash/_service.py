@@ -218,3 +218,23 @@ async def safe_delete_expired_trash_as_admin(app: web.Application) -> None:
                         error_context=ctx,
                     )
                 )
+
+            try:
+                deleted_workspace_ids = await workspaces_trash_service.batch_delete_trashed_workspaces_as_admin(
+                    app,
+                    trashed_before=delete_until,
+                    fail_fast=False,
+                )
+
+                _logger.info(
+                    "Deleted %d trashed workspaces", len(deleted_workspace_ids)
+                )
+
+            except Exception as exc:  # pylint: disable=broad-exception-caught
+                _logger.warning(
+                    **create_troubleshotting_log_kwargs(
+                        "Error batch deleting expired projects as admin.",
+                        error=exc,
+                        error_context=ctx,
+                    )
+                )
