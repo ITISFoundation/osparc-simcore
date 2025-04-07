@@ -4,9 +4,6 @@ from datetime import timedelta
 
 from models_library.healthchecks import IsNonResponsive, IsResponsive, LivenessResult
 from settings_library.postgres import PostgresSettings
-from simcore_postgres_database.utils_aiosqlalchemy import (  # type: ignore[import-not-found] # this on is unclear
-    raise_if_migration_not_ready,
-)
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from tenacity import retry
@@ -17,7 +14,7 @@ _logger = logging.getLogger(__name__)
 
 
 @retry(**PostgresRetryPolicyUponInitialization(_logger).kwargs)
-async def create_async_engine_and_pg_database_ready(
+async def create_async_engine_and_database_ready(
     settings: PostgresSettings,
 ) -> AsyncEngine:
     """
@@ -26,6 +23,10 @@ async def create_async_engine_and_pg_database_ready(
     - waits until db data is migrated (i.e. ready to use)
     - returns engine
     """
+    from simcore_postgres_database.utils_aiosqlalchemy import (  # type: ignore[import-not-found] # this on is unclear
+        raise_if_migration_not_ready,
+    )
+
     server_settings = None
     if settings.POSTGRES_CLIENT_NAME:
         server_settings = {
@@ -43,9 +44,10 @@ async def create_async_engine_and_pg_database_ready(
 
     try:
         await raise_if_migration_not_ready(engine)
-    except Exception:
+    except Exception as exc:
         # NOTE: engine must be closed because retry will create a new engine
         await engine.dispose()
+        exc.add_note("Failed during migration check. Created engine disposed.")
         raise
 
     return engine
