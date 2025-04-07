@@ -20,6 +20,7 @@ _logger = logging.getLogger(__name__)
 _DEFAULT_TASK_TIMEOUT: Final[timedelta | None] = None
 _DEFAULT_MAX_RETRIES: Final[NonNegativeInt] = 3
 _DEFAULT_WAIT_BEFORE_RETRY: Final[timedelta] = timedelta(seconds=5)
+_DEFAULT_DONT_AUTORETRY_FOR: Final[tuple[type[Exception], ...]] = tuple()
 
 
 T = TypeVar("T")
@@ -52,13 +53,21 @@ def _async_task_wrapper(
     return decorator
 
 
-def _error_handling(max_retries: NonNegativeInt, delay_between_retries: timedelta):
+def _error_handling(
+    max_retries: NonNegativeInt,
+    delay_between_retries: timedelta,
+    dont_autoretry_for: tuple[type[Exception], ...],
+):
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         @wraps(func)
         def wrapper(task: Task, *args: Any, **kwargs: Any) -> Any:
             try:
                 return func(task, *args, **kwargs)
             except Exception as exc:
+                if isinstance(exc, dont_autoretry_for):
+                    _logger.debug("Not retrying for exception %s", type(exc).__name__)
+                    raise  # propagate without retry
+
                 exc_type = type(exc).__name__
                 exc_message = f"{exc}"
                 _logger.exception(
@@ -87,6 +96,7 @@ def register_task(
     timeout: timedelta | None = _DEFAULT_TASK_TIMEOUT,
     max_retries: NonNegativeInt = _DEFAULT_MAX_RETRIES,
     delay_between_retries: timedelta = _DEFAULT_WAIT_BEFORE_RETRY,
+    dont_autoretry_for: tuple[type[Exception], ...] = _DEFAULT_DONT_AUTORETRY_FOR,
 ) -> None: ...
 
 
@@ -98,6 +108,7 @@ def register_task(
     timeout: timedelta | None = _DEFAULT_TASK_TIMEOUT,
     max_retries: NonNegativeInt = _DEFAULT_MAX_RETRIES,
     delay_between_retries: timedelta = _DEFAULT_WAIT_BEFORE_RETRY,
+    dont_autoretry_for: tuple[type[Exception], ...] = _DEFAULT_DONT_AUTORETRY_FOR,
 ) -> None: ...
 
 
@@ -111,6 +122,7 @@ def register_task(  # type: ignore[misc]
     timeout: timedelta | None = _DEFAULT_TASK_TIMEOUT,
     max_retries: NonNegativeInt = _DEFAULT_MAX_RETRIES,
     delay_between_retries: timedelta = _DEFAULT_WAIT_BEFORE_RETRY,
+    dont_autoretry_for: tuple[type[Exception], ...] = _DEFAULT_DONT_AUTORETRY_FOR,
 ) -> None:
     """Decorator to define a celery task with error handling and abortable support
 
@@ -119,6 +131,7 @@ def register_task(  # type: ignore[misc]
         timeout -- when None no timeout is enforced, task is allowed to run forever (default: {_DEFAULT_TASK_TIMEOUT})
         max_retries -- number of attempts in case of failuire before giving up (default: {_DEFAULT_MAX_RETRIES})
         delay_between_retries -- dealy between each attempt in case of error (default: {_DEFAULT_WAIT_BEFORE_RETRY})
+        dont_autoretry_for -- exceptions that should not be retried when raised by the task
     """
     wrapped_fn: Callable[Concatenate[AbortableTask, P], R]
     if asyncio.iscoroutinefunction(fn):
@@ -128,7 +141,9 @@ def register_task(  # type: ignore[misc]
         wrapped_fn = fn
 
     wrapped_fn = _error_handling(
-        max_retries=max_retries, delay_between_retries=delay_between_retries
+        max_retries=max_retries,
+        delay_between_retries=delay_between_retries,
+        dont_autoretry_for=dont_autoretry_for,
     )(wrapped_fn)
 
     app.task(
