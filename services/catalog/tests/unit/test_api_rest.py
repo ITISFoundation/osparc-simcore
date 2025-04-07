@@ -6,11 +6,10 @@
 import httpx
 from fastapi import status
 from fastapi.testclient import TestClient
-from pytest_mock import MockType
 
 
 def test_sync_client(
-    postgres_setup_disabled: MockType,
+    postgres_setup_disabled: None,
     rabbitmq_and_rpc_setup_disabled: None,
     background_tasks_setup_disabled: None,
     director_setup_disabled: None,
@@ -25,7 +24,7 @@ def test_sync_client(
 
 
 async def test_async_client(
-    postgres_setup_disabled: MockType,
+    postgres_setup_disabled: None,
     rabbitmq_and_rpc_setup_disabled: None,
     background_tasks_setup_disabled: None,
     director_setup_disabled: None,

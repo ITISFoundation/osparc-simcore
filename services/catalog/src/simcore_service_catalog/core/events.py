@@ -8,7 +8,6 @@ from servicelib.fastapi.postgres_lifespan import (
     postgres_lifespan,
 )
 from servicelib.fastapi.prometheus_instrumentation import (
-    initialize_prometheus_instrumentation,
     lifespan_prometheus_instrumentation,
 )
 from servicelib.fastapi.tracing import initialize_tracing
@@ -55,9 +54,8 @@ async def _setup_prometheus_instrumentation_adapter(
 ) -> AsyncIterator[State]:
     enabled = state.get("prometheus_instrumentation_enabled", False)
     if enabled:
-        initialize_prometheus_instrumentation(app)
-        async for _state in lifespan_prometheus_instrumentation(app):
-            yield _state
+        async for prometheus_state in lifespan_prometheus_instrumentation(app):
+            yield prometheus_state
 
 
 def create_app_lifespan():

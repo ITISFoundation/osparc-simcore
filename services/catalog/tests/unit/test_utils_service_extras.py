@@ -8,7 +8,6 @@ from fastapi import FastAPI, status
 from httpx import AsyncClient
 from models_library.api_schemas_directorv2.services import ServiceExtras
 from pydantic import TypeAdapter
-from pytest_mock import MockType
 from respx import MockRouter
 
 
@@ -18,7 +17,7 @@ def mock_engine(app: FastAPI) -> None:
 
 
 async def test_get_service_extras(
-    postgres_setup_disabled: MockType,
+    postgres_setup_disabled: None,
     mocked_director_service_api: MockRouter,
     rabbitmq_and_rpc_setup_disabled: None,
     background_tasks_setup_disabled: None,
