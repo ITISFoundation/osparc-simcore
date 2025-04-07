@@ -277,7 +277,6 @@ async def test_email_with_reply_to(
         ),
         event_name=event_name,
         user=user_data,
-        sharer=sharer_data,
         product=product_data,
         # extras
         **event_extra_data,
