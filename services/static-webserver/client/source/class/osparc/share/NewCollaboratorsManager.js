@@ -101,7 +101,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
             if (osparc.auth.core.Utils.checkEmail(email)) {
               this.__selectedCollaborators[email] = email;
               const invitedButton = this.__invitedButton(email);
-              this.getChildControl("potential-collaborators-list").add(invitedButton);
+              this.getChildControl("potential-collaborators-list").addAt(invitedButton, 0);
               invitedButton.setValue(true);
             }
           });
@@ -280,6 +280,10 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
     },
 
     __invitedButton: function(email) {
+      if (email in this.__selectedCollaborators) {
+        return this.__selectedCollaborators[email];
+      }
+
       const collaboratorData = {
         label: email,
         description: null,
@@ -291,7 +295,10 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
 
       collaboratorButton.addListener("changeValue", e => {
         const selected = e.getData();
-        if (!selected && collaborator.email in this.__selectedCollaborators) {
+        if (selected) {
+          this.__selectedCollaborators[collaborator.email] = collaborator;
+          collaboratorButton.unsubscribeToFilterGroup("collaboratorsManager");
+        } else if (collaborator.email in this.__selectedCollaborators) {
           delete this.__selectedCollaborators[collaborator.email];
           collaboratorButton.subscribeToFilterGroup("collaboratorsManager");
         }
