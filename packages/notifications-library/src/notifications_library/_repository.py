@@ -25,6 +25,7 @@ class UsersRepo(_BaseRepo):
     async def get_user_data(self, user_id: UserID) -> UserData:
         query = sa.select(
             # NOTE: careful! privacy applies here!
+            users.c.name,
             users.c.first_name,
             users.c.last_name,
             users.c.email,
