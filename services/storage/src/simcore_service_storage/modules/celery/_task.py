@@ -6,7 +6,7 @@ from datetime import timedelta
 from functools import wraps
 from typing import Any, Concatenate, Final, ParamSpec, TypeVar, overload
 
-from celery import Celery, Task  # type: ignore[import-untyped]
+from celery import Celery  # type: ignore[import-untyped]
 from celery.contrib.abortable import AbortableTask  # type: ignore[import-untyped]
 from pydantic import NonNegativeInt
 
@@ -57,10 +57,15 @@ def _error_handling(
     max_retries: NonNegativeInt,
     delay_between_retries: timedelta,
     dont_autoretry_for: tuple[type[Exception], ...],
-):
-    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+) -> Callable[
+    [Callable[Concatenate[AbortableTask, P], R]],
+    Callable[Concatenate[AbortableTask, P], R],
+]:
+    def decorator(
+        func: Callable[Concatenate[AbortableTask, P], R],
+    ) -> Callable[Concatenate[AbortableTask, P], R]:
         @wraps(func)
-        def wrapper(task: Task, *args: Any, **kwargs: Any) -> Any:
+        def wrapper(task: AbortableTask, *args: P.args, **kwargs: P.kwargs) -> R:
             try:
                 return func(task, *args, **kwargs)
             except Exception as exc:
