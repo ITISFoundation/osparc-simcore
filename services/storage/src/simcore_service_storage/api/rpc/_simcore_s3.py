@@ -1,10 +1,10 @@
-from aws_library.s3._models import S3ObjectKey
 from fastapi import FastAPI
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobGet,
     AsyncJobNameData,
 )
 from models_library.api_schemas_storage.storage_schemas import FoldersBody
+from models_library.api_schemas_webserver.storage import PathToExport
 from servicelib.rabbitmq import RPCRouter
 
 from ...modules.celery import get_celery_client
@@ -31,7 +31,7 @@ async def copy_folders_from_project(
 
 @router.expose()
 async def start_export_data(
-    app: FastAPI, job_id_data: AsyncJobNameData, paths_to_export: list[S3ObjectKey]
+    app: FastAPI, job_id_data: AsyncJobNameData, paths_to_export: list[PathToExport]
 ) -> AsyncJobGet:
     task_uuid = await get_celery_client(app).send_task(
         export_data.__name__,

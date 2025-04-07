@@ -5,6 +5,7 @@ from typing import Any
 from aws_library.s3._models import S3ObjectKey
 from celery import Task  # type: ignore[import-untyped]
 from models_library.api_schemas_storage.storage_schemas import FoldersBody
+from models_library.api_schemas_webserver.storage import PathToExport
 from models_library.progress_bar import ProgressReport
 from models_library.projects_nodes_io import StorageFileID
 from models_library.users import UserID
@@ -65,7 +66,7 @@ async def export_data(
     task_id: TaskID,
     *,
     user_id: UserID,
-    paths_to_export: list[S3ObjectKey],
+    paths_to_export: list[PathToExport],
 ) -> StorageFileID:
     """
     AccessRightError: in case user can't access project
@@ -80,8 +81,8 @@ async def export_data(
         )
         assert isinstance(dsm, SimcoreS3DataManager)  # nosec
 
-        paths_to_export = [
-            TypeAdapter(S3ObjectKey).validate_python(path_to_export)
+        object_keys = [
+            TypeAdapter(S3ObjectKey).validate_python(f"{path_to_export}")
             for path_to_export in paths_to_export
         ]
 
@@ -96,5 +97,5 @@ async def export_data(
             progress_report_cb=_progress_cb,
         ) as progress_bar:
             return await dsm.create_s3_export(
-                user_id, paths_to_export, progress_bar=progress_bar
+                user_id, object_keys, progress_bar=progress_bar
             )
