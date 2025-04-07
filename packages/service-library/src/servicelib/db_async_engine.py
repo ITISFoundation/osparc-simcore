@@ -22,6 +22,7 @@ async def connect_to_db(app: FastAPI, settings: PostgresSettings) -> None:
         "The 'connect_to_db' function is deprecated and will be removed in a future release. "
         "Please use 'postgres_lifespan' instead for managing the database connection lifecycle.",
         DeprecationWarning,
+        stacklevel=2,
     )
     with log_context(
         _logger, logging.DEBUG, f"connection to db {settings.dsn_with_async_sqlalchemy}"
