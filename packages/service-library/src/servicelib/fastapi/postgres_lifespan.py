@@ -1,6 +1,6 @@
 import logging
 from collections.abc import AsyncIterator
-from enum import Enum  # Added import
+from enum import Enum
 
 from fastapi_lifespan_manager import LifespanManager, State
 from servicelib.logging_utils import log_catch, log_context

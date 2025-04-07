@@ -32,7 +32,8 @@ class DynamicIndentFormatter(logging.Formatter):
     _cls_indent_level: int = 0
     _instance_indent_level: int = 0
 
-    def __init__(self, fmt: str | None = None, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
+        fmt = args[0] if args else None
         dynamic_fmt = fmt or "%(asctime)s %(levelname)s %(message)s"
         assert "message" in dynamic_fmt
         super().__init__(dynamic_fmt, *args, **kwargs)
