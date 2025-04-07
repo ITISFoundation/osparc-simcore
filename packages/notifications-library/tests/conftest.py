@@ -91,7 +91,7 @@ def user_data(
 
 
 @pytest.fixture
-def sharer_data(user_name: str, message: str) -> SharerData:
+def sharer_data(user_name: str, message: str = "") -> SharerData:
     return SharerData(
         user_name=user_name,
         message=message,
