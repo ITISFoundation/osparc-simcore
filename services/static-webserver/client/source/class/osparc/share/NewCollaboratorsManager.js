@@ -99,7 +99,6 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
             const textField = this.getChildControl("text-filter").getChildControl("textfield");
             const email = textField.getValue();
             if (osparc.auth.core.Utils.checkEmail(email)) {
-              this.__selectedCollaborators[email] = email;
               const invitedButton = this.__invitedButton(email);
               this.getChildControl("potential-collaborators-list").addAt(invitedButton, 0);
               invitedButton.setValue(true);
@@ -286,20 +285,20 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
 
       const collaboratorData = {
         label: email,
+        email: email,
         description: null,
       };
       const collaborator = qx.data.marshal.Json.createModel(collaboratorData);
       const collaboratorButton = new osparc.filter.CollaboratorToggleButton(collaborator);
-      collaboratorButton.email = email;
       collaboratorButton.setIconSrc("@FontAwesome5Solid/envelope/14");
 
       collaboratorButton.addListener("changeValue", e => {
         const selected = e.getData();
         if (selected) {
-          this.__selectedCollaborators[collaborator.email] = collaborator;
+          this.__selectedCollaborators[collaborator.getEmail()] = collaborator;
           collaboratorButton.unsubscribeToFilterGroup("collaboratorsManager");
-        } else if (collaborator.email in this.__selectedCollaborators) {
-          delete this.__selectedCollaborators[collaborator.email];
+        } else if (collaborator.getEmail() in this.__selectedCollaborators) {
+          delete this.__selectedCollaborators[collaborator.getEmail()];
           collaboratorButton.subscribeToFilterGroup("collaboratorsManager");
         }
         this.getChildControl("share-button").setEnabled(Boolean(Object.keys(this.__selectedCollaborators).length));
