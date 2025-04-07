@@ -21,6 +21,7 @@ pytest \
 
 import functools
 import json
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
@@ -186,7 +187,7 @@ async def test_email_event(
     smtp_mock_or_none: MagicMock | None,
     user_data: UserData,
     user_email: EmailStr,
-    sharer_data: SharerData,
+    sharer_data: SharerData | None,
     product_data: ProductData,
     product_name: ProductName,
     event_name: str,
@@ -197,13 +198,14 @@ async def test_email_event(
     assert user_data.email == user_email
     assert product_data.product_name == product_name
 
+    event_extra_data = event_extra_data | (asdict(sharer_data) if sharer_data else {})
+
     parts = render_email_parts(
         env=create_render_environment_from_notifications_library(
             undefined=StrictUndefined
         ),
         event_name=event_name,
         user=user_data,
-        sharer=sharer_data,
         product=product_data,
         # extras
         **event_extra_data,
@@ -256,7 +258,6 @@ async def test_email_with_reply_to(
     smtp_mock_or_none: MagicMock | None,
     user_data: UserData,
     user_email: EmailStr,
-    sharer_data: SharerData,
     support_email: EmailStr,
     product_data: ProductData,
     event_name: str,
