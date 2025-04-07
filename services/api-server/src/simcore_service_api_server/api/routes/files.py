@@ -273,7 +273,7 @@ async def upload_files(files: list[UploadFile] = FileParam(...)):
 @cancel_on_disconnect
 async def get_upload_links(
     request: Request,
-    client_file: UserFile | UserFileToProgramJob,
+    client_file: UserFileToProgramJob | UserFile,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
@@ -387,7 +387,7 @@ async def delete_file(
 async def abort_multipart_upload(
     request: Request,
     file_id: UUID,
-    client_file: Annotated[UserFile | UserFileToProgramJob, Body(..., embed=True)],
+    client_file: Annotated[UserFileToProgramJob | UserFile, Body(..., embed=True)],
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
@@ -416,7 +416,7 @@ async def abort_multipart_upload(
 async def complete_multipart_upload(
     request: Request,
     file_id: UUID,
-    client_file: Annotated[UserFile | UserFileToProgramJob, Body(...)],
+    client_file: Annotated[UserFileToProgramJob | UserFile, Body(...)],
     uploaded_parts: Annotated[FileUploadCompletionBody, Body(...)],
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
