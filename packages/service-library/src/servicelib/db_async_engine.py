@@ -1,4 +1,5 @@
 import logging
+import warnings
 
 from fastapi import FastAPI
 from settings_library.postgres import PostgresSettings
@@ -17,6 +18,11 @@ _logger = logging.getLogger(__name__)
 
 @retry(**PostgresRetryPolicyUponInitialization(_logger).kwargs)
 async def connect_to_db(app: FastAPI, settings: PostgresSettings) -> None:
+    warnings.warn(
+        "The 'connect_to_db' function is deprecated and will be removed in a future release. "
+        "Please use 'postgres_lifespan' instead for managing the database connection lifecycle.",
+        DeprecationWarning,
+    )
     with log_context(
         _logger, logging.DEBUG, f"connection to db {settings.dsn_with_async_sqlalchemy}"
     ):

@@ -7,7 +7,7 @@ from servicelib.logging_utils import log_catch, log_context
 from settings_library.postgres import PostgresSettings
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from ..db_asyncpg_utils import create_async_engine_and_database_ready
+from ..db_asyncpg_utils import create_async_engine_and_wait_for_database_ready
 
 _logger = logging.getLogger(__name__)
 
@@ -30,8 +30,8 @@ async def setup_postgres_database(_, state: State) -> AsyncIterator[State]:
         ]
         assert isinstance(pg_settings, PostgresSettings)  # nosec
 
-        async_engine: AsyncEngine = await create_async_engine_and_database_ready(
-            pg_settings
+        async_engine: AsyncEngine = (
+            await create_async_engine_and_wait_for_database_ready(pg_settings)
         )
 
         yield {PostgresLifespanStateKeys.POSTGRES_ASYNC_ENGINE: async_engine}
