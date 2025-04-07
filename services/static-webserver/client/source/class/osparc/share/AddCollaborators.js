@@ -41,8 +41,7 @@ qx.Class.define("osparc.share.AddCollaborators", {
   },
 
   events: {
-    "addCollaborators": "qx.event.type.Data",
-    "shareWithEmails": "qx.event.type.Data",
+    "addCollaborators": "qx.event.type.Data"
   },
 
   members: {
@@ -100,11 +99,19 @@ qx.Class.define("osparc.share.AddCollaborators", {
           collaboratorsManager.close();
           this.fireDataEvent("addCollaborators", e.getData());
         }, this);
-        collaboratorsManager.addListener("shareWithEmails", e => {
-          collaboratorsManager.close();
-          console.log("Sending emails: ", e.getData());
-          this.fireDataEvent("shareWithEmails", e.getData());
-        }, this);
+        if (this.__serializedDataCopy["resourceType"] === "study") {
+          collaboratorsManager.addListener("shareWithEmails", e => {
+            const {
+              selectedEmails,
+              newAccessRights,
+              message,
+            } = e.getData();
+            collaboratorsManager.close();
+            osparc.store.Study.sendShareEmails(selectedEmails, newAccessRights, message)
+              .then(() => osparc.FlashMessenger.logAs("success", this.tr("Emails sent")))
+              .catch(err => osparc.FlashMessenger.logError(err));
+          }, this);
+        }
       }, this);
 
       const organizations = this.getChildControl("my-organizations");

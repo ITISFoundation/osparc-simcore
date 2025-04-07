@@ -102,6 +102,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
               this.__selectedCollaborators[email] = email;
               const invitedButton = this.__invitedButton(email);
               this.getChildControl("potential-collaborators-list").add(invitedButton);
+              invitedButton.setValue(true);
             }
           });
           this.getChildControl("filter-layout").add(control);
@@ -287,7 +288,6 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       const collaboratorButton = new osparc.filter.CollaboratorToggleButton(collaborator);
       collaboratorButton.email = email;
       collaboratorButton.setIconSrc("@FontAwesome5Solid/envelope/14");
-      collaboratorButton.setValue(true);
 
       collaboratorButton.addListener("changeValue", e => {
         const selected = e.getData();

@@ -111,5 +111,24 @@ qx.Class.define("osparc.store.Study", {
         })
         .catch(err => osparc.FlashMessenger.logError(err));
     },
+
+    sendShareEmails: function(selectedEmails, newAccessRights, message) {
+      const promises = selectedEmails.map(selectedEmail => {
+        const params = {
+          url: {
+            "studyId": this.__serializedDataCopy["uuid"],
+          },
+          data: {
+            shareeEmail: selectedEmail,
+            sharerMessage: message,
+            read: newAccessRights["read"],
+            write: newAccessRights["write"],
+            delete: newAccessRights["delete"],
+          }
+        };
+        return osparc.data.Resources.fetch("studies", "shareWithEmail", params);
+      });
+      return Promise.all(promises);
+    },
   }
 });
