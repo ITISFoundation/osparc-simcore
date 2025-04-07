@@ -75,6 +75,10 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
           this.add(control);
           break;
         }
+        case "filter-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+          this.add(control);
+          break;
         case "text-filter": {
           control = new osparc.filter.TextFilter("name", "collaboratorsManager");
           control.setCompact(true);
@@ -82,7 +86,15 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
           filterTextField.setPlaceholder(this.tr("Search"));
           filterTextField.setBackgroundColor("transparent");
           this.addListener("appear", () => filterTextField.focus());
-          this.add(control);
+          this.getChildControl("filter-layout").add(control, {
+            flex: 1
+          });
+          break;
+        }
+        case "send-email-button": {
+          control = new qx.ui.form.Button(this.tr("Send email"));
+          control.exclude();
+          this.getChildControl("filter-layout").add(control);
           break;
         }
         case "potential-collaborators-list": {
@@ -157,10 +169,12 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
         if (this.__searchDelayer) {
           clearTimeout(this.__searchDelayer);
         }
+        const sendEmailButton = this.getChildControl("send-email-button");
+        sendEmailButton.exclude();
         if (inputValue.length > 3) {
           if (this.__shareWithEmailEnabled) {
             if (osparc.auth.core.Utils.checkEmail(inputValue)) {
-              console.log("Valid email");
+              sendEmailButton.show();
             }
           }
           const waitBeforeSearching = 1000;
