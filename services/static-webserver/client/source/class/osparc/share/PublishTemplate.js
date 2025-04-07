@@ -59,11 +59,13 @@ qx.Class.define("osparc.share.PublishTemplate", {
       this._add(this.__selectedCollabs);
 
       addCollaborators.addListener("addCollaborators", e => {
-        const gids = e.getData();
-        if (gids.length) {
+        const {
+          selectedGids,
+        } = e.getData();
+        if (selectedGids.length) {
           const potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators(false, true)
           const currentGids = this.getSelectedGroups();
-          gids.forEach(gid => {
+          selectedGids.forEach(gid => {
             if (gid in potentialCollaborators && !currentGids.includes(gid)) {
               const collabButton = new qx.ui.toolbar.Button(potentialCollaborators[gid].getLabel(), "@MaterialIcons/close/12");
               collabButton.gid = gid;
@@ -80,11 +82,13 @@ qx.Class.define("osparc.share.PublishTemplate", {
     },
 
     __updateAccessRights: function() {
+      const readAccessRole = osparc.data.Roles.STUDY["read"];
+      const deleteAccessRole = osparc.data.Roles.STUDY["delete"];
       // these "accessRights" are only used for repopulating potential collaborators in the AddCollaborators -> NewCollaboratorsManager
       const myGroupId = osparc.auth.Data.getInstance().getGroupId();
       this.__potentialTemplateData["accessRights"] = {};
-      this.__potentialTemplateData["accessRights"][myGroupId] = osparc.share.CollaboratorsStudy.getOwnerAccessRight();
-      this.getSelectedGroups().forEach(gid => this.__potentialTemplateData["accessRights"][gid] = osparc.share.CollaboratorsStudy.getViewerAccessRight());
+      this.__potentialTemplateData["accessRights"][myGroupId] = deleteAccessRole.accessRights;
+      this.getSelectedGroups().forEach(gid => this.__potentialTemplateData["accessRights"][gid] = readAccessRole.accessRights);
     },
 
     getSelectedGroups: function() {

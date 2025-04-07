@@ -88,10 +88,12 @@ qx.Class.define("osparc.editor.AnnotationNoteCreator", {
             collaboratorsManager.setCaption("Recipient");
             collaboratorsManager.getActionButton().setLabel(this.tr("Add"));
             collaboratorsManager.addListener("addCollaborators", e => {
-              const collabs = e.getData();
-              if (collabs) {
+              const {
+                selectedGids,
+              } = e.getData();
+              if (selectedGids) {
                 collaboratorsManager.close();
-                this.__setRecipientGid(collabs[0]);
+                this.__setRecipientGid(selectedGids[0]);
               }
             }, this);
           }, this);

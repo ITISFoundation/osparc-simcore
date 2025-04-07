@@ -60,4 +60,5 @@ project_to_groups = sa.Table(
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
     sa.UniqueConstraint("project_uuid", "gid"),
+    sa.Index("idx_project_to_groups_gid", "gid"),
 )

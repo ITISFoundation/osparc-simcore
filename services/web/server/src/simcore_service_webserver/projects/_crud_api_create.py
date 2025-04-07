@@ -181,7 +181,11 @@ async def _copy_files_from_source_project(
             product_name=product_name,
         ):
             task_progress.update(
-                message=async_job_composed_result.status.progress.composed_message,
+                message=(
+                    async_job_composed_result.status.progress.message.description
+                    if async_job_composed_result.status.progress.message
+                    else None
+                ),
                 percent=TypeAdapter(ProgressPercent).validate_python(
                     (
                         starting_value

@@ -385,8 +385,15 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
         share.addListener("execute", () => this.__openShareWith(), this);
         menu.add(share);
         editButton.setMenu(menu);
-        const val = value["read"] + value["write"] + value["delete"];
-        roleText.setValue(osparc.data.Roles.WORKSPACE[val].label);
+        let id = "noRead";
+        if (value["delete"]) {
+          id = "delete";
+        } else if (value["write"]) {
+          id = "write";
+        } else if (value["read"]) {
+          id = "read";
+        }
+        roleText.setValue(osparc.data.Roles.WORKSPACE[id].label);
         roleText.show();
         roleIcon.show();
       } else {

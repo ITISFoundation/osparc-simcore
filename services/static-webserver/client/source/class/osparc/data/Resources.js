@@ -1190,10 +1190,6 @@ qx.Class.define("osparc.data.Resources", {
           copy: {
             method: "PUT",
             url: statics.API + "/storage/locations/{toLoc}/files/{fileName}?extra_location={fromLoc}&extra_source={fileUuid}"
-          },
-          delete: {
-            method: "DELETE",
-            url: statics.API + "/storage/locations/{locationId}/files/{fileUuid}"
           }
         }
       },
@@ -1218,6 +1214,10 @@ qx.Class.define("osparc.data.Resources", {
           getPathsPage: {
             method: "GET",
             url: statics.API + "/storage/locations/{locationId}/paths?file_filter={path}&cursor={cursor}&size=1000"
+          },
+          batchDelete: {
+            method: "POST",
+            url: statics.API + "/storage/locations/{locationId}/-/paths:batchDelete"
           },
           requestSize: {
             method: "POST",
@@ -1441,6 +1441,7 @@ qx.Class.define("osparc.data.Resources", {
 
           let message = null;
           let status = null;
+          let supportId = null;
           if (e.getData().error) {
             const errorData = e.getData().error;
             if (errorData.message) {
@@ -1455,6 +1456,9 @@ qx.Class.define("osparc.data.Resources", {
               message = errors[0].message;
             }
             status = errorData.status;
+            if (errorData["support_id"]) {
+              supportId = errorData["support_id"];
+            }
           } else {
             const req = e.getRequest();
             message = req.getResponse();
@@ -1485,6 +1489,9 @@ qx.Class.define("osparc.data.Resources", {
           const err = Error(message ? message : `Error while trying to fetch ${endpoint} ${resource}`);
           if (status) {
             err.status = status;
+          }
+          if (supportId) {
+            err.supportId = supportId;
           }
           reject(err);
         };
