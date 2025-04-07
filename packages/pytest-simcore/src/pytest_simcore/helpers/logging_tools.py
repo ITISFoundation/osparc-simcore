@@ -22,7 +22,7 @@ def _timedelta_as_minute_second_ms(delta: datetime.timedelta) -> str:
     if int(milliseconds * 1000) != 0:
         result += f"{int(milliseconds*1000)}ms"
 
-    sign = "-" if total_seconds < 0 else ""
+    sign = "-" if total_seconds < 0 else "<1ms"
 
     return f"{sign}{result.strip()}"
 
@@ -32,10 +32,10 @@ class DynamicIndentFormatter(logging.Formatter):
     _cls_indent_level: int = 0
     _instance_indent_level: int = 0
 
-    def __init__(self, fmt=None, datefmt=None, style="%"):
+    def __init__(self, fmt: str | None = None, *args, **kwargs):
         dynamic_fmt = fmt or "%(asctime)s %(levelname)s %(message)s"
         assert "message" in dynamic_fmt
-        super().__init__(dynamic_fmt, datefmt, style)
+        super().__init__(dynamic_fmt, *args, **kwargs)
 
     def format(self, record) -> str:
         original_message = record.msg
