@@ -34,7 +34,11 @@ async def setup_postgres_database(_, state: State) -> AsyncIterator[State]:
             pg_settings
         )
 
-        yield {PostgresLifespanStateKeys.POSTGRES_ASYNC_ENGINE: async_engine}
+        try:
+            yield {
+                PostgresLifespanStateKeys.POSTGRES_ASYNC_ENGINE: async_engine,
+            }
 
-        with log_catch(_logger, reraise=False):
-            await async_engine.dispose()
+        finally:
+            with log_catch(_logger, reraise=False):
+                await async_engine.dispose()
