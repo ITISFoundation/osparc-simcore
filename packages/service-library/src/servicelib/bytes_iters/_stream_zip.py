@@ -45,7 +45,6 @@ async def get_zip_bytes_iter(
         sum(bytes_streamer.data_size for _, bytes_streamer in archive_entries)
     )
     description = f"files: count={len(archive_entries)}, size={total_stream_lenth.human_readable()}"
-    _logger.info("Archiving %s", description)
 
     async with progress_bar.sub_progress(
         steps=total_stream_lenth, description=description, progress_unit="Byte"
