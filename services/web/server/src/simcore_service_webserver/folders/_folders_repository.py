@@ -277,19 +277,21 @@ async def list_folders_db_as_admin(
     """
     NOTE: this is app-wide i.e. no product, user or workspace filtered
     """
-    base_query = sql.select(*_FOLDER_DB_MODEL_COLS).where(
-        folders_v2.c.trashed.is_not(None)
-    )
+    base_query = sql.select(*_FOLDER_DB_MODEL_COLS)
 
     if is_set(trashed_explicitly):
         assert isinstance(trashed_explicitly, bool)  # nosec
         base_query = base_query.where(
-            folders_v2.c.trashed_explicitly.is_(trashed_explicitly)
+            (folders_v2.c.trashed_explicitly.is_(trashed_explicitly))
+            & (folders_v2.c.trashed.is_not(None))
         )
 
     if is_set(trashed_before):
         assert isinstance(trashed_before, datetime)  # nosec
-        base_query = base_query.where(folders_v2.c.trashed < trashed_before)
+        base_query = base_query.where(
+            (folders_v2.c.trashed < trashed_before)
+            & (folders_v2.c.trashed.is_not(None))
+        )
 
     if is_set(shared_workspace_id):
         assert isinstance(shared_workspace_id, int)  # nosec
