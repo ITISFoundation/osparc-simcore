@@ -33,12 +33,12 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
     this.__potentialCollaborators = {};
     this.__reloadPotentialCollaborators();
 
-    this.__shareWithEmail = false;
+    this.__shareWithEmailEnabled = false;
     if (this.__resourceData["resourceType"] === "study") {
       osparc.utils.DisabledPlugins.isShareWithEmailEnabled()
         .then(isEnabled => {
           if (isEnabled) {
-            this.__shareWithEmail = true;
+            this.__shareWithEmailEnabled = true;
           }
         });
     }
@@ -153,11 +153,16 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       const textFilter = this.getChildControl("text-filter");
       const filterTextField = textFilter.getChildControl("textfield");
       filterTextField.addListener("input", e => {
-        const filterValue = e.getData();
+        const inputValue = e.getData();
         if (this.__searchDelayer) {
           clearTimeout(this.__searchDelayer);
         }
-        if (filterValue.length > 3) {
+        if (inputValue.length > 3) {
+          if (this.__shareWithEmailEnabled) {
+            let errorMessage = null
+            osparc.auth.core.Utils.checkEmail(inputValue, null, errorMessage);
+            console.log(errorMessage);
+          }
           const waitBeforeSearching = 1000;
           this.__searchDelayer = setTimeout(() => {
             this.__searchUsers();

@@ -68,6 +68,12 @@ qx.Class.define("osparc.auth.core.Utils", {
       };
     },
 
+    checkEmail: function(emailValue) {
+      // Same expression used in qx.util.Validate.checkEmail
+      const reg = /^([A-Za-z0-9_\-.+])+@([A-Za-z0-9_\-.])+\.([A-Za-z]{2,})$/;
+      return reg.test(emailValue);
+    },
+
     /** Finds parameters in the fragment
      *
      * Expected fragment format as https://osparc.io#page=reset-password;code=123546

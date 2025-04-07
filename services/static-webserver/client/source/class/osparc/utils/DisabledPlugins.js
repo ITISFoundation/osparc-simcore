@@ -55,7 +55,7 @@ qx.Class.define("osparc.utils.DisabledPlugins", {
 
     isShareWithEmailEnabled: function() {
       // return !this.__isPluginDisabled(this.SHARE_WITH_EMAIL);
-      return true;
+      return new Promise(resolve => resolve(true));
     },
 
     isJobsEnabled: function() {
