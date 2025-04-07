@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% block title %} {% include 'on_share_project.email.subject.txt' %} {% endblock %}
 {% block content %}
-<p>Dear {{ user.first_name }},</p>
+<p>Dear {{ user.first_name or user.user_name }},</p>
 
 <p>Great news! {{ sharer.user_name }} has shared a {{ product.ui.project_alias }} with you on {{ product.display_name }}.</p>
 

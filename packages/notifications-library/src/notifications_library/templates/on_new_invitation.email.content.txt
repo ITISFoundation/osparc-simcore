@@ -1,4 +1,4 @@
-Dear {{ user.first_name }},
+Dear {{ user.first_name or user.user_name }},
 
 Thank you for your interest in {{ product.display_name }}. We are pleased to provide you with a one-time invitation link to register on the platform.
 
