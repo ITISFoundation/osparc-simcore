@@ -108,7 +108,7 @@ qx.Class.define("osparc.share.AddCollaborators", {
             } = e.getData();
             collaboratorsManager.close();
             osparc.store.Study.sendShareEmails(this.__serializedDataCopy, selectedEmails, newAccessRights, message)
-              .then(() => osparc.FlashMessenger.logAs("success", this.tr("Emails sent")))
+              .then(() => osparc.FlashMessenger.logAs(this.tr("Emails sent"), "INFO"))
               .catch(err => osparc.FlashMessenger.logError(err));
           }, this);
         }

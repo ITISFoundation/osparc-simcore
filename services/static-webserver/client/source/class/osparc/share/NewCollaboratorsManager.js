@@ -396,7 +396,6 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
         };
 
         if (selectedEmails.length) {
-          console.log("Inviting users: ", selectedEmails);
           const dialog = new osparc.ui.window.Confirmation();
           dialog.setCaption(this.tr("Add Message"));
           dialog.setMessage(this.tr("You can add a message that will be go in the email"));
