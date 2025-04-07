@@ -36,6 +36,6 @@ class RedisTaskStore:
 
     async def set_task(self, task_id: TaskID, task_data: TaskData) -> None:
         await self._redis_client_sdk.redis.set(
-            task_id,
+            _CELERY_TASK_META_PREFIX + task_id,
             task_data.model_dump_json(),
         )
