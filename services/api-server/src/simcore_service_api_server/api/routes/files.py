@@ -29,12 +29,12 @@ from simcore_sdk.node_ports_common.filemanager import (
     get_upload_links_from_s3,
 )
 from simcore_sdk.node_ports_common.filemanager import upload_path as storage_upload_path
-from simcore_service_api_server.api.dependencies.webserver_http import (
-    get_webserver_session,
-)
 from starlette.datastructures import URL
 from starlette.responses import RedirectResponse
 
+from ...api.dependencies.webserver_http import (
+    get_webserver_session,
+)
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.domain.files import File as DomainFile
 from ...models.pagination import Page, PaginationParams
