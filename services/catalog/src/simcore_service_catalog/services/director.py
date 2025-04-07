@@ -3,7 +3,7 @@ import functools
 import json
 import logging
 import urllib.parse
-from collections.abc import Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import suppress
 from pprint import pformat
 from typing import Any, Final
@@ -11,6 +11,7 @@ from typing import Any, Final
 import httpx
 from common_library.json_serialization import json_dumps
 from fastapi import FastAPI, HTTPException
+from fastapi_lifespan_manager import State
 from models_library.api_schemas_directorv2.services import ServiceExtras
 from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
@@ -65,7 +66,7 @@ _director_startup_retry_policy: dict[str, Any] = {
 
 
 def _return_data_or_raise_error(
-    request_func: Callable[..., Awaitable[httpx.Response]]
+    request_func: Callable[..., Awaitable[httpx.Response]],
 ) -> Callable[..., Awaitable[list[Any] | dict[str, Any]]]:
     """
     Creates a context for safe inter-process communication (IPC)
@@ -288,13 +289,14 @@ class DirectorApi:
         return TypeAdapter(ServiceExtras).validate_python(result)
 
 
-async def setup_director(app: FastAPI) -> None:
+async def setup_director(app: FastAPI) -> AsyncIterator[State]:
+    client: DirectorApi | None = None
+
     if settings := app.state.settings.CATALOG_DIRECTOR:
         with log_context(
             _logger, logging.DEBUG, "Setup director at %s", f"{settings.base_url=}"
         ):
             async for attempt in AsyncRetrying(**_director_startup_retry_policy):
-                client = DirectorApi(base_url=settings.base_url, app=app)
                 with attempt:
                     client = DirectorApi(base_url=settings.base_url, app=app)
                     if not await client.is_responsive():
@@ -303,17 +305,16 @@ async def setup_director(app: FastAPI) -> None:
                         raise DirectorUnresponsiveError
 
                 _logger.info(
-                    "Connection to director-v0 succeded [%s]",
+                    "Connection to director-v0 succeeded [%s]",
                     json_dumps(attempt.retry_state.retry_object.statistics),
                 )
 
             # set when connected
             app.state.director_api = client
 
-
-async def close_director(app: FastAPI) -> None:
-    client: DirectorApi | None
-    if client := app.state.director_api:
-        await client.close()
-
-    _logger.debug("Director client closed successfully")
+    try:
+        yield {}
+    finally:
+        if client:
+            await client.close()
+        _logger.debug("Director client closed successfully")

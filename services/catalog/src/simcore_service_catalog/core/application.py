@@ -22,12 +22,7 @@ from .._meta import (
 from ..api.rest.routes import setup_rest_api_routes
 from ..api.rpc.routes import setup_rpc_api_routes
 from ..exceptions.handlers import setup_exception_handlers
-from ..services.function_services import setup_function_services
-from ..services.rabbitmq import setup_rabbitmq
 from . import events
-from .events import (
-    _create_on_shutdown,
-)
 from .settings import ApplicationSettings
 
 _logger = logging.getLogger(__name__)
@@ -73,14 +68,10 @@ def create_app() -> FastAPI:
     if settings.CATALOG_TRACING:
         initialize_tracing(app, settings.CATALOG_TRACING, APP_NAME)
 
-    # PLUGIN SETUP
-    setup_function_services(app)
-    setup_rabbitmq(app)
-
+    # MIDDLEWARES
     if settings.CATALOG_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)
 
-    # MIDDLEWARES
     if settings.CATALOG_PROFILING:
         initialize_profiler(app)
 
@@ -95,9 +86,6 @@ def create_app() -> FastAPI:
     # ROUTES
     setup_rest_api_routes(app, vtag=API_VTAG)
     setup_rpc_api_routes(app)
-
-    # SHUTDOWN-EVENT
-    app.add_event_handler("shutdown", _create_on_shutdown(app))
 
     # EXCEPTIONS
     setup_exception_handlers(app)

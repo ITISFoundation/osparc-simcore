@@ -1,9 +1,12 @@
+from collections.abc import AsyncIterator
+
 # mypy: disable-error-code=truthy-function
 from typing import Any
 
 from fastapi import status
 from fastapi.applications import FastAPI
 from fastapi.exceptions import HTTPException
+from fastapi_lifespan_manager import State
 from models_library.function_services_catalog import (
     is_function_service,
     iter_service_docker_data,
@@ -31,12 +34,15 @@ def get_function_service(key, version) -> ServiceMetaDataPublished:
         ) from err
 
 
-def setup_function_services(app: FastAPI):
-    def _on_startup() -> None:
-        catalog = [_as_dict(metadata) for metadata in iter_service_docker_data()]
-        app.state.frontend_services_catalog = catalog
+async def setup_function_services(app: FastAPI) -> AsyncIterator[State]:
+    app.state.frontend_services_catalog = [
+        _as_dict(metadata) for metadata in iter_service_docker_data()
+    ]
 
-    app.add_event_handler("startup", _on_startup)
+    try:
+        yield {}
+    finally:
+        app.state.frontend_services_catalog = None
 
 
 __all__: tuple[str, ...] = (
