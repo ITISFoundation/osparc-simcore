@@ -9,6 +9,7 @@ from typing import Any
 
 import notifications_library
 import pytest
+from faker import Faker
 from models_library.products import ProductName
 from notifications_library._models import (
     ProductData,
@@ -91,10 +92,10 @@ def user_data(
 
 
 @pytest.fixture
-def sharer_data(user_name: str, message: str = "") -> SharerData:
+def sharer_data(user_name: str, faker: Faker) -> SharerData:
     return SharerData(
         user_name=user_name,
-        message=message,
+        message=faker.random_element(elements=(faker.sentence(), "")),
     )
 
 
