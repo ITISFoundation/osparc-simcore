@@ -22,7 +22,7 @@
 qx.Class.define("osparc.data.PollTask", {
   extend: qx.core.Object,
 
-  construct: function(taskData, interval = 1000) {
+  construct: function(taskData, interval = 2000) {
     this.base(arguments);
 
     this.setPollInterval(interval);
@@ -56,7 +56,7 @@ qx.Class.define("osparc.data.PollTask", {
     pollInterval: {
       check: "Number",
       nullable: false,
-      init: 1000
+      init: 2000
     },
 
     taskId: {
@@ -99,7 +99,16 @@ qx.Class.define("osparc.data.PollTask", {
       } catch (_) {
         return href;
       }
-    }
+    },
+
+    extractProgress: function(updateData) {
+      if ("task_progress" in updateData) {
+        const taskProgress = updateData["task_progress"];
+        const percent = taskProgress["percent"] ? parseFloat(taskProgress["percent"].toFixed(3)) : taskProgress["percent"];
+        return percent;
+      }
+      return 0;
+    },
   },
 
   members: {
@@ -152,7 +161,7 @@ qx.Class.define("osparc.data.PollTask", {
           .then(res => res.json())
           .then(result => {
             if ("error" in result && result["error"]) {
-              throw new Error(result["error"]["message"]);
+              throw result["error"];
             }
             if ("data" in result && result["data"]) {
               const resultData = result["data"];
@@ -176,10 +185,8 @@ qx.Class.define("osparc.data.PollTask", {
         fetch(abortPath, {
           method: "DELETE"
         })
-          .then(() => this.fireEvent("taskAborted"))
-          .catch(err => {
-            throw err;
-          });
+          .catch(err => osparc.FlashMessenger.logError(err))
+          .finally(() => this.fireEvent("taskAborted"));
       }
     }
   }

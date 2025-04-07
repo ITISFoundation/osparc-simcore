@@ -202,31 +202,34 @@ async def test__list_projects_full_search_with_query_parameters(
     assert len(data) == 1
     assert data[0]["uuid"] == project["uuid"]
 
-    # Full search with tag_ids
-    base_url = client.app.router["list_projects_full_search"].url_for()
-    url = base_url.with_query({"text": "Orion", "tag_ids": "1,2"})
-    resp = await client.get(f"{url}")
-    data, _ = await assert_status(resp, status.HTTP_200_OK)
-    assert len(data) == 0
+    # NOTE: MD: To improve the listing project performance https://github.com/ITISFoundation/osparc-simcore/pull/7475
+    # we are not using the tag_ids in the full search (https://github.com/ITISFoundation/osparc-simcore/issues/7478)
 
-    # Create tag
-    url = client.app.router["create_tag"].url_for()
-    resp = await client.post(
-        f"{url}", json={"name": "tag1", "description": "description1", "color": "#f00"}
-    )
-    added_tag, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    # # Full search with tag_ids
+    # base_url = client.app.router["list_projects_full_search"].url_for()
+    # url = base_url.with_query({"text": "Orion", "tag_ids": "1,2"})
+    # resp = await client.get(f"{url}")
+    # data, _ = await assert_status(resp, status.HTTP_200_OK)
+    # assert len(data) == 0
 
-    # Add tag to study
-    url = client.app.router["add_project_tag"].url_for(
-        project_uuid=project["uuid"], tag_id=str(added_tag.get("id"))
-    )
-    resp = await client.post(f"{url}")
-    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    # # Create tag
+    # url = client.app.router["create_tag"].url_for()
+    # resp = await client.post(
+    #     f"{url}", json={"name": "tag1", "description": "description1", "color": "#f00"}
+    # )
+    # added_tag, _ = await assert_status(resp, status.HTTP_201_CREATED)
 
-    # Full search with tag_ids
-    base_url = client.app.router["list_projects_full_search"].url_for()
-    url = base_url.with_query({"text": "Orion", "tag_ids": f"{added_tag['id']}"})
-    resp = await client.get(f"{url}")
-    data, _ = await assert_status(resp, status.HTTP_200_OK)
-    assert len(data) == 1
-    assert data[0]["uuid"] == project["uuid"]
+    # # Add tag to study
+    # url = client.app.router["add_project_tag"].url_for(
+    #     project_uuid=project["uuid"], tag_id=str(added_tag.get("id"))
+    # )
+    # resp = await client.post(f"{url}")
+    # data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    # # Full search with tag_ids
+    # base_url = client.app.router["list_projects_full_search"].url_for()
+    # url = base_url.with_query({"text": "Orion", "tag_ids": f"{added_tag['id']}"})
+    # resp = await client.get(f"{url}")
+    # data, _ = await assert_status(resp, status.HTTP_200_OK)
+    # assert len(data) == 1
+    # assert data[0]["uuid"] == project["uuid"]

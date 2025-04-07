@@ -67,13 +67,14 @@ qx.Class.define("osparc.study.SaveAsTemplate", {
     },
 
     __publishTemplate: function() {
+      const readAccessRole = osparc.data.Roles.STUDY["read"];
       // AccessRights will be POSTed after the template is created.
       // No need to add myself, backend will automatically do it
-      const accessRights = {}
+      const accessRights = {};
       this.__studyDataClone["accessRights"] = {};
       const selectedGroupIDs = this.__shareWith.getSelectedGroups();
       selectedGroupIDs.forEach(gid => {
-        accessRights[gid] = osparc.share.CollaboratorsStudy.getViewerAccessRight();
+        accessRights[gid] = readAccessRole.accessRights;
       });
 
       this.fireDataEvent("publishTemplate", {

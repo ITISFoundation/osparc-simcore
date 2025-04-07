@@ -1441,6 +1441,7 @@ qx.Class.define("osparc.data.Resources", {
 
           let message = null;
           let status = null;
+          let supportId = null;
           if (e.getData().error) {
             const errorData = e.getData().error;
             if (errorData.message) {
@@ -1455,6 +1456,9 @@ qx.Class.define("osparc.data.Resources", {
               message = errors[0].message;
             }
             status = errorData.status;
+            if (errorData["support_id"]) {
+              supportId = errorData["support_id"];
+            }
           } else {
             const req = e.getRequest();
             message = req.getResponse();
@@ -1485,6 +1489,9 @@ qx.Class.define("osparc.data.Resources", {
           const err = Error(message ? message : `Error while trying to fetch ${endpoint} ${resource}`);
           if (status) {
             err.status = status;
+          }
+          if (supportId) {
+            err.supportId = supportId;
           }
           reject(err);
         };

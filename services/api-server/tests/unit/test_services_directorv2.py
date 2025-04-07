@@ -28,7 +28,7 @@ def api() -> DirectorV2Api:
 
 
 async def test_oec_139646582688800_missing_ctx_values_for_msg_template(
-    mocked_directorv2_service_api_base: MockRouter,
+    mocked_directorv2_rest_api_base: MockRouter,
     project_id: ProjectID,
     user_id: UserID,
     api: DirectorV2Api,
@@ -44,7 +44,7 @@ async def test_oec_139646582688800_missing_ctx_values_for_msg_template(
     # httpx.HTTPStatusError: Client error '404 Not Found' for url '/v2/computations/c7ad07d3-513f-4368-bcf0-354143b6a048?user_id=94'
 
     for method in ("GET", "POST", "DELETE"):
-        mocked_directorv2_service_api_base.request(
+        mocked_directorv2_rest_api_base.request(
             method,
             path__regex=r"/v2/computations/",
         ).respond(status_code=status.HTTP_404_NOT_FOUND)

@@ -7,8 +7,11 @@ from pathlib import Path
 
 from simcore_service_api_server.models.api_resources import (
     compose_resource_name,
+    parse_collections_ids,
     parse_last_resource_id,
+    parse_resources_ids,
     split_resource_name,
+    split_resource_name_as_dict,
 )
 
 
@@ -38,3 +41,19 @@ def test_parse_resource_id():
     assert (
         parse_last_resource_id(resource_name) == split_resource_name(resource_name)[-1]
     )
+
+    collection_to_resource_id_map = split_resource_name_as_dict(resource_name)
+    # Collection-ID -> Resource-ID
+    assert list(collection_to_resource_id_map.keys()) == parse_collections_ids(
+        resource_name
+    )
+    assert list(collection_to_resource_id_map.values()) == parse_resources_ids(
+        resource_name
+    )
+
+    assert collection_to_resource_id_map["solvers"] == "simcore/services/comp/isolve"
+    assert collection_to_resource_id_map["releases"] == "1.3.4"
+    assert (
+        collection_to_resource_id_map["jobs"] == "f622946d-fd29-35b9-a193-abdd1095167c"
+    )
+    assert collection_to_resource_id_map["outputs"] == "output 22"

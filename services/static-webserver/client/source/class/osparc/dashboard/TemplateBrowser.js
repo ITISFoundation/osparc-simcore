@@ -363,45 +363,42 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       const cardTitle = this.tr("Publishing ") + studyName;
       const toTemplateCard = this._addTaskCard(task, cardTitle, osparc.task.ToTemplate.ICON);
       if (toTemplateCard) {
-        this.__attachToTemplateEventHandler(task, toTemplateTaskUI, toTemplateCard);
+        this.__attachToTemplateEventHandler(task, toTemplateCard);
       }
     },
 
-    __attachToTemplateEventHandler: function(task, taskUI, toTemplateCard) {
-      const finished = (msg, msgLevel) => {
-        if (msg) {
-          osparc.FlashMessenger.logAs(msg, msgLevel);
-        }
-        osparc.store.PollTasks.getInstance().removeTask(task);
-        osparc.task.TasksContainer.getInstance().removeTaskUI(taskUI);
+    __attachToTemplateEventHandler: function(task, toTemplateCard) {
+      const finished = () => {
         this._resourcesContainer.removeNonResourceCard(toTemplateCard);
       };
 
-      task.addListener("taskAborted", () => {
-        const msg = this.tr("Study to Template cancelled");
-        finished(msg, "WARNING");
-      });
       task.addListener("updateReceived", e => {
         const updateData = e.getData();
         if ("task_progress" in updateData && toTemplateCard) {
-          const progress = updateData["task_progress"];
+          const taskProgress = updateData["task_progress"];
           toTemplateCard.getChildControl("progress-bar").set({
-            value: progress["percent"]*100
+            value: osparc.data.PollTask.extractProgress(updateData) * 100
           });
           toTemplateCard.getChildControl("state-label").set({
-            value: progress["message"]
+            value: taskProgress["message"]
           });
         }
       }, this);
       task.addListener("resultReceived", e => {
-        const msg = this.tr("Template created");
-        finished(msg, "INFO");
+        finished();
         this.reloadResources();
+        const msg = this.tr("Template created");
+        osparc.FlashMessenger.logAs(msg, "INFO");
+      });
+      task.addListener("taskAborted", () => {
+        finished();
+        const msg = this.tr("Study to Template cancelled");
+        osparc.FlashMessenger.logAs(msg, "WARNING");
       });
       task.addListener("pollingError", e => {
+        finished();
         const err = e.getData();
-        const msg = this.tr("Something went wrong while publishing the study<br>") + err.message;
-        finished(msg, "ERROR");
+        osparc.FlashMessenger.logError(err);
       });
     },
     // TASKS //

@@ -220,9 +220,9 @@ qx.Class.define("osparc.study.Utils", {
                 task.addListener("updateReceived", e => {
                   const updateData = e.getData();
                   if ("task_progress" in updateData && loadingPage) {
-                    const progress = updateData["task_progress"];
-                    const message = progress["message"];
-                    const percent = progress["percent"] ? parseFloat(progress["percent"].toFixed(3)) : progress["percent"];
+                    const taskProgress = updateData["task_progress"];
+                    const message = taskProgress["message"];
+                    const percent = osparc.data.PollTask.extractProgress(updateData);
                     progressSequence.setOverallProgress(percent);
                     const existingTask = progressSequence.getTask(message);
                     if (existingTask) {
