@@ -402,10 +402,6 @@ termcolor==2.5.0
     # via pytest-sugar
 types-aiofiles==24.1.0.20241221
     # via -r requirements/_test.in
-types-requests==2.32.0.20241016
-    # via types-tqdm
-types-tqdm==4.67.0.20241221
-    # via -r requirements/_test.in
 typing-extensions==4.12.2
     # via
     #   -c requirements/_base.txt
@@ -433,7 +429,6 @@ urllib3==2.3.0
     #   requests
     #   responses
     #   simcore-service-storage-sdk
-    #   types-requests
 vine==5.1.0
     # via
     #   -c requirements/_base.txt
