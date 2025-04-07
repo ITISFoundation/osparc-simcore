@@ -19,6 +19,7 @@ from aws_library.s3 import (
 )
 from aws_library.s3._models import S3ObjectKey
 from fastapi import FastAPI
+from models_library.api_schemas_storage.export_data_async_jobs import AccessRightError
 from models_library.api_schemas_storage.storage_schemas import (
     UNDEFINED_SIZE,
     UNDEFINED_SIZE_TYPE,
@@ -1256,12 +1257,21 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
             with contextlib.suppress(ValueError):
                 project_id = ProjectID(Path(object_key).parts[0])
 
-            accessible_projects_ids = await get_accessible_project_ids(
-                get_db_engine(self.app), user_id=user_id, project_id=project_id
-            )
+            try:
+                accessible_projects_ids = await get_accessible_project_ids(
+                    get_db_engine(self.app), user_id=user_id, project_id=project_id
+                )
+            except ProjectAccessRightError as err:
+                raise AccessRightError(
+                    user_id=user_id,
+                    file_id=object_key,
+                    location_id=SimcoreS3DataManager.get_location_id(),
+                ) from err
             if project_id is None or project_id not in accessible_projects_ids:
-                raise ProjectAccessRightError(
-                    access_right="read", project_id=project_id
+                raise AccessRightError(
+                    user_id=user_id,
+                    file_id=object_key,
+                    location_id=SimcoreS3DataManager.get_location_id(),
                 )
 
         for object_key in object_keys:

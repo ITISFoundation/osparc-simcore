@@ -4,7 +4,6 @@ from typing import Any
 
 from aws_library.s3._models import S3ObjectKey
 from celery import Task  # type: ignore[import-untyped]
-from models_library.api_schemas_storage.export_data_async_jobs import AccessRightError
 from models_library.api_schemas_storage.storage_schemas import FoldersBody
 from models_library.progress_bar import ProgressReport
 from models_library.projects_nodes_io import StorageFileID
@@ -12,7 +11,6 @@ from models_library.users import UserID
 from pydantic import TypeAdapter
 from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
-from simcore_service_storage.exceptions.errors import ProjectAccessRightError
 
 from ...dsm import get_dsm_provider
 from ...modules.celery.models import TaskID, TaskId
@@ -69,6 +67,9 @@ async def export_data(
     user_id: UserID,
     paths_to_export: list[S3ObjectKey],
 ) -> StorageFileID:
+    """
+    AccessRightError: in case user can't access project
+    """
     with log_context(
         _logger,
         logging.INFO,
@@ -94,13 +95,6 @@ async def export_data(
             description=f"'{task_id}' export data",
             progress_report_cb=_progress_cb,
         ) as progress_bar:
-            try:
-                return await dsm.create_s3_export(
-                    user_id, paths_to_export, progress_bar=progress_bar
-                )
-            except ProjectAccessRightError as err:
-                raise AccessRightError(
-                    user_id=user_id,
-                    paths_to_download=paths_to_export,
-                    location_id=SimcoreS3DataManager.get_location_id(),
-                ) from err
+            return await dsm.create_s3_export(
+                user_id, paths_to_export, progress_bar=progress_bar
+            )
