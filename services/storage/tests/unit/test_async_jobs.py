@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 
 from dataclasses import dataclass
+from datetime import timedelta
 from typing import Any
 from uuid import UUID
 
@@ -28,7 +29,7 @@ from models_library.progress_bar import ProgressReport
 from pytest_mock import MockerFixture
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
-from simcore_service_storage.modules.celery._task import _wrap_exception
+from simcore_service_storage.modules.celery._task import _error_handling
 from simcore_service_storage.modules.celery.client import TaskUUID
 from simcore_service_storage.modules.celery.models import TaskState, TaskStatus
 
@@ -69,7 +70,9 @@ class _MockCeleryClient:
         _ = kwargs
         assert self.get_task_result_object is not None
         if isinstance(self.get_task_result_object, Exception):
-            return _wrap_exception(self.get_task_result_object)
+            return _error_handling(1, timedelta(seconds=1), tuple())(
+                self.get_task_result_object
+            )
         return self.get_task_result_object
 
     async def get_task_uuids(self, *args, **kwargs) -> set[TaskUUID]:
