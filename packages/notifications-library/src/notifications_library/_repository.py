@@ -38,7 +38,10 @@ class UsersRepo(_BaseRepo):
             raise ValueError(msg)
 
         return UserData(
-            first_name=row.first_name, last_name=row.last_name, email=row.email
+            user_name=row.name,
+            first_name=row.first_name,
+            last_name=row.last_name,
+            email=row.email,
         )
 
 

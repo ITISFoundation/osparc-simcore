@@ -82,9 +82,10 @@ def product_data(
 
 @pytest.fixture
 def user_data(
-    user_email: EmailStr, user_first_name: str, user_last_name: str
+    user_name: str, user_email: EmailStr, user_first_name: str, user_last_name: str
 ) -> UserData:
     return UserData(
+        user_name=user_name,
         first_name=user_first_name,
         last_name=user_last_name,
         email=user_email,
