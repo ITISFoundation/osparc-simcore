@@ -224,25 +224,26 @@ def postgres_setup_disabled(mocker: MockerFixture) -> MockType:
 def background_tasks_setup_disabled(mocker: MockerFixture) -> None:
     """patch the setup of the background task so we can call it manually"""
 
-    def _factory(name):
-        async def _side_effect(app: FastAPI):
-            assert app
+    class MockedBackgroundTaskContextManager:
+        async def __aenter__(self):
             print(
                 "TEST",
                 background_tasks_setup_disabled.__name__,
-                "Disabled background tasks. Skipping execution of",
-                name,
+                "Disabled background tasks. Skipping execution of __aenter__",
             )
 
-        return _side_effect
+        async def __aexit__(self, exc_type, exc_value, traceback):
+            print(
+                "TEST",
+                background_tasks_setup_disabled.__name__,
+                "Disabled background tasks. Skipping execution of __aexit__",
+            )
 
-    for name in ("start_registry_sync_task", "stop_registry_sync_task"):
-        mocker.patch.object(
-            simcore_service_catalog.core.events,
-            name,
-            side_effect=_factory(name),
-            autospec=True,
-        )
+    mocker.patch.object(
+        simcore_service_catalog.core.events,
+        "setup_background_task",
+        return_value=MockedBackgroundTaskContextManager(),
+    )
 
 
 #
@@ -253,10 +254,8 @@ def background_tasks_setup_disabled(mocker: MockerFixture) -> None:
 @pytest.fixture
 def rabbitmq_and_rpc_setup_disabled(mocker: MockerFixture):
     # The following services are affected if rabbitmq is not in place
-    mocker.patch.object(simcore_service_catalog.core.application, "setup_rabbitmq")
-    mocker.patch.object(
-        simcore_service_catalog.core.application, "setup_rpc_api_routes"
-    )
+    mocker.patch.object(simcore_service_catalog.core.events, "setup_rabbitmq")
+    mocker.patch.object(simcore_service_catalog.core.events, "setup_rpc_api_routes")
 
 
 @pytest.fixture
@@ -272,8 +271,8 @@ async def rpc_client(
 
 
 @pytest.fixture
-def director_setup_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("CATALOG_DIRECTOR", "null")
+def director_setup_disabled(mocker: MockerFixture) -> None:
+    mocker.patch.object(simcore_service_catalog.core.events, "setup_director")
 
 
 @pytest.fixture
