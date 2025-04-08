@@ -147,7 +147,12 @@ class CatalogApi(BaseServiceClientApi):
         return services
 
     async def get_solver(
-        self, *, user_id: int, name: SolverKeyId, version: VersionStr, product_name: str
+        self,
+        *,
+        user_id: UserID,
+        name: SolverKeyId,
+        version: VersionStr,
+        product_name: ProductName,
     ) -> Solver:
         service = await self._get_service(
             user_id=user_id, name=name, version=version, product_name=product_name
