@@ -25,6 +25,7 @@ from models_library.clusters import (
 )
 from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
+from settings_library.rabbit import RabbitSettings
 from simcore_service_clusters_keeper.core.settings import ApplicationSettings
 from simcore_service_clusters_keeper.utils.clusters import (
     _prepare_environment_variables,
@@ -33,6 +34,12 @@ from simcore_service_clusters_keeper.utils.clusters import (
     create_startup_script,
 )
 from types_aiobotocore_ec2.literals import InstanceStateNameType
+
+pytest_simcore_core_services_selection = [
+    "rabbit",
+]
+
+pytest_simcore_ops_services_selection = []
 
 
 @pytest.fixture
@@ -69,9 +76,9 @@ def app_environment(
         monkeypatch,
         {
             "CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH": json_dumps(
-                TLSAuthentication.model_config["json_schema_extra"]["examples"][0]
+                TLSAuthentication.model_json_schema()["examples"][0]
                 if isinstance(backend_cluster_auth, TLSAuthentication)
-                else NoAuthentication.model_config["json_schema_extra"]["examples"][0]
+                else NoAuthentication.model_json_schema()["examples"][0]
             )
         },
     )
@@ -105,7 +112,9 @@ def test_create_deploy_cluster_stack_script(
     clusters_keeper_docker_compose: dict[str, Any],
 ):
     additional_custom_tags = {
-        AWSTagKey("pytest-tag-key"): AWSTagValue("pytest-tag-value")
+        TypeAdapter(AWSTagKey)
+        .validate_python("pytest-tag-key"): TypeAdapter(AWSTagValue)
+        .validate_python("pytest-tag-value")
     }
     deploy_script = create_deploy_cluster_stack_script(
         app_settings,
@@ -175,11 +184,50 @@ def test_create_deploy_cluster_stack_script(
         for i in dict_settings
     )
 
+    # check that the RabbitMQ settings are null since rabbit is disabled
+    assert re.search(r"AUTOSCALING_RABBITMQ=null", deploy_script)
+
     # check the additional tags are in
     assert all(
         f'"{key}": "{value}"' in deploy_script
         for key, value in additional_custom_tags.items()
     )
+
+
+def test_rabbitmq_settings_are_passed_with_pasword_clear(
+    docker_swarm: None,
+    enabled_rabbitmq: None,
+    mocked_ec2_server_envs: EnvVarsDict,
+    mocked_ssm_server_envs: EnvVarsDict,
+    mocked_redis_server: None,
+    app_settings: ApplicationSettings,
+    cluster_machines_name_prefix: str,
+    clusters_keeper_docker_compose: dict[str, Any],
+):
+    assert app_settings.CLUSTERS_KEEPER_RABBITMQ
+    assert app_settings.CLUSTERS_KEEPER_RABBITMQ.RABBIT_HOST
+    assert app_settings.CLUSTERS_KEEPER_RABBITMQ.RABBIT_PORT
+    assert app_settings.CLUSTERS_KEEPER_RABBITMQ.RABBIT_SECURE is False
+    assert app_settings.CLUSTERS_KEEPER_RABBITMQ.RABBIT_USER
+    assert app_settings.CLUSTERS_KEEPER_RABBITMQ.RABBIT_PASSWORD.get_secret_value()
+
+    additional_custom_tags = {
+        TypeAdapter(AWSTagKey)
+        .validate_python("pytest-tag-key"): TypeAdapter(AWSTagValue)
+        .validate_python("pytest-tag-value")
+    }
+    deploy_script = create_deploy_cluster_stack_script(
+        app_settings,
+        cluster_machines_name_prefix=cluster_machines_name_prefix,
+        additional_custom_tags=additional_custom_tags,
+    )
+    assert isinstance(deploy_script, str)
+
+    match = re.search(r"AUTOSCALING_RABBITMQ=({.*?})", deploy_script)
+    assert match, "AUTOSCALING_RABBITMQ is not present in the deploy script!"
+    autoscaling_rabbitmq = match.group(1)
+    passed_settings = RabbitSettings.model_validate_json(autoscaling_rabbitmq)
+    assert passed_settings == app_settings.CLUSTERS_KEEPER_RABBITMQ
 
 
 def test_create_deploy_cluster_stack_script_below_64kb(
@@ -192,7 +240,9 @@ def test_create_deploy_cluster_stack_script_below_64kb(
     clusters_keeper_docker_compose: dict[str, Any],
 ):
     additional_custom_tags = {
-        AWSTagKey("pytest-tag-key"): AWSTagValue("pytest-tag-value")
+        TypeAdapter(AWSTagKey)
+        .validate_python("pytest-tag-key"): TypeAdapter(AWSTagValue)
+        .validate_python("pytest-tag-value")
     }
     deploy_script = create_deploy_cluster_stack_script(
         app_settings,
@@ -239,7 +289,9 @@ def test__prepare_environment_variables_defines_all_envs_for_docker_compose(
     clusters_keeper_docker_compose_file: Path,
 ):
     additional_custom_tags = {
-        AWSTagKey("pytest-tag-key"): AWSTagValue("pytest-tag-value")
+        TypeAdapter(AWSTagKey)
+        .validate_python("pytest-tag-key"): TypeAdapter(AWSTagValue)
+        .validate_python("pytest-tag-value")
     }
     environment_variables = _prepare_environment_variables(
         app_settings,
@@ -285,9 +337,7 @@ def test__prepare_environment_variables_defines_all_envs_for_docker_compose(
     "authentication",
     [
         NoAuthentication(),
-        TLSAuthentication(
-            **TLSAuthentication.model_config["json_schema_extra"]["examples"][0]
-        ),
+        TLSAuthentication(**TLSAuthentication.model_json_schema()["examples"][0]),
     ],
 )
 def test_create_cluster_from_ec2_instance(
