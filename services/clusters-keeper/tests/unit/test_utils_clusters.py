@@ -215,7 +215,7 @@ def rabbitmq_settings_fixture(
             RABBIT_PASSWORD=SecretStr(faker.password()),
         )
         monkeypatch.setenv(
-            "PRIMARY_EC2_INSTANCES_RABBIT_SETTINGS",
+            "PRIMARY_EC2_INSTANCES_RABBIT",
             json_dumps(
                 model_dump_with_secrets(custom_rabbit_settings, show_secrets=True)
             ),
