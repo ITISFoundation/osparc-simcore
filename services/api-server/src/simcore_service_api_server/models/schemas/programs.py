@@ -5,23 +5,15 @@ import packaging.version
 from models_library.services import ServiceMetaDataPublished
 from models_library.services_regex import DYNAMIC_SERVICE_KEY_RE
 from packaging.version import Version
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl, StringConstraints
+from pydantic import ConfigDict, Field, HttpUrl, StringConstraints
+from simcore_service_api_server.models.schemas._utils import ApiServerOutputSchema
 
 from ...models._utils_pydantic import UriSchema
 from ..api_resources import compose_resource_name
 from ..basic_types import VersionStr
 
-# NOTE:
-# - API does NOT impose prefix (simcore)/(services)/comp because does not know anything about registry deployed. This constraint
-#   should be responsibility of the catalog. Those prefix
-# - Strictly speaking solvers should be a collection and releases a sub-collection, i.e. solvers/*/releases/*
-#   But, based on user feedback, everything was flattened into a released-solvers resource simply denoted "solvers"
-STRICT_RELEASE_NAME_REGEX_W_CAPTURE = r"^([^\s:]+)+:([^\s:/]+)$"
-STRICT_RELEASE_NAME_REGEX = r"^[^\s:]+:[0-9\.]+$"
-
 # - API will add flexibility to identify solver resources using aliases. Analogously to docker images e.g. a/b == a/b:latest == a/b:2.3
 #
-SOLVER_ALIAS_REGEX = r"^([^\s:]+)+:?([^\s:/]*)$"
 LATEST_VERSION = "latest"
 
 
@@ -35,26 +27,25 @@ ProgramKeyId = Annotated[
 ]
 
 
-class Program(BaseModel):
+class Program(ApiServerOutputSchema):
     """A released solver with a specific version"""
 
-    id: ProgramKeyId = Field(..., description="Program identifier")
-    version: VersionStr = Field(
-        ...,
-        description="semantic version number of the node",
-    )
-
-    # Human readables Identifiers
-    title: str = Field(..., description="Human readable name")
-    description: str | None = None
-    maintainer: str
-    # TODO: consider released: Optional[datetime]   required?
-    # TODO: consider version_aliases: list[str] = []  # remaining tags
-
-    # Get links to other resources
+    id: Annotated[ProgramKeyId, Field(..., description="Program identifier")]
+    version: Annotated[
+        VersionStr, Field(..., description="semantic version number of the node")
+    ]
+    title: Annotated[
+        str,
+        StringConstraints(max_length=100),
+        Field(..., description="Human readable name"),
+    ]
+    description: Annotated[
+        str | None,
+        StringConstraints(max_length=500),
+        Field(None, description="Description of the program"),
+    ]
     url: Annotated[
-        Annotated[HttpUrl, UriSchema()] | None,
-        Field(..., description="Link to get this resource"),
+        HttpUrl | None, UriSchema(), Field(..., description="Link to get this resource")
     ]
 
     model_config = ConfigDict(
@@ -81,7 +72,6 @@ class Program(BaseModel):
             id=data.pop("key"),
             version=data.pop("version"),
             title=data.pop("name"),
-            maintainer=data.pop("contact"),
             url=None,
             **data,
         )
