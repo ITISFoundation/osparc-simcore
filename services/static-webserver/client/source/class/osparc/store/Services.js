@@ -32,7 +32,7 @@ qx.Class.define("osparc.store.Services", {
           return;
         }
 
-        osparc.data.Resources.getInstance().getAllPages("servicesV2")
+        osparc.data.Resources.getInstance().getAllPages("services")
           .then(servicesArray => {
             const servicesObj = osparc.service.Utils.convertArrayToObject(servicesArray);
             this.__addHits(servicesObj);
@@ -122,7 +122,7 @@ qx.Class.define("osparc.store.Services", {
         const params = {
           url: osparc.data.Resources.getServiceUrl(key, version)
         };
-        this.__servicesPromisesCached[key][version] = osparc.data.Resources.fetch("servicesV2", "getOne", params)
+        this.__servicesPromisesCached[key][version] = osparc.data.Resources.fetch("services", "getOne", params)
           .then(service => {
             this.__addHit(service);
             this.__addTSRInfo(service);
@@ -269,7 +269,7 @@ qx.Class.define("osparc.store.Services", {
         url: osparc.data.Resources.getServiceUrl(key, version),
         data: patchData
       };
-      return osparc.data.Resources.fetch("servicesV2", "patch", params)
+      return osparc.data.Resources.fetch("services", "patch", params)
         .then(() => {
           this.__servicesCached[key][version][fieldKey] = value;
           serviceData[fieldKey] = value;
