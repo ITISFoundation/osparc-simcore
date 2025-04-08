@@ -23,18 +23,23 @@ from .settings import ApplicationSettings
 _logger = logging.getLogger(__name__)
 
 
-def flush_started_banner() -> None:
+def _flush_started_banner() -> None:
     # WARNING: this function is spied in the tests
     print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201
 
 
-def flush_finished_banner() -> None:
+def _flush_finished_banner() -> None:
+    # WARNING: this function is spied in the tests
     print(APP_FINISHED_BANNER_MSG, flush=True)  # noqa: T201
 
 
-async def _setup_app(app: FastAPI) -> AsyncIterator[State]:
-    flush_started_banner()
+async def _banners_lifespan(_) -> AsyncIterator[State]:
+    _flush_started_banner()
+    yield {}
+    _flush_finished_banner()
 
+
+async def _main_lifespan(app: FastAPI) -> AsyncIterator[State]:
     settings: ApplicationSettings = app.state.settings
 
     yield {
@@ -42,45 +47,42 @@ async def _setup_app(app: FastAPI) -> AsyncIterator[State]:
         "prometheus_instrumentation_enabled": settings.CATALOG_PROMETHEUS_INSTRUMENTATION_ENABLED,
     }
 
-    flush_finished_banner()
 
-
-async def _setup_prometheus_instrumentation_adapter(
+async def _prometheus_instrumentation_lifespan(
     app: FastAPI, state: State
 ) -> AsyncIterator[State]:
-    enabled = state.get("prometheus_instrumentation_enabled", False)
-    if enabled:
+    if state.get("prometheus_instrumentation_enabled", False):
         async for prometheus_state in lifespan_prometheus_instrumentation(app):
             yield prometheus_state
 
 
 def create_app_lifespan():
-    # app lifespan
-    app_lifespan = LifespanManager()
-    app_lifespan.add(_setup_app)
-
     # WARNING: order matters
+    app_lifespan = LifespanManager()
+    app_lifespan.add(_main_lifespan)
 
-    # - postgres lifespan
+    # - postgres
     app_lifespan.add(postgres_database_lifespan)
     app_lifespan.add(database_lifespan)
 
-    # - rabbitmq lifespan
+    # - rabbitmq
     app_lifespan.add(rabbitmq_lifespan)
 
-    # - rpc api routes lifespan
+    # - rpc api routes
     app_lifespan.add(rpc_api_lifespan)
 
-    # - director lifespan
+    # - director
     app_lifespan.add(director_lifespan)
 
-    # - function services lifespan
+    # - function services
     app_lifespan.add(function_services_lifespan)
 
-    # - background task lifespan
+    # - background task
     app_lifespan.add(background_task_lifespan)
 
-    # - prometheus instrumentation lifespan
-    app_lifespan.add(_setup_prometheus_instrumentation_adapter)
+    # - prometheus instrumentation
+    app_lifespan.add(_prometheus_instrumentation_lifespan)
+
+    app_lifespan.add(_banners_lifespan)
 
     return app_lifespan

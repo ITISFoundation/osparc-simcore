@@ -8,11 +8,13 @@ from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.prometheus_instrumentation import (
     initialize_prometheus_instrumentation,
 )
+from servicelib.fastapi.tracing import initialize_tracing
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from .._meta import (
     API_VERSION,
     API_VTAG,
+    APP_NAME,
     PROJECT_NAME,
     SUMMARY,
 )
@@ -62,6 +64,9 @@ def create_app() -> FastAPI:
     app.state.settings = settings
 
     # MIDDLEWARES
+    if settings.CATALOG_TRACING:
+        initialize_tracing(app, settings.CATALOG_TRACING, APP_NAME)
+
     if settings.CATALOG_PROMETHEUS_INSTRUMENTATION_ENABLED:
         initialize_prometheus_instrumentation(app)
 

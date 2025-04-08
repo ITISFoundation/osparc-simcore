@@ -118,11 +118,11 @@ def spy_app(mocker: MockerFixture) -> AppLifeSpanSpyTargets:
     return AppLifeSpanSpyTargets(
         on_startup=mocker.spy(
             simcore_service_catalog.core.events,
-            "flush_started_banner",
+            "_flush_started_banner",
         ),
         on_shutdown=mocker.spy(
             simcore_service_catalog.core.events,
-            "flush_finished_banner",
+            "_flush_finished_banner",
         ),
     )
 
