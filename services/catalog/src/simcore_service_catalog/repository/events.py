@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi_lifespan_manager import State
 from servicelib.fastapi.postgres_lifespan import PostgresLifespanState
 
-from .repositories.products import ProductsRepository
+from .products import ProductsRepository
 
 _logger = logging.getLogger(__name__)
 
