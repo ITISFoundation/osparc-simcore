@@ -164,42 +164,39 @@ async def safe_delete_expired_trash_as_admin(app: web.Application) -> None:
 
     app_products_names = await products_service.list_products_names(app)
 
-    for product_name in app_products_names:
+    with log_context(
+        _logger,
+        logging.DEBUG,
+        "Deleting items marked as trashed before %s [trashed_at < %s will be deleted]",
+        retention,
+        delete_until,
+    ):
 
         ctx = {
             "delete_until": delete_until,
             "retention": retention,
-            "product_name": product_name,
         }
 
-        with log_context(
-            _logger,
-            logging.DEBUG,
-            "Deleting items marked as trashed before %s in %s [trashed_at < %s will be deleted]",
-            retention,
-            product_name,
-            delete_until,
-        ):
-            try:
-                deleted_workspace_ids = await workspaces_trash_service.batch_delete_trashed_workspaces_as_admin(
+        try:
+            deleted_workspace_ids = (
+                await workspaces_trash_service.batch_delete_trashed_workspaces_as_admin(
                     app,
                     trashed_before=delete_until,
                     fail_fast=False,
                 )
+            )
+            _logger.info("Deleted %d trashed workspaces", len(deleted_workspace_ids))
 
-                _logger.info(
-                    "Deleted %d trashed workspaces", len(deleted_workspace_ids)
+        except Exception as exc:  # pylint: disable=broad-exception-caught
+            _logger.warning(
+                **create_troubleshotting_log_kwargs(
+                    "Error batch deleting expired workspaces as admin.",
+                    error=exc,
+                    error_context=ctx,
                 )
+            )
 
-            except Exception as exc:  # pylint: disable=broad-exception-caught
-                _logger.warning(
-                    **create_troubleshotting_log_kwargs(
-                        "Error batch deleting expired workspaces as admin.",
-                        error=exc,
-                        error_context=ctx,
-                    )
-                )
-
+        for product_name in app_products_names:
             try:
                 await folders_trash_service.batch_delete_trashed_folders_as_admin(
                     app,
@@ -209,30 +206,31 @@ async def safe_delete_expired_trash_as_admin(app: web.Application) -> None:
                 )
 
             except Exception as exc:  # pylint: disable=broad-exception-caught
+                ctx_with_product = {**ctx, "product_name": product_name}
                 _logger.warning(
                     **create_troubleshotting_log_kwargs(
                         "Error batch deleting expired trashed folders as admin.",
                         error=exc,
-                        error_context=ctx,
+                        error_context=ctx_with_product,
                     )
                 )
 
-            try:
-                deleted_project_ids = (
-                    await projects_trash_service.batch_delete_trashed_projects_as_admin(
-                        app,
-                        trashed_before=delete_until,
-                        fail_fast=False,
-                    )
+        try:
+            deleted_project_ids = (
+                await projects_trash_service.batch_delete_trashed_projects_as_admin(
+                    app,
+                    trashed_before=delete_until,
+                    fail_fast=False,
                 )
+            )
 
-                _logger.info("Deleted %d trashed projects", len(deleted_project_ids))
+            _logger.info("Deleted %d trashed projects", len(deleted_project_ids))
 
-            except Exception as exc:  # pylint: disable=broad-exception-caught
-                _logger.warning(
-                    **create_troubleshotting_log_kwargs(
-                        "Error batch deleting expired projects as admin.",
-                        error=exc,
-                        error_context=ctx,
-                    )
+        except Exception as exc:  # pylint: disable=broad-exception-caught
+            _logger.warning(
+                **create_troubleshotting_log_kwargs(
+                    "Error batch deleting expired projects as admin.",
+                    error=exc,
+                    error_context=ctx,
                 )
+            )
