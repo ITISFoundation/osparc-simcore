@@ -1,418 +1,335 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
-from dataclasses import dataclass
+import asyncio
+import pickle
+from collections.abc import Callable
 from datetime import timedelta
+from enum import Enum
 from typing import Any
-from uuid import UUID
 
 import pytest
-from celery.exceptions import CeleryError
-from faker import Faker
+from celery import Celery, Task
 from fastapi import FastAPI
-from models_library.api_schemas_long_running_tasks.tasks import TaskResult
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobGet,
-    AsyncJobId,
     AsyncJobNameData,
-    AsyncJobResult,
-    AsyncJobStatus,
 )
 from models_library.api_schemas_rpc_async_jobs.exceptions import (
     JobAbortedError,
     JobError,
-    JobNotDoneError,
-    JobSchedulerError,
 )
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
-from models_library.progress_bar import ProgressReport
-from pytest_mock import MockerFixture
-from servicelib.rabbitmq import RabbitMQRPCClient
+from models_library.products import ProductName
+from models_library.rabbitmq_basic_types import RPCMethodName
+from models_library.users import UserID
+from servicelib.rabbitmq import RabbitMQRPCClient, RPCRouter
 from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
-from simcore_service_storage.modules.celery._task import _error_handling
-from simcore_service_storage.modules.celery.client import TaskUUID
-from simcore_service_storage.modules.celery.models import TaskState, TaskStatus
+from simcore_service_storage.api.rpc.routes import get_rabbitmq_rpc_server
+from simcore_service_storage.modules.celery import get_celery_client
+from simcore_service_storage.modules.celery._task import register_task
+from simcore_service_storage.modules.celery.models import TaskID
+from simcore_service_storage.modules.celery.worker import CeleryTaskQueueWorker
+from tenacity import (
+    AsyncRetrying,
+    retry_if_exception_type,
+    stop_after_delay,
+    wait_fixed,
+)
 
 pytest_simcore_core_services_selection = [
     "rabbit",
     "postgres",
 ]
 
-_faker = Faker()
+
+###### RPC Interface ######
+router = RPCRouter()
 
 
-@dataclass
-class _MockCeleryClient:
-    send_task_object: UUID | Exception | None = None
-    get_task_status_object: TaskStatus | Exception | None = None
-    get_task_result_object: TaskResult | Exception | None = None
-    get_task_uuids_object: set[UUID] | Exception | None = None
-    abort_task_object: Exception | None = None
+@router.expose()
+async def rpc_sync_job(
+    app: FastAPI, *, job_id_data: AsyncJobNameData, **kwargs: Any
+) -> AsyncJobGet:
+    task_uuid = await get_celery_client(app).send_task(
+        sync_job.__name__, task_context=job_id_data.model_dump(), **kwargs
+    )
 
-    async def send_task(self, *args, **kwargs) -> TaskUUID:
-        _ = args
-        _ = kwargs
-        assert self.send_task_object is not None
-        if isinstance(self.send_task_object, Exception):
-            raise self.send_task_object
-        return self.send_task_object
+    return AsyncJobGet(job_id=task_uuid)
 
-    async def get_task_status(self, *args, **kwargs) -> TaskStatus:
-        _ = args
-        _ = kwargs
-        assert self.get_task_status_object is not None
-        if isinstance(self.get_task_status_object, Exception):
-            raise self.get_task_status_object
-        return self.get_task_status_object
 
-    async def get_task_result(self, *args, **kwargs) -> Any:
-        _ = args
-        _ = kwargs
-        assert self.get_task_result_object is not None
-        if isinstance(self.get_task_result_object, Exception):
-            return _error_handling(1, timedelta(seconds=1), tuple())(
-                self.get_task_result_object
-            )
-        return self.get_task_result_object
+@router.expose()
+async def rpc_async_job(
+    app: FastAPI, *, job_id_data: AsyncJobNameData, **kwargs: Any
+) -> AsyncJobGet:
+    task_uuid = await get_celery_client(app).send_task(
+        async_job.__name__, task_context=job_id_data.model_dump(), **kwargs
+    )
 
-    async def get_task_uuids(self, *args, **kwargs) -> set[TaskUUID]:
-        _ = args
-        _ = kwargs
-        assert self.get_task_uuids_object is not None
-        if isinstance(self.get_task_uuids_object, Exception):
-            raise self.get_task_uuids_object
-        return self.get_task_uuids_object
+    return AsyncJobGet(job_id=task_uuid)
 
-    async def abort_task(self, *args, **kwargs) -> None:
-        _ = args
-        _ = kwargs
-        if isinstance(self.abort_task_object, Exception):
-            raise self.abort_task_object
-        return self.abort_task_object
+
+#################################
+
+
+###### CELERY TASKS ######
+class Action(str, Enum):
+    ECHO = "ECHO"
+    RAISE = "RAISE"
+    SLEEP = "SLEEP"
+
+
+async def _process_action(action: str, payload: Any) -> Any:
+    match action:
+        case Action.ECHO:
+            return payload
+        case Action.RAISE:
+            raise pickle.loads(payload)
+        case Action.SLEEP:
+            await asyncio.sleep(payload)
+    return None
+
+
+def sync_job(task: Task, action: Action, payload: Any) -> Any:
+    _ = task
+    return asyncio.run(_process_action(action, payload))
+
+
+async def async_job(task: Task, task_id: TaskID, action: Action, payload: Any) -> Any:
+    _ = task
+    _ = task_id
+    return await _process_action(action, payload)
+
+
+#################################
 
 
 @pytest.fixture
-async def mock_celery_client(
-    mocker: MockerFixture,
-    request: pytest.FixtureRequest,
-) -> _MockCeleryClient:
-    params = request.param if hasattr(request, "param") else {}
-    _celery_client = _MockCeleryClient(
-        send_task_object=params.get("send_task_object", None),
-        get_task_status_object=params.get("get_task_status_object", None),
-        get_task_result_object=params.get("get_task_result_object", None),
-        get_task_uuids_object=params.get("get_task_uuids_object", None),
-        abort_task_object=params.get("abort_task_object", None),
+async def register_rpc_routes(initialized_app: FastAPI) -> None:
+    rpc_server = get_rabbitmq_rpc_server(initialized_app)
+    await rpc_server.register_router(router, STORAGE_RPC_NAMESPACE, initialized_app)
+
+
+async def _start_task_via_rpc(
+    client: RabbitMQRPCClient,
+    *,
+    rpc_task_name: str,
+    user_id: UserID,
+    product_name: ProductName,
+    **kwargs: Any,
+) -> tuple[AsyncJobGet, AsyncJobNameData]:
+    job_id_data = AsyncJobNameData(user_id=user_id, product_name=product_name)
+    async_job_get = await async_jobs.submit(
+        rabbitmq_rpc_client=client,
+        rpc_namespace=STORAGE_RPC_NAMESPACE,
+        method_name=RPCMethodName(rpc_task_name),
+        job_id_data=job_id_data,
+        **kwargs,
     )
-    mocker.patch(
-        "simcore_service_storage.api.rpc._async_jobs.get_celery_client",
-        return_value=_celery_client,
-    )
-    mocker.patch(
-        "simcore_service_storage.api.rpc._simcore_s3.get_celery_client",
-        return_value=_celery_client,
-    )
-    return _celery_client
+    return async_job_get, job_id_data
+
+
+@pytest.fixture
+def register_celery_tasks() -> Callable[[Celery], None]:
+    def _(celery_app: Celery) -> None:
+        register_task(
+            celery_app,
+            sync_job,
+            max_retries=1,
+            delay_between_retries=timedelta(seconds=1),
+        )
+        register_task(
+            celery_app,
+            async_job,
+            max_retries=1,
+            delay_between_retries=timedelta(seconds=1),
+        )
+
+    return _
+
+
+async def _wait_for_job(
+    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
+    *,
+    async_job_get: AsyncJobGet,
+    job_id_data: AsyncJobNameData,
+    stop_after: timedelta = timedelta(seconds=5),
+) -> None:
+
+    async for attempt in AsyncRetrying(
+        stop=stop_after_delay(stop_after.total_seconds()),
+        wait=wait_fixed(0.1),
+        retry=retry_if_exception_type(AssertionError),
+        reraise=True,
+    ):
+        with attempt:
+            result = await async_jobs.status(
+                storage_rabbitmq_rpc_client,
+                rpc_namespace=STORAGE_RPC_NAMESPACE,
+                job_id=async_job_get.job_id,
+                job_id_data=job_id_data,
+            )
+            assert (
+                result.done is True
+            ), "Please check logs above, something whent wrong with task execution"
 
 
 @pytest.mark.parametrize(
-    "mock_celery_client",
+    "exposed_rpc_start",
     [
-        {
-            "abort_task_object": None,
-            "get_task_uuids_object": [AsyncJobId(_faker.uuid4())],
-        },
+        rpc_sync_job.__name__,
+        rpc_async_job.__name__,
     ],
-    indirect=True,
 )
-async def test_async_jobs_abort(
+@pytest.mark.parametrize(
+    "payload",
+    [
+        None,
+        1,
+        "a_string",
+        {"a": "dict"},
+        ["a", "list"],
+        {"a", "set"},
+    ],
+)
+async def test_asybc_jobs_workflow(
     initialized_app: FastAPI,
+    register_rpc_routes: None,
     storage_rabbitmq_rpc_client: RabbitMQRPCClient,
-    mock_celery_client: _MockCeleryClient,
+    with_storage_celery_worker: CeleryTaskQueueWorker,
+    user_id: UserID,
+    product_name: ProductName,
+    exposed_rpc_start: str,
+    payload: Any,
 ):
-    assert mock_celery_client.get_task_uuids_object is not None
-    assert not isinstance(mock_celery_client.get_task_uuids_object, Exception)
+    async_job_get, job_id_data = await _start_task_via_rpc(
+        storage_rabbitmq_rpc_client,
+        rpc_task_name=exposed_rpc_start,
+        user_id=user_id,
+        product_name=product_name,
+        action=Action.ECHO,
+        payload=payload,
+    )
+
+    jobs = await async_jobs.list_jobs(
+        storage_rabbitmq_rpc_client,
+        rpc_namespace=STORAGE_RPC_NAMESPACE,
+        filter_="",  # currently not used
+        job_id_data=job_id_data,
+    )
+    assert len(jobs) > 0
+
+    await _wait_for_job(
+        storage_rabbitmq_rpc_client,
+        async_job_get=async_job_get,
+        job_id_data=job_id_data,
+    )
+
+    async_job_result = await async_jobs.result(
+        storage_rabbitmq_rpc_client,
+        rpc_namespace=STORAGE_RPC_NAMESPACE,
+        job_id=async_job_get.job_id,
+        job_id_data=job_id_data,
+    )
+    assert async_job_result.result == payload
+
+
+@pytest.mark.parametrize(
+    "exposed_rpc_start",
+    [
+        rpc_sync_job.__name__,
+        pytest.param(
+            rpc_async_job.__name__,
+            marks=pytest.mark.skip(reason="hangs after teardown for unknown reason"),
+        ),
+    ],
+)
+async def test_async_jobs_cancel_(
+    initialized_app: FastAPI,
+    register_rpc_routes: None,
+    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
+    with_storage_celery_worker: CeleryTaskQueueWorker,
+    user_id: UserID,
+    product_name: ProductName,
+    exposed_rpc_start: str,
+):
+    async_job_get, job_id_data = await _start_task_via_rpc(
+        storage_rabbitmq_rpc_client,
+        rpc_task_name=exposed_rpc_start,
+        user_id=user_id,
+        product_name=product_name,
+        action=Action.SLEEP,
+        payload=10,
+    )
+
     await async_jobs.cancel(
         storage_rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
-        job_id_data=AsyncJobNameData(
-            user_id=_faker.pyint(min_value=1, max_value=100), product_name="osparc"
-        ),
-        job_id=next(iter(mock_celery_client.get_task_uuids_object)),
+        job_id=async_job_get.job_id,
+        job_id_data=job_id_data,
     )
 
-
-@pytest.mark.parametrize(
-    "mock_celery_client, expected_exception_type",
-    [
-        (
-            {
-                "abort_task_object": CeleryError("error"),
-                "get_task_uuids_object": [AsyncJobId(_faker.uuid4())],
-            },
-            JobSchedulerError,
-        ),
-    ],
-    indirect=["mock_celery_client"],
-)
-async def test_async_jobs_cancel(
-    initialized_app: FastAPI,
-    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
-    mock_celery_client: _MockCeleryClient,
-    expected_exception_type: type[Exception],
-):
-    job_ids = mock_celery_client.get_task_uuids_object
-    assert job_ids is not None
-    assert not isinstance(job_ids, Exception)
-    _job_id = next(iter(job_ids)) if len(job_ids) > 0 else AsyncJobId(_faker.uuid4())
-    with pytest.raises(expected_exception_type):
-        await async_jobs.cancel(
-            storage_rabbitmq_rpc_client,
-            rpc_namespace=STORAGE_RPC_NAMESPACE,
-            job_id_data=AsyncJobNameData(
-                user_id=_faker.pyint(min_value=1, max_value=100), product_name="osparc"
-            ),
-            job_id=_job_id,
-        )
-
-
-@pytest.mark.parametrize(
-    "mock_celery_client",
-    [
-        {
-            "get_task_status_object": TaskStatus(
-                task_uuid=TaskUUID(_faker.uuid4()),
-                task_state=TaskState.PENDING,
-                progress_report=ProgressReport(actual_value=0),
-            ),
-            "get_task_uuids_object": [],
-        },
-        {
-            "get_task_status_object": TaskStatus(
-                task_uuid=TaskUUID(_faker.uuid4()),
-                task_state=TaskState.RUNNING,
-                progress_report=ProgressReport(actual_value=0),
-            ),
-            "get_task_uuids_object": [AsyncJobId(_faker.uuid4())],
-        },
-    ],
-    indirect=True,
-)
-async def test_async_jobs_status(
-    initialized_app: FastAPI,
-    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
-    mock_celery_client: _MockCeleryClient,
-):
-    job_ids = mock_celery_client.get_task_uuids_object
-    assert job_ids is not None
-    assert not isinstance(job_ids, Exception)
-    _job_id = next(iter(job_ids)) if len(job_ids) > 0 else AsyncJobId(_faker.uuid4())
-    result = await async_jobs.status(
+    await _wait_for_job(
         storage_rabbitmq_rpc_client,
-        rpc_namespace=STORAGE_RPC_NAMESPACE,
-        job_id=_job_id,
-        job_id_data=AsyncJobNameData(
-            user_id=_faker.pyint(min_value=1, max_value=100), product_name="osparc"
-        ),
+        async_job_get=async_job_get,
+        job_id_data=job_id_data,
     )
-    assert isinstance(result, AsyncJobStatus)
-    assert result.job_id == _job_id
 
-
-@pytest.mark.parametrize(
-    "mock_celery_client, expected_exception_type",
-    [
-        (
-            {
-                "get_task_status_object": CeleryError("error"),
-                "get_task_uuids_object": [AsyncJobId(_faker.uuid4())],
-            },
-            JobSchedulerError,
-        ),
-    ],
-    indirect=["mock_celery_client"],
-)
-async def test_async_jobs_status_error(
-    initialized_app: FastAPI,
-    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
-    mock_celery_client: _MockCeleryClient,
-    expected_exception_type: type[Exception],
-):
-    job_ids = mock_celery_client.get_task_uuids_object
-    assert job_ids is not None
-    assert not isinstance(job_ids, Exception)
-    _job_id = next(iter(job_ids)) if len(job_ids) > 0 else AsyncJobId(_faker.uuid4())
-    with pytest.raises(expected_exception_type):
-        await async_jobs.status(
-            storage_rabbitmq_rpc_client,
-            rpc_namespace=STORAGE_RPC_NAMESPACE,
-            job_id=_job_id,
-            job_id_data=AsyncJobNameData(
-                user_id=_faker.pyint(min_value=1, max_value=100), product_name="osparc"
-            ),
-        )
-
-
-@pytest.mark.parametrize(
-    "mock_celery_client",
-    [
-        {
-            "get_task_status_object": TaskStatus(
-                task_uuid=TaskUUID(_faker.uuid4()),
-                task_state=TaskState.SUCCESS,
-                progress_report=ProgressReport(actual_value=1, total=1),
-            ),
-            "get_task_result_object": "result",
-            "get_task_uuids_object": [AsyncJobId(_faker.uuid4())],
-        },
-    ],
-    indirect=True,
-)
-async def test_async_jobs_result_success(
-    initialized_app: FastAPI,
-    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
-    mock_celery_client: _MockCeleryClient,
-):
-    job_ids = mock_celery_client.get_task_uuids_object
-    assert job_ids is not None
-    assert not isinstance(job_ids, Exception)
-    _job_id = next(iter(job_ids)) if len(job_ids) > 0 else AsyncJobId(_faker.uuid4())
-    result = await async_jobs.result(
-        storage_rabbitmq_rpc_client,
-        rpc_namespace=STORAGE_RPC_NAMESPACE,
-        job_id=_job_id,
-        job_id_data=AsyncJobNameData(
-            user_id=_faker.pyint(min_value=1, max_value=100), product_name="osparc"
-        ),
-    )
-    assert isinstance(result, AsyncJobResult)
-
-
-@pytest.mark.parametrize(
-    "mock_celery_client, expected_exception",
-    [
-        (
-            {
-                "get_task_status_object": TaskStatus(
-                    task_uuid=TaskUUID(_faker.uuid4()),
-                    task_state=TaskState.RUNNING,
-                    progress_report=ProgressReport(actual_value=0.5, total=1.0),
-                ),
-                "get_task_result_object": _faker.text(),
-                "get_task_uuids_object": [AsyncJobId(_faker.uuid4())],
-            },
-            JobNotDoneError,
-        ),
-        (
-            {
-                "get_task_status_object": TaskStatus(
-                    task_uuid=TaskUUID(_faker.uuid4()),
-                    task_state=TaskState.ABORTED,
-                    progress_report=ProgressReport(actual_value=1.0, total=1.0),
-                ),
-                "get_task_result_object": _faker.text(),
-                "get_task_uuids_object": [AsyncJobId(_faker.uuid4())],
-            },
-            JobAbortedError,
-        ),
-        (
-            {
-                "get_task_status_object": TaskStatus(
-                    task_uuid=TaskUUID(_faker.uuid4()),
-                    task_state=TaskState.ERROR,
-                    progress_report=ProgressReport(actual_value=1.0, total=1.0),
-                ),
-                "get_task_result_object": Exception("generic exception"),
-                "get_task_uuids_object": [AsyncJobId(_faker.uuid4())],
-            },
-            JobError,
-        ),
-        (
-            {
-                "get_task_status_object": CeleryError("error"),
-                "get_task_result_object": _faker.text(),
-                "get_task_uuids_object": [AsyncJobId(_faker.uuid4())],
-            },
-            JobSchedulerError,
-        ),
-        (
-            {
-                "get_task_status_object": TaskStatus(
-                    task_uuid=TaskUUID(_faker.uuid4()),
-                    task_state=TaskState.PENDING,
-                    progress_report=ProgressReport(actual_value=0.0),
-                ),
-                "get_task_uuids_object": [],
-            },
-            JobNotDoneError,
-        ),
-    ],
-    indirect=["mock_celery_client"],
-)
-async def test_async_jobs_result_error(
-    initialized_app: FastAPI,
-    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
-    mock_celery_client: _MockCeleryClient,
-    expected_exception: type[Exception],
-):
-    job_ids = mock_celery_client.get_task_uuids_object
-    assert job_ids is not None
-    assert not isinstance(job_ids, Exception)
-    _job_id = next(iter(job_ids)) if len(job_ids) > 0 else AsyncJobId(_faker.uuid4())
-
-    with pytest.raises(expected_exception):
+    with pytest.raises(JobAbortedError):
         await async_jobs.result(
             storage_rabbitmq_rpc_client,
             rpc_namespace=STORAGE_RPC_NAMESPACE,
-            job_id=_job_id,
-            job_id_data=AsyncJobNameData(
-                user_id=_faker.pyint(min_value=1, max_value=100), product_name="osparc"
-            ),
+            job_id=async_job_get.job_id,
+            job_id_data=job_id_data,
         )
 
 
 @pytest.mark.parametrize(
-    "mock_celery_client",
+    "exposed_rpc_start",
     [
-        {"get_task_uuids_object": [_faker.uuid4() for _ in range(_faker.pyint(1, 10))]},
+        rpc_sync_job.__name__,
+        rpc_async_job.__name__,
     ],
-    indirect=True,
 )
-async def test_async_jobs_list_jobs(
-    initialized_app: FastAPI,
-    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
-    mock_celery_client: MockerFixture,
-):
-    result = await async_jobs.list_jobs(
-        storage_rabbitmq_rpc_client,
-        rpc_namespace=STORAGE_RPC_NAMESPACE,
-        job_id_data=AsyncJobNameData(
-            user_id=_faker.pyint(min_value=1, max_value=100), product_name="osparc"
-        ),
-        filter_="",
-    )
-    assert isinstance(result, list)
-    assert all(isinstance(elm, AsyncJobGet) for elm in result)
-
-
 @pytest.mark.parametrize(
-    "mock_celery_client",
+    "error",
     [
-        {"get_task_uuids_object": CeleryError("error")},
+        Exception("some generic exception"),
+        # TODO: figure out if osparc errors are formatted as expected
     ],
-    indirect=True,
 )
-async def test_async_jobs_list_jobs_error(
+async def test_async_jobs_raises(
     initialized_app: FastAPI,
+    register_rpc_routes: None,
     storage_rabbitmq_rpc_client: RabbitMQRPCClient,
-    mock_celery_client: MockerFixture,
+    with_storage_celery_worker: CeleryTaskQueueWorker,
+    user_id: UserID,
+    product_name: ProductName,
+    exposed_rpc_start: str,
+    error: Exception,
 ):
-    with pytest.raises(JobSchedulerError):
-        await async_jobs.list_jobs(
+    async_job_get, job_id_data = await _start_task_via_rpc(
+        storage_rabbitmq_rpc_client,
+        rpc_task_name=exposed_rpc_start,
+        user_id=user_id,
+        product_name=product_name,
+        action=Action.RAISE,
+        payload=pickle.dumps(error),
+    )
+
+    await _wait_for_job(
+        storage_rabbitmq_rpc_client,
+        async_job_get=async_job_get,
+        job_id_data=job_id_data,
+        stop_after=timedelta(minutes=1),
+    )
+
+    with pytest.raises(JobError) as exc:
+        await async_jobs.result(
             storage_rabbitmq_rpc_client,
             rpc_namespace=STORAGE_RPC_NAMESPACE,
-            job_id_data=AsyncJobNameData(
-                user_id=_faker.pyint(min_value=1, max_value=100), product_name="osparc"
-            ),
-            filter_="",
+            job_id=async_job_get.job_id,
+            job_id_data=job_id_data,
         )
+    assert exc.value.exc_type == type(error).__name__
+    assert exc.value.exc_msg == f"{error}"

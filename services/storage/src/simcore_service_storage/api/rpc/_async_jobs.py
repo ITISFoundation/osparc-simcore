@@ -119,6 +119,7 @@ async def result(
 async def list_jobs(
     app: FastAPI, filter_: str, job_id_data: AsyncJobNameData
 ) -> list[AsyncJobGet]:
+    _ = filter_
     assert app  # nosec
     try:
         task_uuids = await get_celery_client(app).get_task_uuids(

@@ -39,6 +39,4 @@ async def start_export_data(
         user_id=job_id_data.user_id,
         paths_to_export=paths_to_export,
     )
-    return AsyncJobGet(
-        job_id=task_uuid,
-    )
+    return AsyncJobGet(job_id=task_uuid)
