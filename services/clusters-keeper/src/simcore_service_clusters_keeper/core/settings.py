@@ -252,6 +252,14 @@ class PrimaryEC2InstancesSettings(BaseCustomSettings):
         ),
     ] = "172.20.0.0/14"  # nosec
 
+    PRIMARY_EC2_INSTANCES_RABBIT_SETTINGS: Annotated[
+        RabbitSettings | None,
+        Field(
+            description="defines the Rabbit settings for the primary instance (may be disabled)",
+            json_schema_extra={"auto_default_from_env": True},
+        ),
+    ]
+
     @field_validator("PRIMARY_EC2_INSTANCES_ALLOWED_TYPES")
     @classmethod
     def _check_valid_instance_names(

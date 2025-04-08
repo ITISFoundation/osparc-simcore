@@ -106,6 +106,11 @@ services:
       EC2_INSTANCES_TIME_BEFORE_TERMINATION: ${WORKERS_EC2_INSTANCES_TIME_BEFORE_TERMINATION}
       LOG_FORMAT_LOCAL_DEV_ENABLED: 1
       LOG_LEVEL: ${LOG_LEVEL:-WARNING}
+      RABBIT_HOST: ${RABBIT_HOST}
+      RABBIT_PASSWORD: ${RABBIT_PASSWORD}
+      RABBIT_PORT: ${RABBIT_PORT}
+      RABBIT_SECURE: ${RABBIT_SECURE}
+      RABBIT_USER: ${RABBIT_USER}
       REDIS_HOST: redis
       REDIS_PORT: 6379
     volumes:
@@ -188,6 +193,7 @@ services:
 networks:
   cluster:
 
+
 configs:
   prometheus-config:
     file: ./prometheus.yml
@@ -199,6 +205,7 @@ volumes:
     name: computational_shared_data
   redis-data:
   prometheus-data:
+
 
 secrets:
   dask_tls_ca:
