@@ -70,9 +70,4 @@ class TaskStatus(BaseModel):
         return self.task_state in _TASK_DONE
 
 
-class TaskError(BaseModel):
-    exc_type: str
-    exc_msg: str
-
-
 TaskId: TypeAlias = str

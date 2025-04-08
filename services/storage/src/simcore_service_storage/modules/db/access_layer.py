@@ -52,6 +52,7 @@ from simcore_postgres_database.storage_models import file_meta_data, user_to_gro
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 from sqlalchemy.ext.asyncio import AsyncConnection
 
+from ...constants import EXPORTS_S3_PREFIX
 from ...exceptions.errors import InvalidFileIdentifierError
 from ...models import AccessRights
 from ._base import BaseRepository
@@ -261,19 +262,13 @@ class AccessLayerRepository(BaseRepository):
         # determine user's access rights by aggregating AR of all groups
         return _aggregate_access_rights(row.access_rights, user_group_ids)
 
-    async def get_file_access_rights(
+    async def _get_access_from_metadata_entry(
         self,
         *,
-        connection: AsyncConnection | None = None,
+        connection: AsyncConnection | None,
         user_id: UserID,
         file_id: StorageFileID,
-    ) -> AccessRights:
-        """
-        Returns access-rights of user (user_id) over data file resource (file_id)
-
-        raises InvalidFileIdentifier
-        """
-
+    ) -> AccessRights | None:
         #
         # 1. file registered in file_meta_data table
         #
@@ -284,61 +279,100 @@ class AccessLayerRepository(BaseRepository):
             result = await conn.execute(stmt)
             row = result.one_or_none()
 
-        if row:
-            if int(row.user_id) == user_id:
-                # is owner
+        if not row:
+            return None
+
+        if int(row.user_id) == user_id:
+            # is owner
+            return AccessRights.all()
+
+        if not row.project_id:
+            # not owner and not shared via project
+            return AccessRights.none()
+
+        # has associated project
+        access_rights = await self.get_project_access_rights(
+            user_id=user_id, project_id=row.project_id
+        )
+        if not access_rights:
+            _logger.warning(
+                "File %s references a project %s that does not exists in db. "
+                " TIP: Audit sync between files_meta_data and projects tables",
+                file_id,
+                row.project_id,
+            )
+            return AccessRights.none()
+
+        return access_rights
+
+    async def _get_access_without_metardata_entry(
+        self,
+        *,
+        user_id: UserID,
+        file_id: StorageFileID,
+    ) -> AccessRights:
+        #
+        # 2. file is NOT registered in meta-data table e.g. it is about to be uploaded or it was deleted
+        #    We rely on the assumption that file_id is formatted either as
+        #
+        #       - project's data: {project_id}/{node_id}/{filename/with/possible/folders}
+        #       - API data:       api/{file_id}/{filename/with/possible/folders}
+        #       - Exporter data:  exporter/{user_id}/{filename/with/possible/folders}
+        #
+
+        try:
+            parent, _, _ = file_id.split("/", maxsplit=2)
+
+            if parent == "api":
+                # ownership still not defined, so we assume it is user_id
                 return AccessRights.all()
 
-            if not row.project_id:
-                # not owner and not shared via project
-                return AccessRights.none()
+            if parent == EXPORTS_S3_PREFIX:
+                # ownership still not defined, so we assume it is user_id
+                # NOTE: all permissions are required for: downloading, uploading and aborting
+                return AccessRights.all()
 
-            # has associated project
+            # otherwise assert 'parent' string corresponds to a valid UUID
             access_rights = await self.get_project_access_rights(
-                user_id=user_id, project_id=row.project_id
+                user_id=user_id, project_id=ProjectID(parent)
             )
             if not access_rights:
                 _logger.warning(
-                    "File %s references a project %s that does not exists in db."
-                    "TIP: Audit sync between files_meta_data and projects tables",
+                    "File %s references a project that does not exists in db",
                     file_id,
-                    row.project_id,
                 )
                 return AccessRights.none()
 
-        else:
-            #
-            # 2. file is NOT registered in meta-data table e.g. it is about to be uploaded or it was deleted
-            #    We rely on the assumption that file_id is formatted either as
-            #
-            #       - project's data: {project_id}/{node_id}/{filename/with/possible/folders}
-            #       - API data:       api/{file_id}/{filename/with/possible/folders}
-            #
-            try:
-                parent, _, _ = file_id.split("/", maxsplit=2)
+            return access_rights
 
-                if parent == "api":
-                    # ownership still not defined, so we assume it is user_id
-                    return AccessRights.all()
+        except (ValueError, AttributeError) as err:
+            raise InvalidFileIdentifierError(
+                identifier=file_id,
+                details=str(err),
+            ) from err
 
-                # otherwise assert 'parent' string corresponds to a valid UUID
-                access_rights = await self.get_project_access_rights(
-                    user_id=user_id, project_id=ProjectID(parent)
-                )
-                if not access_rights:
-                    _logger.warning(
-                        "File %s references a project that does not exists in db",
-                        file_id,
-                    )
-                    return AccessRights.none()
+    async def get_file_access_rights(
+        self,
+        *,
+        connection: AsyncConnection | None = None,
+        user_id: UserID,
+        file_id: StorageFileID,
+    ) -> AccessRights:
+        """
+        Returns access-rights of user (user_id) over data file resource (file_id)
 
-            except (ValueError, AttributeError) as err:
-                raise InvalidFileIdentifierError(
-                    identifier=file_id,
-                    details=str(err),
-                ) from err
+        Raises InvalidFileIdentifierError
+        """
+        access_rights = await self._get_access_from_metadata_entry(
+            connection=connection, user_id=user_id, file_id=file_id
+        )
 
-        return access_rights
+        if access_rights is not None:
+            return access_rights
+
+        return await self._get_access_without_metardata_entry(
+            user_id=user_id, file_id=file_id
+        )
 
     async def get_readable_project_ids(
         self, *, connection: AsyncConnection | None = None, user_id: UserID

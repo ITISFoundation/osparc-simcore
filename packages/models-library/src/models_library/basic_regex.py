@@ -4,6 +4,7 @@
 
 SEE tests_basic_regex.py for examples
 """
+
 # TODO: for every pattern we should have a formatter function
 # NOTE: some sites to manualy check ideas
 #   https://regex101.com/
@@ -45,7 +46,9 @@ MIME_TYPE_RE = (
 )
 
 # Storage basic file ID
-SIMCORE_S3_FILE_ID_RE = rf"^(api|({UUID_RE_BASE}))\/({UUID_RE_BASE})\/(.+)$"
+SIMCORE_S3_FILE_ID_RE = rf"^(exports\/\d+\/{UUID_RE_BASE}\.zip)|((api|({UUID_RE_BASE}))\/({UUID_RE_BASE})\/(.+)$)"
+
+
 SIMCORE_S3_DIRECTORY_ID_RE = rf"^({UUID_RE_BASE})\/({UUID_RE_BASE})\/(.+)\/$"
 
 # S3 - AWS bucket names [https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html]
