@@ -4,6 +4,15 @@ import sqlalchemy as sa
 from models_library.products import ProductName
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
+from simcore_postgres_database.models.groups import user_to_groups
+from simcore_postgres_database.models.services import (
+    services_access_rights,
+    services_meta_data,
+)
+from simcore_postgres_database.models.services_compatibility import (
+    services_compatibility,
+)
+from simcore_postgres_database.models.users import users
 from simcore_postgres_database.utils_repos import get_columns_from_db_model
 from sqlalchemy.dialects.postgresql import ARRAY, INTEGER, array_agg
 from sqlalchemy.sql import and_, or_
@@ -11,13 +20,6 @@ from sqlalchemy.sql.expression import func
 from sqlalchemy.sql.selectable import Select
 
 from ...models.services_db import ServiceMetaDataDBGet
-from ..tables import (
-    services_access_rights,
-    services_compatibility,
-    services_meta_data,
-    user_to_groups,
-    users,
-)
 
 SERVICES_META_DATA_COLS = get_columns_from_db_model(
     services_meta_data, ServiceMetaDataDBGet

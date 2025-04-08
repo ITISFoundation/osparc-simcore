@@ -16,13 +16,22 @@ from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from psycopg2.errors import ForeignKeyViolation
 from pydantic import PositiveInt, TypeAdapter, ValidationError
+from simcore_postgres_database.models.groups import GroupType, groups, user_to_groups
+from simcore_postgres_database.models.services import (
+    services_access_rights,
+    services_meta_data,
+)
+from simcore_postgres_database.models.services_compatibility import (
+    services_compatibility,
+)
+from simcore_postgres_database.models.services_specifications import (
+    services_specifications,
+)
 from simcore_postgres_database.utils import as_postgres_sql_query_str
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 from simcore_postgres_database.utils_services import create_select_latest_services_query
 from sqlalchemy import sql
 from sqlalchemy.dialects.postgresql import insert as pg_insert
-from sqlalchemy.sql import and_, or_
-from sqlalchemy.sql.expression import tuple_
 
 from ...models.services_db import (
     ReleaseDBGet,
@@ -33,13 +42,6 @@ from ...models.services_db import (
     ServiceWithHistoryDBGet,
 )
 from ...models.services_specifications import ServiceSpecificationsAtDB
-from ..tables import (
-    services_access_rights,
-    services_compatibility,
-    services_meta_data,
-    services_specifications,
-    user_to_groups,
-)
 from ._base import BaseRepository
 from ._services_sql import (
     SERVICES_META_DATA_COLS,
@@ -198,7 +200,7 @@ class ServicesRepository(BaseRepository):
             ]
             if gids:
                 conditions.append(
-                    or_(*[services_access_rights.c.gid == gid for gid in gids])
+                    sql.or_(*[services_access_rights.c.gid == gid for gid in gids])
                 )
             if execute_access is not None:
                 conditions.append(services_access_rights.c.execute_access)
@@ -209,7 +211,7 @@ class ServicesRepository(BaseRepository):
 
             query = query.select_from(
                 services_meta_data.join(services_access_rights)
-            ).where(and_(*conditions))
+            ).where(sql.and_(*conditions))
         else:
             query = query.where(
                 (services_meta_data.c.key == key)
@@ -587,7 +589,7 @@ class ServicesRepository(BaseRepository):
             sa.select(services_access_rights)
             .select_from(services_access_rights)
             .where(
-                tuple_(
+                sql.tuple_(
                     services_access_rights.c.key, services_access_rights.c.version
                 ).in_(key_versions)
                 & (services_access_rights.c.product_name == product_name)

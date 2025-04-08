@@ -3,8 +3,8 @@ import logging
 import sqlalchemy as sa
 from models_library.services import ServiceKeyVersion
 from pydantic import ValidationError
+from simcore_postgres_database.models.projects import ProjectType, projects
 
-from ..tables import ProjectType, projects
 from ._base import BaseRepository
 
 _logger = logging.getLogger(__name__)
