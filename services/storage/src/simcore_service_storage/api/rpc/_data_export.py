@@ -63,7 +63,7 @@ async def start_data_export(
             task_context=job_id_data.model_dump(),
             task_metadata=TaskMetadata(
                 ephemeral=False,
-                queue=TasksQueue.CPU_BOUND.name,
+                queue=TasksQueue.CPU_BOUND.name.lower(),
             ),
             files=data_export_start.file_and_folder_ids,  # ANE: adapt here your signature
         )
