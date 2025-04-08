@@ -153,7 +153,7 @@ async def delete_workspace(request: web.Request):
     req_ctx = WorkspacesRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(WorkspacesPathParams, request)
 
-    await _workspaces_service.delete_workspace(
+    await _workspaces_service.delete_workspace_with_all_content(
         app=request.app,
         user_id=req_ctx.user_id,
         workspace_id=path_params.workspace_id,

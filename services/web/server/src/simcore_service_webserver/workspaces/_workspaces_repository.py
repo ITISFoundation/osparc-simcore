@@ -206,7 +206,7 @@ async def get_workspace_db_get(
     connection: AsyncConnection | None = None,
     *,
     workspace_id: WorkspaceID,
-):
+) -> WorkspaceDBGet:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         result = await conn.execute(
             select(
@@ -218,7 +218,7 @@ async def get_workspace_db_get(
         row = result.one_or_none()
         if row is None:
             raise WorkspaceNotFoundError(reason=f"Workspace {workspace_id} not found.")
-        return WorkspaceDBGet.model_validate(row)
+    return WorkspaceDBGet.model_validate(row)
 
 
 async def update_workspace(

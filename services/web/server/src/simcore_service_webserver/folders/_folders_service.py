@@ -317,7 +317,7 @@ async def update_folder(
     )
 
 
-async def delete_folder(
+async def delete_folder_with_all_content(
     app: web.Application,
     user_id: UserID,
     folder_id: FolderID,

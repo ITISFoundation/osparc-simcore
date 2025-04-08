@@ -63,23 +63,24 @@ async def _check_exists_and_access(
     return workspace_is_private
 
 
-async def _folders_db_update(
+async def _folders_db_trashed_state_update(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
     product_name: ProductName,
     folder_id: FolderID,
     trashed_at: datetime | None,
-    trashed_by: UserID,
+    trashed_explicitly: bool,
+    trashed_by: UserID | None,
 ):
-    # EXPLICIT un/trash
+    # EXPLICIT or IMPLICIT un/trash
     await _folders_repository.update(
         app,
         connection,
         folders_id_or_ids=folder_id,
         product_name=product_name,
         trashed=trashed_at,
-        trashed_explicitly=trashed_at is not None,
+        trashed_explicitly=trashed_explicitly,
         trashed_by=trashed_by,
     )
 
@@ -111,6 +112,7 @@ async def trash_folder(
     user_id: UserID,
     folder_id: FolderID,
     force_stop_first: bool,
+    explicit: bool,
 ):
 
     workspace_is_private = await _check_exists_and_access(
@@ -123,12 +125,13 @@ async def trash_folder(
     async with transaction_context(get_asyncpg_engine(app)) as connection:
 
         # 1. Trash folder and children
-        await _folders_db_update(
+        await _folders_db_trashed_state_update(
             app,
             connection,
             folder_id=folder_id,
             product_name=product_name,
             trashed_at=trashed_at,
+            trashed_explicitly=explicit,
             trashed_by=user_id,
         )
 
@@ -172,12 +175,13 @@ async def untrash_folder(
     # 3. UNtrash
 
     # 3.1 UNtrash folder and children
-    await _folders_db_update(
+    await _folders_db_trashed_state_update(
         app,
         folder_id=folder_id,
         product_name=product_name,
         trashed_at=None,
-        trashed_by=user_id,
+        trashed_by=None,
+        trashed_explicitly=False,
     )
 
     # 3.2 UNtrash all child projects that I am an owner
@@ -278,7 +282,7 @@ async def delete_trashed_folder(
         )
 
     # NOTE: this function deletes folder AND its content recursively!
-    await _folders_service.delete_folder(
+    await _folders_service.delete_folder_with_all_content(
         app, user_id=user_id, folder_id=folder_id, product_name=product_name
     )
 

@@ -91,7 +91,7 @@ async def list_projects(  # pylint: disable=too-many-arguments
     folder_id: FolderID | None,
     # attrs filter
     project_type: ProjectTypeAPI,
-    show_hidden: bool,
+    show_hidden: bool,  # NOTE: Be careful, this filters only hidden projects
     trashed: bool | None,
     # search
     search_by_multi_columns: str | None = None,

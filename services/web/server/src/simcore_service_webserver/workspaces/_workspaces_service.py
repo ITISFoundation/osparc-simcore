@@ -17,7 +17,7 @@ from models_library.workspaces import (
     WorkspaceUpdates,
 )
 
-from ..folders.service import delete_folder, list_folders
+from ..folders.service import delete_folder_with_all_content, list_folders
 from ..projects.api import delete_project_by_user, list_projects
 from ..projects.models import ProjectTypeAPI
 from ..users.api import get_user
@@ -83,7 +83,7 @@ async def update_workspace(
     )
 
 
-async def delete_workspace(
+async def delete_workspace_with_all_content(
     app: web.Application,
     *,
     product_name: ProductName,
@@ -107,7 +107,7 @@ async def delete_workspace(
             app,
             user_id=user_id,
             product_name=product_name,
-            show_hidden=True,
+            show_hidden=False,
             workspace_id=workspace_id,
             project_type=ProjectTypeAPI.all,
             folder_id=None,
@@ -152,7 +152,7 @@ async def delete_workspace(
 
         # Delete folders properly
         for folder_id in workspace_root_folders:
-            await delete_folder(
+            await delete_folder_with_all_content(
                 app,
                 user_id=user_id,
                 product_name=product_name,

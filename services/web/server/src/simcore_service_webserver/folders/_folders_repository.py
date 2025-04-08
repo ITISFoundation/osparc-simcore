@@ -386,7 +386,7 @@ async def update(
     parent_folder_id: FolderID | None | UnSet = UnSet.VALUE,
     trashed: datetime | None | UnSet = UnSet.VALUE,
     trashed_explicitly: bool | UnSet = UnSet.VALUE,
-    trashed_by: UserID | UnSet = UnSet.VALUE,  # who trashed
+    trashed_by: UserID | None | UnSet = UnSet.VALUE,  # who trashed
     workspace_id: WorkspaceID | None | UnSet = UnSet.VALUE,
     user_id: UserID | None | UnSet = UnSet.VALUE,  # ownership
 ) -> FolderDB:

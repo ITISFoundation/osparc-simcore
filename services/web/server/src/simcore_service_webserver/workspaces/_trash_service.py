@@ -17,15 +17,16 @@ from models_library.workspaces import (
     WorkspaceUpdates,
 )
 from simcore_postgres_database.utils_repos import transaction_context
+from simcore_service_webserver.folders.service import list_folders
+from simcore_service_webserver.projects.api import list_projects
+from simcore_service_webserver.projects.models import ProjectTypeAPI
 
 from ..db.plugin import get_asyncpg_engine
-from ..folders._folders_service import list_folders
 from ..folders._trash_service import (
     batch_delete_folders_with_content_in_root_workspace_as_admin,
     trash_folder,
     untrash_folder,
 )
-from ..projects._crud_api_read import ProjectTypeAPI, list_projects
 from ..projects._trash_service import (
     batch_delete_projects_in_root_workspace_as_admin,
     trash_project,
@@ -53,7 +54,7 @@ async def _check_exists_and_access(
     )
 
 
-async def _list_child_folders(
+async def _list_root_child_folders(
     app: web.Application,
     *,
     product_name: ProductName,
@@ -83,7 +84,7 @@ async def _list_child_folders(
     return child_folders
 
 
-async def _list_child_projects(
+async def _list_root_child_projects(
     app: web.Application,
     *,
     product_name: ProductName,
@@ -100,14 +101,14 @@ async def _list_child_projects(
             app,
             user_id=user_id,
             product_name=product_name,
-            show_hidden=True,
+            show_hidden=False,
             workspace_id=workspace_id,
             project_type=ProjectTypeAPI.all,
             folder_id=None,
             trashed=None,
             offset=page_params.offset,
             limit=page_params.limit,
-            order_by=OrderBy(field=IDStr("trashed"), direction=OrderDirection.ASC),
+            order_by=OrderBy(field=IDStr("id"), direction=OrderDirection.ASC),
         )
 
         child_projects.extend([Project(**project).uuid for project in projects])
@@ -140,7 +141,7 @@ async def trash_workspace(
         )
 
         # IMPLICIT trash
-        child_folders: list[FolderID] = await _list_child_folders(
+        child_folders: list[FolderID] = await _list_root_child_folders(
             app,
             product_name=product_name,
             user_id=user_id,
@@ -154,9 +155,10 @@ async def trash_workspace(
                 user_id=user_id,
                 folder_id=folder_id,
                 force_stop_first=force_stop_first,
+                explicit=False,
             )
 
-        child_projects: list[ProjectID] = await _list_child_projects(
+        child_projects: list[ProjectID] = await _list_root_child_projects(
             app,
             product_name=product_name,
             user_id=user_id,
@@ -195,7 +197,7 @@ async def untrash_workspace(
             updates=WorkspaceUpdates(trashed=None, trashed_by=None),
         )
 
-        child_folders: list[FolderID] = await _list_child_folders(
+        child_folders: list[FolderID] = await _list_root_child_folders(
             app,
             product_name=product_name,
             user_id=user_id,
@@ -210,7 +212,7 @@ async def untrash_workspace(
                 folder_id=folder_id,
             )
 
-        child_projects: list[ProjectID] = await _list_child_projects(
+        child_projects: list[ProjectID] = await _list_root_child_projects(
             app,
             product_name=product_name,
             user_id=user_id,
@@ -264,7 +266,7 @@ async def delete_trashed_workspace(
         )
 
     # NOTE: this function deletes workspace AND its content recursively!
-    await _workspaces_service.delete_workspace(
+    await _workspaces_service.delete_workspace_with_all_content(
         app,
         user_id=user_id,
         product_name=product_name,
