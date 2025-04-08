@@ -25,7 +25,7 @@ from tenacity.wait import wait_fixed
 _authentication_types = [
     NoAuthentication(),
     TLSAuthentication.model_construct(
-        **TLSAuthentication.model_config["json_schema_extra"]["examples"][0]
+        **TLSAuthentication.model_json_schema()["examples"][0]
     ),
 ]
 
