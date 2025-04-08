@@ -57,7 +57,7 @@ async def complete_file_upload(
     # should not be None because a file is being uploaded
     if not is_directory:
         assert e_tag is not None  # nosec
-        return e_tag
+    return e_tag
 
 
 async def get_download_link_from_s3(
