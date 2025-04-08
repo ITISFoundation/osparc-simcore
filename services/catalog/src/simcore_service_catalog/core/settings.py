@@ -46,9 +46,9 @@ _DEFAULT_RESOURCES: Final[ResourcesDict] = ResourcesDict(
 )
 
 
-_DEFAULT_SERVICE_SPECIFICATIONS: Final[
-    ServiceSpecifications
-] = ServiceSpecifications.model_validate({})
+_DEFAULT_SERVICE_SPECIFICATIONS: Final[ServiceSpecifications] = (
+    ServiceSpecifications.model_validate({})
+)
 
 
 class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
@@ -88,7 +88,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     ] = False
 
     CATALOG_POSTGRES: Annotated[
-        PostgresSettings | None,
+        PostgresSettings,
         Field(json_schema_extra={"auto_default_from_env": True}),
     ]
 
@@ -102,7 +102,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     ]
 
     CATALOG_DIRECTOR: Annotated[
-        DirectorSettings | None,
+        DirectorSettings,
         Field(json_schema_extra={"auto_default_from_env": True}),
     ]
 
