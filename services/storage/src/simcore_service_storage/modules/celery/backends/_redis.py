@@ -2,7 +2,7 @@ import logging
 from datetime import timedelta
 from typing import Final
 
-from celery.result import AsyncResult
+from celery.result import AsyncResult  # type: ignore[import-untyped]
 from servicelib.redis._client import RedisClientSDK
 
 from ..models import TaskContext, TaskID, TaskMetadata, TaskUUID, build_task_id_prefix
