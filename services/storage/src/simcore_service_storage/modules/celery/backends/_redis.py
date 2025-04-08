@@ -16,21 +16,21 @@ _CELERY_TASK_SCAN_COUNT_PER_BATCH: Final[int] = 10000
 _logger = logging.getLogger(__name__)
 
 
+def _build_key(task_id: TaskID) -> str:
+    return _CELERY_TASK_META_PREFIX + task_id
+
+
 class RedisTaskMetadataStore:
     def __init__(self, redis_client_sdk: RedisClientSDK) -> None:
         self._redis_client_sdk = redis_client_sdk
 
     async def exists(self, task_id: TaskID) -> bool:
-        n = await self._redis_client_sdk.redis.exists(
-            _CELERY_TASK_METADATA_PREFIX + task_id
-        )
+        n = await self._redis_client_sdk.redis.exists(_build_key(task_id))
         assert isinstance(n, int)  # nosec
         return n > 0
 
     async def get(self, task_id: TaskID) -> TaskMetadata | None:
-        result = await self._redis_client_sdk.redis.get(
-            _CELERY_TASK_METADATA_PREFIX + task_id
-        )
+        result = await self._redis_client_sdk.redis.get(_build_key(task_id))
         return TaskMetadata.model_validate_json(result) if result else None
 
     async def get_uuids(self, task_context: TaskContext) -> set[TaskUUID]:
@@ -53,16 +53,14 @@ class RedisTaskMetadataStore:
         return keys
 
     async def remove(self, task_id: TaskID) -> None:
-        await self._redis_client_sdk.redis.delete(
-            _CELERY_TASK_METADATA_PREFIX + task_id
-        )
+        await self._redis_client_sdk.redis.delete(_build_key(task_id))
         AsyncResult(_CELERY_TASK_META_PREFIX + task_id).forget()
 
     async def set(
         self, task_id: TaskID, task_metadata: TaskMetadata, expiry: timedelta
     ) -> None:
         await self._redis_client_sdk.redis.set(
-            _CELERY_TASK_METADATA_PREFIX + task_id,
+            _build_key(task_id),
             task_metadata.model_dump_json(),
             ex=expiry,
         )
