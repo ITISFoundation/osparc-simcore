@@ -20,7 +20,7 @@ from simcore_service_catalog.api._dependencies.director import get_director_api
 from simcore_service_catalog.clients.director import DirectorApi
 from simcore_service_catalog.repository.groups import GroupsRepository
 from simcore_service_catalog.repository.services import ServicesRepository
-from simcore_service_catalog.service import manifest, services_api
+from simcore_service_catalog.service import manifest, services
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 pytest_simcore_core_services_selection = [
@@ -125,7 +125,7 @@ async def test_list_services_paginated(
 
     assert not mocked_director_service_api["get_service"].called
 
-    total_count, page_items = await services_api.list_latest_services(
+    total_count, page_items = await services.list_latest_services(
         services_repo,
         director_client,
         product_name=target_product,
@@ -144,7 +144,7 @@ async def test_list_services_paginated(
         assert item.access_rights
         assert item.owner is not None
 
-        got = await services_api.get_service(
+        got = await services.get_service(
             services_repo,
             director_client,
             product_name=target_product,
@@ -227,7 +227,7 @@ async def test_batch_get_my_services(
         (other_service_key, other_service_version),
     ]
 
-    my_services = await services_api.batch_get_my_services(
+    my_services = await services.batch_get_my_services(
         services_repo,
         groups_repo,
         product_name=target_product,
