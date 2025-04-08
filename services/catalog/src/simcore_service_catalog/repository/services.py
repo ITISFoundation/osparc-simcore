@@ -6,17 +6,18 @@ from typing import Any
 
 import packaging.version
 import sqlalchemy as sa
+from common_library.groups_enums import GroupType
 from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_catalog.services_specifications import (
     ServiceSpecifications,
 )
-from models_library.groups import GroupAtDB, GroupID, GroupType
+from models_library.groups import GroupAtDB, GroupID
 from models_library.products import ProductName
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from psycopg2.errors import ForeignKeyViolation
 from pydantic import PositiveInt, TypeAdapter, ValidationError
-from simcore_postgres_database.models.groups import GroupType, groups, user_to_groups
+from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.services import (
     services_access_rights,
     services_meta_data,
