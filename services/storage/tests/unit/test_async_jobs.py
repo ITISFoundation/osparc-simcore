@@ -241,11 +241,16 @@ async def test_asybc_jobs_workflow(
         rpc_sync_job.__name__,
         pytest.param(
             rpc_async_job.__name__,
-            marks=pytest.mark.skip(reason="hangs after teardown for unknown reason"),
+            marks=pytest.mark.skip(
+                reason=(
+                    "hangs after teardown for unknown reason "
+                    "SEE https://github.com/ITISFoundation/osparc-simcore/issues/7486"
+                )
+            ),
         ),
     ],
 )
-async def test_async_jobs_cancel_(
+async def test_async_jobs_cancel(
     initialized_app: FastAPI,
     register_rpc_routes: None,
     storage_rabbitmq_rpc_client: RabbitMQRPCClient,
