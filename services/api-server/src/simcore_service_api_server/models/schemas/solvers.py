@@ -66,8 +66,8 @@ class Solver(BaseService):
         )
 
     @classmethod
-    def compose_resource_name(cls, solver_key: str, solver_version: str) -> str:
-        return compose_resource_name("solvers", solver_key, "releases", solver_version)
+    def compose_resource_name(cls, key: str, version: str) -> str:
+        return compose_resource_name("solvers", key, "releases", version)
 
 
 PortKindStr = Literal["input", "output"]

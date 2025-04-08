@@ -1,17 +1,13 @@
-import urllib.parse
 from typing import Annotated
 
-import packaging.version
 from models_library.services import ServiceMetaDataPublished
 from models_library.services_regex import DYNAMIC_SERVICE_KEY_RE
-from packaging.version import Version
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl, StringConstraints
+from pydantic import ConfigDict, StringConstraints
 from simcore_service_api_server.models.schemas._base import (
     ApiServerOutputSchema,
     BaseService,
 )
 
-from ...models._utils_pydantic import UriSchema
 from ..api_resources import compose_resource_name
 from ..basic_types import VersionStr
 
@@ -30,48 +26,48 @@ ProgramKeyId = Annotated[
 ]
 
 
-class BaseService(BaseModel):
-    id: Annotated[str, Field(..., description="Resource identifier")]
-    version: Annotated[
-        VersionStr, Field(..., description="Semantic version number of the resource")
-    ]
-    title: Annotated[
-        str,
-        StringConstraints(max_length=100),
-        Field(..., description="Human readable name"),
-    ]
-    description: Annotated[
-        str | None,
-        StringConstraints(max_length=500),
-        Field(default=None, description="Description of the resource"),
-    ]
-    url: Annotated[
-        HttpUrl | None, UriSchema(), Field(..., description="Link to get this resource")
-    ]
+# class BaseService(BaseModel):
+#     id: Annotated[str, Field(..., description="Resource identifier")]
+#     version: Annotated[
+#         VersionStr, Field(..., description="Semantic version number of the resource")
+#     ]
+#     title: Annotated[
+#         str,
+#         StringConstraints(max_length=100),
+#         Field(..., description="Human readable name"),
+#     ]
+#     description: Annotated[
+#         str | None,
+#         StringConstraints(max_length=500),
+#         Field(default=None, description="Description of the resource"),
+#     ]
+#     url: Annotated[
+#         HttpUrl | None, UriSchema(), Field(..., description="Link to get this resource")
+#     ]
 
-    @property
-    def pep404_version(self) -> Version:
-        """Rich version type that can be used e.g. to compare"""
-        return packaging.version.parse(self.version)
+#     @property
+#     def pep404_version(self) -> Version:
+#         """Rich version type that can be used e.g. to compare"""
+#         return packaging.version.parse(self.version)
 
-    @property
-    def url_friendly_id(self) -> str:
-        """Use to pass id as parameter in URLs"""
-        return urllib.parse.quote_plus(self.id)
+#     @property
+#     def url_friendly_id(self) -> str:
+#         """Use to pass id as parameter in URLs"""
+#         return urllib.parse.quote_plus(self.id)
 
-    @property
-    def resource_name(self) -> str:
-        """Relative resource name"""
-        return self.compose_resource_name(self.id, self.version)
+#     @property
+#     def resource_name(self) -> str:
+#         """Relative resource name"""
+#         return self.compose_resource_name(self.id, self.version)
 
-    @property
-    def name(self) -> str:
-        """API standards notation (see api_resources.py)"""
-        return self.resource_name
+#     @property
+#     def name(self) -> str:
+#         """API standards notation (see api_resources.py)"""
+#         return self.resource_name
 
-    @classmethod
-    def compose_resource_name(cls, key: str, version: str) -> str:
-        raise NotImplementedError("Subclasses must implement this method")
+#     @classmethod
+#     def compose_resource_name(cls, key: str, version: str) -> str:
+#         raise NotImplementedError("Subclasses must implement this method")
 
 
 class Program(BaseService, ApiServerOutputSchema):
@@ -105,9 +101,5 @@ class Program(BaseService, ApiServerOutputSchema):
         )
 
     @classmethod
-    def compose_resource_name(
-        cls, program_key: ProgramKeyId, program_version: VersionStr
-    ) -> str:
-        return compose_resource_name(
-            "programs", program_key, "releases", program_version
-        )
+    def compose_resource_name(cls, key: ProgramKeyId, version: VersionStr) -> str:
+        return compose_resource_name("programs", key, "releases", version)
