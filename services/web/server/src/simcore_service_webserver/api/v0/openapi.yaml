@@ -8826,6 +8826,7 @@ components:
         paths:
           items:
             type: string
+            format: path
           type: array
           title: Paths
       type: object
