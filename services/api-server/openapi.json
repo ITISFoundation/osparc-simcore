@@ -7704,35 +7704,33 @@
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^simcore/services/dynamic/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
             "title": "Id",
-            "description": "Program identifier"
+            "description": "Resource identifier"
           },
           "version": {
             "type": "string",
             "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
             "title": "Version",
-            "description": "semantic version number of the node"
+            "description": "Semantic version number of the resource"
           },
           "title": {
             "type": "string",
+            "maxLength": 100,
             "title": "Title",
             "description": "Human readable name"
           },
           "description": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 500
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Description"
-          },
-          "maintainer": {
-            "type": "string",
-            "title": "Maintainer"
+            "title": "Description",
+            "description": "Description of the resource"
           },
           "url": {
             "anyOf": [
@@ -7755,11 +7753,10 @@
           "id",
           "version",
           "title",
-          "maintainer",
           "url"
         ],
         "title": "Program",
-        "description": "A released solver with a specific version",
+        "description": "A released program with a specific version",
         "example": {
           "description": "Simulation framework",
           "id": "simcore/services/dynamic/sim4life",
@@ -7838,35 +7835,33 @@
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
             "title": "Id",
-            "description": "Solver identifier"
+            "description": "Resource identifier"
           },
           "version": {
             "type": "string",
             "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
             "title": "Version",
-            "description": "semantic version number of the node"
+            "description": "Semantic version number of the resource"
           },
           "title": {
             "type": "string",
+            "maxLength": 100,
             "title": "Title",
             "description": "Human readable name"
           },
           "description": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 500
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Description"
-          },
-          "maintainer": {
-            "type": "string",
-            "title": "Maintainer"
+            "title": "Description",
+            "description": "Description of the resource"
           },
           "url": {
             "anyOf": [
@@ -7882,6 +7877,11 @@
             ],
             "title": "Url",
             "description": "Link to get this resource"
+          },
+          "maintainer": {
+            "type": "string",
+            "title": "Maintainer",
+            "description": "Maintainer of the solver"
           }
         },
         "type": "object",
@@ -7889,8 +7889,8 @@
           "id",
           "version",
           "title",
-          "maintainer",
-          "url"
+          "url",
+          "maintainer"
         ],
         "title": "Solver",
         "description": "A released solver with a specific version",
