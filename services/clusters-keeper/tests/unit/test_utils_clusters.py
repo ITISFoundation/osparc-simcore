@@ -238,7 +238,7 @@ def test_rabbitmq_settings_are_passed_with_pasword_clear(
     assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES
     assert (
         rabbitmq_settings_fixture
-        == app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_RABBIT_SETTINGS
+        == app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_RABBIT
     )
 
     additional_custom_tags = {
