@@ -50,7 +50,7 @@ def mock_copy_transfer_cb() -> Callable[..., None]:
 
 
 @pytest.fixture
-async def cleanup_when_done(
+async def cleanup_files_closure(
     simcore_s3_dsm: SimcoreS3DataManager, user_id: UserID
 ) -> AsyncIterable[Callable[[SimcoreS3FileID], None]]:
     to_remove: set[SimcoreS3FileID] = set()
@@ -85,13 +85,13 @@ async def test__copy_path_s3_s3(
     node_id: NodeID,
     mock_copy_transfer_cb: Callable[..., None],
     sqlalchemy_async_engine: AsyncEngine,
-    cleanup_when_done: Callable[[SimcoreS3FileID], None],
+    cleanup_files_closure: Callable[[SimcoreS3FileID], None],
 ):
     def _get_dest_file_id(src: SimcoreS3FileID) -> SimcoreS3FileID:
         copy_file_id = TypeAdapter(SimcoreS3FileID).validate_python(
             f"{Path(src).parent}/the-copy"
         )
-        cleanup_when_done(copy_file_id)
+        cleanup_files_closure(copy_file_id)
         return copy_file_id
 
     async def _copy_s3_path(s3_file_id_to_copy: SimcoreS3FileID) -> None:
@@ -240,7 +240,7 @@ async def test_create_s3_export(
     user_id: UserID,
     paths_for_export: set[SimcoreS3FileID],
     sqlalchemy_async_engine: AsyncEngine,
-    cleanup_when_done: Callable[[SimcoreS3FileID], None],
+    cleanup_files_closure: Callable[[SimcoreS3FileID], None],
 ):
     initial_fmd_count = await _get_fmds_count(sqlalchemy_async_engine)
     selection_to_export = _get_folder_and_files_selection(paths_for_export)
@@ -260,7 +260,7 @@ async def test_create_s3_export(
         file_id = await simcore_s3_dsm.create_s3_export(
             user_id, selection_to_export, progress_bar=root_progress_bar
         )
-    cleanup_when_done(file_id)
+    cleanup_files_closure(file_id)
     # count=2 -> the direcotory and the .zip export
     await _assert_meta_data_entries_count(
         sqlalchemy_async_engine, count=initial_fmd_count + 1
