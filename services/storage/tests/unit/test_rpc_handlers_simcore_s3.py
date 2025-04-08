@@ -210,7 +210,6 @@ def short_dsm_cleaner_interval(monkeypatch: pytest.MonkeyPatch) -> int:
 async def test_copy_folders_from_valid_project_with_one_large_file(
     initialized_app: FastAPI,
     short_dsm_cleaner_interval: int,
-    with_storage_celery_worker_controller: TestWorkController,
     storage_rabbitmq_rpc_client: RabbitMQRPCClient,
     user_id: UserID,
     product_name: ProductName,
@@ -304,7 +303,6 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
 async def test_copy_folders_from_valid_project(
     short_dsm_cleaner_interval: int,
     initialized_app: FastAPI,
-    with_storage_celery_worker_controller: TestWorkController,
     storage_rabbitmq_rpc_client: RabbitMQRPCClient,
     user_id: UserID,
     product_name: ProductName,
