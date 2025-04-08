@@ -1,3 +1,4 @@
+from datetime import timedelta
 from enum import StrEnum, auto
 from typing import Any, Final, Protocol, TypeAlias
 from uuid import UUID
@@ -49,7 +50,9 @@ class TaskMetadataStore(Protocol):
 
     async def remove(self, task_id: TaskID) -> None: ...
 
-    async def set(self, task_id: TaskID, task_data: TaskMetadata) -> None: ...
+    async def set(
+        self, task_id: TaskID, task_data: TaskMetadata, expiry: timedelta
+    ) -> None: ...
 
 
 class TaskStatus(BaseModel):

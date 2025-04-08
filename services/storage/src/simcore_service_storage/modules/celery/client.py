@@ -12,6 +12,7 @@ from common_library.async_tools import make_async
 from models_library.progress_bar import ProgressReport
 from pydantic import ValidationError
 from servicelib.logging_utils import log_context
+from settings_library.celery import CelerySettings
 
 from .models import (
     TaskContext,
@@ -43,6 +44,7 @@ _MAX_PROGRESS_VALUE = 1.0
 @dataclass
 class CeleryTaskQueueClient:
     _celery_app: Celery
+    _celery_settings: CelerySettings
     _task_store: TaskMetadataStore
 
     async def send_task(
@@ -67,7 +69,13 @@ class CeleryTaskQueueClient:
                 kwargs=task_params,
                 queue=task_metadata.queue,
             )
-            await self._task_store.set(task_id, task_metadata)
+
+            expiry = (
+                self._celery_settings.CELERY_EPHEMERAL_RESULT_EXPIRES
+                if task_metadata.ephemeral
+                else self._celery_settings.CELERY_RESULT_EXPIRES
+            )
+            await self._task_store.set(task_id, task_metadata, expiry=expiry)
             return task_uuid
 
     @staticmethod
