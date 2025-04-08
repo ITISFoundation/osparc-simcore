@@ -21,6 +21,7 @@ qx.Class.define("osparc.store.Services", {
   statics: {
     __servicesCached: {},
     __servicesPromisesCached: {},
+    __studyServicesPromisesCached: {},
 
     getServicesLatest: function(useCache = true) {
       return new Promise(resolve => {
@@ -139,6 +140,25 @@ qx.Class.define("osparc.store.Services", {
             delete this.__servicesPromisesCached[key][version];
           });
       });
+    },
+
+    getStudyServices: function(studyId) {
+      // avoid request deduplication
+      if (studyId in this.__studyServicesPromisesCached) {
+        return this.__studyServicesPromisesCached[studyId];
+      }
+
+      const params = {
+        url: {
+          studyId
+        }
+      };
+      this.__studyServicesPromisesCached[studyId] = osparc.data.Resources.fetch("studies", "getServices", params)
+        .finally(() => {
+          delete this.__studyServicesPromisesCached[studyId];
+        });
+
+      return this.__studyServicesPromisesCached[studyId]
     },
 
     __getAllVersions: function(key) {
