@@ -9,6 +9,7 @@
 from typing import Any
 
 import pytest
+import simcore_service_catalog.service.access_rights
 from fastapi import FastAPI, HTTPException, status
 from pytest_mock import MockerFixture
 from respx.router import MockRouter
@@ -58,8 +59,9 @@ async def test_registry_sync_task(
 
     if director_fails:
         # Emulates issue https://github.com/ITISFoundation/osparc-simcore/issues/6318
-        mocker.patch(
-            "simcore_service_catalog.services.access_rights._is_old_service",
+        mocker.patch.object(
+            simcore_service_catalog.service.access_rights,
+            "_is_old_service",
             side_effect=HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="fake director error"
             ),

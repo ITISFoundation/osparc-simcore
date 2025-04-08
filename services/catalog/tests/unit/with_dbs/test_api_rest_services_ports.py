@@ -54,8 +54,8 @@ async def mocked_check_service_read_access(
     assert user_groups_ids
 
     mocker.patch.object(
-        simcore_service_catalog.api._dependencies.services,
-        "ServicesRepository.get_service",
+        simcore_service_catalog.api._dependencies.services.ServicesRepository,
+        "get_service",
         autospec=True,
         return_value=True,
     )
