@@ -59,10 +59,10 @@ class RedisTaskMetadataStore:
         AsyncResult(_CELERY_TASK_META_PREFIX + task_id).forget()
 
     async def set(
-        self, task_id: TaskID, task_data: TaskMetadata, expiry: timedelta
+        self, task_id: TaskID, task_metadata: TaskMetadata, expiry: timedelta
     ) -> None:
         await self._redis_client_sdk.redis.set(
             _CELERY_TASK_METADATA_PREFIX + task_id,
-            task_data.model_dump_json(),
+            task_metadata.model_dump_json(),
             ex=expiry,
         )
