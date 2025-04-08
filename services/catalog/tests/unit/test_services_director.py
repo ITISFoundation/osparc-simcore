@@ -27,7 +27,6 @@ def app_environment(
         monkeypatch,
         {
             **app_environment,
-            "CATALOG_POSTGRES": "null",  # disable postgres
             "SC_BOOT_MODE": "local-development",
         },
     )
