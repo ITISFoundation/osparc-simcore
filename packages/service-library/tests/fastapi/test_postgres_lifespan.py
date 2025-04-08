@@ -17,6 +17,7 @@ from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.fastapi.postgres_lifespan import (
+    PostgresConfigurationError,
     PostgresLifespanStateKeys,
     postgres_lifespan_manager,
 )
@@ -147,3 +148,25 @@ async def test_setup_postgres_database_dispose_engine_on_failure(
     # Verify that the engine was disposed even if error happend
     async_engine: Any = mock_create_async_engine_and_database_ready.return_value
     async_engine.dispose.assert_called_once()
+
+
+async def test_setup_postgres_database_with_empty_pg_settings(
+    is_pdb_enabled: bool,
+):
+    async def my_app_settings(app: FastAPI) -> AsyncIterator[State]:
+        yield {PostgresLifespanStateKeys.POSTGRES_SETTINGS: None}
+
+    app_lifespan_manager = LifespanManager()
+    app_lifespan_manager.add(my_app_settings)
+
+    app_lifespan_manager.include(postgres_lifespan_manager)
+
+    app = FastAPI(lifespan=app_lifespan_manager)
+
+    with pytest.raises(PostgresConfigurationError, match="postgres cannot be disabled"):
+        async with ASGILifespanManager(
+            app,
+            startup_timeout=None if is_pdb_enabled else 10,
+            shutdown_timeout=None if is_pdb_enabled else 10,
+        ):
+            ...

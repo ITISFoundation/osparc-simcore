@@ -11,12 +11,15 @@ from typing import Any
 
 import pytest
 from asgi_lifespan import LifespanManager as ASGILifespanManager
-from common_library.errors_classes import OsparcErrorMixin
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager, State
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.logging_tools import log_context
-from servicelib.fastapi.lifespan_utils import combine_lifespans
+from servicelib.fastapi.lifespan_utils import (
+    LifespanOnShutdownError,
+    LifespanOnStartupError,
+    combine_lifespans,
+)
 
 
 async def test_multiple_lifespan_managers(capsys: pytest.CaptureFixture):
@@ -159,17 +162,6 @@ async def test_app_lifespan_composition(
     #                     <- app database done (1ms)
     #             <- postgres_async_engine done (1ms)
     #     <- postgres_sync_engine done (1ms)
-
-
-class LifespanError(OsparcErrorMixin, RuntimeError): ...
-
-
-class LifespanOnStartupError(LifespanError):
-    msg_template = "Failed during startup of {module}"
-
-
-class LifespanOnShutdownError(LifespanError):
-    msg_template = "Failed during shutdown of {module}"
 
 
 @pytest.fixture

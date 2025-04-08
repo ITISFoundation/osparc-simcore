@@ -8,6 +8,7 @@ from settings_library.postgres import PostgresSettings
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..db_asyncpg_utils import create_async_engine_and_database_ready
+from .lifespan_utils import LifespanOnStartupError
 
 _logger = logging.getLogger(__name__)
 
@@ -20,6 +21,10 @@ class PostgresLifespanStateKeys(str, Enum):
     POSTGRES_ASYNC_ENGINE = "postgres.async_engine"
 
 
+class PostgresConfigurationError(LifespanOnStartupError):
+    msg_template = "Invalid postgres settings [={pg_settings}] on startup. Note that postgres cannot be disabled using settings"
+
+
 @postgres_lifespan_manager.add
 async def setup_postgres_database(_, state: State) -> AsyncIterator[State]:
 
@@ -30,8 +35,7 @@ async def setup_postgres_database(_, state: State) -> AsyncIterator[State]:
         ]
 
         if pg_settings is None or not isinstance(pg_settings, PostgresSettings):
-            msg = f"Invalid {pg_settings=} on startup. Postgres cannot be disabled using settings"
-            raise RuntimeError(msg)
+            raise PostgresConfigurationError(pg_settings=pg_settings, module="postgres")
 
         assert isinstance(pg_settings, PostgresSettings)  # nosec
 
