@@ -26,50 +26,6 @@ ProgramKeyId = Annotated[
 ]
 
 
-# class BaseService(BaseModel):
-#     id: Annotated[str, Field(..., description="Resource identifier")]
-#     version: Annotated[
-#         VersionStr, Field(..., description="Semantic version number of the resource")
-#     ]
-#     title: Annotated[
-#         str,
-#         StringConstraints(max_length=100),
-#         Field(..., description="Human readable name"),
-#     ]
-#     description: Annotated[
-#         str | None,
-#         StringConstraints(max_length=500),
-#         Field(default=None, description="Description of the resource"),
-#     ]
-#     url: Annotated[
-#         HttpUrl | None, UriSchema(), Field(..., description="Link to get this resource")
-#     ]
-
-#     @property
-#     def pep404_version(self) -> Version:
-#         """Rich version type that can be used e.g. to compare"""
-#         return packaging.version.parse(self.version)
-
-#     @property
-#     def url_friendly_id(self) -> str:
-#         """Use to pass id as parameter in URLs"""
-#         return urllib.parse.quote_plus(self.id)
-
-#     @property
-#     def resource_name(self) -> str:
-#         """Relative resource name"""
-#         return self.compose_resource_name(self.id, self.version)
-
-#     @property
-#     def name(self) -> str:
-#         """API standards notation (see api_resources.py)"""
-#         return self.resource_name
-
-#     @classmethod
-#     def compose_resource_name(cls, key: str, version: str) -> str:
-#         raise NotImplementedError("Subclasses must implement this method")
-
-
 class Program(BaseService, ApiServerOutputSchema):
     """A released program with a specific version"""
 
