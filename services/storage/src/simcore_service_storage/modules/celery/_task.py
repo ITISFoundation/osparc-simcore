@@ -87,7 +87,7 @@ def _error_handling(
                     max_retries=max_retries,
                     countdown=delay_between_retries.total_seconds(),
                     exc=encore_celery_transferrable_error(exc),
-                )
+                ) from exc
 
         return wrapper
 
