@@ -34,13 +34,13 @@ class TaskState(StrEnum):
 
 
 class TasksQueue(StrEnum):
-    CPU_BOUND = auto()
-    DEFAULT = auto()
+    CPU_BOUND = "cpu_bound"
+    DEFAULT = "default"
 
 
 class TaskMetadata(BaseModel):
     ephemeral: bool = True
-    queue: str = "default"
+    queue: TasksQueue = TasksQueue.DEFAULT
 
 
 _TASK_DONE = {TaskState.SUCCESS, TaskState.ERROR, TaskState.ABORTED}
