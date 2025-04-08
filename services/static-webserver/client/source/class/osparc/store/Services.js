@@ -110,7 +110,10 @@ qx.Class.define("osparc.store.Services", {
         if (
           useCache &&
           this.__isInCache(key, version) &&
-          "history" in this.__servicesCached[key][version]
+          (
+            this.__servicesCached[key][version] === null ||
+            "history" in this.__servicesCached[key][version]
+          )
         ) {
           resolve(this.__servicesCached[key][version]);
           return;
