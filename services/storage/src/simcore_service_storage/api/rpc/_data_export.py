@@ -62,7 +62,6 @@ async def start_data_export(
             "export_data",
             task_context=job_id_data.model_dump(),
             task_metadata=TaskMetadata(ephemeral=False, queue="cpu-bound"),
-            task_queue="cpu-bound",
             files=data_export_start.file_and_folder_ids,  # ANE: adapt here your signature
         )
     except CeleryError as exc:
