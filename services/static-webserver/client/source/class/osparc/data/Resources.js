@@ -276,6 +276,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "PUT",
             url: statics.API + "/projects/{studyId}/groups/{gId}"
           },
+          shareWithEmail: {
+            method: "POST",
+            url: statics.API + "/projects/{studyId}:share"
+          },
           addTag: {
             useCache: false,
             method: "POST",
@@ -565,21 +569,6 @@ qx.Class.define("osparc.data.Resources", {
        * SERVICES
        */
       "services": {
-        useCache: true,
-        idField: ["key", "version"],
-        endpoints: {
-          pricingPlans: {
-            useCache: false,
-            method: "GET",
-            url: statics.API + "/catalog/services/{key}/{version}/pricing-plan"
-          }
-        }
-      },
-
-      /*
-       * SERVICES V2
-       */
-      "servicesV2": {
         useCache: false, // handled in osparc.store.Services
         idField: ["key", "version"],
         endpoints: {
@@ -594,7 +583,12 @@ qx.Class.define("osparc.data.Resources", {
           patch: {
             method: "PATCH",
             url: statics.API + "/catalog/services/{key}/{version}"
-          }
+          },
+          pricingPlans: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/catalog/services/{key}/{version}/pricing-plan"
+          },
         }
       },
 

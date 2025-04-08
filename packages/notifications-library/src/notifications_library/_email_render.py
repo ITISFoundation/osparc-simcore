@@ -11,7 +11,7 @@ _logger = logging.getLogger(__name__)
 
 
 class EmailPartsTuple(NamedTuple):
-    suject: str
+    subject: str
     text_content: str
     html_content: str | None
 
@@ -58,5 +58,5 @@ def render_email_parts(
         html_content = None
 
     return EmailPartsTuple(
-        suject=subject, text_content=text_content, html_content=html_content
+        subject=subject, text_content=text_content, html_content=html_content
     )

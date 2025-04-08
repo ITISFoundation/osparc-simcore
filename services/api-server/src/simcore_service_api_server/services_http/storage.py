@@ -8,7 +8,9 @@ from uuid import UUID
 
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
-from models_library.api_schemas_storage.storage_schemas import FileMetaDataArray
+from models_library.api_schemas_storage.storage_schemas import (
+    FileMetaDataArray,
+)
 from models_library.api_schemas_storage.storage_schemas import (
     FileMetaDataGet as StorageFileMetaData,
 )
@@ -24,15 +26,16 @@ from starlette.datastructures import URL
 
 from ..core.settings import StorageSettings
 from ..exceptions.service_errors_utils import service_exception_mapper
-from ..models.schemas.files import File
+from ..models.domain.files import File
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
 _logger = logging.getLogger(__name__)
 
 _exception_mapper = partial(service_exception_mapper, service_name="Storage")
 
-_FILE_ID_PATTERN = re.compile(r"^api\/(?P<file_id>[\w-]+)\/(?P<filename>.+)$")
 AccessRight = Literal["read", "write"]
+
+_FILE_ID_PATTERN = re.compile(r"^api\/(?P<file_id>[\w-]+)\/(?P<filename>.+)$")
 
 
 def to_file_api_model(stored_file_meta: StorageFileMetaData) -> File:
@@ -47,7 +50,8 @@ def to_file_api_model(stored_file_meta: StorageFileMetaData) -> File:
     return File(
         id=file_id,  # type: ignore
         filename=filename,
-        content_type=guess_type(filename)[0] or "application/octet-stream",
+        content_type=guess_type(stored_file_meta.file_name)[0]
+        or "application/octet-stream",
         e_tag=stored_file_meta.entity_tag,
         checksum=stored_file_meta.sha256_checksum,
     )
@@ -105,7 +109,7 @@ class StorageApi(BaseServiceClientApi):
                 {
                     "kind": "owned",
                     "user_id": f"{user_id}",
-                    "startswith": None if file_id is None else f"api/{file_id}",
+                    "startswith": "api/" if file_id is None else f"api/{file_id}",
                     "sha256_checksum": sha256_checksum,
                     "limit": limit,
                     "offset": offset,

@@ -5,14 +5,14 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from functools import partial
 from operator import attrgetter
-from typing import Final
+from typing import Final, Literal
 
 from fastapi import FastAPI, status
 from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
 from models_library.services import ServiceMetaDataPublished, ServiceType
 from models_library.users import UserID
-from pydantic import ConfigDict, TypeAdapter, ValidationError
+from pydantic import ConfigDict, TypeAdapter
 from settings_library.catalog import CatalogSettings
 from settings_library.tracing import TracingSettings
 
@@ -22,6 +22,7 @@ from ..exceptions.backend_errors import (
 )
 from ..exceptions.service_errors_utils import service_exception_mapper
 from ..models.basic_types import VersionStr
+from ..models.schemas.programs import Program, ProgramKeyId
 from ..models.schemas.solvers import LATEST_VERSION, Solver, SolverKeyId, SolverPort
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
@@ -64,6 +65,20 @@ class TruncatedCatalogServiceOut(ServiceMetaDataPublished):
             **data,
         )
 
+    def to_program(self) -> Program:
+        data = self.model_dump(
+            include={"name", "key", "version", "description", "contact", "owner"},
+        )
+        return Program(
+            id=data.pop("key"),
+            version=data.pop("version"),
+            title=data.pop("name"),
+            url=None,
+            **data,
+        )
+
+
+ServiceTypes = Literal["COMPUTATIONAL", "DYNAMIC"]
 
 # API CLASS ---------------------------------------------
 #
@@ -96,13 +111,14 @@ class CatalogApi(BaseServiceClientApi):
     @_exception_mapper(
         http_status_map={status.HTTP_404_NOT_FOUND: ListSolversOrStudiesError}
     )
-    async def list_solvers(
+    async def list_services(
         self,
         *,
-        user_id: UserID,
-        product_name: ProductName,
-        predicate: Callable[[Solver], bool] | None = None,
-    ) -> list[Solver]:
+        user_id: int,
+        product_name: str,
+        predicate: Callable[[TruncatedCatalogServiceOut], bool] | None = None,
+        type_filter: ServiceTypes,
+    ) -> list[TruncatedCatalogServiceOut]:
 
         response = await self.client.get(
             "/services",
@@ -119,29 +135,17 @@ class CatalogApi(BaseServiceClientApi):
             TruncatedCatalogServiceOutListAdapter,
             response,
         )
-        solvers = []
-        for service in services:
-            try:
-                if service.service_type == ServiceType.COMPUTATIONAL:
-                    solver = service.to_solver()
-                    if predicate is None or predicate(solver):
-                        solvers.append(solver)
 
-            except ValidationError as err:
-                # NOTE: For the moment, this is necessary because there are no guarantees
-                #       at the image registry. Therefore we exclude and warn
-                #       invalid items instead of returning error
-                _logger.warning(
-                    "Skipping invalid service returned by catalog '%s': %s",
-                    service.model_dump_json(),
-                    err,
-                )
-        return solvers
+        services = [
+            service
+            for service in services
+            if service.service_type == ServiceType[type_filter]
+        ]
+        if predicate is not None:
+            services = [service for service in services if predicate(service)]
+        return services
 
-    @_exception_mapper(
-        http_status_map={status.HTTP_404_NOT_FOUND: SolverOrStudyNotFoundError}
-    )
-    async def get_service(
+    async def get_solver(
         self,
         *,
         user_id: UserID,
@@ -149,6 +153,40 @@ class CatalogApi(BaseServiceClientApi):
         version: VersionStr,
         product_name: ProductName,
     ) -> Solver:
+        service = await self._get_service(
+            user_id=user_id, name=name, version=version, product_name=product_name
+        )
+        assert (  # nosec
+            service.service_type == ServiceType.COMPUTATIONAL
+        ), "Expected by SolverName regex"
+
+        solver: Solver = service.to_solver()
+        return solver
+
+    async def get_program(
+        self,
+        *,
+        user_id: int,
+        name: ProgramKeyId,
+        version: VersionStr,
+        product_name: str,
+    ) -> Program:
+        service = await self._get_service(
+            user_id=user_id, name=name, version=version, product_name=product_name
+        )
+        assert (  # nosec
+            service.service_type == ServiceType.DYNAMIC
+        ), "Expected by ProgramName regex"
+
+        program = service.to_program()
+        return program
+
+    @_exception_mapper(
+        http_status_map={status.HTTP_404_NOT_FOUND: SolverOrStudyNotFoundError}
+    )
+    async def _get_service(
+        self, *, user_id: int, name: SolverKeyId, version: VersionStr, product_name: str
+    ) -> TruncatedCatalogServiceOut:
 
         assert version != LATEST_VERSION  # nosec
 
@@ -167,12 +205,7 @@ class CatalogApi(BaseServiceClientApi):
         ) = await asyncio.get_event_loop().run_in_executor(
             None, _parse_response, TruncatedCatalogServiceOutAdapter, response
         )
-        assert (  # nosec
-            service.service_type == ServiceType.COMPUTATIONAL
-        ), "Expected by SolverName regex"
-
-        solver: Solver = service.to_solver()
-        return solver
+        return service
 
     @_exception_mapper(
         http_status_map={status.HTTP_404_NOT_FOUND: SolverOrStudyNotFoundError}
@@ -204,9 +237,13 @@ class CatalogApi(BaseServiceClientApi):
     async def list_latest_releases(
         self, *, user_id: UserID, product_name: ProductName
     ) -> list[Solver]:
-        solvers: list[Solver] = await self.list_solvers(
-            user_id=user_id, product_name=product_name
+        services = await self.list_services(
+            user_id=user_id,
+            product_name=product_name,
+            predicate=None,
+            type_filter="COMPUTATIONAL",
         )
+        solvers = [service.to_solver() for service in services]
 
         latest_releases: dict[SolverKeyId, Solver] = {}
         for solver in solvers:
@@ -216,22 +253,36 @@ class CatalogApi(BaseServiceClientApi):
 
         return list(latest_releases.values())
 
-    async def list_solver_releases(
-        self, *, user_id: UserID, solver_key: SolverKeyId, product_name: ProductName
+    async def list_service_releases(
+        self,
+        *,
+        user_id: int,
+        solver_key: SolverKeyId,
+        product_name: str,
     ) -> list[Solver]:
         def _this_solver(solver: Solver) -> bool:
             return solver.id == solver_key
 
-        releases: list[Solver] = await self.list_solvers(
-            user_id=user_id, predicate=_this_solver, product_name=product_name
+        services = await self.list_services(
+            user_id=user_id,
+            predicate=None,
+            product_name=product_name,
+            type_filter="COMPUTATIONAL",
         )
-        return releases
+        solvers = [service.to_solver() for service in services]
+        return [solver for solver in solvers if _this_solver(solver)]
 
     async def get_latest_release(
-        self, *, user_id: UserID, solver_key: SolverKeyId, product_name: ProductName
+        self,
+        *,
+        user_id: int,
+        solver_key: SolverKeyId,
+        product_name: str,
     ) -> Solver:
-        releases = await self.list_solver_releases(
-            user_id=user_id, solver_key=solver_key, product_name=product_name
+        releases = await self.list_service_releases(
+            user_id=user_id,
+            solver_key=solver_key,
+            product_name=product_name,
         )
 
         # raises IndexError if None

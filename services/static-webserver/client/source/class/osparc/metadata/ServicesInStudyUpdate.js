@@ -57,12 +57,7 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
       });
       this._introText.add(introText);
       let msg = "";
-      const params = {
-        url: {
-          studyId: this._studyData["uuid"]
-        }
-      };
-      osparc.data.Resources.fetch("studies", "getServices", params)
+      osparc.store.Services.getStudyServices(this._studyData["uuid"])
         .then(resp => {
           const services = resp["services"];
           if (osparc.study.Utils.getCantExecuteServices(services).length) {

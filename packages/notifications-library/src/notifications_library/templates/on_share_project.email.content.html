@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %} {% include 'on_share_project.email.subject.txt' %} {% endblock %}
+{% block content %}
+<p>Dear {{ user.first_name or user.user_name }},</p>
+
+<p>Great news! {{ sharer.user_name }} has shared a {{ product.ui.project_alias }} with you on {{ product.display_name }}.</p>
+
+<p>To view the {{ product.ui.project_alias }} and accept the sharing, follow below:</p>
+
+<p>
+{% if sharer.message %}
+  <div style="border: 1px solid #ccc; padding: 16px; border-radius: 8px; background-color: #f9f9f9;">
+    <p style="margin-top: 0;">{{ sharer.message }}</p>
+    <button class="strong-button" style="border-radius: 4px;">
+      <a href="{{ accept_link }}" style="color: white;">Open</a>
+    </button>
+  </div>
+{% else %}
+  <button class="strong-button" style="border-radius: 4px;">
+    <a href="{{ accept_link }}" style="color: white;">Open</a>
+  </button>
+{% endif %}
+</p>
+
+<p>Please don't hesitate to contact us at {{ product.support_email }} if you need further help.</p>
+
+<p>Best Regards,</p>
+<p>The <i>{{ product.display_name }}</i> Team</p>
+{% endblock %}
