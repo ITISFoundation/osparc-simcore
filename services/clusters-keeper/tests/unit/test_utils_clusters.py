@@ -16,6 +16,7 @@ from aws_library.ec2 import (
     EC2InstanceData,
 )
 from common_library.json_serialization import json_dumps
+from common_library.serialization import model_dump_with_secrets
 from faker import Faker
 from models_library.api_schemas_clusters_keeper.clusters import ClusterState
 from models_library.clusters import (
@@ -194,10 +195,13 @@ def test_create_deploy_cluster_stack_script(
     )
 
 
-@pytest.fixture
+@pytest.fixture(
+    params=["default", "custom"], ids=["defaultRabbitMQ", "specialClusterRabbitMQ"]
+)
 def rabbitmq_settings_fixture(
+    app_environment: EnvVarsDict,
+    enabled_rabbitmq: RabbitSettings,
     request: pytest.FixtureRequest,
-    app_settings: ApplicationSettings,
     monkeypatch: pytest.MonkeyPatch,
     faker: Faker,
 ) -> RabbitSettings | None:
@@ -210,18 +214,19 @@ def rabbitmq_settings_fixture(
             RABBIT_USER=faker.user_name(),
             RABBIT_PASSWORD=SecretStr(faker.password()),
         )
-        monkeypatch.setattr(
-            app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES,
+        monkeypatch.setenv(
             "PRIMARY_EC2_INSTANCES_RABBIT_SETTINGS",
-            custom_rabbit_settings,
+            json_dumps(
+                model_dump_with_secrets(custom_rabbit_settings, show_secrets=True)
+            ),
         )
         return custom_rabbit_settings
-    return app_settings.CLUSTERS_KEEPER_RABBITMQ
+    return enabled_rabbitmq
 
 
 def test_rabbitmq_settings_are_passed_with_pasword_clear(
     docker_swarm: None,
-    enabled_rabbitmq: None,
+    rabbitmq_settings_fixture: RabbitSettings | None,
     mocked_ec2_server_envs: EnvVarsDict,
     mocked_ssm_server_envs: EnvVarsDict,
     mocked_redis_server: None,
@@ -232,12 +237,10 @@ def test_rabbitmq_settings_are_passed_with_pasword_clear(
     assert app_settings.CLUSTERS_KEEPER_RABBITMQ
     assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES
     assert (
-        app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_RABBIT_SETTINGS
-    )
-    assert (
-        app_settings.CLUSTERS_KEEPER_RABBITMQ
+        rabbitmq_settings_fixture
         == app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_RABBIT_SETTINGS
     )
+
     additional_custom_tags = {
         TypeAdapter(AWSTagKey)
         .validate_python("pytest-tag-key"): TypeAdapter(AWSTagValue)
@@ -254,7 +257,7 @@ def test_rabbitmq_settings_are_passed_with_pasword_clear(
     assert match, "AUTOSCALING_RABBITMQ is not present in the deploy script!"
     autoscaling_rabbitmq = match.group(1)
     passed_settings = RabbitSettings.model_validate_json(autoscaling_rabbitmq)
-    assert passed_settings == app_settings.CLUSTERS_KEEPER_RABBITMQ
+    assert passed_settings == rabbitmq_settings_fixture
 
 
 def test_create_deploy_cluster_stack_script_below_64kb(
