@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi_lifespan_manager import State
 from models_library.api_schemas_catalog import CATALOG_RPC_NAMESPACE
 
-from ...service.rabbitmq import get_rabbitmq_rpc_server
+from ...clients.rabbitmq import get_rabbitmq_rpc_server
 from . import _services
 
 _logger = logging.getLogger(__name__)

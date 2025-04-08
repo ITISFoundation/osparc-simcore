@@ -22,6 +22,7 @@ from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
 )
 from simcore_service_catalog.repository.groups import GroupsRepository
 
+from ..clients.director import DirectorApi
 from ..models.services_db import (
     ServiceAccessRightsAtDB,
     ServiceMetaDataDBPatch,
@@ -29,7 +30,6 @@ from ..models.services_db import (
 )
 from ..repository.services import ServicesRepository
 from ..service import manifest
-from ..service.director import DirectorApi
 from .compatibility import evaluate_service_compatibility_map
 from .function_services import is_function_service
 

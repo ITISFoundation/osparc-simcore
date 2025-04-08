@@ -20,10 +20,10 @@ from ..._constants import (
     LIST_SERVICES_CACHING_TTL,
     RESPONSE_MODEL_POLICY,
 )
+from ...clients.director import DirectorApi
 from ...models.services_db import ServiceAccessRightsAtDB, ServiceMetaDataDBGet
 from ...repository.groups import GroupsRepository
 from ...repository.services import ServicesRepository
-from ...service.director import DirectorApi
 from .._dependencies.database import get_repository
 from .._dependencies.director import get_director_api
 from .._dependencies.services import get_service_from_manifest

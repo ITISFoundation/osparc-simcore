@@ -14,8 +14,8 @@ from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx.router import MockRouter
 from simcore_service_catalog.api._dependencies.director import get_director_api
+from simcore_service_catalog.clients.director import DirectorApi
 from simcore_service_catalog.service import manifest
-from simcore_service_catalog.service.director import DirectorApi
 
 
 @pytest.fixture

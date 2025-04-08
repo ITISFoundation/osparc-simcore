@@ -12,11 +12,11 @@ from models_library.services_types import ServiceKey, ServiceVersion
 from pydantic import ValidationError
 from servicelib.fastapi.dependencies import get_app
 
+from ...clients.director import DirectorApi
 from ...core.settings import ApplicationSettings
 from ...repository.groups import GroupsRepository
 from ...repository.services import ServicesRepository
 from ...service import manifest
-from ...service.director import DirectorApi
 from .database import get_repository
 from .director import get_director_api
 

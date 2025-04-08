@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import Depends, FastAPI
 from servicelib.fastapi.dependencies import get_app
 
-from ...service.director import DirectorApi
+from ...clients.director import DirectorApi
 
 
 def get_director_api(
