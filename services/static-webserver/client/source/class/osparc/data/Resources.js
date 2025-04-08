@@ -276,6 +276,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "PUT",
             url: statics.API + "/projects/{studyId}/groups/{gId}"
           },
+          shareWithEmail: {
+            method: "POST",
+            url: statics.API + "/projects/{studyId}:share"
+          },
           addTag: {
             useCache: false,
             method: "POST",

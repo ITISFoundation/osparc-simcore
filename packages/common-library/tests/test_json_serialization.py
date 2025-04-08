@@ -13,6 +13,7 @@ from common_library.json_serialization import (
     SeparatorTuple,
     json_dumps,
     json_loads,
+    representation_encoder,
 )
 from faker import Faker
 from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, HttpUrl, TypeAdapter
@@ -110,3 +111,25 @@ def test_serialized_model_with_urls(faker: Faker):
         http_url=faker.url(),
     )
     json_dumps(obj)
+
+
+def test_json_dumps_with_representation_encoder():
+    class CustomObject:
+        def __str__(self):
+            return "CustomObjectRepresentation"
+
+    class SomeModel(BaseModel):
+        x: int
+
+    obj = {
+        "custom": CustomObject(),
+        "some": SomeModel(x=42),
+    }
+
+    # Using representation_encoder as the default encoder
+    result = json_dumps(obj, default=representation_encoder, indent=1)
+
+    assert (
+        result
+        == '{\n  "custom": "CustomObjectRepresentation",\n  "some": {\n    "x": 42\n  }\n}'
+    )

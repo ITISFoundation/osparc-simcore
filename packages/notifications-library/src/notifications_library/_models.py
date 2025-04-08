@@ -16,15 +16,23 @@ class JinjaTemplateDbGet:
 
 @dataclass(frozen=True)
 class UserData:
+    user_name: str
     first_name: str
     last_name: str
     email: str
 
 
 @dataclass(frozen=True)
+class SharerData:
+    user_name: str
+    message: str
+
+
+@dataclass(frozen=True)
 class ProductUIData:
     logo_url: str
     strong_color: str
+    project_alias: str
 
 
 @dataclass(frozen=True)

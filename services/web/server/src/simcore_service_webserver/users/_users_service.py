@@ -362,7 +362,8 @@ async def get_my_profile(
         )
     except GroupExtraPropertiesNotFoundError as err:
         raise MissingGroupExtraPropertiesForProductError(
-            user_id=user_id, product_name=product_name
+            user_id=user_id,
+            product_name=product_name,
         ) from err
 
     return my_profile, preferences
