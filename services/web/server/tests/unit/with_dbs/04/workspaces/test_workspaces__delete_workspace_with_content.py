@@ -20,81 +20,6 @@ from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
 
-# @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
-# async def test_workspaces_full_workflow_deletion(
-#     client: TestClient,
-#     logged_user: UserInfoDict,
-#     user_project: ProjectDict,
-#     expected: HTTPStatus,
-#     mock_catalog_api_get_services_for_user_in_product: MockerFixture,
-#     fake_project: ProjectDict,
-#     workspaces_clean_db: None,
-# ):
-#     assert client.app
-
-#     # Create a new workspace
-#     url = client.app.router["create_workspace"].url_for()
-#     resp = await client.post(
-#         f"{url}",
-#         json={
-#             "name": "My first workspace",
-#             "description": "Custom description",
-#             "thumbnail": None,
-#         },
-#     )
-#     data, _ = await assert_status(resp, status.HTTP_201_CREATED)
-#     added_workspace = WorkspaceGet.model_validate(data)
-
-#     # Create project **in workspace**
-#     project_data = deepcopy(fake_project)
-#     project_data["workspace_id"] = f"{added_workspace.workspace_id}"
-#     project = await create_project(
-#         client.app,
-#         project_data,
-#         user_id=logged_user["id"],
-#         product_name="osparc",
-#     )
-
-#     # # List project in workspace
-#     # url = (
-#     #     client.app.router["list_projects"]
-#     #     .url_for()
-#     #     .with_query({"workspace_id": f"{added_workspace.workspace_id}"})
-#     # )
-#     # resp = await client.get(f"{url}")
-#     # data, _ = await assert_status(resp, status.HTTP_200_OK)
-#     # assert len(data) == 1
-#     # assert data[0]["uuid"] == project["uuid"]
-#     # assert data[0]["workspaceId"] == added_workspace.workspace_id
-#     # assert data[0]["folderId"] is None
-
-#     # # Get project in workspace
-#     # url = client.app.router["get_project"].url_for(project_id=project["uuid"])
-#     # resp = await client.get(f"{url}")
-#     # data, _ = await assert_status(resp, status.HTTP_200_OK)
-#     # assert data["uuid"] == project["uuid"]
-#     # assert data["workspaceId"] == added_workspace.workspace_id
-#     # assert data["folderId"] is None
-
-#     # Create folder in workspace
-#     url = client.app.router["create_folder"].url_for()
-#     resp = await client.post(
-#         f"{url}",
-#         json={
-#             "name": "Original user folder",
-#             "workspaceId": f"{added_workspace.workspace_id}",
-#         },
-#     )
-#     first_folder, _ = await assert_status(resp, status.HTTP_201_CREATED)
-
-#     # Move project in specific folder in workspace
-#     url = client.app.router["replace_project_folder"].url_for(
-#         folder_id=f"{first_folder['folderId']}",
-#         project_id=f"{project['uuid']}",
-#     )
-#     resp = await client.put(f"{url}")
-#     await assert_status(resp, status.HTTP_204_NO_CONTENT)
-
 
 @pytest.fixture
 def mock_storage_delete_data_folders(mocker: MockerFixture) -> mock.Mock:
@@ -219,6 +144,3 @@ async def test_workspaces_full_workflow_deletion(
     )
     resp = await client.delete(f"{url}")
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
-
-    # TODO: Check if the projects are deleted
-    print("finished")

@@ -211,7 +211,7 @@ def _can_delete(
         folder_db.trashed
         and (until_equal_datetime is None or folder_db.trashed < until_equal_datetime)
         and my_access_rights.delete
-        and folder_db.trashed_by == user_id  # <-- Ask PC - is this correct?
+        and folder_db.trashed_by == user_id
         and folder_db.trashed_explicitly
     )
 
