@@ -275,7 +275,7 @@ async def rpc_client(
 
 @pytest.fixture
 def director_setup_disabled(mocker: MockerFixture) -> None:
-    mocker.patch.object(simcore_service_catalog.core.events, "setup_director")
+    mocker.patch.object(simcore_service_catalog.core.events, "director_lifespan")
 
 
 @pytest.fixture
