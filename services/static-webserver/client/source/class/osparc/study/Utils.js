@@ -342,12 +342,11 @@ qx.Class.define("osparc.study.Utils", {
       return Object.values(studyData["workbench"]).filter(nodeData => !osparc.data.model.Node.isFrontend(nodeData));
     },
 
-    guessIcon: async function(studyData) {
+    guessIcon: function(studyData) {
       if (osparc.product.Utils.isProduct("tis") || osparc.product.Utils.isProduct("tiplite")) {
-        return this.__guessTIPIcon(studyData);
+        return new Promise(resolve => resolve(this.__guessTIPIcon(studyData)));
       }
-      const icon = await this.__guessIcon(studyData);
-      return icon;
+      return this.__guessIcon(studyData);
     },
 
     __guessIcon: function(studyData) {
