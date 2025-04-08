@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Literal, TypeAlias
 
 from pydantic import AnyUrl, BaseModel, ConfigDict, Field, HttpUrl, field_validator
+from pydantic.config import JsonDict
 from pydantic.types import NonNegativeInt
 
 from .groups import GroupID
@@ -36,18 +37,22 @@ class TLSAuthentication(_AuthenticationBase):
     tls_client_cert: Path
     tls_client_key: Path
 
-    model_config = ConfigDict(
-        json_schema_extra={
-            "examples": [
-                {
-                    "type": "tls",
-                    "tls_ca_file": "/path/to/ca_file",
-                    "tls_client_cert": "/path/to/cert_file",
-                    "tls_client_key": "/path/to/key_file",
-                },
-            ]
-        }
-    )
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "type": "tls",
+                        "tls_ca_file": "/path/to/ca_file",
+                        "tls_client_cert": "/path/to/cert_file",
+                        "tls_client_key": "/path/to/key_file",
+                    },
+                ]
+            }
+        )
+
+    model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
 
 
 ClusterAuthentication: TypeAlias = NoAuthentication | TLSAuthentication
@@ -71,36 +76,41 @@ class BaseCluster(BaseModel):
         create_enums_pre_validator(ClusterTypeInModel)
     )
 
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "name": "My awesome cluster",
+                        "type": ClusterTypeInModel.ON_PREMISE,
+                        "owner": 12,
+                        "endpoint": "https://registry.osparc-development.fake.dev",
+                        "authentication": {
+                            "type": "tls",
+                            "tls_ca_file": "/path/to/ca_file",
+                            "tls_client_cert": "/path/to/cert_file",
+                            "tls_client_key": "/path/to/key_file",
+                        },
+                    },
+                    {
+                        "name": "My AWS cluster",
+                        "type": ClusterTypeInModel.AWS,
+                        "owner": 154,
+                        "endpoint": "https://registry.osparc-development.fake.dev",
+                        "authentication": {
+                            "type": "tls",
+                            "tls_ca_file": "/path/to/ca_file",
+                            "tls_client_cert": "/path/to/cert_file",
+                            "tls_client_key": "/path/to/key_file",
+                        },
+                    },
+                ]
+            }
+        )
+
     model_config = ConfigDict(
-        use_enum_values=True,
-        json_schema_extra={
-            "examples": [
-                {
-                    "name": "My awesome cluster",
-                    "type": ClusterTypeInModel.ON_PREMISE,
-                    "owner": 12,
-                    "endpoint": "https://registry.osparc-development.fake.dev",
-                    "authentication": {
-                        "type": "tls",
-                        "tls_ca_file": "/path/to/ca_file",
-                        "tls_client_cert": "/path/to/cert_file",
-                        "tls_client_key": "/path/to/key_file",
-                    },
-                },
-                {
-                    "name": "My AWS cluster",
-                    "type": ClusterTypeInModel.AWS,
-                    "owner": 154,
-                    "endpoint": "https://registry.osparc-development.fake.dev",
-                    "authentication": {
-                        "type": "tls",
-                        "tls_ca_file": "/path/to/ca_file",
-                        "tls_client_cert": "/path/to/cert_file",
-                        "tls_client_key": "/path/to/key_file",
-                    },
-                },
-            ]
-        },
+        use_enum_values=True, json_schema_extra=_update_json_schema_extra
     )
 
 
