@@ -18,7 +18,7 @@ from ...datcore_dsm import DatCoreDataManager
 from ...dsm import get_dsm_provider
 from ...exceptions.errors import FileAccessRightError
 from ...modules.celery import get_celery_client
-from ...modules.celery.models import TaskMetadata
+from ...modules.celery.models import _CELERY_CPU_BOUND_QUEUE_NAME, TaskMetadata
 from ...modules.datcore_adapter.datcore_adapter_exceptions import DatcoreAdapterError
 from ...simcore_s3_dsm import SimcoreS3DataManager
 
@@ -61,7 +61,9 @@ async def start_data_export(
         task_uuid = await get_celery_client(app).send_task(
             "export_data",
             task_context=job_id_data.model_dump(),
-            task_metadata=TaskMetadata(ephemeral=False, queue="cpu-bound"),
+            task_metadata=TaskMetadata(
+                ephemeral=False, queue=_CELERY_CPU_BOUND_QUEUE_NAME
+            ),
             files=data_export_start.file_and_folder_ids,  # ANE: adapt here your signature
         )
     except CeleryError as exc:
