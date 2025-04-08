@@ -18,7 +18,7 @@ from ...datcore_dsm import DatCoreDataManager
 from ...dsm import get_dsm_provider
 from ...exceptions.errors import FileAccessRightError
 from ...modules.celery import get_celery_client
-from ...modules.celery.models import _CELERY_CPU_BOUND_QUEUE_NAME, TaskMetadata
+from ...modules.celery.models import TaskMetadata, TasksQueue
 from ...modules.datcore_adapter.datcore_adapter_exceptions import DatcoreAdapterError
 from ...simcore_s3_dsm import SimcoreS3DataManager
 
@@ -62,7 +62,8 @@ async def start_data_export(
             "export_data",
             task_context=job_id_data.model_dump(),
             task_metadata=TaskMetadata(
-                ephemeral=False, queue=_CELERY_CPU_BOUND_QUEUE_NAME
+                ephemeral=False,
+                queue=TasksQueue.CPU_BOUND.name,
             ),
             files=data_export_start.file_and_folder_ids,  # ANE: adapt here your signature
         )

@@ -10,7 +10,6 @@ TaskContext: TypeAlias = dict[str, Any]
 TaskID: TypeAlias = str
 TaskUUID: TypeAlias = UUID
 
-_CELERY_CPU_BOUND_QUEUE_NAME: Final[str] = "cpu_bound"
 _CELERY_TASK_ID_KEY_SEPARATOR: Final[str] = ":"
 
 
@@ -32,6 +31,11 @@ class TaskState(StrEnum):
     SUCCESS = auto()
     ERROR = auto()
     ABORTED = auto()
+
+
+class TasksQueue(StrEnum):
+    CPU_BOUND = auto()
+    DEFAULT = auto()
 
 
 class TaskMetadata(BaseModel):
