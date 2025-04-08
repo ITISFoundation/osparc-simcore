@@ -526,7 +526,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       });
 
       if (resourceData["resourceType"] === "study" || resourceData["resourceType"] === "template") {
-        osparc.store.Services.getStudyServices(this.getResourceData()["uuid"])
+        osparc.store.Services.getStudyServices(resourceData.uuid)
           .then(resp => {
             const services = resp["services"];
             resourceData["services"] = services;

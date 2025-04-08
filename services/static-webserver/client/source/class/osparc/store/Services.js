@@ -285,7 +285,7 @@ qx.Class.define("osparc.store.Services", {
       wbServices.forEach(srv => {
         promises.push(this.getService(srv["key"], srv["version"]));
       });
-      return Promise.all(promises);
+      return Promise.allSettled(promises);
     },
 
     getInaccessibleServices: function(workbench) {
