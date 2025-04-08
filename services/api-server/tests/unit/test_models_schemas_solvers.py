@@ -5,7 +5,7 @@
 from operator import attrgetter
 
 from faker import Faker
-from simcore_service_api_server.models.schemas.programs import Version
+from packaging.version import Version
 from simcore_service_api_server.models.schemas.solvers import Solver
 
 
