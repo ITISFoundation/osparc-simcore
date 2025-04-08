@@ -95,18 +95,19 @@ async def result(
     if _status.task_state == TaskState.ABORTED:
         raise JobAbortedError(job_id=job_id)
     if _status.task_state == TaskState.ERROR:
-        # NOTE: recover original error from wrapped error
-        exception = None
-        exc_type = None
-        exc_msg = f"{_result}"  # try to deseialise something
+        # fallback exception to report
+        exc_type = type(_result).__name__
+        exc_msg = f"{_result}"
 
+        # try to recover the original error
+        exception = None
         with log_catch(_logger, reraise=False):
             exception = decode_celery_transferrable_error(_result)
             exc_type = type(exception).__name__
             exc_msg = f"{exception}"
 
         if exception is None:
-            _logger.warning("Was not expecting %s", _result)
+            _logger.warning("Was not expecting '%s': '%s'", exc_type, exc_msg)
 
         # NOTE: cannot transfer original exception since this will not be able to be serialized
         # outside of storage

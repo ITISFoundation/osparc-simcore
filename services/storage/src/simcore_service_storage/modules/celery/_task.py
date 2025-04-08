@@ -71,7 +71,8 @@ def _error_handling(
             except Exception as exc:
                 if isinstance(exc, dont_autoretry_for):
                     _logger.debug("Not retrying for exception %s", type(exc).__name__)
-                    raise  # propagate without retry
+                    # propagate without retry
+                    raise encore_celery_transferrable_error(exc) from exc
 
                 exc_type = type(exc).__name__
                 exc_message = f"{exc}"
