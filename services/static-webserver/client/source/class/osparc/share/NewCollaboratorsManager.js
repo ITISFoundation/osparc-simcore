@@ -33,12 +33,23 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
     this.__potentialCollaborators = {};
     this.__reloadPotentialCollaborators();
 
+    this.__shareWithEmailEnabled = false;
+    if (this.__resourceData["resourceType"] === "study") {
+      osparc.utils.DisabledPlugins.isShareWithEmailEnabled()
+        .then(isEnabled => {
+          if (isEnabled) {
+            this.__shareWithEmailEnabled = true;
+          }
+        });
+    }
+
     this.center();
     this.open();
   },
 
   events: {
-    "addCollaborators": "qx.event.type.Data"
+    "addCollaborators": "qx.event.type.Data",
+    "shareWithEmails": "qx.event.type.Data",
   },
 
   members: {
@@ -65,6 +76,10 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
           this.add(control);
           break;
         }
+        case "filter-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+          this.add(control);
+          break;
         case "text-filter": {
           control = new osparc.filter.TextFilter("name", "collaboratorsManager");
           control.setCompact(true);
@@ -72,7 +87,24 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
           filterTextField.setPlaceholder(this.tr("Search"));
           filterTextField.setBackgroundColor("transparent");
           this.addListener("appear", () => filterTextField.focus());
-          this.add(control);
+          this.getChildControl("filter-layout").add(control, {
+            flex: 1
+          });
+          break;
+        }
+        case "send-email-button": {
+          control = new qx.ui.form.Button(this.tr("Send email"));
+          control.exclude();
+          control.addListener("execute", () => {
+            const textField = this.getChildControl("text-filter").getChildControl("textfield");
+            const email = textField.getValue();
+            if (osparc.auth.core.Utils.checkEmail(email)) {
+              const invitedButton = this.__invitedButton(email);
+              this.getChildControl("potential-collaborators-list").addAt(invitedButton, 0);
+              invitedButton.setValue(true);
+            }
+          });
+          this.getChildControl("filter-layout").add(control);
           break;
         }
         case "potential-collaborators-list": {
@@ -143,11 +175,18 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       const textFilter = this.getChildControl("text-filter");
       const filterTextField = textFilter.getChildControl("textfield");
       filterTextField.addListener("input", e => {
-        const filterValue = e.getData();
+        const inputValue = e.getData();
         if (this.__searchDelayer) {
           clearTimeout(this.__searchDelayer);
         }
-        if (filterValue.length > 3) {
+        const sendEmailButton = this.getChildControl("send-email-button");
+        sendEmailButton.exclude();
+        if (inputValue.length > 3) {
+          if (this.__shareWithEmailEnabled) {
+            if (osparc.auth.core.Utils.checkEmail(inputValue)) {
+              sendEmailButton.show();
+            }
+          }
           const waitBeforeSearching = 1000;
           this.__searchDelayer = setTimeout(() => {
             this.__searchUsers();
@@ -220,13 +259,10 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       this.__addPotentialCollaborators();
     },
 
-    __collaboratorButton: function(collaborator, preSelected = false) {
+    __collaboratorButton: function(collaborator) {
       const collaboratorButton = new osparc.filter.CollaboratorToggleButton(collaborator);
       collaboratorButton.groupId = collaborator.getGroupId();
-      collaboratorButton.setValue(preSelected);
-      if (!preSelected) {
-        collaboratorButton.subscribeToFilterGroup("collaboratorsManager");
-      }
+      collaboratorButton.subscribeToFilterGroup("collaboratorsManager");
 
       collaboratorButton.addListener("changeValue", e => {
         const selected = e.getData();
@@ -235,6 +271,34 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
           collaboratorButton.unsubscribeToFilterGroup("collaboratorsManager");
         } else if (collaborator.getGroupId() in this.__selectedCollaborators) {
           delete this.__selectedCollaborators[collaborator.getGroupId()];
+          collaboratorButton.subscribeToFilterGroup("collaboratorsManager");
+        }
+        this.getChildControl("share-button").setEnabled(Boolean(Object.keys(this.__selectedCollaborators).length));
+      }, this);
+      return collaboratorButton;
+    },
+
+    __invitedButton: function(email) {
+      if (email in this.__selectedCollaborators) {
+        return this.__selectedCollaborators[email];
+      }
+
+      const collaboratorData = {
+        label: email,
+        email: email,
+        description: null,
+      };
+      const collaborator = qx.data.marshal.Json.createModel(collaboratorData);
+      const collaboratorButton = new osparc.filter.CollaboratorToggleButton(collaborator);
+      collaboratorButton.setIconSrc("@FontAwesome5Solid/envelope/14");
+
+      collaboratorButton.addListener("changeValue", e => {
+        const selected = e.getData();
+        if (selected) {
+          this.__selectedCollaborators[collaborator.getEmail()] = collaborator;
+          collaboratorButton.unsubscribeToFilterGroup("collaboratorsManager");
+        } else if (collaborator.getEmail() in this.__selectedCollaborators) {
+          delete this.__selectedCollaborators[collaborator.getEmail()];
           collaboratorButton.subscribeToFilterGroup("collaboratorsManager");
         }
         this.getChildControl("share-button").setEnabled(Boolean(Object.keys(this.__selectedCollaborators).length));
@@ -315,10 +379,47 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
         }
       }
       if (Object.keys(this.__selectedCollaborators).length) {
-        this.fireDataEvent("addCollaborators", {
-          selectedGids: Object.keys(this.__selectedCollaborators),
-          newAccessRights,
-        });
+        const selectedGIds = Object.keys(this.__selectedCollaborators).filter(key => qx.lang.Type.isNumber(key));
+        const selectedEmails = Object.keys(this.__selectedCollaborators).filter(key => osparc.auth.core.Utils.checkEmail(key));
+
+        const addCollaborators = () => {
+          if (selectedGIds.length) {
+            this.fireDataEvent("addCollaborators", {
+              selectedGids: selectedGIds,
+              newAccessRights,
+            });
+          }
+        };
+
+        const sendEmails = message => {
+          if (selectedEmails.length) {
+            this.fireDataEvent("shareWithEmails", {
+              selectedEmails,
+              newAccessRights,
+              message,
+            });
+          }
+        };
+
+        if (selectedEmails.length) {
+          const dialog = new osparc.ui.window.Confirmation();
+          dialog.setCaption(this.tr("Add Message"));
+          dialog.setMessage(this.tr("Add a message to include in the email (optional)"));
+          dialog.getConfirmButton().setLabel(this.tr("Send"));
+          const messageEditor = new qx.ui.form.TextArea().set({
+            autoSize: true,
+            minHeight: 70,
+            maxHeight: 140,
+          });
+          dialog.addWidget(messageEditor);
+          dialog.open();
+          dialog.addListener("close", () => {
+            addCollaborators();
+            sendEmails(messageEditor.getValue());
+          }, this);
+        } else {
+          addCollaborators();
+        }
       }
     }
   }

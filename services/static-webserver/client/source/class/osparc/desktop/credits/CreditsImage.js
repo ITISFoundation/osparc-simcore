@@ -21,6 +21,8 @@ qx.Class.define("osparc.desktop.credits.CreditsImage", {
   construct: function() {
     this.base(arguments, "osparc/coins-solid.svg");
 
+    osparc.utils.Utils.setAltToImage(this.getChildControl("image"), "credits-left");
+
     const store = osparc.store.Store.getInstance();
     store.addListener("changeContextWallet", this.__updateWallet, this);
     this.__updateWallet();

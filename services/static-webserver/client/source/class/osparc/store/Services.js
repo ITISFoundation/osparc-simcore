@@ -20,6 +20,8 @@ qx.Class.define("osparc.store.Services", {
 
   statics: {
     __servicesCached: {},
+    __servicesPromisesCached: {},
+    __studyServicesPromisesCached: {},
 
     getServicesLatest: function(useCache = true) {
       return new Promise(resolve => {
@@ -30,7 +32,7 @@ qx.Class.define("osparc.store.Services", {
           return;
         }
 
-        osparc.data.Resources.getInstance().getAllPages("servicesV2")
+        osparc.data.Resources.getInstance().getAllPages("services")
           .then(servicesArray => {
             const servicesObj = osparc.service.Utils.convertArrayToObject(servicesArray);
             this.__addHits(servicesObj);
@@ -99,6 +101,11 @@ qx.Class.define("osparc.store.Services", {
     },
 
     getService: function(key, version, useCache = true) {
+      // avoid request deduplication
+      if (key in this.__servicesPromisesCached && version in this.__servicesPromisesCached[key]) {
+        return this.__servicesPromisesCached[key][version];
+      }
+
       return new Promise((resolve, reject) => {
         if (
           useCache &&
@@ -109,10 +116,13 @@ qx.Class.define("osparc.store.Services", {
           return;
         }
 
+        if (!(key in this.__servicesPromisesCached)) {
+          this.__servicesPromisesCached[key] = {};
+        }
         const params = {
           url: osparc.data.Resources.getServiceUrl(key, version)
         };
-        osparc.data.Resources.fetch("servicesV2", "getOne", params)
+        this.__servicesPromisesCached[key][version] = osparc.data.Resources.fetch("services", "getOne", params)
           .then(service => {
             this.__addHit(service);
             this.__addTSRInfo(service);
@@ -121,10 +131,34 @@ qx.Class.define("osparc.store.Services", {
             resolve(service);
           })
           .catch(err => {
+            // store it in cache to avoid asking again
+            this.__servicesCached[key][version] = null;
             console.error(err);
             reject();
+          })
+          .finally(() => {
+            delete this.__servicesPromisesCached[key][version];
           });
       });
+    },
+
+    getStudyServices: function(studyId) {
+      // avoid request deduplication
+      if (studyId in this.__studyServicesPromisesCached) {
+        return this.__studyServicesPromisesCached[studyId];
+      }
+
+      const params = {
+        url: {
+          studyId
+        }
+      };
+      this.__studyServicesPromisesCached[studyId] = osparc.data.Resources.fetch("studies", "getServices", params)
+        .finally(() => {
+          delete this.__studyServicesPromisesCached[studyId];
+        });
+
+      return this.__studyServicesPromisesCached[studyId]
     },
 
     __getAllVersions: function(key) {
@@ -235,7 +269,7 @@ qx.Class.define("osparc.store.Services", {
         url: osparc.data.Resources.getServiceUrl(key, version),
         data: patchData
       };
-      return osparc.data.Resources.fetch("servicesV2", "patch", params)
+      return osparc.data.Resources.fetch("services", "patch", params)
         .then(() => {
           this.__servicesCached[key][version][fieldKey] = value;
           serviceData[fieldKey] = value;
