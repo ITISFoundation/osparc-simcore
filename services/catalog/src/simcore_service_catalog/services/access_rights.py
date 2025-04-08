@@ -1,6 +1,4 @@
-""" Services Access Rights policies
-
-"""
+"""Services Access Rights policies"""
 
 import logging
 import operator
@@ -16,7 +14,7 @@ from packaging.version import Version
 from pydantic.types import PositiveInt
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from ..api.dependencies.director import get_director_api
+from ..api._dependencies.director import get_director_api
 from ..db.repositories.groups import GroupsRepository
 from ..db.repositories.services import ServicesRepository
 from ..models.services_db import ServiceAccessRightsAtDB

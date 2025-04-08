@@ -24,14 +24,14 @@ _logger = logging.getLogger(__name__)
 
 
 def get_default_service_resources(
-    app: Annotated[FastAPI, Depends(get_app)]
+    app: Annotated[FastAPI, Depends(get_app)],
 ) -> ResourcesDict:
     app_settings: ApplicationSettings = app.state.settings
     return app_settings.CATALOG_SERVICES_DEFAULT_RESOURCES
 
 
 def get_default_service_specifications(
-    app: Annotated[FastAPI, Depends(get_app)]
+    app: Annotated[FastAPI, Depends(get_app)],
 ) -> ServiceSpecifications:
     app_settings: ApplicationSettings = app.state.settings
     return app_settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS

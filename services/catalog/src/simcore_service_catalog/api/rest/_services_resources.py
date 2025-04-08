@@ -30,10 +30,10 @@ from ...utils.service_resources import (
     merge_service_resources_with_user_specs,
     parse_generic_resource,
 )
-from ..dependencies.database import get_repository
-from ..dependencies.director import get_director_api
-from ..dependencies.services import get_default_service_resources
-from ..dependencies.user_groups import list_user_groups
+from .._dependencies.database import get_repository
+from .._dependencies.director import get_director_api
+from .._dependencies.services import get_default_service_resources
+from .._dependencies.user_groups import list_user_groups
 
 router = APIRouter()
 _logger = logging.getLogger(__name__)
@@ -149,7 +149,7 @@ async def _get_service_labels(
 
 
 def _get_service_settings(
-    labels: dict[str, Any]
+    labels: dict[str, Any],
 ) -> list[SimcoreServiceSettingLabelEntry]:
     service_settings = TypeAdapter(list[SimcoreServiceSettingLabelEntry]).validate_json(
         labels.get(SIMCORE_SERVICE_SETTINGS_LABELS, "[]"),
