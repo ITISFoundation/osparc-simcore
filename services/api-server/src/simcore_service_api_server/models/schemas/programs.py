@@ -6,7 +6,10 @@ from models_library.services import ServiceMetaDataPublished
 from models_library.services_regex import DYNAMIC_SERVICE_KEY_RE
 from packaging.version import Version
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, StringConstraints
-from simcore_service_api_server.models.schemas._utils import ApiServerOutputSchema
+from simcore_service_api_server.models.schemas._base import (
+    ApiServerOutputSchema,
+    BaseService,
+)
 
 from ...models._utils_pydantic import UriSchema
 from ..api_resources import compose_resource_name
@@ -27,7 +30,7 @@ ProgramKeyId = Annotated[
 ]
 
 
-class BaseResource(BaseModel):
+class BaseService(BaseModel):
     id: Annotated[str, Field(..., description="Resource identifier")]
     version: Annotated[
         VersionStr, Field(..., description="Semantic version number of the resource")
@@ -71,7 +74,7 @@ class BaseResource(BaseModel):
         raise NotImplementedError("Subclasses must implement this method")
 
 
-class Program(BaseResource, ApiServerOutputSchema):
+class Program(BaseService, ApiServerOutputSchema):
     """A released program with a specific version"""
 
     model_config = ConfigDict(

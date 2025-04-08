@@ -5,7 +5,7 @@ from models_library.services import ServiceMetaDataPublished
 from models_library.services_regex import COMPUTATIONAL_SERVICE_KEY_RE
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
-from ...models.schemas.programs import BaseResource
+from ...models.schemas._base import BaseService
 from ..api_resources import compose_resource_name
 
 # NOTE:
@@ -32,7 +32,7 @@ SolverKeyId = Annotated[
 ]
 
 
-class Solver(BaseResource):
+class Solver(BaseService):
     """A released solver with a specific version"""
 
     maintainer: str = Field(..., description="Maintainer of the solver")
