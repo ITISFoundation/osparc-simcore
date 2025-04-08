@@ -194,7 +194,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       };
       Promise.all([
         osparc.data.Resources.fetch("studies", "getOne", params),
-        osparc.data.Resources.fetch("studies", "getServices", params)
+        osparc.store.Services.getStudyServices(this.__resourceData["uuid"]),
       ])
         .then(values => {
           const updatedStudyData = values[0];
