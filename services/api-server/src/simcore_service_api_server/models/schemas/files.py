@@ -60,7 +60,7 @@ class File(ApiServerOutputSchema):
             description="Guess of type content [EXPERIMENTAL]",
             validate_default=True,
         ),
-    ]
+    ] = None
     sha256_checksum: Annotated[
         SHA256Str | None,
         Field(
@@ -68,8 +68,10 @@ class File(ApiServerOutputSchema):
             description="SHA256 hash of the file's content",
             alias="checksum",  # alias for backwards compatibility
         ),
-    ]
-    e_tag: Annotated[ETag | None, Field(default=None, description="S3 entity tag")]
+    ] = None
+    e_tag: Annotated[ETag | None, Field(default=None, description="S3 entity tag")] = (
+        None
+    )
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -107,7 +109,7 @@ class File(ApiServerOutputSchema):
             id=file.id,
             filename=file.filename,
             content_type=file.content_type,
-            checksum=file.sha256_checksum,
+            sha256_checksum=file.sha256_checksum,
             e_tag=file.e_tag,
         )
 

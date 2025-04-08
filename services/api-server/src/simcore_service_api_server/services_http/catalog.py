@@ -73,7 +73,6 @@ class TruncatedCatalogServiceOut(ServiceMetaDataPublished):
             id=data.pop("key"),
             version=data.pop("version"),
             title=data.pop("name"),
-            maintainer=data.pop("owner") or data.pop("contact"),
             url=None,
             **data,
         )
