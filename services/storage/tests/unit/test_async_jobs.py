@@ -138,12 +138,14 @@ def register_celery_tasks() -> Callable[[Celery], None]:
             sync_job,
             max_retries=1,
             delay_between_retries=timedelta(seconds=1),
+            dont_autoretry_for=(AccessRightError,),
         )
         register_task(
             celery_app,
             async_job,
             max_retries=1,
             delay_between_retries=timedelta(seconds=1),
+            dont_autoretry_for=(AccessRightError,),
         )
 
     return _
