@@ -58,7 +58,7 @@ def test_job_io_checksums(repeat: int):
     ), f"{inputs1}!={inputs2}"
 
 
-def test_job_resouce_names_has_associated_url(app: FastAPI):
+def test_job_resource_names_has_associated_url(app: FastAPI):
     solver_key = "z43/name with spaces/isolve"
     solver_version = "1.0.3"
     job_id = uuid4()

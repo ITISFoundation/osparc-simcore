@@ -1,21 +1,27 @@
 import datetime
 import hashlib
 import logging
+from collections.abc import Callable
+from pathlib import Path
 from typing import Annotated, TypeAlias
 from uuid import UUID, uuid4
 
+from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
+from models_library.services_types import FileName
 from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
     HttpUrl,
+    NonNegativeInt,
     PositiveInt,
     StrictBool,
     StrictFloat,
     StrictInt,
+    StringConstraints,
     TypeAdapter,
     ValidationError,
     ValidationInfo,
@@ -24,14 +30,27 @@ from pydantic import (
 from servicelib.logging_utils import LogLevelInt, LogMessageStr
 from starlette.datastructures import Headers
 
-from ...models.schemas.files import File
-from ...models.schemas.solvers import Solver
+from ...models.schemas.files import File, UserFile
 from .._utils_pydantic import UriSchema
 from ..api_resources import (
     RelativeResourceName,
     compose_resource_name,
     split_resource_name,
 )
+from ..basic_types import VersionStr
+from ..domain.files import File as DomainFile
+from ..domain.files import FileInProgramJobData
+from ..schemas.files import UserFile
+from ._base import ApiServerInputSchema
+
+# JOB SUB-RESOURCES  ----------
+#
+#  - Wrappers for input/output values
+#  - Input/outputs are defined in service metadata
+#  - custom metadata
+#
+from .programs import Program, ProgramKeyId
+from .solvers import Solver
 
 JobID: TypeAlias = UUID
 
@@ -55,12 +74,42 @@ def _compute_keyword_arguments_checksum(kwargs: KeywordArguments):
     return hashlib.sha256(_dump_str.encode("utf-8")).hexdigest()
 
 
-# JOB SUB-RESOURCES  ----------
-#
-#  - Wrappers for input/output values
-#  - Input/outputs are defined in service metadata
-#  - custom metadata
-#
+class UserFileToProgramJob(ApiServerInputSchema):
+    filename: Annotated[FileName, Field(..., description="File name")]
+    filesize: Annotated[NonNegativeInt, Field(..., description="File size in bytes")]
+    sha256_checksum: Annotated[SHA256Str, Field(..., description="SHA256 checksum")]
+    program_key: Annotated[ProgramKeyId, Field(..., description="Program identifier")]
+    program_version: Annotated[VersionStr, Field(..., description="Program version")]
+    job_id: Annotated[JobID, Field(..., description="Job identifier")]
+    workspace_path: Annotated[
+        Path,
+        StringConstraints(pattern=r"^workspace/.*"),
+        Field(
+            ...,
+            description="The file's relative path within the job's workspace directory. E.g. 'workspace/myfile.txt'",
+        ),
+    ]
+
+    def to_domain_model(self, *, project_id: ProjectID, node_id: NodeID) -> DomainFile:
+        return DomainFile(
+            id=DomainFile.create_id(
+                self.filesize,
+                self.filename,
+                datetime.datetime.now(datetime.UTC).isoformat(),
+            ),
+            filename=self.filename,
+            checksum=self.sha256_checksum,
+            program_job_file_path=FileInProgramJobData(
+                project_id=project_id,
+                node_id=node_id,
+                workspace_path=self.workspace_path,
+            ),
+        )
+
+
+assert set(UserFile.model_fields.keys()).issubset(
+    set(UserFileToProgramJob.model_fields.keys())
+)  # nosec
 
 
 class JobInputs(BaseModel):
@@ -255,9 +304,11 @@ class Job(BaseModel):
         )
 
     @classmethod
-    def create_solver_job(cls, *, solver: Solver, inputs: JobInputs):
+    def create_job_from_solver_or_program(
+        cls, *, solver_or_program_name: str, inputs: JobInputs
+    ):
         return Job.create_now(
-            parent_name=solver.name,
+            parent_name=solver_or_program_name,
             inputs_checksum=inputs.compute_checksum(),
         )
 
@@ -278,6 +329,44 @@ class Job(BaseModel):
     def resource_name(self) -> str:
         """Relative Resource Name"""
         return self.name
+
+
+def get_url(
+    solver_or_program: Solver | Program, url_for: Callable[..., HttpUrl], job_id: JobID
+) -> HttpUrl | None:
+    if isinstance(solver_or_program, Solver):
+        return url_for(
+            "get_job",
+            solver_key=solver_or_program.id,
+            version=solver_or_program.version,
+            job_id=job_id,
+        )
+    return None
+
+
+def get_runner_url(
+    solver_or_program: Solver | Program, url_for: Callable[..., HttpUrl]
+) -> HttpUrl | None:
+    if isinstance(solver_or_program, Solver):
+        return url_for(
+            "get_solver_release",
+            solver_key=solver_or_program.id,
+            version=solver_or_program.version,
+        )
+    return None
+
+
+def get_outputs_url(
+    solver_or_program: Solver | Program, url_for: Callable[..., HttpUrl], job_id: JobID
+) -> HttpUrl | None:
+    if isinstance(solver_or_program, Solver):
+        return url_for(
+            "get_job_outputs",
+            solver_key=solver_or_program.id,
+            version=solver_or_program.version,
+            job_id=job_id,
+        )
+    return None
 
 
 PercentageInt: TypeAlias = Annotated[int, Field(ge=0, le=100)]

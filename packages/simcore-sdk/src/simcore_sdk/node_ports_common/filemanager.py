@@ -45,16 +45,18 @@ async def complete_file_upload(
     uploaded_parts: list[UploadedPart],
     upload_completion_link: AnyUrl,
     client_session: ClientSession | None = None,
-) -> ETag:
+    is_directory: bool = False,
+) -> ETag | None:
     async with ClientSessionContextManager(client_session) as session:
         e_tag: ETag | None = await _filemanager_utils.complete_upload(
             session=session,
             upload_completion_link=upload_completion_link,
             parts=uploaded_parts,
-            is_directory=False,
+            is_directory=is_directory,
         )
     # should not be None because a file is being uploaded
-    assert e_tag is not None  # nosec
+    if not is_directory:
+        assert e_tag is not None  # nosec
     return e_tag
 
 
@@ -278,8 +280,7 @@ class UploadedFile:
 
 
 @dataclass
-class UploadedFolder:
-    ...
+class UploadedFolder: ...
 
 
 async def _generate_checksum(
