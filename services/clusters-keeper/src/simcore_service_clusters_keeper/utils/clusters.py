@@ -9,6 +9,8 @@ import arrow
 import yaml
 from aws_library.ec2 import EC2InstanceBootSpecific, EC2InstanceData, EC2Tags
 from aws_library.ec2._models import CommandStr
+from common_library.json_serialization import json_dumps
+from common_library.serialization import model_dump_with_secrets
 from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_clusters_keeper.clusters import (
     ClusterState,
@@ -102,7 +104,7 @@ def _prepare_environment_variables(
         f"WORKERS_EC2_INSTANCES_SUBNET_ID={app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_SUBNET_ID}",
         f"WORKERS_EC2_INSTANCES_TIME_BEFORE_DRAINING={app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_TIME_BEFORE_DRAINING}",
         f"WORKERS_EC2_INSTANCES_TIME_BEFORE_TERMINATION={app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_TIME_BEFORE_TERMINATION}",
-        f"AUTOSCALING_RABBITMQ={app_settings.CLUSTERS_KEEPER_RABBITMQ.model_dump_json() if app_settings.CLUSTERS_KEEPER_RABBITMQ else 'null'}",
+        f"AUTOSCALING_RABBITMQ={json_dumps(model_dump_with_secrets(app_settings.CLUSTERS_KEEPER_RABBITMQ, show_secrets=True)) if app_settings.CLUSTERS_KEEPER_RABBITMQ else 'null'}",
     ]
 
 
