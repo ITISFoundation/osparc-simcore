@@ -75,9 +75,9 @@ def _compute_keyword_arguments_checksum(kwargs: KeywordArguments):
 
 
 class UserFileToProgramJob(ApiServerInputSchema):
-    filename: FileName = Field(..., description="File name")
-    filesize: NonNegativeInt = Field(..., description="File size in bytes")
-    sha256_checksum: SHA256Str = Field(..., description="SHA256 checksum")
+    filename: Annotated[FileName, Field(..., description="File name")]
+    filesize: Annotated[NonNegativeInt, Field(..., description="File size in bytes")]
+    sha256_checksum: Annotated[SHA256Str, Field(..., description="SHA256 checksum")]
     program_key: Annotated[ProgramKeyId, Field(..., description="Program identifier")]
     program_version: Annotated[VersionStr, Field(..., description="Program version")]
     job_id: Annotated[JobID, Field(..., description="Job identifier")]

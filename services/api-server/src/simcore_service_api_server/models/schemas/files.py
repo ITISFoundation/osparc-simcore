@@ -24,9 +24,9 @@ from ._base import ApiServerInputSchema, ApiServerOutputSchema
 class UserFile(ApiServerInputSchema):
     """Represents a file stored on the client side"""
 
-    filename: FileName = Field(..., description="File name")
-    filesize: NonNegativeInt = Field(..., description="File size in bytes")
-    sha256_checksum: SHA256Str = Field(..., description="SHA256 checksum")
+    filename: Annotated[FileName, Field(..., description="File name")]
+    filesize: Annotated[NonNegativeInt, Field(..., description="File size in bytes")]
+    sha256_checksum: Annotated[SHA256Str, Field(..., description="SHA256 checksum")]
 
     def to_domain_model(
         self,
@@ -51,23 +51,25 @@ class UserFile(ApiServerInputSchema):
 class File(ApiServerOutputSchema):
     """Represents a file stored on the server side i.e. a unique reference to a file in the cloud."""
 
-    # WARNING: from pydantic import File as FileParam
-    # NOTE: see https://ant.apache.org/manual/Tasks/checksum.html
-
-    id: UUID = Field(..., description="Resource identifier")
-
-    filename: str = Field(..., description="Name of the file with extension")
-    content_type: str | None = Field(
-        default=None,
-        description="Guess of type content [EXPERIMENTAL]",
-        validate_default=True,
-    )
-    sha256_checksum: SHA256Str | None = Field(
-        default=None,
-        description="SHA256 hash of the file's content",
-        alias="checksum",  # alias for backwards compatibility
-    )
-    e_tag: ETag | None = Field(default=None, description="S3 entity tag")
+    id: Annotated[UUID, Field(..., description="Resource identifier")]
+    filename: Annotated[str, Field(..., description="Name of the file with extension")]
+    content_type: Annotated[
+        str | None,
+        Field(
+            default=None,
+            description="Guess of type content [EXPERIMENTAL]",
+            validate_default=True,
+        ),
+    ]
+    sha256_checksum: Annotated[
+        SHA256Str | None,
+        Field(
+            default=None,
+            description="SHA256 hash of the file's content",
+            alias="checksum",  # alias for backwards compatibility
+        ),
+    ]
+    e_tag: Annotated[ETag | None, Field(default=None, description="S3 entity tag")]
 
     model_config = ConfigDict(
         populate_by_name=True,
