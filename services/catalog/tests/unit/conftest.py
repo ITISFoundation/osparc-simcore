@@ -200,7 +200,7 @@ async def aclient(
         headers={"Content-Type": "application/json"},
         transport=httpx.ASGITransport(app=app),
     ) as acli:
-        assert isinstance(acli._transport, httpx.ASGITransport)
+        assert isinstance(acli._transport, httpx.ASGITransport)  # noqa: SLF001
         assert spy_app.on_startup.call_count == 1
         assert spy_app.on_shutdown.call_count == 0
 
