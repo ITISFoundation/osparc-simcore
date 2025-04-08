@@ -4,6 +4,7 @@
 
 from collections.abc import Callable
 
+import simcore_service_catalog.service.access_rights
 from fastapi import FastAPI
 from models_library.groups import GroupAtDB
 from models_library.products import ProductName
@@ -93,28 +94,29 @@ async def test_auto_upgrade_policy(
     everyone_gid, user_gid, team_gid = user_groups_ids
 
     # Avoids calls to director API
-    mocker.patch(
-        "simcore_service_catalog.services.access_rights._is_old_service",
+    mocker.patch.object(
+        simcore_service_catalog.service.access_rights,
+        "_is_old_service",
         return_value=False,
     )
     # Avoids creating a users + user_to_group table
-    data = GroupAtDB.model_config["json_schema_extra"]["example"]
+    data = GroupAtDB.model_json_schema()["example"]
     data["gid"] = everyone_gid
-    mocker.patch(
-        "simcore_service_catalog.services.access_rights.GroupsRepository.get_everyone_group",
+    mocker.patch.object(
+        simcore_service_catalog.service.access_rights.GroupsRepository,
+        "get_everyone_group",
         return_value=GroupAtDB.model_validate(data),
     )
-    mocker.patch(
-        "simcore_service_catalog.services.access_rights.GroupsRepository.get_user_gid_from_email",
+    mocker.patch.object(
+        simcore_service_catalog.service.access_rights.GroupsRepository,
+        "get_user_gid_from_email",
         return_value=user_gid,
     )
 
     # SETUP ---
     MOST_UPDATED_EXAMPLE = -1
     new_service_metadata = ServiceMetaDataPublished.model_validate(
-        ServiceMetaDataPublished.model_config["json_schema_extra"]["examples"][
-            MOST_UPDATED_EXAMPLE
-        ]
+        ServiceMetaDataPublished.model_json_schema()["examples"][MOST_UPDATED_EXAMPLE]
     )
     new_service_metadata.version = TypeAdapter(ServiceVersion).validate_python("1.0.11")
 
