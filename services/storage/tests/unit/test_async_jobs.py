@@ -20,6 +20,7 @@ from models_library.api_schemas_rpc_async_jobs.exceptions import (
     JobError,
 )
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
+from models_library.api_schemas_storage.export_data_async_jobs import AccessRightError
 from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.users import UserID
@@ -84,7 +85,7 @@ async def _process_action(action: str, payload: Any) -> Any:
         case Action.ECHO:
             return payload
         case Action.RAISE:
-            raise pickle.loads(payload)
+            raise pickle.loads(payload)  # noqa: S301
         case Action.SLEEP:
             await asyncio.sleep(payload)
     return None
@@ -294,8 +295,11 @@ async def test_async_jobs_cancel_(
 @pytest.mark.parametrize(
     "error",
     [
-        Exception("some generic exception"),
-        # TODO: figure out if osparc errors are formatted as expected
+        pytest.param(Exception("generic error"), id="generic-error"),
+        pytest.param(
+            AccessRightError(user_id=1, file_id="fake_key", location_id=0),
+            id="custom-osparc-error",
+        ),
     ],
 )
 async def test_async_jobs_raises(
