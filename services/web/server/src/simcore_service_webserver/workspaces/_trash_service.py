@@ -108,7 +108,9 @@ async def _list_root_child_projects(
             trashed=None,
             offset=page_params.offset,
             limit=page_params.limit,
-            order_by=OrderBy(field=IDStr("id"), direction=OrderDirection.ASC),
+            order_by=OrderBy(
+                field=IDStr("last_change_date"), direction=OrderDirection.DESC
+            ),
         )
 
         child_projects.extend([Project(**project).uuid for project in projects])
@@ -332,7 +334,9 @@ async def batch_delete_trashed_workspaces_as_admin(
             trashed_before=trashed_before,
             offset=page_params.offset,
             limit=page_params.limit,
-            order_by=OrderBy(field=IDStr("trashed"), direction=OrderDirection.ASC),
+            order_by=OrderBy(
+                field=IDStr("workspace_id"), direction=OrderDirection.DESC
+            ),
         )
         # BATCH delete
         for trashed_workspace in expired_trashed_workspaces:
