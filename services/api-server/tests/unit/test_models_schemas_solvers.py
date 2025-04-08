@@ -5,7 +5,8 @@
 from operator import attrgetter
 
 from faker import Faker
-from simcore_service_api_server.models.schemas.solvers import Solver, Version
+from simcore_service_api_server.models.schemas.programs import Version
+from simcore_service_api_server.models.schemas.solvers import Solver
 
 
 def test_solvers_sorting_by_name_and_version(faker: Faker):
