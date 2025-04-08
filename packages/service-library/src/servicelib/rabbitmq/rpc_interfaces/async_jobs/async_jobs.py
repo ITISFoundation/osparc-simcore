@@ -31,9 +31,8 @@ from ....rabbitmq import RemoteMethodNotRegisteredError
 from ... import RabbitMQRPCClient
 
 _DEFAULT_TIMEOUT_S: Final[NonNegativeInt] = 30
-
-_RPC_METHOD_NAME_ADAPTER = TypeAdapter(RPCMethodName)
 _DEFAULT_POLL_INTERVAL_S: Final[float] = 0.1
+
 _logger = logging.getLogger(__name__)
 
 
@@ -46,7 +45,7 @@ async def cancel(
 ) -> None:
     await rabbitmq_rpc_client.request(
         rpc_namespace,
-        _RPC_METHOD_NAME_ADAPTER.validate_python("cancel"),
+        TypeAdapter(RPCMethodName).validate_python("cancel"),
         job_id=job_id,
         job_id_data=job_id_data,
         timeout_s=_DEFAULT_TIMEOUT_S,
@@ -62,7 +61,7 @@ async def status(
 ) -> AsyncJobStatus:
     _result = await rabbitmq_rpc_client.request(
         rpc_namespace,
-        _RPC_METHOD_NAME_ADAPTER.validate_python("status"),
+        TypeAdapter(RPCMethodName).validate_python("status"),
         job_id=job_id,
         job_id_data=job_id_data,
         timeout_s=_DEFAULT_TIMEOUT_S,
@@ -80,7 +79,7 @@ async def result(
 ) -> AsyncJobResult:
     _result = await rabbitmq_rpc_client.request(
         rpc_namespace,
-        _RPC_METHOD_NAME_ADAPTER.validate_python("result"),
+        TypeAdapter(RPCMethodName).validate_python("result"),
         job_id=job_id,
         job_id_data=job_id_data,
         timeout_s=_DEFAULT_TIMEOUT_S,
@@ -98,7 +97,7 @@ async def list_jobs(
 ) -> list[AsyncJobGet]:
     _result: list[AsyncJobGet] = await rabbitmq_rpc_client.request(
         rpc_namespace,
-        _RPC_METHOD_NAME_ADAPTER.validate_python("list_jobs"),
+        TypeAdapter(RPCMethodName).validate_python("list_jobs"),
         filter_=filter_,
         job_id_data=job_id_data,
         timeout_s=_DEFAULT_TIMEOUT_S,
@@ -116,7 +115,7 @@ async def submit(
 ) -> AsyncJobGet:
     _result = await rabbitmq_rpc_client.request(
         rpc_namespace,
-        _RPC_METHOD_NAME_ADAPTER.validate_python(method_name),
+        TypeAdapter(RPCMethodName).validate_python(method_name),
         job_id_data=job_id_data,
         **kwargs,
         timeout_s=_DEFAULT_TIMEOUT_S,
