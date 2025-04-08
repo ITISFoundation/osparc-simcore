@@ -217,7 +217,10 @@ def service_caching_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
 
 @pytest.fixture
 def postgres_setup_disabled(mocker: MockerFixture):
-    mocker.patch.object(simcore_service_catalog.core.events, "postgres_lifespan")
+    mocker.patch.object(
+        simcore_service_catalog.core.events, "postgres_database_lifespan"
+    )
+    mocker.patch.object(simcore_service_catalog.core.events, "database_lifespan")
 
 
 @pytest.fixture
@@ -241,7 +244,7 @@ def background_tasks_setup_disabled(mocker: MockerFixture) -> None:
 
     mocker.patch.object(
         simcore_service_catalog.core.events,
-        "setup_background_task",
+        "background_task_lifespan",
         return_value=MockedBackgroundTaskContextManager(),
     )
 
@@ -254,8 +257,8 @@ def background_tasks_setup_disabled(mocker: MockerFixture) -> None:
 @pytest.fixture
 def rabbitmq_and_rpc_setup_disabled(mocker: MockerFixture):
     # The following services are affected if rabbitmq is not in place
-    mocker.patch.object(simcore_service_catalog.core.events, "setup_rabbitmq")
-    mocker.patch.object(simcore_service_catalog.core.events, "setup_rpc_api_routes")
+    mocker.patch.object(simcore_service_catalog.core.events, "rabbitmq_lifespan")
+    mocker.patch.object(simcore_service_catalog.core.events, "rpc_api_lifespan")
 
 
 @pytest.fixture
