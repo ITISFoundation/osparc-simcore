@@ -18,8 +18,8 @@ from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.fastapi.postgres_lifespan import (
     PostgresConfigurationError,
-    PostgresLifespanStateKeys,
-    postgres_lifespan_manager,
+    PostgresLifespanState,
+    postgres_database_lifespan,
 )
 from settings_library.application import BaseApplicationSettings
 from settings_library.postgres import PostgresSettings
@@ -58,11 +58,11 @@ def app_lifespan(
         app.state.settings = AppSettings.create_from_envs()
 
         yield {
-            PostgresLifespanStateKeys.POSTGRES_SETTINGS: app.state.settings.CATALOG_POSTGRES
+            PostgresLifespanState.POSTGRES_SETTINGS: app.state.settings.CATALOG_POSTGRES
         }
 
     async def my_database_setup(app: FastAPI, state: State) -> AsyncIterator[State]:
-        app.state.my_db_engine = state[PostgresLifespanStateKeys.POSTGRES_ASYNC_ENGINE]
+        app.state.my_db_engine = state[PostgresLifespanState.POSTGRES_ASYNC_ENGINE]
 
         yield {}
 
@@ -70,13 +70,14 @@ def app_lifespan(
     app_lifespan = LifespanManager()
     app_lifespan.add(my_app_settings)
 
-    postgres_lifespan_manager.add(my_database_setup)
-    app_lifespan.include(postgres_lifespan_manager)
+    # potsgres
+    app_lifespan.add(postgres_database_lifespan)
+    app_lifespan.add(my_database_setup)
 
     return app_lifespan
 
 
-async def test_setup_postgres_database_in_an_app(
+async def test_lifespan_postgres_database_in_an_app(
     is_pdb_enabled: bool,
     app_environment: EnvVarsDict,
     mock_create_async_engine_and_database_ready: MockType,
@@ -97,14 +98,14 @@ async def test_setup_postgres_database_in_an_app(
 
         # Verify that the async engine is in the lifespan manager state
         assert (
-            PostgresLifespanStateKeys.POSTGRES_ASYNC_ENGINE
+            PostgresLifespanState.POSTGRES_ASYNC_ENGINE
             in asgi_manager._state  # noqa: SLF001
         )
         assert app.state.my_db_engine
         assert (
             app.state.my_db_engine
             == asgi_manager._state[  # noqa: SLF001
-                PostgresLifespanStateKeys.POSTGRES_ASYNC_ENGINE
+                PostgresLifespanState.POSTGRES_ASYNC_ENGINE
             ]
         )
 
@@ -118,20 +119,20 @@ async def test_setup_postgres_database_in_an_app(
     async_engine.dispose.assert_called_once()
 
 
-async def test_setup_postgres_database_dispose_engine_on_failure(
+async def test_lifespan_postgres_database_dispose_engine_on_failure(
     is_pdb_enabled: bool,
     app_environment: EnvVarsDict,
     mock_create_async_engine_and_database_ready: MockType,
     app_lifespan: LifespanManager,
 ):
-    expected_msg = "my_faulty_setup error"
+    expected_msg = "my_faulty_lifespan error"
 
     def raise_error():
         raise RuntimeError(expected_msg)
 
     @app_lifespan.add
-    async def my_faulty_setup(app: FastAPI, state: State) -> AsyncIterator[State]:
-        assert PostgresLifespanStateKeys.POSTGRES_ASYNC_ENGINE in state
+    async def my_faulty_lifespan(app: FastAPI, state: State) -> AsyncIterator[State]:
+        assert PostgresLifespanState.POSTGRES_ASYNC_ENGINE in state
         raise_error()
         yield {}
 
@@ -154,14 +155,13 @@ async def test_setup_postgres_database_with_empty_pg_settings(
     is_pdb_enabled: bool,
 ):
     async def my_app_settings(app: FastAPI) -> AsyncIterator[State]:
-        yield {PostgresLifespanStateKeys.POSTGRES_SETTINGS: None}
+        yield {PostgresLifespanState.POSTGRES_SETTINGS: None}
 
-    app_lifespan_manager = LifespanManager()
-    app_lifespan_manager.add(my_app_settings)
+    app_lifespan = LifespanManager()
+    app_lifespan.add(my_app_settings)
+    app_lifespan.add(postgres_database_lifespan)
 
-    app_lifespan_manager.include(postgres_lifespan_manager)
-
-    app = FastAPI(lifespan=app_lifespan_manager)
+    app = FastAPI(lifespan=app_lifespan)
 
     with pytest.raises(PostgresConfigurationError, match="postgres cannot be disabled"):
         async with ASGILifespanManager(

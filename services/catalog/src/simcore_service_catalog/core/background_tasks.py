@@ -236,7 +236,7 @@ async def stop_registry_sync_task(app: FastAPI) -> None:
     _logger.info("registry syncing task stopped")
 
 
-async def setup_background_task(app: FastAPI) -> AsyncIterator[State]:
+async def background_task_lifespan(app: FastAPI) -> AsyncIterator[State]:
     await start_registry_sync_task(app)
     try:
         yield {}

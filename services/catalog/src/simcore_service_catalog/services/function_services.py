@@ -34,7 +34,7 @@ def get_function_service(key, version) -> ServiceMetaDataPublished:
         ) from err
 
 
-async def setup_function_services(app: FastAPI) -> AsyncIterator[State]:
+async def function_services_lifespan(app: FastAPI) -> AsyncIterator[State]:
     app.state.frontend_services_catalog = [
         _as_dict(metadata) for metadata in iter_service_docker_data()
     ]
@@ -48,5 +48,5 @@ async def setup_function_services(app: FastAPI) -> AsyncIterator[State]:
 __all__: tuple[str, ...] = (
     "get_function_service",
     "is_function_service",
-    "setup_function_services",
+    "function_services_lifespan",
 )

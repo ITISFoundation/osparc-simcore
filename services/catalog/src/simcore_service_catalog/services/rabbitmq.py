@@ -17,7 +17,7 @@ def get_rabbitmq_settings(app: FastAPI) -> RabbitSettings:
     return settings
 
 
-async def setup_rabbitmq(app: FastAPI) -> AsyncIterator[State]:
+async def rabbitmq_lifespan(app: FastAPI) -> AsyncIterator[State]:
     settings: RabbitSettings = get_rabbitmq_settings(app)
     await wait_till_rabbitmq_responsive(settings.dsn)
 

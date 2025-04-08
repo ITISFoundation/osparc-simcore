@@ -56,7 +56,7 @@ async def test_multiple_lifespan_managers(capsys: pytest.CaptureFixture):
 
 
 @pytest.fixture
-def postgres_lifespan_mng() -> LifespanManager:
+def postgres_lifespan() -> LifespanManager:
     lifespan_manager = LifespanManager()
 
     @lifespan_manager.add
@@ -70,8 +70,8 @@ def postgres_lifespan_mng() -> LifespanManager:
         with log_context(logging.INFO, "postgres_async_engine"):
             # pass state to children
 
-            state["postgres"].update(aengine="Some Async Engine")
-            yield state
+            current = state["postgres"]
+            yield {"postgres": {"aengine": "Some Async Engine", **current}}
 
     return lifespan_manager
 
@@ -94,13 +94,13 @@ def rabbitmq_lifespan() -> LifespanManager:
 
 
 async def test_app_lifespan_composition(
-    postgres_lifespan_mng: LifespanManager, rabbitmq_lifespan: LifespanManager
+    postgres_lifespan: LifespanManager, rabbitmq_lifespan: LifespanManager
 ):
     # The app has its own database and rpc-server to initialize
     # this is how you connect the lifespans pre-defined in servicelib
 
-    @postgres_lifespan_mng.add
-    async def setup_database(app: FastAPI, state: State) -> AsyncIterator[State]:
+    @postgres_lifespan.add
+    async def database_lifespan(app: FastAPI, state: State) -> AsyncIterator[State]:
 
         with log_context(logging.INFO, "app database"):
             assert state["postgres"] == {
@@ -119,7 +119,7 @@ async def test_app_lifespan_composition(
             assert app.state.database_engine
 
     @rabbitmq_lifespan.add
-    async def setup_rpc_server(app: FastAPI, state: State) -> AsyncIterator[State]:
+    async def rpc_service_lifespan(app: FastAPI, state: State) -> AsyncIterator[State]:
         with log_context(logging.INFO, "app rpc-server"):
             assert "rabbitmq_rpc_server" in state
 
@@ -129,7 +129,7 @@ async def test_app_lifespan_composition(
 
     # Composes lifepans
     app_lifespan = LifespanManager()
-    app_lifespan.include(postgres_lifespan_mng)
+    app_lifespan.include(postgres_lifespan)
     app_lifespan.include(rabbitmq_lifespan)
 
     app = FastAPI(lifespan=app_lifespan)
@@ -165,7 +165,7 @@ async def test_app_lifespan_composition(
 
 
 @pytest.fixture
-def failing_lifespan_manager(mocker: MockerFixture):
+def failing_lifespan_manager(mocker: MockerFixture) -> dict[str, Any]:
     startup_step = mocker.MagicMock()
     shutdown_step = mocker.MagicMock()
     handle_error = mocker.MagicMock()
@@ -174,8 +174,8 @@ def failing_lifespan_manager(mocker: MockerFixture):
         msg = "failing module"
         raise RuntimeError(msg)
 
-    async def setup_failing_on_startup(app: FastAPI) -> AsyncIterator[State]:
-        _name = setup_failing_on_startup.__name__
+    async def lifespan_failing_on_startup(app: FastAPI) -> AsyncIterator[State]:
+        _name = lifespan_failing_on_startup.__name__
 
         with log_context(logging.INFO, _name):
             try:
@@ -187,8 +187,8 @@ def failing_lifespan_manager(mocker: MockerFixture):
             yield {}
             shutdown_step(_name)
 
-    async def setup_failing_on_shutdown(app: FastAPI) -> AsyncIterator[State]:
-        _name = setup_failing_on_shutdown.__name__
+    async def lifespan_failing_on_shutdown(app: FastAPI) -> AsyncIterator[State]:
+        _name = lifespan_failing_on_shutdown.__name__
 
         with log_context(logging.INFO, _name):
             startup_step(_name)
@@ -204,8 +204,8 @@ def failing_lifespan_manager(mocker: MockerFixture):
         "startup_step": startup_step,
         "shutdown_step": shutdown_step,
         "handle_error": handle_error,
-        "setup_failing_on_startup": setup_failing_on_startup,
-        "setup_failing_on_shutdown": setup_failing_on_shutdown,
+        "lifespan_failing_on_startup": lifespan_failing_on_startup,
+        "lifespan_failing_on_shutdown": lifespan_failing_on_shutdown,
     }
 
 
@@ -213,7 +213,7 @@ async def test_app_lifespan_with_error_on_startup(
     failing_lifespan_manager: dict[str, Any],
 ):
     app_lifespan = LifespanManager()
-    app_lifespan.add(failing_lifespan_manager["setup_failing_on_startup"])
+    app_lifespan.add(failing_lifespan_manager["lifespan_failing_on_startup"])
     app = FastAPI(lifespan=app_lifespan)
 
     with pytest.raises(LifespanOnStartupError) as err_info:
@@ -225,8 +225,8 @@ async def test_app_lifespan_with_error_on_startup(
     assert not failing_lifespan_manager["startup_step"].called
     assert not failing_lifespan_manager["shutdown_step"].called
     assert exception.error_context() == {
-        "module": "setup_failing_on_startup",
-        "message": "Failed during startup of setup_failing_on_startup",
+        "module": "lifespan_failing_on_startup",
+        "message": "Failed during startup of lifespan_failing_on_startup",
         "code": "RuntimeError.LifespanError.LifespanOnStartupError",
     }
 
@@ -235,7 +235,7 @@ async def test_app_lifespan_with_error_on_shutdown(
     failing_lifespan_manager: dict[str, Any],
 ):
     app_lifespan = LifespanManager()
-    app_lifespan.add(failing_lifespan_manager["setup_failing_on_shutdown"])
+    app_lifespan.add(failing_lifespan_manager["lifespan_failing_on_shutdown"])
     app = FastAPI(lifespan=app_lifespan)
 
     with pytest.raises(LifespanOnShutdownError) as err_info:
@@ -247,7 +247,7 @@ async def test_app_lifespan_with_error_on_shutdown(
     assert failing_lifespan_manager["startup_step"].called
     assert not failing_lifespan_manager["shutdown_step"].called
     assert exception.error_context() == {
-        "module": "setup_failing_on_shutdown",
-        "message": "Failed during shutdown of setup_failing_on_shutdown",
+        "module": "lifespan_failing_on_shutdown",
+        "message": "Failed during shutdown of lifespan_failing_on_shutdown",
         "code": "RuntimeError.LifespanError.LifespanOnShutdownError",
     }

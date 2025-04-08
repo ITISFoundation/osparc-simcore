@@ -33,7 +33,7 @@ async def create_async_engine_and_database_ready(
             "application_name": settings.POSTGRES_CLIENT_NAME,
         }
 
-    engine: AsyncEngine = create_async_engine(
+    engine = create_async_engine(
         settings.dsn_with_async_sqlalchemy,
         pool_size=settings.POSTGRES_MINSIZE,
         max_overflow=settings.POSTGRES_MAXSIZE - settings.POSTGRES_MINSIZE,

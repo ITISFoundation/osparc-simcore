@@ -289,7 +289,7 @@ class DirectorApi:
         return TypeAdapter(ServiceExtras).validate_python(result)
 
 
-async def setup_director(app: FastAPI) -> AsyncIterator[State]:
+async def director_lifespan(app: FastAPI) -> AsyncIterator[State]:
     client: DirectorApi | None = None
 
     if settings := app.state.settings.CATALOG_DIRECTOR:
