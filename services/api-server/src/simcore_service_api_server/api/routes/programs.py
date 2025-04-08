@@ -14,7 +14,7 @@ from pydantic import ByteSize, PositiveInt, ValidationError
 from servicelib.fastapi.dependencies import get_reverse_url_mapper
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
 from simcore_sdk.node_ports_common.filemanager import (
-    complete_directory_upload,
+    complete_file_upload,
     get_upload_links_from_s3,
 )
 from simcore_service_api_server._service import create_solver_or_program_job
@@ -154,8 +154,9 @@ async def create_program_job(
         is_directory=True,
         sha256_checksum=None,
     )
-    await complete_directory_upload(
+    await complete_file_upload(
         uploaded_parts=[],
         upload_completion_link=file_upload_schema.links.complete_upload,
+        is_directory=True,
     )
     return job
