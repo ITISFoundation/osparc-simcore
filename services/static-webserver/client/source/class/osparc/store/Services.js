@@ -40,7 +40,7 @@ qx.Class.define("osparc.store.Services", {
             this.__addExtraTypeInfos(servicesObj);
 
             Object.values(servicesObj).forEach(serviceKey => {
-              Object.values(serviceKey).forEach(service => this.__addToCache(service));
+              Object.values(serviceKey).forEach(service => this.__addServiceToCache(service));
             });
 
             resolve(servicesObj);
@@ -127,12 +127,12 @@ qx.Class.define("osparc.store.Services", {
             this.__addHit(service);
             this.__addTSRInfo(service);
             this.__addExtraTypeInfo(service);
-            this.__addToCache(service)
+            this.__addServiceToCache(service)
             resolve(service);
           })
           .catch(err => {
             // store it in cache to avoid asking again
-            this.__servicesCached[key][version] = null;
+            this.__addToCache(key, version, null);
             console.error(err);
             reject();
           })
@@ -340,13 +340,17 @@ qx.Class.define("osparc.store.Services", {
       return this.getLatest("simcore/services/frontend/iterator-consumer/probe/"+type);
     },
 
-    __addToCache: function(service) {
+    __addServiceToCache: function(service) {
       const key = service.key;
       const version = service.version;
+      this.__addToCache(key, version, service);
+    },
+
+    __addToCache: function(key, version, value) {
       if (!(key in this.__servicesCached)) {
         this.__servicesCached[key] = {};
       }
-      this.__servicesCached[key][version] = service;
+      this.__servicesCached[key][version] = value;
     },
 
     __isInCache: function(key, version) {

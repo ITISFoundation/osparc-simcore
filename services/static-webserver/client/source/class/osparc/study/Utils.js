@@ -358,7 +358,7 @@ qx.Class.define("osparc.study.Utils", {
           const wbService = wbServices[0];
           osparc.store.Services.getService(wbService.key, wbService.version)
             .then(serviceMetadata => {
-              if (serviceMetadata["icon"]) {
+              if (serviceMetadata && serviceMetadata["icon"]) {
                 resolve(serviceMetadata["icon"]);
               }
               resolve(defaultIcon);
