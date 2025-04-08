@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 /**
- * App/Theme dependant osparc logo with powerwed by text
+ * App/Theme dependant osparc logo with powered by text
  */
 qx.Class.define("osparc.ui.basic.PoweredByOsparc", {
   extend: qx.ui.core.Widget,
@@ -32,7 +32,7 @@ qx.Class.define("osparc.ui.basic.PoweredByOsparc", {
       toolTipText: this.tr("powered by ") + osparc.About.OSPARC_OFFICIAL,
       alignX: "center",
       alignY: "middle",
-      cursor: "pointer"
+      cursor: "pointer",
     });
 
     this.addListener("tap", () => osparc.About.getInstance().open());
@@ -87,6 +87,7 @@ qx.Class.define("osparc.ui.basic.PoweredByOsparc", {
       this.getChildControl("logo").set({
         source: lightLogo ? "osparc/osparc-o-white.svg" : "osparc/osparc-o-black.svg"
       });
+      osparc.utils.Utils.setAltToImage(this.getChildControl("logo"), "powered-by-osparc");
     }
   }
 });

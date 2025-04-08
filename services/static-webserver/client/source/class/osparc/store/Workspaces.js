@@ -96,7 +96,7 @@ qx.Class.define("osparc.store.Workspaces", {
         .then(trashedWorkspacesData => {
           const workspaces = [];
           trashedWorkspacesData.forEach(workspaceData => {
-            const workspace = this.__addToCache(workspaceData);
+            const workspace = new osparc.data.model.Workspace(workspaceData);
             workspaces.push(workspace);
           });
           return workspaces;
@@ -127,7 +127,7 @@ qx.Class.define("osparc.store.Workspaces", {
         .then(workspacesData => {
           const workspaces = [];
           workspacesData.forEach(workspaceData => {
-            const workspace = this.__addToCache(workspaceData);
+            const workspace = new osparc.data.model.Workspace(workspaceData);
             workspaces.push(workspace);
           });
           return workspaces;
