@@ -5,7 +5,7 @@ import packaging.version
 from models_library.services import ServiceMetaDataPublished
 from models_library.services_regex import DYNAMIC_SERVICE_KEY_RE
 from packaging.version import Version
-from pydantic import ConfigDict, Field, HttpUrl, StringConstraints
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, StringConstraints
 from simcore_service_api_server.models.schemas._utils import ApiServerOutputSchema
 
 from ...models._utils_pydantic import UriSchema
@@ -27,12 +27,10 @@ ProgramKeyId = Annotated[
 ]
 
 
-class Program(ApiServerOutputSchema):
-    """A released solver with a specific version"""
-
-    id: Annotated[ProgramKeyId, Field(..., description="Program identifier")]
+class BaseResource(BaseModel):
+    id: Annotated[str, Field(..., description="Resource identifier")]
     version: Annotated[
-        VersionStr, Field(..., description="semantic version number of the node")
+        VersionStr, Field(..., description="Semantic version number of the resource")
     ]
     title: Annotated[
         str,
@@ -42,11 +40,39 @@ class Program(ApiServerOutputSchema):
     description: Annotated[
         str | None,
         StringConstraints(max_length=500),
-        Field(None, description="Description of the program"),
+        Field(default=None, description="Description of the resource"),
     ]
     url: Annotated[
         HttpUrl | None, UriSchema(), Field(..., description="Link to get this resource")
     ]
+
+    @property
+    def pep404_version(self) -> Version:
+        """Rich version type that can be used e.g. to compare"""
+        return packaging.version.parse(self.version)
+
+    @property
+    def url_friendly_id(self) -> str:
+        """Use to pass id as parameter in URLs"""
+        return urllib.parse.quote_plus(self.id)
+
+    @property
+    def resource_name(self) -> str:
+        """Relative resource name"""
+        return self.compose_resource_name(self.id, self.version)
+
+    @property
+    def name(self) -> str:
+        """API standards notation (see api_resources.py)"""
+        return self.resource_name
+
+    @classmethod
+    def compose_resource_name(cls, key: str, version: str) -> str:
+        raise NotImplementedError("Subclasses must implement this method")
+
+
+class Program(BaseResource, ApiServerOutputSchema):
+    """A released program with a specific version"""
 
     model_config = ConfigDict(
         extra="ignore",
@@ -67,7 +93,6 @@ class Program(ApiServerOutputSchema):
         data = image_meta.model_dump(
             include={"name", "key", "version", "description", "contact"},
         )
-
         return cls(
             id=data.pop("key"),
             version=data.pop("version"),
@@ -75,26 +100,6 @@ class Program(ApiServerOutputSchema):
             url=None,
             **data,
         )
-
-    @property
-    def pep404_version(self) -> Version:
-        """Rich version type that can be used e.g. to compare"""
-        return packaging.version.parse(self.version)
-
-    @property
-    def url_friendly_id(self) -> str:
-        """Use to pass id as parameter in urls"""
-        return urllib.parse.quote_plus(self.id)
-
-    @property
-    def resource_name(self) -> str:
-        """Relative resource name"""
-        return self.compose_resource_name(self.id, self.version)
-
-    @property
-    def name(self) -> str:
-        """API standards notation (see api_resources.py)"""
-        return self.resource_name
 
     @classmethod
     def compose_resource_name(

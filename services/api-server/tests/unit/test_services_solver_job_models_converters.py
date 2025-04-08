@@ -205,8 +205,9 @@ def test_create_job_from_project(faker: Faker):
     solver = Solver(
         id=solver_key,
         version=solver_version,
-        title=faker.text(),
+        title=faker.text(max_nb_chars=20),
         maintainer=faker.name(),
+        description=faker.text(max_nb_chars=100),
         url=None,
     )
 
