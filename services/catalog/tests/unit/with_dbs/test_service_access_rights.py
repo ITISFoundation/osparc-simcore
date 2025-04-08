@@ -9,8 +9,8 @@ from models_library.groups import GroupAtDB
 from models_library.products import ProductName
 from models_library.services import ServiceMetaDataPublished, ServiceVersion
 from pydantic import TypeAdapter
-from simcore_service_catalog.db.repositories.services import ServicesRepository
 from simcore_service_catalog.models.services_db import ServiceAccessRightsAtDB
+from simcore_service_catalog.repository.services import ServicesRepository
 from simcore_service_catalog.service.access_rights import (
     evaluate_auto_upgrade_policy,
     evaluate_default_policy,

@@ -30,15 +30,15 @@ from pytest_simcore.helpers.postgres_tools import (
     insert_and_get_row_lifespan,
 )
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from simcore_postgres_database.models.groups import groups
 from simcore_postgres_database.models.products import products
-from simcore_postgres_database.models.users import users
-from simcore_service_catalog.core.settings import ApplicationSettings
-from simcore_service_catalog.db.tables import (
-    groups,
+from simcore_postgres_database.models.services import (
     services_access_rights,
     services_meta_data,
 )
-from sqlalchemy import tuple_
+from simcore_postgres_database.models.users import users
+from simcore_service_catalog.core.settings import ApplicationSettings
+from sqlalchemy import sql
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -271,7 +271,7 @@ async def services_db_tables_injector(
     async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(
             services_meta_data.delete().where(
-                tuple_(services_meta_data.c.key, services_meta_data.c.version).in_(
+                sql.tuple_(services_meta_data.c.key, services_meta_data.c.version).in_(
                     inserted_services
                 )
             )
