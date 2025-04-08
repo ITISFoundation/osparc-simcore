@@ -23,7 +23,7 @@ from models_library.clusters import (
     NoAuthentication,
     TLSAuthentication,
 )
-from pydantic import ByteSize, TypeAdapter
+from pydantic import ByteSize, SecretStr, TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from settings_library.rabbit import RabbitSettings
 from simcore_service_clusters_keeper.core.settings import ApplicationSettings
@@ -194,6 +194,31 @@ def test_create_deploy_cluster_stack_script(
     )
 
 
+@pytest.fixture
+def rabbitmq_settings_fixture(
+    request: pytest.FixtureRequest,
+    app_settings: ApplicationSettings,
+    monkeypatch: pytest.MonkeyPatch,
+    faker: Faker,
+) -> RabbitSettings | None:
+    if request.param == "custom":
+        # Create random RabbitMQ settings using faker
+        custom_rabbit_settings = RabbitSettings(
+            RABBIT_HOST=faker.hostname(),
+            RABBIT_PORT=faker.port_number(),
+            RABBIT_SECURE=faker.boolean(),
+            RABBIT_USER=faker.user_name(),
+            RABBIT_PASSWORD=SecretStr(faker.password()),
+        )
+        monkeypatch.setattr(
+            app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES,
+            "PRIMARY_EC2_INSTANCES_RABBIT_SETTINGS",
+            custom_rabbit_settings,
+        )
+        return custom_rabbit_settings
+    return app_settings.CLUSTERS_KEEPER_RABBITMQ
+
+
 def test_rabbitmq_settings_are_passed_with_pasword_clear(
     docker_swarm: None,
     enabled_rabbitmq: None,
@@ -205,12 +230,14 @@ def test_rabbitmq_settings_are_passed_with_pasword_clear(
     clusters_keeper_docker_compose: dict[str, Any],
 ):
     assert app_settings.CLUSTERS_KEEPER_RABBITMQ
-    assert app_settings.CLUSTERS_KEEPER_RABBITMQ.RABBIT_HOST
-    assert app_settings.CLUSTERS_KEEPER_RABBITMQ.RABBIT_PORT
-    assert app_settings.CLUSTERS_KEEPER_RABBITMQ.RABBIT_SECURE is False
-    assert app_settings.CLUSTERS_KEEPER_RABBITMQ.RABBIT_USER
-    assert app_settings.CLUSTERS_KEEPER_RABBITMQ.RABBIT_PASSWORD.get_secret_value()
-
+    assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES
+    assert (
+        app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_RABBIT_SETTINGS
+    )
+    assert (
+        app_settings.CLUSTERS_KEEPER_RABBITMQ
+        == app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_RABBIT_SETTINGS
+    )
     additional_custom_tags = {
         TypeAdapter(AWSTagKey)
         .validate_python("pytest-tag-key"): TypeAdapter(AWSTagValue)
