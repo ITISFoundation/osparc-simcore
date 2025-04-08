@@ -92,7 +92,10 @@ class CeleryTaskQueueClient:
             task_id = build_task_id(task_context, task_uuid)
             async_result = self._celery_app.AsyncResult(task_id)
             result = async_result.result
-            if async_result.ready() and (await self._task_store.get(task_id)).ephemeral:
+            if async_result.ready():
+                task_metadata = await self._task_store.get(task_id)
+                if task_metadata is not None and task_metadata.ephemeral:
+                    await self._task_store.remove(task_id)
                 await self._task_store.remove(task_id)
             return result
 
