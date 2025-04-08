@@ -140,7 +140,7 @@ class CatalogApi(BaseServiceClientApi):
         services = [
             service
             for service in services
-            if service.service_type == ServiceType(type_filter)
+            if service.service_type == ServiceType[type_filter]
         ]
         if predicate is not None:
             services = [service for service in services if predicate(service)]
