@@ -8,8 +8,8 @@ from models_library.api_schemas_catalog.service_access_rights import (
 from models_library.services import ServiceKey, ServiceVersion
 
 from ..._constants import RESPONSE_MODEL_POLICY
-from ...db.repositories.services import ServicesRepository
 from ...models.services_db import ServiceAccessRightsAtDB
+from ...repository.services import ServicesRepository
 from .._dependencies.database import get_repository
 from .._dependencies.services import AccessInfo, check_service_read_access
 

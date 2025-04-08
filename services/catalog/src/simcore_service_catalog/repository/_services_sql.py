@@ -19,7 +19,7 @@ from sqlalchemy.sql import and_, or_
 from sqlalchemy.sql.expression import func
 from sqlalchemy.sql.selectable import Select
 
-from ...models.services_db import ServiceMetaDataDBGet
+from ..models.services_db import ServiceMetaDataDBGet
 
 SERVICES_META_DATA_COLS = get_columns_from_db_model(
     services_meta_data, ServiceMetaDataDBGet

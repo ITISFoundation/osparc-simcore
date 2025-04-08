@@ -33,7 +33,7 @@ from simcore_postgres_database.utils_services import create_select_latest_servic
 from sqlalchemy import sql
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
-from ...models.services_db import (
+from ..models.services_db import (
     ReleaseDBGet,
     ServiceAccessRightsAtDB,
     ServiceMetaDataDBCreate,
@@ -41,7 +41,7 @@ from ...models.services_db import (
     ServiceMetaDataDBPatch,
     ServiceWithHistoryDBGet,
 )
-from ...models.services_specifications import ServiceSpecificationsAtDB
+from ..models.services_specifications import ServiceSpecificationsAtDB
 from ._base import BaseRepository
 from ._services_sql import (
     SERVICES_META_DATA_COLS,

@@ -8,7 +8,7 @@ from pydantic.types import PositiveInt
 from simcore_postgres_database.models.groups import GroupType, groups, user_to_groups
 from simcore_postgres_database.models.users import users
 
-from ...errors import UninitializedGroupError
+from ..errors import UninitializedGroupError
 from ._base import BaseRepository
 
 

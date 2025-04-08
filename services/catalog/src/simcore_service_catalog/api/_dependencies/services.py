@@ -13,8 +13,8 @@ from pydantic import ValidationError
 from servicelib.fastapi.dependencies import get_app
 
 from ...core.settings import ApplicationSettings
-from ...db.repositories.groups import GroupsRepository
-from ...db.repositories.services import ServicesRepository
+from ...repository.groups import GroupsRepository
+from ...repository.services import ServicesRepository
 from ...service import manifest
 from ...service.director import DirectorApi
 from .database import get_repository

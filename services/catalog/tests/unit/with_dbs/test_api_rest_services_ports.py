@@ -8,6 +8,7 @@ from collections.abc import Callable
 from typing import Any
 
 import pytest
+import simcore_service_catalog.api._dependencies.services
 from pytest_mock.plugin import MockerFixture
 from respx.router import MockRouter
 from starlette import status
@@ -48,10 +49,11 @@ async def mocked_check_service_read_access(
     # MOCKS functionality inside "simcore_service_catalog.api.dependencies.services.check_service_read_access"
     # to provide read access to a service to user_groups_ids
     #
-    print(user_groups_ids)
+    assert user_groups_ids
 
-    mocker.patch(
-        "simcore_service_catalog.api.dependencies.services.ServicesRepository.get_service",
+    mocker.patch.object(
+        simcore_service_catalog.api._dependencies.services,
+        "ServicesRepository.get_service",
         autospec=True,
         return_value=True,
     )

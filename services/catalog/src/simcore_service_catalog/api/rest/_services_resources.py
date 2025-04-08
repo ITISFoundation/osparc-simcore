@@ -23,7 +23,7 @@ from models_library.utils.docker_compose import replace_env_vars_in_compose_spec
 from pydantic import TypeAdapter
 
 from ..._constants import RESPONSE_MODEL_POLICY, SIMCORE_SERVICE_SETTINGS_LABELS
-from ...db.repositories.services import ServicesRepository
+from ...repository.services import ServicesRepository
 from ...service.director import DirectorApi
 from ...service.function_services import is_function_service
 from ...utils.service_resources import (

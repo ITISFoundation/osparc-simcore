@@ -27,10 +27,10 @@ from simcore_service_catalog.service import manifest
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from ..db.repositories.groups import GroupsRepository
-from ..db.repositories.projects import ProjectsRepository
-from ..db.repositories.services import ServicesRepository
 from ..models.services_db import ServiceAccessRightsAtDB, ServiceMetaDataDBCreate
+from ..repository.groups import GroupsRepository
+from ..repository.projects import ProjectsRepository
+from ..repository.services import ServicesRepository
 from ..service import access_rights
 
 _logger = logging.getLogger(__name__)

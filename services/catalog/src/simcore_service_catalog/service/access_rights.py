@@ -15,9 +15,9 @@ from pydantic.types import PositiveInt
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..api._dependencies.director import get_director_api
-from ..db.repositories.groups import GroupsRepository
-from ..db.repositories.services import ServicesRepository
 from ..models.services_db import ServiceAccessRightsAtDB
+from ..repository.groups import GroupsRepository
+from ..repository.services import ServicesRepository
 from ..utils.versioning import as_version, is_patch_release
 
 _logger = logging.getLogger(__name__)
