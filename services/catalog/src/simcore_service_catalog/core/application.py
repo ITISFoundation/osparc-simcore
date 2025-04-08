@@ -18,8 +18,8 @@ from .._meta import (
     PROJECT_NAME,
     SUMMARY,
 )
+from ..api.rest.errors import setup_rest_exception_handlers
 from ..api.rest.routes import setup_rest_api_routes
-from ..exceptions.handlers import setup_exception_handlers
 from . import events
 from .settings import ApplicationSettings
 
@@ -82,6 +82,6 @@ def create_app() -> FastAPI:
     setup_rest_api_routes(app, vtag=API_VTAG)
 
     # EXCEPTIONS
-    setup_exception_handlers(app)
+    setup_rest_exception_handlers(app)
 
     return app

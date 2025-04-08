@@ -1,8 +1,7 @@
 from common_library.errors_classes import OsparcErrorMixin
 
 
-class CatalogBaseError(OsparcErrorMixin, Exception):
-    ...
+class CatalogBaseError(OsparcErrorMixin, Exception): ...
 
 
 class RepositoryError(CatalogBaseError):
@@ -13,13 +12,11 @@ class UninitializedGroupError(RepositoryError):
     msg_tempalte = "{group} groups was never initialized"
 
 
-class BaseDirectorError(CatalogBaseError):
-    ...
+class BaseDirectorError(CatalogBaseError): ...
 
 
 class DirectorUnresponsiveError(BaseDirectorError):
     msg_template = "Director-v0 is not responsive"
 
 
-class DirectorStatusError(BaseDirectorError):
-    ...
+class DirectorStatusError(BaseDirectorError): ...
