@@ -24,8 +24,8 @@ from pydantic import TypeAdapter
 
 from ..._constants import RESPONSE_MODEL_POLICY, SIMCORE_SERVICE_SETTINGS_LABELS
 from ...db.repositories.services import ServicesRepository
-from ...services.director import DirectorApi
-from ...services.function_services import is_function_service
+from ...service.director import DirectorApi
+from ...service.function_services import is_function_service
 from ...utils.service_resources import (
     merge_service_resources_with_user_specs,
     parse_generic_resource,

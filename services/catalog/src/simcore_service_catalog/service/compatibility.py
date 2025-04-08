@@ -1,6 +1,4 @@
-""" Manages service compatibility policies
-
-"""
+"""Manages service compatibility policies"""
 
 from models_library.products import ProductName
 from models_library.services_history import Compatibility, CompatibleService

@@ -23,7 +23,7 @@ from ..._constants import (
 from ...db.repositories.groups import GroupsRepository
 from ...db.repositories.services import ServicesRepository
 from ...models.services_db import ServiceAccessRightsAtDB, ServiceMetaDataDBGet
-from ...services.director import DirectorApi
+from ...service.director import DirectorApi
 from .._dependencies.database import get_repository
 from .._dependencies.director import get_director_api
 from .._dependencies.services import get_service_from_manifest

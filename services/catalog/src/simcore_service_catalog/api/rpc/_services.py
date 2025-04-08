@@ -26,7 +26,7 @@ from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
 from simcore_service_catalog.db.repositories.groups import GroupsRepository
 
 from ...db.repositories.services import ServicesRepository
-from ...services import services_api
+from ...service import services_api
 from .._dependencies.director import get_director_api
 
 _logger = logging.getLogger(__name__)

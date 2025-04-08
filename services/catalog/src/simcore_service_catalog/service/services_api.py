@@ -28,8 +28,8 @@ from ..models.services_db import (
     ServiceMetaDataDBPatch,
     ServiceWithHistoryDBGet,
 )
-from ..services import manifest
-from ..services.director import DirectorApi
+from ..service import manifest
+from ..service.director import DirectorApi
 from .compatibility import evaluate_service_compatibility_map
 from .function_services import is_function_service
 

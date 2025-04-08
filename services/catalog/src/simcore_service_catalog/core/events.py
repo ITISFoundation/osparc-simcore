@@ -14,9 +14,9 @@ from servicelib.fastapi.prometheus_instrumentation import (
 from .._meta import APP_FINISHED_BANNER_MSG, APP_STARTED_BANNER_MSG
 from ..api.rpc.routes import rpc_api_lifespan
 from ..repository.events import database_lifespan
-from ..services.director import director_lifespan
-from ..services.function_services import function_services_lifespan
-from ..services.rabbitmq import rabbitmq_lifespan
+from ..service.director import director_lifespan
+from ..service.function_services import function_services_lifespan
+from ..service.rabbitmq import rabbitmq_lifespan
 from .background_tasks import background_task_lifespan
 from .settings import ApplicationSettings
 
