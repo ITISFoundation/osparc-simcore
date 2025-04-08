@@ -531,7 +531,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
             const services = resp["services"];
             resourceData["services"] = services;
             this.setServices(services);
-          });
+          })
+          .catch(err => console.error(err));
 
         osparc.study.Utils.guessIcon(resourceData)
           .then(iconSource => this.setIcon(iconSource));
