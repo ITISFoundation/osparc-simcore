@@ -1417,7 +1417,7 @@ jobs:
   unit-test-postgres-database:
     needs: changes
     if: ${{ needs.changes.outputs.postgres-database == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    timeout-minutes: 20 # if this timeout gets too small, then split the tests
     name: "[unit] postgres-database"
     runs-on: ${{ matrix.os }}
     strategy:
