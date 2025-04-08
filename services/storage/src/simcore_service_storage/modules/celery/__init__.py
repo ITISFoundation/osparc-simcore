@@ -9,7 +9,7 @@ from ..._meta import APP_NAME
 from ...core.settings import get_application_settings
 from ._celery_types import register_celery_types
 from ._common import create_app
-from .backends._redis import RedisTaskStore
+from .backends._redis import RedisTaskMetadataStore
 from .client import CeleryTaskQueueClient
 
 _logger = logging.getLogger(__name__)
@@ -29,7 +29,7 @@ def setup_celery_client(app: FastAPI) -> None:
         )
 
         app.state.celery_client = CeleryTaskQueueClient(
-            celery_app, RedisTaskStore(redis_client_sdk)
+            celery_app, RedisTaskMetadataStore(redis_client_sdk)
         )
 
         register_celery_types()

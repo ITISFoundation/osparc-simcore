@@ -15,10 +15,10 @@ from servicelib.logging_utils import log_context
 
 from .models import (
     TaskContext,
-    TaskData,
+    TaskMetadata,
+    TaskMetadataStore,
     TaskState,
     TaskStatus,
-    TaskStore,
     TaskUUID,
     build_task_id,
 )
@@ -43,10 +43,15 @@ _MAX_PROGRESS_VALUE = 1.0
 @dataclass
 class CeleryTaskQueueClient:
     _celery_app: Celery
-    _task_store: TaskStore
+    _task_store: TaskMetadataStore
 
     async def send_task(
-        self, task_name: str, *, task_context: TaskContext, task_queue: str = "default", **task_params
+        self,
+        task_name: str,
+        *,
+        task_context: TaskContext,
+        task_metadata: TaskMetadata | None = None,
+        **task_params,
     ) -> TaskUUID:
         with log_context(
             _logger,
@@ -55,10 +60,14 @@ class CeleryTaskQueueClient:
         ):
             task_uuid = uuid4()
             task_id = build_task_id(task_context, task_uuid)
-            self._celery_app.send_task(task_name, task_id=task_id, kwargs=task_params, queue=task_queue)
-            await self._task_store.set_task(
-                task_id, TaskData(status=TaskState.PENDING.name)
+            task_metadata = task_metadata or TaskMetadata()
+            self._celery_app.send_task(
+                task_name,
+                task_id=task_id,
+                kwargs=task_params,
+                queue=task_metadata.queue,
             )
+            await self._task_store.set(task_id, task_metadata)
             return task_uuid
 
     @staticmethod
@@ -72,15 +81,20 @@ class CeleryTaskQueueClient:
             task_id = build_task_id(task_context, task_uuid)
             AbortableAsyncResult(task_id).abort()
 
-    @make_async()
-    def get_task_result(self, task_context: TaskContext, task_uuid: TaskUUID) -> Any:
+    async def get_task_result(
+        self, task_context: TaskContext, task_uuid: TaskUUID
+    ) -> Any:
         with log_context(
             _logger,
             logging.DEBUG,
             msg=f"Get task result: {task_context=} {task_uuid=}",
         ):
             task_id = build_task_id(task_context, task_uuid)
-            return self._celery_app.AsyncResult(task_id).result
+            async_result = self._celery_app.AsyncResult(task_id)
+            result = async_result.result
+            if async_result.ready() and (await self._task_store.get(task_id)).ephemeral:
+                await self._task_store.remove(task_id)
+            return result
 
     def _get_progress_report(
         self, task_context: TaskContext, task_uuid: TaskUUID
@@ -129,4 +143,4 @@ class CeleryTaskQueueClient:
             logging.DEBUG,
             msg=f"Getting task uuids: {task_context=}",
         ):
-            return await self._task_store.get_task_uuids(task_context)
+            return await self._task_store.get_uuids(task_context)

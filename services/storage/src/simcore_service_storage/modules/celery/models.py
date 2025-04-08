@@ -32,19 +32,24 @@ class TaskState(StrEnum):
     ABORTED = auto()
 
 
-class TaskData(BaseModel):
-    status: str
+class TaskMetadata(BaseModel):
+    ephemeral: bool = True
+    queue: str = "default"
 
 
 _TASK_DONE = {TaskState.SUCCESS, TaskState.ERROR, TaskState.ABORTED}
 
 
-class TaskStore(Protocol):
-    async def get_task_uuids(self, task_context: TaskContext) -> set[TaskUUID]: ...
+class TaskMetadataStore(Protocol):
+    async def exists(self, task_id: TaskID) -> bool: ...
 
-    async def task_exists(self, task_id: TaskID) -> bool: ...
+    async def get(self, task_id: TaskID) -> TaskMetadata | None: ...
 
-    async def set_task(self, task_id: TaskID, task_data: TaskData) -> None: ...
+    async def get_uuids(self, task_context: TaskContext) -> set[TaskUUID]: ...
+
+    async def remove(self, task_id: TaskID) -> None: ...
+
+    async def set(self, task_id: TaskID, task_data: TaskMetadata) -> None: ...
 
 
 class TaskStatus(BaseModel):
