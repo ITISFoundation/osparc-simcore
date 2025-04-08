@@ -252,7 +252,7 @@ class PrimaryEC2InstancesSettings(BaseCustomSettings):
         ),
     ] = "172.20.0.0/14"  # nosec
 
-    PRIMARY_EC2_INSTANCES_RABBIT_SETTINGS: Annotated[
+    PRIMARY_EC2_INSTANCES_RABBIT: Annotated[
         RabbitSettings | None,
         Field(
             description="defines the Rabbit settings for the primary instance (may be disabled)",
