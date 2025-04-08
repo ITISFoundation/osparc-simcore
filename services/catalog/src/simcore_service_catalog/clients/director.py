@@ -17,14 +17,14 @@ from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from pydantic import NonNegativeInt, TypeAdapter
 from servicelib.fastapi.tracing import setup_httpx_client_tracing
-from servicelib.logging_utils import log_context
+from servicelib.logging_utils import log_catch, log_context
 from starlette import status
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random
 
-from ..core.settings import ApplicationSettings
+from ..core.settings import ApplicationSettings, DirectorSettings
 from ..errors import DirectorUnresponsiveError
 
 _logger = logging.getLogger(__name__)
@@ -291,30 +291,32 @@ class DirectorApi:
 
 async def director_lifespan(app: FastAPI) -> AsyncIterator[State]:
     client: DirectorApi | None = None
+    settings = app.state.settings.CATALOG_DIRECTOR
 
-    if settings := app.state.settings.CATALOG_DIRECTOR:
-        with log_context(
-            _logger, logging.DEBUG, "Setup director at %s", f"{settings.base_url=}"
-        ):
-            async for attempt in AsyncRetrying(**_director_startup_retry_policy):
-                with attempt:
-                    client = DirectorApi(base_url=settings.base_url, app=app)
-                    if not await client.is_responsive():
-                        with suppress(Exception):
-                            await client.close()
-                        raise DirectorUnresponsiveError
+    assert isinstance(settings, DirectorSettings)  # nosec
 
-                _logger.info(
-                    "Connection to director-v0 succeeded [%s]",
-                    json_dumps(attempt.retry_state.retry_object.statistics),
-                )
+    with log_context(
+        _logger, logging.DEBUG, "Setup director at %s", f"{settings.base_url=}"
+    ):
+        async for attempt in AsyncRetrying(**_director_startup_retry_policy):
+            with attempt:
+                client = DirectorApi(base_url=settings.base_url, app=app)
+                if not await client.is_responsive():
+                    with suppress(Exception):
+                        await client.close()
+                    raise DirectorUnresponsiveError
 
-            # set when connected
-            app.state.director_api = client
+            _logger.info(
+                "Connection to director-v0 succeeded [%s]",
+                json_dumps(attempt.retry_state.retry_object.statistics),
+            )
+
+        # set when connected
+        app.state.director_api = client
 
     try:
         yield {}
     finally:
         if client:
-            await client.close()
-        _logger.debug("Director client closed successfully")
+            with log_catch(_logger, reraise=False):
+                await asyncio.wait_for(client.close(), timeout=10)
