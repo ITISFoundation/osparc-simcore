@@ -339,6 +339,10 @@ async def batch_delete_trashed_workspaces_as_admin(
             assert trashed_workspace.trashed  # nosec
             deleted_workspace_ids.append(trashed_workspace.workspace_id)
 
+            workspace_db_get = await _workspaces_repository.get_workspace_db_get(
+                app, workspace_id=trashed_workspace.workspace_id
+            )
+
             try:
                 await batch_delete_projects_in_root_workspace_as_admin(
                     app, workspace_id=trashed_workspace.workspace_id, fail_fast=False
@@ -349,15 +353,22 @@ async def batch_delete_trashed_workspaces_as_admin(
                 errors.append((trashed_workspace.workspace_id, err))
 
             try:
-                workspace_db_get = await _workspaces_repository.get_workspace_db_get(
-                    app, workspace_id=trashed_workspace.workspace_id
-                )
-
                 await batch_delete_folders_with_content_in_root_workspace_as_admin(
                     app,
                     workspace_id=trashed_workspace.workspace_id,
                     product_name=workspace_db_get.product_name,
                     fail_fast=False,
+                )
+            except Exception as err:  # pylint: disable=broad-exception-caught
+                if fail_fast:
+                    raise
+                errors.append((trashed_workspace.workspace_id, err))
+
+            try:
+                await _workspaces_repository.delete_workspace(
+                    app,
+                    workspace_id=trashed_workspace.workspace_id,
+                    product_name=workspace_db_get.product_name,
                 )
             except Exception as err:  # pylint: disable=broad-exception-caught
                 if fail_fast:

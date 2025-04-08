@@ -181,7 +181,26 @@ async def safe_delete_expired_trash_as_admin(app: web.Application) -> None:
             delete_until,
         ):
             try:
+                deleted_workspace_ids = await workspaces_trash_service.batch_delete_trashed_workspaces_as_admin(
+                    app,
+                    trashed_before=delete_until,
+                    fail_fast=False,
+                )
 
+                _logger.info(
+                    "Deleted %d trashed workspaces", len(deleted_workspace_ids)
+                )
+
+            except Exception as exc:  # pylint: disable=broad-exception-caught
+                _logger.warning(
+                    **create_troubleshotting_log_kwargs(
+                        "Error batch deleting expired workspaces as admin.",
+                        error=exc,
+                        error_context=ctx,
+                    )
+                )
+
+            try:
                 await folders_trash_service.batch_delete_trashed_folders_as_admin(
                     app,
                     trashed_before=delete_until,
@@ -199,7 +218,6 @@ async def safe_delete_expired_trash_as_admin(app: web.Application) -> None:
                 )
 
             try:
-
                 deleted_project_ids = (
                     await projects_trash_service.batch_delete_trashed_projects_as_admin(
                         app,
@@ -209,26 +227,6 @@ async def safe_delete_expired_trash_as_admin(app: web.Application) -> None:
                 )
 
                 _logger.info("Deleted %d trashed projects", len(deleted_project_ids))
-
-            except Exception as exc:  # pylint: disable=broad-exception-caught
-                _logger.warning(
-                    **create_troubleshotting_log_kwargs(
-                        "Error batch deleting expired projects as admin.",
-                        error=exc,
-                        error_context=ctx,
-                    )
-                )
-
-            try:
-                deleted_workspace_ids = await workspaces_trash_service.batch_delete_trashed_workspaces_as_admin(
-                    app,
-                    trashed_before=delete_until,
-                    fail_fast=False,
-                )
-
-                _logger.info(
-                    "Deleted %d trashed workspaces", len(deleted_workspace_ids)
-                )
 
             except Exception as exc:  # pylint: disable=broad-exception-caught
                 _logger.warning(

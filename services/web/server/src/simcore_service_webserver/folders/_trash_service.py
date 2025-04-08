@@ -358,7 +358,7 @@ async def batch_delete_folders_with_content_in_root_workspace_as_admin(
             shared_workspace_id=workspace_id,  # <-- Workspace filter
             offset=page_params.offset,
             limit=page_params.limit,
-            order_by=OrderBy(field=IDStr("id")),
+            order_by=OrderBy(field=IDStr("folder_id")),
         )
         # BATCH delete
         for folder in folders_for_deletion:
