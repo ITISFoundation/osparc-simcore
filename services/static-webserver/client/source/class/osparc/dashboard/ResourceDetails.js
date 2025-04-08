@@ -52,6 +52,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
               .finally(() => {
                 this.__resourceModel = new osparc.data.model.Study(latestResourceData);
                 this.__resourceModel["resourceType"] = resourceData["resourceType"];
+                this.__resourceData["services"] = resourceData["services"];
                 this.__addPages();
               })
             break;
