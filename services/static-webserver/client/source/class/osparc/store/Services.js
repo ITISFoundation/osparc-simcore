@@ -293,7 +293,11 @@ qx.Class.define("osparc.store.Services", {
       const unaccessibleServices = [];
       const wbServices = osparc.study.Utils.extractUniqueServices(workbench);
       wbServices.forEach(srv => {
-        if (srv.key in allServices && srv.version in allServices[srv.key]) {
+        if (
+          srv.key in allServices &&
+          srv.version in allServices[srv.key] &&
+          allServices[srv.key][srv.version] // check metadata is not null
+        ) {
           return;
         }
         const idx = unaccessibleServices.findIndex(unSrv => unSrv.key === srv.key && unSrv.version === srv.version);
