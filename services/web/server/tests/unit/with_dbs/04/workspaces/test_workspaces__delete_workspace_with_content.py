@@ -138,9 +138,34 @@ async def test_workspaces_full_workflow_deletion(
     resp = await client.put(f"{url}")
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
+    # ---------------------
+    # TESTING DELETION
+    # ---------------------
+
     # Delete workspace
     url = client.app.router["delete_workspace"].url_for(
         workspace_id=f"{added_workspace.workspace_id}"
     )
     resp = await client.delete(f"{url}")
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # ---------------------
+    # Assertions
+
+    resp = await client.get(f"/v0/workspaces/{added_workspace.workspace_id}")
+    await assert_status(resp, status.HTTP_403_FORBIDDEN)
+
+    resp = await client.get(f"/v0/folders/{first_folder['folderId']}")
+    await assert_status(resp, status.HTTP_403_FORBIDDEN)
+
+    resp = await client.get(f"/v0/folders/{second_folder['folderId']}")
+    await assert_status(resp, status.HTTP_403_FORBIDDEN)
+
+    resp = await client.get(f"/v0/projects/{first_project['uuid']}")
+    await assert_status(resp, status.HTTP_404_NOT_FOUND)
+
+    resp = await client.get(f"/v0/projects/{second_project['uuid']}")
+    await assert_status(resp, status.HTTP_404_NOT_FOUND)
+
+    resp = await client.get(f"/v0/projects/{third_project['uuid']}")
+    await assert_status(resp, status.HTTP_404_NOT_FOUND)
