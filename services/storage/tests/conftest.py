@@ -1018,11 +1018,7 @@ async def with_storage_celery_worker_controller(
         perform_ping_check=False,
         queues="default,cpu_bound",
     ) as worker:
-        worker_init.send(sender=worker)
-
         yield worker
-
-        worker_shutdown.send(sender=worker)
 
 
 @pytest.fixture
