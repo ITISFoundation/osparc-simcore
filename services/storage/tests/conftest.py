@@ -966,9 +966,10 @@ def celery_config() -> dict[str, Any]:
         "result_expires": datetime.timedelta(days=7),
         "result_extended": True,
         "pool": "threads",
-        "worker_send_task_events": True,
-        "task_track_started": True,
+        "task_default_queue": "default",
         "task_send_sent_event": True,
+        "task_track_started": True,
+        "worker_send_task_events": True,
     }
 
 
