@@ -6,15 +6,16 @@ from typing import Annotated
 
 import aiodocker
 import pytest
-from asgi_lifespan import LifespanManager
+from asgi_lifespan import LifespanManager as ASGILifespanManager
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager, State
 from pydantic import Field
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.fastapi.docker import (
-    get_lifespan_remote_docker_client,
     get_remote_docker_client,
+    get_remote_docker_client_main_lifespan,
+    lifespan_remote_docker_client,
 )
-from servicelib.fastapi.lifespan_utils import combine_lifespans
 from settings_library.application import BaseApplicationSettings
 from settings_library.docker_api_proxy import DockerApiProxysettings
 
@@ -32,20 +33,29 @@ def pytest_configure(config):
     config.option.asyncio_mode = "auto"
 
 
-def _get_test_app() -> FastAPI:
-    class ApplicationSetting(BaseApplicationSettings):
-        DOCKER_API_PROXY: Annotated[
-            DockerApiProxysettings,
-            Field(json_schema_extra={"auto_default_from_env": True}),
-        ]
+class ApplicationSetting(BaseApplicationSettings):
+    DOCKER_API_PROXY: Annotated[
+        DockerApiProxysettings,
+        Field(json_schema_extra={"auto_default_from_env": True}),
+    ]
 
+
+async def _main_lifespan(app: FastAPI) -> AsyncIterator[State]:
+    settings: ApplicationSetting = app.state.settings
+
+    yield {
+        **get_remote_docker_client_main_lifespan(settings.DOCKER_API_PROXY),
+    }
+
+
+def _get_test_app() -> FastAPI:
     settings = ApplicationSetting.create_from_envs()
 
-    app = FastAPI(
-        lifespan=combine_lifespans(
-            get_lifespan_remote_docker_client(settings.DOCKER_API_PROXY)
-        )
-    )
+    lifespan_manager = LifespanManager()
+    lifespan_manager.add(_main_lifespan)
+    lifespan_manager.add(lifespan_remote_docker_client)
+
+    app = FastAPI(lifespan=lifespan_manager)
     app.state.settings = settings
 
     return app
@@ -61,7 +71,7 @@ async def setup_docker_client(
 
         app = _get_test_app()
 
-        async with LifespanManager(app, startup_timeout=30, shutdown_timeout=30):
+        async with ASGILifespanManager(app, startup_timeout=30, shutdown_timeout=30):
             yield get_remote_docker_client(app)
 
     return _
