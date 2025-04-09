@@ -245,11 +245,9 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
     },
 
     __multiDownloadTaskReceived: function(task) {
-      const taskUI = new osparc.task.TaskUI();
-      taskUI.setIcon("@FontAwesome5Solid/download/14");
-      taskUI.setTitle(this.tr("Downloading files"));
-      taskUI.setTask(task);
-      osparc.task.TasksContainer.getInstance().addTaskUI(taskUI);
+      const downloadPathsTaskUI = new osparc.task.osparc.task.DownloadPaths();
+      downloadPathsTaskUI.setTask(task);
+      osparc.task.TasksContainer.getInstance().addTaskUI(downloadPathsTaskUI);
 
       const progressWindow = new osparc.ui.window.Progress(
         this.tr("Downloading files"),
