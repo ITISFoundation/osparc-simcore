@@ -1,13 +1,14 @@
-""" Configuration for integration testing
+"""Configuration for integration testing
 
-    During integration testing,
-        - the app under test (i.e. the webserver) will be installed and started in the host
-        - every test module (i.e. integration/**/test_*.py) deploys a stack in a swarm fixture with a seleciton of core and op-services
-        - the selection of core/op services are listed in the 'core_services' and 'ops_serices' variables in each test module
+  During integration testing,
+      - the app under test (i.e. the webserver) will be installed and started in the host
+      - every test module (i.e. integration/**/test_*.py) deploys a stack in a swarm fixture with a seleciton of core and op-services
+      - the selection of core/op services are listed in the 'core_services' and 'ops_serices' variables in each test module
 
-  NOTE: services/web/server/tests/conftest.py is pre-loaded
+NOTE: services/web/server/tests/conftest.py is pre-loaded
 
 """
+
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
@@ -62,7 +63,12 @@ def webserver_environ(
     #   version tha loads only the subsystems under test. For that reason,
     #   the test webserver is built-up in webserver_service fixture that runs
     #   on the host.
-    EXCLUDED_SERVICES = ["dask-scheduler", "director", "sto-worker"]
+    EXCLUDED_SERVICES = [
+        "dask-scheduler",
+        "director",
+        "sto-worker",
+        "sto-worker-cpu-bound",
+    ]
     services_with_published_ports = [
         name
         for name in core_services
@@ -127,9 +133,9 @@ def _default_app_config_for_integration_tests(
     # for the moment using web-server as an all-in-one service.
     # TODO: create integration tests using different configs
     # SEE https://github.com/ITISFoundation/osparc-simcore/issues/2896
-    test_environ[
-        "WEBSERVER_GARBAGE_COLLECTOR"
-    ] = "{}"  # by default it is disabled. This enables it with default or env variables
+    test_environ["WEBSERVER_GARBAGE_COLLECTOR"] = (
+        "{}"  # by default it is disabled. This enables it with default or env variables
+    )
     test_environ["GARBAGE_COLLECTOR_INTERVAL_S"] = "30"
 
     # recreate config-file
