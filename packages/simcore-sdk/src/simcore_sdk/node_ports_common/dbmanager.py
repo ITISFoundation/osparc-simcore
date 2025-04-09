@@ -5,7 +5,7 @@ import sqlalchemy as sa
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from pydantic import TypeAdapter
-from servicelib.db_asyncpg_utils import create_async_engine_and_pg_database_ready
+from servicelib.db_asyncpg_utils import create_async_engine_and_database_ready
 from settings_library.node_ports import NodePortsSettings
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.projects import projects
@@ -55,7 +55,7 @@ class DBContextManager:
     @staticmethod
     async def _create_db_engine() -> AsyncEngine:
         settings = NodePortsSettings.create_from_envs()
-        engine = await create_async_engine_and_pg_database_ready(
+        engine = await create_async_engine_and_database_ready(
             settings.POSTGRES_SETTINGS
         )
         assert isinstance(engine, AsyncEngine)  # nosec
