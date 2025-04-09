@@ -339,8 +339,8 @@ async def create_fake_product(
             )
             assert result
             row = result.one()
-            created_product_names.add(row.name)
-            return row
+        created_product_names.add(row.name)
+        return row
 
     yield _creator
 
