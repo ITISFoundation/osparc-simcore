@@ -4,10 +4,11 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobNameData,
 )
 from models_library.api_schemas_storage.storage_schemas import FoldersBody
-from servicelib.rabbitmq._rpc_router import RPCRouter
+from models_library.api_schemas_webserver.storage import PathToExport
+from servicelib.rabbitmq import RPCRouter
 
 from ...modules.celery import get_celery_client
-from .._worker_tasks._simcore_s3 import deep_copy_files_from_project
+from .._worker_tasks._simcore_s3 import deep_copy_files_from_project, export_data
 
 router = RPCRouter()
 
@@ -25,4 +26,17 @@ async def copy_folders_from_project(
         body=body,
     )
 
+    return AsyncJobGet(job_id=task_uuid)
+
+
+@router.expose()
+async def start_export_data(
+    app: FastAPI, job_id_data: AsyncJobNameData, paths_to_export: list[PathToExport]
+) -> AsyncJobGet:
+    task_uuid = await get_celery_client(app).send_task(
+        export_data.__name__,
+        task_context=job_id_data.model_dump(),
+        user_id=job_id_data.user_id,
+        paths_to_export=paths_to_export,
+    )
     return AsyncJobGet(job_id=task_uuid)

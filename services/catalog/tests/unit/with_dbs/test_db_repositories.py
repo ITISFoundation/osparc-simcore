@@ -487,7 +487,7 @@ async def test_get_service_history_page(
     user_id: UserID,
 ):
     # inject services with multiple versions
-    service_key = "simcore/services/dynamic/test-service"
+    service_key = "simcore/services/dynamic/test-some-service"
     num_versions = 10
 
     release_versions = [

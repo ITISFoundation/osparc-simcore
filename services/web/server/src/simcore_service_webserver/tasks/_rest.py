@@ -34,7 +34,7 @@ from ..login.decorators import login_required
 from ..models import RequestContext
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..security.decorators import permission_required
-from ._exception_handlers import handle_data_export_exceptions
+from ._exception_handlers import handle_export_data_exceptions
 
 log = logging.getLogger(__name__)
 
@@ -50,7 +50,7 @@ _task_prefix: Final[str] = f"/{API_VTAG}/tasks"
 )
 @login_required
 @permission_required("storage.files.*")
-@handle_data_export_exceptions
+@handle_export_data_exceptions
 async def get_async_jobs(request: web.Request) -> web.Response:
     session = get_client_session(request.app)
     async with session.request(
@@ -106,7 +106,7 @@ class _StorageAsyncJobId(BaseModel):
     name="get_async_job_status",
 )
 @login_required
-@handle_data_export_exceptions
+@handle_export_data_exceptions
 async def get_async_job_status(request: web.Request) -> web.Response:
 
     _req_ctx = RequestContext.model_validate(request)
@@ -140,7 +140,7 @@ async def get_async_job_status(request: web.Request) -> web.Response:
 )
 @login_required
 @permission_required("storage.files.*")
-@handle_data_export_exceptions
+@handle_export_data_exceptions
 async def abort_async_job(request: web.Request) -> web.Response:
 
     _req_ctx = RequestContext.model_validate(request)
@@ -164,7 +164,7 @@ async def abort_async_job(request: web.Request) -> web.Response:
 )
 @login_required
 @permission_required("storage.files.*")
-@handle_data_export_exceptions
+@handle_export_data_exceptions
 async def get_async_job_result(request: web.Request) -> web.Response:
     class _PathParams(BaseModel):
         task_id: UUID
