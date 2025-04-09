@@ -16,6 +16,7 @@ from settings_library.celery import CelerySettings
 
 from .models import (
     TaskContext,
+    TaskID,
     TaskMetadata,
     TaskMetadataStore,
     TaskState,
@@ -78,16 +79,18 @@ class CeleryTaskQueueClient:
             await self._task_store.set(task_id, task_metadata, expiry=expiry)
             return task_uuid
 
-    @staticmethod
     @make_async()
-    def abort_task(task_context: TaskContext, task_uuid: TaskUUID) -> None:
+    def _abort_task(self, task_id: TaskID) -> None:
+        AbortableAsyncResult(task_id, app=self._celery_app).abort()
+
+    async def abort_task(self, task_context: TaskContext, task_uuid: TaskUUID) -> None:
         with log_context(
             _logger,
             logging.DEBUG,
             msg=f"Abort task: {task_context=} {task_uuid=}",
         ):
             task_id = build_task_id(task_context, task_uuid)
-            AbortableAsyncResult(task_id).abort()
+            return await self._abort_task(task_id)
 
     async def get_task_result(
         self, task_context: TaskContext, task_uuid: TaskUUID
