@@ -1196,7 +1196,18 @@ services:
     environment:
       <<: *storage_environment
       STORAGE_WORKER_MODE: "true"
+      CELERY_CONCURRENCY: 100
+    networks: *storage_networks
+
+  sto-worker-cpu-bound:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-master-github-latest}
+    init: true
+    hostname: "sto-worker-cpu-bound-{{.Node.Hostname}}-{{.Task.Slot}}"
+    environment:
+      <<: *storage_environment
+      STORAGE_WORKER_MODE: "true"
       CELERY_CONCURRENCY: 1
+      CELERY_QUEUES: "cpu-bound"
     networks: *storage_networks
 
   rabbit:
