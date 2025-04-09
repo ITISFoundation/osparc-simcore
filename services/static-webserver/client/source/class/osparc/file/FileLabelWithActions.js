@@ -180,7 +180,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
       const fetchPromise = dataStore.exportData(paths);
       const pollTasks = osparc.store.PollTasks.getInstance();
       pollTasks.createPollingTask(fetchPromise)
-        .then(task => this.__multiDownloadTaskReceived(task))
+        .then(task => this.__exportDataTaskReceived(task))
         .catch(err => osparc.FlashMessenger.logError(err, this.tr("Unsuccessful files download")));
     },
 
@@ -245,7 +245,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
       }
     },
 
-    __multiDownloadTaskReceived: function(task) {
+    __exportDataTaskReceived: function(task) {
       const exportDataTaskUI = new osparc.task.ExportData();
       exportDataTaskUI.setTask(task);
       osparc.task.TasksContainer.getInstance().addTaskUI(exportDataTaskUI);
