@@ -692,7 +692,8 @@ qx.Class.define("osparc.data.model.Workbench", {
       });
       return Promise.allSettled(serviceMetadataPromises)
         .then(results => {
-          if (results.filter(result => result.status === "rejected" || result.value === null)) {
+          const missing = results.filter(result => result.status === "rejected" || result.value === null)
+          if (missing.length) {
             const errorMsg = qx.locale.Manager.tr("Service metadata missing");
             osparc.FlashMessenger.logError(errorMsg);
             return;
