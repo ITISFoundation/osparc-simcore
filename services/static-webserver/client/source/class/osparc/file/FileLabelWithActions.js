@@ -245,7 +245,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
     },
 
     __multiDownloadTaskReceived: function(task) {
-      const exportDataTaskUI = new osparc.task.osparc.task.ExportData();
+      const exportDataTaskUI = new osparc.task.ExportData();
       exportDataTaskUI.setTask(task);
       osparc.task.TasksContainer.getInstance().addTaskUI(exportDataTaskUI);
 
