@@ -6,6 +6,7 @@ from simcore_service_storage.utils.simcore_s3_dsm_utils import (
     UserSelection,
     _strip_parent,
     compute_file_id_prefix,
+    ensure_same_paret_in_user_selection,
 )
 
 
@@ -45,4 +46,28 @@ def test__strip_parent(selection: Path, s3_object: Path, expected: str):
     assert (
         _strip_parent(UserSelection(f"{selection}"), S3ObjectKey(f"{s3_object}"))
         == expected
+    )
+
+
+@pytest.mark.parametrize(
+    "user_slection, expected",
+    [
+        ([], True),
+        (["folder"], True),
+        (["folder", "folder"], True),
+        (["", ""], True),
+        ([""], True),
+        ([_FOLDERS_PATH / "a", _FOLDERS_PATH / "b"], True),
+        (["a.txt", "b.txt"], True),
+        (["a/a.txt"], True),
+        # not same parent
+        (["firsta/file", "second/file"], False),
+        (["a/a.txt", "a.txt", "c.txt", "a/d.txt"], False),
+    ],
+)
+def test_ensure_same_paret_in_user_selection(
+    user_slection: list[S3ObjectKey | Path], expected: bool
+):
+    assert (
+        ensure_same_paret_in_user_selection([f"{x}" for x in user_slection]) == expected
     )
