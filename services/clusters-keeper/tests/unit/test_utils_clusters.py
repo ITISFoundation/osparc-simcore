@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import random
 import re
 import subprocess
 from collections.abc import Callable
@@ -16,7 +17,6 @@ from aws_library.ec2 import (
     EC2InstanceData,
 )
 from common_library.json_serialization import json_dumps
-from common_library.serialization import model_dump_with_secrets
 from faker import Faker
 from models_library.api_schemas_clusters_keeper.clusters import ClusterState
 from models_library.clusters import (
@@ -24,7 +24,7 @@ from models_library.clusters import (
     NoAuthentication,
     TLSAuthentication,
 )
-from pydantic import ByteSize, SecretStr, TypeAdapter
+from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from settings_library.rabbit import RabbitSettings
 from simcore_service_clusters_keeper.core.settings import ApplicationSettings
@@ -207,20 +207,14 @@ def rabbitmq_settings_fixture(
 ) -> RabbitSettings | None:
     if request.param == "custom":
         # Create random RabbitMQ settings using faker
-        custom_rabbit_settings = RabbitSettings(
-            RABBIT_HOST=faker.hostname(),
-            RABBIT_PORT=faker.port_number(),
-            RABBIT_SECURE=faker.boolean(),
-            RABBIT_USER=faker.user_name(),
-            RABBIT_PASSWORD=SecretStr(faker.password()),
+        custom_rabbit_settings = random.choice(  # noqa: S311
+            RabbitSettings.model_json_schema()["examples"]
         )
         monkeypatch.setenv(
-            "PRIMARY_EC2_INSTANCES_RABBIT",
-            json_dumps(
-                model_dump_with_secrets(custom_rabbit_settings, show_secrets=True)
-            ),
+            "PRIMARY_EC2_INSTANCES_RABBIT", json_dumps(custom_rabbit_settings)
         )
-        return custom_rabbit_settings
+        return RabbitSettings.model_validate(custom_rabbit_settings)
+    assert request.param == "default"
     return enabled_rabbitmq
 
 
