@@ -109,8 +109,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
     setItemSelected: function(selectedItem) {
       if (selectedItem) {
         this.__selection = [selectedItem];
-        const isFile = osparc.file.FilesTree.isFile(selectedItem);
-        this.getChildControl("download-button").setEnabled(isFile);
+        this.getChildControl("download-button").setEnabled(true); // folders can also be downloaded
         this.getChildControl("delete-button").setEnabled(true); // folders can also be deleted
         this.getChildControl("selected-label").setValue(selectedItem.getLabel());
       } else {
@@ -165,7 +164,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
     __retrieveURLAndDownloadFile: function(file) {
       const fileId = file.getFileId();
       const locationId = file.getLocation();
-      osparc.utils.Utils.downloadPaths(locationId, fileId)
+      osparc.utils.Utils.retrieveURLAndDownload(locationId, fileId)
         .then(data => {
           if (data) {
             osparc.DownloadLinkTracker.getInstance().downloadLinkUnattended(data.link, data.fileName);
@@ -283,17 +282,15 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
       task.addListener("resultReceived", e => {
         const data = e.getData();
         if (data["result"]) {
-          const link = data["result"];
-
           const params = {
             url: {
               locationId: 0,
-              fileUuid: link
+              fileUuid: encodeURIComponent(data["result"]),
             }
           };
           osparc.data.Resources.fetch("storageLink", "getOne", params)
             .then(data2 => {
-              console.log(data2);
+              osparc.utils.Utils.downloadLink(data2.link, "GET", "hey");
             })
         }
         progressWindow.close();
