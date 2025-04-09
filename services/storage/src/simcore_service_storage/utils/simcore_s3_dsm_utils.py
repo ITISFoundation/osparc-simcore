@@ -145,7 +145,7 @@ def create_random_export_name(user_id: UserID) -> StorageFileID:
     )
 
 
-def ensure_same_paret_in_user_selection(object_keys: list[S3ObjectKey]) -> bool:
+def ensure_same_parent_in_user_selection(object_keys: list[S3ObjectKey]) -> bool:
     parents = [Path(x).parent for x in object_keys]
     return len(set(parents)) <= 1
 
