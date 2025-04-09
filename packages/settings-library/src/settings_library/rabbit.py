@@ -1,7 +1,7 @@
 from functools import cached_property
 from typing import ClassVar
 
-from pydantic.config import ConfigDict, JsonDict
+from pydantic.config import JsonDict
 from pydantic.networks import AnyUrl
 from pydantic.types import SecretStr
 from pydantic_settings import SettingsConfigDict
@@ -60,7 +60,7 @@ class RabbitSettings(BaseCustomSettings):
             }
         )
 
-    model_config = ConfigDict(
+    model_config = SettingsConfigDict(
         extra="ignore",
         populate_by_name=True,
         json_schema_extra=_update_json_schema_extra,
