@@ -195,7 +195,7 @@ async def _wait_for_job(
         {"a", "set"},
     ],
 )
-async def test_asybc_jobs_workflow(
+async def test_async_jobs_workflow(
     initialized_app: FastAPI,
     register_rpc_routes: None,
     storage_rabbitmq_rpc_client: RabbitMQRPCClient,
