@@ -290,7 +290,7 @@ qx.Class.define("osparc.store.Services", {
 
     getInaccessibleServices: function(workbench) {
       const allServices = this.__servicesCached;
-      const unaccessibleServices = [];
+      const inaccessibleServices = [];
       const wbServices = osparc.study.Utils.extractUniqueServices(workbench);
       wbServices.forEach(srv => {
         if (
@@ -300,12 +300,12 @@ qx.Class.define("osparc.store.Services", {
         ) {
           return;
         }
-        const idx = unaccessibleServices.findIndex(unSrv => unSrv.key === srv.key && unSrv.version === srv.version);
+        const idx = inaccessibleServices.findIndex(unSrv => unSrv.key === srv.key && unSrv.version === srv.version);
         if (idx === -1) {
-          unaccessibleServices.push(srv);
+          inaccessibleServices.push(srv);
         }
       });
-      return unaccessibleServices;
+      return inaccessibleServices;
     },
 
     getInaccessibleServicesMsg: function(inaccessibleServices, workbench) {

@@ -113,7 +113,7 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
 
       osparc.store.Services.getStudyServicesMetadata(studyData)
         .finally(() => {
-          const inaccessibleServices = osparc.store.Services.getInaccessibleServices(studyData["workbench"])
+          const inaccessibleServices = osparc.store.Services.getInaccessibleServices(studyData["workbench"]);
           if (inaccessibleServices.length) {
             const msg = osparc.store.Services.getInaccessibleServicesMsg(inaccessibleServices, studyData["workbench"]);
             osparc.FlashMessenger.logError(msg);
