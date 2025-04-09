@@ -280,17 +280,20 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
         }
       }, this);
       task.addListener("resultReceived", e => {
-        const data = e.getData();
-        if (data["result"]) {
+        const taskData = e.getData();
+        if (taskData["result"]) {
           const params = {
             url: {
               locationId: 0,
-              fileUuid: encodeURIComponent(data["result"]),
+              fileUuid: encodeURIComponent(taskData["result"]),
             }
           };
           osparc.data.Resources.fetch("storageLink", "getOne", params)
-            .then(data2 => {
-              osparc.utils.Utils.downloadLink(data2.link, "GET", "hey");
+            .then(data => {
+              if (data && data.link) {
+                const fileName = taskData["result"].split("/").pop();
+                osparc.utils.Utils.downloadLink(data.link, "GET", fileName);
+              }
             })
         }
         progressWindow.close();
