@@ -143,10 +143,11 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
     },
 
     __retrieveURLAndDownloadSelected: function() {
+      const isMultiDownloadEnabled = osparc.utils.DisabledPlugins.isMultiDownloadEnabled();
       if (this.isMultiSelect()) {
         if (this.__selection.length === 1 && osparc.file.FilesTree.isFile(this.__selection[0])) {
           this.__retrieveURLAndDownloadFile(this.__selection[0]);
-        } else if (this.__selection.length > 1) {
+        } else if (this.__selection.length > 1 && isMultiDownloadEnabled) {
           const paths = this.__selection.map(item => item.getPath());
           this.__retrieveURLAndExportData(paths);
         }
@@ -155,7 +156,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
         if (selection) {
           if (osparc.file.FilesTree.isFile(selection)) {
             this.__retrieveURLAndDownloadFile(selection);
-          } else {
+          } else if (isMultiDownloadEnabled) {
             const paths = [selection.getPath()];
             this.__retrieveURLAndExportData(paths);
           }
