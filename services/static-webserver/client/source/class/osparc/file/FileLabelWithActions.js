@@ -109,7 +109,9 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
     setItemSelected: function(selectedItem) {
       if (selectedItem) {
         this.__selection = [selectedItem];
-        this.getChildControl("download-button").setEnabled(true); // folders can also be downloaded
+        const isFile = osparc.file.FilesTree.isFile(selectedItem);
+        const isMultiDownloadEnabled = osparc.utils.DisabledPlugins.isMultiDownloadEnabled();
+        this.getChildControl("download-button").setEnabled(isFile || isMultiDownloadEnabled); // folders can also be downloaded
         this.getChildControl("delete-button").setEnabled(true); // folders can also be deleted
         this.getChildControl("selected-label").setValue(selectedItem.getLabel());
       } else {

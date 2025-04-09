@@ -60,7 +60,6 @@ qx.Class.define("osparc.utils.DisabledPlugins", {
       return osparc.store.StaticInfo.getInstance().isDevFeaturesEnabled();
     },
 
-
     isJobsEnabled: function() {
       if (osparc.utils.Utils.isDevelopmentPlatform() && osparc.product.Utils.isProduct("s4lacad")) {
         return true;
