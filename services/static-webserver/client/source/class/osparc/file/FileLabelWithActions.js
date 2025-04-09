@@ -174,11 +174,12 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
     },
 
     __retrieveURLAndDownloadPaths: function(paths) {
-      const locationId = 0;
-      osparc.store.Data.getInstance().retrieveURLAndDownload(locationId, paths)
-        .then(data => {
-          console.log("data", data);
-        });
+      const dataStore = osparc.store.Data.getInstance();
+      const fetchPromise = dataStore.downloadPaths(paths);
+      const pollTasks = osparc.store.PollTasks.getInstance();
+      pollTasks.createPollingTask(fetchPromise)
+        .then(task => this.__multiDownloadTaskReceived(task))
+        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Unsuccessful files download")));
     },
 
     __deleteSelected: function() {
@@ -237,63 +238,114 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
         const fetchPromise = dataStore.deleteFiles(paths);
         const pollTasks = osparc.store.PollTasks.getInstance();
         pollTasks.createPollingTask(fetchPromise)
-          .then(task => {
-            const taskUI = new osparc.task.TaskUI();
-            taskUI.setIcon("@FontAwesome5Solid/trash/14");
-            taskUI.setTitle(this.tr("Deleting files"));
-            taskUI.setTask(task);
-            osparc.task.TasksContainer.getInstance().addTaskUI(taskUI);
-
-            const progressWindow = new osparc.ui.window.Progress(
-              this.tr("Delete files"),
-              "@FontAwesome5Solid/trash/14",
-              this.tr("Deleting files..."),
-            );
-            if (task.getAbortHref()) {
-              const cancelButton = progressWindow.addCancelButton();
-              cancelButton.setLabel(this.tr("Ignore"));
-              const abortButton = new qx.ui.form.Button().set({
-                label: this.tr("Cancel"),
-                center: true,
-                minWidth: 100,
-              });
-              abortButton.addListener("execute", () => task.abortRequested());
-              progressWindow.addButton(abortButton);
-              abortButton.set({
-                appearance: "danger-button",
-              });
-            }
-            progressWindow.open();
-
-            const finished = () => {
-              progressWindow.close();
-            };
-
-            task.addListener("updateReceived", e => {
-              const data = e.getData();
-              if (data["task_progress"]) {
-                if ("message" in data["task_progress"] && data["task_progress"]["message"]) {
-                  progressWindow.setMessage(data["task_progress"]["message"]);
-                }
-                progressWindow.setProgress(osparc.data.PollTask.extractProgress(data) * 100);
-              }
-            }, this);
-            task.addListener("resultReceived", e => {
-              finished();
-              osparc.FlashMessenger.logAs(this.tr("Items successfully deleted"), "INFO");
-              this.fireDataEvent("pathsDeleted", paths);
-            });
-            task.addListener("taskAborted", () => {
-              finished();
-              osparc.FlashMessenger.logAs(this.tr("Deletion aborted"), "WARNING");
-            });
-            task.addListener("pollingError", e => {
-              const err = e.getData();
-              osparc.FlashMessenger.logError(err);
-            });
-          })
+          .then(task => this.__deleteTaskReceived(task, paths))
           .catch(err => osparc.FlashMessenger.logError(err, this.tr("Unsuccessful files deletion")));
       }
+    },
+
+    __multiDownloadTaskReceived: function(task) {
+      const taskUI = new osparc.task.TaskUI();
+      taskUI.setIcon("@FontAwesome5Solid/download/14");
+      taskUI.setTitle(this.tr("Downloading files"));
+      taskUI.setTask(task);
+      osparc.task.TasksContainer.getInstance().addTaskUI(taskUI);
+
+      const progressWindow = new osparc.ui.window.Progress(
+        this.tr("Downloading files"),
+        "@FontAwesome5Solid/download/14",
+        this.tr("Downloading files..."),
+      );
+      if (task.getAbortHref()) {
+        const cancelButton = progressWindow.addCancelButton();
+        cancelButton.setLabel(this.tr("Ignore"));
+        const abortButton = new qx.ui.form.Button().set({
+          label: this.tr("Cancel"),
+          center: true,
+          minWidth: 100,
+        });
+        abortButton.addListener("execute", () => task.abortRequested());
+        progressWindow.addButton(abortButton);
+        abortButton.set({
+          appearance: "danger-button",
+        });
+      }
+      progressWindow.open();
+
+      task.addListener("updateReceived", e => {
+        const data = e.getData();
+        if (data["task_progress"]) {
+          if ("message" in data["task_progress"] && data["task_progress"]["message"]) {
+            progressWindow.setMessage(data["task_progress"]["message"]);
+          }
+          progressWindow.setProgress(osparc.data.PollTask.extractProgress(data) * 100);
+        }
+      }, this);
+      task.addListener("resultReceived", e => {
+        console.log(e.getData());
+        progressWindow.close();
+      });
+      task.addListener("taskAborted", () => {
+        osparc.FlashMessenger.logAs(this.tr("Download aborted"), "WARNING");
+        progressWindow.close();
+      });
+      task.addListener("pollingError", e => {
+        const err = e.getData();
+        osparc.FlashMessenger.logError(err);
+        progressWindow.close();
+      });
+    },
+
+    __deleteTaskReceived: function(task, paths) {
+      const taskUI = new osparc.task.TaskUI();
+      taskUI.setIcon("@FontAwesome5Solid/trash/14");
+      taskUI.setTitle(this.tr("Deleting files"));
+      taskUI.setTask(task);
+      osparc.task.TasksContainer.getInstance().addTaskUI(taskUI);
+
+      const progressWindow = new osparc.ui.window.Progress(
+        this.tr("Delete files"),
+        "@FontAwesome5Solid/trash/14",
+        this.tr("Deleting files..."),
+      );
+      if (task.getAbortHref()) {
+        const cancelButton = progressWindow.addCancelButton();
+        cancelButton.setLabel(this.tr("Ignore"));
+        const abortButton = new qx.ui.form.Button().set({
+          label: this.tr("Cancel"),
+          center: true,
+          minWidth: 100,
+        });
+        abortButton.addListener("execute", () => task.abortRequested());
+        progressWindow.addButton(abortButton);
+        abortButton.set({
+          appearance: "danger-button",
+        });
+      }
+      progressWindow.open();
+
+      task.addListener("updateReceived", e => {
+        const data = e.getData();
+        if (data["task_progress"]) {
+          if ("message" in data["task_progress"] && data["task_progress"]["message"]) {
+            progressWindow.setMessage(data["task_progress"]["message"]);
+          }
+          progressWindow.setProgress(osparc.data.PollTask.extractProgress(data) * 100);
+        }
+      }, this);
+      task.addListener("resultReceived", e => {
+        osparc.FlashMessenger.logAs(this.tr("Items successfully deleted"), "INFO");
+        this.fireDataEvent("pathsDeleted", paths);
+        progressWindow.close();
+      });
+      task.addListener("taskAborted", () => {
+        osparc.FlashMessenger.logAs(this.tr("Deletion aborted"), "WARNING");
+        progressWindow.close();
+      });
+      task.addListener("pollingError", e => {
+        const err = e.getData();
+        osparc.FlashMessenger.logError(err);
+        progressWindow.close();
+      });
     },
   }
 });
