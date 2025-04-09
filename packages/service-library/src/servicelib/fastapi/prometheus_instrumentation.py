@@ -1,7 +1,7 @@
 # pylint: disable=protected-access
 
 from collections.abc import AsyncIterator
-from typing import Any, Final
+from typing import Final
 
 from fastapi import FastAPI
 from fastapi_lifespan_manager import State
@@ -57,9 +57,7 @@ def setup_prometheus_instrumentation(app: FastAPI) -> Instrumentator:
 _PROMETHEUS_INSTRUMENTATION_ENABLED: Final[str] = "prometheus_instrumentation_enabled"
 
 
-def get_prometheus_instrumentationmain_main_lifespan(
-    *, enabled: bool
-) -> dict[str, Any]:
+def get_prometheus_instrumentationmain_main_lifespan(*, enabled: bool) -> State:
     return {_PROMETHEUS_INSTRUMENTATION_ENABLED: enabled}
 
 

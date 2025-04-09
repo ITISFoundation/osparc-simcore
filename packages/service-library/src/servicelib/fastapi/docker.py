@@ -2,7 +2,7 @@ import asyncio
 import logging
 from collections.abc import AsyncIterator
 from contextlib import AsyncExitStack
-from typing import Any, Final
+from typing import Final
 
 import aiodocker
 import aiohttp
@@ -21,9 +21,7 @@ _DEFAULT_DOCKER_API_PROXY_HEALTH_TIMEOUT: Final[NonNegativeInt] = 5
 _DOCKER_API_PROXY_SETTINGS: Final[str] = "docker_api_proxy_settings"
 
 
-def get_remote_docker_client_main_lifespan(
-    settings: DockerApiProxysettings,
-) -> dict[str, Any]:
+def get_remote_docker_client_main_lifespan(settings: DockerApiProxysettings) -> State:
     return {_DOCKER_API_PROXY_SETTINGS: settings}
 
 
