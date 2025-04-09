@@ -63,7 +63,7 @@ def get_prometheus_instrumentationmain_main_lifespan(
     return {_PROMETHEUS_INSTRUMENTATION_ENABLED: enabled}
 
 
-async def lifespan_prometheus_instrumentation(
+async def prometheus_instrumentation_lifespan(
     app: FastAPI, state: State
 ) -> AsyncIterator[State]:
     # NOTE: requires ``initialize_prometheus_instrumentation`` to be called before the

@@ -27,7 +27,7 @@ def get_remote_docker_client_main_lifespan(
     return {_DOCKER_API_PROXY_SETTINGS: settings}
 
 
-async def lifespan_remote_docker_client(
+async def remote_docker_client_lifespan(
     app: FastAPI, state: State
 ) -> AsyncIterator[State]:
     settings: DockerApiProxysettings = state[_DOCKER_API_PROXY_SETTINGS]

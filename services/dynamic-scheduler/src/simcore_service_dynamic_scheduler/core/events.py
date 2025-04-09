@@ -4,24 +4,24 @@ from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager, State
 from servicelib.fastapi.docker import (
     get_remote_docker_client_main_lifespan,
-    lifespan_remote_docker_client,
+    remote_docker_client_lifespan,
 )
 from servicelib.fastapi.prometheus_instrumentation import (
     get_prometheus_instrumentationmain_main_lifespan,
-    lifespan_prometheus_instrumentation,
+    prometheus_instrumentation_lifespan,
 )
 
 from .._meta import APP_FINISHED_BANNER_MSG, APP_STARTED_BANNER_MSG
-from ..api.rpc.routes import lifespan_rpc_api_routes
-from ..services.catalog import lifespan_catalog
-from ..services.deferred_manager import lifespan_deferred_manager
-from ..services.director_v0 import lifespan_director_v0
-from ..services.director_v2 import lifespan_director_v2
-from ..services.notifier import get_lifespans_notifier
-from ..services.rabbitmq import lifespan_rabbitmq
-from ..services.redis import lifespan_redis
-from ..services.service_tracker import lifespan_service_tracker
-from ..services.status_monitor import lifespan_status_monitor
+from ..api.rpc.routes import rpc_api_routes_lifespan
+from ..services.catalog import catalog_lifespan
+from ..services.deferred_manager import deferred_manager_lifespan
+from ..services.director_v0 import director_v0_lifespan
+from ..services.director_v2 import director_v2_lifespan
+from ..services.notifier import get_notifier_lifespans
+from ..services.rabbitmq import rabbitmq_lifespan
+from ..services.redis import redis_lifespan
+from ..services.service_tracker import service_tracker_lifespan
+from ..services.status_monitor import status_monitor_lifespan
 from .settings import ApplicationSettings
 
 
@@ -49,23 +49,23 @@ def create_app_lifespan() -> LifespanManager:
     app_lifespan = LifespanManager()
     app_lifespan.add(_main_lifespan)
 
-    app_lifespan.add(lifespan_director_v2)
-    app_lifespan.add(lifespan_director_v0)
-    app_lifespan.add(lifespan_catalog)
-    app_lifespan.add(lifespan_rabbitmq)
-    app_lifespan.add(lifespan_rpc_api_routes)
-    app_lifespan.add(lifespan_redis)
+    app_lifespan.add(director_v2_lifespan)
+    app_lifespan.add(director_v0_lifespan)
+    app_lifespan.add(catalog_lifespan)
+    app_lifespan.add(rabbitmq_lifespan)
+    app_lifespan.add(rpc_api_routes_lifespan)
+    app_lifespan.add(redis_lifespan)
 
-    for lifespan in get_lifespans_notifier():
+    for lifespan in get_notifier_lifespans():
         app_lifespan.add(lifespan)
 
-    app_lifespan.add(lifespan_service_tracker)
-    app_lifespan.add(lifespan_deferred_manager)
-    app_lifespan.add(lifespan_status_monitor)
+    app_lifespan.add(service_tracker_lifespan)
+    app_lifespan.add(deferred_manager_lifespan)
+    app_lifespan.add(status_monitor_lifespan)
 
-    app_lifespan.add(lifespan_remote_docker_client)
+    app_lifespan.add(remote_docker_client_lifespan)
 
-    app_lifespan.add(lifespan_prometheus_instrumentation)
+    app_lifespan.add(prometheus_instrumentation_lifespan)
 
     app_lifespan.add(_banner_lifespan)
 

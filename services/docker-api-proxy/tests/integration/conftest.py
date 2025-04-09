@@ -14,7 +14,7 @@ from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_di
 from servicelib.fastapi.docker import (
     get_remote_docker_client,
     get_remote_docker_client_main_lifespan,
-    lifespan_remote_docker_client,
+    remote_docker_client_lifespan,
 )
 from settings_library.application import BaseApplicationSettings
 from settings_library.docker_api_proxy import DockerApiProxysettings
@@ -53,7 +53,7 @@ def _get_test_app() -> FastAPI:
 
     lifespan_manager = LifespanManager()
     lifespan_manager.add(_main_lifespan)
-    lifespan_manager.add(lifespan_remote_docker_client)
+    lifespan_manager.add(remote_docker_client_lifespan)
 
     app = FastAPI(lifespan=lifespan_manager)
     app.state.settings = settings

@@ -9,7 +9,7 @@ from servicelib.fastapi.postgres_lifespan import (
 )
 from servicelib.fastapi.prometheus_instrumentation import (
     get_prometheus_instrumentationmain_main_lifespan,
-    lifespan_prometheus_instrumentation,
+    prometheus_instrumentation_lifespan,
 )
 
 from .._meta import APP_FINISHED_BANNER_MSG, APP_STARTED_BANNER_MSG
@@ -76,7 +76,7 @@ def create_app_lifespan() -> LifespanManager:
     app_lifespan.add(background_task_lifespan)
 
     # - prometheus instrumentation
-    app_lifespan.add(lifespan_prometheus_instrumentation)
+    app_lifespan.add(prometheus_instrumentation_lifespan)
 
     app_lifespan.add(_banners_lifespan)
 
