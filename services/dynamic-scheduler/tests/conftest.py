@@ -83,7 +83,7 @@ def app_environment(
     )
 
 
-_PATH_APPLICATION: Final[str] = "simcore_service_dynamic_scheduler.core.application"
+_PATH_APPLICATION: Final[str] = "simcore_service_dynamic_scheduler.core.events"
 
 
 @pytest.fixture

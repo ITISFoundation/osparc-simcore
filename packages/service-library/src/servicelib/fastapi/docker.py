@@ -2,7 +2,7 @@ import asyncio
 import logging
 from collections.abc import AsyncIterator
 from contextlib import AsyncExitStack
-from typing import Final
+from typing import Any, Final
 
 import aiodocker
 import aiohttp
@@ -56,6 +56,52 @@ def get_lifespan_remote_docker_client(
             yield {}
 
     return _
+
+
+_DOCKER_API_PROXY_SETTINGS: Final[str] = "docker_api_proxy_settings"
+
+
+def get_remote_docker_client_main_lifespan(
+    settings: DockerApiProxysettings,
+) -> dict[str, Any]:
+    return {_DOCKER_API_PROXY_SETTINGS: settings}
+
+
+async def lifespan_remote_docker_client(
+    app: FastAPI, state: State
+) -> AsyncIterator[State]:
+    settings: DockerApiProxysettings = state[_DOCKER_API_PROXY_SETTINGS]
+
+    session: ClientSession | None = None
+    if settings.DOCKER_API_PROXY_USER and settings.DOCKER_API_PROXY_PASSWORD:
+        session = ClientSession(
+            auth=aiohttp.BasicAuth(
+                login=settings.DOCKER_API_PROXY_USER,
+                password=settings.DOCKER_API_PROXY_PASSWORD.get_secret_value(),
+            )
+        )
+
+    async with AsyncExitStack() as exit_stack:
+        if settings.DOCKER_API_PROXY_USER and settings.DOCKER_API_PROXY_PASSWORD:
+            await exit_stack.enter_async_context(
+                ClientSession(
+                    auth=aiohttp.BasicAuth(
+                        login=settings.DOCKER_API_PROXY_USER,
+                        password=settings.DOCKER_API_PROXY_PASSWORD.get_secret_value(),
+                    )
+                )
+            )
+
+        client = await exit_stack.enter_async_context(
+            aiodocker.Docker(url=settings.base_url, session=session)
+        )
+
+        app.state.remote_docker_client = client
+
+        await wait_till_docker_api_proxy_is_responsive(app)
+
+        # NOTE this has to be inside exit_stack scope
+        yield {}
 
 
 @tenacity.retry(

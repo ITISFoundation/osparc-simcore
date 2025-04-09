@@ -4,10 +4,11 @@ from collections.abc import AsyncIterator
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager, State
 from servicelib.fastapi.postgres_lifespan import (
-    PostgresLifespanState,
+    get_postgres_database_main_lifespan,
     postgres_database_lifespan,
 )
 from servicelib.fastapi.prometheus_instrumentation import (
+    get_prometheus_instrumentationmain_main_lifespan,
     lifespan_prometheus_instrumentation,
 )
 
@@ -43,20 +44,14 @@ async def _main_lifespan(app: FastAPI) -> AsyncIterator[State]:
     settings: ApplicationSettings = app.state.settings
 
     yield {
-        PostgresLifespanState.POSTGRES_SETTINGS: settings.CATALOG_POSTGRES,
-        "prometheus_instrumentation_enabled": settings.CATALOG_PROMETHEUS_INSTRUMENTATION_ENABLED,
+        **get_postgres_database_main_lifespan(settings.CATALOG_POSTGRES),
+        **get_prometheus_instrumentationmain_main_lifespan(
+            enabled=settings.CATALOG_PROMETHEUS_INSTRUMENTATION_ENABLED
+        ),
     }
 
 
-async def _prometheus_instrumentation_lifespan(
-    app: FastAPI, state: State
-) -> AsyncIterator[State]:
-    if state.get("prometheus_instrumentation_enabled", False):
-        async for prometheus_state in lifespan_prometheus_instrumentation(app):
-            yield prometheus_state
-
-
-def create_app_lifespan():
+def create_app_lifespan() -> LifespanManager:
     # WARNING: order matters
     app_lifespan = LifespanManager()
     app_lifespan.add(_main_lifespan)
@@ -81,7 +76,7 @@ def create_app_lifespan():
     app_lifespan.add(background_task_lifespan)
 
     # - prometheus instrumentation
-    app_lifespan.add(_prometheus_instrumentation_lifespan)
+    app_lifespan.add(lifespan_prometheus_instrumentation)
 
     app_lifespan.add(_banners_lifespan)
 
