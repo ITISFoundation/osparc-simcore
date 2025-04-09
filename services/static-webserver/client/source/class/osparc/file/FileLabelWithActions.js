@@ -148,7 +148,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
           this.__retrieveURLAndDownloadFile(this.__selection[0]);
         } else if (this.__selection.length > 1) {
           const paths = this.__selection.map(item => item.getPath());
-          this.__retrieveURLAndDownloadPaths(paths);
+          this.__retrieveURLAndExportData(paths);
         }
       } else if (this.__selection.length) {
         const selection = this.__selection[0];
@@ -157,7 +157,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
             this.__retrieveURLAndDownloadFile(selection);
           } else {
             const paths = [selection.getPath()];
-            this.__retrieveURLAndDownloadPaths(paths);
+            this.__retrieveURLAndExportData(paths);
           }
         }
       }
@@ -174,9 +174,9 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
         });
     },
 
-    __retrieveURLAndDownloadPaths: function(paths) {
+    __retrieveURLAndExportData: function(paths) {
       const dataStore = osparc.store.Data.getInstance();
-      const fetchPromise = dataStore.downloadPaths(paths);
+      const fetchPromise = dataStore.exportData(paths);
       const pollTasks = osparc.store.PollTasks.getInstance();
       pollTasks.createPollingTask(fetchPromise)
         .then(task => this.__multiDownloadTaskReceived(task))
@@ -245,9 +245,9 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
     },
 
     __multiDownloadTaskReceived: function(task) {
-      const downloadPathsTaskUI = new osparc.task.osparc.task.DownloadPaths();
-      downloadPathsTaskUI.setTask(task);
-      osparc.task.TasksContainer.getInstance().addTaskUI(downloadPathsTaskUI);
+      const exportDataTaskUI = new osparc.task.osparc.task.ExportData();
+      exportDataTaskUI.setTask(task);
+      osparc.task.TasksContainer.getInstance().addTaskUI(exportDataTaskUI);
 
       const progressWindow = new osparc.ui.window.Progress(
         this.tr("Downloading files"),

@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.task.DownloadPaths", {
+qx.Class.define("osparc.task.ExportData", {
   extend: osparc.task.TaskUI,
 
   construct: function() {

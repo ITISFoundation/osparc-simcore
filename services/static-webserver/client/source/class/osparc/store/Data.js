@@ -234,7 +234,7 @@ qx.Class.define("osparc.store.Data", {
       return true;
     },
 
-    downloadPaths: function(paths) {
+    exportData: function(paths) {
       if (!osparc.data.Permissions.getInstance().canDo("study.node.data.delete", true)) {
         return null;
       }

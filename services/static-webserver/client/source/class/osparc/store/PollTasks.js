@@ -83,6 +83,10 @@ qx.Class.define("osparc.store.PollTasks", {
       return this.getTasks().filter(task => task.getTaskId().includes("from_study") && task.getTaskId().includes("as_template"));
     },
 
+    getExportDataTasks: function() {
+      return this.getTasks().filter(task => task.getTaskId().includes("from_study") && task.getTaskId().includes("as_template"));
+    },
+
     removeTasks: function() {
       const tasks = this.getTasks();
       tasks.forEach(task => task.dispose());
