@@ -92,6 +92,11 @@ class CeleryTaskQueueClient:
             task_id = build_task_id(task_context, task_uuid)
             return await self._abort_task(task_id)
 
+    @make_async()
+    def _get_result(self, task_context: TaskContext, task_uuid: TaskUUID) -> Any:
+        task_id = build_task_id(task_context, task_uuid)
+        return self._celery_app.AsyncResult(task_id).result
+
     async def get_task_result(
         self, task_context: TaskContext, task_uuid: TaskUUID
     ) -> Any:
@@ -109,12 +114,8 @@ class CeleryTaskQueueClient:
                     await self._task_store.remove(task_id)
             return result
 
-    def _get_progress_report(
-        self, task_context: TaskContext, task_uuid: TaskUUID
-    ) -> ProgressReport:
-        task_id = build_task_id(task_context, task_uuid)
-        result = self._celery_app.AsyncResult(task_id).result
-        state = self._get_state(task_context, task_uuid)
+    @staticmethod
+    async def _get_progress_report(state, result) -> ProgressReport:
         if result and state == TaskState.RUNNING:
             with contextlib.suppress(ValidationError):
                 # avoids exception if result is not a ProgressReport (or overwritten by a Celery's state update)
@@ -144,10 +145,12 @@ class CeleryTaskQueueClient:
             logging.DEBUG,
             msg=f"Getting task status: {task_context=} {task_uuid=}",
         ):
+            state = await self._get_state(task_context, task_uuid)
+            result = await self._get_result(task_context, task_uuid)
             return TaskStatus(
                 task_uuid=task_uuid,
-                task_state=await self._get_state(task_context, task_uuid),
-                progress_report=self._get_progress_report(task_context, task_uuid),
+                task_state=state,
+                progress_report=await self._get_progress_report(state, result),
             )
 
     async def get_task_uuids(self, task_context: TaskContext) -> set[TaskUUID]:
