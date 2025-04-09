@@ -105,7 +105,6 @@ class CeleryTaskQueueClient:
                 task_metadata = await self._task_store.get(task_id)
                 if task_metadata is not None and task_metadata.ephemeral:
                     await self._task_store.remove(task_id)
-                await self._task_store.remove(task_id)
             return result
 
     def _get_progress_report(
