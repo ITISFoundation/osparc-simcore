@@ -17,7 +17,7 @@ _logger = logging.getLogger(__name__)
 
 
 def _build_key(task_id: TaskID) -> str:
-    return _CELERY_TASK_META_PREFIX + task_id
+    return _CELERY_TASK_METADATA_PREFIX + task_id
 
 
 class RedisTaskMetadataStore:
