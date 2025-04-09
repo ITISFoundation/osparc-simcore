@@ -1016,7 +1016,7 @@ async def with_storage_celery_worker_controller(
         concurrency=1,
         loglevel="info",
         perform_ping_check=False,
-        worker_kwargs={"hostname": "celery@worker1"},
+        queues="default,cpu_bound",
     ) as worker:
         worker_init.send(sender=worker)
 

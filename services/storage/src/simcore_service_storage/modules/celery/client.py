@@ -68,7 +68,7 @@ class CeleryTaskQueueClient:
                 task_name,
                 task_id=task_id,
                 kwargs=task_params,
-                queue=task_metadata.queue,
+                queue=task_metadata.queue.value,
             )
 
             expiry = (
@@ -145,12 +145,12 @@ class CeleryTaskQueueClient:
             logging.DEBUG,
             msg=f"Getting task status: {task_context=} {task_uuid=}",
         ):
-            state = await self._get_state(task_context, task_uuid)
+            task_state = await self._get_state(task_context, task_uuid)
             result = await self._get_result(task_context, task_uuid)
             return TaskStatus(
                 task_uuid=task_uuid,
-                task_state=state,
-                progress_report=await self._get_progress_report(state, result),
+                task_state=task_state,
+                progress_report=await self._get_progress_report(task_state, result),
             )
 
     async def get_task_uuids(self, task_context: TaskContext) -> set[TaskUUID]:
