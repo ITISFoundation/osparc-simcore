@@ -130,17 +130,16 @@ qx.Class.define("osparc.store.Services", {
             this.__addHit(service);
             this.__addTSRInfo(service);
             this.__addExtraTypeInfo(service);
-            this.__addServiceToCache(service)
+            this.__addServiceToCache(service);
+            delete this.__servicesPromisesCached[key][version];
             resolve(service);
           })
           .catch(err => {
             // store it in cache to avoid asking again
             this.__addToCache(key, version, null);
+            delete this.__servicesPromisesCached[key][version];
             console.error(err);
             reject();
-          })
-          .finally(() => {
-            delete this.__servicesPromisesCached[key][version];
           });
       });
     },
