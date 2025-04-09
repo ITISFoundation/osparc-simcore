@@ -341,10 +341,10 @@ async def batch_delete_folders_with_content_in_root_workspace_as_admin(
     fail_fast: bool,
 ) -> None:
     """
-    Deletes all projects in the workspace root.
+    Deletes all folders recursively in the workspace root.
 
     Raises:
-        ProjectsBatchDeleteError: If there are errors during the deletion process.
+        FolderBatchDeleteError: If there are errors during the deletion process.
     """
     deleted_folder_ids: list[FolderID] = []
     errors: list[tuple[FolderID, Exception]] = []
