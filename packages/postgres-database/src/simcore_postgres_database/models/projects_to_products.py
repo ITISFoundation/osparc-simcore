@@ -34,4 +34,5 @@ projects_to_products = sa.Table(
     column_created_datetime(timezone=False),
     column_modified_datetime(timezone=False),
     sa.UniqueConstraint("project_uuid", "product_name"),
+    sa.Index("idx_projects_to_products_product_name", "product_name"),
 )

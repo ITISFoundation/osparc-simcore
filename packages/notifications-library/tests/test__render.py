@@ -2,16 +2,19 @@ import shutil
 from pathlib import Path
 
 from models_library.products import ProductName
+from notifications_library._models import ProductData
 from notifications_library._render import (
-    create_render_env_from_folder,
-    create_render_env_from_package,
+    create_render_environment_from_folder,
+    create_render_environment_from_notifications_library,
 )
 from notifications_library._templates import _print_tree, _templates_dir
 
 
-def test_render_env_from_folder(tmp_path: Path, product_name: ProductName):
+def test_render_env_from_folder(
+    tmp_path: Path, product_name: ProductName, product_data: ProductData
+):
 
-    pkg_env = create_render_env_from_package()
+    pkg_env = create_render_environment_from_notifications_library()
 
     top_dir = tmp_path / "consolidated"
     top_dir.mkdir()
@@ -22,9 +25,10 @@ def test_render_env_from_folder(tmp_path: Path, product_name: ProductName):
 
     _print_tree(top_dir)
 
-    consolidated_env = create_render_env_from_folder(top_dir)
+    consolidated_env = create_render_environment_from_folder(top_dir)
 
     product_template = consolidated_env.get_template(f"{product_name}/base.html")
     common_template = pkg_env.get_template("base.html")
 
-    assert product_template.render() == common_template.render()
+    data = {"product": product_data}
+    assert product_template.render(data) == common_template.render(data)

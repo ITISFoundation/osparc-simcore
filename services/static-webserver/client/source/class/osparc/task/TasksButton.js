@@ -57,10 +57,11 @@ qx.Class.define("osparc.task.TasksButton", {
         case "number":
           control = new qx.ui.basic.Label().set({
             backgroundColor: "background-main-1",
+            paddingLeft: 4,
             font: "text-12"
           });
           control.getContentElement().setStyles({
-            "border-radius": "4px"
+            "border-radius": "8px"
           });
           this._add(control, {
             bottom: 8,
@@ -72,7 +73,7 @@ qx.Class.define("osparc.task.TasksButton", {
     },
 
     __updateTasksButton: function() {
-      this._createChildControlImpl("icon");
+      this.getChildControl("icon");
       const number = this.getChildControl("number");
 
       const tasks = osparc.task.TasksContainer.getInstance();
@@ -105,7 +106,10 @@ qx.Class.define("osparc.task.TasksButton", {
         }
       }
       const tasks = osparc.task.TasksContainer.getInstance();
-      tasks.setTasksContainerPosition(bounds.left+bounds.width, osparc.navigation.NavigationBar.HEIGHT+3);
+      tasks.setTasksContainerPosition(
+        bounds.left + bounds.width - osparc.task.TaskUI.MAX_WIDTH,
+        osparc.navigation.NavigationBar.HEIGHT + 14
+      );
       tasks.getTasksContainer().show();
       document.addEventListener("mousedown", tapListener);
     },

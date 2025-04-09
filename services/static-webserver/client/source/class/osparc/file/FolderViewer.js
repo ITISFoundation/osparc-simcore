@@ -179,6 +179,14 @@ qx.Class.define("osparc.file.FolderViewer", {
 
     __applyFolder: function() {
       this.getChildControl("selected-file-layout").resetSelection();
-    }
+    },
+
+    resetSelection: function() {
+      const folderContent = this.getChildControl("folder-content");
+      folderContent.resetSelection();
+
+      const selectedFileLayout = this.getChildControl("selected-file-layout");
+      selectedFileLayout.resetSelection();
+    },
   }
 });

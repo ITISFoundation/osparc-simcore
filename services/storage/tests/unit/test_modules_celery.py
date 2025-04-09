@@ -16,14 +16,13 @@ from celery.contrib.abortable import AbortableTask
 from common_library.errors_classes import OsparcErrorMixin
 from fastapi import FastAPI
 from models_library.progress_bar import ProgressReport
-from pydantic import TypeAdapter, ValidationError
 from servicelib.logging_utils import log_context
 from simcore_service_storage.modules.celery import get_celery_client, get_event_loop
-from simcore_service_storage.modules.celery._task import define_task
+from simcore_service_storage.modules.celery._task import register_task
 from simcore_service_storage.modules.celery.client import CeleryTaskQueueClient
+from simcore_service_storage.modules.celery.errors import TransferrableCeleryError
 from simcore_service_storage.modules.celery.models import (
     TaskContext,
-    TaskError,
     TaskState,
 )
 from simcore_service_storage.modules.celery.utils import (
@@ -42,11 +41,12 @@ pytest_simcore_ops_services_selection = []
 @pytest.fixture
 def celery_client(
     initialized_app: FastAPI,
+    with_storage_celery_worker: CeleryTaskQueueWorker,
 ) -> CeleryTaskQueueClient:
     return get_celery_client(initialized_app)
 
 
-async def _async_archive(
+async def _fake_file_processor(
     celery_app: Celery, task_name: str, task_id: str, files: list[str]
 ) -> str:
     worker = get_celery_worker(celery_app)
@@ -59,18 +59,18 @@ async def _async_archive(
             worker.set_task_progress(
                 task_name=task_name,
                 task_id=task_id,
-                report=ProgressReport(actual_value=n / len(files), total=1.0),
+                report=ProgressReport(actual_value=n / len(files)),
             )
             await asyncio.get_event_loop().run_in_executor(None, sleep_for, 1)
 
     return "archive.zip"
 
 
-def sync_archive(task: Task, files: list[str]) -> str:
+def fake_file_processor(task: Task, files: list[str]) -> str:
     assert task.name
-    _logger.info("Calling async_archive")
+    _logger.info("Calling _fake_file_processor")
     return asyncio.run_coroutine_threadsafe(
-        _async_archive(task.app, task.name, task.request.id, files),
+        _fake_file_processor(task.app, task.name, task.request.id, files),
         get_event_loop(get_fastapi_app(task.app)),
     ).result()
 
@@ -85,35 +85,34 @@ def failure_task(task: Task):
     raise MyError(msg=msg)
 
 
-def dreamer_task(task: AbortableTask) -> list[int]:
+async def dreamer_task(task: AbortableTask) -> list[int]:
     numbers = []
     for _ in range(30):
         if task.is_aborted():
             _logger.warning("Alarm clock")
             return numbers
         numbers.append(randint(1, 90))  # noqa: S311
-        time.sleep(0.1)
+        await asyncio.sleep(0.1)
     return numbers
 
 
 @pytest.fixture
 def register_celery_tasks() -> Callable[[Celery], None]:
     def _(celery_app: Celery) -> None:
-        define_task(celery_app, sync_archive)
-        define_task(celery_app, failure_task)
-        define_task(celery_app, dreamer_task)
+        register_task(celery_app, fake_file_processor)
+        register_task(celery_app, failure_task)
+        register_task(celery_app, dreamer_task)
 
     return _
 
 
 async def test_submitting_task_calling_async_function_results_with_success_state(
     celery_client: CeleryTaskQueueClient,
-    with_storage_celery_worker: CeleryTaskQueueWorker,
 ):
     task_context = TaskContext(user_id=42)
 
     task_uuid = await celery_client.send_task(
-        "sync_archive",
+        fake_file_processor.__name__,
         task_context=task_context,
         files=[f"file{n}" for n in range(5)],
     )
@@ -137,38 +136,34 @@ async def test_submitting_task_calling_async_function_results_with_success_state
 
 async def test_submitting_task_with_failure_results_with_error(
     celery_client: CeleryTaskQueueClient,
-    with_storage_celery_worker: CeleryTaskQueueWorker,
-):
-    task_context = TaskContext(user_id=42)
-
-    task_uuid = await celery_client.send_task("failure_task", task_context=task_context)
-
-    for attempt in Retrying(
-        retry=retry_if_exception_type((AssertionError, ValidationError)),
-        wait=wait_fixed(1),
-        stop=stop_after_delay(30),
-    ):
-        with attempt:
-            raw_result = await celery_client.get_task_result(task_context, task_uuid)
-            result = TypeAdapter(TaskError).validate_python(raw_result)
-            assert isinstance(result, TaskError)
-
-    assert (
-        await celery_client.get_task_status(task_context, task_uuid)
-    ).task_state == TaskState.ERROR
-    raw_result = await celery_client.get_task_result(task_context, task_uuid)
-    result = TypeAdapter(TaskError).validate_python(raw_result)
-    assert f"{result.exc_msg}" == "Something strange happened: BOOM!"
-
-
-async def test_aborting_task_results_with_aborted_state(
-    celery_client: CeleryTaskQueueClient,
-    with_storage_celery_worker: CeleryTaskQueueWorker,
 ):
     task_context = TaskContext(user_id=42)
 
     task_uuid = await celery_client.send_task(
-        "dreamer_task",
+        failure_task.__name__, task_context=task_context
+    )
+
+    for attempt in Retrying(
+        retry=retry_if_exception_type(AssertionError),
+        wait=wait_fixed(1),
+        stop=stop_after_delay(30),
+    ):
+
+        with attempt:
+            raw_result = await celery_client.get_task_result(task_context, task_uuid)
+            assert isinstance(raw_result, TransferrableCeleryError)
+
+    raw_result = await celery_client.get_task_result(task_context, task_uuid)
+    assert f"{raw_result}" == "Something strange happened: BOOM!"
+
+
+async def test_aborting_task_results_with_aborted_state(
+    celery_client: CeleryTaskQueueClient,
+):
+    task_context = TaskContext(user_id=42)
+
+    task_uuid = await celery_client.send_task(
+        dreamer_task.__name__,
         task_context=task_context,
     )
 
@@ -190,12 +185,11 @@ async def test_aborting_task_results_with_aborted_state(
 
 async def test_listing_task_uuids_contains_submitted_task(
     celery_client: CeleryTaskQueueClient,
-    with_storage_celery_worker: CeleryTaskQueueWorker,
 ):
     task_context = TaskContext(user_id=42)
 
     task_uuid = await celery_client.send_task(
-        "dreamer_task",
+        dreamer_task.__name__,
         task_context=task_context,
     )
 

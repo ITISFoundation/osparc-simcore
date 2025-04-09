@@ -3,15 +3,12 @@ from typing import Annotated
 
 from pydantic import BaseModel, Field
 
-from ..api_schemas_storage.data_export_async_jobs import DataExportTaskStartInput
 from ..api_schemas_storage.storage_schemas import (
     DEFAULT_NUMBER_OF_PATHS_PER_PAGE,
     MAX_NUMBER_OF_PATHS_PER_PAGE,
 )
-from ..projects_nodes_io import LocationID, StorageFileID
-from ..rest_pagination import (
-    CursorQueryParameters,
-)
+from ..projects_nodes_io import LocationID
+from ..rest_pagination import CursorQueryParameters
 from ._base import InputSchema
 
 
@@ -36,11 +33,12 @@ class ListPathsQueryParams(InputSchema, CursorQueryParameters):
     ] = DEFAULT_NUMBER_OF_PATHS_PER_PAGE
 
 
-class DataExportPost(InputSchema):
-    paths: list[StorageFileID]
+class BatchDeletePathsBodyParams(InputSchema):
+    paths: set[Path]
 
-    def to_rpc_schema(self, location_id: LocationID) -> DataExportTaskStartInput:
-        return DataExportTaskStartInput(
-            file_and_folder_ids=self.paths,
-            location_id=location_id,
-        )
+
+PathToExport = Path
+
+
+class DataExportPost(InputSchema):
+    paths: list[PathToExport]

@@ -10,6 +10,16 @@ class AccessRights(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
+    def verify_access_integrity(self):
+        """Helper function that checks extra constraints in access-rights flags"""
+        if self.write and not self.read:
+            msg = "Write access requires read access"
+            raise ValueError(msg)
+        if self.delete and not self.write:
+            msg = "Delete access requires read access"
+            raise ValueError(msg)
+        return self
+
 
 class ExecutableAccessRights(BaseModel):
     write: Annotated[bool, Field(description="can change executable settings")]

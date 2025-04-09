@@ -144,6 +144,7 @@ services:
   webserver:
     environment: &webserver_environment_local
       <<: *common_environment
+      WEBSERVER_FUNCTIONS: ${WEBSERVER_FUNCTIONS}
     ports:
       - "8080"
       - "3001:3000"

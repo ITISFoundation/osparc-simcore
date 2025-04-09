@@ -375,6 +375,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       this.__addNewStudyButtons();
 
+      this.__tasksToCards();
+
       const loadMoreBtn = this.__createLoadMoreButton();
       loadMoreBtn.set({
         fetching,
@@ -610,7 +612,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         card.addListener("tap", e => this.__studyCardClicked(card, e.getNativeEvent().shiftKey), this);
         this._populateCardMenu(card);
 
-        this.__attachDragHandlers(card);
+        if (this.getCurrentContext() !== "trash") {
+          this.__attachDragHandlers(card);
+        }
       });
     },
 
@@ -1897,9 +1901,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         pollTask: true
       };
       const fetchPromise = osparc.data.Resources.fetch("studies", "duplicate", params, options);
-      const interval = 1000;
       const pollTasks = osparc.store.PollTasks.getInstance();
-      pollTasks.createPollingTask(fetchPromise, interval)
+      pollTasks.createPollingTask(fetchPromise)
         .then(task => this.__taskDuplicateReceived(task, studyData["name"]))
         .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while duplicating")));
     },
@@ -1922,8 +1925,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .catch(err => {
           const msg = osparc.data.Resources.getErrorMsg(JSON.parse(err.response)) || this.tr("Something went wrong while exporting the study");
           osparc.FlashMessenger.logError(err, msg);
-        })
-        .finally(() => osparc.task.TasksContainer.getInstance().removeTaskUI(exportTaskUI));
+        });
     },
 
     __importStudy: function(file) {
@@ -1981,11 +1983,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             .then(studyData => this._updateStudyData(studyData))
             .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while fetching the study")))
             .finally(() => {
-              osparc.task.TasksContainer.getInstance().removeTaskUI(importTaskUI);
               this._resourcesContainer.removeNonResourceCard(importingStudyCard);
             });
         } else if (req.status == 400) {
-          osparc.task.TasksContainer.getInstance().removeTaskUI(importTaskUI);
           this._resourcesContainer.removeNonResourceCard(importingStudyCard);
           const msg = osparc.data.Resources.getErrorMsg(JSON.parse(req.response)) || this.tr("Something went wrong while importing the study");
           osparc.FlashMessenger.logError(msg);
@@ -1993,14 +1993,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
       req.addEventListener("error", e => {
         // transferFailed
-        osparc.task.TasksContainer.getInstance().removeTaskUI(importTaskUI);
         this._resourcesContainer.removeNonResourceCard(importingStudyCard);
         const msg = osparc.data.Resources.getErrorMsg(e) || this.tr("Something went wrong while importing the study");
         osparc.FlashMessenger.logError(msg);
       });
       req.addEventListener("abort", e => {
         // transferAborted
-        osparc.task.TasksContainer.getInstance().removeTaskUI(importTaskUI);
         this._resourcesContainer.removeNonResourceCard(importingStudyCard);
         const msg = osparc.data.Resources.getErrorMsg(e) || this.tr("Something went wrong while importing the study");
         osparc.FlashMessenger.logError(msg);
@@ -2132,34 +2130,31 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const cardTitle = this.tr("Duplicating ") + studyName;
       const duplicatingStudyCard = this._addTaskCard(task, cardTitle, osparc.task.Duplicate.ICON);
       if (duplicatingStudyCard) {
-        this.__attachDuplicateEventHandler(task, duplicateTaskUI, duplicatingStudyCard);
+        this.__attachDuplicateEventHandler(task);
       }
     },
 
-    __attachDuplicateEventHandler: function(task, taskUI, duplicatingStudyCard) {
-      const finished = (msg, msgLevel) => {
-        if (msg) {
-          osparc.FlashMessenger.logAs(msg, msgLevel);
-        }
-        osparc.store.PollTasks.getInstance().removeTask(task);
-        osparc.task.TasksContainer.getInstance().removeTaskUI(taskUI);
-        this._resourcesContainer.removeNonResourceCard(duplicatingStudyCard);
+    __attachDuplicateEventHandler: function(task) {
+      const finished = () => {
+        this._removeTaskCard(task);
       };
 
-      task.addListener("taskAborted", () => {
-        const msg = this.tr("Duplication cancelled");
-        finished(msg, "WARNING");
-      });
       task.addListener("resultReceived", e => {
-        const msg = this.tr("Duplication completed");
-        finished(msg, "INFO");
+        finished();
         const duplicatedStudyData = e.getData();
         this._updateStudyData(duplicatedStudyData);
+        const msg = this.tr("Duplication completed");
+        osparc.FlashMessenger.logAs(msg, "INFO");
+      });
+      task.addListener("taskAborted", () => {
+        finished();
+        const msg = this.tr("Duplication cancelled");
+        osparc.FlashMessenger.logAs(msg, "WARNING");
       });
       task.addListener("pollingError", e => {
+        finished();
         const err = e.getData();
-        const msg = this.tr("Something went wrong while duplicating the study<br>") + err.message;
-        finished(msg, "ERROR");
+        osparc.FlashMessenger.logError(err);
       });
     }
     // TASKS //

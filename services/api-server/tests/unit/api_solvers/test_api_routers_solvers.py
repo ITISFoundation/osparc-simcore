@@ -18,7 +18,7 @@ from starlette import status
 @pytest.mark.skip(reason="Still under development. Currently using fake implementation")
 async def test_list_solvers(
     client: httpx.AsyncClient,
-    mocked_catalog_service_api: MockRouter,
+    mocked_catalog_rest_api: MockRouter,
     mocker: MockFixture,
 ):
     warn = mocker.patch.object(
@@ -63,7 +63,7 @@ async def test_list_solvers(
 
 
 async def test_list_solver_ports(
-    mocked_catalog_service_api: MockRouter,
+    mocked_catalog_rest_api: MockRouter,
     client: httpx.AsyncClient,
     auth: httpx.BasicAuth,
 ):

@@ -5,7 +5,7 @@ from typing import Annotated, TypeAlias
 from pydantic import Field, TypeAdapter
 from pydantic.types import StringConstraints
 
-# RESOURCE NAMES https://cloud.google.com/apis/design/resource_names
+# RESOURCE NAMES https://google.aip.dev/122
 #
 #
 # API Service Name          Collection ID   Resource ID         Collection ID  Resource ID
@@ -56,3 +56,23 @@ def compose_resource_name(*collection_or_resource_ids) -> RelativeResourceName:
 def split_resource_name(resource_name: RelativeResourceName) -> list[str]:
     quoted_parts = resource_name.split("/")
     return [f"{urllib.parse.unquote_plus(p)}" for p in quoted_parts]
+
+
+def split_resource_name_as_dict(
+    resource_name: RelativeResourceName,
+) -> dict[str, str | None]:
+    """Returns a map with
+    resource_ids[Collection-ID] == Resource-ID
+    """
+    parts = split_resource_name(resource_name)
+    return dict(zip(parts[::2], parts[1::2], strict=False))
+
+
+def parse_collections_ids(resource_name: RelativeResourceName) -> list[str]:
+    parts = split_resource_name(resource_name)
+    return parts[::2]
+
+
+def parse_resources_ids(resource_name: RelativeResourceName) -> list[str]:
+    parts = split_resource_name(resource_name)
+    return parts[1::2]

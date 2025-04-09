@@ -15,6 +15,7 @@ import httpx
 import pytest
 import respx
 import simcore_service_catalog
+import simcore_service_catalog.core.application
 import simcore_service_catalog.core.events
 import yaml
 from asgi_lifespan import LifespanManager
@@ -139,7 +140,7 @@ async def app(
 
     # create instance
     assert app_environment
-    app_under_test = create_app(settings=app_settings)
+    app_under_test = create_app()
 
     assert spy_app.on_startup.call_count == 0
     assert spy_app.on_shutdown.call_count == 0
@@ -166,7 +167,7 @@ def client(
 
     # create instance
     assert app_environment
-    app_under_test = create_app(settings=app_settings)
+    app_under_test = create_app()
 
     assert (
         spy_app.on_startup.call_count == 0
@@ -199,7 +200,7 @@ async def aclient(
         headers={"Content-Type": "application/json"},
         transport=httpx.ASGITransport(app=app),
     ) as acli:
-        assert isinstance(acli._transport, httpx.ASGITransport)
+        assert isinstance(acli._transport, httpx.ASGITransport)  # noqa: SLF001
         assert spy_app.on_startup.call_count == 1
         assert spy_app.on_shutdown.call_count == 0
 
@@ -215,32 +216,37 @@ def service_caching_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.fixture
-def postgres_setup_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("CATALOG_POSTGRES", "null")
+def postgres_setup_disabled(mocker: MockerFixture):
+    mocker.patch.object(
+        simcore_service_catalog.core.events, "postgres_database_lifespan"
+    )
+    mocker.patch.object(simcore_service_catalog.core.events, "database_lifespan")
 
 
 @pytest.fixture
 def background_tasks_setup_disabled(mocker: MockerFixture) -> None:
     """patch the setup of the background task so we can call it manually"""
 
-    def _factory(name):
-        async def _side_effect(app: FastAPI):
-            assert app
+    class MockedBackgroundTaskContextManager:
+        async def __aenter__(self):
             print(
                 "TEST",
                 background_tasks_setup_disabled.__name__,
-                "Disabled background tasks. Skipping execution of",
-                name,
+                "Disabled background tasks. Skipping execution of __aenter__",
             )
 
-        return _side_effect
+        async def __aexit__(self, exc_type, exc_value, traceback):
+            print(
+                "TEST",
+                background_tasks_setup_disabled.__name__,
+                "Disabled background tasks. Skipping execution of __aexit__",
+            )
 
-    for name in ("start_registry_sync_task", "stop_registry_sync_task"):
-        mocker.patch(
-            f"simcore_service_catalog.core.events.{name}",
-            side_effect=_factory(name),
-            autospec=True,
-        )
+    mocker.patch.object(
+        simcore_service_catalog.core.events,
+        "background_task_lifespan",
+        return_value=MockedBackgroundTaskContextManager(),
+    )
 
 
 #
@@ -251,8 +257,8 @@ def background_tasks_setup_disabled(mocker: MockerFixture) -> None:
 @pytest.fixture
 def rabbitmq_and_rpc_setup_disabled(mocker: MockerFixture):
     # The following services are affected if rabbitmq is not in place
-    mocker.patch("simcore_service_catalog.core.application.setup_rabbitmq")
-    mocker.patch("simcore_service_catalog.core.application.setup_rpc_api_routes")
+    mocker.patch.object(simcore_service_catalog.core.events, "rabbitmq_lifespan")
+    mocker.patch.object(simcore_service_catalog.core.events, "rpc_api_lifespan")
 
 
 @pytest.fixture
@@ -268,8 +274,8 @@ async def rpc_client(
 
 
 @pytest.fixture
-def director_setup_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("CATALOG_DIRECTOR", "null")
+def director_setup_disabled(mocker: MockerFixture) -> None:
+    mocker.patch.object(simcore_service_catalog.core.events, "director_lifespan")
 
 
 @pytest.fixture

@@ -129,6 +129,7 @@ def main(
 def summary(
     user_id: Annotated[int, typer.Option(help="filters by the user ID")] = 0,
     wallet_id: Annotated[int, typer.Option(help="filters by the wallet ID")] = 0,
+    as_json: Annotated[bool, typer.Option(help="outputs as json")] = False,
 ) -> None:
     """Show a summary of the current situation of autoscaled EC2 instances.
 
@@ -140,7 +141,9 @@ def summary(
 
     """
 
-    if not asyncio.run(api.summary(state, user_id or None, wallet_id or None)):
+    if not asyncio.run(
+        api.summary(state, user_id or None, wallet_id or None, output_json=as_json)
+    ):
         raise typer.Exit(1)
 
 
@@ -152,7 +155,7 @@ def cancel_jobs(
         typer.Option(help="the wallet ID"),
     ] = None,
     *,
-    force: Annotated[
+    abort_in_db: Annotated[
         bool,
         typer.Option(
             help="will also force the job to abort in the database (use only if job is in WAITING FOR CLUSTER/WAITING FOR RESOURCE)"
@@ -166,14 +169,20 @@ def cancel_jobs(
     Keyword Arguments:
         user_id -- the user ID
         wallet_id -- the wallet ID
+        abort_in_db -- will also force the job to abort in the database (use only if job is in WAITING FOR CLUSTER/WAITING FOR RESOURCE)
     """
-    asyncio.run(api.cancel_jobs(state, user_id, wallet_id, force=force))
+    asyncio.run(api.cancel_jobs(state, user_id, wallet_id, abort_in_db=abort_in_db))
 
 
 @app.command()
 def trigger_cluster_termination(
     user_id: Annotated[int, typer.Option(help="the user ID")],
-    wallet_id: Annotated[int, typer.Option(help="the wallet ID")],
+    wallet_id: Annotated[
+        Optional[int | None],  # noqa: UP007 # typer does not understand | syntax
+        typer.Option(help="the wallet ID"),
+    ] = None,
+    *,
+    force: Annotated[bool, typer.Option(help="will not ask for confirmation")] = False,
 ) -> None:
     """this will set the Heartbeat tag on the primary machine to 1 hour, thus ensuring the
     clusters-keeper will properly terminate that cluster.
@@ -181,8 +190,9 @@ def trigger_cluster_termination(
     Keyword Arguments:
         user_id -- the user ID
         wallet_id -- the wallet ID
+        force -- will not ask for confirmation (VERY RISKY! USE WITH CAUTION!)
     """
-    asyncio.run(api.trigger_cluster_termination(state, user_id, wallet_id))
+    asyncio.run(api.trigger_cluster_termination(state, user_id, wallet_id, force=force))
 
 
 @app.command()

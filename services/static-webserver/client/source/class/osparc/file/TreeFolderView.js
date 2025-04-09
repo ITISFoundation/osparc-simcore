@@ -118,12 +118,9 @@ qx.Class.define("osparc.file.TreeFolderView", {
           if (osparc.file.FilesTree.isDir(selectedModel)) {
             folderViewer.setFolder(selectedModel);
           }
+          // this will trigger the fetching of the content
           folderTree.openNodeAndParents(selectedModel);
           folderTree.setSelection(new qx.data.Array([selectedModel]));
-          if (selectedModel.getPath() && !selectedModel.getLoaded()) {
-            selectedModel.setLoaded(true);
-            folderTree.requestPathItems(selectedModel.getLocation(), selectedModel.getPath());
-          }
         }
       }, this);
 
@@ -139,22 +136,18 @@ qx.Class.define("osparc.file.TreeFolderView", {
       }, this);
     },
 
-    openPath: function(path) {
-      const foldersTree = this.getChildControl("folder-tree");
-      const folderViewer = this.getChildControl("folder-viewer");
-      let found = false;
-      while (!found && path.length) {
-        found = foldersTree.findItemId(path.join("/"));
-        // look for next parent
-        path.pop();
-      }
-      if (found) {
-        foldersTree.openNodeAndParents(found);
-        foldersTree.setSelection(new qx.data.Array([found]));
-        foldersTree.fireEvent("selectionChanged");
-      } else {
-        folderViewer.resetFolder();
-      }
+    pathsDeleted: function(paths) {
+      this.getChildControl("folder-viewer").resetSelection();
+
+      const folderTree = this.getChildControl("folder-tree");
+      const selectedFolder = folderTree.getSelectedItem();
+      const children = selectedFolder.getChildren();
+      paths.forEach(path => {
+        const found = children.toArray().find(child => child.getPath() === path);
+        if (found) {
+          children.remove(found);
+        }
+      });
     },
 
     requestSize: function(pathId) {
@@ -166,13 +159,14 @@ qx.Class.define("osparc.file.TreeFolderView", {
       pollTasks.createPollingTask(fetchPromise)
         .then(task => {
           task.addListener("resultReceived", e => {
-            const size = e.getData();
+            const data = e.getData();
+            const size = (data && "result" in data) ? osparc.utils.Utils.bytesToSize(data["result"]) : "-";
             totalSize.set({
               icon: null,
-              label: this.tr("Total size: ") + osparc.utils.Utils.bytesToSize(size),
+              label: this.tr("Total size: ") + size,
             });
           });
-          task.addListener("pollingError", e => totalSize.hide());
+          task.addListener("pollingError", () => totalSize.hide());
         })
         .catch(err => {
           console.error(err);

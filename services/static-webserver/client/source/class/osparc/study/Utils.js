@@ -220,9 +220,9 @@ qx.Class.define("osparc.study.Utils", {
                 task.addListener("updateReceived", e => {
                   const updateData = e.getData();
                   if ("task_progress" in updateData && loadingPage) {
-                    const progress = updateData["task_progress"];
-                    const message = progress["message"];
-                    const percent = progress["percent"] ? parseFloat(progress["percent"].toFixed(3)) : progress["percent"];
+                    const taskProgress = updateData["task_progress"];
+                    const message = taskProgress["message"];
+                    const percent = osparc.data.PollTask.extractProgress(updateData);
                     progressSequence.setOverallProgress(percent);
                     const existingTask = progressSequence.getTask(message);
                     if (existingTask) {
@@ -342,12 +342,11 @@ qx.Class.define("osparc.study.Utils", {
       return Object.values(studyData["workbench"]).filter(nodeData => !osparc.data.model.Node.isFrontend(nodeData));
     },
 
-    guessIcon: async function(studyData) {
+    guessIcon: function(studyData) {
       if (osparc.product.Utils.isProduct("tis") || osparc.product.Utils.isProduct("tiplite")) {
-        return this.__guessTIPIcon(studyData);
+        return new Promise(resolve => resolve(this.__guessTIPIcon(studyData)));
       }
-      const icon = await this.__guessIcon(studyData);
-      return icon;
+      return this.__guessIcon(studyData);
     },
 
     __guessIcon: function(studyData) {

@@ -1,9 +1,14 @@
 {% extends 'base.html' %}
 {% block title %} {% include 'on_new_invitation.email.subject.txt' %} {% endblock %}
 {% block content %}
-<p>Dear {{ user.first_name }},</p>
+<p>Dear {{ user.first_name or user.user_name }},</p>
 <p>Thank you for your interest in {{ product.display_name }}. We are pleased to provide you with a one-time invitation link to register on the platform.</p>
-<p>Click <a href="{{ link }}">here</a> to access the registration page.</p>
+<p>
+  <!-- Many email clients strip or ignore certain CSS properties, including them inline -->
+  <button class="strong-button" style="border-radius: 4px;">
+    <a href="{{ link }}" style="color: white;">Register</a>
+  </button>
+</p>
 <p>Please follow the on-screen information and proceed with your registration.</p>
 <p>If any problem should occur, please feel free to contact us at {{ product.support_email }}.</p>
 <p>Enjoy {{ product.display_name }}!</p>

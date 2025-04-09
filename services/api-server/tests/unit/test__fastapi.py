@@ -26,10 +26,10 @@ from faker import Faker
 from fastapi import APIRouter, FastAPI, status
 from fastapi.testclient import TestClient
 from simcore_service_api_server._meta import API_VTAG
+from simcore_service_api_server.models.schemas.programs import VersionStr
 from simcore_service_api_server.models.schemas.solvers import (
     Solver,
     SolverKeyId,
-    VersionStr,
 )
 
 

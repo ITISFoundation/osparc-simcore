@@ -1,4 +1,4 @@
-Dear {{ user.first_name }},
+Dear {{ user.first_name or user.user_name }},
 
 You have requested to change the email address linked to your {{ product.display_name }} account. Please follow the on-screen information in the link below:
 

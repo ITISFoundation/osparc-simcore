@@ -22,9 +22,10 @@ from servicelib.logging_utils import log_context
 from ...exceptions.custom_errors import InsufficientCreditsError, MissingWalletError
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.basic_types import LogStreamingResponse, VersionStr
+from ...models.domain.files import File as DomainFile
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
-from ...models.schemas.files import File
+from ...models.schemas.files import File as SchemaFile
 from ...models.schemas.jobs import (
     ArgumentTypes,
     Job,
@@ -133,7 +134,7 @@ async def list_jobs(
     - SEE `get_jobs_page` for paginated version of this function
     """
 
-    solver = await catalog_client.get_service(
+    solver = await catalog_client.get_solver(
         user_id=user_id,
         name=solver_key,
         version=version,
@@ -147,7 +148,9 @@ async def list_jobs(
 
     jobs: deque[Job] = deque()
     for prj in projects_page.data:
-        job = create_job_from_project(solver_key, version, prj, url_for)
+        job = create_job_from_project(
+            solver_or_program=solver, project=prj, url_for=url_for
+        )
         assert job.id == prj.uuid  # nosec
         assert job.name == prj.name  # nosec
 
@@ -178,7 +181,7 @@ async def get_jobs_page(
     # NOTE: Different entry to keep backwards compatibility with list_jobs.
     # Eventually use a header with agent version to switch to new interface
 
-    solver = await catalog_client.get_service(
+    solver = await catalog_client.get_solver(
         user_id=user_id,
         name=solver_key,
         version=version,
@@ -191,7 +194,7 @@ async def get_jobs_page(
     )
 
     jobs: list[Job] = [
-        create_job_from_project(solver_key, version, prj, url_for)
+        create_job_from_project(solver_or_program=solver, project=prj, url_for=url_for)
         for prj in projects_page.data
     ]
 
@@ -211,7 +214,10 @@ async def get_job(
     solver_key: SolverKeyId,
     version: VersionStr,
     job_id: JobID,
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    product_name: Annotated[str, Depends(get_product_name)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
     """Gets job of a given solver"""
@@ -219,9 +225,17 @@ async def get_job(
         "Getting Job '%s'", _compose_job_resource_name(solver_key, version, job_id)
     )
 
+    solver = await catalog_client.get_solver(
+        user_id=user_id,
+        name=solver_key,
+        version=version,
+        product_name=product_name,
+    )
     project: ProjectGet = await webserver_api.get_project(project_id=job_id)
 
-    job = create_job_from_project(solver_key, version, project, url_for)
+    job = create_job_from_project(
+        solver_or_program=solver, project=project, url_for=url_for
+    )
     assert job.id == job_id  # nosec
     return job  # nosec
 
@@ -269,19 +283,21 @@ async def get_job_outputs(
     results: dict[str, ArgumentTypes] = {}
     for name, value in outputs.items():
         if isinstance(value, BaseFileLink):
-            file_id: UUID = File.create_id(*value.path.split("/"))
+            file_id: UUID = DomainFile.create_id(*value.path.split("/"))
 
             found = await storage_client.search_owned_files(
                 user_id=user_id, file_id=file_id, limit=1
             )
             if found:
                 assert len(found) == 1  # nosec
-                results[name] = to_file_api_model(found[0])
+                results[name] = SchemaFile.from_domain_model(
+                    to_file_api_model(found[0])
+                )
             else:
-                api_file: File = await storage_client.create_soft_link(
+                api_file = await storage_client.create_soft_link(
                     user_id=user_id, target_s3_path=value.path, as_file_id=file_id
                 )
-                results[name] = api_file
+                results[name] = SchemaFile.from_domain_model(api_file)
         else:
             results[name] = value
 

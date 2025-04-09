@@ -7,12 +7,12 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, Header, Query, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
-from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
 from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from pydantic.types import PositiveInt
 
+from ..._service import create_solver_or_program_job
 from ...exceptions.backend_errors import ProjectAlreadyStartedError
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.basic_types import VersionStr
@@ -30,14 +30,16 @@ from ...services_http.catalog import CatalogApi
 from ...services_http.director_v2 import DirectorV2Api
 from ...services_http.jobs import replace_custom_metadata, start_project, stop_project
 from ...services_http.solver_job_models_converters import (
-    create_job_from_project,
     create_jobstatus_from_task,
-    create_new_project_for_job,
 )
+from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver_http import AuthSession, get_webserver_session
+from ..dependencies.webserver_rpc import (
+    get_wb_api_rpc_client,
+)
 from ._constants import (
     FMSG_CHANGELOG_ADDED_IN_VERSION,
     FMSG_CHANGELOG_CHANGED_IN_VERSION,
@@ -88,13 +90,14 @@ JOBS_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     status_code=status.HTTP_201_CREATED,
     responses=JOBS_STATUS_CODES,
 )
-async def create_job(
+async def create_solver_job(
     solver_key: SolverKeyId,
     version: VersionStr,
     inputs: JobInputs,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
     hidden: Annotated[bool, Query()] = True,
@@ -107,38 +110,28 @@ async def create_job(
     """
 
     # ensures user has access to solver
-    solver = await catalog_client.get_service(
+    solver = await catalog_client.get_solver(
         user_id=user_id,
         name=solver_key,
         version=version,
         product_name=product_name,
     )
-
-    # creates NEW job as prototype
-    pre_job = Job.create_solver_job(solver=solver, inputs=inputs)
-    _logger.debug("Creating Job '%s'", pre_job.name)
-
-    project_in: ProjectCreateNew = create_new_project_for_job(solver, pre_job, inputs)
-    new_project: ProjectGet = await webserver_api.create_project(
-        project_in,
-        is_hidden=hidden,
+    job, project = await create_solver_or_program_job(
+        webserver_api=webserver_api,
+        solver_or_program=solver,
+        inputs=inputs,
+        url_for=url_for,
+        hidden=hidden,
         parent_project_uuid=x_simcore_parent_project_uuid,
         parent_node_id=x_simcore_parent_node_id,
     )
-    assert new_project  # nosec
-    assert new_project.uuid == pre_job.id  # nosec
 
-    # for consistency, it rebuild job
-    job = create_job_from_project(
-        solver_key=solver.id,
-        solver_version=solver.version,
-        project=new_project,
-        url_for=url_for,
+    await wb_api_rpc.mark_project_as_job(
+        product_name=product_name,
+        user_id=user_id,
+        project_uuid=project.uuid,
+        job_parent_resource_name=job.runner_name,
     )
-    assert job.id == pre_job.id  # nosec
-    assert job.name == pre_job.name  # nosec
-    assert job.name == _compose_job_resource_name(solver_key, version, job.id)  # nosec
-
     return job
 
 

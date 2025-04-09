@@ -276,6 +276,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "PUT",
             url: statics.API + "/projects/{studyId}/groups/{gId}"
           },
+          shareWithEmail: {
+            method: "POST",
+            url: statics.API + "/projects/{studyId}:share"
+          },
           addTag: {
             useCache: false,
             method: "POST",
@@ -565,21 +569,6 @@ qx.Class.define("osparc.data.Resources", {
        * SERVICES
        */
       "services": {
-        useCache: true,
-        idField: ["key", "version"],
-        endpoints: {
-          pricingPlans: {
-            useCache: false,
-            method: "GET",
-            url: statics.API + "/catalog/services/{key}/{version}/pricing-plan"
-          }
-        }
-      },
-
-      /*
-       * SERVICES V2
-       */
-      "servicesV2": {
         useCache: false, // handled in osparc.store.Services
         idField: ["key", "version"],
         endpoints: {
@@ -594,7 +583,12 @@ qx.Class.define("osparc.data.Resources", {
           patch: {
             method: "PATCH",
             url: statics.API + "/catalog/services/{key}/{version}"
-          }
+          },
+          pricingPlans: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/catalog/services/{key}/{version}/pricing-plan"
+          },
         }
       },
 
@@ -1190,10 +1184,6 @@ qx.Class.define("osparc.data.Resources", {
           copy: {
             method: "PUT",
             url: statics.API + "/storage/locations/{toLoc}/files/{fileName}?extra_location={fromLoc}&extra_source={fileUuid}"
-          },
-          delete: {
-            method: "DELETE",
-            url: statics.API + "/storage/locations/{locationId}/files/{fileUuid}"
           }
         }
       },
@@ -1218,6 +1208,10 @@ qx.Class.define("osparc.data.Resources", {
           getPathsPage: {
             method: "GET",
             url: statics.API + "/storage/locations/{locationId}/paths?file_filter={path}&cursor={cursor}&size=1000"
+          },
+          batchDelete: {
+            method: "POST",
+            url: statics.API + "/storage/locations/{locationId}/-/paths:batchDelete"
           },
           requestSize: {
             method: "POST",
@@ -1441,6 +1435,7 @@ qx.Class.define("osparc.data.Resources", {
 
           let message = null;
           let status = null;
+          let supportId = null;
           if (e.getData().error) {
             const errorData = e.getData().error;
             if (errorData.message) {
@@ -1455,6 +1450,9 @@ qx.Class.define("osparc.data.Resources", {
               message = errors[0].message;
             }
             status = errorData.status;
+            if (errorData["support_id"]) {
+              supportId = errorData["support_id"];
+            }
           } else {
             const req = e.getRequest();
             message = req.getResponse();
@@ -1485,6 +1483,9 @@ qx.Class.define("osparc.data.Resources", {
           const err = Error(message ? message : `Error while trying to fetch ${endpoint} ${resource}`);
           if (status) {
             err.status = status;
+          }
+          if (supportId) {
+            err.supportId = supportId;
           }
           reject(err);
         };

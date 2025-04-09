@@ -21,6 +21,7 @@ pytest \
 
 import functools
 import json
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
@@ -41,8 +42,10 @@ from notifications_library._email_render import (
     get_user_address,
     render_email_parts,
 )
-from notifications_library._models import ProductData, UserData
-from notifications_library._render import create_render_env_from_package
+from notifications_library._models import ProductData, SharerData, UserData
+from notifications_library._render import (
+    create_render_environment_from_notifications_library,
+)
 from notifications_library.payments import PaymentData
 from pydantic import EmailStr
 from pydantic.json import pydantic_encoder
@@ -65,8 +68,8 @@ def ipinfo(faker: Faker) -> dict[str, Any]:
 
 @pytest.fixture
 def request_form(faker: Faker) -> dict[str, Any]:
-    return AccountRequestInfo(
-        **AccountRequestInfo.model_config["json_schema_extra"]["example"]
+    return AccountRequestInfo.model_validate(
+        AccountRequestInfo.model_json_schema()["example"]
     ).model_dump()
 
 
@@ -126,13 +129,22 @@ def event_extra_data(  # noqa: PLR0911
                 "host": host_url,
                 "link": f"{host_url}?registration={code}",
             }
-
         case "on_reset_password":
             return {
                 "host": host_url,
                 "success": faker.pybool(),
                 "reason": faker.sentence(),
                 "link": f"{host_url}?reset-password={code}",
+            }
+        case "on_share_project":
+            return {
+                "host": host_url,
+                "resource_alias": "Project",
+                "sharer": SharerData(
+                    user_name=faker.name(),
+                    message=faker.random_element(elements=(faker.sentence(), "")),
+                ),
+                "accept_link": f"{host_url}?code={code}",
             }
         case "on_unregister":
             return {
@@ -168,6 +180,7 @@ def event_attachments(event_name: str, faker: Faker) -> list[tuple[bytes, str]]:
         "on_payed",
         "on_registered",
         "on_reset_password",
+        "on_share_project",
         "on_unregister",
     ],
 )
@@ -176,6 +189,7 @@ async def test_email_event(
     smtp_mock_or_none: MagicMock | None,
     user_data: UserData,
     user_email: EmailStr,
+    sharer_data: SharerData | None,
     product_data: ProductData,
     product_name: ProductName,
     event_name: str,
@@ -186,8 +200,12 @@ async def test_email_event(
     assert user_data.email == user_email
     assert product_data.product_name == product_name
 
+    event_extra_data = event_extra_data | (asdict(sharer_data) if sharer_data else {})
+
     parts = render_email_parts(
-        env=create_render_env_from_package(undefined=StrictUndefined),
+        env=create_render_environment_from_notifications_library(
+            undefined=StrictUndefined
+        ),
         event_name=event_name,
         user=user_data,
         product=product_data,
@@ -204,7 +222,7 @@ async def test_email_event(
     msg = compose_email(
         from_,
         to,
-        subject=parts.suject,
+        subject=parts.subject,
         content_text=parts.text_content,
         content_html=parts.html_content,
     )
@@ -254,7 +272,9 @@ async def test_email_with_reply_to(
         )
 
     parts = render_email_parts(
-        env=create_render_env_from_package(undefined=StrictUndefined),
+        env=create_render_environment_from_notifications_library(
+            undefined=StrictUndefined
+        ),
         event_name=event_name,
         user=user_data,
         product=product_data,
@@ -273,7 +293,7 @@ async def test_email_with_reply_to(
     msg = compose_email(
         from_,
         to,
-        subject=parts.suject,
+        subject=parts.subject,
         content_text=parts.text_content,
         content_html=parts.html_content,
         reply_to=reply_to,

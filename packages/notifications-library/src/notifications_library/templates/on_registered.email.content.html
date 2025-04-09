@@ -1,10 +1,14 @@
 {% extends 'base.html' %}
 {% block title %} {% include 'on_registered.email.subject.txt' %} {% endblock %}
 {% block content %}
-<p>Dear {{ user.first_name }},</p>
+<p>Dear {{ user.first_name or user.user_name }},</p>
 <p>Thank you for your interest in {{ product.display_name }}. You have successfully registered for {{ host }}.</p>
 <p>Please activate your account via the link below:</p>
-<p><a href="{{ link }}">{{ link }}</a></p>
+<p>
+  <button class="strong-button" style="border-radius: 4px;">
+    <a href="{{ link }}" style="color: white;">Activate</a>
+  </button>
+</p>
 <p>Please don't hesitate to contact us at {{ product.support_email }} if you need further help.</p>
 <p>Best Regards,</p>
 <p>The <i>{{ product.display_name }}</i> Team</p>

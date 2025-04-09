@@ -188,14 +188,11 @@ async def list_projects_full_search(request: web.Request):
     if not query_params.filters:
         query_params.filters = ProjectFilters()
 
-    tag_ids_list = query_params.tag_ids_list()
-
     projects, total_number_of_projects = await _crud_api_read.list_projects_full_depth(
         request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
         trashed=query_params.filters.trashed,
-        tag_ids_list=tag_ids_list,
         search_by_multi_columns=query_params.text,
         search_by_project_name=query_params.filters.search_by_project_name,
         offset=query_params.offset,

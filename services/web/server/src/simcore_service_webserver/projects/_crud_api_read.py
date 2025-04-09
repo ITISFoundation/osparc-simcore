@@ -175,7 +175,6 @@ async def list_projects_full_depth(
     product_name: str,
     # attrs filter
     trashed: bool | None,
-    tag_ids_list: list[int],
     # pagination
     offset: NonNegativeInt,
     limit: int,
@@ -199,7 +198,6 @@ async def list_projects_full_depth(
         folder_query=FolderQuery(folder_scope=FolderScope.ALL),
         filter_trashed=trashed,
         filter_by_services=user_available_services,
-        filter_tag_ids_list=tag_ids_list,
         filter_by_project_type=ProjectType.STANDARD,
         search_by_multi_columns=search_by_multi_columns,
         search_by_project_name=search_by_project_name,

@@ -51,6 +51,15 @@ qx.Class.define("osparc.filter.CollaboratorToggleButton", {
     this.getChildControl("check");
   },
 
+  properties: {
+    iconSrc: {
+      check: "String",
+      nullable: true,
+      init: "@FontAwesome5Solid/check/14",
+      event: "changeIconSrc"
+    },
+  },
+
   members: {
     _createChildControlImpl: function(id) {
       let control;
@@ -69,7 +78,8 @@ qx.Class.define("osparc.filter.CollaboratorToggleButton", {
           }
           break;
         case "check":
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/check/14");
+          control = new qx.ui.basic.Image();
+          this.bind("iconSrc", control, "source");
           control.setAnonymous(true);
           this._add(control);
           this.bind("value", control, "visibility", {

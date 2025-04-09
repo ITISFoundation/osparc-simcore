@@ -6,9 +6,11 @@ from ..core.settings import ApplicationSettings
 from .routes import credits as _credits
 from .routes import (
     files,
+    functions,
     health,
     licensed_items,
     meta,
+    programs,
     solvers,
     solvers_jobs,
     solvers_jobs_getters,
@@ -32,6 +34,7 @@ def create_router(settings: ApplicationSettings):
     router.include_router(meta.router, tags=["meta"], prefix="/meta")
     router.include_router(users.router, tags=["users"], prefix="/me")
     router.include_router(files.router, tags=["files"], prefix="/files")
+    router.include_router(programs.router, tags=["programs"], prefix="/programs")
     router.include_router(solvers.router, tags=["solvers"], prefix=_SOLVERS_PREFIX)
     router.include_router(solvers_jobs.router, tags=["solvers"], prefix=_SOLVERS_PREFIX)
     router.include_router(
@@ -44,6 +47,7 @@ def create_router(settings: ApplicationSettings):
     router.include_router(
         licensed_items.router, tags=["licensed-items"], prefix="/licensed-items"
     )
+    router.include_router(functions.router, tags=["functions"], prefix="/functions")
 
     # NOTE: multiple-files upload is currently disabled
     # Web form to upload files at http://localhost:8000/v0/upload-form-view
