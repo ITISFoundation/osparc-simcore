@@ -10,7 +10,7 @@ from tenacity import TryAgain, before_sleep_log, retry, retry_if_exception_type
 from tenacity.wait import wait_fixed
 
 from .async_utils import cancel_wait_task, delayed_start
-from .logging_utils import log_context
+from .logging_utils import log_catch, log_context
 
 _logger = logging.getLogger(__name__)
 
@@ -84,7 +84,8 @@ def periodic(
         )
         @functools.wraps(func)
         async def _wrapper(*args: P.args, **kwargs: P.kwargs) -> None:
-            await func(*args, **kwargs)
+            with log_catch(_logger, reraise=True):
+                await func(*args, **kwargs)
             raise _InternalTryAgain
 
         return _wrapper
