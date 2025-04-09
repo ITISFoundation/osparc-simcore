@@ -29,7 +29,6 @@ qx.Class.define("osparc.utils.DisabledPlugins", {
     VERSION_CONTROL: "WEBSERVER_VERSION_CONTROL",
     META_MODELING: "WEBSERVER_META_MODELING",
     LICENSES: "WEBSERVER_LICENSES",
-    SHARE_WITH_EMAIL: "WEBSERVER_SHARE_WITH_EMAIL",
 
     isExportDisabled: function() {
       return this.__isPluginDisabled(this.EXPORT);
@@ -54,9 +53,13 @@ qx.Class.define("osparc.utils.DisabledPlugins", {
     },
 
     isShareWithEmailEnabled: function() {
-      // return !this.__isPluginDisabled(this.SHARE_WITH_EMAIL);
-      return new Promise(resolve => resolve(osparc.utils.Utils.isDevelopmentPlatform()));
+      return osparc.store.StaticInfo.getInstance().isDevFeaturesEnabled();
     },
+
+    isMultiDownloadEnabled: function() {
+      return osparc.store.StaticInfo.getInstance().isDevFeaturesEnabled();
+    },
+
 
     isJobsEnabled: function() {
       if (osparc.utils.Utils.isDevelopmentPlatform() && osparc.product.Utils.isProduct("s4lacad")) {
