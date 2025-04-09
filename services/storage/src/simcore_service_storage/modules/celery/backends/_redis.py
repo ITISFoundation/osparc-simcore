@@ -7,7 +7,6 @@ from servicelib.redis._client import RedisClientSDK
 
 from ..models import TaskContext, TaskID, TaskMetadata, TaskUUID, build_task_id_prefix
 
-_CELERY_TASK_META_PREFIX: Final[str] = "celery-task-meta-"
 _CELERY_TASK_METADATA_PREFIX: Final[str] = "celery-task-metadata-"
 _CELERY_TASK_ID_KEY_ENCODING = "utf-8"
 _CELERY_TASK_ID_KEY_SEPARATOR: Final[str] = ":"
@@ -54,7 +53,7 @@ class RedisTaskMetadataStore:
 
     async def remove(self, task_id: TaskID) -> None:
         await self._redis_client_sdk.redis.delete(_build_key(task_id))
-        AsyncResult(_CELERY_TASK_META_PREFIX + task_id).forget()
+        AsyncResult(task_id).forget()
 
     async def set(
         self, task_id: TaskID, task_metadata: TaskMetadata, expiry: timedelta
