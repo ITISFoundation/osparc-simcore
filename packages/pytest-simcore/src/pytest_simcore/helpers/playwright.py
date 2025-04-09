@@ -137,7 +137,7 @@ SOCKETIO_MESSAGE_PREFIX: Final[str] = "42"
 
 
 @dataclass
-class RestartableWebSocket:
+class RobustWebSocket:
     page: Page
     ws: WebSocket
     _registered_events: list[tuple[str, typing.Callable | None]] = field(
@@ -483,7 +483,7 @@ _FAIL_FAST_COMPUTATIONAL_STATES: Final[tuple[RunningState, ...]] = (
 def wait_for_pipeline_state(
     current_state: RunningState,
     *,
-    websocket: RestartableWebSocket,
+    websocket: RobustWebSocket,
     if_in_states: tuple[RunningState, ...],
     expected_states: tuple[RunningState, ...],
     timeout_ms: int,
@@ -540,7 +540,7 @@ def expected_service_running(
     *,
     page: Page,
     node_id: str,
-    websocket: RestartableWebSocket,
+    websocket: RobustWebSocket,
     timeout: int,
     press_start_button: bool,
     product_url: AnyUrl,
@@ -575,7 +575,7 @@ def wait_for_service_running(
     *,
     page: Page,
     node_id: str,
-    websocket: RestartableWebSocket,
+    websocket: RobustWebSocket,
     timeout: int,
     press_start_button: bool,
     product_url: AnyUrl,

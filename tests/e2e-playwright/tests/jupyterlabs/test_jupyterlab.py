@@ -20,7 +20,7 @@ from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import (
     MINUTE,
     SECOND,
-    RestartableWebSocket,
+    RobustWebSocket,
     ServiceType,
     wait_for_service_running,
 )
@@ -63,7 +63,7 @@ class _JLabWaitForTerminalWebSocket:
 
 def test_jupyterlab(
     page: Page,
-    log_in_and_out: RestartableWebSocket,
+    log_in_and_out: RobustWebSocket,
     create_project_from_service_dashboard: Callable[
         [ServiceType, str, str | None, str | None], dict[str, Any]
     ],
@@ -140,7 +140,7 @@ def test_jupyterlab(
                 iframe.get_by_label("Launcher").get_by_text("Terminal").click()
 
             assert not ws_info.value.is_closed()
-            restartable_terminal_web_socket = RestartableWebSocket.create(
+            restartable_terminal_web_socket = RobustWebSocket.create(
                 page, ws_info.value
             )
 

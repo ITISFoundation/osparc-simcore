@@ -29,7 +29,7 @@ from pytest_simcore.helpers.playwright import (
     MINUTE,
     SECOND,
     AutoRegisteredUser,
-    RestartableWebSocket,
+    RobustWebSocket,
     RunningState,
     ServiceType,
     SocketIOEvent,
@@ -366,7 +366,7 @@ def log_in_and_out(
     register: Callable[[], AutoRegisteredUser],
     store_browser_context: bool,
     context: BrowserContext,
-) -> Iterator[RestartableWebSocket]:
+) -> Iterator[RobustWebSocket]:
     with log_context(
         logging.INFO,
         f"Open {product_url=} using {user_name=}/{user_password=}/{auto_register=} with {browser.browser_type.name}:{browser.version}({browser.browser_type.executable_path})",
@@ -410,7 +410,7 @@ def log_in_and_out(
                 assert response_info.value.ok, f"{response_info.value.json()}"
 
     assert not ws_info.value.is_closed()
-    restartable_wb = RestartableWebSocket.create(page, ws_info.value)
+    restartable_wb = RobustWebSocket.create(page, ws_info.value)
 
     # Welcome to Sim4Life
     page.wait_for_timeout(5000)
@@ -473,7 +473,7 @@ def _select_service_version(page: Page, *, version: str) -> None:
 @pytest.fixture
 def create_new_project_and_delete(  # noqa: C901, PLR0915
     page: Page,
-    log_in_and_out: RestartableWebSocket,
+    log_in_and_out: RobustWebSocket,
     is_product_billable: bool,
     api_request_context: APIRequestContext,
     product_url: AnyUrl,
@@ -735,7 +735,7 @@ def create_project_from_service_dashboard(
 def start_and_stop_pipeline(
     product_url: AnyUrl,
     page: Page,
-    log_in_and_out: RestartableWebSocket,
+    log_in_and_out: RobustWebSocket,
     api_request_context: APIRequestContext,
 ) -> Iterator[Callable[[], SocketIOEvent]]:
     started_pipeline_ids = []
