@@ -4,6 +4,7 @@
 from collections.abc import AsyncIterator
 
 import pytest
+import sqlalchemy as sa
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -17,6 +18,7 @@ def service_env(
     monkeypatch: pytest.MonkeyPatch,
     mock_environment: EnvVarsDict,
     rabbit_service: RabbitSettings,
+    postgres_db: sa.engine.Engine,
     postgres_env_vars_dict: EnvVarsDict,
 ) -> EnvVarsDict:
     return setenvs_from_dict(

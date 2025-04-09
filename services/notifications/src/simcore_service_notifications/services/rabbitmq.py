@@ -9,7 +9,7 @@ from settings_library.rabbit import RabbitSettings
 from ..core.settings import ApplicationSettings
 
 
-async def lifespan_rabbitmq(app: FastAPI) -> AsyncIterator[State]:
+async def rabbitmq_lifespan(app: FastAPI) -> AsyncIterator[State]:
     settings: ApplicationSettings = app.state.settings
     rabbit_settings: RabbitSettings = settings.NOTIFICATIONS_RABBITMQ
     app.state.rabbitmq_rpc_server = None

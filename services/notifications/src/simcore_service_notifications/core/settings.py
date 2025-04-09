@@ -73,6 +73,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         ),
     ]
 
+    NOTIFICATIONS_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
+
     @field_validator("LOG_LEVEL")
     @classmethod
     def valid_log_level(cls, value) -> LogLevel:

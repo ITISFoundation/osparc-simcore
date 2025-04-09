@@ -12,7 +12,7 @@ ROUTERS: list[RPCRouter] = [
 ]
 
 
-async def lifespan_rpc_api_routes(app: FastAPI) -> AsyncIterator[State]:
+async def rpc_api_routes_lifespan(app: FastAPI) -> AsyncIterator[State]:
     rpc_server = get_rabbitmq_rpc_server(app)
 
     for router in ROUTERS:

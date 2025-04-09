@@ -7,6 +7,7 @@ from servicelib.fastapi.db_asyncpg_engine import (
     close_db_connection,
     connect_to_db,
 )
+from servicelib.fastapi.postgres_lifespan import PostgresLifespanState
 from servicelib.logging_utils import log_context
 
 from ...core.settings import ApplicationSettings
@@ -15,7 +16,9 @@ from ._health import PostgresHealth
 _logger = logging.getLogger(__name__)
 
 
-async def lifespan_postgres(app: FastAPI) -> AsyncIterator[State]:
+async def postgres_lifespan(app: FastAPI, state: State) -> AsyncIterator[State]:
+    app.state.engine = state[PostgresLifespanState.POSTGRES_ASYNC_ENGINE]
+
     settings: ApplicationSettings = app.state.settings
 
     app.state.postgress_liveness = PostgresHealth(app)
