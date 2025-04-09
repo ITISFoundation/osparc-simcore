@@ -1,5 +1,7 @@
 from functools import cached_property
+from typing import ClassVar
 
+from pydantic.config import ConfigDict, JsonDict
 from pydantic.networks import AnyUrl
 from pydantic.types import SecretStr
 
@@ -8,7 +10,7 @@ from .basic_types import PortInt
 
 
 class RabbitDsn(AnyUrl):
-    allowed_schemes = {"amqp", "amqps"}
+    allowed_schemes: ClassVar[set[str]] = {"amqp", "amqps"}
 
 
 class RabbitSettings(BaseCustomSettings):
@@ -33,3 +35,32 @@ class RabbitSettings(BaseCustomSettings):
             )
         )
         return rabbit_dsn
+
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "RABBIT_HOST": "rabbitmq.example.com",
+                        "RABBIT_USER": "guest",
+                        "RABBIT_PASSWORD": "guest-password",
+                        "RABBIT_SECURE": False,
+                        "RABBIT_PORT": 5672,
+                    },
+                    {
+                        "RABBIT_HOST": "secure.rabbitmq.example.com",
+                        "RABBIT_USER": "guest",
+                        "RABBIT_PASSWORD": "guest-password",
+                        "RABBIT_SECURE": True,
+                        "RABBIT_PORT": 15672,
+                    },
+                ]
+            }
+        )
+
+    model_config = ConfigDict(
+        extra="ignore",
+        populate_by_name=True,
+        json_schema_extra=_update_json_schema_extra,
+    )
