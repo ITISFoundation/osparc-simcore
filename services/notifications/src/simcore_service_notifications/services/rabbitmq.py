@@ -6,7 +6,7 @@ from fastapi_lifespan_manager import State
 from servicelib.rabbitmq import RabbitMQRPCClient, wait_till_rabbitmq_responsive
 from settings_library.rabbit import RabbitSettings
 
-from ...core.settings import ApplicationSettings
+from ..core.settings import ApplicationSettings
 
 
 async def lifespan_rabbitmq(app: FastAPI) -> AsyncIterator[State]:

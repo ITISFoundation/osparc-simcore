@@ -9,8 +9,8 @@ from models_library.errors import (
 )
 from servicelib.rabbitmq import RabbitMQClient
 
-from ....core.dependencies import get_postgress_health, get_rabbitmq_client
-from ...database.service import PostgresHealth
+from ...core.dependencies import get_postgress_health, get_rabbitmq_client
+from ...services.postgres import PostgresHealth
 
 router = APIRouter()
 

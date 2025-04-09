@@ -5,7 +5,7 @@ from fastapi_lifespan_manager import State
 from models_library.api_schemas_notifications import NOTIFICATIONS_RPC_NAMESPACE
 from servicelib.rabbitmq import RPCRouter
 
-from ..domains.rabbitmq.service import get_rabbitmq_rpc_server
+from ...services.rabbitmq import get_rabbitmq_rpc_server
 
 ROUTERS: list[RPCRouter] = [
     # import form various domains and attach here

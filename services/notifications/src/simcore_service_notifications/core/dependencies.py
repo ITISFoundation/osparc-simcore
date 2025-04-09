@@ -5,10 +5,8 @@ from typing import Annotated, cast
 from fastapi import Depends, FastAPI, Request
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 
-from ..domains.database.service import (
-    PostgresHealth,
-)
-from ..domains.database.service import get_postgress_health as get_postgress_db_health
+from ..services.postgres import PostgresHealth
+from ..services.postgres import get_postgress_health as get_postgress_db_health
 
 
 def get_application(request: Request) -> FastAPI:

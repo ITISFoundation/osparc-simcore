@@ -19,10 +19,10 @@ from .._meta import (
     SUMMARY,
     VERSION,
 )
-from ..domains.database.service import lifespan_postgres
-from ..domains.rabbitmq.service import lifespan_rabbitmq
-from .routing_rest import initialize_rest_api
-from .routing_rpc import lifespan_rpc_api_routes
+from ..api.rest.routing import initialize_rest_api
+from ..api.rpc.routing import lifespan_rpc_api_routes
+from ..services.postgres.service import lifespan_postgres
+from ..services.rabbitmq import lifespan_rabbitmq
 from .settings import ApplicationSettings
 
 _logger = logging.getLogger(__name__)
