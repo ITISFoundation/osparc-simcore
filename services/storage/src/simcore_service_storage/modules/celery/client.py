@@ -89,7 +89,6 @@ class CeleryTaskQueueClient:
             task_id = build_task_id(task_context, task_uuid)
             AbortableAsyncResult(task_id).abort()
 
-    @make_async()
     async def get_task_result(
         self, task_context: TaskContext, task_uuid: TaskUUID
     ) -> Any:
@@ -129,12 +128,12 @@ class CeleryTaskQueueClient:
             actual_value=_MIN_PROGRESS_VALUE, total=_MAX_PROGRESS_VALUE
         )
 
+    @make_async()
     def _get_state(self, task_context: TaskContext, task_uuid: TaskUUID) -> TaskState:
         task_id = build_task_id(task_context, task_uuid)
         return _CELERY_STATES_MAPPING[self._celery_app.AsyncResult(task_id).state]
 
-    @make_async()
-    def get_task_status(
+    async def get_task_status(
         self, task_context: TaskContext, task_uuid: TaskUUID
     ) -> TaskStatus:
         with log_context(
@@ -144,7 +143,7 @@ class CeleryTaskQueueClient:
         ):
             return TaskStatus(
                 task_uuid=task_uuid,
-                task_state=self._get_state(task_context, task_uuid),
+                task_state=await self._get_state(task_context, task_uuid),
                 progress_report=self._get_progress_report(task_context, task_uuid),
             )
 
