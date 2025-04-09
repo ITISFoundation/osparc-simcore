@@ -26,13 +26,13 @@ def app_environment(
         monkeypatch,
         {
             **app_environment,
-            "CATALOG_POSTGRES": "null",  # disable postgres
             "SC_BOOT_MODE": "local-development",
         },
     )
 
 
 async def test_services_manifest_api(
+    postgres_setup_disabled: None,
     rabbitmq_and_rpc_setup_disabled: None,
     mocked_director_service_api: MockRouter,
     app: FastAPI,

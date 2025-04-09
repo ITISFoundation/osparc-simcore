@@ -1,20 +1,26 @@
 import logging
-from collections.abc import Awaitable, Callable
-from typing import TypeAlias
+from collections.abc import AsyncIterator
 
 from fastapi import FastAPI
-from servicelib.fastapi.db_asyncpg_engine import close_db_connection, connect_to_db
-from servicelib.logging_utils import log_context
+from fastapi_lifespan_manager import LifespanManager, State
+from servicelib.fastapi.postgres_lifespan import (
+    PostgresLifespanState,
+    postgres_database_lifespan,
+)
+from servicelib.fastapi.prometheus_instrumentation import (
+    lifespan_prometheus_instrumentation,
+)
 
 from .._meta import APP_FINISHED_BANNER_MSG, APP_STARTED_BANNER_MSG
-from ..db.events import setup_default_product
-from ..services.director import close_director, setup_director
-from .background_tasks import start_registry_sync_task, stop_registry_sync_task
+from ..api.rpc.routes import rpc_api_lifespan
+from ..db.events import database_lifespan
+from ..services.director import director_lifespan
+from ..services.function_services import function_services_lifespan
+from ..services.rabbitmq import rabbitmq_lifespan
+from .background_tasks import background_task_lifespan
+from .settings import ApplicationSettings
 
 _logger = logging.getLogger(__name__)
-
-
-EventCallable: TypeAlias = Callable[[], Awaitable[None]]
 
 
 def _flush_started_banner() -> None:
@@ -23,43 +29,60 @@ def _flush_started_banner() -> None:
 
 
 def _flush_finished_banner() -> None:
+    # WARNING: this function is spied in the tests
     print(APP_FINISHED_BANNER_MSG, flush=True)  # noqa: T201
 
 
-def create_on_startup(app: FastAPI) -> EventCallable:
-    async def _() -> None:
-        _flush_started_banner()
-
-        # setup connection to pg db
-        if app.state.settings.CATALOG_POSTGRES:
-            await connect_to_db(app, app.state.settings.CATALOG_POSTGRES)
-            await setup_default_product(app)
-
-        if app.state.settings.CATALOG_DIRECTOR:
-            # setup connection to director
-            await setup_director(app)
-
-            # FIXME: check director service is in place and ready. Hand-shake??
-            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/1728
-            await start_registry_sync_task(app)
-
-        _logger.info("Application started")
-
-    return _
+async def _banners_lifespan(_) -> AsyncIterator[State]:
+    _flush_started_banner()
+    yield {}
+    _flush_finished_banner()
 
 
-def create_on_shutdown(app: FastAPI) -> EventCallable:
-    async def _() -> None:
+async def _main_lifespan(app: FastAPI) -> AsyncIterator[State]:
+    settings: ApplicationSettings = app.state.settings
 
-        with log_context(_logger, logging.INFO, "Application shutdown"):
-            if app.state.settings.CATALOG_DIRECTOR:
-                try:
-                    await stop_registry_sync_task(app)
-                    await close_director(app)
-                    await close_db_connection(app)
-                except Exception:  # pylint: disable=broad-except
-                    _logger.exception("Unexpected error while closing application")
+    yield {
+        PostgresLifespanState.POSTGRES_SETTINGS: settings.CATALOG_POSTGRES,
+        "prometheus_instrumentation_enabled": settings.CATALOG_PROMETHEUS_INSTRUMENTATION_ENABLED,
+    }
 
-            _flush_finished_banner()
 
-    return _
+async def _prometheus_instrumentation_lifespan(
+    app: FastAPI, state: State
+) -> AsyncIterator[State]:
+    if state.get("prometheus_instrumentation_enabled", False):
+        async for prometheus_state in lifespan_prometheus_instrumentation(app):
+            yield prometheus_state
+
+
+def create_app_lifespan():
+    # WARNING: order matters
+    app_lifespan = LifespanManager()
+    app_lifespan.add(_main_lifespan)
+
+    # - postgres
+    app_lifespan.add(postgres_database_lifespan)
+    app_lifespan.add(database_lifespan)
+
+    # - rabbitmq
+    app_lifespan.add(rabbitmq_lifespan)
+
+    # - rpc api routes
+    app_lifespan.add(rpc_api_lifespan)
+
+    # - director
+    app_lifespan.add(director_lifespan)
+
+    # - function services
+    app_lifespan.add(function_services_lifespan)
+
+    # - background task
+    app_lifespan.add(background_task_lifespan)
+
+    # - prometheus instrumentation
+    app_lifespan.add(_prometheus_instrumentation_lifespan)
+
+    app_lifespan.add(_banners_lifespan)
+
+    return app_lifespan
