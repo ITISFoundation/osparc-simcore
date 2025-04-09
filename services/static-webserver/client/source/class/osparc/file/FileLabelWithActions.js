@@ -143,15 +143,21 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
 
     __retrieveURLAndDownloadSelected: function() {
       if (this.isMultiSelect()) {
-        this.__selection.forEach(selection => {
-          if (selection && osparc.file.FilesTree.isFile(selection)) {
-            this.__retrieveURLAndDownloadFile(selection);
-          }
-        });
+        if (this.__selection.length === 1 && osparc.file.FilesTree.isFile(this.__selection[0])) {
+          this.__retrieveURLAndDownloadFile(this.__selection[0]);
+        } else if (this.__selection.length > 1) {
+          const paths = this.__selection.map(item => item.getPath());
+          this.__retrieveURLAndDownloadPaths(paths);
+        }
       } else if (this.__selection.length) {
         const selection = this.__selection[0];
-        if (selection && osparc.file.FilesTree.isFile(selection)) {
-          this.__retrieveURLAndDownloadFile(selection);
+        if (selection) {
+          if (osparc.file.FilesTree.isFile(selection)) {
+            this.__retrieveURLAndDownloadFile(selection);
+          } else {
+            const paths = [selection.getPath()];
+            this.__retrieveURLAndDownloadPaths(paths);
+          }
         }
       }
     },
@@ -159,11 +165,19 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
     __retrieveURLAndDownloadFile: function(file) {
       const fileId = file.getFileId();
       const locationId = file.getLocation();
-      osparc.utils.Utils.retrieveURLAndDownload(locationId, fileId)
+      osparc.utils.Utils.downloadPaths(locationId, fileId)
         .then(data => {
           if (data) {
             osparc.DownloadLinkTracker.getInstance().downloadLinkUnattended(data.link, data.fileName);
           }
+        });
+    },
+
+    __retrieveURLAndDownloadPaths: function(paths) {
+      const locationId = 0;
+      osparc.store.Data.getInstance().retrieveURLAndDownload(locationId, paths)
+        .then(data => {
+          console.log("data", data);
         });
     },
 
