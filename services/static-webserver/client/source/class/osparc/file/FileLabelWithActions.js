@@ -281,7 +281,21 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
         }
       }, this);
       task.addListener("resultReceived", e => {
-        console.log(e.getData());
+        const data = e.getData();
+        if (data["result"]) {
+          const link = data["result"];
+
+          const params = {
+            url: {
+              locationId: 0,
+              fileUuid: link
+            }
+          };
+          osparc.data.Resources.fetch("storageLink", "getOne", params)
+            .then(data2 => {
+              console.log(data2);
+            })
+        }
         progressWindow.close();
       });
       task.addListener("taskAborted", () => {
