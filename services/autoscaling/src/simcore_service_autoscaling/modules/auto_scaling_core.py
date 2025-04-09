@@ -475,7 +475,7 @@ async def _start_warm_buffer_instances(
         )
         # NOTE: first start the instance and then set the tags in case the instance cannot start (e.g. InsufficientInstanceCapacity)
         await get_ec2_client(app).set_instances_tags(
-            instances_to_start,
+            started_instances,
             tags=get_activated_buffer_ec2_tags(app, auto_scaling_mode),
         )
     started_instance_ids = [i.id for i in started_instances]
