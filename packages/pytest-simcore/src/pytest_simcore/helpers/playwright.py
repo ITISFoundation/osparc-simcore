@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from enum import Enum, unique
 from pathlib import Path
-from typing import Any, Final
+from typing import Any, Final, Self
 
 import pytest
 from playwright._impl._sync_base import EventContextManager
@@ -218,7 +218,7 @@ class RestartableWebSocket:
         return output
 
     @classmethod
-    def create(cls, page: Page, ws: WebSocket):
+    def create(cls, page: Page, ws: WebSocket) -> Self:
         return cls(page, ws)
 
 
@@ -312,6 +312,7 @@ class SocketIOOsparcMessagePrinter:
 
 
 _FAIL_FAST_DYNAMIC_SERVICE_STATES: Final[tuple[str, ...]] = ("idle", "failed")
+_SERVICE_ROOT_POINT_STATUS_TIMEOUT: Final[int] = 5 * SECOND
 
 
 @dataclass
@@ -370,7 +371,7 @@ class SocketIONodeProgressCompleteWaiter:
                         )
 
                         self.logger.info(
-                            "Current startup progress [expected number of node-progress-types=%d]: %s",
+                            "Current startup progress [expected %d node-progress-types progresses]: %s",
                             len(NodeProgressType.required_types_for_started_service()),
                             f"{json.dumps({k: round(v, 2) for k, v in self._current_progress.items()})}",
                         )
@@ -389,36 +390,53 @@ class SocketIONodeProgressCompleteWaiter:
                 url = (
                     f"https://{self.node_id}.services.{self.get_partial_product_url()}"
                 )
-            response = None
-            with contextlib.suppress(
-                PlaywrightTimeoutError, TimeoutError, PlaywrightError
+            with log_context(
+                logging.INFO,
+                "Poll service endpoint in case of missed websocket messages: %s",
+                url,
             ):
-                response = self.api_request_context.get(url, timeout=5000)
-            if response:
-                self.logger.log(
-                    (
-                        logging.ERROR
-                        if (response.status >= 400)
-                        and (response.status not in (502, 503))
-                        else logging.DEBUG
-                    ),
-                    "Querying service endpoint in case we missed some websocket messages. Url: %s Response: '%s' TIP: %s",
-                    url,
-                    f"{response.status}: {response.text()}",
-                    (
-                        "We are emulating the frontend; a 502/503 response is acceptable if the service is not yet ready."
-                    ),
-                )
+                response = None
 
-                if response.status <= 400:
-                    # NOTE: If the response status is less than 400, it means that the service is ready (There are some services that respond with a 3XX)
-                    if self.got_expected_node_progress_types():
-                        self.logger.warning(
-                            "⚠️ Progress bar didn't receive 100 percent but service is already running: %s. TIP: we missed some websocket messages! ⚠️",  # https://github.com/ITISFoundation/osparc-simcore/issues/6449
-                            self.get_current_progress(),
-                        )
-                    self._service_ready = True
-                    return True
+                try:
+                    response = self.api_request_context.get(
+                        url, timeout=_SERVICE_ROOT_POINT_STATUS_TIMEOUT
+                    )
+                except (PlaywrightTimeoutError, TimeoutError):
+                    self.logger.log(
+                        logging.ERROR,
+                        "Timed-out polling service endpoint after %ds",
+                        _SERVICE_ROOT_POINT_STATUS_TIMEOUT,
+                    )
+                except PlaywrightError as exc:
+                    self.logger.log(
+                        logging.ERROR, "Failed to poll service endpoint: %s", exc
+                    )
+                else:
+                    self.logger.log(
+                        (
+                            logging.ERROR
+                            if (response.status >= 400)
+                            and (response.status not in (502, 503))
+                            else logging.DEBUG
+                        ),
+                        "Querying service endpoint in case we missed some websocket messages. Url: %s Response: '%s' TIP: %s",
+                        url,
+                        f"{response.status}: {response.text()}",
+                        (
+                            "We are emulating the frontend; a 502/503 response is acceptable if the service is not yet ready."
+                        ),
+                    )
+
+                    if response.status <= 400:
+                        # NOTE: If the response status is less than 400, it means that the service is ready (There are some services that respond with a 3XX)
+                        if self.got_expected_node_progress_types():
+                            self.logger.warning(
+                                "⚠️ Progress bar didn't receive 100 percent but service is already running: %s. TIP: we missed some websocket messages! ⚠️",  # https://github.com/ITISFoundation/osparc-simcore/issues/6449
+                                self.get_current_progress(),
+                            )
+                        self._service_ready = True
+                        return True
+
             self._last_poll_timestamp = datetime.now(UTC)
 
         return False
