@@ -102,8 +102,8 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
         throw new Error(msg);
       }
 
-      // check if it's corrupt
-      if (osparc.study.Utils.isCorrupt(studyData)) {
+      // check if there is any linked node missing
+      if (osparc.study.Utils.isAnyLinkedNodeMissing(studyData)) {
         const msg = `${qx.locale.Manager.tr("We encountered an issue with the")} ${studyAlias} <br>${qx.locale.Manager.tr("Please contact support.")}`;
         throw new Error(msg);
       }

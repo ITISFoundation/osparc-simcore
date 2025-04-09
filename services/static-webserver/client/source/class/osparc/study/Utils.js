@@ -23,15 +23,11 @@ qx.Class.define("osparc.study.Utils", {
   type: "static",
 
   statics: {
-    __isAnyLinkedNodeMissing: function(studyData) {
+    isAnyLinkedNodeMissing: function(studyData) {
       const existingNodeIds = Object.keys(studyData["workbench"]);
       const linkedNodeIds = osparc.data.model.Workbench.getLinkedNodeIds(studyData["workbench"]);
       const allExist = linkedNodeIds.every(linkedNodeId => existingNodeIds.includes(linkedNodeId));
       return !allExist;
-    },
-
-    isCorrupt: function(studyData) {
-      return this.__isAnyLinkedNodeMissing(studyData);
     },
 
     extractUniqueServices: function(workbench) {
