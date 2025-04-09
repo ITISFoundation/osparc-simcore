@@ -234,6 +234,22 @@ qx.Class.define("osparc.store.Data", {
       return true;
     },
 
+    downloadFiles: function(paths) {
+      if (!osparc.data.Permissions.getInstance().canDo("study.node.data.delete", true)) {
+        return null;
+      }
+
+      const params = {
+        url: {
+          locationId: 0,
+        },
+        data: {
+          paths,
+        }
+      };
+      return osparc.data.Resources.fetch("storagePaths", "multiDownload", params);
+    },
+
     deleteFiles: function(paths) {
       if (!osparc.data.Permissions.getInstance().canDo("study.node.data.delete", true)) {
         return null;
