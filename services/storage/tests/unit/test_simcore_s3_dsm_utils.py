@@ -1,5 +1,12 @@
+from pathlib import Path
+
 import pytest
-from simcore_service_storage.utils.simcore_s3_dsm_utils import compute_file_id_prefix
+from aws_library.s3._models import S3ObjectKey
+from simcore_service_storage.utils.simcore_s3_dsm_utils import (
+    UserSelection,
+    _strip_parent,
+    compute_file_id_prefix,
+)
 
 
 @pytest.mark.parametrize(
@@ -19,3 +26,23 @@ from simcore_service_storage.utils.simcore_s3_dsm_utils import compute_file_id_p
 )
 def test_compute_file_id_prefix(file_id, levels, expected):
     assert compute_file_id_prefix(file_id, levels) == expected
+
+
+_FOLDERS_PATH = Path("nested/folders/path")
+
+
+@pytest.mark.parametrize(
+    "selection, s3_object, expected",
+    [
+        (Path("single_file"), Path("single_file"), "single_file"),
+        (Path("single_folder"), Path("single_folder"), "single_folder"),
+        (_FOLDERS_PATH / "folder", _FOLDERS_PATH / "folder", "folder"),
+        (_FOLDERS_PATH / "a_file.txt", _FOLDERS_PATH / "a_file.txt", "a_file.txt"),
+        (_FOLDERS_PATH, _FOLDERS_PATH / "the/actual/path", "the/actual/path"),
+    ],
+)
+def test__strip_parent(selection: Path, s3_object: Path, expected: str):
+    assert (
+        _strip_parent(UserSelection(f"{selection}"), S3ObjectKey(f"{s3_object}"))
+        == expected
+    )

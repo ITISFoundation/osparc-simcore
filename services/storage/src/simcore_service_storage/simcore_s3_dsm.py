@@ -81,6 +81,7 @@ from .modules.db.tokens import TokenRepository
 from .modules.s3 import get_s3_client
 from .utils.s3_utils import S3TransferDataCB
 from .utils.simcore_s3_dsm_utils import (
+    UserSelection,
     compute_file_id_prefix,
     create_and_upload_export,
     create_random_export_name,
@@ -1249,7 +1250,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         *,
         progress_bar: ProgressBarData,
     ) -> StorageFileID:
-        source_object_keys: set[StorageFileID] = set()
+        source_object_keys: set[tuple[UserSelection, StorageFileID]] = set()
 
         # check access rights
         for object_key in object_keys:
@@ -1279,7 +1280,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                 self.simcore_bucket_name, object_key
             ):
                 for entry in meta_data_files:
-                    source_object_keys.add(entry.object_key)
+                    source_object_keys.add((object_key, entry.object_key))
 
         _logger.debug(
             "User selection '%s' includes '%s' files",
