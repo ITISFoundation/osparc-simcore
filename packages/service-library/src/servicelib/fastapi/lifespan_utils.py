@@ -1,9 +1,4 @@
-from collections.abc import AsyncIterator
-from typing import Protocol
-
 from common_library.errors_classes import OsparcErrorMixin
-from fastapi import FastAPI
-from fastapi_lifespan_manager import State
 
 
 class LifespanError(OsparcErrorMixin, RuntimeError): ...
@@ -15,7 +10,3 @@ class LifespanOnStartupError(LifespanError):
 
 class LifespanOnShutdownError(LifespanError):
     msg_template = "Failed during shutdown of {module}"
-
-
-class LifespanGenerator(Protocol):
-    def __call__(self, app: FastAPI) -> AsyncIterator["State"]: ...
