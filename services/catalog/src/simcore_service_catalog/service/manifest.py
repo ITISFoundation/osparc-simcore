@@ -1,6 +1,6 @@
 """Services Manifest API Documentation
 
-The `services.manifest` module provides a read-only API to access the services catalog. The term "Manifest" refers to a detailed, finalized list,
+The `service.manifest` module provides a read-only API to access the services catalog. The term "Manifest" refers to a detailed, finalized list,
 traditionally used to denote items that are recorded as part of an official inventory or log, emphasizing the immutable nature of the data.
 
 ### Service Registration
