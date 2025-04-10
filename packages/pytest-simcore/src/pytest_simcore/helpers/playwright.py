@@ -32,7 +32,16 @@ from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from playwright.sync_api import (
     WebSocket,
 )
-from pydantic import AnyUrl
+from pydantic import AnyUrl, TypeAdapter
+from tenacity import (
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    stop_after_delay,
+    wait_exponential,
+    wait_fixed,
+)
 
 from .logging_tools import log_context
 
@@ -137,71 +146,71 @@ SOCKETIO_MESSAGE_PREFIX: Final[str] = "42"
 
 
 @dataclass
-class RestartableWebSocket:
+class RobustWebSocket:
     page: Page
     ws: WebSocket
     _registered_events: list[tuple[str, typing.Callable | None]] = field(
         default_factory=list
     )
-    _number_of_restarts: int = 0
+    _num_reconnections: int = 0
+    auto_reconnect: bool = True
 
     def __post_init__(self):
         self._configure_websocket_events()
 
     def _configure_websocket_events(self):
-        try:
-            with log_context(
-                logging.DEBUG,
-                msg="handle websocket message (set to --log-cli-level=DEBUG level if you wanna see all of them)",
-            ) as ctx:
+        with log_context(
+            logging.INFO,
+            msg="handle websocket message (set to --log-cli-level=DEBUG level if you wanna see all of them)",
+        ) as ctx:
 
-                def on_framesent(payload: str | bytes) -> None:
-                    ctx.logger.debug("⬇️ Frame sent: %s", payload)
+            def on_framesent(payload: str | bytes) -> None:
+                ctx.logger.debug("⬇️ Frame sent: %s", payload)
 
-                def on_framereceived(payload: str | bytes) -> None:
-                    ctx.logger.debug("⬆️ Frame received: %s", payload)
+            def on_framereceived(payload: str | bytes) -> None:
+                ctx.logger.debug("⬆️ Frame received: %s", payload)
 
-                def on_close(_: WebSocket) -> None:
+            def on_close(_: WebSocket) -> None:
+                ctx.logger.warning("⚠️ WebSocket closed.")
+                if self.auto_reconnect:
                     ctx.logger.warning("⚠️ WebSocket closed. Attempting to reconnect...")
                     self._attempt_reconnect(ctx.logger)
 
-                def on_socketerror(error_msg: str) -> None:
-                    ctx.logger.error("❌ WebSocket error: %s", error_msg)
+            def on_socketerror(error_msg: str) -> None:
+                ctx.logger.error("❌ WebSocket error: %s", error_msg)
 
-                # Attach core event listeners
-                self.ws.on("framesent", on_framesent)
-                self.ws.on("framereceived", on_framereceived)
-                self.ws.on("close", on_close)
-                self.ws.on("socketerror", on_socketerror)
+            # Attach core event listeners
+            self.ws.on("framesent", on_framesent)
+            self.ws.on("framereceived", on_framereceived)
+            self.ws.on("close", on_close)
+            self.ws.on("socketerror", on_socketerror)
 
-        finally:
-            # Detach core event listeners
-            self.ws.remove_listener("framesent", on_framesent)
-            self.ws.remove_listener("framereceived", on_framereceived)
-            self.ws.remove_listener("close", on_close)
-            self.ws.remove_listener("socketerror", on_socketerror)
-
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(
+            multiplier=1,
+            max=10,
+        ),
+        reraise=True,
+        before_sleep=before_sleep_log(_logger, logging.WARNING),
+    )
     def _attempt_reconnect(self, logger: logging.Logger) -> None:
         """
         Attempt to reconnect the WebSocket and restore event listeners.
         """
-        try:
-            with self.page.expect_websocket() as ws_info:
-                assert not ws_info.value.is_closed()
+        with self.page.expect_websocket(timeout=5000) as ws_info:
+            assert not ws_info.value.is_closed()
 
-            self.ws = ws_info.value
-            self._number_of_restarts += 1
-            logger.info(
-                "🔄 Reconnected to WebSocket successfully. Number of reconnections: %s",
-                self._number_of_restarts,
-            )
-            self._configure_websocket_events()
-            # Re-register all custom event listeners
-            for event, predicate in self._registered_events:
-                self.ws.expect_event(event, predicate)
-
-        except Exception as e:  # pylint: disable=broad-except
-            logger.exception("🚨 Failed to reconnect WebSocket: %s", e)
+        self.ws = ws_info.value
+        self._num_reconnections += 1
+        logger.info(
+            "🔄 Reconnected to WebSocket successfully. Number of reconnections: %s",
+            self._num_reconnections,
+        )
+        self._configure_websocket_events()
+        # Re-register all custom event listeners
+        for event, predicate in self._registered_events:
+            self.ws.expect_event(event, predicate)
 
     def expect_event(
         self,
@@ -216,10 +225,6 @@ class RestartableWebSocket:
         output = self.ws.expect_event(event, predicate, timeout=timeout)
         self._registered_events.append((event, predicate))
         return output
-
-    @classmethod
-    def create(cls, page: Page, ws: WebSocket):
-        return cls(page, ws)
 
 
 def decode_socketio_42_message(message: str) -> SocketIOEvent:
@@ -312,22 +317,88 @@ class SocketIOOsparcMessagePrinter:
 
 
 _FAIL_FAST_DYNAMIC_SERVICE_STATES: Final[tuple[str, ...]] = ("idle", "failed")
+_SERVICE_ROOT_POINT_STATUS_TIMEOUT: Final[timedelta] = timedelta(seconds=5)
+
+
+def _get_service_url(
+    node_id: str, product_url: AnyUrl, *, is_legacy_service: bool
+) -> AnyUrl:
+    return TypeAdapter(AnyUrl).validate_python(
+        f"{product_url.scheme}://{product_url.host}/x/{node_id}"
+        if is_legacy_service
+        else f"{product_url.scheme}://{node_id}.services.{product_url.host}"
+    )
+
+
+def _check_service_endpoint(
+    node_id: str,
+    *,
+    api_request_context: APIRequestContext,
+    logger: logging.Logger,
+    product_url: AnyUrl,
+    is_legacy_service: bool,
+) -> bool:
+    # NOTE: we might have missed some websocket messages, and we check if the service is ready
+    service_url = _get_service_url(
+        node_id, product_url, is_legacy_service=is_legacy_service
+    )
+
+    with log_context(
+        logging.INFO,
+        "Check service endpoint: %s",
+        service_url,
+    ):
+        response = None
+
+        try:
+            response = api_request_context.get(
+                f"{service_url}",
+                timeout=_SERVICE_ROOT_POINT_STATUS_TIMEOUT.total_seconds() * SECOND,
+            )
+        except (PlaywrightTimeoutError, TimeoutError):
+            logger.exception(
+                "❌ Timed-out requesting service endpoint after %ds ❌",
+                _SERVICE_ROOT_POINT_STATUS_TIMEOUT,
+            )
+        except PlaywrightError:
+            logger.exception("Failed to request service endpoint")
+        else:
+            # NOTE: 502,503 are acceptable if the service is not yet ready (traefik still setting up)
+            if response.status in (502, 503):
+                logger.info("⏳ service not ready yet %s ⏳", f"{response.status=}")
+                return False
+            if response.status > 400:
+                logger.error(
+                    "❌ service responded with error: %s:%s ❌",
+                    f"{response.status}",
+                    f"{response.text()}",
+                )
+                return False
+
+            if response.status <= 400:
+                # NOTE: If the response status is less than 400, it means that the service is ready (There are some services that respond with a 3XX)
+                logger.info(
+                    "✅ Service ready!! responded with %s ✅", f"{response.status=}"
+                )
+                return True
+    return False
+
+
+_SOCKET_IO_NODE_PROGRESS_WAITER_MAX_IDLE_TIMEOUT: Final[timedelta] = timedelta(
+    seconds=30
+)
 
 
 @dataclass
 class SocketIONodeProgressCompleteWaiter:
     node_id: str
     logger: logging.Logger
-    product_url: AnyUrl
-    api_request_context: APIRequestContext
-    is_service_legacy: bool
-    assertion_output_folder: Path
+    max_idle_timeout: timedelta = _SOCKET_IO_NODE_PROGRESS_WAITER_MAX_IDLE_TIMEOUT
     _current_progress: dict[NodeProgressType, float] = field(
         default_factory=defaultdict
     )
-    _last_poll_timestamp: datetime = field(default_factory=lambda: datetime.now(tz=UTC))
+    _last_progress_time: datetime = field(default_factory=lambda: datetime.now(tz=UTC))
     _received_messages: list[SocketIOEvent] = field(default_factory=list)
-    _service_ready: bool = False
 
     def __call__(self, message: str) -> bool:
         # socket.io encodes messages like so
@@ -345,7 +416,7 @@ class SocketIONodeProgressCompleteWaiter:
             ):
                 # NOTE: this is a fail fast for dynamic services that fail to start
                 self.logger.error(
-                    "node %s failed with state %s, failing fast",
+                    "❌ node %s failed with state %s, failing fast ❌",
                     self.node_id,
                     decoded_message.obj["service_state"],
                 )
@@ -359,6 +430,7 @@ class SocketIONodeProgressCompleteWaiter:
                         node_progress_event.current_progress
                         / node_progress_event.total_progress
                     )
+                    self._last_progress_time = datetime.now(UTC)
                     if (
                         node_progress_event.progress_type not in self._current_progress
                     ) or (
@@ -370,56 +442,24 @@ class SocketIONodeProgressCompleteWaiter:
                         )
 
                         self.logger.info(
-                            "Current startup progress [expected number of node-progress-types=%d]: %s",
+                            "Current startup progress [expected %d types]: %s",
                             len(NodeProgressType.required_types_for_started_service()),
                             f"{json.dumps({k: round(v, 2) for k, v in self._current_progress.items()})}",
                         )
-                self._service_ready = self.got_expected_node_progress_types() and all(
+
+                return self.got_expected_node_progress_types() and all(
                     round(progress, 1) == 1.0
                     for progress in self._current_progress.values()
                 )
-                return self._service_ready
 
-        _current_timestamp = datetime.now(UTC)
-        if _current_timestamp - self._last_poll_timestamp > timedelta(seconds=5):
-            # NOTE: we might have missed some websocket messages, and we check if the service is ready
-            if self.is_service_legacy:
-                url = f"https://{self.get_partial_product_url()}x/{self.node_id}/"
-            else:
-                url = (
-                    f"https://{self.node_id}.services.{self.get_partial_product_url()}"
-                )
-            response = None
-            with contextlib.suppress(
-                PlaywrightTimeoutError, TimeoutError, PlaywrightError
-            ):
-                response = self.api_request_context.get(url, timeout=5000)
-            if response:
-                self.logger.log(
-                    (
-                        logging.ERROR
-                        if (response.status >= 400)
-                        and (response.status not in (502, 503))
-                        else logging.DEBUG
-                    ),
-                    "Querying service endpoint in case we missed some websocket messages. Url: %s Response: '%s' TIP: %s",
-                    url,
-                    f"{response.status}: {response.text()}",
-                    (
-                        "We are emulating the frontend; a 502/503 response is acceptable if the service is not yet ready."
-                    ),
-                )
-
-                if response.status <= 400:
-                    # NOTE: If the response status is less than 400, it means that the service is ready (There are some services that respond with a 3XX)
-                    if self.got_expected_node_progress_types():
-                        self.logger.warning(
-                            "⚠️ Progress bar didn't receive 100 percent but service is already running: %s. TIP: we missed some websocket messages! ⚠️",  # https://github.com/ITISFoundation/osparc-simcore/issues/6449
-                            self.get_current_progress(),
-                        )
-                    self._service_ready = True
-                    return True
-            self._last_poll_timestamp = datetime.now(UTC)
+        time_since_last_progress = datetime.now(UTC) - self._last_progress_time
+        if time_since_last_progress > self.max_idle_timeout:
+            self.logger.warning(
+                "⚠️ %s passed since the last received progress message. "
+                "The service might be stuck, or we missed some messages ⚠️",
+                time_since_last_progress,
+            )
+            return True
 
         return False
 
@@ -429,31 +469,42 @@ class SocketIONodeProgressCompleteWaiter:
             for progress_type in NodeProgressType.required_types_for_started_service()
         )
 
-    def get_current_progress(self):
-        return self._current_progress.values()
-
-    def get_partial_product_url(self) -> str:
-        return f"{self.product_url}".split("//")[1]
-
     @property
     def number_received_messages(self) -> int:
         return len(self._received_messages)
 
-    def assert_service_ready(self) -> None:
-        if not self._service_ready:
-            with self.assertion_output_folder.joinpath("websocket.json").open("w") as f:
-                f.writelines("[")
-                f.writelines(
-                    f"{msg.to_json()}," for msg in self._received_messages[:-1]
-                )
-                f.writelines(
-                    f"{self._received_messages[-1].to_json()}"
-                )  # no comma for last element
-                f.writelines("]")
-        assert self._service_ready, (
-            f"the service failed and received {self.number_received_messages} websocket messages while waiting!"
-            "\nTIP: check websocket.log for detailed information in the test-results folder!"
+
+def wait_for_service_endpoint_responding(
+    node_id: str,
+    *,
+    api_request_context: APIRequestContext,
+    product_url: AnyUrl,
+    is_legacy_service: bool,
+    timeout: int = 30 * SECOND,
+) -> None:
+    """emulates the frontend polling for the service endpoint until it responds with 2xx/3xx"""
+
+    @retry(
+        retry=retry_if_exception_type(AssertionError),
+        wait=wait_fixed(1),
+        stop=stop_after_delay(timeout / 1000),
+        before_sleep=before_sleep_log(_logger, logging.INFO),
+        reraise=True,
+    )
+    def _retry_check_service_endpoint(logger: logging.Logger) -> None:
+        is_service_ready = _check_service_endpoint(
+            node_id,
+            api_request_context=api_request_context,
+            logger=logger,
+            product_url=product_url,
+            is_legacy_service=is_legacy_service,
         )
+        assert is_service_ready, "❌ the service failed starting! ❌"
+
+    with log_context(
+        logging.INFO, msg=f"wait for service endpoint to be ready ({timeout=})"
+    ) as ctx:
+        _retry_check_service_endpoint(ctx.logger)
 
 
 _FAIL_FAST_COMPUTATIONAL_STATES: Final[tuple[RunningState, ...]] = (
@@ -465,7 +516,7 @@ _FAIL_FAST_COMPUTATIONAL_STATES: Final[tuple[RunningState, ...]] = (
 def wait_for_pipeline_state(
     current_state: RunningState,
     *,
-    websocket: RestartableWebSocket,
+    websocket: RobustWebSocket,
     if_in_states: tuple[RunningState, ...],
     expected_states: tuple[RunningState, ...],
     timeout_ms: int,
@@ -492,7 +543,7 @@ def wait_for_pipeline_state(
                 and current_state not in expected_states
             ):
                 pytest.fail(
-                    f"Pipeline failed with state {current_state}. Expected one of {expected_states}"
+                    f"❌ Pipeline failed with state {current_state}. Expected one of {expected_states} ❌"
                 )
     return current_state
 
@@ -522,7 +573,7 @@ def expected_service_running(
     *,
     page: Page,
     node_id: str,
-    websocket: RestartableWebSocket,
+    websocket: RobustWebSocket,
     timeout: int,
     press_start_button: bool,
     product_url: AnyUrl,
@@ -535,10 +586,6 @@ def expected_service_running(
         waiter = SocketIONodeProgressCompleteWaiter(
             node_id=node_id,
             logger=ctx.logger,
-            product_url=product_url,
-            api_request_context=page.request,
-            is_service_legacy=is_service_legacy,
-            assertion_output_folder=assertion_output_folder,
         )
         service_running = ServiceRunning(iframe_locator=None)
 
@@ -547,7 +594,12 @@ def expected_service_running(
                 _trigger_service_start(page, node_id)
 
             yield service_running
-    waiter.assert_service_ready()
+    wait_for_service_endpoint_responding(
+        node_id,
+        api_request_context=page.request,
+        product_url=product_url,
+        is_legacy_service=is_service_legacy,
+    )
     service_running.iframe_locator = page.frame_locator(
         f'[osparc-test-id="iframe_{node_id}"]'
     )
@@ -557,7 +609,7 @@ def wait_for_service_running(
     *,
     page: Page,
     node_id: str,
-    websocket: RestartableWebSocket,
+    websocket: RobustWebSocket,
     timeout: int,
     press_start_button: bool,
     product_url: AnyUrl,
@@ -573,16 +625,17 @@ def wait_for_service_running(
         waiter = SocketIONodeProgressCompleteWaiter(
             node_id=node_id,
             logger=ctx.logger,
-            product_url=product_url,
-            api_request_context=page.request,
-            is_service_legacy=is_service_legacy,
-            assertion_output_folder=assertion_output_folder,
         )
         with websocket.expect_event("framereceived", waiter, timeout=timeout):
             if press_start_button:
                 _trigger_service_start(page, node_id)
 
-        waiter.assert_service_ready()
+    wait_for_service_endpoint_responding(
+        node_id,
+        api_request_context=page.request,
+        product_url=product_url,
+        is_legacy_service=is_service_legacy,
+    )
     return page.frame_locator(f'[osparc-test-id="iframe_{node_id}"]')
 
 
