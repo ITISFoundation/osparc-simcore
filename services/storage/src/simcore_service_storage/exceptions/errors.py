@@ -47,4 +47,4 @@ class DatCoreCredentialsMissingError(StorageRuntimeError):
 
 
 class SelectionNotAllowedError(StorageRuntimeError):
-    msg_template: str = "Selection='{selection}' must share the same parent folder"
+    msg_template: str = "Selection='{selection}' must be from the same folder"
