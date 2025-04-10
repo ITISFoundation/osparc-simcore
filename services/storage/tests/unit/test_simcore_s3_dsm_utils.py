@@ -107,6 +107,10 @@ _IDS_NAMES_MAP: Final[dict[ProjectID, dict[ProjectIDStr | NodeIDStr, str]]] = {
         (f"{_PID1}/{_NID1}", "project one/project one -> node one"),
         (f"{_PID1}/{_NID1}/something", "project one/project one -> node one/something"),
         (f"{_PID1}/{_NID1}/{_NID2}", f"project one/project one -> node one/{_NID2}"),
+        (
+            f"{_PID1}/{_NID1}/{_NID2}/something",
+            f"project one/project one -> node one/{_NID2}/something",
+        ),
         (f"{_PID2}", "_project_two_"),
         (f"{_PID2}/{_NID1}", "_project_two_/_project_two_->_node_one_"),
         (
@@ -116,6 +120,10 @@ _IDS_NAMES_MAP: Final[dict[ProjectID, dict[ProjectIDStr | NodeIDStr, str]]] = {
         (
             f"{_PID2}/{_NID1}/{_NID2}",
             f"_project_two_/_project_two_->_node_one_/{_NID2}",
+        ),
+        (
+            f"{_PID2}/{_NID1}/{_NID2}/something",
+            f"_project_two_/_project_two_->_node_one_/{_NID2}/something",
         ),
     ],
 )
