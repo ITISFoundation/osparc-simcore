@@ -3,22 +3,29 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
+import logging
 import random
 from collections import Counter
 from collections.abc import Callable
+from contextlib import AsyncExitStack
 from dataclasses import dataclass, field
+from typing import Any
 
 import pytest
 from models_library.products import ProductName
 from models_library.users import UserID
 from packaging import version
 from pydantic import EmailStr, HttpUrl, TypeAdapter
+from pytest_simcore.helpers.faker_factories import random_project
+from pytest_simcore.helpers.postgres_tools import insert_and_get_row_lifespan
+from simcore_postgres_database.models.projects import ProjectType, projects
 from simcore_service_catalog.models.services_db import (
     ServiceAccessRightsAtDB,
     ServiceMetaDataDBCreate,
     ServiceMetaDataDBGet,
     ServiceMetaDataDBPatch,
 )
+from simcore_service_catalog.repository.projects import ProjectsRepository
 from simcore_service_catalog.repository.services import ServicesRepository
 from simcore_service_catalog.utils.versioning import is_patch_release
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -34,6 +41,11 @@ pytest_simcore_ops_services_selection = [
 @pytest.fixture
 def services_repo(sqlalchemy_async_engine: AsyncEngine) -> ServicesRepository:
     return ServicesRepository(sqlalchemy_async_engine)
+
+
+@pytest.fixture
+def projects_repo(sqlalchemy_async_engine: AsyncEngine) -> ProjectsRepository:
+    return ProjectsRepository(sqlalchemy_async_engine)
 
 
 @dataclass
@@ -549,3 +561,109 @@ async def test_get_service_history_page(
 
     # compare paginated results with the corresponding slice of the full history
     assert paginated_history == history[offset : offset + limit]
+
+
+async def test_list_services_from_published_templates(
+    user: dict[str, Any],
+    projects_repo: ProjectsRepository,
+    sqlalchemy_async_engine: AsyncEngine,
+):
+    # Setup: Use AsyncExitStack to manage multiple insert_and_get_row_lifespan
+    async with AsyncExitStack() as stack:
+        await stack.enter_async_context(
+            insert_and_get_row_lifespan(
+                sqlalchemy_async_engine,
+                table=projects,
+                values=random_project(
+                    uuid="template-1",
+                    type=ProjectType.TEMPLATE,
+                    published=True,
+                    prj_owner=user["id"],
+                    workbench={
+                        "node-1": {
+                            "key": "simcore/services/dynamic/jupyterlab",
+                            "version": "1.0.0",
+                        },
+                        "node-2": {
+                            "key": "simcore/services/frontend/file-picker",
+                            "version": "1.0.0",
+                        },
+                    },
+                ),
+                pk_col=projects.c.uuid,
+                pk_value="template-1",
+            )
+        )
+        await stack.enter_async_context(
+            insert_and_get_row_lifespan(
+                sqlalchemy_async_engine,
+                table=projects,
+                values=random_project(
+                    uuid="template-2",
+                    type=ProjectType.TEMPLATE,
+                    published=False,
+                    prj_owner=user["id"],
+                    workbench={
+                        "node-1": {
+                            "key": "simcore/services/dynamic/some-service",
+                            "version": "2.0.0",
+                        },
+                    },
+                ),
+                pk_col=projects.c.uuid,
+                pk_value="template-2",
+            )
+        )
+
+        # Act: Call the method
+        services = await projects_repo.list_services_from_published_templates()
+
+        # Assert: Validate the results
+        assert len(services) == 1
+        assert services[0].key == "simcore/services/dynamic/jupyterlab"
+        assert services[0].version == "1.0.0"
+
+
+async def test_list_services_from_published_templates_with_invalid_service(
+    user: dict[str, Any],
+    projects_repo: ProjectsRepository,
+    sqlalchemy_async_engine: AsyncEngine,
+    caplog,
+):
+    # Setup: Use AsyncExitStack to manage insert_and_get_row_lifespan
+    async with AsyncExitStack() as stack:
+        await stack.enter_async_context(
+            insert_and_get_row_lifespan(
+                sqlalchemy_async_engine,
+                table=projects,
+                values=random_project(
+                    uuid="template-1",
+                    type=ProjectType.TEMPLATE,
+                    published=True,
+                    prj_owner=user["id"],
+                    workbench={
+                        "node-1": {
+                            "key": "simcore/services/frontend/file-picker",
+                            "version": "1.0.0",
+                        },
+                        "node-2": {
+                            "key": "simcore/services/dynamic/invalid-service",
+                            "version": "invalid",
+                        },
+                    },
+                ),
+                pk_col=projects.c.uuid,
+                pk_value="template-1",
+            )
+        )
+
+        # Act: Call the method and capture logs
+        with caplog.at_level(logging.WARNING):
+            services = await projects_repo.list_services_from_published_templates()
+
+        # Assert: Validate the results
+        assert len(services) == 0  # No valid services should be returned
+        assert (
+            "service {'key': 'simcore/services/dynamic/invalid-service', 'version': 'invalid'} could not be validated"
+            in caplog.text
+        )
