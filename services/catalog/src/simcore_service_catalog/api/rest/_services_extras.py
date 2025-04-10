@@ -5,6 +5,7 @@ from models_library.api_schemas_directorv2.services import ServiceExtras
 from models_library.services import ServiceKey, ServiceVersion
 
 from ...clients.director import DirectorApi
+from ...service import services
 from .._dependencies.director import get_director_api
 
 router = APIRouter()
@@ -16,4 +17,7 @@ async def get_service_extras(
     service_version: ServiceVersion,
     director_client: Annotated[DirectorApi, Depends(get_director_api)],
 ) -> ServiceExtras:
-    return await director_client.get_service_extras(service_key, service_version)
+
+    return await services.get_service_extras(
+        director_client, service_key, service_version
+    )

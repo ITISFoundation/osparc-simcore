@@ -30,7 +30,7 @@ pytest_simcore_ops_services_selection = [
 async def test_list_services_with_details(
     background_task_lifespan_disabled: None,
     rabbitmq_and_rpc_setup_disabled: None,
-    mocked_director_service_api_base: MockRouter,
+    mocked_director_rest_api_base: MockRouter,
     user_id: UserID,
     target_product: ProductName,
     create_fake_service_data: Callable,
@@ -60,7 +60,7 @@ async def test_list_services_with_details(
         "examples"
     ][0]
 
-    mocked_director_service_api_base.get("/services", name="list_services").respond(
+    mocked_director_rest_api_base.get("/services", name="list_services").respond(
         200,
         json={
             "data": [
@@ -85,7 +85,7 @@ async def test_list_services_with_details(
 
 async def test_list_services_without_details(
     background_task_lifespan_disabled: None,
-    mocked_director_service_api: MockRouter,
+    mocked_director_rest_api: MockRouter,
     rabbitmq_and_rpc_setup_disabled: None,
     user_id: int,
     target_product: ProductName,
@@ -129,7 +129,7 @@ async def test_list_services_without_details(
 async def test_list_services_without_details_with_wrong_user_id_returns_403(
     service_caching_disabled,
     background_task_lifespan_disabled: None,
-    mocked_director_service_api: MockRouter,
+    mocked_director_rest_api: MockRouter,
     rabbitmq_and_rpc_setup_disabled: None,
     user_id: int,
     target_product: ProductName,
@@ -161,7 +161,7 @@ async def test_list_services_without_details_with_wrong_user_id_returns_403(
 async def test_list_services_without_details_with_another_product_returns_other_services(
     service_caching_disabled: None,
     background_task_lifespan_disabled: None,
-    mocked_director_service_api: MockRouter,
+    mocked_director_rest_api: MockRouter,
     rabbitmq_and_rpc_setup_disabled: None,
     user_id: int,
     target_product: ProductName,
@@ -194,7 +194,7 @@ async def test_list_services_without_details_with_another_product_returns_other_
 async def test_list_services_without_details_with_wrong_product_returns_0_service(
     service_caching_disabled,
     background_task_lifespan_disabled,
-    mocked_director_service_api: MockRouter,
+    mocked_director_rest_api: MockRouter,
     rabbitmq_and_rpc_setup_disabled: None,
     user_id: int,
     target_product: ProductName,
@@ -231,7 +231,7 @@ async def test_list_services_that_are_deprecated(
     service_caching_disabled,
     background_task_lifespan_disabled,
     rabbitmq_and_rpc_setup_disabled: None,
-    mocked_director_service_api_base: MockRouter,
+    mocked_director_rest_api_base: MockRouter,
     user_id: int,
     target_product: ProductName,
     create_fake_service_data: Callable,
@@ -267,7 +267,7 @@ async def test_list_services_that_are_deprecated(
     fake_registry_service_data = ServiceMetaDataPublished.model_json_schema()[
         "examples"
     ][0]
-    mocked_director_service_api_base.get("/services", name="list_services").respond(
+    mocked_director_rest_api_base.get("/services", name="list_services").respond(
         200,
         json={
             "data": [

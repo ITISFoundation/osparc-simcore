@@ -111,7 +111,7 @@ async def director_client(app: FastAPI) -> DirectorApi:
 async def test_list_services_paginated(
     background_sync_task_mocked: None,
     rabbitmq_and_rpc_setup_disabled: None,
-    mocked_director_service_api: MockRouter,
+    mocked_director_rest_api: MockRouter,
     target_product: ProductName,
     services_repo: ServicesRepository,
     user_id: UserID,
@@ -123,7 +123,7 @@ async def test_list_services_paginated(
     limit = 2
     assert limit < num_services
 
-    assert not mocked_director_service_api["get_service"].called
+    assert not mocked_director_rest_api["get_service"].called
 
     total_count, page_items = await services.list_latest_services(
         services_repo,
@@ -137,8 +137,8 @@ async def test_list_services_paginated(
     assert total_count == num_services
     assert page_items
     assert len(page_items) <= limit
-    assert mocked_director_service_api["get_service"].called
-    assert mocked_director_service_api["get_service"].call_count == limit
+    assert mocked_director_rest_api["get_service"].called
+    assert mocked_director_rest_api["get_service"].call_count == limit
 
     for item in page_items:
         assert item.access_rights
@@ -159,13 +159,13 @@ async def test_list_services_paginated(
         assert item.release in got.history
 
     # since it is cached, it should only call it `limit` times
-    assert mocked_director_service_api["get_service"].call_count == limit
+    assert mocked_director_rest_api["get_service"].call_count == limit
 
 
 async def test_batch_get_my_services(
     background_task_lifespan_disabled: None,
     rabbitmq_and_rpc_setup_disabled: None,
-    mocked_director_service_api: MockRouter,
+    mocked_director_rest_api: MockRouter,
     target_product: ProductName,
     services_repo: ServicesRepository,
     groups_repo: GroupsRepository,

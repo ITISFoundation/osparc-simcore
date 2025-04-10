@@ -111,7 +111,7 @@ async def background_sync_task_mocked(
 
 async def test_rpc_catalog_with_no_services_returns_empty_page(
     background_sync_task_mocked: None,
-    mocked_director_service_api: MockRouter,
+    mocked_director_rest_api: MockRouter,
     rpc_client: RabbitMQRPCClient,
     user_id: UserID,
     app: FastAPI,
@@ -130,7 +130,7 @@ async def test_rpc_catalog_with_no_services_returns_empty_page(
 
 async def test_rpc_catalog_client(
     background_sync_task_mocked: None,
-    mocked_director_service_api: MockRouter,
+    mocked_director_rest_api: MockRouter,
     rpc_client: RabbitMQRPCClient,
     product_name: ProductName,
     user_id: UserID,
@@ -207,7 +207,7 @@ async def test_rpc_catalog_client(
 
 async def test_rpc_get_service_not_found_error(
     background_sync_task_mocked: None,
-    mocked_director_service_api: MockRouter,
+    mocked_director_rest_api: MockRouter,
     app: FastAPI,
     rpc_client: RabbitMQRPCClient,
     product_name: ProductName,
@@ -226,7 +226,7 @@ async def test_rpc_get_service_not_found_error(
 
 async def test_rpc_get_service_validation_error(
     background_sync_task_mocked: None,
-    mocked_director_service_api: MockRouter,
+    mocked_director_rest_api: MockRouter,
     app: FastAPI,
     rpc_client: RabbitMQRPCClient,
     product_name: ProductName,
@@ -245,7 +245,7 @@ async def test_rpc_get_service_validation_error(
 
 async def test_rpc_check_for_service(
     background_sync_task_mocked: None,
-    mocked_director_service_api: MockRouter,
+    mocked_director_rest_api: MockRouter,
     app: FastAPI,
     rpc_client: RabbitMQRPCClient,
     product_name: ProductName,
@@ -263,7 +263,7 @@ async def test_rpc_check_for_service(
 
 async def test_rpc_get_service_access_rights(
     background_sync_task_mocked: None,
-    mocked_director_service_api: MockRouter,
+    mocked_director_rest_api: MockRouter,
     rpc_client: RabbitMQRPCClient,
     product_name: ProductName,
     user: dict[str, Any],
@@ -405,7 +405,7 @@ async def test_rpc_get_service_access_rights(
 
 async def test_rpc_batch_get_my_services(
     background_sync_task_mocked: None,
-    mocked_director_service_api: MockRouter,
+    mocked_director_rest_api: MockRouter,
     rpc_client: RabbitMQRPCClient,
     product_name: ProductName,
     user: dict[str, Any],
@@ -486,7 +486,7 @@ async def test_rpc_batch_get_my_services(
 
 async def test_rpc_get_my_service_history(
     background_sync_task_mocked: None,
-    mocked_director_service_api: MockRouter,
+    mocked_director_rest_api: MockRouter,
     rpc_client: RabbitMQRPCClient,
     product_name: ProductName,
     user_id: UserID,

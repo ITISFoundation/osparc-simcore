@@ -7,6 +7,8 @@ from models_library.api_schemas_catalog.services import (
     ServiceGetV2,
     ServiceUpdateV2,
 )
+from models_library.api_schemas_directorv2.services import ServiceExtras
+from models_library.basic_types import VersionStr
 from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.rest_pagination import PageLimitInt, PageTotalCount
@@ -510,3 +512,11 @@ async def list_my_service_release_history(
     ]
 
     return total_count, items
+
+
+async def get_service_extras(
+    director_api: DirectorApi, service_key: ServiceKey, service_version: VersionStr
+) -> ServiceExtras:
+    return await director_api.get_service_extras(
+        service_key=service_key, service_version=service_version
+    )

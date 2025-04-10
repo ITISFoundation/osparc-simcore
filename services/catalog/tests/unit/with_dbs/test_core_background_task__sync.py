@@ -46,8 +46,8 @@ async def cleanup_service_meta_data_db_content(sqlalchemy_async_engine: AsyncEng
 async def test_registry_sync_task(
     background_task_lifespan_disabled: None,
     rabbitmq_and_rpc_setup_disabled: None,
-    mocked_director_service_api: MockRouter,
-    expected_director_list_services: list[dict[str, Any]],
+    mocked_director_rest_api: MockRouter,
+    expected_director_rest_api_list_services: list[dict[str, Any]],
     user: dict[str, Any],
     app: FastAPI,
     services_repo: ServicesRepository,
@@ -67,8 +67,8 @@ async def test_registry_sync_task(
             ),
         )
 
-    service_key = expected_director_list_services[0]["key"]
-    service_version = expected_director_list_services[0]["version"]
+    service_key = expected_director_rest_api_list_services[0]["key"]
+    service_version = expected_director_rest_api_list_services[0]["version"]
 
     # in registry but NOT in db
     got_from_db = await services_repo.get_service_with_history(

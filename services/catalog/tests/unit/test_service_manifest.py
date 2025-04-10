@@ -34,7 +34,7 @@ def app_environment(
 async def test_services_manifest_api(
     repository_lifespan_disabled: None,
     rabbitmq_and_rpc_setup_disabled: None,
-    mocked_director_service_api: MockRouter,
+    mocked_director_rest_api: MockRouter,
     app: FastAPI,
 ):
     director_api = get_director_api(app)
@@ -44,7 +44,7 @@ async def test_services_manifest_api(
 
     # LIST
     all_services_map = await manifest.get_services_map(director_api)
-    assert mocked_director_service_api["list_services"].called
+    assert mocked_director_rest_api["list_services"].called
 
     for service in all_services_map.values():
         if is_function_service(service.key):
@@ -67,7 +67,7 @@ async def test_services_manifest_api(
 
         assert service == expected_service
         if not is_function_service(service.key):
-            assert mocked_director_service_api["get_service"].called
+            assert mocked_director_rest_api["get_service"].called
 
     # BATCH
     for expected_services in toolz.partition(2, all_services_map.values()):

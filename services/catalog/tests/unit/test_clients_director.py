@@ -36,8 +36,8 @@ async def test_director_client_high_level_api(
     repository_lifespan_disabled: None,
     background_task_lifespan_disabled: None,
     rabbitmq_and_rpc_setup_disabled: None,
-    expected_director_list_services: list[dict[str, Any]],
-    mocked_director_service_api: MockRouter,
+    expected_director_rest_api_list_services: list[dict[str, Any]],
+    mocked_director_rest_api: MockRouter,
     app: FastAPI,
 ):
     # gets director client as used in handlers
@@ -50,7 +50,9 @@ async def test_director_client_high_level_api(
     assert await director_api.is_responsive()
 
     # GET
-    expected_service = ServiceMetaDataPublished(**expected_director_list_services[0])
+    expected_service = ServiceMetaDataPublished(
+        **expected_director_rest_api_list_services[0]
+    )
     assert (
         await director_api.get_service(expected_service.key, expected_service.version)
         == expected_service
@@ -62,13 +64,13 @@ async def test_director_client_low_level_api(
     repository_lifespan_disabled: None,
     background_task_lifespan_disabled: None,
     rabbitmq_and_rpc_setup_disabled: None,
-    mocked_director_service_api: MockRouter,
-    expected_director_list_services: list[dict[str, Any]],
+    mocked_director_rest_api: MockRouter,
+    expected_director_rest_api_list_services: list[dict[str, Any]],
     app: FastAPI,
 ):
     director_api = get_director_api(app)
 
-    expected_service = expected_director_list_services[0]
+    expected_service = expected_director_rest_api_list_services[0]
     key = expected_service["key"]
     version = expected_service["version"]
 

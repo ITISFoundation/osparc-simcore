@@ -128,7 +128,7 @@ def create_service_specifications(
 
 async def test_get_service_specifications_returns_403_if_user_does_not_exist(
     background_task_lifespan_disabled,
-    mocked_director_service_api: respx.MockRouter,
+    mocked_director_rest_api: respx.MockRouter,
     rabbitmq_and_rpc_setup_disabled: None,
     client: TestClient,
     user_id: UserID,
@@ -149,7 +149,7 @@ async def test_get_service_specifications_returns_403_if_user_does_not_exist(
 
 async def test_get_service_specifications_of_unknown_service_returns_default_specs(
     background_task_lifespan_disabled,
-    mocked_director_service_api: respx.MockRouter,
+    mocked_director_rest_api: respx.MockRouter,
     rabbitmq_and_rpc_setup_disabled: None,
     client: TestClient,
     user_id: UserID,
@@ -176,7 +176,7 @@ async def test_get_service_specifications_of_unknown_service_returns_default_spe
 
 async def test_get_service_specifications(
     background_task_lifespan_disabled,
-    mocked_director_service_api: respx.MockRouter,
+    mocked_director_rest_api: respx.MockRouter,
     rabbitmq_and_rpc_setup_disabled: None,
     client: TestClient,
     user_id: UserID,
@@ -271,7 +271,7 @@ async def test_get_service_specifications(
 
 async def test_get_service_specifications_are_passed_to_newer_versions_of_service(
     background_task_lifespan_disabled,
-    mocked_director_service_api: respx.MockRouter,
+    mocked_director_rest_api: respx.MockRouter,
     rabbitmq_and_rpc_setup_disabled: None,
     client: TestClient,
     user_id: UserID,

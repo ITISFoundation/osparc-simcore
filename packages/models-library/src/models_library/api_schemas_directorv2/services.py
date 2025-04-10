@@ -1,6 +1,7 @@
 from typing import Final
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic.config import JsonDict
 from pydantic.types import ByteSize, NonNegativeInt
 
 from ..service_settings_labels import ContainerSpec
@@ -63,13 +64,14 @@ class ServiceExtras(BaseModel):
     service_build_details: ServiceBuildDetails | None = None
     container_spec: ContainerSpec | None = None
 
-    model_config = ConfigDict(
-        json_schema_extra={
-            "examples": [
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        examples = [
+            *(
                 {"node_requirements": node_example}
                 for node_example in NodeRequirements.model_json_schema()["examples"]
-            ]
-            + [
+            ),
+            *(
                 {
                     "node_requirements": node_example,
                     "service_build_details": {
@@ -79,8 +81,8 @@ class ServiceExtras(BaseModel):
                     },
                 }
                 for node_example in NodeRequirements.model_json_schema()["examples"]
-            ]
-            + [
+            ),
+            *(
                 {
                     "node_requirements": node_example,
                     "service_build_details": {
@@ -91,9 +93,11 @@ class ServiceExtras(BaseModel):
                     "container_spec": {"Command": ["run", "subcommand"]},
                 }
                 for node_example in NodeRequirements.model_json_schema()["examples"]
-            ]
-        }
-    )
+            ),
+        ]
+        schema.update({"examples": examples})
+
+    model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
 
 
 CHARS_IN_VOLUME_NAME_BEFORE_DIR_NAME: Final[NonNegativeInt] = 89

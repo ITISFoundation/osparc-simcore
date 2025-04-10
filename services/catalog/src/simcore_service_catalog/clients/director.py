@@ -206,6 +206,8 @@ class DirectorApi:
         service_key: ServiceKey,
         service_version: ServiceVersion,
     ) -> ServiceExtras:
+        # NOTE: SEE https://github.com/ITISFoundation/osparc-simcore/issues/7509
+
         # check physical node requirements
         # all nodes require "CPU"
         result: dict[str, Any] = {
