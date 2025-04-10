@@ -16,11 +16,10 @@ RUN addgroup -g ${SC_USER_ID} ${SC_USER_NAME} && \
   --home /home/${SC_USER_NAME} \
   ${SC_USER_NAME}
 
-RUN apk add --no-cache socat curl && \
-  curl -L -o /usr/local/bin/gosu https://github.com/tianon/gosu/releases/download/1.16/gosu-amd64 && \
-  chmod +x /usr/local/bin/gosu && \
-  gosu --version
-
+RUN apk add --no-cache \
+  curl \
+  socat \
+  su-exec
 
 # Health check to ensure the proxy is running
 HEALTHCHECK \
