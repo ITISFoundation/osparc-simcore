@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from enum import Enum, unique
 from pathlib import Path
-from typing import Any, Final, Self
+from typing import Any, Final
 
 import pytest
 from playwright._impl._sync_base import EventContextManager
@@ -33,6 +33,7 @@ from playwright.sync_api import (
     WebSocket,
 )
 from pydantic import AnyUrl
+from tenacity import before_sleep_log, retry, stop_after_attempt, wait_exponential
 
 from .logging_tools import log_context
 
@@ -143,65 +144,62 @@ class RobustWebSocket:
     _registered_events: list[tuple[str, typing.Callable | None]] = field(
         default_factory=list
     )
-    _number_of_restarts: int = 0
+    _num_reconnections: int = 0
 
     def __post_init__(self):
         self._configure_websocket_events()
 
     def _configure_websocket_events(self):
-        try:
-            with log_context(
-                logging.DEBUG,
-                msg="handle websocket message (set to --log-cli-level=DEBUG level if you wanna see all of them)",
-            ) as ctx:
+        with log_context(
+            logging.INFO,
+            msg="handle websocket message (set to --log-cli-level=DEBUG level if you wanna see all of them)",
+        ) as ctx:
 
-                def on_framesent(payload: str | bytes) -> None:
-                    ctx.logger.debug("⬇️ Frame sent: %s", payload)
+            def on_framesent(payload: str | bytes) -> None:
+                ctx.logger.debug("⬇️ Frame sent: %s", payload)
 
-                def on_framereceived(payload: str | bytes) -> None:
-                    ctx.logger.debug("⬆️ Frame received: %s", payload)
+            def on_framereceived(payload: str | bytes) -> None:
+                ctx.logger.debug("⬆️ Frame received: %s", payload)
 
-                def on_close(_: WebSocket) -> None:
-                    ctx.logger.warning("⚠️ WebSocket closed. Attempting to reconnect...")
-                    self._attempt_reconnect(ctx.logger)
+            def on_close(_: WebSocket) -> None:
+                ctx.logger.warning("⚠️ WebSocket closed. Attempting to reconnect...")
+                self._attempt_reconnect(ctx.logger)
 
-                def on_socketerror(error_msg: str) -> None:
-                    ctx.logger.error("❌ WebSocket error: %s", error_msg)
+            def on_socketerror(error_msg: str) -> None:
+                ctx.logger.error("❌ WebSocket error: %s", error_msg)
 
-                # Attach core event listeners
-                self.ws.on("framesent", on_framesent)
-                self.ws.on("framereceived", on_framereceived)
-                self.ws.on("close", on_close)
-                self.ws.on("socketerror", on_socketerror)
+            # Attach core event listeners
+            self.ws.on("framesent", on_framesent)
+            self.ws.on("framereceived", on_framereceived)
+            self.ws.on("close", on_close)
+            self.ws.on("socketerror", on_socketerror)
 
-        finally:
-            # Detach core event listeners
-            self.ws.remove_listener("framesent", on_framesent)
-            self.ws.remove_listener("framereceived", on_framereceived)
-            self.ws.remove_listener("close", on_close)
-            self.ws.remove_listener("socketerror", on_socketerror)
-
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(
+            multiplier=1,
+            max=10,
+        ),
+        reraise=True,
+        before_sleep=before_sleep_log(_logger, logging.WARNING),
+    )
     def _attempt_reconnect(self, logger: logging.Logger) -> None:
         """
         Attempt to reconnect the WebSocket and restore event listeners.
         """
-        try:
-            with self.page.expect_websocket() as ws_info:
-                assert not ws_info.value.is_closed()
+        with self.page.expect_websocket(timeout=5000) as ws_info:
+            assert not ws_info.value.is_closed()
 
-            self.ws = ws_info.value
-            self._number_of_restarts += 1
-            logger.info(
-                "🔄 Reconnected to WebSocket successfully. Number of reconnections: %s",
-                self._number_of_restarts,
-            )
-            self._configure_websocket_events()
-            # Re-register all custom event listeners
-            for event, predicate in self._registered_events:
-                self.ws.expect_event(event, predicate)
-
-        except Exception as e:  # pylint: disable=broad-except
-            logger.exception("🚨 Failed to reconnect WebSocket: %s", e)
+        self.ws = ws_info.value
+        self._num_reconnections += 1
+        logger.info(
+            "🔄 Reconnected to WebSocket successfully. Number of reconnections: %s",
+            self._num_reconnections,
+        )
+        self._configure_websocket_events()
+        # Re-register all custom event listeners
+        for event, predicate in self._registered_events:
+            self.ws.expect_event(event, predicate)
 
     def expect_event(
         self,
@@ -216,10 +214,6 @@ class RobustWebSocket:
         output = self.ws.expect_event(event, predicate, timeout=timeout)
         self._registered_events.append((event, predicate))
         return output
-
-    @classmethod
-    def create(cls, page: Page, ws: WebSocket) -> Self:
-        return cls(page, ws)
 
 
 def decode_socketio_42_message(message: str) -> SocketIOEvent:
