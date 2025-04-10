@@ -966,9 +966,10 @@ def celery_config() -> dict[str, Any]:
         "result_expires": datetime.timedelta(days=7),
         "result_extended": True,
         "pool": "threads",
-        "worker_send_task_events": True,
-        "task_track_started": True,
+        "task_default_queue": "default",
         "task_send_sent_event": True,
+        "task_track_started": True,
+        "worker_send_task_events": True,
     }
 
 
@@ -1015,13 +1016,9 @@ async def with_storage_celery_worker_controller(
         concurrency=1,
         loglevel="info",
         perform_ping_check=False,
-        worker_kwargs={"hostname": "celery@worker1"},
+        queues="default,cpu_bound",
     ) as worker:
-        worker_init.send(sender=worker)
-
         yield worker
-
-        worker_shutdown.send(sender=worker)
 
 
 @pytest.fixture

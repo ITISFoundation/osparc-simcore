@@ -6,9 +6,9 @@ import asyncio
 import json
 import logging
 import warnings
+from collections.abc import Iterator
 from dataclasses import dataclass
 from io import StringIO
-from typing import Iterator
 
 import aiohttp
 import pytest
@@ -38,6 +38,7 @@ _SERVICES_TO_SKIP = {
     "traefik",
     "whoami",
     "sto-worker",
+    "sto-worker-cpu-bound",
 }
 # TODO: unify healthcheck policies see  https://github.com/ITISFoundation/osparc-simcore/pull/2281
 SERVICE_PUBLISHED_PORT = {}

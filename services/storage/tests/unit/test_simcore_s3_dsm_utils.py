@@ -1,5 +1,13 @@
+from pathlib import Path
+
 import pytest
-from simcore_service_storage.utils.simcore_s3_dsm_utils import compute_file_id_prefix
+from aws_library.s3._models import S3ObjectKey
+from simcore_service_storage.utils.simcore_s3_dsm_utils import (
+    UserSelectionStr,
+    _base_path_parent,
+    compute_file_id_prefix,
+    ensure_user_selection_from_same_base_directory,
+)
 
 
 @pytest.mark.parametrize(
@@ -19,3 +27,49 @@ from simcore_service_storage.utils.simcore_s3_dsm_utils import compute_file_id_p
 )
 def test_compute_file_id_prefix(file_id, levels, expected):
     assert compute_file_id_prefix(file_id, levels) == expected
+
+
+_FOLDERS_PATH = Path("nested/folders/path")
+
+
+@pytest.mark.parametrize(
+    "selection, s3_object, expected",
+    [
+        ("single_file", "single_file", "single_file"),
+        ("single_folder", "single_folder", "single_folder"),
+        ("a/b/c", "a/b/c/d/e/f/g", "c/d/e/f/g"),
+        (_FOLDERS_PATH / "folder", _FOLDERS_PATH / "folder", "folder"),
+        (_FOLDERS_PATH / "a_file.txt", _FOLDERS_PATH / "a_file.txt", "a_file.txt"),
+        (_FOLDERS_PATH, _FOLDERS_PATH / "with/some/content", "path/with/some/content"),
+    ],
+)
+def test__base_path_parent(selection: Path | str, s3_object: Path, expected: str):
+    assert (
+        _base_path_parent(UserSelectionStr(f"{selection}"), S3ObjectKey(f"{s3_object}"))
+        == expected
+    )
+
+
+@pytest.mark.parametrize(
+    "user_selection, expected",
+    [
+        ([], True),
+        (["folder"], True),
+        (["folder", "folder"], True),
+        (["", ""], True),
+        ([""], True),
+        ([_FOLDERS_PATH / "a", _FOLDERS_PATH / "b"], True),
+        (["a.txt", "b.txt"], True),
+        (["a/a.txt"], True),
+        # not same parent
+        (["firsta/file", "second/file"], False),
+        (["a/a.txt", "a.txt", "c.txt", "a/d.txt"], False),
+    ],
+)
+def test_ensure_user_selection_from_same_base_directory(
+    user_selection: list[S3ObjectKey | Path], expected: bool
+):
+    assert (
+        ensure_user_selection_from_same_base_directory([f"{x}" for x in user_selection])
+        == expected
+    )
