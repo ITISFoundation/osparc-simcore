@@ -153,13 +153,13 @@ def ensure_same_parent_in_user_selection(object_keys: list[S3ObjectKey]) -> bool
 UserSelectionStr: TypeAlias = str
 
 
-def _strip_parent(selection: UserSelectionStr, s3_object: S3ObjectKey) -> str:
-    selection_path = Path(selection).parent
+def _base_path_parent(base_path: UserSelectionStr, s3_object: S3ObjectKey) -> str:
+    base_path_parent_path = Path(base_path).parent
     s3_object_path = Path(s3_object)
-    if selection_path == s3_object_path:
+    if base_path_parent_path == s3_object_path:
         return s3_object_path.name
 
-    result = s3_object_path.relative_to(selection_path)
+    result = s3_object_path.relative_to(base_path_parent_path)
     return f"{result}"
 
 
@@ -173,7 +173,7 @@ async def create_and_upload_export(
 ) -> None:
     archive_entries: ArchiveEntries = [
         (
-            _strip_parent(selection, s3_object),
+            _base_path_parent(selection, s3_object),
             await s3_client.get_bytes_streamer_from_object(bucket, s3_object),
         )
         for (selection, s3_object) in source_object_keys

@@ -4,7 +4,7 @@ import pytest
 from aws_library.s3._models import S3ObjectKey
 from simcore_service_storage.utils.simcore_s3_dsm_utils import (
     UserSelectionStr,
-    _strip_parent,
+    _base_path_parent,
     compute_file_id_prefix,
     ensure_same_parent_in_user_selection,
 )
@@ -43,9 +43,9 @@ _FOLDERS_PATH = Path("nested/folders/path")
         (_FOLDERS_PATH, _FOLDERS_PATH / "with/some/content", "path/with/some/content"),
     ],
 )
-def test__strip_parent(selection: Path | str, s3_object: Path, expected: str):
+def test__base_path_parent(selection: Path | str, s3_object: Path, expected: str):
     assert (
-        _strip_parent(UserSelectionStr(f"{selection}"), S3ObjectKey(f"{s3_object}"))
+        _base_path_parent(UserSelectionStr(f"{selection}"), S3ObjectKey(f"{s3_object}"))
         == expected
     )
 
