@@ -101,7 +101,7 @@ def expected_director_list_services(
 
 @pytest.fixture
 async def background_sync_task_mocked(
-    background_tasks_setup_disabled: None,
+    background_task_lifespan_disabled: None,
     services_db_tables_injector: Callable,
     fake_data_for_services: list,
 ) -> None:

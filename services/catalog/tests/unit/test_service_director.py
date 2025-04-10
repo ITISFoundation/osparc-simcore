@@ -34,7 +34,7 @@ def app_environment(
 
 async def test_director_client_high_level_api(
     repository_lifespan_disabled: None,
-    background_tasks_setup_disabled: None,
+    background_task_lifespan_disabled: None,
     rabbitmq_and_rpc_setup_disabled: None,
     expected_director_list_services: list[dict[str, Any]],
     mocked_director_service_api: MockRouter,
@@ -60,7 +60,7 @@ async def test_director_client_high_level_api(
 
 async def test_director_client_low_level_api(
     repository_lifespan_disabled: None,
-    background_tasks_setup_disabled: None,
+    background_task_lifespan_disabled: None,
     rabbitmq_and_rpc_setup_disabled: None,
     mocked_director_service_api: MockRouter,
     expected_director_list_services: list[dict[str, Any]],

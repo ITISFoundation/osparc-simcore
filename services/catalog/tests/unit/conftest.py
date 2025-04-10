@@ -225,21 +225,19 @@ def repository_lifespan_disabled(mocker: MockerFixture):
 
 
 @pytest.fixture
-def background_tasks_setup_disabled(mocker: MockerFixture) -> None:
-    """patch the setup of the background task so we can call it manually"""
-
+def background_task_lifespan_disabled(mocker: MockerFixture) -> None:
     class MockedBackgroundTaskContextManager:
         async def __aenter__(self):
             print(
                 "TEST",
-                background_tasks_setup_disabled.__name__,
+                background_task_lifespan_disabled.__name__,
                 "Disabled background tasks. Skipping execution of __aenter__",
             )
 
         async def __aexit__(self, exc_type, exc_value, traceback):
             print(
                 "TEST",
-                background_tasks_setup_disabled.__name__,
+                background_task_lifespan_disabled.__name__,
                 "Disabled background tasks. Skipping execution of __aexit__",
             )
 

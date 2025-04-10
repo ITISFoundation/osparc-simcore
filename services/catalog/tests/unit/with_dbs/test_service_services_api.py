@@ -86,7 +86,7 @@ def expected_director_list_services(
 
 @pytest.fixture
 async def background_sync_task_mocked(
-    background_tasks_setup_disabled: None,
+    background_task_lifespan_disabled: None,
     services_db_tables_injector: Callable,
     fake_services_data: list,
 ) -> None:
@@ -163,7 +163,7 @@ async def test_list_services_paginated(
 
 
 async def test_batch_get_my_services(
-    background_tasks_setup_disabled: None,
+    background_task_lifespan_disabled: None,
     rabbitmq_and_rpc_setup_disabled: None,
     mocked_director_service_api: MockRouter,
     target_product: ProductName,

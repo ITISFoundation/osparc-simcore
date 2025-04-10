@@ -28,7 +28,7 @@ pytest_simcore_ops_services_selection = [
 
 
 async def test_get_service_access_rights(
-    background_tasks_setup_disabled: None,
+    background_task_lifespan_disabled: None,
     mocked_director_service_api: MockRouter,
     rabbitmq_and_rpc_setup_disabled: None,
     user: dict[str, Any],
@@ -75,7 +75,7 @@ async def test_get_service_access_rights(
 
 
 async def test_get_service_access_rights_with_more_gids(
-    background_tasks_setup_disabled: None,
+    background_task_lifespan_disabled: None,
     mocked_director_service_api: MockRouter,
     rabbitmq_and_rpc_setup_disabled: None,
     user: dict[str, Any],

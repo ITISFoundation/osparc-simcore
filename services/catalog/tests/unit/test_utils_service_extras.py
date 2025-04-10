@@ -20,7 +20,7 @@ async def test_get_service_extras(
     repository_lifespan_disabled: None,
     mocked_director_service_api: MockRouter,
     rabbitmq_and_rpc_setup_disabled: None,
-    background_tasks_setup_disabled: None,
+    background_task_lifespan_disabled: None,
     mock_engine: None,
     mock_service_extras: ServiceExtras,
     aclient: AsyncClient,

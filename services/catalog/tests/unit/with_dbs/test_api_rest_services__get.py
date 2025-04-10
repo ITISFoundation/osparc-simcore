@@ -56,7 +56,7 @@ async def expected_service(
                     "execute_access": True,
                     "write_access": True,
                     "product_name": target_product,
-                }
+                },
                 # team_access, everyone_access [optional]
             )
         ]
@@ -66,7 +66,7 @@ async def expected_service(
 
 def test_get_service_with_details(
     service_caching_disabled: None,
-    background_tasks_setup_disabled: None,
+    background_task_lifespan_disabled: None,
     rabbitmq_and_rpc_setup_disabled: None,
     mocked_director_service_api: respx.MockRouter,
     user_id: UserID,

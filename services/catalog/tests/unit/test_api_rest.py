@@ -11,7 +11,7 @@ from fastapi.testclient import TestClient
 def test_sync_client(
     repository_lifespan_disabled: None,
     rabbitmq_and_rpc_setup_disabled: None,
-    background_tasks_setup_disabled: None,
+    background_task_lifespan_disabled: None,
     director_setup_disabled: None,
     client: TestClient,
 ):
@@ -26,7 +26,7 @@ def test_sync_client(
 async def test_async_client(
     repository_lifespan_disabled: None,
     rabbitmq_and_rpc_setup_disabled: None,
-    background_tasks_setup_disabled: None,
+    background_task_lifespan_disabled: None,
     director_setup_disabled: None,
     aclient: httpx.AsyncClient,
 ):

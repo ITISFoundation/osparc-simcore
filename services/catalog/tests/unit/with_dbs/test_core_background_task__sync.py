@@ -44,7 +44,7 @@ async def cleanup_service_meta_data_db_content(sqlalchemy_async_engine: AsyncEng
 
 @pytest.mark.parametrize("director_fails", [False, True])
 async def test_registry_sync_task(
-    background_tasks_setup_disabled: None,
+    background_task_lifespan_disabled: None,
     rabbitmq_and_rpc_setup_disabled: None,
     mocked_director_service_api: MockRouter,
     expected_director_list_services: list[dict[str, Any]],
