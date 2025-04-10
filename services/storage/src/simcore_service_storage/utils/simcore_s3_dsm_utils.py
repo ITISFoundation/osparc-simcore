@@ -1,10 +1,12 @@
 from contextlib import suppress
 from pathlib import Path
+from typing import TypeAlias
 from uuid import uuid4
 
 import orjson
 from aws_library.s3 import S3MetaData, SimcoreS3API
 from aws_library.s3._constants import STREAM_READER_CHUNK_SIZE
+from aws_library.s3._models import S3ObjectKey
 from models_library.api_schemas_storage.storage_schemas import S3BucketName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import (
@@ -143,20 +145,40 @@ def create_random_export_name(user_id: UserID) -> StorageFileID:
     )
 
 
+def ensure_user_selection_from_same_base_directory(
+    object_keys: list[S3ObjectKey],
+) -> bool:
+    parents = [Path(x).parent for x in object_keys]
+    return len(set(parents)) <= 1
+
+
+UserSelectionStr: TypeAlias = str
+
+
+def _base_path_parent(base_path: UserSelectionStr, s3_object: S3ObjectKey) -> str:
+    base_path_parent_path = Path(base_path).parent
+    s3_object_path = Path(s3_object)
+    if base_path_parent_path == s3_object_path:
+        return s3_object_path.name
+
+    result = s3_object_path.relative_to(base_path_parent_path)
+    return f"{result}"
+
+
 async def create_and_upload_export(
     s3_client: SimcoreS3API,
     bucket: S3BucketName,
     *,
-    source_object_keys: set[StorageFileID],
+    source_object_keys: set[tuple[UserSelectionStr, StorageFileID]],
     destination_object_keys: StorageFileID,
     progress_bar: ProgressBarData,
 ) -> None:
     archive_entries: ArchiveEntries = [
         (
-            s3_object,
+            _base_path_parent(selection, s3_object),
             await s3_client.get_bytes_streamer_from_object(bucket, s3_object),
         )
-        for s3_object in source_object_keys
+        for (selection, s3_object) in source_object_keys
     ]
 
     async with progress_bar:
