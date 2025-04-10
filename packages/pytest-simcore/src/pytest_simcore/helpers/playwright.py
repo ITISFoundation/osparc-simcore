@@ -477,30 +477,35 @@ class SocketIONodeProgressCompleteWaiter:
         return len(self._received_messages)
 
 
-@retry(
-    retry=retry_if_exception_type(AssertionError),
-    wait=wait_fixed(1),
-    stop=stop_after_delay(30),
-    before_sleep=before_sleep_log(_logger, logging.INFO),
-    reraise=True,
-)
-def wait_for_service_ready(
+def wait_for_service_endpoint_responding(
     node_id: str,
     *,
     api_request_context: APIRequestContext,
     logger: logging.Logger,
     product_url: AnyUrl,
     is_legacy_service: bool,
+    timeout: int = 30 * SECOND,
 ) -> None:
     """emulates the frontend polling for the service endpoint until it responds with 2xx/3xx"""
-    is_service_ready = _check_service_endpoint(
-        node_id,
-        api_request_context=api_request_context,
-        logger=logger,
-        product_url=product_url,
-        is_legacy_service=is_legacy_service,
+
+    @retry(
+        retry=retry_if_exception_type(AssertionError),
+        wait=wait_fixed(1),
+        stop=stop_after_delay(timeout / 1000),
+        before_sleep=before_sleep_log(_logger, logging.INFO),
+        reraise=True,
     )
-    assert is_service_ready, "❌ the service failed starting! ❌"
+    def _retry_check_service_endpoint():
+        is_service_ready = _check_service_endpoint(
+            node_id,
+            api_request_context=api_request_context,
+            logger=logger,
+            product_url=product_url,
+            is_legacy_service=is_legacy_service,
+        )
+        assert is_service_ready, "❌ the service failed starting! ❌"
+
+    _retry_check_service_endpoint()
 
 
 _FAIL_FAST_COMPUTATIONAL_STATES: Final[tuple[RunningState, ...]] = (
@@ -594,7 +599,7 @@ def expected_service_running(
                 _trigger_service_start(page, node_id)
 
             yield service_running
-        wait_for_service_ready(
+        wait_for_service_endpoint_responding(
             node_id,
             api_request_context=page.request,
             logger=ctx.logger,
@@ -635,7 +640,7 @@ def wait_for_service_running(
             if press_start_button:
                 _trigger_service_start(page, node_id)
 
-        wait_for_service_ready(
+        wait_for_service_endpoint_responding(
             node_id,
             api_request_context=page.request,
             logger=ctx.logger,
