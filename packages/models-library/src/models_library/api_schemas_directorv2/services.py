@@ -1,6 +1,6 @@
 from typing import Final
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, JsonValue, field_validator
 from pydantic.config import JsonDict
 from pydantic.types import ByteSize, NonNegativeInt
 
@@ -66,38 +66,42 @@ class ServiceExtras(BaseModel):
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
-        examples = [
-            *(
-                {"node_requirements": node_example}
-                for node_example in NodeRequirements.model_json_schema()["examples"]
-            ),
-            *(
-                {
-                    "node_requirements": node_example,
-                    "service_build_details": {
-                        "build_date": "2021-08-13T12:56:28Z",
-                        "vcs_ref": "8251ade",
-                        "vcs_url": "git@github.com:ITISFoundation/osparc-simcore.git",
-                    },
-                }
-                for node_example in NodeRequirements.model_json_schema()["examples"]
-            ),
-            *(
-                {
-                    "node_requirements": node_example,
-                    "service_build_details": {
-                        "build_date": "2021-08-13T12:56:28Z",
-                        "vcs_ref": "8251ade",
-                        "vcs_url": "git@github.com:ITISFoundation/osparc-simcore.git",
-                    },
-                    "container_spec": {"Command": ["run", "subcommand"]},
-                }
-                for node_example in NodeRequirements.model_json_schema()["examples"]
-            ),
+
+        node_requirements_examples = NodeRequirements.model_json_schema()["examples"]
+
+        examples: list[JsonValue] = [
+            {"node_requirements": node_example}
+            for node_example in node_requirements_examples
         ]
+        examples += [
+            {
+                "node_requirements": node_example,
+                "service_build_details": {
+                    "build_date": "2021-08-13T12:56:28Z",
+                    "vcs_ref": "8251ade",
+                    "vcs_url": "git@github.com:ITISFoundation/osparc-simcore.git",
+                },
+            }
+            for node_example in node_requirements_examples
+        ]
+        examples += [
+            {
+                "node_requirements": node_example,
+                "service_build_details": {
+                    "build_date": "2021-08-13T12:56:28Z",
+                    "vcs_ref": "8251ade",
+                    "vcs_url": "git@github.com:ITISFoundation/osparc-simcore.git",
+                },
+                "container_spec": {"Command": ["run", "subcommand"]},
+            }
+            for node_example in node_requirements_examples
+        ]
+
         schema.update({"examples": examples})
 
-    model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
+    model_config = ConfigDict(
+        json_schema_extra=_update_json_schema_extra,
+    )
 
 
 CHARS_IN_VOLUME_NAME_BEFORE_DIR_NAME: Final[NonNegativeInt] = 89
