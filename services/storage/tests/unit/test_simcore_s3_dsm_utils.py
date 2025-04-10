@@ -35,14 +35,15 @@ _FOLDERS_PATH = Path("nested/folders/path")
 @pytest.mark.parametrize(
     "selection, s3_object, expected",
     [
-        (Path("single_file"), Path("single_file"), "single_file"),
-        (Path("single_folder"), Path("single_folder"), "single_folder"),
+        ("single_file", "single_file", "single_file"),
+        ("single_folder", "single_folder", "single_folder"),
+        ("a/b/c", "a/b/c/d/e/f/g", "c/d/e/f/g"),
         (_FOLDERS_PATH / "folder", _FOLDERS_PATH / "folder", "folder"),
         (_FOLDERS_PATH / "a_file.txt", _FOLDERS_PATH / "a_file.txt", "a_file.txt"),
-        (_FOLDERS_PATH, _FOLDERS_PATH / "the/actual/path", "the/actual/path"),
+        (_FOLDERS_PATH, _FOLDERS_PATH / "the/actual/path", "path/the/actual/path"),
     ],
 )
-def test__strip_parent(selection: Path, s3_object: Path, expected: str):
+def test__strip_parent(selection: Path | str, s3_object: Path, expected: str):
     assert (
         _strip_parent(UserSelectionStr(f"{selection}"), S3ObjectKey(f"{s3_object}"))
         == expected
