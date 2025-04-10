@@ -22,16 +22,15 @@ from models_library.services import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from packaging.version import Version
 from pydantic import ValidationError
-from simcore_service_catalog.api._dependencies.director import get_director_client
-from simcore_service_catalog.service import manifest
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from ..api._dependencies.director import get_director_client
 from ..models.services_db import ServiceAccessRightsAtDB, ServiceMetaDataDBCreate
 from ..repository.groups import GroupsRepository
 from ..repository.projects import ProjectsRepository
 from ..repository.services import ServicesRepository
-from ..service import access_rights
+from ..service import access_rights, manifest
 
 _logger = logging.getLogger(__name__)
 
