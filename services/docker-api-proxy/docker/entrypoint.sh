@@ -31,4 +31,4 @@ fi
 # Add the user to the group
 adduser "$SC_USER_NAME" $GROUPNAME
 
-exec gosu "$SC_USER_NAME" "$@"
+exec su-exec "$SC_USER_NAME" "$@"

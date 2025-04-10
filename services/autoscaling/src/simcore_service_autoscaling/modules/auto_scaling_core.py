@@ -338,10 +338,10 @@ async def _sorted_allowed_instance_types(app: FastAPI) -> list[EC2InstanceType]:
         allowed_instance_type_names
     ), "EC2_INSTANCES_ALLOWED_TYPES cannot be empty!"
 
-    allowed_instance_types: list[
-        EC2InstanceType
-    ] = await ec2_client.get_ec2_instance_capabilities(
-        cast(set[InstanceTypeType], set(allowed_instance_type_names))
+    allowed_instance_types: list[EC2InstanceType] = (
+        await ec2_client.get_ec2_instance_capabilities(
+            cast(set[InstanceTypeType], set(allowed_instance_type_names))
+        )
     )
 
     def _as_selection(instance_type: EC2InstanceType) -> int:
@@ -470,13 +470,13 @@ async def _start_warm_buffer_instances(
     with log_context(
         _logger, logging.INFO, f"start {len(instances_to_start)} buffer machines"
     ):
-        await get_ec2_client(app).set_instances_tags(
-            instances_to_start,
-            tags=get_activated_buffer_ec2_tags(app, auto_scaling_mode),
-        )
-
         started_instances = await get_ec2_client(app).start_instances(
             instances_to_start
+        )
+        # NOTE: first start the instance and then set the tags in case the instance cannot start (e.g. InsufficientInstanceCapacity)
+        await get_ec2_client(app).set_instances_tags(
+            started_instances,
+            tags=get_activated_buffer_ec2_tags(app, auto_scaling_mode),
         )
     started_instance_ids = [i.id for i in started_instances]
 
@@ -669,7 +669,7 @@ async def _find_needed_instances(
         "found following %s needed instances: %s",
         len(needed_new_instance_types_for_tasks),
         [
-            f"{i.instance_type.name}:{i.instance_type.resources} takes {len(i.assigned_tasks)} task{'s' if len(i.assigned_tasks)>1 else ''}"
+            f"{i.instance_type.name}:{i.instance_type.resources} takes {len(i.assigned_tasks)} task{'s' if len(i.assigned_tasks) > 1 else ''}"
             for i in needed_new_instance_types_for_tasks
         ],
     )

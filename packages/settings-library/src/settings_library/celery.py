@@ -22,6 +22,12 @@ class CelerySettings(BaseCustomSettings):
             description="Time after which task results will be deleted (default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)."
         ),
     ] = timedelta(days=7)
+    CELERY_EPHEMERAL_RESULT_EXPIRES: Annotated[
+        timedelta,
+        Field(
+            description="Time after which ephemeral task results will be deleted (default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)."
+        ),
+    ] = timedelta(hours=1)
     CELERY_RESULT_PERSISTENT: Annotated[
         bool,
         Field(
