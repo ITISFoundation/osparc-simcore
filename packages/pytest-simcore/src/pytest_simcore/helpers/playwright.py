@@ -328,7 +328,6 @@ def _get_service_url(
         if is_legacy_service
         else f"{product_url.scheme}://{node_id}.services.{product_url.host}"
     )
-    return f"{product_url}".split("//")[1]
 
 
 def _check_service_endpoint(
