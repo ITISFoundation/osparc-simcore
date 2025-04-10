@@ -1,10 +1,16 @@
 from pathlib import Path
+from typing import Final
+from uuid import UUID
 
 import pytest
 from aws_library.s3._models import S3ObjectKey
+from models_library.projects import ProjectID, ProjectIDStr
+from models_library.projects_nodes_io import NodeIDStr
+from simcore_service_storage.models import NodeID
 from simcore_service_storage.utils.simcore_s3_dsm_utils import (
     UserSelectionStr,
     _base_path_parent,
+    _replace_node_id_project_id_in_path,
     compute_file_id_prefix,
     ensure_user_selection_from_same_base_directory,
 )
@@ -73,3 +79,45 @@ def test_ensure_user_selection_from_same_base_directory(
         ensure_user_selection_from_same_base_directory([f"{x}" for x in user_selection])
         == expected
     )
+
+
+_PID1: Final[ProjectID] = UUID(int=1)
+_PID2: Final[ProjectID] = UUID(int=2)
+_NID1: Final[NodeID] = UUID(int=3)
+_NID2: Final[NodeID] = UUID(int=4)
+_IDS_NAMES_MAP: Final[dict[ProjectID, dict[ProjectIDStr | NodeIDStr, str]]] = {
+    _PID1: {
+        f"{_PID1}": "project one",
+        f"{_NID1}": "project one -> node one",
+        f"{_NID2}": "project one -> node two",
+    },
+    _PID2: {
+        f"{_PID2}": "/project/two/",
+        f"{_NID1}": "/project/two/->/node/one/",
+        f"{_NID2}": "/project/two/->/node/two/",
+    },
+}
+
+
+@pytest.mark.parametrize(
+    "path, expected",
+    [
+        ("", ""),
+        (f"{_PID1}", "project one"),
+        (f"{_PID1}/{_NID1}", "project one/project one -> node one"),
+        (f"{_PID1}/{_NID1}/something", "project one/project one -> node one/something"),
+        (f"{_PID1}/{_NID1}/{_NID2}", f"project one/project one -> node one/{_NID2}"),
+        (f"{_PID2}", "_project_two_"),
+        (f"{_PID2}/{_NID1}", "_project_two_/_project_two_->_node_one_"),
+        (
+            f"{_PID2}/{_NID1}/something",
+            "_project_two_/_project_two_->_node_one_/something",
+        ),
+        (
+            f"{_PID2}/{_NID1}/{_NID2}",
+            f"_project_two_/_project_two_->_node_one_/{_NID2}",
+        ),
+    ],
+)
+def test__replace_node_id_project_id_in_path(path: str, expected: str):
+    assert _replace_node_id_project_id_in_path(_IDS_NAMES_MAP, path) == expected
