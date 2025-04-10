@@ -9,8 +9,9 @@ from aws_library.s3._constants import STREAM_READER_CHUNK_SIZE
 from aws_library.s3._models import S3ObjectKey
 from fastapi import FastAPI
 from models_library.api_schemas_storage.storage_schemas import S3BucketName
-from models_library.projects import ProjectID
+from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_nodes_io import (
+    NodeIDStr,
     SimcoreS3DirectoryID,
     SimcoreS3FileID,
     StorageFileID,
@@ -29,7 +30,7 @@ from ..models import FileMetaData, FileMetaDataAtDB, GenericCursor, PathMetaData
 from ..modules.db import get_db_engine
 from ..modules.db.access_layer import AccessLayerRepository
 from ..modules.db.file_meta_data import FileMetaDataRepository, TotalChildren
-from ..modules.db.projects import NodeIDStr, ProjectIDStr, ProjectRepository
+from ..modules.db.projects import ProjectRepository
 from ..modules.s3 import get_s3_client
 from .utils import convert_db_to_model
 
