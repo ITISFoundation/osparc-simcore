@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 
 
 def test_sync_client(
-    postgres_setup_disabled: None,
+    repository_lifespan_disabled: None,
     rabbitmq_and_rpc_setup_disabled: None,
     background_tasks_setup_disabled: None,
     director_setup_disabled: None,
@@ -24,7 +24,7 @@ def test_sync_client(
 
 
 async def test_async_client(
-    postgres_setup_disabled: None,
+    repository_lifespan_disabled: None,
     rabbitmq_and_rpc_setup_disabled: None,
     background_tasks_setup_disabled: None,
     director_setup_disabled: None,

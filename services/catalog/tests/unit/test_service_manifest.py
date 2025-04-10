@@ -32,7 +32,7 @@ def app_environment(
 
 
 async def test_services_manifest_api(
-    postgres_setup_disabled: None,
+    repository_lifespan_disabled: None,
     rabbitmq_and_rpc_setup_disabled: None,
     mocked_director_service_api: MockRouter,
     app: FastAPI,

@@ -17,6 +17,8 @@ import respx
 import simcore_service_catalog
 import simcore_service_catalog.core.application
 import simcore_service_catalog.core.events
+import simcore_service_catalog.repository
+import simcore_service_catalog.repository.events
 import yaml
 from asgi_lifespan import LifespanManager
 from faker import Faker
@@ -216,11 +218,10 @@ def service_caching_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.fixture
-def postgres_setup_disabled(mocker: MockerFixture):
+def repository_lifespan_disabled(mocker: MockerFixture):
     mocker.patch.object(
-        simcore_service_catalog.core.events, "postgres_database_lifespan"
+        simcore_service_catalog.repository.events, "repository_lifespan"
     )
-    mocker.patch.object(simcore_service_catalog.core.events, "database_lifespan")
 
 
 @pytest.fixture
