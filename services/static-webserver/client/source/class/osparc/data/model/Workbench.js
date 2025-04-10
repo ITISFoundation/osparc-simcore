@@ -272,12 +272,12 @@ qx.Class.define("osparc.data.model.Workbench", {
     },
 
     __createNode: function(study, metadata, uuid) {
-      osparc.utils.Utils.localCache.serviceToFavs(metadata.key);
       const node = new osparc.data.model.Node(study, metadata, uuid);
       node.addListener("keyChanged", () => this.fireEvent("reloadModel"), this);
       node.addListener("changeInputNodes", () => this.fireDataEvent("pipelineChanged"), this);
       node.addListener("reloadModel", () => this.fireEvent("reloadModel"), this);
       node.addListener("updateStudyDocument", () => this.fireEvent("updateStudyDocument"), this);
+      osparc.utils.Utils.localCache.serviceToFavs(metadata.key);
       return node;
     },
 
@@ -685,15 +685,20 @@ qx.Class.define("osparc.data.model.Workbench", {
 
     __deserializeNodes: function(workbenchData, workbenchUIData = {}) {
       const nodeIds = Object.keys(workbenchData);
-
-      const metadataPromises = [];
+      const serviceMetadataPromises = [];
       nodeIds.forEach(nodeId => {
         const nodeData = workbenchData[nodeId];
-        metadataPromises.push(osparc.store.Services.getService(nodeData.key, nodeData.version));
+        serviceMetadataPromises.push(osparc.store.Services.getService(nodeData.key, nodeData.version));
       });
-
-      return Promise.all(metadataPromises)
-        .then(values => {
+      return Promise.allSettled(serviceMetadataPromises)
+        .then(results => {
+          const missing = results.filter(result => result.status === "rejected" || result.value === null)
+          if (missing.length) {
+            const errorMsg = qx.locale.Manager.tr("Service metadata missing");
+            osparc.FlashMessenger.logError(errorMsg);
+            return;
+          }
+          const values = results.map(result => result.value);
           // Create first all the nodes
           for (let i=0; i<nodeIds.length; i++) {
             const metadata = values[i];

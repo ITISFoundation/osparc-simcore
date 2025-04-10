@@ -102,8 +102,8 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
         throw new Error(msg);
       }
 
-      // check if it's corrupt
-      if (osparc.study.Utils.isCorrupt(studyData)) {
+      // check if there is any linked node missing
+      if (osparc.study.Utils.isAnyLinkedNodeMissing(studyData)) {
         const msg = `${qx.locale.Manager.tr("We encountered an issue with the")} ${studyAlias} <br>${qx.locale.Manager.tr("Please contact support.")}`;
         throw new Error(msg);
       }
@@ -113,10 +113,10 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
 
       osparc.store.Services.getStudyServicesMetadata(studyData)
         .finally(() => {
-          const inaccessibleServices = osparc.store.Services.getInaccessibleServices(studyData["workbench"])
+          const inaccessibleServices = osparc.store.Services.getInaccessibleServices(studyData["workbench"]);
           if (inaccessibleServices.length) {
             const msg = osparc.store.Services.getInaccessibleServicesMsg(inaccessibleServices, studyData["workbench"]);
-            osparc.FlashMessenger.getInstance().logError(msg);
+            osparc.FlashMessenger.logError(msg);
             this.showDashboard();
             return;
           }

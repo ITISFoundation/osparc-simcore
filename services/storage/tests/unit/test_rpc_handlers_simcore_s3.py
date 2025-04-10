@@ -592,17 +592,20 @@ async def test_start_export_data(
 ):
     _, src_projects_list = await random_project_with_files(project_params)
 
-    paths_to_export: set[SimcoreS3FileID] = set()
+    all_available_files: set[SimcoreS3FileID] = set()
     for x in src_projects_list.values():
-        paths_to_export |= x.keys()
+        all_available_files |= x.keys()
+
+    nodes_in_project_to_export = {
+        TypeAdapter(PathToExport).validate_python("/".join(Path(x).parts[0:2]))
+        for x in all_available_files
+    }
 
     result = await _request_start_export_data(
         storage_rabbitmq_rpc_client,
         user_id,
         product_name,
-        paths_to_export=[
-            TypeAdapter(PathToExport).validate_python(x) for x in paths_to_export
-        ],
+        paths_to_export=list(nodes_in_project_to_export),
     )
 
     assert re.fullmatch(
