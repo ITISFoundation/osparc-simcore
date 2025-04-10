@@ -353,22 +353,25 @@ def _check_service_status(
         except PlaywrightError:
             logger.exception("Failed to poll service endpoint")
         else:
-            logger.log(
-                (
-                    logging.ERROR
-                    if (response.status >= 400) and (response.status not in (502, 503))
-                    else logging.DEBUG
-                ),
-                "Querying service endpoint in case we missed some websocket messages. Url: %s Response: '%s' TIP: %s",
-                service_url,
-                f"{response.status}: {response.text()}",
-                (
-                    "We are emulating the frontend; a 502/503 response is acceptable if the service is not yet ready."
-                ),
-            )
+            # NOTE: 502,503 are acceptable if the service is not yet ready (traefik still setting up)
+            if response.status in (502, 503):
+                logger.info("service is not ready yet %s", f"{response.status=}")
+                return False
+            if response.status > 400:
+                logger.error(
+                    "service responded with error: %s:%s",
+                    f"{response.status}",
+                    f"{response.text()}",
+                )
+                return False
 
             if response.status <= 400:
                 # NOTE: If the response status is less than 400, it means that the service is ready (There are some services that respond with a 3XX)
+                logger.warning(
+                    "⚠️ Progress bar did not complete but service is already ready. TIP: some websocket messages were missed! ⚠️. Url: %s Response: '%s'",  # https://github.com/ITISFoundation/osparc-simcore/issues/6449
+                    service_url,
+                    f"{response.status}: {response.text()}",
+                )
                 return True
     return False
 
@@ -452,9 +455,6 @@ class SocketIONodeProgressCompleteWaiter:
                 product_url=self.product_url,
                 is_legacy_service=self.is_service_legacy,
             ):
-                self.logger.warning(
-                    "⚠️ Progress bar did not complete but service is already running. TIP: some websocket messages were missed! ⚠️",  # https://github.com/ITISFoundation/osparc-simcore/issues/6449
-                )
                 self.service_status = True
                 return True
 
