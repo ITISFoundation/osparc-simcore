@@ -361,6 +361,7 @@ qx.Class.define("osparc.store.Services", {
 
     __isInCache: function(key, version) {
       return (
+        this.__servicesCached &&
         key in this.__servicesCached &&
         version in this.__servicesCached[key]
       );
