@@ -18,8 +18,12 @@ from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import HttpUrl, NonNegativeInt
+from servicelib.logging_errors import (
+    create_troubleshotting_log_kwargs,
+)
 from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogForbiddenError,
+    CatalogInconsistentError,
     CatalogItemNotFoundError,
 )
 
@@ -149,7 +153,7 @@ async def list_latest_services(
                 product_name=product_name,
             )
 
-    # get manifest of those with access rights
+    # Get manifest of those with access rights
     got = await manifest.get_batch_services(
         [
             (sc.key, sc.version)
@@ -164,10 +168,27 @@ async def list_latest_services(
         if isinstance(sc, ServiceMetaDataPublished)
     }
 
-    # FIXME: services (key, version) matches not found in manifest means that they are in the database but they
-    # do not really exist in the service. We cannot include them but we should definitively warn!!
-    # All services in database should be include in the registry. The background task should be responsible of that
+    # Log a warning for missing services
+    missing_services = [
+        (sc.key, sc.version)
+        for sc in services
+        if (sc.key, sc.version) not in service_manifest
+    ]
+    if missing_services:
+        msg = f"Found {len(missing_services)} services that are in the database but missing in the registry manifest"
+        _logger.warning(
+            **create_troubleshotting_log_kwargs(
+                msg,
+                error=CatalogInconsistentError(
+                    missing_services=missing_services,
+                    user_id=user_id,
+                    product_name=product_name,
+                ),
+                tip="This might be due to malfunction of the background-task or that this call was done while the sync was taking place",
+            )
+        )
 
+    # Aggregate the services manifest and access-rights
     items = [
         _to_latest_get_schema(
             service_db=sc,
