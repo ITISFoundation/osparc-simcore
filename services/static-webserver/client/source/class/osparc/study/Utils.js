@@ -23,15 +23,11 @@ qx.Class.define("osparc.study.Utils", {
   type: "static",
 
   statics: {
-    __isAnyLinkedNodeMissing: function(studyData) {
+    isAnyLinkedNodeMissing: function(studyData) {
       const existingNodeIds = Object.keys(studyData["workbench"]);
       const linkedNodeIds = osparc.data.model.Workbench.getLinkedNodeIds(studyData["workbench"]);
       const allExist = linkedNodeIds.every(linkedNodeId => existingNodeIds.includes(linkedNodeId));
       return !allExist;
-    },
-
-    isCorrupt: function(studyData) {
-      return this.__isAnyLinkedNodeMissing(studyData);
     },
 
     extractUniqueServices: function(workbench) {
@@ -220,9 +216,9 @@ qx.Class.define("osparc.study.Utils", {
                 task.addListener("updateReceived", e => {
                   const updateData = e.getData();
                   if ("task_progress" in updateData && loadingPage) {
-                    const progress = updateData["task_progress"];
-                    const message = progress["message"];
-                    const percent = progress["percent"] ? parseFloat(progress["percent"].toFixed(3)) : progress["percent"];
+                    const taskProgress = updateData["task_progress"];
+                    const message = taskProgress["message"];
+                    const percent = osparc.data.PollTask.extractProgress(updateData);
                     progressSequence.setOverallProgress(percent);
                     const existingTask = progressSequence.getTask(message);
                     if (existingTask) {
@@ -274,8 +270,9 @@ qx.Class.define("osparc.study.Utils", {
 
     __getBlockedState: function(studyData) {
       if (studyData["services"]) {
-        const unaccessibleServices = osparc.study.Utils.getCantExecuteServices(studyData["services"])
-        if (unaccessibleServices.length) {
+        const cantReadServices = osparc.study.Utils.getCantExecuteServices(studyData["services"]);
+        const inaccessibleServices = osparc.store.Services.getInaccessibleServices(studyData["workbench"]);
+        if (cantReadServices.length || inaccessibleServices.length) {
           return "UNKNOWN_SERVICES";
         }
       }
@@ -342,12 +339,11 @@ qx.Class.define("osparc.study.Utils", {
       return Object.values(studyData["workbench"]).filter(nodeData => !osparc.data.model.Node.isFrontend(nodeData));
     },
 
-    guessIcon: async function(studyData) {
+    guessIcon: function(studyData) {
       if (osparc.product.Utils.isProduct("tis") || osparc.product.Utils.isProduct("tiplite")) {
-        return this.__guessTIPIcon(studyData);
+        return new Promise(resolve => resolve(this.__guessTIPIcon(studyData)));
       }
-      const icon = await this.__guessIcon(studyData);
-      return icon;
+      return this.__guessIcon(studyData);
     },
 
     __guessIcon: function(studyData) {
@@ -359,7 +355,7 @@ qx.Class.define("osparc.study.Utils", {
           const wbService = wbServices[0];
           osparc.store.Services.getService(wbService.key, wbService.version)
             .then(serviceMetadata => {
-              if (serviceMetadata["icon"]) {
+              if (serviceMetadata && serviceMetadata["icon"]) {
                 resolve(serviceMetadata["icon"]);
               }
               resolve(defaultIcon);

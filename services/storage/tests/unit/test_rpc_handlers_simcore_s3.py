@@ -9,14 +9,17 @@
 import asyncio
 import datetime
 import logging
+import re
 from collections.abc import Awaitable, Callable
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
+from unittest.mock import Mock
 
 import httpx
 import pytest
 import sqlalchemy as sa
+from celery.contrib.testing.worker import TestWorkController
 from faker import Faker
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
@@ -27,11 +30,13 @@ from models_library.api_schemas_storage.storage_schemas import (
     FileMetaDataGet,
     FoldersBody,
 )
+from models_library.api_schemas_webserver.storage import PathToExport
 from models_library.basic_types import SHA256Str
 from models_library.products import ProductName
 from models_library.projects_nodes_io import NodeID, NodeIDStr, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.fastapi import url_from_operation_id
 from pytest_simcore.helpers.httpx_assert_checks import assert_status
 from pytest_simcore.helpers.logging_tools import log_context
@@ -49,6 +54,7 @@ from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import wait_and_get_result
 from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import (
     copy_folders_from_project,
+    start_export_data,
 )
 from simcore_postgres_database.storage_models import file_meta_data
 from simcore_service_storage.modules.celery.worker import CeleryTaskQueueWorker
@@ -426,7 +432,7 @@ async def _create_and_delete_folders_from_project(
 
 
 @pytest.fixture
-def mock_datcore_download(mocker, client):
+def mock_datcore_download(mocker: MockerFixture, client: httpx.AsyncClient) -> None:
     # Use to mock downloading from DATCore
     async def _fake_download_to_file_or_raise(session, url, dest_path):
         with log_context(logging.INFO, f"Faking download:  {url} -> {dest_path}"):
@@ -501,3 +507,139 @@ async def test_create_and_delete_folders_from_project(
             for _ in range(num_concurrent_calls)
         ]
     )
+
+
+async def _request_start_export_data(
+    rpc_client: RabbitMQRPCClient,
+    user_id: UserID,
+    product_name: ProductName,
+    paths_to_export: list[PathToExport],
+    *,
+    client_timeout: datetime.timedelta = datetime.timedelta(seconds=60),
+) -> dict[str, Any]:
+    with log_context(
+        logging.INFO,
+        f"Data export form {paths_to_export=}",
+    ) as ctx:
+        async_job_get, async_job_name = await start_export_data(
+            rpc_client,
+            user_id=user_id,
+            product_name=product_name,
+            paths_to_export=paths_to_export,
+        )
+
+        async for async_job_result in wait_and_get_result(
+            rpc_client,
+            rpc_namespace=STORAGE_RPC_NAMESPACE,
+            method_name=start_export_data.__name__,
+            job_id=async_job_get.job_id,
+            job_id_data=async_job_name,
+            client_timeout=client_timeout,
+        ):
+            ctx.logger.info("%s", f"<-- current state is {async_job_result=}")
+            if async_job_result.done:
+                result = await async_job_result.result()
+                assert isinstance(result, AsyncJobResult)
+                return result.result
+
+    pytest.fail(reason="data export failed!")
+
+
+@pytest.fixture
+def task_progress_spy(mocker: MockerFixture) -> Mock:
+    return mocker.spy(CeleryTaskQueueWorker, "set_task_progress")
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    "project_params",
+    [
+        ProjectWithFilesParams(
+            num_nodes=4,
+            allowed_file_sizes=(TypeAdapter(ByteSize).validate_python("1KiB"),),
+            allowed_file_checksums=(
+                TypeAdapter(SHA256Str).validate_python(
+                    "0b3216d95ec5a36c120ba16c88911dcf5ff655925d0fbdbc74cf95baf86de6fc"
+                ),
+            ),
+            workspace_files_count=10,
+        ),
+    ],
+    ids=str,
+)
+async def test_start_export_data(
+    initialized_app: FastAPI,
+    short_dsm_cleaner_interval: int,
+    with_storage_celery_worker_controller: TestWorkController,
+    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
+    user_id: UserID,
+    product_name: ProductName,
+    create_project: Callable[[], Awaitable[dict[str, Any]]],
+    sqlalchemy_async_engine: AsyncEngine,
+    random_project_with_files: Callable[
+        [ProjectWithFilesParams],
+        Awaitable[
+            tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
+        ],
+    ],
+    project_params: ProjectWithFilesParams,
+    task_progress_spy: Mock,
+):
+    _, src_projects_list = await random_project_with_files(project_params)
+
+    all_available_files: set[SimcoreS3FileID] = set()
+    for x in src_projects_list.values():
+        all_available_files |= x.keys()
+
+    nodes_in_project_to_export = {
+        TypeAdapter(PathToExport).validate_python("/".join(Path(x).parts[0:2]))
+        for x in all_available_files
+    }
+
+    result = await _request_start_export_data(
+        storage_rabbitmq_rpc_client,
+        user_id,
+        product_name,
+        paths_to_export=list(nodes_in_project_to_export),
+    )
+
+    assert re.fullmatch(
+        rf"^exports/{user_id}/[0-9a-fA-F]{{8}}-[0-9a-fA-F]{{4}}-[0-9a-fA-F]{{4}}-[0-9a-fA-F]{{4}}-[0-9a-fA-F]{{12}}\.zip$",
+        result,
+    )
+
+    progress_updates = [x[0][3].actual_value for x in task_progress_spy.call_args_list]
+    assert progress_updates[0] == 0
+    assert progress_updates[-1] == 1
+
+
+async def test_start_export_data_access_error(
+    initialized_app: FastAPI,
+    short_dsm_cleaner_interval: int,
+    with_storage_celery_worker_controller: TestWorkController,
+    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
+    user_id: UserID,
+    product_name: ProductName,
+    faker: Faker,
+):
+    path_to_export = TypeAdapter(PathToExport).validate_python(
+        f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}"
+    )
+    with pytest.raises(JobError) as exc:
+        await _request_start_export_data(
+            storage_rabbitmq_rpc_client,
+            user_id,
+            product_name,
+            paths_to_export=[path_to_export],
+            client_timeout=datetime.timedelta(seconds=60),
+        )
+
+    assert isinstance(exc.value, JobError)
+    assert exc.value.exc_type == "AccessRightError"
+    assert f" {user_id} " in f"{exc.value}"
+    assert f" {path_to_export} " in f"{exc.value}"

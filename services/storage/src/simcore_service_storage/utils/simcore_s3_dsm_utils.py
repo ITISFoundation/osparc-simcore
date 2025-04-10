@@ -1,8 +1,12 @@
 from contextlib import suppress
 from pathlib import Path
+from typing import TypeAlias
+from uuid import uuid4
 
 import orjson
 from aws_library.s3 import S3MetaData, SimcoreS3API
+from aws_library.s3._constants import STREAM_READER_CHUNK_SIZE
+from aws_library.s3._models import S3ObjectKey
 from models_library.api_schemas_storage.storage_schemas import S3BucketName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import (
@@ -12,9 +16,13 @@ from models_library.projects_nodes_io import (
 )
 from models_library.users import UserID
 from pydantic import ByteSize, NonNegativeInt, TypeAdapter
+from servicelib.bytes_iters import ArchiveEntries, get_zip_bytes_iter
+from servicelib.progress_bar import ProgressBarData
+from servicelib.s3_utils import FileLikeBytesIterReader
 from servicelib.utils import ensure_ends_with
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from ..constants import EXPORTS_S3_PREFIX
 from ..exceptions.errors import FileMetaDataNotFoundError, ProjectAccessRightError
 from ..models import FileMetaData, FileMetaDataAtDB, GenericCursor, PathMetaData
 from ..modules.db.access_layer import AccessLayerRepository
@@ -129,6 +137,62 @@ async def get_directory_file_id(
 def compute_file_id_prefix(file_id: str, levels: int):
     components = file_id.strip("/").split("/")
     return "/".join(components[:levels])
+
+
+def create_random_export_name(user_id: UserID) -> StorageFileID:
+    return TypeAdapter(StorageFileID).validate_python(
+        f"{EXPORTS_S3_PREFIX}/{user_id}/{uuid4()}.zip"
+    )
+
+
+def ensure_user_selection_from_same_base_directory(
+    object_keys: list[S3ObjectKey],
+) -> bool:
+    parents = [Path(x).parent for x in object_keys]
+    return len(set(parents)) <= 1
+
+
+UserSelectionStr: TypeAlias = str
+
+
+def _base_path_parent(base_path: UserSelectionStr, s3_object: S3ObjectKey) -> str:
+    base_path_parent_path = Path(base_path).parent
+    s3_object_path = Path(s3_object)
+    if base_path_parent_path == s3_object_path:
+        return s3_object_path.name
+
+    result = s3_object_path.relative_to(base_path_parent_path)
+    return f"{result}"
+
+
+async def create_and_upload_export(
+    s3_client: SimcoreS3API,
+    bucket: S3BucketName,
+    *,
+    source_object_keys: set[tuple[UserSelectionStr, StorageFileID]],
+    destination_object_keys: StorageFileID,
+    progress_bar: ProgressBarData,
+) -> None:
+    archive_entries: ArchiveEntries = [
+        (
+            _base_path_parent(selection, s3_object),
+            await s3_client.get_bytes_streamer_from_object(bucket, s3_object),
+        )
+        for (selection, s3_object) in source_object_keys
+    ]
+
+    async with progress_bar:
+        await s3_client.upload_object_from_file_like(
+            bucket,
+            destination_object_keys,
+            FileLikeBytesIterReader(
+                get_zip_bytes_iter(
+                    archive_entries,
+                    progress_bar=progress_bar,
+                    chunk_size=STREAM_READER_CHUNK_SIZE,
+                )
+            ),
+        )
 
 
 async def list_child_paths_from_s3(

@@ -99,6 +99,19 @@ qx.Class.define("osparc.share.AddCollaborators", {
           collaboratorsManager.close();
           this.fireDataEvent("addCollaborators", e.getData());
         }, this);
+        if (this.__serializedDataCopy["resourceType"] === "study") {
+          collaboratorsManager.addListener("shareWithEmails", e => {
+            const {
+              selectedEmails,
+              newAccessRights,
+              message,
+            } = e.getData();
+            collaboratorsManager.close();
+            osparc.store.Study.sendShareEmails(this.__serializedDataCopy, selectedEmails, newAccessRights, message)
+              .then(() => osparc.FlashMessenger.logAs(this.tr("Emails sent"), "INFO"))
+              .catch(err => osparc.FlashMessenger.logError(err));
+          }, this);
+        }
       }, this);
 
       const organizations = this.getChildControl("my-organizations");

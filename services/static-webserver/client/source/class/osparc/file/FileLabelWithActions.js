@@ -110,7 +110,8 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
       if (selectedItem) {
         this.__selection = [selectedItem];
         const isFile = osparc.file.FilesTree.isFile(selectedItem);
-        this.getChildControl("download-button").setEnabled(isFile);
+        const isMultiDownloadEnabled = osparc.utils.DisabledPlugins.isMultiDownloadEnabled();
+        this.getChildControl("download-button").setEnabled(isFile || isMultiDownloadEnabled); // folders can also be downloaded
         this.getChildControl("delete-button").setEnabled(true); // folders can also be deleted
         this.getChildControl("selected-label").setValue(selectedItem.getLabel());
       } else {
@@ -142,16 +143,23 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
     },
 
     __retrieveURLAndDownloadSelected: function() {
+      const isMultiDownloadEnabled = osparc.utils.DisabledPlugins.isMultiDownloadEnabled();
       if (this.isMultiSelect()) {
-        this.__selection.forEach(selection => {
-          if (selection && osparc.file.FilesTree.isFile(selection)) {
-            this.__retrieveURLAndDownloadFile(selection);
-          }
-        });
+        if (this.__selection.length === 1 && osparc.file.FilesTree.isFile(this.__selection[0])) {
+          this.__retrieveURLAndDownloadFile(this.__selection[0]);
+        } else if (this.__selection.length > 1 && isMultiDownloadEnabled) {
+          const paths = this.__selection.map(item => item.getPath());
+          this.__retrieveURLAndExportData(paths);
+        }
       } else if (this.__selection.length) {
         const selection = this.__selection[0];
-        if (selection && osparc.file.FilesTree.isFile(selection)) {
-          this.__retrieveURLAndDownloadFile(selection);
+        if (selection) {
+          if (osparc.file.FilesTree.isFile(selection)) {
+            this.__retrieveURLAndDownloadFile(selection);
+          } else if (isMultiDownloadEnabled) {
+            const paths = [selection.getPath()];
+            this.__retrieveURLAndExportData(paths);
+          }
         }
       }
     },
@@ -165,6 +173,15 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
             osparc.DownloadLinkTracker.getInstance().downloadLinkUnattended(data.link, data.fileName);
           }
         });
+    },
+
+    __retrieveURLAndExportData: function(paths) {
+      const dataStore = osparc.store.Data.getInstance();
+      const fetchPromise = dataStore.exportData(paths);
+      const pollTasks = osparc.store.PollTasks.getInstance();
+      pollTasks.createPollingTask(fetchPromise)
+        .then(task => this.__exportDataTaskReceived(task))
+        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Unsuccessful files download")));
     },
 
     __deleteSelected: function() {
@@ -222,67 +239,128 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
         const dataStore = osparc.store.Data.getInstance();
         const fetchPromise = dataStore.deleteFiles(paths);
         const pollTasks = osparc.store.PollTasks.getInstance();
-        const interval = 1000;
-        pollTasks.createPollingTask(fetchPromise, interval)
-          .then(task => {
-            const taskUI = new osparc.task.TaskUI();
-            taskUI.setIcon("@FontAwesome5Solid/trash/14");
-            taskUI.setTitle(this.tr("Deleting files"));
-            taskUI.setTask(task);
-            osparc.task.TasksContainer.getInstance().addTaskUI(taskUI);
-
-            const progressWindow = new osparc.ui.window.Progress(
-              this.tr("Delete files"),
-              "@FontAwesome5Solid/trash/14",
-              this.tr("Deleting files..."),
-            );
-            if (task.getAbortHref()) {
-              const cancelButton = progressWindow.addCancelButton();
-              cancelButton.setLabel(this.tr("Ignore"));
-              const abortButton = new qx.ui.form.Button().set({
-                label: this.tr("Cancel"),
-                center: true,
-                minWidth: 100,
-              });
-              abortButton.addListener("execute", () => task.abortRequested());
-              progressWindow.addButton(abortButton);
-              abortButton.set({
-                appearance: "danger-button",
-              });
-            }
-            progressWindow.open();
-
-            const finished = (msg, msgLevel) => {
-              if (msg) {
-                osparc.FlashMessenger.logAs(msg, msgLevel);
-              }
-              progressWindow.close();
-            };
-
-            task.addListener("updateReceived", e => {
-              const data = e.getData();
-              if (data["task_progress"]) {
-                if ("message" in data["task_progress"] && data["task_progress"]["message"]) {
-                  progressWindow.setMessage(data["task_progress"]["message"]);
-                }
-                if ("percent" in data["task_progress"]) {
-                  progressWindow.setProgress(data["task_progress"]["percent"]*100);
-                }
-              }
-            }, this);
-            task.addListener("resultReceived", e => {
-              this.fireDataEvent("pathsDeleted", paths);
-              finished(this.tr("Items successfully deleted"), "INFO");
-            });
-            task.addListener("taskAborted", () => finished(this.tr("Deletion aborted"), "WARNING"));
-            task.addListener("pollingError", e => {
-              const err = e.getData();
-              const msg = this.tr("Something went wrong while deleting the files<br>") + err.message;
-              finished(msg, "ERROR");
-            });
-          })
+        pollTasks.createPollingTask(fetchPromise)
+          .then(task => this.__deleteTaskReceived(task, paths))
           .catch(err => osparc.FlashMessenger.logError(err, this.tr("Unsuccessful files deletion")));
       }
+    },
+
+    __exportDataTaskReceived: function(task) {
+      const exportDataTaskUI = new osparc.task.ExportData();
+      exportDataTaskUI.setTask(task);
+      osparc.task.TasksContainer.getInstance().addTaskUI(exportDataTaskUI);
+
+      const progressWindow = new osparc.ui.window.Progress(
+        this.tr("Downloading files"),
+        "@FontAwesome5Solid/download/14",
+        this.tr("Downloading files..."),
+      );
+      if (task.getAbortHref()) {
+        const cancelButton = progressWindow.addCancelButton();
+        cancelButton.setLabel(this.tr("Ignore"));
+        const abortButton = new qx.ui.form.Button().set({
+          label: this.tr("Cancel"),
+          center: true,
+          minWidth: 100,
+        });
+        abortButton.addListener("execute", () => task.abortRequested());
+        progressWindow.addButton(abortButton);
+        abortButton.set({
+          appearance: "danger-button",
+        });
+      }
+      progressWindow.open();
+
+      task.addListener("updateReceived", e => {
+        const data = e.getData();
+        if (data["task_progress"]) {
+          if ("message" in data["task_progress"] && data["task_progress"]["message"]) {
+            progressWindow.setMessage(data["task_progress"]["message"]);
+          }
+          progressWindow.setProgress(osparc.data.PollTask.extractProgress(data) * 100);
+        }
+      }, this);
+      task.addListener("resultReceived", e => {
+        const taskData = e.getData();
+        if (taskData["result"]) {
+          const params = {
+            url: {
+              locationId: 0,
+              fileUuid: encodeURIComponent(taskData["result"]),
+            }
+          };
+          osparc.data.Resources.fetch("storageLink", "getOne", params)
+            .then(data => {
+              if (data && data.link) {
+                const fileName = taskData["result"].split("/").pop();
+                osparc.utils.Utils.downloadLink(data.link, "GET", fileName);
+              }
+            })
+        }
+        progressWindow.close();
+      });
+      task.addListener("taskAborted", () => {
+        osparc.FlashMessenger.logAs(this.tr("Download aborted"), "WARNING");
+        progressWindow.close();
+      });
+      task.addListener("pollingError", e => {
+        const err = e.getData();
+        osparc.FlashMessenger.logError(err);
+        progressWindow.close();
+      });
+    },
+
+    __deleteTaskReceived: function(task, paths) {
+      const taskUI = new osparc.task.TaskUI();
+      taskUI.setIcon("@FontAwesome5Solid/trash/14");
+      taskUI.setTitle(this.tr("Deleting files"));
+      taskUI.setTask(task);
+      osparc.task.TasksContainer.getInstance().addTaskUI(taskUI);
+
+      const progressWindow = new osparc.ui.window.Progress(
+        this.tr("Delete files"),
+        "@FontAwesome5Solid/trash/14",
+        this.tr("Deleting files..."),
+      );
+      if (task.getAbortHref()) {
+        const cancelButton = progressWindow.addCancelButton();
+        cancelButton.setLabel(this.tr("Ignore"));
+        const abortButton = new qx.ui.form.Button().set({
+          label: this.tr("Cancel"),
+          center: true,
+          minWidth: 100,
+        });
+        abortButton.addListener("execute", () => task.abortRequested());
+        progressWindow.addButton(abortButton);
+        abortButton.set({
+          appearance: "danger-button",
+        });
+      }
+      progressWindow.open();
+
+      task.addListener("updateReceived", e => {
+        const data = e.getData();
+        if (data["task_progress"]) {
+          if ("message" in data["task_progress"] && data["task_progress"]["message"]) {
+            progressWindow.setMessage(data["task_progress"]["message"]);
+          }
+          progressWindow.setProgress(osparc.data.PollTask.extractProgress(data) * 100);
+        }
+      }, this);
+      task.addListener("resultReceived", e => {
+        osparc.FlashMessenger.logAs(this.tr("Items successfully deleted"), "INFO");
+        this.fireDataEvent("pathsDeleted", paths);
+        progressWindow.close();
+      });
+      task.addListener("taskAborted", () => {
+        osparc.FlashMessenger.logAs(this.tr("Deletion aborted"), "WARNING");
+        progressWindow.close();
+      });
+      task.addListener("pollingError", e => {
+        const err = e.getData();
+        osparc.FlashMessenger.logError(err);
+        progressWindow.close();
+      });
     },
   }
 });

@@ -21,7 +21,11 @@ from servicelib.logging_utils import log_catch
 from servicelib.rabbitmq import RPCRouter
 
 from ...modules.celery import get_celery_client
-from ...modules.celery.models import TaskError, TaskState
+from ...modules.celery.errors import (
+    TransferrableCeleryError,
+    decode_celery_transferrable_error,
+)
+from ...modules.celery.models import TaskState
 
 _logger = logging.getLogger(__name__)
 router = RPCRouter()
@@ -94,12 +98,23 @@ async def result(
     if _status.task_state == TaskState.ABORTED:
         raise JobAbortedError(job_id=job_id)
     if _status.task_state == TaskState.ERROR:
-        exc_type = ""
-        exc_msg = ""
-        with log_catch(logger=_logger, reraise=False):
-            task_error = TaskError.model_validate(_result)
-            exc_type = task_error.exc_type
-            exc_msg = task_error.exc_msg
+        # fallback exception to report
+        exc_type = type(_result).__name__
+        exc_msg = f"{_result}"
+
+        # try to recover the original error
+        exception = None
+        with log_catch(_logger, reraise=False):
+            assert isinstance(_result, TransferrableCeleryError)  # nosec
+            exception = decode_celery_transferrable_error(_result)
+            exc_type = type(exception).__name__
+            exc_msg = f"{exception}"
+
+        if exception is None:
+            _logger.warning("Was not expecting '%s': '%s'", exc_type, exc_msg)
+
+        # NOTE: cannot transfer original exception since this will not be able to be serialized
+        # outside of storage
         raise JobError(job_id=job_id, exc_type=exc_type, exc_msg=exc_msg)
 
     return AsyncJobResult(result=_result)
@@ -109,6 +124,7 @@ async def result(
 async def list_jobs(
     app: FastAPI, filter_: str, job_id_data: AsyncJobNameData
 ) -> list[AsyncJobGet]:
+    _ = filter_
     assert app  # nosec
     try:
         task_uuids = await get_celery_client(app).get_task_uuids(

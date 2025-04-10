@@ -612,7 +612,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         card.addListener("tap", e => this.__studyCardClicked(card, e.getNativeEvent().shiftKey), this);
         this._populateCardMenu(card);
 
-        this.__attachDragHandlers(card);
+        if (this.getCurrentContext() !== "trash") {
+          this.__attachDragHandlers(card);
+        }
       });
     },
 
@@ -1899,9 +1901,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         pollTask: true
       };
       const fetchPromise = osparc.data.Resources.fetch("studies", "duplicate", params, options);
-      const interval = 1000;
       const pollTasks = osparc.store.PollTasks.getInstance();
-      pollTasks.createPollingTask(fetchPromise, interval)
+      pollTasks.createPollingTask(fetchPromise)
         .then(task => this.__taskDuplicateReceived(task, studyData["name"]))
         .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while duplicating")));
     },
@@ -2134,27 +2135,26 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __attachDuplicateEventHandler: function(task) {
-      const finished = (msg, msgLevel) => {
-        if (msg) {
-          osparc.FlashMessenger.logAs(msg, msgLevel);
-        }
+      const finished = () => {
         this._removeTaskCard(task);
       };
 
       task.addListener("resultReceived", e => {
-        const msg = this.tr("Duplication completed");
-        finished(msg, "INFO");
+        finished();
         const duplicatedStudyData = e.getData();
         this._updateStudyData(duplicatedStudyData);
+        const msg = this.tr("Duplication completed");
+        osparc.FlashMessenger.logAs(msg, "INFO");
       });
       task.addListener("taskAborted", () => {
+        finished();
         const msg = this.tr("Duplication cancelled");
-        finished(msg, "WARNING");
+        osparc.FlashMessenger.logAs(msg, "WARNING");
       });
       task.addListener("pollingError", e => {
+        finished();
         const err = e.getData();
-        const msg = this.tr("Something went wrong while duplicating the study<br>") + err.message;
-        finished(msg, "ERROR");
+        osparc.FlashMessenger.logError(err);
       });
     }
     // TASKS //

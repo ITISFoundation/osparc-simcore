@@ -52,6 +52,14 @@ qx.Class.define("osparc.utils.DisabledPlugins", {
       return this.__isPluginDisabled(this.LICENSES);
     },
 
+    isShareWithEmailEnabled: function() {
+      return osparc.store.StaticInfo.getInstance().isDevFeaturesEnabled();
+    },
+
+    isMultiDownloadEnabled: function() {
+      return osparc.store.StaticInfo.getInstance().isDevFeaturesEnabled();
+    },
+
     isJobsEnabled: function() {
       if (osparc.utils.Utils.isDevelopmentPlatform() && osparc.product.Utils.isProduct("s4lacad")) {
         return true;

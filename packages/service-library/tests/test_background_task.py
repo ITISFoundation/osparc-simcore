@@ -6,6 +6,7 @@
 
 import asyncio
 import datetime
+import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Final
 from unittest import mock
@@ -204,3 +205,19 @@ async def test_periodic_decorator():
         await task
 
     assert mock_func.call_count > 1
+
+
+async def test_periodic_task_logs_error(
+    mock_background_task: mock.AsyncMock,
+    task_interval: datetime.timedelta,
+    caplog: pytest.LogCaptureFixture,
+):
+    mock_background_task.side_effect = RuntimeError("Test error")
+
+    with caplog.at_level(logging.ERROR):
+        async with periodic_task(
+            mock_background_task, interval=task_interval, task_name="test_task"
+        ):
+            await asyncio.sleep(2 * task_interval.total_seconds())
+
+    assert "Test error" in caplog.text

@@ -1,9 +1,9 @@
 import logging
-from pprint import pformat
 from typing import Any, TypedDict
 
 from common_library.error_codes import ErrorCodeStr
 from common_library.errors_classes import OsparcErrorMixin
+from common_library.json_serialization import json_dumps, representation_encoder
 
 from .logging_utils import LogExtra, get_log_record_extra
 
@@ -27,14 +27,15 @@ def create_troubleshotting_log_message(
         error_context -- Additional context surrounding the exception, such as environment variables or function-specific data. This can be derived from exc.error_context() (relevant when using the OsparcErrorMixin)
         tip -- Helpful suggestions or possible solutions explaining why the error may have occurred and how it could potentially be resolved
     """
-    debug_data = pformat(
+    debug_data = json_dumps(
         {
             "exception_type": f"{type(error)}",
             "exception_details": f"{error}",
             "error_code": error_code,
-            "context": pformat(error_context, indent=1),
+            "context": error_context,
             "tip": tip,
         },
+        default=representation_encoder,
         indent=1,
     )
 
@@ -82,7 +83,7 @@ def create_troubleshotting_log_kwargs(
         error=error,
         error_code=error_code,
         error_context=context,
-        tip=tip,
+        tip=tip or getattr(error, "tip", None),
     )
 
     return {

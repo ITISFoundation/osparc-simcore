@@ -237,8 +237,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       };
       const fetchPromise = osparc.data.Resources.fetch("studies", "postToTemplate", params, options);
       const pollTasks = osparc.store.PollTasks.getInstance();
-      const interval = 1000;
-      pollTasks.createPollingTask(fetchPromise, interval)
+      pollTasks.createPollingTask(fetchPromise)
         .then(task => {
           const templateBrowser = this.__dashboard.getTemplateBrowser();
           if (templateBrowser) {

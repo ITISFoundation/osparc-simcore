@@ -11,4 +11,4 @@ pylint
 python-dateutil
 python-dotenv
 tenacity
-typer[all]
+typer

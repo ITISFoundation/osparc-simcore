@@ -177,7 +177,11 @@ def cancel_jobs(
 @app.command()
 def trigger_cluster_termination(
     user_id: Annotated[int, typer.Option(help="the user ID")],
-    wallet_id: Annotated[int, typer.Option(help="the wallet ID")],
+    wallet_id: Annotated[
+        Optional[int | None],  # noqa: UP007 # typer does not understand | syntax
+        typer.Option(help="the wallet ID"),
+    ] = None,
+    *,
     force: Annotated[bool, typer.Option(help="will not ask for confirmation")] = False,
 ) -> None:
     """this will set the Heartbeat tag on the primary machine to 1 hour, thus ensuring the

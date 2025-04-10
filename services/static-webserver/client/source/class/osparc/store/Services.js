@@ -20,6 +20,8 @@ qx.Class.define("osparc.store.Services", {
 
   statics: {
     __servicesCached: {},
+    __servicesPromisesCached: {},
+    __studyServicesPromisesCached: {},
 
     getServicesLatest: function(useCache = true) {
       return new Promise(resolve => {
@@ -30,7 +32,7 @@ qx.Class.define("osparc.store.Services", {
           return;
         }
 
-        osparc.data.Resources.getInstance().getAllPages("servicesV2")
+        osparc.data.Resources.getInstance().getAllPages("services")
           .then(servicesArray => {
             const servicesObj = osparc.service.Utils.convertArrayToObject(servicesArray);
             this.__addHits(servicesObj);
@@ -38,7 +40,7 @@ qx.Class.define("osparc.store.Services", {
             this.__addExtraTypeInfos(servicesObj);
 
             Object.values(servicesObj).forEach(serviceKey => {
-              Object.values(serviceKey).forEach(service => this.__addToCache(service));
+              Object.values(serviceKey).forEach(service => this.__addServiceToCache(service));
             });
 
             resolve(servicesObj);
@@ -99,32 +101,66 @@ qx.Class.define("osparc.store.Services", {
     },
 
     getService: function(key, version, useCache = true) {
+      // avoid request deduplication
+      if (key in this.__servicesPromisesCached && version in this.__servicesPromisesCached[key]) {
+        return this.__servicesPromisesCached[key][version];
+      }
+
       return new Promise((resolve, reject) => {
         if (
           useCache &&
           this.__isInCache(key, version) &&
-          "history" in this.__servicesCached[key][version]
+          (
+            this.__servicesCached[key][version] === null ||
+            "history" in this.__servicesCached[key][version]
+          )
         ) {
           resolve(this.__servicesCached[key][version]);
           return;
         }
 
+        if (!(key in this.__servicesPromisesCached)) {
+          this.__servicesPromisesCached[key] = {};
+        }
         const params = {
           url: osparc.data.Resources.getServiceUrl(key, version)
         };
-        osparc.data.Resources.fetch("servicesV2", "getOne", params)
+        this.__servicesPromisesCached[key][version] = osparc.data.Resources.fetch("services", "getOne", params)
           .then(service => {
             this.__addHit(service);
             this.__addTSRInfo(service);
             this.__addExtraTypeInfo(service);
-            this.__addToCache(service)
+            this.__addServiceToCache(service);
+            delete this.__servicesPromisesCached[key][version];
             resolve(service);
           })
           .catch(err => {
+            // store it in cache to avoid asking again
+            this.__addToCache(key, version, null);
+            delete this.__servicesPromisesCached[key][version];
             console.error(err);
             reject();
           });
       });
+    },
+
+    getStudyServices: function(studyId) {
+      // avoid request deduplication
+      if (studyId in this.__studyServicesPromisesCached) {
+        return this.__studyServicesPromisesCached[studyId];
+      }
+
+      const params = {
+        url: {
+          studyId
+        }
+      };
+      this.__studyServicesPromisesCached[studyId] = osparc.data.Resources.fetch("studies", "getServices", params)
+        .finally(() => {
+          delete this.__studyServicesPromisesCached[studyId];
+        });
+
+      return this.__studyServicesPromisesCached[studyId]
     },
 
     __getAllVersions: function(key) {
@@ -235,7 +271,7 @@ qx.Class.define("osparc.store.Services", {
         url: osparc.data.Resources.getServiceUrl(key, version),
         data: patchData
       };
-      return osparc.data.Resources.fetch("servicesV2", "patch", params)
+      return osparc.data.Resources.fetch("services", "patch", params)
         .then(() => {
           this.__servicesCached[key][version][fieldKey] = value;
           serviceData[fieldKey] = value;
@@ -248,23 +284,27 @@ qx.Class.define("osparc.store.Services", {
       wbServices.forEach(srv => {
         promises.push(this.getService(srv["key"], srv["version"]));
       });
-      return Promise.all(promises);
+      return Promise.allSettled(promises);
     },
 
     getInaccessibleServices: function(workbench) {
       const allServices = this.__servicesCached;
-      const unaccessibleServices = [];
+      const inaccessibleServices = [];
       const wbServices = osparc.study.Utils.extractUniqueServices(workbench);
       wbServices.forEach(srv => {
-        if (srv.key in allServices && srv.version in allServices[srv.key]) {
+        if (
+          srv.key in allServices &&
+          srv.version in allServices[srv.key] &&
+          allServices[srv.key][srv.version] // check metadata is not null
+        ) {
           return;
         }
-        const idx = unaccessibleServices.findIndex(unSrv => unSrv.key === srv.key && unSrv.version === srv.version);
+        const idx = inaccessibleServices.findIndex(unSrv => unSrv.key === srv.key && unSrv.version === srv.version);
         if (idx === -1) {
-          unaccessibleServices.push(srv);
+          inaccessibleServices.push(srv);
         }
       });
-      return unaccessibleServices;
+      return inaccessibleServices;
     },
 
     getInaccessibleServicesMsg: function(inaccessibleServices, workbench) {
@@ -306,13 +346,17 @@ qx.Class.define("osparc.store.Services", {
       return this.getLatest("simcore/services/frontend/iterator-consumer/probe/"+type);
     },
 
-    __addToCache: function(service) {
+    __addServiceToCache: function(service) {
       const key = service.key;
       const version = service.version;
+      this.__addToCache(key, version, service);
+    },
+
+    __addToCache: function(key, version, value) {
       if (!(key in this.__servicesCached)) {
         this.__servicesCached[key] = {};
       }
-      this.__servicesCached[key][version] = service;
+      this.__servicesCached[key][version] = value;
     },
 
     __isInCache: function(key, version) {

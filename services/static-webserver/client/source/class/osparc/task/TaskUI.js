@@ -121,38 +121,38 @@ qx.Class.define("osparc.task.TaskUI", {
     },
 
     __applyTask: function(task) {
-      task.addListener("updateReceived", e => {
-        const data = e.getData();
-        if (data["task_progress"]) {
-          if ("message" in data["task_progress"] && !this.getChildControl("subtitle").getValue()) {
-            this.getChildControl("subtitle").setValue(data["task_progress"]["message"]);
-          }
-          if ("percent" in data["task_progress"]) {
-            const progress = data["task_progress"]["percent"];
-            this.getChildControl("progress").setValue(progress*100 + "%");
-          }
-        }
-      }, this);
+      task.addListener("updateReceived", e => this._updateHandler(e.getData()), this);
 
       const stopButton = this.getChildControl("stop");
       task.bind("abortHref", stopButton, "visibility", {
         converter: abortHref => abortHref ? "visible" : "excluded"
       });
-      stopButton.addListener("tap", () => {
-        const msg = this.tr("Are you sure you want to cancel the task?");
-        const win = new osparc.ui.window.Confirmation(msg).set({
-          caption: this.tr("Cancel Task"),
-          confirmText: this.tr("Cancel"),
-          confirmAction: "delete"
-        });
-        win.getCancelButton().setLabel(this.tr("Ignore"));
-        win.center();
-        win.open();
-        win.addListener("close", () => {
-          if (win.getConfirmed()) {
-            task.abortRequested();
-          }
-        }, this);
+      stopButton.addListener("tap", () => this._abortHandler(), this);
+    },
+
+    _updateHandler: function(data) {
+      if (data["task_progress"]) {
+        if ("message" in data["task_progress"] && !this.getChildControl("subtitle").getValue()) {
+          this.getChildControl("subtitle").setValue(data["task_progress"]["message"]);
+        }
+        this.getChildControl("progress").setValue((osparc.data.PollTask.extractProgress(data) * 100) + "%");
+      }
+    },
+
+    _abortHandler: function() {
+      const msg = this.tr("Are you sure you want to cancel the task?");
+      const win = new osparc.ui.window.Confirmation(msg).set({
+        caption: this.tr("Cancel Task"),
+        confirmText: this.tr("Cancel"),
+        confirmAction: "delete"
+      });
+      win.getCancelButton().setLabel(this.tr("Ignore"));
+      win.center();
+      win.open();
+      win.addListener("close", () => {
+        if (win.getConfirmed()) {
+          this.getTask().abortRequested();
+        }
       }, this);
     },
 
