@@ -16,6 +16,7 @@ from enum import Enum, unique
 from pathlib import Path
 from typing import Any, Final
 
+import arrow
 import pytest
 from playwright._impl._sync_base import EventContextManager
 from playwright.sync_api import (
@@ -385,7 +386,7 @@ def _check_service_endpoint(
 
 
 _SOCKET_IO_NODE_PROGRESS_WAITER_MAX_IDLE_TIMEOUT: Final[timedelta] = timedelta(
-    seconds=30
+    seconds=60
 )
 
 
@@ -580,6 +581,7 @@ def expected_service_running(
     is_service_legacy: bool,
     assertion_output_folder: Path,
 ) -> Generator[ServiceRunning, None, None]:
+    started = arrow.utcnow()
     with log_context(
         logging.INFO, msg=f"Waiting for node to run. Timeout: {timeout}"
     ) as ctx:
@@ -588,17 +590,19 @@ def expected_service_running(
             logger=ctx.logger,
         )
         service_running = ServiceRunning(iframe_locator=None)
-
         with websocket.expect_event("framereceived", waiter, timeout=timeout):
             if press_start_button:
                 _trigger_service_start(page, node_id)
 
             yield service_running
+    elapsed_time = arrow.utcnow() - started
+
     wait_for_service_endpoint_responding(
         node_id,
         api_request_context=page.request,
         product_url=product_url,
         is_legacy_service=is_service_legacy,
+        timeout=min(timeout - int(elapsed_time.total_seconds() * SECOND), 5 * SECOND),
     )
     service_running.iframe_locator = page.frame_locator(
         f'[osparc-test-id="iframe_{node_id}"]'
@@ -619,6 +623,7 @@ def wait_for_service_running(
     """NOTE: if the service was already started this will not work as some of the required websocket events will not be emitted again
     In which case this will need further adjutment"""
 
+    started = arrow.utcnow()
     with log_context(
         logging.INFO, msg=f"Waiting for node to run. Timeout: {timeout}"
     ) as ctx:
@@ -629,12 +634,13 @@ def wait_for_service_running(
         with websocket.expect_event("framereceived", waiter, timeout=timeout):
             if press_start_button:
                 _trigger_service_start(page, node_id)
-
+    elapsed_time = arrow.utcnow() - started
     wait_for_service_endpoint_responding(
         node_id,
         api_request_context=page.request,
         product_url=product_url,
         is_legacy_service=is_service_legacy,
+        timeout=min(timeout - int(elapsed_time.total_seconds() * SECOND), 5 * SECOND),
     )
     return page.frame_locator(f'[osparc-test-id="iframe_{node_id}"]')
 
