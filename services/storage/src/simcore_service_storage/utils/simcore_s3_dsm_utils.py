@@ -150,10 +150,10 @@ def ensure_same_parent_in_user_selection(object_keys: list[S3ObjectKey]) -> bool
     return len(set(parents)) <= 1
 
 
-UserSelection: TypeAlias = str
+UserSelectionStr: TypeAlias = str
 
 
-def _strip_parent(selection: UserSelection, s3_object: S3ObjectKey) -> str:
+def _strip_parent(selection: UserSelectionStr, s3_object: S3ObjectKey) -> str:
     selection_path = Path(selection)
     s3_object_path = Path(s3_object)
     if selection_path == s3_object_path:
@@ -167,7 +167,7 @@ async def create_and_upload_export(
     s3_client: SimcoreS3API,
     bucket: S3BucketName,
     *,
-    source_object_keys: set[tuple[UserSelection, StorageFileID]],
+    source_object_keys: set[tuple[UserSelectionStr, StorageFileID]],
     destination_object_keys: StorageFileID,
     progress_bar: ProgressBarData,
 ) -> None:

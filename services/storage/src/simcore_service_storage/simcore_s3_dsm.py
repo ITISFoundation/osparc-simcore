@@ -82,7 +82,7 @@ from .modules.db.tokens import TokenRepository
 from .modules.s3 import get_s3_client
 from .utils.s3_utils import S3TransferDataCB
 from .utils.simcore_s3_dsm_utils import (
-    UserSelection,
+    UserSelectionStr,
     compute_file_id_prefix,
     create_and_upload_export,
     create_random_export_name,
@@ -1252,7 +1252,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         *,
         progress_bar: ProgressBarData,
     ) -> StorageFileID:
-        source_object_keys: set[tuple[UserSelection, StorageFileID]] = set()
+        source_object_keys: set[tuple[UserSelectionStr, StorageFileID]] = set()
 
         # ensure all selected items have the same parent
         if not ensure_same_parent_in_user_selection(object_keys):
