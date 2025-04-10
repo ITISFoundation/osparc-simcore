@@ -15,6 +15,7 @@ def _celery_configure(celery_settings: CelerySettings) -> dict[str, Any]:
         "result_expires": celery_settings.CELERY_RESULT_EXPIRES,
         "result_extended": True,
         "result_serializer": "json",
+        "task_default_queue": "default",
         "task_send_sent_event": True,
         "task_track_started": True,
         "worker_send_task_events": True,

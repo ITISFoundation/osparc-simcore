@@ -8,6 +8,7 @@ from models_library.api_schemas_webserver.storage import PathToExport
 from servicelib.rabbitmq import RPCRouter
 
 from ...modules.celery import get_celery_client
+from ...modules.celery.models import TaskMetadata, TasksQueue
 from .._worker_tasks._simcore_s3 import deep_copy_files_from_project, export_data
 
 router = RPCRouter()
@@ -36,6 +37,10 @@ async def start_export_data(
     task_uuid = await get_celery_client(app).send_task(
         export_data.__name__,
         task_context=job_id_data.model_dump(),
+        task_metadata=TaskMetadata(
+            ephemeral=False,
+            queue=TasksQueue.CPU_BOUND,
+        ),
         user_id=job_id_data.user_id,
         paths_to_export=paths_to_export,
     )

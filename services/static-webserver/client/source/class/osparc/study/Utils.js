@@ -23,15 +23,11 @@ qx.Class.define("osparc.study.Utils", {
   type: "static",
 
   statics: {
-    __isAnyLinkedNodeMissing: function(studyData) {
+    isAnyLinkedNodeMissing: function(studyData) {
       const existingNodeIds = Object.keys(studyData["workbench"]);
       const linkedNodeIds = osparc.data.model.Workbench.getLinkedNodeIds(studyData["workbench"]);
       const allExist = linkedNodeIds.every(linkedNodeId => existingNodeIds.includes(linkedNodeId));
       return !allExist;
-    },
-
-    isCorrupt: function(studyData) {
-      return this.__isAnyLinkedNodeMissing(studyData);
     },
 
     extractUniqueServices: function(workbench) {
@@ -274,8 +270,9 @@ qx.Class.define("osparc.study.Utils", {
 
     __getBlockedState: function(studyData) {
       if (studyData["services"]) {
-        const unaccessibleServices = osparc.study.Utils.getCantExecuteServices(studyData["services"])
-        if (unaccessibleServices.length) {
+        const cantReadServices = osparc.study.Utils.getCantExecuteServices(studyData["services"]);
+        const inaccessibleServices = osparc.store.Services.getInaccessibleServices(studyData["workbench"]);
+        if (cantReadServices.length || inaccessibleServices.length) {
           return "UNKNOWN_SERVICES";
         }
       }
@@ -358,7 +355,7 @@ qx.Class.define("osparc.study.Utils", {
           const wbService = wbServices[0];
           osparc.store.Services.getService(wbService.key, wbService.version)
             .then(serviceMetadata => {
-              if (serviceMetadata["icon"]) {
+              if (serviceMetadata && serviceMetadata["icon"]) {
                 resolve(serviceMetadata["icon"]);
               }
               resolve(defaultIcon);

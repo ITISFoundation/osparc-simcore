@@ -243,7 +243,11 @@ async def test_create_s3_export(
     cleanup_files_closure: Callable[[SimcoreS3FileID], None],
 ):
     initial_fmd_count = await _get_fmds_count(sqlalchemy_async_engine)
-    selection_to_export = _get_folder_and_files_selection(paths_for_export)
+    all_files_to_export = _get_folder_and_files_selection(paths_for_export)
+    selection_to_export = {
+        S3ObjectKey(project_id)
+        for project_id in {Path(p).parents[-2] for p in all_files_to_export}
+    }
 
     reports: list[ProgressReport] = []
 
