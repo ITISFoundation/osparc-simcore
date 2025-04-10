@@ -23,7 +23,7 @@ class PostgresConfigurationError(LifespanOnStartupError):
     msg_template = "Invalid postgres settings [={settings}] on startup. Note that postgres cannot be disabled using settings"
 
 
-def get_postgres_database_main_lifespan(settings: PostgresSettings) -> State:
+def create_postgres_database_input_state(settings: PostgresSettings) -> State:
     return {PostgresLifespanState.POSTGRES_SETTINGS: settings}
 
 

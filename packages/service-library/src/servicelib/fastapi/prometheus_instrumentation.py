@@ -57,7 +57,7 @@ def setup_prometheus_instrumentation(app: FastAPI) -> Instrumentator:
 _PROMETHEUS_INSTRUMENTATION_ENABLED: Final[str] = "prometheus_instrumentation_enabled"
 
 
-def get_prometheus_instrumentationmain_main_lifespan(*, enabled: bool) -> State:
+def create_prometheus_instrumentationmain_input_state(*, enabled: bool) -> State:
     return {_PROMETHEUS_INSTRUMENTATION_ENABLED: enabled}
 
 

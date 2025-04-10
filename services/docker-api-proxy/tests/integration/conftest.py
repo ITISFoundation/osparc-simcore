@@ -12,8 +12,8 @@ from fastapi_lifespan_manager import LifespanManager, State
 from pydantic import Field
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.fastapi.docker import (
+    create_remote_docker_client_input_state,
     get_remote_docker_client,
-    get_remote_docker_client_main_lifespan,
     remote_docker_client_lifespan,
 )
 from settings_library.application import BaseApplicationSettings
@@ -40,11 +40,11 @@ class ApplicationSetting(BaseApplicationSettings):
     ]
 
 
-async def _main_lifespan(app: FastAPI) -> AsyncIterator[State]:
+async def _settings_lifespan(app: FastAPI) -> AsyncIterator[State]:
     settings: ApplicationSetting = app.state.settings
 
     yield {
-        **get_remote_docker_client_main_lifespan(settings.DOCKER_API_PROXY),
+        **create_remote_docker_client_input_state(settings.DOCKER_API_PROXY),
     }
 
 
@@ -52,7 +52,7 @@ def _get_test_app() -> FastAPI:
     settings = ApplicationSetting.create_from_envs()
 
     lifespan_manager = LifespanManager()
-    lifespan_manager.add(_main_lifespan)
+    lifespan_manager.add(_settings_lifespan)
     lifespan_manager.add(remote_docker_client_lifespan)
 
     app = FastAPI(lifespan=lifespan_manager)

@@ -21,7 +21,7 @@ _DEFAULT_DOCKER_API_PROXY_HEALTH_TIMEOUT: Final[NonNegativeInt] = 5
 _DOCKER_API_PROXY_SETTINGS: Final[str] = "docker_api_proxy_settings"
 
 
-def get_remote_docker_client_main_lifespan(settings: DockerApiProxysettings) -> State:
+def create_remote_docker_client_input_state(settings: DockerApiProxysettings) -> State:
     return {_DOCKER_API_PROXY_SETTINGS: settings}
 
 

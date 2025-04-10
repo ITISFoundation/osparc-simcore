@@ -4,11 +4,11 @@ from collections.abc import AsyncIterator
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager, State
 from servicelib.fastapi.postgres_lifespan import (
-    get_postgres_database_main_lifespan,
+    create_postgres_database_input_state,
     postgres_database_lifespan,
 )
 from servicelib.fastapi.prometheus_instrumentation import (
-    get_prometheus_instrumentationmain_main_lifespan,
+    create_prometheus_instrumentationmain_input_state,
     prometheus_instrumentation_lifespan,
 )
 
@@ -40,12 +40,12 @@ async def _banners_lifespan(_) -> AsyncIterator[State]:
     _flush_finished_banner()
 
 
-async def _main_lifespan(app: FastAPI) -> AsyncIterator[State]:
+async def _settings_lifespan(app: FastAPI) -> AsyncIterator[State]:
     settings: ApplicationSettings = app.state.settings
 
     yield {
-        **get_postgres_database_main_lifespan(settings.CATALOG_POSTGRES),
-        **get_prometheus_instrumentationmain_main_lifespan(
+        **create_postgres_database_input_state(settings.CATALOG_POSTGRES),
+        **create_prometheus_instrumentationmain_input_state(
             enabled=settings.CATALOG_PROMETHEUS_INSTRUMENTATION_ENABLED
         ),
     }
@@ -54,7 +54,7 @@ async def _main_lifespan(app: FastAPI) -> AsyncIterator[State]:
 def create_app_lifespan() -> LifespanManager:
     # WARNING: order matters
     app_lifespan = LifespanManager()
-    app_lifespan.add(_main_lifespan)
+    app_lifespan.add(_settings_lifespan)
 
     # - postgres
     app_lifespan.add(postgres_database_lifespan)

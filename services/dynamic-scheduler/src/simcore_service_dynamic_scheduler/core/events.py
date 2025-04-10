@@ -3,11 +3,11 @@ from collections.abc import AsyncIterator
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager, State
 from servicelib.fastapi.docker import (
-    get_remote_docker_client_main_lifespan,
+    create_remote_docker_client_input_state,
     remote_docker_client_lifespan,
 )
 from servicelib.fastapi.prometheus_instrumentation import (
-    get_prometheus_instrumentationmain_main_lifespan,
+    create_prometheus_instrumentationmain_input_state,
     prometheus_instrumentation_lifespan,
 )
 
@@ -32,14 +32,14 @@ async def _banner_lifespan(app: FastAPI) -> AsyncIterator[State]:
     print(APP_FINISHED_BANNER_MSG, flush=True)  # noqa: T201
 
 
-async def _main_lifespan(app: FastAPI) -> AsyncIterator[State]:
+async def _settings_lifespan(app: FastAPI) -> AsyncIterator[State]:
     settings: ApplicationSettings = app.state.settings
 
     yield {
-        **get_prometheus_instrumentationmain_main_lifespan(
+        **create_prometheus_instrumentationmain_input_state(
             enabled=settings.DYNAMIC_SCHEDULER_PROMETHEUS_INSTRUMENTATION_ENABLED
         ),
-        **get_remote_docker_client_main_lifespan(
+        **create_remote_docker_client_input_state(
             settings.DYNAMIC_SCHEDULER_DOCKER_API_PROXY
         ),
     }
@@ -47,7 +47,7 @@ async def _main_lifespan(app: FastAPI) -> AsyncIterator[State]:
 
 def create_app_lifespan() -> LifespanManager:
     app_lifespan = LifespanManager()
-    app_lifespan.add(_main_lifespan)
+    app_lifespan.add(_settings_lifespan)
 
     app_lifespan.add(director_v2_lifespan)
     app_lifespan.add(director_v0_lifespan)
