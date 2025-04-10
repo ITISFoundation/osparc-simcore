@@ -218,13 +218,10 @@ class RobustWebSocket:
         predicate: typing.Callable | None = None,
         *,
         timeout: float | None = None,
-        expecting_closing: bool = False,
     ) -> EventContextManager:
         """
         Register an event listener with support for reconnection.
         """
-        if expecting_closing:
-            self.auto_reconnect = False
         output = self.ws.expect_event(event, predicate, timeout=timeout)
         self._registered_events.append((event, predicate))
         return output

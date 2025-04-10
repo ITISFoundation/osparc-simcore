@@ -598,7 +598,6 @@ def create_new_project_and_delete(  # noqa: C901, PLR0915
                     "framereceived",
                     SocketIOProjectClosedWaiter(ctx.logger),
                     timeout=_PROJECT_CLOSING_TIMEOUT,
-                    expecting_closing=True,
                 )
             )
         if created_project_uuids:

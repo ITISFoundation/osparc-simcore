@@ -344,3 +344,5 @@ def test_classic_ti_plan(  # noqa: PLR0915
                 s4l_postpro_iframe.get_by_test_id("tree-item-SurfaceViewer").nth(
                     0
                 ).click()
+
+    restartable_jlab_websocket.auto_reconnect = False

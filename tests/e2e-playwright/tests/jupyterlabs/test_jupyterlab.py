@@ -164,6 +164,8 @@ def test_jupyterlab(
                 )
                 terminal.press("Enter")
 
+            restartable_terminal_web_socket.auto_reconnect = False
+
         # NOTE: this is to let some tester see something
         page.wait_for_timeout(2000)
 
