@@ -492,6 +492,7 @@ def wait_for_service_ready(
     product_url: AnyUrl,
     is_legacy_service: bool,
 ) -> None:
+    """emulates the frontend polling for the service endpoint until it responds with 2xx/3xx"""
     is_service_ready = _check_service_endpoint(
         node_id,
         api_request_context=api_request_context,
