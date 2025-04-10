@@ -140,9 +140,7 @@ def test_jupyterlab(
                 iframe.get_by_label("Launcher").get_by_text("Terminal").click()
 
             assert not ws_info.value.is_closed()
-            restartable_terminal_web_socket = RobustWebSocket.create(
-                page, ws_info.value
-            )
+            restartable_terminal_web_socket = RobustWebSocket(page, ws_info.value)
 
             terminal = iframe.locator(
                 "#jp-Terminal-0 > div > div.xterm-screen"

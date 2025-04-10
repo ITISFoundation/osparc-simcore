@@ -410,7 +410,7 @@ def log_in_and_out(
                 assert response_info.value.ok, f"{response_info.value.json()}"
 
     assert not ws_info.value.is_closed()
-    restartable_wb = RobustWebSocket.create(page, ws_info.value)
+    restartable_wb = RobustWebSocket(page, ws_info.value)
 
     # Welcome to Sim4Life
     page.wait_for_timeout(5000)

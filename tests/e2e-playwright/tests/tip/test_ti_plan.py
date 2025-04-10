@@ -222,7 +222,7 @@ def test_classic_ti_plan(  # noqa: PLR0915
             assert ti_iframe
 
         assert not ws_info.value.is_closed()
-        restartable_jlab_websocket = RobustWebSocket.create(page, ws_info.value)
+        restartable_jlab_websocket = RobustWebSocket(page, ws_info.value)
 
         with (
             log_context(logging.INFO, "Run optimization"),
