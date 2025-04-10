@@ -195,7 +195,7 @@ async def _wait_for_job(
         {"a", "set"},
     ],
 )
-async def test_asybc_jobs_workflow(
+async def test_async_jobs_workflow(
     initialized_app: FastAPI,
     register_rpc_routes: None,
     storage_rabbitmq_rpc_client: RabbitMQRPCClient,
@@ -241,15 +241,7 @@ async def test_asybc_jobs_workflow(
     "exposed_rpc_start",
     [
         rpc_sync_job.__name__,
-        pytest.param(
-            rpc_async_job.__name__,
-            marks=pytest.mark.skip(
-                reason=(
-                    "hangs after teardown for unknown reason "
-                    "SEE https://github.com/ITISFoundation/osparc-simcore/issues/7486"
-                )
-            ),
-        ),
+        rpc_async_job.__name__,
     ],
 )
 async def test_async_jobs_cancel(
