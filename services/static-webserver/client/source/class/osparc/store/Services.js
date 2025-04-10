@@ -204,7 +204,7 @@ qx.Class.define("osparc.store.Services", {
                 continue;
               }
               if (excludeDeprecated) {
-                if (osparc.service.Utils.isDeprecated(serviceLatest)) {
+                if (serviceLatest["release"]["retired"]) {
                   // first check if a previous version of this service isn't deprecated
                   // getService to get its history
                   await this.getService(serviceLatest["key"], serviceLatest["version"]);
