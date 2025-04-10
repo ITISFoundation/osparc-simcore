@@ -5,7 +5,7 @@ from models_library.groups import GroupAtDB
 from models_library.users import UserID
 
 from ...repository.groups import GroupsRepository
-from .database import get_repository
+from .repository import get_repository
 
 
 async def list_user_groups(

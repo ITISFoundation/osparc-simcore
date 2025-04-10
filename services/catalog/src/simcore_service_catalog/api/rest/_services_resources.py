@@ -30,8 +30,8 @@ from ...utils.service_resources import (
     merge_service_resources_with_user_specs,
     parse_generic_resource,
 )
-from .._dependencies.database import get_repository
 from .._dependencies.director import get_director_api
+from .._dependencies.repository import get_repository
 from .._dependencies.services import get_default_service_resources
 from .._dependencies.user_groups import list_user_groups
 

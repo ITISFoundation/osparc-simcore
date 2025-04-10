@@ -17,8 +17,8 @@ from ...core.settings import ApplicationSettings
 from ...repository.groups import GroupsRepository
 from ...repository.services import ServicesRepository
 from ...service import manifest
-from .database import get_repository
 from .director import get_director_api
+from .repository import get_repository
 
 _logger = logging.getLogger(__name__)
 

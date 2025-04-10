@@ -13,7 +13,7 @@ from ..._constants import RESPONSE_MODEL_POLICY
 from ...repository.groups import GroupsRepository
 from ...repository.services import ServicesRepository
 from ...service.function_services import is_function_service
-from .._dependencies.database import get_repository
+from .._dependencies.repository import get_repository
 from .._dependencies.services import get_default_service_specifications
 
 router = APIRouter()
