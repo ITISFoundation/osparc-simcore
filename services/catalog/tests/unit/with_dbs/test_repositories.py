@@ -502,10 +502,12 @@ async def test_get_service_history_page(
     service_key = "simcore/services/dynamic/test-some-service"
     num_versions = 10
 
-    release_versions = [
-        f"{random.randint(0, 2)}.{random.randint(0, 9)}.{random.randint(0, 9)}"  # noqa: S311
-        for _ in range(num_versions)
-    ]
+    release_versions = set()
+    while len(release_versions) < num_versions:
+        release_versions.add(
+            f"{random.randint(0, 2)}.{random.randint(0, 9)}.{random.randint(0, 9)}"  # noqa: S311
+        )
+
     await services_db_tables_injector(
         [
             create_fake_service_data(
@@ -520,6 +522,7 @@ async def test_get_service_history_page(
     )
     # sorted AFTER injecting
     release_versions = sorted(release_versions, key=version.Version, reverse=True)
+
     assert version.Version(release_versions[0]) > version.Version(release_versions[-1])
 
     # fetch full history using get_service_history_page
