@@ -1,7 +1,7 @@
 """add index to api_key column
 
 Revision ID: b0c988e3f348
-Revises: 48604dfdc5f4
+Revises: cf8f743fd0b7
 Create Date: 2025-03-13 08:53:05.722855+00:00
 
 """
@@ -10,7 +10,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "b0c988e3f348"
-down_revision = "48604dfdc5f4"
+down_revision = "cf8f743fd0b7"
 branch_labels = None
 depends_on = None
 
