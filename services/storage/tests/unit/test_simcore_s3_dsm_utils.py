@@ -6,7 +6,7 @@ from simcore_service_storage.utils.simcore_s3_dsm_utils import (
     UserSelectionStr,
     _base_path_parent,
     compute_file_id_prefix,
-    ensure_same_parent_in_user_selection,
+    ensure_user_selection_from_same_base_directory,
 )
 
 
@@ -66,10 +66,10 @@ def test__base_path_parent(selection: Path | str, s3_object: Path, expected: str
         (["a/a.txt", "a.txt", "c.txt", "a/d.txt"], False),
     ],
 )
-def test_ensure_same_parent_in_user_selection(
+def test_ensure_user_selection_from_same_base_directory(
     user_selection: list[S3ObjectKey | Path], expected: bool
 ):
     assert (
-        ensure_same_parent_in_user_selection([f"{x}" for x in user_selection])
+        ensure_user_selection_from_same_base_directory([f"{x}" for x in user_selection])
         == expected
     )
