@@ -355,7 +355,7 @@ def _check_service_endpoint(
             )
         except (PlaywrightTimeoutError, TimeoutError):
             logger.exception(
-                "Timed-out requesting service endpoint after %ds",
+                "❌ Timed-out requesting service endpoint after %ds ❌",
                 _SERVICE_ROOT_POINT_STATUS_TIMEOUT,
             )
         except PlaywrightError:
@@ -363,11 +363,11 @@ def _check_service_endpoint(
         else:
             # NOTE: 502,503 are acceptable if the service is not yet ready (traefik still setting up)
             if response.status in (502, 503):
-                logger.info("service not ready yet %s", f"{response.status=}")
+                logger.info("⏳ service not ready yet %s ⏳", f"{response.status=}")
                 return False
             if response.status > 400:
                 logger.error(
-                    "service responded with error: %s:%s",
+                    "❌ service responded with error: %s:%s ❌",
                     f"{response.status}",
                     f"{response.text()}",
                 )
@@ -376,7 +376,7 @@ def _check_service_endpoint(
             if response.status <= 400:
                 # NOTE: If the response status is less than 400, it means that the service is ready (There are some services that respond with a 3XX)
                 logger.info(
-                    "✅ Service ready!! respondedd with %s ✅", f"{response.status=}"
+                    "✅ Service ready!! responded with %s ✅", f"{response.status=}"
                 )
                 return True
     return False
@@ -412,7 +412,7 @@ class SocketIONodeProgressCompleteWaiter:
             ):
                 # NOTE: this is a fail fast for dynamic services that fail to start
                 self.logger.error(
-                    "node %s failed with state %s, failing fast",
+                    "❌ node %s failed with state %s, failing fast ❌",
                     self.node_id,
                     decoded_message.obj["service_state"],
                 )
@@ -500,7 +500,7 @@ def wait_for_service_ready(
         product_url=product_url,
         is_legacy_service=is_legacy_service,
     )
-    assert is_service_ready, "the service failed starting!"
+    assert is_service_ready, "❌ the service failed starting! ❌"
 
 
 _FAIL_FAST_COMPUTATIONAL_STATES: Final[tuple[RunningState, ...]] = (
@@ -539,7 +539,7 @@ def wait_for_pipeline_state(
                 and current_state not in expected_states
             ):
                 pytest.fail(
-                    f"Pipeline failed with state {current_state}. Expected one of {expected_states}"
+                    f"❌ Pipeline failed with state {current_state}. Expected one of {expected_states} ❌"
                 )
     return current_state
 
