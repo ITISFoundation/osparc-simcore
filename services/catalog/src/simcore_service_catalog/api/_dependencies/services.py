@@ -12,12 +12,12 @@ from models_library.services_types import ServiceKey, ServiceVersion
 from pydantic import ValidationError
 from servicelib.fastapi.dependencies import get_app
 
-from ...clients.director import DirectorApi
+from ...clients.director import DirectorClient
 from ...core.settings import ApplicationSettings
 from ...repository.groups import GroupsRepository
 from ...repository.services import ServicesRepository
 from ...service import manifest
-from .director import get_director_api
+from .director import get_director_client
 from .repository import get_repository
 
 _logger = logging.getLogger(__name__)
@@ -86,7 +86,7 @@ async def check_service_read_access(
 async def get_service_from_manifest(
     service_key: ServiceKey,
     service_version: ServiceVersion,
-    director_client: Annotated[DirectorApi, Depends(get_director_api)],
+    director_client: Annotated[DirectorClient, Depends(get_director_client)],
 ) -> ServiceMetaDataPublished:
     """
     Retrieves service metadata from the docker registry via the director

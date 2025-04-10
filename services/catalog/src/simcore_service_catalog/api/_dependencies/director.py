@@ -3,11 +3,11 @@ from typing import Annotated
 from fastapi import Depends, FastAPI
 from servicelib.fastapi.dependencies import get_app
 
-from ...clients.director import DirectorApi
+from ...clients.director import DirectorClient
 
 
-def get_director_api(
+def get_director_client(
     app: Annotated[FastAPI, Depends(get_app)],
-) -> DirectorApi:
-    director: DirectorApi = app.state.director_api
+) -> DirectorClient:
+    director: DirectorClient = app.state.director_api
     return director

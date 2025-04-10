@@ -27,7 +27,7 @@ from simcore_service_catalog.repository.groups import GroupsRepository
 
 from ...repository.services import ServicesRepository
 from ...service import services
-from .._dependencies.director import get_director_api
+from .._dependencies.director import get_director_client
 
 _logger = logging.getLogger(__name__)
 
@@ -70,7 +70,7 @@ async def list_services_paginated(
 
     total_count, items = await services.list_latest_services(
         repo=ServicesRepository(app.state.engine),
-        director_api=get_director_api(app),
+        director_api=get_director_client(app),
         product_name=product_name,
         user_id=user_id,
         limit=limit,
@@ -113,7 +113,7 @@ async def get_service(
 
     service = await services.get_service(
         repo=ServicesRepository(app.state.engine),
-        director_api=get_director_api(app),
+        director_api=get_director_client(app),
         product_name=product_name,
         user_id=user_id,
         service_key=service_key,
@@ -150,7 +150,7 @@ async def update_service(
 
     service = await services.update_service(
         repo=ServicesRepository(app.state.engine),
-        director_api=get_director_api(app),
+        director_api=get_director_client(app),
         product_name=product_name,
         user_id=user_id,
         service_key=service_key,

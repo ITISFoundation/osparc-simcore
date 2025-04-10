@@ -16,8 +16,8 @@ from models_library.users import UserID
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.catalog_services import CreateFakeServiceDataCallable
 from respx.router import MockRouter
-from simcore_service_catalog.api._dependencies.director import get_director_api
-from simcore_service_catalog.clients.director import DirectorApi
+from simcore_service_catalog.api._dependencies.director import get_director_client
+from simcore_service_catalog.clients.director import DirectorClient
 from simcore_service_catalog.repository.groups import GroupsRepository
 from simcore_service_catalog.repository.services import ServicesRepository
 from simcore_service_catalog.service import manifest, services
@@ -98,8 +98,8 @@ async def background_sync_task_mocked(
 
 
 @pytest.fixture
-async def director_client(app: FastAPI) -> DirectorApi:
-    director_api = get_director_api(app)
+async def director_client(app: FastAPI) -> DirectorClient:
+    director_api = get_director_client(app)
 
     # ensures manifest API cache is reset
     assert hasattr(manifest.get_service, "cache")
@@ -115,7 +115,7 @@ async def test_list_services_paginated(
     target_product: ProductName,
     services_repo: ServicesRepository,
     user_id: UserID,
-    director_client: DirectorApi,
+    director_client: DirectorClient,
     num_services: int,
 ):
 

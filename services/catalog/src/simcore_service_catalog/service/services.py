@@ -24,7 +24,7 @@ from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
 )
 from simcore_service_catalog.repository.groups import GroupsRepository
 
-from ..clients.director import DirectorApi
+from ..clients.director import DirectorClient
 from ..models.services_db import (
     ServiceAccessRightsAtDB,
     ServiceMetaDataDBPatch,
@@ -122,7 +122,7 @@ def _to_get_schema(
 
 async def list_latest_services(
     repo: ServicesRepository,
-    director_api: DirectorApi,
+    director_api: DirectorClient,
     *,
     product_name: ProductName,
     user_id: UserID,
@@ -164,6 +164,10 @@ async def list_latest_services(
         if isinstance(sc, ServiceMetaDataPublished)
     }
 
+    # FIXME: services (key, version) matches not found in manifest means that they are in the database but they
+    # do not really exist in the service. We cannot include them but we should definitively warn!!
+    # All services in database should be include in the registry. The background task should be responsible of that
+
     items = [
         _to_latest_get_schema(
             service_db=sc,
@@ -182,7 +186,7 @@ async def list_latest_services(
 
 async def get_service(
     repo: ServicesRepository,
-    director_api: DirectorApi,
+    director_api: DirectorClient,
     product_name: ProductName,
     user_id: UserID,
     service_key: ServiceKey,
@@ -237,7 +241,7 @@ async def get_service(
 
 async def update_service(
     repo: ServicesRepository,
-    director_api: DirectorApi,
+    director_api: DirectorClient,
     *,
     product_name: ProductName,
     user_id: UserID,
@@ -515,7 +519,7 @@ async def list_my_service_release_history(
 
 
 async def get_service_extras(
-    director_api: DirectorApi, service_key: ServiceKey, service_version: VersionStr
+    director_api: DirectorClient, service_key: ServiceKey, service_version: VersionStr
 ) -> ServiceExtras:
     return await director_api.get_service_extras(
         service_key=service_key, service_version=service_version

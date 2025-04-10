@@ -20,11 +20,11 @@ from ..._constants import (
     LIST_SERVICES_CACHING_TTL,
     RESPONSE_MODEL_POLICY,
 )
-from ...clients.director import DirectorApi
+from ...clients.director import DirectorClient
 from ...models.services_db import ServiceAccessRightsAtDB, ServiceMetaDataDBGet
 from ...repository.groups import GroupsRepository
 from ...repository.services import ServicesRepository
-from .._dependencies.director import get_director_api
+from .._dependencies.director import get_director_client
 from .._dependencies.repository import get_repository
 from .._dependencies.services import get_service_from_manifest
 
@@ -86,7 +86,7 @@ async def list_services(
     request: Request,  # pylint:disable=unused-argument
     *,
     user_id: PositiveInt,
-    director_client: Annotated[DirectorApi, Depends(get_director_api)],
+    director_client: Annotated[DirectorClient, Depends(get_director_client)],
     groups_repository: Annotated[
         GroupsRepository, Depends(get_repository(GroupsRepository))
     ],

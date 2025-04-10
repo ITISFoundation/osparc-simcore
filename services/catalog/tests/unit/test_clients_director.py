@@ -15,8 +15,8 @@ from models_library.services_metadata_published import ServiceMetaDataPublished
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx.router import MockRouter
-from simcore_service_catalog.api._dependencies.director import get_director_api
-from simcore_service_catalog.clients.director import DirectorApi
+from simcore_service_catalog.api._dependencies.director import get_director_client
+from simcore_service_catalog.clients.director import DirectorClient
 
 
 @pytest.fixture
@@ -41,10 +41,10 @@ async def test_director_client_high_level_api(
     app: FastAPI,
 ):
     # gets director client as used in handlers
-    director_api = get_director_api(app)
+    director_api = get_director_client(app)
 
     assert app.state.director_api == director_api
-    assert isinstance(director_api, DirectorApi)
+    assert isinstance(director_api, DirectorClient)
 
     # PING
     assert await director_api.is_responsive()
@@ -68,7 +68,7 @@ async def test_director_client_low_level_api(
     expected_director_rest_api_list_services: list[dict[str, Any]],
     app: FastAPI,
 ):
-    director_api = get_director_api(app)
+    director_api = get_director_client(app)
 
     expected_service = expected_director_rest_api_list_services[0]
     key = expected_service["key"]

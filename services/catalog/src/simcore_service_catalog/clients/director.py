@@ -107,7 +107,7 @@ def _return_data_or_raise_error(
 
     @functools.wraps(request_func)
     async def request_wrapper(
-        zelf: "DirectorApi", path: str, *args, **kwargs
+        zelf: "DirectorClient", path: str, *args, **kwargs
     ) -> list[Any] | dict[str, Any]:
         normalized_path = path.lstrip("/")
         try:
@@ -126,7 +126,7 @@ def _return_data_or_raise_error(
     return request_wrapper
 
 
-class DirectorApi:
+class DirectorClient:
     """
     - wrapper around thin-client to simplify director's API
     - sets endspoint upon construction
@@ -292,7 +292,7 @@ class DirectorApi:
 
 
 async def director_lifespan(app: FastAPI) -> AsyncIterator[State]:
-    client: DirectorApi | None = None
+    client: DirectorClient | None = None
     settings = app.state.settings.CATALOG_DIRECTOR
 
     assert isinstance(settings, DirectorSettings)  # nosec
@@ -302,7 +302,7 @@ async def director_lifespan(app: FastAPI) -> AsyncIterator[State]:
     ):
         async for attempt in AsyncRetrying(**_director_startup_retry_policy):
             with attempt:
-                client = DirectorApi(base_url=settings.base_url, app=app)
+                client = DirectorClient(base_url=settings.base_url, app=app)
                 if not await client.is_responsive():
                     with suppress(Exception):
                         await client.close()

@@ -22,7 +22,7 @@ from models_library.services import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from packaging.version import Version
 from pydantic import ValidationError
-from simcore_service_catalog.api._dependencies.director import get_director_api
+from simcore_service_catalog.api._dependencies.director import get_director_client
 from simcore_service_catalog.service import manifest
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -114,7 +114,7 @@ async def _ensure_registry_and_database_are_synced(app: FastAPI) -> None:
 
     Notice that a services here refers to a 2-tuple (key, version)
     """
-    director_api = get_director_api(app)
+    director_api = get_director_client(app)
     services_in_manifest_map = await manifest.get_services_map(director_api)
 
     services_in_db: set[tuple[ServiceKey, ServiceVersion]] = (

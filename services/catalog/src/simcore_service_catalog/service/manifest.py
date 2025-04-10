@@ -35,7 +35,7 @@ from pydantic import ValidationError
 from servicelib.utils import limited_gather
 
 from .._constants import DIRECTOR_CACHING_TTL
-from ..clients.director import DirectorApi
+from ..clients.director import DirectorClient
 from .function_services import get_function_service, is_function_service
 
 _logger = logging.getLogger(__name__)
@@ -50,7 +50,7 @@ _error_already_logged: set[tuple[str | None, str | None]] = set()
 
 
 async def get_services_map(
-    director_client: DirectorApi,
+    director_client: DirectorClient,
 ) -> ServiceMetaDataPublishedDict:
 
     # NOTE: using Low-level API to avoid validation
@@ -89,7 +89,7 @@ async def get_services_map(
     key_builder=lambda f, *ag, **kw: f"{f.__name__}/{kw['key']}/{kw['version']}",
 )
 async def get_service(
-    director_client: DirectorApi,
+    director_client: DirectorClient,
     *,
     key: ServiceKey,
     version: ServiceVersion,
@@ -110,7 +110,7 @@ async def get_service(
 
 async def get_batch_services(
     selection: list[tuple[ServiceKey, ServiceVersion]],
-    director_client: DirectorApi,
+    director_client: DirectorClient,
 ) -> list[ServiceMetaDataPublished | BaseException]:
 
     batch: list[ServiceMetaDataPublished | BaseException] = await limited_gather(

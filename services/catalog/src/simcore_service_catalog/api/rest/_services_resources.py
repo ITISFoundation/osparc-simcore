@@ -23,14 +23,14 @@ from models_library.utils.docker_compose import replace_env_vars_in_compose_spec
 from pydantic import TypeAdapter
 
 from ..._constants import RESPONSE_MODEL_POLICY, SIMCORE_SERVICE_SETTINGS_LABELS
-from ...clients.director import DirectorApi
+from ...clients.director import DirectorClient
 from ...repository.services import ServicesRepository
 from ...service.function_services import is_function_service
 from ...utils.service_resources import (
     merge_service_resources_with_user_specs,
     parse_generic_resource,
 )
-from .._dependencies.director import get_director_api
+from .._dependencies.director import get_director_client
 from .._dependencies.repository import get_repository
 from .._dependencies.services import get_default_service_resources
 from .._dependencies.user_groups import list_user_groups
@@ -128,7 +128,7 @@ def _resources_from_settings(
 
 
 async def _get_service_labels(
-    director_client: DirectorApi, key: ServiceKey, version: ServiceVersion
+    director_client: DirectorClient, key: ServiceKey, version: ServiceVersion
 ) -> dict[str, Any] | None:
     try:
         service_labels = await director_client.get_service_labels(key, version)
@@ -166,7 +166,7 @@ def _get_service_settings(
 async def get_service_resources(
     service_key: ServiceKey,
     service_version: ServiceVersion,
-    director_client: Annotated[DirectorApi, Depends(get_director_api)],
+    director_client: Annotated[DirectorClient, Depends(get_director_client)],
     default_service_resources: Annotated[
         ResourcesDict, Depends(get_default_service_resources)
     ],
