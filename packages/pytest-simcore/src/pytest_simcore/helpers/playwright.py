@@ -153,6 +153,7 @@ class RobustWebSocket:
         default_factory=list
     )
     _num_reconnections: int = 0
+    auto_reconnect: bool = True
 
     def __post_init__(self):
         self._configure_websocket_events()
@@ -170,8 +171,10 @@ class RobustWebSocket:
                 ctx.logger.debug("⬆️ Frame received: %s", payload)
 
             def on_close(_: WebSocket) -> None:
-                ctx.logger.warning("⚠️ WebSocket closed. Attempting to reconnect...")
-                self._attempt_reconnect(ctx.logger)
+                ctx.logger.warning("⚠️ WebSocket closed.")
+                if self.auto_reconnect:
+                    ctx.logger.warning("⚠️ WebSocket closed. Attempting to reconnect...")
+                    self._attempt_reconnect(ctx.logger)
 
             def on_socketerror(error_msg: str) -> None:
                 ctx.logger.error("❌ WebSocket error: %s", error_msg)
@@ -215,10 +218,13 @@ class RobustWebSocket:
         predicate: typing.Callable | None = None,
         *,
         timeout: float | None = None,
+        expecting_closing: bool = False,
     ) -> EventContextManager:
         """
         Register an event listener with support for reconnection.
         """
+        if expecting_closing:
+            self.auto_reconnect = False
         output = self.ws.expect_event(event, predicate, timeout=timeout)
         self._registered_events.append((event, predicate))
         return output
@@ -314,7 +320,7 @@ class SocketIOOsparcMessagePrinter:
 
 
 _FAIL_FAST_DYNAMIC_SERVICE_STATES: Final[tuple[str, ...]] = ("idle", "failed")
-_SERVICE_ROOT_POINT_STATUS_TIMEOUT: Final[timedelta] = timedelta(seconds=5)
+_SERVICE_ROOT_POINT_STATUS_TIMEOUT: Final[timedelta] = timedelta(seconds=2)
 
 
 def _get_service_url(
@@ -481,7 +487,6 @@ def wait_for_service_endpoint_responding(
     node_id: str,
     *,
     api_request_context: APIRequestContext,
-    logger: logging.Logger,
     product_url: AnyUrl,
     is_legacy_service: bool,
     timeout: int = 30 * SECOND,
@@ -495,7 +500,7 @@ def wait_for_service_endpoint_responding(
         before_sleep=before_sleep_log(_logger, logging.INFO),
         reraise=True,
     )
-    def _retry_check_service_endpoint():
+    def _retry_check_service_endpoint(logger: logging.Logger) -> None:
         is_service_ready = _check_service_endpoint(
             node_id,
             api_request_context=api_request_context,
@@ -505,7 +510,10 @@ def wait_for_service_endpoint_responding(
         )
         assert is_service_ready, "❌ the service failed starting! ❌"
 
-    _retry_check_service_endpoint()
+    with log_context(
+        logging.INFO, msg=f"wait for service endpoint to be ready ({timeout=})"
+    ) as ctx:
+        _retry_check_service_endpoint(ctx.logger)
 
 
 _FAIL_FAST_COMPUTATIONAL_STATES: Final[tuple[RunningState, ...]] = (
@@ -602,7 +610,6 @@ def expected_service_running(
         wait_for_service_endpoint_responding(
             node_id,
             api_request_context=page.request,
-            logger=ctx.logger,
             product_url=product_url,
             is_legacy_service=is_service_legacy,
         )
@@ -643,7 +650,6 @@ def wait_for_service_running(
         wait_for_service_endpoint_responding(
             node_id,
             api_request_context=page.request,
-            logger=ctx.logger,
             product_url=product_url,
             is_legacy_service=is_service_legacy,
         )

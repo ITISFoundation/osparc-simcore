@@ -430,6 +430,7 @@ def log_in_and_out(
     # with web_socket_default_log_handler(ws):
     yield restartable_wb
 
+    restartable_wb.auto_reconnect = False
     with log_context(
         logging.INFO,
         f"Log out of {product_url=} using {user_name=}/{user_password=}",
@@ -597,6 +598,7 @@ def create_new_project_and_delete(  # noqa: C901, PLR0915
                     "framereceived",
                     SocketIOProjectClosedWaiter(ctx.logger),
                     timeout=_PROJECT_CLOSING_TIMEOUT,
+                    expecting_closing=True,
                 )
             )
         if created_project_uuids:
