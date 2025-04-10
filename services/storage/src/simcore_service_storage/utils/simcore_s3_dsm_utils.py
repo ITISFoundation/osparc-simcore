@@ -154,7 +154,7 @@ UserSelectionStr: TypeAlias = str
 
 
 def _strip_parent(selection: UserSelectionStr, s3_object: S3ObjectKey) -> str:
-    selection_path = Path(selection)
+    selection_path = Path(selection).parent
     s3_object_path = Path(s3_object)
     if selection_path == s3_object_path:
         return s3_object_path.name
