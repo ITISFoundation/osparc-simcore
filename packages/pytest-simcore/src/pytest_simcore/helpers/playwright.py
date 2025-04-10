@@ -384,18 +384,20 @@ def _check_service_endpoint(
     return False
 
 
+_SOCKET_IO_NODE_PROGRESS_WAITER_MAX_IDLE_TIMEOUT: Final[timedelta] = timedelta(
+    seconds=30
+)
+
+
 @dataclass
 class SocketIONodeProgressCompleteWaiter:
     node_id: str
     logger: logging.Logger
-    product_url: AnyUrl
-    api_request_context: APIRequestContext
-    is_service_legacy: bool
-    assertion_output_folder: Path
+    max_idle_timeout: timedelta = _SOCKET_IO_NODE_PROGRESS_WAITER_MAX_IDLE_TIMEOUT
     _current_progress: dict[NodeProgressType, float] = field(
         default_factory=defaultdict
     )
-    _last_poll_timestamp: datetime = field(default_factory=lambda: datetime.now(tz=UTC))
+    _last_progress_time: datetime = field(default_factory=lambda: datetime.now(tz=UTC))
     _received_messages: list[SocketIOEvent] = field(default_factory=list)
 
     def __call__(self, message: str) -> bool:
@@ -428,6 +430,7 @@ class SocketIONodeProgressCompleteWaiter:
                         node_progress_event.current_progress
                         / node_progress_event.total_progress
                     )
+                    self._last_progress_time = datetime.now(UTC)
                     if (
                         node_progress_event.progress_type not in self._current_progress
                     ) or (
@@ -443,28 +446,20 @@ class SocketIONodeProgressCompleteWaiter:
                             len(NodeProgressType.required_types_for_started_service()),
                             f"{json.dumps({k: round(v, 2) for k, v in self._current_progress.items()})}",
                         )
+
                 return self.got_expected_node_progress_types() and all(
                     round(progress, 1) == 1.0
                     for progress in self._current_progress.values()
                 )
 
-        _current_timestamp = datetime.now(UTC)
-        if (
-            _current_timestamp - self._last_poll_timestamp
-            > _SERVICE_ROOT_POINT_STATUS_TIMEOUT
-        ):
-            self._last_poll_timestamp = datetime.now(UTC)
-            if _check_service_endpoint(
-                self.node_id,
-                api_request_context=self.api_request_context,
-                logger=self.logger,
-                product_url=self.product_url,
-                is_legacy_service=self.is_service_legacy,
-            ):
-                self.logger.warning(
-                    "⚠️ Progress bar did not complete. TIP: some websocket messages were missed! ⚠️",  # https://github.com/ITISFoundation/osparc-simcore/issues/6449
-                )
-                return True
+        time_since_last_progress = datetime.now(UTC) - self._last_progress_time
+        if time_since_last_progress > self.max_idle_timeout:
+            self.logger.warning(
+                "⚠️ %s passed since the last received progress message. "
+                "The service might be stuck, or we missed some messages ⚠️",
+                time_since_last_progress,
+            )
+            return True
 
         return False
 
@@ -591,10 +586,6 @@ def expected_service_running(
         waiter = SocketIONodeProgressCompleteWaiter(
             node_id=node_id,
             logger=ctx.logger,
-            product_url=product_url,
-            api_request_context=page.request,
-            is_service_legacy=is_service_legacy,
-            assertion_output_folder=assertion_output_folder,
         )
         service_running = ServiceRunning(iframe_locator=None)
 
@@ -603,12 +594,12 @@ def expected_service_running(
                 _trigger_service_start(page, node_id)
 
             yield service_running
-        wait_for_service_endpoint_responding(
-            node_id,
-            api_request_context=page.request,
-            product_url=product_url,
-            is_legacy_service=is_service_legacy,
-        )
+    wait_for_service_endpoint_responding(
+        node_id,
+        api_request_context=page.request,
+        product_url=product_url,
+        is_legacy_service=is_service_legacy,
+    )
     service_running.iframe_locator = page.frame_locator(
         f'[osparc-test-id="iframe_{node_id}"]'
     )
@@ -634,21 +625,17 @@ def wait_for_service_running(
         waiter = SocketIONodeProgressCompleteWaiter(
             node_id=node_id,
             logger=ctx.logger,
-            product_url=product_url,
-            api_request_context=page.request,
-            is_service_legacy=is_service_legacy,
-            assertion_output_folder=assertion_output_folder,
         )
         with websocket.expect_event("framereceived", waiter, timeout=timeout):
             if press_start_button:
                 _trigger_service_start(page, node_id)
 
-        wait_for_service_endpoint_responding(
-            node_id,
-            api_request_context=page.request,
-            product_url=product_url,
-            is_legacy_service=is_service_legacy,
-        )
+    wait_for_service_endpoint_responding(
+        node_id,
+        api_request_context=page.request,
+        product_url=product_url,
+        is_legacy_service=is_service_legacy,
+    )
     return page.frame_locator(f'[osparc-test-id="iframe_{node_id}"]')
 
 
