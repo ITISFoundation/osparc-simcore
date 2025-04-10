@@ -32,7 +32,7 @@ from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from playwright.sync_api import (
     WebSocket,
 )
-from pydantic import AnyUrl
+from pydantic import AnyUrl, TypeAdapter
 from tenacity import before_sleep_log, retry, stop_after_attempt, wait_exponential
 
 from .logging_tools import log_context
@@ -306,7 +306,71 @@ class SocketIOOsparcMessagePrinter:
 
 
 _FAIL_FAST_DYNAMIC_SERVICE_STATES: Final[tuple[str, ...]] = ("idle", "failed")
-_SERVICE_ROOT_POINT_STATUS_TIMEOUT: Final[int] = 5 * SECOND
+_SERVICE_ROOT_POINT_STATUS_TIMEOUT: Final[timedelta] = timedelta(seconds=5)
+
+
+def _get_service_url(
+    node_id: str, product_url: AnyUrl, *, is_legacy_service: bool
+) -> AnyUrl:
+    return TypeAdapter(AnyUrl).validate_python(
+        f"{product_url.scheme}://{product_url.host}/x/{node_id}"
+        if is_legacy_service
+        else f"{product_url.scheme}://{node_id}.services.{product_url.host}"
+    )
+    return f"{product_url}".split("//")[1]
+
+
+def _check_service_status(
+    node_id: str,
+    *,
+    api_request_context: APIRequestContext,
+    logger: logging.Logger,
+    product_url: AnyUrl,
+    is_legacy_service: bool,
+) -> bool:
+    # NOTE: we might have missed some websocket messages, and we check if the service is ready
+    service_url = _get_service_url(
+        node_id, product_url, is_legacy_service=is_legacy_service
+    )
+
+    with log_context(
+        logging.INFO,
+        "Poll service endpoint in case of missed websocket messages: %s",
+        service_url,
+    ):
+        response = None
+
+        try:
+            response = api_request_context.get(
+                f"{service_url}",
+                timeout=_SERVICE_ROOT_POINT_STATUS_TIMEOUT.total_seconds() * SECOND,
+            )
+        except (PlaywrightTimeoutError, TimeoutError):
+            logger.exception(
+                "Timed-out polling service endpoint after %ds",
+                _SERVICE_ROOT_POINT_STATUS_TIMEOUT,
+            )
+        except PlaywrightError:
+            logger.exception("Failed to poll service endpoint")
+        else:
+            logger.log(
+                (
+                    logging.ERROR
+                    if (response.status >= 400) and (response.status not in (502, 503))
+                    else logging.DEBUG
+                ),
+                "Querying service endpoint in case we missed some websocket messages. Url: %s Response: '%s' TIP: %s",
+                service_url,
+                f"{response.status}: {response.text()}",
+                (
+                    "We are emulating the frontend; a 502/503 response is acceptable if the service is not yet ready."
+                ),
+            )
+
+            if response.status <= 400:
+                # NOTE: If the response status is less than 400, it means that the service is ready (There are some services that respond with a 3XX)
+                return True
+    return False
 
 
 @dataclass
@@ -365,7 +429,7 @@ class SocketIONodeProgressCompleteWaiter:
                         )
 
                         self.logger.info(
-                            "Current startup progress [expected %d node-progress-types progresses]: %s",
+                            "Current startup progress [expected %d types]: %s",
                             len(NodeProgressType.required_types_for_started_service()),
                             f"{json.dumps({k: round(v, 2) for k, v in self._current_progress.items()})}",
                         )
@@ -376,62 +440,23 @@ class SocketIONodeProgressCompleteWaiter:
                 return self._service_ready
 
         _current_timestamp = datetime.now(UTC)
-        if _current_timestamp - self._last_poll_timestamp > timedelta(seconds=5):
-            # NOTE: we might have missed some websocket messages, and we check if the service is ready
-            if self.is_service_legacy:
-                url = f"https://{self.get_partial_product_url()}x/{self.node_id}/"
-            else:
-                url = (
-                    f"https://{self.node_id}.services.{self.get_partial_product_url()}"
-                )
-            with log_context(
-                logging.INFO,
-                "Poll service endpoint in case of missed websocket messages: %s",
-                url,
-            ):
-                response = None
-
-                try:
-                    response = self.api_request_context.get(
-                        url, timeout=_SERVICE_ROOT_POINT_STATUS_TIMEOUT
-                    )
-                except (PlaywrightTimeoutError, TimeoutError):
-                    self.logger.log(
-                        logging.ERROR,
-                        "Timed-out polling service endpoint after %ds",
-                        _SERVICE_ROOT_POINT_STATUS_TIMEOUT,
-                    )
-                except PlaywrightError as exc:
-                    self.logger.log(
-                        logging.ERROR, "Failed to poll service endpoint: %s", exc
-                    )
-                else:
-                    self.logger.log(
-                        (
-                            logging.ERROR
-                            if (response.status >= 400)
-                            and (response.status not in (502, 503))
-                            else logging.DEBUG
-                        ),
-                        "Querying service endpoint in case we missed some websocket messages. Url: %s Response: '%s' TIP: %s",
-                        url,
-                        f"{response.status}: {response.text()}",
-                        (
-                            "We are emulating the frontend; a 502/503 response is acceptable if the service is not yet ready."
-                        ),
-                    )
-
-                    if response.status <= 400:
-                        # NOTE: If the response status is less than 400, it means that the service is ready (There are some services that respond with a 3XX)
-                        if self.got_expected_node_progress_types():
-                            self.logger.warning(
-                                "⚠️ Progress bar didn't receive 100 percent but service is already running: %s. TIP: we missed some websocket messages! ⚠️",  # https://github.com/ITISFoundation/osparc-simcore/issues/6449
-                                self.get_current_progress(),
-                            )
-                        self._service_ready = True
-                        return True
-
+        if (
+            _current_timestamp - self._last_poll_timestamp
+            > _SERVICE_ROOT_POINT_STATUS_TIMEOUT
+        ):
             self._last_poll_timestamp = datetime.now(UTC)
+            if _check_service_status(
+                self.node_id,
+                api_request_context=self.api_request_context,
+                logger=self.logger,
+                product_url=self.product_url,
+                is_legacy_service=self.is_service_legacy,
+            ):
+                self.logger.warning(
+                    "⚠️ Progress bar did not complete but service is already running. TIP: some websocket messages were missed! ⚠️",  # https://github.com/ITISFoundation/osparc-simcore/issues/6449
+                )
+                self.service_status = True
+                return True
 
         return False
 
@@ -440,12 +465,6 @@ class SocketIONodeProgressCompleteWaiter:
             progress_type in self._current_progress
             for progress_type in NodeProgressType.required_types_for_started_service()
         )
-
-    def get_current_progress(self):
-        return self._current_progress.values()
-
-    def get_partial_product_url(self) -> str:
-        return f"{self.product_url}".split("//")[1]
 
     @property
     def number_received_messages(self) -> int:
