@@ -173,7 +173,9 @@ def reduce_access_rights(
         if access_flags:
             # applies reduction on flags
             for key, value in _get_flags(access).items():
-                access_flags[key] = reduce_operation(access_flags[key], value)  # a |= b
+                access_flags[key] = reduce_operation(  # defaults to a |= b
+                    access_flags[key], value
+                )
         else:
             access_flags_map[target] = _get_flags(access)
 
