@@ -204,7 +204,10 @@ qx.Class.define("osparc.store.Services", {
                 continue;
               }
               if (excludeDeprecated) {
-                if (serviceLatest["release"]["retired"]) {
+                if (
+                  osparc.service.Utils.isRetired(serviceLatest) ||
+                  osparc.service.Utils.isDeprecated(serviceLatest)
+                ) {
                   // first check if a previous version of this service isn't deprecated
                   // getService to get its history
                   await this.getService(serviceLatest["key"], serviceLatest["version"]);
@@ -221,7 +224,10 @@ qx.Class.define("osparc.store.Services", {
                     }
                   }
                 }
-                if (osparc.service.Utils.isDeprecated(serviceLatest)) {
+                if (
+                  osparc.service.Utils.isRetired(serviceLatest) ||
+                  osparc.service.Utils.isDeprecated(serviceLatest)
+                ) {
                   // do not add retired services
                   continue;
                 }
