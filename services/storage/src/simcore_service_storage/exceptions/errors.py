@@ -1,8 +1,7 @@
 from common_library.errors_classes import OsparcErrorMixin
 
 
-class StorageRuntimeError(OsparcErrorMixin, RuntimeError):
-    ...
+class StorageRuntimeError(OsparcErrorMixin, RuntimeError): ...
 
 
 class ConfigurationError(StorageRuntimeError):
@@ -45,3 +44,7 @@ class InvalidFileIdentifierError(AccessLayerError):
 
 class DatCoreCredentialsMissingError(StorageRuntimeError):
     msg_template: str = "DatCore credentials are incomplete. TIP: Check your settings"
+
+
+class SelectionNotAllowedError(StorageRuntimeError):
+    msg_template: str = "Selection='{selection}' must be from the same folder"

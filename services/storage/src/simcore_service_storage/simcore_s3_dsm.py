@@ -61,6 +61,7 @@ from .exceptions.errors import (
     LinkAlreadyExistsError,
     ProjectAccessRightError,
     ProjectNotFoundError,
+    SelectionNotAllowedError,
 )
 from .models import (
     DatasetMetaData,
@@ -81,9 +82,11 @@ from .modules.db.tokens import TokenRepository
 from .modules.s3 import get_s3_client
 from .utils.s3_utils import S3TransferDataCB
 from .utils.simcore_s3_dsm_utils import (
+    UserSelectionStr,
     compute_file_id_prefix,
     create_and_upload_export,
     create_random_export_name,
+    ensure_user_selection_from_same_base_directory,
     expand_directory,
     get_accessible_project_ids,
     get_directory_file_id,
@@ -1249,7 +1252,11 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         *,
         progress_bar: ProgressBarData,
     ) -> StorageFileID:
-        source_object_keys: set[StorageFileID] = set()
+        source_object_keys: set[tuple[UserSelectionStr, StorageFileID]] = set()
+
+        # ensure all selected items have the same parent
+        if not ensure_user_selection_from_same_base_directory(object_keys):
+            raise SelectionNotAllowedError(selection=object_keys)
 
         # check access rights
         for object_key in object_keys:
@@ -1279,7 +1286,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                 self.simcore_bucket_name, object_key
             ):
                 for entry in meta_data_files:
-                    source_object_keys.add(entry.object_key)
+                    source_object_keys.add((object_key, entry.object_key))
 
         _logger.debug(
             "User selection '%s' includes '%s' files",
