@@ -1,4 +1,3 @@
-import logging
 from contextlib import suppress
 from pathlib import Path
 from typing import TypeAlias
@@ -33,8 +32,6 @@ from ..modules.db.file_meta_data import FileMetaDataRepository, TotalChildren
 from ..modules.db.projects import NodeIDStr, ProjectIDStr, ProjectRepository
 from ..modules.s3 import get_s3_client
 from .utils import convert_db_to_model
-
-_logger = logging.getLogger(__name__)
 
 
 async def _list_all_files_in_folder(
@@ -173,7 +170,6 @@ def _base_path_parent(base_path: UserSelectionStr, s3_object: S3ObjectKey) -> st
 
 
 def _get_project_ids(user_selecton: set[UserSelectionStr]) -> list[ProjectID]:
-    _logger.error("user_selection=%s", user_selecton)
     results = []
     for selected in user_selecton:
         project_id = ProjectID(Path(selected).parts[0])
