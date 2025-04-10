@@ -72,15 +72,15 @@ def fake_services_data(
 
 
 @pytest.fixture
-def expected_director_list_services(
-    expected_director_list_services: list[dict[str, Any]],
+def expected_director_rest_api_list_services(
+    expected_director_rest_api_list_services: list[dict[str, Any]],
     fake_services_data: list,
     create_director_list_services_from: Callable,
 ) -> list[dict[str, Any]]:
     # OVERRIDES: Changes the values returned by the mocked_director_service_api
 
     return create_director_list_services_from(
-        expected_director_list_services, fake_services_data
+        expected_director_rest_api_list_services, fake_services_data
     )
 
 

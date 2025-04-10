@@ -467,23 +467,25 @@ def create_director_list_services_from() -> (
 ):
     """Convenience function to merge outputs of
     - `create_fake_service_data` callable with those of
-    - `expected_director_list_services` fixture
+    - `expected_director_rest_api_list_services` fixture
 
-    to produce a new expected_director_list_services
+    to produce a new expected_director_rest_api_list_services
     """
 
     class _Loader(ServiceMetaDataPublished):
         model_config = ConfigDict(extra="ignore", populate_by_name=True)
 
     def _(
-        expected_director_list_services: list[dict[str, Any]],
+        expected_director_rest_api_list_services: list[dict[str, Any]],
         fake_services_data: list,
     ):
         return [
             jsonable_encoder(
                 _Loader.model_validate(
                     {
-                        **next(itertools.cycle(expected_director_list_services)),
+                        **next(
+                            itertools.cycle(expected_director_rest_api_list_services)
+                        ),
                         **data[0],  # service, **access_rights = data
                     }
                 ),

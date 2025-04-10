@@ -164,7 +164,7 @@ class ServicesRepository(BaseRepository):
         services_latest = create_select_latest_services_query().alias("services_latest")
 
         query = (
-            sa.select(SERVICES_META_DATA_COLS)
+            sa.select(*SERVICES_META_DATA_COLS)
             .select_from(
                 services_latest.join(
                     services_meta_data,
