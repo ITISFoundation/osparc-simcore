@@ -50,7 +50,7 @@ def test__strip_parent(selection: Path, s3_object: Path, expected: str):
 
 
 @pytest.mark.parametrize(
-    "user_slection, expected",
+    "user_selection, expected",
     [
         ([], True),
         (["folder"], True),
@@ -66,9 +66,9 @@ def test__strip_parent(selection: Path, s3_object: Path, expected: str):
     ],
 )
 def test_ensure_same_parent_in_user_selection(
-    user_slection: list[S3ObjectKey | Path], expected: bool
+    user_selection: list[S3ObjectKey | Path], expected: bool
 ):
     assert (
-        ensure_same_parent_in_user_selection([f"{x}" for x in user_slection])
+        ensure_same_parent_in_user_selection([f"{x}" for x in user_selection])
         == expected
     )
