@@ -13,11 +13,11 @@ from .products import ProductsRepository
 _logger = logging.getLogger(__name__)
 
 
-repository_lifespan = LifespanManager()
-repository_lifespan.add(postgres_database_lifespan)
+repository_lifespan_manager = LifespanManager()
+repository_lifespan_manager.add(postgres_database_lifespan)
 
 
-@repository_lifespan.add
+@repository_lifespan_manager.add
 async def _database_lifespan(app: FastAPI, state: State) -> AsyncIterator[State]:
     app.state.engine = state[PostgresLifespanState.POSTGRES_ASYNC_ENGINE]
 

@@ -220,7 +220,9 @@ def service_caching_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
 @pytest.fixture
 def repository_lifespan_disabled(mocker: MockerFixture):
     mocker.patch.object(
-        simcore_service_catalog.repository.events, "repository_lifespan"
+        simcore_service_catalog.core.events,
+        "repository_lifespan_manager",
+        autospec=True,
     )
 
 
@@ -244,6 +246,7 @@ def background_task_lifespan_disabled(mocker: MockerFixture) -> None:
     mocker.patch.object(
         simcore_service_catalog.core.events,
         "background_task_lifespan",
+        autospec=True,
         return_value=MockedBackgroundTaskContextManager(),
     )
 
@@ -256,8 +259,12 @@ def background_task_lifespan_disabled(mocker: MockerFixture) -> None:
 @pytest.fixture
 def rabbitmq_and_rpc_setup_disabled(mocker: MockerFixture):
     # The following services are affected if rabbitmq is not in place
-    mocker.patch.object(simcore_service_catalog.core.events, "rabbitmq_lifespan")
-    mocker.patch.object(simcore_service_catalog.core.events, "rpc_api_lifespan")
+    mocker.patch.object(
+        simcore_service_catalog.core.events, "rabbitmq_lifespan", autospec=True
+    )
+    mocker.patch.object(
+        simcore_service_catalog.core.events, "rpc_api_lifespan", autospec=True
+    )
 
 
 @pytest.fixture
@@ -274,7 +281,9 @@ async def rpc_client(
 
 @pytest.fixture
 def director_setup_disabled(mocker: MockerFixture) -> None:
-    mocker.patch.object(simcore_service_catalog.core.events, "director_lifespan")
+    mocker.patch.object(
+        simcore_service_catalog.core.events, "director_lifespan", autospec=True
+    )
 
 
 @pytest.fixture

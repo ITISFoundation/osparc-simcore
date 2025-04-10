@@ -14,7 +14,7 @@ from .._meta import APP_FINISHED_BANNER_MSG, APP_STARTED_BANNER_MSG
 from ..api.rpc.events import rpc_api_lifespan
 from ..clients.director import director_lifespan
 from ..clients.rabbitmq import rabbitmq_lifespan
-from ..repository.events import repository_lifespan
+from ..repository.events import repository_lifespan_manager
 from ..service.function_services import function_services_lifespan
 from .background_tasks import background_task_lifespan
 from .settings import ApplicationSettings
@@ -61,7 +61,7 @@ def create_app_lifespan():
     app_lifespan.add(_main_lifespan)
 
     # - postgres
-    app_lifespan.add(repository_lifespan)
+    app_lifespan.include(repository_lifespan_manager)
 
     # - rabbitmq
     app_lifespan.add(rabbitmq_lifespan)

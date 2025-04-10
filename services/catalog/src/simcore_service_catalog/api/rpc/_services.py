@@ -210,7 +210,7 @@ async def batch_get_my_services(
 ) -> list[MyServiceGet]:
     assert app.state.engine  # nosec
 
-    services = await services.batch_get_my_services(
+    services_batch = await services.batch_get_my_services(
         repo=ServicesRepository(app.state.engine),
         groups_repo=GroupsRepository(app.state.engine),
         product_name=product_name,
@@ -218,9 +218,9 @@ async def batch_get_my_services(
         ids=ids,
     )
 
-    assert [(sv.key, sv.release.version) for sv in services] == ids  # nosec
+    assert [(sv.key, sv.release.version) for sv in services_batch] == ids  # nosec
 
-    return services
+    return services_batch
 
 
 @router.expose(reraise_if_error_type=(ValidationError,))
