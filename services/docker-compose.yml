@@ -1207,7 +1207,7 @@ services:
       <<: *storage_environment
       STORAGE_WORKER_MODE: "true"
       CELERY_CONCURRENCY: 1
-      CELERY_QUEUES: "cpu-bound"
+      CELERY_QUEUES: "cpu_bound"
     networks: *storage_networks
 
   rabbit:
