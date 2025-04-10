@@ -217,7 +217,6 @@ qx.Class.define("osparc.store.Services", {
                     if (!historyEntry["retired"]) {
                       // one older non retired version found
                       let olderNonRetired = await this.getService(key, historyEntry["version"]);
-                      // Hack
                       if (!olderNonRetired) {
                         olderNonRetired = await this.getService(key, historyEntry["version"]);
                       }
