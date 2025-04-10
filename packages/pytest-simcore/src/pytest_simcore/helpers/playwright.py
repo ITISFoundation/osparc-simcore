@@ -33,7 +33,15 @@ from playwright.sync_api import (
     WebSocket,
 )
 from pydantic import AnyUrl, TypeAdapter
-from tenacity import before_sleep_log, retry, stop_after_attempt, wait_exponential
+from tenacity import (
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    stop_after_delay,
+    wait_exponential,
+    wait_fixed,
+)
 
 from .logging_tools import log_context
 
@@ -320,7 +328,7 @@ def _get_service_url(
     return f"{product_url}".split("//")[1]
 
 
-def _check_service_status(
+def _check_service_endpoint(
     node_id: str,
     *,
     api_request_context: APIRequestContext,
@@ -335,7 +343,7 @@ def _check_service_status(
 
     with log_context(
         logging.INFO,
-        "Poll service endpoint in case of missed websocket messages: %s",
+        "Check service endpoint: %s",
         service_url,
     ):
         response = None
@@ -347,15 +355,15 @@ def _check_service_status(
             )
         except (PlaywrightTimeoutError, TimeoutError):
             logger.exception(
-                "Timed-out polling service endpoint after %ds",
+                "Timed-out requesting service endpoint after %ds",
                 _SERVICE_ROOT_POINT_STATUS_TIMEOUT,
             )
         except PlaywrightError:
-            logger.exception("Failed to poll service endpoint")
+            logger.exception("Failed to request service endpoint")
         else:
             # NOTE: 502,503 are acceptable if the service is not yet ready (traefik still setting up)
             if response.status in (502, 503):
-                logger.info("service is not ready yet %s", f"{response.status=}")
+                logger.info("service not ready yet %s", f"{response.status=}")
                 return False
             if response.status > 400:
                 logger.error(
@@ -367,10 +375,8 @@ def _check_service_status(
 
             if response.status <= 400:
                 # NOTE: If the response status is less than 400, it means that the service is ready (There are some services that respond with a 3XX)
-                logger.warning(
-                    "⚠️ Progress bar did not complete but service is already ready. TIP: some websocket messages were missed! ⚠️. Url: %s Response: '%s'",  # https://github.com/ITISFoundation/osparc-simcore/issues/6449
-                    service_url,
-                    f"{response.status}: {response.text()}",
+                logger.info(
+                    "✅ Service ready!! respondedd with %s ✅", f"{response.status=}"
                 )
                 return True
     return False
@@ -389,7 +395,6 @@ class SocketIONodeProgressCompleteWaiter:
     )
     _last_poll_timestamp: datetime = field(default_factory=lambda: datetime.now(tz=UTC))
     _received_messages: list[SocketIOEvent] = field(default_factory=list)
-    _service_ready: bool = False
 
     def __call__(self, message: str) -> bool:
         # socket.io encodes messages like so
@@ -436,11 +441,10 @@ class SocketIONodeProgressCompleteWaiter:
                             len(NodeProgressType.required_types_for_started_service()),
                             f"{json.dumps({k: round(v, 2) for k, v in self._current_progress.items()})}",
                         )
-                self._service_ready = self.got_expected_node_progress_types() and all(
+                return self.got_expected_node_progress_types() and all(
                     round(progress, 1) == 1.0
                     for progress in self._current_progress.values()
                 )
-                return self._service_ready
 
         _current_timestamp = datetime.now(UTC)
         if (
@@ -448,14 +452,16 @@ class SocketIONodeProgressCompleteWaiter:
             > _SERVICE_ROOT_POINT_STATUS_TIMEOUT
         ):
             self._last_poll_timestamp = datetime.now(UTC)
-            if _check_service_status(
+            if _check_service_endpoint(
                 self.node_id,
                 api_request_context=self.api_request_context,
                 logger=self.logger,
                 product_url=self.product_url,
                 is_legacy_service=self.is_service_legacy,
             ):
-                self.service_status = True
+                self.logger.warning(
+                    "⚠️ Progress bar did not complete. TIP: some websocket messages were missed! ⚠️",  # https://github.com/ITISFoundation/osparc-simcore/issues/6449
+                )
                 return True
 
         return False
@@ -470,21 +476,30 @@ class SocketIONodeProgressCompleteWaiter:
     def number_received_messages(self) -> int:
         return len(self._received_messages)
 
-    def assert_service_ready(self) -> None:
-        if not self._service_ready:
-            with self.assertion_output_folder.joinpath("websocket.json").open("w") as f:
-                f.writelines("[")
-                f.writelines(
-                    f"{msg.to_json()}," for msg in self._received_messages[:-1]
-                )
-                f.writelines(
-                    f"{self._received_messages[-1].to_json()}"
-                )  # no comma for last element
-                f.writelines("]")
-        assert self._service_ready, (
-            f"the service failed and received {self.number_received_messages} websocket messages while waiting!"
-            "\nTIP: check websocket.log for detailed information in the test-results folder!"
-        )
+
+@retry(
+    retry=retry_if_exception_type(AssertionError),
+    wait=wait_fixed(1),
+    stop=stop_after_delay(30),
+    before_sleep=before_sleep_log(_logger, logging.INFO),
+    reraise=True,
+)
+def wait_for_service_ready(
+    node_id: str,
+    *,
+    api_request_context: APIRequestContext,
+    logger: logging.Logger,
+    product_url: AnyUrl,
+    is_legacy_service: bool,
+) -> None:
+    is_service_ready = _check_service_endpoint(
+        node_id,
+        api_request_context=api_request_context,
+        logger=logger,
+        product_url=product_url,
+        is_legacy_service=is_legacy_service,
+    )
+    assert is_service_ready, "the service failed starting!"
 
 
 _FAIL_FAST_COMPUTATIONAL_STATES: Final[tuple[RunningState, ...]] = (
@@ -578,7 +593,13 @@ def expected_service_running(
                 _trigger_service_start(page, node_id)
 
             yield service_running
-    waiter.assert_service_ready()
+        wait_for_service_ready(
+            node_id,
+            api_request_context=page.request,
+            logger=ctx.logger,
+            product_url=product_url,
+            is_legacy_service=is_service_legacy,
+        )
     service_running.iframe_locator = page.frame_locator(
         f'[osparc-test-id="iframe_{node_id}"]'
     )
@@ -613,7 +634,13 @@ def wait_for_service_running(
             if press_start_button:
                 _trigger_service_start(page, node_id)
 
-        waiter.assert_service_ready()
+        wait_for_service_ready(
+            node_id,
+            api_request_context=page.request,
+            logger=ctx.logger,
+            product_url=product_url,
+            is_legacy_service=is_service_legacy,
+        )
     return page.frame_locator(f'[osparc-test-id="iframe_{node_id}"]')
 
 
