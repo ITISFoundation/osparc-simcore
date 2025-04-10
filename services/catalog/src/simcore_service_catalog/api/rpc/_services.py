@@ -68,7 +68,7 @@ async def list_services_paginated(
 ) -> PageRpcLatestServiceGet:
     assert app.state.engine  # nosec
 
-    total_count, items = await services.list_latest_services(
+    total_count, items = await services.list_latest_catalog_services(
         repo=ServicesRepository(app.state.engine),
         director_api=get_director_client(app),
         product_name=product_name,
@@ -111,7 +111,7 @@ async def get_service(
 ) -> ServiceGetV2:
     assert app.state.engine  # nosec
 
-    service = await services.get_service(
+    service = await services.get_catalog_service(
         repo=ServicesRepository(app.state.engine),
         director_api=get_director_client(app),
         product_name=product_name,
@@ -148,7 +148,7 @@ async def update_service(
 
     assert app.state.engine  # nosec
 
-    service = await services.update_service(
+    service = await services.update_catalog_service(
         repo=ServicesRepository(app.state.engine),
         director_api=get_director_client(app),
         product_name=product_name,
@@ -184,7 +184,7 @@ async def check_for_service(
     """Checks whether service exists and can be accessed, otherwise it raise"""
     assert app.state.engine  # nosec
 
-    await services.check_for_service(
+    await services.check_catalog_service(
         repo=ServicesRepository(app.state.engine),
         product_name=product_name,
         user_id=user_id,
@@ -210,7 +210,7 @@ async def batch_get_my_services(
 ) -> list[MyServiceGet]:
     assert app.state.engine  # nosec
 
-    services_batch = await services.batch_get_my_services(
+    services_batch = await services.batch_get_user_services(
         repo=ServicesRepository(app.state.engine),
         groups_repo=GroupsRepository(app.state.engine),
         product_name=product_name,
@@ -237,7 +237,7 @@ async def list_my_service_history_paginated(
 ) -> PageRpcServiceRelease:
     assert app.state.engine  # nosec
 
-    total_count, items = await services.list_my_service_release_history(
+    total_count, items = await services.list_user_service_release_history(
         repo=ServicesRepository(app.state.engine),
         product_name=product_name,
         user_id=user_id,

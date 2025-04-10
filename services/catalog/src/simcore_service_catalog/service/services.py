@@ -1,3 +1,5 @@
+"""Includes manifest (services in the registry) and function-service (front-end/back-end services)"""
+
 import logging
 from contextlib import suppress
 
@@ -124,7 +126,7 @@ def _to_get_schema(
     )
 
 
-async def list_latest_services(
+async def list_latest_catalog_services(
     repo: ServicesRepository,
     director_api: DirectorClient,
     *,
@@ -205,7 +207,7 @@ async def list_latest_services(
     return total_count, items
 
 
-async def get_service(
+async def get_catalog_service(
     repo: ServicesRepository,
     director_api: DirectorClient,
     product_name: ProductName,
@@ -260,7 +262,7 @@ async def get_service(
     return _to_get_schema(service, access_rights, service_manifest, compatibility_map)
 
 
-async def update_service(
+async def update_catalog_service(
     repo: ServicesRepository,
     director_api: DirectorClient,
     *,
@@ -351,7 +353,7 @@ async def update_service(
         ]
         await repo.delete_service_access_rights(removed_access_rights)
 
-    return await get_service(
+    return await get_catalog_service(
         repo=repo,
         director_api=director_api,
         product_name=product_name,
@@ -361,7 +363,7 @@ async def update_service(
     )
 
 
-async def check_for_service(
+async def check_catalog_service(
     repo: ServicesRepository,
     product_name: ProductName,
     user_id: UserID,
@@ -404,7 +406,7 @@ async def check_for_service(
         )
 
 
-async def batch_get_my_services(
+async def batch_get_user_services(
     repo: ServicesRepository,
     groups_repo: GroupsRepository,
     *,
@@ -494,7 +496,7 @@ async def batch_get_my_services(
     return my_services
 
 
-async def list_my_service_release_history(
+async def list_user_service_release_history(
     repo: ServicesRepository,
     *,
     # access-rights
@@ -539,7 +541,7 @@ async def list_my_service_release_history(
     return total_count, items
 
 
-async def get_service_extras(
+async def get_catalog_service_extras(
     director_api: DirectorClient, service_key: ServiceKey, service_version: VersionStr
 ) -> ServiceExtras:
     return await director_api.get_service_extras(

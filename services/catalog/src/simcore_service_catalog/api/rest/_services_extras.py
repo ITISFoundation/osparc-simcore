@@ -18,6 +18,6 @@ async def get_service_extras(
     director_client: Annotated[DirectorClient, Depends(get_director_client)],
 ) -> ServiceExtras:
 
-    return await services.get_service_extras(
+    return await services.get_catalog_service_extras(
         director_client, service_key, service_version
     )
