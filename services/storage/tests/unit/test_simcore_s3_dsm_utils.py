@@ -40,7 +40,7 @@ _FOLDERS_PATH = Path("nested/folders/path")
         ("a/b/c", "a/b/c/d/e/f/g", "c/d/e/f/g"),
         (_FOLDERS_PATH / "folder", _FOLDERS_PATH / "folder", "folder"),
         (_FOLDERS_PATH / "a_file.txt", _FOLDERS_PATH / "a_file.txt", "a_file.txt"),
-        (_FOLDERS_PATH, _FOLDERS_PATH / "the/actual/path", "path/the/actual/path"),
+        (_FOLDERS_PATH, _FOLDERS_PATH / "with/some/content", "path/with/some/content"),
     ],
 )
 def test__strip_parent(selection: Path | str, s3_object: Path, expected: str):
