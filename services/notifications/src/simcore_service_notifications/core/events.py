@@ -3,7 +3,7 @@ from collections.abc import AsyncIterator
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager, State
 from servicelib.fastapi.postgres_lifespan import (
-    PostgresLifespanState,
+    create_input_state,
     postgres_database_lifespan,
 )
 from servicelib.fastapi.prometheus_instrumentation import (
@@ -24,15 +24,16 @@ async def _banner_lifespan(app: FastAPI) -> AsyncIterator[State]:
     print(APP_FINISHED_BANNER_MSG, flush=True)  # noqa: T201
 
 
-async def _main_lifespan(app: FastAPI) -> AsyncIterator[State]:
+async def _settings_lifespan(app: FastAPI) -> AsyncIterator[State]:
     settings: ApplicationSettings = app.state.settings
     yield {
-        PostgresLifespanState.POSTGRES_SETTINGS: settings.NOTIFICATIONS_POSTGRES,
+        **create_input_state(settings.NOTIFICATIONS_POSTGRES),
+        # TODO this shoudl also be replaced ensire thing should be repalced
         "prometheus_instrumentation_enabled": settings.NOTIFICATIONS_PROMETHEUS_INSTRUMENTATION_ENABLED,
     }
 
 
-async def _prometheus_instrumentation_lifespan(  # TODO: put this into one single setup like we did for the DB
+async def _prometheus_instrumentation_lifespan(
     app: FastAPI, state: State
 ) -> AsyncIterator[State]:
     if state.get("prometheus_instrumentation_enabled", False):
@@ -43,7 +44,7 @@ async def _prometheus_instrumentation_lifespan(  # TODO: put this into one singl
 def create_app_lifespan():
     # WARNING: order matters
     app_lifespan = LifespanManager()
-    app_lifespan.add(_main_lifespan)
+    app_lifespan.add(_settings_lifespan)
 
     # - postgres
     app_lifespan.add(postgres_database_lifespan)
