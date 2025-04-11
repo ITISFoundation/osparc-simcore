@@ -5,18 +5,17 @@ from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager, State
 from servicelib.fastapi.postgres_lifespan import (
     PostgresLifespanState,
-    postgres_database_lifespan,
 )
 from servicelib.fastapi.prometheus_instrumentation import (
     lifespan_prometheus_instrumentation,
 )
 
 from .._meta import APP_FINISHED_BANNER_MSG, APP_STARTED_BANNER_MSG
-from ..api.rpc.routes import rpc_api_lifespan
-from ..db.events import database_lifespan
-from ..services.director import director_lifespan
-from ..services.function_services import function_services_lifespan
-from ..services.rabbitmq import rabbitmq_lifespan
+from ..api.rpc.events import rpc_api_lifespan
+from ..clients.director import director_lifespan
+from ..clients.rabbitmq import rabbitmq_lifespan
+from ..repository.events import repository_lifespan_manager
+from ..service.function_services import function_services_lifespan
 from .background_tasks import background_task_lifespan
 from .settings import ApplicationSettings
 
@@ -62,8 +61,7 @@ def create_app_lifespan():
     app_lifespan.add(_main_lifespan)
 
     # - postgres
-    app_lifespan.add(postgres_database_lifespan)
-    app_lifespan.add(database_lifespan)
+    app_lifespan.include(repository_lifespan_manager)
 
     # - rabbitmq
     app_lifespan.add(rabbitmq_lifespan)
