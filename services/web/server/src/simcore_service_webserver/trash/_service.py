@@ -13,6 +13,7 @@ from servicelib.logging_utils import log_context
 from ..folders import folders_trash_service
 from ..products import products_service
 from ..projects import projects_trash_service
+from ..workspaces import workspaces_trash_service
 from .settings import get_plugin_settings
 
 _logger = logging.getLogger(__name__)
@@ -100,6 +101,43 @@ async def _empty_explicitly_trashed_folders_and_content(
                 )
 
 
+async def _empty_explicitely_trashed_workspaces_and_content(
+    app: web.Application, product_name: ProductName, user_id: UserID
+):
+    trashed_workspaces_ids = await workspaces_trash_service.list_trashed_workspaces(
+        app=app, product_name=product_name, user_id=user_id
+    )
+
+    with log_context(
+        _logger,
+        logging.DEBUG,
+        "Deleting %s trashed workspaces (and all its content)",
+        len(trashed_workspaces_ids),
+    ):
+        for workspace_id in trashed_workspaces_ids:
+            try:
+                await workspaces_trash_service.delete_trashed_workspace(
+                    app,
+                    product_name=product_name,
+                    user_id=user_id,
+                    workspace_id=workspace_id,
+                )
+
+            except Exception as exc:  # pylint: disable=broad-exception-caught
+                _logger.warning(
+                    **create_troubleshotting_log_kwargs(
+                        "Error deleting a trashed workspace (and content) while emptying trash.",
+                        error=exc,
+                        error_context={
+                            "workspace_id": workspace_id,
+                            "product_name": product_name,
+                            "user_id": user_id,
+                        },
+                        tip=_TIP,
+                    )
+                )
+
+
 async def safe_empty_trash(
     app: web.Application,
     *,
@@ -115,6 +153,9 @@ async def safe_empty_trash(
     # Delete explicitly trashed folders (and all implicitly trashed sub-folders and projects)
     await _empty_explicitly_trashed_folders_and_content(app, product_name, user_id)
 
+    # Delete explicitly trashed workspaces (and all implicitly trashed sub-folders and projects)
+    await _empty_explicitely_trashed_workspaces_and_content(app, product_name, user_id)
+
 
 async def safe_delete_expired_trash_as_admin(app: web.Application) -> None:
     settings = get_plugin_settings(app)
@@ -123,24 +164,40 @@ async def safe_delete_expired_trash_as_admin(app: web.Application) -> None:
 
     app_products_names = await products_service.list_products_names(app)
 
-    for product_name in app_products_names:
+    with log_context(
+        _logger,
+        logging.DEBUG,
+        "Deleting items marked as trashed before %s [trashed_at < %s will be deleted]",
+        retention,
+        delete_until,
+    ):
 
         ctx = {
             "delete_until": delete_until,
             "retention": retention,
-            "product_name": product_name,
         }
 
-        with log_context(
-            _logger,
-            logging.DEBUG,
-            "Deleting items marked as trashed before %s in %s [trashed_at < %s will be deleted]",
-            retention,
-            product_name,
-            delete_until,
-        ):
-            try:
+        try:
+            deleted_workspace_ids = (
+                await workspaces_trash_service.batch_delete_trashed_workspaces_as_admin(
+                    app,
+                    trashed_before=delete_until,
+                    fail_fast=False,
+                )
+            )
+            _logger.info("Deleted %d trashed workspaces", len(deleted_workspace_ids))
 
+        except Exception as exc:  # pylint: disable=broad-exception-caught
+            _logger.warning(
+                **create_troubleshotting_log_kwargs(
+                    "Error batch deleting expired workspaces as admin.",
+                    error=exc,
+                    error_context=ctx,
+                )
+            )
+
+        for product_name in app_products_names:
+            try:
                 await folders_trash_service.batch_delete_trashed_folders_as_admin(
                     app,
                     trashed_before=delete_until,
@@ -149,31 +206,31 @@ async def safe_delete_expired_trash_as_admin(app: web.Application) -> None:
                 )
 
             except Exception as exc:  # pylint: disable=broad-exception-caught
+                ctx_with_product = {**ctx, "product_name": product_name}
                 _logger.warning(
                     **create_troubleshotting_log_kwargs(
                         "Error batch deleting expired trashed folders as admin.",
                         error=exc,
-                        error_context=ctx,
+                        error_context=ctx_with_product,
                     )
                 )
 
-            try:
-
-                deleted_project_ids = (
-                    await projects_trash_service.batch_delete_trashed_projects_as_admin(
-                        app,
-                        trashed_before=delete_until,
-                        fail_fast=False,
-                    )
+        try:
+            deleted_project_ids = (
+                await projects_trash_service.batch_delete_trashed_projects_as_admin(
+                    app,
+                    trashed_before=delete_until,
+                    fail_fast=False,
                 )
+            )
 
-                _logger.info("Deleted %d trashed projects", len(deleted_project_ids))
+            _logger.info("Deleted %d trashed projects", len(deleted_project_ids))
 
-            except Exception as exc:  # pylint: disable=broad-exception-caught
-                _logger.warning(
-                    **create_troubleshotting_log_kwargs(
-                        "Error batch deleting expired projects as admin.",
-                        error=exc,
-                        error_context=ctx,
-                    )
+        except Exception as exc:  # pylint: disable=broad-exception-caught
+            _logger.warning(
+                **create_troubleshotting_log_kwargs(
+                    "Error batch deleting expired projects as admin.",
+                    error=exc,
+                    error_context=ctx,
                 )
+            )

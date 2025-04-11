@@ -10,6 +10,7 @@ from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from models_library.users import UserID
+from models_library.workspaces import WorkspaceID
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.utils import fire_and_forget_task
 
@@ -241,7 +242,7 @@ async def batch_delete_trashed_projects_as_admin(
         (
             page_params.total_number_of_items,
             expired_trashed_projects,
-        ) = await _projects_repository.list_trashed_projects(
+        ) = await _projects_repository.list_projects_db_get_as_admin(
             app,
             # both implicit and explicitly trashed
             trashed_before=trashed_before,
@@ -269,6 +270,54 @@ async def batch_delete_trashed_projects_as_admin(
         raise ProjectsBatchDeleteError(
             errors=errors,
             trashed_before=trashed_before,
+            deleted_project_ids=deleted_project_ids,
+        )
+
+    return deleted_project_ids
+
+
+async def batch_delete_projects_in_root_workspace_as_admin(
+    app: web.Application,
+    *,
+    workspace_id: WorkspaceID,
+    fail_fast: bool,
+) -> list[ProjectID]:
+    """
+    Deletes all projects in the workspace root.
+
+    Raises:
+        ProjectsBatchDeleteError: If there are errors during the deletion process.
+    """
+    deleted_project_ids: list[ProjectID] = []
+    errors: list[tuple[ProjectID, Exception]] = []
+
+    for page_params in iter_pagination_params(limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
+        (
+            page_params.total_number_of_items,
+            projects_for_deletion,
+        ) = await _projects_repository.list_projects_db_get_as_admin(
+            app,
+            shared_workspace_id=workspace_id,  # <-- Workspace filter
+            offset=page_params.offset,
+            limit=page_params.limit,
+            order_by=OrderBy(field=IDStr("id")),
+        )
+        # BATCH delete
+        for project in projects_for_deletion:
+            try:
+                await _projects_service_delete.delete_project_as_admin(
+                    app,
+                    project_uuid=project.uuid,
+                )
+                deleted_project_ids.append(project.uuid)
+            except Exception as err:  # pylint: disable=broad-exception-caught
+                if fail_fast:
+                    raise
+                errors.append((project.uuid, err))
+
+    if errors:
+        raise ProjectsBatchDeleteError(
+            errors=errors,
             deleted_project_ids=deleted_project_ids,
         )
 

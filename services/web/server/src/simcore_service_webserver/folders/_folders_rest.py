@@ -205,11 +205,11 @@ async def replace_folder(request: web.Request):
 @login_required
 @permission_required("folder.delete")
 @handle_plugin_requests_exceptions
-async def delete_folder_group(request: web.Request):
+async def delete_folder(request: web.Request):
     req_ctx = FoldersRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(FoldersPathParams, request)
 
-    await _folders_service.delete_folder(
+    await _folders_service.delete_folder_with_all_content(
         app=request.app,
         user_id=req_ctx.user_id,
         folder_id=path_params.folder_id,

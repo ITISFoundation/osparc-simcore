@@ -8,11 +8,13 @@
 
 import asyncio
 from collections.abc import AsyncIterable
+from copy import deepcopy
 from unittest.mock import MagicMock
 from uuid import UUID
 
 import arrow
 import pytest
+import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver.folders_v2 import FolderGet
 from models_library.api_schemas_webserver.projects import ProjectGet, ProjectListItem
@@ -21,7 +23,10 @@ from models_library.rest_pagination import Page
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import UserInfoDict
+from pytest_simcore.helpers.webserver_projects import create_project
 from servicelib.aiohttp import status
+from simcore_postgres_database.models.folders_v2 import folders_v2
+from simcore_postgres_database.models.projects import projects
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects._groups_service import ProjectGroupGet
 from simcore_service_webserver.projects.models import ProjectDict
@@ -489,7 +494,11 @@ async def workspace(
     "https://github.com/ITISFoundation/osparc-simcore/pull/6690"
 )
 async def test_trash_empty_workspace(
-    client: TestClient, logged_user: UserInfoDict, workspace: WorkspaceGet
+    client: TestClient,
+    logged_user: UserInfoDict,
+    workspace: WorkspaceGet,
+    mocked_catalog: None,
+    mocked_dynamic_services_interface: dict[str, MagicMock],
 ):
     assert client.app
 
@@ -517,7 +526,9 @@ async def test_trash_empty_workspace(
 
     # TRASH
     trashing_at = arrow.utcnow().datetime
-    resp = await client.post(f"/v0/workspaces/{workspace.workspace_id}:trash")
+    resp = await client.post(
+        f"/v0/workspaces/{workspace.workspace_id}:trash"  # <-- TESTING TRASHING
+    )
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
     # LIST NOT trashed (default)
@@ -565,6 +576,267 @@ async def test_trash_empty_workspace(
 
     page = Page[WorkspaceGet].model_validate(await resp.json())
     assert page.meta.total == 0
+
+
+@pytest.mark.acceptance_test(
+    "https://github.com/ITISFoundation/osparc-simcore/issues/7034"
+)
+async def test_trash_workspace(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    workspace: WorkspaceGet,
+    user_project: ProjectDict,
+    fake_project: ProjectDict,
+    mocked_catalog: None,
+    mocked_dynamic_services_interface: dict[str, MagicMock],
+    postgres_db: sa.engine.Engine,
+):
+    assert client.app
+
+    assert workspace.trashed_at is None
+    assert workspace.trashed_by is None
+
+    # LIST NOT trashed (default)
+    resp = await client.get("/v0/workspaces")
+    await assert_status(resp, status.HTTP_200_OK)
+
+    page = Page[WorkspaceGet].model_validate(await resp.json())
+    assert page.meta.total == 1
+    assert page.data[0] == workspace
+
+    # LIST trashed
+    resp = await client.get("/v0/workspaces", params={"filters": '{"trashed": true}'})
+    await assert_status(resp, status.HTTP_200_OK)
+
+    page = Page[WorkspaceGet].model_validate(await resp.json())
+    assert page.meta.total == 0
+
+    # -------------
+    # add folders and projects to the workspace
+
+    # CREATE a project **in workspace**
+    project_data = deepcopy(fake_project)
+    project_data["workspace_id"] = f"{workspace.workspace_id}"
+    created_project = await create_project(
+        client.app,
+        project_data,
+        user_id=logged_user["id"],
+        product_name="osparc",
+    )
+
+    # CREATE a folder in workspace
+    resp = await client.post(
+        "/v0/folders",
+        json={
+            "name": "Folder",
+            # "workspaceId": f"{workspace.workspace_id}",
+        },
+    )
+    data, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    folder = FolderGet.model_validate(data)
+
+    # CREATE a SUB-folder
+    resp = await client.post(
+        "/v0/folders",
+        json={
+            "name": "SubFolder1",
+            "parentFolderId": folder.folder_id,
+            # "workspaceId": f"{workspace.workspace_id}",
+        },
+    )
+    data, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    subfolder = FolderGet.model_validate(data)
+
+    # MOVE project to SUB-folder
+    project_uuid = UUID(user_project["uuid"])
+    resp = await client.put(
+        f"/v0/projects/{project_uuid}/folders/{subfolder.folder_id}"
+    )
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # MOVE root folder with content to workspace
+    url = client.app.router["move_folder_to_workspace"].url_for(
+        folder_id=f"{folder.folder_id}",
+        workspace_id=f"{workspace.workspace_id}",
+    )
+    resp = await client.post(f"{url}")
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # -------------
+    # list folders and projects in workspace
+
+    # LIST projects in workspace
+    url = (
+        client.app.router["list_projects"]
+        .url_for()
+        .with_query({"workspace_id": f"{workspace.workspace_id}"})
+    )
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert len(data) == 1
+
+    # LIST folders in workspace
+    url = (
+        client.app.router["list_folders"]
+        .url_for()
+        .with_query({"workspace_id": f"{workspace.workspace_id}", "folder_id": "null"})
+    )
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert len(data) == 1
+
+    # LIST FOLDERS in workspace
+    url = (
+        client.app.router["list_folders"]
+        .url_for()
+        .with_query({"workspace_id": f"{workspace.workspace_id}", "folder_id": "null"})
+    )
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert len(data) == 1
+
+    # LIST FOLDERS in subfolder of workspace
+    url = (
+        client.app.router["list_folders"]
+        .url_for()
+        .with_query(
+            {
+                "workspace_id": f"{workspace.workspace_id}",
+                "folder_id": f"{folder.folder_id}",
+            }
+        )
+    )
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert len(data) == 1
+
+    # LIST PROJECTS in subfolder of workspace
+    url = (
+        client.app.router["list_projects"]
+        .url_for()
+        .with_query(
+            {
+                "workspace_id": f"{workspace.workspace_id}",
+                "folder_id": f"{subfolder.folder_id}",
+            }
+        )
+    )
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert len(data) == 1
+
+    # -------------
+
+    _exclude_attrs = {"trashed_by", "trashed_at", "modified_at"}
+
+    # TRASH
+    trashing_at = arrow.utcnow().datetime
+    resp = await client.post(
+        f"/v0/workspaces/{workspace.workspace_id}:trash"  # <-- TESTING TRASHING
+    )
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # LIST NOT trashed (default)
+    resp = await client.get("/v0/workspaces")
+    await assert_status(resp, status.HTTP_200_OK)
+
+    page = Page[WorkspaceGet].model_validate(await resp.json())
+    assert page.meta.total == 0
+
+    # LIST trashed
+    resp = await client.get("/v0/workspaces", params={"filters": '{"trashed": true}'})
+    await assert_status(resp, status.HTTP_200_OK)
+
+    page = Page[WorkspaceGet].model_validate(await resp.json())
+    assert page.meta.total == 1
+    assert page.data[0].model_dump(exclude=_exclude_attrs) == workspace.model_dump(
+        exclude=_exclude_attrs
+    )
+    assert page.data[0].trashed_at is not None
+    assert trashing_at < page.data[0].trashed_at
+    assert page.data[0].trashed_by == logged_user["primary_gid"]
+
+    # Check additional state in the DB
+    with postgres_db.connect() as conn:
+        # 1. Check that both projects were marked as trashed implicitly
+        trashed_projects = conn.execute(
+            projects.select().where(
+                projects.c.workspace_id == workspace.workspace_id,
+                projects.c.trashed.isnot(None),
+            )
+        )
+        trashed_projects = trashed_projects.fetchall()
+        assert len(trashed_projects) == 2  # Assuming two projects are expected
+        for project in trashed_projects:
+            assert project.trashed is not None
+            assert project.trashed_by == logged_user["id"]
+            assert project.trashed_explicitly is False
+
+        # 2. Check that both folders were marked as trashed implicitly
+        trashed_folders = conn.execute(
+            folders_v2.select().where(
+                folders_v2.c.workspace_id == workspace.workspace_id,
+                folders_v2.c.trashed.isnot(None),
+            )
+        )
+        trashed_folders = trashed_folders.fetchall()
+        assert len(trashed_folders) == 2  # Assuming two folders are expected
+        for folder in trashed_folders:
+            assert folder.trashed is not None
+            assert folder.trashed_by == logged_user["id"]
+            assert folder.trashed_explicitly is False
+
+    # --------
+
+    # UN_TRASH
+    resp = await client.post(f"/v0/workspaces/{workspace.workspace_id}:untrash")
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # LIST NOT trashed (default)
+    resp = await client.get("/v0/workspaces")
+    await assert_status(resp, status.HTTP_200_OK)
+
+    page = Page[WorkspaceGet].model_validate(await resp.json())
+    assert page.meta.total == 1
+    assert page.data[0].model_dump(exclude=_exclude_attrs) == workspace.model_dump(
+        exclude=_exclude_attrs
+    )
+
+    assert page.data[0].trashed_at is None
+    assert page.data[0].trashed_by is None
+
+    # LIST trashed
+    resp = await client.get("/v0/workspaces", params={"filters": '{"trashed": true}'})
+    await assert_status(resp, status.HTTP_200_OK)
+
+    page = Page[WorkspaceGet].model_validate(await resp.json())
+    assert page.meta.total == 0
+
+    # Check additional state in the DB
+    with postgres_db.connect() as conn:
+        # 1. Check that both projects were marked as trashed implicitly
+        trashed_projects = conn.execute(
+            projects.select().where(projects.c.workspace_id == workspace.workspace_id)
+        )
+        trashed_projects = trashed_projects.fetchall()
+        assert len(trashed_projects) == 2  # Assuming two projects are expected
+        for project in trashed_projects:
+            assert project.trashed is None
+            assert project.trashed_by is None
+            assert project.trashed_explicitly is False
+
+        # 2. Check that both folders were marked as trashed implicitly
+        trashed_folders = conn.execute(
+            folders_v2.select().where(
+                folders_v2.c.workspace_id == workspace.workspace_id
+            )
+        )
+        trashed_folders = trashed_folders.fetchall()
+        assert len(trashed_folders) == 2  # Assuming two folders are expected
+        for folder in trashed_folders:
+            assert folder.trashed is None
+            assert folder.trashed_by is None
+            assert folder.trashed_explicitly is False
 
 
 async def test_trash_subfolder(
