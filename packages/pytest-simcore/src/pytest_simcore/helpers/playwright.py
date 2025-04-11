@@ -448,17 +448,20 @@ class SocketIONodeProgressCompleteWaiter:
                             f"{json.dumps({k: round(v, 2) for k, v in self._current_progress.items()})}",
                         )
 
-                return self.got_expected_node_progress_types() and all(
+                progress_completed = self.got_expected_node_progress_types() and all(
                     round(progress, 1) == 1.0
                     for progress in self._current_progress.values()
                 )
+                if progress_completed:
+                    self.logger.info("✅ Service start completed successfully!! ✅")
 
         time_since_last_progress = datetime.now(UTC) - self._last_progress_time
         if time_since_last_progress > self.max_idle_timeout:
             self.logger.warning(
                 "⚠️ %s passed since the last received progress message. "
-                "The service might be stuck, or we missed some messages ⚠️",
+                "The service %s might be stuck, or we missed some messages ⚠️",
                 time_since_last_progress,
+                self.node_id,
             )
             return True
 
