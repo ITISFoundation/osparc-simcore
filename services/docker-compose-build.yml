@@ -169,6 +169,23 @@ services:
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
 
+  notifications:
+    image: local/notifications:${BUILD_TARGET:?build_target_required}
+    build:
+      context: ../
+      dockerfile: services/notifications/Dockerfile
+      cache_from:
+        - local/notifications:${BUILD_TARGET:?build_target_required}
+        - ${DOCKER_REGISTRY:-itisfoundation}/notifications:master-github-latest
+        - ${DOCKER_REGISTRY:-itisfoundation}/notifications:staging-github-latest
+        - ${DOCKER_REGISTRY:-itisfoundation}/notifications:release-github-latest
+      target: production
+      labels:
+        org.label-schema.schema-version: "1.0"
+        org.opencontainers.image.created: "${BUILD_DATE}"
+        org.opencontainers.image.source: "${VCS_URL}"
+        org.opencontainers.image.revision: "${VCS_REF}"
+
   resource-usage-tracker:
     image: local/resource-usage-tracker:${BUILD_TARGET:?build_target_required}
     build:
