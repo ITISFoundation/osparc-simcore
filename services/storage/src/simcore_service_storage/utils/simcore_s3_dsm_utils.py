@@ -7,7 +7,6 @@ import orjson
 from aws_library.s3 import S3MetaData, SimcoreS3API
 from aws_library.s3._constants import STREAM_READER_CHUNK_SIZE
 from aws_library.s3._models import S3ObjectKey
-from fastapi import FastAPI
 from models_library.api_schemas_storage.storage_schemas import S3BucketName
 from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_nodes_io import (
@@ -27,11 +26,9 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from ..constants import EXPORTS_S3_PREFIX
 from ..exceptions.errors import FileMetaDataNotFoundError, ProjectAccessRightError
 from ..models import FileMetaData, FileMetaDataAtDB, GenericCursor, PathMetaData
-from ..modules.db import get_db_engine
 from ..modules.db.access_layer import AccessLayerRepository
 from ..modules.db.file_meta_data import FileMetaDataRepository, TotalChildren
 from ..modules.db.projects import ProjectRepository
-from ..modules.s3 import get_s3_client
 from .utils import convert_db_to_model
 
 
@@ -201,17 +198,15 @@ def _replace_node_id_project_id_in_path(
 
 
 async def create_and_upload_export(
-    app: FastAPI,
+    s3_client: SimcoreS3API,
+    project_repository: ProjectRepository,
     bucket: S3BucketName,
     *,
     source_object_keys: set[tuple[UserSelectionStr, StorageFileID]],
     destination_object_keys: StorageFileID,
     progress_bar: ProgressBarData,
 ) -> None:
-    s3_client = get_s3_client(app)
-    ids_names_map = await ProjectRepository.instance(
-        get_db_engine(app)
-    ).get_project_id_and_node_id_to_names_map(
+    ids_names_map = await project_repository.get_project_id_and_node_id_to_names_map(
         project_uuids=_get_project_ids(user_selecton={x[0] for x in source_object_keys})
     )
 

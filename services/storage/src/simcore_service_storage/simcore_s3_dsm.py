@@ -1311,7 +1311,8 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
             )
 
             await create_and_upload_export(
-                self.app,
+                get_s3_client(self.app),
+                ProjectRepository.instance(get_db_engine(self.app)),
                 self.simcore_bucket_name,
                 source_object_keys=source_object_keys,
                 destination_object_keys=destination_object_key,
