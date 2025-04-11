@@ -156,10 +156,10 @@ class RobustWebSocket:
     _num_reconnections: int = 0
     auto_reconnect: bool = True
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self._configure_websocket_events()
 
-    def _configure_websocket_events(self):
+    def _configure_websocket_events(self) -> None:
         with log_context(
             logging.INFO,
             msg="handle websocket message (set to --log-cli-level=DEBUG level if you wanna see all of them)",
@@ -172,10 +172,11 @@ class RobustWebSocket:
                 ctx.logger.debug("⬆️ Frame received: %s", payload)
 
             def on_close(_: WebSocket) -> None:
-                ctx.logger.warning("⚠️ WebSocket closed.")
                 if self.auto_reconnect:
                     ctx.logger.warning("⚠️ WebSocket closed. Attempting to reconnect...")
                     self._attempt_reconnect(ctx.logger)
+                else:
+                    ctx.logger.warning("⚠️ WebSocket closed.")
 
             def on_socketerror(error_msg: str) -> None:
                 ctx.logger.error("❌ WebSocket error: %s", error_msg)
