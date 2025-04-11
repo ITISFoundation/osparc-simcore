@@ -13,7 +13,7 @@ from typing import Any
 
 from playwright.sync_api import Page
 from pydantic import AnyUrl
-from pytest_simcore.helpers.playwright import RestartableWebSocket
+from pytest_simcore.helpers.playwright import RobustWebSocket
 from pytest_simcore.helpers.playwright_sim4life import (
     check_video_streaming,
     interact_with_s4l,
@@ -24,7 +24,7 @@ from pytest_simcore.helpers.playwright_sim4life import (
 def test_template(
     page: Page,
     create_project_from_template_dashboard: Callable[[str], dict[str, Any]],
-    log_in_and_out: RestartableWebSocket,
+    log_in_and_out: RobustWebSocket,
     template_id: str,
     is_autoscaled: bool,
     check_videostreaming: bool,

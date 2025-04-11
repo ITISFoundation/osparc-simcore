@@ -1,3 +1,3 @@
-from ._setup import lifespan_status_monitor
+from ._setup import status_monitor_lifespan
 
-__all__: tuple[str, ...] = ("lifespan_status_monitor",)
+__all__: tuple[str, ...] = ("status_monitor_lifespan",)

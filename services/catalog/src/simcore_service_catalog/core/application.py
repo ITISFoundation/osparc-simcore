@@ -18,8 +18,7 @@ from .._meta import (
     PROJECT_NAME,
     SUMMARY,
 )
-from ..api.rest.routes import setup_rest_api_routes
-from ..exceptions.handlers import setup_exception_handlers
+from ..api.rest import initialize_rest_api
 from . import events
 from .settings import ApplicationSettings
 
@@ -78,10 +77,7 @@ def create_app() -> FastAPI:
 
     app.add_middleware(GZipMiddleware)
 
-    # ROUTES
-    setup_rest_api_routes(app, vtag=API_VTAG)
-
-    # EXCEPTIONS
-    setup_exception_handlers(app)
+    # ROUTES & ERROR HANDLERS
+    initialize_rest_api(app)
 
     return app
