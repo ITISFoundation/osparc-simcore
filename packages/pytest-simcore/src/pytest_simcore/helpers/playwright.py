@@ -455,6 +455,7 @@ class SocketIONodeProgressCompleteWaiter:
                 )
                 if progress_completed:
                     self.logger.info("✅ Service start completed successfully!! ✅")
+                return progress_completed
 
         time_since_last_progress = datetime.now(UTC) - self._last_progress_time
         if time_since_last_progress > self.max_idle_timeout:
