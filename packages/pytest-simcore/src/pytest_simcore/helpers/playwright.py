@@ -569,6 +569,9 @@ class ServiceRunning:
     iframe_locator: FrameLocator | None
 
 
+_MIN_TIMEOUT_WAITING_FOR_SERVICE_ENDPOINT: Final[int] = 30 * SECOND
+
+
 @contextlib.contextmanager
 def expected_service_running(
     *,
@@ -602,7 +605,10 @@ def expected_service_running(
         api_request_context=page.request,
         product_url=product_url,
         is_legacy_service=is_service_legacy,
-        timeout=min(timeout - int(elapsed_time.total_seconds() * SECOND), 5 * SECOND),
+        timeout=max(
+            timeout - int(elapsed_time.total_seconds() * SECOND),
+            _MIN_TIMEOUT_WAITING_FOR_SERVICE_ENDPOINT,
+        ),
     )
     service_running.iframe_locator = page.frame_locator(
         f'[osparc-test-id="iframe_{node_id}"]'
@@ -640,7 +646,10 @@ def wait_for_service_running(
         api_request_context=page.request,
         product_url=product_url,
         is_legacy_service=is_service_legacy,
-        timeout=min(timeout - int(elapsed_time.total_seconds() * SECOND), 5 * SECOND),
+        timeout=max(
+            timeout - int(elapsed_time.total_seconds() * SECOND),
+            _MIN_TIMEOUT_WAITING_FOR_SERVICE_ENDPOINT,
+        ),
     )
     return page.frame_locator(f'[osparc-test-id="iframe_{node_id}"]')
 
