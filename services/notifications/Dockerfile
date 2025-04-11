@@ -152,7 +152,7 @@ HEALTHCHECK --interval=30s \
   --timeout=20s \
   --start-period=30s \
   --retries=3 \
-  CMD ["python3", "services/notifications/docker/healthcheck.py", "http://localhost:8000/health"]
+  CMD ["python3", "services/notifications/docker/healthcheck.py", "http://localhost:8000/"]
 
 EXPOSE 8000
 

@@ -19,7 +19,7 @@ class HealthCheckError(RuntimeError):
     """Failed a health check"""
 
 
-@router.get("/health", response_model=HealthCheckGet)
+@router.get("/", response_model=HealthCheckGet)
 async def check_service_health(
     rabbitmq_client: Annotated[RabbitMQClient, Depends(get_rabbitmq_client)],
     posrgress_health: Annotated[PostgresHealth, Depends(get_postgress_health)],

@@ -47,7 +47,7 @@ MAP_SERVICE_HEALTHCHECK_ENTRYPOINT = {
     "autoscaling": "/",
     "clusters-keeper": "/",
     "dask-scheduler": "/health",
-    "notifications": "/health",
+    "notifications": "/",
     "datcore-adapter": "/v0/live",
     "director-v2": "/",
     "dynamic-schdlr": "/",

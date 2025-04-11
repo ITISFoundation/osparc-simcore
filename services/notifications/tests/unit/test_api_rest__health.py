@@ -13,6 +13,6 @@ pytest_simcore_core_services_selection = [
 
 
 def test_health_ok(test_client: TestClient):
-    response = test_client.get("/health")
+    response = test_client.get("/")
     assert response.status_code == status.HTTP_200_OK
     assert HealthCheckGet.model_validate(response.json())
