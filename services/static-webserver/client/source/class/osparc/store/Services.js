@@ -204,7 +204,10 @@ qx.Class.define("osparc.store.Services", {
                 continue;
               }
               if (excludeDeprecated) {
-                if (osparc.service.Utils.isDeprecated(serviceLatest)) {
+                if (
+                  osparc.service.Utils.isRetired(serviceLatest) ||
+                  osparc.service.Utils.isDeprecated(serviceLatest)
+                ) {
                   // first check if a previous version of this service isn't deprecated
                   // getService to get its history
                   await this.getService(serviceLatest["key"], serviceLatest["version"]);
@@ -213,7 +216,10 @@ qx.Class.define("osparc.store.Services", {
                     const historyEntry = serviceMetadata["history"][j];
                     if (!historyEntry["retired"]) {
                       // one older non retired version found
-                      const olderNonRetired = await this.getService(key, historyEntry["version"]);
+                      let olderNonRetired = await this.getService(key, historyEntry["version"]);
+                      if (!olderNonRetired) {
+                        olderNonRetired = await this.getService(key, historyEntry["version"]);
+                      }
                       serviceLatest = osparc.utils.Utils.deepCloneObject(olderNonRetired);
                       // make service metadata latest model like
                       serviceLatest["release"] = osparc.service.Utils.extractVersionFromHistory(olderNonRetired);
@@ -221,7 +227,10 @@ qx.Class.define("osparc.store.Services", {
                     }
                   }
                 }
-                if (osparc.service.Utils.isDeprecated(serviceLatest)) {
+                if (
+                  osparc.service.Utils.isRetired(serviceLatest) ||
+                  osparc.service.Utils.isDeprecated(serviceLatest)
+                ) {
                   // do not add retired services
                   continue;
                 }
@@ -361,6 +370,7 @@ qx.Class.define("osparc.store.Services", {
 
     __isInCache: function(key, version) {
       return (
+        this.__servicesCached &&
         key in this.__servicesCached &&
         version in this.__servicesCached[key]
       );
