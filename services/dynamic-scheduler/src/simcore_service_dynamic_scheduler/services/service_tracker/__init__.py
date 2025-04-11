@@ -13,13 +13,13 @@ from ._api import (
     should_notify_frontend_for_service,
 )
 from ._models import TrackedServiceModel
-from ._setup import lifespan_service_tracker
+from ._setup import service_tracker_lifespan
 
 __all__: tuple[str, ...] = (
     "get_all_tracked_services",
     "get_tracked_service",
     "get_user_id_for_service",
-    "lifespan_service_tracker",
+    "service_tracker_lifespan",
     "NORMAL_RATE_POLL_INTERVAL",
     "remove_tracked_service",
     "set_frontend_notified_for_service",
