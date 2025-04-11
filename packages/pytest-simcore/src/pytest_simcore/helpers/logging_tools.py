@@ -20,9 +20,11 @@ def _timedelta_as_minute_second_ms(delta: datetime.timedelta) -> str:
         result += f"{int(seconds)}s "
 
     if int(milliseconds * 1000) != 0:
-        result += f"{int(milliseconds*1000)}ms"
+        result += f"{int(milliseconds * 1000)}ms"
+    if not result:
+        result = "<1ms"
 
-    sign = "-" if total_seconds < 0 else "<1ms"
+    sign = "-" if total_seconds < 0 else ""
 
     return f"{sign}{result.strip()}"
 
