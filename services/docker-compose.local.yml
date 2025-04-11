@@ -94,7 +94,7 @@ services:
       INVITATIONS_REMOTE_DEBUGGING_PORT : 3000
     ports:
       - "8015:8000"
-      - "3022:3000"
+      - "3023:3000"
 
   payments:
     environment:
