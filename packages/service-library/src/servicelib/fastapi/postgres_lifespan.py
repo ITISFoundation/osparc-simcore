@@ -3,6 +3,7 @@ import logging
 from collections.abc import AsyncIterator
 from enum import Enum
 
+from fastapi import FastAPI
 from fastapi_lifespan_manager import State
 from servicelib.logging_utils import log_catch, log_context
 from settings_library.postgres import PostgresSettings
@@ -23,11 +24,11 @@ class PostgresConfigurationError(LifespanOnStartupError):
     msg_template = "Invalid postgres settings [={settings}] on startup. Note that postgres cannot be disabled using settings"
 
 
-def create_input_state(settings: PostgresSettings) -> State:
+def create_postgres_database_input_state(settings: PostgresSettings) -> State:
     return {PostgresLifespanState.POSTGRES_SETTINGS: settings}
 
 
-async def postgres_database_lifespan(_, state: State) -> AsyncIterator[State]:
+async def postgres_database_lifespan(_: FastAPI, state: State) -> AsyncIterator[State]:
 
     with log_context(_logger, logging.INFO, f"{__name__}"):
 

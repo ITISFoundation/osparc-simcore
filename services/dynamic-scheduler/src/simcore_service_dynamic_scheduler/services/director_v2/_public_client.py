@@ -143,7 +143,7 @@ class DirectorV2Client(SingletonInAppStateMixin, AttachLifespanMixin):
         await self.thin_client.patch_projects_networks(project_id=project_id)
 
 
-async def lifespan_director_v2(app: FastAPI) -> AsyncIterator[State]:
+async def director_v2_lifespan(app: FastAPI) -> AsyncIterator[State]:
     public_client = DirectorV2Client(app)
     public_client.set_to_app_state(app)
 
