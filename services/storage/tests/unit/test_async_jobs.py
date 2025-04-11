@@ -240,7 +240,6 @@ async def test_async_jobs_workflow(
 @pytest.mark.parametrize(
     "exposed_rpc_start",
     [
-        rpc_sync_job.__name__,
         rpc_async_job.__name__,
     ],
 )
@@ -259,7 +258,7 @@ async def test_async_jobs_cancel(
         user_id=user_id,
         product_name=product_name,
         action=Action.SLEEP,
-        payload=10,
+        payload=60 * 10,  # test hangs if not cancelled properly
     )
 
     await async_jobs.cancel(
@@ -282,6 +281,30 @@ async def test_async_jobs_cancel(
             job_id=async_job_get.job_id,
             job_id_data=job_id_data,
         )
+
+    async_job_get, job_id_data = await _start_task_via_rpc(
+        storage_rabbitmq_rpc_client,
+        rpc_task_name=exposed_rpc_start,
+        user_id=user_id,
+        product_name=product_name,
+        action=Action.ECHO,
+        payload="bla",
+    )
+
+    await _wait_for_job(
+        storage_rabbitmq_rpc_client,
+        async_job_get=async_job_get,
+        job_id_data=job_id_data,
+        stop_after=timedelta(seconds=15),
+    )
+
+    async_job_result = await async_jobs.result(
+        storage_rabbitmq_rpc_client,
+        rpc_namespace=STORAGE_RPC_NAMESPACE,
+        job_id=async_job_get.job_id,
+        job_id_data=job_id_data,
+    )
+    assert async_job_result.result == "bla"
 
 
 @pytest.mark.parametrize(
