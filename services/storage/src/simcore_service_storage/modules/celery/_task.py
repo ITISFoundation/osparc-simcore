@@ -7,12 +7,16 @@ from functools import wraps
 from typing import Any, Concatenate, Final, ParamSpec, TypeVar, overload
 
 from celery import Celery  # type: ignore[import-untyped]
-from celery.contrib.abortable import AbortableTask  # type: ignore[import-untyped]
+from celery.contrib.abortable import (  # type: ignore[import-untyped]
+    AbortableAsyncResult,
+    AbortableTask,
+)
 from pydantic import NonNegativeInt
+from servicelib.async_utils import cancel_wait_task
 
 from . import get_event_loop
 from .errors import encore_celery_transferrable_error
-from .models import TaskId
+from .models import TaskID, TaskId
 from .utils import get_fastapi_app
 
 _logger = logging.getLogger(__name__)
@@ -20,8 +24,8 @@ _logger = logging.getLogger(__name__)
 _DEFAULT_TASK_TIMEOUT: Final[timedelta | None] = None
 _DEFAULT_MAX_RETRIES: Final[NonNegativeInt] = 3
 _DEFAULT_WAIT_BEFORE_RETRY: Final[timedelta] = timedelta(seconds=5)
-_DEFAULT_DONT_AUTORETRY_FOR: Final[tuple[type[Exception], ...]] = tuple()
-
+_DEFAULT_DONT_AUTORETRY_FOR: Final[tuple[type[Exception], ...]] = ()
+_DEFAULT_ABORT_TASK_TIMEOUT: Final[timedelta] = timedelta(seconds=0.5)
 
 T = TypeVar("T")
 P = ParamSpec("P")
@@ -43,8 +47,25 @@ def _async_task_wrapper(
             _logger.debug("task id: %s", task.request.id)
             # NOTE: task.request is a thread local object, so we need to pass the id explicitly
             assert task.request.id is not None  # nosec
+
+            async def run_task(task_id: TaskID) -> R:
+                task_coro = asyncio.create_task(coro(task, task_id, *args, **kwargs))
+
+                can_continue = True
+                while can_continue:
+                    if AbortableAsyncResult(task_id).is_aborted():
+                        _logger.warning("Task %s was aborted by user.", task_id)
+                        await cancel_wait_task(task_coro, max_delay=5)  # to constant
+                        raise asyncio.CancelledError
+                    if task_coro.done():
+                        break
+
+                    await asyncio.sleep(_DEFAULT_ABORT_TASK_TIMEOUT.total_seconds())
+
+                return task_coro.result()
+
             return asyncio.run_coroutine_threadsafe(
-                coro(task, task.request.id, *args, **kwargs),
+                run_task(task.request.id),
                 get_event_loop(fastapi_app),
             ).result()
 
