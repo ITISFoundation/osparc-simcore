@@ -141,6 +141,14 @@ services:
     ports:
       - "8080"
       - "3021:3000"
+
+  sto-worker-cpu-bound:
+    environment:
+      <<: *common_environment
+      STORAGE_REMOTE_DEBUGGING_PORT : 3000
+    ports:
+      - "8080"
+      - "3022:3000"
   webserver:
     environment: &webserver_environment_local
       <<: *common_environment

@@ -20,7 +20,7 @@ _BINARY_DBS: Final[set[RedisDatabase]] = {
 _ALL_REDIS_DATABASES: Final[set[RedisDatabase]] = _DECODE_DBS | _BINARY_DBS
 
 
-async def lifespan_redis(app: FastAPI) -> AsyncIterator[State]:
+async def redis_lifespan(app: FastAPI) -> AsyncIterator[State]:
     settings: RedisSettings = app.state.settings.DYNAMIC_SCHEDULER_REDIS
 
     app.state.redis_clients_manager = manager = RedisClientsManager(

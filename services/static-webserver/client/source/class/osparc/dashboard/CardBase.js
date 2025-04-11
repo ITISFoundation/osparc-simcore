@@ -526,12 +526,13 @@ qx.Class.define("osparc.dashboard.CardBase", {
       });
 
       if (resourceData["resourceType"] === "study" || resourceData["resourceType"] === "template") {
-        osparc.store.Services.getStudyServices(this.getResourceData()["uuid"])
+        osparc.store.Services.getStudyServices(resourceData.uuid)
           .then(resp => {
             const services = resp["services"];
             resourceData["services"] = services;
             this.setServices(services);
-          });
+          })
+          .catch(err => console.error(err));
 
         osparc.study.Utils.guessIcon(resourceData)
           .then(iconSource => this.setIcon(iconSource));
@@ -664,13 +665,20 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
 
       // Block card
-      const unaccessibleServices = osparc.study.Utils.getCantExecuteServices(services);
-      if (unaccessibleServices.length) {
+      const cantReadServices = osparc.study.Utils.getCantExecuteServices(services);
+      let inaccessibleServices = [];
+      if (this.isResourceType("study") || this.isResourceType("template")) {
+        inaccessibleServices = osparc.store.Services.getInaccessibleServices(this.getResourceData()["workbench"]);
+      }
+      if (cantReadServices.length || inaccessibleServices.length) {
         this.setBlocked("UNKNOWN_SERVICES");
         const image = "@FontAwesome5Solid/ban/";
-        let toolTipText = this.tr("Unaccessible service(s):");
-        unaccessibleServices.forEach(unSrv => {
+        let toolTipText = this.tr("Inaccessible service(s):");
+        cantReadServices.forEach(unSrv => {
           toolTipText += "<br>" + unSrv.key + ":" + osparc.service.Utils.extractVersionDisplay(unSrv.release);
+        });
+        inaccessibleServices.forEach(unSrv => {
+          toolTipText += "<br>" + unSrv.key + ":" + unSrv.version;
         });
         this.__showBlockedCard(image, toolTipText);
       }

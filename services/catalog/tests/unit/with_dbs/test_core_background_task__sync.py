@@ -9,12 +9,13 @@
 from typing import Any
 
 import pytest
+import simcore_service_catalog.service.access_rights
 from fastapi import FastAPI, HTTPException, status
 from pytest_mock import MockerFixture
 from respx.router import MockRouter
 from simcore_postgres_database.models.services import services_meta_data
 from simcore_service_catalog.core.background_tasks import _run_sync_services
-from simcore_service_catalog.db.repositories.services import ServicesRepository
+from simcore_service_catalog.repository.services import ServicesRepository
 from sqlalchemy.ext.asyncio.engine import AsyncEngine
 
 pytest_simcore_core_services_selection = [
@@ -43,10 +44,10 @@ async def cleanup_service_meta_data_db_content(sqlalchemy_async_engine: AsyncEng
 
 @pytest.mark.parametrize("director_fails", [False, True])
 async def test_registry_sync_task(
-    background_tasks_setup_disabled: None,
+    background_task_lifespan_disabled: None,
     rabbitmq_and_rpc_setup_disabled: None,
-    mocked_director_service_api: MockRouter,
-    expected_director_list_services: list[dict[str, Any]],
+    mocked_director_rest_api: MockRouter,
+    expected_director_rest_api_list_services: list[dict[str, Any]],
     user: dict[str, Any],
     app: FastAPI,
     services_repo: ServicesRepository,
@@ -58,15 +59,16 @@ async def test_registry_sync_task(
 
     if director_fails:
         # Emulates issue https://github.com/ITISFoundation/osparc-simcore/issues/6318
-        mocker.patch(
-            "simcore_service_catalog.services.access_rights._is_old_service",
+        mocker.patch.object(
+            simcore_service_catalog.service.access_rights,
+            "_is_old_service",
             side_effect=HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="fake director error"
             ),
         )
 
-    service_key = expected_director_list_services[0]["key"]
-    service_version = expected_director_list_services[0]["version"]
+    service_key = expected_director_rest_api_list_services[0]["key"]
+    service_version = expected_director_rest_api_list_services[0]["version"]
 
     # in registry but NOT in db
     got_from_db = await services_repo.get_service_with_history(

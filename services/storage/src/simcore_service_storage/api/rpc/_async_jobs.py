@@ -21,7 +21,10 @@ from servicelib.logging_utils import log_catch
 from servicelib.rabbitmq import RPCRouter
 
 from ...modules.celery import get_celery_client
-from ...modules.celery.errors import decode_celery_transferrable_error
+from ...modules.celery.errors import (
+    TransferrableCeleryError,
+    decode_celery_transferrable_error,
+)
 from ...modules.celery.models import TaskState
 
 _logger = logging.getLogger(__name__)
@@ -102,6 +105,7 @@ async def result(
         # try to recover the original error
         exception = None
         with log_catch(_logger, reraise=False):
+            assert isinstance(_result, TransferrableCeleryError)  # nosec
             exception = decode_celery_transferrable_error(_result)
             exc_type = type(exception).__name__
             exc_msg = f"{exception}"

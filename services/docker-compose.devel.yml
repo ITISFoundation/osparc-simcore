@@ -225,6 +225,16 @@ services:
       STORAGE_PROFILING : ${STORAGE_PROFILING}
       STORAGE_LOGLEVEL: DEBUG
 
+  sto-worker-cpu-bound:
+    volumes:
+      - ./storage:/devel/services/storage
+      - ../packages:/devel/packages
+      - ${HOST_UV_CACHE_DIR}:/home/scu/.cache/uv
+    environment:
+      <<: *common-environment
+      STORAGE_PROFILING : ${STORAGE_PROFILING}
+      STORAGE_LOGLEVEL: DEBUG
+
   agent:
     environment:
       <<: *common-environment

@@ -10,11 +10,11 @@ from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 
 from ..._constants import RESPONSE_MODEL_POLICY
-from ...db.repositories.groups import GroupsRepository
-from ...db.repositories.services import ServicesRepository
-from ...services.function_services import is_function_service
-from ..dependencies.database import get_repository
-from ..dependencies.services import get_default_service_specifications
+from ...repository.groups import GroupsRepository
+from ...repository.services import ServicesRepository
+from ...service.function_services import is_function_service
+from .._dependencies.repository import get_repository
+from .._dependencies.services import get_default_service_specifications
 
 router = APIRouter()
 _logger = logging.getLogger(__name__)
