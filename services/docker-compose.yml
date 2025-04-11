@@ -1099,12 +1099,6 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/notifications:${DOCKER_IMAGE_TAG:-latest}
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
-    deploy:
-      mode: global
-      resources:
-        limits:
-          cpus: "1.0"
-          memory: 1024M
 
     environment:
       LOG_FILTER_MAPPING : ${LOG_FILTER_MAPPING}
