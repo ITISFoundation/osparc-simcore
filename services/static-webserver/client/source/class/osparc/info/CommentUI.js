@@ -62,6 +62,7 @@ qx.Class.define("osparc.info.CommentUI", {
             maxWidth: 32,
             maxHeight: 32,
             decorator: "rounded",
+            marginTop: 4,
           });
           this.getChildControl("meta-data-grid").add(control, {
             row: 0,
@@ -71,7 +72,7 @@ qx.Class.define("osparc.info.CommentUI", {
           break;
         case "user-name":
           control = new qx.ui.basic.Label().set({
-            font: "text-14"
+            font: "text-12"
           });
           this.getChildControl("meta-data-grid").add(control, {
             row: 0,
@@ -94,7 +95,7 @@ qx.Class.define("osparc.info.CommentUI", {
           });
           this._add(control, {
             row: 0,
-            column: this.__isMyComment() ? 0 : 1
+            column: this.__isMyComment() ? 0 : 1,
           });
           break;
       }
