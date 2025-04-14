@@ -7,6 +7,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.projects_pipeline import ComputationTask
 from models_library.projects_state import RunningState
 from pydantic import AnyHttpUrl, BaseModel, ConfigDict, Field, PositiveInt, TypeAdapter
+from pydantic.config import JsonDict
 from settings_library.tracing import TracingSettings
 from starlette import status
 
@@ -39,15 +40,21 @@ class ComputationTaskGet(ComputationTask):
             return 100
         return 0
 
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        **ComputationTask.model_json_schema()["examples"][0],  # type: ignore
+                        "url": "https://link-to-stop-computation",
+                    }
+                ]
+            }
+        )
+
     model_config = ConfigDict(
-        json_schema_extra={
-            "examples": [
-                {
-                    **ComputationTask.model_config["json_schema_extra"]["examples"][0],  # type: ignore
-                    "url": "https://link-to-stop-computation",
-                }
-            ]
-        }
+        json_schema_extra=_update_json_schema_extra,
     )
 
 

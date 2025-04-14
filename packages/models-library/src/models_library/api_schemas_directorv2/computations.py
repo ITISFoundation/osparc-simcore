@@ -30,9 +30,7 @@ class ComputationGet(ComputationTask):
         json_schema_extra={
             "examples": [
                 x | {"url": "http://url.local"}  # type:ignore[operator]
-                for x in ComputationTask.model_config[  # type:ignore[index,union-attr]
-                    "json_schema_extra"
-                ]["examples"]
+                for x in ComputationTask.model_json_schema()["examples"]
             ]
         }
     )
