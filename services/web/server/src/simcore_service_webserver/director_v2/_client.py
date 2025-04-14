@@ -7,7 +7,8 @@ Wraps interactions to the director-v2 service
 import logging
 from typing import Any
 
-from aiohttp import web
+import aiohttp
+from aiohttp import ClientTimeout, web
 from models_library.api_schemas_directorv2.computations import (
     ComputationCreate as DirectorV2ComputationCreate,
 )
@@ -15,9 +16,28 @@ from models_library.projects import ProjectID
 from models_library.users import UserID
 
 from ._client_base import request_director_v2
-from .settings import DirectorV2Settings, get_plugin_settings
+from .settings import DirectorV2Settings, get_client_session, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
+
+SERVICE_HEALTH_CHECK_TIMEOUT = ClientTimeout(total=2, connect=1)
+
+
+async def is_healthy(app: web.Application) -> bool:
+    try:
+        session = get_client_session(app)
+        settings: DirectorV2Settings = get_plugin_settings(app)
+        health_check_url = settings.base_url.parent
+        await session.get(
+            url=health_check_url,
+            ssl=False,
+            raise_for_status=True,
+            timeout=SERVICE_HEALTH_CHECK_TIMEOUT,
+        )
+        return True
+    except (aiohttp.ClientError, TimeoutError) as err:
+        _logger.warning("Director is NOT healthy: %s", err)
+        return False
 
 
 class ComputationsApi:
