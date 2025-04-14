@@ -45,7 +45,7 @@ class ComputationTaskGet(ComputationTask):
             {
                 "examples": [
                     {
-                        **ComputationTask.model_json_schema()["examples"][0],  # type: ignore
+                        **ComputationTask.model_json_schema()["examples"][0],
                         "url": "https://link-to-stop-computation",
                     }
                 ]
