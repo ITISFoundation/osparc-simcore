@@ -14,13 +14,14 @@ from simcore_service_storage._meta import APP_NAME
 
 from ...core.application import create_app
 from ...core.settings import ApplicationSettings
-from ...modules.celery.backends._redis import RedisTaskInfoStore, set_event_loop
-from ...modules.celery.utils import (
+from . import set_event_loop
+from .backends._redis import RedisTaskInfoStore
+from .utils import (
     get_fastapi_app,
     set_celery_worker,
     set_fastapi_app,
 )
-from ...modules.celery.worker import CeleryTaskWorker
+from .worker import CeleryTaskWorker
 
 _logger = logging.getLogger(__name__)
 

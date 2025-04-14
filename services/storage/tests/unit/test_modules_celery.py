@@ -19,7 +19,7 @@ from models_library.progress_bar import ProgressReport
 from servicelib.logging_utils import log_context
 from simcore_service_storage.modules.celery import get_celery_client, get_event_loop
 from simcore_service_storage.modules.celery._task import register_task
-from simcore_service_storage.modules.celery.client import CeleryTaskQueueClient
+from simcore_service_storage.modules.celery.client import CeleryTaskClient
 from simcore_service_storage.modules.celery.errors import TransferrableCeleryError
 from simcore_service_storage.modules.celery.models import (
     TaskContext,
@@ -42,7 +42,7 @@ pytest_simcore_ops_services_selection = []
 def celery_client(
     initialized_app: FastAPI,
     with_storage_celery_worker: CeleryTaskWorker,
-) -> CeleryTaskQueueClient:
+) -> CeleryTaskClient:
     return get_celery_client(initialized_app)
 
 
@@ -106,7 +106,7 @@ def register_celery_tasks() -> Callable[[Celery], None]:
 
 
 async def test_submitting_task_calling_async_function_results_with_success_state(
-    celery_client: CeleryTaskQueueClient,
+    celery_client: CeleryTaskClient,
 ):
     task_context = TaskContext(user_id=42)
 
@@ -134,7 +134,7 @@ async def test_submitting_task_calling_async_function_results_with_success_state
 
 
 async def test_submitting_task_with_failure_results_with_error(
-    celery_client: CeleryTaskQueueClient,
+    celery_client: CeleryTaskClient,
 ):
     task_context = TaskContext(user_id=42)
 
@@ -157,7 +157,7 @@ async def test_submitting_task_with_failure_results_with_error(
 
 
 async def test_aborting_task_results_with_aborted_state(
-    celery_client: CeleryTaskQueueClient,
+    celery_client: CeleryTaskClient,
 ):
     task_context = TaskContext(user_id=42)
 
@@ -183,7 +183,7 @@ async def test_aborting_task_results_with_aborted_state(
 
 
 async def test_listing_task_uuids_contains_submitted_task(
-    celery_client: CeleryTaskQueueClient,
+    celery_client: CeleryTaskClient,
 ):
     task_context = TaskContext(user_id=42)
 

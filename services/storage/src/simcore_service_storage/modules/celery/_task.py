@@ -14,6 +14,7 @@ from celery.contrib.abortable import (  # type: ignore[import-untyped]
 )
 from celery.exceptions import Ignore  # type: ignore[import-untyped]
 from pydantic import NonNegativeInt
+from servicelib.async_utils import cancel_wait_task
 
 from . import get_event_loop
 from .errors import encore_celery_transferrable_error
@@ -26,7 +27,8 @@ _DEFAULT_TASK_TIMEOUT: Final[timedelta | None] = None
 _DEFAULT_MAX_RETRIES: Final[NonNegativeInt] = 3
 _DEFAULT_WAIT_BEFORE_RETRY: Final[timedelta] = timedelta(seconds=5)
 _DEFAULT_DONT_AUTORETRY_FOR: Final[tuple[type[Exception], ...]] = ()
-_DEFAULT_ABORT_TASK_TIMEOUT: Final[timedelta] = timedelta(seconds=0.5)
+_DEFAULT_ABORT_TASK_TIMEOUT: Final[timedelta] = timedelta(seconds=1)
+_DEFAULT_CANCEL_TASK_TIMEOUT: Final[timedelta] = timedelta(seconds=5)
 
 T = TypeVar("T")
 P = ParamSpec("P")
@@ -60,10 +62,10 @@ def _async_task_wrapper(
                     async def abort_monitor():
                         while not main_task.done():
                             if AbortableAsyncResult(task_id).is_aborted():
-                                _logger.warning(
-                                    "Task %s aborted, cancelling main task", task_id
+                                await cancel_wait_task(
+                                    main_task,
+                                    max_delay=_DEFAULT_CANCEL_TASK_TIMEOUT.total_seconds(),
                                 )
-                                main_task.cancel()
                                 return
                             await asyncio.sleep(
                                 _DEFAULT_ABORT_TASK_TIMEOUT.total_seconds()

@@ -1,7 +1,6 @@
-import contextlib
 import logging
 from dataclasses import dataclass
-from typing import Any, Final
+from typing import Any
 from uuid import uuid4
 
 from celery import Celery  # type: ignore[import-untyped]
@@ -10,7 +9,6 @@ from celery.contrib.abortable import (  # type: ignore[import-untyped]
 )
 from common_library.async_tools import make_async
 from models_library.progress_bar import ProgressReport
-from pydantic import ValidationError
 from servicelib.logging_utils import log_context
 from settings_library.celery import CelerySettings
 
@@ -27,23 +25,13 @@ from .models import (
 
 _logger = logging.getLogger(__name__)
 
-_CELERY_STATES_MAPPING: Final[dict[str, TaskState]] = {
-    "PENDING": TaskState.PENDING,
-    "STARTED": TaskState.PENDING,
-    "RETRY": TaskState.PENDING,
-    "RUNNING": TaskState.RUNNING,
-    "SUCCESS": TaskState.SUCCESS,
-    "ABORTED": TaskState.ABORTED,
-    "FAILURE": TaskState.ERROR,
-    "ERROR": TaskState.ERROR,
-}
 
 _MIN_PROGRESS_VALUE = 0.0
 _MAX_PROGRESS_VALUE = 1.0
 
 
 @dataclass
-class CeleryTaskQueueClient:
+class CeleryTaskClient:
     _celery_app: Celery
     _celery_settings: CelerySettings
     _task_store: TaskInfoStore
@@ -92,11 +80,6 @@ class CeleryTaskQueueClient:
             task_id = build_task_id(task_context, task_uuid)
             await self._abort_task(task_id)
 
-    @make_async()
-    def _get_result(self, task_context: TaskContext, task_uuid: TaskUUID) -> Any:
-        task_id = build_task_id(task_context, task_uuid)
-        return self._celery_app.AsyncResult(task_id).result
-
     async def get_task_result(
         self, task_context: TaskContext, task_uuid: TaskUUID
     ) -> Any:
@@ -114,20 +97,23 @@ class CeleryTaskQueueClient:
                     await self._task_store.remove(task_id)
             return result
 
-    @staticmethod
-    async def _get_progress_report(state, result) -> ProgressReport:
-        if result and state == TaskState.RUNNING:
-            with contextlib.suppress(ValidationError):
-                # avoids exception if result is not a ProgressReport (or overwritten by a Celery's state update)
-                return ProgressReport.model_validate(result)
+    async def _get_progress_report(
+        self, task_id: TaskID, state: TaskState
+    ) -> ProgressReport:
+        if state in (TaskState.STARTED, TaskState.RETRY):
+            progress = await self._task_store.get_progress(task_id)
+            if progress is not None:
+                return progress
         if state in (
-            TaskState.ABORTED,
-            TaskState.ERROR,
             TaskState.SUCCESS,
+            TaskState.ABORTED,
+            TaskState.FAILURE,
         ):
             return ProgressReport(
                 actual_value=_MAX_PROGRESS_VALUE, total=_MAX_PROGRESS_VALUE
             )
+
+        # task is pending
         return ProgressReport(
             actual_value=_MIN_PROGRESS_VALUE, total=_MAX_PROGRESS_VALUE
         )
@@ -135,7 +121,7 @@ class CeleryTaskQueueClient:
     @make_async()
     def _get_state(self, task_context: TaskContext, task_uuid: TaskUUID) -> TaskState:
         task_id = build_task_id(task_context, task_uuid)
-        return _CELERY_STATES_MAPPING[self._celery_app.AsyncResult(task_id).state]
+        return TaskState(self._celery_app.AsyncResult(task_id).state)
 
     async def get_task_status(
         self, task_context: TaskContext, task_uuid: TaskUUID
@@ -146,11 +132,11 @@ class CeleryTaskQueueClient:
             msg=f"Getting task status: {task_context=} {task_uuid=}",
         ):
             task_state = await self._get_state(task_context, task_uuid)
-            result = await self._get_result(task_context, task_uuid)
+            task_id = build_task_id(task_context, task_uuid)
             return TaskStatus(
                 task_uuid=task_uuid,
                 task_state=task_state,
-                progress_report=await self._get_progress_report(task_state, result),
+                progress_report=await self._get_progress_report(task_id, task_state),
             )
 
     async def get_task_uuids(self, task_context: TaskContext) -> set[TaskUUID]:
