@@ -1812,20 +1812,29 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       confirmationWin.addListener("close", () => {
         if (confirmationWin.getConfirmed()) {
           this.__updateUIMode(studyData, "workbench")
+            .then(() => osparc.FlashMessenger.logAs(this.tr("Project converted to pipeline"), "INFO"))
             .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while converting to pipeline")));
         }
       });
       copyOptionButton.addListener("execute", () => {
         confirmationWin.close();
-        // this.__duplicateStudy(studyData)
-      })
+        this.__duplicateStudy(studyData)
+          .then(task => {
+            task.addListener("resultReceived", e => {
+              const copiedStudy = e.getData();
+              this.__updateUIMode(copiedStudy, "workbench")
+                .then(() => osparc.FlashMessenger.logAs(this.tr("Project's copy converted to pipeline"), "INFO"))
+                .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while converting the copy to pipeline")));
+            }, this);
+          });
+      }, this);
       confirmationWin.open();
     },
 
     __updateUIMode: function(studyData, uiMode) {
       const studyUI = osparc.utils.Utils.deepCloneObject(studyData["ui"]);
       studyUI["mode"] = uiMode;
-      return osparc.info.StudyUtils.patchStudyData(studyData, "ui", studyUI)
+      return osparc.store.Study.patchStudyData(studyData, "ui", studyUI)
         .then(() => this._updateStudyData(studyData))
     },
 
@@ -1929,7 +1938,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const fetchPromise = osparc.data.Resources.fetch("studies", "duplicate", params, options);
       const pollTasks = osparc.store.PollTasks.getInstance();
       return pollTasks.createPollingTask(fetchPromise)
-        .then(task => this.__taskDuplicateReceived(task, studyData["name"]))
+        .then(task => {
+          this.__taskDuplicateReceived(task, studyData["name"]);
+          return task;
+        })
         .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while duplicating")));
     },
 
