@@ -9,7 +9,7 @@ from models_library.api_schemas_webserver.computations import (
     ComputationStart,
     ComputationStarted,
 )
-from models_library.projects import ProjectID
+from models_library.projects import CommitID, ProjectID
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
