@@ -9,26 +9,25 @@ from servicelib.aiohttp.application_setup import (
 )
 
 from ..rest.plugin import setup_rest
+from . import _client, _rest
 from ._abc import set_project_run_policy
-from ._core_utils import DefaultProjectRunPolicy
+from ._utils import DefaultProjectRunPolicy
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 @app_module_setup(
     __name__,
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_DIRECTOR_V2",
-    logger=log,
+    logger=_logger,
 )
 def setup_director_v2(app: web.Application):
-    from . import _rest
-    from ._client import ComputationsApi, set_client
 
     assert app[APP_SETTINGS_KEY].WEBSERVER_DIRECTOR_V2  # nosec
 
     # client to communicate with director-v2 service
-    set_client(app, ComputationsApi(app))
+    _client.set_client(app, _client.ComputationsApi(app))
 
     # routes at the web-server app
     setup_rest(app)
@@ -38,6 +37,6 @@ def setup_director_v2(app: web.Application):
         app.router.add_routes(_rest.routes)
 
     else:
-        log.warning(
+        _logger.warning(
             "Skipping computation routes since WEBSERVER_REST plugin is disabled (i.e. service w/o http API)"
         )
