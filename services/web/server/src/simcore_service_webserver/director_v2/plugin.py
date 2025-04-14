@@ -10,7 +10,6 @@ from servicelib.aiohttp.application_setup import (
 
 from ..rest.plugin import setup_rest
 from ._abc import set_project_run_policy
-from ._core_computations import ComputationsApi, set_client
 from ._core_utils import DefaultProjectRunPolicy
 
 log = logging.getLogger(__name__)
@@ -24,6 +23,7 @@ log = logging.getLogger(__name__)
 )
 def setup_director_v2(app: web.Application):
     from . import _rest
+    from ._client import ComputationsApi, set_client
 
     assert app[APP_SETTINGS_KEY].WEBSERVER_DIRECTOR_V2  # nosec
 

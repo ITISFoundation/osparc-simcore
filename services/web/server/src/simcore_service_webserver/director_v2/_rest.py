@@ -35,9 +35,8 @@ from ..models import RequestContext
 from ..products import products_web
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
+from . import _client, _service
 from ._abc import CommitID, get_project_run_policy
-from ._api_utils import get_wallet_info
-from ._core_computations import ComputationsApi
 from ._rest_exceptions import handle_rest_requests_exceptions
 
 _logger = logging.getLogger(__name__)
@@ -74,7 +73,7 @@ async def start_computation(request: web.Request) -> web.Response:
 
     # Get wallet information
     product = products_web.get_current_product(request)
-    wallet_info = await get_wallet_info(
+    wallet_info = await _service.get_wallet_info(
         request.app,
         product=product,
         user_id=req_ctx.user_id,
@@ -117,7 +116,7 @@ async def start_computation(request: web.Request) -> web.Response:
         else True
     )
 
-    computations = ComputationsApi(request.app)
+    computations = _client.ComputationsApi(request.app)
     _started_pipelines_ids: list[str] = await asyncio.gather(
         *[
             computations.start(pid, req_ctx.user_id, req_ctx.product_name, **options)
@@ -145,7 +144,7 @@ async def start_computation(request: web.Request) -> web.Response:
 @handle_rest_requests_exceptions
 async def stop_computation(request: web.Request) -> web.Response:
     req_ctx = RequestContext.model_validate(request)
-    computations = ComputationsApi(request.app)
+    computations = _client.ComputationsApi(request.app)
     run_policy = get_project_run_policy(request.app)
     assert run_policy  # nosec
 
@@ -168,7 +167,7 @@ async def stop_computation(request: web.Request) -> web.Response:
 @permission_required("project.read")
 @handle_rest_requests_exceptions
 async def get_computation(request: web.Request) -> web.Response:
-    computations = ComputationsApi(request.app)
+    computations = _client.ComputationsApi(request.app)
     run_policy = get_project_run_policy(request.app)
     assert run_policy  # nosec
 
