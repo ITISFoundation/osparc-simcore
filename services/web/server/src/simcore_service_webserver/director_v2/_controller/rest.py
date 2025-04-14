@@ -25,14 +25,14 @@ from servicelib.common_headers import (
 )
 from servicelib.request_keys import RQT_USERID_KEY
 
-from .._meta import API_VTAG as VTAG
-from ..login.decorators import login_required
-from ..models import RequestContext
-from ..products import products_web
-from ..security.decorators import permission_required
-from ..utils_aiohttp import envelope_json_response
-from . import _client, _service
-from ._abc import CommitID, get_project_run_policy
+from ..._meta import API_VTAG as VTAG
+from ...login.decorators import login_required
+from ...models import RequestContext
+from ...products import products_web
+from ...security.decorators import permission_required
+from ...utils_aiohttp import envelope_json_response
+from .. import _client, _service
+from .._abc import CommitID, get_project_run_policy
 from ._rest_exceptions import handle_rest_requests_exceptions
 
 _logger = logging.getLogger(__name__)

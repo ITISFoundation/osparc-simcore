@@ -4,15 +4,15 @@ from servicelib.aiohttp.rest_responses import create_http_error
 from servicelib.aiohttp.web_exceptions_extension import get_http_error_class_or_none
 from simcore_service_webserver.director_v2.exceptions import DirectorServiceError
 
-from ..exception_handling import (
+from ...exception_handling import (
     ExceptionHandlersMap,
     ExceptionToHttpErrorMap,
     HttpErrorInfo,
     exception_handling_decorator,
     to_exceptions_handlers_map,
 )
-from ..users.exceptions import UserDefaultWalletNotFoundError
-from ..wallets.errors import WalletNotEnoughCreditsError
+from ...users.exceptions import UserDefaultWalletNotFoundError
+from ...wallets.errors import WalletNotEnoughCreditsError
 
 _exceptions_handlers_map: ExceptionHandlersMap = {}
 
