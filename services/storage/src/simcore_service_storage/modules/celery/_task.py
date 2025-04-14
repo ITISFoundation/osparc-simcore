@@ -76,11 +76,15 @@ def _async_task_wrapper(
 
                     return main_task.result()
                 except BaseExceptionGroup as eg:
-                    _, other_errors = eg.split(TaskAbortedError)
+                    task_aborted_errors, other_errors = eg.split(TaskAbortedError)
 
                     if other_errors:
                         assert len(other_errors.exceptions) == 1  # nosec
                         raise other_errors.exceptions[0] from eg
+
+                    assert task_aborted_errors is not None  # nosec
+                    assert len(task_aborted_errors.exceptions) == 1  # nosec
+                    raise task_aborted_errors.exceptions[0] from eg
 
             return asyncio.run_coroutine_threadsafe(
                 run_task(task.request.id),
