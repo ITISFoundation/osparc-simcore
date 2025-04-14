@@ -1,4 +1,5 @@
 import asyncio
+import concurrent.futures
 import inspect
 import logging
 from collections.abc import Callable, Coroutine
@@ -11,6 +12,7 @@ from celery.contrib.abortable import (  # type: ignore[import-untyped]
     AbortableAsyncResult,
     AbortableTask,
 )
+from celery.exceptions import Ignore  # type: ignore[import-untyped]
 from pydantic import NonNegativeInt
 from servicelib.async_utils import cancel_wait_task
 
@@ -32,6 +34,9 @@ P = ParamSpec("P")
 R = TypeVar("R")
 
 
+class TaskAbortedError(Exception): ...
+
+
 def _async_task_wrapper(
     app: Celery,
 ) -> Callable[
@@ -44,7 +49,6 @@ def _async_task_wrapper(
         @wraps(coro)
         def wrapper(task: AbortableTask, *args: P.args, **kwargs: P.kwargs) -> R:
             fastapi_app = get_fastapi_app(app)
-            _logger.debug("task id: %s", task.request.id)
             # NOTE: task.request is a thread local object, so we need to pass the id explicitly
             assert task.request.id is not None  # nosec
 
@@ -56,7 +60,6 @@ def _async_task_wrapper(
                     if AbortableAsyncResult(task_id).is_aborted():
                         _logger.warning("Task %s was aborted by user.", task_id)
                         await cancel_wait_task(task_coro, max_delay=5)  # to constant
-                        raise asyncio.CancelledError
                     if task_coro.done():
                         break
 
@@ -89,6 +92,9 @@ def _error_handling(
         def wrapper(task: AbortableTask, *args: P.args, **kwargs: P.kwargs) -> R:
             try:
                 return func(task, *args, **kwargs)
+            except concurrent.futures.CancelledError as exc:
+                _logger.warning("Task %s was cancelled", task.request.id)
+                raise Ignore from exc
             except Exception as exc:
                 if isinstance(exc, dont_autoretry_for):
                     _logger.debug("Not retrying for exception %s", type(exc).__name__)
