@@ -14,7 +14,6 @@ from celery.contrib.abortable import (  # type: ignore[import-untyped]
 )
 from celery.exceptions import Ignore  # type: ignore[import-untyped]
 from pydantic import NonNegativeInt
-from servicelib.async_utils import cancel_wait_task
 
 from . import get_event_loop
 from .errors import encore_celery_transferrable_error
@@ -53,20 +52,27 @@ def _async_task_wrapper(
             assert task.request.id is not None  # nosec
 
             async def run_task(task_id: TaskID) -> R:
-                task_coro = asyncio.create_task(coro(task, task_id, *args, **kwargs))
+                async with asyncio.TaskGroup() as tg:
+                    main_task = tg.create_task(
+                        coro(task, task_id, *args, **kwargs), name=f"task_{task_id}"
+                    )
 
-                can_continue = True
-                while can_continue:
-                    if AbortableAsyncResult(task_id).is_aborted():
-                        _logger.warning("Task %s was aborted by user.", task_id)
-                        await cancel_wait_task(task_coro, max_delay=5)  # to constant
-                        raise asyncio.CancelledError
-                    if task_coro.done():
-                        break
+                    async def abort_monitor():
+                        while not main_task.done():
+                            if AbortableAsyncResult(task_id).is_aborted():
+                                _logger.warning(
+                                    "Task %s aborted, cancelling main task", task_id
+                                )
+                                main_task.cancel()
+                                return
+                            await asyncio.sleep(
+                                _DEFAULT_ABORT_TASK_TIMEOUT.total_seconds()
+                            )
 
-                    await asyncio.sleep(_DEFAULT_ABORT_TASK_TIMEOUT.total_seconds())
+                    tg.create_task(abort_monitor(), name=f"abort_monitor_{task_id}")
 
-                return task_coro.result()
+                # If we get here, both tasks completed without errors
+                return main_task.result()
 
             return asyncio.run_coroutine_threadsafe(
                 run_task(task.request.id),

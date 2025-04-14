@@ -90,7 +90,7 @@ class CeleryTaskQueueClient:
             msg=f"Abort task: {task_context=} {task_uuid=}",
         ):
             task_id = build_task_id(task_context, task_uuid)
-            return await self._abort_task(task_id)
+            await self._abort_task(task_id)
 
     @make_async()
     def _get_result(self, task_context: TaskContext, task_uuid: TaskUUID) -> Any:
