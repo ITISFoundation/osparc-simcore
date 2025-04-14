@@ -54,27 +54,34 @@ def _async_task_wrapper(
             assert task.request.id is not None  # nosec
 
             async def run_task(task_id: TaskID) -> R:
-                async with asyncio.TaskGroup() as tg:
-                    main_task = tg.create_task(
-                        coro(task, task_id, *args, **kwargs), name=f"task_{task_id}"
-                    )
+                try:
+                    async with asyncio.TaskGroup() as tg:
+                        main_task = tg.create_task(
+                            coro(task, task_id, *args, **kwargs), name=f"task_{task_id}"
+                        )
 
-                    async def abort_monitor():
-                        while not main_task.done():
-                            if AbortableAsyncResult(task_id).is_aborted():
-                                await cancel_wait_task(
-                                    main_task,
-                                    max_delay=_DEFAULT_CANCEL_TASK_TIMEOUT.total_seconds(),
+                        async def abort_monitor():
+                            while not main_task.done():
+                                if AbortableAsyncResult(task_id).is_aborted():
+                                    await cancel_wait_task(
+                                        main_task,
+                                        max_delay=_DEFAULT_CANCEL_TASK_TIMEOUT.total_seconds(),
+                                    )
+                                    return
+                                await asyncio.sleep(
+                                    _DEFAULT_ABORT_TASK_TIMEOUT.total_seconds()
                                 )
-                                return
-                            await asyncio.sleep(
-                                _DEFAULT_ABORT_TASK_TIMEOUT.total_seconds()
-                            )
 
-                    tg.create_task(abort_monitor(), name=f"abort_monitor_{task_id}")
+                        tg.create_task(abort_monitor(), name=f"abort_monitor_{task_id}")
 
-                # If we get here, both tasks completed without errors
-                return main_task.result()
+                    # If we get here, both tasks completed without errors
+                    return main_task.result()
+                except ExceptionGroup as exc_group:
+                    for exc in exc_group.exceptions:
+                        if isinstance(exc, asyncio.CancelledError):
+                            raise exc from exc_group
+
+                    raise exc_group.exceptions[0] from exc_group
 
             return asyncio.run_coroutine_threadsafe(
                 run_task(task.request.id),
