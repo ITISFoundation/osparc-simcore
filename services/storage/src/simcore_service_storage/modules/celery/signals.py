@@ -17,7 +17,7 @@ from ...modules.celery.utils import (
     set_celery_worker,
     set_fastapi_app,
 )
-from ...modules.celery.worker import CeleryTaskQueueWorker
+from ...modules.celery.worker import CeleryTaskWorker
 
 _logger = logging.getLogger(__name__)
 
@@ -54,7 +54,7 @@ def on_worker_init(sender, **_kwargs) -> None:
         set_event_loop(fastapi_app, loop)
 
         set_fastapi_app(sender.app, fastapi_app)
-        set_celery_worker(sender.app, CeleryTaskQueueWorker(sender.app))
+        set_celery_worker(sender.app, CeleryTaskWorker(sender.app))
         loop.run_until_complete(lifespan(startup_complete_event, shutdown_event))
 
     thread = threading.Thread(

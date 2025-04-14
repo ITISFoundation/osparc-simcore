@@ -29,7 +29,7 @@ from simcore_service_storage.modules.celery.utils import (
     get_celery_worker,
     get_fastapi_app,
 )
-from simcore_service_storage.modules.celery.worker import CeleryTaskQueueWorker
+from simcore_service_storage.modules.celery.worker import CeleryTaskWorker
 from tenacity import Retrying, retry_if_exception_type, stop_after_delay, wait_fixed
 
 _logger = logging.getLogger(__name__)
@@ -41,7 +41,7 @@ pytest_simcore_ops_services_selection = []
 @pytest.fixture
 def celery_client(
     initialized_app: FastAPI,
-    with_storage_celery_worker: CeleryTaskQueueWorker,
+    with_storage_celery_worker: CeleryTaskWorker,
 ) -> CeleryTaskQueueClient:
     return get_celery_client(initialized_app)
 
@@ -56,8 +56,7 @@ async def _fake_file_processor(
 
     for n, file in enumerate(files, start=1):
         with log_context(_logger, logging.INFO, msg=f"Processing file {file}"):
-            worker.set_task_progress(
-                task_name=task_name,
+            await worker.set_progress(
                 task_id=task_id,
                 report=ProgressReport(actual_value=n / len(files)),
             )

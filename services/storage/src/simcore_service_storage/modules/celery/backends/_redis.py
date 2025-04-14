@@ -3,6 +3,7 @@ from datetime import timedelta
 from typing import Final
 
 from celery.result import AsyncResult  # type: ignore[import-untyped]
+from models_library.progress_bar import ProgressReport
 from servicelib.redis._client import RedisClientSDK
 
 from ..models import TaskContext, TaskID, TaskMetadata, TaskUUID, build_task_id_prefix
@@ -12,6 +13,7 @@ _CELERY_TASK_ID_KEY_ENCODING = "utf-8"
 _CELERY_TASK_ID_KEY_SEPARATOR: Final[str] = ":"
 _CELERY_TASK_SCAN_COUNT_PER_BATCH: Final[int] = 10000
 _CELERY_TASK_METADATA_KEY: Final[str] = "metadata"
+_CELERY_TASK_PROGRESS_KEY: Final[str] = "progress"
 
 _logger = logging.getLogger(__name__)
 
@@ -32,6 +34,10 @@ class RedisTaskInfoStore:
     async def get_metadata(self, task_id: TaskID) -> TaskMetadata | None:
         result = await self._redis_client_sdk.redis.hget(_build_key(task_id), _CELERY_TASK_METADATA_KEY)  # type: ignore
         return TaskMetadata.model_validate_json(result) if result else None
+
+    async def get_progress(self, task_id: TaskID) -> ProgressReport | None:
+        result = await self._redis_client_sdk.redis.hget(_build_key(task_id), _CELERY_TASK_PROGRESS_KEY)  # type: ignore
+        return ProgressReport.model_validate_json(result) if result else None
 
     async def get_uuids(self, task_context: TaskContext) -> set[TaskUUID]:
         search_key = (
@@ -68,3 +74,10 @@ class RedisTaskInfoStore:
             _build_key(task_id),
             expiry,
         )
+
+    async def set_progress(self, task_id: TaskID, report: ProgressReport) -> None:
+        await self._redis_client_sdk.redis.hset(
+            name=_build_key(task_id),
+            key=_CELERY_TASK_PROGRESS_KEY,
+            value=report.model_dump_json(),
+        )  # type: ignore
