@@ -1,8 +1,3 @@
-from ._abc import (
-    AbstractProjectRunPolicy,
-    get_project_run_policy,
-    set_project_run_policy,
-)
 from ._client import is_healthy
 from ._service import (
     create_or_update_pipeline,
@@ -11,6 +6,11 @@ from ._service import (
     get_computation_task,
     is_pipeline_running,
     stop_pipeline,
+)
+from ._service_abc import (
+    AbstractProjectRunPolicy,
+    get_project_run_policy,
+    set_project_run_policy,
 )
 from .exceptions import DirectorServiceError
 

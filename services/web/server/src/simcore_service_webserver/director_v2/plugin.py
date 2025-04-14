@@ -10,8 +10,8 @@ from servicelib.aiohttp.application_setup import (
 
 from ..rest.plugin import setup_rest
 from . import _client, _controller
-from ._abc import set_project_run_policy
-from ._utils import DefaultProjectRunPolicy
+from ._service_abc import set_project_run_policy
+from ._service_abc_default import DefaultProjectRunPolicy
 
 _logger = logging.getLogger(__name__)
 
