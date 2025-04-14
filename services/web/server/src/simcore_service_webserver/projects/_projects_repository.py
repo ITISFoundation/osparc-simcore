@@ -11,6 +11,7 @@ from models_library.groups import GroupID
 from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+from models_library.workspaces import WorkspaceID
 from pydantic import NonNegativeInt, PositiveInt
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.users import users
@@ -48,18 +49,19 @@ def _to_sql_expression(table: sa.Table, order_by: OrderBy):
     return direction_func(table.columns[order_by.field])
 
 
-async def list_trashed_projects(
+async def list_projects_db_get_as_admin(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
     # filter
     trashed_explicitly: bool | UnSet = UnSet.VALUE,
     trashed_before: datetime | UnSet = UnSet.VALUE,
+    shared_workspace_id: WorkspaceID | UnSet = UnSet.VALUE,
     # pagination
     offset: NonNegativeInt = 0,
     limit: PositiveInt = MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
     # order
-    order_by: OrderBy = OLDEST_TRASHED_FIRST,
+    order_by: OrderBy,
 ) -> tuple[int, list[ProjectDBGet]]:
 
     base_query = sql.select(*PROJECT_DB_COLS).where(projects.c.trashed.is_not(None))
@@ -74,12 +76,16 @@ async def list_trashed_projects(
         assert isinstance(trashed_before, datetime)  # nosec
         base_query = base_query.where(projects.c.trashed < trashed_before)
 
+    if is_set(shared_workspace_id):
+        assert isinstance(shared_workspace_id, int)  # nosec
+        base_query = base_query.where(projects.c.workspace_id == shared_workspace_id)
+
     # Select total count from base_query
     count_query = sql.select(sql.func.count()).select_from(base_query.subquery())
 
     # Ordering and pagination
     list_query = (
-        base_query.order_by(_to_sql_expression(projects, order_by))
+        base_query.order_by(_to_sql_expression(projects, order_by), projects.c.id)
         .offset(offset)
         .limit(limit)
     )

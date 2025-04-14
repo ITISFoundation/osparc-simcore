@@ -1,8 +1,10 @@
 from ..errors import WebServerBaseError
 
 
-class WorkspacesValueError(WebServerBaseError, ValueError):
-    ...
+class WorkspacesValueError(WebServerBaseError, ValueError): ...
+
+
+class WorkspacesRuntimeError(WebServerBaseError, RuntimeError): ...
 
 
 class WorkspaceNotFoundError(WorkspacesValueError):
@@ -11,6 +13,10 @@ class WorkspaceNotFoundError(WorkspacesValueError):
 
 class WorkspaceAccessForbiddenError(WorkspacesValueError):
     msg_template = "Workspace access forbidden. {reason}"
+
+
+class WorkspaceBatchDeleteError(WorkspacesValueError):
+    msg_template = "One or more workspaces could not be deleted: {errors}"
 
 
 # Workspace groups
@@ -22,3 +28,7 @@ class WorkspaceGroupNotFoundError(WorkspacesValueError):
 
 class WorkspaceFolderInconsistencyError(WorkspacesValueError):
     msg_template = "Folder {folder_id} does not exists in the workspace {workspace_id}"
+
+
+class WorkspaceNotTrashedError(WorkspacesRuntimeError):
+    msg_template = "Cannot delete workspace {workspace_id} since it was not trashed first: {reason}"

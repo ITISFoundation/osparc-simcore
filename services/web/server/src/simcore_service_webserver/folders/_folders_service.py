@@ -11,11 +11,8 @@ from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.workspaces import WorkspaceID, WorkspaceQuery, WorkspaceScope
 from pydantic import NonNegativeInt
-from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
-from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
-from servicelib.utils import fire_and_forget_task
 
-from ..projects._projects_service import submit_delete_project_task
+from ..projects._projects_service import delete_project_by_user
 from ..users.api import get_user
 from ..workspaces.api import check_user_workspace_access
 from ..workspaces.errors import (
@@ -320,7 +317,7 @@ async def update_folder(
     )
 
 
-async def delete_folder(
+async def delete_folder_with_all_content(
     app: web.Application,
     user_id: UserID,
     folder_id: FolderID,
@@ -352,6 +349,9 @@ async def delete_folder(
 
     # 1. Delete folder content
     # 1.1 Delete all child projects that I am an owner
+    # NOTE: The reason for this is to be cautious and not delete projects by accident that
+    # are not owned by the user (even if the user was granted delete permissions). As a consequence, after deleting the folder,
+    # projects that the user does not own will appear in the root. (Maybe this can be changed as we now have a trash system).
     project_id_list: list[ProjectID] = (
         await _folders_repository.get_projects_recursively_only_if_user_is_owner(
             app,
@@ -362,17 +362,11 @@ async def delete_folder(
         )
     )
 
-    # fire and forget task for project deletion
     for project_id in project_id_list:
-        fire_and_forget_task(
-            submit_delete_project_task(
-                app,
-                project_uuid=project_id,
-                user_id=user_id,
-                simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
-            ),
-            task_suffix_name=f"delete_project_task_{project_id}",
-            fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
+        await delete_project_by_user(
+            app,
+            project_uuid=project_id,
+            user_id=user_id,
         )
 
     # 1.2 Delete all child folders
