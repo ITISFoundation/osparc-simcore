@@ -1,11 +1,11 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
-
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
 
 import pytest
+from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
-from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_pipeline import ComputationTask
 from models_library.projects_state import RunningState
@@ -20,23 +20,15 @@ async def mocked_director_v2(
     return director_v2_service_mock
 
 
-@pytest.fixture
-def user_id(faker: Faker) -> UserID:
-    return UserID(faker.pyint(min_value=1))
-
-
-@pytest.fixture
-def project_id(faker: Faker) -> ProjectID:
-    return ProjectID(faker.uuid4())
-
-
 async def test_create_pipeline(
-    mocked_director_v2,
-    client,
+    mocked_director_v2: aioresponses,
+    client: TestClient,
     user_id: UserID,
     project_id: ProjectID,
     osparc_product_name: str,
 ):
+    assert client.app
+
     task_out = await director_v2_service.create_or_update_pipeline(
         client.app, user_id, project_id, osparc_product_name
     )
@@ -46,11 +38,13 @@ async def test_create_pipeline(
 
 
 async def test_get_computation_task(
-    mocked_director_v2,
-    client,
+    mocked_director_v2: aioresponses,
+    client: TestClient,
     user_id: UserID,
     project_id: ProjectID,
 ):
+    assert client.app
+
     task_out = await director_v2_service.get_computation_task(
         client.app, user_id, project_id
     )
@@ -60,6 +54,10 @@ async def test_get_computation_task(
 
 
 async def test_delete_pipeline(
-    mocked_director_v2, client, user_id: UserID, project_id: ProjectID
+    mocked_director_v2: aioresponses,
+    client: TestClient,
+    user_id: UserID,
+    project_id: ProjectID,
 ):
+    assert client.app
     await director_v2_service.delete_pipeline(client.app, user_id, project_id)
