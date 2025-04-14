@@ -63,7 +63,7 @@ qx.Class.define("osparc.store.Jobs", {
       if (index === -1) {
         const job = new osparc.data.Job(jobData);
         jobs.push(job);
-        this.fireEvent("changeJobs");
+        this.fireDataEvent("changeJobs");
         return job;
       }
       return null;
@@ -72,7 +72,7 @@ qx.Class.define("osparc.store.Jobs", {
     removeJobs: function() {
       const jobs = this.getJobs();
       jobs.forEach(job => job.dispose());
-      this.fireEvent("changeJobs");
+      this.fireDataEvent("changeJobs");
     },
   }
 });
