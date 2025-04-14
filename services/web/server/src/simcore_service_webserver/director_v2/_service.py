@@ -20,6 +20,7 @@ from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraProperties,
     GroupExtraPropertiesRepo,
 )
+from simcore_service_webserver.director_v2._client import get_directorv2_client
 
 from ..application_settings import get_application_settings
 from ..db.plugin import get_database_engine
@@ -39,13 +40,16 @@ _logger = logging.getLogger(__name__)
 #
 # PIPELINE RESOURCE ----------------------
 #
-# TODO: REFACTOR! the client class above and the free functions below are duplicates of the same interface!
 
 
 @log_decorator(logger=_logger)
 async def create_or_update_pipeline(
-    app: web.Application, user_id: UserID, project_id: ProjectID, product_name: str
+    app: web.Application,
+    user_id: UserID,
+    project_id: ProjectID,
+    product_name: ProductName,
 ) -> DataType | None:
+    # NOTE https://github.com/ITISFoundation/osparc-simcore/issues/7527
     settings: DirectorV2Settings = get_plugin_settings(app)
 
     backend_url = settings.base_url / "computations"
@@ -61,7 +65,7 @@ async def create_or_update_pipeline(
             product_name=product_name,
         ),
     }
-    # request to director-v2
+
     try:
         computation_task_out = await request_director_v2(
             app, "POST", backend_url, expected_status=web.HTTPCreated, data=body
@@ -102,18 +106,14 @@ async def is_pipeline_running(
 async def get_computation_task(
     app: web.Application, user_id: UserID, project_id: ProjectID
 ) -> ComputationTask | None:
-    settings: DirectorV2Settings = get_plugin_settings(app)
-    backend_url = (settings.base_url / f"computations/{project_id}").update_query(
-        user_id=int(user_id)
-    )
 
-    # request to director-v2
     try:
-        computation_task_out_dict = await request_director_v2(
-            app, "GET", backend_url, expected_status=web.HTTPOk
+        dv2_computation = await get_directorv2_client(app).get_computation(
+            project_id=project_id, user_id=user_id
         )
-        task_out = ComputationTask.model_validate(computation_task_out_dict)
+        task_out = ComputationTask.model_validate(dv2_computation, from_attributes=True)
         _logger.debug("found computation task: %s", f"{task_out=}")
+
         return task_out
     except DirectorServiceError as exc:
         if exc.status == status.HTTP_404_NOT_FOUND:
@@ -129,13 +129,8 @@ async def get_computation_task(
 async def stop_pipeline(
     app: web.Application, *, user_id: PositiveInt, project_id: ProjectID
 ):
-    settings: DirectorV2Settings = get_plugin_settings(app)
-    await request_director_v2(
-        app,
-        "POST",
-        url=settings.base_url / f"computations/{project_id}:stop",
-        expected_status=web.HTTPAccepted,
-        data={"user_id": user_id},
+    await get_directorv2_client(app).stop_computation(
+        project_id=project_id, user_id=user_id
     )
 
 
@@ -147,6 +142,8 @@ async def delete_pipeline(
     *,
     force: bool = True,
 ) -> None:
+    # NOTE https://github.com/ITISFoundation/osparc-simcore/issues/7527
+
     settings: DirectorV2Settings = get_plugin_settings(app)
     await request_director_v2(
         app,
@@ -171,6 +168,7 @@ async def get_batch_tasks_outputs(
     project_id: ProjectID,
     selection: TasksSelection,
 ) -> TasksOutputs:
+    # NOTE https://github.com/ITISFoundation/osparc-simcore/issues/7527
     settings: DirectorV2Settings = get_plugin_settings(app)
     response_payload = await request_director_v2(
         app,
@@ -193,18 +191,13 @@ async def get_batch_tasks_outputs(
     return TasksOutputs(**response_payload)
 
 
-#
-# WALLETS ----------------------
-#
-
-
 async def get_wallet_info(
     app: web.Application,
     *,
     product: Product,
     user_id: UserID,
     project_id: ProjectID,
-    product_name: str,
+    product_name: ProductName,
 ) -> WalletInfo | None:
     app_settings = get_application_settings(app)
     if not (

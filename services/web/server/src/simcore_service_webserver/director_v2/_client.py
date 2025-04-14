@@ -93,10 +93,10 @@ class DirectorV2RestClient:
 _APP_KEY = f"{__name__}.{DirectorV2RestClient.__name__}"
 
 
-def get_client(app: web.Application) -> DirectorV2RestClient | None:
-    app_key: DirectorV2RestClient | None = app.get(_APP_KEY)
-    return app_key
-
-
-def set_client(app: web.Application, obj: DirectorV2RestClient):
+def set_directorv2_client(app: web.Application, obj: DirectorV2RestClient):
     app[_APP_KEY] = obj
+
+
+def get_directorv2_client(app: web.Application) -> DirectorV2RestClient:
+    app_key: DirectorV2RestClient = app[_APP_KEY]
+    return app_key

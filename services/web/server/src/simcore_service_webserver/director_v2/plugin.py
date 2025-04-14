@@ -9,7 +9,8 @@ from servicelib.aiohttp.application_setup import (
 )
 
 from ..rest.plugin import setup_rest
-from . import _client, _controller
+from . import _controller
+from ._client import DirectorV2RestClient, get_directorv2_client, set_directorv2_client
 from ._service_abc import set_project_run_policy
 from ._service_abc_default import DefaultProjectRunPolicy
 
@@ -27,7 +28,9 @@ def setup_director_v2(app: web.Application):
     assert app[APP_SETTINGS_KEY].WEBSERVER_DIRECTOR_V2  # nosec
 
     # client to communicate with director-v2 service
-    _client.set_client(app, _client.DirectorV2RestClient(app))
+    client = DirectorV2RestClient(app)
+    set_directorv2_client(app, client)
+    assert get_directorv2_client(app) == client  # nosec
 
     # routes at the web-server app
     setup_rest(app)

@@ -162,7 +162,7 @@ async def stop_computation(request: web.Request) -> web.Response:
 @permission_required("project.read")
 @handle_rest_requests_exceptions
 async def get_computation(request: web.Request) -> web.Response:
-    computations = DirectorV2RestClient(request.app)
+    dv2_client = DirectorV2RestClient(request.app)
     run_policy = get_project_run_policy(request.app)
     assert run_policy  # nosec
 
@@ -179,7 +179,7 @@ async def get_computation(request: web.Request) -> web.Response:
 
     list_computation_tasks = await asyncio.gather(
         *[
-            computations.get_computation(project_id=pid, user_id=user_id)
+            dv2_client.get_computation(project_id=pid, user_id=user_id)
             for pid in project_ids
         ]
     )
