@@ -1,7 +1,7 @@
 from ._notifier import notify_service_status_change
-from ._setup import get_lifespans_notifier
+from ._setup import get_notifier_lifespans
 
 __all__: tuple[str, ...] = (
-    "get_lifespans_notifier",
+    "get_notifier_lifespans",
     "notify_service_status_change",
 )

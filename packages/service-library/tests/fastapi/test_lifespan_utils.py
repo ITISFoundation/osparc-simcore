@@ -18,7 +18,6 @@ from pytest_simcore.helpers.logging_tools import log_context
 from servicelib.fastapi.lifespan_utils import (
     LifespanOnShutdownError,
     LifespanOnStartupError,
-    combine_lifespans,
 )
 
 
@@ -35,7 +34,11 @@ async def test_multiple_lifespan_managers(capsys: pytest.CaptureFixture):
         yield {}
         print("shutdown CACHE")
 
-    app = FastAPI(lifespan=combine_lifespans(database_lifespan, cache_lifespan))
+    lifespan_manager = LifespanManager()
+    lifespan_manager.add(database_lifespan)
+    lifespan_manager.add(cache_lifespan)
+
+    app = FastAPI(lifespan=lifespan_manager)
 
     capsys.readouterr()
 
