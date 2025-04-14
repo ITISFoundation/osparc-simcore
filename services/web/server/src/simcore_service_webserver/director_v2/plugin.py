@@ -9,7 +9,6 @@ from servicelib.aiohttp.application_setup import (
 )
 
 from ..rest.plugin import setup_rest
-from . import _handlers as director_v2_handlers
 from ._abc import set_project_run_policy
 from ._core_computations import ComputationsApi, set_client
 from ._core_utils import DefaultProjectRunPolicy
@@ -24,6 +23,8 @@ log = logging.getLogger(__name__)
     logger=log,
 )
 def setup_director_v2(app: web.Application):
+    from . import _rest
+
     assert app[APP_SETTINGS_KEY].WEBSERVER_DIRECTOR_V2  # nosec
 
     # client to communicate with director-v2 service
@@ -34,7 +35,7 @@ def setup_director_v2(app: web.Application):
 
     if is_setup_completed(setup_rest.metadata()["module_name"], app):
         set_project_run_policy(app, DefaultProjectRunPolicy())
-        app.router.add_routes(director_v2_handlers.routes)
+        app.router.add_routes(_rest.routes)
 
     else:
         log.warning(
