@@ -1,4 +1,4 @@
-from typing import Any, TypeAlias
+from typing import Annotated, Any, TypeAlias
 
 from pydantic import (
     AnyHttpUrl,
@@ -19,17 +19,17 @@ from ..wallets import WalletInfo
 
 
 class ComputationGet(ComputationTask):
-    url: AnyHttpUrl = Field(
-        ..., description="the link where to get the status of the task"
-    )
-    stop_url: AnyHttpUrl | None = Field(
-        None, description="the link where to stop the task"
-    )
+    url: Annotated[
+        AnyHttpUrl, Field(description="the link where to get the status of the task")
+    ]
+    stop_url: Annotated[
+        AnyHttpUrl | None, Field(description="the link where to stop the task")
+    ] = None
 
     model_config = ConfigDict(
         json_schema_extra={
             "examples": [
-                x | {"url": "http://url.local"}  # type:ignore[operator]
+                x | {"url": "https://url.local"}  # type:ignore[operator]
                 for x in ComputationTask.model_json_schema()["examples"]
             ]
         }
@@ -39,28 +39,35 @@ class ComputationGet(ComputationTask):
 class ComputationCreate(BaseModel):
     user_id: UserID
     project_id: ProjectID
-    start_pipeline: bool | None = Field(
-        default=False,
-        description="if True the computation pipeline will start right away",
-    )
-    product_name: str
-    subgraph: list[NodeID] | None = Field(
-        default=None,
-        description="An optional set of nodes that must be executed, if empty the whole pipeline is executed",
-    )
-    force_restart: bool | None = Field(
-        default=False, description="if True will force re-running all dependent nodes"
-    )
+    start_pipeline: Annotated[
+        bool | None,
+        Field(description="if True the computation pipeline will start right away"),
+    ] = False
+    product_name: Annotated[str, Field()]
+    subgraph: Annotated[
+        list[NodeID] | None,
+        Field(
+            description="An optional set of nodes that must be executed, if empty the whole pipeline is executed"
+        ),
+    ] = None
+    force_restart: Annotated[
+        bool | None,
+        Field(description="if True will force re-running all dependent nodes"),
+    ] = False
     simcore_user_agent: str = ""
-    use_on_demand_clusters: bool = Field(
-        default=False,
-        description="if True, a cluster will be created as necessary (wallet_id cannot be None)",
-        validate_default=True,
-    )
-    wallet_info: WalletInfo | None = Field(
-        default=None,
-        description="contains information about the wallet used to bill the running service",
-    )
+    use_on_demand_clusters: Annotated[
+        bool,
+        Field(
+            description="if True, a cluster will be created as necessary (wallet_id cannot be None)",
+            validate_default=True,
+        ),
+    ] = False
+    wallet_info: Annotated[
+        WalletInfo | None,
+        Field(
+            description="contains information about the wallet used to bill the running service"
+        ),
+    ] = None
 
     @field_validator("product_name")
     @classmethod
@@ -78,17 +85,20 @@ class ComputationStop(BaseModel):
 
 
 class ComputationDelete(ComputationStop):
-    force: bool | None = Field(
-        default=False,
-        description="if True then the pipeline will be removed even if it is running",
-    )
+    force: Annotated[
+        bool | None,
+        Field(
+            description="if True then the pipeline will be removed even if it is running"
+        ),
+    ] = False
 
 
 class TaskLogFileGet(BaseModel):
     task_id: NodeID
-    download_link: AnyUrl | None = Field(
-        None, description="Presigned link for log file or None if still not available"
-    )
+    download_link: Annotated[
+        AnyUrl | None,
+        Field(description="Presigned link for log file or None if still not available"),
+    ] = None
 
 
 class TasksSelection(BaseModel):
