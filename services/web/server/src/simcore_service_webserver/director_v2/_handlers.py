@@ -3,12 +3,22 @@ import logging
 from typing import Any
 
 from aiohttp import web
-from common_library.json_serialization import json_dumps
-from models_library.api_schemas_directorv2.computations import ComputationGet
-from models_library.api_schemas_webserver.computations import ComputationStart
+from models_library.api_schemas_directorv2.computations import (
+    ComputationGet as _ComputationGetDirectorV2,
+)
+from models_library.api_schemas_webserver.computations import (
+    ComputationGet,
+    ComputationPathParams,
+    ComputationStart,
+    ComputationStarted,
+)
 from models_library.projects import ProjectID
-from pydantic import BaseModel, Field, TypeAdapter, ValidationError
+from pydantic import TypeAdapter, ValidationError
 from servicelib.aiohttp import status
+from servicelib.aiohttp.requests_validation import (
+    parse_request_body_as,
+    parse_request_path_parameters_as,
+)
 from servicelib.aiohttp.rest_responses import create_http_error, exception_to_response
 from servicelib.aiohttp.web_exceptions_extension import get_http_error_class_or_none
 from servicelib.common_headers import (
@@ -40,15 +50,6 @@ _logger = logging.getLogger(__name__)
 routes = web.RouteTableDef()
 
 
-class _ComputationStarted(BaseModel):
-    pipeline_id: ProjectID = Field(
-        ..., description="ID for created pipeline (=project identifier)"
-    )
-    ref_ids: list[CommitID] = Field(
-        default_factory=list, description="Checkpoints IDs for created pipeline"
-    )
-
-
 @routes.post(f"/{VTAG}/computations/{{project_id}}:start", name="start_computation")
 @login_required
 @permission_required("services.pipeline.*")
@@ -56,29 +57,18 @@ class _ComputationStarted(BaseModel):
 async def start_computation(request: web.Request) -> web.Response:
     # pylint: disable=too-many-statements
     try:
-        req_ctx = RequestContext.model_validate(request)
-        computations = ComputationsApi(request.app)
-
-        run_policy = get_project_run_policy(request.app)
-        assert run_policy  # nosec
-
-        project_id = ProjectID(request.match_info["project_id"])
-
-        subgraph: set[str] = set()
-        force_restart: bool = False  # NOTE: deprecate this entry
-
-        if request.can_read_body:
-            body = await request.json()
-            assert (
-                TypeAdapter(ComputationStart).validate_python(body) is not None
-            )  # nosec
-
-            subgraph = body.get("subgraph", [])
-            force_restart = bool(body.get("force_restart", force_restart))
-
         simcore_user_agent = request.headers.get(
             X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
         )
+        req_ctx = RequestContext.model_validate(request)
+        path_params = parse_request_path_parameters_as(ComputationPathParams, request)
+
+        subgraph: set[str] = set()
+        force_restart: bool = False  # NOTE: deprecate this entry
+        if request.can_read_body:
+            body_params = await parse_request_body_as(ComputationStart, request)
+            subgraph = body_params.subgraph
+            force_restart = body_params.force_restart
 
         async with get_database_engine(request.app).acquire() as conn:
             group_properties = (
@@ -93,7 +83,7 @@ async def start_computation(request: web.Request) -> web.Response:
             request.app,
             product=product,
             user_id=req_ctx.user_id,
-            project_id=project_id,
+            project_id=path_params.project_id,
             product_name=req_ctx.product_name,
         )
 
@@ -106,16 +96,21 @@ async def start_computation(request: web.Request) -> web.Response:
             "wallet_info": wallet_info,
         }
 
+        run_policy = get_project_run_policy(request.app)
+        assert run_policy  # nosec
+
         running_project_ids: list[ProjectID]
         project_vc_commits: list[CommitID]
 
         (
             running_project_ids,
             project_vc_commits,
-        ) = await run_policy.get_or_create_runnable_projects(request, project_id)
+        ) = await run_policy.get_or_create_runnable_projects(
+            request, path_params.project_id
+        )
         _logger.debug(
             "Project %s will start %d variants: %s",
-            f"{project_id=}",
+            f"{path_params.project_id=}",
             len(running_project_ids),
             f"{running_project_ids=}",
         )
@@ -127,6 +122,7 @@ async def start_computation(request: web.Request) -> web.Response:
             else True
         )
 
+        computations = ComputationsApi(request.app)
         _started_pipelines_ids: list[str] = await asyncio.gather(
             *[
                 computations.start(
@@ -141,14 +137,14 @@ async def start_computation(request: web.Request) -> web.Response:
         )  # nosec
 
         data: dict[str, Any] = {
-            "pipeline_id": project_id,
+            "pipeline_id": path_params.project_id,
         }
         # Optional
         if project_vc_commits:
             data["ref_ids"] = project_vc_commits
 
         assert (
-            TypeAdapter(_ComputationStarted).validate_python(data) is not None
+            TypeAdapter(ComputationStarted).validate_python(data) is not None
         )  # nosec
 
         return envelope_json_response(data, status_cls=web.HTTPCreated)
@@ -221,7 +217,9 @@ async def get_computation(request: web.Request) -> web.Response:
             request, project_id
         )
         _logger.debug("Project %s will get %d variants", project_id, len(project_ids))
-        list_computation_tasks = TypeAdapter(list[ComputationGet]).validate_python(
+        list_computation_tasks = TypeAdapter(
+            list[_ComputationGetDirectorV2]
+        ).validate_python(
             await asyncio.gather(
                 *[
                     computations.get(project_id=pid, user_id=user_id)
@@ -231,10 +229,13 @@ async def get_computation(request: web.Request) -> web.Response:
         )
         assert len(list_computation_tasks) == len(project_ids)  # nosec
 
-        return web.json_response(
-            data={"data": list_computation_tasks[0].model_dump(by_alias=True)},
-            dumps=json_dumps,
+        return envelope_json_response(
+            [
+                ComputationGet.model_construct(**m.model_dump(exclude_unset=True))
+                for m in list_computation_tasks
+            ],
         )
+
     except DirectorServiceError as exc:
         return create_http_error(
             exc,
