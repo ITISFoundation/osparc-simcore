@@ -32,7 +32,9 @@ qx.Class.define("osparc.jobs.ClustersTable", {
     });
 
     const columnModel = this.getTableColumnModel();
-    columnModel.setColumnVisible(this.self().COLS.CLUSTER_ID.column, false);
+    columnModel.setColumnVisible(this.self().COLS.CLUSTER_ID.column, true);
+
+    Object.values(this.self().COLS).forEach(col => columnModel.setColumnWidth(col.column, col.width));
   },
 
   statics: {
@@ -41,7 +43,7 @@ qx.Class.define("osparc.jobs.ClustersTable", {
         id: "clusterId",
         column: 0,
         label: qx.locale.Manager.tr("Cluster Id"),
-        width: 170
+        width: 280
       },
       NAME: {
         id: "name",

@@ -105,13 +105,13 @@ qx.Class.define("osparc.jobs.ClustersTableModel", {
         return osparc.store.Clusters.getInstance().fetchClusters(urlParams)
           .then(clusters => {
             const data = [];
-            const jobsCols = osparc.jobs.JobsTable.COLS;
+            const clustersCols = osparc.jobs.ClustersTable.COLS;
             clusters.forEach(cluster => {
               data.push({
-                [jobsCols.CLUSTER_ID.id]: cluster.getClusterId(),
-                [jobsCols.NAME.id]: cluster.getName(),
-                [jobsCols.STATUS.id]: cluster.getStatus(),
-                [jobsCols.N_WORKERS.id]: cluster.getNWorkers() ? cluster.getNWorkers() : 0,
+                [clustersCols.CLUSTER_ID.id]: cluster.getClusterId(),
+                [clustersCols.NAME.id]: cluster.getName(),
+                [clustersCols.STATUS.id]: cluster.getStatus(),
+                [clustersCols.N_WORKERS.id]: cluster.getNWorkers() ? cluster.getNWorkers() : 0,
               });
             });
             return data;

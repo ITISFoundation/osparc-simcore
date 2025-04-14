@@ -1,33 +1,33 @@
 {
   "clusters": [{
-    "job_id": "0cde4607-07de-4bb5-b3e6-487f22387a70",
+    "cluster_id": "0cde4607-07de-4bb5-b3e6-487f22387a70",
     "name": "cluster_1",
     "status": "RUNNING",
-    "nWorkers": 2
+    "n_workers": 2
   }, {
-    "job_id": "5685a699-4927-479e-9b34-e5ab1616303a",
+    "cluster_id": "5685a699-4927-479e-9b34-e5ab1616303a",
     "name": "cluster_2",
     "status": "WAITING FOR RESOURCES",
-    "nWorkers": 4
+    "n_workers": 4
   }, {
-    "job_id": "a8ca6a02-8816-48a6-8c6b-b94b3e431c8c",
+    "cluster_id": "a8ca6a02-8816-48a6-8c6b-b94b3e431c8c",
     "name": "cluster_3",
     "status": "PENDING",
-    "nWorkers": 8
+    "n_workers": 8
   }, {
-    "job_id": "a8ca6a02-8816-48a6-8c6b-b94b3e431c8d",
+    "cluster_id": "a8ca6a02-8816-48a6-8c6b-b94b3e431c8d",
     "name": "cluster_4",
     "status": "ERROR",
-    "nWorkers": 12
+    "n_workers": 12
   }, {
-    "job_id": "a8ca6a02-8816-48a6-8c6b-b94b3e431c81",
+    "cluster_id": "a8ca6a02-8816-48a6-8c6b-b94b3e431c81",
     "name": "cluster_5",
     "status": "IDK",
-    "nWorkers": 24
+    "n_workers": 24
   }, {
-    "job_id": "a8ca6a02-8816-48a6-8c6b-b94b3e431c82",
+    "cluster_id": "a8ca6a02-8816-48a6-8c6b-b94b3e431c82",
     "name": "cluster_6",
     "status": "SOMETHING_ELSE",
-    "nWorkers": 42
+    "n_workers": 42
   }]
 }

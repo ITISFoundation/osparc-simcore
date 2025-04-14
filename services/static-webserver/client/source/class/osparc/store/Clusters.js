@@ -37,8 +37,8 @@ qx.Class.define("osparc.store.Clusters", {
       return osparc.utils.Utils.fetchJSON("/resource/osparc/mock_clusters.json")
         .then(clustersData => {
           if ("clusters" in clustersData) {
-            clustersData["clusters"].forEach(jobData => {
-              this.addJob(jobData);
+            clustersData["clusters"].forEach(clusterData => {
+              this.addCluster(clusterData);
             });
           }
           return this.getClusters();
@@ -46,21 +46,21 @@ qx.Class.define("osparc.store.Clusters", {
         .catch(err => console.error(err));
     },
 
-    addJob: function(jobData) {
+    addCluster: function(clusterData) {
       const clusters = this.getClusters();
-      const index = clusters.findIndex(t => t.getJobId() === jobData["job_id"]);
+      const index = clusters.findIndex(t => t.getClusterId() === clusterData["cluster_id"]);
       if (index === -1) {
-        const job = new osparc.data.Job(jobData);
-        clusters.push(job);
+        const cluster = new osparc.data.Cluster(clusterData);
+        clusters.push(cluster);
         this.fireDataEvent("changeClusters");
-        return job;
+        return cluster;
       }
       return null;
     },
 
     removeClusters: function() {
       const clusters = this.getClusters();
-      clusters.forEach(job => job.dispose());
+      clusters.forEach(cluster => cluster.dispose());
       this.fireDataEvent("changeClusters");
     },
   }
