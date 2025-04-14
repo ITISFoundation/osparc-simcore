@@ -39,7 +39,7 @@ qx.Class.define("osparc.jobs.JobsAndClusters", {
     const clustersPage = new qx.ui.tabview.Page(this.tr("Clusters")).set({
       layout: new qx.ui.layout.VBox(10)
     });
-    const clustersBrowser = new osparc.jobs.JobsBrowser();
+    const clustersBrowser = new osparc.jobs.ClustersBrowser();
     const scroller2 = new qx.ui.container.Scroll();
     scroller2.add(clustersBrowser);
     clustersPage.add(scroller2);
