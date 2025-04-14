@@ -12,7 +12,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from pydantic.types import PositiveInt
 
-from ..._service import create_solver_or_program_job
+from ..._service_jobs import create_job
 from ...exceptions.backend_errors import ProjectAlreadyStartedError
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.basic_types import VersionStr
@@ -116,7 +116,7 @@ async def create_solver_job(
         version=version,
         product_name=product_name,
     )
-    job, project = await create_solver_or_program_job(
+    job, project = await create_job(
         webserver_api=webserver_api,
         solver_or_program=solver,
         inputs=inputs,

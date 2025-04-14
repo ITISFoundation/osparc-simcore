@@ -17,7 +17,7 @@ from simcore_service_api_server.services_http.webserver import AuthSession
 _logger = logging.getLogger(__name__)
 
 
-async def create_solver_or_program_job(
+async def create_job(
     *,
     webserver_api: AuthSession,
     solver_or_program: Solver | Program,

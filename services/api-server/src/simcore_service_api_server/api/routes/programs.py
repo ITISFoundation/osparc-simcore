@@ -17,7 +17,7 @@ from simcore_sdk.node_ports_common.filemanager import (
     complete_file_upload,
     get_upload_links_from_s3,
 )
-from simcore_service_api_server._service import create_solver_or_program_job
+from simcore_service_api_server._service_jobs import create_job
 from simcore_service_api_server.api.dependencies.webserver_http import (
     get_webserver_session,
 )
@@ -130,7 +130,7 @@ async def create_program_job(
         product_name=product_name,
     )
 
-    job, project = await create_solver_or_program_job(
+    job, project = await create_job(
         webserver_api=webserver_api,
         solver_or_program=program,
         inputs=inputs,
