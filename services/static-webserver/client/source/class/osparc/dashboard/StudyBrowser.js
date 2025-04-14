@@ -1822,6 +1822,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           .then(task => {
             task.addListener("resultReceived", e => {
               const copiedStudy = e.getData();
+              osparc.store.Study.patchStudyData(copiedStudy, "name", copiedStudy["name"] + " (pipeline)");
               this.__updateUIMode(copiedStudy, "workbench")
                 .then(() => osparc.FlashMessenger.logAs(this.tr("Project's copy converted to pipeline"), "INFO"))
                 .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while converting the copy to pipeline")));
