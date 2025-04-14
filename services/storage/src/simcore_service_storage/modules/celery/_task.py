@@ -1,5 +1,4 @@
 import asyncio
-import concurrent.futures
 import inspect
 import logging
 from collections.abc import Callable, Coroutine
@@ -78,13 +77,14 @@ def _async_task_wrapper(
                 except BaseExceptionGroup as eg:
                     task_aborted_errors, other_errors = eg.split(TaskAbortedError)
 
-                    if other_errors:
-                        assert len(other_errors.exceptions) == 1  # nosec
-                        raise other_errors.exceptions[0] from eg
+                    if task_aborted_errors:
+                        assert task_aborted_errors is not None  # nosec
+                        assert len(task_aborted_errors.exceptions) == 1  # nosec
+                        raise task_aborted_errors.exceptions[0] from eg
 
-                    assert task_aborted_errors is not None  # nosec
-                    assert len(task_aborted_errors.exceptions) == 1  # nosec
-                    raise task_aborted_errors.exceptions[0] from eg
+                    assert other_errors is not None  # nosec
+                    assert len(other_errors.exceptions) == 1  # nosec
+                    raise other_errors.exceptions[0] from eg
 
             return asyncio.run_coroutine_threadsafe(
                 run_task(task.request.id),
@@ -111,7 +111,7 @@ def _error_handling(
         def wrapper(task: AbortableTask, *args: P.args, **kwargs: P.kwargs) -> R:
             try:
                 return func(task, *args, **kwargs)
-            except concurrent.futures.CancelledError as exc:
+            except TaskAbortedError as exc:
                 _logger.warning("Task %s was cancelled", task.request.id)
                 raise Ignore from exc
             except Exception as exc:
