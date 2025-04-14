@@ -1802,16 +1802,23 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         confirmText: this.tr("Convert"),
         confirmAction: "create",
         message,
-      })
-      confirmationWin.getChildControl("cancel-button").set({
+      });
+      confirmationWin.getChildControl("cancel-button").exclude();
+      const copyOptionButton = new qx.ui.form.Button().set({
+        appearance: "form-button-text",
         label: this.tr("Create a copy and convert it"),
       });
+      confirmationWin.getChildControl("buttons-layout").addAt(copyOptionButton, 0);
       confirmationWin.addListener("close", () => {
         if (confirmationWin.getConfirmed()) {
           this.__updateUIMode(studyData, "workbench")
             .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while converting to pipeline")));
         }
       });
+      copyOptionButton.addListener("execute", () => {
+        confirmationWin.close();
+        // this.__duplicateStudy(studyData)
+      })
       confirmationWin.open();
     },
 
@@ -1921,7 +1928,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       };
       const fetchPromise = osparc.data.Resources.fetch("studies", "duplicate", params, options);
       const pollTasks = osparc.store.PollTasks.getInstance();
-      pollTasks.createPollingTask(fetchPromise)
+      return pollTasks.createPollingTask(fetchPromise)
         .then(task => this.__taskDuplicateReceived(task, studyData["name"]))
         .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while duplicating")));
     },
