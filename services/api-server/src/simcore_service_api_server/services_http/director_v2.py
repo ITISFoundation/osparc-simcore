@@ -3,6 +3,9 @@ from functools import partial
 from uuid import UUID
 
 from fastapi import FastAPI
+from models_library.api_schemas_directorv2.computations import (
+    ComputationGet as DirectorV2ComputationGet,
+)
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_pipeline import ComputationTask
 from models_library.projects_state import RunningState
@@ -19,10 +22,6 @@ from ..models.schemas.studies import JobLogsMap, LogLink
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
 logger = logging.getLogger(__name__)
-
-
-# API MODELS ---------------------------------------------
-# NOTE: as services/director-v2/src/simcore_service_director_v2/models/schemas/comp_tasks.py
 
 
 class ComputationTaskGet(ComputationTask):
@@ -66,12 +65,16 @@ class TaskLogFileGet(BaseModel):
 
 # API CLASS ---------------------------------------------
 
-_exception_mapper = partial(service_exception_mapper, service_name="Director V2")
+_client_status_code_to_exception = partial(
+    service_exception_mapper, service_name="Director V2"
+)
 
 
 class DirectorV2Api(BaseServiceClientApi):
 
-    @_exception_mapper(http_status_map={status.HTTP_404_NOT_FOUND: JobNotFoundError})
+    @_client_status_code_to_exception(
+        http_status_map={status.HTTP_404_NOT_FOUND: JobNotFoundError}
+    )
     async def get_computation(
         self, *, project_id: UUID, user_id: PositiveInt
     ) -> ComputationTaskGet:
@@ -82,13 +85,15 @@ class DirectorV2Api(BaseServiceClientApi):
             },
         )
         response.raise_for_status()
-        task: ComputationTaskGet = ComputationTaskGet.model_validate_json(response.text)
-        return task
+        return ComputationTaskGet.model_validate(
+            DirectorV2ComputationGet.model_validate_json(response.text),
+            from_attributes=True,
+        )
 
-    @_exception_mapper(http_status_map={status.HTTP_404_NOT_FOUND: JobNotFoundError})
-    async def stop_computation(
-        self, *, project_id: UUID, user_id: PositiveInt
-    ) -> ComputationTaskGet:
+    @_client_status_code_to_exception(
+        http_status_map={status.HTTP_404_NOT_FOUND: JobNotFoundError}
+    )
+    async def stop_computation(self, *, project_id: UUID, user_id: PositiveInt) -> None:
         response = await self.client.post(
             f"/v2/computations/{project_id}:stop",
             json={
@@ -96,11 +101,13 @@ class DirectorV2Api(BaseServiceClientApi):
             },
         )
         response.raise_for_status()
-        task: ComputationTaskGet = ComputationTaskGet.model_validate_json(response.text)
-        return task
 
-    @_exception_mapper(http_status_map={status.HTTP_404_NOT_FOUND: JobNotFoundError})
-    async def delete_computation(self, *, project_id: UUID, user_id: PositiveInt):
+    @_client_status_code_to_exception(
+        http_status_map={status.HTTP_404_NOT_FOUND: JobNotFoundError}
+    )
+    async def delete_computation(
+        self, *, project_id: UUID, user_id: PositiveInt
+    ) -> None:
         response = await self.client.request(
             "DELETE",
             f"/v2/computations/{project_id}",
@@ -111,7 +118,7 @@ class DirectorV2Api(BaseServiceClientApi):
         )
         response.raise_for_status()
 
-    @_exception_mapper(
+    @_client_status_code_to_exception(
         http_status_map={status.HTTP_404_NOT_FOUND: LogFileNotFoundError}
     )
     async def get_computation_logs(
