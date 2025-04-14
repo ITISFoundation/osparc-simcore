@@ -67,21 +67,20 @@ def _async_task_wrapper(
                                         main_task,
                                         max_delay=_DEFAULT_CANCEL_TASK_TIMEOUT.total_seconds(),
                                     )
-                                    return
+                                    raise TaskAbortedError
                                 await asyncio.sleep(
                                     _DEFAULT_ABORT_TASK_TIMEOUT.total_seconds()
                                 )
 
                         tg.create_task(abort_monitor(), name=f"abort_monitor_{task_id}")
 
-                    # If we get here, both tasks completed without errors
                     return main_task.result()
-                except ExceptionGroup as exc_group:
-                    for exc in exc_group.exceptions:
-                        if isinstance(exc, asyncio.CancelledError):
-                            raise exc from exc_group
+                except BaseExceptionGroup as eg:
+                    _, other_errors = eg.split(TaskAbortedError)
 
-                    raise exc_group.exceptions[0] from exc_group
+                    if other_errors:
+                        assert len(other_errors.exceptions) == 1  # nosec
+                        raise other_errors.exceptions[0] from eg
 
             return asyncio.run_coroutine_threadsafe(
                 run_task(task.request.id),
