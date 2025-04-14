@@ -17,8 +17,8 @@ from settings_library.celery import CelerySettings
 from .models import (
     TaskContext,
     TaskID,
+    TaskInfoStore,
     TaskMetadata,
-    TaskMetadataStore,
     TaskState,
     TaskStatus,
     TaskUUID,
@@ -46,7 +46,7 @@ _MAX_PROGRESS_VALUE = 1.0
 class CeleryTaskQueueClient:
     _celery_app: Celery
     _celery_settings: CelerySettings
-    _task_store: TaskMetadataStore
+    _task_store: TaskInfoStore
 
     async def send_task(
         self,
@@ -76,7 +76,7 @@ class CeleryTaskQueueClient:
                 if task_metadata.ephemeral
                 else self._celery_settings.CELERY_RESULT_EXPIRES
             )
-            await self._task_store.set(task_id, task_metadata, expiry=expiry)
+            await self._task_store.set_metadata(task_id, task_metadata, expiry=expiry)
             return task_uuid
 
     @make_async()
@@ -109,7 +109,7 @@ class CeleryTaskQueueClient:
             async_result = self._celery_app.AsyncResult(task_id)
             result = async_result.result
             if async_result.ready():
-                task_metadata = await self._task_store.get(task_id)
+                task_metadata = await self._task_store.get_metadata(task_id)
                 if task_metadata is not None and task_metadata.ephemeral:
                     await self._task_store.remove(task_id)
             return result

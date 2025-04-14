@@ -46,16 +46,16 @@ class TaskMetadata(BaseModel):
 _TASK_DONE = {TaskState.SUCCESS, TaskState.ERROR, TaskState.ABORTED}
 
 
-class TaskMetadataStore(Protocol):
+class TaskInfoStore(Protocol):
     async def exists(self, task_id: TaskID) -> bool: ...
 
-    async def get(self, task_id: TaskID) -> TaskMetadata | None: ...
+    async def get_metadata(self, task_id: TaskID) -> TaskMetadata | None: ...
 
     async def get_uuids(self, task_context: TaskContext) -> set[TaskUUID]: ...
 
     async def remove(self, task_id: TaskID) -> None: ...
 
-    async def set(
+    async def set_metadata(
         self, task_id: TaskID, task_data: TaskMetadata, expiry: timedelta
     ) -> None: ...
 

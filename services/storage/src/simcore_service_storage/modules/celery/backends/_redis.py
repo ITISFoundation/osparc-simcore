@@ -7,19 +7,20 @@ from servicelib.redis._client import RedisClientSDK
 
 from ..models import TaskContext, TaskID, TaskMetadata, TaskUUID, build_task_id_prefix
 
-_CELERY_TASK_METADATA_PREFIX: Final[str] = "celery-task-metadata-"
+_CELERY_TASK_INFO_PREFIX: Final[str] = "celery-task-info-"
 _CELERY_TASK_ID_KEY_ENCODING = "utf-8"
 _CELERY_TASK_ID_KEY_SEPARATOR: Final[str] = ":"
 _CELERY_TASK_SCAN_COUNT_PER_BATCH: Final[int] = 10000
+_CELERY_TASK_METADATA_KEY: Final[str] = "metadata"
 
 _logger = logging.getLogger(__name__)
 
 
 def _build_key(task_id: TaskID) -> str:
-    return _CELERY_TASK_METADATA_PREFIX + task_id
+    return _CELERY_TASK_INFO_PREFIX + task_id
 
 
-class RedisTaskMetadataStore:
+class RedisTaskInfoStore:
     def __init__(self, redis_client_sdk: RedisClientSDK) -> None:
         self._redis_client_sdk = redis_client_sdk
 
@@ -28,13 +29,13 @@ class RedisTaskMetadataStore:
         assert isinstance(n, int)  # nosec
         return n > 0
 
-    async def get(self, task_id: TaskID) -> TaskMetadata | None:
-        result = await self._redis_client_sdk.redis.get(_build_key(task_id))
+    async def get_metadata(self, task_id: TaskID) -> TaskMetadata | None:
+        result = await self._redis_client_sdk.redis.hget(_build_key(task_id), _CELERY_TASK_METADATA_KEY)  # type: ignore
         return TaskMetadata.model_validate_json(result) if result else None
 
     async def get_uuids(self, task_context: TaskContext) -> set[TaskUUID]:
         search_key = (
-            _CELERY_TASK_METADATA_PREFIX
+            _CELERY_TASK_INFO_PREFIX
             + build_task_id_prefix(task_context)
             + _CELERY_TASK_ID_KEY_SEPARATOR
         )
@@ -55,11 +56,15 @@ class RedisTaskMetadataStore:
         await self._redis_client_sdk.redis.delete(_build_key(task_id))
         AsyncResult(task_id).forget()
 
-    async def set(
+    async def set_metadata(
         self, task_id: TaskID, task_metadata: TaskMetadata, expiry: timedelta
     ) -> None:
-        await self._redis_client_sdk.redis.set(
+        await self._redis_client_sdk.redis.hset(
+            name=_build_key(task_id),
+            key=_CELERY_TASK_METADATA_KEY,
+            value=task_metadata.model_dump_json(),
+        )  # type: ignore
+        await self._redis_client_sdk.redis.expire(
             _build_key(task_id),
-            task_metadata.model_dump_json(),
-            ex=expiry,
+            expiry,
         )
