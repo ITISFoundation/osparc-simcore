@@ -30,7 +30,7 @@ qx.Class.define("osparc.info.CommentUI", {
     const isMyComment = this.__isMyComment();
     const layout = new qx.ui.layout.Grid(12, 4);
     layout.setColumnFlex(1, 1); // comment
-    layout.setColumnFlex(isMyComment ? 0 : 2, 2); // spacer
+    layout.setColumnFlex(isMyComment ? 0 : 2, 3); // spacer
     this._setLayout(layout);
     this.setPadding(5);
 
