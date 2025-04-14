@@ -1,0 +1,83 @@
+[
+ {
+  "name": "GET /services/simcore%2Fservices%2Fdynamic%2Felectrode-selector/2.1.3",
+  "description": "<Request('GET', 'http://catalog:8005/v0/services/simcore%2Fservices%2Fdynamic%2Felectrode-selector/2.1.3?user_id=1')>",
+  "method": "GET",
+  "host": "catalog",
+  "path": {
+   "path": "/v0/services/{service_key}/{service_version}",
+   "path_parameters": [
+    {
+     "in": "path",
+     "name": "service_version",
+     "required": true,
+     "schema": {
+      "title": "Service Version",
+      "type": "str",
+      "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$"
+     },
+     "response_value": "simcore/services/dynamic/electrode-selector"
+    },
+    {
+     "in": "path",
+     "name": "service_key",
+     "required": true,
+     "schema": {
+      "title": "Service Key",
+      "type": "str",
+      "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$"
+     },
+     "response_value": "services"
+    }
+   ]
+  },
+  "query": "user_id=1",
+  "response_body": {
+   "name": "electrode-selector",
+   "thumbnail": null,
+   "icon": null,
+   "description": "GUI for selecting/visualizing electrode groups and target tissue",
+   "description_ui": false,
+   "version_display": null,
+   "deprecated": null,
+   "classifiers": [],
+   "quality": {},
+   "key": "simcore/services/dynamic/electrode-selector",
+   "version": "2.1.3",
+   "integration-version": "1.0.0",
+   "type": "dynamic",
+   "authors": [
+    {
+     "name": "Odei Maiz",
+     "email": "maiz@itis.swiss",
+     "affiliation": "ITIS Foundation"
+    }
+   ],
+   "contact": "maiz@itis.swiss",
+   "inputs": {
+    "input_1": {
+     "displayOrder": 1.0,
+     "label": "Sim info",
+     "description": "Information on which simulations are done",
+     "type": "data:application/json"
+    },
+    "input_2": {
+     "displayOrder": 2.0,
+     "label": "Targets list",
+     "description": "List of available targets for the model",
+     "type": "data:application/json"
+    }
+   },
+   "outputs": {
+    "output_1": {
+     "displayOrder": 1.0,
+     "label": "Output",
+     "description": "Electrode groups and Target tissue",
+     "type": "data:application/json"
+    }
+   },
+   "image_digest": "sha256:37f2603d079cfedcc77cce6c0846eba6668c52a4da15d81ef4e9a742c081b224",
+   "owner": null
+  }
+ }
+]

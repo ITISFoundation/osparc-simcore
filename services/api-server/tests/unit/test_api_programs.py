@@ -95,8 +95,8 @@ async def test_get_program_release(
     )
     assert respx_mock
 
-    program_key = "simcore/services/dynamic/my_program"
-    version = "1.0.0"
+    program_key = "simcore/services/dynamic/electrode-selector"
+    version = "2.1.3"
 
     response = await client.get(
         f"{API_VTAG}/programs/{program_key}/releases/{version}", auth=auth
