@@ -11,7 +11,9 @@ import pytest
 from aioresponses import aioresponses as AioResponsesMock
 from aioresponses.core import CallbackResult
 from faker import Faker
-from models_library.api_schemas_directorv2.computations import ComputationGet
+from models_library.api_schemas_directorv2.computations import (
+    ComputationGet as DirectorV2ComputationGet,
+)
 from models_library.api_schemas_storage.storage_schemas import (
     FileMetaDataGet,
     FileUploadCompleteFutureResponse,
@@ -135,7 +137,7 @@ def get_computation_cb(url, **kwargs) -> CallbackResult:
     pipeline: dict[str, list[str]] = FULL_PROJECT_PIPELINE_ADJACENCY
     node_states = FULL_PROJECT_NODE_STATES
 
-    json_schema = ComputationGet.model_json_schema()
+    json_schema = DirectorV2ComputationGet.model_json_schema()
     assert isinstance(json_schema["examples"], list)
     assert isinstance(json_schema["examples"][0], dict)
 
@@ -151,7 +153,7 @@ def get_computation_cb(url, **kwargs) -> CallbackResult:
             },
         }
     )
-    returned_computation = ComputationGet.model_validate(computation)
+    returned_computation = DirectorV2ComputationGet.model_validate(computation)
 
     return CallbackResult(
         status=200,

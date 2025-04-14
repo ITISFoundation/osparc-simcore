@@ -4,7 +4,7 @@ from common_library.basic_types import DEFAULT_FACTORY
 from pydantic import BaseModel, Field
 
 from ..api_schemas_directorv2.computations import (
-    ComputationGet as _ComputationGetDirectorV2,
+    ComputationGet as _DirectorV2ComputationGet,
 )
 from ..projects import CommitID, ProjectID
 from ._base import InputSchemaWithoutCamelCase, OutputSchemaWithoutCamelCase
@@ -14,7 +14,7 @@ class ComputationPathParams(BaseModel):
     project_id: ProjectID
 
 
-class ComputationGet(_ComputationGetDirectorV2, OutputSchemaWithoutCamelCase):
+class ComputationGet(_DirectorV2ComputationGet, OutputSchemaWithoutCamelCase):
     # NOTE: this is a copy of the same class in models_library.api_schemas_directorv2
     #       but it is used in a different context (webserver)
     #       and we need to add the `OutputSchema` mixin

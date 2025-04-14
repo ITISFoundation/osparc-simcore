@@ -4,7 +4,7 @@ from typing import Any
 
 from aiohttp import web
 from models_library.api_schemas_directorv2.computations import (
-    ComputationGet as _ComputationGetDirectorV2,
+    ComputationGet as _DirectorV2ComputationGet,
 )
 from models_library.api_schemas_webserver.computations import (
     ComputationGet,
@@ -173,7 +173,7 @@ async def get_computation(request: web.Request) -> web.Response:
     )
     _logger.debug("Project %s will get %d variants", project_id, len(project_ids))
     list_computation_tasks = TypeAdapter(
-        list[_ComputationGetDirectorV2]
+        list[_DirectorV2ComputationGet]
     ).validate_python(
         await asyncio.gather(
             *[computations.get(project_id=pid, user_id=user_id) for pid in project_ids]

@@ -29,7 +29,7 @@ class ComputationGet(ComputationTask):
     model_config = ConfigDict(
         json_schema_extra={
             "examples": [
-                x | {"url": "https://url.local"}  # type:ignore[operator]
+                x | {"url": "https://url.local"}
                 for x in ComputationTask.model_json_schema()["examples"]
             ]
         }
