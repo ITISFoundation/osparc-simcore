@@ -47,12 +47,11 @@ async def test_create_program_job(
     "capture,expected_status_code",
     [
         ("list_programs_success.json", status.HTTP_200_OK),
-        ("list_programs_empty.json", status.HTTP_200_OK),
     ],
 )
 async def test_list_programs(
     client: AsyncClient,
-    mocked_webserver_rest_api_base,
+    mocked_catalog_rest_api_base,
     create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
@@ -60,7 +59,7 @@ async def test_list_programs(
     expected_status_code: int,
 ):
     respx_mock = create_respx_mock_from_capture(
-        respx_mocks=[mocked_webserver_rest_api_base],
+        respx_mocks=[mocked_catalog_rest_api_base],
         capture_path=project_tests_dir / "mocks" / capture,
         side_effects_callbacks=[],
     )

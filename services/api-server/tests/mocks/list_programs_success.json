@@ -1,9 +1,9 @@
 [
  {
   "name": "GET /services",
-  "description": "<Request('GET', 'http://192.168.1.42:8005/v0/services?user_id=1&details=true')>",
+  "description": "<Request('GET', 'http://catalog:8005/v0/services?user_id=1&details=true')>",
   "method": "GET",
-  "host": "192.168.1.42",
+  "host": "catalog",
   "path": {
    "path": "/v0/services",
    "path_parameters": []
