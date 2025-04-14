@@ -20,7 +20,7 @@ from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraProperties,
     GroupExtraPropertiesRepo,
 )
-from simcore_service_webserver.director_v2._client import get_directorv2_client
+from simcore_service_webserver.director_v2._client import DirectorV2RestClient
 
 from ..application_settings import get_application_settings
 from ..db.plugin import get_database_engine
@@ -108,7 +108,7 @@ async def get_computation_task(
 ) -> ComputationTask | None:
 
     try:
-        dv2_computation = await get_directorv2_client(app).get_computation(
+        dv2_computation = await DirectorV2RestClient(app).get_computation(
             project_id=project_id, user_id=user_id
         )
         task_out = ComputationTask.model_validate(dv2_computation, from_attributes=True)
@@ -129,7 +129,7 @@ async def get_computation_task(
 async def stop_pipeline(
     app: web.Application, *, user_id: PositiveInt, project_id: ProjectID
 ):
-    await get_directorv2_client(app).stop_computation(
+    await DirectorV2RestClient(app).stop_computation(
         project_id=project_id, user_id=user_id
     )
 
