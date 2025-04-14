@@ -24,12 +24,8 @@ from servicelib.common_headers import (
     X_SIMCORE_USER_AGENT,
 )
 from servicelib.request_keys import RQT_USERID_KEY
-from simcore_postgres_database.utils_groups_extra_properties import (
-    GroupExtraPropertiesRepo,
-)
 
 from .._meta import API_VTAG as VTAG
-from ..db.plugin import get_database_engine
 from ..login.decorators import login_required
 from ..models import RequestContext
 from ..products import products_web
@@ -64,12 +60,10 @@ async def start_computation(request: web.Request) -> web.Response:
         subgraph = body_params.subgraph
         force_restart = body_params.force_restart
 
-    async with get_database_engine(request.app).acquire() as conn:
-        group_properties = (
-            await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
-                conn, user_id=req_ctx.user_id, product_name=req_ctx.product_name
-            )
-        )
+    # Group properties
+    group_properties = await _service.get_group_properties(
+        request.app, product_name=req_ctx.product_name, user_id=req_ctx.user_id
+    )
 
     # Get wallet information
     product = products_web.get_current_product(request)

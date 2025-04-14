@@ -6,6 +6,7 @@ from models_library.api_schemas_directorv2.computations import (
     TasksOutputs,
     TasksSelection,
 )
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_pipeline import ComputationTask
 from models_library.users import UserID
@@ -15,12 +16,17 @@ from pydantic import TypeAdapter
 from pydantic.types import PositiveInt
 from servicelib.aiohttp import status
 from servicelib.logging_utils import log_decorator
+from simcore_postgres_database.utils_groups_extra_properties import (
+    GroupExtraProperties,
+    GroupExtraPropertiesRepo,
+)
 
 from ..application_settings import get_application_settings
+from ..db.plugin import get_database_engine
 from ..products import products_service
 from ..products.models import Product
-from ..projects import api as projects_api
-from ..users import preferences_api as user_preferences_api
+from ..projects import api as projects_service
+from ..users import preferences_api as user_preferences_service
 from ..users.exceptions import UserDefaultWalletNotFoundError
 from ..wallets import api as wallets_service
 from ._client_base import DataType, request_director_v2
@@ -205,20 +211,22 @@ async def get_wallet_info(
         product.is_payment_enabled and app_settings.WEBSERVER_CREDIT_COMPUTATION_ENABLED
     ):
         return None
-    project_wallet = await projects_api.get_project_wallet(app, project_id=project_id)
+    project_wallet = await projects_service.get_project_wallet(
+        app, project_id=project_id
+    )
     if project_wallet is None:
-        user_default_wallet_preference = await user_preferences_api.get_frontend_user_preference(
+        user_default_wallet_preference = await user_preferences_service.get_frontend_user_preference(
             app,
             user_id=user_id,
             product_name=product_name,
-            preference_class=user_preferences_api.PreferredWalletIdFrontendUserPreference,
+            preference_class=user_preferences_service.PreferredWalletIdFrontendUserPreference,
         )
         if user_default_wallet_preference is None:
             raise UserDefaultWalletNotFoundError(uid=user_id)
         project_wallet_id = TypeAdapter(WalletID).validate_python(
             user_default_wallet_preference.value
         )
-        await projects_api.connect_wallet_to_project(
+        await projects_service.connect_wallet_to_project(
             app,
             product_name=product_name,
             project_id=project_id,
@@ -240,3 +248,15 @@ async def get_wallet_info(
         wallet_name=wallet.name,
         wallet_credit_amount=wallet.available_credits,
     )
+
+
+async def get_group_properties(
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+) -> GroupExtraProperties:
+    async with get_database_engine(app).acquire() as conn:
+        return await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
+            conn, user_id=user_id, product_name=product_name
+        )
