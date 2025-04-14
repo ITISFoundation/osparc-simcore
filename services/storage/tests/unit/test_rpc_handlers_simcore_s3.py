@@ -547,7 +547,7 @@ async def _request_start_export_data(
 
 @pytest.fixture
 def task_progress_spy(mocker: MockerFixture) -> Mock:
-    return mocker.spy(CeleryTaskWorker, "set_task_progress")
+    return mocker.spy(CeleryTaskWorker, "set_progress")
 
 
 @pytest.mark.parametrize(
