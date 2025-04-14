@@ -1,0 +1,44 @@
+[
+ {
+  "name": "GET /services/simcore%2Fservices%2Fdynamic%2Fmy_program/1.0.0",
+  "description": "<Request('GET', 'http://catalog:8005/v0/services/simcore%2Fservices%2Fdynamic%2Fmy_program/1.0.0?user_id=1')>",
+  "method": "GET",
+  "host": "catalog",
+  "path": {
+   "path": "/v0/services/{service_key}/{service_version}",
+   "path_parameters": [
+    {
+     "in": "path",
+     "name": "service_key",
+     "required": true,
+     "schema": {
+      "title": "Service Key",
+      "type": "str",
+      "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$"
+     },
+     "response_value": "services"
+    },
+    {
+     "in": "path",
+     "name": "service_version",
+     "required": true,
+     "schema": {
+      "title": "Service Version",
+      "type": "str",
+      "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$"
+     },
+     "response_value": "simcore/services/dynamic/my_program"
+    }
+   ]
+  },
+  "query": "user_id=1",
+  "response_body": {
+   "error": {
+    "errors": [
+     "Not Found"
+    ]
+   }
+  },
+  "status_code": 404
+ }
+]

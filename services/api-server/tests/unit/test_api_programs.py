@@ -70,3 +70,40 @@ async def test_list_programs(
     if response.status_code == status.HTTP_200_OK:
         programs = response.json()
         assert isinstance(programs, list)
+
+
+@pytest.mark.parametrize(
+    "capture,expected_status_code",
+    [
+        ("get_program_release_success.json", status.HTTP_200_OK),
+        ("get_program_release_not_found.json", status.HTTP_404_NOT_FOUND),
+    ],
+)
+async def test_get_program_release(
+    client: AsyncClient,
+    mocked_catalog_rest_api_base,
+    create_respx_mock_from_capture: CreateRespxMockCallback,
+    auth: httpx.BasicAuth,
+    project_tests_dir: Path,
+    capture: str,
+    expected_status_code: int,
+):
+    respx_mock = create_respx_mock_from_capture(
+        respx_mocks=[mocked_catalog_rest_api_base],
+        capture_path=project_tests_dir / "mocks" / capture,
+        side_effects_callbacks=[],
+    )
+    assert respx_mock
+
+    program_key = "simcore/services/dynamic/my_program"
+    version = "1.0.0"
+
+    response = await client.get(
+        f"{API_VTAG}/programs/{program_key}/releases/{version}", auth=auth
+    )
+    assert response.status_code == expected_status_code
+    if response.status_code == status.HTTP_200_OK:
+        program_release = response.json()
+        assert "id" in program_release
+        assert program_release["id"] == program_key
+        assert program_release["version"] == version
