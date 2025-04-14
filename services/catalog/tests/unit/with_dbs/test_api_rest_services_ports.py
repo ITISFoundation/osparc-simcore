@@ -1,13 +1,16 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-# pylint: disable=too-many-arguments
+
 
 import urllib.parse
 from collections.abc import Callable
 from typing import Any
 
 import pytest
+import simcore_service_catalog.api._dependencies.services
 from pytest_mock.plugin import MockerFixture
 from respx.router import MockRouter
 from starlette import status
@@ -48,10 +51,11 @@ async def mocked_check_service_read_access(
     # MOCKS functionality inside "simcore_service_catalog.api.dependencies.services.check_service_read_access"
     # to provide read access to a service to user_groups_ids
     #
-    print(user_groups_ids)
+    assert user_groups_ids
 
-    mocker.patch(
-        "simcore_service_catalog.api.dependencies.services.ServicesRepository.get_service",
+    mocker.patch.object(
+        simcore_service_catalog.api._dependencies.services.ServicesRepository,
+        "get_service",
         autospec=True,
         return_value=True,
     )
@@ -59,13 +63,13 @@ async def mocked_check_service_read_access(
 
 @pytest.fixture
 async def mocked_director_service_api(
-    mocked_director_service_api_base: MockRouter,
+    mocked_director_rest_api_base: MockRouter,
     service_key: str,
     service_version: str,
     service_metadata: dict[str, Any],
 ):
     # SEE services/director/src/simcore_service_director/api/v0/openapi.yaml
-    mocked_director_service_api_base.get(
+    mocked_director_rest_api_base.get(
         f"/services/{urllib.parse.quote_plus(service_key)}/{service_version}",
         name="services_by_key_version_get",
     ).respond(
@@ -80,7 +84,7 @@ async def mocked_director_service_api(
 
 async def test_list_service_ports(
     service_caching_disabled: None,
-    background_tasks_setup_disabled: None,
+    background_task_lifespan_disabled: None,
     mocked_check_service_read_access: None,
     mocked_director_service_api: None,
     rabbitmq_and_rpc_setup_disabled: None,

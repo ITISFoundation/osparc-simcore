@@ -309,7 +309,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           }
         }, this);
       }
-      socket.emit("logger");
     },
 
     __listenToProgress: function() {

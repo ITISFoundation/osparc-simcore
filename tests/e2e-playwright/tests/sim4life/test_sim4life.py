@@ -13,7 +13,7 @@ from typing import Any
 
 from playwright.sync_api import Page
 from pydantic import AnyUrl
-from pytest_simcore.helpers.playwright import RestartableWebSocket, ServiceType
+from pytest_simcore.helpers.playwright import RobustWebSocket, ServiceType
 from pytest_simcore.helpers.playwright_sim4life import (
     check_video_streaming,
     interact_with_s4l,
@@ -27,7 +27,7 @@ def test_sim4life(
         [ServiceType, str, str | None, str | None], dict[str, Any]
     ],
     create_project_from_new_button: Callable[[str], dict[str, Any]],
-    log_in_and_out: RestartableWebSocket,
+    log_in_and_out: RobustWebSocket,
     service_key: str,
     service_version: str | None,
     use_plus_button: bool,
