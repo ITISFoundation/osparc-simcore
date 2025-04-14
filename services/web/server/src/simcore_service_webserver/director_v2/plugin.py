@@ -27,7 +27,7 @@ def setup_director_v2(app: web.Application):
     assert app[APP_SETTINGS_KEY].WEBSERVER_DIRECTOR_V2  # nosec
 
     # client to communicate with director-v2 service
-    _client.set_client(app, _client.ComputationsApi(app))
+    _client.set_client(app, _client.DirectorV2RestClient(app))
 
     # routes at the web-server app
     setup_rest(app)

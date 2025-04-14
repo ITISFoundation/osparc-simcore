@@ -42,12 +42,12 @@ async def is_healthy(app: web.Application) -> bool:
         return False
 
 
-class ComputationsApi:
+class DirectorV2RestClient:
     def __init__(self, app: web.Application) -> None:
         self._app = app
         self._settings: DirectorV2Settings = get_plugin_settings(app)
 
-    async def get(
+    async def get_computation(
         self, project_id: ProjectID, user_id: UserID
     ) -> DirectorV2ComputationGet:
         computation_task_out = await request_director_v2(
@@ -61,7 +61,7 @@ class ComputationsApi:
         assert isinstance(computation_task_out, dict)  # nosec
         return DirectorV2ComputationGet.model_validate(computation_task_out)
 
-    async def start(
+    async def start_computation(
         self, project_id: ProjectID, user_id: UserID, product_name: str, **options
     ) -> str:
         computation_task_out = await request_director_v2(
@@ -80,7 +80,7 @@ class ComputationsApi:
         computation_task_out_id: str = computation_task_out["id"]
         return computation_task_out_id
 
-    async def stop(self, project_id: ProjectID, user_id: UserID):
+    async def stop_computation(self, project_id: ProjectID, user_id: UserID):
         await request_director_v2(
             self._app,
             "POST",
@@ -90,13 +90,13 @@ class ComputationsApi:
         )
 
 
-_APP_KEY = f"{__name__}.{ComputationsApi.__name__}"
+_APP_KEY = f"{__name__}.{DirectorV2RestClient.__name__}"
 
 
-def get_client(app: web.Application) -> ComputationsApi | None:
-    app_key: ComputationsApi | None = app.get(_APP_KEY)
+def get_client(app: web.Application) -> DirectorV2RestClient | None:
+    app_key: DirectorV2RestClient | None = app.get(_APP_KEY)
     return app_key
 
 
-def set_client(app: web.Application, obj: ComputationsApi):
+def set_client(app: web.Application, obj: DirectorV2RestClient):
     app[_APP_KEY] = obj

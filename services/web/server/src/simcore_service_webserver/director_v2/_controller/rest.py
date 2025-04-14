@@ -27,7 +27,8 @@ from ...models import RequestContext
 from ...products import products_web
 from ...security.decorators import permission_required
 from ...utils_aiohttp import envelope_json_response
-from .. import _client, _service
+from .. import _service
+from .._client import DirectorV2RestClient
 from .._service_abc import CommitID, get_project_run_policy
 from ._rest_exceptions import handle_rest_requests_exceptions
 
@@ -106,10 +107,12 @@ async def start_computation(request: web.Request) -> web.Response:
         else True
     )
 
-    computations = _client.ComputationsApi(request.app)
+    computations = DirectorV2RestClient(request.app)
     _started_pipelines_ids = await asyncio.gather(
         *[
-            computations.start(pid, req_ctx.user_id, req_ctx.product_name, **options)
+            computations.start_computation(
+                pid, req_ctx.user_id, req_ctx.product_name, **options
+            )
             for pid in running_project_ids
         ]
     )
@@ -134,7 +137,7 @@ async def start_computation(request: web.Request) -> web.Response:
 @handle_rest_requests_exceptions
 async def stop_computation(request: web.Request) -> web.Response:
     req_ctx = RequestContext.model_validate(request)
-    computations = _client.ComputationsApi(request.app)
+    computations = DirectorV2RestClient(request.app)
     run_policy = get_project_run_policy(request.app)
     assert run_policy  # nosec
 
@@ -148,7 +151,7 @@ async def stop_computation(request: web.Request) -> web.Response:
     )
 
     await asyncio.gather(
-        *[computations.stop(pid, req_ctx.user_id) for pid in project_ids]
+        *[computations.stop_computation(pid, req_ctx.user_id) for pid in project_ids]
     )
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
@@ -159,7 +162,7 @@ async def stop_computation(request: web.Request) -> web.Response:
 @permission_required("project.read")
 @handle_rest_requests_exceptions
 async def get_computation(request: web.Request) -> web.Response:
-    computations = _client.ComputationsApi(request.app)
+    computations = DirectorV2RestClient(request.app)
     run_policy = get_project_run_policy(request.app)
     assert run_policy  # nosec
 
@@ -175,7 +178,10 @@ async def get_computation(request: web.Request) -> web.Response:
     )
 
     list_computation_tasks = await asyncio.gather(
-        *[computations.get(project_id=pid, user_id=user_id) for pid in project_ids]
+        *[
+            computations.get_computation(project_id=pid, user_id=user_id)
+            for pid in project_ids
+        ]
     )
 
     assert len(list_computation_tasks) == len(project_ids)  # nosec
