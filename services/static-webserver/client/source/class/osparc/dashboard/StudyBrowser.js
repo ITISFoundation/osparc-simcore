@@ -1789,11 +1789,30 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       convertToPipelineButton["convertToPipelineButton"] = true;
       const uiMode = osparc.study.Utils.getUiMode(studyData);
       convertToPipelineButton.setVisibility(uiMode === "standalone" ? "visible" : "excluded");
-      convertToPipelineButton.addListener("execute", () => {
-        this.__updateUIMode(studyData, "workbench")
-          .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while converting to pipeline")));
-      }, this);
+      convertToPipelineButton.addListener("execute", () => this.__convertToPipelineClicked(studyData), this);
       return convertToPipelineButton;
+    },
+
+    __convertToPipelineClicked: function(studyData) {
+      let message = this.tr("Would you like to convert this project to a pipeline?");
+      message += "<br>" + this.tr("Alternatively, you can create a copy of the project and convert the copy instead.");
+      const confirmationWin = new osparc.ui.window.Confirmation();
+      confirmationWin.set({
+        caption: this.tr("Convert to Pipeline"),
+        confirmText: this.tr("Convert"),
+        confirmAction: "create",
+        message,
+      })
+      confirmationWin.getChildControl("cancel-button").set({
+        label: this.tr("Create a copy and convert it"),
+      });
+      confirmationWin.addListener("close", () => {
+        if (confirmationWin.getConfirmed()) {
+          this.__updateUIMode(studyData, "workbench")
+            .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while converting to pipeline")));
+        }
+      });
+      confirmationWin.open();
     },
 
     __updateUIMode: function(studyData, uiMode) {
