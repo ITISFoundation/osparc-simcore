@@ -28,8 +28,9 @@ qx.Class.define("osparc.info.CommentUI", {
     this.__comment = comment;
 
     const isMyComment = this.__isMyComment();
-    const layout = new qx.ui.layout.Grid(12, 5);
-    layout.setColumnFlex(isMyComment ? 0 : 1, 1); // message content
+    const layout = new qx.ui.layout.Grid(12, 4);
+    layout.setColumnFlex(1, 1); // comment
+    layout.setColumnFlex(isMyComment ? 0 : 2, 2); // spacer
     this._setLayout(layout);
     this.setPadding(5);
 
@@ -46,56 +47,63 @@ qx.Class.define("osparc.info.CommentUI", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "meta-data-grid": {
-          const layout = new qx.ui.layout.Grid(12, 5)
-          layout.setColumnWidth(this.__isMyComment() ? 1 : 0, 32); // thumbnail
-          control = new qx.ui.container.Composite(layout);
-          this._add(control, {
-            row: 0,
-            column: this.__isMyComment() ? 1 : 0
-          });
-          break;
-        }
         case "thumbnail":
           control = new qx.ui.basic.Image().set({
             scale: true,
             maxWidth: 32,
             maxHeight: 32,
             decorator: "rounded",
-            marginTop: 4,
+            marginTop: 2,
           });
-          this.getChildControl("meta-data-grid").add(control, {
+          this._add(control, {
             row: 0,
-            column: this.__isMyComment() ? 1 : 0,
-            rowSpan: 2
+            column: this.__isMyComment() ? 2 : 0,
+            rowSpan: 2,
+          });
+          break;
+        case "header-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+            alignX: this.__isMyComment() ? "right" : "left"
+          }));
+          this._add(control, {
+            row: 0,
+            column: 1
           });
           break;
         case "user-name":
           control = new qx.ui.basic.Label().set({
             font: "text-12"
           });
-          this.getChildControl("meta-data-grid").add(control, {
-            row: 0,
-            column: this.__isMyComment() ? 0 : 1
-          });
+          this.getChildControl("header-layout").addAt(control, 0);
           break;
         case "last-updated":
           control = new qx.ui.basic.Label().set({
             font: "text-12"
           });
-          this.getChildControl("meta-data-grid").add(control, {
-            row: 1,
-            column: this.__isMyComment() ? 0 : 1
-          });
+          this.getChildControl("header-layout").addAt(control, 1);
           break;
         case "comment-content":
-          control = new osparc.ui.markdown.Markdown();
+          control = new osparc.ui.markdown.Markdown().set({
+            backgroundColor: "background-main-2",
+            decorator: "rounded",
+            noMargin: true,
+            paddingLeft: 8,
+            paddingRight: 8,
+            allowGrowX: true,
+          });
           control.getContentElement().setStyles({
-            "text-align": this.__isMyComment() ? "right" : "left"
+            "text-align": this.__isMyComment() ? "right" : "left",
           });
           this._add(control, {
-            row: 0,
-            column: this.__isMyComment() ? 0 : 1,
+            row: 1,
+            column: 1,
+          });
+          break;
+        case "spacer":
+          control = new qx.ui.core.Spacer();
+          this._add(control, {
+            row: 1,
+            column: this.__isMyComment() ? 0 : 2,
           });
           break;
       }
@@ -123,6 +131,8 @@ qx.Class.define("osparc.info.CommentUI", {
         thumbnail.setSource(user.getThumbnail());
         userName.setValue(user.getLabel());
       }
+
+      this.getChildControl("spacer");
     }
   }
 });
