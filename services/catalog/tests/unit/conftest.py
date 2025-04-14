@@ -17,6 +17,8 @@ import respx
 import simcore_service_catalog
 import simcore_service_catalog.core.application
 import simcore_service_catalog.core.events
+import simcore_service_catalog.repository
+import simcore_service_catalog.repository.events
 import yaml
 from asgi_lifespan import LifespanManager
 from faker import Faker
@@ -216,35 +218,35 @@ def service_caching_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.fixture
-def postgres_setup_disabled(mocker: MockerFixture):
+def repository_lifespan_disabled(mocker: MockerFixture):
     mocker.patch.object(
-        simcore_service_catalog.core.events, "postgres_database_lifespan"
+        simcore_service_catalog.core.events,
+        "repository_lifespan_manager",
+        autospec=True,
     )
-    mocker.patch.object(simcore_service_catalog.core.events, "database_lifespan")
 
 
 @pytest.fixture
-def background_tasks_setup_disabled(mocker: MockerFixture) -> None:
-    """patch the setup of the background task so we can call it manually"""
-
+def background_task_lifespan_disabled(mocker: MockerFixture) -> None:
     class MockedBackgroundTaskContextManager:
         async def __aenter__(self):
             print(
                 "TEST",
-                background_tasks_setup_disabled.__name__,
+                background_task_lifespan_disabled.__name__,
                 "Disabled background tasks. Skipping execution of __aenter__",
             )
 
         async def __aexit__(self, exc_type, exc_value, traceback):
             print(
                 "TEST",
-                background_tasks_setup_disabled.__name__,
+                background_task_lifespan_disabled.__name__,
                 "Disabled background tasks. Skipping execution of __aexit__",
             )
 
     mocker.patch.object(
         simcore_service_catalog.core.events,
         "background_task_lifespan",
+        autospec=True,
         return_value=MockedBackgroundTaskContextManager(),
     )
 
@@ -257,8 +259,12 @@ def background_tasks_setup_disabled(mocker: MockerFixture) -> None:
 @pytest.fixture
 def rabbitmq_and_rpc_setup_disabled(mocker: MockerFixture):
     # The following services are affected if rabbitmq is not in place
-    mocker.patch.object(simcore_service_catalog.core.events, "rabbitmq_lifespan")
-    mocker.patch.object(simcore_service_catalog.core.events, "rpc_api_lifespan")
+    mocker.patch.object(
+        simcore_service_catalog.core.events, "rabbitmq_lifespan", autospec=True
+    )
+    mocker.patch.object(
+        simcore_service_catalog.core.events, "rpc_api_lifespan", autospec=True
+    )
 
 
 @pytest.fixture
@@ -274,12 +280,14 @@ async def rpc_client(
 
 
 @pytest.fixture
-def director_setup_disabled(mocker: MockerFixture) -> None:
-    mocker.patch.object(simcore_service_catalog.core.events, "director_lifespan")
+def director_lifespan_disabled(mocker: MockerFixture) -> None:
+    mocker.patch.object(
+        simcore_service_catalog.core.events, "director_lifespan", autospec=True
+    )
 
 
 @pytest.fixture
-def director_service_openapi_specs(
+def director_rest_openapi_specs(
     osparc_simcore_services_dir: Path,
 ) -> dict[str, Any]:
     openapi_path = (
@@ -295,7 +303,7 @@ def director_service_openapi_specs(
 
 
 @pytest.fixture
-def expected_director_list_services(
+def expected_director_rest_api_list_services(
     user_email: EmailStr, user_first_name: str, user_last_name: str
 ) -> list[dict[str, Any]]:
     """This fixture has at least TWO purposes:
@@ -359,9 +367,9 @@ def expected_director_list_services(
 
 
 @pytest.fixture
-def mocked_director_service_api_base(
+def mocked_director_rest_api_base(
     app_settings: ApplicationSettings,
-    director_service_openapi_specs: dict[str, Any],
+    director_rest_openapi_specs: dict[str, Any],
 ) -> Iterator[respx.MockRouter]:
     """
     BASIC fixture to mock director service API
@@ -374,7 +382,7 @@ def mocked_director_service_api_base(
     ), "Check dependency on fixture `director_setup_disabled`"
 
     # NOTE: this MUST be in sync with services/director/src/simcore_service_director/api/v0/openapi.yaml
-    openapi = director_service_openapi_specs
+    openapi = director_rest_openapi_specs
     assert Version(openapi["info"]["version"]) == Version("0.1.0")
 
     with respx.mock(
@@ -437,10 +445,10 @@ def mock_service_extras() -> ServiceExtras:
 
 
 @pytest.fixture
-def mocked_director_service_api(
-    mocked_director_service_api_base: respx.MockRouter,
-    director_service_openapi_specs: dict[str, Any],
-    expected_director_list_services: list[dict[str, Any]],
+def mocked_director_rest_api(
+    mocked_director_rest_api_base: respx.MockRouter,
+    director_rest_openapi_specs: dict[str, Any],
+    expected_director_rest_api_list_services: list[dict[str, Any]],
     get_mocked_service_labels: Callable[[str, str], dict],
     mock_service_extras: ServiceExtras,
 ) -> respx.MockRouter:
@@ -450,14 +458,14 @@ def mocked_director_service_api(
     To customize the  mock responses use `mocked_director_service_api_base` instead
     """
     # alias
-    openapi = director_service_openapi_specs
-    respx_mock = mocked_director_service_api_base
+    openapi = director_rest_openapi_specs
+    respx_mock = mocked_director_rest_api_base
 
     def _search(service_key, service_version):
         try:
             return next(
                 s
-                for s in expected_director_list_services
+                for s in expected_director_rest_api_list_services
                 if (s["key"] == service_key and s["version"] == service_version)
             )
         except StopIteration:
@@ -467,7 +475,7 @@ def mocked_director_service_api(
     assert openapi["paths"].get("/services")
 
     respx_mock.get(path__regex=r"/services$", name="list_services").respond(
-        status.HTTP_200_OK, json={"data": expected_director_list_services}
+        status.HTTP_200_OK, json={"data": expected_director_rest_api_list_services}
     )
 
     # GET

@@ -8,10 +8,9 @@ from models_library.api_schemas_catalog.service_access_rights import (
 from models_library.services import ServiceKey, ServiceVersion
 
 from ..._constants import RESPONSE_MODEL_POLICY
-from ...db.repositories.services import ServicesRepository
-from ...models.services_db import ServiceAccessRightsAtDB
-from ..dependencies.database import get_repository
-from ..dependencies.services import AccessInfo, check_service_read_access
+from ...repository.services import ServicesRepository
+from .._dependencies.repository import get_repository
+from .._dependencies.services import AccessInfo, check_service_read_access
 
 _logger = logging.getLogger(__name__)
 
@@ -33,10 +32,10 @@ async def get_service_access_rights(
     ],
     x_simcore_products_name: Annotated[str, Header(...)],
 ):
-    service_access_rights: list[
-        ServiceAccessRightsAtDB
-    ] = await services_repo.get_service_access_rights(
-        key=service_key, version=service_version, product_name=x_simcore_products_name
+    service_access_rights = await services_repo.get_service_access_rights(
+        key=service_key,
+        version=service_version,
+        product_name=x_simcore_products_name,
     )
 
     gids_with_access_rights = {}

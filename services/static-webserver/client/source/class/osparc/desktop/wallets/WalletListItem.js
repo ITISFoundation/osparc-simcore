@@ -24,6 +24,7 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
     const creditsCol = 7;
     const layout = this._getLayout();
     layout.setSpacingX(10);
+    layout.setColumnAlign(0, "left", "middle");
     layout.setColumnWidth(creditsCol, 110);
     layout.setColumnAlign(creditsCol, "right", "middle");
 

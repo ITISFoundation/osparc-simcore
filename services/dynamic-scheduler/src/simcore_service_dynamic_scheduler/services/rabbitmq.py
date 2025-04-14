@@ -12,7 +12,7 @@ from servicelib.rabbitmq import (
 from settings_library.rabbit import RabbitSettings
 
 
-async def lifespan_rabbitmq(app: FastAPI) -> AsyncIterator[State]:
+async def rabbitmq_lifespan(app: FastAPI) -> AsyncIterator[State]:
     settings: RabbitSettings = app.state.settings.DYNAMIC_SCHEDULER_RABBITMQ
 
     await wait_till_rabbitmq_responsive(settings.dsn)

@@ -35,12 +35,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
 
     this.__shareWithEmailEnabled = false;
     if (this.__resourceData["resourceType"] === "study") {
-      osparc.utils.DisabledPlugins.isShareWithEmailEnabled()
-        .then(isEnabled => {
-          if (isEnabled) {
-            this.__shareWithEmailEnabled = true;
-          }
-        });
+      this.__shareWithEmailEnabled = osparc.utils.DisabledPlugins.isShareWithEmailEnabled();
     }
 
     this.center();
