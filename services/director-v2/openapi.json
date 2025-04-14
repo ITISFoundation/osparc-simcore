@@ -65,7 +65,8 @@
         "tags": [
           "computations"
         ],
-        "summary": "Create and optionally start a new computation",
+        "summary": "Create Computation",
+        "description": "Create and optionally starts it",
         "operationId": "create_computation_v2_computations_post",
         "requestBody": {
           "content": {
@@ -114,7 +115,8 @@
         "tags": [
           "computations"
         ],
-        "summary": "Returns a computation pipeline state",
+        "summary": "Get Computation",
+        "description": "Returns a computation pipeline state",
         "operationId": "get_computation_v2_computations__project_id__get",
         "parameters": [
           {
@@ -166,7 +168,8 @@
         "tags": [
           "computations"
         ],
-        "summary": "Deletes a computation pipeline",
+        "summary": "Delete Computation",
+        "description": "Deletes a computation pipeline",
         "operationId": "delete_computation_v2_computations__project_id__delete",
         "parameters": [
           {
@@ -212,7 +215,8 @@
         "tags": [
           "computations"
         ],
-        "summary": "Stops a computation pipeline",
+        "summary": "Stop Computation",
+        "description": "Stops a computation pipeline",
         "operationId": "stop_computation_v2_computations__project_id__stop_post",
         "parameters": [
           {
