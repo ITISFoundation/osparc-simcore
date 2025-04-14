@@ -21,7 +21,7 @@ from typing import Annotated, Any, Final
 
 import networkx as nx
 from fastapi import APIRouter, Depends, FastAPI, HTTPException
-from models_library.api_schemas_directorv2.comp_tasks import (
+from models_library.api_schemas_directorv2.computations import (
     ComputationCreate,
     ComputationDelete,
     ComputationGet,
@@ -245,7 +245,7 @@ async def _try_start_pipeline(
 
 @router.post(
     "",
-    summary="Create and optionally start a new computation",
+    description="Create and optionally starts it",
     response_model=ComputationGet,
     status_code=status.HTTP_201_CREATED,
     responses={
@@ -417,7 +417,7 @@ async def create_computation(  # noqa: PLR0913 # pylint: disable=too-many-positi
 
 @router.get(
     "/{project_id}",
-    summary="Returns a computation pipeline state",
+    description="Returns a computation pipeline state",
     response_model=ComputationGet,
     status_code=status.HTTP_200_OK,
 )
@@ -496,7 +496,7 @@ async def get_computation(
 
 @router.post(
     "/{project_id}:stop",
-    summary="Stops a computation pipeline",
+    description="Stops a computation pipeline",
     response_model=ComputationGet,
     status_code=status.HTTP_202_ACCEPTED,
 )
@@ -575,7 +575,7 @@ async def stop_computation(
 
 @router.delete(
     "/{project_id}",
-    summary="Deletes a computation pipeline",
+    description="Deletes a computation pipeline",
     response_model=None,
     status_code=status.HTTP_204_NO_CONTENT,
 )
@@ -632,9 +632,9 @@ async def delete_computation(
                 before_sleep=before_sleep_log(_logger, logging.INFO),
             )
             async def check_pipeline_stopped() -> bool:
-                comp_tasks: list[
-                    CompTaskAtDB
-                ] = await comp_tasks_repo.list_computational_tasks(project_id)
+                comp_tasks: list[CompTaskAtDB] = (
+                    await comp_tasks_repo.list_computational_tasks(project_id)
+                )
                 pipeline_state = utils.get_pipeline_state_from_task_states(
                     comp_tasks,
                 )

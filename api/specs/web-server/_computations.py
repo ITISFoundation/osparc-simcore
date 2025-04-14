@@ -1,5 +1,5 @@
 from fastapi import APIRouter, status
-from models_library.api_schemas_directorv2.comp_tasks import ComputationGet
+from models_library.api_schemas_directorv2.computations import ComputationGet
 from models_library.api_schemas_webserver.computations import ComputationStart
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
@@ -19,8 +19,7 @@ router = APIRouter(
     "/computations/{project_id}",
     response_model=Envelope[ComputationGet],
 )
-async def get_computation(project_id: ProjectID):
-    ...
+async def get_computation(project_id: ProjectID): ...
 
 
 @router.post(
@@ -39,13 +38,11 @@ async def get_computation(project_id: ProjectID):
         status.HTTP_503_SERVICE_UNAVAILABLE: {"description": "Service not available"},
     },
 )
-async def start_computation(project_id: ProjectID, _start: ComputationStart):
-    ...
+async def start_computation(project_id: ProjectID, _start: ComputationStart): ...
 
 
 @router.post(
     "/computations/{project_id}:stop",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def stop_computation(project_id: ProjectID):
-    ...
+async def stop_computation(project_id: ProjectID): ...

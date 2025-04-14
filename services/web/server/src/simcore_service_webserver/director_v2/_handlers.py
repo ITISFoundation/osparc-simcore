@@ -4,7 +4,7 @@ from typing import Any
 
 from aiohttp import web
 from common_library.json_serialization import json_dumps
-from models_library.api_schemas_directorv2.comp_tasks import ComputationGet
+from models_library.api_schemas_directorv2.computations import ComputationGet
 from models_library.api_schemas_webserver.computations import ComputationStart
 from models_library.projects import ProjectID
 from pydantic import BaseModel, Field, TypeAdapter, ValidationError

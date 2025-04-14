@@ -11,7 +11,7 @@ import pytest
 from aioresponses import aioresponses as AioResponsesMock
 from aioresponses.core import CallbackResult
 from faker import Faker
-from models_library.api_schemas_directorv2.comp_tasks import ComputationGet
+from models_library.api_schemas_directorv2.computations import ComputationGet
 from models_library.api_schemas_storage.storage_schemas import (
     FileMetaDataGet,
     FileUploadCompleteFutureResponse,
@@ -108,9 +108,7 @@ def create_computation_cb(url, **kwargs) -> CallbackResult:
 
     json_schema = ComputationTask.model_json_schema()
     assert isinstance(json_schema["examples"], list)
-    assert isinstance(
-        json_schema["examples"][0], dict
-    )
+    assert isinstance(json_schema["examples"][0], dict)
     computation: dict[str, Any] = json_schema["examples"][0].copy()
     computation.update(
         {
@@ -123,9 +121,7 @@ def create_computation_cb(url, **kwargs) -> CallbackResult:
             },
         }
     )
-    returned_computation = ComputationTask.model_validate(
-        computation
-    )
+    returned_computation = ComputationTask.model_validate(computation)
 
     return CallbackResult(
         status=201,
@@ -140,16 +136,10 @@ def get_computation_cb(url, **kwargs) -> CallbackResult:
     node_states = FULL_PROJECT_NODE_STATES
 
     json_schema = ComputationGet.model_json_schema()
-    assert isinstance(
-        json_schema["examples"], list
-    )
-    assert isinstance(
-        json_schema["examples"][0], dict
-    )
+    assert isinstance(json_schema["examples"], list)
+    assert isinstance(json_schema["examples"][0], dict)
 
-    computation: dict[str, Any] = json_schema[
-        "examples"
-    ][0].copy()
+    computation: dict[str, Any] = json_schema["examples"][0].copy()
     computation.update(
         {
             "id": Path(url.path).name,
@@ -283,10 +273,8 @@ async def storage_v0_service_mock(
         r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+/metadata.+$"
     )
 
-    get_upload_link_pattern = (
-        get_download_link_pattern
-    ) = delete_file_pattern = re.compile(
-        r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files.+$"
+    get_upload_link_pattern = get_download_link_pattern = delete_file_pattern = (
+        re.compile(r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files.+$")
     )
 
     get_locations_link_pattern = re.compile(

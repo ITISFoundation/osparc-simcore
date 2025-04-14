@@ -1,4 +1,4 @@
-""" Computations API
+"""Computations API
 
 Wraps interactions to the director-v2 service
 
@@ -9,7 +9,7 @@ from typing import Any
 from uuid import UUID
 
 from aiohttp import web
-from models_library.api_schemas_directorv2.comp_tasks import (
+from models_library.api_schemas_directorv2.computations import (
     TasksOutputs,
     TasksSelection,
 )
