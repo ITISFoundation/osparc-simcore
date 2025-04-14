@@ -109,7 +109,8 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
         return self
 
     async def __aexit__(self, exc_type, exc_value, traceback) -> None:
-        await self.finish()
+        if exc_type is not None:
+            await self.finish()
 
     async def _update_parent(self, value: float) -> None:
         if self._parent:

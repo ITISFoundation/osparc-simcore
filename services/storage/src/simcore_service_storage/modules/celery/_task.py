@@ -60,6 +60,7 @@ def _async_task_wrapper(
                     if AbortableAsyncResult(task_id).is_aborted():
                         _logger.warning("Task %s was aborted by user.", task_id)
                         await cancel_wait_task(task_coro, max_delay=5)  # to constant
+                        raise asyncio.CancelledError
                     if task_coro.done():
                         break
 
