@@ -6,6 +6,7 @@
 import pytest
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
+from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_pipeline import ComputationTask
 from models_library.projects_state import RunningState
@@ -18,6 +19,11 @@ async def mocked_director_v2(
     director_v2_service_mock: aioresponses,
 ) -> aioresponses:
     return director_v2_service_mock
+
+
+@pytest.fixture
+def project_id(faker: Faker) -> ProjectID:
+    return ProjectID(faker.uuid4())
 
 
 async def test_create_pipeline(

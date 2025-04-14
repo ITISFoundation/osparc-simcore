@@ -3,9 +3,6 @@ import logging
 from typing import Any
 
 from aiohttp import web
-from models_library.api_schemas_directorv2.computations import (
-    ComputationGet as _DirectorV2ComputationGet,
-)
 from models_library.api_schemas_webserver.computations import (
     ComputationGet,
     ComputationPathParams,
@@ -13,7 +10,6 @@ from models_library.api_schemas_webserver.computations import (
     ComputationStarted,
 )
 from models_library.projects import ProjectID
-from pydantic import TypeAdapter
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -111,7 +107,7 @@ async def start_computation(request: web.Request) -> web.Response:
     )
 
     computations = _client.ComputationsApi(request.app)
-    _started_pipelines_ids: list[str] = await asyncio.gather(
+    _started_pipelines_ids = await asyncio.gather(
         *[
             computations.start(pid, req_ctx.user_id, req_ctx.product_name, **options)
             for pid in running_project_ids
@@ -142,12 +138,14 @@ async def stop_computation(request: web.Request) -> web.Response:
     run_policy = get_project_run_policy(request.app)
     assert run_policy  # nosec
 
-    project_id = ProjectID(request.match_info["project_id"])
+    path_params = parse_request_path_parameters_as(ComputationPathParams, request)
 
-    project_ids: list[ProjectID] = await run_policy.get_runnable_projects_ids(
-        request, project_id
+    project_ids = await run_policy.get_runnable_projects_ids(
+        request, path_params.project_id
     )
-    _logger.debug("Project %s will stop %d variants", project_id, len(project_ids))
+    _logger.debug(
+        "Project %s will stop %d variants", path_params.project_id, len(project_ids)
+    )
 
     await asyncio.gather(
         *[computations.stop(pid, req_ctx.user_id) for pid in project_ids]
@@ -166,19 +164,20 @@ async def get_computation(request: web.Request) -> web.Response:
     assert run_policy  # nosec
 
     user_id = request[RQT_USERID_KEY]
-    project_id = ProjectID(request.match_info["project_id"])
+    path_params = parse_request_path_parameters_as(ComputationPathParams, request)
 
     project_ids: list[ProjectID] = await run_policy.get_runnable_projects_ids(
-        request, project_id
+        request, path_params.project_id
     )
-    _logger.debug("Project %s will get %d variants", project_id, len(project_ids))
-    list_computation_tasks = TypeAdapter(
-        list[_DirectorV2ComputationGet]
-    ).validate_python(
-        await asyncio.gather(
-            *[computations.get(project_id=pid, user_id=user_id) for pid in project_ids]
-        ),
+
+    _logger.debug(
+        "Project %s will get %d variants", path_params.project_id, len(project_ids)
     )
+
+    list_computation_tasks = await asyncio.gather(
+        *[computations.get(project_id=pid, user_id=user_id) for pid in project_ids]
+    )
+
     assert len(list_computation_tasks) == len(project_ids)  # nosec
 
     return envelope_json_response(

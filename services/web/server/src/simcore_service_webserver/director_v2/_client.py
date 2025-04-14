@@ -5,12 +5,14 @@ Wraps interactions to the director-v2 service
 """
 
 import logging
-from typing import Any
 
 import aiohttp
 from aiohttp import ClientTimeout, web
 from models_library.api_schemas_directorv2.computations import (
     ComputationCreate as DirectorV2ComputationCreate,
+)
+from models_library.api_schemas_directorv2.computations import (
+    ComputationGet as DirectorV2ComputationGet,
 )
 from models_library.projects import ProjectID
 from models_library.users import UserID
@@ -45,7 +47,9 @@ class ComputationsApi:
         self._app = app
         self._settings: DirectorV2Settings = get_plugin_settings(app)
 
-    async def get(self, project_id: ProjectID, user_id: UserID) -> dict[str, Any]:
+    async def get(
+        self, project_id: ProjectID, user_id: UserID
+    ) -> DirectorV2ComputationGet:
         computation_task_out = await request_director_v2(
             self._app,
             "GET",
@@ -55,7 +59,7 @@ class ComputationsApi:
             expected_status=web.HTTPOk,
         )
         assert isinstance(computation_task_out, dict)  # nosec
-        return computation_task_out
+        return DirectorV2ComputationGet.model_validate(computation_task_out)
 
     async def start(
         self, project_id: ProjectID, user_id: UserID, product_name: str, **options
