@@ -12,7 +12,6 @@ from settings_library.tracing import TracingSettings
 from starlette import status
 
 from ..core.settings import DirectorV2Settings
-from ..db.repositories.groups_extra_properties import GroupsExtraPropertiesRepository
 from ..exceptions.backend_errors import JobNotFoundError, LogFileNotFoundError
 from ..exceptions.service_errors_utils import service_exception_mapper
 from ..models.schemas.jobs import PercentageInt
@@ -71,56 +70,6 @@ _exception_mapper = partial(service_exception_mapper, service_name="Director V2"
 
 
 class DirectorV2Api(BaseServiceClientApi):
-    @_exception_mapper(http_status_map={})
-    async def create_computation(
-        self,
-        *,
-        project_id: UUID,
-        user_id: PositiveInt,
-        product_name: str,
-    ) -> ComputationTaskGet:
-        response = await self.client.post(
-            "/v2/computations",
-            json={
-                "user_id": user_id,
-                "project_id": str(project_id),
-                "start_pipeline": False,
-                "product_name": product_name,
-            },
-        )
-        response.raise_for_status()
-        task: ComputationTaskGet = ComputationTaskGet.model_validate_json(response.text)
-        return task
-
-    @_exception_mapper(http_status_map={})
-    async def start_computation(
-        self,
-        *,
-        project_id: UUID,
-        user_id: PositiveInt,
-        product_name: str,
-        groups_extra_properties_repository: GroupsExtraPropertiesRepository,
-    ) -> ComputationTaskGet:
-
-        use_on_demand_clusters = (
-            await groups_extra_properties_repository.use_on_demand_clusters(
-                user_id, product_name
-            )
-        )
-
-        response = await self.client.post(
-            "/v2/computations",
-            json={
-                "user_id": user_id,
-                "project_id": str(project_id),
-                "start_pipeline": True,
-                "product_name": product_name,
-                "use_on_demand_clusters": use_on_demand_clusters,
-            },
-        )
-        response.raise_for_status()
-        task: ComputationTaskGet = ComputationTaskGet.model_validate_json(response.text)
-        return task
 
     @_exception_mapper(http_status_map={status.HTTP_404_NOT_FOUND: JobNotFoundError})
     async def get_computation(
