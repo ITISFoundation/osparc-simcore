@@ -1,0 +1,92 @@
+[
+ {
+  "name": "GET /services",
+  "description": "<Request('GET', 'http://192.168.1.42:8005/v0/services?user_id=1&details=true')>",
+  "method": "GET",
+  "host": "192.168.1.42",
+  "path": {
+   "path": "/v0/services",
+   "path_parameters": []
+  },
+  "query": "user_id=1&details=true",
+  "response_body": [
+   {
+    "name": "File Picker",
+    "thumbnail": null,
+    "icon": null,
+    "description": "File Picker",
+    "description_ui": false,
+    "version_display": null,
+    "deprecated": null,
+    "classifiers": [],
+    "quality": {},
+    "accessRights": {
+     "1": {
+      "execute_access": true,
+      "write_access": false
+     }
+    },
+    "key": "simcore/services/frontend/file-picker",
+    "version": "1.0.0",
+    "integration-version": "1.0.0",
+    "type": "frontend",
+    "authors": [
+     {
+      "name": "Unknown",
+      "email": "unknown@osparc.io",
+      "affiliation": "unknown"
+     }
+    ],
+    "contact": "unknown@osparc.io",
+    "inputs": {},
+    "outputs": {
+     "outFile": {
+      "displayOrder": 0.0,
+      "label": "File",
+      "description": "Chosen File",
+      "type": "data:*/*"
+     }
+    },
+    "owner": null
+   },
+   {
+    "name": "Number parameter",
+    "thumbnail": "https://fakeimg.pl/100x100/ff0000%2C128/000%2C255/?text=number",
+    "icon": null,
+    "description": "Produces a number value at its outputs",
+    "description_ui": false,
+    "version_display": null,
+    "deprecated": null,
+    "classifiers": [],
+    "quality": {},
+    "accessRights": {
+     "1": {
+      "execute_access": true,
+      "write_access": false
+     }
+    },
+    "key": "simcore/services/frontend/parameter/number",
+    "version": "1.0.0",
+    "integration-version": "1.0.0",
+    "type": "frontend",
+    "authors": [
+     {
+      "name": "Unknown",
+      "email": "unknown@osparc.io",
+      "affiliation": "unknown"
+     }
+    ],
+    "contact": "unknown@osparc.io",
+    "inputs": {},
+    "outputs": {
+     "out_1": {
+      "label": "number_source",
+      "description": "Input number value",
+      "type": "number"
+     }
+    },
+    "owner": null
+   }
+  ]
+ }
+]
