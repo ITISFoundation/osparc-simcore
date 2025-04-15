@@ -27,12 +27,12 @@ def mock_program_service(mocker: MockerFixture, app: FastAPI):
 
 @pytest.mark.asyncio
 async def test_get_program_release(
-    user_id: UserID,
-    mocker: MockerFixture,
+    auth: httpx.BasicAuth,
     client: AsyncClient,
     mocked_rpc_catalog_service_api: dict[str, MockType],
+    mocker: MockerFixture,
     mock_program_service: None,
-    auth: httpx.BasicAuth,
+    user_id: UserID,
 ):
     # Arrange
     program_key = "simcore/services/dynamic/my_program"
