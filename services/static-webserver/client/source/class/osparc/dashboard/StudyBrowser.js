@@ -1811,7 +1811,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       confirmationWin.getChildControl("buttons-layout").addAt(copyOptionButton, 0);
       confirmationWin.addListener("close", () => {
         if (confirmationWin.getConfirmed()) {
-          this.__updateUIMode(studyData, "workbench")
+          this.__updateUIMode(studyData, "pipeline")
             .then(() => osparc.FlashMessenger.logAs(this.tr("Project converted to pipeline"), "INFO"))
             .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while converting to pipeline")));
         }
@@ -1822,8 +1822,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           .then(task => {
             task.addListener("resultReceived", e => {
               const copiedStudy = e.getData();
-              osparc.store.Study.patchStudyData(copiedStudy, "name", copiedStudy["name"] + " (pipeline)");
-              this.__updateUIMode(copiedStudy, "workbench")
+              this.__updateUIMode(copiedStudy, "pipeline")
                 .then(() => osparc.FlashMessenger.logAs(this.tr("Project's copy converted to pipeline"), "INFO"))
                 .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while converting the copy to pipeline")));
             }, this);

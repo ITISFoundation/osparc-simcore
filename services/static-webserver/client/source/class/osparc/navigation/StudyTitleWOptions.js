@@ -81,16 +81,7 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
             icon: null,
           });
           control.addListener("execute", () => {
-            this.getStudy().getUi().setMode("workbench");
-          });
-          break;
-        case "study-menu-convert-to-standalone":
-          control = new qx.ui.menu.Button().set({
-            label: this.tr("Convert to Standalone"),
-            icon: null,
-          });
-          control.addListener("execute", () => {
-            this.getStudy().getUi().setMode("standalone");
+            this.getStudy().getUi().setMode("pipeline");
           });
           break;
         case "study-menu-restore":
@@ -115,7 +106,6 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
           optionsMenu.add(this.getChildControl("study-menu-info"));
           optionsMenu.add(this.getChildControl("study-menu-reload"));
           optionsMenu.add(this.getChildControl("study-menu-convert-to-pipeline"));
-          optionsMenu.add(this.getChildControl("study-menu-convert-to-standalone"));
           optionsMenu.add(this.getChildControl("study-menu-restore"));
           optionsMenu.add(this.getChildControl("study-menu-open-logger"));
           control = new qx.ui.form.MenuButton().set({

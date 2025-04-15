@@ -340,30 +340,37 @@ qx.Class.define("osparc.study.Utils", {
     },
 
     guessIcon: function(studyData) {
-      if (osparc.product.Utils.isProduct("tis") || osparc.product.Utils.isProduct("tiplite")) {
+      if (
+        (osparc.product.Utils.isProduct("tis") || osparc.product.Utils.isProduct("tiplite")) &&
+        ["app", "guided"].includes(studyData["ui"]["mode"])
+      ) {
         return new Promise(resolve => resolve(this.__guessTIPIcon(studyData)));
       }
       return this.__guessIcon(studyData);
     },
 
     __guessIcon: function(studyData) {
-      const defaultIcon = osparc.dashboard.CardBase.PRODUCT_ICON;
       return new Promise(resolve => {
-        // the was to guess the TI type is to check the boot mode of the ti-postpro in the pipeline
-        const wbServices = this.self().getNonFrontendNodes(studyData);
-        if (wbServices.length === 1) {
-          const wbService = wbServices[0];
-          osparc.store.Services.getService(wbService.key, wbService.version)
-            .then(serviceMetadata => {
-              if (serviceMetadata && serviceMetadata["icon"]) {
-                resolve(serviceMetadata["icon"]);
-              }
-              resolve(defaultIcon);
-            });
-        } else if (wbServices.length > 1) {
+        if (studyData["ui"]["mode"] === "pipeline") {
           resolve("osparc/icons/diagram.png");
         } else {
-          resolve(defaultIcon);
+          const defaultIcon = osparc.dashboard.CardBase.PRODUCT_ICON;
+          // the was to guess the TI type is to check the boot mode of the ti-postpro in the pipeline
+          const wbServices = this.self().getNonFrontendNodes(studyData);
+          if (wbServices.length === 1) {
+            const wbService = wbServices[0];
+            osparc.store.Services.getService(wbService.key, wbService.version)
+              .then(serviceMetadata => {
+                if (serviceMetadata && serviceMetadata["icon"]) {
+                  resolve(serviceMetadata["icon"]);
+                }
+                resolve(defaultIcon);
+              });
+          } else if (wbServices.length > 1) {
+            resolve("osparc/icons/diagram.png");
+          } else {
+            resolve(defaultIcon);
+          }
         }
       });
     },
