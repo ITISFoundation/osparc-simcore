@@ -41,6 +41,13 @@ qx.Class.define("osparc.study.Utils", {
       return Array.from(services);
     },
 
+    extractTemplateType: function(templateData) {
+      if (templateData && templateData["ui"] && templateData["ui"]["templateType"]) {
+        return templateData["ui"]["templateType"];
+      }
+      return null;
+    },
+
     getCantExecuteServices: function(studyServices = []) {
       return studyServices.filter(studyService => studyService["myAccessRights"]["execute"] === false);
     },
