@@ -10,6 +10,7 @@ from servicelib.logging_utils import config_all_loggers
 
 from .. import exceptions
 from .._meta import API_VERSION, API_VTAG, APP_NAME
+from .._service_programs import setup as setup_program_service
 from ..api.root import create_router
 from ..api.routes.health import router as health_router
 from ..services_http import catalog, director_v2, storage, webserver
@@ -82,6 +83,8 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
     app.state.settings = settings
 
     setup_rabbitmq(app)
+
+    setup_program_service(app)
 
     if settings.API_SERVER_TRACING:
         initialize_tracing(app, settings.API_SERVER_TRACING, APP_NAME)

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from fastapi import FastAPI
 from models_library.api_schemas_catalog.services import LatestServiceGet, ServiceGetV2
 from models_library.products import ProductName
 from models_library.rest_pagination import (
@@ -87,3 +88,8 @@ class CatalogService(SingletonInAppStateMixin):
             service_key=service_key,
             service_version=service_version,
         )
+
+
+def setup(app: FastAPI, rabbitmq_rmp_client: RabbitMQRPCClient):
+    catalog_service = CatalogService(_client=rabbitmq_rmp_client)
+    catalog_service.set_to_app_state(app=app)

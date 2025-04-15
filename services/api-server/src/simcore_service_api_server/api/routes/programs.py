@@ -17,16 +17,18 @@ from simcore_sdk.node_ports_common.filemanager import (
     complete_file_upload,
     get_upload_links_from_s3,
 )
-from simcore_service_api_server._service_jobs import create_job
-from simcore_service_api_server.api.dependencies.webserver_http import (
+
+from ..._service_jobs import create_job
+from ..._service_programs import ProgramService
+from ...api.dependencies.program_service import get_program_service
+from ...api.dependencies.webserver_http import (
     get_webserver_session,
 )
-from simcore_service_api_server.services_http.webserver import AuthSession
-
 from ...models.basic_types import VersionStr
 from ...models.schemas.jobs import Job, JobInputs
 from ...models.schemas.programs import Program, ProgramKeyId
 from ...services_http.catalog import CatalogApi
+from ...services_http.webserver import AuthSession
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.services import get_api_client
 
@@ -70,13 +72,13 @@ async def get_program_release(
     program_key: ProgramKeyId,
     version: VersionStr,
     user_id: Annotated[int, Depends(get_current_user_id)],
-    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
+    program_service: Annotated[ProgramService, Depends(get_program_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
 ) -> Program:
     """Gets a specific release of a solver"""
     try:
-        program = await catalog_client.get_program(
+        program = await program_service.get_program(
             user_id=user_id,
             name=program_key,
             version=version,
