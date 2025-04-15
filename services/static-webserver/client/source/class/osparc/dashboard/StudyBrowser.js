@@ -1924,20 +1924,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __duplicateStudy: function(studyData) {
-      const text = this.tr("Duplicate process started and added to the background tasks");
-      osparc.FlashMessenger.logAs(text, "INFO");
-
-      const params = {
-        url: {
-          "studyId": studyData["uuid"]
-        }
-      };
-      const options = {
-        pollTask: true
-      };
-      const fetchPromise = osparc.data.Resources.fetch("studies", "duplicate", params, options);
-      const pollTasks = osparc.store.PollTasks.getInstance();
-      return pollTasks.createPollingTask(fetchPromise)
+      osparc.study.Utils.duplicateStudy(studyData)
         .then(task => {
           this.__taskDuplicateReceived(task, studyData["name"]);
           return task;

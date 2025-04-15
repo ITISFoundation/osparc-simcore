@@ -23,75 +23,6 @@ qx.Class.define("osparc.study.Utils", {
   type: "static",
 
   statics: {
-    isAnyLinkedNodeMissing: function(studyData) {
-      const existingNodeIds = Object.keys(studyData["workbench"]);
-      const linkedNodeIds = osparc.data.model.Workbench.getLinkedNodeIds(studyData["workbench"]);
-      const allExist = linkedNodeIds.every(linkedNodeId => existingNodeIds.includes(linkedNodeId));
-      return !allExist;
-    },
-
-    extractUniqueServices: function(workbench) {
-      const services = new Set([]);
-      Object.values(workbench).forEach(srv => {
-        services.add({
-          key: srv.key,
-          version: srv.version
-        });
-      });
-      return Array.from(services);
-    },
-
-    getCantExecuteServices: function(studyServices = []) {
-      return studyServices.filter(studyService => studyService["myAccessRights"]["execute"] === false);
-    },
-
-    anyServiceRetired: function(studyServices) {
-      const isRetired = studyServices.some(studyService => {
-        if (studyService["release"] && studyService["release"]["retired"]) {
-          const retirementDate = new Date(studyService["release"]["retired"]);
-          const currentDate = new Date();
-          return retirementDate < currentDate;
-        }
-        return false;
-      });
-      return isRetired;
-    },
-
-    anyServiceDeprecated: function(studyServices) {
-      const isDeprecated = studyServices.some(studyService => {
-        if (studyService["release"] && studyService["release"]["retired"]) {
-          const retirementDate = new Date(studyService["release"]["retired"]);
-          const currentDate = new Date();
-          return retirementDate > currentDate;
-        }
-        return false;
-      });
-      return isDeprecated;
-    },
-
-    anyServiceUpdatable: function(studyServices) {
-      const isUpdatable = studyServices.some(studyService => {
-        if (studyService["release"] && studyService["release"]["compatibility"]) {
-          return Boolean(studyService["release"]["compatibility"]);
-        }
-        return false;
-      });
-      return isUpdatable;
-    },
-
-    updatableNodeIds: function(workbench, studyServices) {
-      const nodeIds = [];
-      for (const nodeId in workbench) {
-        const node = workbench[nodeId];
-        const studyServiceFound = studyServices.find(studyService => studyService["key"] === node["key"] && studyService["release"]["version"] === node["version"]);
-        if (studyServiceFound && studyServiceFound["release"] && studyServiceFound["release"]["compatibility"]) {
-          nodeIds.push(nodeId);
-        }
-      }
-      return nodeIds;
-    },
-
-
     createStudyFromService: function(key, version, existingStudies, newStudyLabel, contextProps = {}) {
       return new Promise((resolve, reject) => {
         osparc.store.Services.getService(key, version)
@@ -255,6 +186,91 @@ qx.Class.define("osparc.study.Utils", {
               .catch(err => reject(err));
           });
       });
+    },
+
+    duplicateStudy: function(studyData) {
+      const text = qx.locale.Manager.tr("Duplicate process started and added to the background tasks");
+      osparc.FlashMessenger.logAs(text, "INFO");
+
+      const params = {
+        url: {
+          "studyId": studyData["uuid"]
+        }
+      };
+      const options = {
+        pollTask: true
+      };
+      const fetchPromise = osparc.data.Resources.fetch("studies", "duplicate", params, options);
+      const pollTasks = osparc.store.PollTasks.getInstance();
+      return pollTasks.createPollingTask(fetchPromise)
+    },
+
+    isAnyLinkedNodeMissing: function(studyData) {
+      const existingNodeIds = Object.keys(studyData["workbench"]);
+      const linkedNodeIds = osparc.data.model.Workbench.getLinkedNodeIds(studyData["workbench"]);
+      const allExist = linkedNodeIds.every(linkedNodeId => existingNodeIds.includes(linkedNodeId));
+      return !allExist;
+    },
+
+    extractUniqueServices: function(workbench) {
+      const services = new Set([]);
+      Object.values(workbench).forEach(srv => {
+        services.add({
+          key: srv.key,
+          version: srv.version
+        });
+      });
+      return Array.from(services);
+    },
+
+    getCantExecuteServices: function(studyServices = []) {
+      return studyServices.filter(studyService => studyService["myAccessRights"]["execute"] === false);
+    },
+
+    anyServiceRetired: function(studyServices) {
+      const isRetired = studyServices.some(studyService => {
+        if (studyService["release"] && studyService["release"]["retired"]) {
+          const retirementDate = new Date(studyService["release"]["retired"]);
+          const currentDate = new Date();
+          return retirementDate < currentDate;
+        }
+        return false;
+      });
+      return isRetired;
+    },
+
+    anyServiceDeprecated: function(studyServices) {
+      const isDeprecated = studyServices.some(studyService => {
+        if (studyService["release"] && studyService["release"]["retired"]) {
+          const retirementDate = new Date(studyService["release"]["retired"]);
+          const currentDate = new Date();
+          return retirementDate > currentDate;
+        }
+        return false;
+      });
+      return isDeprecated;
+    },
+
+    anyServiceUpdatable: function(studyServices) {
+      const isUpdatable = studyServices.some(studyService => {
+        if (studyService["release"] && studyService["release"]["compatibility"]) {
+          return Boolean(studyService["release"]["compatibility"]);
+        }
+        return false;
+      });
+      return isUpdatable;
+    },
+
+    updatableNodeIds: function(workbench, studyServices) {
+      const nodeIds = [];
+      for (const nodeId in workbench) {
+        const node = workbench[nodeId];
+        const studyServiceFound = studyServices.find(studyService => studyService["key"] === node["key"] && studyService["release"]["version"] === node["version"]);
+        if (studyServiceFound && studyServiceFound["release"] && studyServiceFound["release"]["compatibility"]) {
+          nodeIds.push(nodeId);
+        }
+      }
+      return nodeIds;
     },
 
     isInDebt: function(studyData) {
