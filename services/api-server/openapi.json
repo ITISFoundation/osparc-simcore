@@ -1262,7 +1262,7 @@
           "programs"
         ],
         "summary": "List Programs",
-        "description": "Lists all available solvers (latest version)\n\nSEE get_solvers_page for paginated version of this function",
+        "description": "Lists all available solvers (latest version)\n\nDEPRECATION: This implementation and returned values are deprecated",
         "operationId": "list_programs",
         "responses": {
           "200": {

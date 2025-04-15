@@ -536,7 +536,7 @@ def patch_lrt_response_urls(mocker: MockerFixture):
             return data.status_href, data.result_href
 
         return mocker.patch(
-            "simcore_service_api_server.services.webserver._get_lrt_urls",
+            "simcore_service_api_server.services_http.webserver._get_lrt_urls",
             side_effect=_get_lrt_urls,
         )
 
