@@ -135,7 +135,7 @@ async def attach_container_to_network(
             )
             return
 
-        # NOTE: A docker network is only visible on a docker node when it is
+        # NOTE: A docker overlay network is only visible on a docker node when it is
         # used by a container
         network = DockerNetwork(docker=docker, id_=item.network_id)
         await network.connect(
@@ -172,7 +172,7 @@ async def detach_container_from_network(
             )
             return
 
-        # NOTE: A docker network is only visible on a docker node when it is
+        # NOTE: A docker overlay network is only visible on a docker node when it is
         # used by a container
         network = DockerNetwork(docker=docker, id_=item.network_id)
         await network.disconnect({"Container": container_id, "Force": True})
