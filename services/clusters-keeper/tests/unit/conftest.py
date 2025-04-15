@@ -224,6 +224,7 @@ def disable_clusters_management_background_task(
 @pytest.fixture
 def disabled_rabbitmq(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("CLUSTERS_KEEPER_RABBITMQ", "null")
+    monkeypatch.delenv("RABBIT_HOST", raising=False)
 
 
 @pytest.fixture
@@ -331,7 +332,7 @@ def create_ec2_workers(
                     "Tags": [
                         {
                             "Key": "Name",
-                            "Value": f"{get_cluster_name(app_settings,user_id=user_id,wallet_id=wallet_id,is_manager=False)}_blahblah",
+                            "Value": f"{get_cluster_name(app_settings, user_id=user_id, wallet_id=wallet_id, is_manager=False)}_blahblah",
                         }
                     ],
                 }
