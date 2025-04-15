@@ -2,8 +2,6 @@ import httpx
 import pytest
 from fastapi import FastAPI, status
 from httpx import AsyncClient
-from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.httpx_calls_capture_models import (
@@ -84,15 +82,15 @@ async def test_create_program_job(
     # Arrange
     program_key = "simcore/services/dynamic/my_program"
     version = "1.0.0"
-    headers = {
-        "X-Simcore-Parent-Project-Uuid": str(ProjectID("project-uuid")),
-        "X-Simcore-Parent-Node-Id": str(NodeID("node-id")),
-    }
+    # headers = {
+    #     "X-Simcore-Parent-Project-Uuid": str(ProjectID("project-uuid")),
+    #     "X-Simcore-Parent-Node-Id": str(NodeID("node-id")),
+    # }
 
     # Act
     response = await client.post(
         f"/{API_VTAG}/programs/{program_key}/releases/{version}/jobs",
-        headers=headers,
+        # headers=headers,
         auth=auth,
     )
 
