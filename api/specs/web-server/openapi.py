@@ -36,6 +36,7 @@ openapi_modules = [
         "_exporter",
         "_folders",
         "_long_running_tasks",
+        "_long_running_tasks_legacy",
         "_licensed_items",
         "_licensed_items_purchases",
         "_licensed_items_checkouts",
