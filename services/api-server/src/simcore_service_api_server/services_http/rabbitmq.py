@@ -5,7 +5,6 @@ from servicelib.rabbitmq import RabbitMQClient, wait_till_rabbitmq_responsive
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from settings_library.rabbit import RabbitSettings
 
-from .._service_programs import setup as setup_program_service
 from ..api.dependencies.rabbitmq import get_rabbitmq_rpc_client
 from ..core.health_checker import ApiServerHealthChecker
 from ..services_http.log_streaming import LogDistributor
@@ -43,9 +42,6 @@ def setup_rabbitmq(app: FastAPI) -> None:
         catalog.setup(app, get_rabbitmq_rpc_client(app))
         resource_usage_tracker.setup(app, get_rabbitmq_rpc_client(app))
         wb_api_server.setup(app, get_rabbitmq_rpc_client(app))
-
-        # setup dependent services layers
-        setup_program_service(app)
 
     async def _on_shutdown() -> None:
         if app.state.health_checker:

@@ -12,7 +12,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from pydantic.types import PositiveInt
 
-from ..._service_jobs import create_job
+from ..._service_job import JobService
 from ...exceptions.backend_errors import ProjectAlreadyStartedError
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.basic_types import VersionStr
@@ -35,6 +35,7 @@ from ...services_http.solver_job_models_converters import (
 from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
+from ..dependencies.job_service import get_job_service
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver_http import AuthSession, get_webserver_session
 from ..dependencies.webserver_rpc import (
@@ -96,7 +97,7 @@ async def create_solver_job(
     inputs: JobInputs,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
-    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    job_service: Annotated[JobService, Depends(get_job_service)],
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
@@ -116,8 +117,7 @@ async def create_solver_job(
         version=version,
         product_name=product_name,
     )
-    job, project = await create_job(
-        webserver_api=webserver_api,
+    job, project = await job_service.create_job(
         solver_or_program=solver,
         inputs=inputs,
         url_for=url_for,

@@ -18,18 +18,15 @@ from simcore_sdk.node_ports_common.filemanager import (
     get_upload_links_from_s3,
 )
 
-from ..._service_jobs import create_job
+from ..._service_job import JobService
 from ..._service_programs import ProgramService
 from ...api.dependencies.program_service import get_program_service
-from ...api.dependencies.webserver_http import (
-    get_webserver_session,
-)
 from ...models.basic_types import VersionStr
 from ...models.schemas.jobs import Job, JobInputs
 from ...models.schemas.programs import Program, ProgramKeyId
 from ...services_http.catalog import CatalogApi
-from ...services_http.webserver import AuthSession
 from ..dependencies.authentication import get_current_user_id, get_product_name
+from ..dependencies.job_service import get_job_service
 from ..dependencies.services import get_api_client
 
 _logger = logging.getLogger(__name__)
@@ -45,7 +42,8 @@ async def list_programs(
 ):
     """Lists all available solvers (latest version)
 
-    SEE get_solvers_page for paginated version of this function
+    DEPRECATION: This implementation and returned values are deprecated
+
     """
     services = await catalog_client.list_services(
         user_id=user_id,
@@ -111,8 +109,8 @@ async def create_program_job(
     program_key: ProgramKeyId,
     version: VersionStr,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
-    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
-    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    program_service: Annotated[ProgramService, Depends(get_program_service)],
+    job_service: Annotated[JobService, Depends(get_job_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
     x_simcore_parent_project_uuid: Annotated[ProjectID | None, Header()] = None,
@@ -125,15 +123,14 @@ async def create_program_job(
 
     # ensures user has access to solver
     inputs = JobInputs(values={})
-    program = await catalog_client.get_program(
+    program = await program_service.get_program(
         user_id=user_id,
         name=program_key,
         version=version,
         product_name=product_name,
     )
 
-    job, project = await create_job(
-        webserver_api=webserver_api,
+    job, project = await job_service.create_job(
         solver_or_program=program,
         inputs=inputs,
         parent_project_uuid=x_simcore_parent_project_uuid,
