@@ -82,7 +82,6 @@ async def list_my_projects_marked_as_jobs(
             description=project.description,
             creation_date=project.creation_date,
             last_change_date=project.last_change_date,
-            workbench={},
         )
         for project in projects
     ]

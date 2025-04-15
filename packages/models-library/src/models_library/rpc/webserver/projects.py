@@ -1,12 +1,18 @@
 from datetime import datetime
 from typing import Annotated, TypeAlias
 
-from models_library.projects import NodesDict, ProjectID
+from models_library.projects import ProjectID
 from models_library.rpc_pagination import PageRpc
 from pydantic import BaseModel, ConfigDict, Field
 
 
 class ProjectRpcGet(BaseModel):
+    """
+    Minimal information about a project that (for now) will fullfill
+    the needs of the api-server. Specifically, the fields needed in
+    project to call create_job_from_project
+    """
+
     uuid: Annotated[
         ProjectID,
         Field(description="project unique identifier"),
@@ -20,8 +26,6 @@ class ProjectRpcGet(BaseModel):
     # timestamps
     creation_date: datetime
     last_change_date: datetime
-
-    workbench: Annotated[NodesDict, Field(description="Project's pipeline")]
 
     model_config = ConfigDict(
         extra="forbid",
