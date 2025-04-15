@@ -1,5 +1,5 @@
 """
-    Models Front-end UI
+Models Front-end UI
 """
 
 from typing import Annotated, Literal, NotRequired
@@ -87,6 +87,7 @@ class StudyUI(BaseModel):
     slideshow: dict[NodeIDStr, SlideshowUI] | None = None
     current_node_id: Annotated[NodeID | None, Field(alias="currentNodeId")] = None
     annotations: dict[NodeIDStr, AnnotationUI] | None = None
+    template_type: Annotated[str | None, Field(alias="templateType")] = None
 
     _empty_is_none = field_validator("*", mode="before")(
         empty_str_to_none_pre_validator
