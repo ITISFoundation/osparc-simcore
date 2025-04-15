@@ -1,4 +1,5 @@
 import logging
+from typing import cast
 
 from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.products import ProductName
@@ -63,4 +64,4 @@ async def list_my_projects_marked_as_jobs(
         job_parent_resource_name_filter=job_parent_resource_name_filter,
     )
     assert TypeAdapter(PageRpcProjectRpcGet).validate_python(result)  # nosec
-    return result
+    return cast(PageRpcProjectRpcGet, result)
