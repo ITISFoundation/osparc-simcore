@@ -56,12 +56,13 @@ def _async_task_wrapper(
                 try:
                     async with asyncio.TaskGroup() as tg:
                         main_task = tg.create_task(
-                            coro(task, task_id, *args, **kwargs), name=f"task_{task_id}"
+                            coro(task, task_id, *args, **kwargs),
                         )
 
                         async def abort_monitor():
+                            abortable_result = AbortableAsyncResult(task_id, app=app)
                             while not main_task.done():
-                                if AbortableAsyncResult(task_id, app=app).is_aborted():
+                                if abortable_result.is_aborted():
                                     await cancel_wait_task(
                                         main_task,
                                         max_delay=_DEFAULT_CANCEL_TASK_TIMEOUT.total_seconds(),
@@ -71,7 +72,7 @@ def _async_task_wrapper(
                                     _DEFAULT_ABORT_TASK_TIMEOUT.total_seconds()
                                 )
 
-                        tg.create_task(abort_monitor(), name=f"abort_monitor_{task_id}")
+                        tg.create_task(abort_monitor())
 
                     return main_task.result()
                 except BaseExceptionGroup as eg:
