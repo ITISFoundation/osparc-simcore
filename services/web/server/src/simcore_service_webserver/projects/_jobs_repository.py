@@ -1,5 +1,4 @@
 import logging
-from typing import cast
 
 import sqlalchemy as sa
 from models_library.products import ProductName
@@ -140,4 +139,4 @@ class ProjectJobsRepository(BaseRepository):
                 result.fetchall()
             )
 
-            return cast(int, total_count), projects_list
+            return total_count, projects_list
