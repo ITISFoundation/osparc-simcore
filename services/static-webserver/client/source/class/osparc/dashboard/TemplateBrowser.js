@@ -100,10 +100,10 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
 
     __setResourcesToList: function(templatesList) {
       templatesList.forEach(template => template["resourceType"] = "template");
-      if (this.__templateType) {
-        this._resourcesList = templatesList;
+      if (this.__templateType === "tutorial") {
+        this._resourcesList = templatesList.filter(template => [null, "tutorial"].includes(osparc.study.Utils.extractTemplateType(template)));
       } else {
-        this._resourcesList = templatesList;
+        this._resourcesList = templatesList.filter(template => osparc.study.Utils.extractTemplateType(template) === this.__templateType);
       }
       this._reloadCards();
     },

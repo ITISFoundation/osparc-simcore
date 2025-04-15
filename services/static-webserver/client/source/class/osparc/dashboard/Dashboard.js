@@ -188,8 +188,6 @@ qx.Class.define("osparc.dashboard.Dashboard", {
         scrollerMainView.add(viewLayout);
         tabPage.add(scrollerMainView);
 
-        viewLayout.bind("visibility", tabPage, "visibility");
-
         this.add(tabPage);
       }, this);
 
