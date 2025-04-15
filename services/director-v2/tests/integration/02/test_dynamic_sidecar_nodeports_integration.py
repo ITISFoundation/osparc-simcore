@@ -28,7 +28,7 @@ from helpers.shared_comp_utils import (
     assert_and_wait_for_pipeline_status,
     assert_computation_task_out_obj,
 )
-from models_library.api_schemas_directorv2.comp_tasks import ComputationGet
+from models_library.api_schemas_directorv2.computations import ComputationGet
 from models_library.clusters import ClusterAuthentication
 from models_library.projects import (
     Node,

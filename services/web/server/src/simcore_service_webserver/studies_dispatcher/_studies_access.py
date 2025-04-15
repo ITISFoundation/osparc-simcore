@@ -27,7 +27,7 @@ from servicelib.aiohttp.typing_extension import Handler
 from servicelib.logging_errors import create_troubleshotting_log_kwargs
 
 from ..constants import INDEX_RESOURCE_NAME
-from ..director_v2._core_computations import create_or_update_pipeline
+from ..director_v2 import director_v2_service
 from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..products import products_web
 from ..projects._groups_repository import get_project_group
@@ -210,7 +210,7 @@ async def copy_study_to_account(
             )
             if lr_task.done:
                 await lr_task.result()
-        await create_or_update_pipeline(
+        await director_v2_service.create_or_update_pipeline(
             request.app, user["id"], project["uuid"], product_name
         )
         await dynamic_scheduler_service.update_projects_networks(
