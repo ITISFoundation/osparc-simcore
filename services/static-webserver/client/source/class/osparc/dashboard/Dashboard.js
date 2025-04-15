@@ -79,6 +79,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
   members: {
     __studyBrowser: null,
     __templateBrowser: null,
+    __hypertoolBrowser: null,
     __serviceBrowser: null,
     __dataBrowser: null,
 
@@ -88,6 +89,10 @@ qx.Class.define("osparc.dashboard.Dashboard", {
 
     getTemplateBrowser: function() {
       return this.__templateBrowser;
+    },
+
+    getHypertoolBrowser: function() {
+      return this.__hypertoolBrowser;
     },
 
     getServiceBrowser: function() {
@@ -117,6 +122,14 @@ qx.Class.define("osparc.dashboard.Dashboard", {
           }),
           icon: "@FontAwesome5Solid/copy/"+tabIconSize,
           buildLayout: this.__createTemplateBrowser
+        });
+
+        tabs.push({
+          id: "hypertoolsTab",
+          buttonId: "hypertoolsTabBtn",
+          label: this.tr("HYPERTOOLS"),
+          icon: "@FontAwesome5Solid/copy/"+tabIconSize,
+          buildLayout: this.__createHypertoolsBrowser
         });
       }
       if (permissions.canDo("dashboard.services.read")) {
@@ -175,6 +188,8 @@ qx.Class.define("osparc.dashboard.Dashboard", {
         scrollerMainView.add(viewLayout);
         tabPage.add(scrollerMainView);
 
+        viewLayout.bind("visibility", tabPage, "visibility");
+
         this.add(tabPage);
       }, this);
 
@@ -187,6 +202,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
           [
             this.__studyBrowser,
             this.__templateBrowser,
+            this.__hypertoolBrowser,
             this.__serviceBrowser,
             this.__dataBrowser
           ].forEach(resourceBrowser => {
@@ -204,8 +220,15 @@ qx.Class.define("osparc.dashboard.Dashboard", {
     },
 
     __createTemplateBrowser: function() {
-      const templatesView = this.__templateBrowser = new osparc.dashboard.TemplateBrowser();
+      const templateType = osparc.utils.DisabledPlugins.isHypertoolsEnabled() ? "tutorial" : null;
+      const templatesView = this.__templateBrowser = new osparc.dashboard.TemplateBrowser(templateType);
       return templatesView;
+    },
+
+    __createHypertoolsBrowser: function() {
+      const templateType = "Hypertools";
+      const hypertoolsView = this.__hypertoolBrowser = new osparc.dashboard.TemplateBrowser(templateType);
+      return hypertoolsView;
     },
 
     __createServiceBrowser: function() {
