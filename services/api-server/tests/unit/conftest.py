@@ -38,6 +38,7 @@ from moto.server import ThreadedMotoServer
 from packaging.version import Version
 from pydantic import EmailStr, HttpUrl, TypeAdapter
 from pytest_mock import MockerFixture, MockType
+from pytest_simcore.helpers.catalog_rpc_server import CatalogRpcSideEffects
 from pytest_simcore.helpers.host import get_localhost_ip
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.webserver_rpc_server import WebserverRpcSideEffects
@@ -45,10 +46,46 @@ from pytest_simcore.simcore_webserver_projects_rest_api import GET_PROJECT
 from requests.auth import HTTPBasicAuth
 from respx import MockRouter
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
+from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
 from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.core.settings import ApplicationSettings
 from simcore_service_api_server.db.repositories.api_keys import UserAndProductTuple
 from simcore_service_api_server.services_http.solver_job_outputs import ResultsTypes
+
+
+@pytest.fixture
+def mocked_rpc_catalog_service_api(mocker: MockerFixture) -> dict[str, MockType]:
+    """
+    Mocks the RPC catalog service API for testing purposes.
+    """
+    side_effects = CatalogRpcSideEffects()
+
+    return {
+        "list_services_paginated": mocker.patch.object(
+            catalog_rpc,
+            "list_services_paginated",
+            autospec=True,
+            side_effect=side_effects.list_services_paginated,
+        ),
+        "get_service": mocker.patch.object(
+            catalog_rpc,
+            "get_service",
+            autospec=True,
+            side_effect=side_effects.get_service,
+        ),
+        "update_service": mocker.patch.object(
+            catalog_rpc,
+            "update_service",
+            autospec=True,
+            side_effect=side_effects.update_service,
+        ),
+        "list_my_service_history_paginated": mocker.patch.object(
+            catalog_rpc,
+            "list_my_service_history_paginated",
+            autospec=True,
+            side_effect=side_effects.list_my_service_history_paginated,
+        ),
+    }
 
 
 @pytest.fixture

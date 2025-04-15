@@ -44,6 +44,7 @@ def setup_rabbitmq(app: FastAPI) -> None:
         resource_usage_tracker.setup(app, get_rabbitmq_rpc_client(app))
         wb_api_server.setup(app, get_rabbitmq_rpc_client(app))
 
+        # setup dependent services layers
         setup_program_service(app)
 
     async def _on_shutdown() -> None:

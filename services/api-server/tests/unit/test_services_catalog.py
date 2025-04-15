@@ -12,47 +12,13 @@ from models_library.services_history import ServiceRelease
 from models_library.users import UserID
 from pydantic import HttpUrl
 from pytest_mock import MockerFixture, MockType
-from pytest_simcore.helpers.catalog_rpc_server import CatalogRpcSideEffects
 from simcore_service_api_server.models.schemas.solvers import Solver
-from simcore_service_api_server.services_rpc.catalog import CatalogService, catalog_rpc
+from simcore_service_api_server.services_rpc.catalog import CatalogService
 
 
 @pytest.fixture
 def product_name() -> ProductName:
     return "osparc"
-
-
-@pytest.fixture
-def mocked_rpc_catalog_service_api(mocker: MockerFixture) -> dict[str, MockType]:
-
-    side_effects = CatalogRpcSideEffects()
-
-    return {
-        "list_services_paginated": mocker.patch.object(
-            catalog_rpc,
-            "list_services_paginated",
-            autospec=True,
-            side_effect=side_effects.list_services_paginated,
-        ),
-        "get_service": mocker.patch.object(
-            catalog_rpc,
-            "get_service",
-            autospec=True,
-            side_effect=side_effects.get_service,
-        ),
-        "update_service": mocker.patch.object(
-            catalog_rpc,
-            "update_service",
-            autospec=True,
-            side_effect=side_effects.update_service,
-        ),
-        "list_my_service_history_paginated": mocker.patch.object(
-            catalog_rpc,
-            "list_my_service_history_paginated",
-            autospec=True,
-            side_effect=side_effects.list_my_service_history_paginated,
-        ),
-    }
 
 
 def to_solver(
