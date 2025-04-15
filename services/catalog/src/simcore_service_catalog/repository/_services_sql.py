@@ -19,7 +19,7 @@ from sqlalchemy.sql import and_, or_
 from sqlalchemy.sql.expression import func
 from sqlalchemy.sql.selectable import Select
 
-from ..models.services_db import ServiceMetaDataDBGet
+from ..models.services_db import ServiceFiltersDB, ServiceMetaDataDBGet
 
 SERVICES_META_DATA_COLS = get_columns_from_db_model(
     services_meta_data, ServiceMetaDataDBGet
@@ -113,13 +113,22 @@ def _has_access_rights(
     )
 
 
+def apply_services_filters(
+    stmt,
+    filters: ServiceFiltersDB,
+):
+    if filters.service_type:
+        stmt = stmt.where(services_meta_data.c.service_type == filters.service_type)
+
+
 def latest_services_total_count_stmt(
     *,
     product_name: ProductName,
     user_id: UserID,
     access_rights: sa.sql.ClauseElement,
+    filters: ServiceFiltersDB | None = None,
 ):
-    return (
+    stmt = (
         sa.select(func.count(sa.distinct(services_meta_data.c.key)))
         .select_from(
             services_meta_data.join(
@@ -136,6 +145,11 @@ def latest_services_total_count_stmt(
         .where(access_rights)
     )
 
+    if filters:
+        apply_services_filters(stmt, filters)
+
+    return stmt
+
 
 def list_latest_services_stmt(
     *,
@@ -144,10 +158,11 @@ def list_latest_services_stmt(
     access_rights: sa.sql.ClauseElement,
     limit: int | None,
     offset: int | None,
+    filters: ServiceFiltersDB | None = None,
 ):
     # get all distinct services key fitting a page
     # and its corresponding latest version
-    cte = (
+    cte_stmt = (
         sa.select(
             services_meta_data.c.key,
             services_meta_data.c.version.label("latest_version"),
@@ -172,8 +187,12 @@ def list_latest_services_stmt(
         .distinct(services_meta_data.c.key)  # get only first
         .limit(limit)
         .offset(offset)
-        .cte("cte")
     )
+
+    if filters:
+        apply_services_filters(cte_stmt, filters)
+
+    cte = cte_stmt.cte("cte")
 
     # get all information of latest's services listed in CTE
     latest_stmt = (
