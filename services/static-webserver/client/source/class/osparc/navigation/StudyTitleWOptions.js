@@ -80,9 +80,7 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
             label: this.tr("Convert to Pipeline"),
             icon: null,
           });
-          control.addListener("execute", () => {
-            this.getStudy().getUi().setMode("pipeline");
-          });
+          control.addListener("execute", () => this.__convertToPipelineClicked(), this);
           break;
         case "study-menu-restore":
           control = new qx.ui.menu.Button().set({
@@ -105,7 +103,9 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
           optionsMenu.setAppearance("menu-wider");
           optionsMenu.add(this.getChildControl("study-menu-info"));
           optionsMenu.add(this.getChildControl("study-menu-reload"));
-          optionsMenu.add(this.getChildControl("study-menu-convert-to-pipeline"));
+          if (osparc.product.Utils.hasConvertToPipelineEnabled()) {
+            optionsMenu.add(this.getChildControl("study-menu-convert-to-pipeline"));
+          }
           optionsMenu.add(this.getChildControl("study-menu-restore"));
           optionsMenu.add(this.getChildControl("study-menu-open-logger"));
           control = new qx.ui.form.MenuButton().set({
@@ -151,13 +151,11 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
           converter: mode => mode === "standalone" ? "visible" : "excluded"
         });
 
-        const convertToPipelineButton = this.getChildControl("study-menu-convert-to-pipeline");
         if (osparc.product.Utils.hasConvertToPipelineEnabled()) {
+          const convertToPipelineButton = this.getChildControl("study-menu-convert-to-pipeline");
           study.getUi().bind("mode", convertToPipelineButton, "visibility", {
             converter: mode => mode === "standalone" ? "visible" : "excluded"
           });
-        } else {
-          convertToPipelineButton.exclude();
         }
 
         const restoreButton = this.getChildControl("study-menu-restore");
@@ -172,6 +170,10 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
       } else {
         this.exclude();
       }
-    }
+    },
+
+    __convertToPipelineClicked: function() {
+      this.getStudy().getUi().setMode("pipeline");
+    },
   }
 });
