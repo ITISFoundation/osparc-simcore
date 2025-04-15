@@ -228,7 +228,6 @@ def test_classic_ti_plan(  # noqa: PLR0915
         with log_context(logging.INFO, "Run optimization") as ctx:
             run_button = ti_iframe.get_by_role("button", name="Run Optimization")
             run_button.click(timeout=_JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME)
-
             start = time.time()
             success = False
             while (
@@ -242,7 +241,6 @@ def test_classic_ti_plan(  # noqa: PLR0915
                     success = True
                     break
                 time.sleep(2)
-
             if not success:
                 ctx.logger.info("Optimization did not finish in time.")
 
