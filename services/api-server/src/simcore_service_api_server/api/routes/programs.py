@@ -34,7 +34,7 @@ _logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.get("", response_model=list[Program])
+@router.get("", response_model=list[Program], include_in_schema=False)
 async def list_programs(
     user_id: Annotated[int, Depends(get_current_user_id)],
     catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
