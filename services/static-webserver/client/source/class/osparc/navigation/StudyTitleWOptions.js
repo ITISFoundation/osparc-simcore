@@ -173,7 +173,22 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
     },
 
     __convertToPipelineClicked: function() {
-      this.getStudy().getUi().setMode("pipeline");
+      let message = this.tr("Would you like to convert this project to a pipeline?");
+      message += "<br>" + this.tr("If you want to create a copy of the project and convert the copy instead, please close the project first.");
+      const confirmationWin = new osparc.ui.window.Confirmation();
+      confirmationWin.set({
+        caption: this.tr("Convert to Pipeline"),
+        confirmText: this.tr("Convert"),
+        confirmAction: "create",
+        message,
+      });
+      confirmationWin.addListener("close", () => {
+        if (confirmationWin.getConfirmed()) {
+          this.getStudy().getUi().setMode("pipeline");
+          osparc.FlashMessenger.logAs(this.tr("Project converted to pipeline"), "INFO");
+        }
+      });
+      confirmationWin.open();
     },
   }
 });
