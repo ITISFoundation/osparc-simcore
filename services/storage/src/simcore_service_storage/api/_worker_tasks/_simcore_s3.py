@@ -26,8 +26,7 @@ async def _task_progress_cb(
 ) -> None:
     worker = get_celery_worker(task.app)
     assert task.name  # nosec
-    worker.set_task_progress(
-        task_name=task.name,
+    await worker.set_progress(
         task_id=task_id,
         report=report,
     )
@@ -88,7 +87,7 @@ async def export_data(
 
         async def _progress_cb(report: ProgressReport) -> None:
             assert task.name  # nosec
-            get_celery_worker(task.app).set_task_progress(task.name, task_id, report)
+            await get_celery_worker(task.app).set_progress(task_id, report)
             _logger.debug("'%s' progress %s", task_id, report.percent_value)
 
         async with ProgressBarData(

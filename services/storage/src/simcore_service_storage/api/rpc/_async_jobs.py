@@ -97,7 +97,7 @@ async def result(
 
     if _status.task_state == TaskState.ABORTED:
         raise JobAbortedError(job_id=job_id)
-    if _status.task_state == TaskState.ERROR:
+    if _status.task_state == TaskState.FAILURE:
         # fallback exception to report
         exc_type = type(_result).__name__
         exc_msg = f"{_result}"
