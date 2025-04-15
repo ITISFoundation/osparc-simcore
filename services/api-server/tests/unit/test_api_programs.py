@@ -7,6 +7,7 @@ import httpx
 import pytest
 from fastapi import FastAPI, status
 from httpx import AsyncClient
+from models_library.api_schemas_storage.storage_schemas import FileUploadSchema
 from models_library.users import UserID
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.httpx_calls_capture_models import (
@@ -71,6 +72,17 @@ async def test_create_program_job(
     capture_name: str,
     project_tests_dir: Path,
 ):
+
+    mocker.patch(
+        "simcore_service_api_server.api.routes.programs.get_upload_links_from_s3",
+        return_value=(
+            None,
+            FileUploadSchema.model_validate(
+                next(iter(FileUploadSchema.model_json_schema()["examples"]))
+            ),
+        ),
+    )
+    mocker.patch("simcore_service_api_server.api.routes.programs.complete_file_upload")
 
     def _side_effect(
         server_state: dict,
