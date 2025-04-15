@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Any, Literal, NamedTuple
 
 from aiohttp import web
-from models_library.api_schemas_directorv2.comp_tasks import (
+from models_library.api_schemas_directorv2.computations import (
     OutputName,
     TasksOutputs,
     TasksSelection,

@@ -2505,7 +2505,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope__ComputationStarted_'
+                $ref: '#/components/schemas/Envelope_ComputationStarted_'
         '402':
           description: Insufficient credits to run computation
         '404':
@@ -8582,9 +8582,25 @@ components:
           type: array
           uniqueItems: true
           title: Subgraph
-          default: []
       type: object
       title: ComputationStart
+    ComputationStarted:
+      properties:
+        pipeline_id:
+          type: string
+          format: uuid
+          title: Pipeline Id
+          description: ID for created pipeline (=project identifier)
+        ref_ids:
+          items:
+            type: integer
+          type: array
+          title: Ref Ids
+          description: Checkpoints IDs for created pipeline
+      type: object
+      required:
+      - pipeline_id
+      title: ComputationStarted
     ConnectServiceToPricingPlanBodyParams:
       properties:
         serviceKey:
@@ -8986,6 +9002,19 @@ components:
           title: Error
       type: object
       title: Envelope[ComputationGet]
+    Envelope_ComputationStarted_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/ComputationStarted'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[ComputationStarted]
     Envelope_CreditPriceGet_:
       properties:
         data:
@@ -9747,19 +9776,6 @@ components:
           title: Error
       type: object
       title: Envelope[WorkspaceGroupGet]
-    Envelope__ComputationStarted_:
-      properties:
-        data:
-          anyOf:
-          - $ref: '#/components/schemas/_ComputationStarted'
-          - type: 'null'
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[_ComputationStarted]
     Envelope__ProjectGroupAccess_:
       properties:
         data:
@@ -16261,23 +16277,6 @@ components:
       - write
       - delete
       title: WorkspacesGroupsBodyParams
-    _ComputationStarted:
-      properties:
-        pipeline_id:
-          type: string
-          format: uuid
-          title: Pipeline Id
-          description: ID for created pipeline (=project identifier)
-        ref_ids:
-          items:
-            type: integer
-          type: array
-          title: Ref Ids
-          description: Checkpoints IDs for created pipeline
-      type: object
-      required:
-      - pipeline_id
-      title: _ComputationStarted
     _ItisVipResourceRestData:
       properties:
         source:

@@ -1256,37 +1256,6 @@
         }
       }
     },
-    "/v0/programs": {
-      "get": {
-        "tags": [
-          "programs"
-        ],
-        "summary": "List Programs",
-        "description": "Lists all available solvers (latest version)\n\nSEE get_solvers_page for paginated version of this function",
-        "operationId": "list_programs",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/Program"
-                  },
-                  "type": "array",
-                  "title": "Response List Programs V0 Programs Get"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
-      }
-    },
     "/v0/programs/{program_key}/releases/{version}": {
       "get": {
         "tags": [
