@@ -76,7 +76,7 @@ from simcore_service_storage.modules.celery.signals import (
     on_worker_shutdown,
 )
 from simcore_service_storage.modules.celery.utils import get_celery_worker
-from simcore_service_storage.modules.celery.worker import CeleryTaskQueueWorker
+from simcore_service_storage.modules.celery.worker import CeleryTaskWorker
 from simcore_service_storage.modules.s3 import get_s3_client
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy import literal_column
@@ -365,7 +365,7 @@ def upload_file(
     create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
     create_file_of_size: Callable[[ByteSize, str | None], Path],
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
-    with_storage_celery_worker: CeleryTaskQueueWorker,
+    with_storage_celery_worker: CeleryTaskWorker,
 ) -> Callable[
     [ByteSize, str, SimcoreS3FileID | None], Awaitable[tuple[Path, SimcoreS3FileID]]
 ]:
@@ -480,7 +480,7 @@ async def create_empty_directory(
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
     create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
     client: httpx.AsyncClient,
-    with_storage_celery_worker: CeleryTaskQueueWorker,
+    with_storage_celery_worker: CeleryTaskWorker,
 ) -> Callable[[str, ProjectID, NodeID], Awaitable[SimcoreS3FileID]]:
     async def _directory_creator(
         dir_name: str, project_id: ProjectID, node_id: NodeID
@@ -1024,7 +1024,7 @@ async def with_storage_celery_worker_controller(
 @pytest.fixture
 def with_storage_celery_worker(
     with_storage_celery_worker_controller: TestWorkController,
-) -> CeleryTaskQueueWorker:
+) -> CeleryTaskWorker:
     assert isinstance(with_storage_celery_worker_controller.app, Celery)
     return get_celery_worker(with_storage_celery_worker_controller.app)
 
