@@ -10,6 +10,7 @@ from models_library.api_schemas_catalog.services import (
     PageRpcLatestServiceGet,
     PageRpcServiceRelease,
     ServiceGetV2,
+    ServiceListFilters,
     ServiceRelease,
     ServiceUpdateV2,
 )
@@ -24,10 +25,10 @@ from models_library.rpc_pagination import (
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import TypeAdapter, validate_call
-from servicelib.logging_utils import log_decorator
-from servicelib.rabbitmq._constants import RPC_REQUEST_DEFAULT_TIMEOUT_S
 
+from ....logging_utils import log_decorator
 from ..._client_rpc import RabbitMQRPCClient
+from ..._constants import RPC_REQUEST_DEFAULT_TIMEOUT_S
 
 _logger = logging.getLogger(__name__)
 
@@ -39,6 +40,7 @@ async def list_services_paginated(  # pylint: disable=too-many-arguments
     user_id: UserID,
     limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     offset: PageOffsetInt = 0,
+    filters: ServiceListFilters | None = None,
 ) -> PageRpcLatestServiceGet:
     """
     Raises:
@@ -52,6 +54,7 @@ async def list_services_paginated(  # pylint: disable=too-many-arguments
         user_id: UserID,
         limit: PageLimitInt,
         offset: PageOffsetInt,
+        filters: ServiceListFilters | None = None,
     ):
         return await rpc_client.request(
             CATALOG_RPC_NAMESPACE,
@@ -60,11 +63,16 @@ async def list_services_paginated(  # pylint: disable=too-many-arguments
             user_id=user_id,
             limit=limit,
             offset=offset,
+            filters=filters,
             timeout_s=40 * RPC_REQUEST_DEFAULT_TIMEOUT_S,
         )
 
     result = await _call(
-        product_name=product_name, user_id=user_id, limit=limit, offset=offset
+        product_name=product_name,
+        user_id=user_id,
+        limit=limit,
+        offset=offset,
+        filters=filters,
     )
     assert (  # nosec
         TypeAdapter(PageRpc[LatestServiceGet]).validate_python(result) is not None
@@ -249,6 +257,7 @@ async def list_my_service_history_paginated(  # pylint: disable=too-many-argumen
     service_key: ServiceKey,
     limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     offset: PageOffsetInt = 0,
+    filters: ServiceListFilters | None = None,
 ) -> PageRpcServiceRelease:
     """
     Raises:
@@ -262,6 +271,7 @@ async def list_my_service_history_paginated(  # pylint: disable=too-many-argumen
         service_key: ServiceKey,
         limit: PageLimitInt,
         offset: PageOffsetInt,
+        filters: ServiceListFilters | None,
     ):
         return await rpc_client.request(
             CATALOG_RPC_NAMESPACE,
@@ -273,6 +283,7 @@ async def list_my_service_history_paginated(  # pylint: disable=too-many-argumen
             service_key=service_key,
             limit=limit,
             offset=offset,
+            filters=filters,
         )
 
     result = await _call(
@@ -281,6 +292,7 @@ async def list_my_service_history_paginated(  # pylint: disable=too-many-argumen
         service_key=service_key,
         limit=limit,
         offset=offset,
+        filters=filters,
     )
 
     assert (  # nosec

@@ -109,7 +109,7 @@ async def background_sync_task_mocked(
     await services_db_tables_injector(fake_data_for_services)
 
 
-async def test_rpc_catalog_with_no_services_returns_empty_page(
+async def test_rpc_list_services_paginated_with_no_services_returns_empty_page(
     background_sync_task_mocked: None,
     mocked_director_rest_api: MockRouter,
     rpc_client: RabbitMQRPCClient,
@@ -484,7 +484,7 @@ async def test_rpc_batch_get_my_services(
     assert my_services[1].release.version == other_service_version
 
 
-async def test_rpc_get_my_service_history(
+async def test_rpc_list_my_service_history_paginated(
     background_sync_task_mocked: None,
     mocked_director_rest_api: MockRouter,
     rpc_client: RabbitMQRPCClient,
@@ -553,3 +553,61 @@ async def test_rpc_get_my_service_history(
     assert len(release_history) == 2
     assert release_history[0].version == service_version_2, "expected newest first"
     assert release_history[1].version == service_version_1
+
+
+async def test_rpc_list_services_paginated_with_filters(
+    background_sync_task_mocked: None,
+    mocked_director_rest_api: MockRouter,
+    rpc_client: RabbitMQRPCClient,
+    product_name: ProductName,
+    user_id: UserID,
+    app: FastAPI,
+    create_fake_service_data: Callable,
+    services_db_tables_injector: Callable,
+):
+    assert app
+
+    # Create fake services with different types
+    service_key_1 = "simcore/services/comp/test-filter-service-1"
+    service_key_2 = "simcore/services/frontend/test-filter-service-2"
+    service_version = "1.0.0"
+
+    fake_services = [
+        create_fake_service_data(
+            service_key_1,
+            service_version,
+            team_access=None,
+            everyone_access=None,
+            product=product_name,
+            service_type="computational",
+        ),
+        create_fake_service_data(
+            service_key_2,
+            service_version,
+            team_access=None,
+            everyone_access=None,
+            product=product_name,
+            service_type="frontend",
+        ),
+    ]
+
+    # Inject fake services into the database
+    await services_db_tables_injector(fake_services)
+
+    # Apply a filter to match only computational services
+    filters = {"service_type": "computational"}
+    page = await list_services_paginated(
+        rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        filters=filters,
+    )
+
+    # Validate the response
+    assert len(page.data) == 1
+    assert page.data[0].key == service_key_1
+    assert page.data[0].service_type == "computational"
+    assert page.meta.total == 1
+    assert page.meta.count == 1
+    assert page.links.next is None
+    assert page.links.prev is None
