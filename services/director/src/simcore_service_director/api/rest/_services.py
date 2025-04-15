@@ -57,7 +57,7 @@ async def list_services(
                 the_app, registry_proxy.ServiceType.DYNAMIC
             )
         # NOTE: the validation is done in the catalog. This entrypoint IS and MUST BE only used by the catalog!!
-        # NOTE2: the catalog will directly talk to the registry see case #2165 [https://github.com/ITISFoundation/osparc-simcore/issues/2165]
+        # NOTE2: the catalog might eventually directly talk to the registry see case #2165 [https://github.com/ITISFoundation/osparc-simcore/issues/2165]
         # services = node_validator.validate_nodes(services)
         return Envelope[list[dict[str, Any]]](data=services)
     except RegistryConnectionError as err:
@@ -96,7 +96,7 @@ async def list_service_labels(
         ) from err
 
 
-@router.get("/services/{service_key:path}/{service_version}")
+@router.get("/services/{service_key:path}/{service_version}")  # <-- MD
 async def get_service(
     the_app: Annotated[FastAPI, Depends(get_app)],
     service_key: ServiceKey,
