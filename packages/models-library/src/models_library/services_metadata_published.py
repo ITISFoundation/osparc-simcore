@@ -149,6 +149,18 @@ class ServiceMetaDataPublished(ServiceKeyVersion, ServiceBaseDisplay):
         alias="progress_regexp",
         description="regexp pattern for detecting computational service's progress",
     )
+    inputs_path: str | None = Field(
+        None,
+        description="if this is present, the service is a modern style dv2 dynamic service",
+    )
+    outputs_path: str | None = Field(
+        None,
+        description="if this is present, the service is a modern style dv2 dynamic service",
+    )
+    state_paths: str | None = Field(
+        None,
+        description="if this is present, the service is a modern style dv2 dynamic service",
+    )
 
     # SEE https://github.com/opencontainers/image-spec/blob/main/annotations.md#pre-defined-annotation-keys
     image_digest: str | None = Field(

@@ -119,6 +119,13 @@ services_meta_data = sa.Table(
         doc="Timestamp when the service is retired (editable)."
         "A fixed time before this date, service is marked as deprecated.",
     ),
+    sa.Column(
+        "is_legacy_dynamic_service",
+        sa.Boolean,
+        nullable=False,
+        server_default=sa.false(),
+        doc="Is the service a legacy-style dynamic service? This is false for comp-services and special items like filepickers.",
+    ),
     sa.PrimaryKeyConstraint("key", "version", name="services_meta_data_pk"),
 )
 

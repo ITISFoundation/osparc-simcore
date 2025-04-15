@@ -410,7 +410,9 @@ async def get_image_details(
     if not labels:
         return image_details
     for key in labels:
-        if not key.startswith("io.simcore."):
+        if not key.startswith("io.simcore.") and not key.startswith(
+            "simcore.service."
+        ):  # This adds input_paths, output_paths, state_paths
             continue
         try:
             label_data = json.loads(labels[key])
