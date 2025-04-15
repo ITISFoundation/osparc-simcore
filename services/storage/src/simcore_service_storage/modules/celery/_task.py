@@ -61,7 +61,7 @@ def _async_task_wrapper(
 
                         async def abort_monitor():
                             while not main_task.done():
-                                if AbortableAsyncResult(task_id).is_aborted():
+                                if AbortableAsyncResult(task_id, app=app).is_aborted():
                                     await cancel_wait_task(
                                         main_task,
                                         max_delay=_DEFAULT_CANCEL_TASK_TIMEOUT.total_seconds(),
