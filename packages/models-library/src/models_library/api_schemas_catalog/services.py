@@ -9,6 +9,7 @@ from pydantic.config import JsonDict
 from ..boot_options import BootOptions
 from ..emails import LowerCaseEmailStr
 from ..groups import GroupID
+from ..rest_filters import Filters
 from ..services_access import ServiceAccessRights, ServiceGroupAccessRightsV2
 from ..services_authoring import Author
 from ..services_enums import ServiceType
@@ -374,6 +375,15 @@ class MyServiceGet(CatalogOutputSchema):
 
     owner: GroupID | None
     my_access_rights: ServiceGroupAccessRightsV2
+
+
+class ServiceListFilters(Filters):
+    service_type: Annotated[
+        ServiceType | None,
+        Field(
+            description="Filter only services of a given type. If None, then all types are returned"
+        ),
+    ] = None
 
 
 __all__: tuple[str, ...] = ("ServiceRelease",)
