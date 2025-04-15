@@ -25,13 +25,10 @@ from .models import ProjectDBGet, ProjectJobDBGet
 _logger = logging.getLogger(__name__)
 
 
-_PROJECT_JOB_DB_COLS = [
-    *get_columns_from_db_model(
-        projects,
-        ProjectDBGet,
-    ),
-    projects_to_jobs.c.job_parent_resource_name,  # Add job_parent_resource_name
-]
+_PROJECT_DB_COLS = get_columns_from_db_model(
+    projects,
+    ProjectDBGet,
+)
 
 
 class ProjectJobsRepository(BaseRepository):
@@ -81,7 +78,7 @@ class ProjectJobsRepository(BaseRepository):
 
         # Step 2: Create access_query to filter projects based on product_name and read access
         access_query = (
-            sa.select(projects_to_jobs.c.project_uuid)
+            sa.select(projects_to_jobs)
             .select_from(
                 projects_to_jobs.join(
                     projects_to_products,
@@ -115,7 +112,10 @@ class ProjectJobsRepository(BaseRepository):
 
         # Step 4: Query to get the paginated list with full selection
         list_query = (
-            sa.select(*_PROJECT_JOB_DB_COLS)
+            sa.select(
+                *_PROJECT_DB_COLS,
+                base_query.c.job_parent_resource_name,
+            )
             .select_from(
                 base_query.join(
                     projects,
