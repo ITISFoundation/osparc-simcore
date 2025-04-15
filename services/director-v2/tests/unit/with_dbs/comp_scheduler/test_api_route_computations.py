@@ -25,7 +25,7 @@ from faker import Faker
 from fastapi import FastAPI, status
 from models_library.api_schemas_catalog.services import ServiceGet
 from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
-from models_library.api_schemas_directorv2.comp_tasks import (
+from models_library.api_schemas_directorv2.computations import (
     ComputationCreate,
     ComputationGet,
 )

@@ -1,5 +1,5 @@
 """
-    Models a study's project document
+Models a study's project document
 """
 
 from datetime import datetime
@@ -27,6 +27,7 @@ from .utils.common_validators import (
 )
 
 ProjectID: TypeAlias = UUID
+CommitID: TypeAlias = int
 ClassifierID: TypeAlias = str
 
 NodesDict: TypeAlias = dict[NodeIDStr, Node]

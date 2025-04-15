@@ -315,7 +315,7 @@ async def test_run_solver_job(
 
     example = next(
         e
-        for e in ServiceMetaDataPublished.model_config["json_schema_extra"]["examples"]
+        for e in ServiceMetaDataPublished.model_json_schema()["examples"]
         if "boot-options" in e
     )
 
