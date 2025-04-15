@@ -613,7 +613,7 @@ async def test_start_export_data(
         result,
     )
 
-    progress_updates = [x[0][3].actual_value for x in task_progress_spy.call_args_list]
+    progress_updates = [x[0][2].actual_value for x in task_progress_spy.call_args_list]
     assert progress_updates[0] == 0
     assert progress_updates[-1] == 1
 
