@@ -29,7 +29,7 @@ from ...security.decorators import permission_required
 from ...utils_aiohttp import envelope_json_response
 from .. import _service
 from .._client import DirectorV2RestClient
-from .._service_abc import CommitID, get_project_run_policy
+from .._service_abc import get_project_run_policy
 from ._rest_exceptions import handle_rest_requests_exceptions
 
 _logger = logging.getLogger(__name__)
