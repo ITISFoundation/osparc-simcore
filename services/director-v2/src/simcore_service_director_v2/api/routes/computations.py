@@ -245,7 +245,7 @@ async def _try_start_pipeline(
 
 @router.post(
     "",
-    description="Create and optionally starts it",
+    description="Create and optionally start a new computation",
     response_model=ComputationGet,
     status_code=status.HTTP_201_CREATED,
     responses={
