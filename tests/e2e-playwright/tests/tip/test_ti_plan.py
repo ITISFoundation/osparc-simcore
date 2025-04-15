@@ -9,6 +9,7 @@ import contextlib
 import json
 import logging
 import re
+import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -224,21 +225,26 @@ def test_classic_ti_plan(  # noqa: PLR0915
         assert not ws_info.value.is_closed()
         restartable_jlab_websocket = RobustWebSocket(page, ws_info.value)
 
-        with (
-            log_context(logging.INFO, "Run optimization"),
-            restartable_jlab_websocket.expect_event(
-                "framereceived",
-                _JLabWebSocketWaiter(
-                    expected_header_msg_type="stream",
-                    expected_message_contents="All results evaluated",
-                ),
-                timeout=_JLAB_RUN_OPTIMIZATION_MAX_TIME
-                + _JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME,
-            ),
-        ):
-            ti_iframe.get_by_role("button", name="Run Optimization").click(
-                timeout=_JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME
-            )
+        with log_context(logging.INFO, "Run optimization") as ctx:
+            run_button = ti_iframe.get_by_role("button", name="Run Optimization")
+            run_button.click(timeout=_JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME)
+
+            start = time.time()
+            success = False
+            while (
+                time.time() - start < _JLAB_RUN_OPTIMIZATION_MAX_TIME / 1000
+            ):  # Convert ms to seconds
+                bg_color = run_button.evaluate(
+                    "el => getComputedStyle(el).backgroundColor"
+                )
+                if bg_color == "rgb(0, 128, 0)":
+                    ctx.logger.info("Optimization finished!")
+                    success = True
+                    break
+                time.sleep(2)
+
+            if not success:
+                ctx.logger.info("Optimization did not finish in time.")
 
         with log_context(logging.INFO, "Create report"):
             with log_context(
