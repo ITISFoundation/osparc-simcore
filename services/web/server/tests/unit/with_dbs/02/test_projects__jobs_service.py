@@ -11,25 +11,26 @@ from simcore_service_webserver.projects.models import ProjectDict
 async def test_list_my_projects_marked_as_jobs_empty(
     client: TestClient,
     logged_user: UserInfoDict,  # owns `user_project`
-    osparc_product_name: ProductName,
     user_project: ProjectDict,
+    osparc_product_name: ProductName,
 ):
     assert client.app
     assert user_project
 
-    result = await list_my_projects_marked_as_jobs(
+    total_count, result = await list_my_projects_marked_as_jobs(
         app=client.app,
         product_name=osparc_product_name,
         user_id=logged_user["id"],
     )
+    assert total_count == 0
     assert result == []
 
 
 async def test_list_my_projects_marked_as_jobs_with_one_marked(
     client: TestClient,
     logged_user: UserInfoDict,  # owns `user_project`
-    osparc_product_name: ProductName,
     user_project: ProjectDict,
+    osparc_product_name: ProductName,
 ):
     assert client.app
 
@@ -45,35 +46,49 @@ async def test_list_my_projects_marked_as_jobs_with_one_marked(
         job_parent_resource_name=job_parent_resource_name,
     )
 
-    result = await list_my_projects_marked_as_jobs(
+    total_count, result = await list_my_projects_marked_as_jobs(
         app=client.app,
         product_name=osparc_product_name,
         user_id=user_id,
     )
+    assert total_count == 1
     assert len(result) == 1
-    assert result[0]["project_uuid"] == project_uuid
-    assert result[0]["job_parent_resource_name"] == job_parent_resource_name
 
-    result = await list_my_projects_marked_as_jobs(
+    project = result[0]
+    assert project.uuid == project_uuid
+    assert project.job_parent_resource_name == job_parent_resource_name
+
+    total_count, result = await list_my_projects_marked_as_jobs(
         app=client.app,
         product_name=osparc_product_name,
         user_id=user_id,
         job_parent_resource_name_filter=job_parent_resource_name,
     )
+    assert total_count == 1
     assert len(result) == 1
 
-    result = await list_my_projects_marked_as_jobs(
+    project = result[0]
+    assert project.uuid == project_uuid
+    assert project.job_parent_resource_name == job_parent_resource_name
+
+    total_count, result = await list_my_projects_marked_as_jobs(
         app=client.app,
         product_name=osparc_product_name,
         user_id=user_id,
         job_parent_resource_name_filter="test/%",
     )
+    assert total_count == 1
     assert len(result) == 1
 
-    result = await list_my_projects_marked_as_jobs(
+    project = result[0]
+    assert project.project_uuid == project_uuid
+    assert project.job_parent_resource_name == job_parent_resource_name
+
+    total_count, result = await list_my_projects_marked_as_jobs(
         app=client.app,
         product_name=osparc_product_name,
         user_id=user_id,
         job_parent_resource_name_filter="other/%",
     )
+    assert total_count == 0
     assert len(result) == 0

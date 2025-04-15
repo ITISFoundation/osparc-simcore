@@ -6,7 +6,7 @@ from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from pydantic import AfterValidator, validate_call
-from simcore_service_webserver.projects.models import ProjectDBGet
+from simcore_service_webserver.projects.models import ProjectJobDBGet
 
 from ._access_rights_service import check_user_project_permission
 from ._jobs_repository import ProjectJobsRepository
@@ -57,7 +57,7 @@ async def list_my_projects_marked_as_jobs(
     offset: int = 0,
     limit: int = 10,
     job_parent_resource_name_filter: str | None = None,
-) -> tuple[int, list[ProjectDBGet]]:
+) -> tuple[int, list[ProjectJobDBGet]]:
     """
     Lists paginated projects marked as jobs for the given user and product.
     Optionally filters by job_parent_resource_name using SQL-like wildcard patterns.
