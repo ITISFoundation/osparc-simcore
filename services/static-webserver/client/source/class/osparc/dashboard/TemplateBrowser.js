@@ -18,12 +18,15 @@
 qx.Class.define("osparc.dashboard.TemplateBrowser", {
   extend: osparc.dashboard.ResourceBrowserBase,
 
-  construct: function() {
+  construct: function(templateType) {
     this._resourceType = "template";
+    this.__templateType = templateType || null;
+
     this.base(arguments);
   },
 
   members: {
+    __templateType: null,
     __updateAllButton: null,
 
     // overridden
@@ -97,7 +100,11 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
 
     __setResourcesToList: function(templatesList) {
       templatesList.forEach(template => template["resourceType"] = "template");
-      this._resourcesList = templatesList;
+      if (this.__templateType) {
+        this._resourcesList = templatesList;
+      } else {
+        this._resourcesList = templatesList;
+      }
       this._reloadCards();
     },
 
