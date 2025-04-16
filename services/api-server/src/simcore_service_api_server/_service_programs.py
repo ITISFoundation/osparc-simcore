@@ -3,14 +3,12 @@ from typing import Annotated
 from fastapi import Depends
 from models_library.basic_types import VersionStr
 from models_library.services_enums import ServiceType
-from servicelib.fastapi.app_state import SingletonInAppStateMixin
 
 from .models.schemas.programs import Program, ProgramKeyId
 from .services_rpc.catalog import CatalogService
 
 
-class ProgramService(SingletonInAppStateMixin):
-    app_state_name = "ProgramService"
+class ProgramService:
     _catalog_service: CatalogService
 
     def __init__(

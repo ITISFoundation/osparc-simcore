@@ -12,15 +12,13 @@ from models_library.rest_pagination import (
 from models_library.services_history import ServiceRelease
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
 
 from ..api.dependencies.rabbitmq import get_rabbitmq_rpc_client
 
 
-class CatalogService(SingletonInAppStateMixin):
-    app_state_name = "CatalogService"
+class CatalogService:
     _client: RabbitMQRPCClient
 
     def __init__(
