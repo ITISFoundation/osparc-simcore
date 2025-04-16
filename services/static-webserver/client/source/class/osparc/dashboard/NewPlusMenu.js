@@ -77,6 +77,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
     });
 
     this.__categoryHeaders = [];
+    this.__itemIdx = 0;
 
     this.__addItems();
   },
@@ -137,11 +138,13 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
 
   members: {
     __categoryHeaders: null,
+    __itemIdx: null,
 
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
         case "new-folder":
+          this.addSeparator();
           control = this.self().createMenuButton(
             osparc.dashboard.CardBase.NEW_ICON + "16",
             this.tr("New Folder"),
@@ -155,9 +158,9 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
     },
 
     __addItems: async function() {
-      this.getChildControl("new-folder");
-      this.addSeparator();
       await this.__addNewStudyItems();
+      this.__addMoreMenu();
+      this.getChildControl("new-folder");
     },
 
     __addNewStudyItems: async function() {
@@ -181,6 +184,26 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
             });
           });
       }
+    },
+
+    __addMoreMenu: function() {
+      const moreMenuButton = this.self().createMenuButton("@FontAwesome5Solid/star/14", this.tr("More"));
+      this.addAt(moreMenuButton, this.__itemIdx);
+      this.__itemIdx++;
+
+      const moreMenu = new qx.ui.menu.Menu().set({
+        appearance: "menu-wider",
+      });
+
+      const templatesButton = new qx.ui.menu.Button(this.tr("Tutorials..."), "@FontAwesome5Solid/copy/14");
+      templatesButton.addListener("execute", () => this.fireDataEvent("moveFolderToRequested", this.getFolderId()), this);
+      moreMenu.add(templatesButton);
+
+      const servicesButton = new qx.ui.menu.Button(this.tr("Services..."), "@FontAwesome5Solid/cog/14");
+      servicesButton.addListener("execute", () => this.fireDataEvent("moveFolderToRequested", this.getFolderId()), this);
+      moreMenu.add(servicesButton);
+
+      moreMenuButton.setMenu(moreMenu);
     },
 
     __getLastIdxFromCategory: function(categoryId) {
@@ -237,7 +260,8 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
         menuButton["categoryId"] = category;
         this.addAt(menuButton, idx+1);
       } else {
-        this.add(menuButton);
+        this.addAt(menuButton, this.__itemIdx);
+        this.__itemIdx++;
       }
     },
 
