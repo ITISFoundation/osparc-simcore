@@ -43,5 +43,9 @@ qx.Class.define("osparc.store.Templates", {
     getTemplates: function() {
       return this.__templates;
     },
+
+    getTemplate: function(templateId) {
+      return this.__templates.find(t => t.uuid === templateId);
+    },
   }
 });
