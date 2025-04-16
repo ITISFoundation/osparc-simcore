@@ -225,12 +225,17 @@ qx.Class.define("osparc.desktop.MainPage", {
       const text = this.tr("Started template creation and added to the background tasks");
       osparc.FlashMessenger.logAs(text, "INFO");
 
+      const studyId = data["studyData"].uuid;
+      const studyName = data["studyData"].name;
+      const copyData = data["copyData"];
+      const templateAccessRights = data["accessRights"];
+      const templateType = data["templateType"];
+
       const params = {
         url: {
-          "study_id": data["studyData"].uuid,
-          "copy_data": data["copyData"]
+          "study_id": studyId,
+          "copy_data": copyData
         },
-        data: data["studyData"]
       };
       const options = {
         pollTask: true
@@ -241,11 +246,18 @@ qx.Class.define("osparc.desktop.MainPage", {
         .then(task => {
           const templateBrowser = this.__dashboard.getTemplateBrowser();
           if (templateBrowser) {
-            templateBrowser.taskToTemplateReceived(task, data["studyData"].name);
+            templateBrowser.taskToTemplateReceived(task, studyName);
           }
           task.addListener("resultReceived", e => {
             const templateData = e.getData();
-            osparc.store.Study.addCollaborators(templateData, data["accessRights"]);
+            // these operations need to be done after template creation
+            osparc.store.Study.addCollaborators(templateData, templateAccessRights);
+            if (templateType) {
+              const studyUI = osparc.utils.Utils.deepCloneObject(templateData["ui"]);
+              studyUI["templateType"] = templateType;
+              osparc.store.Study.patchStudyData(templateData, "ui", studyUI)
+                .then(() => console.log("patched"));
+            }
           });
         })
         .catch(errMsg => {

@@ -90,11 +90,7 @@ qx.Class.define("osparc.study.SaveAsTemplate", {
     __publishTemplate: function() {
       const publishWithDataCB = this.__form.getItem("publishWithData");
       const templateTypeSB = this.__form.getItem("templateType");
-
       const templateType = templateTypeSB ? templateTypeSB.getSelection()[0].getModel() : null;
-      if (templateType) {
-        this.__studyDataClone["ui"]["templateType"] = templateType;
-      }
 
       const readAccessRole = osparc.data.Roles.STUDY["read"];
       // AccessRights will be POSTed after the template is created.
@@ -109,8 +105,8 @@ qx.Class.define("osparc.study.SaveAsTemplate", {
       this.fireDataEvent("publishTemplate", {
         "studyData": this.__studyDataClone,
         "copyData": publishWithDataCB.getValue(),
-
         "accessRights": accessRights,
+        "templateType": templateType,
       });
     },
 
