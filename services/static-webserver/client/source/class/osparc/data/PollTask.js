@@ -102,9 +102,13 @@ qx.Class.define("osparc.data.PollTask", {
     },
 
     extractProgress: function(updateData) {
+      const toNumberWithMaxTwoDecimals = value => {
+        return Math.round(Number(value) * 100) / 100;
+      };
+
       if ("task_progress" in updateData) {
         const taskProgress = updateData["task_progress"];
-        const percent = taskProgress["percent"] ? parseFloat(taskProgress["percent"].toFixed(3)) : taskProgress["percent"];
+        const percent = taskProgress["percent"] ? toNumberWithMaxTwoDecimals(taskProgress["percent"]) : taskProgress["percent"];
         return percent;
       }
       return 0;

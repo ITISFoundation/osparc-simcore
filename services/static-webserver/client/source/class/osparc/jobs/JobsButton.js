@@ -72,7 +72,7 @@ qx.Class.define("osparc.jobs.JobsButton", {
     },
 
     __updateJobsButton: function() {
-      this._createChildControlImpl("icon");
+      this.getChildControl("icon");
       const number = this.getChildControl("number");
 
       const jobsStore = osparc.store.Jobs.getInstance();

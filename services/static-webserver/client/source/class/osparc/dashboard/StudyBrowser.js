@@ -1789,17 +1789,52 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       convertToPipelineButton["convertToPipelineButton"] = true;
       const uiMode = osparc.study.Utils.getUiMode(studyData);
       convertToPipelineButton.setVisibility(uiMode === "standalone" ? "visible" : "excluded");
-      convertToPipelineButton.addListener("execute", () => {
-        this.__updateUIMode(studyData, "workbench")
-          .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while converting to pipeline")));
-      }, this);
+      convertToPipelineButton.addListener("execute", () => this.__convertToPipelineClicked(studyData), this);
       return convertToPipelineButton;
+    },
+
+    __convertToPipelineClicked: function(studyData) {
+      let message = this.tr("Would you like to convert this project to a pipeline?");
+      message += "<br>" + this.tr("Alternatively, you can create a copy of the project and convert the copy instead.");
+      const confirmationWin = new osparc.ui.window.Confirmation();
+      confirmationWin.set({
+        caption: this.tr("Convert to Pipeline"),
+        confirmText: this.tr("Convert"),
+        confirmAction: "create",
+        message,
+      });
+      confirmationWin.getChildControl("cancel-button").exclude();
+      const copyOptionButton = new qx.ui.form.Button().set({
+        appearance: "form-button-text",
+        label: this.tr("Create a copy and convert it"),
+      });
+      confirmationWin.getChildControl("buttons-layout").addAt(copyOptionButton, 0);
+      confirmationWin.addListener("close", () => {
+        if (confirmationWin.getConfirmed()) {
+          this.__updateUIMode(studyData, "pipeline")
+            .then(() => osparc.FlashMessenger.logAs(this.tr("Project converted to pipeline"), "INFO"))
+            .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while converting to pipeline")));
+        }
+      });
+      copyOptionButton.addListener("execute", () => {
+        confirmationWin.close();
+        this.__duplicateStudy(studyData)
+          .then(task => {
+            task.addListener("resultReceived", e => {
+              const copiedStudy = e.getData();
+              this.__updateUIMode(copiedStudy, "pipeline")
+                .then(() => osparc.FlashMessenger.logAs(this.tr("Project's copy converted to pipeline"), "INFO"))
+                .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while converting the copy to pipeline")));
+            }, this);
+          });
+      }, this);
+      confirmationWin.open();
     },
 
     __updateUIMode: function(studyData, uiMode) {
       const studyUI = osparc.utils.Utils.deepCloneObject(studyData["ui"]);
       studyUI["mode"] = uiMode;
-      return osparc.info.StudyUtils.patchStudyData(studyData, "ui", studyUI)
+      return osparc.store.Study.patchStudyData(studyData, "ui", studyUI)
         .then(() => this._updateStudyData(studyData))
     },
 
@@ -1889,21 +1924,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __duplicateStudy: function(studyData) {
-      const text = this.tr("Duplicate process started and added to the background tasks");
-      osparc.FlashMessenger.logAs(text, "INFO");
-
-      const params = {
-        url: {
-          "studyId": studyData["uuid"]
-        }
-      };
-      const options = {
-        pollTask: true
-      };
-      const fetchPromise = osparc.data.Resources.fetch("studies", "duplicate", params, options);
-      const pollTasks = osparc.store.PollTasks.getInstance();
-      pollTasks.createPollingTask(fetchPromise)
-        .then(task => this.__taskDuplicateReceived(task, studyData["name"]))
+      osparc.study.Utils.duplicateStudy(studyData)
+        .then(task => {
+          this.__taskDuplicateReceived(task, studyData["name"]);
+          return task;
+        })
         .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while duplicating")));
     },
 
