@@ -15147,6 +15147,7 @@ components:
         templateType:
           anyOf:
           - type: string
+            const: hypertool
           - type: 'null'
           title: Templatetype
       additionalProperties: true
@@ -15183,6 +15184,7 @@ components:
         templateType:
           anyOf:
           - type: string
+            const: hypertool
           - type: 'null'
           title: Templatetype
       additionalProperties: true
