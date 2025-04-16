@@ -25,7 +25,6 @@ from ...models.schemas.jobs import Job, JobInputs
 from ...models.schemas.programs import Program, ProgramKeyId
 from ...services_http.catalog import CatalogApi
 from ..dependencies.authentication import get_current_user_id, get_product_name
-from ..dependencies.job_service import get_job_service
 from ..dependencies.services import get_api_client
 
 _logger = logging.getLogger(__name__)
@@ -109,7 +108,7 @@ async def create_program_job(
     version: VersionStr,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     program_service: Annotated[ProgramService, Depends(ProgramService)],
-    job_service: Annotated[JobService, Depends(get_job_service)],
+    job_service: Annotated[JobService, Depends(JobService)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
     x_simcore_parent_project_uuid: Annotated[ProjectID | None, Header()] = None,

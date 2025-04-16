@@ -35,7 +35,6 @@ from ...services_http.solver_job_models_converters import (
 from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
-from ..dependencies.job_service import get_job_service
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver_http import AuthSession, get_webserver_session
 from ..dependencies.webserver_rpc import (
@@ -97,7 +96,7 @@ async def create_solver_job(
     inputs: JobInputs,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
-    job_service: Annotated[JobService, Depends(get_job_service)],
+    job_service: Annotated[JobService, Depends(JobService)],
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],

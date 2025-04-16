@@ -1,34 +1,35 @@
 import logging
 from collections.abc import Callable
-from dataclasses import dataclass
+from typing import Annotated
 
-from fastapi import FastAPI
+from fastapi import Depends
 from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from pydantic import HttpUrl
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
-from simcore_service_api_server.models.schemas.jobs import Job, JobInputs
-from simcore_service_api_server.models.schemas.programs import Program
-from simcore_service_api_server.models.schemas.solvers import Solver
-from simcore_service_api_server.services_http.solver_job_models_converters import (
+
+from .api.dependencies.webserver_http import get_webserver_session
+from .models.schemas.jobs import Job, JobInputs
+from .models.schemas.programs import Program
+from .models.schemas.solvers import Solver
+from .services_http.solver_job_models_converters import (
     create_job_from_project,
     create_new_project_for_job,
 )
-from simcore_service_api_server.services_http.webserver import AuthSession
+from .services_http.webserver import AuthSession
 
 _logger = logging.getLogger(__name__)
 
 
-@dataclass()
 class JobService(SingletonInAppStateMixin):
     app_state_name = "JobService"
-    _webserver_api: AuthSession | None = None
+    _webserver_api: AuthSession
 
-    @property
-    def webserver_api(self) -> AuthSession:
-        assert self._webserver_api, "JobService not initialized"  # nosec
-        return self._webserver_api
+    def __init__(
+        self, webserver_api: Annotated[AuthSession, Depends(get_webserver_session)]
+    ):
+        self._webserver_api = webserver_api
 
     async def create_job(
         self,
@@ -49,7 +50,7 @@ class JobService(SingletonInAppStateMixin):
         project_in: ProjectCreateNew = create_new_project_for_job(
             solver_or_program, pre_job, inputs
         )
-        new_project: ProjectGet = await self.webserver_api.create_project(
+        new_project: ProjectGet = await self._webserver_api.create_project(
             project_in,
             is_hidden=hidden,
             parent_project_uuid=parent_project_uuid,
@@ -69,7 +70,3 @@ class JobService(SingletonInAppStateMixin):
             job_id=job.id,
         )
         return job, new_project
-
-
-def setup(app: FastAPI):
-    JobService().set_to_app_state(app=app)
