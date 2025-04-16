@@ -162,7 +162,9 @@ def create_storage_paths_rpc_client_mock(
 @pytest.mark.parametrize(
     "backend_result_or_exception",
     [
-        AsyncJobGet(job_id=AsyncJobId(f"{_faker.uuid4()}")),
+        AsyncJobGet(
+            job_id=AsyncJobId(f"{_faker.uuid4()}"), job_name="compute_path_size"
+        ),
     ],
     ids=lambda x: type(x).__name__,
 )
@@ -204,7 +206,9 @@ async def test_compute_path_size(
 @pytest.mark.parametrize(
     "backend_result_or_exception",
     [
-        AsyncJobGet(job_id=AsyncJobId(f"{_faker.uuid4()}")),
+        AsyncJobGet(
+            job_id=AsyncJobId(f"{_faker.uuid4()}"), job_name="batch_delete_paths"
+        ),
     ],
     ids=lambda x: type(x).__name__,
 )
