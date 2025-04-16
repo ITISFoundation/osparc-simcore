@@ -69,8 +69,9 @@ class RedisTaskInfoStore:
             + build_task_id_prefix(task_context)
             + _CELERY_TASK_ID_KEY_SEPARATOR
         )
+        search_key_len = len(search_key)
+
         keys: list[str] = []
-        tasks = []
         pipe = self._redis_client_sdk.redis.pipeline()
         async for key in self._redis_client_sdk.redis.scan_iter(
             match=search_key + "*", count=_CELERY_TASK_SCAN_COUNT_PER_BATCH
@@ -82,19 +83,18 @@ class RedisTaskInfoStore:
                 else key
             )
             keys.append(_key)
-
-        for key in keys:
-            pipe.hget(key, _CELERY_TASK_METADATA_KEY)
+            pipe.hget(_key, _CELERY_TASK_METADATA_KEY)
 
         results = await pipe.execute()
-        for key, task_metadata in zip(keys, results, strict=False):
-            tasks.append(
-                Task(
-                    uuid=TaskUUID(key.removeprefix(search_key)),
-                    metadata=TaskMetadata.model_validate_json(task_metadata),
-                )
+
+        return [
+            Task(
+                uuid=TaskUUID(key[search_key_len:]),
+                metadata=TaskMetadata.model_validate_json(metadata),
             )
-        return tasks
+            for key, metadata in zip(keys, results, strict=True)
+            if metadata is not None
+        ]
 
     async def remove_task(self, task_id: TaskID) -> None:
         await self._redis_client_sdk.redis.delete(_build_key(task_id))  # type: ignore

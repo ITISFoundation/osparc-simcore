@@ -25,9 +25,10 @@ async def compute_path_size(
     location_id: LocationID,
     path: Path,
 ) -> AsyncJobGet:
+    task_name = remote_compute_path_size.__name__
     task_uuid = await get_celery_client(app).submit_task(
         task_metadata=TaskMetadata(
-            name=remote_compute_path_size.__name__,
+            name=task_name,
         ),
         task_context=job_id_data.model_dump(),
         user_id=job_id_data.user_id,
@@ -35,7 +36,7 @@ async def compute_path_size(
         path=path,
     )
 
-    return AsyncJobGet(job_id=task_uuid)
+    return AsyncJobGet(job_id=task_uuid, job_name=task_name)
 
 
 @router.expose(reraise_if_error_type=None)
@@ -45,13 +46,14 @@ async def delete_paths(
     location_id: LocationID,
     paths: set[Path],
 ) -> AsyncJobGet:
+    task_name = remote_delete_paths.__name__
     task_uuid = await get_celery_client(app).submit_task(
         task_metadata=TaskMetadata(
-            name=remote_delete_paths.__name__,
+            name=task_name,
         ),
         task_context=job_id_data.model_dump(),
         user_id=job_id_data.user_id,
         location_id=location_id,
         paths=paths,
     )
-    return AsyncJobGet(job_id=task_uuid)
+    return AsyncJobGet(job_id=task_uuid, job_name=task_name)

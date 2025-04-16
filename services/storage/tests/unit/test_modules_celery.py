@@ -23,6 +23,7 @@ from simcore_service_storage.modules.celery.client import CeleryTaskClient
 from simcore_service_storage.modules.celery.errors import TransferrableCeleryError
 from simcore_service_storage.modules.celery.models import (
     TaskContext,
+    TaskMetadata,
     TaskState,
 )
 from simcore_service_storage.modules.celery.utils import (
@@ -111,7 +112,9 @@ async def test_submitting_task_calling_async_function_results_with_success_state
     task_context = TaskContext(user_id=42)
 
     task_uuid = await celery_client.submit_task(
-        fake_file_processor.__name__,
+        TaskMetadata(
+            name=fake_file_processor.__name__,
+        ),
         task_context=task_context,
         files=[f"file{n}" for n in range(5)],
     )
@@ -139,7 +142,10 @@ async def test_submitting_task_with_failure_results_with_error(
     task_context = TaskContext(user_id=42)
 
     task_uuid = await celery_client.submit_task(
-        failure_task.__name__, task_context=task_context
+        TaskMetadata(
+            name=failure_task.__name__,
+        ),
+        task_context=task_context,
     )
 
     for attempt in Retrying(
@@ -162,7 +168,9 @@ async def test_aborting_task_results_with_aborted_state(
     task_context = TaskContext(user_id=42)
 
     task_uuid = await celery_client.submit_task(
-        dreamer_task.__name__,
+        TaskMetadata(
+            name=dreamer_task.__name__,
+        ),
         task_context=task_context,
     )
 
@@ -188,7 +196,9 @@ async def test_listing_task_uuids_contains_submitted_task(
     task_context = TaskContext(user_id=42)
 
     task_uuid = await celery_client.submit_task(
-        dreamer_task.__name__,
+        TaskMetadata(
+            name=dreamer_task.__name__,
+        ),
         task_context=task_context,
     )
 
