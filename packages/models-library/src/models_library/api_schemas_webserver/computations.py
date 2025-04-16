@@ -1,12 +1,19 @@
-from typing import Annotated
+from datetime import datetime
+from typing import Annotated, Any, NamedTuple
 
 from common_library.basic_types import DEFAULT_FACTORY
-from pydantic import BaseModel, Field
+from pydantic import (
+    BaseModel,
+    Field,
+    PositiveInt,
+)
 
 from ..api_schemas_directorv2.computations import (
     ComputationGet as _DirectorV2ComputationGet,
 )
 from ..projects import CommitID, ProjectID
+from ..projects_nodes_io import NodeID
+from ..projects_state import RunningState
 from ._base import InputSchemaWithoutCamelCase, OutputSchemaWithoutCamelCase
 
 
@@ -41,3 +48,33 @@ class ComputationStarted(OutputSchemaWithoutCamelCase):
             json_schema_extra={"default": []},
         ),
     ] = DEFAULT_FACTORY
+
+
+class ComputationRunRestGet(BaseModel):
+    project_uuid: ProjectID
+    iteration: int
+    state: RunningState
+    info: dict[str, Any]
+    submitted_at: datetime
+    started_at: datetime | None
+    ended_at: datetime | None
+
+
+class ComputationRunRestGetPage(NamedTuple):
+    items: list[ComputationRunRestGet]
+    total: PositiveInt
+
+
+class ComputationTaskRestGet(BaseModel):
+    project_uuid: ProjectID
+    node_id: NodeID
+    state: RunningState
+    progress: float
+    image: dict[str, Any]
+    started_at: datetime | None
+    ended_at: datetime | None
+
+
+class ComputationTaskRestGetPage(NamedTuple):
+    items: list[ComputationTaskRestGet]
+    total: PositiveInt

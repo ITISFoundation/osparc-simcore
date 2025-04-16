@@ -79,10 +79,10 @@ async def test_list(
     run_metadata: RunMetadataDict,
     faker: Faker,
 ):
-    assert await CompRunsRepository(aiopg_engine).list() == []
+    assert await CompRunsRepository(aiopg_engine).list_() == []
 
     published_project = await publish_project()
-    assert await CompRunsRepository(aiopg_engine).list() == []
+    assert await CompRunsRepository(aiopg_engine).list_() == []
 
     created = await CompRunsRepository(aiopg_engine).create(
         user_id=published_project.user["id"],
@@ -91,7 +91,7 @@ async def test_list(
         metadata=run_metadata,
         use_on_demand_clusters=faker.pybool(),
     )
-    assert await CompRunsRepository(aiopg_engine).list() == [created]
+    assert await CompRunsRepository(aiopg_engine).list_() == [created]
 
     created = [created] + await asyncio.gather(
         *(
@@ -106,7 +106,7 @@ async def test_list(
         )
     )
     assert sorted(
-        await CompRunsRepository(aiopg_engine).list(), key=lambda x: x.iteration
+        await CompRunsRepository(aiopg_engine).list_(), key=lambda x: x.iteration
     ) == sorted(created, key=lambda x: x.iteration)
 
     # test with filter of state
@@ -114,13 +114,13 @@ async def test_list(
         s for s in RunningState if s is not RunningState.PUBLISHED
     }
     assert (
-        await CompRunsRepository(aiopg_engine).list(
+        await CompRunsRepository(aiopg_engine).list_(
             filter_by_state=any_state_but_published
         )
         == []
     )
     assert sorted(
-        await CompRunsRepository(aiopg_engine).list(
+        await CompRunsRepository(aiopg_engine).list_(
             filter_by_state={RunningState.PUBLISHED}
         ),
         key=lambda x: x.iteration,
@@ -128,7 +128,7 @@ async def test_list(
 
     # test with never scheduled filter, let's create a bunch of scheduled entries,
     assert sorted(
-        await CompRunsRepository(aiopg_engine).list(never_scheduled=True),
+        await CompRunsRepository(aiopg_engine).list_(never_scheduled=True),
         key=lambda x: x.iteration,
     ) == sorted(created, key=lambda x: x.iteration)
     comp_runs_marked_for_scheduling = random.sample(created, k=25)
@@ -145,7 +145,7 @@ async def test_list(
     # filter them away
     created = [r for r in created if r not in comp_runs_marked_for_scheduling]
     assert sorted(
-        await CompRunsRepository(aiopg_engine).list(never_scheduled=True),
+        await CompRunsRepository(aiopg_engine).list_(never_scheduled=True),
         key=lambda x: x.iteration,
     ) == sorted(created, key=lambda x: x.iteration)
 
@@ -170,7 +170,7 @@ async def test_list(
     # since they were just marked as processed now, we will get nothing
     assert (
         sorted(
-            await CompRunsRepository(aiopg_engine).list(
+            await CompRunsRepository(aiopg_engine).list_(
                 never_scheduled=False, processed_since=SCHEDULER_INTERVAL
             ),
             key=lambda x: x.iteration,
@@ -200,7 +200,7 @@ async def test_list(
     )
     # now we should get them
     assert sorted(
-        await CompRunsRepository(aiopg_engine).list(
+        await CompRunsRepository(aiopg_engine).list_(
             never_scheduled=False, processed_since=SCHEDULER_INTERVAL
         ),
         key=lambda x: x.iteration,
@@ -233,14 +233,14 @@ async def test_list(
     )
     # so the processed ones shall remain
     assert sorted(
-        await CompRunsRepository(aiopg_engine).list(
+        await CompRunsRepository(aiopg_engine).list_(
             never_scheduled=False, processed_since=SCHEDULER_INTERVAL
         ),
         key=lambda x: x.iteration,
     ) == sorted(comp_runs_marked_as_processed, key=lambda x: x.iteration)
     # the ones waiting for scheduling now
     assert sorted(
-        await CompRunsRepository(aiopg_engine).list(
+        await CompRunsRepository(aiopg_engine).list_(
             never_scheduled=False, scheduled_since=SCHEDULER_INTERVAL
         ),
         key=lambda x: x.iteration,

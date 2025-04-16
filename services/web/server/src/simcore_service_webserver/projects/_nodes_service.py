@@ -41,7 +41,7 @@ ASSETS_FOLDER: Final[str] = "assets"
 
 
 def get_service_start_lock_key(user_id: UserID, project_uuid: ProjectID) -> str:
-    return f"lock_service_start_limit.{user_id}.{project_uuid}"
+    return f"lock_service_start_limit.usr_{user_id}.prj_{project_uuid}"
 
 
 def check_num_service_per_projects_limit(

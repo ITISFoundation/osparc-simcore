@@ -2536,6 +2536,91 @@ paths:
       responses:
         '204':
           description: Successful Response
+  /v0/computations/-/iterations/latest:
+    get:
+      tags:
+      - computations
+      - projects
+      summary: List Computations Latest Iteration
+      description: Lists the latest iteration of computations
+      operationId: list_computations_latest_iteration
+      parameters:
+      - name: order_by
+        in: query
+        required: false
+        schema:
+          type: string
+          contentMediaType: application/json
+          contentSchema: {}
+          default: '{"field":"created","direction":"asc"}'
+          title: Order By
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Offset
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_ComputationGet__'
+  /v0/computations/{project_id}/iterations/latest/tasks:
+    get:
+      tags:
+      - computations
+      - projects
+      summary: List Computations Latest Iteration Tasks
+      description: Lists the latest iteration tasks for a computation
+      operationId: list_computations_latest_iteration_tasks
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Project Id
+      - name: order_by
+        in: query
+        required: false
+        schema:
+          type: string
+          contentMediaType: application/json
+          contentSchema: {}
+          default: '{"field":"start","direction":"asc"}'
+          title: Order By
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Offset
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_ComputationGet__'
   /v0/projects/{project_id}:xport:
     post:
       tags:
@@ -9955,6 +10040,22 @@ components:
           title: Error
       type: object
       title: Envelope[list[ApiKeyGet]]
+    Envelope_list_ComputationGet__:
+      properties:
+        data:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/ComputationGet'
+            type: array
+          - type: 'null'
+          title: Data
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[list[ComputationGet]]
     Envelope_list_DatasetMetaData__:
       properties:
         data:

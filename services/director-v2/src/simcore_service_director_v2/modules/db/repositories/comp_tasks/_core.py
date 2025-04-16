@@ -1,15 +1,17 @@
 import logging
 from datetime import datetime
-from typing import Any
+from typing import Any, cast
 
 import arrow
 import sqlalchemy as sa
 from aiopg.sa.result import ResultProxy, RowProxy
+from models_library.api_schemas_directorv2.comp_runs import ComputationTaskRpcGet
 from models_library.basic_types import IDStr
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
+from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.users import UserID
 from models_library.wallets import WalletInfo
 from servicelib.logging_utils import log_context
@@ -75,6 +77,62 @@ class CompTasksRepository(BaseRepository):
                 tasks.append(task_db)
         return tasks
 
+    async def list_computational_tasks_for_frontend_client(
+        self,
+        *,
+        project_id: ProjectID,
+        # pagination
+        offset: int = 0,
+        limit: int = 20,
+        # ordering
+        order_by: OrderBy | None = None,
+    ) -> tuple[int, list[ComputationTaskRpcGet]]:
+        if order_by is None:
+            order_by = OrderBy(field=IDStr("task_id"))  # default ordering
+
+        base_select_query = (
+            sa.select(
+                comp_tasks.c.project_id,
+                comp_tasks.c.node_id,
+                comp_tasks.c.state,
+                comp_tasks.c.progress,
+                comp_tasks.c.image,
+                comp_tasks.c.start.label("started_at"),
+                comp_tasks.c.end.label("ended_at"),
+            )
+            .select_from(comp_tasks)
+            .where(
+                (comp_tasks.c.project_id == f"{project_id}")
+                & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
+            )
+        )
+
+        # Select total count from base_query
+        count_query = sa.select(sa.func.count()).select_from(
+            base_select_query.subquery()
+        )
+
+        # Ordering and pagination
+        if order_by.direction == OrderDirection.ASC:
+            list_query = base_select_query.order_by(
+                sa.asc(getattr(comp_tasks.c, order_by.field)), comp_tasks.c.task_id
+            )
+        else:
+            list_query = base_select_query.order_by(
+                sa.desc(getattr(comp_tasks.c, order_by.field)), comp_tasks.c.task_id
+            )
+        list_query = list_query.offset(offset).limit(limit)
+
+        async with self.db_engine.acquire() as conn:
+            total_count = await conn.scalar(count_query)
+
+            result = await conn.execute(list_query)
+            items: list[ComputationTaskRpcGet] = [
+                ComputationTaskRpcGet.model_validate(row) async for row in result
+            ]
+
+            return cast(int, total_count), items
+
     async def task_exists(self, project_id: ProjectID, node_id: NodeID) -> bool:
         async with self.db_engine.acquire() as conn:
             nid: str | None = await conn.scalar(
@@ -99,18 +157,18 @@ class CompTasksRepository(BaseRepository):
     ) -> list[CompTaskAtDB]:
         # NOTE: really do an upsert here because of issue https://github.com/ITISFoundation/osparc-simcore/issues/2125
         async with self.db_engine.acquire() as conn:
-            list_of_comp_tasks_in_project: list[
-                CompTaskAtDB
-            ] = await _utils.generate_tasks_list_from_project(
-                project=project,
-                catalog_client=catalog_client,
-                published_nodes=published_nodes,
-                user_id=user_id,
-                product_name=product_name,
-                connection=conn,
-                rut_client=rut_client,
-                wallet_info=wallet_info,
-                rabbitmq_rpc_client=rabbitmq_rpc_client,
+            list_of_comp_tasks_in_project: list[CompTaskAtDB] = (
+                await _utils.generate_tasks_list_from_project(
+                    project=project,
+                    catalog_client=catalog_client,
+                    published_nodes=published_nodes,
+                    user_id=user_id,
+                    product_name=product_name,
+                    connection=conn,
+                    rut_client=rut_client,
+                    wallet_info=wallet_info,
+                    rabbitmq_rpc_client=rabbitmq_rpc_client,
+                )
             )
             # get current tasks
             result = await conn.execute(

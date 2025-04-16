@@ -11,8 +11,8 @@ from servicelib.aiohttp.application_setup import (
 from ..rest.plugin import setup_rest
 from . import _controller
 from ._client import DirectorV2RestClient, get_directorv2_client, set_directorv2_client
-from ._service_abc import set_project_run_policy
-from ._service_abc_default import DefaultProjectRunPolicy
+from ._director_v2_abc_default_service import DefaultProjectRunPolicy
+from ._director_v2_abc_service import set_project_run_policy
 
 _logger = logging.getLogger(__name__)
 

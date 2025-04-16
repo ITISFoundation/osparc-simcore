@@ -640,7 +640,7 @@ async def _start_dynamic_service(  # noqa: C901
             )
         ),
     )
-    async def _() -> None:
+    async def _run() -> None:
         project_running_nodes = await dynamic_scheduler_service.list_dynamic_services(
             request.app, user_id=user_id, project_id=project_uuid
         )
@@ -788,7 +788,7 @@ async def _start_dynamic_service(  # noqa: C901
             ),
         )
 
-    await _()
+    await _run()
 
 
 async def add_project_node(

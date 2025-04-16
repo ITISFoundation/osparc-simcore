@@ -3,7 +3,7 @@ from collections.abc import AsyncGenerator, Callable
 from typing import TypeVar, cast
 
 from aiopg.sa import Engine
-from fastapi import Depends
+from fastapi import Depends, FastAPI
 from fastapi.requests import Request
 
 from ...modules.db.repositories import BaseRepository
@@ -47,3 +47,11 @@ def get_repository(
         yield get_base_repository(engine=engine, repo_type=repo_type)
 
     return _get_repo
+
+
+def get_repository_instance(app: FastAPI, repo_type: type[RepoType]) -> RepoType:
+    """
+    Retrieves an instance of the specified repository type using the database engine from the FastAPI app.
+    """
+    engine = cast(Engine, app.state.engine)
+    return get_base_repository(engine=engine, repo_type=repo_type)
