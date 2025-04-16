@@ -84,6 +84,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
 
   events: {
     "createFolder": "qx.event.type.Data",
+    "changeTab": "qx.event.type.Data",
     "newEmptyStudyClicked": "qx.event.type.Data",
     "newStudyFromTemplateClicked": "qx.event.type.Data",
     "newStudyFromServiceClicked": "qx.event.type.Data",
@@ -196,11 +197,11 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       });
 
       const templatesButton = this.self().createMenuButton("@FontAwesome5Solid/copy/16", this.tr("Tutorials..."));
-      templatesButton.addListener("execute", () => this.fireDataEvent("moveFolderToRequested", this.getFolderId()), this);
+      templatesButton.addListener("execute", () => this.fireDataEvent("changeTab", "templatesTab"), this);
       moreMenu.add(templatesButton);
 
       const servicesButton = this.self().createMenuButton("@FontAwesome5Solid/cog/16", this.tr("Services..."));
-      servicesButton.addListener("execute", () => this.fireDataEvent("moveFolderToRequested", this.getFolderId()), this);
+      servicesButton.addListener("execute", () => this.fireDataEvent("changeTab", "servicesTab"), this);
       moreMenu.add(servicesButton);
 
       moreMenuButton.setMenu(moreMenu);

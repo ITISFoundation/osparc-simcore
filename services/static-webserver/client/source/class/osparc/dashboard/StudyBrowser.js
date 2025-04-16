@@ -836,6 +836,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this.__createFolder(data);
       }, this);
 
+      newPlusButtonMenu.addListener("changeTab", e => this.fireDataEvent("changeTab", e.getData()));
+
       newPlusButtonMenu.addListener("newEmptyStudyClicked", e => {
         const {
           newStudyLabel,
