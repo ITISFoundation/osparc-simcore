@@ -278,11 +278,19 @@ def fake_workbench_complete_adjacency(
 
 @pytest.fixture
 def disable_rabbitmq(mocker: MockerFixture) -> None:
-    def mock_setup(app: FastAPI) -> None:
+    def rabbitmq_mock_setup(app: FastAPI) -> None:
         app.state.rabbitmq_client = AsyncMock()
 
+    def rpc_api_routes_mock_setup(app: FastAPI) -> None:
+        app.state.rabbitmq_rpc_server = AsyncMock()
+
     mocker.patch(
-        "simcore_service_director_v2.modules.rabbitmq.setup", side_effect=mock_setup
+        "simcore_service_director_v2.modules.rabbitmq.setup",
+        side_effect=rabbitmq_mock_setup,
+    )
+    mocker.patch(
+        "simcore_service_director_v2.core.application.setup_rpc_api_routes",
+        side_effect=rpc_api_routes_mock_setup,
     )
 
 
