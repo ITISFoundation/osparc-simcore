@@ -170,6 +170,7 @@ class StudyUI(BaseModel):
                             },
                         },
                         "current_node_id": "4b3345e5-861f-47b0-8b52-a4508449be79",
+                        "template_type": "hypertool",
                     },
                 ]
             }
