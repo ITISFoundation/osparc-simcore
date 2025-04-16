@@ -85,6 +85,20 @@ async def get_function(
     return await wb_api_rpc.get_function(function_id=function_id)
 
 
+def join_inputs(
+    default_inputs: FunctionInputs | None,
+    function_inputs: FunctionInputs | None,
+) -> FunctionInputs:
+    if default_inputs is None:
+        return function_inputs
+
+    if function_inputs is None:
+        return default_inputs
+
+    # last dict will override defaults
+    return {**default_inputs, **function_inputs}
+
+
 @function_router.post(
     "/{function_id:uuid}:run",
     response_model=FunctionJob,
@@ -108,16 +122,21 @@ async def run_function(
 
     assert to_run_function.uid is not None
 
+    joined_inputs = join_inputs(
+        to_run_function.default_inputs,
+        function_inputs,
+    )
+
     if cached_function_job := await wb_api_rpc.find_cached_function_job(
         function_id=to_run_function.uid,
-        inputs=function_inputs,
+        inputs=joined_inputs,
     ):
         return cached_function_job
 
     if to_run_function.function_class == FunctionClass.project:
         study_job = await studies_jobs.create_study_job(
             study_id=to_run_function.project_id,
-            job_inputs=JobInputs(values=function_inputs or {}),
+            job_inputs=JobInputs(values=joined_inputs or {}),
             webserver_api=webserver_api,
             wb_api_rpc=wb_api_rpc,
             url_for=url_for,
@@ -140,7 +159,7 @@ async def run_function(
                 function_uid=to_run_function.uid,
                 title=f"Function job of function {to_run_function.uid}",
                 description=to_run_function.description,
-                inputs=function_inputs,
+                inputs=joined_inputs,
                 outputs=None,
                 project_job_id=study_job.id,
             ),
@@ -149,7 +168,7 @@ async def run_function(
         solver_job = await solvers_jobs.create_solver_job(
             solver_key=to_run_function.solver_key,
             version=to_run_function.solver_version,
-            inputs=JobInputs(values=function_inputs or {}),
+            inputs=JobInputs(values=joined_inputs or {}),
             webserver_api=webserver_api,
             wb_api_rpc=wb_api_rpc,
             url_for=url_for,
@@ -174,7 +193,7 @@ async def run_function(
                 function_uid=to_run_function.uid,
                 title=f"Function job of function {to_run_function.uid}",
                 description=to_run_function.description,
-                inputs=function_inputs,
+                inputs=joined_inputs,
                 outputs=None,
                 solver_job_id=solver_job.id,
             ),
