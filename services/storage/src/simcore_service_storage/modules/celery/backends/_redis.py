@@ -2,8 +2,8 @@ import logging
 from datetime import timedelta
 from typing import Final
 
-from celery.result import AsyncResult
-from common_library.async_tools import make_async  # type: ignore[import-untyped]
+from celery.result import AsyncResult # type: ignore[import-untyped]
+from common_library.async_tools import make_async
 from models_library.progress_bar import ProgressReport
 from servicelib.redis._client import RedisClientSDK
 
