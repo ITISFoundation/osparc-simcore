@@ -707,14 +707,19 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           this.__viewsStack.setSelection([this.__slideshowView]);
           this.__slideshowView.startSlides();
           break;
-        case "standalone": {
+        case "standalone":
           this.__viewsStack.setSelection([this.__workbenchView]);
           this.__workbenchView.openFirstNode();
           break;
-        }
+        case "pipeline":
+          this.__viewsStack.setSelection([this.__workbenchView]);
+          this.__workbenchView.setMaximized(false);
+          this.__workbenchView.showPipeline();
+          break;
         case "workbench":
         default: {
           this.__viewsStack.setSelection([this.__workbenchView]);
+          // OM: Is this needed?
           if (oldUIMode === "standalone") {
             // in this transition, show workbenchUI
             this.__workbenchView.setMaximized(false);

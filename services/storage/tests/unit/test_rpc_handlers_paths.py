@@ -34,7 +34,7 @@ from servicelib.rabbitmq.rpc_interfaces.storage.paths import (
     compute_path_size,
     delete_paths,
 )
-from simcore_service_storage.modules.celery.worker import CeleryTaskQueueWorker
+from simcore_service_storage.modules.celery.worker import CeleryTaskWorker
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit"]
@@ -265,7 +265,7 @@ async def test_path_compute_size_inexistent_path(
     mock_celery_app: None,
     initialized_app: FastAPI,
     storage_rabbitmq_rpc_client: RabbitMQRPCClient,
-    with_storage_celery_worker: CeleryTaskQueueWorker,
+    with_storage_celery_worker: CeleryTaskWorker,
     location_id: LocationID,
     user_id: UserID,
     faker: Faker,
@@ -294,7 +294,7 @@ async def test_delete_paths_empty_set(
     user_id: UserID,
     location_id: LocationID,
     product_name: ProductName,
-    with_storage_celery_worker: CeleryTaskQueueWorker,
+    with_storage_celery_worker: CeleryTaskWorker,
 ):
     await _assert_delete_paths(
         storage_rabbitmq_rpc_client,
@@ -333,7 +333,7 @@ async def test_delete_paths(
     ],
     project_params: ProjectWithFilesParams,
     product_name: ProductName,
-    with_storage_celery_worker: CeleryTaskQueueWorker,
+    with_storage_celery_worker: CeleryTaskWorker,
 ):
     assert (
         len(project_params.allowed_file_sizes) == 1

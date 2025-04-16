@@ -122,8 +122,8 @@ def test_fastapi_route_name_parsing(client: TestClient, app: FastAPI, faker: Fak
     # Ensures ':' is allowed in routes
     # SEE https://github.com/encode/starlette/pull/1657
 
-    solver_key = Solver.model_config["json_schema_extra"]["example"]["id"]
-    version = Solver.model_config["json_schema_extra"]["example"]["version"]
+    solver_key = Solver.model_json_schema()["example"]["id"]
+    version = Solver.model_json_schema()["example"]["version"]
     job_id = faker.uuid4()
 
     # Checks whether parse correctly ":action" suffix

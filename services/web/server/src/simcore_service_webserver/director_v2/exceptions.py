@@ -18,7 +18,3 @@ class DirectorServiceError(WebServerBaseError, RuntimeError):
 
 class ComputationNotFoundError(DirectorServiceError):
     msg_template = "Computation '{project_id}' not found"
-
-
-class ServiceWaitingForManualIntervention(DirectorServiceError):
-    msg_template = "Service '{service_uuid}' is waiting for user manual intervention"

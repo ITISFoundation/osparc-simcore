@@ -28,12 +28,12 @@ qx.Class.define("osparc.jobs.JobsButton", {
       alignX: "center",
       cursor: "pointer",
       visibility: "excluded",
-      toolTipText: this.tr("Jobs"),
+      toolTipText: this.tr("Jobs and Clusters"),
     });
 
     const jobsStore = osparc.store.Jobs.getInstance();
     jobsStore.addListener("changeJobs", e => this.__updateJobsButton(), this);
-    this.addListener("tap", () => osparc.jobs.JobsBrowser.popUpInWindow(), this);
+    this.addListener("tap", () => osparc.jobs.JobsAndClusters.popUpInWindow(), this);
   },
 
   members: {
@@ -72,7 +72,7 @@ qx.Class.define("osparc.jobs.JobsButton", {
     },
 
     __updateJobsButton: function() {
-      this._createChildControlImpl("icon");
+      this.getChildControl("icon");
       const number = this.getChildControl("number");
 
       const jobsStore = osparc.store.Jobs.getInstance();
