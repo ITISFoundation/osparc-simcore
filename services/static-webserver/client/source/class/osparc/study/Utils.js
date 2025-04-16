@@ -205,6 +205,13 @@ qx.Class.define("osparc.study.Utils", {
       return pollTasks.createPollingTask(fetchPromise)
     },
 
+    extractTemplateType: function(templateData) {
+      if (templateData && templateData["ui"] && templateData["ui"]["templateType"]) {
+        return templateData["ui"]["templateType"];
+      }
+      return null;
+    },
+
     isAnyLinkedNodeMissing: function(studyData) {
       const existingNodeIds = Object.keys(studyData["workbench"]);
       const linkedNodeIds = osparc.data.model.Workbench.getLinkedNodeIds(studyData["workbench"]);
