@@ -65,7 +65,10 @@ def mocked_rpc_catalog_service_api(
     class MockRabbitMQRPCClient:
         pass
 
-    app.dependency_overrides[get_rabbitmq_rpc_client] = lambda: MockRabbitMQRPCClient()
+    def get_mock_rabbitmq_rpc_client():
+        return MockRabbitMQRPCClient()
+
+    app.dependency_overrides[get_rabbitmq_rpc_client] = get_mock_rabbitmq_rpc_client
     side_effects = CatalogRpcSideEffects()
 
     yield {
