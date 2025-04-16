@@ -8582,6 +8582,7 @@ components:
           type: array
           uniqueItems: true
           title: Subgraph
+          default: []
       type: object
       title: ComputationStart
     ComputationStarted:
@@ -8597,6 +8598,7 @@ components:
           type: array
           title: Ref Ids
           description: Checkpoints IDs for created pipeline
+          default: []
       type: object
       required:
       - pipeline_id
