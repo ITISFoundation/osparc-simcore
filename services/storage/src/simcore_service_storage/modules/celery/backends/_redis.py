@@ -8,7 +8,6 @@ from servicelib.redis._client import RedisClientSDK
 
 from ..models import (
     TaskContext,
-    TaskID,
     TaskMetadata,
     TaskUUID,
     build_task_id,
@@ -25,8 +24,10 @@ _CELERY_TASK_PROGRESS_KEY: Final[str] = "progress"
 _logger = logging.getLogger(__name__)
 
 
-def _build_key(task_id: TaskID) -> str:
-    return _CELERY_TASK_INFO_PREFIX + task_id
+def _build_key(task_context: TaskContext, task_uuid: TaskUUID | None = None) -> str:
+    if task_uuid is None:
+        return _CELERY_TASK_INFO_PREFIX + build_task_id_prefix(task_context)
+    return _CELERY_TASK_INFO_PREFIX + build_task_id(task_context, task_uuid)
 
 
 class RedisTaskInfoStore:
@@ -40,7 +41,7 @@ class RedisTaskInfoStore:
         task_metadata: TaskMetadata,
         expiry: timedelta,
     ) -> None:
-        task_key = _build_key(build_task_id(task_context, task_uuid))
+        task_key = _build_key(task_context, task_uuid)
         await self._redis_client_sdk.redis.hset(
             name=task_key,
             key=_CELERY_TASK_METADATA_KEY,
@@ -52,28 +53,24 @@ class RedisTaskInfoStore:
         )
 
     async def exists(self, task_context: TaskContext, task_uuid: TaskUUID) -> bool:
-        n = await self._redis_client_sdk.redis.exists(_build_key(build_task_id(task_context, task_uuid)))  # type: ignore
+        n = await self._redis_client_sdk.redis.exists(_build_key(task_context, task_uuid))  # type: ignore
         assert isinstance(n, int)  # nosec
         return n > 0
 
     async def get_metadata(
         self, task_context: TaskContext, task_uuid: TaskUUID
     ) -> TaskMetadata | None:
-        result = await self._redis_client_sdk.redis.hget(_build_key(build_task_id(task_context, task_uuid)), _CELERY_TASK_METADATA_KEY)  # type: ignore
+        result = await self._redis_client_sdk.redis.hget(_build_key(task_context, task_uuid), _CELERY_TASK_METADATA_KEY)  # type: ignore
         return TaskMetadata.model_validate_json(result) if result else None
 
     async def get_progress(
         self, task_context: TaskContext, task_uuid: TaskUUID
     ) -> ProgressReport | None:
-        result = await self._redis_client_sdk.redis.hget(_build_key(build_task_id(task_context, task_uuid)), _CELERY_TASK_PROGRESS_KEY)  # type: ignore
+        result = await self._redis_client_sdk.redis.hget(_build_key(task_context, task_uuid), _CELERY_TASK_PROGRESS_KEY)  # type: ignore
         return ProgressReport.model_validate_json(result) if result else None
 
     async def get_uuids(self, task_context: TaskContext) -> set[TaskUUID]:
-        search_key = (
-            _CELERY_TASK_INFO_PREFIX
-            + build_task_id_prefix(task_context)
-            + _CELERY_TASK_ID_KEY_SEPARATOR
-        )
+        search_key = _build_key(task_context) + _CELERY_TASK_ID_KEY_SEPARATOR
         keys = set()
         async for key in self._redis_client_sdk.redis.scan_iter(
             match=search_key + "*", count=_CELERY_TASK_SCAN_COUNT_PER_BATCH
@@ -87,13 +84,15 @@ class RedisTaskInfoStore:
             keys.add(TaskUUID(_key.removeprefix(search_key)))
         return keys
 
-    async def remove(self, task_id: TaskID) -> None:
-        await self._redis_client_sdk.redis.delete(_build_key(task_id))
-        AsyncResult(task_id).forget()
+    async def remove(self, task_context: TaskContext, task_uuid: TaskUUID) -> None:
+        await self._redis_client_sdk.redis.delete(_build_key(task_context, task_uuid))  # type: ignore
+        AsyncResult(build_task_id(task_context, task_uuid)).forget()
 
-    async def set_progress(self, task_id: TaskID, report: ProgressReport) -> None:
+    async def set_progress(
+        self, task_context: TaskContext, task_uuid: TaskUUID, report: ProgressReport
+    ) -> None:
         await self._redis_client_sdk.redis.hset(
-            name=_build_key(task_id),
+            name=_build_key(task_context, task_uuid),
             key=_CELERY_TASK_PROGRESS_KEY,
             value=report.model_dump_json(),
         )  # type: ignore
