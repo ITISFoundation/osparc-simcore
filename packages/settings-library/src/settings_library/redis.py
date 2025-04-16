@@ -2,6 +2,7 @@ from enum import IntEnum
 
 from pydantic.networks import RedisDsn
 from pydantic.types import SecretStr
+from pydantic_settings import SettingsConfigDict
 
 from .base import BaseCustomSettings
 from .basic_types import PortInt
@@ -45,3 +46,18 @@ class RedisSettings(BaseCustomSettings):
                 path=f"{db_index}",
             )
         )
+
+    model_config = SettingsConfigDict(
+        json_schema_extra={
+            "examples": [
+                # minimal required
+                {
+                    "REDIS_SECURE": "0",
+                    "REDIS_HOST": "localhost",
+                    "REDIS_PORT": "6379",
+                    "REDIS_USER": "user",
+                    "REDIS_PASSWORD": "foobar",  # NOSONAR
+                }
+            ],
+        }
+    )
