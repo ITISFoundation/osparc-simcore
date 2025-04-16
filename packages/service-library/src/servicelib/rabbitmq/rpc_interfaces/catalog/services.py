@@ -1,7 +1,7 @@
 """RPC client-side for the RPC server at the payments service"""
 
 import logging
-from typing import Any, cast
+from typing import cast
 
 from models_library.api_schemas_catalog import CATALOG_RPC_NAMESPACE
 from models_library.api_schemas_catalog.services import (
@@ -32,7 +32,16 @@ from ..._constants import RPC_REQUEST_DEFAULT_TIMEOUT_S
 
 _logger = logging.getLogger(__name__)
 
+#
+# In this interface, the context of the caller is passed in the following arguments:
+#   - `user_id` is intended for the caller's identifer. Do not add other user_id that is not the callers!.
+#      - Ideally this could be injected by an authentication layer (as in the rest API)
+#        but  for now we are passing it as an argument.
+#   - `product_name` is the name of the product at the caller's context as well
+#
 
+
+@validate_call(config={"arbitrary_types_allowed": True})
 async def list_services_paginated(  # pylint: disable=too-many-arguments
     rpc_client: RabbitMQRPCClient,
     *,
@@ -48,38 +57,24 @@ async def list_services_paginated(  # pylint: disable=too-many-arguments
         CatalogForbiddenError: no access-rights to list services
     """
 
-    @validate_call()
-    async def _call(
-        product_name: ProductName,
-        user_id: UserID,
-        limit: PageLimitInt,
-        offset: PageOffsetInt,
-        filters: ServiceListFilters | None = None,
-    ):
-        return await rpc_client.request(
-            CATALOG_RPC_NAMESPACE,
-            TypeAdapter(RPCMethodName).validate_python("list_services_paginated"),
-            product_name=product_name,
-            user_id=user_id,
-            limit=limit,
-            offset=offset,
-            filters=filters,
-            timeout_s=40 * RPC_REQUEST_DEFAULT_TIMEOUT_S,
-        )
-
-    result = await _call(
+    result = await rpc_client.request(
+        CATALOG_RPC_NAMESPACE,
+        TypeAdapter(RPCMethodName).validate_python("list_services_paginated"),
         product_name=product_name,
         user_id=user_id,
         limit=limit,
         offset=offset,
         filters=filters,
+        timeout_s=40 * RPC_REQUEST_DEFAULT_TIMEOUT_S,
     )
+
     assert (  # nosec
         TypeAdapter(PageRpc[LatestServiceGet]).validate_python(result) is not None
     )
     return cast(PageRpc[LatestServiceGet], result)
 
 
+@validate_call(config={"arbitrary_types_allowed": True})
 @log_decorator(_logger, level=logging.DEBUG)
 async def get_service(
     rpc_client: RabbitMQRPCClient,
@@ -95,34 +90,20 @@ async def get_service(
         CatalogItemNotFoundError: service not found in catalog
         CatalogForbiddenError: not access rights to read this service
     """
-
-    @validate_call()
-    async def _call(
-        product_name: ProductName,
-        user_id: UserID,
-        service_key: ServiceKey,
-        service_version: ServiceVersion,
-    ) -> Any:
-        return await rpc_client.request(
-            CATALOG_RPC_NAMESPACE,
-            TypeAdapter(RPCMethodName).validate_python("get_service"),
-            product_name=product_name,
-            user_id=user_id,
-            service_key=service_key,
-            service_version=service_version,
-            timeout_s=4 * RPC_REQUEST_DEFAULT_TIMEOUT_S,
-        )
-
-    result = await _call(
+    result = await rpc_client.request(
+        CATALOG_RPC_NAMESPACE,
+        TypeAdapter(RPCMethodName).validate_python("get_service"),
         product_name=product_name,
         user_id=user_id,
         service_key=service_key,
         service_version=service_version,
+        timeout_s=4 * RPC_REQUEST_DEFAULT_TIMEOUT_S,
     )
     assert TypeAdapter(ServiceGetV2).validate_python(result) is not None  # nosec
     return cast(ServiceGetV2, result)
 
 
+@validate_call(config={"arbitrary_types_allowed": True})
 @log_decorator(_logger, level=logging.DEBUG)
 async def update_service(
     rpc_client: RabbitMQRPCClient,
@@ -140,26 +121,9 @@ async def update_service(
         CatalogItemNotFoundError: service not found in catalog
         CatalogForbiddenError: not access rights to read this service
     """
-
-    @validate_call()
-    async def _call(
-        product_name: ProductName,
-        user_id: UserID,
-        service_key: ServiceKey,
-        service_version: ServiceVersion,
-        update: ServiceUpdateV2,
-    ):
-        return await rpc_client.request(
-            CATALOG_RPC_NAMESPACE,
-            TypeAdapter(RPCMethodName).validate_python("update_service"),
-            product_name=product_name,
-            user_id=user_id,
-            service_key=service_key,
-            service_version=service_version,
-            update=update,
-        )
-
-    result = await _call(
+    result = await rpc_client.request(
+        CATALOG_RPC_NAMESPACE,
+        TypeAdapter(RPCMethodName).validate_python("update_service"),
         product_name=product_name,
         user_id=user_id,
         service_key=service_key,
@@ -170,6 +134,7 @@ async def update_service(
     return cast(ServiceGetV2, result)
 
 
+@validate_call(config={"arbitrary_types_allowed": True})
 @log_decorator(_logger, level=logging.DEBUG)
 async def check_for_service(
     rpc_client: RabbitMQRPCClient,
@@ -180,29 +145,15 @@ async def check_for_service(
     service_version: ServiceVersion,
 ) -> None:
     """
+
     Raises:
         ValidationError: on invalid arguments
         CatalogItemNotFoundError: service not found in catalog
         CatalogForbiddenError: not access rights to read this service
     """
-
-    @validate_call()
-    async def _call(
-        product_name: ProductName,
-        user_id: UserID,
-        service_key: ServiceKey,
-        service_version: ServiceVersion,
-    ):
-        return await rpc_client.request(
-            CATALOG_RPC_NAMESPACE,
-            TypeAdapter(RPCMethodName).validate_python("check_for_service"),
-            product_name=product_name,
-            user_id=user_id,
-            service_key=service_key,
-            service_version=service_version,
-        )
-
-    await _call(
+    await rpc_client.request(
+        CATALOG_RPC_NAMESPACE,
+        TypeAdapter(RPCMethodName).validate_python("check_for_service"),
         product_name=product_name,
         user_id=user_id,
         service_key=service_key,
@@ -210,6 +161,7 @@ async def check_for_service(
     )
 
 
+@validate_call(config={"arbitrary_types_allowed": True})
 @log_decorator(_logger, level=logging.DEBUG)
 async def batch_get_my_services(
     rpc_client: RabbitMQRPCClient,
@@ -228,27 +180,19 @@ async def batch_get_my_services(
         ValidationError: on invalid arguments
         CatalogForbiddenError: no access-rights to list services
     """
-
-    @validate_call()
-    async def _call(
-        product_name: ProductName,
-        user_id: UserID,
-        ids: list[tuple[ServiceKey, ServiceVersion]],
-    ):
-        return await rpc_client.request(
-            CATALOG_RPC_NAMESPACE,
-            TypeAdapter(RPCMethodName).validate_python("batch_get_my_services"),
-            product_name=product_name,
-            user_id=user_id,
-            ids=ids,
-            timeout_s=40 * RPC_REQUEST_DEFAULT_TIMEOUT_S,
-        )
-
-    result = await _call(product_name=product_name, user_id=user_id, ids=ids)
+    result = await rpc_client.request(
+        CATALOG_RPC_NAMESPACE,
+        TypeAdapter(RPCMethodName).validate_python("batch_get_my_services"),
+        product_name=product_name,
+        user_id=user_id,
+        ids=ids,
+        timeout_s=40 * RPC_REQUEST_DEFAULT_TIMEOUT_S,
+    )
     assert TypeAdapter(list[MyServiceGet]).validate_python(result) is not None  # nosec
     return cast(list[MyServiceGet], result)
 
 
+@validate_call(config={"arbitrary_types_allowed": True})
 async def list_my_service_history_paginated(  # pylint: disable=too-many-arguments
     rpc_client: RabbitMQRPCClient,
     *,
@@ -260,33 +204,13 @@ async def list_my_service_history_paginated(  # pylint: disable=too-many-argumen
     filters: ServiceListFilters | None = None,
 ) -> PageRpcServiceRelease:
     """
+
     Raises:
         ValidationError: on invalid arguments
     """
-
-    @validate_call()
-    async def _call(
-        product_name: ProductName,
-        user_id: UserID,
-        service_key: ServiceKey,
-        limit: PageLimitInt,
-        offset: PageOffsetInt,
-        filters: ServiceListFilters | None,
-    ):
-        return await rpc_client.request(
-            CATALOG_RPC_NAMESPACE,
-            TypeAdapter(RPCMethodName).validate_python(
-                "list_my_service_history_paginated"
-            ),
-            product_name=product_name,
-            user_id=user_id,
-            service_key=service_key,
-            limit=limit,
-            offset=offset,
-            filters=filters,
-        )
-
-    result = await _call(
+    result = await rpc_client.request(
+        CATALOG_RPC_NAMESPACE,
+        TypeAdapter(RPCMethodName).validate_python("list_my_service_history_paginated"),
         product_name=product_name,
         user_id=user_id,
         service_key=service_key,
@@ -294,7 +218,6 @@ async def list_my_service_history_paginated(  # pylint: disable=too-many-argumen
         offset=offset,
         filters=filters,
     )
-
     assert (  # nosec
         TypeAdapter(PageRpcServiceRelease).validate_python(result) is not None
     )
