@@ -46,34 +46,34 @@ class TaskMetadata(BaseModel):
     queue: TasksQueue = TasksQueue.DEFAULT
 
 
+class Task(BaseModel):
+    uuid: TaskUUID
+    metadata: TaskMetadata
+
+
 _TASK_DONE = {TaskState.SUCCESS, TaskState.FAILURE, TaskState.ABORTED}
 
 
 class TaskInfoStore(Protocol):
-    async def create(
+    async def create_task(
         self,
-        task_context: TaskContext,
-        task_uuid: TaskUUID,
+        task_id: TaskID,
         task_metadata: TaskMetadata,
         expiry: timedelta,
     ) -> None: ...
 
-    async def exists(self, task_context: TaskContext, task_uuid: TaskUUID) -> bool: ...
+    async def exists_task(self, task_id: TaskID) -> bool: ...
 
-    async def get_metadata(
-        self, task_context: TaskContext, task_uuid: TaskUUID
-    ) -> TaskMetadata | None: ...
+    async def get_task_metadata(self, task_id: TaskID) -> TaskMetadata | None: ...
 
-    async def get_progress(
-        self, task_context: TaskContext, task_uuid: TaskUUID
-    ) -> ProgressReport | None: ...
+    async def get_task_progress(self, task_id: TaskID) -> ProgressReport | None: ...
 
-    async def get_uuids(self, task_context: TaskContext) -> set[TaskUUID]: ...
+    async def list_tasks(self, task_context: TaskContext) -> list[Task]: ...
 
-    async def remove(self, task_context: TaskContext, task_uuid: TaskUUID) -> None: ...
+    async def remove_task(self, task_id: TaskID) -> None: ...
 
-    async def set_progress(
-        self, task_context: TaskContext, task_uuid: TaskUUID, report: ProgressReport
+    async def set_task_progress(
+        self, task_id: TaskID, report: ProgressReport
     ) -> None: ...
 
 

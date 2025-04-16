@@ -13,6 +13,7 @@ from servicelib.logging_utils import log_context
 from settings_library.celery import CelerySettings
 
 from .models import (
+    Task,
     TaskContext,
     TaskInfoStore,
     TaskMetadata,
@@ -35,7 +36,7 @@ class CeleryTaskClient:
     _celery_settings: CelerySettings
     _task_store: TaskInfoStore
 
-    async def send_task(
+    async def submit_task(
         self,
         task_metadata: TaskMetadata,
         *,
@@ -48,9 +49,10 @@ class CeleryTaskClient:
             msg=f"Submit {task_metadata.name=}: {task_context=} {task_params=}",
         ):
             task_uuid = uuid4()
+            task_id = build_task_id(task_context, task_uuid)
             self._celery_app.send_task(
                 task_metadata.name,
-                task_id=build_task_id(task_context, task_uuid),
+                task_id=task_id,
                 kwargs=task_params,
                 queue=task_metadata.queue.value,
             )
@@ -60,9 +62,7 @@ class CeleryTaskClient:
                 if task_metadata.ephemeral
                 else self._celery_settings.CELERY_RESULT_EXPIRES
             )
-            await self._task_store.create(
-                task_context, task_uuid, task_metadata, expiry=expiry
-            )
+            await self._task_store.create_task(task_id, task_metadata, expiry=expiry)
             return task_uuid
 
     @make_async()
@@ -91,18 +91,17 @@ class CeleryTaskClient:
             async_result = self._celery_app.AsyncResult(task_id)
             result = async_result.result
             if async_result.ready():
-                task_metadata = await self._task_store.get_metadata(
-                    task_context, task_uuid
-                )
+                task_metadata = await self._task_store.get_task_metadata(task_id)
                 if task_metadata is not None and task_metadata.ephemeral:
-                    await self._task_store.remove(task_context, task_uuid)
+                    await self._task_store.remove_task(task_id)
             return result
 
-    async def _get_progress_report(
+    async def _get_task_progress_report(
         self, task_context: TaskContext, task_uuid: TaskUUID, state: TaskState
     ) -> ProgressReport:
         if state in (TaskState.STARTED, TaskState.RETRY, TaskState.ABORTED):
-            progress = await self._task_store.get_progress(task_context, task_uuid)
+            task_id = build_task_id(task_context, task_uuid)
+            progress = await self._task_store.get_task_progress(task_id)
             if progress is not None:
                 return progress
         if state in (
@@ -119,7 +118,9 @@ class CeleryTaskClient:
         )
 
     @make_async()
-    def _get_state(self, task_context: TaskContext, task_uuid: TaskUUID) -> TaskState:
+    def _get_task_celery_state(
+        self, task_context: TaskContext, task_uuid: TaskUUID
+    ) -> TaskState:
         task_id = build_task_id(task_context, task_uuid)
         return TaskState(self._celery_app.AsyncResult(task_id).state)
 
@@ -131,18 +132,19 @@ class CeleryTaskClient:
             logging.DEBUG,
             msg=f"Getting task status: {task_context=} {task_uuid=}",
         ):
-            task_state = await self._get_state(task_context, task_uuid)
-            task_id = build_task_id(task_context, task_uuid)
+            task_state = await self._get_task_celery_state(task_context, task_uuid)
             return TaskStatus(
                 task_uuid=task_uuid,
                 task_state=task_state,
-                progress_report=await self._get_progress_report(task_id, task_state),
+                progress_report=await self._get_task_progress_report(
+                    task_context, task_uuid, task_state
+                ),
             )
 
-    async def get_task_uuids(self, task_context: TaskContext) -> set[TaskUUID]:
+    async def list_tasks(self, task_context: TaskContext) -> list[Task]:
         with log_context(
             _logger,
             logging.DEBUG,
-            msg=f"Getting task uuids: {task_context=}",
+            msg=f"Listing tasks: {task_context=}",
         ):
-            return await self._task_store.get_uuids(task_context)
+            return await self._task_store.list_tasks(task_context)

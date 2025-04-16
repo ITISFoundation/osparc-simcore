@@ -56,7 +56,7 @@ async def _fake_file_processor(
 
     for n, file in enumerate(files, start=1):
         with log_context(_logger, logging.INFO, msg=f"Processing file {file}"):
-            await worker.set_progress(
+            await worker.set_task_progress(
                 task_id=task_id,
                 report=ProgressReport(actual_value=n / len(files)),
             )
@@ -110,7 +110,7 @@ async def test_submitting_task_calling_async_function_results_with_success_state
 ):
     task_context = TaskContext(user_id=42)
 
-    task_uuid = await celery_client.send_task(
+    task_uuid = await celery_client.submit_task(
         fake_file_processor.__name__,
         task_context=task_context,
         files=[f"file{n}" for n in range(5)],
@@ -138,7 +138,7 @@ async def test_submitting_task_with_failure_results_with_error(
 ):
     task_context = TaskContext(user_id=42)
 
-    task_uuid = await celery_client.send_task(
+    task_uuid = await celery_client.submit_task(
         failure_task.__name__, task_context=task_context
     )
 
@@ -161,7 +161,7 @@ async def test_aborting_task_results_with_aborted_state(
 ):
     task_context = TaskContext(user_id=42)
 
-    task_uuid = await celery_client.send_task(
+    task_uuid = await celery_client.submit_task(
         dreamer_task.__name__,
         task_context=task_context,
     )
@@ -187,7 +187,7 @@ async def test_listing_task_uuids_contains_submitted_task(
 ):
     task_context = TaskContext(user_id=42)
 
-    task_uuid = await celery_client.send_task(
+    task_uuid = await celery_client.submit_task(
         dreamer_task.__name__,
         task_context=task_context,
     )
@@ -198,6 +198,6 @@ async def test_listing_task_uuids_contains_submitted_task(
         stop=stop_after_delay(10),
     ):
         with attempt:
-            assert task_uuid in await celery_client.get_task_uuids(task_context)
+            assert task_uuid in await celery_client.list_tasks(task_context)
 
-    assert task_uuid in await celery_client.get_task_uuids(task_context)
+    assert task_uuid in await celery_client.list_tasks(task_context)
