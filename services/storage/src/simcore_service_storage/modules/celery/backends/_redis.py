@@ -63,7 +63,7 @@ class RedisTaskInfoStore:
         try:
             return TaskMetadata.model_validate_json(raw_result)
         except ValidationError as exc:
-            _logger.warning(
+            _logger.debug(
                 "Failed to deserialize task metadata for task %s: %s", task_id, f"{exc}"
             )
             return None
@@ -76,7 +76,7 @@ class RedisTaskInfoStore:
         try:
             return ProgressReport.model_validate_json(raw_result)
         except ValidationError as exc:
-            _logger.warning(
+            _logger.debug(
                 "Failed to deserialize task progress for task %s: %s", task_id, f"{exc}"
             )
             return None
