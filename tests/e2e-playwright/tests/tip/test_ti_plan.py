@@ -9,7 +9,6 @@ import contextlib
 import json
 import logging
 import re
-import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -26,6 +25,7 @@ from pytest_simcore.helpers.playwright import (
     expected_service_running,
     wait_for_service_running,
 )
+from tenacity import RetryError, retry, stop_after_delay, wait_fixed
 
 _GET_NODE_OUTPUTS_REQUEST_PATTERN: Final[re.Pattern[str]] = re.compile(
     r"/storage/locations/[^/]+/files"
@@ -88,6 +88,17 @@ class _JLabWebSocketWaiter:
                     return True
 
             return False
+
+
+@retry(
+    stop=stop_after_delay(_JLAB_RUN_OPTIMIZATION_MAX_TIME / 1000),  # seconds
+    wait=wait_fixed(2),
+    reraise=True,
+)
+def _wait_for_optimization_complete(run_button):
+    bg_color = run_button.evaluate("el => getComputedStyle(el).backgroundColor")
+    if bg_color != "rgb(0, 128, 0)":
+        raise ValueError("Optimization not finished yet: {bg_color=}, {run_button=}")
 
 
 def test_classic_ti_plan(  # noqa: PLR0915
@@ -228,21 +239,12 @@ def test_classic_ti_plan(  # noqa: PLR0915
         with log_context(logging.INFO, "Run optimization") as ctx:
             run_button = ti_iframe.get_by_role("button", name="Run Optimization")
             run_button.click(timeout=_JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME)
-            start = time.time()
-            success = False
-            while (
-                time.time() - start < _JLAB_RUN_OPTIMIZATION_MAX_TIME / 1000
-            ):  # Convert ms to seconds
-                bg_color = run_button.evaluate(
-                    "el => getComputedStyle(el).backgroundColor"
-                )
-                if bg_color == "rgb(0, 128, 0)":
-                    ctx.logger.info("Optimization finished!")
-                    success = True
-                    break
-                time.sleep(2)
-            if not success:
-                ctx.logger.info("Optimization did not finish in time.")
+            try:
+                _wait_for_optimization_complete(run_button)
+                ctx.logger.info("Optimization finished!")
+            except RetryError as e:
+                last_exc = e.last_attempt.exception()
+                ctx.logger.warning(f"Optimization did not finish in time: {last_exc}")
 
         with log_context(logging.INFO, "Create report"):
             with log_context(
