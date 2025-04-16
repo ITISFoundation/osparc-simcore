@@ -129,6 +129,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
           buttonId: "hypertoolsTabBtn",
           label: this.tr("HYPERTOOLS"),
           icon: "@FontAwesome5Solid/copy/"+tabIconSize,
+          initVisibility: "excluded",
           buildLayout: this.__createHypertoolsBrowser
         });
       }
@@ -141,16 +142,17 @@ qx.Class.define("osparc.dashboard.Dashboard", {
           buildLayout: this.__createServiceBrowser
         });
       }
-      if (permissions.canDo("dashboard.data.read") && osparc.product.Utils.isProduct("osparc")) {
+      if (permissions.canDo("dashboard.data.read")) {
         tabs.push({
           id: "dataTab",
           buttonId: "dataTabBtn",
           label: this.tr("DATA"),
           icon: "@FontAwesome5Solid/folder/"+tabIconSize,
+          initVisibility: osparc.product.Utils.isProduct("osparc") ? "visible" : "excluded",
           buildLayout: this.__createDataBrowser
         });
       }
-      tabs.forEach(({id, buttonId, label, icon, buildLayout}) => {
+      tabs.forEach(({id, buttonId, label, icon, initVisibility, buildLayout}) => {
         const tabPage = new qx.ui.tabview.Page(label, icon).set({
           appearance: "dashboard-page"
         });
@@ -159,6 +161,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
         tabButton.set({
           minWidth: 50,
           maxHeight: 36,
+          visibility: initVisibility ? initVisibility : "visible",
         });
         tabButton.ttt = label;
         tabButton.getChildControl("label").set({
@@ -186,7 +189,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
         }, this);
         viewLayout.addListener("showTab", e => {
           const showTab = e.getData();
-          tabPage.setVisibility(showTab ? "visible" : "excluded");
+          tabButton.setVisibility(showTab ? "visible" : "excluded");
         })
         const scrollerMainView = new qx.ui.container.Scroll();
         scrollerMainView.add(viewLayout);
