@@ -22,7 +22,7 @@
  * - Product everyone
  */
 
-qx.Class.define("osparc.share.PublishTemplate", {
+qx.Class.define("osparc.share.ShareTemplateWith", {
   extend: qx.ui.core.Widget,
 
   /**
