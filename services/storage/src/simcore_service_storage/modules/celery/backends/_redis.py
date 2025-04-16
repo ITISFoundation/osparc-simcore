@@ -56,12 +56,30 @@ class RedisTaskInfoStore:
         return n > 0
 
     async def get_task_metadata(self, task_id: TaskID) -> TaskMetadata | None:
-        result = await self._redis_client_sdk.redis.hget(_build_key(task_id), _CELERY_TASK_METADATA_KEY)  # type: ignore
-        return TaskMetadata.model_validate_json(result) if result else None
+        raw_result = await self._redis_client_sdk.redis.hget(_build_key(task_id), _CELERY_TASK_METADATA_KEY)  # type: ignore
+        if not raw_result:
+            return None
+
+        try:
+            return TaskMetadata.model_validate_json(raw_result)
+        except ValidationError as exc:
+            _logger.warning(
+                "Failed to deserialize task metadata for task %s: %s", task_id, f"{exc}"
+            )
+            return None
 
     async def get_task_progress(self, task_id: TaskID) -> ProgressReport | None:
-        result = await self._redis_client_sdk.redis.hget(_build_key(task_id), _CELERY_TASK_PROGRESS_KEY)  # type: ignore
-        return ProgressReport.model_validate_json(result) if result else None
+        raw_result = await self._redis_client_sdk.redis.hget(_build_key(task_id), _CELERY_TASK_PROGRESS_KEY)  # type: ignore
+        if not raw_result:
+            return None
+
+        try:
+            return ProgressReport.model_validate_json(raw_result)
+        except ValidationError as exc:
+            _logger.warning(
+                "Failed to deserialize task progress for task %s: %s", task_id, f"{exc}"
+            )
+            return None
 
     async def list_tasks(self, task_context: TaskContext) -> list[Task]:
         search_key = (
@@ -102,7 +120,7 @@ class RedisTaskInfoStore:
                 )
             except ValidationError as exc:
                 _logger.debug(
-                    "Failed to deserialize task metadata for key %s: %s", key, str(exc)
+                    "Failed to deserialize task metadata for key %s: %s", key, f"{exc}"
                 )
 
         return tasks
