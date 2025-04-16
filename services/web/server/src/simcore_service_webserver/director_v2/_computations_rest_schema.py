@@ -18,7 +18,7 @@ ComputationRunListOrderParams = create_ordering_query_model_class(
 
 class ComputationRunListQueryParams(
     PageQueryParameters,
-    ComputationRunListOrderParams,
+    ComputationRunListOrderParams,  # type: ignore[misc, valid-type]
 ): ...
 
 
@@ -41,5 +41,5 @@ ComputationTaskListOrderParams = create_ordering_query_model_class(
 
 class ComputationTaskListQueryParams(
     PageQueryParameters,
-    ComputationTaskListOrderParams,
+    ComputationTaskListOrderParams,  # type: ignore[misc, valid-type]
 ): ...
