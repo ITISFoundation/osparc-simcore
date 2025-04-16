@@ -96,7 +96,7 @@ async def list_service_labels(
         ) from err
 
 
-@router.get("/services/{service_key:path}/{service_version}")  # <-- MD
+@router.get("/services/{service_key:path}/{service_version}")
 async def get_service(
     the_app: Annotated[FastAPI, Depends(get_app)],
     service_key: ServiceKey,
