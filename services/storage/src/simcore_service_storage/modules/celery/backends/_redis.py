@@ -2,7 +2,8 @@ import logging
 from datetime import timedelta
 from typing import Final
 
-from celery.result import AsyncResult  # type: ignore[import-untyped]
+from celery.result import AsyncResult
+from common_library.async_tools import make_async  # type: ignore[import-untyped]
 from models_library.progress_bar import ProgressReport
 from servicelib.redis._client import RedisClientSDK
 
@@ -51,7 +52,7 @@ class RedisTaskInfoStore:
         )
 
     async def exists_task(self, task_id: TaskID) -> bool:
-        n = await self._redis_client_sdk.redis.exists(_build_key(task_id))  # type: ignore
+        n = await self._redis_client_sdk.redis.exists(_build_key(task_id))
         assert isinstance(n, int)  # nosec
         return n > 0
 
@@ -96,9 +97,14 @@ class RedisTaskInfoStore:
             if metadata is not None
         ]
 
-    async def remove_task(self, task_id: TaskID) -> None:
-        await self._redis_client_sdk.redis.delete(_build_key(task_id))  # type: ignore
+    @make_async()
+    @staticmethod
+    def _forget_task(task_id: TaskID) -> None:
         AsyncResult(task_id).forget()
+
+    async def remove_task(self, task_id: TaskID) -> None:
+        await self._redis_client_sdk.redis.delete(_build_key(task_id))
+        await self._forget_task(task_id)
 
     async def set_task_progress(self, task_id: TaskID, report: ProgressReport) -> None:
         await self._redis_client_sdk.redis.hset(
