@@ -146,7 +146,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
         case "new-folder":
           this.addSeparator();
           control = this.self().createMenuButton(
-            osparc.dashboard.CardBase.NEW_ICON + "16",
+            "@FontAwesome5Solid/folder/16",
             this.tr("New Folder"),
           );
           osparc.utils.Utils.setIdToWidget(control, "newFolderButton");
@@ -187,7 +187,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
     },
 
     __addMoreMenu: function() {
-      const moreMenuButton = this.self().createMenuButton("@FontAwesome5Solid/star/14", this.tr("More"));
+      const moreMenuButton = this.self().createMenuButton("@FontAwesome5Solid/star/16", this.tr("More"));
       this.addAt(moreMenuButton, this.__itemIdx);
       this.__itemIdx++;
 
@@ -195,11 +195,11 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
         appearance: "menu-wider",
       });
 
-      const templatesButton = new qx.ui.menu.Button(this.tr("Tutorials..."), "@FontAwesome5Solid/copy/14");
+      const templatesButton = this.self().createMenuButton("@FontAwesome5Solid/copy/16", this.tr("Tutorials..."));
       templatesButton.addListener("execute", () => this.fireDataEvent("moveFolderToRequested", this.getFolderId()), this);
       moreMenu.add(templatesButton);
 
-      const servicesButton = new qx.ui.menu.Button(this.tr("Services..."), "@FontAwesome5Solid/cog/14");
+      const servicesButton = this.self().createMenuButton("@FontAwesome5Solid/cog/16", this.tr("Services..."));
       servicesButton.addListener("execute", () => this.fireDataEvent("moveFolderToRequested", this.getFolderId()), this);
       moreMenu.add(servicesButton);
 
