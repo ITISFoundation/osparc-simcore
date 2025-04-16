@@ -37,11 +37,14 @@ def mock_rabbitmq_connection(mocker: MockerFixture) -> MockType:
 
 @pytest.fixture
 def mock_rabbitmq_rpc_client_class(mocker: MockerFixture) -> MockType:
-    return mocker.patch.object(
-        servicelib.rabbitmq._client_rpc,
-        "RabbitMQRPCClient",
-        return_value=mocker.AsyncMock(),
+    mock_rpc_client_instance = mocker.AsyncMock()
+    mocker.patch.object(
+        servicelib.rabbitmq._client_rpc.RabbitMQRPCClient,
+        "create",
+        return_value=mock_rpc_client_instance,
     )
+    mock_rpc_client_instance.close = mocker.AsyncMock()
+    return mock_rpc_client_instance
 
 
 @pytest.fixture
@@ -64,6 +67,7 @@ def app_lifespan(
             ..., json_schema_extra={"auto_default_from_env": True}
         )
 
+    # setup settings
     async def my_app_settings(app: FastAPI) -> AsyncIterator[State]:
         app.state.settings = AppSettings.create_from_envs()
 
@@ -71,7 +75,9 @@ def app_lifespan(
             RABBIT_SETTINGS=app.state.settings.RABBITMQ,
         ).model_dump()
 
+    # setup rpc-server using rabbitmq_rpc_client_context (yes, a "rpc_server" is built with an RabbitMQRpcClient)
     async def my_app_rpc_server(app: FastAPI, state: State) -> AsyncIterator[State]:
+        assert "RABBIT_CONNECTIVITY_LIFESPAN_NAME" in state
 
         async with rabbitmq_rpc_client_context(
             "rpc_server", app.state.settings.RABBITMQ
@@ -79,10 +85,22 @@ def app_lifespan(
             app.state.rpc_server = rpc_server
             yield {}
 
+    # setup rpc-client using rabbitmq_rpc_client_context
+    async def my_app_rpc_client(app: FastAPI, state: State) -> AsyncIterator[State]:
+
+        assert "RABBIT_CONNECTIVITY_LIFESPAN_NAME" in state
+
+        async with rabbitmq_rpc_client_context(
+            "rpc_client", app.state.settings.RABBITMQ
+        ) as rpc_client:
+            app.state.rpc_client = rpc_client
+            yield {}
+
     app_lifespan = LifespanManager()
     app_lifespan.add(my_app_settings)
     app_lifespan.add(rabbitmq_connectivity_lifespan)
     app_lifespan.add(my_app_rpc_server)
+    app_lifespan.add(my_app_rpc_client)
 
     assert not mock_rabbitmq_connection.called
     assert not mock_rabbitmq_rpc_client_class.called
@@ -103,7 +121,8 @@ async def test_lifespan_rabbitmq_in_an_app(
         app,
         startup_timeout=None if is_pdb_enabled else 10,
         shutdown_timeout=None if is_pdb_enabled else 10,
-    ) as asgi_manager:
+    ):
+
         # Verify that RabbitMQ responsiveness was checked
         mock_rabbitmq_connection.assert_called_once_with(
             app.state.settings.RABBITMQ.dsn
@@ -111,9 +130,11 @@ async def test_lifespan_rabbitmq_in_an_app(
 
         # Verify that RabbitMQ settings are in the lifespan manager state
         assert app.state.settings.RABBITMQ
+        assert app.state.rpc_server
+        assert app.state.rpc_client
 
     # No explicit shutdown logic for RabbitMQ in this case
-    assert mock_rabbitmq_rpc_client_class.called
+    assert mock_rabbitmq_rpc_client_class.close.called
 
 
 async def test_lifespan_rabbitmq_with_invalid_settings(

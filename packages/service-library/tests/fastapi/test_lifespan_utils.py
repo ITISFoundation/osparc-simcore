@@ -17,9 +17,11 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.logging_tools import log_context
 from servicelib.fastapi.lifespan_utils import (
     LifespanAlreadyCalledError,
+    LifespanExpectedCalledError,
     LifespanOnShutdownError,
     LifespanOnStartupError,
-    record_lifespan_called_once,
+    ensure_lifespan_called,
+    mark_lifespace_called,
 )
 
 
@@ -259,18 +261,21 @@ async def test_app_lifespan_with_error_on_shutdown(
 
 
 async def test_lifespan_called_more_than_once(is_pdb_enabled: bool):
-    state = {}
-
     app_lifespan = LifespanManager()
 
     @app_lifespan.add
     async def _one(_, state: State) -> AsyncIterator[State]:
-        called_state = record_lifespan_called_once(state, "test_lifespan_one")
+        called_state = mark_lifespace_called(state, "test_lifespan_one")
         yield {"other": 0, **called_state}
 
     @app_lifespan.add
     async def _two(_, state: State) -> AsyncIterator[State]:
-        called_state = record_lifespan_called_once(state, "test_lifespan_two")
+        ensure_lifespan_called(state, "test_lifespan_one")
+
+        with pytest.raises(LifespanExpectedCalledError):
+            ensure_lifespan_called(state, "test_lifespan_three")
+
+        called_state = mark_lifespace_called(state, "test_lifespan_two")
         yield {"something": 0, **called_state}
 
     app_lifespan.add(_one)  # added "by mistake"

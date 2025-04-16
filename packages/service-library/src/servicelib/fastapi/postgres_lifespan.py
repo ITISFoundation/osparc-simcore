@@ -10,7 +10,7 @@ from settings_library.postgres import PostgresSettings
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..db_asyncpg_utils import create_async_engine_and_database_ready
-from .lifespan_utils import LifespanOnStartupError, record_lifespan_called_once
+from .lifespan_utils import LifespanOnStartupError, mark_lifespace_called
 
 _logger = logging.getLogger(__name__)
 
@@ -33,7 +33,7 @@ async def postgres_database_lifespan(_: FastAPI, state: State) -> AsyncIterator[
     with log_context(_logger, logging.INFO, f"{__name__}"):
 
         # Mark lifespan as called
-        called_state = record_lifespan_called_once(state, "postgres_database_lifespan")
+        called_state = mark_lifespace_called(state, "postgres_database_lifespan")
 
         settings = state[PostgresLifespanState.POSTGRES_SETTINGS]
 

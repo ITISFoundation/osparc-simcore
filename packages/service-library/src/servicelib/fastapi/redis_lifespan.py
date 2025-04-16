@@ -10,7 +10,7 @@ from servicelib.logging_utils import log_catch, log_context
 from settings_library.redis import RedisDatabase, RedisSettings
 
 from ..redis import RedisClientSDK
-from .lifespan_utils import LifespanOnStartupError, record_lifespan_called_once
+from .lifespan_utils import LifespanOnStartupError, mark_lifespace_called
 
 _logger = logging.getLogger(__name__)
 
@@ -34,7 +34,7 @@ async def redis_database_lifespan(_: FastAPI, state: State) -> AsyncIterator[Sta
     with log_context(_logger, logging.INFO, f"{__name__}"):
 
         # Check if lifespan has already been called
-        called_state = record_lifespan_called_once(state, "redis_database_lifespan")
+        called_state = mark_lifespace_called(state, "redis_database_lifespan")
 
         # Validate input state
         try:

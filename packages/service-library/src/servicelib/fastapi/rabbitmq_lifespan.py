@@ -8,7 +8,10 @@ from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import wait_till_rabbitmq_responsive
 from settings_library.rabbit import RabbitSettings
 
-from .lifespan_utils import LifespanOnStartupError, record_lifespan_called_once
+from .lifespan_utils import (
+    LifespanOnStartupError,
+    mark_lifespace_called,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -33,7 +36,7 @@ async def rabbitmq_connectivity_lifespan(
     with log_context(_logger, logging.INFO, _lifespan_name):
 
         # Check if lifespan has already been called
-        called_state = record_lifespan_called_once(state, _lifespan_name)
+        called_state = mark_lifespace_called(state, _lifespan_name)
 
         # Validate input state
         try:
