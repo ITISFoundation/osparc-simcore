@@ -4,7 +4,6 @@ import urllib.parse
 from collections.abc import Callable
 from dataclasses import dataclass
 from functools import partial
-from operator import attrgetter
 from typing import Final, Literal
 
 from fastapi import FastAPI, status
@@ -148,32 +147,6 @@ class CatalogApi(BaseServiceClientApi):
     @_exception_mapper(
         http_status_map={status.HTTP_404_NOT_FOUND: SolverOrStudyNotFoundError}
     )
-    async def _get_service(
-        self, *, user_id: int, name: SolverKeyId, version: VersionStr, product_name: str
-    ) -> TruncatedCatalogServiceOut:
-
-        assert version != LATEST_VERSION  # nosec
-
-        service_key = urllib.parse.quote_plus(name)
-        service_version = version
-
-        response = await self.client.get(
-            f"/services/{service_key}/{service_version}",
-            params={"user_id": user_id},
-            headers={"x-simcore-products-name": product_name},
-        )
-        response.raise_for_status()
-
-        service: (
-            TruncatedCatalogServiceOut
-        ) = await asyncio.get_event_loop().run_in_executor(
-            None, _parse_response, TruncatedCatalogServiceOutAdapter, response
-        )
-        return service
-
-    @_exception_mapper(
-        http_status_map={status.HTTP_404_NOT_FOUND: SolverOrStudyNotFoundError}
-    )
     async def get_service_ports(
         self,
         *,
@@ -235,22 +208,6 @@ class CatalogApi(BaseServiceClientApi):
         )
         solvers = [service.to_solver() for service in services]
         return [solver for solver in solvers if _this_solver(solver)]
-
-    async def get_latest_release(
-        self,
-        *,
-        user_id: int,
-        solver_key: SolverKeyId,
-        product_name: str,
-    ) -> Solver:
-        releases = await self.list_service_releases(
-            user_id=user_id,
-            solver_key=solver_key,
-            product_name=product_name,
-        )
-
-        # raises IndexError if None
-        return sorted(releases, key=attrgetter("pep404_version"))[-1]
 
 
 # MODULES APP SETUP -------------------------------------------------------------

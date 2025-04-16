@@ -136,7 +136,7 @@ async def get_solvers_releases_page(
 async def get_solver(
     solver_key: SolverKeyId,
     user_id: Annotated[int, Depends(get_current_user_id)],
-    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
+    solver_service: Annotated[SolverService, Depends(SolverService)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
 ) -> Solver:
@@ -144,7 +144,7 @@ async def get_solver(
     # IMPORTANT: by adding /latest, we avoid changing the order of this entry in the router list
     # otherwise, {solver_key:path} will override and consume any of the paths that follow.
     try:
-        solver = await catalog_client.get_latest_release(
+        solver = await solver_service.get_latest_release(
             user_id=user_id,
             solver_key=solver_key,
             product_name=product_name,
