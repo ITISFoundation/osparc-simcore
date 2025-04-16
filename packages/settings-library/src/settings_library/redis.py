@@ -52,9 +52,6 @@ class RedisSettings(BaseCustomSettings):
             "examples": [
                 # minimal required
                 {
-                    "REDIS_SECURE": "0",
-                    "REDIS_HOST": "localhost",
-                    "REDIS_PORT": "6379",
                     "REDIS_USER": "user",
                     "REDIS_PASSWORD": "foobar",  # NOSONAR
                 }
