@@ -5,7 +5,7 @@ from typing import Any
 
 import httpx
 import pytest
-from fastapi import FastAPI, status
+from fastapi import status
 from httpx import AsyncClient
 from models_library.api_schemas_storage.storage_schemas import FileUploadSchema
 from models_library.users import UserID
@@ -15,22 +15,8 @@ from pytest_simcore.helpers.httpx_calls_capture_models import (
     HttpApiCallCaptureModel,
 )
 from simcore_service_api_server._meta import API_VTAG
-from simcore_service_api_server._service_programs import ProgramService
 from simcore_service_api_server.models.schemas.jobs import Job
 from simcore_service_api_server.models.schemas.programs import Program
-from simcore_service_api_server.services_rpc.catalog import CatalogService
-
-
-@pytest.fixture
-def mock_program_service(mocker: MockerFixture, app: FastAPI):
-
-    def _get_program_service():
-        catalog_service = CatalogService(client=mocker.MagicMock())
-        return ProgramService(_catalog_service=catalog_service)
-
-    app.dependency_overrides[ProgramService] = _get_program_service
-    yield
-    app.dependency_overrides.pop(ProgramService)
 
 
 async def test_get_program_release(
@@ -38,7 +24,6 @@ async def test_get_program_release(
     client: AsyncClient,
     mocked_rpc_catalog_service_api: dict[str, MockType],
     mocker: MockerFixture,
-    mock_program_service: None,
     user_id: UserID,
 ):
     # Arrange
@@ -64,7 +49,6 @@ async def test_create_program_job(
     mocked_rpc_catalog_service_api: dict[str, MockType],
     create_respx_mock_from_capture: CreateRespxMockCallback,
     mocker: MockerFixture,
-    mock_program_service: None,
     user_id: UserID,
     capture_name: str,
     project_tests_dir: Path,

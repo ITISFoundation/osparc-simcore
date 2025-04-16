@@ -36,13 +36,13 @@ def to_solver(
 
 
 async def test_catalog_service_read_solvers(
+    app: FastAPI,
     product_name: ProductName,
     user_id: UserID,
     mocker: MockerFixture,
     mocked_rpc_catalog_service_api: dict[str, MockType],
 ):
     catalog_service = CatalogService(client=mocker.MagicMock())
-    catalog_service.set_to_app_state(app=FastAPI())
 
     # Step 1: List latest releases in a page
     latest_releases, meta = await catalog_service.list_latest_releases(

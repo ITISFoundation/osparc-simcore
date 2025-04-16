@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from httpx import HTTPStatusError
 from pydantic import ValidationError
 
+from ..._service_solvers import SolverService
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.basic_types import VersionStr
 from ...models.pagination import OnePage, Page, PaginationParams
@@ -214,13 +215,13 @@ async def get_solver_release(
     solver_key: SolverKeyId,
     version: VersionStr,
     user_id: Annotated[int, Depends(get_current_user_id)],
-    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
+    solver_service: Annotated[SolverService, Depends(SolverService)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
 ) -> Solver:
     """Gets a specific release of a solver"""
     try:
-        solver: Solver = await catalog_client.get_solver(
+        solver: Solver = await solver_service.get_solver(
             user_id=user_id,
             name=solver_key,
             version=version,

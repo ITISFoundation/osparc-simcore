@@ -22,7 +22,7 @@ from ..exceptions.backend_errors import (
 )
 from ..exceptions.service_errors_utils import service_exception_mapper
 from ..models.basic_types import VersionStr
-from ..models.schemas.programs import Program, ProgramKeyId
+from ..models.schemas.programs import Program
 from ..models.schemas.solvers import LATEST_VERSION, Solver, SolverKeyId, SolverPort
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
@@ -162,24 +162,6 @@ class CatalogApi(BaseServiceClientApi):
 
         solver: Solver = service.to_solver()
         return solver
-
-    async def get_program(
-        self,
-        *,
-        user_id: int,
-        name: ProgramKeyId,
-        version: VersionStr,
-        product_name: str,
-    ) -> Program:
-        service = await self._get_service(
-            user_id=user_id, name=name, version=version, product_name=product_name
-        )
-        assert (  # nosec
-            service.service_type == ServiceType.DYNAMIC
-        ), "Expected by ProgramName regex"
-
-        program = service.to_program()
-        return program
 
     @_exception_mapper(
         http_status_map={status.HTTP_404_NOT_FOUND: SolverOrStudyNotFoundError}

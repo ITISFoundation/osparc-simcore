@@ -13,6 +13,7 @@ from models_library.projects_nodes_io import NodeID
 from pydantic.types import PositiveInt
 
 from ..._service_job import JobService
+from ..._service_solvers import SolverService
 from ...exceptions.backend_errors import ProjectAlreadyStartedError
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.basic_types import VersionStr
@@ -26,7 +27,6 @@ from ...models.schemas.jobs import (
     JobStatus,
 )
 from ...models.schemas.solvers import Solver, SolverKeyId
-from ...services_http.catalog import CatalogApi
 from ...services_http.director_v2 import DirectorV2Api
 from ...services_http.jobs import replace_custom_metadata, start_project, stop_project
 from ...services_http.solver_job_models_converters import (
@@ -95,7 +95,7 @@ async def create_solver_job(
     version: VersionStr,
     inputs: JobInputs,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
-    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
+    solver_service: Annotated[SolverService, Depends(SolverService)],
     job_service: Annotated[JobService, Depends(JobService)],
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
@@ -110,7 +110,7 @@ async def create_solver_job(
     """
 
     # ensures user has access to solver
-    solver = await catalog_client.get_solver(
+    solver = await solver_service.get_solver(
         user_id=user_id,
         name=solver_key,
         version=version,

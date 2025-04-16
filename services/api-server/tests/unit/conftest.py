@@ -5,7 +5,7 @@
 
 import json
 import subprocess
-from collections.abc import AsyncIterator, Callable, Iterator
+from collections.abc import AsyncIterator, Callable, Iterable, Iterator
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
@@ -47,6 +47,7 @@ from requests.auth import HTTPBasicAuth
 from respx import MockRouter
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
+from simcore_service_api_server.api.dependencies.rabbitmq import get_rabbitmq_rpc_client
 from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.core.settings import ApplicationSettings
 from simcore_service_api_server.db.repositories.api_keys import UserAndProductTuple
@@ -54,13 +55,20 @@ from simcore_service_api_server.services_http.solver_job_outputs import ResultsT
 
 
 @pytest.fixture
-def mocked_rpc_catalog_service_api(mocker: MockerFixture) -> dict[str, MockType]:
+def mocked_rpc_catalog_service_api(
+    app: FastAPI, mocker: MockerFixture
+) -> Iterable[dict[str, MockType]]:
     """
     Mocks the RPC catalog service API for testing purposes.
     """
+
+    class MockRabbitMQRPCClient:
+        pass
+
+    app.dependency_overrides[get_rabbitmq_rpc_client] = lambda: MockRabbitMQRPCClient()
     side_effects = CatalogRpcSideEffects()
 
-    return {
+    yield {
         "list_services_paginated": mocker.patch.object(
             catalog_rpc,
             "list_services_paginated",
@@ -86,6 +94,7 @@ def mocked_rpc_catalog_service_api(mocker: MockerFixture) -> dict[str, MockType]
             side_effect=side_effects.list_my_service_history_paginated,
         ),
     }
+    app.dependency_overrides.pop(get_rabbitmq_rpc_client)
 
 
 @pytest.fixture
