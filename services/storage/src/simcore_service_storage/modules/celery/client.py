@@ -15,6 +15,7 @@ from settings_library.celery import CelerySettings
 from .models import (
     Task,
     TaskContext,
+    TaskID,
     TaskInfoStore,
     TaskMetadata,
     TaskState,
@@ -79,6 +80,10 @@ class CeleryTaskClient:
         ):
             await self._abort_task(task_context, task_uuid)
 
+    @make_async()
+    async def _forget_task(self, task_id: TaskID) -> None:
+        AbortableAsyncResult(task_id, app=self._celery_app).forget()
+
     async def get_task_result(
         self, task_context: TaskContext, task_uuid: TaskUUID
     ) -> Any:
@@ -94,6 +99,7 @@ class CeleryTaskClient:
                 task_metadata = await self._task_store.get_task_metadata(task_id)
                 if task_metadata is not None and task_metadata.ephemeral:
                     await self._task_store.remove_task(task_id)
+                    await self._forget_task(task_id)
             return result
 
     async def _get_task_progress_report(
