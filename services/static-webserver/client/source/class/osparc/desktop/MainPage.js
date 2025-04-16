@@ -245,6 +245,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       pollTasks.createPollingTask(fetchPromise)
         .then(task => {
           const templateBrowser = this.__dashboard.getTemplateBrowser();
+          const hypertoolBrowser = this.__dashboard.getHypertoolBrowser();
           if (templateBrowser) {
             templateBrowser.taskToTemplateReceived(task, studyName);
           }
@@ -256,7 +257,14 @@ qx.Class.define("osparc.desktop.MainPage", {
               const studyUI = osparc.utils.Utils.deepCloneObject(templateData["ui"]);
               studyUI["templateType"] = templateType;
               osparc.store.Study.patchStudyData(templateData, "ui", studyUI)
-                .then(() => console.log("patched"));
+                .then(() => {
+                  if (templateBrowser) {
+                    templateBrowser.reloadResources();
+                  }
+                  if (hypertoolBrowser) {
+                    hypertoolBrowser.reloadResources();
+                  }
+                });
             }
           });
         })
