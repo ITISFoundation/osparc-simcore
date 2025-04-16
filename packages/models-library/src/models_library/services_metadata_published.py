@@ -149,6 +149,10 @@ class ServiceMetaDataPublished(ServiceKeyVersion, ServiceBaseDisplay):
         alias="progress_regexp",
         description="regexp pattern for detecting computational service's progress",
     )
+    strip_path: str | None = Field(
+        None,
+        description="??? Mystery Pokemon Missingo",
+    )
     inputs_path: str | None = Field(
         None,
         description="if this is present, the service is a modern style dv2 dynamic service",
@@ -157,7 +161,7 @@ class ServiceMetaDataPublished(ServiceKeyVersion, ServiceBaseDisplay):
         None,
         description="if this is present, the service is a modern style dv2 dynamic service",
     )
-    state_paths: str | None = Field(
+    state_paths: list[str] = Field(
         None,
         description="if this is present, the service is a modern style dv2 dynamic service",
     )
