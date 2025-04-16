@@ -43,7 +43,7 @@ async def mark_project_as_job(
 
 @log_decorator(_logger, level=logging.DEBUG)
 @validate_call(config={"arbitrary_types_allowed": True})
-async def list_my_projects_marked_as_jobs(
+async def list_projects_marked_as_jobs(
     rpc_client: RabbitMQRPCClient,
     *,
     product_name: ProductName,
@@ -56,7 +56,7 @@ async def list_my_projects_marked_as_jobs(
 ) -> PageRpcProjectRpcGet:
     result = await rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python("list_my_projects_marked_as_jobs"),
+        TypeAdapter(RPCMethodName).validate_python("list_projects_marked_as_jobs"),
         product_name=product_name,
         user_id=user_id,
         offset=offset,

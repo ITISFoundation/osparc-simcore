@@ -54,7 +54,7 @@ async def mark_project_as_job(
 
 @router.expose(reraise_if_error_type=(ValidationError,))
 @validate_call(config={"arbitrary_types_allowed": True})
-async def list_my_projects_marked_as_jobs(
+async def list_projects_marked_as_jobs(
     app: web.Application,
     *,
     product_name: ProductName,

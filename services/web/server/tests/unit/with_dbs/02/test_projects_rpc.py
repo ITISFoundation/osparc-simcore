@@ -107,7 +107,7 @@ async def test_rpc_client_list_my_projects_marked_as_jobs(
     )
 
     # List projects marked as jobs
-    page: PageRpcProjectRpcGet = await projects_rpc.list_my_projects_marked_as_jobs(
+    page: PageRpcProjectRpcGet = await projects_rpc.list_projects_marked_as_jobs(
         rpc_client=rpc_client,
         product_name=product_name,
         user_id=user_id,
