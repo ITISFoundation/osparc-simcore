@@ -43,34 +43,35 @@ qx.Class.define("osparc.study.SaveAsTemplate", {
 
   members: {
     __studyDataClone: null,
-    __copyWData: null,
-    __templateTypeSB: null,
-    __shareWith: null,
+    __form: null,
     __publishTemplateBtn: null,
 
     __buildLayout: function() {
-      const publishWithData = this.__copyWData = new qx.ui.form.CheckBox(this.tr("Publish with data")).set({
+      const form = this.__form = new qx.ui.form.Form();
+      this._add(new qx.ui.form.renderer.Single(form));
+
+      const publishWithData = new qx.ui.form.CheckBox().set({
         value: true,
         iconPosition: "right",
       });
-      this._add(publishWithData);
+      form.add(publishWithData, this.tr("Publish with data"), null, "publishWithData");
 
       if (osparc.utils.DisabledPlugins.isHypertoolsEnabled()) {
-        const templateTypeSB = this.__templateTypeSB = new qx.ui.form.SelectBox();
-        const countries = osparc.store.StaticInfo.getInstance().getCountries();
-        [{
-          label: "Standard",
+        const templateTypeSB = new qx.ui.form.SelectBox().set({
+          allowGrowX: false,
+        });
+        const templateTypes = [{
+          label: "Tutorial",
           id: null,
         }, {
           label: "Hypertool",
-          id: "hypertool",
+          id: osparc.data.model.StudyUI.HYPERTOOL_TYPE,
         }]
-        countries.forEach(c => {
-          const cItem = new qx.ui.form.ListItem(c.name, null, c.alpha2).set({
-            rich: true
-          });
-          templateTypeSB.add(cItem);
+        templateTypes.forEach(tempType => {
+          const tItem = new qx.ui.form.ListItem(tempType.label, null, tempType.id);
+          templateTypeSB.add(tItem);
         });
+        form.add(templateTypeSB, this.tr("Template Type"), null, "templateType");
       }
 
       const shareWith = this.__shareWith = new osparc.share.ShareTemplateWith(this.__studyDataClone);
@@ -87,6 +88,14 @@ qx.Class.define("osparc.study.SaveAsTemplate", {
     },
 
     __publishTemplate: function() {
+      const publishWithDataCB = this.__form.getItem("publishWithData");
+      const templateTypeSB = this.__form.getItem("templateType");
+
+      const templateType = templateTypeSB ? templateTypeSB.getSelection()[0].getModel() : null;
+      if (templateType) {
+        this.__studyDataClone["ui"]["templateType"] = templateType;
+      }
+
       const readAccessRole = osparc.data.Roles.STUDY["read"];
       // AccessRights will be POSTed after the template is created.
       // No need to add myself, backend will automatically do it
@@ -99,8 +108,9 @@ qx.Class.define("osparc.study.SaveAsTemplate", {
 
       this.fireDataEvent("publishTemplate", {
         "studyData": this.__studyDataClone,
-        "copyData": this.__copyWData.getValue(),
-        "accessRights": accessRights
+        "copyData": publishWithDataCB.getValue(),
+
+        "accessRights": accessRights,
       });
     },
 
