@@ -3,6 +3,7 @@ from datetime import timedelta
 from typing import Final
 
 from models_library.progress_bar import ProgressReport
+from pydantic import ValidationError
 from servicelib.redis._client import RedisClientSDK
 
 from ..models import (
@@ -86,14 +87,25 @@ class RedisTaskInfoStore:
 
         results = await pipe.execute()
 
-        return [
-            Task(
-                uuid=TaskUUID(key[search_key_len:]),
-                metadata=TaskMetadata.model_validate_json(metadata),
-            )
-            for key, metadata in zip(keys, results, strict=True)
-            if metadata is not None
-        ]
+        tasks = []
+        for key, raw_metadata in zip(keys, results, strict=True):
+            if raw_metadata is None:
+                continue
+
+            try:
+                task_metadata = TaskMetadata.model_validate_json(raw_metadata)
+                tasks.append(
+                    Task(
+                        uuid=TaskUUID(key[search_key_len:]),
+                        metadata=task_metadata,
+                    )
+                )
+            except ValidationError as exc:
+                _logger.debug(
+                    "Failed to deserialize task metadata for key %s: %s", key, str(exc)
+                )
+
+        return tasks
 
     async def remove_task(self, task_id: TaskID) -> None:
         await self._redis_client_sdk.redis.delete(_build_key(task_id))
