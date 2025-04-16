@@ -145,24 +145,6 @@ class CatalogApi(BaseServiceClientApi):
             services = [service for service in services if predicate(service)]
         return services
 
-    async def get_solver(
-        self,
-        *,
-        user_id: UserID,
-        name: SolverKeyId,
-        version: VersionStr,
-        product_name: ProductName,
-    ) -> Solver:
-        service = await self._get_service(
-            user_id=user_id, name=name, version=version, product_name=product_name
-        )
-        assert (  # nosec
-            service.service_type == ServiceType.COMPUTATIONAL
-        ), "Expected by SolverName regex"
-
-        solver: Solver = service.to_solver()
-        return solver
-
     @_exception_mapper(
         http_status_map={status.HTTP_404_NOT_FOUND: SolverOrStudyNotFoundError}
     )
