@@ -81,7 +81,7 @@ class CeleryTaskClient:
             await self._abort_task(task_context, task_uuid)
 
     @make_async()
-    async def _forget_task(self, task_id: TaskID) -> None:
+    def _forget_task(self, task_id: TaskID) -> None:
         AbortableAsyncResult(task_id, app=self._celery_app).forget()
 
     async def get_task_result(
