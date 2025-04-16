@@ -417,8 +417,10 @@ async def get_image_details(
         try:
             label_data = json.loads(labels[key])
             for label_key in label_data:
-                if isinstance(label_key, dict) or isinstance(
-                    label_data, list
+                if (
+                    isinstance(label_key, dict)
+                    or isinstance(label_data, list)
+                    or isinstance(label_data, str)
                 ):  # Dicts from "simcore.service." docker image labels are omitted.
                     continue
                 image_details[label_key] = label_data[label_key]
