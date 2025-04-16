@@ -35,59 +35,10 @@ async def ping(app: web.Application) -> str:
 @router.expose()
 async def register_function(app: web.Application, *, function: Function) -> Function:
     assert app
-    if function.function_class == FunctionClass.project:
-        saved_function = await _functions_repository.create_function(
-            app=app,
-            function=FunctionDB(
-                title=function.title,
-                description=function.description,
-                input_schema=function.input_schema,
-                output_schema=function.output_schema,
-                function_class=function.function_class,
-                class_specific_data=FunctionClassSpecificData(
-                    {
-                        "project_id": str(function.project_id),
-                    }
-                ),
-            ),
-        )
-        return ProjectFunction(
-            uid=saved_function.uuid,
-            title=saved_function.title,
-            description=saved_function.description,
-            input_schema=saved_function.input_schema,
-            output_schema=saved_function.output_schema,
-            project_id=saved_function.class_specific_data["project_id"],
-        )
-    elif function.function_class == FunctionClass.solver:  # noqa: RET505
-        saved_function = await _functions_repository.create_function(
-            app=app,
-            function=FunctionDB(
-                title=function.title,
-                description=function.description,
-                input_schema=function.input_schema,
-                output_schema=function.output_schema,
-                function_class=function.function_class,
-                class_specific_data=FunctionClassSpecificData(
-                    {
-                        "solver_key": str(function.solver_key),
-                        "solver_version": str(function.solver_version),
-                    }
-                ),
-            ),
-        )
-        return SolverFunction(
-            uid=saved_function.uuid,
-            title=saved_function.title,
-            description=saved_function.description,
-            input_schema=saved_function.input_schema,
-            output_schema=saved_function.output_schema,
-            solver_key=saved_function.class_specific_data["solver_key"],
-            solver_version=saved_function.class_specific_data["solver_version"],
-        )
-    else:
-        msg = f"Unsupported function class: {function.function_class}"
-        raise TypeError(msg)
+    saved_function = await _functions_repository.create_function(
+        app=app, function=_encode_function(function)
+    )
+    return _decode_function(saved_function)
 
 
 def _decode_function(
@@ -117,6 +68,42 @@ def _decode_function(
         raise TypeError(msg)
 
 
+def _encode_function(
+    function: Function,
+) -> FunctionDB:
+    if function.function_class == FunctionClass.project:
+        return FunctionDB(
+            title=function.title,
+            description=function.description,
+            input_schema=function.input_schema,
+            output_schema=function.output_schema,
+            function_class=function.function_class,
+            default_inputs=function.default_inputs,
+            class_specific_data=FunctionClassSpecificData(
+                {
+                    "project_id": str(function.project_id),
+                }
+            ),
+        )
+    elif function.function_class == FunctionClass.solver:  # noqa: RET505
+        return FunctionDB(
+            title=function.title,
+            description=function.description,
+            input_schema=function.input_schema,
+            output_schema=function.output_schema,
+            function_class=function.function_class,
+            class_specific_data=FunctionClassSpecificData(
+                {
+                    "solver_key": str(function.solver_key),
+                    "solver_version": str(function.solver_version),
+                }
+            ),
+        )
+    else:
+        msg = f"Unsupported function class: {function.function_class}"
+        raise TypeError(msg)
+
+
 @router.expose()
 async def get_function(app: web.Application, *, function_id: FunctionID) -> Function:
     assert app
@@ -129,7 +116,7 @@ async def get_function(app: web.Application, *, function_id: FunctionID) -> Func
     )
 
 
-def convert_functionjobdb_to_functionjob(
+def _decode_functionjob(
     functionjob_db: FunctionJobDB,
 ) -> FunctionJob:
     if functionjob_db.function_class == FunctionClass.project:
@@ -157,6 +144,40 @@ def convert_functionjobdb_to_functionjob(
         raise TypeError(msg)
 
 
+def _encode_functionjob(
+    functionjob: FunctionJob,
+) -> FunctionJobDB:
+    if functionjob.function_class == FunctionClass.project:
+        return FunctionJobDB(
+            title=functionjob.title,
+            function_uuid=functionjob.function_uid,
+            inputs=functionjob.inputs,
+            outputs=None,
+            class_specific_data=FunctionJobClassSpecificData(
+                {
+                    "project_job_id": str(functionjob.project_job_id),
+                }
+            ),
+            function_class=functionjob.function_class,
+        )
+    elif functionjob.function_class == FunctionClass.solver:  # noqa: RET505
+        return FunctionJobDB(
+            title=functionjob.title,
+            function_uuid=functionjob.function_uid,
+            inputs=functionjob.inputs,
+            outputs=None,
+            class_specific_data=FunctionJobClassSpecificData(
+                {
+                    "solver_job_id": str(functionjob.solver_job_id),
+                }
+            ),
+            function_class=functionjob.function_class,
+        )
+    else:
+        msg = f"Unsupported function class: [{functionjob.function_class}]"
+        raise TypeError(msg)
+
+
 @router.expose()
 async def get_function_job(
     app: web.Application, *, function_job_id: FunctionJobID
@@ -168,7 +189,7 @@ async def get_function_job(
     )
     assert returned_function_job is not None
 
-    return convert_functionjobdb_to_functionjob(returned_function_job)
+    return _decode_functionjob(returned_function_job)
 
 
 @router.expose()
@@ -178,7 +199,7 @@ async def list_function_jobs(app: web.Application) -> list[FunctionJob]:
         app=app,
     )
     return [
-        convert_functionjobdb_to_functionjob(returned_function_job)
+        _decode_functionjob(returned_function_job)
         for returned_function_job in returned_function_jobs
     ]
 
@@ -244,61 +265,10 @@ async def register_function_job(
     app: web.Application, *, function_job: FunctionJob
 ) -> FunctionJob:
     assert app
-    if function_job.function_class == FunctionClass.project:
-        created_function_job_db = await _functions_repository.register_function_job(
-            app=app,
-            function_job=FunctionJobDB(
-                title=function_job.title,
-                function_uuid=function_job.function_uid,
-                inputs=function_job.inputs,
-                outputs=None,
-                class_specific_data=FunctionJobClassSpecificData(
-                    {
-                        "project_job_id": str(function_job.project_job_id),  # type: ignore
-                    }
-                ),
-                function_class=function_job.function_class,
-            ),
-        )
-        return ProjectFunctionJob(
-            uid=created_function_job_db.uuid,
-            title=created_function_job_db.title,
-            description="",
-            function_uid=created_function_job_db.function_uuid,
-            inputs=created_function_job_db.inputs,
-            outputs=None,
-            project_job_id=created_function_job_db.class_specific_data[
-                "project_job_id"
-            ],
-        )
-    elif function_job.function_class == FunctionClass.solver:  # noqa: RET505
-        created_function_job_db = await _functions_repository.register_function_job(
-            app=app,
-            function_job=FunctionJobDB(
-                title=function_job.title,
-                function_uuid=function_job.function_uid,
-                inputs=function_job.inputs,
-                outputs=None,
-                class_specific_data=FunctionJobClassSpecificData(
-                    {
-                        "solver_job_id": str(function_job.solver_job_id),
-                    }
-                ),
-                function_class=function_job.function_class,
-            ),
-        )
-        return SolverFunctionJob(
-            uid=created_function_job_db.uuid,
-            title=created_function_job_db.title,
-            description="",
-            function_uid=created_function_job_db.function_uuid,
-            inputs=created_function_job_db.inputs,
-            outputs=None,
-            solver_job_id=created_function_job_db.class_specific_data["solver_job_id"],
-        )
-    else:
-        msg = f"Unsupported function class: [{function_job.function_class}]"
-        raise TypeError(msg)
+    created_function_job_db = await _functions_repository.register_function_job(
+        app=app, function_job=_encode_functionjob(function_job)
+    )
+    return _decode_functionjob(created_function_job_db)
 
 
 @router.expose()
