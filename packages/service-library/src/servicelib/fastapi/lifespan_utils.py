@@ -5,7 +5,8 @@ from typing import Final
 from common_library.errors_classes import OsparcErrorMixin
 from fastapi import FastAPI
 from fastapi_lifespan_manager import State
-from servicelib.logging_utils import log_context
+
+from ..logging_utils import log_context
 
 
 class LifespanError(OsparcErrorMixin, RuntimeError): ...

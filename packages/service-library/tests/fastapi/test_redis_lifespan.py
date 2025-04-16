@@ -19,7 +19,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.fastapi.redis_lifespan import (
     RedisConfigurationError,
     RedisLifespanState,
-    redis_database_lifespan,
+    redis_client_sdk_lifespan,
 )
 from settings_library.application import BaseApplicationSettings
 from settings_library.redis import RedisDatabase, RedisSettings
@@ -65,7 +65,7 @@ def app_lifespan(
 
     app_lifespan = LifespanManager()
     app_lifespan.add(my_app_settings)
-    app_lifespan.add(redis_database_lifespan)
+    app_lifespan.add(redis_client_sdk_lifespan)
 
     assert not mock_redis_client_sdk.called
 
@@ -112,7 +112,7 @@ async def test_lifespan_redis_database_with_invalid_settings(
 
     app_lifespan = LifespanManager()
     app_lifespan.add(my_app_settings)
-    app_lifespan.add(redis_database_lifespan)
+    app_lifespan.add(redis_client_sdk_lifespan)
 
     app = FastAPI(lifespan=app_lifespan)
 

@@ -5,11 +5,11 @@ from enum import Enum
 
 from fastapi import FastAPI
 from fastapi_lifespan_manager import State
-from servicelib.logging_utils import log_catch
 from settings_library.postgres import PostgresSettings
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..db_asyncpg_utils import create_async_engine_and_database_ready
+from ..logging_utils import log_catch
 from .lifespan_utils import LifespanOnStartupError, lifespan_context
 
 _logger = logging.getLogger(__name__)

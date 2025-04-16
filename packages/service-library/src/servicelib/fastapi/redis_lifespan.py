@@ -6,9 +6,9 @@ from typing import Annotated
 from fastapi import FastAPI
 from fastapi_lifespan_manager import State
 from pydantic import BaseModel, StringConstraints, ValidationError
-from servicelib.logging_utils import log_catch, log_context
 from settings_library.redis import RedisDatabase, RedisSettings
 
+from ..logging_utils import log_catch, log_context
 from ..redis import RedisClientSDK
 from .lifespan_utils import LifespanOnStartupError, lifespan_context
 
@@ -25,8 +25,8 @@ class RedisLifespanState(BaseModel):
     REDIS_CLIENT_DB: RedisDatabase
 
 
-async def redis_database_lifespan(_: FastAPI, state: State) -> AsyncIterator[State]:
-    _lifespan_name = f"{__name__}.{redis_database_lifespan.__name__}"
+async def redis_client_sdk_lifespan(_: FastAPI, state: State) -> AsyncIterator[State]:
+    _lifespan_name = f"{__name__}.{redis_client_sdk_lifespan.__name__}"
 
     with lifespan_context(_logger, logging.INFO, _lifespan_name, state) as called_state:
 
@@ -45,6 +45,8 @@ async def redis_database_lifespan(_: FastAPI, state: State) -> AsyncIterator[Sta
             logging.INFO,
             f"Creating redis client with name={redis_state.REDIS_CLIENT_NAME}",
         ):
+            # NOTE: sdk integrats waiting until connection is ready
+            # and will raise an exception if it cannot connect
             redis_client = RedisClientSDK(
                 redis_dsn_with_secrets,
                 client_name=redis_state.REDIS_CLIENT_NAME,
@@ -54,10 +56,9 @@ async def redis_database_lifespan(_: FastAPI, state: State) -> AsyncIterator[Sta
             yield {"REDIS_CLIENT_SDK": redis_client, **called_state}
         finally:
             # Teardown client
-            if redis_client:
-                with log_catch(_logger, reraise=False):
-                    await asyncio.wait_for(
-                        redis_client.shutdown(),
-                        # NOTE: shutdown already has a _HEALTHCHECK_TASK_TIMEOUT_S of 10s
-                        timeout=20,
-                    )
+            with log_catch(_logger, reraise=False):
+                await asyncio.wait_for(
+                    redis_client.shutdown(),
+                    # NOTE: shutdown already has a _HEALTHCHECK_TASK_TIMEOUT_S of 10s
+                    timeout=20,
+                )

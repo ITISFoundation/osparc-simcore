@@ -4,9 +4,9 @@ from collections.abc import AsyncIterator
 from fastapi import FastAPI
 from fastapi_lifespan_manager import State
 from pydantic import BaseModel, ValidationError
-from servicelib.rabbitmq import wait_till_rabbitmq_responsive
 from settings_library.rabbit import RabbitSettings
 
+from ..rabbitmq import wait_till_rabbitmq_responsive
 from .lifespan_utils import (
     LifespanOnStartupError,
     lifespan_context,
