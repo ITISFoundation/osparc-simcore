@@ -3,7 +3,7 @@ import time
 from uuid import UUID
 
 import httpx
-from models_library.api_schemas_directorv2.comp_tasks import ComputationGet
+from models_library.api_schemas_directorv2.computations import ComputationGet
 from models_library.projects import ProjectAtDB
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
