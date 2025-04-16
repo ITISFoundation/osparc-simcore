@@ -105,6 +105,8 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       } else {
         this._resourcesList = templatesList.filter(template => osparc.study.Utils.extractTemplateType(template) === this.__templateType);
       }
+      this.fireDataEvent("showTab", Boolean(this._resourcesList.length));
+
       this._reloadCards();
     },
 

@@ -184,6 +184,10 @@ qx.Class.define("osparc.dashboard.Dashboard", {
             this.setSelection([tabFound]);
           }
         }, this);
+        viewLayout.addListener("showTab", e => {
+          const showTab = e.getData();
+          tabPage.setVisibility(showTab ? "visible" : "excluded");
+        })
         const scrollerMainView = new qx.ui.container.Scroll();
         scrollerMainView.add(viewLayout);
         tabPage.add(scrollerMainView);
