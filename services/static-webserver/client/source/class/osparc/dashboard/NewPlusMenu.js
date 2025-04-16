@@ -160,6 +160,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
 
     __addItems: function() {
       this.__addNewStudyItems();
+      this.__addEmptyStudyButton();
       this.__addMoreMenu();
       this.getChildControl("new-folder");
     },
@@ -228,14 +229,8 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       });
     },
 
-    __addIcon: function(menuButton, resourceInfo, resourceMetadata) {
-      let source = null;
-      if (resourceInfo && resourceInfo["icon"]) {
-        source = resourceInfo["icon"];
-      } else {
-        source = osparc.utils.Utils.getIconFromResource(resourceMetadata);
-      }
-
+    __addIcon: function(menuButton, icon, resourceMetadata) {
+      const source = icon ? icon : osparc.utils.Utils.getIconFromResource(resourceMetadata);
       if (source) {
         const thumbnail = new osparc.ui.basic.Thumbnail(source, 24, 24).set({
           minHeight: 24,
@@ -269,21 +264,25 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       osparc.utils.Utils.setIdToWidget(menuButton, buttonConfig["idToWidget"]);
       menuButton.setEnabled(false);
 
-      this.__addIcon(menuButton, buttonConfig);
+      this.__addIcon(menuButton, buttonConfig["icon"]);
       this.__addFromResourceButton(menuButton, buttonConfig["category"]);
     },
 
-    __addEmptyStudyButton: function(buttonConfig) {
-      const menuButton = this.self().createMenuButton(null, buttonConfig["title"]);
-      osparc.utils.Utils.setIdToWidget(menuButton, buttonConfig["idToWidget"]);
+    __addEmptyStudyButton: function(buttonConfig = {}) {
+      if (this.__emptyPipelineButton) {
+        return;
+      }
+
+      const menuButton = this.__emptyPipelineButton = this.self().createMenuButton(null, buttonConfig["title"] || "Empty Pipeline");
+      osparc.utils.Utils.setIdToWidget(menuButton, buttonConfig["idToWidget"] || "emptyStudyBtn");
 
       menuButton.addListener("tap", () => {
         this.fireDataEvent("newEmptyStudyClicked", {
-          newStudyLabel: buttonConfig["newStudyLabel"],
+          newStudyLabel: buttonConfig["newStudyLabel"] || "Empty Pipeline",
         });
       });
 
-      this.__addIcon(menuButton, buttonConfig);
+      this.__addIcon(menuButton, buttonConfig["icon"] || "osparc/icons/diagram.png");
       this.__addFromResourceButton(menuButton, buttonConfig["category"]);
     },
 
@@ -302,7 +301,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
             newStudyLabel: buttonConfig["newStudyLabel"],
           });
         });
-        this.__addIcon(menuButton, buttonConfig, templateMetadata);
+        this.__addIcon(menuButton, buttonConfig["icon"], templateMetadata);
         this.__addFromResourceButton(menuButton, buttonConfig["category"]);
       }
     },
@@ -350,7 +349,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
           return;
         }
         menuButton.setEnabled(true);
-        this.__addIcon(menuButton, buttonConfig, latestMetadata);
+        this.__addIcon(menuButton, buttonConfig["icon"], latestMetadata);
         this.__addFromResourceButton(menuButton, buttonConfig["category"]);
         addListenerToButton(menuButton, latestMetadata);
       } else if ("myMostUsed" in buttonConfig) {
