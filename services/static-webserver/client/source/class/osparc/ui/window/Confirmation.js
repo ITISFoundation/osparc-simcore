@@ -55,7 +55,6 @@ qx.Class.define("osparc.ui.window.Confirmation", {
       let control;
       switch (id) {
         case "confirm-button": {
-          const btnsLayout = this.getChildControl("buttons-layout");
           control = new qx.ui.form.Button().set({
             appearance: "form-button",
             center: true,
@@ -67,6 +66,7 @@ qx.Class.define("osparc.ui.window.Confirmation", {
           }, this);
           const command = new qx.ui.command.Command("Enter");
           control.setCommand(command);
+          const btnsLayout = this.getChildControl("buttons-layout");
           btnsLayout.addAt(control, 1);
           break;
         }

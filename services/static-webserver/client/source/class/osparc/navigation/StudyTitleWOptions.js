@@ -80,18 +80,7 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
             label: this.tr("Convert to Pipeline"),
             icon: null,
           });
-          control.addListener("execute", () => {
-            this.getStudy().getUi().setMode("workbench");
-          });
-          break;
-        case "study-menu-convert-to-standalone":
-          control = new qx.ui.menu.Button().set({
-            label: this.tr("Convert to Standalone"),
-            icon: null,
-          });
-          control.addListener("execute", () => {
-            this.getStudy().getUi().setMode("standalone");
-          });
+          control.addListener("execute", () => this.__convertToPipelineClicked(), this);
           break;
         case "study-menu-restore":
           control = new qx.ui.menu.Button().set({
@@ -114,8 +103,9 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
           optionsMenu.setAppearance("menu-wider");
           optionsMenu.add(this.getChildControl("study-menu-info"));
           optionsMenu.add(this.getChildControl("study-menu-reload"));
-          optionsMenu.add(this.getChildControl("study-menu-convert-to-pipeline"));
-          optionsMenu.add(this.getChildControl("study-menu-convert-to-standalone"));
+          if (osparc.product.Utils.hasConvertToPipelineEnabled()) {
+            optionsMenu.add(this.getChildControl("study-menu-convert-to-pipeline"));
+          }
           optionsMenu.add(this.getChildControl("study-menu-restore"));
           optionsMenu.add(this.getChildControl("study-menu-open-logger"));
           control = new qx.ui.form.MenuButton().set({
@@ -161,22 +151,11 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
           converter: mode => mode === "standalone" ? "visible" : "excluded"
         });
 
-        const convertToPipelineButton = this.getChildControl("study-menu-convert-to-pipeline");
-        const convertToStandaloneButton = this.getChildControl("study-menu-convert-to-standalone");
         if (osparc.product.Utils.hasConvertToPipelineEnabled()) {
+          const convertToPipelineButton = this.getChildControl("study-menu-convert-to-pipeline");
           study.getUi().bind("mode", convertToPipelineButton, "visibility", {
             converter: mode => mode === "standalone" ? "visible" : "excluded"
           });
-
-          const evaluateConvertToStandaloneButton = () => {
-            // exclude until we have the export to standalone backend functionality
-            convertToStandaloneButton.exclude();
-          };
-          study.getWorkbench().addListener("pipelineChanged", () => evaluateConvertToStandaloneButton());
-          study.getUi().addListener("changeMode", () => evaluateConvertToStandaloneButton());
-        } else {
-          convertToPipelineButton.exclude();
-          convertToStandaloneButton.exclude();
         }
 
         const restoreButton = this.getChildControl("study-menu-restore");
@@ -191,6 +170,25 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
       } else {
         this.exclude();
       }
-    }
+    },
+
+    __convertToPipelineClicked: function() {
+      let message = this.tr("Would you like to convert this project to a pipeline?");
+      message += "<br>" + this.tr("If you want to create a copy of the project and convert the copy instead, please close the project first.");
+      const confirmationWin = new osparc.ui.window.Confirmation();
+      confirmationWin.set({
+        caption: this.tr("Convert to Pipeline"),
+        confirmText: this.tr("Convert"),
+        confirmAction: "create",
+        message,
+      });
+      confirmationWin.addListener("close", () => {
+        if (confirmationWin.getConfirmed()) {
+          this.getStudy().getUi().setMode("pipeline");
+          osparc.FlashMessenger.logAs(this.tr("Project converted to pipeline"), "INFO");
+        }
+      });
+      confirmationWin.open();
+    },
   }
 });

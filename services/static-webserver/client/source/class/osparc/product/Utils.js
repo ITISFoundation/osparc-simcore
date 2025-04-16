@@ -189,7 +189,7 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     hasConvertToPipelineEnabled: function() {
-      return false;
+      return osparc.store.StaticInfo.getInstance().isDevFeaturesEnabled();
     },
 
     // oSPARC only
