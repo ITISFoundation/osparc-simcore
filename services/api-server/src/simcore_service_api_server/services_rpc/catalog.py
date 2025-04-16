@@ -1,3 +1,4 @@
+from functools import partial
 from typing import Annotated
 
 from fastapi import Depends
@@ -12,10 +13,23 @@ from models_library.rest_pagination import (
 from models_library.services_history import ServiceRelease
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
+from pydantic import ValidationError
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
+from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
+    CatalogForbiddenError,
+    CatalogItemNotFoundError,
+)
+from simcore_service_api_server.exceptions.backend_errors import (
+    InvalidInputError,
+    ProgramOrSolverOrStudyNotFoundError,
+    ServiceForbiddenAccessError,
+)
 
 from ..api.dependencies.rabbitmq import get_rabbitmq_rpc_client
+from ..exceptions.service_errors_utils import service_exception_mapper
+
+_exception_mapper = partial(service_exception_mapper, service_name="CatalogService")
 
 
 class CatalogService:
@@ -76,6 +90,13 @@ class CatalogService:
         )
         return page.data, meta
 
+    @_exception_mapper(
+        rpc_exception_map={
+            CatalogItemNotFoundError: ProgramOrSolverOrStudyNotFoundError,
+            CatalogForbiddenError: ServiceForbiddenAccessError,
+            ValidationError: InvalidInputError,
+        }
+    )
     async def get(
         self,
         *,

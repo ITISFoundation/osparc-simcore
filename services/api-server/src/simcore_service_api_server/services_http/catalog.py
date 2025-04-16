@@ -17,7 +17,7 @@ from settings_library.tracing import TracingSettings
 
 from ..exceptions.backend_errors import (
     ListSolversOrStudiesError,
-    SolverOrStudyNotFoundError,
+    ProgramOrSolverOrStudyNotFoundError,
 )
 from ..exceptions.service_errors_utils import service_exception_mapper
 from ..models.basic_types import VersionStr
@@ -145,7 +145,7 @@ class CatalogApi(BaseServiceClientApi):
         return services
 
     @_exception_mapper(
-        http_status_map={status.HTTP_404_NOT_FOUND: SolverOrStudyNotFoundError}
+        http_status_map={status.HTTP_404_NOT_FOUND: ProgramOrSolverOrStudyNotFoundError}
     )
     async def get_service_ports(
         self,
