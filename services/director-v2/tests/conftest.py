@@ -7,7 +7,7 @@ import functools
 import json
 import logging
 import os
-from collections.abc import AsyncIterable, AsyncIterator
+from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable
 from copy import deepcopy
 from datetime import timedelta
 from pathlib import Path
@@ -30,6 +30,8 @@ from pytest_simcore.helpers.monkeypatch_envs import (
     setenvs_from_envfile,
 )
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from servicelib.rabbitmq import RabbitMQRPCClient
+from settings_library.rabbit import RabbitSettings
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings
 from starlette.testclient import ASGI3App, TestClient
@@ -224,6 +226,15 @@ async def async_client(initialized_app: FastAPI) -> AsyncIterable[httpx.AsyncCli
         headers={"Content-Type": "application/json"},
     ) as client:
         yield client
+
+
+@pytest.fixture
+async def rpc_client(
+    rabbit_service: RabbitSettings,
+    initialized_app: FastAPI,
+    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
+) -> RabbitMQRPCClient:
+    return await rabbitmq_rpc_client("client")
 
 
 @pytest.fixture()
