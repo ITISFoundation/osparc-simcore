@@ -1,8 +1,11 @@
+import contextlib
+from collections.abc import Iterator
 from typing import Final
 
 from common_library.errors_classes import OsparcErrorMixin
 from fastapi import FastAPI
 from fastapi_lifespan_manager import State
+from servicelib.logging_utils import log_context
 
 
 class LifespanError(OsparcErrorMixin, RuntimeError): ...
@@ -54,3 +57,16 @@ def ensure_lifespan_called(state: State, lifespan_name: str) -> None:
     """
     if not is_lifespan_called(state, lifespan_name):
         raise LifespanExpectedCalledError(lifespan_name=lifespan_name)
+
+
+@contextlib.contextmanager
+def lifespan_context(
+    logger, level, lifespan_name: str, state: State
+) -> Iterator[State]:
+    """Helper context manager to log lifespan event and mark lifespan as called."""
+
+    with log_context(logger, level, lifespan_name):
+        # Check if lifespan has already been called
+        called_state = mark_lifespace_called(state, lifespan_name)
+
+        yield called_state

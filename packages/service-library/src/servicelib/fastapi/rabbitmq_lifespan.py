@@ -4,13 +4,12 @@ from collections.abc import AsyncIterator
 from fastapi import FastAPI
 from fastapi_lifespan_manager import State
 from pydantic import BaseModel, ValidationError
-from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import wait_till_rabbitmq_responsive
 from settings_library.rabbit import RabbitSettings
 
 from .lifespan_utils import (
     LifespanOnStartupError,
-    mark_lifespace_called,
+    lifespan_context,
 )
 
 _logger = logging.getLogger(__name__)
@@ -33,10 +32,7 @@ async def rabbitmq_connectivity_lifespan(
     """
     _lifespan_name = f"{__name__}.{rabbitmq_connectivity_lifespan.__name__}"
 
-    with log_context(_logger, logging.INFO, _lifespan_name):
-
-        # Check if lifespan has already been called
-        called_state = mark_lifespace_called(state, _lifespan_name)
+    with lifespan_context(_logger, logging.INFO, _lifespan_name, state) as called_state:
 
         # Validate input state
         try:

@@ -5,12 +5,12 @@ from typing import Annotated
 
 from fastapi import FastAPI
 from fastapi_lifespan_manager import State
-from pydantic import BaseModel, ConfigDict, StringConstraints, ValidationError
+from pydantic import BaseModel, StringConstraints, ValidationError
 from servicelib.logging_utils import log_catch, log_context
 from settings_library.redis import RedisDatabase, RedisSettings
 
 from ..redis import RedisClientSDK
-from .lifespan_utils import LifespanOnStartupError, mark_lifespace_called
+from .lifespan_utils import LifespanOnStartupError, lifespan_context
 
 _logger = logging.getLogger(__name__)
 
@@ -24,17 +24,11 @@ class RedisLifespanState(BaseModel):
     REDIS_CLIENT_NAME: Annotated[str, StringConstraints(min_length=3, max_length=32)]
     REDIS_CLIENT_DB: RedisDatabase
 
-    model_config = ConfigDict(
-        extra="allow",
-        arbitrary_types_allowed=True,  # RedisClientSDK has some arbitrary types and this class will never be serialized
-    )
-
 
 async def redis_database_lifespan(_: FastAPI, state: State) -> AsyncIterator[State]:
-    with log_context(_logger, logging.INFO, f"{__name__}"):
+    _lifespan_name = f"{__name__}.{redis_database_lifespan.__name__}"
 
-        # Check if lifespan has already been called
-        called_state = mark_lifespace_called(state, "redis_database_lifespan")
+    with lifespan_context(_logger, logging.INFO, _lifespan_name, state) as called_state:
 
         # Validate input state
         try:
