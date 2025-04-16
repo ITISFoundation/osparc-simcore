@@ -52,6 +52,7 @@ def _decode_function(
             input_schema=function.input_schema,
             output_schema=function.output_schema,
             project_id=function.class_specific_data["project_id"],
+            default_inputs=function.default_inputs,
         )
     elif function.function_class == "solver":  # noqa: RET505
         return SolverFunction(
@@ -62,6 +63,7 @@ def _decode_function(
             output_schema=function.output_schema,
             solver_key=function.class_specific_data["solver_key"],
             solver_version=function.class_specific_data["solver_version"],
+            default_inputs=function.default_inputs,
         )
     else:
         msg = f"Unsupported function class: [{function.function_class}]"
@@ -72,36 +74,29 @@ def _encode_function(
     function: Function,
 ) -> FunctionDB:
     if function.function_class == FunctionClass.project:
-        return FunctionDB(
-            title=function.title,
-            description=function.description,
-            input_schema=function.input_schema,
-            output_schema=function.output_schema,
-            function_class=function.function_class,
-            default_inputs=function.default_inputs,
-            class_specific_data=FunctionClassSpecificData(
-                {
-                    "project_id": str(function.project_id),
-                }
-            ),
+        class_specific_data = FunctionClassSpecificData(
+            {"project_id": str(function.project_id)}
         )
-    elif function.function_class == FunctionClass.solver:  # noqa: RET505
-        return FunctionDB(
-            title=function.title,
-            description=function.description,
-            input_schema=function.input_schema,
-            output_schema=function.output_schema,
-            function_class=function.function_class,
-            class_specific_data=FunctionClassSpecificData(
-                {
-                    "solver_key": str(function.solver_key),
-                    "solver_version": str(function.solver_version),
-                }
-            ),
+    elif function.function_class == FunctionClass.solver:
+        class_specific_data = FunctionClassSpecificData(
+            {
+                "solver_key": str(function.solver_key),
+                "solver_version": str(function.solver_version),
+            }
         )
     else:
         msg = f"Unsupported function class: {function.function_class}"
         raise TypeError(msg)
+
+    return FunctionDB(
+        title=function.title,
+        description=function.description,
+        input_schema=function.input_schema,
+        output_schema=function.output_schema,
+        function_class=function.function_class,
+        default_inputs=function.default_inputs,
+        class_specific_data=class_specific_data,
+    )
 
 
 @router.expose()

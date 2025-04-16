@@ -53,6 +53,7 @@ async def create_function(
                 ),
                 function_class=function.function_class,
                 class_specific_data=function.class_specific_data,
+                default_inputs=function.default_inputs,
             )
             .returning(*_FUNCTIONS_TABLE_COLS)
         )
