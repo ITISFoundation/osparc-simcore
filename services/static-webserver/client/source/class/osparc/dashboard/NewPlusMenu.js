@@ -158,32 +158,30 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       return control || this.base(arguments, id);
     },
 
-    __addItems: async function() {
-      await this.__addNewStudyItems();
+    __addItems: function() {
+      this.__addNewStudyItems();
       this.__addMoreMenu();
       this.getChildControl("new-folder");
     },
 
-    __addNewStudyItems: async function() {
+    __addNewStudyItems: function() {
       const plusButtonConfig = osparc.store.Products.getInstance().getPlusButtonUiConfig();
       if (plusButtonConfig) {
-        await osparc.data.Resources.get("templates")
-          .then(templates => {
-            if (plusButtonConfig["categories"]) {
-              this.__addCategories(plusButtonConfig["categories"]);
-            }
-            plusButtonConfig["resources"].forEach(buttonConfig => {
-              if (buttonConfig["showDisabled"]) {
-                this.__addDisabledButton(buttonConfig);
-              } else if (buttonConfig["resourceType"] === "study") {
-                this.__addEmptyStudyButton(buttonConfig);
-              } else if (buttonConfig["resourceType"] === "template") {
-                this.__addFromTemplateButton(buttonConfig, templates);
-              } else if (buttonConfig["resourceType"] === "service") {
-                this.__addFromServiceButton(buttonConfig);
-              }
-            });
-          });
+        const templates = osparc.store.Templates.getInstance().getTemplates()
+        if (plusButtonConfig["categories"]) {
+          this.__addCategories(plusButtonConfig["categories"]);
+        }
+        plusButtonConfig["resources"].forEach(buttonConfig => {
+          if (buttonConfig["showDisabled"]) {
+            this.__addDisabledButton(buttonConfig);
+          } else if (buttonConfig["resourceType"] === "study") {
+            this.__addEmptyStudyButton(buttonConfig);
+          } else if (buttonConfig["resourceType"] === "template") {
+            this.__addFromTemplateButton(buttonConfig, templates);
+          } else if (buttonConfig["resourceType"] === "service") {
+            this.__addFromServiceButton(buttonConfig);
+          }
+        });
       }
     },
 

@@ -973,29 +973,27 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         newPlansBtn.setEnabled(true);
 
         newPlansBtn.addListener("tap", () => {
-          osparc.data.Resources.get("templates")
-            .then(templates => {
-              if (templates) {
-                const newStudies = new osparc.dashboard.NewStudies(newStudiesConfig);
-                newStudies.addListener("templatesLoaded", () => {
-                  newStudies.setGroupBy("category");
-                  const winTitle = this.tr("New Plan");
-                  const win = osparc.ui.window.Window.popUpInWindow(newStudies, winTitle, osparc.dashboard.NewStudies.WIDTH+40, 300).set({
-                    clickAwayClose: false,
-                    resizable: true
-                  });
-                  newStudies.addListener("newStudyClicked", e => {
-                    win.close();
-                    const templateInfo = e.getData();
-                    const templateData = templates.find(t => t.name === templateInfo.expectedTemplateLabel);
-                    if (templateData) {
-                      this.__newPlanBtnClicked(templateData, templateInfo.newStudyLabel);
-                    }
-                  });
-                  osparc.utils.Utils.setIdToWidget(win, "newStudiesWindow");
-                });
-              }
+          const templates = osparc.store.Templates.getInstance().getTemplates();
+          if (templates) {
+            const newStudies = new osparc.dashboard.NewStudies(newStudiesConfig);
+            newStudies.addListener("templatesLoaded", () => {
+              newStudies.setGroupBy("category");
+              const winTitle = this.tr("New Plan");
+              const win = osparc.ui.window.Window.popUpInWindow(newStudies, winTitle, osparc.dashboard.NewStudies.WIDTH+40, 300).set({
+                clickAwayClose: false,
+                resizable: true
+              });
+              newStudies.addListener("newStudyClicked", e => {
+                win.close();
+                const templateInfo = e.getData();
+                const templateData = templates.find(t => t.name === templateInfo.expectedTemplateLabel);
+                if (templateData) {
+                  this.__newPlanBtnClicked(templateData, templateInfo.newStudyLabel);
+                }
+              });
+              osparc.utils.Utils.setIdToWidget(win, "newStudiesWindow");
             });
+          }
         });
       }
     },

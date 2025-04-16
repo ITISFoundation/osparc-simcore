@@ -182,6 +182,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       const groupsStore = osparc.store.Groups.getInstance();
       preResourcePromises.push(groupsStore.fetchGroupsAndMembers());
       preResourcePromises.push(osparc.store.Services.getServicesLatest(false));
+      preResourcePromises.push(osparc.store.Templates.getInstance().fetchAllTemplates());
       Promise.all(preResourcePromises)
         .then(() => {
           [
