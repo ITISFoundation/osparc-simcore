@@ -83,11 +83,16 @@ qx.Class.define("osparc.data.model.StudyUI", {
     },
 
     templateType: {
-      check: "String",
+      check: [null, "tutorial", "hypertool"],
       init: null,
       nullable: true,
       event: "changeTemplateType",
     },
+  },
+
+  statics: {
+    STANDARD_TYPE: "tutorial",
+    HYPERTOOL_TYPE: "hypertool",
   },
 
   members: {

@@ -43,15 +43,35 @@ qx.Class.define("osparc.study.SaveAsTemplate", {
 
   members: {
     __studyDataClone: null,
+    __copyWData: null,
+    __templateTypeSB: null,
     __shareWith: null,
     __publishTemplateBtn: null,
-    __copyWData: null,
 
     __buildLayout: function() {
       const publishWithData = this.__copyWData = new qx.ui.form.CheckBox(this.tr("Publish with data")).set({
-        value: true
+        value: true,
+        iconPosition: "right",
       });
       this._add(publishWithData);
+
+      if (osparc.utils.DisabledPlugins.isHypertoolsEnabled()) {
+        const templateTypeSB = this.__templateTypeSB = new qx.ui.form.SelectBox();
+        const countries = osparc.store.StaticInfo.getInstance().getCountries();
+        [{
+          label: "Standard",
+          id: null,
+        }, {
+          label: "Hypertool",
+          id: "hypertool",
+        }]
+        countries.forEach(c => {
+          const cItem = new qx.ui.form.ListItem(c.name, null, c.alpha2).set({
+            rich: true
+          });
+          templateTypeSB.add(cItem);
+        });
+      }
 
       const shareWith = this.__shareWith = new osparc.share.ShareTemplateWith(this.__studyDataClone);
       this._add(shareWith);

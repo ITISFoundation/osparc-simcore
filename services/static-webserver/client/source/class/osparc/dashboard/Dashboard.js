@@ -225,13 +225,13 @@ qx.Class.define("osparc.dashboard.Dashboard", {
     },
 
     __createTemplateBrowser: function() {
-      const templateType = osparc.utils.DisabledPlugins.isHypertoolsEnabled() ? "tutorial" : null;
+      const templateType = osparc.utils.DisabledPlugins.isHypertoolsEnabled() ? osparc.data.model.StudyUI.STANDARD_TYPE : null;
       const templatesView = this.__templateBrowser = new osparc.dashboard.TemplateBrowser(templateType);
       return templatesView;
     },
 
     __createHypertoolsBrowser: function() {
-      const templateType = "Hypertools";
+      const templateType = osparc.data.model.StudyUI.HYPERTOOL_TYPE;
       const hypertoolsView = this.__hypertoolBrowser = new osparc.dashboard.TemplateBrowser(templateType);
       return hypertoolsView;
     },
