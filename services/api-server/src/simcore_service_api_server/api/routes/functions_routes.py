@@ -15,6 +15,7 @@ from models_library.api_schemas_webserver.functions_wb_schema import (
     FunctionOutputs,
     FunctionOutputSchema,
     ProjectFunctionJob,
+    SolverFunctionJob,
 )
 from pydantic import PositiveInt
 from servicelib.fastapi.dependencies import get_reverse_url_mapper
@@ -23,17 +24,19 @@ from ...models.schemas.errors import ErrorGet
 from ...models.schemas.jobs import (
     JobInputs,
 )
+from ...services_http.catalog import CatalogApi
 from ...services_http.director_v2 import DirectorV2Api
 from ...services_http.storage import StorageApi
 from ...services_http.webserver import AuthSession
 from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.authentication import get_current_user_id, get_product_name
+from ..dependencies.database import Engine, get_db_engine
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver_http import get_webserver_session
 from ..dependencies.webserver_rpc import (
     get_wb_api_rpc_client,
 )
-from . import studies_jobs
+from . import solvers_jobs, solvers_jobs_getters, studies_jobs
 
 function_router = APIRouter()
 function_job_router = APIRouter()
@@ -98,6 +101,7 @@ async def run_function(
     function_inputs: FunctionInputs,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     product_name: Annotated[str, Depends(get_product_name)],
+    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
 ):
 
     to_run_function = await wb_api_rpc.get_function(function_id=function_id)
@@ -141,7 +145,41 @@ async def run_function(
                 project_job_id=study_job.id,
             ),
         )
-    else:  # noqa: RET505
+    elif to_run_function.function_class == FunctionClass.solver:  # noqa: RET505
+        solver_job = await solvers_jobs.create_solver_job(
+            solver_key=to_run_function.solver_key,
+            version=to_run_function.solver_version,
+            inputs=JobInputs(values=function_inputs or {}),
+            webserver_api=webserver_api,
+            wb_api_rpc=wb_api_rpc,
+            url_for=url_for,
+            x_simcore_parent_project_uuid=None,
+            x_simcore_parent_node_id=None,
+            user_id=user_id,
+            product_name=product_name,
+            catalog_client=catalog_client,
+        )
+        await solvers_jobs.start_job(
+            request=request,
+            solver_key=to_run_function.solver_key,
+            version=to_run_function.solver_version,
+            job_id=solver_job.id,
+            user_id=user_id,
+            webserver_api=webserver_api,
+            director2_api=director2_api,
+        )
+        return await register_function_job(
+            wb_api_rpc=wb_api_rpc,
+            function_job=SolverFunctionJob(
+                function_uid=to_run_function.uid,
+                title=f"Function job of function {to_run_function.uid}",
+                description=to_run_function.description,
+                inputs=function_inputs,
+                outputs=None,
+                solver_job_id=solver_job.id,
+            ),
+        )
+    else:
         msg = f"Function type {type(to_run_function)} not supported"
         raise TypeError(msg)
 
@@ -276,12 +314,23 @@ async def function_job_status(
     ):
         job_status = await studies_jobs.inspect_study_job(
             study_id=function.project_id,
-            job_id=function_job.project_job_id,
+            job_id=function_job.project_job_id,  # type: ignore
             user_id=user_id,
             director2_api=director2_api,
         )
         return FunctionJobStatus(status=job_status.state)
-    else:  # noqa: RET505
+    elif (function.function_class == FunctionClass.solver) and (  # noqa: RET505
+        function_job.function_class == FunctionClass.solver
+    ):
+        job_status = await solvers_jobs.inspect_job(
+            solver_key=function.solver_key,
+            version=function.solver_version,
+            job_id=function_job.solver_job_id,
+            user_id=user_id,
+            director2_api=director2_api,
+        )
+        return FunctionJobStatus(status=job_status.state)
+    else:
         msg = f"Function type {function.function_class} / Function job type {function_job.function_class} not supported"
         raise TypeError(msg)
 
@@ -298,27 +347,41 @@ async def function_job_outputs(
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
+    db_engine: Annotated[Engine, Depends(get_db_engine)],
 ):
     function, function_job = await get_function_from_functionjobid(
         wb_api_rpc=wb_api_rpc, function_job_id=function_job_id
     )
 
     if (
-        function.function_class != FunctionClass.project
-        or function_job.function_class != FunctionClass.project
+        function.function_class == FunctionClass.project
+        and function_job.function_class == FunctionClass.project
     ):
-        msg = f"Function type {function.function_class} not supported"
-        raise TypeError(msg)
-    else:  # noqa: RET506
         job_outputs = await studies_jobs.get_study_job_outputs(
             study_id=function.project_id,
-            job_id=function_job.project_job_id,
+            job_id=function_job.project_job_id,  # type: ignore
             user_id=user_id,
             webserver_api=webserver_api,
             storage_client=storage_client,
         )
 
         return job_outputs.results
+    elif (function.function_class == FunctionClass.solver) and (  # noqa: RET505
+        function_job.function_class == FunctionClass.solver
+    ):
+        job_outputs = await solvers_jobs_getters.get_job_outputs(
+            solver_key=function.solver_key,
+            version=function.solver_version,
+            job_id=function_job.solver_job_id,
+            user_id=user_id,
+            webserver_api=webserver_api,
+            storage_client=storage_client,
+            db_engine=db_engine,
+        )
+        return job_outputs.results
+    else:
+        msg = f"Function type {function.function_class} not supported"
+        raise TypeError(msg)
 
 
 @function_router.post(
@@ -337,6 +400,7 @@ async def map_function(
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     product_name: Annotated[str, Depends(get_product_name)],
+    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
 ):
     function_jobs = []
     for function_inputs in function_inputs_list:
@@ -351,6 +415,7 @@ async def map_function(
                 url_for=url_for,
                 director2_api=director2_api,
                 request=request,
+                catalog_client=catalog_client,
             )
             for function_inputs in function_inputs_list
         ]
