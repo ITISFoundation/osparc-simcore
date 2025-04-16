@@ -20,7 +20,6 @@ from simcore_sdk.node_ports_common.filemanager import (
 
 from ..._service_job import JobService
 from ..._service_programs import ProgramService
-from ...api.dependencies.program_service import get_program_service
 from ...models.basic_types import VersionStr
 from ...models.schemas.jobs import Job, JobInputs
 from ...models.schemas.programs import Program, ProgramKeyId
@@ -70,7 +69,7 @@ async def get_program_release(
     program_key: ProgramKeyId,
     version: VersionStr,
     user_id: Annotated[int, Depends(get_current_user_id)],
-    program_service: Annotated[ProgramService, Depends(get_program_service)],
+    program_service: Annotated[ProgramService, Depends(ProgramService)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
 ) -> Program:
@@ -109,7 +108,7 @@ async def create_program_job(
     program_key: ProgramKeyId,
     version: VersionStr,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
-    program_service: Annotated[ProgramService, Depends(get_program_service)],
+    program_service: Annotated[ProgramService, Depends(ProgramService)],
     job_service: Annotated[JobService, Depends(get_job_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],

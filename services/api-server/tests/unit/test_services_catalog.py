@@ -41,7 +41,7 @@ async def test_catalog_service_read_solvers(
     mocker: MockerFixture,
     mocked_rpc_catalog_service_api: dict[str, MockType],
 ):
-    catalog_service = CatalogService(_client=mocker.MagicMock())
+    catalog_service = CatalogService(client=mocker.MagicMock())
     catalog_service.set_to_app_state(app=FastAPI())
 
     # Step 1: List latest releases in a page

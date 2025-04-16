@@ -8,7 +8,7 @@ from settings_library.rabbit import RabbitSettings
 from ..api.dependencies.rabbitmq import get_rabbitmq_rpc_client
 from ..core.health_checker import ApiServerHealthChecker
 from ..services_http.log_streaming import LogDistributor
-from ..services_rpc import catalog, resource_usage_tracker, wb_api_server
+from ..services_rpc import resource_usage_tracker, wb_api_server
 
 _logger = logging.getLogger(__name__)
 
@@ -39,7 +39,6 @@ def setup_rabbitmq(app: FastAPI) -> None:
             app.state.settings.API_SERVER_HEALTH_CHECK_TASK_PERIOD_SECONDS
         )
         # setup rpc clients
-        catalog.setup(app, get_rabbitmq_rpc_client(app))
         resource_usage_tracker.setup(app, get_rabbitmq_rpc_client(app))
         wb_api_server.setup(app, get_rabbitmq_rpc_client(app))
 

@@ -1,6 +1,6 @@
-from dataclasses import dataclass
+from typing import Annotated
 
-from fastapi import FastAPI
+from fastapi import Depends
 from models_library.api_schemas_catalog.services import LatestServiceGet, ServiceGetV2
 from models_library.products import ProductName
 from models_library.rest_pagination import (
@@ -16,11 +16,17 @@ from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
 
+from ..api.dependencies.rabbitmq import get_rabbitmq_rpc_client
 
-@dataclass
+
 class CatalogService(SingletonInAppStateMixin):
     app_state_name = "CatalogService"
     _client: RabbitMQRPCClient
+
+    def __init__(
+        self, client: Annotated[RabbitMQRPCClient, Depends(get_rabbitmq_rpc_client)]
+    ):
+        self._client = client
 
     async def list_latest_releases(
         self,
@@ -88,8 +94,3 @@ class CatalogService(SingletonInAppStateMixin):
             service_key=service_key,
             service_version=service_version,
         )
-
-
-def setup(app: FastAPI, rabbitmq_rmp_client: RabbitMQRPCClient):
-    catalog_service = CatalogService(_client=rabbitmq_rmp_client)
-    catalog_service.set_to_app_state(app=app)

@@ -16,9 +16,6 @@ from pytest_simcore.helpers.httpx_calls_capture_models import (
 )
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server._service_programs import ProgramService
-from simcore_service_api_server.api.dependencies.program_service import (
-    get_program_service,
-)
 from simcore_service_api_server.models.schemas.jobs import Job
 from simcore_service_api_server.models.schemas.programs import Program
 from simcore_service_api_server.services_rpc.catalog import CatalogService
@@ -28,12 +25,12 @@ from simcore_service_api_server.services_rpc.catalog import CatalogService
 def mock_program_service(mocker: MockerFixture, app: FastAPI):
 
     def _get_program_service():
-        catalog_service = CatalogService(_client=mocker.MagicMock())
+        catalog_service = CatalogService(client=mocker.MagicMock())
         return ProgramService(_catalog_service=catalog_service)
 
-    app.dependency_overrides[get_program_service] = _get_program_service
+    app.dependency_overrides[ProgramService] = _get_program_service
     yield
-    app.dependency_overrides.pop(get_program_service)
+    app.dependency_overrides.pop(ProgramService)
 
 
 async def test_get_program_release(
