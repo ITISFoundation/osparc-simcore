@@ -4,6 +4,15 @@ from typing import cast
 
 from fastapi import FastAPI
 from fastapi_pagination import create_page
+from models_library.api_schemas_webserver.functions_wb_schema import (
+    Function,
+    FunctionID,
+    FunctionInputs,
+    FunctionInputSchema,
+    FunctionJob,
+    FunctionJobID,
+    FunctionOutputSchema,
+)
 from models_library.api_schemas_webserver.licensed_items import LicensedItemRpcGetPage
 from models_library.licenses import LicensedItemID
 from models_library.products import ProductName
@@ -29,8 +38,44 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     NotEnoughAvailableSeatsError,
 )
 from servicelib.rabbitmq.rpc_interfaces.webserver import projects as projects_rpc
-from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions import (
+from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interface import (
+    delete_function as _delete_function,
+)
+from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interface import (
+    delete_function_job as _delete_function_job,
+)
+from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interface import (
+    find_cached_function_job as _find_cached_function_job,
+)
+from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interface import (
+    get_function as _get_function,
+)
+from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interface import (
+    get_function_input_schema as _get_function_input_schema,
+)
+from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interface import (
+    get_function_job as _get_function_job,
+)
+from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interface import (
+    get_function_output_schema as _get_function_output_schema,
+)
+from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interface import (
+    list_function_jobs as _list_function_jobs,
+)
+from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interface import (
+    list_functions as _list_functions,
+)
+from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interface import (
     ping as _ping,
+)
+from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interface import (
+    register_function as _register_function,
+)
+from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interface import (
+    register_function_job as _register_function_job,
+)
+from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interface import (
+    run_function as _run_function,
 )
 from servicelib.rabbitmq.rpc_interfaces.webserver.licenses.licensed_items import (
     checkout_licensed_item_for_wallet as _checkout_licensed_item_for_wallet,
@@ -218,6 +263,65 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             project_uuid=project_uuid,
             job_parent_resource_name=job_parent_resource_name,
         )
+
+    async def register_function(self, *, function: Function) -> Function:
+        function.input_schema = (
+            FunctionInputSchema(**function.input_schema.model_dump())
+            if function.input_schema is not None
+            else None
+        )
+        function.output_schema = (
+            FunctionOutputSchema(**function.output_schema.model_dump())
+            if function.output_schema is not None
+            else None
+        )
+        return await _register_function(
+            self._client,
+            function=function,
+        )
+
+    async def get_function(self, *, function_id: FunctionID) -> Function:
+        return await _get_function(self._client, function_id=function_id)
+
+    async def delete_function(self, *, function_id: FunctionID) -> None:
+        return await _delete_function(self._client, function_id=function_id)
+
+    async def list_functions(self) -> list[Function]:
+        return await _list_functions(self._client)
+
+    async def run_function(
+        self, *, function_id: FunctionID, inputs: FunctionInputs
+    ) -> FunctionJob:
+        return await _run_function(self._client, function_id=function_id, inputs=inputs)
+
+    async def get_function_job(self, *, function_job_id: FunctionJobID) -> FunctionJob:
+        return await _get_function_job(self._client, function_job_id=function_job_id)
+
+    async def delete_function_job(self, *, function_job_id: FunctionJobID) -> None:
+        return await _delete_function_job(self._client, function_job_id=function_job_id)
+
+    async def register_function_job(self, *, function_job: FunctionJob) -> FunctionJob:
+        return await _register_function_job(self._client, function_job=function_job)
+
+    async def get_function_input_schema(
+        self, *, function_id: FunctionID
+    ) -> FunctionInputSchema:
+        return await _get_function_input_schema(self._client, function_id=function_id)
+
+    async def get_function_output_schema(
+        self, *, function_id: FunctionID
+    ) -> FunctionOutputSchema:
+        return await _get_function_output_schema(self._client, function_id=function_id)
+
+    async def find_cached_function_job(
+        self, *, function_id: FunctionID, inputs: FunctionInputs
+    ) -> FunctionJob | None:
+        return await _find_cached_function_job(
+            self._client, function_id=function_id, inputs=inputs
+        )
+
+    async def list_function_jobs(self) -> list[FunctionJob]:
+        return await _list_function_jobs(self._client)
 
 
 def setup(app: FastAPI, rabbitmq_rmp_client: RabbitMQRPCClient):
