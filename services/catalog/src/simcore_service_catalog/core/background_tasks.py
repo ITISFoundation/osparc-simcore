@@ -89,7 +89,7 @@ async def _create_services_in_database(
             )
 
             # set the service in the DB
-            _is_legacy_dynamic_service: bool = (
+            _is_classic_dynamic_service: bool = (
                 service_metadata.inputs_path is None
                 and service_metadata.outputs_path is None
                 and service_metadata.state_paths is None
@@ -98,7 +98,7 @@ async def _create_services_in_database(
                 ServiceMetaDataDBCreate(
                     **service_metadata.model_dump(exclude_unset=True, exclude={""}),
                     owner=owner_gid,
-                    is_legacy_dynamic_service=_is_legacy_dynamic_service,
+                    _is_classic_dynamic_service=_is_classic_dynamic_service,
                 ),
                 service_access_rights,
             )
