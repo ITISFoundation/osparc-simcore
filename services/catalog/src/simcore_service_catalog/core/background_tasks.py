@@ -90,9 +90,9 @@ async def _create_services_in_database(
 
             # set the service in the DB
             _is_legacy_dynamic_service: bool = (
-                service_metadata.inputs_path is not None
-                and ervice_metadata.outputs_path is not None
-                and service_metadata.state_paths is not None
+                service_metadata.inputs_path is None
+                and service_metadata.outputs_path is None
+                and service_metadata.state_paths is None
             )
             await services_repo.create_or_update_service(
                 ServiceMetaDataDBCreate(
