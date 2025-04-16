@@ -8804,6 +8804,12 @@
       },
       "ProjectFunction": {
         "properties": {
+          "function_class": {
+            "type": "string",
+            "const": "project",
+            "title": "Function Class",
+            "default": "project"
+          },
           "uid": {
             "anyOf": [
               {
@@ -8838,12 +8844,6 @@
             ],
             "title": "Description"
           },
-          "function_class": {
-            "type": "string",
-            "const": "project",
-            "title": "Function Class",
-            "default": "project"
-          },
           "input_schema": {
             "anyOf": [
               {
@@ -8863,6 +8863,17 @@
                 "type": "null"
               }
             ]
+          },
+          "default_inputs": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Inputs"
           },
           "project_id": {
             "type": "string",
@@ -8960,6 +8971,12 @@
       },
       "PythonCodeFunction": {
         "properties": {
+          "function_class": {
+            "type": "string",
+            "const": "python_code",
+            "title": "Function Class",
+            "default": "python_code"
+          },
           "uid": {
             "anyOf": [
               {
@@ -8994,12 +9011,6 @@
             ],
             "title": "Description"
           },
-          "function_class": {
-            "type": "string",
-            "const": "python_code",
-            "title": "Function Class",
-            "default": "python_code"
-          },
           "input_schema": {
             "anyOf": [
               {
@@ -9019,6 +9030,17 @@
                 "type": "null"
               }
             ]
+          },
+          "default_inputs": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Inputs"
           },
           "code_url": {
             "type": "string",
@@ -9246,6 +9268,12 @@
       },
       "SolverFunction": {
         "properties": {
+          "function_class": {
+            "type": "string",
+            "const": "solver",
+            "title": "Function Class",
+            "default": "solver"
+          },
           "uid": {
             "anyOf": [
               {
@@ -9280,12 +9308,6 @@
             ],
             "title": "Description"
           },
-          "function_class": {
-            "type": "string",
-            "const": "solver",
-            "title": "Function Class",
-            "default": "solver"
-          },
           "input_schema": {
             "anyOf": [
               {
@@ -9305,6 +9327,17 @@
                 "type": "null"
               }
             ]
+          },
+          "default_inputs": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Inputs"
           },
           "solver_key": {
             "type": "string",

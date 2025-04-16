@@ -65,6 +65,12 @@ functions = sa.Table(
         nullable=True,
         doc="Fields specific for a function class",
     ),
+    sa.Column(
+        "default_inputs",
+        sa.JSON,
+        nullable=True,
+        doc="Default inputs of the function",
+    ),
     sa.PrimaryKeyConstraint("uuid", name="functions_pk"),
 )
 

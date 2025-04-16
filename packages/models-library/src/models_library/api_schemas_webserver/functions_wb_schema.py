@@ -45,21 +45,23 @@ FunctionOutputs: TypeAlias = dict[str, Any] | None
 
 
 class FunctionBase(BaseModel):
+    function_class: FunctionClass
     uid: FunctionID | None = None
     title: str | None = None
     description: str | None = None
-    function_class: FunctionClass
     input_schema: FunctionInputSchema | None = None
     output_schema: FunctionOutputSchema | None = None
+    default_inputs: FunctionInputs | None = None
 
 
 class FunctionDB(BaseModel):
+    function_class: FunctionClass
     uuid: FunctionJobID | None = None
     title: str | None = None
     description: str | None = None
-    function_class: FunctionClass
     input_schema: FunctionInputSchema | None = None
     output_schema: FunctionOutputSchema | None = None
+    default_inputs: FunctionInputs | None = None
     class_specific_data: FunctionClassSpecificData
 
 
