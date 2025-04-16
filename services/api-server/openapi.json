@@ -5316,13 +5316,17 @@
                       },
                       {
                         "$ref": "#/components/schemas/PythonCodeFunction"
+                      },
+                      {
+                        "$ref": "#/components/schemas/SolverFunction"
                       }
                     ],
                     "discriminator": {
                       "propertyName": "function_class",
                       "mapping": {
                         "project": "#/components/schemas/ProjectFunction",
-                        "python_code": "#/components/schemas/PythonCodeFunction"
+                        "python_code": "#/components/schemas/PythonCodeFunction",
+                        "solver": "#/components/schemas/SolverFunction"
                       }
                     }
                   },
@@ -5351,6 +5355,9 @@
                   },
                   {
                     "$ref": "#/components/schemas/PythonCodeFunction"
+                  },
+                  {
+                    "$ref": "#/components/schemas/SolverFunction"
                   }
                 ],
                 "title": "Function",
@@ -5358,7 +5365,8 @@
                   "propertyName": "function_class",
                   "mapping": {
                     "project": "#/components/schemas/ProjectFunction",
-                    "python_code": "#/components/schemas/PythonCodeFunction"
+                    "python_code": "#/components/schemas/PythonCodeFunction",
+                    "solver": "#/components/schemas/SolverFunction"
                   }
                 }
               }
@@ -5378,6 +5386,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/PythonCodeFunction"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SolverFunction"
                     }
                   ],
                   "title": "Response Register Function V0 Functions Post",
@@ -5385,7 +5396,8 @@
                     "propertyName": "function_class",
                     "mapping": {
                       "project": "#/components/schemas/ProjectFunction",
-                      "python_code": "#/components/schemas/PythonCodeFunction"
+                      "python_code": "#/components/schemas/PythonCodeFunction",
+                      "solver": "#/components/schemas/SolverFunction"
                     }
                   }
                 }
@@ -5437,13 +5449,17 @@
                     },
                     {
                       "$ref": "#/components/schemas/PythonCodeFunction"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SolverFunction"
                     }
                   ],
                   "discriminator": {
                     "propertyName": "function_class",
                     "mapping": {
                       "project": "#/components/schemas/ProjectFunction",
-                      "python_code": "#/components/schemas/PythonCodeFunction"
+                      "python_code": "#/components/schemas/PythonCodeFunction",
+                      "solver": "#/components/schemas/SolverFunction"
                     }
                   },
                   "title": "Response Get Function V0 Functions  Function Id  Get"
@@ -5504,13 +5520,17 @@
                     },
                     {
                       "$ref": "#/components/schemas/PythonCodeFunction"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SolverFunction"
                     }
                   ],
                   "discriminator": {
                     "propertyName": "function_class",
                     "mapping": {
                       "project": "#/components/schemas/ProjectFunction",
-                      "python_code": "#/components/schemas/PythonCodeFunction"
+                      "python_code": "#/components/schemas/PythonCodeFunction",
+                      "solver": "#/components/schemas/SolverFunction"
                     }
                   },
                   "title": "Response Delete Function V0 Functions  Function Id  Delete"
@@ -5596,13 +5616,17 @@
                     },
                     {
                       "$ref": "#/components/schemas/PythonCodeFunctionJob"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SolverFunctionJob"
                     }
                   ],
                   "discriminator": {
                     "propertyName": "function_class",
                     "mapping": {
                       "project": "#/components/schemas/ProjectFunctionJob",
-                      "python_code": "#/components/schemas/PythonCodeFunctionJob"
+                      "python_code": "#/components/schemas/PythonCodeFunctionJob",
+                      "solver": "#/components/schemas/SolverFunctionJob"
                     }
                   },
                   "title": "Response Run Function V0 Functions  Function Id  Run Post"
@@ -5801,13 +5825,17 @@
                       },
                       {
                         "$ref": "#/components/schemas/PythonCodeFunctionJob"
+                      },
+                      {
+                        "$ref": "#/components/schemas/SolverFunctionJob"
                       }
                     ],
                     "discriminator": {
                       "propertyName": "function_class",
                       "mapping": {
                         "project": "#/components/schemas/ProjectFunctionJob",
-                        "python_code": "#/components/schemas/PythonCodeFunctionJob"
+                        "python_code": "#/components/schemas/PythonCodeFunctionJob",
+                        "solver": "#/components/schemas/SolverFunctionJob"
                       }
                     }
                   },
@@ -5860,13 +5888,17 @@
                       },
                       {
                         "$ref": "#/components/schemas/PythonCodeFunctionJob"
+                      },
+                      {
+                        "$ref": "#/components/schemas/SolverFunctionJob"
                       }
                     ],
                     "discriminator": {
                       "propertyName": "function_class",
                       "mapping": {
                         "project": "#/components/schemas/ProjectFunctionJob",
-                        "python_code": "#/components/schemas/PythonCodeFunctionJob"
+                        "python_code": "#/components/schemas/PythonCodeFunctionJob",
+                        "solver": "#/components/schemas/SolverFunctionJob"
                       }
                     }
                   },
@@ -5895,6 +5927,9 @@
                   },
                   {
                     "$ref": "#/components/schemas/PythonCodeFunctionJob"
+                  },
+                  {
+                    "$ref": "#/components/schemas/SolverFunctionJob"
                   }
                 ],
                 "title": "Function Job",
@@ -5902,7 +5937,8 @@
                   "propertyName": "function_class",
                   "mapping": {
                     "project": "#/components/schemas/ProjectFunctionJob",
-                    "python_code": "#/components/schemas/PythonCodeFunctionJob"
+                    "python_code": "#/components/schemas/PythonCodeFunctionJob",
+                    "solver": "#/components/schemas/SolverFunctionJob"
                   }
                 }
               }
@@ -5922,6 +5958,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/PythonCodeFunctionJob"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SolverFunctionJob"
                     }
                   ],
                   "title": "Response Register Function Job V0 Function Jobs Post",
@@ -5929,7 +5968,8 @@
                     "propertyName": "function_class",
                     "mapping": {
                       "project": "#/components/schemas/ProjectFunctionJob",
-                      "python_code": "#/components/schemas/PythonCodeFunctionJob"
+                      "python_code": "#/components/schemas/PythonCodeFunctionJob",
+                      "solver": "#/components/schemas/SolverFunctionJob"
                     }
                   }
                 }
@@ -5981,13 +6021,17 @@
                     },
                     {
                       "$ref": "#/components/schemas/PythonCodeFunctionJob"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SolverFunctionJob"
                     }
                   ],
                   "discriminator": {
                     "propertyName": "function_class",
                     "mapping": {
                       "project": "#/components/schemas/ProjectFunctionJob",
-                      "python_code": "#/components/schemas/PythonCodeFunctionJob"
+                      "python_code": "#/components/schemas/PythonCodeFunctionJob",
+                      "solver": "#/components/schemas/SolverFunctionJob"
                     }
                   },
                   "title": "Response Get Function Job V0 Function Jobs  Function Job Id  Get"
@@ -9055,16 +9099,11 @@
             "const": "python_code",
             "title": "Function Class",
             "default": "python_code"
-          },
-          "code_url": {
-            "type": "string",
-            "title": "Code Url"
           }
         },
         "type": "object",
         "required": [
-          "function_uid",
-          "code_url"
+          "function_uid"
         ],
         "title": "PythonCodeFunctionJob"
       },
@@ -9204,6 +9243,167 @@
           "url": "https://api.osparc.io/v0/solvers/simcore%2Fservices%2Fcomp%2Fisolve/releases/2.1.1",
           "version": "2.1.1"
         }
+      },
+      "SolverFunction": {
+        "properties": {
+          "uid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uid"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "function_class": {
+            "type": "string",
+            "const": "solver",
+            "title": "Function Class",
+            "default": "solver"
+          },
+          "input_schema": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FunctionInputSchema"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "output_schema": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FunctionOutputSchema"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "solver_key": {
+            "type": "string",
+            "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+            "title": "Solver Key"
+          },
+          "solver_version": {
+            "type": "string",
+            "title": "Solver Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "solver_key",
+          "solver_version"
+        ],
+        "title": "SolverFunction"
+      },
+      "SolverFunctionJob": {
+        "properties": {
+          "uid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uid"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "function_uid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Function Uid"
+          },
+          "inputs": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inputs"
+          },
+          "outputs": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outputs"
+          },
+          "function_class": {
+            "type": "string",
+            "const": "solver",
+            "title": "Function Class",
+            "default": "solver"
+          },
+          "solver_job_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Solver Job Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "function_uid",
+          "solver_job_id"
+        ],
+        "title": "SolverFunctionJob"
       },
       "SolverPort": {
         "properties": {

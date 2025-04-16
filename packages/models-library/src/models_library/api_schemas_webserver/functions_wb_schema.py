@@ -3,7 +3,9 @@ from typing import Annotated, Any, Literal, TypeAlias
 from uuid import UUID
 
 from models_library import projects
-from pydantic import BaseModel, Field
+from models_library.basic_regex import SIMPLE_VERSION_RE
+from models_library.services_regex import COMPUTATIONAL_SERVICE_KEY_RE
+from pydantic import BaseModel, Field, StringConstraints
 
 from ..projects import ProjectID
 
@@ -26,6 +28,7 @@ class FunctionOutputSchema(FunctionSchema): ...
 
 class FunctionClass(str, Enum):
     project = "project"
+    solver = "solver"
     python_code = "python_code"
 
 
@@ -75,13 +78,28 @@ class ProjectFunction(FunctionBase):
     project_id: ProjectID
 
 
+SolverKeyId = Annotated[
+    str, StringConstraints(strip_whitespace=True, pattern=COMPUTATIONAL_SERVICE_KEY_RE)
+]
+VersionStr: TypeAlias = Annotated[
+    str, StringConstraints(strip_whitespace=True, pattern=SIMPLE_VERSION_RE)
+]
+SolverJobID: TypeAlias = UUID
+
+
+class SolverFunction(FunctionBase):
+    function_class: Literal[FunctionClass.solver] = FunctionClass.solver
+    solver_key: SolverKeyId
+    solver_version: str
+
+
 class PythonCodeFunction(FunctionBase):
     function_class: Literal[FunctionClass.python_code] = FunctionClass.python_code
     code_url: str
 
 
 Function: TypeAlias = Annotated[
-    ProjectFunction | PythonCodeFunction,
+    ProjectFunction | PythonCodeFunction | SolverFunction,
     Field(discriminator="function_class"),
 ]
 
@@ -103,13 +121,17 @@ class ProjectFunctionJob(FunctionJobBase):
     project_job_id: ProjectID
 
 
+class SolverFunctionJob(FunctionJobBase):
+    function_class: Literal[FunctionClass.solver] = FunctionClass.solver
+    solver_job_id: ProjectID
+
+
 class PythonCodeFunctionJob(FunctionJobBase):
     function_class: Literal[FunctionClass.python_code] = FunctionClass.python_code
-    code_url: str
 
 
 FunctionJob: TypeAlias = Annotated[
-    ProjectFunctionJob | PythonCodeFunctionJob,
+    ProjectFunctionJob | PythonCodeFunctionJob | SolverFunctionJob,
     Field(discriminator="function_class"),
 ]
 
