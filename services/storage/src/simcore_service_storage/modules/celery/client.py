@@ -14,7 +14,6 @@ from settings_library.celery import CelerySettings
 
 from .models import (
     TaskContext,
-    TaskID,
     TaskInfoStore,
     TaskMetadata,
     TaskState,
@@ -46,12 +45,11 @@ class CeleryTaskClient:
         with log_context(
             _logger,
             logging.DEBUG,
-            msg=f"Submit {task_name=}: {task_context=} {task_params=}",
+            msg=f"Submit {task_metadata.name=}: {task_context=} {task_params=}",
         ):
             task_uuid = uuid4()
-            task_metadata = task_metadata or TaskMetadata()
             self._celery_app.send_task(
-                task_name,
+                task_metadata.name,
                 task_id=build_task_id(task_context, task_uuid),
                 kwargs=task_params,
                 queue=task_metadata.queue.value,
@@ -68,8 +66,10 @@ class CeleryTaskClient:
             return task_uuid
 
     @make_async()
-    def _abort_task(self, task_id: TaskID) -> None:
-        AbortableAsyncResult(task_id, app=self._celery_app).abort()
+    def _abort_task(self, task_context: TaskContext, task_uuid: TaskUUID) -> None:
+        AbortableAsyncResult(
+            build_task_id(task_context, task_uuid), app=self._celery_app
+        ).abort()
 
     async def abort_task(self, task_context: TaskContext, task_uuid: TaskUUID) -> None:
         with log_context(
@@ -77,8 +77,7 @@ class CeleryTaskClient:
             logging.DEBUG,
             msg=f"Abort task: {task_context=} {task_uuid=}",
         ):
-            task_id = build_task_id(task_context, task_uuid)
-            await self._abort_task(task_id)
+            await self._abort_task(task_context, task_uuid)
 
     async def get_task_result(
         self, task_context: TaskContext, task_uuid: TaskUUID
@@ -92,16 +91,18 @@ class CeleryTaskClient:
             async_result = self._celery_app.AsyncResult(task_id)
             result = async_result.result
             if async_result.ready():
-                task_metadata = await self._task_store.get_metadata(task_id)
+                task_metadata = await self._task_store.get_metadata(
+                    task_context, task_uuid
+                )
                 if task_metadata is not None and task_metadata.ephemeral:
-                    await self._task_store.remove(task_id)
+                    await self._task_store.remove(task_context, task_uuid)
             return result
 
     async def _get_progress_report(
-        self, task_id: TaskID, state: TaskState
+        self, task_context: TaskContext, task_uuid: TaskUUID, state: TaskState
     ) -> ProgressReport:
         if state in (TaskState.STARTED, TaskState.RETRY, TaskState.ABORTED):
-            progress = await self._task_store.get_progress(task_id)
+            progress = await self._task_store.get_progress(task_context, task_uuid)
             if progress is not None:
                 return progress
         if state in (
