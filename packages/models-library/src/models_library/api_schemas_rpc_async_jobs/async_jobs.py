@@ -23,7 +23,7 @@ class AsyncJobResult(BaseModel):
 
 class AsyncJobGet(BaseModel):
     job_id: AsyncJobId
-    job_name: AsyncJobName | None
+    job_name: AsyncJobName
 
 
 class AsyncJobAbort(BaseModel):

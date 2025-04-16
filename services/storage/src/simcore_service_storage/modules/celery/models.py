@@ -4,7 +4,7 @@ from typing import Any, Final, Protocol, TypeAlias
 from uuid import UUID
 
 from models_library.progress_bar import ProgressReport
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 TaskContext: TypeAlias = dict[str, Any]
 TaskID: TypeAlias = str
@@ -41,9 +41,16 @@ class TasksQueue(StrEnum):
 
 
 class TaskMetadata(BaseModel):
-    name: TaskName | None
+    name: TaskName
     ephemeral: bool = True
     queue: TasksQueue = TasksQueue.DEFAULT
+
+    @model_validator(mode="before")
+    @classmethod
+    def _legacy_name_if_missing(cls, data: Any) -> Any:
+        if isinstance(data, dict) and "name" not in data:
+            data["name"] = ""
+        return data
 
 
 class Task(BaseModel):
