@@ -38,10 +38,9 @@ class CeleryTaskClient:
 
     async def send_task(
         self,
-        task_name: str,
+        task_metadata: TaskMetadata,
         *,
         task_context: TaskContext,
-        task_metadata: TaskMetadata | None = None,
         **task_params,
     ) -> TaskUUID:
         with log_context(
@@ -50,11 +49,10 @@ class CeleryTaskClient:
             msg=f"Submit {task_name=}: {task_context=} {task_params=}",
         ):
             task_uuid = uuid4()
-            task_id = build_task_id(task_context, task_uuid)
             task_metadata = task_metadata or TaskMetadata()
             self._celery_app.send_task(
                 task_name,
-                task_id=task_id,
+                task_id=build_task_id(task_context, task_uuid),
                 kwargs=task_params,
                 queue=task_metadata.queue.value,
             )
@@ -64,7 +62,9 @@ class CeleryTaskClient:
                 if task_metadata.ephemeral
                 else self._celery_settings.CELERY_RESULT_EXPIRES
             )
-            await self._task_store.set_metadata(task_id, task_metadata, expiry=expiry)
+            await self._task_store.create(
+                task_context, task_uuid, task_metadata, expiry=expiry
+            )
             return task_uuid
 
     @make_async()

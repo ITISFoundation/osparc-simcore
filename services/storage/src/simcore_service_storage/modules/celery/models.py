@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 TaskContext: TypeAlias = dict[str, Any]
 TaskID: TypeAlias = str
+TaskName: TypeAlias = str
 TaskUUID: TypeAlias = UUID
 
 _CELERY_TASK_ID_KEY_SEPARATOR: Final[str] = ":"
@@ -40,6 +41,7 @@ class TasksQueue(StrEnum):
 
 
 class TaskMetadata(BaseModel):
+    name: TaskName
     ephemeral: bool = True
     queue: TasksQueue = TasksQueue.DEFAULT
 
@@ -50,6 +52,14 @@ _TASK_DONE = {TaskState.SUCCESS, TaskState.FAILURE, TaskState.ABORTED}
 class TaskInfoStore(Protocol):
     async def exists(self, task_id: TaskID) -> bool: ...
 
+    async def create(
+        self,
+        task_context: TaskContext,
+        task_uuid: TaskUUID,
+        task_metadata: TaskMetadata,
+        expiry: timedelta,
+    ) -> None: ...
+
     async def get_progress(self, task_id: TaskID) -> ProgressReport | None: ...
 
     async def get_metadata(self, task_id: TaskID) -> TaskMetadata | None: ...
@@ -57,10 +67,6 @@ class TaskInfoStore(Protocol):
     async def get_uuids(self, task_context: TaskContext) -> set[TaskUUID]: ...
 
     async def remove(self, task_id: TaskID) -> None: ...
-
-    async def set_metadata(
-        self, task_id: TaskID, task_metadata: TaskMetadata, expiry: timedelta
-    ) -> None: ...
 
     async def set_progress(self, task_id: TaskID, report: ProgressReport) -> None: ...
 
