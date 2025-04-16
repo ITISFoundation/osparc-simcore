@@ -10,7 +10,7 @@ from servicelib.logging_utils import log_catch, log_context
 from settings_library.redis import RedisDatabase, RedisSettings
 
 from ..redis import RedisClientSDK
-from .lifespan_utils import LifespanOnStartupError
+from .lifespan_utils import LifespanOnStartupError, record_lifespan_called_once
 
 _logger = logging.getLogger(__name__)
 
@@ -31,8 +31,10 @@ class RedisLifespanState(BaseModel):
 
 
 async def redis_database_lifespan(_: FastAPI, state: State) -> AsyncIterator[State]:
-
     with log_context(_logger, logging.INFO, f"{__name__}"):
+
+        # Check if lifespan has already been called
+        called_state = record_lifespan_called_once(state, "redis_database_lifespan")
 
         # Validate input state
         try:
@@ -40,7 +42,6 @@ async def redis_database_lifespan(_: FastAPI, state: State) -> AsyncIterator[Sta
             redis_dsn_with_secrets = redis_state.REDIS_SETTINGS.build_redis_dsn(
                 redis_state.REDIS_CLIENT_DB
             )
-
         except ValidationError as exc:
             raise RedisConfigurationError(validation_error=exc, state=state) from exc
 
@@ -50,16 +51,13 @@ async def redis_database_lifespan(_: FastAPI, state: State) -> AsyncIterator[Sta
             logging.INFO,
             f"Creating redis client with name={redis_state.REDIS_CLIENT_NAME}",
         ):
-
             redis_client = RedisClientSDK(
                 redis_dsn_with_secrets,
                 client_name=redis_state.REDIS_CLIENT_NAME,
             )
 
         try:
-
-            yield {"REDIS_CLIENT_SDK": redis_client}
-
+            yield {"REDIS_CLIENT_SDK": redis_client, **called_state}
         finally:
             # Teardown client
             if redis_client:
