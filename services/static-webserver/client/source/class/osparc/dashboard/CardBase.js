@@ -384,7 +384,12 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     uiMode: {
-      check: ["workbench", "guided", "app", "standalone"], // "guided" is no longer used
+      check: [
+        "workbench", // =auto, the frontend decides the icon and default view
+        "app", "guided", // "guided" is no longer used
+        "standalone",
+        "pipeline",
+      ],
       nullable: true,
       apply: "__applyUiMode"
     },

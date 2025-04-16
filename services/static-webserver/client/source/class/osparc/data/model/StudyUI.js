@@ -64,7 +64,12 @@ qx.Class.define("osparc.data.model.StudyUI", {
     },
 
     mode: {
-      check: ["workbench", "guided", "app", "standalone"], // "guided" is no longer used
+      check: [
+        "workbench", // =auto, the frontend decides the icon and default view
+        "app", "guided", // "guided" is no longer used
+        "standalone",
+        "pipeline",
+      ],
       init: "workbench",
       nullable: true,
       event: "changeMode",
