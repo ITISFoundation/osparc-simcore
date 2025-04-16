@@ -69,8 +69,8 @@ async def test_catalog_service_read_solvers(
     service: ServiceGetV2 = await catalog_service.get(
         product_name=product_name,
         user_id=user_id,
-        service_key=selected_solver.id,
-        service_version=oldest_release.version,
+        name=selected_solver.id,
+        version=oldest_release.version,
     )
     solver = to_solver(service)
     assert solver.id == selected_solver.id

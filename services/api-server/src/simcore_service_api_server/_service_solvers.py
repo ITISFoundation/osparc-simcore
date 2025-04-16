@@ -34,8 +34,8 @@ class SolverService:
     ) -> Solver:
         service = await self._catalog_service.get(
             user_id=user_id,
-            service_key=name,
-            service_version=version,
+            name=name,
+            version=version,
             product_name=product_name,
         )
         assert (  # nosec
@@ -66,8 +66,8 @@ class SolverService:
         release = sorted(service_releases, key=lambda s: Version(s.version))[-1]
         service = await self._catalog_service.get(
             user_id=user_id,
-            service_key=solver_key,
-            service_version=release.version,
+            name=solver_key,
+            version=release.version,
             product_name=product_name,
         )
 

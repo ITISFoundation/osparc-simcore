@@ -102,14 +102,14 @@ class CatalogService:
         *,
         product_name: ProductName,
         user_id: UserID,
-        service_key: ServiceKey,
-        service_version: ServiceVersion,
+        name: ServiceKey,
+        version: ServiceVersion,
     ) -> ServiceGetV2:
 
         return await catalog_rpc.get_service(
             self._client,
             product_name=product_name,
             user_id=user_id,
-            service_key=service_key,
-            service_version=service_version,
+            service_key=name,
+            service_version=version,
         )

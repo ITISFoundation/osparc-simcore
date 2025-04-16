@@ -26,8 +26,8 @@ class ProgramService:
     ) -> Program:
         service = await self._catalog_service.get(
             user_id=user_id,
-            service_key=name,
-            service_version=version,
+            name=name,
+            version=version,
             product_name=product_name,
         )
         assert service.service_type == ServiceType.DYNAMIC  # nosec
