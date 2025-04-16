@@ -41,7 +41,7 @@ class TasksQueue(StrEnum):
 
 
 class TaskMetadata(BaseModel):
-    name: TaskName
+    name: TaskName | None
     ephemeral: bool = True
     queue: TasksQueue = TasksQueue.DEFAULT
 
