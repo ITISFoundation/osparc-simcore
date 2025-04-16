@@ -224,8 +224,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
     },
 
     __createTemplateBrowser: function() {
-      const templateType = osparc.utils.DisabledPlugins.isHypertoolsEnabled() ? osparc.data.model.StudyUI.STANDARD_TYPE : null;
-      const templatesView = this.__templateBrowser = new osparc.dashboard.TemplateBrowser(templateType);
+      const templatesView = this.__templateBrowser = new osparc.dashboard.TemplateBrowser();
       return templatesView;
     },
 

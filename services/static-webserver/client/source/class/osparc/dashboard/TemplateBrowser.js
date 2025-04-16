@@ -18,9 +18,9 @@
 qx.Class.define("osparc.dashboard.TemplateBrowser", {
   extend: osparc.dashboard.ResourceBrowserBase,
 
-  construct: function(templateType) {
+  construct: function(templateType = null) {
     this._resourceType = "template";
-    this.__templateType = templateType || null;
+    this.__templateType = templateType;
 
     this.base(arguments);
   },
@@ -100,13 +100,8 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
 
     __setResourcesToList: function(templatesList) {
       templatesList.forEach(template => template["resourceType"] = "template");
-      if (this.__templateType === "tutorial") {
-        this._resourcesList = templatesList.filter(template => [null, "tutorial"].includes(osparc.study.Utils.extractTemplateType(template)));
-      } else {
-        this._resourcesList = templatesList.filter(template => osparc.study.Utils.extractTemplateType(template) === this.__templateType);
-      }
+      this._resourcesList = templatesList.filter(template => osparc.study.Utils.extractTemplateType(template) === this.__templateType);
       this.fireDataEvent("showTab", Boolean(this._resourcesList.length));
-
       this._reloadCards();
     },
 
