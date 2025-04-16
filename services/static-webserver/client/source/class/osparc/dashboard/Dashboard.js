@@ -123,7 +123,6 @@ qx.Class.define("osparc.dashboard.Dashboard", {
           icon: "@FontAwesome5Solid/copy/"+tabIconSize,
           buildLayout: this.__createTemplateBrowser
         });
-
         tabs.push({
           id: "hypertoolsTab",
           buttonId: "hypertoolsTabBtn",
