@@ -103,14 +103,14 @@ class CeleryTaskClient:
             return result
 
     async def _get_task_progress_report(
-        self, task_context: TaskContext, task_uuid: TaskUUID, state: TaskState
+        self, task_context: TaskContext, task_uuid: TaskUUID, task_state: TaskState
     ) -> ProgressReport:
-        if state in (TaskState.STARTED, TaskState.RETRY, TaskState.ABORTED):
+        if task_state in (TaskState.STARTED, TaskState.RETRY, TaskState.ABORTED):
             task_id = build_task_id(task_context, task_uuid)
             progress = await self._task_store.get_task_progress(task_id)
             if progress is not None:
                 return progress
-        if state in (
+        if task_state in (
             TaskState.SUCCESS,
             TaskState.FAILURE,
         ):
