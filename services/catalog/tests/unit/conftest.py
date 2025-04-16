@@ -227,17 +227,17 @@ def repository_lifespan_disabled(mocker: MockerFixture):
 
 
 @pytest.fixture
-def redis_lifespan_disabled(mocker: MockerFixture):
+def redis_client_lifespan(mocker: MockerFixture):
     mocker.patch.object(
         simcore_service_catalog.core.events,
-        "redis_database_lifespan",
+        "redis_client_lifespan",
         autospec=True,
     )
 
 
 @pytest.fixture
 def background_task_lifespan_disabled(
-    mocker: MockerFixture, redis_lifespan_disabled: None
+    mocker: MockerFixture, redis_client_lifespan: None
 ) -> None:
     class MockedBackgroundTaskContextManager:
         async def __aenter__(self):

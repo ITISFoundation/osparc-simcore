@@ -12,7 +12,6 @@ from servicelib.fastapi.prometheus_instrumentation import (
 )
 from servicelib.fastapi.redis_lifespan import (
     RedisLifespanState,
-    redis_database_lifespan,
 )
 from settings_library.redis import RedisDatabase
 
@@ -20,6 +19,7 @@ from .._meta import APP_FINISHED_BANNER_MSG, APP_NAME, APP_STARTED_BANNER_MSG
 from ..api.rpc.events import rpc_api_lifespan
 from ..clients.director import director_lifespan
 from ..clients.rabbitmq import rabbitmq_lifespan
+from ..clients.redis import redis_client_lifespan
 from ..repository.events import repository_lifespan_manager
 from ..service.function_services import function_services_lifespan
 from .background_tasks import background_task_lifespan
@@ -81,8 +81,9 @@ def create_app_lifespan() -> LifespanManager:
     app_lifespan.add(function_services_lifespan)
 
     # - redis
+    app_lifespan.include(redis_client_lifespan)
+
     # - background task
-    app_lifespan.add(redis_database_lifespan)
     app_lifespan.add(background_task_lifespan)
 
     # - prometheus instrumentation
