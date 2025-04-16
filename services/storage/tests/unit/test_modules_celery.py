@@ -18,11 +18,15 @@ from fastapi import FastAPI
 from models_library.progress_bar import ProgressReport
 from servicelib.logging_utils import log_context
 from simcore_service_storage.modules.celery import get_celery_client, get_event_loop
-from simcore_service_storage.modules.celery._task import register_task
+from simcore_service_storage.modules.celery._task import (
+    AbortableAsyncResult,
+    register_task,
+)
 from simcore_service_storage.modules.celery.client import CeleryTaskClient
 from simcore_service_storage.modules.celery.errors import TransferrableCeleryError
 from simcore_service_storage.modules.celery.models import (
     TaskContext,
+    TaskID,
     TaskMetadata,
     TaskState,
 )
@@ -85,10 +89,10 @@ def failure_task(task: Task):
     raise MyError(msg=msg)
 
 
-async def dreamer_task(task: AbortableTask) -> list[int]:
+async def dreamer_task(task: AbortableTask, task_id: TaskID) -> list[int]:
     numbers = []
     for _ in range(30):
-        if task.is_aborted():
+        if AbortableAsyncResult(task_id, app=task.app).is_aborted():
             _logger.warning("Alarm clock")
             return numbers
         numbers.append(randint(1, 90))  # noqa: S311
@@ -208,6 +212,8 @@ async def test_listing_task_uuids_contains_submitted_task(
         stop=stop_after_delay(10),
     ):
         with attempt:
-            assert task_uuid in await celery_client.list_tasks(task_context)
+            tasks = await celery_client.list_tasks(task_context)
+            assert len(tasks) == 1
+            assert task_uuid == tasks[0].uuid
 
     assert task_uuid in await celery_client.list_tasks(task_context)
