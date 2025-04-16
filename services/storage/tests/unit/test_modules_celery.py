@@ -216,4 +216,6 @@ async def test_listing_task_uuids_contains_submitted_task(
             assert len(tasks) == 1
             assert task_uuid == tasks[0].uuid
 
-    assert task_uuid in await celery_client.list_tasks(task_context)
+        tasks = await celery_client.list_tasks(task_context)
+        assert len(tasks) == 1
+        assert task_uuid == tasks[0].uuid
