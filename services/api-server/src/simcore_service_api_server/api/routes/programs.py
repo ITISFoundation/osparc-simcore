@@ -1,6 +1,5 @@
 import logging
 from collections.abc import Callable
-from operator import attrgetter
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, HTTPException, status
@@ -23,41 +22,10 @@ from ..._service_programs import ProgramService
 from ...models.basic_types import VersionStr
 from ...models.schemas.jobs import Job, JobInputs
 from ...models.schemas.programs import Program, ProgramKeyId
-from ...services_http.catalog import CatalogApi
 from ..dependencies.authentication import get_current_user_id, get_product_name
-from ..dependencies.services import get_api_client
 
 _logger = logging.getLogger(__name__)
 router = APIRouter()
-
-
-@router.get("", response_model=list[Program], include_in_schema=False)
-async def list_programs(
-    user_id: Annotated[int, Depends(get_current_user_id)],
-    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
-    url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
-    product_name: Annotated[str, Depends(get_product_name)],
-):
-    """Lists all available solvers (latest version)
-
-    DEPRECATION: This implementation and returned values are deprecated
-
-    """
-    services = await catalog_client.list_services(
-        user_id=user_id,
-        product_name=product_name,
-        predicate=None,
-        type_filter="DYNAMIC",
-    )
-
-    programs = [service.to_program() for service in services]
-
-    for program in programs:
-        program.url = url_for(
-            "get_program_release", program_key=program.id, version=program.version
-        )
-
-    return sorted(programs, key=attrgetter("id"))
 
 
 @router.get(
