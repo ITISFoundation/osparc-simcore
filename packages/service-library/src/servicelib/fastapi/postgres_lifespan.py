@@ -10,7 +10,7 @@ from settings_library.postgres import PostgresSettings
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..db_asyncpg_utils import create_async_engine_and_database_ready
-from .lifespan_utils import LifespanOnStartupError
+from .lifespan_utils import LifespanOnStartupError, record_lifespan_called_once
 
 _logger = logging.getLogger(__name__)
 
@@ -32,6 +32,9 @@ async def postgres_database_lifespan(_: FastAPI, state: State) -> AsyncIterator[
 
     with log_context(_logger, logging.INFO, f"{__name__}"):
 
+        # Mark lifespan as called
+        called_state = record_lifespan_called_once(state, "postgres_database_lifespan")
+
         settings = state[PostgresLifespanState.POSTGRES_SETTINGS]
 
         if settings is None or not isinstance(settings, PostgresSettings):
@@ -48,6 +51,7 @@ async def postgres_database_lifespan(_: FastAPI, state: State) -> AsyncIterator[
 
             yield {
                 PostgresLifespanState.POSTGRES_ASYNC_ENGINE: async_engine,
+                **called_state,
             }
 
         finally:

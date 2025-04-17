@@ -5,6 +5,7 @@ import typer
 from settings_library.http_client_request import ClientRequestSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
+from settings_library.redis import RedisSettings
 from settings_library.utils_cli import (
     create_settings_command,
     create_version_callback,
@@ -77,6 +78,16 @@ def echo_dotenv(ctx: typer.Context, *, minimal: bool = True) -> None:
                 RABBIT_USER=os.environ.get("RABBIT_USER", "replace-with-rabbit-user"),
                 RABBIT_PASSWORD=os.environ.get(
                     "RABBIT_PASSWORD", "replace-with-rabbit-password"
+                ),
+            ),
+        ),
+        CATALOG_REDIS=os.environ.get(
+            "CATALOG_REDIS",
+            RedisSettings.create_from_envs(
+                REDIS_HOST=os.environ.get("REDIS_HOST", "replace-with-redis-host"),
+                REDIS_PORT=os.environ.get("REDIS_PORT", "6379"),
+                REDIS_PASSWORD=os.environ.get(
+                    "REDIS_PASSWORD", "replace-with-redis-password"
                 ),
             ),
         ),

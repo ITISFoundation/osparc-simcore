@@ -14,7 +14,9 @@ from fastapi import FastAPI, HTTPException, status
 from pytest_mock import MockerFixture
 from respx.router import MockRouter
 from simcore_postgres_database.models.services import services_meta_data
-from simcore_service_catalog.core.background_tasks import _run_sync_services
+from simcore_service_catalog.core.background_tasks import (
+    _sync_services_in_registry,
+)
 from simcore_service_catalog.repository.services import ServicesRepository
 from sqlalchemy.ext.asyncio.engine import AsyncEngine
 
@@ -80,7 +82,7 @@ async def test_registry_sync_task(
     assert not got_from_db
 
     # let's sync
-    await _run_sync_services(app)
+    await _sync_services_in_registry(app)
 
     # after sync, it should be in db as well
     got_from_db = await services_repo.get_service_with_history(

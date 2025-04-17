@@ -10,11 +10,16 @@ from servicelib.fastapi.prometheus_instrumentation import (
     create_prometheus_instrumentationmain_input_state,
     prometheus_instrumentation_lifespan,
 )
+from servicelib.fastapi.redis_lifespan import (
+    RedisLifespanState,
+)
+from settings_library.redis import RedisDatabase
 
-from .._meta import APP_FINISHED_BANNER_MSG, APP_STARTED_BANNER_MSG
+from .._meta import APP_FINISHED_BANNER_MSG, APP_NAME, APP_STARTED_BANNER_MSG
 from ..api.rpc.events import rpc_api_lifespan
 from ..clients.director import director_lifespan
 from ..clients.rabbitmq import rabbitmq_lifespan
+from ..clients.redis import redis_client_lifespan
 from ..repository.events import repository_lifespan_manager
 from ..service.function_services import function_services_lifespan
 from .background_tasks import background_task_lifespan
@@ -43,6 +48,11 @@ async def _settings_lifespan(app: FastAPI) -> AsyncIterator[State]:
     settings: ApplicationSettings = app.state.settings
 
     yield {
+        **RedisLifespanState(
+            REDIS_SETTINGS=settings.CATALOG_REDIS,
+            REDIS_CLIENT_NAME=APP_NAME,
+            REDIS_CLIENT_DB=RedisDatabase.LOCKS,
+        ).model_dump(),
         **create_postgres_database_input_state(settings.CATALOG_POSTGRES),
         **create_prometheus_instrumentationmain_input_state(
             enabled=settings.CATALOG_PROMETHEUS_INSTRUMENTATION_ENABLED
@@ -69,6 +79,9 @@ def create_app_lifespan() -> LifespanManager:
 
     # - function services
     app_lifespan.add(function_services_lifespan)
+
+    # - redis
+    app_lifespan.include(redis_client_lifespan)
 
     # - background task
     app_lifespan.add(background_task_lifespan)

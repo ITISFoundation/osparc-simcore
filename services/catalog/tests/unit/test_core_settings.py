@@ -20,3 +20,6 @@ def test_valid_web_application_settings(app_environment: EnvVarsDict):
     assert settings
 
     assert settings == ApplicationSettings.create_from_envs()
+
+    assert app_environment["REDIS_HOST"] == settings.CATALOG_REDIS.REDIS_HOST
+    assert app_environment["POSTGRES_HOST"] == settings.CATALOG_POSTGRES.POSTGRES_HOST

@@ -16,8 +16,10 @@ from fastapi_lifespan_manager import LifespanManager, State
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.logging_tools import log_context
 from servicelib.fastapi.lifespan_utils import (
+    LifespanAlreadyCalledError,
     LifespanOnShutdownError,
     LifespanOnStartupError,
+    record_lifespan_called_once,
 )
 
 
@@ -186,7 +188,7 @@ def failing_lifespan_manager(mocker: MockerFixture) -> dict[str, Any]:
                 startup_step(_name)
             except RuntimeError as exc:
                 handle_error(_name, exc)
-                raise LifespanOnStartupError(module=_name) from exc
+                raise LifespanOnStartupError(lifespan_name=_name) from exc
             yield {}
             shutdown_step(_name)
 
@@ -201,7 +203,7 @@ def failing_lifespan_manager(mocker: MockerFixture) -> dict[str, Any]:
                 shutdown_step(_name)
             except RuntimeError as exc:
                 handle_error(_name, exc)
-                raise LifespanOnShutdownError(module=_name) from exc
+                raise LifespanOnShutdownError(lifespan_name=_name) from exc
 
     return {
         "startup_step": startup_step,
@@ -228,7 +230,7 @@ async def test_app_lifespan_with_error_on_startup(
     assert not failing_lifespan_manager["startup_step"].called
     assert not failing_lifespan_manager["shutdown_step"].called
     assert exception.error_context() == {
-        "module": "lifespan_failing_on_startup",
+        "lifespan_name": "lifespan_failing_on_startup",
         "message": "Failed during startup of lifespan_failing_on_startup",
         "code": "RuntimeError.LifespanError.LifespanOnStartupError",
     }
@@ -250,7 +252,35 @@ async def test_app_lifespan_with_error_on_shutdown(
     assert failing_lifespan_manager["startup_step"].called
     assert not failing_lifespan_manager["shutdown_step"].called
     assert exception.error_context() == {
-        "module": "lifespan_failing_on_shutdown",
+        "lifespan_name": "lifespan_failing_on_shutdown",
         "message": "Failed during shutdown of lifespan_failing_on_shutdown",
         "code": "RuntimeError.LifespanError.LifespanOnShutdownError",
     }
+
+
+async def test_lifespan_called_more_than_once(is_pdb_enabled: bool):
+    state = {}
+
+    app_lifespan = LifespanManager()
+
+    @app_lifespan.add
+    async def _one(_, state: State) -> AsyncIterator[State]:
+        called_state = record_lifespan_called_once(state, "test_lifespan_one")
+        yield {"other": 0, **called_state}
+
+    @app_lifespan.add
+    async def _two(_, state: State) -> AsyncIterator[State]:
+        called_state = record_lifespan_called_once(state, "test_lifespan_two")
+        yield {"something": 0, **called_state}
+
+    app_lifespan.add(_one)  # added "by mistake"
+
+    with pytest.raises(LifespanAlreadyCalledError) as err_info:
+        async with ASGILifespanManager(
+            FastAPI(lifespan=app_lifespan),
+            startup_timeout=None if is_pdb_enabled else 10,
+            shutdown_timeout=None if is_pdb_enabled else 10,
+        ):
+            ...
+
+    assert err_info.value.lifespan_name == "test_lifespan_one"
