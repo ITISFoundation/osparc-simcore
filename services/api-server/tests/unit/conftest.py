@@ -5,7 +5,7 @@
 
 import json
 import subprocess
-from collections.abc import AsyncIterator, Callable, Iterator
+from collections.abc import AsyncIterator, Callable, Iterable, Iterator
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
@@ -38,6 +38,7 @@ from moto.server import ThreadedMotoServer
 from packaging.version import Version
 from pydantic import EmailStr, HttpUrl, TypeAdapter
 from pytest_mock import MockerFixture, MockType
+from pytest_simcore.helpers.catalog_rpc_server import CatalogRpcSideEffects
 from pytest_simcore.helpers.host import get_localhost_ip
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.webserver_rpc_server import WebserverRpcSideEffects
@@ -45,10 +46,58 @@ from pytest_simcore.simcore_webserver_projects_rest_api import GET_PROJECT
 from requests.auth import HTTPBasicAuth
 from respx import MockRouter
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
+from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
+from simcore_service_api_server.api.dependencies.rabbitmq import get_rabbitmq_rpc_client
 from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.core.settings import ApplicationSettings
 from simcore_service_api_server.db.repositories.api_keys import UserAndProductTuple
 from simcore_service_api_server.services_http.solver_job_outputs import ResultsTypes
+
+
+@pytest.fixture
+def mocked_rpc_catalog_service_api(
+    app: FastAPI, mocker: MockerFixture
+) -> Iterable[dict[str, MockType]]:
+    """
+    Mocks the RPC catalog service API for testing purposes.
+    """
+
+    class MockRabbitMQRPCClient:
+        pass
+
+    def get_mock_rabbitmq_rpc_client():
+        return MockRabbitMQRPCClient()
+
+    app.dependency_overrides[get_rabbitmq_rpc_client] = get_mock_rabbitmq_rpc_client
+    side_effects = CatalogRpcSideEffects()
+
+    yield {
+        "list_services_paginated": mocker.patch.object(
+            catalog_rpc,
+            "list_services_paginated",
+            autospec=True,
+            side_effect=side_effects.list_services_paginated,
+        ),
+        "get_service": mocker.patch.object(
+            catalog_rpc,
+            "get_service",
+            autospec=True,
+            side_effect=side_effects.get_service,
+        ),
+        "update_service": mocker.patch.object(
+            catalog_rpc,
+            "update_service",
+            autospec=True,
+            side_effect=side_effects.update_service,
+        ),
+        "list_my_service_history_paginated": mocker.patch.object(
+            catalog_rpc,
+            "list_my_service_history_paginated",
+            autospec=True,
+            side_effect=side_effects.list_my_service_history_paginated,
+        ),
+    }
+    app.dependency_overrides.pop(get_rabbitmq_rpc_client)
 
 
 @pytest.fixture
@@ -499,7 +548,7 @@ def patch_lrt_response_urls(mocker: MockerFixture):
             return data.status_href, data.result_href
 
         return mocker.patch(
-            "simcore_service_api_server.services.webserver._get_lrt_urls",
+            "simcore_service_api_server.services_http.webserver._get_lrt_urls",
             side_effect=_get_lrt_urls,
         )
 

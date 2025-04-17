@@ -8,6 +8,7 @@ from typing import NamedTuple
 import httpx
 import pytest
 from pydantic import TypeAdapter
+from pytest_mock import MockType
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
@@ -17,31 +18,19 @@ from starlette import status
 
 
 class MockBackendRouters(NamedTuple):
-    catalog: MockRouter
     webserver: MockRouter
+    catalog: dict[str, MockType]
 
 
 @pytest.fixture
 def mocked_backend(
     mocked_webserver_rest_api_base: MockRouter,
-    mocked_catalog_rest_api_base: MockRouter,
+    mocked_rpc_catalog_service_api: dict[str, MockType],
     project_tests_dir: Path,
 ) -> MockBackendRouters:
     mock_name = "on_list_jobs.json"
     captures = TypeAdapter(list[HttpApiCallCaptureModel]).validate_json(
         Path(project_tests_dir / "mocks" / mock_name).read_text()
-    )
-
-    capture = captures[0]
-    assert capture.host == "catalog"
-    assert capture.name == "get_service"
-    mocked_catalog_rest_api_base.request(
-        method=capture.method,
-        path=capture.path,
-        name=capture.name,
-    ).respond(
-        status_code=capture.status_code,
-        json=capture.response_body,
     )
 
     capture = captures[1]
@@ -57,8 +46,8 @@ def mocked_backend(
     )
 
     return MockBackendRouters(
-        catalog=mocked_catalog_rest_api_base,
         webserver=mocked_webserver_rest_api_base,
+        catalog=mocked_rpc_catalog_service_api,
     )
 
 
