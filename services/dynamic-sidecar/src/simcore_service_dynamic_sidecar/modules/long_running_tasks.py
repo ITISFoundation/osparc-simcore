@@ -328,7 +328,7 @@ async def task_runs_docker_compose_down(
     progress.update(message="done", percent=ProgressPercent(0.99))
 
 
-def _get_satate_folders_size(paths: list[Path]) -> int:
+def _get_state_folders_size(paths: list[Path]) -> int:
     total_size: int = 0
     for path in paths:
         for file in path.rglob("*"):
@@ -406,7 +406,7 @@ async def task_restore_state(
     )
     progress.update(message="state restored", percent=ProgressPercent(0.99))
 
-    return _get_satate_folders_size(state_paths)
+    return _get_state_folders_size(state_paths)
 
 
 async def _save_state_folder(
@@ -471,7 +471,7 @@ async def task_save_state(
     await post_sidecar_log_message(app, "Finished state saving", log_level=logging.INFO)
     progress.update(message="finished state saving", percent=ProgressPercent(0.99))
 
-    return _get_satate_folders_size(state_paths)
+    return _get_state_folders_size(state_paths)
 
 
 async def task_ports_inputs_pull(

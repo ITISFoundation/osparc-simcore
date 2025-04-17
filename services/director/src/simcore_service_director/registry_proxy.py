@@ -410,12 +410,23 @@ async def get_image_details(
     if not labels:
         return image_details
     for key in labels:
-        if not key.startswith("io.simcore."):
+        if not key.startswith("io.simcore.") and not key.startswith(
+            "simcore.service."
+        ):  # Keeping "simcore.service." adds additonally input_paths, output_paths, state_paths
             continue
         try:
             label_data = json.loads(labels[key])
             for label_key in label_data:
+                if (
+                    isinstance(label_key, dict)
+                    or isinstance(label_data, list)
+                    or isinstance(label_data, str)
+                ):  # Dicts from "simcore.service." docker image labels are omitted.
+                    continue
                 image_details[label_key] = label_data[label_key]
+        except json.JSONDecodeError:
+            label_data = []  # Set to empty list if the value is not JSON
+            pass
         except json.decoder.JSONDecodeError:
             logging.exception(
                 "Error while decoding json formatted data from %s:%s",

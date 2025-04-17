@@ -118,6 +118,7 @@ class ServiceMetaDataDBCreate(BaseModel):
 
     # lifecycle
     deprecated: datetime | None = None
+    _is_classic_dynamic_service: bool = False
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
