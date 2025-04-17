@@ -18,11 +18,11 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
-from .._meta import API_VTAG as VTAG
-from ..constants import RQ_PRODUCT_KEY
-from ..login.decorators import login_required
-from ..security.decorators import permission_required
-from . import _computations_service
+from ..._meta import API_VTAG as VTAG
+from ...constants import RQ_PRODUCT_KEY
+from ...login.decorators import login_required
+from ...security.decorators import permission_required
+from .. import _computations_service
 from ._computations_rest_schema import (
     ComputationRunListQueryParams,
     ComputationTaskListQueryParams,

@@ -6,13 +6,19 @@ from pydantic import BaseModel, ConfigDict
 
 ### Computation Run
 
-
 ComputationRunListOrderParams = create_ordering_query_model_class(
     ordering_fields={
         "submitted_at",
+        "started_at",
+        "ended_at",
+        "state",
     },
     default=OrderBy(field=IDStr("submitted_at")),
-    ordering_fields_api_to_column_map={"submitted_at": "created"},
+    ordering_fields_api_to_column_map={
+        "submitted_at": "created",
+        "started_at": "started",
+        "ended_at": "ended",
+    },
 )
 
 
