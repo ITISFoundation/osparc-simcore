@@ -88,7 +88,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
   events: {
     "changeTab": "qx.event.type.Data",
-    "publishTemplate": "qx.event.type.Data"
+    "showTab": "qx.event.type.Data",
+    "publishTemplate": "qx.event.type.Data",
   },
 
   statics: {
