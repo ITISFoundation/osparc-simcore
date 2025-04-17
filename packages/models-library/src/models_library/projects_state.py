@@ -1,5 +1,5 @@
 """
-    Models both project and node states
+Models both project and node states
 """
 
 from enum import Enum, unique
@@ -30,6 +30,7 @@ class RunningState(str, Enum):
     PENDING = "PENDING"
     WAITING_FOR_RESOURCES = "WAITING_FOR_RESOURCES"
     STARTED = "STARTED"
+    RUNNING = "RUNNING"
     SUCCESS = "SUCCESS"
     FAILED = "FAILED"
     ABORTED = "ABORTED"
@@ -41,6 +42,7 @@ class RunningState(str, Enum):
             RunningState.PENDING,
             RunningState.WAITING_FOR_RESOURCES,
             RunningState.STARTED,
+            RunningState.RUNNING,
             RunningState.WAITING_FOR_CLUSTER,
         )
 

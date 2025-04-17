@@ -2,10 +2,14 @@ import logging
 
 from aiohttp import web
 from models_library.api_schemas_webserver.computations import (
+    ComputationRunListQueryParams,
     ComputationRunRestGet,
+    ComputationTaskListQueryParams,
+    ComputationTaskPathParams,
     ComputationTaskRestGet,
 )
 from models_library.rest_base import RequestParameters
+from models_library.rest_ordering import OrderBy
 from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
 from models_library.users import UserID
@@ -23,11 +27,6 @@ from ...constants import RQ_PRODUCT_KEY
 from ...login.decorators import login_required
 from ...security.decorators import permission_required
 from .. import _computations_service
-from ._computations_rest_schema import (
-    ComputationRunListQueryParams,
-    ComputationTaskListQueryParams,
-    ComputationTaskPathParams,
-)
 
 _logger = logging.getLogger(__name__)
 
@@ -62,7 +61,7 @@ async def list_computations_latest_iteration(request: web.Request) -> web.Respon
         offset=query_params.offset,
         limit=query_params.limit,
         # ordering
-        order_by=query_params.order_by,
+        order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
     )
 
     page = Page[ComputationRunRestGet].model_validate(
@@ -110,7 +109,7 @@ async def list_computations_latest_iteration_tasks(
         offset=query_params.offset,
         limit=query_params.limit,
         # ordering
-        order_by=query_params.order_by,
+        order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
     )
 
     page = Page[ComputationTaskRestGet].model_validate(
