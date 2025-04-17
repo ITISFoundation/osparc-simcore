@@ -171,6 +171,10 @@ qx.Class.define("osparc.service.Utils", {
     },
 
     __extractRetiredDate: function(metadata) {
+      if (!metadata) {
+        return null;
+      }
+
       if ("release" in metadata && metadata["release"]["retired"]) {
         // this works for service latest
         return new Date(metadata["release"]["retired"]);
