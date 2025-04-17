@@ -32,22 +32,34 @@ SERVICE_ENCODED_KEY_RE: Final[re.Pattern[str]] = re.compile(
     r"(?P<name>[a-z0-9-_]+[a-z0-9])$"
 )
 
+
 DYNAMIC_SERVICE_KEY_RE: Final[re.Pattern[str]] = re.compile(
     rf"^{DYNAMIC_SERVICE_KEY_PREFIX}/"
     r"(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*"
     r"(?P<name>[a-z0-9-_]+[a-z0-9])$"
 )
+DYNAMIC_SERVICE_KEY_FORMAT: Final[str] = (
+    f"{DYNAMIC_SERVICE_KEY_PREFIX}/{{service_name}}"
+)
+
 
 COMPUTATIONAL_SERVICE_KEY_RE: Final[re.Pattern[str]] = re.compile(
     rf"^{COMPUTATIONAL_SERVICE_KEY_PREFIX}/"
     r"(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*"
     r"(?P<name>[a-z0-9-_]+[a-z0-9])$"
 )
+COMPUTATIONAL_SERVICE_KEY_FORMAT: Final[str] = (
+    f"{COMPUTATIONAL_SERVICE_KEY_PREFIX}/{{service_name}}"
+)
+
 
 FRONTEND_SERVICE_KEY_RE: Final[re.Pattern[str]] = re.compile(
     rf"^{FRONTEND_SERVICE_KEY_PREFIX}/"
     r"(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*"
     r"(?P<name>[a-z0-9-_]+[a-z0-9])$"
+)
+FRONTEND_SERVICE_KEY_FORMAT: Final[str] = (
+    f"{FRONTEND_SERVICE_KEY_PREFIX}/{{service_name}}"
 )
 
 
