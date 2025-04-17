@@ -15,7 +15,7 @@ from ..rabbitmq import get_rabbitmq_rpc_client
 #
 
 
-async def get_or_create_api_key_and_secret(
+async def create_api_key(
     app: FastAPI,
     *,
     product_name: ProductName,
@@ -26,10 +26,27 @@ async def get_or_create_api_key_and_secret(
     rpc_client = get_rabbitmq_rpc_client(app)
     result = await rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python("get_or_create_api_key"),
+        TypeAdapter(RPCMethodName).validate_python("create_api_key"),
+        product_name=product_name,
         user_id=user_id,
         display_name=display_name,
         expiration=expiration,
-        product_name=product_name,
     )
     return ApiKeyGet.model_validate(result)
+
+
+async def delete_api_key_by_key(
+    app: FastAPI,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    api_key: str,
+) -> None:
+    rpc_client = get_rabbitmq_rpc_client(app)
+    await rpc_client.request(
+        WEBSERVER_RPC_NAMESPACE,
+        TypeAdapter(RPCMethodName).validate_python("delete_api_key_by_key"),
+        product_name=product_name,
+        user_id=user_id,
+        api_key=api_key,
+    )

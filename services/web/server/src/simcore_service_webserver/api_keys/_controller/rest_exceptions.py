@@ -1,12 +1,12 @@
 from servicelib.aiohttp import status
 
-from ..exception_handling import (
+from ...exception_handling import (
     ExceptionToHttpErrorMap,
     HttpErrorInfo,
     exception_handling_decorator,
     to_exceptions_handlers_map,
 )
-from .errors import ApiKeyDuplicatedDisplayNameError, ApiKeyNotFoundError
+from ..errors import ApiKeyDuplicatedDisplayNameError, ApiKeyNotFoundError
 
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     ApiKeyDuplicatedDisplayNameError: HttpErrorInfo(

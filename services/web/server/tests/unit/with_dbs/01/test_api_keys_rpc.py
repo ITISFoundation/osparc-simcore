@@ -8,6 +8,7 @@ from collections.abc import AsyncIterable, Awaitable, Callable
 import pytest
 from aiohttp.test_utils import TestServer
 from faker import Faker
+from models_library.basic_types import IDStr
 from models_library.products import ProductName
 from models_library.rpc.webserver.auth.api_keys import ApiKeyCreate
 from pytest_mock import MockerFixture
@@ -17,7 +18,7 @@ from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.webserver.auth.api_keys import (
     create_api_key,
-    delete_api_key,
+    delete_api_key_by_key,
     get_api_key,
 )
 from settings_library.rabbit import RabbitSettings
@@ -114,7 +115,7 @@ async def test_get_api_key(
             rpc_client,
             user_id=logged_user["id"],
             product_name=osparc_product_name,
-            api_key_id=api_key.id,
+            api_key_id=IDStr(api_key.id),
         )
         assert result.id == api_key.id
 
@@ -147,14 +148,16 @@ async def test_api_keys_workflow(
     assert queried_api_key.display_name == key_name
 
     assert created_api_key.id == queried_api_key.id
+    assert created_api_key.api_key
+    assert created_api_key.api_key == queried_api_key.api_key
     assert created_api_key.display_name == queried_api_key.display_name
 
     # remove the key
-    await delete_api_key(
+    await delete_api_key_by_key(
         rpc_client,
         user_id=logged_user["id"],
         product_name=osparc_product_name,
-        api_key_id=created_api_key.id,
+        api_key=created_api_key.api_key,
     )
 
     with pytest.raises(ApiKeyNotFoundError):
