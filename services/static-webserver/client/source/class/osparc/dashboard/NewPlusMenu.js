@@ -194,13 +194,27 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
         appearance: "menu-wider",
       });
 
-      const templatesButton = this.self().createMenuButton("@FontAwesome5Solid/copy/16", this.tr("Tutorials..."));
-      templatesButton.addListener("execute", () => this.fireDataEvent("changeTab", "templatesTab"), this);
-      moreMenu.add(templatesButton);
+      const permissions = osparc.data.Permissions.getInstance();
+      if (permissions.canDo("dashboard.templates.read")) {
+        const templatesButton = this.self().createMenuButton("@FontAwesome5Solid/copy/16", this.tr("Tutorials..."));
+        templatesButton.addListener("execute", () => this.fireDataEvent("changeTab", "templatesTab"), this);
+        moreMenu.add(templatesButton);
 
-      const servicesButton = this.self().createMenuButton("@FontAwesome5Solid/cog/16", this.tr("Services..."));
-      servicesButton.addListener("execute", () => this.fireDataEvent("changeTab", "servicesTab"), this);
-      moreMenu.add(servicesButton);
+        const hypertoolsButton = this.self().createMenuButton("@FontAwesome5Solid/copy/16", this.tr("Hypertools..."));
+        hypertoolsButton.addListener("execute", () => this.fireDataEvent("changeTab", "hypertoolsTab"), this);
+        const hypertools = osparc.store.Templates.getInstance().getTemplatesByType(osparc.data.model.StudyUI.HYPERTOOL_TYPE);
+        if (hypertools.length) {
+          moreMenu.add(hypertoolsButton);
+        }
+      }
+
+      if (permissions.canDo("dashboard.services.read")) {
+        const servicesButton = this.self().createMenuButton("@FontAwesome5Solid/cog/16", this.tr("Services..."));
+        servicesButton.addListener("execute", () => this.fireDataEvent("changeTab", "servicesTab"), this);
+        moreMenu.add(servicesButton);
+      }
+
+      moreMenuButton.setVisibility(moreMenu.getChildren().length ? "visible" : "excluded");
 
       moreMenuButton.setMenu(moreMenu);
     },
