@@ -1,14 +1,16 @@
 from datetime import timedelta
 from enum import StrEnum
-from typing import Any, Final, Protocol, TypeAlias
+from typing import Annotated, Any, Final, Protocol, TypeAlias
 from uuid import UUID
 
 from models_library.progress_bar import ProgressReport
-from pydantic import BaseModel
+from pydantic import BaseModel, StringConstraints
 
 TaskContext: TypeAlias = dict[str, Any]
 TaskID: TypeAlias = str
-TaskName: TypeAlias = str
+TaskName: TypeAlias = Annotated[
+    str, StringConstraints(strip_whitespace=True, min_length=1)
+]
 TaskUUID: TypeAlias = UUID
 
 _CELERY_TASK_ID_KEY_SEPARATOR: Final[str] = ":"
