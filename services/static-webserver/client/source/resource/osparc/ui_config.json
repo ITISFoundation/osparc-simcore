@@ -114,6 +114,11 @@
         "expectedKey": "simcore/services/dynamic/iseg-web",
         "title": "Segmentation",
         "newStudyLabel": "Segmentation"
+      }, {
+        "resourceType": "study",
+        "title": "Empty Pipeline",
+        "newStudyLabel": "New Pipeline",
+        "idToWidget": "emptyStudyBtn"
       }]
     }
   },
@@ -135,6 +140,11 @@
         "expectedKey": "simcore/services/dynamic/iseg-web",
         "title": "Segmentation",
         "newStudyLabel": "Segmentation"
+      }, {
+        "resourceType": "study",
+        "title": "Empty Pipeline",
+        "newStudyLabel": "New Pipeline",
+        "idToWidget": "emptyStudyBtn"
       }]
     }
   },

@@ -147,7 +147,6 @@ qx.Class.define("osparc.dashboard.Dashboard", {
           buttonId: "dataTabBtn",
           label: this.tr("DATA"),
           icon: "@FontAwesome5Solid/folder/"+tabIconSize,
-          initVisibility: osparc.product.Utils.isProduct("osparc") ? "visible" : "excluded",
           buildLayout: this.__createDataBrowser
         });
       }
@@ -201,6 +200,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       const groupsStore = osparc.store.Groups.getInstance();
       preResourcePromises.push(groupsStore.fetchGroupsAndMembers());
       preResourcePromises.push(osparc.store.Services.getServicesLatest(false));
+      preResourcePromises.push(osparc.store.Templates.getInstance().fetchAllTemplates());
       Promise.all(preResourcePromises)
         .then(() => {
           [

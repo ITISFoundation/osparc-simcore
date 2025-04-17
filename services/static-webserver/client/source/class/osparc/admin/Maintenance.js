@@ -53,6 +53,11 @@ qx.Class.define("osparc.admin.Maintenance", {
         const respLabel = new qx.ui.basic.Label(this.tr("Start and End dates go in UTC time zone"));
         vBox.add(respLabel);
 
+        const displayMaintenanceBtn = new qx.ui.form.Button(this.tr("Display Maintenance message"));
+        // eslint-disable-next-line no-underscore-dangle
+        displayMaintenanceBtn.addListener("execute", () => osparc.MaintenanceTracker.getInstance().__messageToRibbon(true));
+        vBox.add(displayMaintenanceBtn);
+
         const invitationRespViewer = new osparc.ui.basic.JsonTreeWidget(data, "maintenance-data");
         const container = new qx.ui.container.Scroll();
         container.add(invitationRespViewer);

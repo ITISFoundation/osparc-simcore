@@ -145,6 +145,7 @@ qx.Class.define("osparc.data.Permissions", {
         ],
         "admin": []
       };
+
       let fromUserToTester = [];
       if (osparc.product.Utils.isProduct("tis") || osparc.product.Utils.isProduct("tiplite")) {
         // "templates" and "services" tabs only for testers
@@ -162,6 +163,13 @@ qx.Class.define("osparc.data.Permissions", {
           "dashboard.services.read"
         ];
       }
+      if (osparc.product.Utils.getProductName() !== "osparc") {
+        // data tab only available in osparc and testers
+        fromUserToTester = [
+          "dashboard.data.read"
+        ];
+      }
+
       fromUserToTester.forEach(onlyTester => {
         const idx = initPermissions.user.indexOf(onlyTester);
         if (idx > -1) {
