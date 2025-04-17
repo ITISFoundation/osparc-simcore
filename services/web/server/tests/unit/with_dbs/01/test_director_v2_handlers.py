@@ -6,7 +6,18 @@
 import pytest
 from aiohttp.test_utils import TestClient
 from faker import Faker
+from models_library.api_schemas_directorv2.comp_runs import (
+    ComputationRunRpcGet,
+    ComputationRunRpcGetPage,
+    ComputationTaskRpcGet,
+    ComputationTaskRpcGetPage,
+)
+from models_library.api_schemas_webserver.computations import (
+    ComputationRunRestGet,
+    ComputationTaskRestGet,
+)
 from models_library.projects import ProjectID
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import LoggedUser
 from pytest_simcore.helpers.webserver_parametrizations import (
@@ -16,6 +27,7 @@ from pytest_simcore.helpers.webserver_parametrizations import (
 from pytest_simcore.services_api_mocks_for_aiohttp_clients import AioResponsesMock
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.projects.models import ProjectDict
 
 
 @pytest.fixture
@@ -117,3 +129,74 @@ async def test_stop_computation(
             else expected.no_content
         ),
     )
+
+
+@pytest.fixture
+def mock_rpc_list_computations_latest_iteration_tasks(
+    mocker: MockerFixture,
+) -> ComputationRunRpcGetPage:
+    return mocker.patch(
+        "simcore_service_webserver.director_v2._computations_service.computations.list_computations_latest_iteration_page",
+        spec=True,
+        return_value=ComputationRunRpcGetPage(
+            items=[
+                ComputationRunRpcGet.model_validate(
+                    ComputationRunRpcGet.model_config["json_schema_extra"]["examples"][
+                        0
+                    ]
+                )
+            ],
+            total=1,
+        ),
+    )
+
+
+@pytest.fixture
+def mock_rpc_list_computations_latest_iteration_tasks_page(
+    mocker: MockerFixture,
+) -> ComputationTaskRpcGetPage:
+    return mocker.patch(
+        "simcore_service_webserver.director_v2._computations_service.computations.list_computations_latest_iteration_tasks_page",
+        spec=True,
+        return_value=ComputationTaskRpcGetPage(
+            items=[
+                ComputationTaskRpcGet.model_validate(
+                    ComputationTaskRpcGet.model_config["json_schema_extra"]["examples"][
+                        0
+                    ]
+                )
+            ],
+            total=1,
+        ),
+    )
+
+
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
+async def test_list_computations_latest_iteration(
+    director_v2_service_mock: AioResponsesMock,
+    user_project: ProjectDict,
+    client: TestClient,
+    logged_user: LoggedUser,
+    user_role: UserRole,
+    expected: ExpectedResponse,
+    mock_rpc_list_computations_latest_iteration_tasks: None,
+    mock_rpc_list_computations_latest_iteration_tasks_page: None,
+):
+    assert client.app
+    url = client.app.router["list_computations_latest_iteration"].url_for()
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(
+        resp, status.HTTP_200_OK if user_role == UserRole.GUEST else expected.ok
+    )
+    if user_role != UserRole.ANONYMOUS:
+        assert ComputationRunRestGet.model_validate(data[0])
+
+    url = client.app.router["list_computations_latest_iteration_tasks"].url_for(
+        project_id=f"{user_project['uuid']}"
+    )
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(
+        resp, status.HTTP_200_OK if user_role == UserRole.GUEST else expected.ok
+    )
+    if user_role != UserRole.ANONYMOUS:
+        assert ComputationTaskRestGet.model_validate(data[0])

@@ -99,4 +99,5 @@ comp_runs = sa.Table(
         doc="the run uses on demand clusters",
     ),
     sa.UniqueConstraint("project_uuid", "user_id", "iteration"),
+    sa.Index("ix_comp_runs_user_id", "user_id"),
 )

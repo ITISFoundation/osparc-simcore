@@ -33,8 +33,16 @@ qx.Class.define("osparc.store.Jobs", {
   },
 
   members: {
-    fetchJobs: function() {
-      return osparc.utils.Utils.fetchJSON("/resource/osparc/mock_jobs.json")
+    fetchJobs: function(orderBy = {
+      field: "submitted_at",
+      direction: "desc"
+    }) {
+      const params = {
+        url: {
+          orderBy: JSON.stringify(orderBy),
+        }
+      };
+      return osparc.data.Resources.getInstance().getAllPages("jobs", params)
         .then(jobsData => {
           if ("jobs" in jobsData) {
             jobsData["jobs"].forEach(jobData => {
@@ -46,11 +54,20 @@ qx.Class.define("osparc.store.Jobs", {
         .catch(err => console.error(err));
     },
 
-    fetchJobInfo: function(jobId) {
-      return osparc.utils.Utils.fetchJSON("/resource/osparc/mock_jobs.json")
+    fetchSubJobs: function(studyId, orderBy = {
+      field: "submitted_at",
+      direction: "desc"
+    }) {
+      const params = {
+        url: {
+          studyId,
+          orderBy: JSON.stringify(orderBy),
+        }
+      };
+      return osparc.data.Resources.getInstance().getAllPages("subJobs", params)
         .then(jobsData => {
-          if ("jobs_info" in jobsData && jobId in jobsData["jobs_info"]) {
-            return jobsData["jobs_info"][jobId];
+          if ("jobs_info" in jobsData && studyId in jobsData["jobs_info"]) {
+            return jobsData["jobs_info"][studyId];
           }
           return null;
         })

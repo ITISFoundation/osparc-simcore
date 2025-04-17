@@ -119,14 +119,14 @@ _LOST_TASKS_FACTOR: Final[int] = 10
 async def schedule_all_pipelines(app: FastAPI) -> None:
     with log_context(_logger, logging.DEBUG, msg="scheduling pipelines"):
         db_engine = get_db_engine(app)
-        runs_to_schedule = await CompRunsRepository.instance(db_engine).list(
+        runs_to_schedule = await CompRunsRepository.instance(db_engine).list_(
             filter_by_state=SCHEDULED_STATES,
             never_scheduled=True,
             processed_since=SCHEDULER_INTERVAL,
         )
         possibly_lost_scheduled_pipelines = await CompRunsRepository.instance(
             db_engine
-        ).list(
+        ).list_(
             filter_by_state=SCHEDULED_STATES,
             scheduled_since=SCHEDULER_INTERVAL * _LOST_TASKS_FACTOR,
         )

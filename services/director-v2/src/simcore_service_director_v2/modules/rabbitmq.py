@@ -58,7 +58,10 @@ def setup(app: FastAPI) -> None:
             client_name="director-v2", settings=settings
         )
         app.state.rabbitmq_rpc_client = await RabbitMQRPCClient.create(
-            client_name="director-v2", settings=settings
+            client_name="director-v2-rpc-client", settings=settings
+        )
+        app.state.rabbitmq_rpc_server = await RabbitMQRPCClient.create(
+            client_name="director-v2-rpc-server", settings=settings
         )
 
         await app.state.rabbitmq_client.subscribe(
@@ -73,6 +76,8 @@ def setup(app: FastAPI) -> None:
             await app.state.rabbitmq_client.close()
         if app.state.rabbitmq_rpc_client:
             await app.state.rabbitmq_rpc_client.close()
+        if app.state.rabbitmq_rpc_server:
+            await app.state.rabbitmq_rpc_server.close()
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
@@ -92,3 +97,8 @@ def get_rabbitmq_rpc_client(app: FastAPI) -> RabbitMQRPCClient:
         )
         raise ConfigurationError(msg=msg)
     return cast(RabbitMQRPCClient, app.state.rabbitmq_rpc_client)
+
+
+def get_rabbitmq_rpc_server(app: FastAPI) -> RabbitMQRPCClient:
+    assert app.state.rabbitmq_rpc_server  # nosec
+    return cast(RabbitMQRPCClient, app.state.rabbitmq_rpc_server)

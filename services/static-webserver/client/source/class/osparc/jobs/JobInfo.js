@@ -25,7 +25,7 @@ qx.Class.define("osparc.jobs.JobInfo", {
     this._setLayout(new qx.ui.layout.VBox());
 
     const jobInfoViewer = this.getChildControl("job-info-viewer");
-    osparc.store.Jobs.getInstance().fetchJobInfo(jobId)
+    osparc.store.Jobs.getInstance().fetchSubJobs(jobId)
       .then(info => {
         jobInfoViewer.setJson(info);
       });
