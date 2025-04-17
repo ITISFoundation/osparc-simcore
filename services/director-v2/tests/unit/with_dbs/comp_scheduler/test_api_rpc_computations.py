@@ -7,10 +7,15 @@
 # pylint: disable=too-many-positional-arguments
 
 from collections.abc import Awaitable, Callable
+from datetime import datetime, timezone
 from typing import Any
 
-from models_library.api_schemas_directorv2.comp_runs import ComputationRunRpcGetPage
+from models_library.api_schemas_directorv2.comp_runs import (
+    ComputationRunRpcGetPage,
+    ComputationTaskRpcGetPage,
+)
 from models_library.projects import ProjectAtDB
+from models_library.projects_state import RunningState
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.director_v2 import (
     computations as rpc_computations,
@@ -48,8 +53,7 @@ pytest_simcore_ops_services_selection = [
 #     monkeypatch.setenv("S3_BUCKET_NAME", faker.pystr())
 
 
-async def test_get_computation_from_published_computation_task(
-    # minimal_configuration: None,
+async def test_rpc_list_computation_runs_and_tasks(
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
@@ -57,7 +61,6 @@ async def test_get_computation_from_published_computation_task(
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
     create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
     create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
-    # async_client: httpx.AsyncClient,
     rpc_client: RabbitMQRPCClient,
 ):
     user = registered_user()
@@ -67,10 +70,10 @@ async def test_get_computation_from_published_computation_task(
         dag_adjacency_list=fake_workbench_adjacency,
     )
     comp_tasks = await create_tasks(
-        user=user, project=proj, state=StateType.PUBLISHED, progress=0
+        user=user, project=proj, state=StateType.PUBLISHED, progress=None
     )
     comp_runs = await create_comp_run(
-        user=user, project=proj, result=StateType.PUBLISHED
+        user=user, project=proj, result=RunningState.PUBLISHED
     )
     assert comp_runs
 
@@ -79,14 +82,46 @@ async def test_get_computation_from_published_computation_task(
     )
     assert output.total == 1
     assert isinstance(output, ComputationRunRpcGetPage)
+    assert output.items[0].iteration == 1
 
-    # get_computation_url = httpx.URL(
-    #     f"/v2/computations/{proj.uuid}?user_id={user['id']}"
-    # )
-    # response = await async_client.get(get_computation_url)
-    # assert response.status_code == status.HTTP_200_OK, response.text
-    # returned_computation = ComputationGet.model_validate(response.json())
-    # assert returned_computation
-    # expected_stop_url = async_client.base_url.join(
-    #     f"/v2/computations/{proj.uuid}:stop?user_id={user['id']}"
-    # )
+    comp_runs_2 = await create_comp_run(
+        user=user,
+        project=proj,
+        result=RunningState.PENDING,
+        started=datetime.now(tz=timezone.utc),
+        iteration=2,
+    )
+    output = await rpc_computations.list_computations_latest_iteration_page(
+        rpc_client, product_name="osparc", user_id=user["id"]
+    )
+    assert output.total == 1
+    assert isinstance(output, ComputationRunRpcGetPage)
+    assert output.items[0].iteration == 2
+    assert output.items[0].started_at is not None
+    assert output.items[0].ended_at is None
+
+    comp_runs_3 = await create_comp_run(
+        user=user,
+        project=proj,
+        result=RunningState.SUCCESS,
+        started=datetime.now(tz=timezone.utc),
+        ended=datetime.now(tz=timezone.utc),
+        iteration=3,
+    )
+    output = await rpc_computations.list_computations_latest_iteration_page(
+        rpc_client, product_name="osparc", user_id=user["id"]
+    )
+    assert output.total == 1
+    assert isinstance(output, ComputationRunRpcGetPage)
+    assert output.items[0].iteration == 3
+    assert output.items[0].ended_at is not None
+
+    # Tasks
+
+    output = await rpc_computations.list_computations_latest_iteration_tasks_page(
+        rpc_client, product_name="osparc", user_id=user["id"], project_id=proj.uuid
+    )
+    assert output
+    assert output.total == 4
+    assert isinstance(output, ComputationTaskRpcGetPage)
+    assert len(output.items) == 4

@@ -1,8 +1,9 @@
 from datetime import datetime
-from typing import Any, NamedTuple
+from typing import Annotated, Any, NamedTuple
 
 from pydantic import (
     BaseModel,
+    BeforeValidator,
     PositiveInt,
 )
 
@@ -26,11 +27,17 @@ class ComputationRunRpcGetPage(NamedTuple):
     total: PositiveInt
 
 
+def _none_to_zero_float_pre_validator(value: Any):
+    if value is None:
+        return 0.0
+    return value
+
+
 class ComputationTaskRpcGet(BaseModel):
     project_uuid: ProjectID
     node_id: NodeID
     state: RunningState
-    progress: float
+    progress: Annotated[float, BeforeValidator(_none_to_zero_float_pre_validator)]
     image: dict[str, Any]
     started_at: datetime | None
     ended_at: datetime | None

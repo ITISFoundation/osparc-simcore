@@ -18,6 +18,7 @@ from faker import Faker
 from fastapi.encoders import jsonable_encoder
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.projects_state import RunningState
 from pydantic.main import BaseModel
 from simcore_postgres_database.models.comp_pipeline import StateType, comp_pipeline
 from simcore_postgres_database.models.comp_runs import comp_runs
@@ -193,7 +194,7 @@ async def create_comp_run(
             "project_uuid": f"{project.uuid}",
             "user_id": user["id"],
             "iteration": 1,
-            "result": StateType.NOT_STARTED,
+            "result": RunningState.NOT_STARTED,
             "metadata": jsonable_encoder(run_metadata),
             "use_on_demand_clusters": False,
         }
@@ -247,7 +248,7 @@ async def publish_project(
 
 @pytest.fixture
 async def published_project(
-    publish_project: Callable[[], Awaitable[PublishedProject]]
+    publish_project: Callable[[], Awaitable[PublishedProject]],
 ) -> PublishedProject:
     return await publish_project()
 

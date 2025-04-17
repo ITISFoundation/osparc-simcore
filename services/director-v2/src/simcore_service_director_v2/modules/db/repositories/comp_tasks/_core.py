@@ -92,7 +92,7 @@ class CompTasksRepository(BaseRepository):
 
         base_select_query = (
             sa.select(
-                comp_tasks.c.project_id,
+                comp_tasks.c.project_id.label("project_uuid"),
                 comp_tasks.c.node_id,
                 comp_tasks.c.state,
                 comp_tasks.c.progress,
