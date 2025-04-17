@@ -95,6 +95,7 @@ qx.Class.define("osparc.utils.Utils", {
       if (control && control.getContentElement()) {
         control.getContentElement().setAttribute("autocomplete", "off");
         control.getContentElement().setAttribute("type", "search");
+        control.getContentElement().setAttribute("name", "osparc-nope1234");
       }
     },
 
