@@ -157,11 +157,6 @@ qx.Class.define("osparc.desktop.MainPage", {
       }
       this.closeEditor();
       this.__showDashboard();
-      // reset templates
-      // OM is this needed?
-      // this.__dashboard.getTemplateBrowser().invalidateTemplates();
-      osparc.store.Templates.getInstance().invalidateTemplates();
-      this.__dashboard.getTemplateBrowser().reloadResources();
       // reset studies
       this.__dashboard.getStudyBrowser().invalidateStudies();
       this.__dashboard.getStudyBrowser().reloadResources();

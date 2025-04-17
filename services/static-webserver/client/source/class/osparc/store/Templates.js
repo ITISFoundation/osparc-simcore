@@ -40,10 +40,6 @@ qx.Class.define("osparc.store.Templates", {
         });
     },
 
-    invalidateTemplates: function() {
-      this.__templates = [];
-    },
-
     getTemplates: function() {
       return this.__templates;
     },
