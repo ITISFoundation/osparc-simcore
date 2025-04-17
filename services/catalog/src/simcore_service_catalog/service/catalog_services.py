@@ -194,7 +194,6 @@ async def list_latest_catalog_services(
                     filters=filters,
                     limit=limit,
                     offset=offset,
-                    access_rights=access_rights,
                 ),
                 tip="This might be due to malfunction of the background-task or that this call was done while the sync was taking place",
             )
