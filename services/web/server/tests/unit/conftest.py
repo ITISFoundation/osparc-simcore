@@ -7,17 +7,20 @@
 
 import json
 import sys
-from collections.abc import Callable, Iterable
+from collections.abc import AsyncIterator, Callable, Iterable
 from pathlib import Path
 from typing import Any
 
 import pytest
 import yaml
+from aiohttp.test_utils import TestClient
 from models_library.products import ProductName
 from pytest_mock import MockFixture, MockType
-from pytest_simcore.helpers.webserver_projects import empty_project_data
+from pytest_simcore.helpers.webserver_login import UserInfoDict
+from pytest_simcore.helpers.webserver_projects import NewProject, empty_project_data
 from simcore_service_webserver.application_settings_utils import AppConfigDict
 from simcore_service_webserver.constants import FRONTEND_APP_DEFAULT
+from simcore_service_webserver.projects.models import ProjectDict
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -93,3 +96,23 @@ def disabled_setup_garbage_collector(mocker: MockFixture) -> MockType:
 @pytest.fixture(scope="session")
 def product_name() -> ProductName:
     return ProductName(FRONTEND_APP_DEFAULT)
+
+
+@pytest.fixture
+async def user_project(
+    client: TestClient,
+    fake_project: ProjectDict,
+    logged_user: UserInfoDict,
+    tests_data_dir: Path,
+    osparc_product_name: str,
+) -> AsyncIterator[ProjectDict]:
+    async with NewProject(
+        fake_project,
+        client.app,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+        tests_data_dir=tests_data_dir,
+    ) as project:
+        print("-----> added project", project["name"])
+        yield project
+        print("<----- removed project", project["name"])

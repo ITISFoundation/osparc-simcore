@@ -67,13 +67,17 @@ async def list_computations_latest_iteration(request: web.Request) -> web.Respon
 
     page = Page[ComputationRunRestGet].model_validate(
         paginate_data(
-            chunk=[ComputationRunRestGet(**task.dict()) for task in _get.items],
+            chunk=[
+                ComputationRunRestGet.model_validate(task, from_attributes=True)
+                for task in _get.items
+            ],
             total=_get.total,
             limit=query_params.limit,
             offset=query_params.offset,
             request_url=request.url,
         )
     )
+
     return web.Response(
         text=page.model_dump_json(**RESPONSE_MODEL_POLICY),
         content_type=MIMETYPE_APPLICATION_JSON,
@@ -111,7 +115,10 @@ async def list_computations_latest_iteration_tasks(
 
     page = Page[ComputationTaskRestGet].model_validate(
         paginate_data(
-            chunk=[ComputationTaskRestGet(**task.dict()) for task in _get.items],
+            chunk=[
+                ComputationTaskRestGet.model_validate(task, from_attributes=True)
+                for task in _get.items
+            ],
             total=_get.total,
             limit=query_params.limit,
             offset=query_params.offset,
