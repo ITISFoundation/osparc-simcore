@@ -9,6 +9,10 @@ from aiopg.sa.connection import SAConnection
 from aiopg.sa.engine import Engine
 from models_library.groups import EVERYONE_GROUP_ID
 from models_library.services import ServiceKey, ServiceVersion
+from models_library.services_regex import (
+    COMPUTATIONAL_SERVICE_KEY_PREFIX,
+    DYNAMIC_SERVICE_KEY_PREFIX,
+)
 from pydantic import HttpUrl, PositiveInt, TypeAdapter, ValidationError
 from servicelib.logging_utils import log_decorator
 from simcore_postgres_database.models.services import (
@@ -92,8 +96,8 @@ async def iter_latest_product_services(
         )
         .where(
             (
-                services_meta_data.c.key.like("simcore/services/dynamic/%%")
-                | (services_meta_data.c.key.like("simcore/services/comp/%%"))
+                services_meta_data.c.key.like(f"{DYNAMIC_SERVICE_KEY_PREFIX}/%")
+                | services_meta_data.c.key.like(f"{COMPUTATIONAL_SERVICE_KEY_PREFIX}/%")
             )
             & (services_meta_data.c.deprecated.is_(None))
             & (services_access_rights.c.gid == EVERYONE_GROUP_ID)

@@ -32,6 +32,7 @@ from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
 from ..clients.director import DirectorClient
 from ..models.services_db import (
     ServiceAccessRightsAtDB,
+    ServiceFiltersDB,
     ServiceMetaDataDBPatch,
     ServiceWithHistoryDBGet,
 )
@@ -134,11 +135,16 @@ async def list_latest_catalog_services(
     user_id: UserID,
     limit: PageLimitInt | None,
     offset: NonNegativeInt = 0,
+    filters: ServiceFiltersDB | None = None,
 ) -> tuple[PageTotalCount, list[LatestServiceGet]]:
 
     # defines the order
     total_count, services = await repo.list_latest_services(
-        product_name=product_name, user_id=user_id, limit=limit, offset=offset
+        product_name=product_name,
+        user_id=user_id,
+        limit=limit,
+        offset=offset,
+        filters=filters,
     )
 
     if services:
@@ -185,6 +191,9 @@ async def list_latest_catalog_services(
                     missing_services=missing_services,
                     user_id=user_id,
                     product_name=product_name,
+                    filters=filters,
+                    limit=limit,
+                    offset=offset,
                 ),
                 tip="This might be due to malfunction of the background-task or that this call was done while the sync was taking place",
             )
@@ -507,6 +516,8 @@ async def list_user_service_release_history(
     # pagination
     limit: PageLimitInt | None = None,
     offset: NonNegativeInt | None = None,
+    # filters
+    filters: ServiceFiltersDB | None = None,
     # options
     include_compatibility: bool = False,
 ) -> tuple[PageTotalCount, list[ServiceRelease]]:
@@ -519,6 +530,7 @@ async def list_user_service_release_history(
         key=service_key,
         limit=limit,
         offset=offset,
+        filters=filters,
     )
 
     compatibility_map: dict[ServiceVersion, Compatibility | None] = {}

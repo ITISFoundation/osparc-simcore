@@ -1,4 +1,4 @@
-""" 'osparc config' is a set of stardard file forms (yaml) that the user fills to describe how his/her service works and
+"""'osparc config' is a set of stardard file forms (yaml) that the user fills to describe how his/her service works and
 integrates with osparc.
 
     - config files are stored under '.osparc/' folder in the root repo folder (analogous to other configs like .github, .vscode, etc)
@@ -26,11 +26,7 @@ from models_library.service_settings_labels import (
     RestartPolicy,
 )
 from models_library.service_settings_nat_rule import NATRule
-from models_library.services import BootOptions, ServiceMetaDataPublished, ServiceType
-from models_library.services_regex import (
-    COMPUTATIONAL_SERVICE_KEY_FORMAT,
-    DYNAMIC_SERVICE_KEY_FORMAT,
-)
+from models_library.services import BootOptions, ServiceMetaDataPublished
 from models_library.services_types import ServiceKey
 from models_library.utils.labels_annotations import (
     OSPARC_LABEL_PREFIXES,
@@ -60,12 +56,6 @@ OSPARC_CONFIG_DIRNAME: Final[str] = ".osparc"
 OSPARC_CONFIG_COMPOSE_SPEC_NAME: Final[str] = "docker-compose.overwrite.yml"
 OSPARC_CONFIG_METADATA_NAME: Final[str] = "metadata.yml"
 OSPARC_CONFIG_RUNTIME_NAME: Final[str] = "runtime.yml"
-
-
-SERVICE_KEY_FORMATS = {
-    ServiceType.COMPUTATIONAL: COMPUTATIONAL_SERVICE_KEY_FORMAT,
-    ServiceType.DYNAMIC: DYNAMIC_SERVICE_KEY_FORMAT,
-}
 
 
 class DockerComposeOverwriteConfig(ComposeSpecification):
@@ -231,9 +221,9 @@ class RuntimeConfig(BaseModel):
 
     containers_allowed_outgoing_internet: set[str] | None = None
 
-    settings: Annotated[
-        list[SettingsItem], Field(default_factory=list)
-    ] = DEFAULT_FACTORY
+    settings: Annotated[list[SettingsItem], Field(default_factory=list)] = (
+        DEFAULT_FACTORY
+    )
 
     @model_validator(mode="before")
     @classmethod

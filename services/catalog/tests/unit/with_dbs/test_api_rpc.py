@@ -109,7 +109,7 @@ async def background_sync_task_mocked(
     await services_db_tables_injector(fake_data_for_services)
 
 
-async def test_rpc_catalog_with_no_services_returns_empty_page(
+async def test_rpc_list_services_paginated_with_no_services_returns_empty_page(
     background_sync_task_mocked: None,
     mocked_director_rest_api: MockRouter,
     rpc_client: RabbitMQRPCClient,
@@ -125,6 +125,35 @@ async def test_rpc_catalog_with_no_services_returns_empty_page(
     assert page.links.next is None
     assert page.links.prev is None
     assert page.meta.count == 0
+    assert page.meta.total == 0
+
+
+async def test_rpc_list_services_paginated_with_filters(
+    background_sync_task_mocked: None,
+    mocked_director_rest_api: MockRouter,
+    rpc_client: RabbitMQRPCClient,
+    product_name: ProductName,
+    user_id: UserID,
+    app: FastAPI,
+):
+    assert app
+
+    # only computational services introduced by the background_sync_task_mocked
+    page = await list_services_paginated(
+        rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        filters={"service_type": "computational"},
+    )
+    assert page.meta.total == page.meta.count
+    assert page.meta.total > 0
+
+    page = await list_services_paginated(
+        rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        filters={"service_type": "dynamic"},
+    )
     assert page.meta.total == 0
 
 
@@ -484,7 +513,7 @@ async def test_rpc_batch_get_my_services(
     assert my_services[1].release.version == other_service_version
 
 
-async def test_rpc_get_my_service_history(
+async def test_rpc_list_my_service_history_paginated(
     background_sync_task_mocked: None,
     mocked_director_rest_api: MockRouter,
     rpc_client: RabbitMQRPCClient,
