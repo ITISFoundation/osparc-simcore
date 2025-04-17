@@ -1,12 +1,15 @@
 import datetime
 import logging
-from typing import Any, Final
+from typing import Any, Final, cast
 
 import arrow
 import sqlalchemy as sa
 from aiopg.sa.result import RowProxy
+from models_library.api_schemas_directorv2.comp_runs import ComputationRunRpcGet
+from models_library.basic_types import IDStr
 from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
+from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import PositiveInt
@@ -67,7 +70,7 @@ class CompRunsRepository(BaseRepository):
                 raise ComputationalRunNotFoundError
             return CompRunsAtDB.model_validate(row)
 
-    async def list(
+    async def list_(
         self,
         *,
         filter_by_state: set[RunningState] | None = None,
@@ -138,6 +141,85 @@ class CompRunsRepository(BaseRepository):
                     )
                 )
             ]
+
+    async def list_for_user__only_latest_iterations(
+        self,
+        *,
+        product_name: str,
+        user_id: UserID,
+        # pagination
+        offset: int,
+        limit: int,
+        # ordering
+        order_by: OrderBy | None = None,
+    ) -> tuple[int, list[ComputationRunRpcGet]]:
+        # NOTE: Currently, we list only pipelines created by the user themselves.
+        # If we want to list all pipelines that the user has read access to
+        # via project access rights, we need to join the `projects_to_groups`
+        # and `workspaces_access_rights` tables (which will make it slower, but we do
+        # the same for listing projects).
+        if order_by is None:
+            order_by = OrderBy(field=IDStr("run_id"))  # default ordering
+
+        base_select_query = sa.select(
+            comp_runs.c.project_uuid,
+            comp_runs.c.iteration,
+            comp_runs.c.result.label("state"),
+            comp_runs.c.metadata.label("info"),
+            comp_runs.c.created.label("submitted_at"),
+            comp_runs.c.started.label("started_at"),
+            comp_runs.c.ended.label("ended_at"),
+        ).select_from(
+            sa.select(
+                comp_runs.c.project_uuid,
+                sa.func.max(comp_runs.c.iteration).label(
+                    "latest_iteration"
+                ),  # <-- NOTE: We might create a boolean column with latest iteration for fast retrieval
+            )
+            .where(
+                (comp_runs.c.user_id == user_id)
+                & (
+                    comp_runs.c.metadata["product_name"].astext == product_name
+                )  # <-- NOTE: We might create a separate column for this for fast retrieval
+            )
+            .group_by(comp_runs.c.project_uuid)
+            .subquery("latest_runs")
+            .join(
+                comp_runs,
+                sa.and_(
+                    comp_runs.c.project_uuid
+                    == literal_column("latest_runs.project_uuid"),
+                    comp_runs.c.iteration
+                    == literal_column("latest_runs.latest_iteration"),
+                ),
+            )
+        )
+
+        # Select total count from base_query
+        count_query = sa.select(sa.func.count()).select_from(
+            base_select_query.subquery()
+        )
+
+        # Ordering and pagination
+        if order_by.direction == OrderDirection.ASC:
+            list_query = base_select_query.order_by(
+                sa.asc(getattr(comp_runs.c, order_by.field)), comp_runs.c.run_id
+            )
+        else:
+            list_query = base_select_query.order_by(
+                desc(getattr(comp_runs.c, order_by.field)), comp_runs.c.run_id
+            )
+        list_query = list_query.offset(offset).limit(limit)
+
+        async with self.db_engine.acquire() as conn:
+            total_count = await conn.scalar(count_query)
+
+            result = await conn.execute(list_query)
+            items: list[ComputationRunRpcGet] = [
+                ComputationRunRpcGet.model_validate(row) async for row in result
+            ]
+
+            return cast(int, total_count), items
 
     async def create(
         self,

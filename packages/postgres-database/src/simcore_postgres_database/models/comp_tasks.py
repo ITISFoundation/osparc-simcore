@@ -110,6 +110,7 @@ comp_tasks = sa.Table(
     ),
     # ------
     sa.UniqueConstraint("project_id", "node_id", name="project_node_uniqueness"),
+    sa.Index("ix_comp_tasks_project_id", "project_id"),
 )
 
 register_modified_datetime_auto_update_trigger(comp_tasks)

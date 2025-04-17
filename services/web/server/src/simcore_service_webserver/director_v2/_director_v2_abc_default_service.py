@@ -9,7 +9,7 @@ import logging
 from aiohttp import web
 from models_library.projects import CommitID, ProjectID
 
-from ._service_abc import AbstractProjectRunPolicy
+from ._director_v2_abc_service import AbstractProjectRunPolicy
 
 log = logging.getLogger(__name__)
 

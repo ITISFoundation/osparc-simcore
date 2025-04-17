@@ -105,26 +105,6 @@ def mock_catalog_api(
 
 
 @pytest.fixture
-async def user_project(
-    client: TestClient,
-    fake_project: ProjectDict,
-    logged_user: UserInfoDict,
-    tests_data_dir: Path,
-    osparc_product_name: str,
-) -> AsyncIterator[ProjectDict]:
-    async with NewProject(
-        fake_project,
-        client.app,
-        user_id=logged_user["id"],
-        product_name=osparc_product_name,
-        tests_data_dir=tests_data_dir,
-    ) as project:
-        print("-----> added project", project["name"])
-        yield project
-        print("<----- removed project", project["name"])
-
-
-@pytest.fixture
 async def shared_project(
     client,
     fake_project,
