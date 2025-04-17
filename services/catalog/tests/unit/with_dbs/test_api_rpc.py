@@ -14,6 +14,10 @@ from fastapi import FastAPI
 from models_library.products import ProductName
 from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from models_library.services_history import ServiceRelease
+from models_library.services_regex import (
+    COMPUTATIONAL_SERVICE_KEY_PREFIX,
+    FRONTEND_SERVICE_KEY_PREFIX,
+)
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from packaging import version
@@ -568,8 +572,8 @@ async def test_rpc_list_services_paginated_with_filters(
     assert app
 
     # Create fake services with different types
-    service_key_1 = "simcore/services/comp/test-filter-service-1"
-    service_key_2 = "simcore/services/frontend/test-filter-service-2"
+    service_key_1 = f"{COMPUTATIONAL_SERVICE_KEY_PREFIX}/test-filter-service-1"
+    service_key_2 = f"{FRONTEND_SERVICE_KEY_PREFIX}/test-filter-service-2"
     service_version = "1.0.0"
 
     fake_services = [
@@ -579,7 +583,6 @@ async def test_rpc_list_services_paginated_with_filters(
             team_access=None,
             everyone_access=None,
             product=product_name,
-            service_type="computational",
         ),
         create_fake_service_data(
             service_key_2,
@@ -587,7 +590,6 @@ async def test_rpc_list_services_paginated_with_filters(
             team_access=None,
             everyone_access=None,
             product=product_name,
-            service_type="frontend",
         ),
     ]
 
