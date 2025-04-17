@@ -3,15 +3,18 @@ from functools import partial
 from uuid import UUID
 
 from fastapi import FastAPI
+from models_library.api_schemas_directorv2.computations import (
+    ComputationGet as DirectorV2ComputationGet,
+)
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_pipeline import ComputationTask
 from models_library.projects_state import RunningState
 from pydantic import AnyHttpUrl, BaseModel, ConfigDict, Field, PositiveInt, TypeAdapter
+from pydantic.config import JsonDict
 from settings_library.tracing import TracingSettings
 from starlette import status
 
 from ..core.settings import DirectorV2Settings
-from ..db.repositories.groups_extra_properties import GroupsExtraPropertiesRepository
 from ..exceptions.backend_errors import JobNotFoundError, LogFileNotFoundError
 from ..exceptions.service_errors_utils import service_exception_mapper
 from ..models.schemas.jobs import PercentageInt
@@ -19,10 +22,6 @@ from ..models.schemas.studies import JobLogsMap, LogLink
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
 logger = logging.getLogger(__name__)
-
-
-# API MODELS ---------------------------------------------
-# NOTE: as services/director-v2/src/simcore_service_director_v2/models/schemas/comp_tasks.py
 
 
 class ComputationTaskGet(ComputationTask):
@@ -39,15 +38,21 @@ class ComputationTaskGet(ComputationTask):
             return 100
         return 0
 
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        **ComputationTask.model_json_schema()["examples"][0],
+                        "url": "https://link-to-stop-computation",
+                    }
+                ]
+            }
+        )
+
     model_config = ConfigDict(
-        json_schema_extra={
-            "examples": [
-                {
-                    **ComputationTask.model_config["json_schema_extra"]["examples"][0],  # type: ignore
-                    "url": "https://link-to-stop-computation",
-                }
-            ]
-        }
+        json_schema_extra=_update_json_schema_extra,
     )
 
 
@@ -60,62 +65,16 @@ class TaskLogFileGet(BaseModel):
 
 # API CLASS ---------------------------------------------
 
-_exception_mapper = partial(service_exception_mapper, service_name="Director V2")
+_client_status_code_to_exception = partial(
+    service_exception_mapper, service_name="Director V2"
+)
 
 
 class DirectorV2Api(BaseServiceClientApi):
-    @_exception_mapper(http_status_map={})
-    async def create_computation(
-        self,
-        *,
-        project_id: UUID,
-        user_id: PositiveInt,
-        product_name: str,
-    ) -> ComputationTaskGet:
-        response = await self.client.post(
-            "/v2/computations",
-            json={
-                "user_id": user_id,
-                "project_id": str(project_id),
-                "start_pipeline": False,
-                "product_name": product_name,
-            },
-        )
-        response.raise_for_status()
-        task: ComputationTaskGet = ComputationTaskGet.model_validate_json(response.text)
-        return task
 
-    @_exception_mapper(http_status_map={})
-    async def start_computation(
-        self,
-        *,
-        project_id: UUID,
-        user_id: PositiveInt,
-        product_name: str,
-        groups_extra_properties_repository: GroupsExtraPropertiesRepository,
-    ) -> ComputationTaskGet:
-
-        use_on_demand_clusters = (
-            await groups_extra_properties_repository.use_on_demand_clusters(
-                user_id, product_name
-            )
-        )
-
-        response = await self.client.post(
-            "/v2/computations",
-            json={
-                "user_id": user_id,
-                "project_id": str(project_id),
-                "start_pipeline": True,
-                "product_name": product_name,
-                "use_on_demand_clusters": use_on_demand_clusters,
-            },
-        )
-        response.raise_for_status()
-        task: ComputationTaskGet = ComputationTaskGet.model_validate_json(response.text)
-        return task
-
-    @_exception_mapper(http_status_map={status.HTTP_404_NOT_FOUND: JobNotFoundError})
+    @_client_status_code_to_exception(
+        http_status_map={status.HTTP_404_NOT_FOUND: JobNotFoundError}
+    )
     async def get_computation(
         self, *, project_id: UUID, user_id: PositiveInt
     ) -> ComputationTaskGet:
@@ -126,13 +85,15 @@ class DirectorV2Api(BaseServiceClientApi):
             },
         )
         response.raise_for_status()
-        task: ComputationTaskGet = ComputationTaskGet.model_validate_json(response.text)
-        return task
+        return ComputationTaskGet.model_validate(
+            DirectorV2ComputationGet.model_validate_json(response.text),
+            from_attributes=True,
+        )
 
-    @_exception_mapper(http_status_map={status.HTTP_404_NOT_FOUND: JobNotFoundError})
-    async def stop_computation(
-        self, *, project_id: UUID, user_id: PositiveInt
-    ) -> ComputationTaskGet:
+    @_client_status_code_to_exception(
+        http_status_map={status.HTTP_404_NOT_FOUND: JobNotFoundError}
+    )
+    async def stop_computation(self, *, project_id: UUID, user_id: PositiveInt) -> None:
         response = await self.client.post(
             f"/v2/computations/{project_id}:stop",
             json={
@@ -140,11 +101,13 @@ class DirectorV2Api(BaseServiceClientApi):
             },
         )
         response.raise_for_status()
-        task: ComputationTaskGet = ComputationTaskGet.model_validate_json(response.text)
-        return task
 
-    @_exception_mapper(http_status_map={status.HTTP_404_NOT_FOUND: JobNotFoundError})
-    async def delete_computation(self, *, project_id: UUID, user_id: PositiveInt):
+    @_client_status_code_to_exception(
+        http_status_map={status.HTTP_404_NOT_FOUND: JobNotFoundError}
+    )
+    async def delete_computation(
+        self, *, project_id: UUID, user_id: PositiveInt
+    ) -> None:
         response = await self.client.request(
             "DELETE",
             f"/v2/computations/{project_id}",
@@ -155,7 +118,7 @@ class DirectorV2Api(BaseServiceClientApi):
         )
         response.raise_for_status()
 
-    @_exception_mapper(
+    @_client_status_code_to_exception(
         http_status_map={status.HTTP_404_NOT_FOUND: LogFileNotFoundError}
     )
     async def get_computation_logs(

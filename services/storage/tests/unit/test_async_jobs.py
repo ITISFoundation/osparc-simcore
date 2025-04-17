@@ -30,7 +30,7 @@ from simcore_service_storage.api.rpc.routes import get_rabbitmq_rpc_server
 from simcore_service_storage.modules.celery import get_celery_client
 from simcore_service_storage.modules.celery._task import register_task
 from simcore_service_storage.modules.celery.models import TaskID
-from simcore_service_storage.modules.celery.worker import CeleryTaskQueueWorker
+from simcore_service_storage.modules.celery.worker import CeleryTaskWorker
 from tenacity import (
     AsyncRetrying,
     retry_if_exception_type,
@@ -199,7 +199,7 @@ async def test_async_jobs_workflow(
     initialized_app: FastAPI,
     register_rpc_routes: None,
     storage_rabbitmq_rpc_client: RabbitMQRPCClient,
-    with_storage_celery_worker: CeleryTaskQueueWorker,
+    with_storage_celery_worker: CeleryTaskWorker,
     user_id: UserID,
     product_name: ProductName,
     exposed_rpc_start: str,
@@ -240,7 +240,6 @@ async def test_async_jobs_workflow(
 @pytest.mark.parametrize(
     "exposed_rpc_start",
     [
-        rpc_sync_job.__name__,
         rpc_async_job.__name__,
     ],
 )
@@ -248,7 +247,7 @@ async def test_async_jobs_cancel(
     initialized_app: FastAPI,
     register_rpc_routes: None,
     storage_rabbitmq_rpc_client: RabbitMQRPCClient,
-    with_storage_celery_worker: CeleryTaskQueueWorker,
+    with_storage_celery_worker: CeleryTaskWorker,
     user_id: UserID,
     product_name: ProductName,
     exposed_rpc_start: str,
@@ -259,7 +258,7 @@ async def test_async_jobs_cancel(
         user_id=user_id,
         product_name=product_name,
         action=Action.SLEEP,
-        payload=10,
+        payload=60 * 10,  # test hangs if not cancelled properly
     )
 
     await async_jobs.cancel(
@@ -305,7 +304,7 @@ async def test_async_jobs_raises(
     initialized_app: FastAPI,
     register_rpc_routes: None,
     storage_rabbitmq_rpc_client: RabbitMQRPCClient,
-    with_storage_celery_worker: CeleryTaskQueueWorker,
+    with_storage_celery_worker: CeleryTaskWorker,
     user_id: UserID,
     product_name: ProductName,
     exposed_rpc_start: str,

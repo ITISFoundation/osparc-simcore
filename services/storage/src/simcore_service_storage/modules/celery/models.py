@@ -1,5 +1,5 @@
 from datetime import timedelta
-from enum import StrEnum, auto
+from enum import StrEnum
 from typing import Any, Final, Protocol, TypeAlias
 from uuid import UUID
 
@@ -26,11 +26,12 @@ def build_task_id(task_context: TaskContext, task_uuid: TaskUUID) -> TaskID:
 
 
 class TaskState(StrEnum):
-    PENDING = auto()
-    RUNNING = auto()
-    SUCCESS = auto()
-    ERROR = auto()
-    ABORTED = auto()
+    PENDING = "PENDING"
+    STARTED = "STARTED"
+    RETRY = "RETRY"
+    SUCCESS = "SUCCESS"
+    FAILURE = "FAILURE"
+    ABORTED = "ABORTED"
 
 
 class TasksQueue(StrEnum):
@@ -43,21 +44,25 @@ class TaskMetadata(BaseModel):
     queue: TasksQueue = TasksQueue.DEFAULT
 
 
-_TASK_DONE = {TaskState.SUCCESS, TaskState.ERROR, TaskState.ABORTED}
+_TASK_DONE = {TaskState.SUCCESS, TaskState.FAILURE, TaskState.ABORTED}
 
 
-class TaskMetadataStore(Protocol):
+class TaskInfoStore(Protocol):
     async def exists(self, task_id: TaskID) -> bool: ...
 
-    async def get(self, task_id: TaskID) -> TaskMetadata | None: ...
+    async def get_progress(self, task_id: TaskID) -> ProgressReport | None: ...
+
+    async def get_metadata(self, task_id: TaskID) -> TaskMetadata | None: ...
 
     async def get_uuids(self, task_context: TaskContext) -> set[TaskUUID]: ...
 
     async def remove(self, task_id: TaskID) -> None: ...
 
-    async def set(
-        self, task_id: TaskID, task_data: TaskMetadata, expiry: timedelta
+    async def set_metadata(
+        self, task_id: TaskID, task_metadata: TaskMetadata, expiry: timedelta
     ) -> None: ...
+
+    async def set_progress(self, task_id: TaskID, report: ProgressReport) -> None: ...
 
 
 class TaskStatus(BaseModel):

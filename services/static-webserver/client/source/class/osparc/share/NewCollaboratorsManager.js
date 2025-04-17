@@ -35,12 +35,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
 
     this.__shareWithEmailEnabled = false;
     if (this.__resourceData["resourceType"] === "study") {
-      osparc.utils.DisabledPlugins.isShareWithEmailEnabled()
-        .then(isEnabled => {
-          if (isEnabled) {
-            this.__shareWithEmailEnabled = true;
-          }
-        });
+      this.__shareWithEmailEnabled = osparc.utils.DisabledPlugins.isShareWithEmailEnabled();
     }
 
     this.center();
@@ -379,7 +374,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
         }
       }
       if (Object.keys(this.__selectedCollaborators).length) {
-        const selectedGIds = Object.keys(this.__selectedCollaborators).filter(key => qx.lang.Type.isNumber(key));
+        const selectedGIds = Object.keys(this.__selectedCollaborators).filter(key => /^\d+$/.test(key)); // all digits
         const selectedEmails = Object.keys(this.__selectedCollaborators).filter(key => osparc.auth.core.Utils.checkEmail(key));
 
         const addCollaborators = () => {

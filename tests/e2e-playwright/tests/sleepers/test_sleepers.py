@@ -24,7 +24,7 @@ from pytest_simcore.helpers.logging_tools import (
 )
 from pytest_simcore.helpers.playwright import (
     MINUTE,
-    RestartableWebSocket,
+    RobustWebSocket,
     RunningState,
     ServiceType,
     SocketIOEvent,
@@ -80,7 +80,7 @@ def _get_file_names(page: Page) -> list[str]:
 
 def test_sleepers(
     page: Page,
-    log_in_and_out: RestartableWebSocket,
+    log_in_and_out: RobustWebSocket,
     create_project_from_service_dashboard: Callable[
         [ServiceType, str, str | None, str | None], dict[str, Any]
     ],

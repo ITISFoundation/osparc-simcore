@@ -15,9 +15,9 @@ from fastapi import status
 from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_api_server.api_keys import ApiKeyInDB
 from models_library.generics import Envelope
-from models_library.users import UserID
 from models_library.wallets import WalletStatus
 from pydantic import PositiveInt
+from pytest_mock import MockType
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.schemas.model_adapter import (
     WalletGetWithAvailableCreditsLegacy,
@@ -80,7 +80,7 @@ async def test_product_webserver(
 
 async def test_product_catalog(
     client: httpx.AsyncClient,
-    mocked_catalog_rest_api_base: respx.MockRouter,
+    mocked_rpc_catalog_service_api: dict[str, MockType],
     create_fake_api_keys: Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB, None]],
 ) -> None:
     assert client
@@ -88,25 +88,10 @@ async def test_product_catalog(
     keys: list[ApiKeyInDB] = [key async for key in create_fake_api_keys(2)]
     assert len({key.product_name for key in keys}) == 2
 
-    def _get_service_side_effect(request: httpx.Request, **kwargs):
-        assert (
-            received_product := request.headers.get("x-simcore-products-name")
-        ) is not None
-        assert (user_id := request.url.params.get("user_id")) is not None
-        assert (
-            key := {UserID(key.id_): key for key in keys}.get(UserID(user_id))
-        ) is not None
-        assert key.product_name == received_product
-        return httpx.Response(status_code=status.HTTP_200_OK)
-
-    respx_mock = mocked_catalog_rest_api_base.get(
-        r"/v0/services/simcore%2Fservices%2Fcomp%2Fisolve/2.0.24"
-    ).mock(side_effect=_get_service_side_effect)
-
     for key in keys:
         await client.get(
             f"{API_VTAG}/solvers/simcore/services/comp/isolve/releases/2.0.24",
             auth=httpx.BasicAuth(key.api_key, key.api_secret),
         )
 
-    assert respx_mock.call_count == len(keys)
+    assert mocked_rpc_catalog_service_api["get_service"].called

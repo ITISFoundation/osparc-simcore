@@ -9,7 +9,7 @@ from settings_library.redis import RedisDatabase
 from .redis import get_redis_client
 
 
-async def lifespan_deferred_manager(app: FastAPI) -> AsyncIterator[State]:
+async def deferred_manager_lifespan(app: FastAPI) -> AsyncIterator[State]:
     rabbit_settings: RabbitSettings = app.state.settings.DYNAMIC_SCHEDULER_RABBITMQ
 
     redis_client_sdk = get_redis_client(app, RedisDatabase.DEFERRED_TASKS)

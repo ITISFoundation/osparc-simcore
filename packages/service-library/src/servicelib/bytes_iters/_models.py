@@ -14,5 +14,6 @@ class BytesStreamer:
         self, progress_bar: ProgressBarData
     ) -> BytesIter:
         async for chunk in self.bytes_iter_callable():
-            await progress_bar.update(len(chunk))
+            if progress_bar.is_running():
+                await progress_bar.update(len(chunk))
             yield chunk

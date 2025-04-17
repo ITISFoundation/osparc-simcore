@@ -25,7 +25,6 @@ from starlette import status
 
 
 class MockedBackendApiDict(TypedDict):
-    catalog: MockRouter | None
     webserver: MockRouter | None
 
 
@@ -40,7 +39,7 @@ def _as_path_regex(initial_path: str):
 def mocked_backend(
     mocked_webserver_rest_api: MockRouter,
     mocked_webserver_rpc_api: dict[str, MockType],
-    mocked_catalog_rest_api: MockRouter,
+    mocked_rpc_catalog_service_api: dict[str, MockType],
     project_tests_dir: Path,
 ) -> MockedBackendApiDict:
     mock_name = "for_test_get_and_update_job_metadata.json"
@@ -54,14 +53,6 @@ def mocked_backend(
 
     capture = captures["get_service"]
     assert capture.host == "catalog"
-    mocked_catalog_rest_api.request(
-        method=capture.method,
-        path=capture.path,
-        name=capture.name,
-    ).respond(
-        status_code=capture.status_code,
-        json=capture.response_body,
-    )
 
     for name in ("get_project_metadata", "update_project_metadata", "delete_project"):
         capture = captures[name]
@@ -87,9 +78,7 @@ def mocked_backend(
                 json=capture.response_body,
             )
 
-    return MockedBackendApiDict(
-        webserver=mocked_webserver_rest_api, catalog=mocked_catalog_rest_api
-    )
+    return MockedBackendApiDict(webserver=mocked_webserver_rest_api)
 
 
 @pytest.mark.acceptance_test(

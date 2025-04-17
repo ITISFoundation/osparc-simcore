@@ -1,6 +1,5 @@
 import logging
 from collections.abc import Callable
-from operator import attrgetter
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, HTTPException, status
@@ -17,49 +16,16 @@ from simcore_sdk.node_ports_common.filemanager import (
     complete_file_upload,
     get_upload_links_from_s3,
 )
-from simcore_service_api_server._service import create_solver_or_program_job
-from simcore_service_api_server.api.dependencies.webserver_http import (
-    get_webserver_session,
-)
-from simcore_service_api_server.services_http.webserver import AuthSession
 
+from ..._service_job import JobService
+from ..._service_programs import ProgramService
 from ...models.basic_types import VersionStr
 from ...models.schemas.jobs import Job, JobInputs
 from ...models.schemas.programs import Program, ProgramKeyId
-from ...services_http.catalog import CatalogApi
 from ..dependencies.authentication import get_current_user_id, get_product_name
-from ..dependencies.services import get_api_client
 
 _logger = logging.getLogger(__name__)
 router = APIRouter()
-
-
-@router.get("", response_model=list[Program])
-async def list_programs(
-    user_id: Annotated[int, Depends(get_current_user_id)],
-    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
-    url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
-    product_name: Annotated[str, Depends(get_product_name)],
-):
-    """Lists all available solvers (latest version)
-
-    SEE get_solvers_page for paginated version of this function
-    """
-    services = await catalog_client.list_services(
-        user_id=user_id,
-        product_name=product_name,
-        predicate=None,
-        type_filter="DYNAMIC",
-    )
-
-    programs = [service.to_program() for service in services]
-
-    for program in programs:
-        program.url = url_for(
-            "get_program_release", program_key=program.id, version=program.version
-        )
-
-    return sorted(programs, key=attrgetter("id"))
 
 
 @router.get(
@@ -70,13 +36,13 @@ async def get_program_release(
     program_key: ProgramKeyId,
     version: VersionStr,
     user_id: Annotated[int, Depends(get_current_user_id)],
-    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
+    program_service: Annotated[ProgramService, Depends()],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
 ) -> Program:
     """Gets a specific release of a solver"""
     try:
-        program = await catalog_client.get_program(
+        program = await program_service.get_program(
             user_id=user_id,
             name=program_key,
             version=version,
@@ -109,8 +75,8 @@ async def create_program_job(
     program_key: ProgramKeyId,
     version: VersionStr,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
-    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
-    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    program_service: Annotated[ProgramService, Depends()],
+    job_service: Annotated[JobService, Depends()],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
     x_simcore_parent_project_uuid: Annotated[ProjectID | None, Header()] = None,
@@ -123,15 +89,14 @@ async def create_program_job(
 
     # ensures user has access to solver
     inputs = JobInputs(values={})
-    program = await catalog_client.get_program(
+    program = await program_service.get_program(
         user_id=user_id,
         name=program_key,
         version=version,
         product_name=product_name,
     )
 
-    job, project = await create_solver_or_program_job(
-        webserver_api=webserver_api,
+    job, project = await job_service.create_job(
         solver_or_program=program,
         inputs=inputs,
         parent_project_uuid=x_simcore_parent_project_uuid,

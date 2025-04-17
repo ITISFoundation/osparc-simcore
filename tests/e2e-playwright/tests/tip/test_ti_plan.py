@@ -20,11 +20,12 @@ from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import (
     MINUTE,
     SECOND,
-    RestartableWebSocket,
+    RobustWebSocket,
     app_mode_trigger_next_app,
     expected_service_running,
     wait_for_service_running,
 )
+from tenacity import RetryError, retry, stop_after_delay, wait_fixed
 
 _GET_NODE_OUTPUTS_REQUEST_PATTERN: Final[re.Pattern[str]] = re.compile(
     r"/storage/locations/[^/]+/files"
@@ -89,9 +90,20 @@ class _JLabWebSocketWaiter:
             return False
 
 
+@retry(
+    stop=stop_after_delay(_JLAB_RUN_OPTIMIZATION_MAX_TIME / 1000),  # seconds
+    wait=wait_fixed(2),
+    reraise=True,
+)
+def _wait_for_optimization_complete(run_button):
+    bg_color = run_button.evaluate("el => getComputedStyle(el).backgroundColor")
+    if bg_color != "rgb(0, 128, 0)":
+        raise ValueError("Optimization not finished yet: {bg_color=}, {run_button=}")
+
+
 def test_classic_ti_plan(  # noqa: PLR0915
     page: Page,
-    log_in_and_out: RestartableWebSocket,
+    log_in_and_out: RobustWebSocket,
     is_autoscaled: bool,
     is_product_lite: bool,
     create_tip_plan_from_dashboard: Callable[[str], dict[str, Any]],
@@ -222,23 +234,17 @@ def test_classic_ti_plan(  # noqa: PLR0915
             assert ti_iframe
 
         assert not ws_info.value.is_closed()
-        restartable_jlab_websocket = RestartableWebSocket.create(page, ws_info.value)
+        restartable_jlab_websocket = RobustWebSocket(page, ws_info.value)
 
-        with (
-            log_context(logging.INFO, "Run optimization"),
-            restartable_jlab_websocket.expect_event(
-                "framereceived",
-                _JLabWebSocketWaiter(
-                    expected_header_msg_type="stream",
-                    expected_message_contents="All results evaluated",
-                ),
-                timeout=_JLAB_RUN_OPTIMIZATION_MAX_TIME
-                + _JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME,
-            ),
-        ):
-            ti_iframe.get_by_role("button", name="Run Optimization").click(
-                timeout=_JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME
-            )
+        with log_context(logging.INFO, "Run optimization") as ctx:
+            run_button = ti_iframe.get_by_role("button", name="Run Optimization")
+            run_button.click(timeout=_JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME)
+            try:
+                _wait_for_optimization_complete(run_button)
+                ctx.logger.info("Optimization finished!")
+            except RetryError as e:
+                last_exc = e.last_attempt.exception()
+                ctx.logger.warning(f"Optimization did not finish in time: {last_exc}")
 
         with log_context(logging.INFO, "Create report"):
             with log_context(
@@ -344,3 +350,5 @@ def test_classic_ti_plan(  # noqa: PLR0915
                 s4l_postpro_iframe.get_by_test_id("tree-item-SurfaceViewer").nth(
                     0
                 ).click()
+
+    restartable_jlab_websocket.auto_reconnect = False

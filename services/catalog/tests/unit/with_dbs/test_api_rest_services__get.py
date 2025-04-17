@@ -27,13 +27,13 @@ pytest_simcore_ops_services_selection = [
 
 @pytest.fixture
 async def expected_service(
-    expected_director_list_services: list[dict[str, Any]],
+    expected_director_rest_api_list_services: list[dict[str, Any]],
     user: dict[str, Any],
     services_db_tables_injector: Callable,
     target_product: ProductName,
 ) -> dict[str, Any]:
     # Just selected one of the list provided by the director (i.e. emulated from registry)
-    service = expected_director_list_services[-1]
+    service = expected_director_rest_api_list_services[-1]
 
     # Emulates sync of registry with db and injects the expected response model
     # of the director (i.e. coming from the registry) in the database
@@ -56,7 +56,7 @@ async def expected_service(
                     "execute_access": True,
                     "write_access": True,
                     "product_name": target_product,
-                }
+                },
                 # team_access, everyone_access [optional]
             )
         ]
@@ -66,9 +66,9 @@ async def expected_service(
 
 def test_get_service_with_details(
     service_caching_disabled: None,
-    background_tasks_setup_disabled: None,
+    background_task_lifespan_disabled: None,
     rabbitmq_and_rpc_setup_disabled: None,
-    mocked_director_service_api: respx.MockRouter,
+    mocked_director_rest_api: respx.MockRouter,
     user_id: UserID,
     expected_service: dict[str, Any],
     target_product: ProductName,
@@ -94,4 +94,4 @@ def test_get_service_with_details(
     assert got.key == service_key
     assert got.version == service_version
 
-    assert mocked_director_service_api["get_service"].called
+    assert mocked_director_rest_api["get_service"].called

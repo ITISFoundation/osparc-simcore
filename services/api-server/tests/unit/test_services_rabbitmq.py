@@ -333,7 +333,7 @@ async def log_streamer_with_distributor(
 ) -> AsyncIterable[LogStreamer]:
     def _get_computation(request: httpx.Request, **kwargs) -> httpx.Response:
         task = ComputationTaskGet.model_validate(
-            ComputationTaskGet.model_config["json_schema_extra"]["examples"][0]
+            ComputationTaskGet.model_json_schema()["examples"][0]
         )
         if computation_done():
             task.state = RunningState.SUCCESS
@@ -448,9 +448,7 @@ async def test_log_generator(mocker: MockFixture, faker: Faker):
 
     published_logs: list[str] = []
     for _ in range(10):
-        job_log = JobLog.model_validate(
-            JobLog.model_config["json_schema_extra"]["example"]
-        )
+        job_log = JobLog.model_validate(JobLog.model_json_schema()["example"])
         msg = faker.text()
         published_logs.append(msg)
         job_log.messages = [msg]
