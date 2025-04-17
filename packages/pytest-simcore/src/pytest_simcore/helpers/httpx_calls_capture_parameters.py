@@ -7,7 +7,9 @@ from .httpx_calls_capture_errors import OpenApiSpecError
 
 class CapturedParameterSchema(BaseModel):
     title: str | None = None
-    type_: Literal["str", "int", "float", "bool"] | None = Field(None, alias="type")
+    type_: Literal["str", "int", "float", "bool", "null"] | None = Field(
+        None, alias="type"
+    )
     pattern: str | None = None
     format_: Literal["uuid"] | None = Field(None, alias="format")
     exclusiveMinimum: bool | None = None
