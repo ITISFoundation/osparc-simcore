@@ -159,13 +159,13 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
     },
 
     __addItems: function() {
-      this.__addNewStudyItems();
+      this.__addUIConfigItems();
       this.__addEmptyStudyButton();
-      this.__addMoreMenu();
+      this.__addOtherTabsAccess();
       this.getChildControl("new-folder");
     },
 
-    __addNewStudyItems: function() {
+    __addUIConfigItems: function() {
       const plusButtonConfig = osparc.store.Products.getInstance().getPlusButtonUiConfig();
       if (plusButtonConfig) {
         const templates = osparc.store.Templates.getInstance().getTemplates()
@@ -186,7 +186,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       }
     },
 
-    __addMoreMenu: function() {
+    __addOtherTabsAccess: function() {
       const moreMenuButton = this.self().createMenuButton("@FontAwesome5Solid/star/16", this.tr("More"));
       this.addAt(moreMenuButton, this.__itemIdx);
       this.__itemIdx++;
