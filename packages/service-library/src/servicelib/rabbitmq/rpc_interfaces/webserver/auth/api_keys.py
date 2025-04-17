@@ -52,18 +52,18 @@ async def get_api_key(
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def delete_api_key(
+async def delete_api_key_by_key(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     user_id: UserID,
     product_name: str,
-    api_key_id: IDStr,
+    api_key: str,
 ) -> None:
     result = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python("delete_api_key"),
+        TypeAdapter(RPCMethodName).validate_python("delete_api_key_by_key"),
         user_id=user_id,
         product_name=product_name,
-        api_key_id=api_key_id,
+        api_key=api_key,
     )
     assert result is None  # nosec
