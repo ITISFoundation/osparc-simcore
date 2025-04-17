@@ -7,10 +7,10 @@ from models_library.rpc.webserver.auth.api_keys import ApiKeyGet
 from models_library.users import UserID
 from servicelib.rabbitmq import RPCRouter
 
-from ..rabbitmq import get_rabbitmq_rpc_server
-from . import _service
-from .errors import ApiKeyNotFoundError
-from .models import ApiKey
+from ...rabbitmq import get_rabbitmq_rpc_server
+from .. import _service
+from ..errors import ApiKeyNotFoundError
+from ..models import ApiKey
 
 router = RPCRouter()
 
