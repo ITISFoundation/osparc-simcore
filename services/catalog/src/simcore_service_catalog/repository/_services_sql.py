@@ -125,8 +125,9 @@ def apply_services_filters(
         if prefix is None:
             msg = f"Undefined service type {filters.service_type}. Please update prefix expressions"
             raise ValueError(msg)
-        prefix = prefix.rstrip("/")  # safety
-        stmt = stmt.where(services_meta_data.c.service_key.like(f"{prefix}/%"))
+
+        assert not prefix.endswith("/")  # nosec
+        return stmt.where(services_meta_data.c.key.like(f"{prefix}/%"))
     return stmt
 
 
@@ -155,7 +156,7 @@ def latest_services_total_count_stmt(
     )
 
     if filters:
-        apply_services_filters(stmt, filters)
+        stmt = apply_services_filters(stmt, filters)
 
     return stmt
 
@@ -199,7 +200,7 @@ def list_latest_services_stmt(
     )
 
     if filters:
-        apply_services_filters(cte_stmt, filters)
+        cte_stmt = apply_services_filters(cte_stmt, filters)
 
     cte = cte_stmt.cte("cte")
 
