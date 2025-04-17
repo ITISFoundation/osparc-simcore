@@ -20,28 +20,32 @@ async def copy_folders_from_project(
     job_id_data: AsyncJobNameData,
     body: FoldersBody,
 ) -> AsyncJobGet:
-    task_uuid = await get_celery_client(app).send_task(
-        deep_copy_files_from_project.__name__,
+    task_name = deep_copy_files_from_project.__name__
+    task_uuid = await get_celery_client(app).submit_task(
+        task_metadata=TaskMetadata(
+            name=task_name,
+        ),
         task_context=job_id_data.model_dump(),
         user_id=job_id_data.user_id,
         body=body,
     )
 
-    return AsyncJobGet(job_id=task_uuid)
+    return AsyncJobGet(job_id=task_uuid, job_name=task_name)
 
 
 @router.expose()
 async def start_export_data(
     app: FastAPI, job_id_data: AsyncJobNameData, paths_to_export: list[PathToExport]
 ) -> AsyncJobGet:
-    task_uuid = await get_celery_client(app).send_task(
-        export_data.__name__,
-        task_context=job_id_data.model_dump(),
+    task_name = export_data.__name__
+    task_uuid = await get_celery_client(app).submit_task(
         task_metadata=TaskMetadata(
+            name=task_name,
             ephemeral=False,
             queue=TasksQueue.CPU_BOUND,
         ),
+        task_context=job_id_data.model_dump(),
         user_id=job_id_data.user_id,
         paths_to_export=paths_to_export,
     )
-    return AsyncJobGet(job_id=task_uuid)
+    return AsyncJobGet(job_id=task_uuid, job_name=task_name)

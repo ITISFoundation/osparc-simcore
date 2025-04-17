@@ -35,7 +35,7 @@ from ...models import (
     UploadLinks,
 )
 from ...modules.celery.client import CeleryTaskClient
-from ...modules.celery.models import TaskUUID
+from ...modules.celery.models import TaskMetadata, TaskUUID
 from ...simcore_s3_dsm import SimcoreS3DataManager
 from .._worker_tasks._files import complete_upload_file as remote_complete_upload_file
 from .dependencies.celery import get_celery_client
@@ -284,8 +284,10 @@ async def complete_upload_file(
         user_id=query_params.user_id,
         product_name=_UNDEFINED_PRODUCT_NAME_FOR_WORKER_TASKS,  # NOTE: I would need to change the API here
     )
-    task_uuid = await celery_client.send_task(
-        remote_complete_upload_file.__name__,
+    task_uuid = await celery_client.submit_task(
+        TaskMetadata(
+            name=remote_complete_upload_file.__name__,
+        ),
         task_context=async_job_name_data.model_dump(),
         user_id=async_job_name_data.user_id,
         location_id=location_id,

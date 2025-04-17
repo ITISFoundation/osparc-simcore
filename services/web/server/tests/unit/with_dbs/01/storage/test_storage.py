@@ -162,7 +162,9 @@ def create_storage_paths_rpc_client_mock(
 @pytest.mark.parametrize(
     "backend_result_or_exception",
     [
-        AsyncJobGet(job_id=AsyncJobId(f"{_faker.uuid4()}")),
+        AsyncJobGet(
+            job_id=AsyncJobId(f"{_faker.uuid4()}"), job_name="compute_path_size"
+        ),
     ],
     ids=lambda x: type(x).__name__,
 )
@@ -204,7 +206,9 @@ async def test_compute_path_size(
 @pytest.mark.parametrize(
     "backend_result_or_exception",
     [
-        AsyncJobGet(job_id=AsyncJobId(f"{_faker.uuid4()}")),
+        AsyncJobGet(
+            job_id=AsyncJobId(f"{_faker.uuid4()}"), job_name="batch_delete_paths"
+        ),
     ],
     ids=lambda x: type(x).__name__,
 )
@@ -429,7 +433,12 @@ def create_storage_rpc_client_mock(
     "backend_result_or_exception, expected_status",
     [
         (
-            (AsyncJobGet(job_id=AsyncJobId(f"{_faker.uuid4()}")), None),
+            (
+                AsyncJobGet(
+                    job_id=AsyncJobId(f"{_faker.uuid4()}"), job_name="export_data"
+                ),
+                None,
+            ),
             status.HTTP_202_ACCEPTED,
         ),
         (
@@ -590,6 +599,7 @@ async def test_get_async_job_result(
             [
                 AsyncJobGet(
                     job_id=AsyncJobId(_faker.uuid4()),
+                    job_name="task_name",
                 )
             ],
             status.HTTP_200_OK,
@@ -668,7 +678,13 @@ async def test_get_async_job_links(
     create_storage_rpc_client_mock(
         "simcore_service_webserver.storage._rest",
         start_export_data.__name__,
-        (AsyncJobGet(job_id=AsyncJobId(f"{_faker.uuid4()}")), None),
+        (
+            AsyncJobGet(
+                job_id=AsyncJobId(f"{_faker.uuid4()}"),
+                job_name="export_data",
+            ),
+            None,
+        ),
     )
 
     _body = DataExportPost(

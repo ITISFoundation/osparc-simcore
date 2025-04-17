@@ -29,6 +29,7 @@ from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
 from simcore_service_storage.api.rpc.routes import get_rabbitmq_rpc_server
 from simcore_service_storage.modules.celery import get_celery_client
 from simcore_service_storage.modules.celery._task import register_task
+from simcore_service_storage.modules.celery.client import TaskMetadata
 from simcore_service_storage.modules.celery.models import TaskID
 from simcore_service_storage.modules.celery.worker import CeleryTaskWorker
 from tenacity import (
@@ -52,22 +53,24 @@ router = RPCRouter()
 async def rpc_sync_job(
     app: FastAPI, *, job_id_data: AsyncJobNameData, **kwargs: Any
 ) -> AsyncJobGet:
-    task_uuid = await get_celery_client(app).send_task(
-        sync_job.__name__, task_context=job_id_data.model_dump(), **kwargs
+    task_name = sync_job.__name__
+    task_uuid = await get_celery_client(app).submit_task(
+        TaskMetadata(name=task_name), task_context=job_id_data.model_dump(), **kwargs
     )
 
-    return AsyncJobGet(job_id=task_uuid)
+    return AsyncJobGet(job_id=task_uuid, job_name=task_name)
 
 
 @router.expose()
 async def rpc_async_job(
     app: FastAPI, *, job_id_data: AsyncJobNameData, **kwargs: Any
 ) -> AsyncJobGet:
-    task_uuid = await get_celery_client(app).send_task(
-        async_job.__name__, task_context=job_id_data.model_dump(), **kwargs
+    task_name = async_job.__name__
+    task_uuid = await get_celery_client(app).submit_task(
+        TaskMetadata(name=task_name), task_context=job_id_data.model_dump(), **kwargs
     )
 
-    return AsyncJobGet(job_id=task_uuid)
+    return AsyncJobGet(job_id=task_uuid, job_name=task_name)
 
 
 #################################
