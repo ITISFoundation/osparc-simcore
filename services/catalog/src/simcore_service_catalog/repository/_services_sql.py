@@ -2,6 +2,9 @@ from typing import Any
 
 import sqlalchemy as sa
 from models_library.products import ProductName
+from models_library.services_regex import (
+    SERVICE_TYPE_PREFIXES,
+)
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from simcore_postgres_database.models.groups import user_to_groups
@@ -118,7 +121,13 @@ def apply_services_filters(
     filters: ServiceFiltersDB,
 ):
     if filters.service_type:
-        stmt = stmt.where(services_meta_data.c.service_type == filters.service_type)
+        prefix = SERVICE_TYPE_PREFIXES.get(filters.service_type)
+        if prefix is None:
+            msg = f"Undefined service type {filters.service_type}. Please update prefix expressions"
+            raise ValueError(msg)
+        prefix = prefix.rstrip("/")  # safety
+        stmt = stmt.where(services_meta_data.c.service_key.like(f"{prefix}/%"))
+    return stmt
 
 
 def latest_services_total_count_stmt(
