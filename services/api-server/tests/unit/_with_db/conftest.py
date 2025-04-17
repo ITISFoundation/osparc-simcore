@@ -267,7 +267,7 @@ async def create_fake_api_keys(
             result = await connection.execute(
                 api_keys.insert()
                 .values(
-                    api_secret=sa.func.crypt(plain_api_secret, sa.func.gen_salt("bf")),
+                    api_secret=sa.func.crypt(plain_api_secret, sa.func.gen_salt("bf", 10)),
                     **api_key,
                 )
                 .returning(*returning_cols)
