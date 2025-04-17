@@ -146,8 +146,11 @@ async def _create_domain_file(
         deprecated=True,
         alternative="GET /v0/files/page",
         changelog=[
-            FMSG_CHANGELOG_ADDED_IN_VERSION.format("0.5"),
-            FMSG_CHANGELOG_REMOVED_IN_VERSION_FORMAT.format("0.7"),
+            FMSG_CHANGELOG_ADDED_IN_VERSION.format("0.5", ""),
+            FMSG_CHANGELOG_REMOVED_IN_VERSION_FORMAT.format(
+                "0.7",
+                "This endpoint is deprecated and will be removed in a future version",
+            ),
         ],
     ),
 )

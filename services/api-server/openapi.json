@@ -223,7 +223,7 @@
           "files"
         ],
         "summary": "List Files",
-        "description": "Lists all files stored in the system\n\nSEE `get_files_page` for a paginated version of this function",
+        "description": "\ud83d\udea8 **Deprecated**: This endpoint is deprecated and will be removed in a future release.\nPlease use `GET /v0/files/page` instead.\n\n\n\nLists all files stored in the system\n\nAdded in *version 0.5*: \n\nRemoved in *version 0.7*: This endpoint is deprecated and will be removed in a future version",
         "operationId": "list_files",
         "responses": {
           "200": {
@@ -1414,7 +1414,7 @@
           "solvers"
         ],
         "summary": "List Solvers",
-        "description": "Lists all available solvers (latest version)\n\nSEE get_solvers_page for paginated version of this function",
+        "description": "\ud83d\udea8 **Deprecated**: This endpoint is deprecated and will be removed in a future release.\nPlease use `GET /v0/solvers/page` instead.\n\n\n\nLists all available solvers (latest version)\n\nNew in *version 0.5.0*\n\nRemoved in *version 0.7*: This endpoint is deprecated and will be removed in a future version",
         "operationId": "list_solvers",
         "responses": {
           "200": {
