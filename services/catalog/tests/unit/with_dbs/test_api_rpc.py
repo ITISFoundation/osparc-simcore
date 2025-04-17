@@ -15,8 +15,7 @@ from models_library.products import ProductName
 from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from models_library.services_history import ServiceRelease
 from models_library.services_regex import (
-    COMPUTATIONAL_SERVICE_KEY_PREFIX,
-    FRONTEND_SERVICE_KEY_PREFIX,
+    DYNAMIC_SERVICE_KEY_PREFIX,
 )
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
@@ -571,21 +570,31 @@ async def test_rpc_list_services_paginated_with_filters(
 ):
     assert app
 
+    # only computational services introduced by the background_sync_task_mocked
+    page = await list_services_paginated(
+        rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        filters={"service_type": "computational"},
+    )
+    assert page.meta.total == page.meta.count
+    assert page.meta.total > 0
+
+    page = await list_services_paginated(
+        rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        filters={"service_type": "dynamic"},
+    )
+    assert page.meta.total == 0
+
     # Create fake services with different types
-    service_key_1 = f"{COMPUTATIONAL_SERVICE_KEY_PREFIX}/test-filter-service-1"
-    service_key_2 = f"{FRONTEND_SERVICE_KEY_PREFIX}/test-filter-service-2"
-    service_version = "1.0.0"
+    service_key_1 = f"{DYNAMIC_SERVICE_KEY_PREFIX}/test-filter-service"
+    service_version = "1.2.3"
 
     fake_services = [
         create_fake_service_data(
             service_key_1,
-            service_version,
-            team_access=None,
-            everyone_access=None,
-            product=product_name,
-        ),
-        create_fake_service_data(
-            service_key_2,
             service_version,
             team_access=None,
             everyone_access=None,
@@ -597,19 +606,18 @@ async def test_rpc_list_services_paginated_with_filters(
     await services_db_tables_injector(fake_services)
 
     # Apply a filter to match only computational services
-    filters = {"service_type": "computational"}
     page = await list_services_paginated(
         rpc_client,
         product_name=product_name,
         user_id=user_id,
-        filters=filters,
+        filters={"service_type": "dynamic"},
     )
 
     # Validate the response
-    assert len(page.data) == 1
-    assert page.data[0].key == service_key_1
-    assert page.data[0].service_type == "computational"
     assert page.meta.total == 1
     assert page.meta.count == 1
+    assert len(page.data) == 1
+    assert page.data[0].key == service_key_1
+    assert page.data[0].service_type == "frontend"
     assert page.links.next is None
     assert page.links.prev is None
