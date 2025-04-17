@@ -43,7 +43,6 @@ qx.Class.define("osparc.dashboard.NewStudies", {
       }
       return templates.find(t => t.name === newButtonInfo.expectedTemplateLabel);
     });
-    this.fireEvent("templatesLoaded");
   },
 
   properties: {
@@ -56,7 +55,6 @@ qx.Class.define("osparc.dashboard.NewStudies", {
   },
 
   events: {
-    "templatesLoaded": "qx.event.type.Event",
     "newStudyClicked": "qx.event.type.Data",
   },
 
