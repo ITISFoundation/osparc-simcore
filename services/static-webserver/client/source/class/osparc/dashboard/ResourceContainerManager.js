@@ -315,7 +315,16 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     __rebuildLayout: function(resourceType) {
       this.__cleanAll();
       if (this.getGroupBy()) {
-        const noGroupContainer = this.__createGroupContainer("no-group", "No Group", "transparent");
+        let groupTitle = "No Group";
+        switch (this.getGroupBy()) {
+          case "tags":
+            groupTitle = "Not Tagged";
+            break;
+          case "shared":
+            groupTitle = "Not Shared";
+            break;
+        }
+        const noGroupContainer = this.__createGroupContainer("no-group", groupTitle, "transparent");
         this.__groupedContainers.add(noGroupContainer);
         this._add(this.__groupedContainers);
       } else {

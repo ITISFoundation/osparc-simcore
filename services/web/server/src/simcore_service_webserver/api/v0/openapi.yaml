@@ -15144,6 +15144,12 @@ components:
           - type: object
           - type: 'null'
           title: Annotations
+        templateType:
+          anyOf:
+          - type: string
+            const: hypertool
+          - type: 'null'
+          title: Templatetype
       additionalProperties: true
       type: object
       title: StudyUI
@@ -15175,6 +15181,12 @@ components:
           - type: object
           - type: 'null'
           title: Annotations
+        templateType:
+          anyOf:
+          - type: string
+            const: hypertool
+          - type: 'null'
+          title: Templatetype
       additionalProperties: true
       type: object
       title: StudyUI
