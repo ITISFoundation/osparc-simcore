@@ -3,24 +3,25 @@ import logging
 from aiohttp import web
 from models_library.api_schemas_webserver.computations import (
     ComputationRunRestGet,
-    ComputationRunRestGetPage,
     ComputationTaskRestGet,
-    ComputationTaskRestGetPage,
 )
 from models_library.rest_base import RequestParameters
+from models_library.rest_pagination import Page
+from models_library.rest_pagination_utils import paginate_data
 from models_library.users import UserID
 from pydantic import Field
 from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
+from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
+from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from .._meta import API_VTAG as VTAG
 from ..constants import RQ_PRODUCT_KEY
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
-from ..utils_aiohttp import envelope_json_response
 from . import _computations_service
 from ._computations_rest_schema import (
     ComputationRunListQueryParams,
@@ -63,12 +64,20 @@ async def list_computations_latest_iteration(request: web.Request) -> web.Respon
         # ordering
         order_by=query_params.order_by,
     )
-    _output = ComputationRunRestGetPage(
-        items=[ComputationRunRestGet(**task.dict()) for task in _get.items],
-        total=_get.total,
-    )
 
-    return envelope_json_response(_output)
+    page = Page[ComputationRunRestGet].model_validate(
+        paginate_data(
+            chunk=[ComputationRunRestGet(**task.dict()) for task in _get.items],
+            total=_get.total,
+            limit=query_params.limit,
+            offset=query_params.offset,
+            request_url=request.url,
+        )
+    )
+    return web.Response(
+        text=page.model_dump_json(**RESPONSE_MODEL_POLICY),
+        content_type=MIMETYPE_APPLICATION_JSON,
+    )
 
 
 @routes.get(
@@ -99,9 +108,17 @@ async def list_computations_latest_iteration_tasks(
         # ordering
         order_by=query_params.order_by,
     )
-    _output = ComputationTaskRestGetPage(
-        items=[ComputationTaskRestGet(**task.dict()) for task in _get.items],
-        total=_get.total,
-    )
 
-    return envelope_json_response(_output)
+    page = Page[ComputationTaskRestGet].model_validate(
+        paginate_data(
+            chunk=[ComputationTaskRestGet(**task.dict()) for task in _get.items],
+            total=_get.total,
+            limit=query_params.limit,
+            offset=query_params.offset,
+            request_url=request.url,
+        )
+    )
+    return web.Response(
+        text=page.model_dump_json(**RESPONSE_MODEL_POLICY),
+        content_type=MIMETYPE_APPLICATION_JSON,
+    )
