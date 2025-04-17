@@ -9,7 +9,7 @@ from servicelib.aiohttp.application_setup import (
 )
 
 from ..rest.plugin import setup_rest
-from . import _computations_rest, _controller
+from . import _controller
 from ._client import DirectorV2RestClient, get_directorv2_client, set_directorv2_client
 from ._director_v2_abc_default_service import DefaultProjectRunPolicy
 from ._director_v2_abc_service import set_project_run_policy
@@ -38,7 +38,7 @@ def setup_director_v2(app: web.Application):
     if is_setup_completed(setup_rest.metadata()["module_name"], app):
         set_project_run_policy(app, DefaultProjectRunPolicy())
         app.router.add_routes(_controller.rest.routes)
-        app.router.add_routes(_computations_rest.routes)
+        app.router.add_routes(_controller.computations_rest.routes)
 
     else:
         _logger.warning(
