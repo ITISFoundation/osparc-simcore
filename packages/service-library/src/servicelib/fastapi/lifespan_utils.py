@@ -32,9 +32,13 @@ _CALLED_LIFESPANS_KEY: Final[str] = "_CALLED_LIFESPANS"
 
 
 def is_lifespan_called(state: State, lifespan_name: str) -> bool:
+    # NOTE: This assert is meant to catch a common mistake:
+    # The `lifespan` function should accept up to two *optional* positional arguments: (app: FastAPI, state: State).
+    # Valid signatures include: `()`, `(app)`, `(app, state)`, or even `(_, state)`.
+    # It's easy to accidentally swap or misplace these arguments.
     assert not isinstance(  # nosec
         state, FastAPI
-    ), "TIP: lifespan func has (app, state) positional arguments"
+    ), "Did you swap arguments? `lifespan(app, state)` expects (app: FastAPI, state: State)"
 
     called_lifespans = state.get(_CALLED_LIFESPANS_KEY, set())
     return lifespan_name in called_lifespans
