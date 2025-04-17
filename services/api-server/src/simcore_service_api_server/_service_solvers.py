@@ -19,9 +19,7 @@ DEFAULT_PAGINATION_LIMIT = MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE - 1
 class SolverService:
     _catalog_service: CatalogService
 
-    def __init__(
-        self, catalog_service: Annotated[CatalogService, Depends(CatalogService)]
-    ):
+    def __init__(self, catalog_service: Annotated[CatalogService, Depends()]):
         self._catalog_service = catalog_service
 
     async def get_solver(

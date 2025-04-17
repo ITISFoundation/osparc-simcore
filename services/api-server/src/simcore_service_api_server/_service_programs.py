@@ -11,9 +11,7 @@ from .services_rpc.catalog import CatalogService
 class ProgramService:
     _catalog_service: CatalogService
 
-    def __init__(
-        self, _catalog_service: Annotated[CatalogService, Depends(CatalogService)]
-    ):
+    def __init__(self, _catalog_service: Annotated[CatalogService, Depends()]):
         self._catalog_service = _catalog_service
 
     async def get_program(

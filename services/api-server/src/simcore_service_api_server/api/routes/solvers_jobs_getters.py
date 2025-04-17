@@ -55,7 +55,11 @@ from ..dependencies.database import Engine, get_db_engine
 from ..dependencies.rabbitmq import get_log_check_timeout, get_log_distributor
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver_http import AuthSession, get_webserver_session
-from ._constants import FMSG_CHANGELOG_NEW_IN_VERSION
+from ._constants import (
+    FMSG_CHANGELOG_NEW_IN_VERSION,
+    FMSG_CHANGELOG_REMOVED_IN_VERSION_FORMAT,
+    create_route_description,
+)
 from .solvers_jobs import (
     JOBS_STATUS_CODES,
     METADATA_STATUS_CODES,
@@ -118,6 +122,18 @@ router = APIRouter()
     "/{solver_key:path}/releases/{version}/jobs",
     response_model=list[Job],
     responses=JOBS_STATUS_CODES,
+    description=create_route_description(
+        base="List of jobs in a specific released solver",
+        deprecated=True,
+        alternative="GET /{solver_key}/releases/{version}/jobs/page",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.5"),
+            FMSG_CHANGELOG_REMOVED_IN_VERSION_FORMAT.format(
+                "0.7",
+                "This endpoint is deprecated and will be removed in a future version",
+            ),
+        ],
+    ),
 )
 async def list_jobs(
     solver_key: SolverKeyId,
