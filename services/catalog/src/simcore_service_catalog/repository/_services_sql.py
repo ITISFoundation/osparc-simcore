@@ -3,7 +3,7 @@ from typing import Any
 import sqlalchemy as sa
 from models_library.products import ProductName
 from models_library.services_regex import (
-    SERVICE_TYPE_PREFIXES,
+    SERVICE_TYPE_TO_PREFIX_MAP,
 )
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
@@ -121,7 +121,7 @@ def apply_services_filters(
     filters: ServiceFiltersDB,
 ):
     if filters.service_type:
-        prefix = SERVICE_TYPE_PREFIXES.get(filters.service_type)
+        prefix = SERVICE_TYPE_TO_PREFIX_MAP.get(filters.service_type)
         if prefix is None:
             msg = f"Undefined service type {filters.service_type}. Please update prefix expressions"
             raise ValueError(msg)

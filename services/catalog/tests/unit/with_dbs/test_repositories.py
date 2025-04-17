@@ -17,7 +17,7 @@ from models_library.services_enums import ServiceType  # Import ServiceType enum
 from models_library.services_regex import (
     COMPUTATIONAL_SERVICE_KEY_PREFIX,
     DYNAMIC_SERVICE_KEY_PREFIX,
-    SERVICE_TYPE_PREFIXES,
+    SERVICE_TYPE_TO_PREFIX_MAP,
 )
 from models_library.users import UserID
 from packaging import version
@@ -633,7 +633,7 @@ async def test_get_service_history_page(
 
 
 @pytest.mark.parametrize(
-    "expected_service_type,service_prefix", SERVICE_TYPE_PREFIXES.items()
+    "expected_service_type,service_prefix", SERVICE_TYPE_TO_PREFIX_MAP.items()
 )
 async def test_get_service_history_page_with_filters(
     target_product: ProductName,
