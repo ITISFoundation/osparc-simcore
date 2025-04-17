@@ -15,55 +15,69 @@ PROPERTY_TYPE_TO_PYTHON_TYPE_MAP = {
 FILENAME_RE = r".+"
 
 
-# Add key prefixes for dynamic and computational services
-DYNAMIC_SERVICE_KEY_PREFIX: Final[str] = "simcore/services/dynamic"
-COMPUTATIONAL_SERVICE_KEY_PREFIX: Final[str] = "simcore/services/comp"
-FRONTEND_SERVICE_KEY_PREFIX: Final[str] = "simcore/services/frontend"
+SERVICE_TYPE_TO_NAME_MAP = MappingProxyType(
+    {
+        ServiceType.COMPUTATIONAL: "comp",
+        ServiceType.DYNAMIC: "dynamic",
+        ServiceType.FRONTEND: "frontend",
+    }
+)
 
-
+# e.g. simcore/services/comp/opencor
 SERVICE_KEY_RE: Final[re.Pattern[str]] = re.compile(
-    rf"^(?P<key_prefix>{COMPUTATIONAL_SERVICE_KEY_PREFIX}|{DYNAMIC_SERVICE_KEY_PREFIX}|{FRONTEND_SERVICE_KEY_PREFIX})"
-    r"/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*"
+    r"^simcore/services/"
+    rf"(?P<type>({ '|'.join(SERVICE_TYPE_TO_NAME_MAP.values()) }))/"
+    r"(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*"
     r"(?P<name>[a-z0-9-_]+[a-z0-9])$"
 )
+
+# e.g. simcore%2Fservices%2Fcomp%2Fopencor
 SERVICE_ENCODED_KEY_RE: Final[re.Pattern[str]] = re.compile(
-    rf"^(?P<key_prefix>{COMPUTATIONAL_SERVICE_KEY_PREFIX.replace('/', '%2F')}|{DYNAMIC_SERVICE_KEY_PREFIX.replace('/', '%2F')}|{FRONTEND_SERVICE_KEY_PREFIX.replace('/', '%2F')})"
-    r"(?P<subdir>(%2F[a-z0-9][a-z0-9_.-]*)*%2F)?"
+    r"^simcore%2Fservices%2F"
+    rf"(?P<type>({'|'.join(SERVICE_TYPE_TO_NAME_MAP.values())}))%2F"
+    r"(?P<subdir>[a-z0-9][a-z0-9_.-]*%2F)*"
     r"(?P<name>[a-z0-9-_]+[a-z0-9])$"
 )
 
 
-DYNAMIC_SERVICE_KEY_RE: Final[re.Pattern[str]] = re.compile(
-    rf"^{DYNAMIC_SERVICE_KEY_PREFIX}/"
-    r"(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*"
-    r"(?P<name>[a-z0-9-_]+[a-z0-9])$"
-)
-DYNAMIC_SERVICE_KEY_FORMAT: Final[str] = (
-    f"{DYNAMIC_SERVICE_KEY_PREFIX}/{{service_name}}"
-)
+def create_key_prefix(service_type: ServiceType) -> str:
+    return f"simcore/services/{SERVICE_TYPE_TO_NAME_MAP[service_type]}"
 
 
-COMPUTATIONAL_SERVICE_KEY_RE: Final[re.Pattern[str]] = re.compile(
-    rf"^{COMPUTATIONAL_SERVICE_KEY_PREFIX}/"
-    r"(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*"
-    r"(?P<name>[a-z0-9-_]+[a-z0-9])$"
+COMPUTATIONAL_SERVICE_KEY_PREFIX: Final[str] = create_key_prefix(
+    ServiceType.COMPUTATIONAL
 )
-COMPUTATIONAL_SERVICE_KEY_FORMAT: Final[str] = (
-    f"{COMPUTATIONAL_SERVICE_KEY_PREFIX}/{{service_name}}"
-)
+DYNAMIC_SERVICE_KEY_PREFIX: Final[str] = create_key_prefix(ServiceType.DYNAMIC)
+FRONTEND_SERVICE_KEY_PREFIX: Final[str] = create_key_prefix(ServiceType.FRONTEND)
 
 
-FRONTEND_SERVICE_KEY_RE: Final[re.Pattern[str]] = re.compile(
-    rf"^{FRONTEND_SERVICE_KEY_PREFIX}/"
-    r"(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*"
-    r"(?P<name>[a-z0-9-_]+[a-z0-9])$"
-)
-FRONTEND_SERVICE_KEY_FORMAT: Final[str] = (
-    f"{FRONTEND_SERVICE_KEY_PREFIX}/{{service_name}}"
-)
+def create_key_regex(service_type: ServiceType) -> re.Pattern[str]:
+    return re.compile(
+        rf"^simcore/services/{SERVICE_TYPE_TO_NAME_MAP[service_type]}/"
+        r"(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*"
+        r"(?P<name>[a-z0-9-_]+[a-z0-9])$"
+    )
 
 
-SERVICE_TYPE_PREFIXES = MappingProxyType(
+def create_key_format(service_type: ServiceType) -> str:
+    return f"simcore/services/{SERVICE_TYPE_TO_NAME_MAP[service_type]}/{{service_name}}"
+
+
+COMPUTATIONAL_SERVICE_KEY_RE: Final[re.Pattern[str]] = create_key_regex(
+    ServiceType.COMPUTATIONAL
+)
+COMPUTATIONAL_SERVICE_KEY_FORMAT: Final[str] = create_key_format(
+    ServiceType.COMPUTATIONAL
+)
+
+DYNAMIC_SERVICE_KEY_RE: Final[re.Pattern[str]] = create_key_regex(ServiceType.DYNAMIC)
+DYNAMIC_SERVICE_KEY_FORMAT: Final[str] = create_key_format(ServiceType.DYNAMIC)
+
+FRONTEND_SERVICE_KEY_RE: Final[re.Pattern[str]] = create_key_regex(ServiceType.FRONTEND)
+FRONTEND_SERVICE_KEY_FORMAT: Final[str] = create_key_format(ServiceType.FRONTEND)
+
+
+SERVICE_TYPE_TO_PREFIX_MAP = MappingProxyType(
     {
         ServiceType.COMPUTATIONAL: COMPUTATIONAL_SERVICE_KEY_PREFIX,
         ServiceType.DYNAMIC: DYNAMIC_SERVICE_KEY_PREFIX,
@@ -72,5 +86,5 @@ SERVICE_TYPE_PREFIXES = MappingProxyType(
 )
 
 assert all(  # nosec
-    not prefix.endswith("/") for prefix in SERVICE_TYPE_PREFIXES.values()
+    not prefix.endswith("/") for prefix in SERVICE_TYPE_TO_PREFIX_MAP.values()
 ), "Service type prefixes must not end with '/'"
