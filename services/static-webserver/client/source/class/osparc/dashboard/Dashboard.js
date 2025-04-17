@@ -147,7 +147,6 @@ qx.Class.define("osparc.dashboard.Dashboard", {
           buttonId: "dataTabBtn",
           label: this.tr("DATA"),
           icon: "@FontAwesome5Solid/folder/"+tabIconSize,
-          initVisibility: osparc.product.Utils.isProduct("osparc") ? "visible" : "excluded",
           buildLayout: this.__createDataBrowser
         });
       }
