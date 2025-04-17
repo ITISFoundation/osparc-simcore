@@ -160,7 +160,6 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
 
     __addItems: function() {
       this.__addUIConfigItems();
-      this.__addEmptyStudyButton();
       this.__addOtherTabsAccess();
       this.getChildControl("new-folder");
     },
