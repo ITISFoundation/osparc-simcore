@@ -20,7 +20,11 @@ from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver_http import AuthSession, get_webserver_session
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
-from ._constants import FMSG_CHANGELOG_NEW_IN_VERSION
+from ._constants import (
+    FMSG_CHANGELOG_NEW_IN_VERSION,
+    FMSG_CHANGELOG_REMOVED_IN_VERSION_FORMAT,
+    create_route_description,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -44,17 +48,27 @@ router = APIRouter()
 #    Would be nice to have /solvers/foo/releases/latest or solvers/foo/releases/3 , similar to docker tagging
 
 
-@router.get("", response_model=list[Solver], responses=_SOLVER_STATUS_CODES)
+@router.get(
+    "",
+    response_model=list[Solver],
+    responses=_SOLVER_STATUS_CODES,
+    description=create_route_description(
+        base="Lists all available solvers (latest version)",
+        deprecated=True,
+        alternative="GET /v0/solvers/page",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.5.0"),
+            FMSG_CHANGELOG_REMOVED_IN_VERSION_FORMAT.format("0.7"),
+        ],
+    ),
+)
 async def list_solvers(
     user_id: Annotated[int, Depends(get_current_user_id)],
     catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
 ):
-    """Lists all available solvers (latest version)
-
-    SEE get_solvers_page for paginated version of this function
-    """
+    """Lists all available solvers (latest version)"""
     solvers: list[Solver] = await catalog_client.list_latest_releases(
         user_id=user_id, product_name=product_name
     )
