@@ -3210,6 +3210,77 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Internal Server Error
+  /v0/tasks-legacy:
+    get:
+      tags:
+      - long-running-tasks-legacy
+      summary: List Tasks
+      description: Lists all long running tasks
+      operationId: list_tasks
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_TaskGet__'
+  /v0/tasks-legacy/{task_id}:
+    get:
+      tags:
+      - long-running-tasks-legacy
+      summary: Get Task Status
+      description: Retrieves the status of a task
+      operationId: get_task_status
+      parameters:
+      - name: task_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Task Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_TaskStatus_'
+    delete:
+      tags:
+      - long-running-tasks-legacy
+      summary: Cancel And Delete Task
+      description: Cancels and deletes a task
+      operationId: cancel_and_delete_task
+      parameters:
+      - name: task_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Task Id
+      responses:
+        '204':
+          description: Successful Response
+  /v0/tasks-legacy/{task_id}/result:
+    get:
+      tags:
+      - long-running-tasks-legacy
+      summary: Get Task Result
+      description: Retrieves the result of a task
+      operationId: get_task_result
+      parameters:
+      - name: task_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Task Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
   /v0/catalog/licensed-items:
     get:
       tags:

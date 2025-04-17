@@ -12,47 +12,13 @@ from models_library.services_history import ServiceRelease
 from models_library.users import UserID
 from pydantic import HttpUrl
 from pytest_mock import MockerFixture, MockType
-from pytest_simcore.helpers.catalog_rpc_server import CatalogRpcSideEffects
 from simcore_service_api_server.models.schemas.solvers import Solver
-from simcore_service_api_server.services_rpc.catalog import CatalogService, catalog_rpc
+from simcore_service_api_server.services_rpc.catalog import CatalogService
 
 
 @pytest.fixture
 def product_name() -> ProductName:
     return "osparc"
-
-
-@pytest.fixture
-def mocked_rpc_catalog_service_api(mocker: MockerFixture) -> dict[str, MockType]:
-
-    side_effects = CatalogRpcSideEffects()
-
-    return {
-        "list_services_paginated": mocker.patch.object(
-            catalog_rpc,
-            "list_services_paginated",
-            autospec=True,
-            side_effect=side_effects.list_services_paginated,
-        ),
-        "get_service": mocker.patch.object(
-            catalog_rpc,
-            "get_service",
-            autospec=True,
-            side_effect=side_effects.get_service,
-        ),
-        "update_service": mocker.patch.object(
-            catalog_rpc,
-            "update_service",
-            autospec=True,
-            side_effect=side_effects.update_service,
-        ),
-        "list_my_service_history_paginated": mocker.patch.object(
-            catalog_rpc,
-            "list_my_service_history_paginated",
-            autospec=True,
-            side_effect=side_effects.list_my_service_history_paginated,
-        ),
-    }
 
 
 def to_solver(
@@ -70,13 +36,13 @@ def to_solver(
 
 
 async def test_catalog_service_read_solvers(
+    app: FastAPI,
     product_name: ProductName,
     user_id: UserID,
     mocker: MockerFixture,
     mocked_rpc_catalog_service_api: dict[str, MockType],
 ):
-    catalog_service = CatalogService(_client=mocker.MagicMock())
-    catalog_service.set_to_app_state(app=FastAPI())
+    catalog_service = CatalogService(client=mocker.MagicMock())
 
     # Step 1: List latest releases in a page
     latest_releases, meta = await catalog_service.list_latest_releases(
@@ -103,8 +69,8 @@ async def test_catalog_service_read_solvers(
     service: ServiceGetV2 = await catalog_service.get(
         product_name=product_name,
         user_id=user_id,
-        service_key=selected_solver.id,
-        service_version=oldest_release.version,
+        name=selected_solver.id,
+        version=oldest_release.version,
     )
     solver = to_solver(service)
     assert solver.id == selected_solver.id
