@@ -676,11 +676,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this.setMultiSelection(false);
       });
 
-      const store = osparc.store.Store.getInstance();
-      store.addListener("changeTags", () => {
+      const tagsStore = osparc.store.Tags.getInstance();
+      tagsStore.addListener("tagsChanged", e => {
         this.invalidateStudies();
         this.__reloadStudies();
       }, this);
+
+      const store = osparc.store.Store.getInstance();
       store.addListener("studyStateChanged", e => {
         const {
           studyId,
