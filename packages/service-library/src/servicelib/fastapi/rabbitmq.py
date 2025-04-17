@@ -1,4 +1,5 @@
 import logging
+import warnings
 
 from fastapi import FastAPI
 from models_library.rabbitmq_messages import RabbitMessageBase
@@ -55,6 +56,13 @@ def setup_rabbit(
         settings -- Rabbit settings or if None, the connection to rabbit is not done upon startup
         name -- name for the rmq client name
     """
+    warnings.warn(
+        "The 'setup_rabbit' function is deprecated and will be removed in a future release. "
+        "Please use 'rabbitmq_lifespan' for managing RabbitMQ connections.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     app.state.rabbitmq_client = None  # RabbitMQClient | None
     app.state.rabbitmq_client_name = name
     app.state.rabbitmq_settings = settings
