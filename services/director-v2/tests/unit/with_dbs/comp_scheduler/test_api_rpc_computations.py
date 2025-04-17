@@ -31,28 +31,6 @@ pytest_simcore_ops_services_selection = [
 ]
 
 
-# @pytest.fixture()
-# def minimal_configuration(
-#     mock_env: EnvVarsDict,
-#     postgres_host_config: dict[str, str],
-#     rabbit_service: RabbitSettings,
-#     redis_service: RedisSettings,
-#     monkeypatch: pytest.MonkeyPatch,
-#     faker: Faker,
-#     with_disabled_auto_scheduling: mock.Mock,
-#     with_disabled_scheduler_publisher: mock.Mock,
-# ):
-#     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "false")
-#     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "1")
-#     monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "1")
-#     monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
-#     monkeypatch.setenv("S3_ENDPOINT", faker.url())
-#     monkeypatch.setenv("S3_ACCESS_KEY", faker.pystr())
-#     monkeypatch.setenv("S3_REGION", faker.pystr())
-#     monkeypatch.setenv("S3_SECRET_KEY", faker.pystr())
-#     monkeypatch.setenv("S3_BUCKET_NAME", faker.pystr())
-
-
 async def test_rpc_list_computation_runs_and_tasks(
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
