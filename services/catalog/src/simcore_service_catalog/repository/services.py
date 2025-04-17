@@ -411,11 +411,6 @@ class ServicesRepository(BaseRepository):
             filters=filters,
         )
 
-        from simcore_postgres_database.utils import as_postgres_sql_query_str
-
-        print(as_postgres_sql_query_str(stmt_total))
-        print(as_postgres_sql_query_str(stmt_page))
-
         async with self.db_engine.connect() as conn:
             result = await conn.execute(stmt_total)
             total_count = result.scalar() or 0
