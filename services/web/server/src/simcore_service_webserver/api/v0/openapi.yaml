@@ -2542,7 +2542,6 @@ paths:
       - computations
       - projects
       summary: List Computations Latest Iteration
-      description: Lists the latest iteration of computations
       operationId: list_computations_latest_iteration
       parameters:
       - name: order_by
@@ -2574,14 +2573,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_ComputationGet__'
+                $ref: '#/components/schemas/Envelope_list_ComputationRunRestGet__'
   /v0/computations/{project_id}/iterations/latest/tasks:
     get:
       tags:
       - computations
       - projects
       summary: List Computations Latest Iteration Tasks
-      description: Lists the latest iteration tasks for a computation
       operationId: list_computations_latest_iteration_tasks
       parameters:
       - name: project_id
@@ -2620,7 +2618,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_ComputationGet__'
+                $ref: '#/components/schemas/Envelope_list_ComputationTaskRestGet__'
   /v0/projects/{project_id}:xport:
     post:
       tags:
@@ -8726,6 +8724,46 @@ components:
       - submitted
       - url
       title: ComputationGet
+    ComputationRunRestGet:
+      properties:
+        project_uuid:
+          type: string
+          format: uuid
+          title: Project Uuid
+        iteration:
+          type: integer
+          title: Iteration
+        state:
+          $ref: '#/components/schemas/RunningState'
+        info:
+          type: object
+          title: Info
+        submitted_at:
+          type: string
+          format: date-time
+          title: Submitted At
+        started_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Started At
+        ended_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Ended At
+      type: object
+      required:
+      - project_uuid
+      - iteration
+      - state
+      - info
+      - submitted_at
+      - started_at
+      - ended_at
+      title: ComputationRunRestGet
     ComputationStart:
       properties:
         force_restart:
@@ -8759,6 +8797,46 @@ components:
       required:
       - pipeline_id
       title: ComputationStarted
+    ComputationTaskRestGet:
+      properties:
+        project_uuid:
+          type: string
+          format: uuid
+          title: Project Uuid
+        node_id:
+          type: string
+          format: uuid
+          title: Node Id
+        state:
+          $ref: '#/components/schemas/RunningState'
+        progress:
+          type: number
+          title: Progress
+        image:
+          type: object
+          title: Image
+        started_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Started At
+        ended_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Ended At
+      type: object
+      required:
+      - project_uuid
+      - node_id
+      - state
+      - progress
+      - image
+      - started_at
+      - ended_at
+      title: ComputationTaskRestGet
     ConnectServiceToPricingPlanBodyParams:
       properties:
         serviceKey:
@@ -10111,12 +10189,12 @@ components:
           title: Error
       type: object
       title: Envelope[list[ApiKeyGet]]
-    Envelope_list_ComputationGet__:
+    Envelope_list_ComputationRunRestGet__:
       properties:
         data:
           anyOf:
           - items:
-              $ref: '#/components/schemas/ComputationGet'
+              $ref: '#/components/schemas/ComputationRunRestGet'
             type: array
           - type: 'null'
           title: Data
@@ -10126,7 +10204,23 @@ components:
           - type: 'null'
           title: Error
       type: object
-      title: Envelope[list[ComputationGet]]
+      title: Envelope[list[ComputationRunRestGet]]
+    Envelope_list_ComputationTaskRestGet__:
+      properties:
+        data:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/ComputationTaskRestGet'
+            type: array
+          - type: 'null'
+          title: Data
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[list[ComputationTaskRestGet]]
     Envelope_list_DatasetMetaData__:
       properties:
         data:

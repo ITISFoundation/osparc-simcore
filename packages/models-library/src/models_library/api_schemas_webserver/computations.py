@@ -1,20 +1,27 @@
 from datetime import datetime
-from typing import Annotated, Any, NamedTuple
+from typing import Annotated, Any
 
 from common_library.basic_types import DEFAULT_FACTORY
 from pydantic import (
     BaseModel,
+    ConfigDict,
     Field,
-    PositiveInt,
 )
 
 from ..api_schemas_directorv2.computations import (
     ComputationGet as _DirectorV2ComputationGet,
 )
+from ..basic_types import IDStr
 from ..projects import CommitID, ProjectID
 from ..projects_nodes_io import NodeID
 from ..projects_state import RunningState
-from ._base import InputSchemaWithoutCamelCase, OutputSchemaWithoutCamelCase
+from ..rest_ordering import OrderBy, create_ordering_query_model_class
+from ..rest_pagination import PageQueryParameters
+from ._base import (
+    InputSchemaWithoutCamelCase,
+    OutputSchema,
+    OutputSchemaWithoutCamelCase,
+)
 
 
 class ComputationPathParams(BaseModel):
@@ -50,7 +57,32 @@ class ComputationStarted(OutputSchemaWithoutCamelCase):
     ] = DEFAULT_FACTORY
 
 
-class ComputationRunRestGet(BaseModel):
+### Computation Run
+
+
+ComputationRunListOrderParams = create_ordering_query_model_class(
+    ordering_fields={
+        "submitted_at",
+        "started_at",
+        "ended_at",
+        "state",
+    },
+    default=OrderBy(field=IDStr("submitted_at")),
+    ordering_fields_api_to_column_map={
+        "submitted_at": "created",
+        "started_at": "started",
+        "ended_at": "ended",
+    },
+)
+
+
+class ComputationRunListQueryParams(
+    PageQueryParameters,
+    ComputationRunListOrderParams,  # type: ignore[misc, valid-type]
+): ...
+
+
+class ComputationRunRestGet(OutputSchema):
     project_uuid: ProjectID
     iteration: int
     state: RunningState
@@ -60,12 +92,30 @@ class ComputationRunRestGet(BaseModel):
     ended_at: datetime | None
 
 
-class ComputationRunRestGetPage(NamedTuple):
-    items: list[ComputationRunRestGet]
-    total: PositiveInt
+### Computation Task
 
 
-class ComputationTaskRestGet(BaseModel):
+class ComputationTaskPathParams(BaseModel):
+    project_id: ProjectID
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
+
+
+ComputationTaskListOrderParams = create_ordering_query_model_class(
+    ordering_fields={
+        "started_at",
+    },
+    default=OrderBy(field=IDStr("started_at")),
+    ordering_fields_api_to_column_map={"started_at": "start"},
+)
+
+
+class ComputationTaskListQueryParams(
+    PageQueryParameters,
+    ComputationTaskListOrderParams,  # type: ignore[misc, valid-type]
+): ...
+
+
+class ComputationTaskRestGet(OutputSchema):
     project_uuid: ProjectID
     node_id: NodeID
     state: RunningState
@@ -73,8 +123,3 @@ class ComputationTaskRestGet(BaseModel):
     image: dict[str, Any]
     started_at: datetime | None
     ended_at: datetime | None
-
-
-class ComputationTaskRestGetPage(NamedTuple):
-    items: list[ComputationTaskRestGet]
-    total: PositiveInt
