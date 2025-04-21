@@ -19,7 +19,7 @@
 qx.Class.define("osparc.jobs.JobsTableModel", {
   extend: qx.ui.table.model.Remote,
 
-  construct(filters) {
+  construct() {
     this.base(arguments);
 
     const jobsCols = osparc.jobs.JobsTable.COLS;
@@ -27,16 +27,14 @@ qx.Class.define("osparc.jobs.JobsTableModel", {
     const colIDs = Object.values(jobsCols).map(col => col.id);
     this.setColumns(colLabels, colIDs);
 
-    if (filters) {
-      this.setFilters(filters);
-    }
-
     this.setSortColumnIndexWithoutSortingData(jobsCols.SUBMIT.column);
     this.setSortAscendingWithoutSortingData(false);
+    this.setColumnSortable(jobsCols.STATE.column, false);
     this.setColumnSortable(jobsCols.INFO.column, false);
     this.setColumnSortable(jobsCols.ACTION_STOP.column, false);
-    this.setColumnSortable(jobsCols.ACTION_DELETE.column, false);
-    this.setColumnSortable(jobsCols.ACTION_LOGS.column, false);
+    this.setColumnSortable(jobsCols.ACTION_RUN.column, false);
+    this.setColumnSortable(jobsCols.ACTION_RETRY.column, false);
+    this.setColumnSortable(jobsCols.ACTION_MORE.column, false);
   },
 
   properties: {
@@ -46,84 +44,27 @@ qx.Class.define("osparc.jobs.JobsTableModel", {
       event: "changeFetching"
     },
 
-    filters: {
-      check: "Object",
-      init: null,
-      apply: "reloadData", // force reload
-    },
-
     orderBy: {
       check: "Object",
       init: {
-        field: "started_at",
+        field: "submitted_at",
         direction: "desc"
       }
     },
   },
 
-  statics: {
-    SERVER_MAX_LIMIT: 49,
-    COLUMN_ID_TO_DB_COLUMN_MAP: {
-      0: "started_at",
-    },
-  },
-
   members: {
-    // this should be done by the backend
-    __filterJobs: function(jobs) {
-      const filters = this.getFilters();
-      return jobs.filter(job => {
-        if (filters) {
-          let match = false;
-          [
-            "jobId",
-            "solver",
-            "status",
-            "instance",
-          ].forEach(filterableField => {
-            const getter = "get" + qx.lang.String.firstUp(filterableField);
-            const value = job[getter]();
-            // lowercase both
-            if (!match && value && value.toLowerCase().includes(filters.text.toLowerCase())) {
-              match = true;
-            }
-          });
-          return match;
-        }
-        return true;
-      });
-    },
-
-    // overridden
-    sortByColumn(columnIndex, ascending) {
-      this.setOrderBy({
-        field: this.self().COLUMN_ID_TO_DB_COLUMN_MAP[columnIndex],
-        direction: ascending ? "asc" : "desc"
-      })
-      this.base(arguments, columnIndex, ascending);
-    },
-
     // overridden
     _loadRowCount() {
-      const urlParams = {
-        offset: 0,
-        limit: 1,
-        filters: this.getFilters() ?
-          JSON.stringify({
-            "started_at": this.getFilters()
-          }) :
-          null,
-        orderBy: JSON.stringify(this.getOrderBy()),
-      };
-      const options = {
-        resolveWResponse: true
-      };
-      osparc.store.Jobs.getInstance().fetchJobs(urlParams, options)
+      const offset = 0;
+      const limit = 1;
+      osparc.store.Jobs.getInstance().fetchJobs(offset, limit, JSON.stringify(this.getOrderBy()))
         .then(jobs => {
-          const filteredJobs = this.__filterJobs(jobs);
-          this._onRowCountLoaded(filteredJobs.length);
+          this._onRowCountLoaded(jobs.length)
         })
-        .catch(() => this._onRowCountLoaded(null));
+        .catch(() => {
+          this._onRowCountLoaded(null)
+        })
     },
 
     // overridden
@@ -132,31 +73,19 @@ qx.Class.define("osparc.jobs.JobsTableModel", {
 
       const lastRow = Math.min(qxLastRow, this._rowCount - 1);
       // Returns a request promise with given offset and limit
-      const getFetchPromise = (offset, limit=this.self().SERVER_MAX_LIMIT) => {
-        const urlParams = {
-          limit,
-          offset,
-          filters: this.getFilters() ?
-            JSON.stringify({
-              "started_at": this.getFilters()
-            }) :
-            null,
-          orderBy: JSON.stringify(this.getOrderBy())
-        };
-        return osparc.store.Jobs.getInstance().fetchJobs(urlParams)
+      const getFetchPromise = (offset, limit) => {
+        return osparc.store.Jobs.getInstance().fetchJobs(offset, limit, JSON.stringify(this.getOrderBy()))
           .then(jobs => {
-            const filteredJobs = this.__filterJobs(jobs);
             const data = [];
             const jobsCols = osparc.jobs.JobsTable.COLS;
-            filteredJobs.forEach(job => {
+            jobs.forEach(job => {
               data.push({
-                [jobsCols.JOB_ID.id]: job.getJobId(),
-                [jobsCols.SOLVER.id]: job.getSolver(),
-                [jobsCols.STATUS.id]: job.getStatus(),
-                [jobsCols.PROGRESS.id]: job.getProgress() ? (job.getProgress() + "%") : "-",
+                [jobsCols.PROJECT_UUID.id]: job.getProjectUuid(),
+                [jobsCols.PROJECT_NAME.id]: job.getProjectName(),
+                [jobsCols.STATE.id]: job.getState(),
                 [jobsCols.SUBMIT.id]: job.getSubmittedAt() ? osparc.utils.Utils.formatDateAndTime(job.getSubmittedAt()) : "-",
                 [jobsCols.START.id]: job.getStartedAt() ? osparc.utils.Utils.formatDateAndTime(job.getStartedAt()) : "-",
-                [jobsCols.INSTANCE.id]: job.getInstance(),
+                [jobsCols.START.id]: job.getEndedAt() ? osparc.utils.Utils.formatDateAndTime(job.getEndedAt()) : "-",
               });
             });
             return data;

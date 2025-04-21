@@ -76,7 +76,7 @@ qx.Class.define("osparc.jobs.JobsButton", {
       const number = this.getChildControl("number");
 
       const jobsStore = osparc.store.Jobs.getInstance();
-      const nJobs = jobsStore.getJobs().length;
+      const nJobs = jobsStore.getJobs().length > 20 ? "20+" : jobsStore.getJobs().length;
       number.setValue(nJobs.toString());
       nJobs ? this.show() : this.exclude();
     },

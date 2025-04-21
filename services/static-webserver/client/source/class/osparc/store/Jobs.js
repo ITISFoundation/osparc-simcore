@@ -32,42 +32,61 @@ qx.Class.define("osparc.store.Jobs", {
     }
   },
 
+  statics: {
+    SERVER_MAX_LIMIT: 49,
+  },
+
   members: {
-    fetchJobs: function(orderBy = {
-      field: "submitted_at",
-      direction: "desc"
-    }) {
+    fetchJobs: function(
+      offset = 0,
+      limit = this.self().SERVER_MAX_LIMIT,
+      orderBy = {
+        field: "submitted_at",
+        direction: "desc"
+      }
+    ) {
       const params = {
         url: {
-          orderBy: JSON.stringify(orderBy),
+          offset,
+          limit,
+          // orderBy: JSON.stringify(orderBy),
         }
       };
-      return osparc.data.Resources.getInstance().getAllPages("jobs", params)
-        .then(jobsData => {
-          if ("jobs" in jobsData) {
-            jobsData["jobs"].forEach(jobData => {
-              this.addJob(jobData);
+      const options = {
+        resolveWResponse: true
+      };
+      return osparc.data.Resources.fetch("jobs", "getPage", params, options)
+        .then(jobsResp => {
+          const jobs = [];
+          if ("data" in jobsResp) {
+            jobsResp["data"].forEach(jobData => {
+              jobs.push(this.addJob(jobData));
             });
           }
-          return this.getJobs();
+          return jobs;
         })
         .catch(err => console.error(err));
     },
 
-    fetchSubJobs: function(studyId, orderBy = {
-      field: "submitted_at",
-      direction: "desc"
-    }) {
+    fetchSubJobs: function(
+      projectUuid,
+      offset = 0,
+      limit = osparc.jobs.JobsTableModel.SERVER_MAX_LIMIT,
+      orderBy = {
+        field: "submitted_at",
+        direction: "desc"
+      }
+    ) {
       const params = {
         url: {
-          studyId,
+          studyId: projectUuid,
           orderBy: JSON.stringify(orderBy),
         }
       };
       return osparc.data.Resources.getInstance().getAllPages("subJobs", params)
         .then(jobsData => {
-          if ("jobs_info" in jobsData && studyId in jobsData["jobs_info"]) {
-            return jobsData["jobs_info"][studyId];
+          if ("jobs_info" in jobsData && projectUuid in jobsData["jobs_info"]) {
+            return jobsData["jobs_info"][projectUuid];
           }
           return null;
         })
@@ -76,7 +95,7 @@ qx.Class.define("osparc.store.Jobs", {
 
     addJob: function(jobData) {
       const jobs = this.getJobs();
-      const index = jobs.findIndex(t => t.getJobId() === jobData["job_id"]);
+      const index = jobs.findIndex(job => job.getProjectUuid() === jobData["projectUuid"]);
       if (index === -1) {
         const job = new osparc.data.Job(jobData);
         jobs.push(job);

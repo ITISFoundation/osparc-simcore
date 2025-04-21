@@ -32,7 +32,7 @@ qx.Class.define("osparc.jobs.JobsTable", {
     });
 
     const columnModel = this.getTableColumnModel();
-    columnModel.setColumnVisible(this.self().COLS.JOB_ID.column, true);
+    columnModel.setColumnVisible(this.self().COLS.PROJECT_UUID.column, false);
 
     Object.values(this.self().COLS).forEach(col => columnModel.setColumnWidth(col.column, col.width));
 
@@ -44,53 +44,45 @@ qx.Class.define("osparc.jobs.JobsTable", {
     const fontButtonRendererStop = new osparc.ui.table.cellrenderer.ImageButtonRenderer("stop", iconPathStop);
     columnModel.setDataCellRenderer(this.self().COLS.ACTION_STOP.column, fontButtonRendererStop);
 
-    const iconPathDelete = "osparc/trash-text.svg";
-    const fontButtonRendererDelete = new osparc.ui.table.cellrenderer.ImageButtonRenderer("delete", iconPathDelete);
-    columnModel.setDataCellRenderer(this.self().COLS.ACTION_DELETE.column, fontButtonRendererDelete);
-
-    const iconPathLogs = "osparc/logs-text.svg";
-    const fontButtonRendererLogs = new osparc.ui.table.cellrenderer.ImageButtonRenderer("logs", iconPathLogs);
-    columnModel.setDataCellRenderer(this.self().COLS.ACTION_LOGS.column, fontButtonRendererLogs);
-
     this.__attachHandlers();
   },
 
   statics: {
     COLS: {
-      JOB_ID: {
+      PROJECT_UUID: {
         id: "jobId",
         column: 0,
-        label: qx.locale.Manager.tr("Job Id"),
+        label: qx.locale.Manager.tr("Project Id"),
         width: 170
       },
-      SOLVER: {
-        id: "solver",
+      PROJECT_NAME: {
+        id: "projectName",
         column: 1,
-        label: qx.locale.Manager.tr("Solver"),
-        width: 100
-      },
-      STATUS: {
-        id: "status",
-        column: 2,
-        label: qx.locale.Manager.tr("Status"),
+        label: qx.locale.Manager.tr("Project Name"),
         width: 170
       },
-      PROGRESS: {
-        id: "progress",
-        column: 3,
-        label: qx.locale.Manager.tr("Progress"),
-        width: 80
+      STATE: {
+        id: "state",
+        column: 2,
+        label: qx.locale.Manager.tr("State"),
+        width: 170
       },
       SUBMIT: {
         id: "submit",
-        column: 4,
+        column: 3,
         label: qx.locale.Manager.tr("Submitted"),
         width: 130
       },
       START: {
         id: "start",
-        column: 5,
+        column: 4,
         label: qx.locale.Manager.tr("Started"),
+        width: 130
+      },
+      END: {
+        id: "end",
+        column: 5,
+        label: qx.locale.Manager.tr("Ended"),
         width: 130
       },
       INFO: {
@@ -99,26 +91,26 @@ qx.Class.define("osparc.jobs.JobsTable", {
         label: qx.locale.Manager.tr("Info"),
         width: 40
       },
-      INSTANCE: {
-        id: "instance",
-        column: 7,
-        label: qx.locale.Manager.tr("Instance"),
-        width: 90
-      },
       ACTION_STOP: {
         id: "info",
+        column: 7,
+        label: "",
+        width: 40
+      },
+      ACTION_RUN: {
+        id: "action_run",
         column: 8,
         label: "",
         width: 40
       },
-      ACTION_DELETE: {
-        id: "info",
+      ACTION_RETRY: {
+        id: "action_retry",
         column: 9,
         label: "",
         width: 40
       },
-      ACTION_LOGS: {
-        id: "info",
+      ACTION_MORE: {
+        id: "action_more",
         column: 10,
         label: "",
         width: 40
