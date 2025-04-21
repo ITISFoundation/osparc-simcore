@@ -95,20 +95,14 @@ qx.Class.define("osparc.store.Jobs", {
 
     addJob: function(jobData) {
       const jobs = this.getJobs();
-      const index = jobs.findIndex(job => job.getProjectUuid() === jobData["projectUuid"]);
-      if (index === -1) {
-        const job = new osparc.data.Job(jobData);
-        jobs.push(job);
-        this.fireDataEvent("changeJobs");
-        return job;
+      const jobFound = jobs.find(job => job.getProjectUuid() === jobData["projectUuid"]);
+      if (jobFound) {
+        return jobFound;
       }
-      return null;
-    },
-
-    removeJobs: function() {
-      const jobs = this.getJobs();
-      jobs.forEach(job => job.dispose());
+      const job = new osparc.data.Job(jobData);
+      jobs.push(job);
       this.fireDataEvent("changeJobs");
+      return job;
     },
   }
 });
