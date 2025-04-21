@@ -78,4 +78,4 @@ referencing<=0.35.1
 boto3<1.36.0
 
 # See issue https://github.com/ITISFoundation/osparc-simcore/issues/7300
-pydantic-settings<2.7.1
+pydantic-settings<2.9.2
