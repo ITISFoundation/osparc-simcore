@@ -58,9 +58,10 @@ qx.Class.define("osparc.jobs.JobsTableModel", {
     _loadRowCount() {
       const offset = 0;
       const limit = 1;
-      osparc.store.Jobs.getInstance().fetchJobs(offset, limit, JSON.stringify(this.getOrderBy()))
-        .then(jobs => {
-          this._onRowCountLoaded(jobs.length)
+      const resolveWResponse = true;
+      osparc.store.Jobs.getInstance().fetchJobs(offset, limit, JSON.stringify(this.getOrderBy()), resolveWResponse)
+        .then(resp => {
+          this._onRowCountLoaded(resp["_meta"].total)
         })
         .catch(() => {
           this._onRowCountLoaded(null)

@@ -43,7 +43,8 @@ qx.Class.define("osparc.store.Jobs", {
       orderBy = {
         field: "submitted_at",
         direction: "desc"
-      }
+      },
+      resolveWResponse = false
     ) {
       const params = {
         url: {
@@ -62,6 +63,9 @@ qx.Class.define("osparc.store.Jobs", {
             jobsResp["data"].forEach(jobData => {
               jobs.push(this.addJob(jobData));
             });
+          }
+          if (resolveWResponse) {
+            return jobsResp;
           }
           return jobs;
         })
