@@ -72,25 +72,19 @@ qx.Class.define("osparc.store.Jobs", {
         .catch(err => console.error(err));
     },
 
-    fetchSubJobs: function(
-      projectUuid,
-      orderBy = {
-        field: "submitted_at",
-        direction: "desc"
-      }
-    ) {
+    fetchSubJobs: function(projectUuid) {
       const params = {
         url: {
           studyId: projectUuid,
-          orderBy: JSON.stringify(orderBy),
         }
       };
       return osparc.data.Resources.getInstance().getAllPages("subJobs", params)
-        .then(jobsData => {
-          if ("jobs_info" in jobsData && projectUuid in jobsData["jobs_info"]) {
-            return jobsData["jobs_info"][projectUuid];
-          }
-          return null;
+        .then(subJobsData => {
+          const subJobs = [];
+          subJobsData.forEach(subJobData => {
+            subJobs.push(this.addSubJob(subJobData));
+          });
+          return subJobs;
         })
         .catch(err => console.error(err));
     },
@@ -105,6 +99,16 @@ qx.Class.define("osparc.store.Jobs", {
       jobs.push(job);
       this.fireDataEvent("changeJobs");
       return job;
+    },
+
+    addSubJob: function(subJobData) {
+      const jobs = this.getJobs();
+      const jobFound = jobs.find(job => job.getProjectUuid() === subJobData["projectUuid"]);
+      if (jobFound) {
+        const subJob = jobFound.addSubJob(subJobData);
+        return subJob;
+      }
+      return null;
     },
   }
 });

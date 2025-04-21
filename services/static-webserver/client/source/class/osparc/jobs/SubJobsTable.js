@@ -16,13 +16,13 @@
 ************************************************************************ */
 
 
-qx.Class.define("osparc.jobs.JobsTable", {
+qx.Class.define("osparc.jobs.SubJobsTable", {
   extend: qx.ui.table.Table,
 
-  construct: function(filters) {
+  construct: function(projectUuid) {
     this.base(arguments);
 
-    const model = new osparc.jobs.JobsTableModel(filters);
+    const model = new osparc.jobs.SubJobsTableModel(projectUuid);
     this.setTableModel(model);
 
     this.set({
@@ -33,16 +33,13 @@ qx.Class.define("osparc.jobs.JobsTable", {
 
     const columnModel = this.getTableColumnModel();
     columnModel.setColumnVisible(this.self().COLS.PROJECT_UUID.column, false);
+    columnModel.setColumnVisible(this.self().COLS.NODE_ID.column, false);
 
     Object.values(this.self().COLS).forEach(col => columnModel.setColumnWidth(col.column, col.width));
 
     const iconPathInfo = "osparc/circle-info-text.svg";
     const fontButtonRendererInfo = new osparc.ui.table.cellrenderer.ImageButtonRenderer("info", iconPathInfo);
-    columnModel.setDataCellRenderer(this.self().COLS.INFO.column, fontButtonRendererInfo);
-
-    const iconPathStop = "osparc/circle-stop-text.svg";
-    const fontButtonRendererStop = new osparc.ui.table.cellrenderer.ImageButtonRenderer("stop", iconPathStop);
-    columnModel.setDataCellRenderer(this.self().COLS.ACTION_STOP.column, fontButtonRendererStop);
+    columnModel.setDataCellRenderer(this.self().COLS.IMAGE.column, fontButtonRendererInfo);
 
     this.__attachHandlers();
   },
@@ -55,68 +52,52 @@ qx.Class.define("osparc.jobs.JobsTable", {
         label: qx.locale.Manager.tr("Project Id"),
         width: 170
       },
-      PROJECT_NAME: {
-        id: "projectName",
+      NODE_ID: {
+        id: "nodeId",
         column: 1,
-        label: qx.locale.Manager.tr("Project Name"),
-        width: 170,
-        sortable: true
+        label: qx.locale.Manager.tr("Node Id"),
+        width: 170
+      },
+      NODE_NAME: {
+        id: "nodeName",
+        column: 2,
+        label: qx.locale.Manager.tr("Node Name"),
+        width: 170
+      },
+      SOLVER: {
+        id: "solver",
+        column: 3,
+        label: qx.locale.Manager.tr("Solver"),
+        width: 300
       },
       STATE: {
         id: "state",
-        column: 2,
+        column: 4,
         label: qx.locale.Manager.tr("State"),
-        width: 170
+        width: 100
       },
-      SUBMIT: {
-        id: "submit",
-        column: 3,
-        label: qx.locale.Manager.tr("Submitted"),
-        width: 130,
-        sortable: true
+      PROGRESS: {
+        id: "progress",
+        column: 5,
+        label: qx.locale.Manager.tr("Progress"),
+        width: 70
       },
       START: {
         id: "start",
-        column: 4,
+        column: 6,
         label: qx.locale.Manager.tr("Started"),
-        width: 130,
-        sortable: true
+        width: 130
       },
       END: {
         id: "end",
-        column: 5,
-        label: qx.locale.Manager.tr("Ended"),
-        width: 130,
-        sortable: true
-      },
-      INFO: {
-        id: "info",
-        column: 6,
-        label: qx.locale.Manager.tr("Info"),
-        width: 40
-      },
-      ACTION_STOP: {
-        id: "info",
         column: 7,
-        label: "",
-        width: 40
+        label: qx.locale.Manager.tr("Ended"),
+        width: 130
       },
-      ACTION_RUN: {
-        id: "action_run",
+      IMAGE: {
+        id: "image",
         column: 8,
-        label: "",
-        width: 40
-      },
-      ACTION_RETRY: {
-        id: "action_retry",
-        column: 9,
-        label: "",
-        width: 40
-      },
-      ACTION_MORE: {
-        id: "action_more",
-        column: 10,
-        label: "",
+        label: qx.locale.Manager.tr("Info"),
         width: 40
       },
     }
@@ -140,18 +121,9 @@ qx.Class.define("osparc.jobs.JobsTable", {
       const rowData = this.getTableModel().getRowData(row);
       switch (action) {
         case "info": {
-          const subJobsTable = new osparc.jobs.SubJobsTable(rowData["projectUuid"]);
-          osparc.ui.window.Window.popUpInWindow(subJobsTable, "title", 1000, 500).set({
-            clickAwayClose: false,
-            showClose: true
-          });
-          break;
-        }
-        case "stop":
-        case "delete":
-        case "logs": {
-          const msg = `I wish I could ${action} the job ${rowData["projectUuid"]}`;
-          osparc.FlashMessenger.logAs(msg, "WARNING");
+          const jobInfo = new osparc.jobs.JobInfo(rowData["image"]);
+          const win = osparc.jobs.JobInfo.popUpInWindow(jobInfo);
+          win.setCaption(win.getCaption() + " - " + rowData["projectName"]);
           break;
         }
         default:
