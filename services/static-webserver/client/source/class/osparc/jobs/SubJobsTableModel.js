@@ -79,9 +79,10 @@ qx.Class.define("osparc.jobs.SubJobsTableModel", {
                 [subJobsCols.NODE_NAME.id]: subJob.getNodeName(),
                 [subJobsCols.SOLVER.id]: subJob.getImage()["name"] + ":" + subJob.getImage()["tag"],
                 [subJobsCols.STATE.id]: subJob.getState(),
-                [subJobsCols.PROGRESS.id]: subJob.getProgress(),
+                [subJobsCols.PROGRESS.id]: subJob.getProgress() * 100 + "%",
                 [subJobsCols.START.id]: subJob.getStartedAt() ? osparc.utils.Utils.formatDateAndTime(subJob.getStartedAt()) : "-",
                 [subJobsCols.END.id]: subJob.getEndedAt() ? osparc.utils.Utils.formatDateAndTime(subJob.getEndedAt()) : "-",
+                [subJobsCols.IMAGE.id]: subJob.getImage() ? osparc.utils.Utils.formatDateAndTime(subJob.getEndedAt()) : "-",
               });
             });
             return data;

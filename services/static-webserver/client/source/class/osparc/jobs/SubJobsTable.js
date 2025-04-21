@@ -121,9 +121,17 @@ qx.Class.define("osparc.jobs.SubJobsTable", {
       const rowData = this.getTableModel().getRowData(row);
       switch (action) {
         case "info": {
-          const jobInfo = new osparc.jobs.JobInfo(rowData["image"]);
+          const job = osparc.store.Jobs.getInstance().getJob(rowData["projectUuid"]);
+          if (!job) {
+            return;
+          }
+          const subJob = job.getSubJob(rowData["nodeId"]);
+          if (!subJob) {
+            return;
+          }
+          const jobInfo = new osparc.jobs.JobInfo(subJob.getImage());
           const win = osparc.jobs.JobInfo.popUpInWindow(jobInfo);
-          win.setCaption(win.getCaption() + " - " + rowData["projectName"]);
+          win.setCaption(win.getCaption() + " - " + rowData["nodeName"]);
           break;
         }
         default:

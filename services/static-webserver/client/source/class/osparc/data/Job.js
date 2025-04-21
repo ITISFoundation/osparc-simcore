@@ -99,8 +99,8 @@ qx.Class.define("osparc.data.Job", {
       return this.__subJobs;
     },
 
-    clearSubJobs: function() {
-      this.__subJobs = [];
+    getSubJob: function(nodeId) {
+      return this.__subJobs.find(subJb => subJb.getNodeId() === nodeId);
     },
   }
 });

@@ -15,10 +15,6 @@
 
 ************************************************************************ */
 
-/**
- * @asset(osparc/mock_jobs.json")
- */
-
 qx.Class.define("osparc.store.Jobs", {
   extend: qx.core.Object,
   type: "singleton",
@@ -109,6 +105,11 @@ qx.Class.define("osparc.store.Jobs", {
         return subJob;
       }
       return null;
+    },
+
+    getJob: function(projectUuid) {
+      const jobs = this.getJobs();
+      return jobs.find(job => job.getProjectUuid() === projectUuid);
     },
   }
 });
