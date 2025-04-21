@@ -129,9 +129,9 @@ qx.Class.define("osparc.jobs.SubJobsTable", {
           if (!subJob) {
             return;
           }
-          const jobInfo = new osparc.jobs.JobInfo(subJob.getImage());
-          const win = osparc.jobs.JobInfo.popUpInWindow(jobInfo);
-          win.setCaption(win.getCaption() + " - " + rowData["nodeName"]);
+          const jobInfo = new osparc.jobs.Info(subJob.getImage());
+          const win = osparc.jobs.Info.popUpInWindow(jobInfo);
+          win.setCaption(rowData["nodeName"]);
           break;
         }
         default:

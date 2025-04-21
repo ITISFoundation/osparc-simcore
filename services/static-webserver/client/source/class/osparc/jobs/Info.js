@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 
-qx.Class.define("osparc.jobs.JobInfo", {
+qx.Class.define("osparc.jobs.Info", {
   extend: qx.ui.core.Widget,
 
   construct(info) {

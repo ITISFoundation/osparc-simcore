@@ -141,7 +141,7 @@ qx.Class.define("osparc.jobs.JobsTable", {
       switch (action) {
         case "info": {
           const subJobsTable = new osparc.jobs.SubJobsTable(rowData["projectUuid"]);
-          osparc.ui.window.Window.popUpInWindow(subJobsTable, "title", 1000, 500).set({
+          osparc.ui.window.Window.popUpInWindow(subJobsTable, rowData["projectName"], 1000, 500).set({
             clickAwayClose: false,
             showClose: true
           });
