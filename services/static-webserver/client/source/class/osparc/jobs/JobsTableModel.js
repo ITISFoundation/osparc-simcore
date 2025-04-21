@@ -29,12 +29,9 @@ qx.Class.define("osparc.jobs.JobsTableModel", {
 
     this.setSortColumnIndexWithoutSortingData(jobsCols.SUBMIT.column);
     this.setSortAscendingWithoutSortingData(false);
-    this.setColumnSortable(jobsCols.STATE.column, false);
-    this.setColumnSortable(jobsCols.INFO.column, false);
-    this.setColumnSortable(jobsCols.ACTION_STOP.column, false);
-    this.setColumnSortable(jobsCols.ACTION_RUN.column, false);
-    this.setColumnSortable(jobsCols.ACTION_RETRY.column, false);
-    this.setColumnSortable(jobsCols.ACTION_MORE.column, false);
+    Object.values(jobsCols).forEach(col => {
+      this.setColumnSortable(col.column, Boolean(col.sortable));
+    });
   },
 
   properties: {

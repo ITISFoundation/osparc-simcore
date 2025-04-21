@@ -50,7 +50,7 @@ qx.Class.define("osparc.jobs.JobsTable", {
   statics: {
     COLS: {
       PROJECT_UUID: {
-        id: "jobId",
+        id: "projectUuid",
         column: 0,
         label: qx.locale.Manager.tr("Project Id"),
         width: 170
@@ -59,7 +59,8 @@ qx.Class.define("osparc.jobs.JobsTable", {
         id: "projectName",
         column: 1,
         label: qx.locale.Manager.tr("Project Name"),
-        width: 170
+        width: 170,
+        sortable: true
       },
       STATE: {
         id: "state",
@@ -71,19 +72,22 @@ qx.Class.define("osparc.jobs.JobsTable", {
         id: "submit",
         column: 3,
         label: qx.locale.Manager.tr("Submitted"),
-        width: 130
+        width: 130,
+        sortable: true
       },
       START: {
         id: "start",
         column: 4,
         label: qx.locale.Manager.tr("Started"),
-        width: 130
+        width: 130,
+        sortable: true
       },
       END: {
         id: "end",
         column: 5,
         label: qx.locale.Manager.tr("Ended"),
-        width: 130
+        width: 130,
+        sortable: true
       },
       INFO: {
         id: "info",
@@ -136,14 +140,15 @@ qx.Class.define("osparc.jobs.JobsTable", {
       const rowData = this.getTableModel().getRowData(row);
       switch (action) {
         case "info": {
-          const jobInfo = new osparc.jobs.JobInfo(rowData["jobId"]);
-          osparc.jobs.JobInfo.popUpInWindow(jobInfo);
+          const jobInfo = new osparc.jobs.JobInfo(rowData["projectUuid"]);
+          const win = osparc.jobs.JobInfo.popUpInWindow(jobInfo);
+          win.setCaption(win.getCaption() + " - " + rowData["projectName"]);
           break;
         }
         case "stop":
         case "delete":
         case "logs": {
-          const msg = `I wish I could ${action} the job ${rowData["jobId"]}`;
+          const msg = `I wish I could ${action} the job ${rowData["projectUuid"]}`;
           osparc.FlashMessenger.logAs(msg, "WARNING");
           break;
         }
