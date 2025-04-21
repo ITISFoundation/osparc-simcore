@@ -41,8 +41,7 @@ qx.Class.define("osparc.jobs.JobsButton", {
       let control;
       switch (id) {
         case "icon": {
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/cog/22");
-          osparc.utils.Utils.addClass(control.getContentElement(), "rotateSlow");
+          control = new qx.ui.basic.Image("@FontAwesome5Solid/tasks/22");
 
           const logoContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
             alignY: "middle"
