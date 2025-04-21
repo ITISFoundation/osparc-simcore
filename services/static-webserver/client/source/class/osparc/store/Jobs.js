@@ -74,8 +74,6 @@ qx.Class.define("osparc.store.Jobs", {
 
     fetchSubJobs: function(
       projectUuid,
-      offset = 0,
-      limit = osparc.jobs.JobsTableModel.SERVER_MAX_LIMIT,
       orderBy = {
         field: "submitted_at",
         direction: "desc"
