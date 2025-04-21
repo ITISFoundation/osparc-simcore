@@ -95,7 +95,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       const pollTasks = osparc.store.PollTasks.getInstance();
       const exportDataTasks = pollTasks.getExportDataTasks();
       exportDataTasks.forEach(task => {
-        osparc.task.ExportData.exportDataTaskReceived(task);
+        osparc.task.ExportData.exportDataTaskReceived(task, false);
       });
     },
 
