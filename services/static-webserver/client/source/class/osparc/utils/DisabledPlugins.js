@@ -61,7 +61,14 @@ qx.Class.define("osparc.utils.DisabledPlugins", {
     },
 
     isJobsEnabled: function() {
-      if (osparc.utils.Utils.isDevelopmentPlatform() && osparc.product.Utils.isProduct("s4lacad")) {
+      if (osparc.store.StaticInfo.getInstance().isDevFeaturesEnabled() && osparc.product.Utils.isS4LProduct()) {
+        return true;
+      }
+      return false;
+    },
+
+    isHypertoolsEnabled: function() {
+      if (osparc.store.StaticInfo.getInstance().isDevFeaturesEnabled() && osparc.product.Utils.isS4LProduct()) {
         return true;
       }
       return false;

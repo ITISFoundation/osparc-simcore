@@ -2505,7 +2505,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope__ComputationStarted_'
+                $ref: '#/components/schemas/Envelope_ComputationStarted_'
         '402':
           description: Insufficient credits to run computation
         '404':
@@ -3125,6 +3125,77 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Internal Server Error
+  /v0/tasks-legacy:
+    get:
+      tags:
+      - long-running-tasks-legacy
+      summary: List Tasks
+      description: Lists all long running tasks
+      operationId: list_tasks
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_TaskGet__'
+  /v0/tasks-legacy/{task_id}:
+    get:
+      tags:
+      - long-running-tasks-legacy
+      summary: Get Task Status
+      description: Retrieves the status of a task
+      operationId: get_task_status
+      parameters:
+      - name: task_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Task Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_TaskStatus_'
+    delete:
+      tags:
+      - long-running-tasks-legacy
+      summary: Cancel And Delete Task
+      description: Cancels and deletes a task
+      operationId: cancel_and_delete_task
+      parameters:
+      - name: task_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Task Id
+      responses:
+        '204':
+          description: Successful Response
+  /v0/tasks-legacy/{task_id}/result:
+    get:
+      tags:
+      - long-running-tasks-legacy
+      summary: Get Task Result
+      description: Retrieves the result of a task
+      operationId: get_task_result
+      parameters:
+      - name: task_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Task Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
   /v0/catalog/licensed-items:
     get:
       tags:
@@ -8585,6 +8656,24 @@ components:
           default: []
       type: object
       title: ComputationStart
+    ComputationStarted:
+      properties:
+        pipeline_id:
+          type: string
+          format: uuid
+          title: Pipeline Id
+          description: ID for created pipeline (=project identifier)
+        ref_ids:
+          items:
+            type: integer
+          type: array
+          title: Ref Ids
+          description: Checkpoints IDs for created pipeline
+          default: []
+      type: object
+      required:
+      - pipeline_id
+      title: ComputationStarted
     ConnectServiceToPricingPlanBodyParams:
       properties:
         serviceKey:
@@ -8986,6 +9075,19 @@ components:
           title: Error
       type: object
       title: Envelope[ComputationGet]
+    Envelope_ComputationStarted_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/ComputationStarted'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[ComputationStarted]
     Envelope_CreditPriceGet_:
       properties:
         data:
@@ -9747,19 +9849,6 @@ components:
           title: Error
       type: object
       title: Envelope[WorkspaceGroupGet]
-    Envelope__ComputationStarted_:
-      properties:
-        data:
-          anyOf:
-          - $ref: '#/components/schemas/_ComputationStarted'
-          - type: 'null'
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[_ComputationStarted]
     Envelope__ProjectGroupAccess_:
       properties:
         data:
@@ -15126,6 +15215,12 @@ components:
           - type: object
           - type: 'null'
           title: Annotations
+        templateType:
+          anyOf:
+          - type: string
+            const: hypertool
+          - type: 'null'
+          title: Templatetype
       additionalProperties: true
       type: object
       title: StudyUI
@@ -15157,6 +15252,12 @@ components:
           - type: object
           - type: 'null'
           title: Annotations
+        templateType:
+          anyOf:
+          - type: string
+            const: hypertool
+          - type: 'null'
+          title: Templatetype
       additionalProperties: true
       type: object
       title: StudyUI
@@ -16251,23 +16352,6 @@ components:
       - write
       - delete
       title: WorkspacesGroupsBodyParams
-    _ComputationStarted:
-      properties:
-        pipeline_id:
-          type: string
-          format: uuid
-          title: Pipeline Id
-          description: ID for created pipeline (=project identifier)
-        ref_ids:
-          items:
-            type: integer
-          type: array
-          title: Ref Ids
-          description: Checkpoints IDs for created pipeline
-      type: object
-      required:
-      - pipeline_id
-      title: _ComputationStarted
     _ItisVipResourceRestData:
       properties:
         source:

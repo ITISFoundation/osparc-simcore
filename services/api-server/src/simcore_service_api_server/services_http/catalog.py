@@ -4,7 +4,6 @@ import urllib.parse
 from collections.abc import Callable
 from dataclasses import dataclass
 from functools import partial
-from operator import attrgetter
 from typing import Final, Literal
 
 from fastapi import FastAPI, status
@@ -18,11 +17,11 @@ from settings_library.tracing import TracingSettings
 
 from ..exceptions.backend_errors import (
     ListSolversOrStudiesError,
-    SolverOrStudyNotFoundError,
+    ProgramOrSolverOrStudyNotFoundError,
 )
 from ..exceptions.service_errors_utils import service_exception_mapper
 from ..models.basic_types import VersionStr
-from ..models.schemas.programs import Program, ProgramKeyId
+from ..models.schemas.programs import Program
 from ..models.schemas.solvers import LATEST_VERSION, Solver, SolverKeyId, SolverPort
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
@@ -145,70 +144,8 @@ class CatalogApi(BaseServiceClientApi):
             services = [service for service in services if predicate(service)]
         return services
 
-    async def get_solver(
-        self,
-        *,
-        user_id: UserID,
-        name: SolverKeyId,
-        version: VersionStr,
-        product_name: ProductName,
-    ) -> Solver:
-        service = await self._get_service(
-            user_id=user_id, name=name, version=version, product_name=product_name
-        )
-        assert (  # nosec
-            service.service_type == ServiceType.COMPUTATIONAL
-        ), "Expected by SolverName regex"
-
-        solver: Solver = service.to_solver()
-        return solver
-
-    async def get_program(
-        self,
-        *,
-        user_id: int,
-        name: ProgramKeyId,
-        version: VersionStr,
-        product_name: str,
-    ) -> Program:
-        service = await self._get_service(
-            user_id=user_id, name=name, version=version, product_name=product_name
-        )
-        assert (  # nosec
-            service.service_type == ServiceType.DYNAMIC
-        ), "Expected by ProgramName regex"
-
-        program = service.to_program()
-        return program
-
     @_exception_mapper(
-        http_status_map={status.HTTP_404_NOT_FOUND: SolverOrStudyNotFoundError}
-    )
-    async def _get_service(
-        self, *, user_id: int, name: SolverKeyId, version: VersionStr, product_name: str
-    ) -> TruncatedCatalogServiceOut:
-
-        assert version != LATEST_VERSION  # nosec
-
-        service_key = urllib.parse.quote_plus(name)
-        service_version = version
-
-        response = await self.client.get(
-            f"/services/{service_key}/{service_version}",
-            params={"user_id": user_id},
-            headers={"x-simcore-products-name": product_name},
-        )
-        response.raise_for_status()
-
-        service: (
-            TruncatedCatalogServiceOut
-        ) = await asyncio.get_event_loop().run_in_executor(
-            None, _parse_response, TruncatedCatalogServiceOutAdapter, response
-        )
-        return service
-
-    @_exception_mapper(
-        http_status_map={status.HTTP_404_NOT_FOUND: SolverOrStudyNotFoundError}
+        http_status_map={status.HTTP_404_NOT_FOUND: ProgramOrSolverOrStudyNotFoundError}
     )
     async def get_service_ports(
         self,
@@ -271,22 +208,6 @@ class CatalogApi(BaseServiceClientApi):
         )
         solvers = [service.to_solver() for service in services]
         return [solver for solver in solvers if _this_solver(solver)]
-
-    async def get_latest_release(
-        self,
-        *,
-        user_id: int,
-        solver_key: SolverKeyId,
-        product_name: str,
-    ) -> Solver:
-        releases = await self.list_service_releases(
-            user_id=user_id,
-            solver_key=solver_key,
-            product_name=product_name,
-        )
-
-        # raises IndexError if None
-        return sorted(releases, key=attrgetter("pep404_version"))[-1]
 
 
 # MODULES APP SETUP -------------------------------------------------------------

@@ -110,6 +110,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
           this._add(control, {
             flex: 1
           });
+          osparc.utils.Utils.disableAutocomplete(control);
           break;
         case "reset-button":
           control = new qx.ui.toolbar.Button(null, "@MaterialIcons/close/20").set({

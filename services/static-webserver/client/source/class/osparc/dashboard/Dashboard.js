@@ -79,6 +79,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
   members: {
     __studyBrowser: null,
     __templateBrowser: null,
+    __hypertoolBrowser: null,
     __serviceBrowser: null,
     __dataBrowser: null,
 
@@ -88,6 +89,10 @@ qx.Class.define("osparc.dashboard.Dashboard", {
 
     getTemplateBrowser: function() {
       return this.__templateBrowser;
+    },
+
+    getHypertoolBrowser: function() {
+      return this.__hypertoolBrowser;
     },
 
     getServiceBrowser: function() {
@@ -118,6 +123,14 @@ qx.Class.define("osparc.dashboard.Dashboard", {
           icon: "@FontAwesome5Solid/copy/"+tabIconSize,
           buildLayout: this.__createTemplateBrowser
         });
+        tabs.push({
+          id: "hypertoolsTab",
+          buttonId: "hypertoolsTabBtn",
+          label: this.tr("HYPERTOOLS"),
+          icon: "@FontAwesome5Solid/copy/"+tabIconSize,
+          initVisibility: "excluded",
+          buildLayout: this.__createHypertoolsBrowser
+        });
       }
       if (permissions.canDo("dashboard.services.read")) {
         tabs.push({
@@ -128,7 +141,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
           buildLayout: this.__createServiceBrowser
         });
       }
-      if (permissions.canDo("dashboard.data.read") && osparc.product.Utils.isProduct("osparc")) {
+      if (permissions.canDo("dashboard.data.read")) {
         tabs.push({
           id: "dataTab",
           buttonId: "dataTabBtn",
@@ -137,7 +150,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
           buildLayout: this.__createDataBrowser
         });
       }
-      tabs.forEach(({id, buttonId, label, icon, buildLayout}) => {
+      tabs.forEach(({id, buttonId, label, icon, initVisibility, buildLayout}) => {
         const tabPage = new qx.ui.tabview.Page(label, icon).set({
           appearance: "dashboard-page"
         });
@@ -146,6 +159,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
         tabButton.set({
           minWidth: 50,
           maxHeight: 36,
+          visibility: initVisibility ? initVisibility : "visible",
         });
         tabButton.ttt = label;
         tabButton.getChildControl("label").set({
@@ -171,6 +185,10 @@ qx.Class.define("osparc.dashboard.Dashboard", {
             this.setSelection([tabFound]);
           }
         }, this);
+        viewLayout.addListener("showTab", e => {
+          const showTab = e.getData();
+          tabButton.setVisibility(showTab ? "visible" : "excluded");
+        })
         const scrollerMainView = new qx.ui.container.Scroll();
         scrollerMainView.add(viewLayout);
         tabPage.add(scrollerMainView);
@@ -182,11 +200,13 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       const groupsStore = osparc.store.Groups.getInstance();
       preResourcePromises.push(groupsStore.fetchGroupsAndMembers());
       preResourcePromises.push(osparc.store.Services.getServicesLatest(false));
+      preResourcePromises.push(osparc.store.Templates.getInstance().fetchAllTemplates());
       Promise.all(preResourcePromises)
         .then(() => {
           [
             this.__studyBrowser,
             this.__templateBrowser,
+            this.__hypertoolBrowser,
             this.__serviceBrowser,
             this.__dataBrowser
           ].forEach(resourceBrowser => {
@@ -206,6 +226,12 @@ qx.Class.define("osparc.dashboard.Dashboard", {
     __createTemplateBrowser: function() {
       const templatesView = this.__templateBrowser = new osparc.dashboard.TemplateBrowser();
       return templatesView;
+    },
+
+    __createHypertoolsBrowser: function() {
+      const templateType = osparc.data.model.StudyUI.HYPERTOOL_TYPE;
+      const hypertoolsView = this.__hypertoolBrowser = new osparc.dashboard.TemplateBrowser(templateType);
+      return hypertoolsView;
     },
 
     __createServiceBrowser: function() {

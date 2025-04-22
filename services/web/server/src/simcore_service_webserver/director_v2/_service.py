@@ -1,103 +1,55 @@
-""" Computations API
-
-Wraps interactions to the director-v2 service
-
-"""
-
 import logging
-from typing import Any
 from uuid import UUID
 
 from aiohttp import web
-from models_library.api_schemas_directorv2.comp_tasks import (
+from models_library.api_schemas_directorv2.computations import (
     TasksOutputs,
     TasksSelection,
 )
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_pipeline import ComputationTask
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from models_library.wallets import WalletID, WalletInfo
+from pydantic import TypeAdapter
 from pydantic.types import PositiveInt
 from servicelib.aiohttp import status
 from servicelib.logging_utils import log_decorator
+from simcore_postgres_database.utils_groups_extra_properties import (
+    GroupExtraProperties,
+    GroupExtraPropertiesRepo,
+)
+from simcore_service_webserver.director_v2._client import DirectorV2RestClient
 
+from ..application_settings import get_application_settings
+from ..db.plugin import get_database_engine
 from ..products import products_service
-from ._api_utils import get_wallet_info
-from ._core_base import DataType, request_director_v2
+from ..products.models import Product
+from ..projects import projects_wallets_service
+from ..users import preferences_api as user_preferences_service
+from ..users.exceptions import UserDefaultWalletNotFoundError
+from ..wallets import api as wallets_service
+from ._client_base import DataType, request_director_v2
 from .exceptions import ComputationNotFoundError, DirectorServiceError
 from .settings import DirectorV2Settings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
 
 
-class ComputationsApi:
-    def __init__(self, app: web.Application) -> None:
-        self._app = app
-        self._settings: DirectorV2Settings = get_plugin_settings(app)
-
-    async def get(self, project_id: ProjectID, user_id: UserID) -> dict[str, Any]:
-        computation_task_out = await request_director_v2(
-            self._app,
-            "GET",
-            (self._settings.base_url / "computations" / f"{project_id}").with_query(
-                user_id=int(user_id)
-            ),
-            expected_status=web.HTTPOk,
-        )
-        assert isinstance(computation_task_out, dict)  # nosec
-        return computation_task_out
-
-    async def start(
-        self, project_id: ProjectID, user_id: UserID, product_name: str, **options
-    ) -> str:
-        computation_task_out = await request_director_v2(
-            self._app,
-            "POST",
-            self._settings.base_url / "computations",
-            expected_status=web.HTTPCreated,
-            data={
-                "user_id": user_id,
-                "project_id": project_id,
-                "product_name": product_name,
-                **options,
-            },
-        )
-        assert isinstance(computation_task_out, dict)  # nosec
-        computation_task_out_id: str = computation_task_out["id"]
-        return computation_task_out_id
-
-    async def stop(self, project_id: ProjectID, user_id: UserID):
-        await request_director_v2(
-            self._app,
-            "POST",
-            self._settings.base_url / "computations" / f"{project_id}:stop",
-            expected_status=web.HTTPAccepted,
-            data={"user_id": user_id},
-        )
-
-
-_APP_KEY = f"{__name__}.{ComputationsApi.__name__}"
-
-
-def get_client(app: web.Application) -> ComputationsApi | None:
-    app_key: ComputationsApi | None = app.get(_APP_KEY)
-    return app_key
-
-
-def set_client(app: web.Application, obj: ComputationsApi):
-    app[_APP_KEY] = obj
-
-
 #
 # PIPELINE RESOURCE ----------------------
 #
-# TODO: REFACTOR! the client class above and the free functions below are duplicates of the same interface!
 
 
 @log_decorator(logger=_logger)
 async def create_or_update_pipeline(
-    app: web.Application, user_id: UserID, project_id: ProjectID, product_name: str
+    app: web.Application,
+    user_id: UserID,
+    project_id: ProjectID,
+    product_name: ProductName,
 ) -> DataType | None:
+    # NOTE https://github.com/ITISFoundation/osparc-simcore/issues/7527
     settings: DirectorV2Settings = get_plugin_settings(app)
 
     backend_url = settings.base_url / "computations"
@@ -113,7 +65,7 @@ async def create_or_update_pipeline(
             product_name=product_name,
         ),
     }
-    # request to director-v2
+
     try:
         computation_task_out = await request_director_v2(
             app, "POST", backend_url, expected_status=web.HTTPCreated, data=body
@@ -154,18 +106,14 @@ async def is_pipeline_running(
 async def get_computation_task(
     app: web.Application, user_id: UserID, project_id: ProjectID
 ) -> ComputationTask | None:
-    settings: DirectorV2Settings = get_plugin_settings(app)
-    backend_url = (settings.base_url / f"computations/{project_id}").update_query(
-        user_id=int(user_id)
-    )
 
-    # request to director-v2
     try:
-        computation_task_out_dict = await request_director_v2(
-            app, "GET", backend_url, expected_status=web.HTTPOk
+        dv2_computation = await DirectorV2RestClient(app).get_computation(
+            project_id=project_id, user_id=user_id
         )
-        task_out = ComputationTask.model_validate(computation_task_out_dict)
+        task_out = ComputationTask.model_validate(dv2_computation, from_attributes=True)
         _logger.debug("found computation task: %s", f"{task_out=}")
+
         return task_out
     except DirectorServiceError as exc:
         if exc.status == status.HTTP_404_NOT_FOUND:
@@ -181,13 +129,8 @@ async def get_computation_task(
 async def stop_pipeline(
     app: web.Application, *, user_id: PositiveInt, project_id: ProjectID
 ):
-    settings: DirectorV2Settings = get_plugin_settings(app)
-    await request_director_v2(
-        app,
-        "POST",
-        url=settings.base_url / f"computations/{project_id}:stop",
-        expected_status=web.HTTPAccepted,
-        data={"user_id": user_id},
+    await DirectorV2RestClient(app).stop_computation(
+        project_id=project_id, user_id=user_id
     )
 
 
@@ -199,6 +142,8 @@ async def delete_pipeline(
     *,
     force: bool = True,
 ) -> None:
+    # NOTE https://github.com/ITISFoundation/osparc-simcore/issues/7527
+
     settings: DirectorV2Settings = get_plugin_settings(app)
     await request_director_v2(
         app,
@@ -223,6 +168,7 @@ async def get_batch_tasks_outputs(
     project_id: ProjectID,
     selection: TasksSelection,
 ) -> TasksOutputs:
+    # NOTE https://github.com/ITISFoundation/osparc-simcore/issues/7527
     settings: DirectorV2Settings = get_plugin_settings(app)
     response_payload = await request_director_v2(
         app,
@@ -243,3 +189,67 @@ async def get_batch_tasks_outputs(
     )
     assert isinstance(response_payload, dict)  # nosec
     return TasksOutputs(**response_payload)
+
+
+async def get_wallet_info(
+    app: web.Application,
+    *,
+    product: Product,
+    user_id: UserID,
+    project_id: ProjectID,
+    product_name: ProductName,
+) -> WalletInfo | None:
+    app_settings = get_application_settings(app)
+    if not (
+        product.is_payment_enabled and app_settings.WEBSERVER_CREDIT_COMPUTATION_ENABLED
+    ):
+        return None
+    project_wallet = await projects_wallets_service.get_project_wallet(
+        app, project_id=project_id
+    )
+    if project_wallet is None:
+        user_default_wallet_preference = await user_preferences_service.get_frontend_user_preference(
+            app,
+            user_id=user_id,
+            product_name=product_name,
+            preference_class=user_preferences_service.PreferredWalletIdFrontendUserPreference,
+        )
+        if user_default_wallet_preference is None:
+            raise UserDefaultWalletNotFoundError(uid=user_id)
+        project_wallet_id = TypeAdapter(WalletID).validate_python(
+            user_default_wallet_preference.value
+        )
+        await projects_wallets_service.connect_wallet_to_project(
+            app,
+            product_name=product_name,
+            project_id=project_id,
+            user_id=user_id,
+            wallet_id=project_wallet_id,
+        )
+    else:
+        project_wallet_id = project_wallet.wallet_id
+
+    # Check whether user has access to the wallet
+    wallet = await wallets_service.get_wallet_with_available_credits_by_user_and_wallet(
+        app,
+        user_id=user_id,
+        wallet_id=project_wallet_id,
+        product_name=product_name,
+    )
+    return WalletInfo(
+        wallet_id=project_wallet_id,
+        wallet_name=wallet.name,
+        wallet_credit_amount=wallet.available_credits,
+    )
+
+
+async def get_group_properties(
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+) -> GroupExtraProperties:
+    async with get_database_engine(app).acquire() as conn:
+        return await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
+            conn, user_id=user_id, product_name=product_name
+        )

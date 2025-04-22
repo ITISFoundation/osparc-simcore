@@ -13,7 +13,7 @@ import pytest
 from faker import Faker
 from fastapi import FastAPI, status
 from fastapi.encoders import jsonable_encoder
-from models_library.api_schemas_directorv2.comp_tasks import (
+from models_library.api_schemas_directorv2.computations import (
     TaskLogFileGet,
     TasksOutputs,
     TasksSelection,

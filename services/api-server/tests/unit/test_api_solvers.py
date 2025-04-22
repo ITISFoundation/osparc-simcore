@@ -50,3 +50,26 @@ async def test_get_solver_pricing_plan(
     assert expected_status_code == response.status_code
     if response.status_code == status.HTTP_200_OK:
         _ = ServicePricingPlanGet.model_validate(response.json())
+
+
+@pytest.mark.parametrize(
+    "solver_key,expected_status_code",
+    [
+        ("simcore/services/comp/valid_solver", status.HTTP_200_OK),
+    ],
+)
+async def test_get_latest_solver_release(
+    client: AsyncClient,
+    mocked_rpc_catalog_service_api,
+    auth: httpx.BasicAuth,
+    solver_key: str,
+    expected_status_code: int,
+):
+    response = await client.get(
+        f"{API_VTAG}/solvers/{solver_key}/latest",
+        auth=auth,
+    )
+    assert response.status_code == expected_status_code
+    if response.status_code == status.HTTP_200_OK:
+        assert "id" in response.json()
+        assert response.json()["id"] == solver_key

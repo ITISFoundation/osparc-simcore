@@ -5,14 +5,23 @@
 # pylint: disable=unused-variable
 
 
-from models_library.api_schemas_catalog.services import LatestServiceGet, ServiceGetV2
+from models_library.api_schemas_catalog.services import (
+    LatestServiceGet,
+    ServiceGetV2,
+    ServiceListFilters,
+)
 from models_library.api_schemas_webserver.catalog import (
     CatalogServiceUpdate,
 )
 from models_library.products import ProductName
 from models_library.rest_pagination import PageOffsetInt
 from models_library.rpc_pagination import PageLimitInt, PageRpc
+from models_library.services_enums import ServiceType
 from models_library.services_history import ServiceRelease
+from models_library.services_regex import (
+    COMPUTATIONAL_SERVICE_KEY_RE,
+    DYNAMIC_SERVICE_KEY_RE,
+)
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import NonNegativeInt, TypeAdapter
@@ -29,10 +38,12 @@ class CatalogRpcSideEffects:
         user_id: UserID,
         limit: PageLimitInt,
         offset: NonNegativeInt,
+        filters: ServiceListFilters | None = None,
     ):
         assert rpc_client
         assert product_name
         assert user_id
+        assert filters is None, "filters not mocked yet"
 
         items = TypeAdapter(list[LatestServiceGet]).validate_python(
             LatestServiceGet.model_json_schema()["examples"],
@@ -64,6 +75,14 @@ class CatalogRpcSideEffects:
         )
         got.version = service_version
         got.key = service_key
+
+        if DYNAMIC_SERVICE_KEY_RE.match(got.key):
+            got.service_type = ServiceType.DYNAMIC
+        elif COMPUTATIONAL_SERVICE_KEY_RE.match(got.key):
+            got.service_type = ServiceType.COMPUTATIONAL
+        else:
+            msg = "Service type not recognized. Please extend the mock yourself"
+            raise RuntimeError(msg)
 
         return got
 
@@ -97,12 +116,14 @@ class CatalogRpcSideEffects:
         service_key: ServiceKey,
         offset: PageOffsetInt,
         limit: PageLimitInt,
+        filters: ServiceListFilters | None = None,
     ) -> PageRpc[ServiceRelease]:
 
         assert rpc_client
         assert product_name
         assert user_id
         assert service_key
+        assert filters is None, "filters not mocked yet"
 
         items = TypeAdapter(list[ServiceRelease]).validate_python(
             ServiceRelease.model_json_schema()["examples"],

@@ -97,7 +97,7 @@ async def result(
 
     if _status.task_state == TaskState.ABORTED:
         raise JobAbortedError(job_id=job_id)
-    if _status.task_state == TaskState.ERROR:
+    if _status.task_state == TaskState.FAILURE:
         # fallback exception to report
         exc_type = type(_result).__name__
         exc_msg = f"{_result}"
@@ -127,10 +127,12 @@ async def list_jobs(
     _ = filter_
     assert app  # nosec
     try:
-        task_uuids = await get_celery_client(app).get_task_uuids(
+        tasks = await get_celery_client(app).list_tasks(
             task_context=job_id_data.model_dump(),
         )
     except CeleryError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc
 
-    return [AsyncJobGet(job_id=task_uuid) for task_uuid in task_uuids]
+    return [
+        AsyncJobGet(job_id=task.uuid, job_name=task.metadata.name) for task in tasks
+    ]
