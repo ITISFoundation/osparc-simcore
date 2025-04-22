@@ -59,7 +59,9 @@ class UserStatus(str, Enum):
     DELETED = "DELETED"
 
 
-class AccountApprovalStatus(str, Enum):
+class AccountRequestStatus(str, Enum):
+    """Status of an account request"""
+
     PENDING = "PENDING"
     APPROVED = "APPROVED"
     REJECTED = "REJECTED"
