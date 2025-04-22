@@ -127,8 +127,8 @@ class CatalogService:
         *,
         product_name: ProductName,
         user_id: UserID,
-        service_key: ServiceKey,
-        service_version: ServiceVersion,
+        name: ServiceKey,
+        version: ServiceVersion,
     ) -> list[ServicePortGet]:
         """Gets service ports (inputs and outputs) for a specific service version
 
@@ -141,6 +141,6 @@ class CatalogService:
             self._client,
             product_name=product_name,
             user_id=user_id,
-            service_key=service_key,
-            service_version=service_version,
+            service_key=name,
+            service_version=version,
         )

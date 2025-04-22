@@ -29,17 +29,29 @@ class ServicePortGet(BaseModel):
 
     model_config = ConfigDict(
         json_schema_extra={
-            "example": {
-                "key": "input_1",
-                "kind": "input",
-                "content_schema": {
-                    "title": "Sleep interval",
-                    "type": "integer",
-                    "x_unit": "second",
-                    "minimum": 0,
-                    "maximum": 5,
+            "examples": [
+                {
+                    "key": "input_1",
+                    "kind": "input",
+                    "content_schema": {
+                        "title": "Sleep interval",
+                        "type": "integer",
+                        "x_unit": "second",
+                        "minimum": 0,
+                        "maximum": 5,
+                    },
                 },
-            }
+                {
+                    "key": "output_1",
+                    "kind": "output",
+                    "content_media_type": "text/plain",
+                    "content_schema": {
+                        "type": "string",
+                        "title": "File containing one random integer",
+                        "description": "Integer is generated in range [1-9]",
+                    },
+                },
+            ]
         }
     )
 

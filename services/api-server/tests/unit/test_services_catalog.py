@@ -80,8 +80,8 @@ async def test_catalog_service_read_solvers(
     ports = await catalog_service.get_service_ports(
         product_name=product_name,
         user_id=user_id,
-        service_key=selected_solver.id,
-        service_version=oldest_release.version,
+        name=selected_solver.id,
+        version=oldest_release.version,
     )
 
     # Verify ports are returned and contain both inputs and outputs
