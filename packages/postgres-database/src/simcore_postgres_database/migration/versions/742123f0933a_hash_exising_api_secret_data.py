@@ -1,4 +1,4 @@
-"""hash exising api_secret data
+"""hash existing api_secret data
 
 Revision ID: 742123f0933a
 Revises: b0c988e3f348
