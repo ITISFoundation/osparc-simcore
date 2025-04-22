@@ -119,7 +119,7 @@ qx.Class.define("osparc.store.Tags", {
         .then(accessRightsArray => {
           const accessRights = {};
           accessRightsArray.forEach(ar => accessRights[ar.gid] = ar);
-          tag.setAccessRights(accessRights)
+          tag.setAccessRights(accessRights);
         })
         .catch(err => console.error(err));
     },

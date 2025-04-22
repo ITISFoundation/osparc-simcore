@@ -86,17 +86,14 @@ qx.Class.define("osparc.desktop.organizations.TemplatesList", {
           item.subscribeToFilterGroup("organizationTemplatesList");
           item.addListener("openMoreInfo", e => {
             const templateId = e.getData()["key"];
-            osparc.data.Resources.get("templates")
-              .then(templates => {
-                const templateData = templates.find(t => t.uuid === templateId);
-                if (templateData) {
-                  templateData["resourceType"] = "template";
-                  const resourceDetails = new osparc.dashboard.ResourceDetails(templateData).set({
-                    showOpenButton: false
-                  });
-                  osparc.dashboard.ResourceDetails.popUpInWindow(resourceDetails);
-                }
+            const templateData = osparc.store.Templates.getInstance().getTemplate(templateId);
+            if (templateData) {
+              templateData["resourceType"] = "template";
+              const resourceDetails = new osparc.dashboard.ResourceDetails(templateData).set({
+                showOpenButton: false
               });
+              osparc.dashboard.ResourceDetails.popUpInWindow(resourceDetails);
+            }
           });
         }
       });
@@ -114,15 +111,13 @@ qx.Class.define("osparc.desktop.organizations.TemplatesList", {
       }
 
       const groupId = orgModel.getGroupId();
-      osparc.data.Resources.getInstance().getAllPages("templates")
-        .then(templates => {
-          const orgTemplates = templates.filter(template => groupId in template["accessRights"]);
-          orgTemplates.forEach(orgTemplate => {
-            const orgTemplateCopy = osparc.utils.Utils.deepCloneObject(orgTemplate);
-            orgTemplateCopy["orgId"] = groupId;
-            templatesModel.append(qx.data.marshal.Json.createModel(orgTemplateCopy));
-          });
-        });
+      const templates = osparc.store.Templates.getInstance().getTemplates();
+      const orgTemplates = templates.filter(template => groupId in template["accessRights"]);
+      orgTemplates.forEach(orgTemplate => {
+        const orgTemplateCopy = osparc.utils.Utils.deepCloneObject(orgTemplate);
+        orgTemplateCopy["orgId"] = groupId;
+        templatesModel.append(qx.data.marshal.Json.createModel(orgTemplateCopy));
+      });
     }
   }
 });
