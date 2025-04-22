@@ -16,7 +16,7 @@ PortKindStr = Literal["input", "output"]
 class ServicePortGet(BaseModel):
     key: str = Field(
         ...,
-        description="port identifier name",
+        description="Port identifier name",
         pattern=PUBLIC_VARIABLE_NAME_RE,
         title="Key name",
     )
@@ -26,6 +26,7 @@ class ServicePortGet(BaseModel):
         None,
         description="jsonschema for the port's value. SEE https://json-schema.org/understanding-json-schema/",
     )
+
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
@@ -43,7 +44,7 @@ class ServicePortGet(BaseModel):
     )
 
     @classmethod
-    def from_service_io(
+    def from_domain_model(
         cls,
         kind: PortKindStr,
         key: str,
