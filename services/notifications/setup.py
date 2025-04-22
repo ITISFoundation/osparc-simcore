@@ -25,7 +25,6 @@ NAME = "simcore-service-notifications"
 VERSION = (CURRENT_DIR / "VERSION").read_text().strip()
 AUTHORS = ("Andrei Neagu (GitHK)",)
 DESCRIPTION = "Service for executing commands on docker nodes"
-README = (CURRENT_DIR / "README.md").read_text()
 
 PROD_REQUIREMENTS = tuple(
     read_reqs(CURRENT_DIR / "requirements" / "_base.txt")
@@ -43,7 +42,6 @@ SETUP = {
     "version": VERSION,
     "author": AUTHORS,
     "description": DESCRIPTION,
-    "long_description": README,
     "license": "MIT license",
     "python_requires": "~=3.11",
     "packages": find_packages(where="src"),
