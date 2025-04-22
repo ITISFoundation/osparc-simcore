@@ -2,7 +2,7 @@ import re
 from types import MappingProxyType
 from typing import Final
 
-from models_library.services_enums import ServiceType
+from .services_enums import ServiceType
 
 PROPERTY_TYPE_RE = r"^(number|integer|boolean|string|ref_contentSchema|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$"
 PROPERTY_TYPE_TO_PYTHON_TYPE_MAP = {

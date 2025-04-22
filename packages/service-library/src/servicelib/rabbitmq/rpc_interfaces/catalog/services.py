@@ -1,4 +1,12 @@
-"""RPC client-side for the RPC server at the payments service"""
+"""RPC client-side for the RPC server at the payments service
+
+In this interface (and all belows), the context of the caller is passed in the following arguments:
+- `user_id` is intended for the caller's identifer. Do not add other user_id that is not the callers!.
+    - Ideally this could be injected by an authentication layer (as in the rest API)
+        but  for now we are passing it as an argument.
+- `product_name` is the name of the product at the caller's context as well
+
+"""
 
 import logging
 from typing import cast
@@ -31,14 +39,6 @@ from ..._client_rpc import RabbitMQRPCClient
 from ..._constants import RPC_REQUEST_DEFAULT_TIMEOUT_S
 
 _logger = logging.getLogger(__name__)
-
-#
-# In this interface, the context of the caller is passed in the following arguments:
-#   - `user_id` is intended for the caller's identifer. Do not add other user_id that is not the callers!.
-#      - Ideally this could be injected by an authentication layer (as in the rest API)
-#        but  for now we are passing it as an argument.
-#   - `product_name` is the name of the product at the caller's context as well
-#
 
 
 @validate_call(config={"arbitrary_types_allowed": True})

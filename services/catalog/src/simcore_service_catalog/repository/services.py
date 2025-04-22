@@ -47,7 +47,7 @@ from ._base import BaseRepository
 from ._services_sql import (
     SERVICES_META_DATA_COLS,
     AccessRightsClauses,
-    apply_services_filters,
+    _apply_services_filters,
     by_version,
     can_get_service_stmt,
     get_service_history_stmt,
@@ -514,7 +514,7 @@ class ServicesRepository(BaseRepository):
         )
 
         if filters:
-            base_stmt = apply_services_filters(base_stmt, filters)
+            base_stmt = _apply_services_filters(base_stmt, filters)
 
         base_subquery = base_stmt.subquery()
 
