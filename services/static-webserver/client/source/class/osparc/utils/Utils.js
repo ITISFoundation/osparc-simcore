@@ -91,6 +91,15 @@ qx.Class.define("osparc.utils.Utils", {
 
     FLOATING_Z_INDEX: 1000001 + 1,
 
+    disableAutocomplete: function(control) {
+      if (control && control.getContentElement()) {
+        control.getContentElement().setAttribute("autocomplete", "off");
+        control.getContentElement().setAttribute("type", "search");
+        control.getContentElement().setAttribute("name", "osparcdontautomplete");
+        control.getContentElement().setAttribute("id", "osparcdontautomplete");
+      }
+    },
+
     checkImageExists: function(url) {
       return new Promise(resolve => {
         const img = new Image();
