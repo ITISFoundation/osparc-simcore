@@ -3,6 +3,7 @@ branch = True
 omit =
     */tests/*
     */generated_code/*
+    */_original_fastapi_encoders.py
 parallel = True
 
 [report]

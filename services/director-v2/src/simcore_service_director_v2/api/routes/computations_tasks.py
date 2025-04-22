@@ -1,4 +1,4 @@
-""" CRUD operations on a computation's tasks sub-resource
+"""CRUD operations on a computation's tasks sub-resource
 
 A task is computation sub-resource that respresents a running computational service in the pipeline described above
 Therefore,
@@ -11,7 +11,7 @@ from typing import Annotated, NamedTuple
 
 import networkx as nx
 from fastapi import APIRouter, Depends, HTTPException
-from models_library.api_schemas_directorv2.comp_tasks import (
+from models_library.api_schemas_directorv2.computations import (
     TaskLogFileGet,
     TasksOutputs,
     TasksSelection,

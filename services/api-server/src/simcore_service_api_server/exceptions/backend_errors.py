@@ -17,6 +17,11 @@ class BaseBackEndError(ApiServerBaseError):
         )
 
 
+class InvalidInputError(BaseBackEndError):
+    msg_template = "Invalid input"
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
 class ListSolversOrStudiesError(BaseBackEndError):
     msg_template = "Cannot list solvers/studies"
     status_code = status.HTTP_404_NOT_FOUND
@@ -37,9 +42,14 @@ class ProfileNotFoundError(BaseBackEndError):
     status_code = status.HTTP_404_NOT_FOUND
 
 
-class SolverOrStudyNotFoundError(BaseBackEndError):
-    msg_template = "Could not get solver/study {name}:{version}"
+class ProgramOrSolverOrStudyNotFoundError(BaseBackEndError):
+    msg_template = "Could not get program/solver/study {name}:{version}"
     status_code = status.HTTP_404_NOT_FOUND
+
+
+class ServiceForbiddenAccessError(BaseBackEndError):
+    msg_template = "Forbidden access to program/solver/study {name}:{version}"
+    status_code = status.HTTP_403_FORBIDDEN
 
 
 class JobNotFoundError(BaseBackEndError):

@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from httpx import HTTPStatusError
 from pydantic import ValidationError
 
+from ..._service_solvers import SolverService
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.basic_types import VersionStr
 from ...models.pagination import OnePage, Page, PaginationParams
@@ -19,7 +20,11 @@ from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver_http import AuthSession, get_webserver_session
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
-from ._constants import FMSG_CHANGELOG_NEW_IN_VERSION
+from ._constants import (
+    FMSG_CHANGELOG_NEW_IN_VERSION,
+    FMSG_CHANGELOG_REMOVED_IN_VERSION_FORMAT,
+    create_route_description,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -43,17 +48,30 @@ router = APIRouter()
 #    Would be nice to have /solvers/foo/releases/latest or solvers/foo/releases/3 , similar to docker tagging
 
 
-@router.get("", response_model=list[Solver], responses=_SOLVER_STATUS_CODES)
+@router.get(
+    "",
+    response_model=list[Solver],
+    responses=_SOLVER_STATUS_CODES,
+    description=create_route_description(
+        base="Lists all available solvers (latest version)",
+        deprecated=True,
+        alternative="GET /v0/solvers/page",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.5.0", ""),
+            FMSG_CHANGELOG_REMOVED_IN_VERSION_FORMAT.format(
+                "0.7",
+                "This endpoint is deprecated and will be removed in a future version",
+            ),
+        ],
+    ),
+)
 async def list_solvers(
     user_id: Annotated[int, Depends(get_current_user_id)],
     catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
 ):
-    """Lists all available solvers (latest version)
-
-    SEE get_solvers_page for paginated version of this function
-    """
+    """Lists all available solvers (latest version)"""
     solvers: list[Solver] = await catalog_client.list_latest_releases(
         user_id=user_id, product_name=product_name
     )
@@ -135,7 +153,7 @@ async def get_solvers_releases_page(
 async def get_solver(
     solver_key: SolverKeyId,
     user_id: Annotated[int, Depends(get_current_user_id)],
-    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
+    solver_service: Annotated[SolverService, Depends(SolverService)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
 ) -> Solver:
@@ -143,7 +161,7 @@ async def get_solver(
     # IMPORTANT: by adding /latest, we avoid changing the order of this entry in the router list
     # otherwise, {solver_key:path} will override and consume any of the paths that follow.
     try:
-        solver = await catalog_client.get_latest_release(
+        solver = await solver_service.get_latest_release(
             user_id=user_id,
             solver_key=solver_key,
             product_name=product_name,
@@ -214,13 +232,13 @@ async def get_solver_release(
     solver_key: SolverKeyId,
     version: VersionStr,
     user_id: Annotated[int, Depends(get_current_user_id)],
-    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
+    solver_service: Annotated[SolverService, Depends(SolverService)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
 ) -> Solver:
     """Gets a specific release of a solver"""
     try:
-        solver: Solver = await catalog_client.get_solver(
+        solver: Solver = await solver_service.get_solver(
             user_id=user_id,
             name=solver_key,
             version=version,

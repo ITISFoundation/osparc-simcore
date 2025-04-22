@@ -38,8 +38,9 @@ def setup_rabbitmq(app: FastAPI) -> None:
         await app.state.health_checker.setup(
             app.state.settings.API_SERVER_HEALTH_CHECK_TASK_PERIOD_SECONDS
         )
-        wb_api_server.setup(app, get_rabbitmq_rpc_client(app))
+        # setup rpc clients
         resource_usage_tracker.setup(app, get_rabbitmq_rpc_client(app))
+        wb_api_server.setup(app, get_rabbitmq_rpc_client(app))
 
     async def _on_shutdown() -> None:
         if app.state.health_checker:

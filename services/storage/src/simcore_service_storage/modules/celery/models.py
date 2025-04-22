@@ -1,13 +1,16 @@
 from datetime import timedelta
-from enum import StrEnum, auto
-from typing import Any, Final, Protocol, TypeAlias
+from enum import StrEnum
+from typing import Annotated, Any, Final, Protocol, TypeAlias
 from uuid import UUID
 
 from models_library.progress_bar import ProgressReport
-from pydantic import BaseModel
+from pydantic import BaseModel, StringConstraints
 
 TaskContext: TypeAlias = dict[str, Any]
 TaskID: TypeAlias = str
+TaskName: TypeAlias = Annotated[
+    str, StringConstraints(strip_whitespace=True, min_length=1)
+]
 TaskUUID: TypeAlias = UUID
 
 _CELERY_TASK_ID_KEY_SEPARATOR: Final[str] = ":"
@@ -26,11 +29,12 @@ def build_task_id(task_context: TaskContext, task_uuid: TaskUUID) -> TaskID:
 
 
 class TaskState(StrEnum):
-    PENDING = auto()
-    RUNNING = auto()
-    SUCCESS = auto()
-    ERROR = auto()
-    ABORTED = auto()
+    PENDING = "PENDING"
+    STARTED = "STARTED"
+    RETRY = "RETRY"
+    SUCCESS = "SUCCESS"
+    FAILURE = "FAILURE"
+    ABORTED = "ABORTED"
 
 
 class TasksQueue(StrEnum):
@@ -39,24 +43,39 @@ class TasksQueue(StrEnum):
 
 
 class TaskMetadata(BaseModel):
+    name: TaskName
     ephemeral: bool = True
     queue: TasksQueue = TasksQueue.DEFAULT
 
 
-_TASK_DONE = {TaskState.SUCCESS, TaskState.ERROR, TaskState.ABORTED}
+class Task(BaseModel):
+    uuid: TaskUUID
+    metadata: TaskMetadata
 
 
-class TaskMetadataStore(Protocol):
-    async def exists(self, task_id: TaskID) -> bool: ...
+_TASK_DONE = {TaskState.SUCCESS, TaskState.FAILURE, TaskState.ABORTED}
 
-    async def get(self, task_id: TaskID) -> TaskMetadata | None: ...
 
-    async def get_uuids(self, task_context: TaskContext) -> set[TaskUUID]: ...
+class TaskInfoStore(Protocol):
+    async def create_task(
+        self,
+        task_id: TaskID,
+        task_metadata: TaskMetadata,
+        expiry: timedelta,
+    ) -> None: ...
 
-    async def remove(self, task_id: TaskID) -> None: ...
+    async def exists_task(self, task_id: TaskID) -> bool: ...
 
-    async def set(
-        self, task_id: TaskID, task_data: TaskMetadata, expiry: timedelta
+    async def get_task_metadata(self, task_id: TaskID) -> TaskMetadata | None: ...
+
+    async def get_task_progress(self, task_id: TaskID) -> ProgressReport | None: ...
+
+    async def list_tasks(self, task_context: TaskContext) -> list[Task]: ...
+
+    async def remove_task(self, task_id: TaskID) -> None: ...
+
+    async def set_task_progress(
+        self, task_id: TaskID, report: ProgressReport
     ) -> None: ...
 
 

@@ -1,9 +1,5 @@
-from ._abc import (
-    AbstractProjectRunPolicy,
-    get_project_run_policy,
-    set_project_run_policy,
-)
-from ._core_computations import (
+from ._client import is_healthy
+from ._service import (
     create_or_update_pipeline,
     delete_pipeline,
     get_batch_tasks_outputs,
@@ -11,7 +7,11 @@ from ._core_computations import (
     is_pipeline_running,
     stop_pipeline,
 )
-from ._core_utils import is_healthy
+from ._service_abc import (
+    AbstractProjectRunPolicy,
+    get_project_run_policy,
+    set_project_run_policy,
+)
 from .exceptions import DirectorServiceError
 
 # director-v2 module internal API

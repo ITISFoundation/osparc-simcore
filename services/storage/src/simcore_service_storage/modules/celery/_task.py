@@ -7,12 +7,17 @@ from functools import wraps
 from typing import Any, Concatenate, Final, ParamSpec, TypeVar, overload
 
 from celery import Celery  # type: ignore[import-untyped]
-from celery.contrib.abortable import AbortableTask  # type: ignore[import-untyped]
+from celery.contrib.abortable import (  # type: ignore[import-untyped]
+    AbortableAsyncResult,
+    AbortableTask,
+)
+from celery.exceptions import Ignore  # type: ignore[import-untyped]
 from pydantic import NonNegativeInt
+from servicelib.async_utils import cancel_wait_task
 
 from . import get_event_loop
 from .errors import encore_celery_transferrable_error
-from .models import TaskId
+from .models import TaskID, TaskId
 from .utils import get_fastapi_app
 
 _logger = logging.getLogger(__name__)
@@ -20,12 +25,16 @@ _logger = logging.getLogger(__name__)
 _DEFAULT_TASK_TIMEOUT: Final[timedelta | None] = None
 _DEFAULT_MAX_RETRIES: Final[NonNegativeInt] = 3
 _DEFAULT_WAIT_BEFORE_RETRY: Final[timedelta] = timedelta(seconds=5)
-_DEFAULT_DONT_AUTORETRY_FOR: Final[tuple[type[Exception], ...]] = tuple()
-
+_DEFAULT_DONT_AUTORETRY_FOR: Final[tuple[type[Exception], ...]] = ()
+_DEFAULT_ABORT_TASK_TIMEOUT: Final[timedelta] = timedelta(seconds=1)
+_DEFAULT_CANCEL_TASK_TIMEOUT: Final[timedelta] = timedelta(seconds=5)
 
 T = TypeVar("T")
 P = ParamSpec("P")
 R = TypeVar("R")
+
+
+class TaskAbortedError(Exception): ...
 
 
 def _async_task_wrapper(
@@ -40,11 +49,46 @@ def _async_task_wrapper(
         @wraps(coro)
         def wrapper(task: AbortableTask, *args: P.args, **kwargs: P.kwargs) -> R:
             fastapi_app = get_fastapi_app(app)
-            _logger.debug("task id: %s", task.request.id)
             # NOTE: task.request is a thread local object, so we need to pass the id explicitly
             assert task.request.id is not None  # nosec
+
+            async def run_task(task_id: TaskID) -> R:
+                try:
+                    async with asyncio.TaskGroup() as tg:
+                        main_task = tg.create_task(
+                            coro(task, task_id, *args, **kwargs),
+                        )
+
+                        async def abort_monitor():
+                            abortable_result = AbortableAsyncResult(task_id, app=app)
+                            while not main_task.done():
+                                if abortable_result.is_aborted():
+                                    await cancel_wait_task(
+                                        main_task,
+                                        max_delay=_DEFAULT_CANCEL_TASK_TIMEOUT.total_seconds(),
+                                    )
+                                    raise TaskAbortedError
+                                await asyncio.sleep(
+                                    _DEFAULT_ABORT_TASK_TIMEOUT.total_seconds()
+                                )
+
+                        tg.create_task(abort_monitor())
+
+                    return main_task.result()
+                except BaseExceptionGroup as eg:
+                    task_aborted_errors, other_errors = eg.split(TaskAbortedError)
+
+                    if task_aborted_errors:
+                        assert task_aborted_errors is not None  # nosec
+                        assert len(task_aborted_errors.exceptions) == 1  # nosec
+                        raise task_aborted_errors.exceptions[0] from eg
+
+                    assert other_errors is not None  # nosec
+                    assert len(other_errors.exceptions) == 1  # nosec
+                    raise other_errors.exceptions[0] from eg
+
             return asyncio.run_coroutine_threadsafe(
-                coro(task, task.request.id, *args, **kwargs),
+                run_task(task.request.id),
                 get_event_loop(fastapi_app),
             ).result()
 
@@ -68,6 +112,9 @@ def _error_handling(
         def wrapper(task: AbortableTask, *args: P.args, **kwargs: P.kwargs) -> R:
             try:
                 return func(task, *args, **kwargs)
+            except TaskAbortedError as exc:
+                _logger.warning("Task %s was cancelled", task.request.id)
+                raise Ignore from exc
             except Exception as exc:
                 if isinstance(exc, dont_autoretry_for):
                     _logger.debug("Not retrying for exception %s", type(exc).__name__)

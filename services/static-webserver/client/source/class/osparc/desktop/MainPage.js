@@ -79,6 +79,7 @@ qx.Class.define("osparc.desktop.MainPage", {
           flex: 1
         });
 
+        this.__attachTasks();
         this.__listenToWalletSocket();
         this.__attachHandlers();
       });
@@ -89,6 +90,14 @@ qx.Class.define("osparc.desktop.MainPage", {
     __dashboard: null,
     __loadingPage: null,
     __studyEditor: null,
+
+    __attachTasks: function() {
+      const pollTasks = osparc.store.PollTasks.getInstance();
+      const exportDataTasks = pollTasks.getExportDataTasks();
+      exportDataTasks.forEach(task => {
+        osparc.task.ExportData.exportDataTaskReceived(task, false);
+      });
+    },
 
     __listenToWalletSocket: function() {
       const socket = osparc.wrapper.WebSocket.getInstance();
@@ -157,9 +166,6 @@ qx.Class.define("osparc.desktop.MainPage", {
       }
       this.closeEditor();
       this.__showDashboard();
-      // reset templates
-      this.__dashboard.getTemplateBrowser().invalidateTemplates();
-      this.__dashboard.getTemplateBrowser().reloadResources();
       // reset studies
       this.__dashboard.getStudyBrowser().invalidateStudies();
       this.__dashboard.getStudyBrowser().reloadResources();
@@ -225,12 +231,17 @@ qx.Class.define("osparc.desktop.MainPage", {
       const text = this.tr("Started template creation and added to the background tasks");
       osparc.FlashMessenger.logAs(text, "INFO");
 
+      const studyId = data["studyData"].uuid;
+      const studyName = data["studyData"].name;
+      const copyData = data["copyData"];
+      const templateAccessRights = data["accessRights"];
+      const templateType = data["templateType"];
+
       const params = {
         url: {
-          "study_id": data["studyData"].uuid,
-          "copy_data": data["copyData"]
+          "study_id": studyId,
+          "copy_data": copyData
         },
-        data: data["studyData"]
       };
       const options = {
         pollTask: true
@@ -240,12 +251,27 @@ qx.Class.define("osparc.desktop.MainPage", {
       pollTasks.createPollingTask(fetchPromise)
         .then(task => {
           const templateBrowser = this.__dashboard.getTemplateBrowser();
+          const hypertoolBrowser = this.__dashboard.getHypertoolBrowser();
           if (templateBrowser) {
-            templateBrowser.taskToTemplateReceived(task, data["studyData"].name);
+            templateBrowser.taskToTemplateReceived(task, studyName);
           }
           task.addListener("resultReceived", e => {
             const templateData = e.getData();
-            osparc.store.Study.addCollaborators(templateData, data["accessRights"]);
+            // these operations need to be done after template creation
+            osparc.store.Study.addCollaborators(templateData, templateAccessRights);
+            if (templateType) {
+              const studyUI = osparc.utils.Utils.deepCloneObject(templateData["ui"]);
+              studyUI["templateType"] = templateType;
+              osparc.store.Study.patchStudyData(templateData, "ui", studyUI)
+                .then(() => {
+                  if (templateBrowser) {
+                    templateBrowser.reloadResources();
+                  }
+                  if (hypertoolBrowser) {
+                    hypertoolBrowser.reloadResources();
+                  }
+                });
+            }
           });
         })
         .catch(errMsg => {

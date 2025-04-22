@@ -8,6 +8,7 @@ from models_library.api_schemas_catalog.services import (
     PageRpcLatestServiceGet,
     PageRpcServiceRelease,
     ServiceGetV2,
+    ServiceListFilters,
     ServiceUpdateV2,
 )
 from models_library.products import ProductName
@@ -23,8 +24,9 @@ from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogForbiddenError,
     CatalogItemNotFoundError,
 )
-from simcore_service_catalog.repository.groups import GroupsRepository
 
+from ...models.services_db import ServiceFiltersDB
+from ...repository.groups import GroupsRepository
 from ...repository.services import ServicesRepository
 from ...service import catalog_services
 from .._dependencies.director import get_director_client
@@ -55,6 +57,16 @@ def _profile_rpc_call(coro):
     return _wrapper
 
 
+def _type_adapter_to_domain(
+    filters: ServiceListFilters | None,
+) -> ServiceFiltersDB | None:
+    return (
+        ServiceFiltersDB.model_validate(filters, from_attributes=True)
+        if filters
+        else None
+    )
+
+
 @router.expose(reraise_if_error_type=(CatalogForbiddenError, ValidationError))
 @_profile_rpc_call
 @validate_call(config={"arbitrary_types_allowed": True})
@@ -65,6 +77,7 @@ async def list_services_paginated(
     user_id: UserID,
     limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     offset: PageOffsetInt = 0,
+    filters: ServiceListFilters | None = None,
 ) -> PageRpcLatestServiceGet:
     assert app.state.engine  # nosec
 
@@ -75,6 +88,7 @@ async def list_services_paginated(
         user_id=user_id,
         limit=limit,
         offset=offset,
+        filters=_type_adapter_to_domain(filters),
     )
 
     assert len(items) <= total_count  # nosec
@@ -234,6 +248,7 @@ async def list_my_service_history_paginated(
     service_key: ServiceKey,
     limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     offset: PageOffsetInt = 0,
+    filters: ServiceListFilters | None = None,
 ) -> PageRpcServiceRelease:
     assert app.state.engine  # nosec
 
@@ -244,6 +259,7 @@ async def list_my_service_history_paginated(
         service_key=service_key,
         limit=limit,
         offset=offset,
+        filters=_type_adapter_to_domain(filters),
     )
 
     assert len(items) <= total_count  # nosec

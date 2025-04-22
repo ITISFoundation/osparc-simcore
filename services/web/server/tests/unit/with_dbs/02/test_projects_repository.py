@@ -10,6 +10,8 @@ import arrow
 import pytest
 from aiohttp.test_utils import TestClient
 from common_library.users_enums import UserRole
+from models_library.basic_types import IDStr
+from models_library.rest_ordering import OrderBy, OrderDirection
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from simcore_service_webserver.projects import (
     _projects_repository as projects_service_repository,
@@ -137,10 +139,11 @@ async def test_list_trashed_projects(client: TestClient, trashed_project: Projec
     (
         total_count,
         trashed_projects,
-    ) = await projects_service_repository.list_trashed_projects(
+    ) = await projects_service_repository.list_projects_db_get_as_admin(
         client.app,
         trashed_explicitly=True,
         trashed_before=arrow.utcnow().datetime + timedelta(days=1),
+        order_by=OrderBy(field=IDStr("trashed"), direction=OrderDirection.ASC),
     )
 
     assert total_count == 1

@@ -57,7 +57,7 @@ from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import (
     start_export_data,
 )
 from simcore_postgres_database.storage_models import file_meta_data
-from simcore_service_storage.modules.celery.worker import CeleryTaskQueueWorker
+from simcore_service_storage.modules.celery.worker import CeleryTaskWorker
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy.ext.asyncio import AsyncEngine
 from yarl import URL
@@ -113,7 +113,7 @@ async def test_copy_folders_from_non_existing_project(
     product_name: ProductName,
     create_project: Callable[..., Awaitable[dict[str, Any]]],
     faker: Faker,
-    with_storage_celery_worker: CeleryTaskQueueWorker,
+    with_storage_celery_worker: CeleryTaskWorker,
 ):
     src_project = await create_project()
     incorrect_src_project = deepcopy(src_project)
@@ -154,7 +154,7 @@ async def test_copy_folders_from_empty_project(
     product_name: ProductName,
     create_project: Callable[[], Awaitable[dict[str, Any]]],
     sqlalchemy_async_engine: AsyncEngine,
-    with_storage_celery_worker: CeleryTaskQueueWorker,
+    with_storage_celery_worker: CeleryTaskWorker,
 ):
     # we will copy from src to dst
     src_project = await create_project()
@@ -547,7 +547,7 @@ async def _request_start_export_data(
 
 @pytest.fixture
 def task_progress_spy(mocker: MockerFixture) -> Mock:
-    return mocker.spy(CeleryTaskQueueWorker, "set_task_progress")
+    return mocker.spy(CeleryTaskWorker, "set_task_progress")
 
 
 @pytest.mark.parametrize(
@@ -613,7 +613,7 @@ async def test_start_export_data(
         result,
     )
 
-    progress_updates = [x[0][3].actual_value for x in task_progress_spy.call_args_list]
+    progress_updates = [x[0][2].actual_value for x in task_progress_spy.call_args_list]
     assert progress_updates[0] == 0
     assert progress_updates[-1] == 1
 

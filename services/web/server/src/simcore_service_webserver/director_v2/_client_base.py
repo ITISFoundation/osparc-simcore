@@ -1,14 +1,3 @@
-""" Core functionality to interact with the director-v2 service
-
-director-v2 rest API common functionality includes
-
-- common types and constants
-- requests helper function to call the API
-- thin API client wrapper instance associated to the app's lifespan
-
-"""
-
-import asyncio
 import logging
 from typing import Any, TypeAlias
 
@@ -105,7 +94,7 @@ async def request_director_v2(
         )
         return payload
 
-    except asyncio.TimeoutError as err:
+    except TimeoutError as err:
         raise DirectorServiceError(
             status=status.HTTP_503_SERVICE_UNAVAILABLE,
             reason=f"request to director-v2 timed-out: {err}",

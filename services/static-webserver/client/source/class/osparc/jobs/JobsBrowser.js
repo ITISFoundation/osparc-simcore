@@ -36,18 +36,6 @@ qx.Class.define("osparc.jobs.JobsBrowser", {
     });
   },
 
-  statics: {
-    popUpInWindow: function(jobsBrowser) {
-      if (!jobsBrowser) {
-        jobsBrowser = new osparc.jobs.JobsBrowser();
-      }
-      const title = qx.locale.Manager.tr("Jobs");
-      const win = osparc.ui.window.Window.popUpInWindow(jobsBrowser, title, 1100, 500);
-      win.open();
-      return win;
-    }
-  },
-
   members: {
     _createChildControlImpl: function(id) {
       let control;

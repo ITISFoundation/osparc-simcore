@@ -1,5 +1,7 @@
-from dataclasses import dataclass
+from functools import partial
+from typing import Annotated
 
+from fastapi import Depends
 from models_library.api_schemas_catalog.services import LatestServiceGet, ServiceGetV2
 from models_library.products import ProductName
 from models_library.rest_pagination import (
@@ -11,15 +13,32 @@ from models_library.rest_pagination import (
 from models_library.services_history import ServiceRelease
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from servicelib.fastapi.app_state import SingletonInAppStateMixin
+from pydantic import ValidationError
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
+from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
+    CatalogForbiddenError,
+    CatalogItemNotFoundError,
+)
+from simcore_service_api_server.exceptions.backend_errors import (
+    InvalidInputError,
+    ProgramOrSolverOrStudyNotFoundError,
+    ServiceForbiddenAccessError,
+)
+
+from ..api.dependencies.rabbitmq import get_rabbitmq_rpc_client
+from ..exceptions.service_errors_utils import service_exception_mapper
+
+_exception_mapper = partial(service_exception_mapper, service_name="CatalogService")
 
 
-@dataclass
-class CatalogService(SingletonInAppStateMixin):
-    app_state_name = "CatalogService"
+class CatalogService:
     _client: RabbitMQRPCClient
+
+    def __init__(
+        self, client: Annotated[RabbitMQRPCClient, Depends(get_rabbitmq_rpc_client)]
+    ):
+        self._client = client
 
     async def list_latest_releases(
         self,
@@ -71,19 +90,26 @@ class CatalogService(SingletonInAppStateMixin):
         )
         return page.data, meta
 
+    @_exception_mapper(
+        rpc_exception_map={
+            CatalogItemNotFoundError: ProgramOrSolverOrStudyNotFoundError,
+            CatalogForbiddenError: ServiceForbiddenAccessError,
+            ValidationError: InvalidInputError,
+        }
+    )
     async def get(
         self,
         *,
         product_name: ProductName,
         user_id: UserID,
-        service_key: ServiceKey,
-        service_version: ServiceVersion,
+        name: ServiceKey,
+        version: ServiceVersion,
     ) -> ServiceGetV2:
 
         return await catalog_rpc.get_service(
             self._client,
             product_name=product_name,
             user_id=user_id,
-            service_key=service_key,
-            service_version=service_version,
+            service_key=name,
+            service_version=version,
         )

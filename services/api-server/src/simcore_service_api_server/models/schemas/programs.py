@@ -1,5 +1,6 @@
 from typing import Annotated
 
+from models_library.api_schemas_catalog.services import ServiceGetV2
 from models_library.services import ServiceMetaDataPublished
 from models_library.services_regex import DYNAMIC_SERVICE_KEY_RE
 from pydantic import ConfigDict, StringConstraints
@@ -46,6 +47,19 @@ class Program(BaseService, ApiServerOutputSchema):
     @classmethod
     def create_from_image(cls, image_meta: ServiceMetaDataPublished) -> "Program":
         data = image_meta.model_dump(
+            include={"name", "key", "version", "description", "contact"},
+        )
+        return cls(
+            id=data.pop("key"),
+            version=data.pop("version"),
+            title=data.pop("name"),
+            url=None,
+            **data,
+        )
+
+    @classmethod
+    def create_from_service(cls, service: ServiceGetV2) -> "Program":
+        data = service.model_dump(
             include={"name", "key", "version", "description", "contact"},
         )
         return cls(

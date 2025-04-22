@@ -5,7 +5,6 @@
 # pylint: disable=too-many-statements
 
 
-import asyncio
 from copy import deepcopy
 from http import HTTPStatus
 from unittest import mock
@@ -19,23 +18,8 @@ from pytest_simcore.helpers.webserver_login import LoggedUser, UserInfoDict
 from pytest_simcore.helpers.webserver_projects import create_project
 from pytest_simcore.helpers.webserver_workspaces import update_or_insert_workspace_group
 from servicelib.aiohttp import status
-from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
-
-
-@pytest.fixture
-def mock_catalog_api_get_services_for_user_in_product(mocker: MockerFixture):
-    mocker.patch(
-        "simcore_service_webserver.projects._crud_api_read.catalog_service.get_services_for_user_in_product",
-        spec=True,
-        return_value=[],
-    )
-    mocker.patch(
-        "simcore_service_webserver.projects._controller.projects_rest.project_uses_available_services",
-        spec=True,
-        return_value=True,
-    )
 
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
@@ -364,16 +348,6 @@ async def test_workspaces_delete_folders(
     )
     resp = await client.delete(f"{url}")
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
-
-    fire_and_forget_tasks = list(client.app[APP_FIRE_AND_FORGET_TASKS_KEY])
-    t1: asyncio.Task = fire_and_forget_tasks[0]
-    t2: asyncio.Task = fire_and_forget_tasks[1]
-    assert t1.get_name().startswith("fire_and_forget_task_delete_project_task_")
-    assert t2.get_name().startswith("fire_and_forget_task_delete_project_task_")
-    await t1
-    await t2
-
-    assert len(client.app[APP_FIRE_AND_FORGET_TASKS_KEY]) == 0
 
     # List project in workspace (The projects should have been deleted)
     url = (
