@@ -108,7 +108,8 @@ async def async_job_rpc_server(  # noqa: C901
 
             return [
                 AsyncJobGet(
-                    job_id=TypeAdapter(AsyncJobId).validate_python(t.get_name())
+                    job_id=TypeAdapter(AsyncJobId).validate_python(t.get_name()),
+                    job_name="fake_job_name",
                 )
                 for t in self.tasks
             ]
@@ -117,7 +118,7 @@ async def async_job_rpc_server(  # noqa: C901
             assert job_id_data
             job_id = faker.uuid4(cast_to=None)
             self.tasks.append(asyncio.create_task(_slow_task(), name=f"{job_id}"))
-            return AsyncJobGet(job_id=job_id)
+            return AsyncJobGet(job_id=job_id, job_name="fake_job_name")
 
         async def setup(self) -> None:
             for m in (self.status, self.cancel, self.result):
