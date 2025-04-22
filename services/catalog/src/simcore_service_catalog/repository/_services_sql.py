@@ -116,10 +116,10 @@ def _has_access_rights(
     )
 
 
-def apply_services_filters(
-    stmt,
+def _apply_services_filters(
+    stmt: sa.sql.Select,
     filters: ServiceFiltersDB,
-):
+) -> sa.sql.Select:
     if filters.service_type:
         prefix = SERVICE_TYPE_TO_PREFIX_MAP.get(filters.service_type)
         if prefix is None:
@@ -156,7 +156,7 @@ def latest_services_total_count_stmt(
     )
 
     if filters:
-        stmt = apply_services_filters(stmt, filters)
+        stmt = _apply_services_filters(stmt, filters)
 
     return stmt
 
@@ -200,7 +200,7 @@ def list_latest_services_stmt(
     )
 
     if filters:
-        cte_stmt = apply_services_filters(cte_stmt, filters)
+        cte_stmt = _apply_services_filters(cte_stmt, filters)
 
     cte = cte_stmt.cte("cte")
 
