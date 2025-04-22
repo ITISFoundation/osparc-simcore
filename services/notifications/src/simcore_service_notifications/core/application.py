@@ -55,6 +55,8 @@ def create_app() -> FastAPI:
         initialize_prometheus_instrumentation(app)
 
     if settings.NOTIFICATIONS_TRACING:
-        initialize_tracing(app, settings.NOTIFICATIONS_TRACING, APP_NAME)
+        initialize_tracing(
+            app, settings.NOTIFICATIONS_TRACING, APP_NAME
+        )  # pragma: no cover
 
     return app

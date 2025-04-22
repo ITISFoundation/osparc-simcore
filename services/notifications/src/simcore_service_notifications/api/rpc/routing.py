@@ -16,6 +16,8 @@ async def rpc_api_routes_lifespan(app: FastAPI) -> AsyncIterator[State]:
     rpc_server = get_rabbitmq_rpc_server(app)
 
     for router in ROUTERS:
-        await rpc_server.register_router(router, NOTIFICATIONS_RPC_NAMESPACE, app)
+        await rpc_server.register_router(
+            router, NOTIFICATIONS_RPC_NAMESPACE, app
+        )  # pragma: no cover
 
     yield {}

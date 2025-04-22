@@ -5,8 +5,8 @@ from typing import Annotated, cast
 from fastapi import Depends, FastAPI, Request
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 
-from ..services.postgres import PostgresHealth
-from ..services.postgres import get_postgress_health as get_postgress_db_health
+from ...services.postgres import PostgresHealth
+from ...services.postgres import get_postgres_health as get_postgress_db_health
 
 
 def get_application(request: Request) -> FastAPI:
@@ -20,7 +20,7 @@ def get_rabbitmq_client(
     return app.state.rabbitmq_rpc_server
 
 
-def get_postgress_health(
+def get_postgres_health(
     app: Annotated[FastAPI, Depends(get_application)],
 ) -> PostgresHealth:
     return get_postgress_db_health(app)
