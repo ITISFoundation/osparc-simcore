@@ -28,12 +28,12 @@ qx.Class.define("osparc.jobs.JobsButton", {
       alignX: "center",
       cursor: "pointer",
       visibility: "excluded",
-      toolTipText: this.tr("Jobs and Clusters"),
+      toolTipText: this.tr("Runs and Clusters"),
     });
 
     const jobsStore = osparc.store.Jobs.getInstance();
     jobsStore.addListener("changeJobs", e => this.__updateJobsButton(), this);
-    this.addListener("tap", () => osparc.jobs.JobsAndClusters.popUpInWindow(), this);
+    this.addListener("tap", () => osparc.jobs.RunsAndClusters.popUpInWindow(), this);
   },
 
   members: {

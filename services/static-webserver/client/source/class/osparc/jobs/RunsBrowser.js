@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 
-qx.Class.define("osparc.jobs.JobsBrowser", {
+qx.Class.define("osparc.jobs.RunsBrowser", {
   extend: qx.ui.core.Widget,
 
   construct() {

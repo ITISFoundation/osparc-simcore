@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 
-qx.Class.define("osparc.jobs.JobsAndClusters", {
+qx.Class.define("osparc.jobs.RunsAndClusters", {
   extend: qx.ui.tabview.TabView,
 
   construct() {
@@ -30,7 +30,7 @@ qx.Class.define("osparc.jobs.JobsAndClusters", {
     const jobsPage = new qx.ui.tabview.Page(this.tr("Jobs")).set({
       layout: new qx.ui.layout.VBox(10)
     });
-    const jobsBrowser = new osparc.jobs.JobsBrowser();
+    const jobsBrowser = new osparc.jobs.RunsBrowser();
     const scroller1 = new qx.ui.container.Scroll();
     scroller1.add(jobsBrowser);
     jobsPage.add(scroller1);
@@ -49,9 +49,9 @@ qx.Class.define("osparc.jobs.JobsAndClusters", {
   statics: {
     popUpInWindow: function(jobsAndClusters) {
       if (!jobsAndClusters) {
-        jobsAndClusters = new osparc.jobs.JobsAndClusters();
+        jobsAndClusters = new osparc.jobs.RunsAndClusters();
       }
-      const title = qx.locale.Manager.tr("Jobs and Clusters");
+      const title = qx.locale.Manager.tr("Runs and Clusters");
       const win = osparc.ui.window.Window.popUpInWindow(jobsAndClusters, title, 1100, 500);
       win.open();
       return win;
