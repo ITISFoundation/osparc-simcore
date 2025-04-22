@@ -76,9 +76,23 @@ async def test_catalog_service_read_solvers(
     assert solver.id == selected_solver.id
     assert solver.version == oldest_release.version
 
+    # Step 4: Get service ports for the solver
+    ports = await catalog_service.get_service_ports(
+        product_name=product_name,
+        user_id=user_id,
+        service_key=selected_solver.id,
+        service_version=oldest_release.version,
+    )
+
+    # Verify ports are returned and contain both inputs and outputs
+    assert ports, "Service ports should not be empty"
+    assert any(port.kind == "input" for port in ports), "Should contain input ports"
+    assert any(port.kind == "output" for port in ports), "Should contain output ports"
+
     # checks calls to rpc
     mocked_rpc_catalog_service_api["list_services_paginated"].assert_called_once()
     mocked_rpc_catalog_service_api[
         "list_my_service_history_paginated"
     ].assert_called_once()
     mocked_rpc_catalog_service_api["get_service"].assert_called_once()
+    mocked_rpc_catalog_service_api["get_service_ports"].assert_called_once()
