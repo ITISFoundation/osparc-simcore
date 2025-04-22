@@ -62,7 +62,6 @@ qx.Class.define("osparc.jobs.RunsWindow", {
       });
 
       subRunsBrowser.addListener("backToRuns", () => {
-        runsAndClusters.reloadRuns();
         this.getChildControl("title").setValue(this.tr("Runs and Clusters"));
         stack.setSelection([runsAndClusters]);
       });
