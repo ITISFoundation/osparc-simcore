@@ -22,10 +22,9 @@ RUN apk add --no-cache \
   su-exec
 
 # Health check to ensure the proxy is running
-HEALTHCHECK \
-  --interval=10s \
+HEALTHCHECK --interval=10s \
   --timeout=5s \
-  --start-period=30s \
+  --start-period=20s \
   --start-interval=1s \
   --retries=5 \
   CMD curl http://localhost:8888/version || exit 1

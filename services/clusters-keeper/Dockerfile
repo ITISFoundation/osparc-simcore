@@ -161,7 +161,8 @@ RUN chmod +x services/clusters-keeper/docker/*.sh
 
 HEALTHCHECK --interval=10s \
   --timeout=5s \
-  --start-period=5s \
+  --start-period=20s \
+  --start-interval=1s \
   --retries=5 \
   CMD ["python3", "services/clusters-keeper/docker/healthcheck.py", "http://localhost:8000/"]
 

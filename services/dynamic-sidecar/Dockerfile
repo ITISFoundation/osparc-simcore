@@ -196,8 +196,7 @@ COPY --chown=scu:scu --from=prod-only-deps  ${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_D
 COPY --chown=scu:scu services/dynamic-sidecar/docker services/dynamic-sidecar/docker
 RUN chmod +x services/dynamic-sidecar/docker/*.sh
 
-HEALTHCHECK \
-  --interval=10s \
+HEALTHCHECK --interval=10s \
   --timeout=5s \
   --start-period=180s \
   --start-interval=1s \

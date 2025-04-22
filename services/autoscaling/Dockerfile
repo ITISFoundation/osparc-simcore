@@ -158,7 +158,8 @@ RUN chmod +x services/autoscaling/docker/*.sh
 
 HEALTHCHECK --interval=10s \
   --timeout=5s \
-  --start-period=5s \
+  --start-period=20s \
+  --start-interval=1s \
   --retries=5 \
   CMD ["python3", "services/autoscaling/docker/healthcheck.py", "http://localhost:8000/"]
 

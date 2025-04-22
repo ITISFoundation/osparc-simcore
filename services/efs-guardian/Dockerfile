@@ -177,7 +177,7 @@ RUN chmod +x services/efs-guardian/docker/*.sh
 
 HEALTHCHECK --interval=10s \
   --timeout=5s \
-  --start-period=30s \
+  --start-period=20s \
   --start-interval=1s \
   --retries=5 \
   CMD ["python3", "services/efs-guardian/docker/healthcheck.py", "http://localhost:8000/"]
