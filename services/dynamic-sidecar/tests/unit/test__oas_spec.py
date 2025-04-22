@@ -9,6 +9,14 @@ import pytest
 from fastapi import FastAPI
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+]
+
+pytest_simcore_ops_services_selection = [
+    "adminer",
+]
+
 
 @pytest.fixture
 def mock_environment(mock_environment_with_envdevel: EnvVarsDict) -> None:

@@ -11,6 +11,10 @@ pytest_simcore_core_services_selection = [
     "postgres",
 ]
 
+pytest_simcore_ops_services_selection = [
+    "adminer",
+]
+
 
 async def test_is_healthy(test_client: TestClient) -> None:
     test_client.application.state.application_health.is_healthy = True
