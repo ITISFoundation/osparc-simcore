@@ -7,7 +7,7 @@ from simcore_postgres_database.utils_aiosqlalchemy import (  # type: ignore[impo
     get_pg_engine_stateinfo,
     raise_if_migration_not_ready,
 )
-from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+from sqlalchemy.ext.asyncio import create_async_engine
 from tenacity import retry
 
 from .logging_utils import log_context
@@ -27,12 +27,16 @@ async def connect_to_db(app: FastAPI, settings: PostgresSettings) -> None:
     with log_context(
         _logger, logging.DEBUG, f"connection to db {settings.dsn_with_async_sqlalchemy}"
     ):
-        engine: AsyncEngine = create_async_engine(
+        engine = create_async_engine(
             settings.dsn_with_async_sqlalchemy,
             pool_size=settings.POSTGRES_MINSIZE,
             max_overflow=settings.POSTGRES_MAXSIZE - settings.POSTGRES_MINSIZE,
             connect_args={
-                "server_settings": {"application_name": settings.POSTGRES_CLIENT_NAME}
+                "server_settings": (
+                    {"application_name": settings.POSTGRES_CLIENT_NAME}
+                    if settings.POSTGRES_CLIENT_NAME
+                    else None
+                )
             },
             pool_pre_ping=True,  # https://docs.sqlalchemy.org/en/14/core/pooling.html#dealing-with-disconnects
             future=True,  # this uses sqlalchemy 2.0 API, shall be removed when sqlalchemy 2.0 is released

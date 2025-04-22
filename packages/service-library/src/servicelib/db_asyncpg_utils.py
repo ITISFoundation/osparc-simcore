@@ -37,7 +37,7 @@ async def create_async_engine_and_database_ready(
         settings.dsn_with_async_sqlalchemy,
         pool_size=settings.POSTGRES_MINSIZE,
         max_overflow=settings.POSTGRES_MAXSIZE - settings.POSTGRES_MINSIZE,
-        connect_args={"server_settings": server_settings},
+        connect_args={"server_settings": server_settings} if server_settings else None,
         pool_pre_ping=True,  # https://docs.sqlalchemy.org/en/14/core/pooling.html#dealing-with-disconnects
         future=True,  # this uses sqlalchemy 2.0 API, shall be removed when sqlalchemy 2.0 is released
     )
