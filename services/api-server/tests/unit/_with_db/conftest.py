@@ -25,7 +25,7 @@ from pydantic import PositiveInt
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers import postgres_tools
 from pytest_simcore.helpers.faker_factories import (
-    random_api_key,
+    random_api_auth,
     random_product,
     random_user,
 )
@@ -262,13 +262,13 @@ async def create_fake_api_keys(
         for _ in range(n):
             product = await anext(products)
             user = await anext(users)
-            api_key = random_api_key(product, user)
-            plain_api_secret = api_key.pop("api_secret")
+            api_auth = random_api_auth(product, user)
+            plain_api_secret = api_auth.pop("api_secret")
             result = await connection.execute(
                 api_keys.insert()
                 .values(
                     api_secret=sa.func.crypt(plain_api_secret, sa.func.gen_salt("bf", 10)),
-                    **api_key,
+                    **api_auth,
                 )
                 .returning(*returning_cols)
             )

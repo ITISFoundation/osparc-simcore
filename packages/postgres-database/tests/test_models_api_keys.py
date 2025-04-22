@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from pytest_simcore.helpers.faker_factories import (
-    random_api_key,
+    random_api_auth,
     random_product,
     random_user,
 )
@@ -48,7 +48,7 @@ async def test_create_and_delete_api_key(
 ):
     apikey_id = await connection.scalar(
         api_keys.insert()
-        .values(**random_api_key(product_name, user_id))
+        .values(**random_api_auth(product_name, user_id))
         .returning(api_keys.c.id)
     )
 
@@ -66,7 +66,7 @@ async def session_auth(
     # uses to authenticate a session.
     result = await connection.execute(
         api_keys.insert()
-        .values(**random_api_key(product_name, user_id))
+        .values(**random_api_auth(product_name, user_id))
         .returning(sa.literal_column("*"))
     )
     row = await result.fetchone()
