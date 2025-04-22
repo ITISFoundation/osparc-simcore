@@ -584,25 +584,15 @@ async def test_rpc_get_service_ports_successful_retrieval(
     product_name: ProductName,
     user_id: UserID,
     app: FastAPI,
-    create_fake_service_data: Callable,
-    services_db_tables_injector: Callable,
+    expected_director_rest_api_list_services: list[dict[str, Any]],
 ):
     """Tests successful retrieval of service ports for a specific service version"""
     assert app
 
     # Create a service with known ports
-    service_key = "simcore/services/comp/test-service-ports"
-    service_version = "1.0.0"
-
-    # Create and inject the service
-    fake_service = create_fake_service_data(
-        service_key,
-        service_version,
-        team_access=None,
-        everyone_access=None,
-        product=product_name,
-    )
-    await services_db_tables_injector([fake_service])
+    expected_service = expected_director_rest_api_list_services[0]
+    service_key = expected_service["key"]
+    service_version = expected_service["version"]
 
     # Call the RPC function to get service ports
     ports = await catalog_rpc.get_service_ports(
@@ -614,12 +604,9 @@ async def test_rpc_get_service_ports_successful_retrieval(
     )
 
     # Validate the response
-    assert isinstance(ports, list)
-    # Each port should have expected fields
-    for port in ports:
-        assert hasattr(port, "kind")
-        assert hasattr(port, "key")
-        assert hasattr(port, "port")
+    expected_inputs = expected_service["inputs"]
+    expected_outputs = expected_service["outputs"]
+    assert len(ports) == len(expected_inputs) + len(expected_outputs)
 
 
 async def test_rpc_get_service_ports_not_found(
@@ -654,12 +641,16 @@ async def test_rpc_get_service_ports_permission_denied(
     product_name: ProductName,
     user: dict[str, Any],
     user_id: UserID,
+    other_user: dict[str, Any],
     app: FastAPI,
     create_fake_service_data: Callable,
     services_db_tables_injector: Callable,
 ):
     """Tests that appropriate error is raised when user doesn't have permission"""
     assert app
+
+    assert other_user["id"] != user_id
+    assert user["id"] == user_id
 
     # Create a service with restricted access
     restricted_service_key = "simcore/services/comp/restricted-service"
@@ -674,10 +665,12 @@ async def test_rpc_get_service_ports_permission_denied(
     )
 
     # Modify access rights to restrict access
-    if "access_rights" in fake_restricted_service:
-        # Remove user's access if present
-        if user["primary_gid"] in fake_restricted_service["access_rights"]:
-            fake_restricted_service["access_rights"].pop(user["primary_gid"])
+    # Remove user's access if present
+    if (
+        "access_rights" in fake_restricted_service
+        and user["primary_gid"] in fake_restricted_service["access_rights"]
+    ):
+        fake_restricted_service["access_rights"].pop(user["primary_gid"])
 
     await services_db_tables_injector([fake_restricted_service])
 
@@ -686,7 +679,7 @@ async def test_rpc_get_service_ports_permission_denied(
         await catalog_rpc.get_service_ports(
             rpc_client,
             product_name=product_name,
-            user_id=UserID("different-user"),  # Use a different user ID
+            user_id=other_user["id"],  # Use a different user ID
             service_key=restricted_service_key,
             service_version=service_version,
         )
