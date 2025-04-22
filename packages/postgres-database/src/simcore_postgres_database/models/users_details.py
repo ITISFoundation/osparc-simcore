@@ -1,4 +1,5 @@
 import sqlalchemy as sa
+from common_library.users_enums import AccountRequestStatus
 from sqlalchemy.dialects import postgresql
 
 from ._common import (
@@ -52,6 +53,14 @@ users_pre_registration_details = sa.Table(
         sa.String(),
         doc="Phone provided on pre-registration"
         "NOTE: this is not copied upon registration since it needs to be confirmed",
+    ),
+    # Account request status
+    sa.Column(
+        "account_request_status",
+        sa.Enum(AccountRequestStatus),
+        nullable=False,
+        server_default=sa.text("'PENDING'::account_request_status"),
+        doc="Status of the account request: PENDING, APPROVED, REJECTED",
     ),
     # Billable address columns:
     sa.Column("institution", sa.String(), doc="the name of a company or university"),
