@@ -8,6 +8,8 @@ from common_library.basic_types import DEFAULT_FACTORY
 from common_library.dict_tools import remap_keys
 from common_library.users_enums import UserStatus
 from models_library.groups import AccessRightsDict
+from models_library.rest_filters import Filters
+from models_library.rest_pagination import PageQueryParameters
 from pydantic import (
     ConfigDict,
     EmailStr,
@@ -236,6 +238,18 @@ class UserGet(OutputSchema):
     @classmethod
     def from_domain_model(cls, data):
         return cls.model_validate(data, from_attributes=True)
+
+
+class UsersForAdminListFilter(Filters):
+    approved: Annotated[
+        bool | None,
+        Field(
+            description="Filter users by approval status: True for approved, False for pending/rejected, None for all"
+        ),
+    ] = None
+
+
+class UsersForAdminListQueryParams(PageQueryParameters, UsersForAdminListFilter): ...
 
 
 class UsersForAdminSearchQueryParams(RequestParameters):

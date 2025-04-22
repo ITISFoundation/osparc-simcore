@@ -7,6 +7,7 @@
 from enum import Enum
 from typing import Annotated
 
+from _common import as_query
 from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.users import (
     MyPermissionGet,
@@ -16,11 +17,13 @@ from models_library.api_schemas_webserver.users import (
     MyTokenGet,
     UserForAdminGet,
     UserGet,
+    UsersForAdminListQueryParams,
     UsersForAdminSearchQueryParams,
     UsersSearch,
 )
 from models_library.api_schemas_webserver.users_preferences import PatchRequestBody
 from models_library.generics import Envelope
+from models_library.rest_pagination import Page
 from models_library.user_preferences import PreferenceIdentifier
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.users._common.schemas import PreRegisteredUserGet
@@ -141,6 +144,16 @@ async def search_users(_body: UsersSearch): ...
 #
 
 _extra_tags: list[str | Enum] = ["admin"]
+
+
+@router.get(
+    "/admin/users",
+    response_model=Envelope[Page[UserForAdminGet]],
+    tags=_extra_tags,
+)
+async def list_users_for_admin(
+    _query: Annotated[as_query(UsersForAdminListQueryParams), Depends()],
+): ...
 
 
 @router.get(

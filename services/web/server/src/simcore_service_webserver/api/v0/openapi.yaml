@@ -1365,6 +1365,43 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_UserGet__'
+  /v0/admin/users:
+    get:
+      tags:
+      - users
+      - admin
+      summary: List Users For Admin
+      operationId: list_users_for_admin
+      parameters:
+      - name: approved
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Approved
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Offset
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_Page_UserForAdminGet__'
   /v0/admin/users:search:
     get:
       tags:
@@ -10178,6 +10215,19 @@ components:
           title: Error
       type: object
       title: Envelope[NodeRetrieved]
+    Envelope_Page_UserForAdminGet__:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/Page_UserForAdminGet_'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[Page[UserForAdminGet]]
     Envelope_PaymentMethodGet_:
       properties:
         data:
@@ -13760,6 +13810,24 @@ components:
       - _links
       - data
       title: Page[ServiceRunGet]
+    Page_UserForAdminGet_:
+      properties:
+        _meta:
+          $ref: '#/components/schemas/PageMetaInfoLimitOffset'
+        _links:
+          $ref: '#/components/schemas/PageLinks'
+        data:
+          items:
+            $ref: '#/components/schemas/UserForAdminGet'
+          type: array
+          title: Data
+      additionalProperties: false
+      type: object
+      required:
+      - _meta
+      - _links
+      - data
+      title: Page[UserForAdminGet]
     PatchRequestBody:
       properties:
         value:
