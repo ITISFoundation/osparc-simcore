@@ -9,25 +9,13 @@
     {
       "url": "/",
       "description": "Default server: requests directed to serving url"
-    },
-    {
-      "url": "http://{host}:{port}",
-      "description": "Development server: can configure any base url",
-      "variables": {
-        "host": {
-          "default": "127.0.0.1"
-        },
-        "port": {
-          "default": "8000"
-        }
-      }
     }
   ],
   "paths": {
-    "/health": {
+    "/": {
       "get": {
         "summary": "Check Service Health",
-        "operationId": "check_service_health_health_get",
+        "operationId": "check_service_health__get",
         "responses": {
           "200": {
             "description": "Successful Response",
