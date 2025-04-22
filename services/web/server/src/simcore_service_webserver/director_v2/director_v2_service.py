@@ -1,16 +1,16 @@
 from ._client import is_healthy
-from ._service import (
+from ._director_v2_abc_service import (
+    AbstractProjectRunPolicy,
+    get_project_run_policy,
+    set_project_run_policy,
+)
+from ._director_v2_service import (
     create_or_update_pipeline,
     delete_pipeline,
     get_batch_tasks_outputs,
     get_computation_task,
     is_pipeline_running,
     stop_pipeline,
-)
-from ._service_abc import (
-    AbstractProjectRunPolicy,
-    get_project_run_policy,
-    set_project_run_policy,
 )
 from .exceptions import DirectorServiceError
 

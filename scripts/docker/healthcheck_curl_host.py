@@ -6,7 +6,8 @@ Example of usage in a Dockerfile
     COPY --chown=scu:scu docker/healthcheck.py docker/healthcheck.py
     HEALTHCHECK --interval=30s \
                 --timeout=30s \
-                --start-period=1s \
+                --start-period=20s \
+                --start-interval=1s \
                 --retries=3 \
                 CMD python3 docker/healthcheck.py http://localhost:8080/v0/
 ```

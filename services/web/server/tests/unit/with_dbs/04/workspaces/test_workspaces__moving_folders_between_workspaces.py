@@ -26,20 +26,6 @@ def user_role() -> UserRole:
 
 
 @pytest.fixture
-def mock_catalog_api_get_services_for_user_in_product(mocker: MockerFixture):
-    mocker.patch(
-        "simcore_service_webserver.projects._crud_api_read.catalog_service.get_services_for_user_in_product",
-        spec=True,
-        return_value=[],
-    )
-    mocker.patch(
-        "simcore_service_webserver.projects._controller.projects_rest.project_uses_available_services",
-        spec=True,
-        return_value=True,
-    )
-
-
-@pytest.fixture
 async def moving_folder_id(
     client: TestClient,
     logged_user: UserInfoDict,

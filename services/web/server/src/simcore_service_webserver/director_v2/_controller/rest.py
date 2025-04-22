@@ -27,9 +27,9 @@ from ...models import RequestContext
 from ...products import products_web
 from ...security.decorators import permission_required
 from ...utils_aiohttp import envelope_json_response
-from .. import _service
+from .. import _director_v2_service
 from .._client import DirectorV2RestClient
-from .._service_abc import get_project_run_policy
+from .._director_v2_abc_service import get_project_run_policy
 from ._rest_exceptions import handle_rest_requests_exceptions
 
 _logger = logging.getLogger(__name__)
@@ -58,13 +58,13 @@ async def start_computation(request: web.Request) -> web.Response:
         force_restart = body_params.force_restart
 
     # Group properties
-    group_properties = await _service.get_group_properties(
+    group_properties = await _director_v2_service.get_group_properties(
         request.app, product_name=req_ctx.product_name, user_id=req_ctx.user_id
     )
 
     # Get wallet information
     product = products_web.get_current_product(request)
-    wallet_info = await _service.get_wallet_info(
+    wallet_info = await _director_v2_service.get_wallet_info(
         request.app,
         product=product,
         user_id=req_ctx.user_id,

@@ -140,9 +140,12 @@ COPY --chown=scu:scu --from=prod-only-deps  ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 COPY --chown=scu:scu services/catalog/docker services/catalog/docker
 RUN chmod +x services/catalog/docker/*.sh
 
-HEALTHCHECK --interval=10s \
+# https://docs.docker.com/reference/dockerfile/#healthcheck
+HEALTHCHECK \
+  --interval=10s \
   --timeout=5s \
-  --start-period=5s \
+  --start-period=20s \
+  --start-interval=1s \
   --retries=5 \
   CMD ["python3", "services/catalog/docker/healthcheck.py", "http://localhost:8000/"]
 

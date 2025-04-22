@@ -247,7 +247,7 @@ async def publish_project(
 
 @pytest.fixture
 async def published_project(
-    publish_project: Callable[[], Awaitable[PublishedProject]]
+    publish_project: Callable[[], Awaitable[PublishedProject]],
 ) -> PublishedProject:
     return await publish_project()
 

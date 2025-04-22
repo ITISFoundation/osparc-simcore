@@ -1,5 +1,5 @@
 """
-    Models both project and node states
+Models both project and node states
 """
 
 from enum import Enum, unique
