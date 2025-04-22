@@ -5,10 +5,14 @@ from aiohttp import web
 from models_library.api_schemas_webserver.users import (
     MyProfileGet,
     MyProfilePatch,
+    UserForAdminGet,
     UserGet,
+    UsersForAdminListQueryParams,
     UsersForAdminSearchQueryParams,
     UsersSearch,
 )
+from models_library.rest_pagination import Page
+from models_library.rest_pagination_utils import paginate_data
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -29,7 +33,7 @@ from ..login.decorators import login_required
 from ..products import products_web
 from ..products.models import Product
 from ..security.decorators import permission_required
-from ..utils_aiohttp import envelope_json_response
+from ..utils_aiohttp import create_json_response_from_page, envelope_json_response
 from . import _users_service
 from ._common.schemas import PreRegisteredUserGet, UsersRequestContext
 from .exceptions import (
@@ -158,6 +162,38 @@ async def search_users(request: web.Request) -> web.Response:
 
 _RESPONSE_MODEL_MINIMAL_POLICY = RESPONSE_MODEL_POLICY.copy()
 _RESPONSE_MODEL_MINIMAL_POLICY["exclude_none"] = True
+
+
+@routes.get(f"/{API_VTAG}/admin/users", name="list_users_for_admin")
+@login_required
+@permission_required("admin.users.read")
+@_handle_users_exceptions
+async def list_users_for_admin(request: web.Request) -> web.Response:
+    req_ctx = UsersRequestContext.model_validate(request)
+    assert req_ctx.product_name  # nosec
+
+    query_params = parse_request_query_parameters_as(
+        UsersForAdminListQueryParams, request
+    )
+
+    users, total_count = await _users_service.list_users_as_admin(
+        request.app,
+        filter_approved=query_params.approved,
+        limit=query_params.limit,
+        offset=query_params.offset,
+    )
+
+    page = Page[UserForAdminGet].model_validate(
+        paginate_data(
+            chunk=users,
+            request_url=request.url,
+            total=total_count,
+            limit=query_params.limit,
+            offset=query_params.offset,
+        )
+    )
+
+    return create_json_response_from_page(page)
 
 
 @routes.get(f"/{API_VTAG}/admin/users:search", name="search_users_for_admin")
