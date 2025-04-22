@@ -31,10 +31,11 @@ def setup_check_dependencies(app: FastAPI) -> None:
         liveliness_results = await logged_gather(
             *[
                 wait_for_service_liveness(
-                    connect_to_db(app, postgres_settings),
+                    connect_to_db,
+                    app,
+                    postgres_settings,
                     service_name="Postgres",
                     endpoint=postgres_settings.dsn,
-                    url=postgres_settings.dsn,
                 ),
                 wait_for_rabbitmq_liveness(app),
                 wait_for_registries_liveness(app),
