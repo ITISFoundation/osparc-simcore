@@ -154,7 +154,7 @@ RUN chmod +x services/storage/docker/*.sh
 
 HEALTHCHECK \
   --interval=10s \
-  --timeout=15s \
+  --timeout=5s \
   --start-period=20s \
   --start-interval=1s \
   --retries=5 \

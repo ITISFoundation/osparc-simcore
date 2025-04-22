@@ -96,11 +96,11 @@ COPY --chown=scu:scu --from=build ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 COPY --chown=scu:scu services/migration/docker services/migration/docker
 
 HEALTHCHECK \
-  --interval=5s \
-  --timeout=10s \
+  --interval=10s \
+  --timeout=5s \
   --start-period=20s \
   --start-interval=1s \
-  --retries=50 \
+  --retries=5 \
   CMD [ "/bin/sh", "/home/scu/services/migration/docker/healthcheck.sh"]
 
 ENTRYPOINT [ "/bin/sh", "services/migration/docker/entrypoint.sh" ]
