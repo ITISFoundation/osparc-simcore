@@ -54,7 +54,12 @@ api_keys = sa.Table(
         doc="Identified product",
     ),
     sa.Column("api_key", sa.String(), nullable=False, index=True),
-    sa.Column("api_secret", sa.String(), nullable=False),
+    sa.Column(
+        "api_secret",
+        sa.String(),
+        nullable=False,
+        doc="API key secret, hashed using blowfish algorithm",
+    ),
     sa.Column(
         "created",
         sa.DateTime(),
