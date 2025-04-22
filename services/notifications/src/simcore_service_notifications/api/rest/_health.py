@@ -9,7 +9,7 @@ from models_library.errors import (
 )
 from servicelib.rabbitmq import RabbitMQClient
 
-from ...services.postgres import PostgresLiveness
+from ...clients.postgres import PostgresLiveness
 from .dependencies import get_postgres_liveness, get_rabbitmq_client
 
 router = APIRouter()
