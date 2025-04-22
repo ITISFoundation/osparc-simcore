@@ -5,10 +5,10 @@
 
 import asyncio
 import json
-from collections.abc import AsyncIterable
+from collections.abc import AsyncIterable, AsyncIterator
 from inspect import signature
 from pathlib import Path
-from typing import Any, AsyncIterator, Final
+from typing import Any, Final
 from unittest.mock import AsyncMock, Mock
 from uuid import uuid4
 
@@ -46,6 +46,14 @@ from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
+
+pytest_simcore_core_services_selection = [
+    "postgres",
+]
+
+pytest_simcore_ops_services_selection = [
+    "adminer",
+]
 
 WAIT_FOR_OUTPUTS_WATCHER: Final[float] = 0.1
 FAST_POLLING_INTERVAL: Final[float] = 0.1
@@ -135,7 +143,6 @@ async def _start_containers(
 
 
 async def _docker_ps_a_container_names() -> list[str]:
-    # TODO: replace with aiodocker this is legacy by now
     command = 'docker ps -a --format "{{.Names}}"'
     success, stdout, *_ = await async_command(command=command, timeout=None)
 
@@ -163,7 +170,9 @@ async def _assert_compose_spec_pulled(compose_spec: str, settings: ApplicationSe
 
 
 @pytest.fixture
-def mock_environment(mock_rabbitmq_envs: EnvVarsDict) -> EnvVarsDict:
+def mock_environment(
+    mock_environment: EnvVarsDict, mock_rabbitmq_envs: EnvVarsDict
+) -> EnvVarsDict:
     return mock_rabbitmq_envs
 
 
@@ -451,7 +460,6 @@ async def test_container_docker_error(
         }
 
     for container in started_containers:
-
         # inspect container
         response = await test_client.get(f"/{API_VTAG}/containers/{container}")
         assert response.status_code == mock_aiodocker_containers_get, response.text
@@ -702,9 +710,9 @@ def define_inactivity_command(
 @pytest.fixture
 def mock_shared_store(app: FastAPI) -> None:
     shared_store: SharedStore = app.state.shared_store
-    shared_store.original_to_container_names[
+    shared_store.original_to_container_names["mock_container_name"] = (
         "mock_container_name"
-    ] = "mock_container_name"
+    )
 
 
 async def test_containers_activity_command_failed(

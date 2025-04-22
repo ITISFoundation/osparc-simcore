@@ -6,6 +6,14 @@ from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_di
 from settings_library.utils_service import DEFAULT_AIOHTTP_PORT
 from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+]
+
+pytest_simcore_ops_services_selection = [
+    "adminer",
+]
+
 
 def test_settings_with_mock_environment(mock_environment: EnvVarsDict):
     assert ApplicationSettings.create_from_envs()

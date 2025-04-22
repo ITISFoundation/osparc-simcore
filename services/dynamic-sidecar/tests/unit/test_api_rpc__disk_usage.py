@@ -2,8 +2,7 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=unused-argument
 
-from collections.abc import Awaitable, Callable
-from typing import AsyncIterable
+from collections.abc import AsyncIterable, Awaitable, Callable
 from unittest.mock import AsyncMock
 
 import pytest
@@ -23,8 +22,13 @@ from simcore_service_dynamic_sidecar.modules.system_monitor._disk_usage import (
 )
 
 pytest_simcore_core_services_selection = [
+    "postgres",
     "redis",
     "rabbit",
+]
+
+pytest_simcore_ops_services_selection = [
+    "adminer",
 ]
 
 

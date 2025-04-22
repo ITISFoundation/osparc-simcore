@@ -49,6 +49,14 @@ from tenacity import AsyncRetrying, TryAgain
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+]
+
+pytest_simcore_ops_services_selection = [
+    "adminer",
+]
+
 _FAST_STATUS_POLL: Final[float] = 0.1
 _CREATE_SERVICE_CONTAINERS_TIMEOUT: Final[float] = 60
 _BASE_HEART_BEAT_INTERVAL: Final[float] = 0.1

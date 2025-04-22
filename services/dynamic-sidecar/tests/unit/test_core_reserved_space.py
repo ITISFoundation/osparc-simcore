@@ -10,6 +10,14 @@ from simcore_service_dynamic_sidecar.core.reserved_space import (
     remove_reserved_disk_space,
 )
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+]
+
+pytest_simcore_ops_services_selection = [
+    "adminer",
+]
+
 
 def test_reserved_disk_space_workflow(
     cleanup_reserved_disk_space: None, mock_environment: EnvVarsDict

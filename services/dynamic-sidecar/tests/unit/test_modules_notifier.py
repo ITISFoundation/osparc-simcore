@@ -53,9 +53,13 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 pytest_simcore_core_services_selection = [
+    "postgres",
     "rabbit",
 ]
 
+pytest_simcore_ops_services_selection = [
+    "adminer",
+]
 _NUMBER_OF_CLIENTS: Final[NonNegativeInt] = 10
 
 

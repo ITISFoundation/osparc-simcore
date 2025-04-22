@@ -32,6 +32,14 @@ from simcore_service_dynamic_sidecar.modules.prometheus_metrics import (
     UserServicesMetrics,
 )
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+]
+
+pytest_simcore_ops_services_selection = [
+    "adminer",
+]
+
 _FAST_STATUS_POLL: Final[float] = 0.1
 _CREATE_SERVICE_CONTAINERS_TIMEOUT: Final[float] = 60
 

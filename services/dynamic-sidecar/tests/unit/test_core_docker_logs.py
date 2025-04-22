@@ -15,6 +15,14 @@ from simcore_service_dynamic_sidecar.core.docker_logs import (
     stop_log_fetching,
 )
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+]
+
+pytest_simcore_ops_services_selection = [
+    "adminer",
+]
+
 
 @pytest.fixture
 def mock_environment(

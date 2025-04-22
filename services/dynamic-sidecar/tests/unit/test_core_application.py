@@ -11,6 +11,14 @@ from simcore_service_dynamic_sidecar.core.application import AppState, create_ap
 from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+]
+
+pytest_simcore_ops_services_selection = [
+    "adminer",
+]
+
 
 def test_create_app(mock_environment_with_envdevel: EnvVarsDict):
     app = create_app()
