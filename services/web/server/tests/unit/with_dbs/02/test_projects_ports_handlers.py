@@ -12,7 +12,7 @@ from typing import Any
 import pytest
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses as AioResponsesMock  # noqa: N812
-from models_library.api_schemas_directorv2.comp_tasks import TasksOutputs
+from models_library.api_schemas_directorv2.computations import TasksOutputs
 from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import TypeAdapter

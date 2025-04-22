@@ -71,6 +71,10 @@ class ProjectDBGet(BaseModel):
     )
 
 
+class ProjectJobDBGet(ProjectDBGet):
+    job_parent_resource_name: str
+
+
 class ProjectWithTrashExtra(ProjectDBGet):
     # This field is not part of the tables
     trashed_by_primary_gid: GroupID | None = None

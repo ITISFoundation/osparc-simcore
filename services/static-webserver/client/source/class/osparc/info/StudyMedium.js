@@ -120,6 +120,9 @@ qx.Class.define("osparc.info.StudyMedium", {
         label: this.tr("ACCESS RIGHTS"),
         view: osparc.info.StudyUtils.createAccessRights(this.getStudy())
       }, {
+        label: this.tr("SHARED"),
+        view: osparc.info.StudyUtils.createShared(this.getStudy())
+      }, {
         label: this.tr("CREATED"),
         view: osparc.info.StudyUtils.createCreationDate(this.getStudy())
       }, {

@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock
 import httpx
 import pytest
 import sqlalchemy as sa
-from models_library.api_schemas_directorv2.comp_tasks import ComputationGet
+from models_library.api_schemas_directorv2.computations import ComputationGet
 from models_library.projects import ProjectAtDB
 from models_library.users import UserID
 from pytest_mock import MockerFixture
@@ -130,7 +130,7 @@ def mock_projects_repository(mocker: MockerFixture) -> None:
 
 @pytest.fixture
 async def wait_for_catalog_service(
-    services_endpoint: dict[str, URL]
+    services_endpoint: dict[str, URL],
 ) -> Callable[[UserID, str], Awaitable[None]]:
     async def _waiter(user_id: UserID, product_name: str) -> None:
         catalog_endpoint = list(

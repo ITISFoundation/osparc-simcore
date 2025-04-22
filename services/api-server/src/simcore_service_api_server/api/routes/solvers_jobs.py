@@ -12,7 +12,8 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from pydantic.types import PositiveInt
 
-from ..._service import create_solver_or_program_job
+from ..._service_job import JobService
+from ..._service_solvers import SolverService
 from ...exceptions.backend_errors import ProjectAlreadyStartedError
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.basic_types import VersionStr
@@ -26,7 +27,6 @@ from ...models.schemas.jobs import (
     JobStatus,
 )
 from ...models.schemas.solvers import Solver, SolverKeyId
-from ...services_http.catalog import CatalogApi
 from ...services_http.director_v2 import DirectorV2Api
 from ...services_http.jobs import replace_custom_metadata, start_project, stop_project
 from ...services_http.solver_job_models_converters import (
@@ -95,8 +95,8 @@ async def create_solver_job(
     version: VersionStr,
     inputs: JobInputs,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
-    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
-    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    solver_service: Annotated[SolverService, Depends()],
+    job_service: Annotated[JobService, Depends()],
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
@@ -110,14 +110,13 @@ async def create_solver_job(
     """
 
     # ensures user has access to solver
-    solver = await catalog_client.get_solver(
+    solver = await solver_service.get_solver(
         user_id=user_id,
         name=solver_key,
         version=version,
         product_name=product_name,
     )
-    job, project = await create_solver_or_program_job(
-        webserver_api=webserver_api,
+    job, project = await job_service.create_job(
         solver_or_program=solver,
         inputs=inputs,
         url_for=url_for,

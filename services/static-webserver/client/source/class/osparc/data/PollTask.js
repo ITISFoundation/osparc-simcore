@@ -30,8 +30,9 @@ qx.Class.define("osparc.data.PollTask", {
     if (taskData && "task_id" in taskData) {
       this.set({
         taskId: taskData["task_id"],
+        taskName: taskData["task_name"] || "",
         statusHref: taskData["status_href"],
-        resultHref: taskData["result_href"]
+        resultHref: taskData["result_href"],
       });
 
       if ("abort_href" in taskData) {
@@ -62,6 +63,11 @@ qx.Class.define("osparc.data.PollTask", {
     taskId: {
       check: "String",
       nullable: false
+    },
+
+    taskName: {
+      check: "String",
+      nullable: true
     },
 
     statusHref: {
@@ -102,9 +108,13 @@ qx.Class.define("osparc.data.PollTask", {
     },
 
     extractProgress: function(updateData) {
+      const toNumberWithMaxTwoDecimals = value => {
+        return Math.round(Number(value) * 100) / 100;
+      };
+
       if ("task_progress" in updateData) {
         const taskProgress = updateData["task_progress"];
-        const percent = taskProgress["percent"] ? parseFloat(taskProgress["percent"].toFixed(3)) : taskProgress["percent"];
+        const percent = taskProgress["percent"] ? toNumberWithMaxTwoDecimals(taskProgress["percent"]) : taskProgress["percent"];
         return percent;
       }
       return 0;

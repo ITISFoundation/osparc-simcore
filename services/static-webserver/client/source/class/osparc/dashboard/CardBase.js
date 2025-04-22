@@ -384,7 +384,12 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     uiMode: {
-      check: ["workbench", "guided", "app", "standalone"], // "guided" is no longer used
+      check: [
+        "workbench", // =auto, the frontend decides the icon and default view
+        "app", "guided", // "guided" is no longer used
+        "standalone",
+        "pipeline",
+      ],
       nullable: true,
       apply: "__applyUiMode"
     },
@@ -666,19 +671,12 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
       // Block card
       const cantReadServices = osparc.study.Utils.getCantExecuteServices(services);
-      let inaccessibleServices = [];
-      if (this.isResourceType("study") || this.isResourceType("template")) {
-        inaccessibleServices = osparc.store.Services.getInaccessibleServices(this.getResourceData()["workbench"]);
-      }
-      if (cantReadServices.length || inaccessibleServices.length) {
+      if (cantReadServices.length) {
         this.setBlocked("UNKNOWN_SERVICES");
         const image = "@FontAwesome5Solid/ban/";
         let toolTipText = this.tr("Inaccessible service(s):");
         cantReadServices.forEach(unSrv => {
           toolTipText += "<br>" + unSrv.key + ":" + osparc.service.Utils.extractVersionDisplay(unSrv.release);
-        });
-        inaccessibleServices.forEach(unSrv => {
-          toolTipText += "<br>" + unSrv.key + ":" + unSrv.version;
         });
         this.__showBlockedCard(image, toolTipText);
       }

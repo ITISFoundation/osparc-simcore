@@ -156,10 +156,10 @@ class RobustWebSocket:
     _num_reconnections: int = 0
     auto_reconnect: bool = True
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self._configure_websocket_events()
 
-    def _configure_websocket_events(self):
+    def _configure_websocket_events(self) -> None:
         with log_context(
             logging.INFO,
             msg="handle websocket message (set to --log-cli-level=DEBUG level if you wanna see all of them)",
@@ -172,10 +172,11 @@ class RobustWebSocket:
                 ctx.logger.debug("⬆️ Frame received: %s", payload)
 
             def on_close(_: WebSocket) -> None:
-                ctx.logger.warning("⚠️ WebSocket closed.")
                 if self.auto_reconnect:
                     ctx.logger.warning("⚠️ WebSocket closed. Attempting to reconnect...")
                     self._attempt_reconnect(ctx.logger)
+                else:
+                    ctx.logger.warning("⚠️ WebSocket closed.")
 
             def on_socketerror(error_msg: str) -> None:
                 ctx.logger.error("❌ WebSocket error: %s", error_msg)
@@ -448,17 +449,21 @@ class SocketIONodeProgressCompleteWaiter:
                             f"{json.dumps({k: round(v, 2) for k, v in self._current_progress.items()})}",
                         )
 
-                return self.got_expected_node_progress_types() and all(
+                progress_completed = self.got_expected_node_progress_types() and all(
                     round(progress, 1) == 1.0
                     for progress in self._current_progress.values()
                 )
+                if progress_completed:
+                    self.logger.info("✅ Service start completed successfully!! ✅")
+                return progress_completed
 
         time_since_last_progress = datetime.now(UTC) - self._last_progress_time
         if time_since_last_progress > self.max_idle_timeout:
             self.logger.warning(
                 "⚠️ %s passed since the last received progress message. "
-                "The service might be stuck, or we missed some messages ⚠️",
+                "The service %s might be stuck, or we missed some messages ⚠️",
                 time_since_last_progress,
+                self.node_id,
             )
             return True
 
@@ -569,6 +574,9 @@ class ServiceRunning:
     iframe_locator: FrameLocator | None
 
 
+_MIN_TIMEOUT_WAITING_FOR_SERVICE_ENDPOINT: Final[int] = 30 * SECOND
+
+
 @contextlib.contextmanager
 def expected_service_running(
     *,
@@ -602,7 +610,10 @@ def expected_service_running(
         api_request_context=page.request,
         product_url=product_url,
         is_legacy_service=is_service_legacy,
-        timeout=min(timeout - int(elapsed_time.total_seconds() * SECOND), 5 * SECOND),
+        timeout=max(
+            timeout - int(elapsed_time.total_seconds() * SECOND),
+            _MIN_TIMEOUT_WAITING_FOR_SERVICE_ENDPOINT,
+        ),
     )
     service_running.iframe_locator = page.frame_locator(
         f'[osparc-test-id="iframe_{node_id}"]'
@@ -640,7 +651,10 @@ def wait_for_service_running(
         api_request_context=page.request,
         product_url=product_url,
         is_legacy_service=is_service_legacy,
-        timeout=min(timeout - int(elapsed_time.total_seconds() * SECOND), 5 * SECOND),
+        timeout=max(
+            timeout - int(elapsed_time.total_seconds() * SECOND),
+            _MIN_TIMEOUT_WAITING_FOR_SERVICE_ENDPOINT,
+        ),
     )
     return page.frame_locator(f'[osparc-test-id="iframe_{node_id}"]')
 

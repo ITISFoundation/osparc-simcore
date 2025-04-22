@@ -12,6 +12,7 @@ from aiohttp.test_utils import TestClient
 from common_library.users_enums import UserRole
 from models_library.products import ProductName
 from models_library.projects import ProjectID
+from models_library.rpc.webserver.projects import PageRpcProjectRpcGet, ProjectRpcGet
 from pydantic import ValidationError
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -85,6 +86,38 @@ async def test_rpc_client_mark_project_as_job(
         project_uuid=project_uuid,
         job_parent_resource_name="solvers/solver123/version/1.2.3",
     )
+
+
+async def test_rpc_client_list_my_projects_marked_as_jobs(
+    rpc_client: RabbitMQRPCClient,
+    product_name: ProductName,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+):
+    project_uuid = ProjectID(user_project["uuid"])
+    user_id = logged_user["id"]
+
+    # Mark the project as a job first
+    await projects_rpc.mark_project_as_job(
+        rpc_client=rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        project_uuid=project_uuid,
+        job_parent_resource_name="solvers/solver123/version/1.2.3",
+    )
+
+    # List projects marked as jobs
+    page: PageRpcProjectRpcGet = await projects_rpc.list_projects_marked_as_jobs(
+        rpc_client=rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        job_parent_resource_name_filter="solvers/solver123",
+    )
+
+    assert page.meta.total == 1
+    assert page.meta.offset == 0
+    assert isinstance(page.data[0], ProjectRpcGet)
+    assert page.data[0].uuid == project_uuid
 
 
 @pytest.fixture

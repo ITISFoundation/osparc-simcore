@@ -97,7 +97,7 @@ async def mocked_directorv2_rest_api(
 
     def _get_computation(request: httpx.Request, **kwargs) -> httpx.Response:
         task = ComputationTaskGet.model_validate(
-            ComputationTaskGet.model_config["json_schema_extra"]["examples"][0]
+            ComputationTaskGet.model_json_schema()["examples"][0]
         )
         if datetime.now() > stop_time:
             task.state = RunningState.SUCCESS

@@ -28,7 +28,6 @@ from simcore_postgres_database.models.services_compatibility import (
 from simcore_postgres_database.models.services_specifications import (
     services_specifications,
 )
-from simcore_postgres_database.utils import as_postgres_sql_query_str
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 from simcore_postgres_database.utils_services import create_select_latest_services_query
 from sqlalchemy import sql
@@ -37,6 +36,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from ..models.services_db import (
     ReleaseDBGet,
     ServiceAccessRightsAtDB,
+    ServiceFiltersDB,
     ServiceMetaDataDBCreate,
     ServiceMetaDataDBGet,
     ServiceMetaDataDBPatch,
@@ -47,6 +47,7 @@ from ._base import BaseRepository
 from ._services_sql import (
     SERVICES_META_DATA_COLS,
     AccessRightsClauses,
+    _apply_services_filters,
     by_version,
     can_get_service_stmt,
     get_service_history_stmt,
@@ -391,6 +392,7 @@ class ServicesRepository(BaseRepository):
         # list args: pagination
         limit: int | None = None,
         offset: int | None = None,
+        filters: ServiceFiltersDB | None = None,
     ) -> tuple[PositiveInt, list[ServiceWithHistoryDBGet]]:
 
         # get page
@@ -398,6 +400,7 @@ class ServicesRepository(BaseRepository):
             product_name=product_name,
             user_id=user_id,
             access_rights=AccessRightsClauses.can_read,
+            filters=filters,
         )
         stmt_page = list_latest_services_stmt(
             product_name=product_name,
@@ -405,6 +408,7 @@ class ServicesRepository(BaseRepository):
             access_rights=AccessRightsClauses.can_read,
             limit=limit,
             offset=offset,
+            filters=filters,
         )
 
         async with self.db_engine.connect() as conn:
@@ -480,9 +484,10 @@ class ServicesRepository(BaseRepository):
         # list args: pagination
         limit: int | None = None,
         offset: int | None = None,
+        filters: ServiceFiltersDB | None = None,
     ) -> tuple[PositiveInt, list[ReleaseDBGet]]:
 
-        base_subquery = (
+        base_stmt = (
             # Search on service (key, *) for (product_name, user_id w/ access)
             sql.select(
                 services_meta_data.c.key,
@@ -506,11 +511,15 @@ class ServicesRepository(BaseRepository):
                 & (user_to_groups.c.uid == user_id)
                 & AccessRightsClauses.can_read
             )
-        ).subquery()
+        )
+
+        if filters:
+            base_stmt = _apply_services_filters(base_stmt, filters)
+
+        base_subquery = base_stmt.subquery()
 
         # Query to count the TOTAL number of rows
         count_query = sql.select(sql.func.count()).select_from(base_subquery)
-        _logger.debug("count_query=\n%s", as_postgres_sql_query_str(count_query))
 
         # Query to retrieve page with additional columns, ordering, offset, and limit
         page_query = (
@@ -541,7 +550,6 @@ class ServicesRepository(BaseRepository):
             .offset(offset)
             .limit(limit)
         )
-        _logger.debug("page_query=\n%s", as_postgres_sql_query_str(page_query))
 
         async with pass_or_acquire_connection(self.db_engine) as conn:
             total_count: PositiveInt = await conn.scalar(count_query) or 0

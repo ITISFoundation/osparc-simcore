@@ -62,7 +62,7 @@ def walk_model_examples_in_package(package: ModuleType) -> Iterator[ModelExample
 
 
 def iter_model_examples_in_module(module: object) -> Iterator[ModelExample]:
-    """Iterates on all examples defined as BaseModelClass.model_config["json_schema_extra"]["example"]
+    """Iterates on all examples defined as BaseModelClass.model_json_schema()["example"]
 
     Usage:
         import some_package.some_module

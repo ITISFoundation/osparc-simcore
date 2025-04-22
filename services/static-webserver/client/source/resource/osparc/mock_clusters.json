@@ -1,0 +1,33 @@
+{
+  "clusters": [{
+    "cluster_id": "0cde4607-07de-4bb5-b3e6-487f22387a70",
+    "name": "cluster_1",
+    "status": "RUNNING",
+    "n_workers": 2
+  }, {
+    "cluster_id": "5685a699-4927-479e-9b34-e5ab1616303a",
+    "name": "cluster_2",
+    "status": "WAITING FOR RESOURCES",
+    "n_workers": 4
+  }, {
+    "cluster_id": "a8ca6a02-8816-48a6-8c6b-b94b3e431c8c",
+    "name": "cluster_3",
+    "status": "PENDING",
+    "n_workers": 8
+  }, {
+    "cluster_id": "a8ca6a02-8816-48a6-8c6b-b94b3e431c8d",
+    "name": "cluster_4",
+    "status": "ERROR",
+    "n_workers": 12
+  }, {
+    "cluster_id": "a8ca6a02-8816-48a6-8c6b-b94b3e431c81",
+    "name": "cluster_5",
+    "status": "IDK",
+    "n_workers": 24
+  }, {
+    "cluster_id": "a8ca6a02-8816-48a6-8c6b-b94b3e431c82",
+    "name": "cluster_6",
+    "status": "SOMETHING_ELSE",
+    "n_workers": 42
+  }]
+}
