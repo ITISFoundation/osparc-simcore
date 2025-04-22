@@ -140,6 +140,7 @@ COPY --chown=scu:scu --from=prod-only-deps  ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 COPY --chown=scu:scu services/catalog/docker services/catalog/docker
 RUN chmod +x services/catalog/docker/*.sh
 
+# https://docs.docker.com/reference/dockerfile/#healthcheck
 HEALTHCHECK \
   --interval=10s \
   --timeout=5s \

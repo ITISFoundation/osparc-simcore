@@ -141,6 +141,7 @@ COPY --chown=scu:scu services/datcore-adapter/docker services/datcore-adapter/do
 RUN chmod +x services/datcore-adapter/docker/*.sh
 
 
+# https://docs.docker.com/reference/dockerfile/#healthcheck
 HEALTHCHECK \
   --interval=10s \
   --timeout=5s \

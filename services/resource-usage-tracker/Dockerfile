@@ -140,6 +140,7 @@ COPY --chown=scu:scu --from=prod-only-deps  ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 COPY --chown=scu:scu services/resource-usage-tracker/docker services/resource-usage-tracker/docker
 RUN chmod +x services/resource-usage-tracker/docker/*.sh
 
+# https://docs.docker.com/reference/dockerfile/#healthcheck
 HEALTHCHECK \
   --interval=10s \
   --timeout=5s \

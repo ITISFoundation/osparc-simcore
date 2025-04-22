@@ -137,6 +137,7 @@ COPY --chown=scu:scu services/director/docker services/director/docker
 RUN chmod +x services/director/docker/*.sh
 
 
+# https://docs.docker.com/reference/dockerfile/#healthcheck
 HEALTHCHECK \
   --interval=10s \
   --timeout=5s \

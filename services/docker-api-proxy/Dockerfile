@@ -22,6 +22,7 @@ RUN apk add --no-cache \
   su-exec
 
 # Health check to ensure the proxy is running
+# https://docs.docker.com/reference/dockerfile/#healthcheck
 HEALTHCHECK \
   --interval=10s \
   --timeout=5s \

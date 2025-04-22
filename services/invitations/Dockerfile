@@ -141,6 +141,7 @@ COPY --chown=scu:scu services/invitations/docker services/invitations/docker
 RUN chmod +x services/invitations/docker/*.sh
 
 
+# https://docs.docker.com/reference/dockerfile/#healthcheck
 HEALTHCHECK \
   --interval=10s \
   --timeout=5s \

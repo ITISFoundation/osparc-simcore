@@ -141,6 +141,7 @@ COPY --chown=scu:scu services/payments/docker services/payments/docker
 RUN chmod +x services/payments/docker/*.sh
 
 
+# https://docs.docker.com/reference/dockerfile/#healthcheck
 HEALTHCHECK \
   --interval=10s \
   --timeout=5s \

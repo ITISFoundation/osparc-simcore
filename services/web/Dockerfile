@@ -163,6 +163,7 @@ RUN chmod +x services/web/server/docker/*.sh
 # healthcheck.
 # NOTE: do not forget to update variable
 ENV SC_HEALTHCHECK_TIMEOUT=120s
+# https://docs.docker.com/reference/dockerfile/#healthcheck
 HEALTHCHECK \
   --interval=10s \
   --timeout=5s \

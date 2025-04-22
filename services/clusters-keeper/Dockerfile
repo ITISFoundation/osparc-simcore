@@ -159,6 +159,7 @@ COPY --chown=scu:scu services/clusters-keeper/docker services/clusters-keeper/do
 RUN chmod +x services/clusters-keeper/docker/*.sh
 
 
+# https://docs.docker.com/reference/dockerfile/#healthcheck
 HEALTHCHECK \
   --interval=10s \
   --timeout=5s \
