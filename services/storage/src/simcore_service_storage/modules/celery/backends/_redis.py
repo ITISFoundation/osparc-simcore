@@ -91,7 +91,6 @@ class RedisTaskInfoStore:
         search_key_len = len(search_key)
 
         keys: list[str] = []
-
         pipeline = self._redis_client_sdk.redis.pipeline()
         async for key in self._redis_client_sdk.redis.scan_iter(
             match=search_key + "*", count=_CELERY_TASK_SCAN_COUNT_PER_BATCH
@@ -103,7 +102,6 @@ class RedisTaskInfoStore:
                 else key
             )
             keys.append(_key)
-
             pipeline.hget(_key, _CELERY_TASK_METADATA_KEY)
 
         results = await pipeline.execute()
