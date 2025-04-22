@@ -9,7 +9,7 @@ from aiopg.sa.connection import SAConnection
 from aiopg.sa.engine import Engine
 from models_library.groups import EVERYONE_GROUP_ID
 from models_library.services import ServiceKey, ServiceVersion
-from models_library.services_regex import (
+from models_library.services_constants import (
     COMPUTATIONAL_SERVICE_KEY_PREFIX,
     DYNAMIC_SERVICE_KEY_PREFIX,
 )
