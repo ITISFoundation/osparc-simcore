@@ -260,14 +260,15 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       }
     },
 
-    __addFromResourceButton: function(menuButton, category) {
-      let idx = null;
+    __addFromResourceButton: function(menuButton, category, idx = null) {
       if (category) {
         idx = this.__getLastIdxFromCategory(category);
       }
-      if (idx) {
+      if (category && idx) {
         menuButton["categoryId"] = category;
         this.addAt(menuButton, idx+1);
+      } else if (idx) {
+        this.addAt(menuButton, idx);
       } else {
         this.addAt(menuButton, this.__itemIdx);
         this.__itemIdx++;
@@ -369,7 +370,9 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
         addListenerToButton(menuButton, latestMetadata);
       } else if ("myMostUsed" in buttonConfig) {
         const excludeFrontend = true;
-        const excludeDeprecated = true
+        const excludeDeprecated = true;
+        const old = this.__itemIdx;
+        this.__itemIdx += buttonConfig["myMostUsed"];
         osparc.store.Services.getServicesLatestList(excludeFrontend, excludeDeprecated)
           .then(servicesList => {
             osparc.service.Utils.sortObjectsBasedOn(servicesList, {
@@ -385,7 +388,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
                   allowGrowX: true,
                 });
                 this.__addIcon(menuButton, null, latestMetadata);
-                this.__addFromResourceButton(menuButton, buttonConfig["category"]);
+                this.__addFromResourceButton(menuButton, buttonConfig["category"], old+i);
                 addListenerToButton(menuButton, latestMetadata);
               }
             }
