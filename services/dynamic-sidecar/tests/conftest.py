@@ -8,7 +8,7 @@
 import json
 import logging
 import sys
-from collections.abc import AsyncIterable, Iterable, Iterator
+from collections.abc import Iterable, Iterator
 from pathlib import Path
 from unittest.mock import AsyncMock
 
@@ -152,13 +152,6 @@ def mock_storage_check(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
-def mock_postgres_check(mocker: MockerFixture) -> None:
-    mocker.patch(
-        "simcore_service_dynamic_sidecar.core.external_dependencies.connect_to_db",
-    )
-
-
-@pytest.fixture
 def mock_rabbit_check(mocker: MockerFixture) -> None:
     mocker.patch(
         "simcore_service_dynamic_sidecar.core.external_dependencies.wait_for_rabbitmq_liveness",
@@ -210,7 +203,6 @@ def base_mock_envs(
 def mock_environment(
     postgres_host_config: PostgresTestConfig,
     mock_storage_check: None,
-    # mock_postgres_check: None,
     mock_rabbit_check: None,
     monkeypatch: pytest.MonkeyPatch,
     base_mock_envs: EnvVarsDict,
@@ -357,7 +349,7 @@ def mock_metrics_params(faker: Faker) -> CreateServiceMetricsAdditionalParams:
 
 
 @pytest.fixture
-def cleanup_reserved_disk_space() -> AsyncIterable[None]:
+def cleanup_reserved_disk_space() -> Iterator[None]:
     remove_reserved_disk_space()
     yield
     remove_reserved_disk_space()

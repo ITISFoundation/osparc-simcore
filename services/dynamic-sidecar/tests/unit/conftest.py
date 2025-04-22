@@ -8,6 +8,7 @@ from collections.abc import AsyncIterable, AsyncIterator
 from unittest.mock import AsyncMock
 
 import pytest
+import sqlalchemy as sa
 from aiodocker.volumes import DockerVolume
 from async_asgi_testclient import TestClient
 from fastapi import FastAPI
@@ -41,6 +42,7 @@ logger = logging.getLogger(__name__)
 
 @pytest.fixture
 def app(
+    postgres_db: sa.engine.Engine,
     mock_environment: EnvVarsDict,
     mock_registry_service: AsyncMock,
     mock_core_rabbitmq: dict[str, AsyncMock],
@@ -72,7 +74,7 @@ async def test_client(
 @pytest.fixture
 async def ensure_external_volumes(
     app: FastAPI,
-) -> AsyncIterator[tuple[DockerVolume]]:
+) -> AsyncIterator[tuple[DockerVolume, ...]]:
     """ensures inputs and outputs volumes for the service are present
 
     Emulates creation of volumes by the directorv2 when it spawns the dynamic-sidecar service
