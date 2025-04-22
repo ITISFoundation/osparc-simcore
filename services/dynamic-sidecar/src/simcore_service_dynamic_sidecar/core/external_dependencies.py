@@ -4,6 +4,7 @@ from servicelib.db_async_engine import connect_to_db
 from servicelib.utils import logged_gather
 from settings_library.postgres import PostgresSettings
 
+from ..modules.service_liveness import wait_for_service_liveness
 from .rabbitmq import wait_for_rabbitmq_liveness
 from .registry import wait_for_registries_liveness
 from .settings import ApplicationSettings
@@ -29,7 +30,12 @@ def setup_check_dependencies(app: FastAPI) -> None:
         assert isinstance(postgres_settings, PostgresSettings)  # nosec
         liveliness_results = await logged_gather(
             *[
-                connect_to_db(app, postgres_settings),
+                wait_for_service_liveness(
+                    connect_to_db(app, postgres_settings),
+                    service_name="Postgres",
+                    endpoint=postgres_settings.dsn,
+                    url=postgres_settings.dsn,
+                ),
                 wait_for_rabbitmq_liveness(app),
                 wait_for_registries_liveness(app),
                 wait_for_storage_liveness(app),
