@@ -62,7 +62,7 @@ qx.Class.define("osparc.jobs.RunsBrowser", {
           this.getChildControl("header-filter").add(control);
           break;
         case "jobs-table":
-          control = new osparc.jobs.JobsTable();
+          control = new osparc.jobs.RunsTable();
           this._add(control);
           break;
       }

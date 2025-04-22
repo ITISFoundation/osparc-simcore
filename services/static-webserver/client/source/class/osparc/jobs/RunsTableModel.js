@@ -16,45 +16,49 @@
 ************************************************************************ */
 
 
-qx.Class.define("osparc.jobs.SubJobsTableModel", {
+qx.Class.define("osparc.jobs.RunsTableModel", {
   extend: qx.ui.table.model.Remote,
 
-  construct(projectUuid) {
+  construct() {
     this.base(arguments);
 
-    this.setProjectUuid(projectUuid);
-
-    const subJobsCols = osparc.jobs.SubJobsTable.COLS;
-    const colLabels = Object.values(subJobsCols).map(col => col.label);
-    const colIDs = Object.values(subJobsCols).map(col => col.id);
+    const jobsCols = osparc.jobs.RunsTable.COLS;
+    const colLabels = Object.values(jobsCols).map(col => col.label);
+    const colIDs = Object.values(jobsCols).map(col => col.id);
     this.setColumns(colLabels, colIDs);
 
-    this.setSortColumnIndexWithoutSortingData(subJobsCols.START.column);
+    this.setSortColumnIndexWithoutSortingData(jobsCols.SUBMIT.column);
     this.setSortAscendingWithoutSortingData(false);
-    Object.values(subJobsCols).forEach(col => {
-      this.setColumnSortable(col.column, false);
+    Object.values(jobsCols).forEach(col => {
+      this.setColumnSortable(col.column, Boolean(col.sortable));
     });
   },
 
   properties: {
-    projectUuid: {
-      check: "String",
-      nullable: true
-    },
-
     isFetching: {
       check: "Boolean",
       init: false,
       event: "changeFetching"
+    },
+
+    orderBy: {
+      check: "Object",
+      init: {
+        field: "submitted_at",
+        direction: "desc"
+      }
     },
   },
 
   members: {
     // overridden
     _loadRowCount() {
-      osparc.store.Jobs.getInstance().fetchSubJobs(this.getProjectUuid())
-        .then(subJobs => {
-          this._onRowCountLoaded(subJobs.length)
+      const offset = 0;
+      const limit = 1;
+      const resolveWResponse = true;
+      osparc.store.Jobs.getInstance().fetchJobs(offset, limit, JSON.stringify(this.getOrderBy()), resolveWResponse)
+        .then(resp => {
+          this._onRowCountLoaded(resp["_meta"].total)
         })
         .catch(() => {
           this._onRowCountLoaded(null)
@@ -67,22 +71,19 @@ qx.Class.define("osparc.jobs.SubJobsTableModel", {
 
       const lastRow = Math.min(qxLastRow, this._rowCount - 1);
       // Returns a request promise with given offset and limit
-      const getFetchPromise = () => {
-        return osparc.store.Jobs.getInstance().fetchSubJobs(this.getProjectUuid())
-          .then(subJobs => {
+      const getFetchPromise = (offset, limit) => {
+        return osparc.store.Jobs.getInstance().fetchJobs(offset, limit, JSON.stringify(this.getOrderBy()))
+          .then(jobs => {
             const data = [];
-            const subJobsCols = osparc.jobs.SubJobsTable.COLS;
-            subJobs.forEach(subJob => {
+            const jobsCols = osparc.jobs.RunsTable.COLS;
+            jobs.forEach(job => {
               data.push({
-                [subJobsCols.PROJECT_UUID.id]: subJob.getProjectUuid(),
-                [subJobsCols.NODE_ID.id]: subJob.getNodeId(),
-                [subJobsCols.NODE_NAME.id]: subJob.getNodeName(),
-                [subJobsCols.SOLVER.id]: subJob.getImage()["name"] + ":" + subJob.getImage()["tag"],
-                [subJobsCols.STATE.id]: subJob.getState(),
-                [subJobsCols.PROGRESS.id]: subJob.getProgress() * 100 + "%",
-                [subJobsCols.START.id]: subJob.getStartedAt() ? osparc.utils.Utils.formatDateAndTime(subJob.getStartedAt()) : "-",
-                [subJobsCols.END.id]: subJob.getEndedAt() ? osparc.utils.Utils.formatDateAndTime(subJob.getEndedAt()) : "-",
-                [subJobsCols.IMAGE.id]: subJob.getImage() ? osparc.utils.Utils.formatDateAndTime(subJob.getEndedAt()) : "-",
+                [jobsCols.PROJECT_UUID.id]: job.getProjectUuid(),
+                [jobsCols.PROJECT_NAME.id]: job.getProjectName(),
+                [jobsCols.STATE.id]: job.getState(),
+                [jobsCols.SUBMIT.id]: job.getSubmittedAt() ? osparc.utils.Utils.formatDateAndTime(job.getSubmittedAt()) : "-",
+                [jobsCols.START.id]: job.getStartedAt() ? osparc.utils.Utils.formatDateAndTime(job.getStartedAt()) : "-",
+                [jobsCols.END.id]: job.getEndedAt() ? osparc.utils.Utils.formatDateAndTime(job.getEndedAt()) : "-",
               });
             });
             return data;
