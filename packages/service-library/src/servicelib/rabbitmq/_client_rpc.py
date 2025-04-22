@@ -1,7 +1,8 @@
 import asyncio
 import functools
 import logging
-from collections.abc import Callable
+from collections.abc import AsyncIterator, Callable
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from typing import Any
 
@@ -156,3 +157,19 @@ class RabbitMQRPCClient(RabbitMQClientBase):
             raise RPCNotInitializedError
 
         await self._rpc.unregister(handler)
+
+
+@asynccontextmanager
+async def rabbitmq_rpc_client_context(
+    rpc_client_name: str, settings: RabbitSettings, **kwargs
+) -> AsyncIterator[RabbitMQRPCClient]:
+    """
+    Adapter to create and close a RabbitMQRPCClient using an async context manager.
+    """
+    rpc_client = await RabbitMQRPCClient.create(
+        client_name=rpc_client_name, settings=settings, **kwargs
+    )
+    try:
+        yield rpc_client
+    finally:
+        await rpc_client.close()
