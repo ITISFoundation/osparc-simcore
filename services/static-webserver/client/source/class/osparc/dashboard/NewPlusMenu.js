@@ -374,7 +374,8 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
         const old = this.__itemIdx;
         this.__itemIdx += buttonConfig["myMostUsed"];
         osparc.store.Services.getServicesLatestList(excludeFrontend, excludeDeprecated)
-          .then(servicesList => {
+          .then(srvList => {
+            const servicesList = srvList.filter(srv => srv !== null);
             osparc.service.Utils.sortObjectsBasedOn(servicesList, {
               "sort": "hits",
               "order": "down"
