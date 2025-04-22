@@ -79,6 +79,7 @@ qx.Class.define("osparc.desktop.MainPage", {
           flex: 1
         });
 
+        this.__attachTasks();
         this.__listenToWalletSocket();
         this.__attachHandlers();
       });
@@ -89,6 +90,14 @@ qx.Class.define("osparc.desktop.MainPage", {
     __dashboard: null,
     __loadingPage: null,
     __studyEditor: null,
+
+    __attachTasks: function() {
+      const pollTasks = osparc.store.PollTasks.getInstance();
+      const exportDataTasks = pollTasks.getExportDataTasks();
+      exportDataTasks.forEach(task => {
+        osparc.task.ExportData.exportDataTaskReceived(task, false);
+      });
+    },
 
     __listenToWalletSocket: function() {
       const socket = osparc.wrapper.WebSocket.getInstance();
