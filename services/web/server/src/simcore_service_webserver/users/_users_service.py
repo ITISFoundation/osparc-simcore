@@ -199,6 +199,51 @@ async def is_user_in_product(
     )
 
 
+async def list_users_as_admin(
+    app: web.Application,
+    *,
+    filter_approved: bool | None = None,
+    limit: int = 50,
+    offset: int = 0,
+) -> tuple[list[dict[str, Any]], int]:
+    """
+    Get a paginated list of users for admin view with filtering options.
+
+    Args:
+        app: The web application instance
+        filter_approved: If set, filters users by their approval status
+        limit: Maximum number of users to return
+        offset: Number of users to skip for pagination
+
+    Returns:
+        A tuple containing (list of user dictionaries, total count of users)
+    """
+    engine = get_asyncpg_engine(app)
+
+    # Get user data with pagination
+    users_data, total_count = await _users_repository.list_users_for_admin(
+        engine=engine, filter_approved=filter_approved, limit=limit, offset=offset
+    )
+
+    # For each user, append additional information if needed
+    result = []
+    for user in users_data:
+        # Add any additional processing needed for admin view
+        user_dict = dict(user)
+
+        # Add products information if needed
+        user_id = user.get("user_id")
+        if user_id:
+            products = await _users_repository.get_user_products(
+                engine, user_id=user_id
+            )
+            user_dict["products"] = [p.product_name for p in products]
+
+        result.append(user_dict)
+
+    return result, total_count
+
+
 #
 # GET USER PROPERTIES
 #
