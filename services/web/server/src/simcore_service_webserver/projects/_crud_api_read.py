@@ -21,7 +21,7 @@ from simcore_postgres_database.webserver_models import ProjectType as ProjectTyp
 
 from ..catalog import catalog_service
 from ..folders import _folders_repository
-from ..workspaces._workspaces_service import check_user_workspace_access
+from ..workspaces.api import check_user_workspace_access
 from . import _projects_service
 from ._projects_repository import batch_get_trashed_by_primary_gid
 from ._projects_repository_legacy import ProjectDBAPI
@@ -91,7 +91,7 @@ async def list_projects(  # pylint: disable=too-many-arguments
     folder_id: FolderID | None,
     # attrs filter
     project_type: ProjectTypeAPI,
-    show_hidden: bool,
+    show_hidden: bool,  # NOTE: Be careful, this filters only hidden projects
     trashed: bool | None,
     # search
     search_by_multi_columns: str | None = None,

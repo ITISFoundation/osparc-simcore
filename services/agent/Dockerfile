@@ -148,10 +148,13 @@ COPY --chown=scu:scu services/agent/docker services/agent/docker
 RUN chmod +x services/agent/docker/*.sh
 
 
-HEALTHCHECK --interval=30s \
-  --timeout=20s \
-  --start-period=30s \
-  --retries=3 \
+# https://docs.docker.com/reference/dockerfile/#healthcheck
+HEALTHCHECK \
+  --interval=10s \
+  --timeout=5s \
+  --start-period=20s \
+  --start-interval=1s \
+  --retries=5 \
   CMD ["python3", "services/agent/docker/healthcheck.py", "http://localhost:8000/health"]
 
 EXPOSE 8000
