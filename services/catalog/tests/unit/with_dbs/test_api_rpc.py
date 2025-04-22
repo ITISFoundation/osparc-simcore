@@ -582,3 +582,152 @@ async def test_rpc_list_my_service_history_paginated(
     assert len(release_history) == 2
     assert release_history[0].version == service_version_2, "expected newest first"
     assert release_history[1].version == service_version_1
+
+
+async def test_rpc_get_service_ports_successful_retrieval(
+    background_sync_task_mocked: None,
+    mocked_director_rest_api: MockRouter,
+    rpc_client: RabbitMQRPCClient,
+    product_name: ProductName,
+    user_id: UserID,
+    app: FastAPI,
+    create_fake_service_data: Callable,
+    services_db_tables_injector: Callable,
+):
+    """Tests successful retrieval of service ports for a specific service version"""
+    assert app
+
+    # Create a service with known ports
+    service_key = "simcore/services/comp/test-service-ports"
+    service_version = "1.0.0"
+
+    # Create and inject the service
+    fake_service = create_fake_service_data(
+        service_key,
+        service_version,
+        team_access=None,
+        everyone_access=None,
+        product=product_name,
+    )
+    await services_db_tables_injector([fake_service])
+
+    # Import the get_service_ports function from the client
+    from servicelib.rabbitmq.rpc_interfaces.catalog.services import get_service_ports
+
+    # Call the RPC function to get service ports
+    ports = await get_service_ports(
+        rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        service_key=service_key,
+        service_version=service_version,
+    )
+
+    # Validate the response
+    assert isinstance(ports, list)
+    # Each port should have expected fields
+    for port in ports:
+        assert hasattr(port, "kind")
+        assert hasattr(port, "key")
+        assert hasattr(port, "port")
+
+
+async def test_rpc_get_service_ports_not_found(
+    background_sync_task_mocked: None,
+    mocked_director_rest_api: MockRouter,
+    rpc_client: RabbitMQRPCClient,
+    product_name: ProductName,
+    user_id: UserID,
+    app: FastAPI,
+):
+    """Tests that appropriate error is raised when service does not exist"""
+    assert app
+
+    # Import the get_service_ports function from the client
+    from servicelib.rabbitmq.rpc_interfaces.catalog.services import get_service_ports
+
+    service_version = "1.0.0"
+    non_existent_key = "simcore/services/comp/non-existent-service"
+
+    # Test service not found scenario
+    with pytest.raises(CatalogItemNotFoundError, match="non-existent-service"):
+        await get_service_ports(
+            rpc_client,
+            product_name=product_name,
+            user_id=user_id,
+            service_key=non_existent_key,
+            service_version=service_version,
+        )
+
+
+async def test_rpc_get_service_ports_permission_denied(
+    background_sync_task_mocked: None,
+    mocked_director_rest_api: MockRouter,
+    rpc_client: RabbitMQRPCClient,
+    product_name: ProductName,
+    user: dict[str, Any],
+    user_id: UserID,
+    app: FastAPI,
+    create_fake_service_data: Callable,
+    services_db_tables_injector: Callable,
+):
+    """Tests that appropriate error is raised when user doesn't have permission"""
+    assert app
+
+    # Import the get_service_ports function from the client
+    from servicelib.rabbitmq.rpc_interfaces.catalog.services import get_service_ports
+
+    # Create a service with restricted access
+    restricted_service_key = "simcore/services/comp/restricted-service"
+    service_version = "1.0.0"
+
+    fake_restricted_service = create_fake_service_data(
+        restricted_service_key,
+        service_version,
+        team_access=None,
+        everyone_access=None,
+        product=product_name,
+    )
+
+    # Modify access rights to restrict access
+    if "access_rights" in fake_restricted_service:
+        # Remove user's access if present
+        if user["primary_gid"] in fake_restricted_service["access_rights"]:
+            fake_restricted_service["access_rights"].pop(user["primary_gid"])
+
+    await services_db_tables_injector([fake_restricted_service])
+
+    # Attempt to access without permission
+    with pytest.raises(CatalogForbiddenError):
+        await get_service_ports(
+            rpc_client,
+            product_name=product_name,
+            user_id=UserID("different-user"),  # Use a different user ID
+            service_key=restricted_service_key,
+            service_version=service_version,
+        )
+
+
+async def test_rpc_get_service_ports_validation_error(
+    background_sync_task_mocked: None,
+    mocked_director_rest_api: MockRouter,
+    rpc_client: RabbitMQRPCClient,
+    product_name: ProductName,
+    user_id: UserID,
+    app: FastAPI,
+):
+    """Tests validation error handling for invalid service key format"""
+    assert app
+
+    # Import the get_service_ports function from the client
+    from servicelib.rabbitmq.rpc_interfaces.catalog.services import get_service_ports
+
+    # Test with invalid service key format
+    with pytest.raises(ValidationError, match="service_key"):
+        await get_service_ports(
+            rpc_client,
+            product_name=product_name,
+            user_id=user_id,
+            service_key="invalid-service-key-format",
+            service_version="1.0.0",
+        )
