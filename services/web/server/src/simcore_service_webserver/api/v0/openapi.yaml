@@ -8726,10 +8726,10 @@ components:
       title: ComputationGet
     ComputationRunRestGet:
       properties:
-        project_uuid:
+        projectUuid:
           type: string
           format: uuid
-          title: Project Uuid
+          title: Projectuuid
         iteration:
           type: integer
           title: Iteration
@@ -8738,31 +8738,31 @@ components:
         info:
           type: object
           title: Info
-        submitted_at:
+        submittedAt:
           type: string
           format: date-time
-          title: Submitted At
-        started_at:
+          title: Submittedat
+        startedAt:
           anyOf:
           - type: string
             format: date-time
           - type: 'null'
-          title: Started At
-        ended_at:
+          title: Startedat
+        endedAt:
           anyOf:
           - type: string
             format: date-time
           - type: 'null'
-          title: Ended At
+          title: Endedat
       type: object
       required:
-      - project_uuid
+      - projectUuid
       - iteration
       - state
       - info
-      - submitted_at
-      - started_at
-      - ended_at
+      - submittedAt
+      - startedAt
+      - endedAt
       title: ComputationRunRestGet
     ComputationStart:
       properties:
@@ -8799,14 +8799,14 @@ components:
       title: ComputationStarted
     ComputationTaskRestGet:
       properties:
-        project_uuid:
+        projectUuid:
           type: string
           format: uuid
-          title: Project Uuid
-        node_id:
+          title: Projectuuid
+        nodeId:
           type: string
           format: uuid
-          title: Node Id
+          title: Nodeid
         state:
           $ref: '#/components/schemas/RunningState'
         progress:
@@ -8815,27 +8815,27 @@ components:
         image:
           type: object
           title: Image
-        started_at:
+        startedAt:
           anyOf:
           - type: string
             format: date-time
           - type: 'null'
-          title: Started At
-        ended_at:
+          title: Startedat
+        endedAt:
           anyOf:
           - type: string
             format: date-time
           - type: 'null'
-          title: Ended At
+          title: Endedat
       type: object
       required:
-      - project_uuid
-      - node_id
+      - projectUuid
+      - nodeId
       - state
       - progress
       - image
-      - started_at
-      - ended_at
+      - startedAt
+      - endedAt
       title: ComputationTaskRestGet
     ConnectServiceToPricingPlanBodyParams:
       properties:

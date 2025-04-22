@@ -26,7 +26,7 @@ from ..application_settings import get_application_settings
 from ..db.plugin import get_database_engine
 from ..products import products_service
 from ..products.models import Product
-from ..projects import api as projects_service
+from ..projects import projects_wallets_service
 from ..users import preferences_api as user_preferences_service
 from ..users.exceptions import UserDefaultWalletNotFoundError
 from ..wallets import api as wallets_service
@@ -204,7 +204,7 @@ async def get_wallet_info(
         product.is_payment_enabled and app_settings.WEBSERVER_CREDIT_COMPUTATION_ENABLED
     ):
         return None
-    project_wallet = await projects_service.get_project_wallet(
+    project_wallet = await projects_wallets_service.get_project_wallet(
         app, project_id=project_id
     )
     if project_wallet is None:
@@ -219,7 +219,7 @@ async def get_wallet_info(
         project_wallet_id = TypeAdapter(WalletID).validate_python(
             user_default_wallet_preference.value
         )
-        await projects_service.connect_wallet_to_project(
+        await projects_wallets_service.connect_wallet_to_project(
             app,
             product_name=product_name,
             project_id=project_id,

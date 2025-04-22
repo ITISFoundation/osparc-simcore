@@ -180,7 +180,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
       const fetchPromise = dataStore.exportData(paths);
       const pollTasks = osparc.store.PollTasks.getInstance();
       pollTasks.createPollingTask(fetchPromise)
-        .then(task => this.__exportDataTaskReceived(task))
+        .then(task => osparc.task.ExportData.exportDataTaskReceived(task))
         .catch(err => osparc.FlashMessenger.logError(err, this.tr("Unsuccessful files download")));
     },
 
@@ -243,71 +243,6 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
           .then(task => this.__deleteTaskReceived(task, paths))
           .catch(err => osparc.FlashMessenger.logError(err, this.tr("Unsuccessful files deletion")));
       }
-    },
-
-    __exportDataTaskReceived: function(task) {
-      const exportDataTaskUI = new osparc.task.ExportData();
-      exportDataTaskUI.setTask(task);
-      osparc.task.TasksContainer.getInstance().addTaskUI(exportDataTaskUI);
-
-      const progressWindow = new osparc.ui.window.Progress(
-        this.tr("Downloading files"),
-        "@FontAwesome5Solid/download/14",
-        this.tr("Downloading files..."),
-      );
-      if (task.getAbortHref()) {
-        const cancelButton = progressWindow.addCancelButton();
-        cancelButton.setLabel(this.tr("Ignore"));
-        const abortButton = new qx.ui.form.Button().set({
-          label: this.tr("Cancel"),
-          center: true,
-          minWidth: 100,
-        });
-        abortButton.addListener("execute", () => task.abortRequested());
-        progressWindow.addButton(abortButton);
-        abortButton.set({
-          appearance: "danger-button",
-        });
-      }
-      progressWindow.open();
-
-      task.addListener("updateReceived", e => {
-        const data = e.getData();
-        if (data["task_progress"]) {
-          if ("message" in data["task_progress"] && data["task_progress"]["message"]) {
-            progressWindow.setMessage(data["task_progress"]["message"]);
-          }
-          progressWindow.setProgress(osparc.data.PollTask.extractProgress(data) * 100);
-        }
-      }, this);
-      task.addListener("resultReceived", e => {
-        const taskData = e.getData();
-        if (taskData["result"]) {
-          const params = {
-            url: {
-              locationId: 0,
-              fileUuid: encodeURIComponent(taskData["result"]),
-            }
-          };
-          osparc.data.Resources.fetch("storageLink", "getOne", params)
-            .then(data => {
-              if (data && data.link) {
-                const fileName = taskData["result"].split("/").pop();
-                osparc.utils.Utils.downloadLink(data.link, "GET", fileName);
-              }
-            })
-        }
-        progressWindow.close();
-      });
-      task.addListener("taskAborted", () => {
-        osparc.FlashMessenger.logAs(this.tr("Download aborted"), "WARNING");
-        progressWindow.close();
-      });
-      task.addListener("pollingError", e => {
-        const err = e.getData();
-        osparc.FlashMessenger.logError(err);
-        progressWindow.close();
-      });
     },
 
     __deleteTaskReceived: function(task, paths) {
