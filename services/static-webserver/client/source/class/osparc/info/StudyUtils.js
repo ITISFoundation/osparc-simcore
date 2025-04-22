@@ -104,6 +104,20 @@ qx.Class.define("osparc.info.StudyUtils", {
     /**
       * @param study {osparc.data.model.Study} Study Model
       */
+    createShared: function(study) {
+      const isShared = new qx.ui.basic.Label();
+      const populateLabel = () => {
+        const nCollabs = Object.keys(study.getAccessRights()).length;
+        isShared.setValue(nCollabs === 1 ? qx.locale.Manager.tr("Not Shared") : "+" + String(nCollabs-1));
+      }
+      study.addListener("changeAccessRights", () => populateLabel());
+      populateLabel();
+      return isShared;
+    },
+
+    /**
+      * @param study {osparc.data.model.Study} Study Model
+      */
     createClassifiers: function(study) {
       const nClassifiers = new qx.ui.basic.Label();
       study.bind("classifiers", nClassifiers, "value", {

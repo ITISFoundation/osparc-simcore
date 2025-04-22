@@ -2,6 +2,7 @@ from functools import cached_property
 
 from pydantic.networks import AnyUrl
 from pydantic.types import SecretStr
+from pydantic_settings import SettingsConfigDict
 
 from .base import BaseCustomSettings
 from .basic_types import PortInt
@@ -33,3 +34,17 @@ class RabbitSettings(BaseCustomSettings):
             )
         )
         return rabbit_dsn
+
+    model_config = SettingsConfigDict(
+        json_schema_extra={
+            "examples": [
+                # minimal required
+                {
+                    "RABBIT_SECURE": "1",
+                    "RABBIT_HOST": "localhost",
+                    "RABBIT_USER": "user",
+                    "RABBIT_PASSWORD": "foobar",  # NOSONAR
+                }
+            ],
+        }
+    )

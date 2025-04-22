@@ -42,7 +42,7 @@ qx.Class.define("osparc.form.tag.TagManager", {
       if (!title) {
         title = qx.locale.Manager.tr("Apply Tags");
       }
-      return osparc.ui.window.Window.popUpInWindow(tagManager, title, 280, null).set({
+      return osparc.ui.window.Window.popUpInWindow(tagManager, title, 300, null).set({
         allowMinimize: false,
         allowMaximize: false,
         showMinimize: false,
