@@ -140,9 +140,12 @@ COPY --chown=scu:scu --from=prod-only-deps  ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 COPY --chown=scu:scu services/resource-usage-tracker/docker services/resource-usage-tracker/docker
 RUN chmod +x services/resource-usage-tracker/docker/*.sh
 
-HEALTHCHECK --interval=10s \
+# https://docs.docker.com/reference/dockerfile/#healthcheck
+HEALTHCHECK \
+  --interval=10s \
   --timeout=5s \
-  --start-period=5s \
+  --start-period=20s \
+  --start-interval=1s \
   --retries=5 \
   CMD ["python3", "services/resource-usage-tracker/docker/healthcheck.py", "http://localhost:8000/"]
 
