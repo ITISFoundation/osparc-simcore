@@ -751,6 +751,105 @@ async def test_search_and_pre_registration(
 
 
 @pytest.mark.parametrize(
+    "user_role",
+    [
+        UserRole.PRODUCT_OWNER,
+    ],
+)
+async def test_list_users_for_admin(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    account_request_form: dict[str, Any],
+    faker: Faker,
+):
+    assert client.app
+
+    # Create some pre-registered users
+    pre_registered_users = []
+    for _ in range(3):
+        form_data = account_request_form.copy()
+        form_data["firstName"] = faker.first_name()
+        form_data["lastName"] = faker.last_name()
+        form_data["email"] = faker.email()
+
+        resp = await client.post("/v0/admin/users:pre-register", json=form_data)
+        assert resp.status == status.HTTP_200_OK
+        pre_registered_data = await resp.json()
+        pre_registered_users.append(pre_registered_data)
+
+    # Register one of the pre-registered users
+    new_user = await simcore_service_webserver.login._auth_service.create_user(
+        client.app,
+        email=pre_registered_users[0]["data"]["email"],
+        password=DEFAULT_TEST_PASSWORD,
+        status_upon_creation=UserStatus.ACTIVE,
+        expires_at=None,
+    )
+
+    # Test pagination (page 1, limit 2)
+    url = client.app.router["list_users_for_admin"].url_for()
+    resp = await client.get(f"{url}", params={"page": 1, "per_page": 2})
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    # Verify pagination structure
+    assert "items" in data
+    assert "pagination" in data
+    assert data["pagination"]["page"] == 1
+    assert data["pagination"]["per_page"] == 2
+    assert data["pagination"]["total"] >= 1  # At least the logged user
+
+    # Test pagination (page 2, limit 2)
+    resp = await client.get(f"{url}", params={"page": 2, "per_page": 2})
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert data["pagination"]["page"] == 2
+
+    # Test filtering by approval status (only approved users)
+    resp = await client.get(f"{url}", params={"approved": True})
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    # All items should be registered users with status
+    for item in data["items"]:
+        user = UserForAdminGet(**item)
+        assert user.registered is True
+        assert user.status is not None
+
+    # Test filtering by approval status (only non-approved users)
+    resp = await client.get(f"{url}", params={"approved": False})
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    # All items should be non-registered or non-approved users
+    assert len(data["items"]) >= 2  # We created at least 2 non-registered users
+    for item in data["items"]:
+        user = UserForAdminGet(**item)
+        assert user.registered is False or user.status != UserStatus.ACTIVE
+
+    # Combine pagination and filtering
+    resp = await client.get(
+        f"{url}", params={"approved": True, "page": 1, "per_page": 1}
+    )
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert len(data["items"]) == 1
+    assert data["pagination"]["page"] == 1
+    assert data["pagination"]["per_page"] == 1
+
+    # Verify content of a specific user
+    resp = await client.get(f"{url}", params={"approved": True})
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    # Find the newly registered user in the list
+    registered_user = next(
+        (item for item in data["items"] if item["email"] == new_user["email"]),
+        None,
+    )
+    assert registered_user is not None
+
+    user = UserForAdminGet(**registered_user)
+    assert user.registered is True
+    assert user.status == UserStatus.ACTIVE
+    assert user.email == new_user["email"]
+
+
+@pytest.mark.parametrize(
     "institution_key",
     [
         "institution",
