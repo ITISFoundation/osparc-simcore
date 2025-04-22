@@ -19,10 +19,8 @@
 qx.Class.define("osparc.jobs.SubRunsTableModel", {
   extend: qx.ui.table.model.Remote,
 
-  construct(projectUuid) {
+  construct() {
     this.base(arguments);
-
-    this.setProjectUuid(projectUuid);
 
     const subJobsCols = osparc.jobs.SubRunsTable.COLS;
     const colLabels = Object.values(subJobsCols).map(col => col.label);
@@ -39,7 +37,8 @@ qx.Class.define("osparc.jobs.SubRunsTableModel", {
   properties: {
     projectUuid: {
       check: "String",
-      nullable: true
+      nullable: true,
+      apply: "__applyProjectUuid"
     },
 
     isFetching: {
@@ -50,6 +49,10 @@ qx.Class.define("osparc.jobs.SubRunsTableModel", {
   },
 
   members: {
+    __applyProjectUuid: function() {
+      // this.updateContent();
+    },
+
     // overridden
     _loadRowCount() {
       osparc.store.Jobs.getInstance().fetchSubJobs(this.getProjectUuid())

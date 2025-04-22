@@ -27,23 +27,14 @@ qx.Class.define("osparc.jobs.RunsAndClusters", {
       barPosition: "top",
     });
 
-    const jobsPage = new qx.ui.tabview.Page(this.tr("Jobs")).set({
-      layout: new qx.ui.layout.VBox(10)
-    });
-    const jobsBrowser = new osparc.jobs.RunsBrowser();
-    const scroller1 = new qx.ui.container.Scroll();
-    scroller1.add(jobsBrowser);
-    jobsPage.add(scroller1);
-    this.add(jobsPage);
+    const runsBrowser = this.getChildControl("runs-browser");
+    runsBrowser.addListener("runSelected", e => this.fireDataEvent("runSelected", e.getData()));
 
-    const clustersPage = new qx.ui.tabview.Page(this.tr("Clusters")).set({
-      layout: new qx.ui.layout.VBox(10)
-    });
-    const clustersBrowser = new osparc.jobs.ClustersBrowser();
-    const scroller2 = new qx.ui.container.Scroll();
-    scroller2.add(clustersBrowser);
-    clustersPage.add(scroller2);
-    this.add(clustersPage);
+    this.getChildControl("clusters-browser");
+  },
+
+  events: {
+    "runSelected": "qx.event.type.Data",
   },
 
   statics: {
@@ -57,4 +48,44 @@ qx.Class.define("osparc.jobs.RunsAndClusters", {
       return win;
     }
   },
+
+  members: {
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "jobs-page":
+          control = new qx.ui.tabview.Page(this.tr("Runs")).set({
+            layout: new qx.ui.layout.VBox(10)
+          });
+          this.add(control);
+          break;
+        case "runs-browser": {
+          control = new osparc.jobs.RunsBrowser();
+          const scroller = new qx.ui.container.Scroll();
+          scroller.add(control);
+          this.getChildControl("jobs-page").add(scroller);
+          break;
+        }
+        case "clusters-page":
+          control = new qx.ui.tabview.Page(this.tr("Clusters")).set({
+            layout: new qx.ui.layout.VBox(10)
+          });
+          this.add(control);
+          break;
+        case "clusters-browser": {
+          control = new osparc.jobs.ClustersBrowser();
+          const scroller = new qx.ui.container.Scroll();
+          scroller.add(control);
+          this.getChildControl("clusters-page").add(scroller);
+          break;
+        }
+      }
+      return control || this.base(arguments, id);
+    },
+
+    reloadRuns: function() {
+      const runsBrowser = this.getChildControl("runs-browser");
+      runsBrowser.reloadRuns();
+    },
+  }
 });

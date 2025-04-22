@@ -36,6 +36,10 @@ qx.Class.define("osparc.jobs.RunsBrowser", {
     });
   },
 
+  events: {
+    "runSelected": "qx.event.type.Data",
+  },
+
   members: {
     _createChildControlImpl: function(id) {
       let control;
@@ -63,11 +67,17 @@ qx.Class.define("osparc.jobs.RunsBrowser", {
           break;
         case "jobs-table":
           control = new osparc.jobs.RunsTable();
+          control.addListener("runSelected", e => this.fireDataEvent("runSelected", e.getData()));
           this._add(control);
           break;
       }
 
       return control || this.base(arguments, id);
+    },
+
+    reloadRuns: function() {
+      const runsTable = this.getChildControl("jobs-table");
+      runsTable.reloadRuns();
     },
   }
 })

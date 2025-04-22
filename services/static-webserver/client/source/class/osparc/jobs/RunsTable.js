@@ -47,6 +47,10 @@ qx.Class.define("osparc.jobs.RunsTable", {
     this.__attachHandlers();
   },
 
+  events: {
+    "runSelected": "qx.event.type.Data",
+  },
+
   statics: {
     COLS: {
       PROJECT_UUID: {
@@ -140,11 +144,14 @@ qx.Class.define("osparc.jobs.RunsTable", {
       const rowData = this.getTableModel().getRowData(row);
       switch (action) {
         case "info": {
+          this.fireDataEvent("runSelected", rowData["projectUuid"]);
+          /*
           const subJobsTable = new osparc.jobs.SubRunsTable(rowData["projectUuid"]);
           osparc.ui.window.Window.popUpInWindow(subJobsTable, rowData["projectName"], 1000, 500).set({
             clickAwayClose: false,
             showClose: true
           });
+          */
           break;
         }
         case "stop":
