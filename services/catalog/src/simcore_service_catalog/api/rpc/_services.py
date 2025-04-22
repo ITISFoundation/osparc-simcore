@@ -199,12 +199,13 @@ async def check_for_service(
     """Checks whether service exists and can be accessed, otherwise it raise"""
     assert app.state.engine  # nosec
 
-    await catalog_services.check_catalog_service(
+    await catalog_services.check_catalog_service_permissions(
         repo=ServicesRepository(app.state.engine),
         product_name=product_name,
         user_id=user_id,
         service_key=service_key,
         service_version=service_version,
+        permission="read",
     )
 
 

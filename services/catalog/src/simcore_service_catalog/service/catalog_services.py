@@ -2,6 +2,7 @@
 
 import logging
 from contextlib import suppress
+from typing import Literal
 
 from models_library.api_schemas_catalog.services import (
     LatestServiceGet,
@@ -226,12 +227,13 @@ async def get_catalog_service(
     service_version: ServiceVersion,
 ) -> ServiceGetV2:
 
-    access_rights = await check_catalog_service(
+    access_rights = await check_catalog_service_permissions(
         repo=repo,
         product_name=product_name,
         user_id=user_id,
         service_key=service_key,
         service_version=service_version,
+        permission="read",
     )
 
     service = await repo.get_service_with_history(
@@ -287,12 +289,13 @@ async def update_catalog_service(
         )
 
     # Check access rights first
-    access_rights = await check_catalog_service(
+    access_rights = await check_catalog_service_permissions(
         repo=repo,
         product_name=product_name,
         user_id=user_id,
         service_key=service_key,
         service_version=service_version,
+        permission="write",
     )
 
     # Updates service_meta_data
@@ -349,18 +352,29 @@ async def update_catalog_service(
     )
 
 
-async def check_catalog_service(
+async def check_catalog_service_permissions(
     repo: ServicesRepository,
+    *,
     product_name: ProductName,
     user_id: UserID,
     service_key: ServiceKey,
     service_version: ServiceVersion,
+    permission: Literal["read", "write"],
 ) -> list[ServiceAccessRightsAtDB]:
-    """Raises if the service canot be read
+    """Raises if the service cannot be accessed with the specified permission level
+
+    Args:
+        repo: Repository for services
+        product_name: Product name
+        user_id: User ID
+        service_key: Service key
+        service_version: Service version
+        permission: Permission level to check, either "read" or "write".
+                    Note that write permission implies read permission.
 
     Raises:
         CatalogItemNotFoundError: service (key,version) not found
-        CatalogForbiddenError: insufficient access rights to get read accss
+        CatalogForbiddenError: insufficient access rights to get the requested access
     """
 
     access_rights = await repo.get_service_access_rights(
@@ -377,12 +391,23 @@ async def check_catalog_service(
             product_name=product_name,
         )
 
-    if not await repo.can_get_service(
-        product_name=product_name,
-        user_id=user_id,
-        key=service_key,
-        version=service_version,
-    ):
+    has_permission = False
+    if permission == "read":
+        has_permission = await repo.can_get_service(
+            product_name=product_name,
+            user_id=user_id,
+            key=service_key,
+            version=service_version,
+        )
+    elif permission == "write":
+        has_permission = await repo.can_update_service(
+            product_name=product_name,
+            user_id=user_id,
+            key=service_key,
+            version=service_version,
+        )
+
+    if not has_permission:
         raise CatalogForbiddenError(
             name=f"{service_key}:{service_version}",
             service_key=service_key,
@@ -549,12 +574,13 @@ async def get_user_services_ports(
     """
 
     # Check access rights first
-    await check_catalog_service(
+    await check_catalog_service_permissions(
         repo=repo,
         product_name=product_name,
         user_id=user_id,
         service_key=service_key,
         service_version=service_version,
+        permission="read",
     )
 
     # Get service ports from manifest

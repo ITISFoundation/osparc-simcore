@@ -292,8 +292,6 @@ async def test_rpc_get_service_access_rights(
     user_id: UserID,
     other_user: dict[str, Any],
     app: FastAPI,
-    create_fake_service_data: Callable,
-    target_product: ProductName,
 ):
     assert app
     assert user["id"] == user_id
