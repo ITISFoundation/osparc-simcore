@@ -1,5 +1,14 @@
 import re
+from types import MappingProxyType
 from typing import Final
+
+from .services_constants import (
+    COMPUTATIONAL_SERVICE_KEY_PREFIX,
+    DYNAMIC_SERVICE_KEY_PREFIX,
+    FRONTEND_SERVICE_KEY_PREFIX,
+    SERVICE_TYPE_TO_NAME_MAP,
+)
+from .services_enums import ServiceType
 
 PROPERTY_TYPE_RE = r"^(number|integer|boolean|string|ref_contentSchema|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$"
 PROPERTY_TYPE_TO_PYTHON_TYPE_MAP = {
@@ -11,34 +20,59 @@ PROPERTY_TYPE_TO_PYTHON_TYPE_MAP = {
 
 FILENAME_RE = r".+"
 
-
 # e.g. simcore/services/comp/opencor
 SERVICE_KEY_RE: Final[re.Pattern[str]] = re.compile(
     r"^simcore/services/"
-    r"(?P<type>(comp|dynamic|frontend))/"
+    rf"(?P<type>({ '|'.join(SERVICE_TYPE_TO_NAME_MAP.values()) }))/"
     r"(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*"
     r"(?P<name>[a-z0-9-_]+[a-z0-9])$"
 )
+
 # e.g. simcore%2Fservices%2Fcomp%2Fopencor
 SERVICE_ENCODED_KEY_RE: Final[re.Pattern[str]] = re.compile(
     r"^simcore%2Fservices%2F"
-    r"(?P<type>(comp|dynamic|frontend))%2F"
+    rf"(?P<type>({'|'.join(SERVICE_TYPE_TO_NAME_MAP.values())}))%2F"
     r"(?P<subdir>[a-z0-9][a-z0-9_.-]*%2F)*"
     r"(?P<name>[a-z0-9-_]+[a-z0-9])$"
 )
 
-DYNAMIC_SERVICE_KEY_RE: Final[re.Pattern[str]] = re.compile(
-    r"^simcore/services/dynamic/"
-    r"(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*"
-    r"(?P<name>[a-z0-9-_]+[a-z0-9])$"
-)
-DYNAMIC_SERVICE_KEY_FORMAT = "simcore/services/dynamic/{service_name}"
+
+def _create_key_regex(service_type: ServiceType) -> re.Pattern[str]:
+    return re.compile(
+        rf"^simcore/services/{SERVICE_TYPE_TO_NAME_MAP[service_type]}/"
+        r"(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*"
+        r"(?P<name>[a-z0-9-_]+[a-z0-9])$"
+    )
 
 
-# Computational regex & format
-COMPUTATIONAL_SERVICE_KEY_RE: Final[re.Pattern[str]] = re.compile(
-    r"^simcore/services/comp/"
-    r"(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*"
-    r"(?P<name>[a-z0-9-_]+[a-z0-9])$"
+def _create_key_format(service_type: ServiceType) -> str:
+    return f"simcore/services/{SERVICE_TYPE_TO_NAME_MAP[service_type]}/{{service_name}}"
+
+
+COMPUTATIONAL_SERVICE_KEY_RE: Final[re.Pattern[str]] = _create_key_regex(
+    ServiceType.COMPUTATIONAL
 )
-COMPUTATIONAL_SERVICE_KEY_FORMAT: Final[str] = "simcore/services/comp/{service_name}"
+COMPUTATIONAL_SERVICE_KEY_FORMAT: Final[str] = _create_key_format(
+    ServiceType.COMPUTATIONAL
+)
+
+DYNAMIC_SERVICE_KEY_RE: Final[re.Pattern[str]] = _create_key_regex(ServiceType.DYNAMIC)
+DYNAMIC_SERVICE_KEY_FORMAT: Final[str] = _create_key_format(ServiceType.DYNAMIC)
+
+FRONTEND_SERVICE_KEY_RE: Final[re.Pattern[str]] = _create_key_regex(
+    ServiceType.FRONTEND
+)
+FRONTEND_SERVICE_KEY_FORMAT: Final[str] = _create_key_format(ServiceType.FRONTEND)
+
+
+SERVICE_TYPE_TO_PREFIX_MAP = MappingProxyType(
+    {
+        ServiceType.COMPUTATIONAL: COMPUTATIONAL_SERVICE_KEY_PREFIX,
+        ServiceType.DYNAMIC: DYNAMIC_SERVICE_KEY_PREFIX,
+        ServiceType.FRONTEND: FRONTEND_SERVICE_KEY_PREFIX,
+    }
+)
+
+assert all(  # nosec
+    not prefix.endswith("/") for prefix in SERVICE_TYPE_TO_PREFIX_MAP.values()
+), "Service type prefixes must not end with '/'"
