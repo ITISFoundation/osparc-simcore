@@ -14,20 +14,20 @@ _logger = logging.getLogger(__name__)
 async def postgres_lifespan(app: FastAPI, state: State) -> AsyncIterator[State]:
     app.state.engine = state[PostgresLifespanState.POSTGRES_ASYNC_ENGINE]
 
-    app.state.postgres_health = PostgresLiveness(app)
+    app.state.postgres_liveness = PostgresLiveness(app)
 
     with log_context(_logger, logging.INFO, msg="setup postgres health"):
-        await app.state.postgres_health.setup()
+        await app.state.postgres_liveness.setup()
 
     yield {}
 
     with log_context(_logger, logging.INFO, msg="teardown postgres health"):
-        await app.state.postgres_health.teardown()
+        await app.state.postgres_liveness.teardown()
 
 
 def get_postgres_liveness(app: FastAPI) -> PostgresLiveness:
-    assert isinstance(app.state.postgres_health, PostgresLiveness)  # nosec
-    return app.state.postgres_health
+    assert isinstance(app.state.postgres_liveness, PostgresLiveness)  # nosec
+    return app.state.postgres_liveness
 
 
 __all__: tuple[str, ...] = ("PostgresLiveness",)
