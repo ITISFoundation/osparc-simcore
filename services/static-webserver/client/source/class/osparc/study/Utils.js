@@ -389,10 +389,8 @@ qx.Class.define("osparc.study.Utils", {
                 }
                 resolve(defaultIcon);
               });
-          } else if (wbServices.length > 1) {
-            resolve("osparc/icons/diagram.png");
           } else {
-            resolve(defaultIcon);
+            resolve("osparc/icons/diagram.png");
           }
         }
       });
