@@ -1,10 +1,12 @@
 from common_library.errors_classes import OsparcErrorMixin
 from fastapi import FastAPI
+from servicelib.db_async_engine import connect_to_db
 from servicelib.utils import logged_gather
+from settings_library.postgres import PostgresSettings
 
-from .postgres import wait_for_postgres_liveness
 from .rabbitmq import wait_for_rabbitmq_liveness
 from .registry import wait_for_registries_liveness
+from .settings import ApplicationSettings
 from .storage import wait_for_storage_liveness
 
 
@@ -21,9 +23,13 @@ def setup_check_dependencies(app: FastAPI) -> None:
     # start rapidly, for this reason they are run in
     # parallel.
     async def on_startup() -> None:
+        app_settings = app.state.settings
+        assert isinstance(app_settings, ApplicationSettings)  # nosec
+        postgres_settings = app_settings.POSTGRES_SETTINGS
+        assert isinstance(postgres_settings, PostgresSettings)  # nosec
         liveliness_results = await logged_gather(
             *[
-                wait_for_postgres_liveness(app),
+                connect_to_db(app, postgres_settings),
                 wait_for_rabbitmq_liveness(app),
                 wait_for_registries_liveness(app),
                 wait_for_storage_liveness(app),

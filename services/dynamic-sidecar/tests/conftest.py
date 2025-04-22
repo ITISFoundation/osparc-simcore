@@ -152,7 +152,7 @@ def mock_storage_check(mocker: MockerFixture) -> None:
 @pytest.fixture
 def mock_postgres_check(mocker: MockerFixture) -> None:
     mocker.patch(
-        "simcore_service_dynamic_sidecar.core.external_dependencies.wait_for_postgres_liveness",
+        "simcore_service_dynamic_sidecar.core.external_dependencies.connect_to_db",
     )
 
 
