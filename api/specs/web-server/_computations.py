@@ -12,7 +12,7 @@ from models_library.api_schemas_webserver.computations import (
 )
 from models_library.generics import Envelope
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.director_v2._controller.computations_restp import (
+from simcore_service_webserver.director_v2._controller.computations_rest import (
     ComputationRunListQueryParams,
     ComputationTaskListQueryParams,
     ComputationTaskPathParams,
