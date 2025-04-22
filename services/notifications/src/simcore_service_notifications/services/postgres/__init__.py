@@ -6,8 +6,7 @@ from fastapi_lifespan_manager import State
 from servicelib.fastapi.postgres_lifespan import PostgresLifespanState
 from servicelib.logging_utils import log_context
 
-from ...core.settings import ApplicationSettings
-from ._health import PostgresHealth
+from ._liveness import PostgresLiveness
 
 _logger = logging.getLogger(__name__)
 
@@ -15,7 +14,7 @@ _logger = logging.getLogger(__name__)
 async def postgres_lifespan(app: FastAPI, state: State) -> AsyncIterator[State]:
     app.state.engine = state[PostgresLifespanState.POSTGRES_ASYNC_ENGINE]
 
-    app.state.postgres_health = PostgresHealth(app)
+    app.state.postgres_health = PostgresLiveness(app)
 
     with log_context(_logger, logging.INFO, msg="setup postgres health"):
         await app.state.postgres_health.setup()
@@ -26,9 +25,9 @@ async def postgres_lifespan(app: FastAPI, state: State) -> AsyncIterator[State]:
         await app.state.postgres_health.teardown()
 
 
-def get_postgres_health(app: FastAPI) -> PostgresHealth:
-    assert isinstance(app.state.postgres_health, PostgresHealth)  # nosec
+def get_postgres_liveness(app: FastAPI) -> PostgresLiveness:
+    assert isinstance(app.state.postgres_health, PostgresLiveness)  # nosec
     return app.state.postgres_health
 
 
-__all__: tuple[str, ...] = ("PostgresHealth",)
+__all__: tuple[str, ...] = ("PostgresLiveness",)

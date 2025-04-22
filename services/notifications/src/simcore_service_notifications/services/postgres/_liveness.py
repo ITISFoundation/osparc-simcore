@@ -13,7 +13,7 @@ from servicelib.logging_utils import log_catch
 _logger = logging.getLogger(__name__)
 
 
-class PostgresHealth:
+class PostgresLiveness:
     def __init__(self, app: FastAPI) -> None:
         self.app = app
 

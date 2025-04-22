@@ -9,8 +9,8 @@ from models_library.errors import (
 )
 from servicelib.rabbitmq import RabbitMQClient
 
-from ...services.postgres import PostgresHealth
-from .dependencies import get_postgres_health, get_rabbitmq_client
+from ...services.postgres import PostgresLiveness
+from .dependencies import get_postgres_liveness, get_rabbitmq_client
 
 router = APIRouter()
 
@@ -22,12 +22,12 @@ class HealthCheckError(RuntimeError):
 @router.get("/", response_model=HealthCheckGet)
 async def check_service_health(
     rabbitmq_client: Annotated[RabbitMQClient, Depends(get_rabbitmq_client)],
-    postgres_health: Annotated[PostgresHealth, Depends(get_postgres_health)],
+    postgres_liveness: Annotated[PostgresLiveness, Depends(get_postgres_liveness)],
 ):
     if not rabbitmq_client.healthy:
         raise HealthCheckError(RABBITMQ_CLIENT_UNHEALTHY_MSG)
 
-    if not postgres_health.is_responsive:
+    if not postgres_liveness.is_responsive:
         raise HealthCheckError(POSRGRES_DATABASE_UNHEALTHY_MSG)
 
     return HealthCheckGet(timestamp=f"{__name__}@{arrow.utcnow().datetime.isoformat()}")
