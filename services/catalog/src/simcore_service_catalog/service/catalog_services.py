@@ -226,19 +226,13 @@ async def get_catalog_service(
     service_version: ServiceVersion,
 ) -> ServiceGetV2:
 
-    access_rights = await repo.get_service_access_rights(
-        key=service_key,
-        version=service_version,
+    access_rights = await check_catalog_service(
+        repo=repo,
         product_name=product_name,
+        user_id=user_id,
+        service_key=service_key,
+        service_version=service_version,
     )
-    if not access_rights:
-        raise CatalogItemNotFoundError(
-            name=f"{service_key}:{service_version}",
-            service_key=service_key,
-            service_version=service_version,
-            user_id=user_id,
-            product_name=product_name,
-        )
 
     service = await repo.get_service_with_history(
         product_name=product_name,
@@ -292,32 +286,14 @@ async def update_catalog_service(
             product_name=product_name,
         )
 
-    access_rights = await repo.get_service_access_rights(
-        key=service_key, version=service_version, product_name=product_name
-    )
-
-    if not access_rights:
-        raise CatalogItemNotFoundError(
-            name=f"{service_key}:{service_version}",
-            service_key=service_key,
-            service_version=service_version,
-            user_id=user_id,
-            product_name=product_name,
-        )
-
-    if not await repo.can_update_service(
+    # Check access rights first
+    access_rights = await check_catalog_service(
+        repo=repo,
         product_name=product_name,
         user_id=user_id,
-        key=service_key,
-        version=service_version,
-    ):
-        raise CatalogForbiddenError(
-            name=f"{service_key}:{service_version}",
-            service_key=service_key,
-            service_version=service_version,
-            user_id=user_id,
-            product_name=product_name,
-        )
+        service_key=service_key,
+        service_version=service_version,
+    )
 
     # Updates service_meta_data
     await repo.update_service(
@@ -379,7 +355,7 @@ async def check_catalog_service(
     user_id: UserID,
     service_key: ServiceKey,
     service_version: ServiceVersion,
-) -> None:
+) -> list[ServiceAccessRightsAtDB]:
     """Raises if the service canot be read
 
     Raises:
@@ -414,6 +390,8 @@ async def check_catalog_service(
             user_id=user_id,
             product_name=product_name,
         )
+
+    return access_rights
 
 
 async def batch_get_user_services(
@@ -569,34 +547,15 @@ async def get_user_services_ports(
         CatalogItemNotFoundError: When service is not found
         CatalogForbiddenError: When user doesn't have access rights
     """
-    # Check access rights first
-    access_rights = await repo.get_service_access_rights(
-        key=service_key,
-        version=service_version,
-        product_name=product_name,
-    )
-    if not access_rights:
-        raise CatalogItemNotFoundError(
-            name=f"{service_key}:{service_version}",
-            service_key=service_key,
-            service_version=service_version,
-            user_id=user_id,
-            product_name=product_name,
-        )
 
-    if not await repo.can_get_service(
+    # Check access rights first
+    await check_catalog_service(
+        repo=repo,
         product_name=product_name,
         user_id=user_id,
-        key=service_key,
-        version=service_version,
-    ):
-        raise CatalogForbiddenError(
-            name=f"{service_key}:{service_version}",
-            service_key=service_key,
-            service_version=service_version,
-            user_id=user_id,
-            product_name=product_name,
-        )
+        service_key=service_key,
+        service_version=service_version,
+    )
 
     # Get service ports from manifest
     return await manifest.get_service_ports(
