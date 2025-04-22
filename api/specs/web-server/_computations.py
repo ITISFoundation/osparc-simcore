@@ -1,14 +1,22 @@
 from typing import Annotated
 
+from _common import as_query
 from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.computations import (
     ComputationGet,
     ComputationPathParams,
+    ComputationRunRestGet,
     ComputationStart,
     ComputationStarted,
+    ComputationTaskRestGet,
 )
 from models_library.generics import Envelope
 from simcore_service_webserver._meta import API_VTAG
+from simcore_service_webserver.director_v2._controller.computations_rest import (
+    ComputationRunListQueryParams,
+    ComputationTaskListQueryParams,
+    ComputationTaskPathParams,
+)
 
 router = APIRouter(
     prefix=f"/{API_VTAG}",
@@ -53,3 +61,22 @@ async def start_computation(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def stop_computation(_path: Annotated[ComputationPathParams, Depends()]): ...
+
+
+@router.get(
+    "/computations/-/iterations/latest",
+    response_model=Envelope[list[ComputationRunRestGet]],
+)
+async def list_computations_latest_iteration(
+    _query: Annotated[as_query(ComputationRunListQueryParams), Depends()],
+): ...
+
+
+@router.get(
+    "/computations/{project_id}/iterations/latest/tasks",
+    response_model=Envelope[list[ComputationTaskRestGet]],
+)
+async def list_computations_latest_iteration_tasks(
+    _query: Annotated[as_query(ComputationTaskListQueryParams), Depends()],
+    _path: Annotated[ComputationTaskPathParams, Depends()],
+): ...

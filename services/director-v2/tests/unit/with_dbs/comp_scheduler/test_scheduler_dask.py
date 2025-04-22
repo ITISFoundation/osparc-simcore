@@ -1451,7 +1451,6 @@ async def test_handling_scheduled_tasks_after_director_reboots(
         project_uuid=running_project.project.uuid,
         task_ids=[
             running_project.tasks[1].node_id,
-            running_project.tasks[2].node_id,
             running_project.tasks[3].node_id,
         ],
         expected_state=reboot_state.expected_task_state_group1,
@@ -1460,7 +1459,7 @@ async def test_handling_scheduled_tasks_after_director_reboots(
     await assert_comp_tasks(
         sqlalchemy_async_engine,
         project_uuid=running_project.project.uuid,
-        task_ids=[running_project.tasks[4].node_id],
+        task_ids=[running_project.tasks[2].node_id, running_project.tasks[4].node_id],
         expected_state=reboot_state.expected_task_state_group2,
         expected_progress=reboot_state.expected_task_progress_group2,
     )

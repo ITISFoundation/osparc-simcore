@@ -7,7 +7,7 @@ import functools
 import json
 import logging
 import os
-from collections.abc import AsyncIterable, AsyncIterator
+from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable
 from copy import deepcopy
 from datetime import timedelta
 from pathlib import Path
@@ -30,6 +30,8 @@ from pytest_simcore.helpers.monkeypatch_envs import (
     setenvs_from_envfile,
 )
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from servicelib.rabbitmq import RabbitMQRPCClient
+from settings_library.rabbit import RabbitSettings
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings
 from starlette.testclient import ASGI3App, TestClient
@@ -226,6 +228,15 @@ async def async_client(initialized_app: FastAPI) -> AsyncIterable[httpx.AsyncCli
         yield client
 
 
+@pytest.fixture
+async def rpc_client(
+    rabbit_service: RabbitSettings,
+    initialized_app: FastAPI,
+    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
+) -> RabbitMQRPCClient:
+    return await rabbitmq_rpc_client("client")
+
+
 @pytest.fixture()
 def minimal_app(client: TestClient) -> ASGI3App:
     # NOTICE that this app triggers events
@@ -278,11 +289,19 @@ def fake_workbench_complete_adjacency(
 
 @pytest.fixture
 def disable_rabbitmq(mocker: MockerFixture) -> None:
-    def mock_setup(app: FastAPI) -> None:
+    def rabbitmq_mock_setup(app: FastAPI) -> None:
         app.state.rabbitmq_client = AsyncMock()
 
+    def rpc_api_routes_mock_setup(app: FastAPI) -> None:
+        app.state.rabbitmq_rpc_server = AsyncMock()
+
     mocker.patch(
-        "simcore_service_director_v2.modules.rabbitmq.setup", side_effect=mock_setup
+        "simcore_service_director_v2.modules.rabbitmq.setup",
+        side_effect=rabbitmq_mock_setup,
+    )
+    mocker.patch(
+        "simcore_service_director_v2.core.application.setup_rpc_api_routes",
+        side_effect=rpc_api_routes_mock_setup,
     )
 
 
