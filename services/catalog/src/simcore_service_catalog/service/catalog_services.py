@@ -36,6 +36,7 @@ from ..models.services_db import (
     ServiceMetaDataDBPatch,
     ServiceWithHistoryDBGet,
 )
+from ..models.services_ports import ServicePort
 from ..repository.groups import GroupsRepository
 from ..repository.services import ServicesRepository
 from . import manifest
@@ -524,7 +525,7 @@ async def list_user_service_release_history(
 
     total_count, history = await repo.get_service_history_page(
         # NOTE: that the service history might be different for each user
-        # since access-rights are defined on a k:v basis
+        # since access rights are defined on a k:v basis
         product_name=product_name,
         user_id=user_id,
         key=service_key,
@@ -551,6 +552,58 @@ async def list_user_service_release_history(
     ]
 
     return total_count, items
+
+
+async def get_user_services_ports(
+    repo: ServicesRepository,
+    director_api: DirectorClient,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+) -> list[ServicePort]:
+    """Get service ports (inputs and outputs) for a specific service version.
+
+    Raises:
+        CatalogItemNotFoundError: When service is not found
+        CatalogForbiddenError: When user doesn't have access rights
+    """
+    # Check access rights first
+    access_rights = await repo.get_service_access_rights(
+        key=service_key,
+        version=service_version,
+        product_name=product_name,
+    )
+    if not access_rights:
+        raise CatalogItemNotFoundError(
+            name=f"{service_key}:{service_version}",
+            service_key=service_key,
+            service_version=service_version,
+            user_id=user_id,
+            product_name=product_name,
+        )
+
+    if not await repo.can_get_service(
+        product_name=product_name,
+        user_id=user_id,
+        key=service_key,
+        version=service_version,
+    ):
+        raise CatalogForbiddenError(
+            name=f"{service_key}:{service_version}",
+            service_key=service_key,
+            service_version=service_version,
+            user_id=user_id,
+            product_name=product_name,
+        )
+
+    # Get service ports from manifest
+    return await manifest.get_service_ports(
+        director_client=director_api,
+        key=service_key,
+        version=service_version,
+    )
 
 
 async def get_catalog_service_extras(
