@@ -39,6 +39,7 @@ async def trash_folder(request: web.Request):
         user_id=user_id,
         folder_id=path_params.folder_id,
         force_stop_first=query_params.force,
+        explicit=True,
     )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)

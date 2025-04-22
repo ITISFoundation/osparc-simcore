@@ -12,7 +12,7 @@ from ..users import api as users_service
 from . import _groups_repository as workspaces_groups_db
 from . import _workspaces_repository as workspaces_workspaces_repository
 from ._groups_repository import WorkspaceGroupGetDB
-from ._workspaces_service import check_user_workspace_access
+from ._workspaces_service_crud_read import check_user_workspace_access
 from .errors import WorkspaceAccessForbiddenError
 
 log = logging.getLogger(__name__)
