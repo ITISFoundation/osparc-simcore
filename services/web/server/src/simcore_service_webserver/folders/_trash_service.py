@@ -12,6 +12,7 @@ from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from models_library.users import UserID
+from models_library.workspaces import WorkspaceID
 from simcore_postgres_database.utils_repos import transaction_context
 from sqlalchemy.ext.asyncio import AsyncConnection
 
@@ -62,23 +63,24 @@ async def _check_exists_and_access(
     return workspace_is_private
 
 
-async def _folders_db_update(
+async def _folders_db_trashed_state_update(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
     product_name: ProductName,
     folder_id: FolderID,
     trashed_at: datetime | None,
-    trashed_by: UserID,
+    trashed_explicitly: bool,
+    trashed_by: UserID | None,
 ):
-    # EXPLICIT un/trash
+    # EXPLICIT or IMPLICIT un/trash
     await _folders_repository.update(
         app,
         connection,
         folders_id_or_ids=folder_id,
         product_name=product_name,
         trashed=trashed_at,
-        trashed_explicitly=trashed_at is not None,
+        trashed_explicitly=trashed_explicitly,
         trashed_by=trashed_by,
     )
 
@@ -110,6 +112,7 @@ async def trash_folder(
     user_id: UserID,
     folder_id: FolderID,
     force_stop_first: bool,
+    explicit: bool,
 ):
 
     workspace_is_private = await _check_exists_and_access(
@@ -122,25 +125,28 @@ async def trash_folder(
     async with transaction_context(get_asyncpg_engine(app)) as connection:
 
         # 1. Trash folder and children
-        await _folders_db_update(
+        await _folders_db_trashed_state_update(
             app,
             connection,
             folder_id=folder_id,
             product_name=product_name,
             trashed_at=trashed_at,
+            trashed_explicitly=explicit,
             trashed_by=user_id,
         )
 
         # 2. Trash all child projects that I am an owner
-        child_projects: list[
-            ProjectID
-        ] = await _folders_repository.get_projects_recursively_only_if_user_is_owner(
-            app,
-            connection,
-            folder_id=folder_id,
-            private_workspace_user_id_or_none=user_id if workspace_is_private else None,
-            user_id=user_id,
-            product_name=product_name,
+        child_projects: list[ProjectID] = (
+            await _folders_repository.get_projects_recursively_only_if_user_is_owner(
+                app,
+                connection,
+                folder_id=folder_id,
+                private_workspace_user_id_or_none=(
+                    user_id if workspace_is_private else None
+                ),
+                user_id=user_id,
+                product_name=product_name,
+            )
         )
 
         for project_id in child_projects:
@@ -169,23 +175,24 @@ async def untrash_folder(
     # 3. UNtrash
 
     # 3.1 UNtrash folder and children
-    await _folders_db_update(
+    await _folders_db_trashed_state_update(
         app,
         folder_id=folder_id,
         product_name=product_name,
         trashed_at=None,
-        trashed_by=user_id,
+        trashed_by=None,
+        trashed_explicitly=False,
     )
 
     # 3.2 UNtrash all child projects that I am an owner
-    child_projects: list[
-        ProjectID
-    ] = await _folders_repository.get_projects_recursively_only_if_user_is_owner(
-        app,
-        folder_id=folder_id,
-        private_workspace_user_id_or_none=user_id if workspace_is_private else None,
-        user_id=user_id,
-        product_name=product_name,
+    child_projects: list[ProjectID] = (
+        await _folders_repository.get_projects_recursively_only_if_user_is_owner(
+            app,
+            folder_id=folder_id,
+            private_workspace_user_id_or_none=user_id if workspace_is_private else None,
+            user_id=user_id,
+            product_name=product_name,
+        )
     )
 
     for project_id in child_projects:
@@ -227,7 +234,7 @@ async def list_explicitly_trashed_folders(
             user_id=user_id,
             product_name=product_name,
             text=None,
-            trashed=True,  # NOTE: lists only expliclty trashed!
+            trashed=True,  # NOTE: lists only explicitly trashed!
             offset=page_params.offset,
             limit=page_params.limit,
             order_by=OrderBy(field=IDStr("trashed"), direction=OrderDirection.ASC),
@@ -275,7 +282,7 @@ async def delete_trashed_folder(
         )
 
     # NOTE: this function deletes folder AND its content recursively!
-    await _folders_service.delete_folder(
+    await _folders_service.delete_folder_with_all_content(
         app, user_id=user_id, folder_id=folder_id, product_name=product_name
     )
 
@@ -298,7 +305,7 @@ async def batch_delete_trashed_folders_as_admin(
         (
             page_params.total_number_of_items,
             expired_trashed_folders,
-        ) = await _folders_repository.list_trashed_folders(
+        ) = await _folders_repository.list_folders_db_as_admin(
             app,
             trashed_explicitly=True,
             trashed_before=trashed_before,
@@ -323,4 +330,49 @@ async def batch_delete_trashed_folders_as_admin(
     if errors:
         raise FolderBatchDeleteError(
             errors=errors, trashed_before=trashed_before, product_name=product_name
+        )
+
+
+async def batch_delete_folders_with_content_in_root_workspace_as_admin(
+    app: web.Application,
+    *,
+    workspace_id: WorkspaceID,
+    product_name: ProductName,
+    fail_fast: bool,
+) -> None:
+    """
+    Deletes all folders recursively in the workspace root.
+
+    Raises:
+        FolderBatchDeleteError: If there are errors during the deletion process.
+    """
+    deleted_folder_ids: list[FolderID] = []
+    errors: list[tuple[FolderID, Exception]] = []
+
+    for page_params in iter_pagination_params(limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
+        (
+            page_params.total_number_of_items,
+            folders_for_deletion,
+        ) = await _folders_repository.list_folders_db_as_admin(
+            app,
+            shared_workspace_id=workspace_id,  # <-- Workspace filter
+            offset=page_params.offset,
+            limit=page_params.limit,
+            order_by=OrderBy(field=IDStr("folder_id")),
+        )
+        # BATCH delete
+        for folder in folders_for_deletion:
+            try:
+                await _folders_repository.delete_recursively(
+                    app, folder_id=folder.folder_id, product_name=product_name
+                )
+                deleted_folder_ids.append(folder.folder_id)
+            except Exception as err:  # pylint: disable=broad-exception-caught
+                if fail_fast:
+                    raise
+                errors.append((folder.folder_id, err))
+
+    if errors:
+        raise FolderBatchDeleteError(
+            errors=errors,
         )

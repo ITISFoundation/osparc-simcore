@@ -28,8 +28,7 @@ from ...products.models import Product
 from ...security.decorators import permission_required
 from ...users import api
 from ...utils_aiohttp import envelope_json_response
-from .. import _projects_service
-from .. import api as projects_api
+from .. import _projects_service, projects_wallets_service
 from ..exceptions import ProjectStartsTooManyDynamicNodesError
 from ._rest_exceptions import handle_plugin_requests_exceptions
 from ._rest_schemas import ProjectPathParams, RequestContext
@@ -87,7 +86,7 @@ async def open_project(request: web.Request) -> web.Response:
             ),
         )
 
-        await projects_api.check_project_financial_status(
+        await projects_wallets_service.check_project_financial_status(
             request.app,
             project_id=path_params.project_id,
             product_name=req_ctx.product_name,

@@ -5,7 +5,6 @@
 # pylint: disable=too-many-statements
 
 
-import asyncio
 from http import HTTPStatus
 from unittest import mock
 
@@ -21,7 +20,6 @@ from pytest_simcore.helpers.webserver_parametrizations import (
     standard_role_response,
 )
 from servicelib.aiohttp import status
-from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects._groups_repository import (
     GroupID,
@@ -494,15 +492,6 @@ async def test_folders_deletion(
     )
     resp = await client.delete(f"{url}")
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
-
-    fire_and_forget_task: asyncio.Task = next(
-        iter(client.app[APP_FIRE_AND_FORGET_TASKS_KEY])
-    )
-    assert fire_and_forget_task.get_name().startswith(
-        "fire_and_forget_task_delete_project_task_"
-    )
-    await fire_and_forget_task
-    assert len(client.app[APP_FIRE_AND_FORGET_TASKS_KEY]) == 0
 
     # list root projects (The project should have been deleted)
     url = client.app.router["list_projects"].url_for()
