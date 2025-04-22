@@ -13,6 +13,12 @@ from typing import Any
 
 import pytest
 from models_library.products import ProductName
+from models_library.services_enums import ServiceType  # Import ServiceType enum
+from models_library.services_regex import (
+    COMPUTATIONAL_SERVICE_KEY_PREFIX,
+    DYNAMIC_SERVICE_KEY_PREFIX,
+    SERVICE_TYPE_TO_PREFIX_MAP,
+)
 from models_library.users import UserID
 from packaging import version
 from pydantic import EmailStr, HttpUrl, TypeAdapter
@@ -21,6 +27,7 @@ from pytest_simcore.helpers.postgres_tools import insert_and_get_row_lifespan
 from simcore_postgres_database.models.projects import ProjectType, projects
 from simcore_service_catalog.models.services_db import (
     ServiceAccessRightsAtDB,
+    ServiceFiltersDB,
     ServiceMetaDataDBCreate,
     ServiceMetaDataDBGet,
     ServiceMetaDataDBPatch,
@@ -310,7 +317,7 @@ async def test_get_latest_release(
     assert latest.version == fake_catalog_with_jupyterlab.expected_latest
 
 
-async def test_list_all_services_and_history(
+async def test_list_latest_services(
     target_product: ProductName,
     user_id: UserID,
     services_repo: ServicesRepository,
@@ -332,7 +339,7 @@ async def test_list_all_services_and_history(
     ), "list_latest_service does NOT show history"
 
 
-async def test_listing_with_no_services(
+async def test_list_latest_services_with_no_services(
     target_product: ProductName,
     services_repo: ServicesRepository,
     user_id: UserID,
@@ -344,7 +351,7 @@ async def test_listing_with_no_services(
     assert total_count == 0
 
 
-async def test_list_all_services_and_history_with_pagination(
+async def test_list_latest_services_with_pagination(
     target_product: ProductName,
     create_fake_service_data: Callable,
     services_db_tables_injector: Callable,
@@ -401,6 +408,61 @@ async def test_list_all_services_and_history_with_pagination(
     assert (
         not duplicates
     ), f"list of latest versions of services cannot have duplicates, found: {duplicates}"
+
+
+async def test_list_latest_services_with_filters(
+    target_product: ProductName,
+    create_fake_service_data: Callable,
+    services_db_tables_injector: Callable,
+    services_repo: ServicesRepository,
+    user_id: UserID,
+):
+    # Setup: Inject services with different service types
+    await services_db_tables_injector(
+        [
+            create_fake_service_data(
+                f"{DYNAMIC_SERVICE_KEY_PREFIX}/service-name-a-{i}",
+                "1.0.0",
+                team_access=None,
+                everyone_access=None,
+                product=target_product,
+            )
+            for i in range(3)
+        ]
+        + [
+            create_fake_service_data(
+                f"{COMPUTATIONAL_SERVICE_KEY_PREFIX}/service-name-b-{i}",
+                "1.0.0",
+                team_access=None,
+                everyone_access=None,
+                product=target_product,
+            )
+            for i in range(2)
+        ]
+    )
+
+    # Test: Apply filter for ServiceType.DYNAMIC
+    filters = ServiceFiltersDB(service_type=ServiceType.DYNAMIC)
+    total_count, services_items = await services_repo.list_latest_services(
+        product_name=target_product, user_id=user_id, filters=filters
+    )
+    assert total_count == 3
+    assert len(services_items) == 3
+    assert all(
+        service.key.startswith(DYNAMIC_SERVICE_KEY_PREFIX) for service in services_items
+    )
+
+    # Test: Apply filter for ServiceType.COMPUTATIONAL
+    filters = ServiceFiltersDB(service_type=ServiceType.COMPUTATIONAL)
+    total_count, services_items = await services_repo.list_latest_services(
+        product_name=target_product, user_id=user_id, filters=filters
+    )
+    assert total_count == 2
+    assert len(services_items) == 2
+    assert all(
+        service.key.startswith(COMPUTATIONAL_SERVICE_KEY_PREFIX)
+        for service in services_items
+    )
 
 
 async def test_get_and_update_service_meta_data(
@@ -491,6 +553,15 @@ async def test_can_get_service(
     )
 
 
+def _create_fake_release_versions(num_versions: int) -> set[str]:
+    release_versions = set()
+    while len(release_versions) < num_versions:
+        release_versions.add(
+            f"{random.randint(0, 2)}.{random.randint(0, 9)}.{random.randint(0, 9)}"  # noqa: S311
+        )
+    return release_versions
+
+
 async def test_get_service_history_page(
     target_product: ProductName,
     create_fake_service_data: Callable,
@@ -502,12 +573,7 @@ async def test_get_service_history_page(
     service_key = "simcore/services/dynamic/test-some-service"
     num_versions = 10
 
-    release_versions = set()
-    while len(release_versions) < num_versions:
-        release_versions.add(
-            f"{random.randint(0, 2)}.{random.randint(0, 9)}.{random.randint(0, 9)}"  # noqa: S311
-        )
-
+    release_versions = _create_fake_release_versions(num_versions)
     await services_db_tables_injector(
         [
             create_fake_service_data(
@@ -564,6 +630,78 @@ async def test_get_service_history_page(
 
     # compare paginated results with the corresponding slice of the full history
     assert paginated_history == history[offset : offset + limit]
+
+
+@pytest.mark.parametrize(
+    "expected_service_type,service_prefix", SERVICE_TYPE_TO_PREFIX_MAP.items()
+)
+async def test_get_service_history_page_with_filters(
+    target_product: ProductName,
+    create_fake_service_data: Callable,
+    services_db_tables_injector: Callable,
+    services_repo: ServicesRepository,
+    user_id: UserID,
+    expected_service_type: ServiceType,
+    service_prefix: str,
+):
+    # Setup: Inject services with multiple versions and types
+    service_key = f"{service_prefix}/test-service"
+    num_versions = 10
+
+    release_versions = _create_fake_release_versions(num_versions)
+
+    await services_db_tables_injector(
+        [
+            create_fake_service_data(
+                service_key,
+                service_version,
+                team_access=None,
+                everyone_access=None,
+                product=target_product,
+            )
+            for _, service_version in enumerate(release_versions)
+        ]
+    )
+    # Sort versions after injecting
+    release_versions = sorted(release_versions, key=version.Version, reverse=True)
+
+    # Test: Fetch full history with no filters
+    total_count, history = await services_repo.get_service_history_page(
+        product_name=target_product,
+        user_id=user_id,
+        key=service_key,
+    )
+    assert total_count == num_versions
+    assert len(history) == num_versions
+    assert [release.version for release in history] == release_versions
+
+    # Test: Apply filter for
+    filters = ServiceFiltersDB(service_type=expected_service_type)
+    total_count, filtered_history = await services_repo.get_service_history_page(
+        product_name=target_product,
+        user_id=user_id,
+        key=service_key,
+        filters=filters,
+    )
+    assert total_count == num_versions
+    assert len(filtered_history) == num_versions
+    assert [release.version for release in filtered_history] == release_versions
+
+    # Final check: filter by a different service type expecting no results
+    different_service_type = (
+        ServiceType.COMPUTATIONAL
+        if expected_service_type != ServiceType.COMPUTATIONAL
+        else ServiceType.DYNAMIC
+    )
+    filters = ServiceFiltersDB(service_type=different_service_type)
+    total_count, no_history = await services_repo.get_service_history_page(
+        product_name=target_product,
+        user_id=user_id,
+        key=service_key,
+        filters=filters,
+    )
+    assert total_count == 0
+    assert no_history == []
 
 
 async def test_list_services_from_published_templates(

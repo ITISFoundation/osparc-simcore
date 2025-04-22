@@ -5,7 +5,11 @@
 # pylint: disable=unused-variable
 
 
-from models_library.api_schemas_catalog.services import LatestServiceGet, ServiceGetV2
+from models_library.api_schemas_catalog.services import (
+    LatestServiceGet,
+    ServiceGetV2,
+    ServiceListFilters,
+)
 from models_library.api_schemas_webserver.catalog import (
     CatalogServiceUpdate,
 )
@@ -34,10 +38,12 @@ class CatalogRpcSideEffects:
         user_id: UserID,
         limit: PageLimitInt,
         offset: NonNegativeInt,
+        filters: ServiceListFilters | None = None,
     ):
         assert rpc_client
         assert product_name
         assert user_id
+        assert filters is None, "filters not mocked yet"
 
         items = TypeAdapter(list[LatestServiceGet]).validate_python(
             LatestServiceGet.model_json_schema()["examples"],
@@ -110,12 +116,14 @@ class CatalogRpcSideEffects:
         service_key: ServiceKey,
         offset: PageOffsetInt,
         limit: PageLimitInt,
+        filters: ServiceListFilters | None = None,
     ) -> PageRpc[ServiceRelease]:
 
         assert rpc_client
         assert product_name
         assert user_id
         assert service_key
+        assert filters is None, "filters not mocked yet"
 
         items = TypeAdapter(list[ServiceRelease]).validate_python(
             ServiceRelease.model_json_schema()["examples"],

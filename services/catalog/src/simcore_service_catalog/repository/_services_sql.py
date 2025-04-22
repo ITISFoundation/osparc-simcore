@@ -2,6 +2,9 @@ from typing import Any
 
 import sqlalchemy as sa
 from models_library.products import ProductName
+from models_library.services_regex import (
+    SERVICE_TYPE_TO_PREFIX_MAP,
+)
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from simcore_postgres_database.models.groups import user_to_groups
@@ -19,7 +22,7 @@ from sqlalchemy.sql import and_, or_
 from sqlalchemy.sql.expression import func
 from sqlalchemy.sql.selectable import Select
 
-from ..models.services_db import ServiceMetaDataDBGet
+from ..models.services_db import ServiceFiltersDB, ServiceMetaDataDBGet
 
 SERVICES_META_DATA_COLS = get_columns_from_db_model(
     services_meta_data, ServiceMetaDataDBGet
@@ -113,13 +116,29 @@ def _has_access_rights(
     )
 
 
+def _apply_services_filters(
+    stmt: sa.sql.Select,
+    filters: ServiceFiltersDB,
+) -> sa.sql.Select:
+    if filters.service_type:
+        prefix = SERVICE_TYPE_TO_PREFIX_MAP.get(filters.service_type)
+        if prefix is None:
+            msg = f"Undefined service type {filters.service_type}. Please update prefix expressions"
+            raise ValueError(msg)
+
+        assert not prefix.endswith("/")  # nosec
+        return stmt.where(services_meta_data.c.key.like(f"{prefix}/%"))
+    return stmt
+
+
 def latest_services_total_count_stmt(
     *,
     product_name: ProductName,
     user_id: UserID,
     access_rights: sa.sql.ClauseElement,
+    filters: ServiceFiltersDB | None = None,
 ):
-    return (
+    stmt = (
         sa.select(func.count(sa.distinct(services_meta_data.c.key)))
         .select_from(
             services_meta_data.join(
@@ -136,6 +155,11 @@ def latest_services_total_count_stmt(
         .where(access_rights)
     )
 
+    if filters:
+        stmt = _apply_services_filters(stmt, filters)
+
+    return stmt
+
 
 def list_latest_services_stmt(
     *,
@@ -144,10 +168,11 @@ def list_latest_services_stmt(
     access_rights: sa.sql.ClauseElement,
     limit: int | None,
     offset: int | None,
+    filters: ServiceFiltersDB | None = None,
 ):
     # get all distinct services key fitting a page
     # and its corresponding latest version
-    cte = (
+    cte_stmt = (
         sa.select(
             services_meta_data.c.key,
             services_meta_data.c.version.label("latest_version"),
@@ -172,8 +197,12 @@ def list_latest_services_stmt(
         .distinct(services_meta_data.c.key)  # get only first
         .limit(limit)
         .offset(offset)
-        .cte("cte")
     )
+
+    if filters:
+        cte_stmt = _apply_services_filters(cte_stmt, filters)
+
+    cte = cte_stmt.cte("cte")
 
     # get all information of latest's services listed in CTE
     latest_stmt = (
