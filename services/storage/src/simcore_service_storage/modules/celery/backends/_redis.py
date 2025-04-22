@@ -1,3 +1,4 @@
+import contextlib
 import logging
 from datetime import timedelta
 from typing import Final
@@ -90,7 +91,8 @@ class RedisTaskInfoStore:
         search_key_len = len(search_key)
 
         keys: list[str] = []
-        pipe = self._redis_client_sdk.redis.pipeline()
+
+        pipeline = self._redis_client_sdk.redis.pipeline()
         async for key in self._redis_client_sdk.redis.scan_iter(
             match=search_key + "*", count=_CELERY_TASK_SCAN_COUNT_PER_BATCH
         ):
@@ -101,26 +103,23 @@ class RedisTaskInfoStore:
                 else key
             )
             keys.append(_key)
-            pipe.hget(_key, _CELERY_TASK_METADATA_KEY)
 
-        results = await pipe.execute()
+            pipeline.hget(_key, _CELERY_TASK_METADATA_KEY)
+
+        results = await pipeline.execute()
 
         tasks = []
         for key, raw_metadata in zip(keys, results, strict=True):
             if raw_metadata is None:
                 continue
 
-            try:
+            with contextlib.suppress(ValidationError):
                 task_metadata = TaskMetadata.model_validate_json(raw_metadata)
                 tasks.append(
                     Task(
                         uuid=TaskUUID(key[search_key_len:]),
                         metadata=task_metadata,
                     )
-                )
-            except ValidationError as exc:
-                _logger.debug(
-                    "Failed to deserialize task metadata for key %s: %s", key, f"{exc}"
                 )
 
         return tasks
