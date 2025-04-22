@@ -1,7 +1,7 @@
 from typing import Final
 
 from ..services import ServiceKey
-from ..services_regex import FRONTEND_SERVICE_KEY_PREFIX
+from ..services_constants import FRONTEND_SERVICE_KEY_PREFIX
 
 # NOTE: due to legacy reasons, the name remains with 'frontend' in it but
 # it now refers to a more general group: function sections that contains front-end services as well

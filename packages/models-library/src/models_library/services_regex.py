@@ -2,6 +2,12 @@ import re
 from types import MappingProxyType
 from typing import Final
 
+from .services_constants import (
+    COMPUTATIONAL_SERVICE_KEY_PREFIX,
+    DYNAMIC_SERVICE_KEY_PREFIX,
+    FRONTEND_SERVICE_KEY_PREFIX,
+    SERVICE_TYPE_TO_NAME_MAP,
+)
 from .services_enums import ServiceType
 
 PROPERTY_TYPE_RE = r"^(number|integer|boolean|string|ref_contentSchema|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$"
@@ -13,15 +19,6 @@ PROPERTY_TYPE_TO_PYTHON_TYPE_MAP = {
 }
 
 FILENAME_RE = r".+"
-
-
-SERVICE_TYPE_TO_NAME_MAP = MappingProxyType(
-    {
-        ServiceType.COMPUTATIONAL: "comp",
-        ServiceType.DYNAMIC: "dynamic",
-        ServiceType.FRONTEND: "frontend",
-    }
-)
 
 # e.g. simcore/services/comp/opencor
 SERVICE_KEY_RE: Final[re.Pattern[str]] = re.compile(
@@ -40,18 +37,7 @@ SERVICE_ENCODED_KEY_RE: Final[re.Pattern[str]] = re.compile(
 )
 
 
-def create_key_prefix(service_type: ServiceType) -> str:
-    return f"simcore/services/{SERVICE_TYPE_TO_NAME_MAP[service_type]}"
-
-
-COMPUTATIONAL_SERVICE_KEY_PREFIX: Final[str] = create_key_prefix(
-    ServiceType.COMPUTATIONAL
-)
-DYNAMIC_SERVICE_KEY_PREFIX: Final[str] = create_key_prefix(ServiceType.DYNAMIC)
-FRONTEND_SERVICE_KEY_PREFIX: Final[str] = create_key_prefix(ServiceType.FRONTEND)
-
-
-def create_key_regex(service_type: ServiceType) -> re.Pattern[str]:
+def _create_key_regex(service_type: ServiceType) -> re.Pattern[str]:
     return re.compile(
         rf"^simcore/services/{SERVICE_TYPE_TO_NAME_MAP[service_type]}/"
         r"(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*"
@@ -59,22 +45,24 @@ def create_key_regex(service_type: ServiceType) -> re.Pattern[str]:
     )
 
 
-def create_key_format(service_type: ServiceType) -> str:
+def _create_key_format(service_type: ServiceType) -> str:
     return f"simcore/services/{SERVICE_TYPE_TO_NAME_MAP[service_type]}/{{service_name}}"
 
 
-COMPUTATIONAL_SERVICE_KEY_RE: Final[re.Pattern[str]] = create_key_regex(
+COMPUTATIONAL_SERVICE_KEY_RE: Final[re.Pattern[str]] = _create_key_regex(
     ServiceType.COMPUTATIONAL
 )
-COMPUTATIONAL_SERVICE_KEY_FORMAT: Final[str] = create_key_format(
+COMPUTATIONAL_SERVICE_KEY_FORMAT: Final[str] = _create_key_format(
     ServiceType.COMPUTATIONAL
 )
 
-DYNAMIC_SERVICE_KEY_RE: Final[re.Pattern[str]] = create_key_regex(ServiceType.DYNAMIC)
-DYNAMIC_SERVICE_KEY_FORMAT: Final[str] = create_key_format(ServiceType.DYNAMIC)
+DYNAMIC_SERVICE_KEY_RE: Final[re.Pattern[str]] = _create_key_regex(ServiceType.DYNAMIC)
+DYNAMIC_SERVICE_KEY_FORMAT: Final[str] = _create_key_format(ServiceType.DYNAMIC)
 
-FRONTEND_SERVICE_KEY_RE: Final[re.Pattern[str]] = create_key_regex(ServiceType.FRONTEND)
-FRONTEND_SERVICE_KEY_FORMAT: Final[str] = create_key_format(ServiceType.FRONTEND)
+FRONTEND_SERVICE_KEY_RE: Final[re.Pattern[str]] = _create_key_regex(
+    ServiceType.FRONTEND
+)
+FRONTEND_SERVICE_KEY_FORMAT: Final[str] = _create_key_format(ServiceType.FRONTEND)
 
 
 SERVICE_TYPE_TO_PREFIX_MAP = MappingProxyType(
