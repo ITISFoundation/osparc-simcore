@@ -19,10 +19,10 @@
 qx.Class.define("osparc.jobs.SubRunsTable", {
   extend: qx.ui.table.Table,
 
-  construct: function() {
+  construct: function(projectUuid) {
     this.base(arguments);
 
-    const model = new osparc.jobs.SubRunsTableModel();
+    const model = new osparc.jobs.SubRunsTableModel(projectUuid);
     this.setTableModel(model);
 
     this.set({
@@ -42,16 +42,6 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
     columnModel.setDataCellRenderer(this.self().COLS.IMAGE.column, fontButtonRendererInfo);
 
     this.__attachHandlers();
-
-    this.bind("projectUuid", model, "projectUuid");
-  },
-
-  properties: {
-    projectUuid: {
-      check: "String",
-      nullable: true,
-      event: "changeProjectUuid"
-    },
   },
 
   statics: {

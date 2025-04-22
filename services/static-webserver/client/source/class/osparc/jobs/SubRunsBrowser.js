@@ -26,25 +26,10 @@ qx.Class.define("osparc.jobs.SubRunsBrowser", {
 
     const titleLayout = this.__createTitleLayout();
     this._add(titleLayout);
-
-    const subRunsTable = new osparc.jobs.SubRunsTable();
-    this._add(subRunsTable, {
-      flex: 1
-    });
-
-    this.bind("projectUuid", subRunsTable, "projectUuid");
   },
 
   events: {
     "backToRuns": "qx.event.type.Event",
-  },
-
-  properties: {
-    projectUuid: {
-      check: "String",
-      nullable: true,
-      event: "changeProjectUuid"
-    },
   },
 
   members: {
@@ -61,5 +46,17 @@ qx.Class.define("osparc.jobs.SubRunsBrowser", {
 
       return titleLayout;
     },
+
+    setProjectUuid: function(projectUuid) {
+      if (this.__subRunsTable) {
+        this._remove(this.__subRunsTable);
+        this.__subRunsTable = null;
+      }
+
+      const subRunsTable = this.__subRunsTable = new osparc.jobs.SubRunsTable(projectUuid);
+      this._add(subRunsTable, {
+        flex: 1
+      });
+    }
   }
 })
