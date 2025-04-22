@@ -24,7 +24,7 @@ from .....core.errors import ComputationalTaskNotFoundError
 from .....models.comp_tasks import CompTaskAtDB
 from .....modules.resource_usage_tracker_client import ResourceUsageTrackerClient
 from .....utils.computations import to_node_class
-from .....utils.db import RUNNING_STATE_TO_DB
+from .....utils.db import DB_TO_RUNNING_STATE, RUNNING_STATE_TO_DB
 from ....catalog import CatalogClient
 from ...tables import NodeClass, StateType, comp_tasks
 from .._base import BaseRepository
@@ -77,7 +77,7 @@ class CompTasksRepository(BaseRepository):
                 tasks.append(task_db)
         return tasks
 
-    async def list_computational_tasks_for_frontend_client(
+    async def list_computational_tasks_rpc_domain(
         self,
         *,
         project_id: ProjectID,
@@ -127,10 +127,15 @@ class CompTasksRepository(BaseRepository):
             total_count = await conn.scalar(count_query)
 
             result = await conn.execute(list_query)
-            items: list[ComputationTaskRpcGet] = [
-                ComputationTaskRpcGet.model_validate(row) async for row in result
+            items = [
+                ComputationTaskRpcGet.model_validate(
+                    {
+                        **row,
+                        "state": DB_TO_RUNNING_STATE[row["state"]],  # Convert the state
+                    }
+                )
+                async for row in result
             ]
-
             return cast(int, total_count), items
 
     async def task_exists(self, project_id: ProjectID, node_id: NodeID) -> bool:

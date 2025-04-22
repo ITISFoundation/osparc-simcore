@@ -25,7 +25,7 @@ from ....core.errors import (
     UserNotFoundError,
 )
 from ....models.comp_runs import CompRunsAtDB, RunMetadataDict
-from ....utils.db import RUNNING_STATE_TO_DB
+from ....utils.db import DB_TO_RUNNING_STATE, RUNNING_STATE_TO_DB
 from ..tables import comp_runs
 from ._base import BaseRepository
 
@@ -215,8 +215,14 @@ class CompRunsRepository(BaseRepository):
             total_count = await conn.scalar(count_query)
 
             result = await conn.execute(list_query)
-            items: list[ComputationRunRpcGet] = [
-                ComputationRunRpcGet.model_validate(row) async for row in result
+            items = [
+                ComputationRunRpcGet.model_validate(
+                    {
+                        **row,
+                        "state": DB_TO_RUNNING_STATE[row["state"]],
+                    }
+                )
+                async for row in result
             ]
 
             return cast(int, total_count), items
