@@ -28,6 +28,7 @@ from pytest_simcore.helpers.monkeypatch_envs import (
     setenvs_from_dict,
     setenvs_from_envfile,
 )
+from pytest_simcore.helpers.postgres_tools import PostgresTestConfig
 from simcore_service_dynamic_sidecar.core.reserved_space import (
     remove_reserved_disk_space,
 )
@@ -40,6 +41,7 @@ pytest_plugins = [
     "pytest_simcore.docker_swarm",
     "pytest_simcore.faker_users_data",
     "pytest_simcore.minio_service",
+    "pytest_simcore.postgres_service",
     "pytest_simcore.pytest_global_environs",
     "pytest_simcore.rabbit_service",
     "pytest_simcore.redis_service",
@@ -206,8 +208,9 @@ def base_mock_envs(
 
 @pytest.fixture
 def mock_environment(
+    postgres_host_config: PostgresTestConfig,
     mock_storage_check: None,
-    mock_postgres_check: None,
+    # mock_postgres_check: None,
     mock_rabbit_check: None,
     monkeypatch: pytest.MonkeyPatch,
     base_mock_envs: EnvVarsDict,
@@ -248,10 +251,6 @@ def mock_environment(
             "DY_SIDECAR_USER_ID": f"{user_id}",
             "DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS": "false",
             "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
-            "POSTGRES_DB": "test",
-            "POSTGRES_HOST": "test",
-            "POSTGRES_PASSWORD": "test",
-            "POSTGRES_USER": "test",
             "R_CLONE_PROVIDER": "MINIO",
             "RABBIT_HOST": "test",
             "RABBIT_PASSWORD": "test",
