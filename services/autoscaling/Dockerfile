@@ -156,7 +156,8 @@ COPY --chown=scu:scu services/autoscaling/docker services/autoscaling/docker
 RUN chmod +x services/autoscaling/docker/*.sh
 
 
-HEALTHCHECK --interval=10s \
+HEALTHCHECK \
+  --interval=10s \
   --timeout=5s \
   --start-period=20s \
   --start-interval=1s \

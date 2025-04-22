@@ -175,7 +175,8 @@ COPY services/efs-guardian/docker services/efs-guardian/docker
 RUN chmod +x services/efs-guardian/docker/*.sh
 
 
-HEALTHCHECK --interval=10s \
+HEALTHCHECK \
+  --interval=10s \
   --timeout=5s \
   --start-period=20s \
   --start-interval=1s \

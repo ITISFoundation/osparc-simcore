@@ -141,7 +141,8 @@ COPY --chown=scu:scu services/dynamic-scheduler/docker services/dynamic-schedule
 RUN chmod +x services/dynamic-scheduler/docker/*.sh
 
 
-HEALTHCHECK --interval=30s \
+HEALTHCHECK \
+  --interval=30s \
   --timeout=20s \
   --start-period=20s \
   --start-interval=1s \

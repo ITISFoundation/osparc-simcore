@@ -141,7 +141,8 @@ COPY --chown=scu:scu services/director-v2/docker services/director-v2/docker
 RUN chmod +x services/director-v2/docker/*.sh
 
 
-HEALTHCHECK --interval=30s \
+HEALTHCHECK \
+  --interval=30s \
   --timeout=20s \
   --start-period=20s \
   --start-interval=1s \

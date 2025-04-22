@@ -95,7 +95,8 @@ RUN chown -R scu /home/scu
 COPY --chown=scu:scu --from=build ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 COPY --chown=scu:scu services/migration/docker services/migration/docker
 
-HEALTHCHECK --interval=5s \
+HEALTHCHECK \
+  --interval=5s \
   --timeout=10s \
   --start-period=20s \
   --start-interval=1s \

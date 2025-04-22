@@ -152,7 +152,8 @@ COPY --from=prod-only-deps --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 COPY --chown=scu:scu services/storage/docker services/storage/docker
 RUN chmod +x services/storage/docker/*.sh
 
-HEALTHCHECK --interval=10s \
+HEALTHCHECK \
+  --interval=10s \
   --timeout=15s \
   --start-period=20s \
   --start-interval=1s \

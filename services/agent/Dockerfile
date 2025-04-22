@@ -148,7 +148,8 @@ COPY --chown=scu:scu services/agent/docker services/agent/docker
 RUN chmod +x services/agent/docker/*.sh
 
 
-HEALTHCHECK --interval=30s \
+HEALTHCHECK \
+  --interval=30s \
   --timeout=20s \
   --start-period=20s \
   --start-interval=1s \
