@@ -13,6 +13,14 @@ from simcore_service_dynamic_sidecar.core.registry import (
     _login_registry,
 )
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+]
+
+pytest_simcore_ops_services_selection = [
+    "adminer",
+]
+
 
 def _get_registry_config(
     *,
@@ -77,7 +85,9 @@ def mock_registry_settings_with_auth(
     monkeypatch.setenv(
         "DY_DEPLOYMENT_REGISTRY_SETTINGS",
         _get_registry_config(
-            url=docker_registry, user="testuser", password="testpassword"  # noqa: S106
+            url=docker_registry,
+            user="testuser",
+            password="testpassword",  # noqa: S106
         ),
     )
 
