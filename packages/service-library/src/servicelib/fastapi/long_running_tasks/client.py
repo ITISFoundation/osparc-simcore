@@ -106,7 +106,7 @@ async def _task_result(session: httpx.AsyncClient, result_url: URL) -> Any:
 
 @retry(**_DEFAULT_FASTAPI_RETRY_POLICY)
 async def _abort_task(session: httpx.AsyncClient, abort_url: URL) -> None:
-    response = await session.post(f"{abort_url}")
+    response = await session.delete(f"{abort_url}")
     response.raise_for_status()
 
 
