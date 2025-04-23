@@ -1,4 +1,4 @@
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.config import JsonDict
@@ -13,18 +13,22 @@ from ..utils.services_io import (
 
 
 class ServicePortGet(BaseModel):
-    key: str = Field(
-        ...,
-        description="Port identifier name",
-        pattern=PUBLIC_VARIABLE_NAME_RE,
-        title="Key name",
-    )
+    key: Annotated[
+        str,
+        Field(
+            description="Port identifier name",
+            pattern=PUBLIC_VARIABLE_NAME_RE,
+            title="Key name",
+        ),
+    ]
     kind: Literal["input", "output"]
     content_media_type: str | None = None
-    content_schema: dict[str, Any] | None = Field(
-        None,
-        description="jsonschema for the port's value. SEE https://json-schema.org/understanding-json-schema/",
-    )
+    content_schema: Annotated[
+        dict[str, Any] | None,
+        Field(
+            description="jsonschema for the port's value. SEE https://json-schema.org/understanding-json-schema/",
+        ),
+    ] = None
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
