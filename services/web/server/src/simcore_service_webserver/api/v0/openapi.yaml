@@ -3164,12 +3164,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Internal Server Error
-  /v0/tasks/{task_id}:abort:
+  /v0/tasks/{task_id}:cancel:
     post:
       tags:
       - long-running-tasks
-      summary: Abort Task
-      description: Aborts a task
+      summary: Cancel Task
+      description: Cancels a task
       operationId: abort_async_job
       parameters:
       - name: task_id
