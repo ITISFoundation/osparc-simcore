@@ -6,14 +6,15 @@ from models_library.basic_types import VersionStr
 from models_library.products import ProductName
 from models_library.rest_pagination import (
     MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
+    PageMetaInfoLimitOffset,
     PageOffsetInt,
 )
-from models_library.rpc.webserver.projects import PageRpcProjectRpcGet
 from models_library.rpc_pagination import PageLimitInt
 from models_library.services_enums import ServiceType
 from models_library.services_history import ServiceRelease
 from models_library.users import UserID
 from packaging.version import Version
+from simcore_service_api_server.models.schemas.jobs import Job
 
 from .models.schemas.solvers import Solver, SolverKeyId
 from .services_rpc.catalog import CatalogService
@@ -29,10 +30,10 @@ class SolverService:
     def __init__(
         self,
         catalog_service: Annotated[CatalogService, Depends()],
-        wb_api_client: Annotated[WbApiRpcClient, Depends()],
+        webserver_client: Annotated[WbApiRpcClient, Depends()],
     ):
         self._catalog_service = catalog_service
-        self._webserver_client = wb_api_client
+        self._webserver_client = webserver_client
 
     async def get_solver(
         self,
@@ -61,6 +62,7 @@ class SolverService:
         solver_key: SolverKeyId,
         product_name: str,
     ) -> Solver:
+        # TODO: Mads, this is not necessary. The first item is the latest!
         service_releases: list[ServiceRelease] = []
         for page_params in iter_pagination_params(limit=DEFAULT_PAGINATION_LIMIT):
             releases, page_meta = await self._catalog_service.list_release_history(
@@ -90,23 +92,32 @@ class SolverService:
         product_name: ProductName,
         offset: PageOffsetInt = 0,
         limit: PageLimitInt = DEFAULT_PAGINATION_LIMIT,
-    ) -> PageRpcProjectRpcGet:
-        """Lists solver jobs for a user with pagination
+    ) -> tuple[list[Job], PageMetaInfoLimitOffset]:
+        """Lists all solver jobs for a user with pagination"""
 
-        Args:
-            user_id: The ID of the user
-            product_name: The product name
-            offset: Pagination offset
-            limit: Pagination limit
-            job_parent_resource_name_filter: Optional filter for job parent resource name
+        # NOTE: perhaps we should get comp_tasks instead of projects! or a combinatino of both?
+        # I need inputs_checksum and job_parent_source_name!
 
-        Returns:
-            Paginated response with projects marked as jobs
-        """
-        return await self._webserver_client.list_projects_marked_as_jobs(
+        projects_page = await self._webserver_client.list_projects_marked_as_jobs(
             product_name=product_name,
             user_id=user_id,
             offset=offset,
             limit=limit,
-            job_parent_resource_name_filter="solvers",  # TODO: use a constant from models_library
+            job_parent_resource_name_filter="solvers",  # TODO: project shouldr eturn parent resource name and workbench
         )
+
+        solver = None  # TODO
+        url_for = None  # TODO
+
+        jobs: list[Job] = [
+            Job(
+                id=prj.uuid,
+                name=prj.name,
+                inputs_checksum=prj.inputs_checksum,
+                created_at=prj.creation_date,  # type: ignore[arg-type]
+                runner_name=prj.job_parent_resource_name,
+                # TODO: url_ parts missing
+            )
+            for prj in projects_page.data
+        ]
+        return jobs, projects_page.meta
