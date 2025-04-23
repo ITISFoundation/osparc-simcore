@@ -39,7 +39,7 @@ def mock_rabbitmq_connection(mocker: MockerFixture) -> MockType:
 def mock_rabbitmq_rpc_client_class(mocker: MockerFixture) -> MockType:
     mock_rpc_client_instance = mocker.AsyncMock()
     mocker.patch.object(
-        servicelib.rabbitmq._client_rpc.RabbitMQRPCClient,
+        servicelib.rabbitmq._client_rpc.RabbitMQRPCClient,  # noqa: SLF001
         "create",
         return_value=mock_rpc_client_instance,
     )
@@ -87,7 +87,6 @@ def app_lifespan(
 
     # setup rpc-client using rabbitmq_rpc_client_context
     async def my_app_rpc_client(app: FastAPI, state: State) -> AsyncIterator[State]:
-
         assert "RABBIT_CONNECTIVITY_LIFESPAN_NAME" in state
 
         async with rabbitmq_rpc_client_context(
@@ -122,7 +121,6 @@ async def test_lifespan_rabbitmq_in_an_app(
         startup_timeout=None if is_pdb_enabled else 10,
         shutdown_timeout=None if is_pdb_enabled else 10,
     ):
-
         # Verify that RabbitMQ responsiveness was checked
         mock_rabbitmq_connection.assert_called_once_with(
             app.state.settings.RABBITMQ.dsn
