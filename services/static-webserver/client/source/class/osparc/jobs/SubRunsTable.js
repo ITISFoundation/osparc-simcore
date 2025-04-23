@@ -68,12 +68,12 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
         id: "solver",
         column: 3,
         label: qx.locale.Manager.tr("Solver"),
-        width: 300
+        width: 150
       },
       STATE: {
         id: "state",
         column: 4,
-        label: qx.locale.Manager.tr("State"),
+        label: qx.locale.Manager.tr("Status"),
         width: 100
       },
       PROGRESS: {
@@ -94,9 +94,15 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
         label: qx.locale.Manager.tr("Ended"),
         width: 130
       },
+      DURATION: {
+        id: "duration",
+        column: 8,
+        label: qx.locale.Manager.tr("Duration"),
+        width: 70
+      },
       IMAGE: {
         id: "image",
-        column: 8,
+        column: 9,
         label: qx.locale.Manager.tr("Info"),
         width: 40
       },

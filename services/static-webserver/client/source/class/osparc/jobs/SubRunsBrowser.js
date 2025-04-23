@@ -33,8 +33,13 @@ qx.Class.define("osparc.jobs.SubRunsBrowser", {
   },
 
   members: {
+    __titleLabel: null,
+    __subRunsTable: null,
+
     __createTitleLayout: function() {
-      const titleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      const titleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+        alignY: "middle",
+      }));
 
       const prevBtn = new qx.ui.form.Button().set({
         toolTipText: this.tr("Return to Runs and Clusters"),
@@ -44,16 +49,25 @@ qx.Class.define("osparc.jobs.SubRunsBrowser", {
       prevBtn.addListener("execute", () => this.fireEvent("backToRuns"));
       titleLayout.add(prevBtn);
 
+      const titleLabel = this.__titleLabel = new qx.ui.basic.Label().set({
+        font: "text-14",
+      });
+      titleLayout.add(titleLabel, {
+        flex: 1
+      });
+
       return titleLayout;
     },
 
-    setProjectUuid: function(projectUuid) {
+    setProject: function(project) {
       if (this.__subRunsTable) {
         this._remove(this.__subRunsTable);
         this.__subRunsTable = null;
       }
 
-      const subRunsTable = this.__subRunsTable = new osparc.jobs.SubRunsTable(projectUuid);
+      this.__titleLabel.setValue(project["projectName"])
+
+      const subRunsTable = this.__subRunsTable = new osparc.jobs.SubRunsTable(project["projectUuid"]);
       this._add(subRunsTable, {
         flex: 1
       });

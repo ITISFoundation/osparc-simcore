@@ -73,15 +73,28 @@ qx.Class.define("osparc.jobs.SubRunsTableModel", {
             const data = [];
             const subJobsCols = osparc.jobs.SubRunsTable.COLS;
             subJobs.forEach(subJob => {
+              const nodeName = subJob.getImage()["name"].split("/").pop();
+              const version = osparc.store.Services.getVersionDisplay(subJob.getImage()["name"], subJob.getImage()["tag"]) || subJob.getImage()["tag"];
+              const startedAt = subJob.getStartedAt();
+              const endedAt = subJob.getEndedAt();
+              let duration = "-";
+              if (startedAt && endedAt) {
+                const diffMs = endedAt - startedAt; // Difference in milliseconds
+                const diffSeconds = Math.floor(diffMs / 1000) % 60;
+                const diffMinutes = Math.floor(diffMs / (1000 * 60)) % 60;
+                const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                duration = `${String(diffHours).padStart(2, "0")}:${String(diffMinutes).padStart(2, "0")}:${String(diffSeconds).padStart(2, "0")}`;
+              }
               data.push({
                 [subJobsCols.PROJECT_UUID.id]: subJob.getProjectUuid(),
                 [subJobsCols.NODE_ID.id]: subJob.getNodeId(),
                 [subJobsCols.NODE_NAME.id]: subJob.getNodeName(),
-                [subJobsCols.SOLVER.id]: subJob.getImage()["name"] + ":" + subJob.getImage()["tag"],
+                [subJobsCols.SOLVER.id]: nodeName + ":" + version,
                 [subJobsCols.STATE.id]: subJob.getState(),
                 [subJobsCols.PROGRESS.id]: subJob.getProgress() * 100 + "%",
-                [subJobsCols.START.id]: subJob.getStartedAt() ? osparc.utils.Utils.formatDateAndTime(subJob.getStartedAt()) : "-",
-                [subJobsCols.END.id]: subJob.getEndedAt() ? osparc.utils.Utils.formatDateAndTime(subJob.getEndedAt()) : "-",
+                [subJobsCols.START.id]: startedAt ? osparc.utils.Utils.formatDateAndTime(startedAt) : "-",
+                [subJobsCols.END.id]: endedAt ? osparc.utils.Utils.formatDateAndTime(endedAt) : "-",
+                [subJobsCols.DURATION.id]: duration,
                 [subJobsCols.IMAGE.id]: subJob.getImage() ? osparc.utils.Utils.formatDateAndTime(subJob.getEndedAt()) : "-",
               });
             });

@@ -55,9 +55,9 @@ qx.Class.define("osparc.jobs.RunsWindow", {
       stack.add(subRunsBrowser);
 
       runsAndClusters.addListener("runSelected", e => {
-        const projectUuid = e.getData();
-        subRunsBrowser.setProjectUuid(projectUuid);
-        this.getChildControl("title").setValue(this.tr("Runs asdf"));
+        const project = e.getData();
+        subRunsBrowser.setProject(project);
+        this.getChildControl("title").setValue(this.tr("Runs"));
         stack.setSelection([subRunsBrowser]);
       });
 

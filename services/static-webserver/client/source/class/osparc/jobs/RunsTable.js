@@ -69,7 +69,7 @@ qx.Class.define("osparc.jobs.RunsTable", {
       STATE: {
         id: "state",
         column: 2,
-        label: qx.locale.Manager.tr("State"),
+        label: qx.locale.Manager.tr("Status"),
         width: 170
       },
       SUBMIT: {
@@ -144,14 +144,7 @@ qx.Class.define("osparc.jobs.RunsTable", {
       const rowData = this.getTableModel().getRowData(row);
       switch (action) {
         case "info": {
-          this.fireDataEvent("runSelected", rowData["projectUuid"]);
-          /*
-          const subJobsTable = new osparc.jobs.SubRunsTable(rowData["projectUuid"]);
-          osparc.ui.window.Window.popUpInWindow(subJobsTable, rowData["projectName"], 1000, 500).set({
-            clickAwayClose: false,
-            showClose: true
-          });
-          */
+          this.fireDataEvent("runSelected", rowData);
           break;
         }
         case "stop":

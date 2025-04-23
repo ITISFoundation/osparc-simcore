@@ -506,7 +506,7 @@ qx.Class.define("osparc.utils.Utils", {
       * @param value {Date Object} Date Object
       */
     formatDate: function(value) {
-      // create a date format like "Oct. 19, 2018 11:31 AM"
+      // create a date format like "Oct. 19, 11:31 AM" if it's this year
       const dateFormat = new qx.util.format.DateFormat(
         qx.locale.Date.getDateFormat("medium")
       );
@@ -517,6 +517,7 @@ qx.Class.define("osparc.utils.Utils", {
       yesterday.setDate(yesterday.getDate() - 1);
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
+
       if (today.toDateString() === value.toDateString()) {
         dateStr = qx.locale.Manager.tr("Today");
       } else if (yesterday.toDateString() === value.toDateString()) {
@@ -524,7 +525,14 @@ qx.Class.define("osparc.utils.Utils", {
       } else if (tomorrow.toDateString() === value.toDateString()) {
         dateStr = qx.locale.Manager.tr("Tomorrow");
       } else {
-        dateStr = dateFormat.format(value);
+        const currentYear = today.getFullYear();
+        if (value.getFullYear() === currentYear) {
+          // Remove the year if it's the current year
+          const shortDateFormat = new qx.util.format.DateFormat("MMM d");
+          dateStr = shortDateFormat.format(value);
+        } else {
+          dateStr = dateFormat.format(value);
+        }
       }
       return dateStr;
     },
