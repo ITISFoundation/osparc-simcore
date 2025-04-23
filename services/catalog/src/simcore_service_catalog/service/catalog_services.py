@@ -370,7 +370,6 @@ async def check_catalog_service_permissions(
         service_key: Service key
         service_version: Service version
         permission: Permission level to check, either "read" or "write".
-                    Note that write permission implies read permission.
 
     Raises:
         CatalogItemNotFoundError: service (key,version) not found
