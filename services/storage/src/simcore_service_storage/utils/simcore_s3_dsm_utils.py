@@ -3,11 +3,10 @@ from pathlib import Path
 from typing import TypeAlias
 from uuid import uuid4
 
-import orjson
 from aws_library.s3 import S3MetaData, SimcoreS3API
 from aws_library.s3._constants import STREAM_READER_CHUNK_SIZE
 from aws_library.s3._models import S3ObjectKey
-from common_library.json_serialization import json_loads
+from common_library.json_serialization import json_dumps, json_loads
 from models_library.api_schemas_storage.storage_schemas import S3BucketName
 from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_nodes_io import (
@@ -278,7 +277,7 @@ async def list_child_paths_from_s3(
     ]
     next_cursor = None
     if objects_next_cursor:
-        next_cursor = orjson.dumps(
+        next_cursor = json_dumps(
             {
                 "file_filter": f"{file_filter}",
                 "objects_next_cursor": objects_next_cursor,

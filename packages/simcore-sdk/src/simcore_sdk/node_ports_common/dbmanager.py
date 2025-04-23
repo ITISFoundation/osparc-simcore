@@ -1,8 +1,7 @@
-import json
 import logging
 
 import sqlalchemy as sa
-from common_library.json_serialization import json_loads
+from common_library.json_serialization import json_dumps, json_loads
 
 from models_library.projects import ProjectID
 from models_library.users import UserID
@@ -118,7 +117,7 @@ class DBManager:
             engine.connect() as connection,
         ):
             node = await _get_node_from_db(project_id, node_uuid, connection)
-            node_json_config = json.dumps(
+            node_json_config = json_dumps(
                 {
                     "schema": node.schema,
                     "inputs": node.inputs,

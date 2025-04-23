@@ -1,5 +1,4 @@
 import asyncio
-import json
 import logging
 import os
 import socket
@@ -12,6 +11,7 @@ from typing import Final, cast
 from uuid import uuid4
 
 from aiodocker import Docker
+from common_library.json_serialization import json_dumps
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.errors import ServiceRuntimeError
 from dask_task_models_library.container_tasks.io import FileUrl, TaskOutputData
@@ -95,7 +95,7 @@ class ComputationalSidecar:
         # NOTE: temporary solution until new version is created
         for task in download_tasks:
             await task
-        input_data_file.write_text(json.dumps(local_input_data_file))
+        input_data_file.write_text(json_dumps(local_input_data_file))
 
         await self._publish_sidecar_log("All the input data were downloaded.")
 

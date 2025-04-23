@@ -1,6 +1,5 @@
 import asyncio
 import contextlib
-import json
 import logging
 import re
 from datetime import timedelta
@@ -13,7 +12,7 @@ import aiodocker.networks
 import arrow
 import httpx
 import tenacity
-from common_library.json_serialization import json_loads
+from common_library.json_serialization import json_dumps, json_loads
 from fastapi import FastAPI, status
 from packaging.version import Version
 from servicelib.async_utils import run_sequentially_in_context
@@ -315,7 +314,7 @@ async def _create_docker_service_params(
         _check_setting_correctness(param)
         # replace %service_uuid% by the given uuid
         if str(param["value"]).find("%service_uuid%") != -1:
-            dummy_string = json.dumps(param["value"])
+            dummy_string = json_dumps(param["value"])
             dummy_string = dummy_string.replace("%service_uuid%", node_uuid)
             param["value"] = json_loads(dummy_string)
 

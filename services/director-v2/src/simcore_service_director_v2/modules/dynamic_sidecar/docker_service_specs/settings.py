@@ -1,9 +1,8 @@
-import json
 import logging
 from collections import deque
 from typing import Any, cast
 
-from common_library.json_serialization import json_loads
+from common_library.json_serialization import json_dumps, json_loads
 from models_library.basic_types import EnvVarKey, PortInt
 from models_library.boot_options import BootOption
 from models_library.docker import (
@@ -375,7 +374,7 @@ def _patch_target_service_into_env_vars(
 
     def _format_env_var(env_var: str, destination_container: list[str]) -> str:
         var_name, var_payload = env_var.split("=")
-        json_encoded = json.dumps(
+        json_encoded = json_dumps(
             {"destination_containers": destination_container, "env_var": var_payload}
         )
         return f"{var_name}={json_encoded}"
