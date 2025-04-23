@@ -247,7 +247,7 @@ def test_rabbitmq_settings_are_passed_with_pasword_clear(
     )
     assert isinstance(deploy_script, str)
 
-    match = re.search(r"AUTOSCALING_RABBITMQ=({.*?})", deploy_script)
+    match = re.search(r"AUTOSCALING_RABBITMQ=\'({.*?})\'", deploy_script)
     assert match, "AUTOSCALING_RABBITMQ is not present in the deploy script!"
     autoscaling_rabbitmq = match.group(1)
     passed_settings = RabbitSettings.model_validate_json(autoscaling_rabbitmq)
