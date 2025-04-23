@@ -1,6 +1,7 @@
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
+from pydantic.config import JsonDict
 
 from ..basic_regex import PUBLIC_VARIABLE_NAME_RE
 from ..services import ServiceInput, ServiceOutput
@@ -25,32 +26,40 @@ class ServicePortGet(BaseModel):
         description="jsonschema for the port's value. SEE https://json-schema.org/understanding-json-schema/",
     )
 
-    model_config = ConfigDict(
-        json_schema_extra={
-            "examples": [
-                {
-                    "key": "input_1",
-                    "kind": "input",
-                    "content_schema": {
-                        "title": "Sleep interval",
-                        "type": "integer",
-                        "x_unit": "second",
-                        "minimum": 0,
-                        "maximum": 5,
-                    },
-                },
-                {
-                    "key": "output_1",
-                    "kind": "output",
-                    "content_media_type": "text/plain",
-                    "content_schema": {
-                        "type": "string",
-                        "title": "File containing one random integer",
-                        "description": "Integer is generated in range [1-9]",
-                    },
-                },
-            ]
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        input_example = {
+            "key": "input_1",
+            "kind": "input",
+            "content_schema": {
+                "title": "Sleep interval",
+                "type": "integer",
+                "x_unit": "second",
+                "minimum": 0,
+                "maximum": 5,
+            },
         }
+        schema.update(
+            {
+                "example": input_example,
+                "examples": [
+                    input_example,
+                    {
+                        "key": "output_1",
+                        "kind": "output",
+                        "content_media_type": "text/plain",
+                        "content_schema": {
+                            "type": "string",
+                            "title": "File containing one random integer",
+                            "description": "Integer is generated in range [1-9]",
+                        },
+                    },
+                ],
+            }
+        )
+
+    model_config = ConfigDict(
+        json_schema_extra=_update_json_schema_extra,
     )
 
     @classmethod

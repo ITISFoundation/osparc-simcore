@@ -3145,7 +3145,18 @@
           "key",
           "kind"
         ],
-        "title": "ServicePortGet"
+        "title": "ServicePortGet",
+        "example": {
+          "content_schema": {
+            "maximum": 5,
+            "minimum": 0,
+            "title": "Sleep interval",
+            "type": "integer",
+            "x_unit": "second"
+          },
+          "key": "input_1",
+          "kind": "input"
+        }
       },
       "ServiceSpec": {
         "properties": {
