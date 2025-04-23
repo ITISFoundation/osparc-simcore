@@ -561,6 +561,10 @@ qx.Class.define("osparc.data.Resources", {
           get: {
             method: "GET",
             url: statics.API + "/tasks"
+          },
+          delete: {
+            method: "DELETE",
+            url: statics.API + "/tasks/{taskId}"
           }
         }
       },
