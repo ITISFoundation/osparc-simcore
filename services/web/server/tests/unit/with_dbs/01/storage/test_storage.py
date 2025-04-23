@@ -680,7 +680,7 @@ async def test_get_user_async_jobs(
         (
             "POST",
             "abort_href",
-            async_jobs.abort.__name__,
+            async_jobs.cancel.__name__,
             AsyncJobAbort(result=True, job_id=AsyncJobId(_faker.uuid4())),
             status.HTTP_204_NO_CONTENT,
             None,
