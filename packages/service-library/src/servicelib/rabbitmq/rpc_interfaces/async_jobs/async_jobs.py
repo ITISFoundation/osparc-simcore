@@ -36,7 +36,7 @@ _DEFAULT_POLL_INTERVAL_S: Final[float] = 0.1
 _logger = logging.getLogger(__name__)
 
 
-async def cancel(
+async def abort(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     rpc_namespace: RPCNamespace,
@@ -45,7 +45,23 @@ async def cancel(
 ) -> None:
     await rabbitmq_rpc_client.request(
         rpc_namespace,
-        TypeAdapter(RPCMethodName).validate_python("cancel"),
+        TypeAdapter(RPCMethodName).validate_python("abort"),
+        job_id=job_id,
+        job_id_data=job_id_data,
+        timeout_s=_DEFAULT_TIMEOUT_S,
+    )
+
+
+async def delete(
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    *,
+    rpc_namespace: RPCNamespace,
+    job_id: AsyncJobId,
+    job_id_data: AsyncJobNameData,
+) -> None:
+    await rabbitmq_rpc_client.request(
+        rpc_namespace,
+        TypeAdapter(RPCMethodName).validate_python("delete"),
         job_id=job_id,
         job_id_data=job_id_data,
         timeout_s=_DEFAULT_TIMEOUT_S,
@@ -222,7 +238,7 @@ async def wait_and_get_result(
             )
     except (TimeoutError, CancelledError) as error:
         try:
-            await cancel(
+            await abort(
                 rabbitmq_rpc_client,
                 rpc_namespace=rpc_namespace,
                 job_id=job_id,
@@ -254,7 +270,7 @@ async def submit_and_wait(
     except (TimeoutError, CancelledError) as error:
         if async_job_rpc_get is not None:
             try:
-                await cancel(
+                await abort(
                     rabbitmq_rpc_client,
                     rpc_namespace=rpc_namespace,
                     job_id=async_job_rpc_get.job_id,

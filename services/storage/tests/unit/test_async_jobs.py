@@ -264,7 +264,7 @@ async def test_async_jobs_cancel(
         payload=60 * 10,  # test hangs if not cancelled properly
     )
 
-    await async_jobs.cancel(
+    await async_jobs.abort(
         storage_rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_id=async_job_get.job_id,
