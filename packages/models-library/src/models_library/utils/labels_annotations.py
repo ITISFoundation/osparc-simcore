@@ -56,7 +56,7 @@ def from_labels(
     for key, label in labels.items():
         if key.startswith(f"{prefix_key}."):
             try:
-                value = json_loads(label)  # type: ignore
+                value = json_loads(label)
             except JSONDecodeError:
                 value = label
 
