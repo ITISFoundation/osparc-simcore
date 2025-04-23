@@ -22,6 +22,7 @@ from models_library.api_schemas_catalog.services import (
     ServiceRelease,
     ServiceUpdateV2,
 )
+from models_library.api_schemas_catalog.services_ports import ServicePortGet
 from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.rest_pagination import PageOffsetInt
@@ -222,3 +223,34 @@ async def list_my_service_history_paginated(  # pylint: disable=too-many-argumen
         TypeAdapter(PageRpcServiceRelease).validate_python(result) is not None
     )
     return cast(PageRpc[ServiceRelease], result)
+
+
+@validate_call(config={"arbitrary_types_allowed": True})
+@log_decorator(_logger, level=logging.DEBUG)
+async def get_service_ports(
+    rpc_client: RabbitMQRPCClient,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+) -> list[ServicePortGet]:
+    """Gets service ports (inputs and outputs) for a specific service version
+
+    Raises:
+        ValidationError: on invalid arguments
+        CatalogItemNotFoundError: service not found in catalog
+        CatalogForbiddenError: not access rights to read this service
+    """
+    result = await rpc_client.request(
+        CATALOG_RPC_NAMESPACE,
+        TypeAdapter(RPCMethodName).validate_python("get_service_ports"),
+        product_name=product_name,
+        user_id=user_id,
+        service_key=service_key,
+        service_version=service_version,
+    )
+    assert (
+        TypeAdapter(list[ServicePortGet]).validate_python(result) is not None
+    )  # nosec
+    return cast(list[ServicePortGet], result)
