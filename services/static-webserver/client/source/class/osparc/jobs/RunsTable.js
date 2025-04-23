@@ -36,6 +36,10 @@ qx.Class.define("osparc.jobs.RunsTable", {
 
     Object.values(this.self().COLS).forEach(col => columnModel.setColumnWidth(col.column, col.width));
 
+    const iconPathRun = "osparc/circle-play-text.svg";
+    const fontButtonRendererRun = new osparc.ui.table.cellrenderer.ImageButtonRenderer("run", iconPathRun);
+    columnModel.setDataCellRenderer(this.self().COLS.ACTION_RUN.column, fontButtonRendererRun);
+
     const iconPathStop = "osparc/circle-stop-text.svg";
     const fontButtonRendererStop = new osparc.ui.table.cellrenderer.ImageButtonRenderer("stop", iconPathStop);
     columnModel.setDataCellRenderer(this.self().COLS.ACTION_STOP.column, fontButtonRendererStop);
@@ -89,14 +93,14 @@ qx.Class.define("osparc.jobs.RunsTable", {
         width: 130,
         sortable: true
       },
-      ACTION_STOP: {
-        id: "info",
+      ACTION_RUN: {
+        id: "action_run",
         column: 6,
         label: "",
         width: 40
       },
-      ACTION_RUN: {
-        id: "action_run",
+      ACTION_STOP: {
+        id: "action_stop",
         column: 7,
         label: "",
         width: 40
@@ -134,7 +138,7 @@ qx.Class.define("osparc.jobs.RunsTable", {
           this.fireDataEvent("runSelected", rowData);
           break;
         }
-        case "start":
+        case "run":
         case "stop":
         case "logs": {
           const msg = `I wish I could ${action} the job ${rowData["projectUuid"]}`;
