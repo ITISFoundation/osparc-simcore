@@ -5,8 +5,8 @@ from typing import Final
 
 import aiofiles
 import httpx
+import orjson
 from aws_library.s3 import MultiPartUploadLinks
-from common_library.json_serialization import json_loads
 from fastapi import status
 from models_library.api_schemas_storage.storage_schemas import (
     ETag,
@@ -71,7 +71,7 @@ async def upload_file_part(
     assert response.status_code == status.HTTP_200_OK
     assert response.headers
     assert "Etag" in response.headers
-    received_e_tag = json_loads(response.headers["Etag"])
+    received_e_tag = orjson.loads(response.headers["Etag"])
     print(
         f"--> completed upload {this_file_chunk_size=} of {file=}, [{part_index + 1}/{num_parts}], {received_e_tag=}"
     )
