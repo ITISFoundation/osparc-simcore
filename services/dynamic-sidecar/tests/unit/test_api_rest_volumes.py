@@ -9,14 +9,6 @@ from models_library.sidecar_volumes import VolumeCategory, VolumeState, VolumeSt
 from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
 
-pytest_simcore_core_services_selection = [
-    "postgres",
-]
-
-pytest_simcore_ops_services_selection = [
-    "adminer",
-]
-
 
 @pytest.mark.parametrize(
     "volume_category, initial_expected_status",

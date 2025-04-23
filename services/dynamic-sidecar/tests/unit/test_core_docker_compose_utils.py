@@ -23,14 +23,6 @@ from simcore_service_dynamic_sidecar.core.docker_compose_utils import (
 from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 from simcore_service_dynamic_sidecar.core.utils import CommandResult
 
-pytest_simcore_core_services_selection = [
-    "postgres",
-]
-
-pytest_simcore_ops_services_selection = [
-    "adminer",
-]
-
 SLEEP_TIME_S = 60
 COMPOSE_SPEC_SAMPLE = {
     "services": {

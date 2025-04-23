@@ -46,14 +46,6 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
-pytest_simcore_core_services_selection = [
-    "postgres",
-]
-
-pytest_simcore_ops_services_selection = [
-    "adminer",
-]
-
 _TENACITY_RETRY_PARAMS = {
     "reraise": True,
     "retry": retry_if_exception_type(AssertionError),
@@ -204,7 +196,7 @@ def file_generation_info(request: pytest.FixtureRequest) -> FileGenerationInfo:
 # UTILS
 
 
-async def random_events_in_path(
+async def random_events_in_path(  # noqa: C901
     *,
     port_key_path: Path,
     files_per_port_key: NonNegativeInt,

@@ -8,7 +8,6 @@ from collections.abc import AsyncIterable, AsyncIterator
 from unittest.mock import AsyncMock
 
 import pytest
-import sqlalchemy as sa
 from aiodocker.volumes import DockerVolume
 from async_asgi_testclient import TestClient
 from fastapi import FastAPI
@@ -31,9 +30,17 @@ from tenacity.wait import wait_fixed
 logger = logging.getLogger(__name__)
 
 
+#
+# APP and CLIENT fixtures
+#
+#  In this context by default all external services are
+#  mocked (e.g. registry, rabbitmq, ...)
+#
+#
+
+
 @pytest.fixture
 def app(
-    postgres_db: sa.engine.Engine,
     mock_environment: EnvVarsDict,
     mock_registry_service: AsyncMock,
     mock_core_rabbitmq: dict[str, AsyncMock],

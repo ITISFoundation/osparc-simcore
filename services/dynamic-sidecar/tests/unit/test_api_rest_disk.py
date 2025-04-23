@@ -7,14 +7,6 @@ from simcore_service_dynamic_sidecar.core.reserved_space import (
     _RESERVED_DISK_SPACE_NAME,
 )
 
-pytest_simcore_core_services_selection = [
-    "postgres",
-]
-
-pytest_simcore_ops_services_selection = [
-    "adminer",
-]
-
 
 async def test_reserved_disk_space_freed(
     cleanup_reserved_disk_space: None, test_client: TestClient

@@ -21,14 +21,6 @@ from simcore_service_dynamic_sidecar.core.docker_utils import (
 )
 from simcore_service_dynamic_sidecar.core.errors import VolumeNotFoundError
 
-pytest_simcore_core_services_selection = [
-    "postgres",
-]
-
-pytest_simcore_ops_services_selection = [
-    "adminer",
-]
-
 
 @pytest.fixture
 def volume_name() -> str:

@@ -20,14 +20,6 @@ from simcore_service_dynamic_sidecar.models.shared_store import (
     SharedStore,
 )
 
-pytest_simcore_core_services_selection = [
-    "postgres",
-]
-
-pytest_simcore_ops_services_selection = [
-    "adminer",
-]
-
 
 @pytest.fixture
 def trigger_setup_shutdown_events(

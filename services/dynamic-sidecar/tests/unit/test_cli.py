@@ -11,14 +11,6 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_dynamic_sidecar.cli import main
 from typer.testing import CliRunner
 
-pytest_simcore_core_services_selection = [
-    "postgres",
-]
-
-pytest_simcore_ops_services_selection = [
-    "adminer",
-]
-
 
 @pytest.fixture
 def cli_runner(mock_environment: EnvVarsDict) -> CliRunner:

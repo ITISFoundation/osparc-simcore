@@ -29,14 +29,6 @@ from watchdog.events import (
     FileSystemEvent,
 )
 
-pytest_simcore_core_services_selection = [
-    "postgres",
-]
-
-pytest_simcore_ops_services_selection = [
-    "adminer",
-]
-
 
 @pytest.fixture
 def path_to_observe(tmp_path: Path) -> Path:
@@ -240,6 +232,7 @@ class _MockAioQueue:
 def test_port_keys_event_handler_triggers_for_events(
     mock_state_path: Path, event: FileSystemEvent, expected_port_key: str | None
 ) -> None:
+
     queue = _MockAioQueue()
 
     event_handler = _PortKeysEventHandler(mock_state_path, queue)

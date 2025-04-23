@@ -17,14 +17,6 @@ from simcore_service_dynamic_sidecar.core.validation import (
 )
 from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
 
-pytest_simcore_core_services_selection = [
-    "postgres",
-]
-
-pytest_simcore_ops_services_selection = [
-    "adminer",
-]
-
 
 @pytest.fixture
 def incoming_iseg_compose_file_content() -> str:

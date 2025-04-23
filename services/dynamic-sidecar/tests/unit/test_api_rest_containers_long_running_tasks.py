@@ -47,14 +47,6 @@ from simcore_service_dynamic_sidecar.modules.inputs import enable_inputs_pulling
 from simcore_service_dynamic_sidecar.modules.outputs._context import OutputsContext
 from simcore_service_dynamic_sidecar.modules.outputs._manager import OutputsManager
 
-pytest_simcore_core_services_selection = [
-    "postgres",
-]
-
-pytest_simcore_ops_services_selection = [
-    "adminer",
-]
-
 FAST_STATUS_POLL: Final[float] = 0.1
 CREATE_SERVICE_CONTAINERS_TIMEOUT: Final[float] = 60
 DEFAULT_COMMAND_TIMEOUT: Final[int] = 5

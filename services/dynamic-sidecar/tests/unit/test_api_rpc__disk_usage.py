@@ -6,7 +6,6 @@ from collections.abc import AsyncIterable, Awaitable, Callable
 from unittest.mock import AsyncMock
 
 import pytest
-import sqlalchemy as sa
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from models_library.api_schemas_dynamic_sidecar.telemetry import DiskUsage
@@ -23,36 +22,34 @@ from simcore_service_dynamic_sidecar.modules.system_monitor._disk_usage import (
 )
 
 pytest_simcore_core_services_selection = [
-    "postgres",
     "redis",
     "rabbit",
-]
-
-pytest_simcore_ops_services_selection = [
-    "adminer",
 ]
 
 
 @pytest.fixture
 def mock_environment(
-    mock_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
     rabbit_service: RabbitSettings,
     redis_service: RedisSettings,
+    mock_environment: EnvVarsDict,
     mock_registry_service: AsyncMock,
 ) -> EnvVarsDict:
     return setenvs_from_dict(
         monkeypatch,
         {
             "DY_SIDECAR_SYSTEM_MONITOR_TELEMETRY_ENABLE": "true",
+            "RABBIT_HOST": rabbit_service.RABBIT_HOST,
+            "RABBIT_PASSWORD": rabbit_service.RABBIT_PASSWORD.get_secret_value(),
+            "RABBIT_PORT": f"{rabbit_service.RABBIT_PORT}",
+            "RABBIT_SECURE": f"{rabbit_service.RABBIT_SECURE}",
+            "RABBIT_USER": rabbit_service.RABBIT_USER,
         },
     )
 
 
 @pytest.fixture
-async def app(
-    postgres_db: sa.engine.Engine, mock_environment: EnvVarsDict
-) -> AsyncIterable[FastAPI]:
+async def app(mock_environment: EnvVarsDict) -> AsyncIterable[FastAPI]:
     app = create_app()
     async with LifespanManager(app):
         yield app
