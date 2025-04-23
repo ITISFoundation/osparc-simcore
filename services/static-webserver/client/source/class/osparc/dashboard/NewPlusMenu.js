@@ -191,19 +191,24 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
     __addHypertools: function() {
       const hypertools = osparc.store.Templates.getInstance().getTemplatesByType(osparc.data.model.StudyUI.HYPERTOOL_TYPE);
       if (hypertools.length) {
-        const moreMenuButton = this.self().createMenuButton("@FontAwesome5Solid/star/16", this.tr("Hypertools"));
-        this.addAt(moreMenuButton, this.__itemIdx);
+        const hypertoolsMenuButton = this.self().createMenuButton("@FontAwesome5Solid/star/16", this.tr("Hypertools"));
+        this.addAt(hypertoolsMenuButton, this.__itemIdx);
         this.__itemIdx++;
 
-        const moreMenu = new qx.ui.menu.Menu().set({
+        const hypertoolsMenu = new qx.ui.menu.Menu().set({
           appearance: "menu-wider",
         });
+        hypertoolsMenuButton.setMenu(hypertoolsMenu);
+
         hypertools.forEach(templateData => {
           const hypertoolButton = this.self().createMenuButton(templateData["icon"], templateData["name"]);
-          hypertoolButton.addListener("execute", () => {
-            console.log(templateData);
-          }, this);
-          moreMenu.add(hypertoolButton);
+          hypertoolButton.addListener("tap", () => {
+            this.fireDataEvent("newStudyFromTemplateClicked", {
+              templateData,
+              newStudyLabel: templateData["name"],
+            });
+          });
+          hypertoolsMenu.add(hypertoolButton);
         });
       }
     },
@@ -216,6 +221,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       const moreMenu = new qx.ui.menu.Menu().set({
         appearance: "menu-wider",
       });
+      moreMenuButton.setMenu(moreMenu);
 
       const permissions = osparc.data.Permissions.getInstance();
       if (permissions.canDo("dashboard.templates.read")) {
@@ -229,10 +235,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
         servicesButton.addListener("execute", () => this.fireDataEvent("changeTab", "servicesTab"), this);
         moreMenu.add(servicesButton);
       }
-
       moreMenuButton.setVisibility(moreMenu.getChildren().length ? "visible" : "excluded");
-
-      moreMenuButton.setMenu(moreMenu);
     },
 
     __getLastIdxFromCategory: function(categoryId) {
