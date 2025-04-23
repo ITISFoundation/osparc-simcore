@@ -67,7 +67,7 @@ class JobService(SingletonInAppStateMixin):
     ) -> tuple[Job, ProjectGet]:
         # creates NEW job as prototype
         pre_job = Job.create_job_from_solver_or_program(
-            solver_or_program_name=solver_or_program.name, inputs=inputs, name=name
+            solver_or_program_name=solver_or_program.name, inputs=inputs
         )
         with log_context(
             logger=_logger, level=logging.DEBUG, msg=f"Creating job {pre_job.name}"
@@ -77,6 +77,7 @@ class JobService(SingletonInAppStateMixin):
                 job=pre_job,
                 inputs=inputs,
                 description=description,
+                name=name,
             )
             new_project: ProjectGet = await self._web_rest_api.create_project(
                 project_in,

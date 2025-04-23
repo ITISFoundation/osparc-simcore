@@ -3,7 +3,6 @@ Helper functions to convert models used in
 services/api-server/src/simcore_service_api_server/api/routes/solvers_jobs.py
 """
 
-import urllib.parse
 import uuid
 from collections.abc import Callable
 from datetime import UTC, datetime
@@ -124,6 +123,7 @@ def create_new_project_for_job(
     job: Job,
     inputs: JobInputs,
     description: str | None = None,
+    name: str | None = None,
 ) -> ProjectCreateNew:
     """
     Creates a project for a solver's job
@@ -162,7 +162,7 @@ def create_new_project_for_job(
 
     return ProjectCreateNew(
         uuid=project_id,
-        name=job.name,  # NOTE: this IS an identifier as well. MUST NOT be changed in the case of project APIs!
+        name=name or job.name,
         description=description
         or f"Study associated to solver/study/program job:\n{job_info}",
         thumbnail="https://via.placeholder.com/170x120.png",  # type: ignore[arg-type]
@@ -199,8 +199,6 @@ def create_job_from_project(
     raise ValidationError
     """
     assert len(project.workbench) == 1  # nosec
-    assert solver_or_program.version in project.name  # nosec
-    assert urllib.parse.quote_plus(solver_or_program.id) in project.name  # nosec
 
     # get solver node
     node_id = next(iter(project.workbench.keys()))
@@ -216,7 +214,9 @@ def create_job_from_project(
 
     job = Job(
         id=job_id,
-        name=project.name,
+        name=Job.compose_resource_name(
+            parent_name=solver_or_program_name, job_id=job_id
+        ),
         inputs_checksum=job_inputs.compute_checksum(),
         created_at=project.creation_date,  # type: ignore[arg-type]
         runner_name=solver_or_program_name,

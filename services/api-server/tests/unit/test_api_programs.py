@@ -7,6 +7,7 @@ from typing import Any
 
 import httpx
 import pytest
+from faker import Faker
 from fastapi import status
 from httpx import AsyncClient
 from models_library.api_schemas_storage.storage_schemas import FileUploadSchema
@@ -19,6 +20,8 @@ from pytest_simcore.helpers.httpx_calls_capture_models import (
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.schemas.jobs import Job
 from simcore_service_api_server.models.schemas.programs import Program
+
+_faker = Faker()
 
 
 async def test_get_program_release(
@@ -43,17 +46,29 @@ async def test_get_program_release(
     assert program.version == version
 
 
+@pytest.mark.parametrize(
+    "job_name,job_description",
+    [
+        (None, None),
+        (_faker.name(), None),
+        (None, _faker.sentence()),
+        (_faker.name(), _faker.sentence()),
+    ],
+)
 @pytest.mark.parametrize("capture_name", ["create_program_job_success.json"])
 async def test_create_program_job(
     auth: httpx.BasicAuth,
     client: AsyncClient,
     mocked_webserver_rest_api_base,
     mocked_rpc_catalog_service_api: dict[str, MockType],
+    mocked_webserver_rpc_api: dict[str, MockType],
     create_respx_mock_from_capture: CreateRespxMockCallback,
     mocker: MockerFixture,
     user_id: UserID,
     capture_name: str,
     project_tests_dir: Path,
+    job_name: str | None,
+    job_description: str | None,
 ):
 
     mocker.patch(
@@ -76,18 +91,33 @@ async def test_create_program_job(
 
         response_body = capture.response_body
 
-        # first call defines the project uuid
+        # first call creates project
         if server_state.get("project_uuid") is None:
-            _project_uuid = json.loads(request.content.decode("utf-8")).get("uuid")
+            get_body_field = lambda field: json.loads(
+                request.content.decode("utf-8")
+            ).get(field)
+
+            _project_uuid = get_body_field("uuid")
             assert _project_uuid
             server_state["project_uuid"] = _project_uuid
 
+            _name = get_body_field("name")
+            assert _name
+            server_state["name"] = _name
+
+            _description = get_body_field("description")
+            assert _description
+            server_state["description"] = _description
+
+            if job_name:
+                assert job_name == get_body_field("name")
+            if job_description:
+                assert job_description == get_body_field("description")
+
         if request.url.path.endswith("/result"):
-            capture_uuid = response_body["data"]["uuid"]
             response_body["data"]["uuid"] = server_state["project_uuid"]
-            response_body["data"]["name"] = response_body["data"]["name"].replace(
-                capture_uuid, server_state["project_uuid"]
-            )
+            response_body["data"]["name"] = server_state["name"]
+            response_body["data"]["description"] = server_state["description"]
         assert isinstance(response_body, dict)
         return response_body
 
@@ -100,14 +130,15 @@ async def test_create_program_job(
         side_effects_callbacks=3 * [partial(_side_effect, _server_state)],
     )
 
-    # Arrange
     program_key = "simcore/services/dynamic/electrode-selector"
     version = "2.1.3"
 
+    body = {"name": job_name, "description": job_description}
+
     response = await client.post(
         f"/{API_VTAG}/programs/{program_key}/releases/{version}/jobs",
-        # headers=headers,
         auth=auth,
+        json={k: v for k, v in body.items() if v is not None},
     )
 
     # Assert
