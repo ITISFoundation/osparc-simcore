@@ -56,10 +56,6 @@ qx.Class.define("osparc.utils.DisabledPlugins", {
       return osparc.store.StaticInfo.getInstance().isDevFeaturesEnabled();
     },
 
-    isMultiDownloadEnabled: function() {
-      return osparc.store.StaticInfo.getInstance().isDevFeaturesEnabled();
-    },
-
     isJobsEnabled: function() {
       return osparc.store.StaticInfo.getInstance().isDevFeaturesEnabled();
     },

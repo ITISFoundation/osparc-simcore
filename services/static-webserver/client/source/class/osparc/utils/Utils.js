@@ -858,24 +858,25 @@ qx.Class.define("osparc.utils.Utils", {
           }
         });
         xhr.addEventListener("progress", e => {
-          if (xhr.readyState === XMLHttpRequest.LOADING) {
-            if (xhr.status === 0 || (xhr.status >= 200 && xhr.status < 400)) {
-              if (e["type"] === "progress" && progressCb) {
-                progressCb(e.loaded / e.total);
-              }
-            }
+          if (
+            progressCb &&
+            xhr.readyState === XMLHttpRequest.LOADING &&
+            (xhr.status === 0 || (xhr.status >= 200 && xhr.status < 400)) &&
+            e["type"] === "progress"
+          ) {
+            progressCb(e.loaded / e.total);
           }
         });
         xhr.addEventListener("load", () => {
           if (xhr.status == 200) {
-            if (loadedCb) {
-              loadedCb();
-            }
             const blob = new Blob([xhr.response]);
             if (!fileName) {
               fileName = this.self().filenameFromContentDisposition(xhr);
             }
             this.self().downloadBlobContent(blob, fileName);
+            if (loadedCb) {
+              loadedCb();
+            }
             resolve();
           } else {
             reject(xhr);
