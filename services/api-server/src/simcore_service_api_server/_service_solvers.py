@@ -4,7 +4,12 @@ from common_library.pagination_tools import iter_pagination_params
 from fastapi import Depends
 from models_library.basic_types import VersionStr
 from models_library.products import ProductName
-from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+from models_library.rest_pagination import (
+    MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
+    PageOffsetInt,
+)
+from models_library.rpc.webserver.projects import PageRpcProjectRpcGet
+from models_library.rpc_pagination import PageLimitInt
 from models_library.services_enums import ServiceType
 from models_library.services_history import ServiceRelease
 from models_library.users import UserID
@@ -12,15 +17,22 @@ from packaging.version import Version
 
 from .models.schemas.solvers import Solver, SolverKeyId
 from .services_rpc.catalog import CatalogService
+from .services_rpc.wb_api_server import WbApiRpcClient
 
 DEFAULT_PAGINATION_LIMIT = MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE - 1
 
 
 class SolverService:
     _catalog_service: CatalogService
+    _webserver_client: WbApiRpcClient
 
-    def __init__(self, catalog_service: Annotated[CatalogService, Depends()]):
+    def __init__(
+        self,
+        catalog_service: Annotated[CatalogService, Depends()],
+        wb_api_client: Annotated[WbApiRpcClient, Depends()],
+    ):
         self._catalog_service = catalog_service
+        self._webserver_client = wb_api_client
 
     async def get_solver(
         self,
@@ -70,3 +82,31 @@ class SolverService:
         )
 
         return Solver.create_from_service(service)
+
+    async def list_all_solvers_jobs(
+        self,
+        *,
+        user_id: UserID,
+        product_name: ProductName,
+        offset: PageOffsetInt = 0,
+        limit: PageLimitInt = DEFAULT_PAGINATION_LIMIT,
+    ) -> PageRpcProjectRpcGet:
+        """Lists solver jobs for a user with pagination
+
+        Args:
+            user_id: The ID of the user
+            product_name: The product name
+            offset: Pagination offset
+            limit: Pagination limit
+            job_parent_resource_name_filter: Optional filter for job parent resource name
+
+        Returns:
+            Paginated response with projects marked as jobs
+        """
+        return await self._webserver_client.list_projects_marked_as_jobs(
+            product_name=product_name,
+            user_id=user_id,
+            offset=offset,
+            limit=limit,
+            job_parent_resource_name_filter="solvers",  # TODO: use a constant from models_library
+        )

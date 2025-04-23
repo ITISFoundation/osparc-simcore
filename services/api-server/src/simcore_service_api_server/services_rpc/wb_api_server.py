@@ -219,6 +219,25 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             job_parent_resource_name=job_parent_resource_name,
         )
 
+    @_exception_mapper(rpc_exception_map={})
+    async def list_projects_marked_as_jobs(
+        self,
+        *,
+        product_name: ProductName,
+        user_id: UserID,
+        offset: int = 0,
+        limit: int = 50,
+        job_parent_resource_name_filter: str | None = None,
+    ):
+        return await projects_rpc.list_projects_marked_as_jobs(
+            rpc_client=self._client,
+            product_name=product_name,
+            user_id=user_id,
+            offset=offset,
+            limit=limit,
+            job_parent_resource_name_filter=job_parent_resource_name_filter,
+        )
+
 
 def setup(app: FastAPI, rabbitmq_rmp_client: RabbitMQRPCClient):
     wb_api_rpc_client = WbApiRpcClient(_client=rabbitmq_rmp_client)
