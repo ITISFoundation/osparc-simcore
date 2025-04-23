@@ -44,6 +44,7 @@ async def test_get_program_release(
     program = Program.model_validate(response.json())
     assert program.id == program_key
     assert program.version == version
+    assert program.version_display is not None
 
 
 @pytest.mark.parametrize(

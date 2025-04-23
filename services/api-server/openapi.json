@@ -7752,6 +7752,17 @@
             ],
             "title": "Url",
             "description": "Link to get this resource"
+          },
+          "version_display": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version Display"
           }
         },
         "type": "object",
@@ -7759,7 +7770,8 @@
           "id",
           "version",
           "title",
-          "url"
+          "url",
+          "version_display"
         ],
         "title": "Program",
         "description": "A released program with a specific version",
