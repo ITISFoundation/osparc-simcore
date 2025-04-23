@@ -4,11 +4,9 @@
 Example of usage in pydantic:
 
 [...]
-    class Config:
-        extra = Extra.forbid
-        alias_generator = snake_to_camel  # <--------
-        json_loads = json_loads
-        json_dumps = json_dumps
+    model_config = ConfigDict(
+        alias_generator=snake_to_camel, # <-- note
+    )
 
 """
 
