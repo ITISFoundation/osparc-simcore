@@ -31,15 +31,6 @@ from tenacity.wait import wait_fixed
 logger = logging.getLogger(__name__)
 
 
-#
-# APP and CLIENT fixtures
-#
-#  In this context by default all external services are
-#  mocked (e.g. registry, rabbitmq, ...)
-#
-#
-
-
 @pytest.fixture
 def app(
     postgres_db: sa.engine.Engine,
