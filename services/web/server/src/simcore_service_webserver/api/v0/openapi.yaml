@@ -3127,8 +3127,49 @@ paths:
     delete:
       tags:
       - long-running-tasks
-      summary: Cancel And Delete Task
-      description: Cancels and deletes a task
+      summary: Delete Task
+      description: Deletes a task
+      operationId: selete_async_job
+      parameters:
+      - name: task_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Task Id
+      responses:
+        '204':
+          description: Successful Response
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '410':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Gone
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Internal Server Error
+  /v0/tasks/{task_id}:abort:
+    post:
+      tags:
+      - long-running-tasks
+      summary: Abort Task
+      description: Aborts a task
       operationId: abort_async_job
       parameters:
       - name: task_id
