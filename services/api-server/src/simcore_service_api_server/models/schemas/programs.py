@@ -42,6 +42,7 @@ class Program(BaseService, ApiServerOutputSchema):
                 "description": "Simulation framework",
                 "maintainer": "info@itis.swiss",
                 "url": "https://api.osparc.io/v0/solvers/simcore%2Fservices%2Fdynamic%2Fsim4life/releases/8.0.0",
+                "version_display": "8.0.0",
             }
         },
     )

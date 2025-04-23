@@ -1,3 +1,4 @@
+# pylint: disable=too-many-arguments
 import logging
 from collections.abc import Callable
 from typing import Annotated

@@ -1,5 +1,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
+
 import json
 from functools import partial
 from pathlib import Path
