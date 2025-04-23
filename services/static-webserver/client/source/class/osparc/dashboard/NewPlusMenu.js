@@ -161,6 +161,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
     __addItems: function() {
       this.__addUIConfigItems();
       if (osparc.store.StaticInfo.getInstance().isDevFeaturesEnabled()) {
+        this.__addHypertools();
         this.__addOtherTabsAccess();
       }
       this.getChildControl("new-folder");
@@ -187,6 +188,26 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       }
     },
 
+    __addHypertools: function() {
+      const hypertools = osparc.store.Templates.getInstance().getTemplatesByType(osparc.data.model.StudyUI.HYPERTOOL_TYPE);
+      if (hypertools.length) {
+        const moreMenuButton = this.self().createMenuButton("@FontAwesome5Solid/star/16", this.tr("Hypertools"));
+        this.addAt(moreMenuButton, this.__itemIdx);
+        this.__itemIdx++;
+
+        const moreMenu = new qx.ui.menu.Menu().set({
+          appearance: "menu-wider",
+        });
+        hypertools.forEach(templateData => {
+          const hypertoolButton = this.self().createMenuButton(templateData["icon"], templateData["name"]);
+          hypertoolButton.addListener("execute", () => {
+            console.log(templateData);
+          }, this);
+          moreMenu.add(hypertoolButton);
+        });
+      }
+    },
+
     __addOtherTabsAccess: function() {
       const moreMenuButton = this.self().createMenuButton("@FontAwesome5Solid/star/16", this.tr("More"));
       this.addAt(moreMenuButton, this.__itemIdx);
@@ -201,13 +222,6 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
         const templatesButton = this.self().createMenuButton("@FontAwesome5Solid/copy/16", this.tr("Tutorials..."));
         templatesButton.addListener("execute", () => this.fireDataEvent("changeTab", "templatesTab"), this);
         moreMenu.add(templatesButton);
-
-        const hypertoolsButton = this.self().createMenuButton("@FontAwesome5Solid/copy/16", this.tr("Hypertools..."));
-        hypertoolsButton.addListener("execute", () => this.fireDataEvent("changeTab", "hypertoolsTab"), this);
-        const hypertools = osparc.store.Templates.getInstance().getTemplatesByType(osparc.data.model.StudyUI.HYPERTOOL_TYPE);
-        if (hypertools.length) {
-          moreMenu.add(hypertoolsButton);
-        }
       }
 
       if (permissions.canDo("dashboard.services.read")) {
@@ -289,12 +303,12 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
         return;
       }
 
-      const menuButton = this.__emptyPipelineButton = this.self().createMenuButton(null, buttonConfig["title"] || "Empty Pipeline");
+      const menuButton = this.__emptyPipelineButton = this.self().createMenuButton(null, buttonConfig["title"] || "Pipeline");
       osparc.utils.Utils.setIdToWidget(menuButton, buttonConfig["idToWidget"] || "emptyStudyBtn");
 
       menuButton.addListener("tap", () => {
         this.fireDataEvent("newEmptyStudyClicked", {
-          newStudyLabel: buttonConfig["newStudyLabel"] || "Empty Pipeline",
+          newStudyLabel: buttonConfig["newStudyLabel"] || "Pipeline",
         });
       });
 
