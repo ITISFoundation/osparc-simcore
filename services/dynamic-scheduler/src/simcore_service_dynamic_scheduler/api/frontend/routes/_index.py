@@ -1,6 +1,7 @@
 import json
 
 import httpx
+from common_library.json_serialization import json_loads
 from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
 from nicegui import APIRouter, app, ui
@@ -39,7 +40,7 @@ def _render_service_details(node_id: NodeID, service: TrackedServiceModel) -> No
             service.dynamic_service_start.product_name,
         )
         service_status = (
-            json.loads(service.service_status) if service.service_status else {}
+            json_loads(service.service_status) if service.service_status else {}
         )
         dict_to_render["Service State"] = (
             "label",
