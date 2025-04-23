@@ -36,10 +36,6 @@ qx.Class.define("osparc.jobs.RunsTable", {
 
     Object.values(this.self().COLS).forEach(col => columnModel.setColumnWidth(col.column, col.width));
 
-    const iconPathInfo = "osparc/circle-info-text.svg";
-    const fontButtonRendererInfo = new osparc.ui.table.cellrenderer.ImageButtonRenderer("info", iconPathInfo);
-    columnModel.setDataCellRenderer(this.self().COLS.INFO.column, fontButtonRendererInfo);
-
     const iconPathStop = "osparc/circle-stop-text.svg";
     const fontButtonRendererStop = new osparc.ui.table.cellrenderer.ImageButtonRenderer("stop", iconPathStop);
     columnModel.setDataCellRenderer(this.self().COLS.ACTION_STOP.column, fontButtonRendererStop);
@@ -93,33 +89,15 @@ qx.Class.define("osparc.jobs.RunsTable", {
         width: 130,
         sortable: true
       },
-      INFO: {
-        id: "info",
-        column: 6,
-        label: qx.locale.Manager.tr("Info"),
-        width: 40
-      },
       ACTION_STOP: {
         id: "info",
-        column: 7,
+        column: 6,
         label: "",
         width: 40
       },
       ACTION_RUN: {
         id: "action_run",
-        column: 8,
-        label: "",
-        width: 40
-      },
-      ACTION_RETRY: {
-        id: "action_retry",
-        column: 9,
-        label: "",
-        width: 40
-      },
-      ACTION_MORE: {
-        id: "action_more",
-        column: 10,
+        column: 7,
         label: "",
         width: 40
       },
@@ -136,6 +114,10 @@ qx.Class.define("osparc.jobs.RunsTable", {
           if (action) {
             this.__handleButtonClick(action, row);
           }
+        } else {
+          const rowData = this.getTableModel().getRowData(row);
+          this.fireDataEvent("runSelected", rowData);
+          this.resetSelection();
         }
       });
     },
@@ -147,8 +129,8 @@ qx.Class.define("osparc.jobs.RunsTable", {
           this.fireDataEvent("runSelected", rowData);
           break;
         }
+        case "start":
         case "stop":
-        case "delete":
         case "logs": {
           const msg = `I wish I could ${action} the job ${rowData["projectUuid"]}`;
           osparc.FlashMessenger.logAs(msg, "WARNING");

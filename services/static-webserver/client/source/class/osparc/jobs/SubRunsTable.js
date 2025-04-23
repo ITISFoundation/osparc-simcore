@@ -142,6 +142,7 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
         }
         default:
           console.warn(`Unknown action: ${action}`);
+          break;
       }
     },
   }

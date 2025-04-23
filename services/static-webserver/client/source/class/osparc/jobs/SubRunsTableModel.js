@@ -95,7 +95,6 @@ qx.Class.define("osparc.jobs.SubRunsTableModel", {
                 [subJobsCols.START.id]: startedAt ? osparc.utils.Utils.formatDateAndTime(startedAt) : "-",
                 [subJobsCols.END.id]: endedAt ? osparc.utils.Utils.formatDateAndTime(endedAt) : "-",
                 [subJobsCols.DURATION.id]: duration,
-                [subJobsCols.IMAGE.id]: subJob.getImage() ? osparc.utils.Utils.formatDateAndTime(subJob.getEndedAt()) : "-",
               });
             });
             return data;
