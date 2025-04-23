@@ -26,6 +26,7 @@ from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.models.schemas.containers import (
     ContainersComposeSpec,
     ContainersCreate,
+    DcokerComposeYamlStr,
 )
 from simcore_service_dynamic_sidecar.modules.prometheus_metrics import (
     _USER_SERVICES_NOT_STARTED,
@@ -85,7 +86,7 @@ def client(
 
 
 @pytest.fixture
-def compose_spec() -> str:
+def compose_spec() -> DcokerComposeYamlStr:
     return json.dumps(
         {
             "version": "3",
@@ -101,7 +102,7 @@ def compose_spec() -> str:
 
 async def _get_task_id_create_service_containers(
     httpx_async_client: AsyncClient,
-    compose_spec: str,
+    compose_spec: DcokerComposeYamlStr,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
 ) -> TaskId:
     ctontainers_compose_spec = ContainersComposeSpec(

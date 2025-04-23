@@ -4,6 +4,7 @@ from typing import Final, TypeAlias
 
 import aiofiles
 from fastapi import FastAPI
+from models_library.api_schemas_dynamic_sidecar.containers import DcokerComposeYamlStr
 from models_library.sidecar_volumes import VolumeCategory, VolumeState, VolumeStatus
 from pydantic import BaseModel, Field, PrivateAttr
 
@@ -50,7 +51,7 @@ class SharedStore(_StoreMixin):
             shared_store.container_names = copied_list
     """
 
-    compose_spec: str | None = Field(
+    compose_spec: DcokerComposeYamlStr | None = Field(
         default=None, description="stores the stringified compose spec"
     )
     container_names: list[ContainerNameStr] = Field(
@@ -119,3 +120,8 @@ def setup_shared_store(app: FastAPI) -> None:
         )
 
     app.add_event_handler("startup", on_startup)
+
+
+def get_shared_store(app: FastAPI) -> SharedStore:
+    shared_store: SharedStore = app.state.shared_store
+    return shared_store
