@@ -78,7 +78,7 @@ qx.Class.define("osparc.jobs.SubRunsTableModel", {
               const startedAt = subJob.getStartedAt();
               const endedAt = subJob.getEndedAt();
               let duration = "-";
-              if (startedAt && endedAt) {
+              if (startedAt && endedAt && endedAt > startedAt) {
                 const diffMs = endedAt - startedAt; // Difference in milliseconds
                 const diffSeconds = Math.floor(diffMs / 1000) % 60;
                 const diffMinutes = Math.floor(diffMs / (1000 * 60)) % 60;

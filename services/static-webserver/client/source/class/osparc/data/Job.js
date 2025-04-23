@@ -87,6 +87,7 @@ qx.Class.define("osparc.data.Job", {
     addSubJob: function(subJobData) {
       const subJobFound = this.__subJobs.find(subJb => subJb.getNodeId() === subJobData["nodeId"]);
       if (subJobFound) {
+        subJobFound.updateSubTask(subJobData);
         return subJobFound;
       }
 

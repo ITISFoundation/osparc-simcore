@@ -18,18 +18,18 @@
 qx.Class.define("osparc.data.SubJob", {
   extend: qx.core.Object,
 
-  construct: function(jobData) {
+  construct: function(subJobData) {
     this.base(arguments);
 
     this.set({
-      projectUuid: jobData["projectUuid"],
-      nodeId: jobData["nodeId"],
-      nodeName: jobData["nodeId"],
-      state: jobData["state"],
-      progress: jobData["progress"],
-      startedAt: jobData["startedAt"] ? new Date(jobData["startedAt"]) : null,
-      endedAt: jobData["endedAt"] ? new Date(jobData["endedAt"]) : null,
-      image: jobData["image"] || {},
+      projectUuid: subJobData["projectUuid"],
+      nodeId: subJobData["nodeId"],
+      nodeName: subJobData["nodeId"],
+      state: subJobData["state"],
+      progress: subJobData["progress"],
+      startedAt: subJobData["startedAt"] ? new Date(subJobData["startedAt"]) : null,
+      endedAt: subJobData["endedAt"] ? new Date(subJobData["endedAt"]) : null,
+      image: subJobData["image"] || {},
     });
   },
 
@@ -80,6 +80,17 @@ qx.Class.define("osparc.data.SubJob", {
       check: "Object",
       nullable: false,
       init: null,
+    },
+  },
+
+  members: {
+    updateSubTask: function(subJobData) {
+      this.set({
+        state: subJobData["state"],
+        progress: subJobData["progress"],
+        startedAt: subJobData["startedAt"] ? new Date(subJobData["startedAt"]) : null,
+        endedAt: subJobData["endedAt"] ? new Date(subJobData["endedAt"]) : null,
+      });
     },
   },
 });
