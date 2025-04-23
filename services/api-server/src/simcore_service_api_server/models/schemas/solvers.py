@@ -1,6 +1,6 @@
 from typing import Annotated, Any, Literal
 
-from models_library.api_schemas_catalog.services import ServiceGetV2
+from models_library.api_schemas_catalog.services import LatestServiceGet, ServiceGetV2
 from models_library.basic_regex import PUBLIC_VARIABLE_NAME_RE
 from models_library.services import ServiceMetaDataPublished
 from models_library.services_regex import COMPUTATIONAL_SERVICE_KEY_RE
@@ -67,7 +67,7 @@ class Solver(BaseService):
         )
 
     @classmethod
-    def create_from_service(cls, service: ServiceGetV2) -> "Solver":
+    def create_from_service(cls, service: ServiceGetV2 | LatestServiceGet) -> "Solver":
         data = service.model_dump(
             include={"name", "key", "version", "description", "contact"},
         )

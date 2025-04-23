@@ -4,8 +4,12 @@ from operator import attrgetter
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from grpc import services
 from httpx import HTTPStatusError
+from models_library.api_schemas_catalog.services import ServiceListFilters
+from models_library.services_enums import ServiceType
 from pydantic import ValidationError
+from simcore_service_api_server.services_rpc.catalog import CatalogService
 
 from ..._service_solvers import SolverService
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
@@ -67,14 +71,18 @@ router = APIRouter()
 )
 async def list_solvers(
     user_id: Annotated[int, Depends(get_current_user_id)],
-    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
+    catalog_service: Annotated[CatalogService, Depends()],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
 ):
     """Lists all available solvers (latest version)"""
-    solvers: list[Solver] = await catalog_client.list_latest_releases(
-        user_id=user_id, product_name=product_name
+
+    services, page_info = await catalog_service.list_latest_releases(
+        user_id=user_id,
+        product_name=product_name,
+        filters=ServiceListFilters(service_type=ServiceType.COMPUTATIONAL),
     )
+    solvers = [Solver.create_from_service(service=service) for service in services]
 
     for solver in solvers:
         solver.url = url_for(
