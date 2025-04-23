@@ -96,6 +96,12 @@ def mocked_rpc_catalog_service_api(
             autospec=True,
             side_effect=side_effects.list_my_service_history_paginated,
         ),
+        "get_service_ports": mocker.patch.object(
+            catalog_rpc,
+            "get_service_ports",
+            autospec=True,
+            side_effect=side_effects.get_service_ports,
+        ),
     }
     app.dependency_overrides.pop(get_rabbitmq_rpc_client)
 

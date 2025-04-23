@@ -1,6 +1,7 @@
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
+from pydantic.config import JsonDict
 
 from ..basic_regex import PUBLIC_VARIABLE_NAME_RE
 from ..services import ServiceInput, ServiceOutput
@@ -10,42 +11,65 @@ from ..utils.services_io import (
     update_schema_doc,
 )
 
-PortKindStr = Literal["input", "output"]
-
 
 class ServicePortGet(BaseModel):
-    key: str = Field(
-        ...,
-        description="port identifier name",
-        pattern=PUBLIC_VARIABLE_NAME_RE,
-        title="Key name",
-    )
-    kind: PortKindStr
+    key: Annotated[
+        str,
+        Field(
+            description="Port identifier name",
+            pattern=PUBLIC_VARIABLE_NAME_RE,
+            title="Key name",
+        ),
+    ]
+    kind: Literal["input", "output"]
     content_media_type: str | None = None
-    content_schema: dict[str, Any] | None = Field(
-        None,
-        description="jsonschema for the port's value. SEE https://json-schema.org/understanding-json-schema/",
-    )
-    model_config = ConfigDict(
-        json_schema_extra={
-            "example": {
-                "key": "input_1",
-                "kind": "input",
-                "content_schema": {
-                    "title": "Sleep interval",
-                    "type": "integer",
-                    "x_unit": "second",
-                    "minimum": 0,
-                    "maximum": 5,
-                },
-            }
+    content_schema: Annotated[
+        dict[str, Any] | None,
+        Field(
+            description="jsonschema for the port's value. SEE https://json-schema.org/understanding-json-schema/",
+        ),
+    ] = None
+
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        example_input: dict[str, Any] = {
+            "key": "input_1",
+            "kind": "input",
+            "content_schema": {
+                "title": "Sleep interval",
+                "type": "integer",
+                "x_unit": "second",
+                "minimum": 0,
+                "maximum": 5,
+            },
         }
+        schema.update(
+            {
+                "example": example_input,
+                "examples": [
+                    example_input,
+                    {
+                        "key": "output_1",
+                        "kind": "output",
+                        "content_media_type": "text/plain",
+                        "content_schema": {
+                            "type": "string",
+                            "title": "File containing one random integer",
+                            "description": "Integer is generated in range [1-9]",
+                        },
+                    },
+                ],
+            }
+        )
+
+    model_config = ConfigDict(
+        json_schema_extra=_update_json_schema_extra,
     )
 
     @classmethod
-    def from_service_io(
+    def from_domain_model(
         cls,
-        kind: PortKindStr,
+        kind: Literal["input", "output"],
         key: str,
         port: ServiceInput | ServiceOutput,
     ) -> "ServicePortGet":
