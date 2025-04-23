@@ -97,19 +97,19 @@ qx.Class.define("osparc.editor.AnnotationNoteCreator", {
               } = e.getData();
 
               const currentAccessRights = this.__study.getAccessRights();
-              console.log("currentAccessRights", currentAccessRights);
-              console.log("selectedGids", selectedGids);
               const proposeSharing = [];
               selectedGids.forEach(selectedGid => {
                 if (!(parseInt(selectedGid) in currentAccessRights)) {
                   proposeSharing.push(parseInt(selectedGid));
                 }
               });
-              console.log("share?", proposeSharing);
+              if (proposeSharing.length) {
+                console.log("share?", proposeSharing);
+              }
 
               if (selectedGids) {
                 collaboratorsManager.close();
-                this.__setRecipientGid(selectedGids[0]);
+                this.__setRecipientGid(parseInt(selectedGids[0]));
               }
             }, this);
           }, this);
