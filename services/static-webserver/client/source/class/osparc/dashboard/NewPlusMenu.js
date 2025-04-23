@@ -303,12 +303,12 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
         return;
       }
 
-      const menuButton = this.__emptyPipelineButton = this.self().createMenuButton(null, buttonConfig["title"] || "Pipeline");
+      const menuButton = this.__emptyPipelineButton = this.self().createMenuButton(null, buttonConfig["title"] || "Empty Pipeline");
       osparc.utils.Utils.setIdToWidget(menuButton, buttonConfig["idToWidget"] || "emptyStudyBtn");
 
       menuButton.addListener("tap", () => {
         this.fireDataEvent("newEmptyStudyClicked", {
-          newStudyLabel: buttonConfig["newStudyLabel"] || "Pipeline",
+          newStudyLabel: buttonConfig["newStudyLabel"] || "Empty Pipeline",
         });
       });
 
