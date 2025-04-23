@@ -183,12 +183,12 @@ def app(app: FastAPI) -> FastAPI:
 
 
 @pytest.fixture
-def test_client(
+async def test_client(
     ensure_shared_store_dir: Path,
-    ensure_run_in_sequence_context_is_empty: None,
     ensure_external_volumes: tuple[DockerVolume],
-    cleanup_containers: AsyncIterator[None],
     test_client: TestClient,
+    cleanup_containers: AsyncIterator[None],
+    ensure_run_in_sequence_context_is_empty: None,
 ) -> TestClient:
     """creates external volumes and provides a client to dy-sidecar service"""
     return test_client
