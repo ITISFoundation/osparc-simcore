@@ -14,8 +14,9 @@ from models_library.services_enums import ServiceType
 from models_library.services_history import ServiceRelease
 from models_library.users import UserID
 from packaging.version import Version
-from simcore_service_api_server.models.schemas.jobs import Job
 
+from .api.dependencies.webserver_rpc import get_wb_api_rpc_client
+from .models.schemas.jobs import Job
 from .models.schemas.solvers import Solver, SolverKeyId
 from .services_rpc.catalog import CatalogService
 from .services_rpc.wb_api_server import WbApiRpcClient
@@ -30,7 +31,7 @@ class SolverService:
     def __init__(
         self,
         catalog_service: Annotated[CatalogService, Depends()],
-        webserver_client: Annotated[WbApiRpcClient, Depends()],
+        webserver_client: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     ):
         self._catalog_service = catalog_service
         self._webserver_client = webserver_client
