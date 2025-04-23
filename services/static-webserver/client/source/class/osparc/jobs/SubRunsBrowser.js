@@ -27,7 +27,11 @@ qx.Class.define("osparc.jobs.SubRunsBrowser", {
     const titleLayout = this.__createTitleLayout();
     this._add(titleLayout);
 
-    this.__reloadInterval = setInterval(() => this.__subRunsTable.reloadSubRuns(), 10*1000);
+    this.__reloadInterval = setInterval(() => {
+      if (this.__subRunsTable) {
+        this.__subRunsTable.reloadSubRuns();
+      }
+    }, 10*1000);
   },
 
   events: {
