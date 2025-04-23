@@ -54,6 +54,22 @@ class ProjectJobRpcGet(BaseModel):
             }
         )
 
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.udpate(
+            {
+                "examples": [
+                    {
+                        "uuid": "12345678-1234-5678-1234-123456789012",
+                        "name": "My project",
+                        "description": "My project description",
+                        "creation_date": "2023-01-01T00:00:00Z",
+                        "last_change_date": "2023-01-01T00:00:00Z",
+                    },
+                ]
+            }
+        )
+
     model_config = ConfigDict(
         extra="forbid",
         populate_by_name=True,
