@@ -45,7 +45,7 @@ async def cancel(app: FastAPI, job_id: AsyncJobId, job_id_data: AsyncJobNameData
 
 
 @router.expose(reraise_if_error_type=(JobSchedulerError,))
-async def deletet(app: FastAPI, job_id: AsyncJobId, job_id_data: AsyncJobNameData):
+async def delete(app: FastAPI, job_id: AsyncJobId, job_id_data: AsyncJobNameData):
     assert app  # nosec
     assert job_id_data  # nosec
     try:
