@@ -34,6 +34,8 @@ qx.Class.define("osparc.jobs.RunsBrowser", {
         text: filterText,
       });
     });
+
+    this.__reloadInterval = setInterval(() => this.getChildControl("runs-table").reloadRuns(), 10*1000);
   },
 
   events: {
@@ -41,6 +43,8 @@ qx.Class.define("osparc.jobs.RunsBrowser", {
   },
 
   members: {
+    __reloadInterval: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -78,6 +82,12 @@ qx.Class.define("osparc.jobs.RunsBrowser", {
     reloadRuns: function() {
       const runsTable = this.getChildControl("runs-table");
       runsTable.reloadRuns();
+    },
+
+    stopInterval: function() {
+      if (this.__reloadInterval) {
+        clearInterval(this.__reloadInterval);
+      }
     },
   }
 })
