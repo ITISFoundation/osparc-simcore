@@ -18,8 +18,10 @@
 qx.Class.define("osparc.editor.AnnotationNoteCreator", {
   extend: qx.ui.core.Widget,
 
-  construct: function() {
+  construct: function(study) {
     this.base(arguments);
+
+    this.__study = study;
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
@@ -93,6 +95,18 @@ qx.Class.define("osparc.editor.AnnotationNoteCreator", {
               const {
                 selectedGids,
               } = e.getData();
+
+              const currentAccessRights = this.__study.getAccessRights();
+              console.log("currentAccessRights", currentAccessRights);
+              console.log("selectedGids", selectedGids);
+              const proposeSharing = [];
+              selectedGids.forEach(selectedGid => {
+                if (!(parseInt(selectedGid) in currentAccessRights)) {
+                  proposeSharing.push(parseInt(selectedGid));
+                }
+              });
+              console.log("share?", proposeSharing);
+
               if (selectedGids) {
                 collaboratorsManager.close();
                 this.__setRecipientGid(selectedGids[0]);
