@@ -19,7 +19,7 @@
 qx.Class.define("osparc.jobs.RunsTableModel", {
   extend: qx.ui.table.model.Remote,
 
-  construct() {
+  construct: function() {
     this.base(arguments);
 
     const jobsCols = osparc.jobs.RunsTable.COLS;

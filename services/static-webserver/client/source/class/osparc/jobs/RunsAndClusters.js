@@ -19,7 +19,7 @@
 qx.Class.define("osparc.jobs.RunsAndClusters", {
   extend: qx.ui.tabview.TabView,
 
-  construct() {
+  construct: function() {
     this.base(arguments);
 
     this.set({
