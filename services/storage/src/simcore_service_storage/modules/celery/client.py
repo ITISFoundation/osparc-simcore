@@ -35,7 +35,7 @@ _MAX_PROGRESS_VALUE = 1.0
 class CeleryTaskClient:
     _celery_app: Celery
     _celery_settings: CelerySettings
-    _task_store: TaskInfoStore
+    _task_info_store: TaskInfoStore
 
     async def submit_task(
         self,
@@ -63,7 +63,9 @@ class CeleryTaskClient:
                 if task_metadata.ephemeral
                 else self._celery_settings.CELERY_RESULT_EXPIRES
             )
-            await self._task_store.create_task(task_id, task_metadata, expiry=expiry)
+            await self._task_info_store.create_task(
+                task_id, task_metadata, expiry=expiry
+            )
             return task_uuid
 
     @make_async()
@@ -96,9 +98,9 @@ class CeleryTaskClient:
             async_result = self._celery_app.AsyncResult(task_id)
             result = async_result.result
             if async_result.ready():
-                task_metadata = await self._task_store.get_task_metadata(task_id)
+                task_metadata = await self._task_info_store.get_task_metadata(task_id)
                 if task_metadata is not None and task_metadata.ephemeral:
-                    await self._task_store.remove_task(task_id)
+                    await self._task_info_store.remove_task(task_id)
                     await self._forget_task(task_id)
             return result
 
@@ -107,7 +109,7 @@ class CeleryTaskClient:
     ) -> ProgressReport:
         if task_state in (TaskState.STARTED, TaskState.RETRY, TaskState.ABORTED):
             task_id = build_task_id(task_context, task_uuid)
-            progress = await self._task_store.get_task_progress(task_id)
+            progress = await self._task_info_store.get_task_progress(task_id)
             if progress is not None:
                 return progress
         if task_state in (
@@ -153,4 +155,4 @@ class CeleryTaskClient:
             logging.DEBUG,
             msg=f"Listing tasks: {task_context=}",
         ):
-            return await self._task_store.list_tasks(task_context)
+            return await self._task_info_store.list_tasks(task_context)
