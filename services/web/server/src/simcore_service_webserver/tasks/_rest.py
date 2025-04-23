@@ -160,12 +160,12 @@ async def delete_async_job(request: web.Request) -> web.Response:
 
 @routes.post(
     _task_prefix + "/{task_id}:cancel",
-    name="cancel_async_job",
+    name="abort_async_job",
 )
 @login_required
 @permission_required("storage.files.*")
 @handle_export_data_exceptions
-async def cancel_async_job(request: web.Request) -> web.Response:
+async def abort_async_job(request: web.Request) -> web.Response:
 
     _req_ctx = RequestContext.model_validate(request)
 
