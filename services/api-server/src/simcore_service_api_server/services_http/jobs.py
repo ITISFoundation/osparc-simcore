@@ -17,8 +17,8 @@ from ..models.schemas.jobs import (
     JobPricingSpecification,
     JobStatus,
 )
+from ..models.solver_job_models_converters import create_jobstatus_from_task
 from .director_v2 import DirectorV2Api
-from .solver_job_models_converters import create_jobstatus_from_task
 from .webserver import AuthSession
 
 _logger = logging.getLogger(__name__)

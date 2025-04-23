@@ -29,6 +29,7 @@ from ...models.schemas.jobs import (
     JobStatus,
 )
 from ...models.schemas.studies import JobLogsMap, Study, StudyID
+from ...models.solver_job_models_converters import create_jobstatus_from_task
 from ...services_http.director_v2 import DirectorV2Api
 from ...services_http.jobs import (
     get_custom_metadata,
@@ -36,7 +37,6 @@ from ...services_http.jobs import (
     start_project,
     stop_project,
 )
-from ...services_http.solver_job_models_converters import create_jobstatus_from_task
 from ...services_http.storage import StorageApi
 from ...services_http.study_job_models_converters import (
     create_job_from_study,

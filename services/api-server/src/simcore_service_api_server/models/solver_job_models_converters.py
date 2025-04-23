@@ -15,11 +15,13 @@ from models_library.api_schemas_webserver.projects_ui import StudyUI
 from models_library.basic_types import KeyIDStr
 from models_library.projects import Project
 from models_library.projects_nodes import InputID
+from models_library.rpc.webserver.projects import ProjectRpcGet
 from pydantic import HttpUrl, TypeAdapter
 
-from ..models.domain.projects import InputTypes, Node, SimCoreFileLink
-from ..models.schemas.files import File
-from ..models.schemas.jobs import (
+from ..services_http.director_v2 import ComputationTaskGet
+from .domain.projects import InputTypes, Node, SimCoreFileLink
+from .schemas.files import File
+from .schemas.jobs import (
     ArgumentTypes,
     Job,
     JobInputs,
@@ -29,9 +31,8 @@ from ..models.schemas.jobs import (
     get_runner_url,
     get_url,
 )
-from ..models.schemas.programs import Program
-from ..models.schemas.solvers import Solver
-from .director_v2 import ComputationTaskGet
+from .schemas.programs import Program
+from .schemas.solvers import Solver
 
 # UTILS ------
 _BASE_UUID = uuid.UUID("231e13db-6bc6-4f64-ba56-2ee2c73b9f09")
@@ -182,7 +183,7 @@ def create_new_project_for_job(
 def create_job_from_project(
     *,
     solver_or_program: Solver | Program,
-    project: ProjectGet | Project,
+    project: ProjectRpcGet | ProjectGet | Project,
     url_for: Callable[..., HttpUrl],
 ) -> Job:
     """
