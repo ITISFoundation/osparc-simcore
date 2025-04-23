@@ -36,7 +36,7 @@ _DEFAULT_POLL_INTERVAL_S: Final[float] = 0.1
 _logger = logging.getLogger(__name__)
 
 
-async def abort(
+async def cancel(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     rpc_namespace: RPCNamespace,
@@ -45,7 +45,7 @@ async def abort(
 ) -> None:
     await rabbitmq_rpc_client.request(
         rpc_namespace,
-        TypeAdapter(RPCMethodName).validate_python("abort"),
+        TypeAdapter(RPCMethodName).validate_python("cancel"),
         job_id=job_id,
         job_id_data=job_id_data,
         timeout_s=_DEFAULT_TIMEOUT_S,

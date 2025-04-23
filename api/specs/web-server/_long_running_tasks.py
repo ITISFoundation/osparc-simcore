@@ -64,9 +64,9 @@ def delete_async_job(
 
 
 @router.post(
-    "/tasks/{task_id}:abort",
-    name="abort_task",
-    description="Aborts a task",
+    "/tasks/{task_id}:cancel",
+    name="cancel_task",
+    description="Cancels a task",
     responses=_export_data_responses,
     status_code=status.HTTP_204_NO_CONTENT,
 )

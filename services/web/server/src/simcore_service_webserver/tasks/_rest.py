@@ -159,19 +159,19 @@ async def delete_async_job(request: web.Request) -> web.Response:
 
 
 @routes.post(
-    _task_prefix + "/{task_id}:abort",
-    name="abort_async_job",
+    _task_prefix + "/{task_id}:cancel",
+    name="cancel_async_job",
 )
 @login_required
 @permission_required("storage.files.*")
 @handle_export_data_exceptions
-async def abort_async_job(request: web.Request) -> web.Response:
+async def cancel_async_job(request: web.Request) -> web.Response:
 
     _req_ctx = RequestContext.model_validate(request)
 
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
     async_job_get = parse_request_path_parameters_as(_StorageAsyncJobId, request)
-    await async_jobs.abort(
+    await async_jobs.cancel(
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_id=async_job_get.task_id,

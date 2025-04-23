@@ -550,11 +550,11 @@ async def test_abort_async_jobs(
     _job_id = AsyncJobId(faker.uuid4())
     create_storage_rpc_client_mock(
         "simcore_service_webserver.tasks._rest",
-        f"async_jobs.{async_jobs.abort.__name__}",
+        f"async_jobs.{async_jobs.cancel.__name__}",
         backend_result_or_exception,
     )
 
-    response = await client.post(f"/{API_VERSION}/tasks/{_job_id}:abort")
+    response = await client.post(f"/{API_VERSION}/tasks/{_job_id}:cancel")
     assert response.status == expected_status
 
 
