@@ -57,10 +57,7 @@ qx.Class.define("osparc.utils.DisabledPlugins", {
     },
 
     isJobsEnabled: function() {
-      if (osparc.store.StaticInfo.getInstance().isDevFeaturesEnabled() && osparc.product.Utils.isS4LProduct()) {
-        return true;
-      }
-      return false;
+      return osparc.store.StaticInfo.getInstance().isDevFeaturesEnabled();
     },
 
     isHypertoolsEnabled: function() {
