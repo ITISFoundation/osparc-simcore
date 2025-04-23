@@ -69,6 +69,7 @@ async def create_user_api_key(
         node_id=node_id,
     )
     assert data.api_key  # nosec
+    assert isinstance(data.api_key, str)  # nosec
     return data.api_key
 
 
@@ -87,6 +88,7 @@ async def create_user_api_secret(
         node_id=node_id,
     )
     assert data.api_secret  # nosec
+    assert isinstance(data.api_secret, str)  # nosec
     return data.api_secret
 
 
