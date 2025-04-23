@@ -19,7 +19,7 @@
 qx.Class.define("osparc.jobs.SubRunsBrowser", {
   extend: qx.ui.core.Widget,
 
-  construct() {
+  construct: function() {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(10));

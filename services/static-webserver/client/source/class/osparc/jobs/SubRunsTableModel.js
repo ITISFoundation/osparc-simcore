@@ -19,7 +19,7 @@
 qx.Class.define("osparc.jobs.SubRunsTableModel", {
   extend: qx.ui.table.model.Remote,
 
-  construct(projectUuid) {
+  construct: function(projectUuid) {
     this.base(arguments);
 
     const subJobsCols = osparc.jobs.SubRunsTable.COLS;
