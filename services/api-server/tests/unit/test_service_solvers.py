@@ -17,6 +17,7 @@ from simcore_service_api_server.services_rpc.wb_api_server import WbApiRpcClient
 def solver_service(
     mocker: MockerFixture,
     mocked_catalog_rpc_api: dict[str, MockType],
+    mocked_webserver_rpc_api: dict[str, MockType],
 ) -> SolverService:
     return SolverService(
         catalog_service=CatalogService(client=mocker.MagicMock()),
@@ -39,3 +40,43 @@ async def test_get_solver(
 
     assert isinstance(solver, Solver)
     mocked_catalog_rpc_api["get_service"].assert_called_once()
+
+
+async def test_list_jobs(
+    solver_service: SolverService,
+    mocked_webserver_rpc_api: dict[str, MockType],
+    product_name: ProductName,
+    user_id: UserID,
+):
+    # Test default parameters
+    jobs, page_meta = await solver_service.list_jobs(
+        user_id=user_id,
+        product_name=product_name,
+    )
+    assert isinstance(jobs, list)
+    mocked_webserver_rpc_api["list_projects_marked_as_jobs"].assert_called_once_with(
+        product_name=product_name,
+        user_id=user_id,
+        offset=0,
+        limit=999,
+        job_parent_resource_name_filter="solvers",
+    )
+    assert page_meta.total >= 0
+    assert page_meta.limit == 999
+    assert page_meta.offset == 0
+
+    # Test with explicit pagination
+    mocked_webserver_rpc_api["list_projects_marked_as_jobs"].reset_mock()
+    jobs, page_meta = await solver_service.list_jobs(
+        user_id=user_id,
+        product_name=product_name,
+        offset=10,
+        limit=20,
+    )
+    mocked_webserver_rpc_api["list_projects_marked_as_jobs"].assert_called_once_with(
+        product_name=product_name,
+        user_id=user_id,
+        offset=10,
+        limit=20,
+        job_parent_resource_name_filter="solvers",
+    )
