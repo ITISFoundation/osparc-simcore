@@ -83,7 +83,7 @@ class SolverService:
 
         return Solver.create_from_service(service)
 
-    async def list_all_solvers_jobs(
+    async def list_jobs(
         self,
         *,
         user_id: UserID,
