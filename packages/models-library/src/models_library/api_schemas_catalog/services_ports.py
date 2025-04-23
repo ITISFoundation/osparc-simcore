@@ -28,7 +28,7 @@ class ServicePortGet(BaseModel):
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
-        input_example = {
+        example_input: dict[str, Any] = {
             "key": "input_1",
             "kind": "input",
             "content_schema": {
@@ -41,9 +41,9 @@ class ServicePortGet(BaseModel):
         }
         schema.update(
             {
-                "example": input_example,
+                "example": example_input,
                 "examples": [
-                    input_example,
+                    example_input,
                     {
                         "key": "output_1",
                         "kind": "output",
