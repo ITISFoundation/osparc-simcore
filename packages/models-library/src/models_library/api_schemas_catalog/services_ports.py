@@ -10,8 +10,6 @@ from ..utils.services_io import (
     update_schema_doc,
 )
 
-PortKindStr = Literal["input", "output"]
-
 
 class ServicePortGet(BaseModel):
     key: str = Field(
@@ -20,7 +18,7 @@ class ServicePortGet(BaseModel):
         pattern=PUBLIC_VARIABLE_NAME_RE,
         title="Key name",
     )
-    kind: PortKindStr
+    kind: Literal["input", "output"]
     content_media_type: str | None = None
     content_schema: dict[str, Any] | None = Field(
         None,
@@ -58,7 +56,7 @@ class ServicePortGet(BaseModel):
     @classmethod
     def from_domain_model(
         cls,
-        kind: PortKindStr,
+        kind: Literal["input", "output"],
         key: str,
         port: ServiceInput | ServiceOutput,
     ) -> "ServicePortGet":
