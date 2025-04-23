@@ -414,7 +414,7 @@ def sidecar_task(
 
 @pytest.fixture()
 def failing_ubuntu_task(
-    sidecar_task: Callable[..., ServiceExampleParam]
+    sidecar_task: Callable[..., ServiceExampleParam],
 ) -> ServiceExampleParam:
     return sidecar_task(command=["/bin/bash", "-c", "some stupid failing command"])
 
@@ -444,7 +444,7 @@ def mocked_get_image_labels(
 ) -> mock.Mock:
     assert "json_schema_extra" in ServiceMetaDataPublished.model_config
     labels: ImageLabels = TypeAdapter(ImageLabels).validate_python(
-        ServiceMetaDataPublished.model_config["json_schema_extra"]["examples"][0],
+        ServiceMetaDataPublished.model_json_schema()["examples"][0],
     )
     labels.integration_version = f"{integration_version}"
     return mocker.patch(
