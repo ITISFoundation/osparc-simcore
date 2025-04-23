@@ -18,6 +18,7 @@ import docker
 import jsonschema
 import pytest
 import yaml
+from common_library.json_serialization import json_loads
 from docker.errors import APIError
 from docker.models.containers import Container
 
@@ -206,7 +207,7 @@ def convert_to_simcore_labels(image_labels: dict) -> dict:
     io_simcore_labels = {}
     for key, value in image_labels.items():
         if str(key).startswith("io.simcore."):
-            simcore_label = json.loads(value)
+            simcore_label = json_loads(value)
             simcore_keys = list(simcore_label.keys())
             assert len(simcore_keys) == 1
             simcore_key = simcore_keys[0]
