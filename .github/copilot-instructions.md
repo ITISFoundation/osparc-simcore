@@ -23,6 +23,14 @@ This document provides guidelines and best practices for using GitHub Copilot in
 - ensure we use `fastapi` >0.100 compatible code
 - use f-string formatting
 
+
+### Json serialization
+
+- Use `json_loads` from `common_library.json_serialization` instead of `json.dumps` / `json.loads`.
+- Prefer Pydantic model methods (e.g., `model.model_dump_json()`) for serialization/deserialization.
+- Avoid using the built-in `json` module for these tasks.
+
+
 ## Node.js-Specific Instructions
 
 - Use ES6+ syntax and features.
