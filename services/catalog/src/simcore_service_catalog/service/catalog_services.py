@@ -474,7 +474,7 @@ async def batch_get_user_services(
         if my_access_rights.execute or my_access_rights.write:
             history = await repo.get_service_history(
                 # NOTE: that the service history might be different for each user
-                # since access rights are defined on a k:v basis
+                # since access rights are defined on a version basis (i.e. one use can have access to v1 but ot to v2)
                 product_name=product_name,
                 user_id=user_id,
                 key=service_key,
@@ -527,7 +527,7 @@ async def list_user_service_release_history(
 
     total_count, history = await repo.get_service_history_page(
         # NOTE: that the service history might be different for each user
-        # since access rights are defined on a k:v basis
+        # since access rights are defined on a version basis (i.e. one use can have access to v1 but ot to v2)
         product_name=product_name,
         user_id=user_id,
         key=service_key,

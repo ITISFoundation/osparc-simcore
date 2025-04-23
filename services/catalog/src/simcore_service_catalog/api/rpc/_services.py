@@ -307,7 +307,6 @@ async def get_service_ports(
         service_version=service_version,
     )
 
-    # Convert internal ServicePort models to ServicePortGet models for the API
     return [
         ServicePortGet.from_domain_model(
             kind=port.kind,
