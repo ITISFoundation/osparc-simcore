@@ -69,10 +69,8 @@ class CeleryTaskClient:
             return task_uuid
 
     @make_async()
-    def _abort_task(self, task_context: TaskContext, task_uuid: TaskUUID) -> None:
-        AbortableAsyncResult(
-            build_task_id(task_context, task_uuid), app=self._celery_app
-        ).abort()
+    def _abort_task(self, task_id: TaskID) -> None:
+        AbortableAsyncResult(task_id, app=self._celery_app).abort()
 
     async def abort_task(self, task_context: TaskContext, task_uuid: TaskUUID) -> None:
         with log_context(
@@ -80,7 +78,9 @@ class CeleryTaskClient:
             logging.DEBUG,
             msg=f"task abortion: {task_context=} {task_uuid=}",
         ):
-            await self._abort_task(task_context, task_uuid)
+            task_id = build_task_id(task_context, task_uuid)
+            await self._abort_task(task_id)
+            await self._task_info_store.remove_task(task_id)
 
     async def delete_task(self, task_context: TaskContext, task_uuid: TaskUUID) -> None:
         with log_context(
