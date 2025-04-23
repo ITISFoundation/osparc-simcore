@@ -357,9 +357,7 @@ def mock_exclusive(mock_redis: None, mocker: MockerFixture) -> None:
 @pytest.fixture
 def mock_osparc_variables_api_auth_rpc(mocker: MockerFixture) -> None:
 
-    fake_data = ApiKeyGet.model_validate(
-        ApiKeyGet.model_config["json_schema_extra"]["examples"][0]
-    )
+    fake_data = ApiKeyGet.model_validate(ApiKeyGet.model_json_schema()["examples"][0])
 
     async def _create(
         app: FastAPI,
@@ -372,14 +370,14 @@ def mock_osparc_variables_api_auth_rpc(mocker: MockerFixture) -> None:
         assert app
         assert product_name
         assert user_id
-        assert expiration is None
+        assert expiration
 
         fake_data.display_name = display_name
         return fake_data
 
     # mocks RPC interface
     mocker.patch(
-        "simcore_service_director_v2.modules.osparc_variables._api_auth.get_or_create_api_key_and_secret",
+        "simcore_service_director_v2.modules.osparc_variables._api_auth.rpc_create_api_key",
         side_effect=_create,
         autospec=True,
     )

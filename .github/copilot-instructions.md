@@ -21,7 +21,7 @@ This document provides guidelines and best practices for using GitHub Copilot in
 - ensure we use `sqlalchemy` >2 compatible code.
 - ensure we use `pydantic` >2 compatible code.
 - ensure we use `fastapi` >0.100 compatible code
-
+- use f-string formatting
 
 ## Node.js-Specific Instructions
 

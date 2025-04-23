@@ -405,7 +405,7 @@ def random_payment_autorecharge(
     return data
 
 
-def random_api_key(
+def random_api_auth(
     product_name: str, user_id: int, fake: Faker = DEFAULT_FAKER, **overrides
 ) -> dict[str, Any]:
     from simcore_postgres_database.models.api_keys import api_keys

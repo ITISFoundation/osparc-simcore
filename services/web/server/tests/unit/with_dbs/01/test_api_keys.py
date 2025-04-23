@@ -18,9 +18,9 @@ from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
+from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
-from simcore_service_webserver.api_keys import _repository, _service, api_keys_service
+from simcore_service_webserver.api_keys import _repository, api_keys_service
 from simcore_service_webserver.api_keys.models import ApiKey
 from simcore_service_webserver.application_settings import (
     ApplicationSettings,
@@ -199,34 +199,6 @@ async def test_create_api_key_with_expiration(
         resp = await client.get("/v0/auth/api-keys")
         data, _ = await assert_status(resp, expected)
         assert not data
-
-
-async def test_get_or_create_api_key(
-    disabled_setup_garbage_collector: MockType,
-    client: TestClient,
-):
-    async with NewUser(
-        app=client.app,
-    ) as user:
-
-        assert client.app
-
-        options = {
-            "user_id": user["id"],
-            "product_name": "osparc",
-            "display_name": "foo",
-        }
-
-        # create once
-        created = await _service.get_or_create_api_key(client.app, **options)
-        assert created.display_name == "foo"
-        assert created.api_key != created.api_secret
-
-        # idempotent
-        for _ in range(3):
-            assert (
-                await _service.get_or_create_api_key(client.app, **options) == created
-            )
 
 
 @pytest.mark.parametrize(
