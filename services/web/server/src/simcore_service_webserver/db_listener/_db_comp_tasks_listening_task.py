@@ -13,7 +13,7 @@ from typing import Final, NoReturn
 from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
-from common_types.json_serialization import json_loads
+from common_library.json_serialization import json_loads
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
