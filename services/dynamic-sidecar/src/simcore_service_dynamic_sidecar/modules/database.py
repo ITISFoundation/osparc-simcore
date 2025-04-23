@@ -1,6 +1,5 @@
 from fastapi import FastAPI
-from servicelib.db_async_engine import with_async_pg_engine
-from servicelib.db_asyncpg_utils import check_postgres_liveness
+from servicelib.db_asyncpg_utils import check_postgres_liveness, with_async_pg_engine
 from settings_library.postgres import PostgresSettings
 
 from ..core.settings import ApplicationSettings
