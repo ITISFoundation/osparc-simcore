@@ -16,7 +16,7 @@ from simcore_service_api_server.services_rpc.wb_api_server import WbApiRpcClient
 @pytest.fixture
 def solver_service(
     mocker: MockerFixture,
-    mocked_rpc_catalog_service_api: dict[str, MockType],
+    mocked_catalog_rpc_api: dict[str, MockType],
 ) -> SolverService:
     return SolverService(
         catalog_service=CatalogService(client=mocker.MagicMock()),
@@ -26,7 +26,7 @@ def solver_service(
 
 async def test_get_solver(
     solver_service: SolverService,
-    mocked_rpc_catalog_service_api: dict[str, MockType],
+    mocked_catalog_rpc_api: dict[str, MockType],
     product_name: ProductName,
     user_id: UserID,
 ):
@@ -38,4 +38,4 @@ async def test_get_solver(
     )
 
     assert isinstance(solver, Solver)
-    mocked_rpc_catalog_service_api["get_service"].assert_called_once()
+    mocked_catalog_rpc_api["get_service"].assert_called_once()
