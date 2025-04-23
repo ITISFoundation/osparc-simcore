@@ -116,7 +116,9 @@ async def create_solver_job(
         version=version,
         product_name=product_name,
     )
-    job, project = await job_service.create_job(
+    job, _ = await job_service.create_job(
+        name=None,
+        description=None,
         solver_or_program=solver,
         inputs=inputs,
         url_for=url_for,
@@ -125,12 +127,6 @@ async def create_solver_job(
         parent_node_id=x_simcore_parent_node_id,
     )
 
-    await wb_api_rpc.mark_project_as_job(
-        product_name=product_name,
-        user_id=user_id,
-        project_uuid=project.uuid,
-        job_parent_resource_name=job.runner_name,
-    )
     return job
 
 

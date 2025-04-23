@@ -119,7 +119,11 @@ def get_node_id(project_id, solver_id) -> str:
 
 
 def create_new_project_for_job(
-    solver_or_program: Solver | Program, job: Job, inputs: JobInputs
+    *,
+    solver_or_program: Solver | Program,
+    job: Job,
+    inputs: JobInputs,
+    description: str | None = None,
 ) -> ProjectCreateNew:
     """
     Creates a project for a solver's job
@@ -159,7 +163,8 @@ def create_new_project_for_job(
     return ProjectCreateNew(
         uuid=project_id,
         name=job.name,  # NOTE: this IS an identifier as well. MUST NOT be changed in the case of project APIs!
-        description=f"Study associated to solver job:\n{job_info}",
+        description=description
+        or f"Study associated to solver/study/program job:\n{job_info}",
         thumbnail="https://via.placeholder.com/170x120.png",  # type: ignore[arg-type]
         workbench={solver_id: solver_service},
         ui=StudyUI(

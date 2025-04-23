@@ -288,12 +288,15 @@ class Job(BaseModel):
 
     @classmethod
     def create_now(
-        cls, parent_name: RelativeResourceName, inputs_checksum: str
+        cls,
+        parent_name: RelativeResourceName,
+        inputs_checksum: str,
+        name: str | None = None,
     ) -> "Job":
         global_uuid = uuid4()
 
         return cls(
-            name=cls.compose_resource_name(parent_name, global_uuid),
+            name=name or cls.compose_resource_name(parent_name, global_uuid),
             id=global_uuid,
             runner_name=parent_name,
             inputs_checksum=inputs_checksum,
@@ -305,9 +308,10 @@ class Job(BaseModel):
 
     @classmethod
     def create_job_from_solver_or_program(
-        cls, *, solver_or_program_name: str, inputs: JobInputs
+        cls, *, solver_or_program_name: str, inputs: JobInputs, name: str | None = None
     ):
         return Job.create_now(
+            name=name,
             parent_name=solver_or_program_name,
             inputs_checksum=inputs.compute_checksum(),
         )

@@ -2,7 +2,7 @@ import logging
 from collections.abc import Callable
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Header, HTTPException, status
+from fastapi import APIRouter, Body, Depends, Header, HTTPException, status
 from httpx import HTTPStatusError
 from models_library.api_schemas_storage.storage_schemas import (
     LinkType,
@@ -81,11 +81,10 @@ async def create_program_job(
     product_name: Annotated[str, Depends(get_product_name)],
     x_simcore_parent_project_uuid: Annotated[ProjectID | None, Header()] = None,
     x_simcore_parent_node_id: Annotated[NodeID | None, Header()] = None,
+    name: Annotated[str | None, Body()] = None,
+    description: Annotated[str | None, Body()] = None,
 ):
-    """Creates a job in a specific release with given inputs.
-
-    NOTE: This operation does **not** start the job
-    """
+    """Creates a program job"""
 
     # ensures user has access to solver
     inputs = JobInputs(values={})
@@ -97,6 +96,8 @@ async def create_program_job(
     )
 
     job, project = await job_service.create_job(
+        name=name,
+        description=description,
         solver_or_program=program,
         inputs=inputs,
         parent_project_uuid=x_simcore_parent_project_uuid,
@@ -104,6 +105,7 @@ async def create_program_job(
         url_for=url_for,
         hidden=False,
     )
+
     # create workspace directory so files can be uploaded to it
     assert len(project.workbench) > 0  # nosec
     node_id = next(iter(project.workbench))
