@@ -2,6 +2,8 @@ import json
 import logging
 
 import sqlalchemy as sa
+from common_library.json_serialization import json_loads
+
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from pydantic import TypeAdapter
@@ -85,7 +87,7 @@ class DBManager:
         )
         _logger.debug(message)
 
-        node_configuration = json.loads(json_configuration)
+        node_configuration = json_loads(json_configuration)
         async with (
             DBContextManager(self._db_engine) as engine,
             engine.begin() as connection,
