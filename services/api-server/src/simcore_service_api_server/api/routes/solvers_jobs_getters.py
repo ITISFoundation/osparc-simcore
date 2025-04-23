@@ -56,6 +56,7 @@ from ..dependencies.database import get_db_asyncpg_engine
 from ..dependencies.rabbitmq import get_log_check_timeout, get_log_distributor
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver_http import AuthSession, get_webserver_session
+from ._common import API_SERVER_DEV_FEATURES_ENABLED
 from ._constants import (
     FMSG_CHANGELOG_NEW_IN_VERSION,
     FMSG_CHANGELOG_REMOVED_IN_VERSION_FORMAT,
@@ -116,7 +117,25 @@ _LOGSTREAM_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     **DEFAULT_BACKEND_SERVICE_STATUS_CODES,
 }
 
+
 router = APIRouter()
+
+
+@router.get(
+    "/-/releases/-/jobs",
+    response_model=Page[Job],
+    description="List of all jobs created for any released solver (paginated)",
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+)
+async def list_all_solvers_jobs(
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    page_params: Annotated[PaginationParams, Depends()],
+    solver_service: Annotated[SolverService, Depends(SolverService)],
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
+    product_name: Annotated[str, Depends(get_product_name)],
+):
+    raise NotImplementedError
 
 
 @router.get(
