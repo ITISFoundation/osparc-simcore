@@ -156,7 +156,7 @@ async def get_solver(
     solver_service: Annotated[SolverService, Depends(SolverService)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
-) -> Solver:
+):
     """Gets latest release of a solver"""
     # IMPORTANT: by adding /latest, we avoid changing the order of this entry in the router list
     # otherwise, {solver_key:path} will override and consume any of the paths that follow.
