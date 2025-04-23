@@ -4,6 +4,7 @@ from common_library.pagination_tools import iter_pagination_params
 from fastapi import Depends
 from models_library.basic_types import VersionStr
 from models_library.products import ProductName
+from models_library.projects_nodes import Node
 from models_library.rest_pagination import (
     MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
     PageMetaInfoLimitOffset,
@@ -16,8 +17,9 @@ from models_library.users import UserID
 from packaging.version import Version
 
 from .api.dependencies.webserver_rpc import get_wb_api_rpc_client
-from .models.schemas.jobs import Job
+from .models.schemas.jobs import JobInputs, JobModel
 from .models.schemas.solvers import Solver, SolverKeyId
+from .models.solver_job_models_converters import create_job_inputs_from_node_inputs
 from .services_rpc.catalog import CatalogService
 from .services_rpc.wb_api_server import WbApiRpcClient
 
@@ -93,7 +95,7 @@ class SolverService:
         product_name: ProductName,
         offset: PageOffsetInt = 0,
         limit: PageLimitInt = DEFAULT_PAGINATION_LIMIT,
-    ) -> tuple[list[Job], PageMetaInfoLimitOffset]:
+    ) -> tuple[list[JobModel], PageMetaInfoLimitOffset]:
         """Lists all solver jobs for a user with pagination"""
 
         # NOTE: perhaps we should get comp_tasks instead of projects! or a combinatino of both?
@@ -107,18 +109,28 @@ class SolverService:
             job_parent_resource_name_filter="solvers",  # TODO: project shouldr eturn parent resource name and workbench
         )
 
-        solver = None  # TODO
-        url_for = None  # TODO
+        jobs: list[JobModel] = []
 
-        jobs: list[Job] = [
-            Job(
-                id=prj.uuid,
-                name=prj.name,
-                inputs_checksum=prj.inputs_checksum,
-                created_at=prj.creation_date,  # type: ignore[arg-type]
-                runner_name=prj.job_parent_resource_name,
-                # TODO: url_ parts missing
+        for prj in projects_page.data:
+
+            assert len(prj.workbench) == 1, "Expected only one solver node in workbench"
+
+            solver_node: Node = next(iter(prj.workbench.values()))
+            job_inputs: JobInputs = create_job_inputs_from_node_inputs(
+                inputs=solver_node.inputs or {}
             )
-            for prj in projects_page.data
-        ]
+            assert prj.job_parent_resource_name  # nosec
+
+            jobs.append(
+                JobModel(
+                    id=prj.uuid,
+                    name=JobModel.compose_resource_name(
+                        prj.job_parent_resource_name, prj.uuid
+                    ),
+                    inputs_checksum=job_inputs.compute_checksum(),
+                    created_at=prj.creation_date,
+                    runner_name=prj.job_parent_resource_name,
+                )
+            )
+
         return jobs, projects_page.meta

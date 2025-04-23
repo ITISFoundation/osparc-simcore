@@ -15,7 +15,6 @@ from models_library.api_schemas_webserver.projects_ui import StudyUI
 from models_library.basic_types import KeyIDStr
 from models_library.projects import Project
 from models_library.projects_nodes import InputID
-from models_library.rpc.webserver.projects import ProjectRpcGet
 from pydantic import HttpUrl, TypeAdapter
 
 from ..services_http.director_v2 import ComputationTaskGet
@@ -183,7 +182,7 @@ def create_new_project_for_job(
 def create_job_from_project(
     *,
     solver_or_program: Solver | Program,
-    project: ProjectRpcGet | ProjectGet | Project,
+    project: ProjectGet | Project,
     url_for: Callable[..., HttpUrl],
 ) -> Job:
     """
@@ -198,9 +197,7 @@ def create_job_from_project(
     assert solver_or_program.version in project.name  # nosec
     assert urllib.parse.quote_plus(solver_or_program.id) in project.name  # nosec
 
-    # get solver node
-    node_id = next(iter(project.workbench.keys()))
-    solver_node: Node = project.workbench[node_id]
+    solver_node: Node = next(iter(project.workbench.values()))
     job_inputs: JobInputs = create_job_inputs_from_node_inputs(
         inputs=solver_node.inputs or {}
     )
@@ -210,7 +207,7 @@ def create_job_from_project(
 
     job_id = project.uuid
 
-    job = Job(
+    return Job(
         id=job_id,
         name=project.name,
         inputs_checksum=job_inputs.compute_checksum(),
@@ -224,8 +221,6 @@ def create_job_from_project(
             solver_or_program=solver_or_program, url_for=url_for, job_id=job_id
         ),
     )
-
-    return job
 
 
 def create_jobstatus_from_task(task: ComputationTaskGet) -> JobStatus:

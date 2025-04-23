@@ -54,9 +54,11 @@ class ProjectJobRpcGet(BaseModel):
             }
         )
 
+    job_parent_resource_name: str
+
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
-        schema.udpate(
+        schema.update(
             {
                 "examples": [
                     {
@@ -65,6 +67,8 @@ class ProjectJobRpcGet(BaseModel):
                         "description": "My project description",
                         "creation_date": "2023-01-01T00:00:00Z",
                         "last_change_date": "2023-01-01T00:00:00Z",
+                        "job_parent_resource_name": "solvers/foo/release/1.2.3",
+                        "workbench": {},
                     },
                 ]
             }
