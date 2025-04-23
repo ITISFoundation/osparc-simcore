@@ -110,6 +110,11 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
   },
 
   members: {
+    reloadSubRuns: function() {
+      const model = this.getTableModel();
+      model.reloadData();
+    },
+
     __attachHandlers: function() {
       this.addListener("cellTap", e => {
         const row = e.getRow();

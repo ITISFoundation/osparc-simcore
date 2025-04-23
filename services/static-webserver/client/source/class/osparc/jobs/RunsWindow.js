@@ -69,6 +69,7 @@ qx.Class.define("osparc.jobs.RunsWindow", {
 
       this.addListener("close", () => {
         runsAndClusters.getChildControl("runs-browser").stopInterval();
+        subRunsBrowser.stopInterval();
       });
     },
   }

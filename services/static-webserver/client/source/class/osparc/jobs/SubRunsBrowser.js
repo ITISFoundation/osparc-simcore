@@ -26,6 +26,8 @@ qx.Class.define("osparc.jobs.SubRunsBrowser", {
 
     const titleLayout = this.__createTitleLayout();
     this._add(titleLayout);
+
+    this.__reloadInterval = setInterval(() => this.__subRunsTable.reloadSubRuns(), 10*1000);
   },
 
   events: {
@@ -35,6 +37,7 @@ qx.Class.define("osparc.jobs.SubRunsBrowser", {
   members: {
     __titleLabel: null,
     __subRunsTable: null,
+    __reloadInterval: null,
 
     __createTitleLayout: function() {
       const titleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
@@ -71,6 +74,12 @@ qx.Class.define("osparc.jobs.SubRunsBrowser", {
       this._add(subRunsTable, {
         flex: 1
       });
-    }
+    },
+
+    stopInterval: function() {
+      if (this.__reloadInterval) {
+        clearInterval(this.__reloadInterval);
+      }
+    },
   }
 })
