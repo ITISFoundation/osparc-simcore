@@ -26,9 +26,8 @@ This document provides guidelines and best practices for using GitHub Copilot in
 
 ### Json serialization
 
-- Use `json_loads` from `common_library.json_serialization` instead of `json.dumps` / `json.loads`.
-- Prefer Pydantic model methods (e.g., `model.model_dump_json()`) for serialization/deserialization.
-- Avoid using the built-in `json` module for these tasks.
+- Generally use `json_dumps`/`json_loads` from `common_library.json_serialization` to built-in `json.dumps` / `json.loads`.
+- Prefer Pydantic model methods (e.g., `model.model_dump_json()`) for serialization.
 
 
 ## Node.js-Specific Instructions
