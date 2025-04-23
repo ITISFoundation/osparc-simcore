@@ -25,7 +25,7 @@ from pydantic import PositiveInt
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers import postgres_tools
 from pytest_simcore.helpers.faker_factories import (
-    random_api_key,
+    random_api_auth,
     random_product,
     random_user,
 )
@@ -255,31 +255,39 @@ async def create_fake_api_keys(
     create_product_names: Callable[[PositiveInt], AsyncGenerator[str, None]],
 ) -> AsyncGenerator[Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB, None]], None]:
     async def _generate_fake_api_key(n: PositiveInt):
-        users = create_user_ids(n)
-        products = create_product_names(n)
+        users, products = create_user_ids(n), create_product_names(n)
+        excluded_column = "api_secret"
+        returning_cols = [col for col in api_keys.c if col.name != excluded_column]
+
         for _ in range(n):
             product = await anext(products)
             user = await anext(users)
+            api_auth = random_api_auth(product, user)
+            plain_api_secret = api_auth.pop("api_secret")
             result = await connection.execute(
                 api_keys.insert()
-                .values(**random_api_key(product, user))
-                .returning(sa.literal_column("*"))
+                .values(
+                    api_secret=sa.func.crypt(plain_api_secret, sa.func.gen_salt("bf", 10)),
+                    **api_auth,
+                )
+                .returning(*returning_cols)
             )
             row = await result.fetchone()
             assert row
             _generate_fake_api_key.row_ids.append(row.id)
-            yield ApiKeyInDB.model_validate(row)
+            yield ApiKeyInDB.model_validate({"api_secret": plain_api_secret, **row})
 
     _generate_fake_api_key.row_ids = []
     yield _generate_fake_api_key
 
-    for row_id in _generate_fake_api_key.row_ids:
-        await connection.execute(api_keys.delete().where(api_keys.c.id == row_id))
+    await connection.execute(
+        api_keys.delete().where(api_keys.c.id.in_(_generate_fake_api_key.row_ids))
+    )
 
 
 @pytest.fixture
 async def auth(
-    create_fake_api_keys: Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB, None]]
+    create_fake_api_keys: Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB, None]],
 ) -> httpx.BasicAuth:
     """overrides auth and uses access to real repositories instead of mocks"""
     async for key in create_fake_api_keys(1):
