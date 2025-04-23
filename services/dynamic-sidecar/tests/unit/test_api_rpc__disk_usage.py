@@ -15,7 +15,6 @@ from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.dynamic_sidecar import disk_usage
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
-from simcore_service_dynamic_sidecar.core.application import create_app
 from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 from simcore_service_dynamic_sidecar.modules.system_monitor._disk_usage import (
     get_disk_usage_monitor,
@@ -54,8 +53,7 @@ def mock_environment(
 
 
 @pytest.fixture
-async def app(mock_environment: EnvVarsDict) -> AsyncIterable[FastAPI]:
-    app = create_app()
+async def app(app: FastAPI, mock_environment: EnvVarsDict) -> AsyncIterable[FastAPI]:
     async with LifespanManager(app):
         yield app
 

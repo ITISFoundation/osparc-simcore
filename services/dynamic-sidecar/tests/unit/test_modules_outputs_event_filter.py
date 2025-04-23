@@ -2,8 +2,8 @@
 # pylint:disable=unused-argument
 
 import asyncio
+from collections.abc import AsyncIterator
 from pathlib import Path
-from typing import AsyncIterator
 from unittest.mock import AsyncMock
 
 import pytest
@@ -24,14 +24,21 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+]
+
+pytest_simcore_ops_services_selection = [
+    "adminer",
+]
+
+
 _TENACITY_RETRY_PARAMS = {
     "reraise": True,
     "retry": retry_if_exception_type(AssertionError),
     "stop": stop_after_delay(10),
     "wait": wait_fixed(0.01),
 }
-
-# FIXTURES
 
 
 @pytest.fixture

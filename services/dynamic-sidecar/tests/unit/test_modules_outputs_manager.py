@@ -4,10 +4,10 @@
 
 import asyncio
 import inspect
+from collections.abc import AsyncIterator, Iterator
 from dataclasses import dataclass
 from inspect import FullArgSpec
 from pathlib import Path
-from typing import AsyncIterator, Iterator
 from unittest.mock import AsyncMock
 
 import pytest
@@ -36,7 +36,13 @@ from simcore_service_dynamic_sidecar.modules.outputs._manager import (
     setup_outputs_manager,
 )
 
-# UTILS
+pytest_simcore_core_services_selection = [
+    "postgres",
+]
+
+pytest_simcore_ops_services_selection = [
+    "adminer",
+]
 
 
 @dataclass
@@ -106,7 +112,7 @@ def mock_upload_outputs_raises_error(
         side_effect=_mock_upload_outputs,
     )
 
-    yield error_toggle
+    return error_toggle
 
 
 @pytest.fixture(params=[1, 4, 10])

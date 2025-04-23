@@ -17,7 +17,13 @@ from simcore_service_dynamic_sidecar.modules.mounted_fs import (
     _name_from_full_path,
 )
 
-# UTILS
+pytest_simcore_core_services_selection = [
+    "postgres",
+]
+
+pytest_simcore_ops_services_selection = [
+    "adminer",
+]
 
 
 def _replace_slashes(path: Path) -> str:
