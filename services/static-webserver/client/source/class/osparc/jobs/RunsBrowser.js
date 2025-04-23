@@ -26,7 +26,7 @@ qx.Class.define("osparc.jobs.RunsBrowser", {
 
     const jobsFilter = this.getChildControl("jobs-filter");
     this.getChildControl("jobs-ongoing");
-    const jobsTable = this.getChildControl("jobs-table");
+    const jobsTable = this.getChildControl("runs-table");
 
     jobsFilter.getChildControl("textfield").addListener("input", e => {
       const filterText = e.getData();
@@ -65,7 +65,7 @@ qx.Class.define("osparc.jobs.RunsBrowser", {
           });
           this.getChildControl("header-filter").add(control);
           break;
-        case "jobs-table":
+        case "runs-table":
           control = new osparc.jobs.RunsTable();
           control.addListener("runSelected", e => this.fireDataEvent("runSelected", e.getData()));
           this._add(control);
@@ -76,7 +76,7 @@ qx.Class.define("osparc.jobs.RunsBrowser", {
     },
 
     reloadRuns: function() {
-      const runsTable = this.getChildControl("jobs-table");
+      const runsTable = this.getChildControl("runs-table");
       runsTable.reloadRuns();
     },
   }

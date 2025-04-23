@@ -105,6 +105,11 @@ qx.Class.define("osparc.jobs.RunsTable", {
   },
 
   members: {
+    reloadRuns: function() {
+      const model = this.getTableModel();
+      model.reloadData();
+    },
+
     __attachHandlers: function() {
       this.addListener("cellTap", e => {
         const row = e.getRow();

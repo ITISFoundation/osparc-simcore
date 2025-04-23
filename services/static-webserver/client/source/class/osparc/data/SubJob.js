@@ -84,7 +84,7 @@ qx.Class.define("osparc.data.SubJob", {
   },
 
   members: {
-    updateSubTask: function(subJobData) {
+    updateSubJob: function(subJobData) {
       this.set({
         state: subJobData["state"],
         progress: subJobData["progress"],

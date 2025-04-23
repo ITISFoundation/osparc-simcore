@@ -89,6 +89,7 @@ qx.Class.define("osparc.store.Jobs", {
       const jobs = this.getJobs();
       const jobFound = jobs.find(job => job.getProjectUuid() === jobData["projectUuid"]);
       if (jobFound) {
+        jobFound.updateJob(jobData);
         return jobFound;
       }
       const job = new osparc.data.Job(jobData);

@@ -87,13 +87,22 @@ qx.Class.define("osparc.data.Job", {
     addSubJob: function(subJobData) {
       const subJobFound = this.__subJobs.find(subJb => subJb.getNodeId() === subJobData["nodeId"]);
       if (subJobFound) {
-        subJobFound.updateSubTask(subJobData);
+        subJobFound.updateSubJob(subJobData);
         return subJobFound;
       }
 
       const subJob = new osparc.data.SubJob(subJobData);
       this.__subJobs.push(subJob);
       return subJob;
+    },
+
+    updateJob: function(jobData) {
+      this.set({
+        state: jobData["state"],
+        submittedAt: jobData["submittedAt"] ? new Date(jobData["submittedAt"]) : null,
+        startedAt: jobData["startedAt"] ? new Date(jobData["startedAt"]) : null,
+        endedAt: jobData["endedAt"] ? new Date(jobData["endedAt"]) : null,
+      });
     },
 
     getSubJobs: function() {
