@@ -53,8 +53,20 @@ def get_async_job_status(
 
 @router.delete(
     "/tasks/{task_id}",
-    name="cancel_and_delete_task",
-    description="Cancels and deletes a task",
+    name="delete_task",
+    description="Deletes a task",
+    responses=_export_data_responses,
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def selete_async_job(
+    _path_params: Annotated[_PathParam, Depends()],
+): ...
+
+
+@router.post(
+    "/tasks/{task_id}:abort",
+    name="abort_task",
+    description="Aborts a task",
     responses=_export_data_responses,
     status_code=status.HTTP_204_NO_CONTENT,
 )
