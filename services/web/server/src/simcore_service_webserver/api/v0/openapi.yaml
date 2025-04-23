@@ -3129,7 +3129,7 @@ paths:
       - long-running-tasks
       summary: Delete Task
       description: Deletes a task
-      operationId: selete_async_job
+      operationId: delete_async_job
       parameters:
       - name: task_id
         in: path
