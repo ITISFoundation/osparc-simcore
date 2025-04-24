@@ -3169,7 +3169,7 @@ paths:
       tags:
       - long-running-tasks
       summary: Cancel Task
-      description: Cancels a task
+      description: Cancels (aborts) a task
       operationId: cancel_async_job
       parameters:
       - name: task_id
