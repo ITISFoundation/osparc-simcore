@@ -260,8 +260,8 @@ async def email_confirmation(code: str):
 
 @router.get(
     "/auth/captcha",
-    operation_id="request_captcha",
+    operation_id="generate_captcha",
     status_code=status.HTTP_200_OK,
     responses={status.HTTP_200_OK: {"content": {"image/png": {}}}},
 )
-async def request_captcha(): ...
+async def generate_captcha(): ...

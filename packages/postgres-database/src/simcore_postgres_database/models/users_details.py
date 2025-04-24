@@ -54,7 +54,7 @@ users_pre_registration_details = sa.Table(
         doc="Phone provided on pre-registration"
         "NOTE: this is not copied upon registration since it needs to be confirmed",
     ),
-    # Account request status
+    # Approval status of the account request
     sa.Column(
         "account_request_status",
         sa.Enum(AccountRequestStatus),

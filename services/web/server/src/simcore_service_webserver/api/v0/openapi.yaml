@@ -372,7 +372,7 @@ paths:
       tags:
       - auth
       summary: Request Captcha
-      operationId: request_captcha
+      operationId: generate_captcha
       responses:
         '200':
           description: Successful Response

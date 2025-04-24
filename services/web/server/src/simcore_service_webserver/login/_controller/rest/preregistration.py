@@ -57,10 +57,7 @@ def _get_ipinfo(request: web.Request) -> dict[str, Any]:
     }
 
 
-@routes.post(
-    f"/{API_VTAG}/auth/request-account",
-    name="request_product_account",
-)
+@routes.post(f"/{API_VTAG}/auth/request-account", name="request_product_account")
 @global_rate_limit_route(number_of_requests=30, interval_seconds=MINUTE)
 async def request_product_account(request: web.Request):
     product = products_web.get_current_product(request)
@@ -148,12 +145,9 @@ async def unregister_account(request: web.Request):
         return response
 
 
-@routes.get(
-    f"/{API_VTAG}/auth/captcha",
-    name="request_captcha",
-)
+@routes.get(f"/{API_VTAG}/auth/captcha", name="generate_captcha")
 @global_rate_limit_route(number_of_requests=30, interval_seconds=MINUTE)
-async def request_captcha(request: web.Request):
+async def generate_captcha(request: web.Request):
     session = await get_session(request)
 
     captcha_text, image_data = await _preregistration_service.generate_captcha()
