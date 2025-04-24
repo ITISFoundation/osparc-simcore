@@ -8,7 +8,7 @@
 qx.Class.define("osparc.share.NewCollaboratorsManager", {
   extend: osparc.ui.window.SingletonWindow,
 
-  construct: function(resourceData, showOrganizations = true) {
+  construct: function(resourceData, showOrganizations = true, showAccessRights = true) {
     this.base(arguments, "newCollaboratorsManager", this.tr("New collaborators"));
 
     this.set({
@@ -26,6 +26,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
 
     this.__resourceData = resourceData;
     this.__showOrganizations = showOrganizations;
+    this.__showAccessRights = showAccessRights;
 
     this.__renderLayout();
 
@@ -50,6 +51,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
   members: {
     __resourceData: null,
     __showOrganizations: null,
+    __showAccessRights: null,
     __searchDelayer: null,
     __selectedCollaborators: null,
     __potentialCollaborators: null,
@@ -192,7 +194,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       this.getChildControl("potential-collaborators-list");
       this.getChildControl("searching-collaborators");
 
-      if (this.__resourceData["resourceType"] === "study") {
+      if (this.__resourceData["resourceType"] === "study" && this.__showAccessRights) {
         const selectBox = this.getChildControl("access-rights-selector");
         const helper = this.getChildControl("access-rights-helper");
 
