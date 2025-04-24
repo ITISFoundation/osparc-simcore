@@ -545,23 +545,23 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
       const lazyLoadContent = () => {
         const resourceData = this.__resourceData;
-        let permissionsView = null;
+        let collaboratorsView = null;
         if (osparc.utils.Resources.isService(resourceData)) {
-          permissionsView = new osparc.share.CollaboratorsService(resourceData);
-          permissionsView.addListener("updateAccessRights", e => {
+          collaboratorsView = new osparc.share.CollaboratorsService(resourceData);
+          collaboratorsView.addListener("updateAccessRights", e => {
             const updatedData = e.getData();
             if (osparc.utils.Resources.isService(resourceData)) {
               this.fireDataEvent("updateService", updatedData);
             }
           }, this);
         } else {
-          permissionsView = new osparc.share.CollaboratorsStudy(resourceData);
+          collaboratorsView = new osparc.share.CollaboratorsStudy(resourceData);
           if (osparc.utils.Resources.isStudy(resourceData)) {
-            permissionsView.getChildControl("study-link").show();
+            collaboratorsView.getChildControl("study-link").show();
           } else if (osparc.utils.Resources.isTemplate(resourceData)) {
-            permissionsView.getChildControl("template-link").show();
+            collaboratorsView.getChildControl("template-link").show();
           }
-          permissionsView.addListener("updateAccessRights", e => {
+          collaboratorsView.addListener("updateAccessRights", e => {
             const updatedData = e.getData();
             if (osparc.utils.Resources.isStudy(resourceData)) {
               this.fireDataEvent("updateStudy", updatedData);
@@ -570,7 +570,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
             }
           }, this);
         }
-        page.addToContent(permissionsView);
+        page.addToContent(collaboratorsView);
       }
       page.addListenerOnce("appear", lazyLoadContent, this);
 

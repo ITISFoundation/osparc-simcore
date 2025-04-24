@@ -111,7 +111,7 @@ qx.Class.define("osparc.editor.AnnotationNoteCreator", {
                     const {
                       selectedGids,
                       newAccessRights,
-                    } = e.getData();
+                    } = ev.getData();
                     console.log("addCollaborators", selectedGids, newAccessRights);
                     // this._addEditors(selectedGids, newAccessRights);
                     collaboratorsManager.close();
