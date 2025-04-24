@@ -1,6 +1,7 @@
 import logging
 from asyncio import Task
 from datetime import timedelta
+from typing import Final
 
 from fastapi import FastAPI
 from models_library.healthchecks import IsResponsive, LivenessResult
@@ -11,6 +12,8 @@ from servicelib.fastapi.db_asyncpg_engine import get_engine
 from servicelib.logging_utils import log_catch
 
 _logger = logging.getLogger(__name__)
+
+_LVENESS_CHECK_INTERVAL: Final[timedelta] = timedelta(seconds=10)
 
 
 class PostgresLiveness:
@@ -30,7 +33,7 @@ class PostgresLiveness:
     async def setup(self) -> None:
         self._task = create_periodic_task(
             self._check_task,
-            interval=timedelta(seconds=10),
+            interval=_LVENESS_CHECK_INTERVAL,
             task_name="posgress_liveness_check",
         )
 

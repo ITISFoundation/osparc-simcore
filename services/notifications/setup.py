@@ -24,7 +24,7 @@ CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 NAME = "simcore-service-notifications"
 VERSION = (CURRENT_DIR / "VERSION").read_text().strip()
 AUTHORS = ("Andrei Neagu (GitHK)",)
-DESCRIPTION = "Service for executing commands on docker nodes"
+DESCRIPTION = "Service used for sending notifications to users via different channels"
 
 PROD_REQUIREMENTS = tuple(
     read_reqs(CURRENT_DIR / "requirements" / "_base.txt")

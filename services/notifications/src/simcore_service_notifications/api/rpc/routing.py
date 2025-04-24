@@ -8,7 +8,7 @@ from servicelib.rabbitmq import RPCRouter
 from ...clients.rabbitmq import get_rabbitmq_rpc_server
 
 ROUTERS: list[RPCRouter] = [
-    # import form various domains and attach here
+    # import and use all routers here
 ]
 
 
