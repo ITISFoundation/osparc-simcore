@@ -3,7 +3,7 @@ import uuid
 from dataclasses import dataclass
 from typing import Any
 
-import asyncpg.exceptions
+import asyncpg.exceptions  # type: ignore[import-untyped]
 import sqlalchemy
 import sqlalchemy.exc
 from common_library.async_tools import maybe_await
@@ -124,7 +124,7 @@ class ProjectNodesRepo:
             result = await connection.execute(insert_stmt)
             assert result  # nosec
             rows = await maybe_await(result.fetchall())
-            assert rows is not None  # nosec
+            assert isinstance(rows, list)  # nosec
             return [ProjectNode.model_validate(r) for r in rows]
         except ForeignKeyViolation as exc:
             # this happens when the project does not exist, as we first check the node exists
@@ -168,7 +168,7 @@ class ProjectNodesRepo:
         result = await connection.execute(list_stmt)
         assert result  # nosec
         rows = await maybe_await(result.fetchall())
-        assert rows is not None  # nosec
+        assert isinstance(rows, list)  # nosec
         return [ProjectNode.model_validate(row) for row in rows]
 
     async def get(self, connection: DBConnection, *, node_id: uuid.UUID) -> ProjectNode:
@@ -266,8 +266,8 @@ class ProjectNodesRepo:
             )
         )
         row = await maybe_await(result.fetchone())
-        if row:
-            return (row[0], row[1])
+        if row is not None:
+            return (row.pricing_plan_id, row.pricing_unit_id)
         return None
 
     async def connect_pricing_unit_to_project_node(
@@ -322,6 +322,7 @@ class ProjectNodesRepo:
         )
         result = await connection.execute(get_stmt)
         project_ids = await maybe_await(result.fetchall())
+        assert isinstance(project_ids, list)  # nosec
         if not project_ids:
             raise ProjectNodesNodeNotFoundError(project_uuid=None, node_id=node_id)
         if len(project_ids) > 1:
