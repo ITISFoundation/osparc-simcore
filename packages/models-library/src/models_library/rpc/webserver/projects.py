@@ -54,26 +54,6 @@ class ProjectJobRpcGet(BaseModel):
             }
         )
 
-    # Specific to jobs
-    job_parent_resource_name: str
-
-    @staticmethod
-    def _update_json_schema_extra(schema: JsonDict) -> None:
-        schema.update(
-            {
-                "examples": [
-                    {
-                        "uuid": "12345678-1234-5678-1234-123456789012",
-                        "name": "My project",
-                        "description": "My project description",
-                        "creation_date": "2023-01-01T00:00:00Z",
-                        "last_change_date": "2023-01-01T00:00:00Z",
-                        "job_parent_resource_name": "solvers/foo/release/1.2.3",
-                        "workbench": {},
-                    },
-                ]
-            }
-        )
 
     model_config = ConfigDict(
         extra="forbid",
