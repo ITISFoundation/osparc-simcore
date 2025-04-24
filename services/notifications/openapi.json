@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-notifications",
     "description": "Service for executing commands on docker nodes",
-    "version": "0.0.3"
+    "version": "0.0.1"
   },
   "servers": [
     {
