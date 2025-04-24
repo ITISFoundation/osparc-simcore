@@ -1,8 +1,9 @@
 import datetime
 import logging
 import warnings
+from collections.abc import Callable
 from dataclasses import dataclass, fields
-from typing import Any, Callable
+from typing import Any
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
@@ -22,12 +23,10 @@ _WARNING_FMSG = (
 )
 
 
-class GroupExtraPropertiesError(Exception):
-    ...
+class GroupExtraPropertiesError(Exception): ...
 
 
-class GroupExtraPropertiesNotFoundError(GroupExtraPropertiesError):
-    ...
+class GroupExtraPropertiesNotFoundError(GroupExtraPropertiesError): ...
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -213,7 +212,6 @@ class GroupExtraPropertiesRepo:
         product_name: str,
     ) -> GroupExtraProperties:
         async with pass_or_acquire_connection(engine, connection) as conn:
-
             list_stmt = _list_table_entries_ordered_by_group_type_stmt(
                 user_id=user_id, product_name=product_name
             )

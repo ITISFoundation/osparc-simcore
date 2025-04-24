@@ -12,6 +12,7 @@ from faker import Faker
 from pytest_simcore.helpers.faker_factories import random_user
 from simcore_postgres_database.models.users import UserRole, users
 from simcore_postgres_database.utils_users import UserNotFoundInRepoError, UsersRepo
+from sqlalchemy.ext.asyncio import AsyncConnection
 
 
 @pytest.fixture
@@ -25,11 +26,13 @@ async def user(connection: SAConnection, faker: Faker) -> dict[str, Any]:
     return data
 
 
-async def test_users_repo_get(connection: SAConnection, user: dict[str, Any]):
+async def test_users_repo_get(
+    connection_factory: SAConnection | AsyncConnection, user: dict[str, Any]
+):
     repo = UsersRepo()
-
-    assert await repo.get_email(connection, user_id=user["id"]) == user["email"]
-    assert await repo.get_role(connection, user_id=user["id"]) == user["role"]
+    # NOTE: Temporary usage of connection_factory until asyncpg is used
+    assert await repo.get_email(connection_factory, user_id=user["id"]) == user["email"]
+    assert await repo.get_role(connection_factory, user_id=user["id"]) == user["role"]
 
     with pytest.raises(UserNotFoundInRepoError):
-        await repo.get_role(connection, user_id=55)
+        await repo.get_role(connection_factory, user_id=55)

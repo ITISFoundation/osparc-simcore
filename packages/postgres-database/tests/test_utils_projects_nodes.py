@@ -28,6 +28,8 @@ from simcore_postgres_database.utils_projects_nodes import (
 )
 from sqlalchemy.ext.asyncio import AsyncConnection
 
+# NOTE: Temporary usage of connection_factory until asyncpg is used
+
 
 async def _delete_project(
     connection_factory: SAConnection, project_uuid: uuid.UUID
