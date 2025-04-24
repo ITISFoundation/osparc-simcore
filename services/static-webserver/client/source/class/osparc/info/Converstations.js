@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 
-qx.Class.define("osparc.info.CommentsList", {
+qx.Class.define("osparc.info.Conversations", {
   extend: qx.ui.core.Widget,
 
   /**

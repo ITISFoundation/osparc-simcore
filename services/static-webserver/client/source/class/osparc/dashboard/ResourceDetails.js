@@ -522,7 +522,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       this.__addOpenButton(page);
 
       const lazyLoadContent = () => {
-        const commentsList = new osparc.info.CommentsList(resourceData);
+        const commentsList = new osparc.info.Conversations(resourceData);
         page.addToContent(commentsList);
       }
       page.addListenerOnce("appear", lazyLoadContent, this);
