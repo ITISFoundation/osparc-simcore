@@ -1,6 +1,5 @@
 import asyncio
 import contextlib
-import json
 import logging
 import re
 from datetime import timedelta
@@ -13,6 +12,7 @@ import aiodocker.networks
 import arrow
 import httpx
 import tenacity
+from common_library.json_serialization import json_dumps, json_loads
 from fastapi import FastAPI, status
 from packaging.version import Version
 from servicelib.async_utils import run_sequentially_in_context
@@ -135,7 +135,7 @@ async def _read_service_settings(
 ) -> dict[str, Any] | list[Any] | None:
     image_labels, _ = await registry_proxy.get_image_labels(app, key, tag)
     settings: dict[str, Any] | list[Any] | None = (
-        json.loads(image_labels[settings_name])
+        json_loads(image_labels[settings_name])
         if settings_name in image_labels
         else None
     )
@@ -306,28 +306,28 @@ async def _create_docker_service_params(
         ] += f", {service_name}_stripprefixregex"
 
     placement_constraints_to_substitute: list[str] = []
-    placement_substitutions: dict[
-        str, str
-    ] = app_settings.DIRECTOR_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS
+    placement_substitutions: dict[str, str] = (
+        app_settings.DIRECTOR_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS
+    )
     assert isinstance(service_parameters_labels, list)  # nosec
     for param in service_parameters_labels:
         _check_setting_correctness(param)
         # replace %service_uuid% by the given uuid
         if str(param["value"]).find("%service_uuid%") != -1:
-            dummy_string = json.dumps(param["value"])
+            dummy_string = json_dumps(param["value"])
             dummy_string = dummy_string.replace("%service_uuid%", node_uuid)
-            param["value"] = json.loads(dummy_string)
+            param["value"] = json_loads(dummy_string)
 
         if param["type"] == "Resources":
             # python-API compatible for backward compatibility
             if "mem_limit" in param["value"]:
-                docker_params["task_template"]["Resources"]["Limits"][
-                    "MemoryBytes"
-                ] = param["value"]["mem_limit"]
+                docker_params["task_template"]["Resources"]["Limits"]["MemoryBytes"] = (
+                    param["value"]["mem_limit"]
+                )
             if "cpu_limit" in param["value"]:
-                docker_params["task_template"]["Resources"]["Limits"][
-                    "NanoCPUs"
-                ] = param["value"]["cpu_limit"]
+                docker_params["task_template"]["Resources"]["Limits"]["NanoCPUs"] = (
+                    param["value"]["cpu_limit"]
+                )
             if "mem_reservation" in param["value"]:
                 docker_params["task_template"]["Resources"]["Reservations"][
                     "MemoryBytes"
@@ -379,11 +379,11 @@ async def _create_docker_service_params(
 
         # publishing port on the ingress network.
         elif param["name"] == "ports" and param["type"] == "int":  # backward comp
-            docker_params["labels"][
-                _to_simcore_runtime_docker_label_key("port")
-            ] = docker_params["labels"][
-                f"traefik.http.services.{service_name}.loadbalancer.server.port"
-            ] = str(
+            docker_params["labels"][_to_simcore_runtime_docker_label_key("port")] = (
+                docker_params["labels"][
+                    f"traefik.http.services.{service_name}.loadbalancer.server.port"
+                ]
+            ) = str(
                 param["value"]
             )
         # REST-API compatible
@@ -445,11 +445,9 @@ async def _create_docker_service_params(
     ] = container_spec["Labels"][
         _to_simcore_runtime_docker_label_key("cpu_limit")
     ] = f"{float(nano_cpus_limit) / 1e9}"
-    docker_params["labels"][
-        _to_simcore_runtime_docker_label_key("memory_limit")
-    ] = container_spec["Labels"][
-        _to_simcore_runtime_docker_label_key("memory_limit")
-    ] = mem_limit
+    docker_params["labels"][_to_simcore_runtime_docker_label_key("memory_limit")] = (
+        container_spec["Labels"][_to_simcore_runtime_docker_label_key("memory_limit")]
+    ) = mem_limit
 
     # and make the container aware of them via env variables
     resource_limits = {

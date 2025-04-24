@@ -2,6 +2,8 @@ import json
 from collections.abc import Mapping
 from typing import Any
 
+from common_library.json_serialization import json_loads
+
 _ENVELOPE_KEYS = ("data", "error")
 
 
@@ -11,7 +13,7 @@ def is_enveloped_from_map(payload: Mapping) -> bool:
 
 def is_enveloped_from_text(text: str) -> bool:
     try:
-        payload = json.loads(text)
+        payload = json_loads(text)
     except json.decoder.JSONDecodeError:
         return False
     return is_enveloped_from_map(payload)

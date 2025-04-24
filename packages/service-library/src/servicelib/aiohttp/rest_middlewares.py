@@ -3,7 +3,6 @@
 SEE  https://gist.github.com/amitripshtos/854da3f4217e3441e8fceea85b0cbd91
 """
 
-import json
 import logging
 from collections.abc import Awaitable, Callable
 from typing import Any, Union
@@ -12,7 +11,7 @@ from aiohttp import web
 from aiohttp.web_request import Request
 from aiohttp.web_response import StreamResponse
 from common_library.error_codes import create_error_code
-from common_library.json_serialization import json_dumps
+from common_library.json_serialization import json_dumps, json_loads
 from models_library.rest_error import ErrorGet, ErrorItemType, LogMessageType
 
 from ..logging_errors import create_troubleshotting_log_kwargs
@@ -107,7 +106,7 @@ def error_middleware_factory(
             err.content_type = MIMETYPE_APPLICATION_JSON
             if err.text:
                 try:
-                    payload = json.loads(err.text)
+                    payload = json_loads(err.text)
                     if not is_enveloped_from_map(payload):
                         payload = wrap_as_envelope(data=payload)
                         err.text = json_dumps(payload)
