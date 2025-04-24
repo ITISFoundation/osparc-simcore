@@ -75,6 +75,13 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
           });
           control.addListener("execute", () => this.__reloadIFrame(), this);
           break;
+        case "study-menu-conversations":
+          control = new qx.ui.menu.Button().set({
+            label: this.tr("Conversations"),
+            icon: "@FontAwesome5Solid/comments/12",
+          });
+          control.addListener("execute", () => osparc.info.Conversations.popUpInWindow(this.getStudy().serialize()), this);
+          break;
         case "study-menu-convert-to-pipeline":
           control = new qx.ui.menu.Button().set({
             label: this.tr("Convert to Pipeline"),
@@ -103,6 +110,9 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
           optionsMenu.setAppearance("menu-wider");
           optionsMenu.add(this.getChildControl("study-menu-info"));
           optionsMenu.add(this.getChildControl("study-menu-reload"));
+          if (osparc.utils.DisabledPlugins.isConversationEnabled()) {
+            optionsMenu.add(this.getChildControl("study-menu-conversations"));
+          }
           if (osparc.product.Utils.hasConvertToPipelineEnabled()) {
             optionsMenu.add(this.getChildControl("study-menu-convert-to-pipeline"));
           }
@@ -150,6 +160,13 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
         study.getUi().bind("mode", reloadButton, "visibility", {
           converter: mode => mode === "standalone" ? "visible" : "excluded"
         });
+
+        if (osparc.utils.DisabledPlugins.isConversationEnabled()) {
+          const conversationsButton = this.getChildControl("study-menu-conversations");
+          study.getUi().bind("mode", conversationsButton, "visibility", {
+            converter: mode => mode === "standalone" ? "visible" : "excluded"
+          });
+        }
 
         if (osparc.product.Utils.hasConvertToPipelineEnabled()) {
           const convertToPipelineButton = this.getChildControl("study-menu-convert-to-pipeline");
