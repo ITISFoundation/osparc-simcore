@@ -3,7 +3,10 @@ from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.rest_pagination import PageLimitInt, PageOffsetInt
-from models_library.rpc.webserver.projects import PageRpcProjectRpcGet, ProjectRpcGet
+from models_library.rpc.webserver.projects import (
+    PageRpcProjectJobRpcGet,
+    ProjectJobRpcGet,
+)
 from models_library.users import UserID
 from pydantic import ValidationError, validate_call
 from servicelib.rabbitmq import RPCRouter
@@ -64,7 +67,7 @@ async def list_projects_marked_as_jobs(
     limit: PageLimitInt,
     # filters
     job_parent_resource_name_filter: str | None,
-) -> PageRpcProjectRpcGet:
+) -> PageRpcProjectJobRpcGet:
 
     total, projects = await _jobs_service.list_my_projects_marked_as_jobs(
         app,
@@ -76,17 +79,19 @@ async def list_projects_marked_as_jobs(
     )
 
     job_projects = [
-        ProjectRpcGet(
+        ProjectJobRpcGet(
             uuid=project.uuid,
             name=project.name,
             description=project.description,
+            workbench={},  # FIXME: this should be extracted
             creation_date=project.creation_date,
             last_change_date=project.last_change_date,
+            job_parent_resource_name=project.job_parent_resource_name,
         )
         for project in projects
     ]
 
-    page: PageRpcProjectRpcGet = PageRpcProjectRpcGet.create(
+    page: PageRpcProjectJobRpcGet = PageRpcProjectJobRpcGet.create(
         job_projects,
         total=total,
         limit=limit,
