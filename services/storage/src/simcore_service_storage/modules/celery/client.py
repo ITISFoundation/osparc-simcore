@@ -127,10 +127,7 @@ class CeleryTaskClient:
         )
 
     @make_async()
-    def _get_task_celery_state(
-        self, task_context: TaskContext, task_uuid: TaskUUID
-    ) -> TaskState:
-        task_id = build_task_id(task_context, task_uuid)
+    def _get_task_celery_state(self, task_id: TaskID) -> TaskState:
         return TaskState(self._celery_app.AsyncResult(task_id).state)
 
     async def get_task_status(
@@ -141,7 +138,8 @@ class CeleryTaskClient:
             logging.DEBUG,
             msg=f"Getting task status: {task_context=} {task_uuid=}",
         ):
-            task_state = await self._get_task_celery_state(task_context, task_uuid)
+            task_id = build_task_id(task_context, task_uuid)
+            task_state = await self._get_task_celery_state(task_id)
             return TaskStatus(
                 task_uuid=task_uuid,
                 task_state=task_state,
