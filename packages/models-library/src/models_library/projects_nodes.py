@@ -78,7 +78,6 @@ class NodeState(BaseModel):
             description="true if the node's outputs need to be re-computed",
         ),
     ] = True
-
     dependencies: Annotated[
         set[NodeID],
         Field(
@@ -86,7 +85,6 @@ class NodeState(BaseModel):
             description="contains the node inputs dependencies if they need to be computed first",
         ),
     ] = DEFAULT_FACTORY
-
     current_status: Annotated[
         RunningState,
         Field(
@@ -94,7 +92,6 @@ class NodeState(BaseModel):
             alias="currentStatus",
         ),
     ] = RunningState.NOT_STARTED
-
     progress: Annotated[
         float | None,
         Field(
