@@ -38,8 +38,8 @@ qx.Class.define("osparc.info.Conversations", {
     popUpInWindow: function(studyData) {
       const conversations = new osparc.info.Conversations(studyData);
       const title = qx.locale.Manager.tr("Conversations");
-      const viewWidth = 500;
-      const viewHeight = 600;
+      const viewWidth = 600;
+      const viewHeight = 700;
       const win = osparc.ui.window.Window.popUpInWindow(conversations, title, viewWidth, viewHeight);
       win.set({
         width: this.WIDTH,
