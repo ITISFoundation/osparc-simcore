@@ -46,8 +46,8 @@ class ProjectJobRpcGet(BaseModel):
                         "name": "My project",
                         "description": "My project description",
                         "workbench": {f"{uuid4()}": n for n in nodes_examples[2:3]},
-                        "creation_date": "2023-01-01T00:00:00Z",
-                        "last_change_date": "2023-01-01T00:00:00Z",
+                        "creation_at": "2023-01-01T00:00:00Z",
+                        "modified_at": "2023-01-01T00:00:00Z",
                         "job_parent_resource_name": "solvers/foo/release/1.2.3",
                     },
                 ]
