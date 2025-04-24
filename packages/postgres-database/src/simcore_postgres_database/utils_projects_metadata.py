@@ -3,12 +3,11 @@ import uuid
 from typing import Any
 
 import sqlalchemy as sa
-from aiopg.sa.connection import SAConnection
-from aiopg.sa.result import ResultProxy, RowProxy
 from common_library.errors_classes import OsparcErrorMixin
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
+from ._protocols import DBConnection
 from .aiopg_errors import ForeignKeyViolation
 from .models.projects import projects
 from .models.projects_metadata import projects_metadata
@@ -65,7 +64,7 @@ class ProjectMetadata(BaseModel):
 #
 
 
-async def get(connection: SAConnection, project_uuid: uuid.UUID) -> ProjectMetadata:
+async def get(connection: DBConnection, project_uuid: uuid.UUID) -> ProjectMetadata:
     """
     Raises:
         DBProjectNotFoundError: project not found
@@ -93,8 +92,8 @@ async def get(connection: SAConnection, project_uuid: uuid.UUID) -> ProjectMetad
         )
         .where(projects.c.uuid == f"{project_uuid}")
     )
-    result: ResultProxy = await connection.execute(get_stmt)
-    row: RowProxy | None = await result.first()
+    result = await connection.execute(get_stmt)
+    row = await result.first()
     if row is None:
         raise DBProjectNotFoundError(project_uuid=project_uuid)
     return ProjectMetadata.model_validate(row)
@@ -114,7 +113,7 @@ def _check_valid_ancestors_combination(
 
 
 async def _project_has_any_child(
-    connection: SAConnection, project_uuid: uuid.UUID
+    connection: DBConnection, project_uuid: uuid.UUID
 ) -> bool:
     get_stmt = sa.select(projects_metadata.c.project_uuid).where(
         projects_metadata.c.parent_project_uuid == f"{project_uuid}"
@@ -125,7 +124,7 @@ async def _project_has_any_child(
 
 
 async def _compute_root_parent_from_parent(
-    connection: SAConnection,
+    connection: DBConnection,
     *,
     project_uuid: uuid.UUID,
     parent_project_uuid: uuid.UUID | None,
@@ -152,7 +151,7 @@ async def _compute_root_parent_from_parent(
 
 
 async def set_project_ancestors(
-    connection: SAConnection,
+    connection: DBConnection,
     *,
     project_uuid: uuid.UUID,
     parent_project_uuid: uuid.UUID | None,
@@ -203,8 +202,8 @@ async def set_project_ancestors(
     ).returning(sa.literal_column("*"))
 
     try:
-        result: ResultProxy = await connection.execute(upsert_stmt)
-        row: RowProxy | None = await result.first()
+        result = await connection.execute(upsert_stmt)
+        row = await result.first()
         assert row  # nosec
         return ProjectMetadata.model_validate(row)
 
@@ -219,7 +218,7 @@ async def set_project_ancestors(
 
 
 async def set_project_custom_metadata(
-    connection: SAConnection,
+    connection: DBConnection,
     *,
     project_uuid: uuid.UUID,
     custom_metadata: dict[str, Any],
@@ -235,8 +234,8 @@ async def set_project_custom_metadata(
     ).returning(sa.literal_column("*"))
 
     try:
-        result: ResultProxy = await connection.execute(upsert_stmt)
-        row: RowProxy | None = await result.first()
+        result = await connection.execute(upsert_stmt)
+        row = await result.first()
         assert row  # nosec
         return ProjectMetadata.model_validate(row)
 
