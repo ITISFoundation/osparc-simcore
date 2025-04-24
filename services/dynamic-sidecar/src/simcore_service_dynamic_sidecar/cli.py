@@ -1,10 +1,10 @@
 import asyncio
-import json
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 import typer
+from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
 from settings_library.utils_cli import create_settings_command
@@ -31,7 +31,7 @@ main.command()(create_settings_command(settings_cls=ApplicationSettings, logger=
 def openapi():
     """Prints OpenAPI specifications in json format"""
     app = create_base_app()
-    typer.secho(json.dumps(app.openapi(), indent=2))
+    typer.secho(json_dumps(app.openapi(), indent=2))
 
 
 @asynccontextmanager

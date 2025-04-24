@@ -1,6 +1,5 @@
-import json
-
 import httpx
+from common_library.json_serialization import json_dumps, json_loads
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStop,
 )
@@ -89,17 +88,17 @@ async def service_details(node_id: NodeID):
 
         scheduler_internals = service_model.model_dump(mode="json")
         service_status = scheduler_internals.pop("service_status", "{}")
-        service_status = json.loads("{}" if service_status == "" else service_status)
+        service_status = json_loads("{}" if service_status == "" else service_status)
         dynamic_service_start = scheduler_internals.pop("dynamic_service_start")
 
         ui.markdown("**Service Status**")
-        ui.code(json.dumps(service_status, indent=2), language="json")
+        ui.code(json_dumps(service_status, indent=2), language="json")
 
         ui.markdown("**Scheduler Internals**")
-        ui.code(json.dumps(scheduler_internals, indent=2), language="json")
+        ui.code(json_dumps(scheduler_internals, indent=2), language="json")
 
         ui.markdown("**Start Parameters**")
-        ui.code(json.dumps(dynamic_service_start, indent=2), language="json")
+        ui.code(json_dumps(dynamic_service_start, indent=2), language="json")
 
         ui.markdown("**Raw serialized data (the one used to render the above**")
         ui.code(service_model.model_dump_json(indent=2), language="json")

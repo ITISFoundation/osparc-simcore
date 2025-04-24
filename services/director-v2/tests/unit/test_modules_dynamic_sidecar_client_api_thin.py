@@ -1,11 +1,11 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import json
 from collections.abc import AsyncIterable, Callable
 from typing import Any
 
 import pytest
+from common_library.json_serialization import json_dumps
 from faker import Faker
 from fastapi import FastAPI, status
 from httpx import Response
@@ -182,7 +182,7 @@ async def test_get_containers_name(
 ) -> None:
     mock_response = Response(status.HTTP_200_OK)
 
-    encoded_filters = json.dumps(
+    encoded_filters = json_dumps(
         {
             "network": dynamic_sidecar_network_name,
             "exclude": SUFFIX_EGRESS_PROXY_NAME,

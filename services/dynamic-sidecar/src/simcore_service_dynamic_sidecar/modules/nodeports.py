@@ -14,6 +14,7 @@ from typing import cast
 import magic
 from aiofiles.os import remove
 from aiofiles.tempfile import TemporaryDirectory as AioTemporaryDirectory
+from common_library.json_serialization import json_loads
 from models_library.projects import ProjectIDStr
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.services_types import ServicePortKey
@@ -208,7 +209,7 @@ async def upload_outputs(  # pylint:disable=too-many-statements  # noqa: PLR0915
             else:
                 data_file = outputs_path / _KEY_VALUE_FILE_NAME
                 if data_file.exists():
-                    data = json.loads(data_file.read_text())
+                    data = json_loads(data_file.read_text())
                     if port.key in data and data[port.key] is not None:
                         ports_values[port.key] = (data[port.key], None)
                     else:
@@ -390,7 +391,7 @@ async def download_target_ports(
     if data:
         data_file = target_dir / _KEY_VALUE_FILE_NAME
         if data_file.exists():
-            current_data = json.loads(data_file.read_text())
+            current_data = json_loads(data_file.read_text())
             # merge data
             data = {**current_data, **data}
         data_file.write_text(json.dumps(data))

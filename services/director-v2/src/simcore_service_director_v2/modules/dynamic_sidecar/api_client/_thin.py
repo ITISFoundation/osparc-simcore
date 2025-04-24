@@ -1,6 +1,6 @@
-import json
 from typing import Any
 
+from common_library.json_serialization import json_dumps
 from fastapi import FastAPI, status
 from httpx import Response, Timeout
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
@@ -123,7 +123,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
     async def get_containers_name(
         self, dynamic_sidecar_endpoint: AnyHttpUrl, *, dynamic_sidecar_network_name: str
     ) -> Response:
-        filters = json.dumps(
+        filters = json_dumps(
             {
                 "network": dynamic_sidecar_network_name,
                 "exclude": SUFFIX_EGRESS_PROXY_NAME,
