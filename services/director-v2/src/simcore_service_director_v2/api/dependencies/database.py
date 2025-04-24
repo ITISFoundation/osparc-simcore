@@ -26,9 +26,9 @@ def get_base_repository(engine: AsyncEngine, repo_type: type[RepoType]) -> RepoT
     # now the current solution is to acquire connection when needed.
 
     # Get pool metrics
-    checkedin = engine.pool.checkedin()  # connections available in pool  # type: ignore
-    checkedout = engine.pool.checkedout()  # connections in use  # type: ignore
-    total_size = engine.pool.size  # current total connections  # type: ignore
+    checkedin = engine.pool.checkedin()  # type: ignore # connections available in pool
+    checkedout = engine.pool.checkedout()  # type: ignore # connections in use
+    total_size = engine.pool.size  # type: ignore # current total connections
 
     if checkedin <= 1:
         logger.warning(

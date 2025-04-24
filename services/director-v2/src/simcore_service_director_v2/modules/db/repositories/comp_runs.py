@@ -4,7 +4,6 @@ from typing import Any, Final, cast
 
 import arrow
 import sqlalchemy as sa
-from aiopg.sa.result import RowProxy
 from models_library.api_schemas_directorv2.comp_runs import ComputationRunRpcGet
 from models_library.basic_types import IDStr
 from models_library.projects import ProjectID
@@ -54,7 +53,7 @@ class CompRunsRepository(BaseRepository):
 
         :raises ComputationalRunNotFoundError: no entry found
         """
-        async with self.db_engine.acquire() as conn:
+        async with self.db_engine.connect() as conn:
             result = await conn.execute(
                 sa.select(comp_runs)
                 .where(
@@ -65,7 +64,7 @@ class CompRunsRepository(BaseRepository):
                 .order_by(desc(comp_runs.c.iteration))
                 .limit(1)
             )
-            row: RowProxy | None = await result.first()
+            row = result.one_or_none()
             if not row:
                 raise ComputationalRunNotFoundError
             return CompRunsAtDB.model_validate(row)
@@ -132,10 +131,10 @@ class CompRunsRepository(BaseRepository):
         if scheduling_or_conditions:
             conditions.append(sa.or_(*scheduling_or_conditions))
 
-        async with self.db_engine.acquire() as conn:
+        async with self.db_engine.connect() as conn:
             return [
                 CompRunsAtDB.model_validate(row)
-                async for row in conn.execute(
+                async for row in await conn.stream(
                     sa.select(comp_runs).where(
                         sa.and_(True, *conditions)  # noqa: FBT003
                     )
@@ -211,10 +210,9 @@ class CompRunsRepository(BaseRepository):
             )
         list_query = list_query.offset(offset).limit(limit)
 
-        async with self.db_engine.acquire() as conn:
+        async with self.db_engine.connect() as conn:
             total_count = await conn.scalar(count_query)
 
-            result = await conn.execute(list_query)
             items = [
                 ComputationRunRpcGet.model_validate(
                     {
@@ -222,7 +220,7 @@ class CompRunsRepository(BaseRepository):
                         "state": DB_TO_RUNNING_STATE[row["state"]],
                     }
                 )
-                async for row in result
+                async for row in await conn.stream(list_query)
             ]
 
             return cast(int, total_count), items
@@ -237,7 +235,7 @@ class CompRunsRepository(BaseRepository):
         use_on_demand_clusters: bool,
     ) -> CompRunsAtDB:
         try:
-            async with self.db_engine.acquire() as conn:
+            async with self.db_engine.begin() as conn:
                 if iteration is None:
                     # let's get the latest if it exists
                     last_iteration = await conn.scalar(
@@ -263,7 +261,7 @@ class CompRunsRepository(BaseRepository):
                     )
                     .returning(literal_column("*"))
                 )
-                row = await result.first()
+                row = result.one()
                 return CompRunsAtDB.model_validate(row)
         except ForeignKeyViolation as exc:
             assert exc.diag.constraint_name  # nosec  # noqa: PT017
@@ -281,7 +279,7 @@ class CompRunsRepository(BaseRepository):
     async def update(
         self, user_id: UserID, project_id: ProjectID, iteration: PositiveInt, **values
     ) -> CompRunsAtDB | None:
-        async with self.db_engine.acquire() as conn:
+        async with self.db_engine.begin() as conn:
             result = await conn.execute(
                 sa.update(comp_runs)
                 .where(
@@ -292,7 +290,7 @@ class CompRunsRepository(BaseRepository):
                 .values(**values)
                 .returning(literal_column("*"))
             )
-            row = await result.first()
+            row = result.one()
             return CompRunsAtDB.model_validate(row) if row else None
 
     async def set_run_result(

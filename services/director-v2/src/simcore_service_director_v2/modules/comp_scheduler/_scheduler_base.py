@@ -21,7 +21,6 @@ from typing import Final
 
 import arrow
 import networkx as nx
-from aiopg.sa.engine import Engine
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_state import RunningState
@@ -80,7 +79,7 @@ _MAX_WAITING_FOR_CLUSTER_TIMEOUT_IN_MIN: Final[int] = 10
 
 def _auto_schedule_callback(
     loop: asyncio.AbstractEventLoop,
-    db_engine: Engine,
+    db_engine: AsyncEngine,
     rabbit_mq_client: RabbitMQClient,
     *,
     user_id: UserID,
@@ -159,8 +158,7 @@ async def _triage_changed_tasks(
 
 @dataclass
 class BaseCompScheduler(ABC):
-    db_engine: Engine
-    asyncpg_db_engine: AsyncEngine
+    db_engine: AsyncEngine
     rabbitmq_client: RabbitMQClient
     rabbitmq_rpc_client: RabbitMQRPCClient
     settings: ComputationalBackendSettings
