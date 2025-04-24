@@ -536,9 +536,8 @@ async def test_get_async_jobs_status(
         (JobSchedulerError(exc=_faker.text()), status.HTTP_500_INTERNAL_SERVER_ERROR),
         (JobMissingError(job_id=_faker.uuid4()), status.HTTP_404_NOT_FOUND),
     ],
-    ids=lambda x: type(x).__name__,
 )
-async def test_cancel_async_jobs(
+async def test_cancel_and_delete_async_jobs(
     user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
@@ -554,33 +553,6 @@ async def test_cancel_async_jobs(
         backend_result_or_exception,
     )
 
-    response = await client.post(f"/{API_VERSION}/tasks/{_job_id}:cancel")
-    assert response.status == expected_status
-
-
-@pytest.mark.parametrize("user_role", _user_roles)
-@pytest.mark.parametrize(
-    "backend_result_or_exception, expected_status",
-    [
-        (
-            AsyncJobAbort(result=True, job_id=AsyncJobId(_faker.uuid4())),
-            status.HTTP_204_NO_CONTENT,
-        ),
-        (JobSchedulerError(exc=_faker.text()), status.HTTP_500_INTERNAL_SERVER_ERROR),
-        (JobMissingError(job_id=_faker.uuid4()), status.HTTP_404_NOT_FOUND),
-    ],
-    ids=lambda x: type(x).__name__,
-)
-async def test_delete_async_jobs(
-    user_role: UserRole,
-    logged_user: UserInfoDict,
-    client: TestClient,
-    create_storage_rpc_client_mock: Callable[[str, str, Any], None],
-    faker: Faker,
-    backend_result_or_exception: Any,
-    expected_status: int,
-):
-    _job_id = AsyncJobId(faker.uuid4())
     create_storage_rpc_client_mock(
         "simcore_service_webserver.tasks._rest",
         f"async_jobs.{async_jobs.delete.__name__}",
