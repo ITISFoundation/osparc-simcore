@@ -282,7 +282,7 @@ class DaskScheduler(BaseCompScheduler):
                 if isinstance(result, TaskOutputData):
                     # success!
                     await parse_output_data(
-                        self.db_engine,
+                        self.asyncpg_db_engine,
                         task.job_id,
                         result,
                     )
@@ -307,7 +307,7 @@ class DaskScheduler(BaseCompScheduler):
                             simcore_platform_status = SimcorePlatformStatus.BAD
                     # we need to remove any invalid files in the storage
                     await clean_task_output_and_log_files_if_invalid(
-                        self.db_engine, user_id, project_id, node_id
+                        self.asyncpg_db_engine, user_id, project_id, node_id
                     )
             except TaskSchedulingError as err:
                 task_final_state = RunningState.FAILED

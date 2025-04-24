@@ -33,6 +33,7 @@ from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
 from servicelib.redis import RedisClientSDK
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ...constants import UNDEFINED_STR_METADATA
 from ...core.errors import (
@@ -159,6 +160,7 @@ async def _triage_changed_tasks(
 @dataclass
 class BaseCompScheduler(ABC):
     db_engine: Engine
+    asyncpg_db_engine: AsyncEngine
     rabbitmq_client: RabbitMQClient
     rabbitmq_rpc_client: RabbitMQRPCClient
     settings: ComputationalBackendSettings

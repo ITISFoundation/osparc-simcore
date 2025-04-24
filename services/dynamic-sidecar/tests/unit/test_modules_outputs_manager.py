@@ -4,10 +4,10 @@
 
 import asyncio
 import inspect
+from collections.abc import AsyncIterator, Iterator
 from dataclasses import dataclass
 from inspect import FullArgSpec
 from pathlib import Path
-from typing import AsyncIterator, Iterator
 from unittest.mock import AsyncMock
 
 import pytest
