@@ -23,17 +23,12 @@ class ResultProxy(Protocol):
     """Protocol for query result objects from both engines
 
     Handles both aiopg's async methods and SQLAlchemy asyncpg's sync methods.
-    The caller should handle both cases, for example:
-
-    result = await conn.execute(query)
-    row = await result.fetchone() if hasattr(result.fetchone, '__await__') else result.fetchone()
+    This is temporary until we fully migrate to asyncpg.
     """
 
     def fetchall(self) -> MaybeCoro[list[Any]]: ...
     def fetchone(self) -> MaybeCoro[Any | None]: ...
     def first(self) -> MaybeCoro[Any | None]: ...
-    def scalar(self) -> MaybeCoro[Any | None]: ...
-    def scalar_one_or_none(self) -> Any | None: ...
 
 
 class DBConnection(Protocol):
@@ -41,12 +36,8 @@ class DBConnection(Protocol):
 
     async def scalar(
         self, statement: Select | Insert | Update | Delete | TextClause, **kwargs
-    ) -> Any:
-        """Execute a statement and return a scalar result"""
-        ...
+    ) -> Any: ...
 
     async def execute(
         self, statement: Select | Insert | Update | Delete | TextClause, **kwargs
-    ) -> ResultProxy:
-        """Execute a statement and return a result proxy"""
-        ...
+    ) -> ResultProxy: ...
