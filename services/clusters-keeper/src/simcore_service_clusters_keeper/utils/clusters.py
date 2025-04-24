@@ -1,6 +1,7 @@
 import base64
 import datetime
 import functools
+import json
 from pathlib import Path
 from typing import Any, Final
 
@@ -8,7 +9,6 @@ import arrow
 import yaml
 from aws_library.ec2 import EC2InstanceBootSpecific, EC2InstanceData, EC2Tags
 from aws_library.ec2._models import CommandStr
-from common_library.json_serialization import json_dumps
 from common_library.serialization import model_dump_with_secrets
 from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_clusters_keeper.clusters import (
@@ -80,7 +80,7 @@ def _prepare_environment_variables(
         return f"[{entries_as_str}]"
 
     def _convert_to_env_dict(entries: dict[str, Any]) -> str:
-        return f"'{json_dumps(jsonable_encoder(entries))}'"
+        return f"'{json.dumps(jsonable_encoder(entries))}'"
 
     assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES  # nosec
 
