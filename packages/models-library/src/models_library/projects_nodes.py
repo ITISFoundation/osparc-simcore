@@ -1,5 +1,5 @@
 """
-    Models Node as a central element in a project's pipeline
+Models Node as a central element in a project's pipeline
 """
 
 from typing import Annotated, Any, TypeAlias, Union
@@ -17,6 +17,7 @@ from pydantic import (
     StringConstraints,
     field_validator,
 )
+from pydantic.config import JsonDict
 
 from .basic_types import EnvVarKey, KeyIDStr
 from .projects_access import AccessEnum
@@ -71,24 +72,35 @@ UnitStr: TypeAlias = Annotated[str, StringConstraints(strip_whitespace=True)]
 
 
 class NodeState(BaseModel):
-    modified: bool = Field(
-        default=True, description="true if the node's outputs need to be re-computed"
-    )
-    dependencies: set[NodeID] = Field(
-        default_factory=set,
-        description="contains the node inputs dependencies if they need to be computed first",
-    )
-    current_status: RunningState = Field(
-        default=RunningState.NOT_STARTED,
-        description="the node's current state",
-        alias="currentStatus",
-    )
-    progress: float | None = Field(
-        default=0,
-        ge=0.0,
-        le=1.0,
-        description="current progress of the task if available (None if not started or not a computational task)",
-    )
+    modified: Annotated[
+        bool,
+        Field(
+            description="true if the node's outputs need to be re-computed",
+        ),
+    ] = True
+    dependencies: Annotated[
+        set[NodeID],
+        Field(
+            default_factory=set,
+            description="contains the node inputs dependencies if they need to be computed first",
+        ),
+    ] = DEFAULT_FACTORY
+    current_status: Annotated[
+        RunningState,
+        Field(
+            description="the node's current state",
+            alias="currentStatus",
+        ),
+    ] = RunningState.NOT_STARTED
+    progress: Annotated[
+        float | None,
+        Field(
+            ge=0.0,
+            le=1.0,
+            description="current progress of the task if available (None if not started or not a computational task)",
+        ),
+    ] = 0
+
     model_config = ConfigDict(
         extra="forbid",
         json_schema_extra={
@@ -114,23 +126,28 @@ class NodeState(BaseModel):
 
 
 class Node(BaseModel):
-    key: ServiceKey = Field(
-        ...,
-        description="distinctive name for the node based on the docker registry path",
-        examples=[
-            "simcore/services/comp/itis/sleeper",
-            "simcore/services/dynamic/3dviewer",
-            "simcore/services/frontend/file-picker",
-        ],
-    )
-    version: ServiceVersion = Field(
-        ...,
-        description="semantic version number of the node",
-        examples=["1.0.0", "0.0.1"],
-    )
-    label: str = Field(
-        ..., description="The short name of the node", examples=["JupyterLab"]
-    )
+    key: Annotated[
+        ServiceKey,
+        Field(
+            description="distinctive name for the node based on the docker registry path",
+            examples=[
+                "simcore/services/comp/itis/sleeper",
+                "simcore/services/dynamic/3dviewer",
+                "simcore/services/frontend/file-picker",
+            ],
+        ),
+    ]
+    version: Annotated[
+        ServiceVersion,
+        Field(
+            description="semantic version number of the node",
+            examples=["1.0.0", "0.0.1"],
+        ),
+    ]
+    label: Annotated[
+        str,
+        Field(description="The short name of the node", examples=["JupyterLab"]),
+    ]
     progress: Annotated[
         float | None,
         Field(
@@ -204,9 +221,9 @@ class Node(BaseModel):
         Field(default_factory=dict, description="values of output properties"),
     ] = DEFAULT_FACTORY
 
-    output_node: Annotated[
-        bool | None, Field(deprecated=True, alias="outputNode")
-    ] = None
+    output_node: Annotated[bool | None, Field(deprecated=True, alias="outputNode")] = (
+        None
+    )
 
     output_nodes: Annotated[
         list[NodeID] | None,
@@ -270,9 +287,99 @@ class Node(BaseModel):
             return NodeState(currentStatus=running_state_value)
         return v
 
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    # Minimal example with only required fields
+                    {
+                        "key": "simcore/services/comp/no_ports",
+                        "version": "1.0.0",
+                        "label": "Sleep",
+                    },
+                    # Complete example with optional fields
+                    {
+                        "key": "simcore/services/comp/only_inputs",
+                        "version": "1.0.0",
+                        "label": "Only INputs",
+                        "inputs": {
+                            "input_1": 1,
+                            "input_2": 2,
+                            "input_3": 3,
+                        },
+                    },
+                    # Complete example with optional fields
+                    {
+                        "key": "simcore/services/comp/only_outputs",
+                        "version": "1.0.0",
+                        "label": "Only Outputs",
+                        "outputs": {
+                            "output_1": 1,
+                            "output_2": 2,
+                            "output_3": 3,
+                        },
+                    },
+                    # Example with all possible input and output types
+                    {
+                        "key": "simcore/services/comp/itis/all-types",
+                        "version": "1.0.0",
+                        "label": "All Types Demo",
+                        "inputs": {
+                            "boolean_input": True,
+                            "integer_input": 42,
+                            "float_input": 3.14159,
+                            "string_input": "text value",
+                            "json_input": {"key": "value", "nested": {"data": 123}},
+                            "port_link_input": {
+                                "nodeUuid": "f2700a54-adcf-45d4-9881-01ec30fd75a2",
+                                "output": "out_1",
+                            },
+                            "simcore_file_link": {
+                                "store": "simcore.s3",
+                                "path": "123e4567-e89b-12d3-a456-426614174000/test.csv",
+                            },
+                            "datcore_file_link": {
+                                "store": "datcore",
+                                "dataset": "N:dataset:123",
+                                "path": "path/to/file.txt",
+                            },
+                            "download_link": {
+                                "downloadLink": "https://example.com/downloadable/file.txt"
+                            },
+                            "array_input": [1, 2, 3, 4, 5],
+                            "object_input": {"name": "test", "value": 42},
+                        },
+                        "outputs": {
+                            "boolean_output": False,
+                            "integer_output": 100,
+                            "float_output": 2.71828,
+                            "string_output": "result text",
+                            "json_output": {"status": "success", "data": [1, 2, 3]},
+                            "simcore_file_output": {
+                                "store": "simcore.s3",
+                                "path": "987e6543-e21b-12d3-a456-426614174000/result.csv",
+                            },
+                            "datcore_file_output": {
+                                "store": "datcore",
+                                "dataset": "N:dataset:456",
+                                "path": "results/output.txt",
+                            },
+                            "download_link_output": {
+                                "downloadLink": "https://example.com/results/download.txt"
+                            },
+                            "array_output": ["a", "b", "c", "d"],
+                            "object_output": {"status": "complete", "count": 42},
+                        },
+                    },
+                ],
+            }
+        )
+
     model_config = ConfigDict(
         extra="forbid",
         populate_by_name=True,
+        json_schema_extra=_update_json_schema_extra,
     )
 
 
