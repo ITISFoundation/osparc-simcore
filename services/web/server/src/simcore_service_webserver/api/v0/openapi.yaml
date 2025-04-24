@@ -3129,7 +3129,7 @@ paths:
       - long-running-tasks
       summary: Cancel And Delete Task
       description: Cancels and deletes a task
-      operationId: cancel_and_delete_async_job
+      operationId: cancel_async_job
       parameters:
       - name: task_id
         in: path
