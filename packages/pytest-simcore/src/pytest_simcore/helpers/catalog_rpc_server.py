@@ -9,11 +9,9 @@ from models_library.api_schemas_catalog.services import (
     LatestServiceGet,
     ServiceGetV2,
     ServiceListFilters,
+    ServiceUpdateV2,
 )
 from models_library.api_schemas_catalog.services_ports import ServicePortGet
-from models_library.api_schemas_webserver.catalog import (
-    CatalogServiceUpdate,
-)
 from models_library.products import ProductName
 from models_library.rest_pagination import PageOffsetInt
 from models_library.rpc_pagination import PageLimitInt, PageRpc
@@ -99,8 +97,8 @@ class CatalogRpcSideEffects:
         user_id: UserID,
         service_key: ServiceKey,
         service_version: ServiceVersion,
-        update: CatalogServiceUpdate,
-    ):
+        update: ServiceUpdateV2,
+    ) -> ServiceGetV2:
         assert rpc_client
         assert product_name
         assert user_id
