@@ -6,7 +6,6 @@ Purpose: to reduce dependency with aiopg (expected full migration to asyncpg)
 """
 
 from collections.abc import Coroutine
-from types import TracebackType
 from typing import Any, Protocol, TypeVar
 
 from sqlalchemy.sql.dml import Delete, Insert, Update
@@ -59,22 +58,3 @@ class DBConnection(Protocol):
     async def begin_nested(self) -> Any:
         """Begin a nested transaction (savepoint)"""
         ...
-
-
-class TransactionContext(Protocol):
-    """Protocol for transaction context managers"""
-
-    async def __aenter__(self) -> Any: ...
-    async def __aexit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: TracebackType | None,
-    ) -> None: ...
-
-
-class ConnectionWithTransaction(DBConnection, Protocol):
-    """Protocol for connections that support transactions"""
-
-    def begin(self) -> TransactionContext: ...
-    def begin_nested(self) -> TransactionContext: ...
