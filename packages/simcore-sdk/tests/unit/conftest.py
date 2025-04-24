@@ -27,7 +27,7 @@ def node_uuid() -> str:
     return str(uuid4())
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 async def mock_db_manager(
     monkeypatch,
     project_id: str,

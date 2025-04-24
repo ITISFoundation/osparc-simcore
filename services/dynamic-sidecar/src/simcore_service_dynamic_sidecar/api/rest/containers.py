@@ -1,10 +1,10 @@
 # pylint: disable=too-many-arguments
 
-import json
 import logging
 from asyncio import Lock
 from typing import Annotated, Any, Final
 
+from common_library.json_serialization import json_loads
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi import Path as PathParam
 from fastapi import Query, Request, status
@@ -234,7 +234,7 @@ async def get_containers_name(
     """
     _ = request
 
-    filters_dict: dict[str, str] = json.loads(filters)
+    filters_dict: dict[str, str] = json_loads(filters)
     if not isinstance(filters_dict, dict):
         raise HTTPException(
             status.HTTP_422_UNPROCESSABLE_ENTITY,

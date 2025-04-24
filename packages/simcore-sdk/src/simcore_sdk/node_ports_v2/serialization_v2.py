@@ -1,11 +1,10 @@
 import functools
-import json
 import logging
 from pprint import pformat
 from typing import Any
 
 import pydantic
-from common_library.json_serialization import json_dumps
+from common_library.json_serialization import json_dumps, json_loads
 from models_library.projects_nodes_io import NodeID
 from models_library.utils.nodes import compute_node_hash
 from packaging import version
@@ -50,7 +49,7 @@ async def load(
     port_config_str: str = await db_manager.get_ports_configuration_from_node_uuid(
         project_id, node_uuid
     )
-    port_cfg = json.loads(port_config_str)
+    port_cfg = json_loads(port_config_str)
 
     log.debug(f"{port_cfg=}")  # pylint: disable=logging-fstring-interpolation
     if any(k not in port_cfg for k in NODE_REQUIRED_KEYS):

@@ -1,10 +1,10 @@
-import json
 from pathlib import Path
 from typing import Annotated, Final
 
 import rich
 import typer
 import yaml
+from common_library.json_serialization import json_loads
 from models_library.utils.labels_annotations import LabelsAnnotationsDict
 from pydantic import BaseModel
 
@@ -57,7 +57,7 @@ def _create_config_from_compose_spec(
             rich.print(f"Creating {output_path} ...", end="")
 
             with output_path.open("wt") as fh:
-                data = json.loads(
+                data = json_loads(
                     model.model_dump_json(by_alias=True, exclude_none=True)
                 )
                 yaml.safe_dump(data, fh, sort_keys=False)

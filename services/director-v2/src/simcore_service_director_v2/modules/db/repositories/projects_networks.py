@@ -1,7 +1,6 @@
-import json
-
 import sqlalchemy as sa
 from aiopg.sa.result import RowProxy
+from common_library.json_serialization import json_loads
 from models_library.projects import ProjectID
 from models_library.projects_networks import NetworksWithAliases, ProjectsNetworks
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -33,7 +32,7 @@ class ProjectsNetworksRepository(BaseRepository):
         )
 
         async with self.db_engine.acquire() as conn:
-            row_data = json.loads(projects_networks_to_insert.model_dump_json())
+            row_data = json_loads(projects_networks_to_insert.model_dump_json())
             insert_stmt = pg_insert(projects_networks).values(**row_data)
             upsert_snapshot = insert_stmt.on_conflict_do_update(
                 constraint=projects_networks.primary_key, set_=row_data
