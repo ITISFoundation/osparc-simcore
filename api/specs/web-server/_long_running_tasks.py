@@ -70,7 +70,7 @@ def delete_async_job(
     responses=_export_data_responses,
     status_code=status.HTTP_204_NO_CONTENT,
 )
-def abort_async_job(
+def cancel_async_job(
     _path_params: Annotated[_PathParam, Depends()],
 ): ...
 

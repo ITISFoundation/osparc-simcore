@@ -87,7 +87,7 @@ async def get_async_jobs(request: web.Request) -> web.Response:
                 task_id=f"{job.job_id}",
                 task_name=job.job_name,
                 status_href=f"{request.url.with_path(str(request.app.router['get_async_job_status'].url_for(task_id=str(job.job_id))))}",
-                abort_href=f"{request.url.with_path(str(request.app.router['abort_async_job'].url_for(task_id=str(job.job_id))))}",
+                abort_href=f"{request.url.with_path(str(request.app.router['cancel_async_job'].url_for(task_id=str(job.job_id))))}",
                 result_href=f"{request.url.with_path(str(request.app.router['get_async_job_result'].url_for(task_id=str(job.job_id))))}",
             )
             for job in user_async_jobs
@@ -160,12 +160,12 @@ async def delete_async_job(request: web.Request) -> web.Response:
 
 @routes.post(
     _task_prefix + "/{task_id}:cancel",
-    name="abort_async_job",
+    name="cancel_async_job",
 )
 @login_required
 @permission_required("storage.files.*")
 @handle_export_data_exceptions
-async def abort_async_job(request: web.Request) -> web.Response:
+async def cancel_async_job(request: web.Request) -> web.Response:
 
     _req_ctx = RequestContext.model_validate(request)
 
