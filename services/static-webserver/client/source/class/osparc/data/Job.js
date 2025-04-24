@@ -22,39 +22,38 @@ qx.Class.define("osparc.data.Job", {
     this.base(arguments);
 
     this.set({
-      jobId: jobData["job_id"],
-      solver: jobData["solver"],
-      status: jobData["status"],
-      progress: jobData["progress"],
-      submittedAt: jobData["submitted_at"] ? new Date(jobData["submitted_at"]) : null,
-      startedAt: jobData["started_at"] ? new Date(jobData["started_at"]) : null,
-      instance: jobData["instance"],
+      projectUuid: jobData["projectUuid"],
+      state: jobData["state"],
+      submittedAt: jobData["submittedAt"] ? new Date(jobData["submittedAt"]) : null,
+      startedAt: jobData["startedAt"] ? new Date(jobData["startedAt"]) : null,
+      endedAt: jobData["endedAt"] ? new Date(jobData["endedAt"]) : null,
+      info: jobData["info"] || null,
     });
+
+    if (jobData["info"] && jobData["info"]["project_name"]) {
+      this.setProjectName(jobData["info"]["project_name"]);
+    }
+
+    this.__subJobs = [];
   },
 
   properties: {
-    jobId: {
+    projectUuid: {
       check: "String",
       nullable: false,
       init: null,
     },
 
-    solver: {
+    projectName: {
       check: "String",
       nullable: false,
       init: null,
     },
 
-    status: {
+    state: {
       check: "String",
       nullable: false,
       init: null,
-    },
-
-    progress: {
-      check: "Number",
-      init: null,
-      nullable: true,
     },
 
     submittedAt: {
@@ -69,10 +68,10 @@ qx.Class.define("osparc.data.Job", {
       nullable: true,
     },
 
-    instance: {
-      check: "String",
-      nullable: false,
+    endedAt: {
+      check: "Date",
       init: null,
+      nullable: true,
     },
 
     info: {
@@ -81,4 +80,37 @@ qx.Class.define("osparc.data.Job", {
       init: null,
     },
   },
+
+  members: {
+    __subJobs: null,
+
+    addSubJob: function(subJobData) {
+      const subJobFound = this.__subJobs.find(subJb => subJb.getNodeId() === subJobData["nodeId"]);
+      if (subJobFound) {
+        subJobFound.updateSubJob(subJobData);
+        return subJobFound;
+      }
+
+      const subJob = new osparc.data.SubJob(subJobData);
+      this.__subJobs.push(subJob);
+      return subJob;
+    },
+
+    updateJob: function(jobData) {
+      this.set({
+        state: jobData["state"],
+        submittedAt: jobData["submittedAt"] ? new Date(jobData["submittedAt"]) : null,
+        startedAt: jobData["startedAt"] ? new Date(jobData["startedAt"]) : null,
+        endedAt: jobData["endedAt"] ? new Date(jobData["endedAt"]) : null,
+      });
+    },
+
+    getSubJobs: function() {
+      return this.__subJobs;
+    },
+
+    getSubJob: function(nodeId) {
+      return this.__subJobs.find(subJb => subJb.getNodeId() === nodeId);
+    },
+  }
 });

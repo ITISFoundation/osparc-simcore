@@ -38,7 +38,6 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.utils import logged_gather
 from settings_library.rabbit import RabbitSettings
-from simcore_service_dynamic_sidecar.core.application import create_app
 from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 from simcore_service_dynamic_sidecar.modules.notifications import (
     PortNotifier,
@@ -80,10 +79,10 @@ def mock_environment(
 
 @pytest.fixture
 async def app(
+    app: FastAPI,
     mock_environment: EnvVarsDict,
     mock_registry_service: AsyncMock,
     mock_storage_check: None,
-    mock_postgres_check: None,
     mocker: MockerFixture,
 ) -> AsyncIterable[FastAPI]:
     mocker.patch(
@@ -91,7 +90,6 @@ async def app(
         return_value=[],
     )
 
-    app: FastAPI = create_app()
     async with LifespanManager(app):
         yield app
 

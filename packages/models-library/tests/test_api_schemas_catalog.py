@@ -21,7 +21,7 @@ def test_service_port_with_file():
         }
     )
 
-    port = ServicePortGet.from_service_io("input", "input_1", io).model_dump(
+    port = ServicePortGet.from_domain_model("input", "input_1", io).model_dump(
         exclude_unset=True
     )
 
@@ -49,7 +49,7 @@ def test_service_port_with_boolean():
         }
     )
 
-    port = ServicePortGet.from_service_io("input", "input_1", io).model_dump(
+    port = ServicePortGet.from_domain_model("input", "input_1", io).model_dump(
         exclude_unset=True
     )
 

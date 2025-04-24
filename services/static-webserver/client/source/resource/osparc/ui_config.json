@@ -116,7 +116,7 @@
         "newStudyLabel": "Segmentation"
       }, {
         "resourceType": "study",
-        "title": "Empty Pipeline",
+        "title": "Pipeline",
         "newStudyLabel": "New Pipeline",
         "idToWidget": "emptyStudyBtn"
       }]
@@ -142,7 +142,7 @@
         "newStudyLabel": "Segmentation"
       }, {
         "resourceType": "study",
-        "title": "Empty Pipeline",
+        "title": "Pipeline",
         "newStudyLabel": "New Pipeline",
         "idToWidget": "emptyStudyBtn"
       }]

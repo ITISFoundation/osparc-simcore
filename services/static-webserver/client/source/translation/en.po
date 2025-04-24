@@ -1294,7 +1294,7 @@ msgstr ""
 msgid "Tasks"
 msgstr ""
 
-#: osparc/jobs/JobsBrowser.js
+#: osparc/jobs/RunsBrowser.js
 msgid "Jobs"
 msgstr ""
 
