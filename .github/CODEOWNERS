@@ -35,6 +35,7 @@ Makefile                                           @pcrespov @sanderegg
 /services/efs-guardian/                            @matusdrobuliak66
 /services/invitations/                             @pcrespov
 /services/migration/                               @pcrespov
+/services/notifications/                           @GitHK
 /services/payments/                                @pcrespov @matusdrobuliak66
 /services/resource-usage-tracker/                  @matusdrobuliak66
 /services/static-webserver/                        @GitHK
