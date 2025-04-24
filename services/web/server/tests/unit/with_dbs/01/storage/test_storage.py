@@ -650,7 +650,7 @@ async def test_get_user_async_jobs(
             TaskStatus,
         ),
         (
-            "POST",
+            "DELETE",
             "abort_href",
             async_jobs.cancel.__name__,
             AsyncJobAbort(result=True, job_id=AsyncJobId(_faker.uuid4())),
