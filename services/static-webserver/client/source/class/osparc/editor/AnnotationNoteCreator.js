@@ -96,7 +96,7 @@ qx.Class.define("osparc.editor.AnnotationNoteCreator", {
                 selectedGids,
               } = e.getData();
 
-              if (selectedGids) {
+              if (selectedGids && selectedGids.length) {
                 const recipientGid = parseInt(selectedGids[0]);
                 this.__setRecipientGid(recipientGid);
                 recipientsManager.close();
