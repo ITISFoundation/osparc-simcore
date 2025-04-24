@@ -263,14 +263,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
 
       collaboratorButton.addListener("changeValue", e => {
         const selected = e.getData();
-        if (selected) {
-          this.__selectedCollaborators[collaborator.getGroupId()] = collaborator;
-          collaboratorButton.unsubscribeToFilterGroup("collaboratorsManager");
-        } else if (collaborator.getGroupId() in this.__selectedCollaborators) {
-          delete this.__selectedCollaborators[collaborator.getGroupId()];
-          collaboratorButton.subscribeToFilterGroup("collaboratorsManager");
-        }
-        this.getChildControl("share-button").setEnabled(Boolean(Object.keys(this.__selectedCollaborators).length));
+        this.__collaboratorSelected(selected, collaborator.getGroupId(), collaborator, collaboratorButton);
       }, this);
       return collaboratorButton;
     },
@@ -291,16 +284,20 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
 
       collaboratorButton.addListener("changeValue", e => {
         const selected = e.getData();
-        if (selected) {
-          this.__selectedCollaborators[collaborator.getEmail()] = collaborator;
-          collaboratorButton.unsubscribeToFilterGroup("collaboratorsManager");
-        } else if (collaborator.getEmail() in this.__selectedCollaborators) {
-          delete this.__selectedCollaborators[collaborator.getEmail()];
-          collaboratorButton.subscribeToFilterGroup("collaboratorsManager");
-        }
-        this.getChildControl("share-button").setEnabled(Boolean(Object.keys(this.__selectedCollaborators).length));
+        this.__collaboratorSelected(selected, collaborator.getEmail(), collaborator, collaboratorButton);
       }, this);
       return collaboratorButton;
+    },
+
+    __collaboratorSelected: function(selected, collaboratorGidOrEmail, collaborator, collaboratorButton) {
+      if (selected) {
+        this.__selectedCollaborators[collaboratorGidOrEmail] = collaborator;
+        collaboratorButton.unsubscribeToFilterGroup("collaboratorsManager");
+      } else if (collaborator.getGroupId() in this.__selectedCollaborators) {
+        delete this.__selectedCollaborators[collaboratorGidOrEmail];
+        collaboratorButton.subscribeToFilterGroup("collaboratorsManager");
+      }
+      this.getChildControl("share-button").setEnabled(Boolean(Object.keys(this.__selectedCollaborators).length));
     },
 
     __addPotentialCollaborators: function(foundCollaborators = []) {
