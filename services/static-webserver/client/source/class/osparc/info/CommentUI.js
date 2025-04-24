@@ -65,6 +65,7 @@ qx.Class.define("osparc.info.CommentUI", {
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
             alignX: this.__isMyComment() ? "right" : "left"
           }));
+          control.addAt(new qx.ui.basic.Label("-"), 1);
           this._add(control, {
             row: 0,
             column: 1
@@ -74,17 +75,17 @@ qx.Class.define("osparc.info.CommentUI", {
           control = new qx.ui.basic.Label().set({
             font: "text-12"
           });
-          this.getChildControl("header-layout").addAt(control, 0);
+          this.getChildControl("header-layout").addAt(control, this.__isMyComment() ? 2 : 0);
           break;
         case "last-updated":
           control = new qx.ui.basic.Label().set({
             font: "text-12"
           });
-          this.getChildControl("header-layout").addAt(control, 1);
+          this.getChildControl("header-layout").addAt(control, this.__isMyComment() ? 0 : 2);
           break;
         case "comment-content":
           control = new osparc.ui.markdown.Markdown().set({
-            backgroundColor: "background-main-2",
+            // backgroundColor: "background-main-2",
             decorator: "rounded",
             noMargin: true,
             paddingLeft: 8,
