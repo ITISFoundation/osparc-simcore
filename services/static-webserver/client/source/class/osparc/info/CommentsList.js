@@ -20,12 +20,12 @@ qx.Class.define("osparc.info.CommentsList", {
   extend: qx.ui.core.Widget,
 
   /**
-    * @param studyId {String} Study Id
+    * @param studyData {String} Study Data
     */
-  construct: function(studyId) {
+  construct: function(studyData) {
     this.base(arguments);
 
-    this.__studyId = studyId;
+    this.__studyData = studyData;
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
@@ -35,6 +35,7 @@ qx.Class.define("osparc.info.CommentsList", {
   },
 
   members: {
+    __studyData: null,
     __nextRequestParams: null,
 
     _createChildControlImpl: function(id) {
@@ -50,12 +51,22 @@ qx.Class.define("osparc.info.CommentsList", {
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
             alignY: "middle"
           });
-          this._add(control);
+          this._add(control, {
+            flex: 1
+          });
           break;
         case "load-more-button":
           control = new osparc.ui.form.FetchButton(this.tr("Load more comments..."));
           control.addListener("execute", () => this.fetchComments(false));
           this._add(control);
+          break;
+        case "add-comment":
+          if (osparc.data.model.Study.canIWrite(this.__studyData["accessRights"])) {
+            control = new osparc.info.CommentAdd(this.__studyData["uuid"]);
+            control.setPaddingLeft(10);
+            control.addListener("commentAdded", () => this.fetchComments());
+            this._add(control);
+          }
           break;
       }
 
@@ -66,6 +77,7 @@ qx.Class.define("osparc.info.CommentsList", {
       this.getChildControl("title");
       this.getChildControl("comments-list");
       this.getChildControl("load-more-button");
+      this.getChildControl("add-comment");
     },
 
     fetchComments: function(removeComments = true) {
@@ -92,7 +104,7 @@ qx.Class.define("osparc.info.CommentsList", {
     __getNextRequest: function() {
       const params = {
         url: {
-          studyId: this.__studyId,
+          studyId: this.__studyData["uuid"],
           offset: 0,
           limit: 20
         }

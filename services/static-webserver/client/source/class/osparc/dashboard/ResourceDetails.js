@@ -522,14 +522,8 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       this.__addOpenButton(page);
 
       const lazyLoadContent = () => {
-        const commentsList = new osparc.info.CommentsList(resourceData["uuid"]);
+        const commentsList = new osparc.info.CommentsList(resourceData);
         page.addToContent(commentsList);
-        if (osparc.data.model.Study.canIWrite(resourceData["accessRights"])) {
-          const addComment = new osparc.info.CommentAdd(resourceData["uuid"]);
-          addComment.setPaddingLeft(10);
-          addComment.addListener("commentAdded", () => commentsList.fetchComments());
-          page.addToFooter(addComment);
-        }
       }
       page.addListenerOnce("appear", lazyLoadContent, this);
 
