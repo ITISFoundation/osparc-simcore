@@ -50,11 +50,3 @@ class DBConnection(Protocol):
     ) -> ResultProxy:
         """Execute a statement and return a result proxy"""
         ...
-
-    async def begin(self) -> Any:
-        """Begin a transaction"""
-        ...
-
-    async def begin_nested(self) -> Any:
-        """Begin a nested transaction (savepoint)"""
-        ...
