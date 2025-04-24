@@ -89,7 +89,6 @@ class CeleryTaskClient:
         ):
             task_id = build_task_id(task_context, task_uuid)
             await self._task_info_store.remove_task(task_id)
-            await self._forget_task(task_id)
 
     @make_async()
     def _forget_task(self, task_id: TaskID) -> None:
