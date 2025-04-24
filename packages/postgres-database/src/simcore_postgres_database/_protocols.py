@@ -8,9 +8,7 @@ Purpose: to reduce dependency with aiopg (expected full migration to asyncpg)
 from collections.abc import Awaitable
 from typing import Any, Protocol, TypeAlias, TypeVar
 
-from sqlalchemy.sql.dml import Delete, Insert, Update
-from sqlalchemy.sql.elements import TextClause
-from sqlalchemy.sql.selectable import Select
+from sqlalchemy.sql import Executable
 
 # Type for query results
 Result = TypeVar("Result")
@@ -35,9 +33,17 @@ class DBConnection(Protocol):
     """Protocol to account for both aiopg and SQLAlchemy async connections"""
 
     async def scalar(
-        self, statement: Select | Insert | Update | Delete | TextClause, **kwargs
+        self,
+        statement: Executable,
+        parameters: dict[str, Any] | None = None,
+        *,
+        execution_options: dict[str, Any] | None = None,
     ) -> Any: ...
 
     async def execute(
-        self, statement: Select | Insert | Update | Delete | TextClause, **kwargs
+        self,
+        statement: Executable,
+        parameters: dict[str, Any] | None = None,
+        *,
+        execution_options: dict[str, Any] | None = None,
     ) -> ResultProxy: ...
