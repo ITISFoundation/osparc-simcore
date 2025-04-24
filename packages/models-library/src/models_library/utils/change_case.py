@@ -1,16 +1,15 @@
-""" String convesion
+"""String convesion
 
 
 Example of usage in pydantic:
 
 [...]
-    class Config:
-        extra = Extra.forbid
-        alias_generator = snake_to_camel  # <--------
-        json_loads = orjson.loads
-        json_dumps = json_dumps
+    model_config = ConfigDict(
+        alias_generator=snake_to_camel, # <-- note
+    )
 
 """
+
 # Partially taken from  https://github.com/autoferrit/python-change-case/blob/master/change_case/change_case.py#L131
 import re
 from typing import Final

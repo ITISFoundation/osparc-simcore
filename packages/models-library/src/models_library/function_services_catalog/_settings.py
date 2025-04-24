@@ -1,11 +1,12 @@
 import json
 import os
 
+from common_library.json_serialization import json_loads
 from pydantic_settings import BaseSettings
 
 # Expects env var: FUNCTION_SERVICES_AUTHORS='{"OM":{"name": ...}, "EN":{...} }'
 try:
-    AUTHORS = json.loads(os.environ.get("FUNCTION_SERVICES_AUTHORS", "{}"))
+    AUTHORS = json_loads(os.environ.get("FUNCTION_SERVICES_AUTHORS", "{}"))
 except json.decoder.JSONDecodeError:
     AUTHORS = {}
 

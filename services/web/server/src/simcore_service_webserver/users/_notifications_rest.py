@@ -1,8 +1,8 @@
-import json
 import logging
 
 import redis.asyncio as aioredis
 from aiohttp import web
+from common_library.json_serialization import json_loads
 from models_library.api_schemas_webserver.users import MyPermissionGet
 from models_library.users import UserPermission
 from pydantic import BaseModel
@@ -45,7 +45,7 @@ async def _get_user_notifications(
             get_notification_key(user_id), -1 * MAX_NOTIFICATIONS_FOR_USER_TO_SHOW, -1
         )
     )
-    notifications = [json.loads(x) for x in raw_notifications]
+    notifications = [json_loads(x) for x in raw_notifications]
     # Make it backwards compatible
     for n in notifications:
         if "product" not in n:

@@ -1,4 +1,3 @@
-import json
 import logging
 import os
 import re
@@ -6,6 +5,7 @@ from collections.abc import Generator
 from typing import Any, NamedTuple
 
 import yaml
+from common_library.json_serialization import json_loads
 from servicelib.docker_constants import (
     DEFAULT_USER_SERVICES_NETWORK_NAME,
     SUFFIX_EGRESS_PROXY_NAME,
@@ -53,7 +53,7 @@ def _get_forwarded_env_vars(container_key: str) -> list[str]:
             new_entry_key = key.replace("FORWARD_ENV_", "")
 
             # parsing `VAR={"destination_containers": ["destination_container"], "env_var": "PAYLOAD"}`
-            new_entry_payload = json.loads(os.environ[key])
+            new_entry_payload = json_loads(os.environ[key])
             if container_key not in new_entry_payload["destination_containers"]:
                 continue
 

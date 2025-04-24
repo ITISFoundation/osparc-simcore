@@ -54,7 +54,7 @@ async def send_close_account_email(
 
 
 def _json_encoder_and_dumps(obj: Any, **kwargs):
-    # NOTE: equivalent json.dumps(obj, default=jsonable_encode(pydantic_encoder(.))
+    # NOTE: equivalent json_dumps(obj, default=jsonable_encode(pydantic_encoder(.))
     return json_dumps(jsonable_encoder(obj), **kwargs)
 
 
