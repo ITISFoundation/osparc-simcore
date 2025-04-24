@@ -136,17 +136,27 @@ async def get_async_job_status(request: web.Request) -> web.Response:
 
 @routes.delete(
     _task_prefix + "/{task_id}",
-    name="delete_async_job",
+    name="cancel_and_delete_async_job",
 )
 @login_required
 @permission_required("storage.files.*")
 @handle_export_data_exceptions
-async def delete_async_job(request: web.Request) -> web.Response:
+async def cancel_and_delete_async_job(request: web.Request) -> web.Response:
 
     _req_ctx = RequestContext.model_validate(request)
 
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
     async_job_get = parse_request_path_parameters_as(_StorageAsyncJobId, request)
+
+    await async_jobs.cancel(
+        rabbitmq_rpc_client=rabbitmq_rpc_client,
+        rpc_namespace=STORAGE_RPC_NAMESPACE,
+        job_id=async_job_get.task_id,
+        job_id_data=AsyncJobNameData(
+            user_id=_req_ctx.user_id, product_name=_req_ctx.product_name
+        ),
+    )
+
     await async_jobs.delete(
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,

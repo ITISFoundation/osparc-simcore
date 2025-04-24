@@ -40,6 +40,7 @@ Makefile                                           @pcrespov @sanderegg
 /services/static-webserver/                        @GitHK
 /services/static-webserver/client/                 @odeimaiz
 /services/storage/                                 @sanderegg
+/services/storage/modules/celery                   @giancarloromeo
 /services/web/server/                              @pcrespov @sanderegg @GitHK @matusdrobuliak66
 /tests/e2e-frontend/                               @odeimaiz
 /tests/e2e-playwright/                             @matusdrobuliak66
