@@ -5,8 +5,8 @@
 Purpose: to reduce dependency with aiopg (expected full migration to asyncpg)
 """
 
-from collections.abc import Coroutine
-from typing import Any, Protocol, TypeVar
+from collections.abc import Awaitable
+from typing import Any, Protocol, TypeAlias, TypeVar
 
 from sqlalchemy.sql.dml import Delete, Insert, Update
 from sqlalchemy.sql.elements import TextClause
@@ -16,7 +16,7 @@ from sqlalchemy.sql.selectable import Select
 Result = TypeVar("Result")
 
 # Type alias for methods that can be either async or sync
-MaybeCoro = Coroutine[Any, Any, Result] | Result
+MaybeCoro: TypeAlias = Awaitable[Result] | Result
 
 
 class ResultProxy(Protocol):
