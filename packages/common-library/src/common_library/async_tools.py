@@ -37,7 +37,7 @@ async def maybe_await(obj: _AwaitableResult) -> _AwaitableResult: ...
 
 
 async def maybe_await(
-    obj: _AwaitableResult | Awaitable[_AwaitableResult],
+    obj: Awaitable[_AwaitableResult] | _AwaitableResult,
 ) -> _AwaitableResult:
     """Helper function to handle both async and sync database results.
 
@@ -57,7 +57,7 @@ async def maybe_await(
         row = await maybe_await(result.fetchone())
         ```
     """
-    if hasattr(obj, "__await__"):
+    if isawaitable(obj):
         assert isawaitable(obj)  # nosec
         return await obj
     assert not isawaitable(obj)  # nosec
