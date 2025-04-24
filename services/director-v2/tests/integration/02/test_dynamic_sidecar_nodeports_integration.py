@@ -20,7 +20,6 @@ import httpx
 import pytest
 import sqlalchemy as sa
 from aiodocker.containers import DockerContainer
-from aiopg.sa import Engine
 from faker import Faker
 from fastapi import FastAPI
 from helpers.shared_comp_utils import (
@@ -450,9 +449,9 @@ async def projects_networks_db(
         project_uuid=current_study.uuid, networks_with_aliases=networks_with_aliases
     )
 
-    engine: Engine = initialized_app.state.engine
+    engine: AsyncEngine = initialized_app.state.engine
 
-    async with engine.acquire() as conn:
+    async with engine.begin() as conn:
         row_data = projects_networks_to_insert.model_dump()
         insert_stmt = pg_insert(projects_networks).values(**row_data)
         upsert_snapshot = insert_stmt.on_conflict_do_update(
