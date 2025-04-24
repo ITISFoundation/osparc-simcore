@@ -546,6 +546,14 @@ async def list_users_for_admin(
     )
 
     # Main query to get user data
+    invited_by = (
+        sa.select(
+            users.c.name,
+        )
+        .where(users_pre_registration_details.c.created_by == users.c.id)
+        .label("invited_by")
+    )
+
     main_query = (
         sa.select(
             users.c.id.label("user_id"),
@@ -571,7 +579,13 @@ async def list_users_for_admin(
             users.c.status,
             users.c.created,
             users_pre_registration_details.c.institution,
-            users_pre_registration_details.c.pre_phone.label("phone"),
+            sa.case(
+                (
+                    users.c.phone.is_(None),
+                    users_pre_registration_details.c.pre_phone,
+                ),
+                else_=users.c.phone,
+            ).label("phone"),
             users_pre_registration_details.c.address,
             users_pre_registration_details.c.city,
             users_pre_registration_details.c.state,
@@ -579,6 +593,7 @@ async def list_users_for_admin(
             users_pre_registration_details.c.country,
             users_pre_registration_details.c.extras,
             users_pre_registration_details.c.account_request_status,
+            invited_by,
         )
         .select_from(joined_tables)
         .where(where_clause)

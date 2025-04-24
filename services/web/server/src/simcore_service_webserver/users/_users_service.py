@@ -222,7 +222,7 @@ async def list_users_as_admin(
 
     # Get user data with pagination
     users_data, total_count = await _users_repository.list_users_for_admin(
-        engine=engine, filter_approved=filter_approved, limit=limit, offset=offset
+        engine, filter_approved=filter_approved, limit=limit, offset=offset
     )
 
     # For each user, append additional information if needed
@@ -238,6 +238,12 @@ async def list_users_as_admin(
                 engine, user_id=user_id
             )
             user_dict["products"] = [p.product_name for p in products]
+
+        user_dict["registered"] = (
+            user_id is not None
+            if user.get("pre_email")
+            else user.get("status") is not None
+        )
 
         result.append(user_dict)
 

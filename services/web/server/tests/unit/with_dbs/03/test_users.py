@@ -773,8 +773,7 @@ async def test_list_users_for_admin(
         form_data["email"] = faker.email()
 
         resp = await client.post("/v0/admin/users:pre-register", json=form_data)
-        assert resp.status == status.HTTP_200_OK
-        pre_registered_data = await resp.json()
+        pre_registered_data, _ = await assert_status(resp, status.HTTP_200_OK)
         pre_registered_users.append(pre_registered_data)
 
     # Register one of the pre-registered users
