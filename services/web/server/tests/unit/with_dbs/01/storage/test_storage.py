@@ -536,6 +536,7 @@ async def test_get_async_jobs_status(
         (JobSchedulerError(exc=_faker.text()), status.HTTP_500_INTERNAL_SERVER_ERROR),
         (JobMissingError(job_id=_faker.uuid4()), status.HTTP_404_NOT_FOUND),
     ],
+    ids=lambda x: type(x).__name__,
 )
 async def test_cancel_async_jobs(
     user_role: UserRole,
