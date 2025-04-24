@@ -34,6 +34,21 @@ qx.Class.define("osparc.info.Conversations", {
     this.fetchComments();
   },
 
+  statics: {
+    popUpInWindow: function(studyData) {
+      const conversations = new osparc.info.Conversations(studyData);
+      const title = qx.locale.Manager.tr("Conversations");
+      const viewWidth = 500;
+      const viewHeight = 600;
+      const win = osparc.ui.window.Window.popUpInWindow(conversations, title, viewWidth, viewHeight);
+      win.set({
+        width: this.WIDTH,
+        height: this.HEIGHT,
+      });
+      return win;
+    },
+  },
+
   members: {
     __studyData: null,
     __nextRequestParams: null,

@@ -522,8 +522,8 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       this.__addOpenButton(page);
 
       const lazyLoadContent = () => {
-        const commentsList = new osparc.info.Conversations(resourceData);
-        page.addToContent(commentsList);
+        const conversations = new osparc.info.Conversations(resourceData);
+        page.addToContent(conversations);
       }
       page.addListenerOnce("appear", lazyLoadContent, this);
 
