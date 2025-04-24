@@ -41,10 +41,6 @@ qx.Class.define("osparc.info.Conversations", {
       const viewWidth = 600;
       const viewHeight = 700;
       const win = osparc.ui.window.Window.popUpInWindow(conversations, title, viewWidth, viewHeight);
-      win.set({
-        width: this.WIDTH,
-        height: this.HEIGHT,
-      });
       return win;
     },
   },
