@@ -1,5 +1,4 @@
 import asyncio
-import json
 import logging
 from collections.abc import AsyncGenerator, Coroutine
 from contextlib import AsyncExitStack
@@ -17,6 +16,7 @@ from aiohttp import (
     ClientSession,
     RequestInfo,
 )
+from common_library.json_serialization import json_loads
 from models_library.api_schemas_storage.storage_schemas import (
     ETag,
     FileUploadSchema,
@@ -143,8 +143,7 @@ class ProgressData:
 
 @runtime_checkable
 class LogRedirectCB(Protocol):
-    async def __call__(self, log: str) -> None:
-        ...
+    async def __call__(self, log: str) -> None: ...
 
 
 async def _file_chunk_writer(
@@ -276,7 +275,7 @@ async def _session_put(
         assert response.status == status.HTTP_200_OK  # nosec
         assert response.headers  # nosec
         assert "Etag" in response.headers  # nosec
-        etag: str = json.loads(response.headers["Etag"])
+        etag: str = json_loads(response.headers["Etag"])
         return etag
 
 

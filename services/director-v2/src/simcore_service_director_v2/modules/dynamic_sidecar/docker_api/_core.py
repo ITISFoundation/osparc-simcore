@@ -1,4 +1,3 @@
-import json
 import logging
 import re
 from collections.abc import Mapping
@@ -98,7 +97,7 @@ def _to_snake_case(string: str) -> str:
 
 
 async def create_service_and_get_id(
-    create_service_data: AioDockerServiceSpec | dict[str, Any]
+    create_service_data: AioDockerServiceSpec | dict[str, Any],
 ) -> ServiceId:
     # NOTE: ideally the argument should always be AioDockerServiceSpec
     # but for that we need get_dynamic_proxy_spec to return that type
@@ -108,13 +107,13 @@ async def create_service_and_get_id(
         )
         kwargs = {_to_snake_case(k): v for k, v in kwargs.items()}
 
-        logging.debug("Creating service with\n%s", json.dumps(kwargs, indent=1))
+        logging.debug("Creating service with\n%s", json_dumps(kwargs, indent=1))
         service_start_result = await client.services.create(**kwargs)
 
         log.debug(
             "Started service %s with\n%s",
             service_start_result,
-            json.dumps(kwargs, indent=1),
+            json_dumps(kwargs, indent=1),
         )
 
     if "ID" not in service_start_result:
