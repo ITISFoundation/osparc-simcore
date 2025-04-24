@@ -79,7 +79,6 @@ aiohttp-session==2.11.0
 aiopg==1.4.0
     # via
     #   -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
-    #   -r requirements/../../../../packages/simcore-sdk/requirements/_base.in
     #   -r requirements/_base.in
 aiormq==6.7.6
     # via aio-pika
@@ -465,7 +464,6 @@ opentelemetry-instrumentation-aiohttp-server==0.48b0
 opentelemetry-instrumentation-aiopg==0.48b0
     # via
     #   -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
-    #   -r requirements/../../../../packages/simcore-sdk/requirements/_base.in
     #   -r requirements/_base.in
 opentelemetry-instrumentation-asyncpg==0.48b0
     # via
@@ -937,6 +935,7 @@ sqlalchemy==1.4.47
     #   -r requirements/../../../../packages/notifications-library/requirements/../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/../../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
+    #   -r requirements/../../../../packages/simcore-sdk/requirements/_base.in
     #   aiopg
     #   alembic
 stream-zip==0.0.83
