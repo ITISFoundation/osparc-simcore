@@ -14,7 +14,7 @@ from .api.dependencies.webserver_http import get_webserver_session
 from .models.schemas.jobs import Job, JobInputs
 from .models.schemas.programs import Program
 from .models.schemas.solvers import Solver
-from .models.solver_job_models_converters import (
+from .services_http.solver_job_models_converters import (
     create_job_from_project,
     create_new_project_for_job,
 )

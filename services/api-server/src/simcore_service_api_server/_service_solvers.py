@@ -19,7 +19,9 @@ from packaging.version import Version
 from .api.dependencies.webserver_rpc import get_wb_api_rpc_client
 from .models.schemas.jobs import JobInputs, JobModel
 from .models.schemas.solvers import Solver, SolverKeyId
-from .models.solver_job_models_converters import create_job_inputs_from_node_inputs
+from .services_http.solver_job_models_converters import (
+    create_job_inputs_from_node_inputs,
+)
 from .services_rpc.catalog import CatalogService
 from .services_rpc.wb_api_server import WbApiRpcClient
 

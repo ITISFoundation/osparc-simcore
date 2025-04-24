@@ -17,10 +17,9 @@ from models_library.projects import Project
 from models_library.projects_nodes import InputID
 from pydantic import HttpUrl, TypeAdapter
 
-from ..services_http.director_v2 import ComputationTaskGet
-from .domain.projects import InputTypes, Node, SimCoreFileLink
-from .schemas.files import File
-from .schemas.jobs import (
+from ..models.domain.projects import InputTypes, Node, SimCoreFileLink
+from ..models.schemas.files import File
+from ..models.schemas.jobs import (
     ArgumentTypes,
     Job,
     JobInputs,
@@ -30,8 +29,9 @@ from .schemas.jobs import (
     get_runner_url,
     get_url,
 )
-from .schemas.programs import Program
-from .schemas.solvers import Solver
+from ..models.schemas.programs import Program
+from ..models.schemas.solvers import Solver
+from .director_v2 import ComputationTaskGet
 
 # UTILS ------
 _BASE_UUID = uuid.UUID("231e13db-6bc6-4f64-ba56-2ee2c73b9f09")

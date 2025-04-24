@@ -10,7 +10,7 @@ from pydantic import HttpUrl, RootModel, TypeAdapter, create_model
 from simcore_service_api_server.models.schemas.files import File
 from simcore_service_api_server.models.schemas.jobs import ArgumentTypes, Job, JobInputs
 from simcore_service_api_server.models.schemas.solvers import Solver
-from simcore_service_api_server.models.solver_job_models_converters import (
+from simcore_service_api_server.services_http.solver_job_models_converters import (
     create_job_from_project,
     create_job_inputs_from_node_inputs,
     create_jobstatus_from_task,

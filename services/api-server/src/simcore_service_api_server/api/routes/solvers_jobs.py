@@ -27,11 +27,11 @@ from ...models.schemas.jobs import (
     JobStatus,
 )
 from ...models.schemas.solvers import Solver, SolverKeyId
-from ...models.solver_job_models_converters import (
-    create_jobstatus_from_task,
-)
 from ...services_http.director_v2 import DirectorV2Api
 from ...services_http.jobs import replace_custom_metadata, start_project, stop_project
+from ...services_http.solver_job_models_converters import (
+    create_jobstatus_from_task,
+)
 from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
