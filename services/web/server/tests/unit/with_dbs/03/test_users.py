@@ -779,7 +779,7 @@ async def test_list_users_for_admin(
     # Register one of the pre-registered users
     new_user = await simcore_service_webserver.login._auth_service.create_user(
         client.app,
-        email=pre_registered_users[0]["data"]["email"],
+        email=pre_registered_users[0]["email"],
         password=DEFAULT_TEST_PASSWORD,
         status_upon_creation=UserStatus.ACTIVE,
         expires_at=None,

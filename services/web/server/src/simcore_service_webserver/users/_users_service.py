@@ -43,6 +43,7 @@ async def pre_register_user(
     app: web.Application,
     profile: PreRegisteredUserGet,
     creator_user_id: UserID,
+    product_name: ProductName,
 ) -> UserForAdminGet:
 
     found = await search_users_as_admin(
@@ -70,6 +71,11 @@ async def pre_register_user(
     for key in ("first_name", "last_name", "phone"):
         if key in details:
             details[f"pre_{key}"] = details.pop(key)
+
+    # adds the product name to the extras field
+    extras = details.get("extras", {})
+    extras["product_name"] = product_name
+    details["extras"] = extras
 
     await _users_repository.create_user_details(
         get_asyncpg_engine(app),
