@@ -2,7 +2,7 @@
 
 # Define arguments in the global scope
 ARG PYTHON_VERSION="3.11.9"
-ARG UV_VERSION="0.5"
+ARG UV_VERSION="0.6"
 
 FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv_build
 # we docker image is built based on debian
@@ -11,7 +11,7 @@ FROM python:${PYTHON_VERSION}-slim-bookworm AS base
 
 #
 #  USAGE:
-#     cd sercices/notifications
+#     cd services/notifications
 #     docker build -f Dockerfile -t notifications:prod --target production ../../
 #     docker run notifications:prod
 #
@@ -27,7 +27,6 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
   apt-get update && \
   apt-get install -y --no-install-recommends \
   gosu \
-  curl \
   && apt-get clean -y \
   # verify that the binary works
   && gosu nobody true
@@ -57,13 +56,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # Ensures that the python and pip executables used in the image will be
 # those from our virtualenv.
 ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
-
-# rclone installation
-ARG TARGETARCH
-ENV TARGETARCH=${TARGETARCH}
-RUN \
-  --mount=type=bind,source=scripts/install_rclone.bash,target=/tmp/install_rclone.bash \
-  ./tmp/install_rclone.bash
 
 # -------------------------- Build stage -------------------
 # Installs build/package management tools and third party dependencies
@@ -106,7 +98,7 @@ WORKDIR /build
 #
 FROM build AS prod-only-deps
 
-ENV SC_BUILD_TARGET prod-only-deps
+ENV SC_BUILD_TARGET=prod-only-deps
 
 WORKDIR /build/services/notifications
 
