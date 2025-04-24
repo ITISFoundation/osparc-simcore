@@ -78,6 +78,7 @@ class NodeState(BaseModel):
             description="true if the node's outputs need to be re-computed",
         ),
     ] = True
+
     dependencies: Annotated[
         set[NodeID],
         Field(
@@ -85,6 +86,7 @@ class NodeState(BaseModel):
             description="contains the node inputs dependencies if they need to be computed first",
         ),
     ] = DEFAULT_FACTORY
+
     current_status: Annotated[
         RunningState,
         Field(
@@ -92,6 +94,7 @@ class NodeState(BaseModel):
             alias="currentStatus",
         ),
     ] = RunningState.NOT_STARTED
+
     progress: Annotated[
         float | None,
         Field(
@@ -103,6 +106,7 @@ class NodeState(BaseModel):
 
     model_config = ConfigDict(
         extra="forbid",
+        populate_by_name=True,
         json_schema_extra={
             "examples": [
                 {
@@ -284,7 +288,7 @@ class Node(BaseModel):
 
             # the old version of state was a enum of RunningState
             running_state_value = _convert_old_enum_name(v)
-            return NodeState.model_validate({"currentStatus": running_state_value})
+            return NodeState(current_status=running_state_value)
         return v
 
     @staticmethod
