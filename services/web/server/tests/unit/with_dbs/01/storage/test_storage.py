@@ -537,7 +537,7 @@ async def test_get_async_jobs_status(
         (JobMissingError(job_id=_faker.uuid4()), status.HTTP_404_NOT_FOUND),
     ],
 )
-async def test_cancel_and_delete_async_jobs(
+async def test_cancel_async_jobs(
     user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
@@ -550,12 +550,6 @@ async def test_cancel_and_delete_async_jobs(
     create_storage_rpc_client_mock(
         "simcore_service_webserver.tasks._rest",
         f"async_jobs.{async_jobs.cancel.__name__}",
-        backend_result_or_exception,
-    )
-
-    create_storage_rpc_client_mock(
-        "simcore_service_webserver.tasks._rest",
-        f"async_jobs.{async_jobs.delete.__name__}",
         backend_result_or_exception,
     )
 

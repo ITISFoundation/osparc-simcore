@@ -72,22 +72,15 @@ class CeleryTaskClient:
     def _abort_task(self, task_id: TaskID) -> None:
         AbortableAsyncResult(task_id, app=self._celery_app).abort()
 
-    async def abort_task(self, task_context: TaskContext, task_uuid: TaskUUID) -> None:
+    async def cancel_task(self, task_context: TaskContext, task_uuid: TaskUUID) -> None:
         with log_context(
             _logger,
             logging.DEBUG,
-            msg=f"task abortion: {task_context=} {task_uuid=}",
+            msg=f"task cancellation: {task_context=} {task_uuid=}",
         ):
             task_id = build_task_id(task_context, task_uuid)
-            await self._abort_task(task_id)
-
-    async def delete_task(self, task_context: TaskContext, task_uuid: TaskUUID) -> None:
-        with log_context(
-            _logger,
-            logging.DEBUG,
-            msg=f"task deletion: {task_context=} {task_uuid=}",
-        ):
-            task_id = build_task_id(task_context, task_uuid)
+            if not (await self.get_task_status(task_context, task_uuid)).is_done:
+                await self._abort_task(task_id)
             await self._task_info_store.remove_task(task_id)
 
     @make_async()
@@ -108,7 +101,8 @@ class CeleryTaskClient:
             if async_result.ready():
                 task_metadata = await self._task_info_store.get_task_metadata(task_id)
                 if task_metadata is not None and task_metadata.ephemeral:
-                    await self.delete_task(task_context, task_uuid)
+                    await self._forget_task(task_id)
+                    await self._task_info_store.remove_task(task_id)
             return result
 
     async def _get_task_progress_report(

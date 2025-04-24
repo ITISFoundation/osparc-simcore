@@ -36,20 +36,7 @@ async def cancel(app: FastAPI, job_id: AsyncJobId, job_id_data: AsyncJobNameData
     assert app  # nosec
     assert job_id_data  # nosec
     try:
-        await get_celery_client(app).abort_task(
-            task_context=job_id_data.model_dump(),
-            task_uuid=job_id,
-        )
-    except CeleryError as exc:
-        raise JobSchedulerError(exc=f"{exc}") from exc
-
-
-@router.expose(reraise_if_error_type=(JobSchedulerError,))
-async def delete(app: FastAPI, job_id: AsyncJobId, job_id_data: AsyncJobNameData):
-    assert app  # nosec
-    assert job_id_data  # nosec
-    try:
-        await get_celery_client(app).delete_task(
+        await get_celery_client(app).cancel_task(
             task_context=job_id_data.model_dump(),
             task_uuid=job_id,
         )

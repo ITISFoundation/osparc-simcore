@@ -178,7 +178,7 @@ async def test_aborting_task_results_with_aborted_state(
         task_context=task_context,
     )
 
-    await celery_client.abort_task(task_context, task_uuid)
+    await celery_client.cancel_task(task_context, task_uuid)
 
     for attempt in Retrying(
         retry=retry_if_exception_type(AssertionError),

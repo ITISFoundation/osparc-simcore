@@ -52,22 +52,6 @@ async def cancel(
     )
 
 
-async def delete(
-    rabbitmq_rpc_client: RabbitMQRPCClient,
-    *,
-    rpc_namespace: RPCNamespace,
-    job_id: AsyncJobId,
-    job_id_data: AsyncJobNameData,
-) -> None:
-    await rabbitmq_rpc_client.request(
-        rpc_namespace,
-        TypeAdapter(RPCMethodName).validate_python("delete"),
-        job_id=job_id,
-        job_id_data=job_id_data,
-        timeout_s=_DEFAULT_TIMEOUT_S,
-    )
-
-
 async def status(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
