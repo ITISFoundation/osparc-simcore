@@ -6,6 +6,7 @@ from typing import Any
 import asyncpg.exceptions
 import sqlalchemy
 import sqlalchemy.exc
+from common_library.async_tools import maybe_await
 from common_library.errors_classes import OsparcErrorMixin
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -15,7 +16,6 @@ from ._protocols import DBConnection
 from .aiopg_errors import ForeignKeyViolation, UniqueViolation
 from .models.projects_node_to_pricing_unit import projects_node_to_pricing_unit
 from .models.projects_nodes import projects_nodes
-from .utils_results import maybe_await
 
 
 #

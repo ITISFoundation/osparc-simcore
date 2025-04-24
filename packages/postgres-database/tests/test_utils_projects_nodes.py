@@ -14,6 +14,7 @@ import sqlalchemy
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import RowProxy
+from common_library.async_tools import maybe_await
 from faker import Faker
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.projects_nodes import projects_nodes
@@ -25,7 +26,6 @@ from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodesProjectNotFoundError,
     ProjectNodesRepo,
 )
-from simcore_postgres_database.utils_results import maybe_await
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 
