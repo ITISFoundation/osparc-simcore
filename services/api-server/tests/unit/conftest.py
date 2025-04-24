@@ -218,6 +218,8 @@ def auth(
         engine.freesize = 3
         engine.maxsize = 10
         app.state.engine = engine
+        async_engine = mocker.MagicMock()
+        app.state.asyncpg_engine = async_engine
 
     # NOTE: here, instead of using the database, we patch repositories interface
     mocker.patch(

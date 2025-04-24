@@ -48,6 +48,7 @@ from simcore_service_director_v2.models.dynamic_services_scheduler import Schedu
 def disable_postgres(mocker) -> None:
     def mock_setup(app: FastAPI, *args, **kwargs) -> None:
         app.state.engine = mock.AsyncMock()
+        app.state.asyncpg_engine = mock.AsyncMock()
 
     mocker.patch("simcore_service_director_v2.modules.db.setup", side_effect=mock_setup)
 
@@ -152,7 +153,7 @@ def mock_service_inspect(
 
 @pytest.fixture
 def scheduler_data_from_service_inspect(
-    mock_service_inspect: Mapping[str, Any]
+    mock_service_inspect: Mapping[str, Any],
 ) -> SchedulerData:
     return SchedulerData.from_service_inspect(mock_service_inspect)
 

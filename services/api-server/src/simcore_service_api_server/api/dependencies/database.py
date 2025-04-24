@@ -5,7 +5,9 @@ from typing import Annotated, cast
 from aiopg.sa import Engine
 from fastapi import Depends
 from fastapi.requests import Request
+from sqlalchemy.ext.asyncio import AsyncEngine
 
+from ...db.events import get_asyncpg_engine
 from ...db.repositories import BaseRepository
 
 logger = logging.getLogger(__name__)
@@ -13,6 +15,10 @@ logger = logging.getLogger(__name__)
 
 def get_db_engine(request: Request) -> Engine:
     return cast(Engine, request.app.state.engine)
+
+
+def get_db_asyncpg_engine(request: Request) -> AsyncEngine:
+    return get_asyncpg_engine(request.app)
 
 
 def get_repository(repo_type: type[BaseRepository]) -> Callable:

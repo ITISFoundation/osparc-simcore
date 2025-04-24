@@ -389,9 +389,11 @@ async def test_create_containers_task(
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
     shared_store: SharedStore,
 ) -> None:
-    last_progress_message: tuple[str, float] | None = None
+    last_progress_message: tuple[str, ProgressPercent | None] | None = None
 
-    async def create_progress(message: str, percent: float, _: TaskId) -> None:
+    async def create_progress(
+        message: str, percent: ProgressPercent | None, _: TaskId
+    ) -> None:
         nonlocal last_progress_message
         last_progress_message = (message, percent)
         print(message, percent)
