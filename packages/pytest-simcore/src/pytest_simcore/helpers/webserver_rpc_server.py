@@ -17,7 +17,6 @@ from models_library.users import UserID
 from pydantic import TypeAdapter, validate_call
 from pytest_mock import MockType
 from servicelib.rabbitmq import RabbitMQRPCClient
-from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 
 
 class WebserverRpcSideEffects:
