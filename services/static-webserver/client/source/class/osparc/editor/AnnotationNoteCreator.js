@@ -112,9 +112,22 @@ qx.Class.define("osparc.editor.AnnotationNoteCreator", {
                       selectedGids,
                       newAccessRights,
                     } = ev.getData();
-                    console.log("addCollaborators", selectedGids, newAccessRights);
-                    // this._addEditors(selectedGids, newAccessRights);
-                    collaboratorsManager.close();
+                    const newCollaborators = {};
+                    selectedGids.forEach(gid => {
+                      newCollaborators[gid] = newAccessRights;
+                    });
+                    const studyData = this.__study.serialize();
+                    osparc.store.Study.addCollaborators(studyData, newCollaborators)
+                      .then(() => {
+                        const potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators()
+                        selectedGids.forEach(gid => {
+                          if (gid in potentialCollaborators && "getUserId" in potentialCollaborators[gid]) {
+                            const uid = potentialCollaborators[gid].getUserId();
+                            osparc.notification.Notifications.postNewStudy(uid, studyData["uuid"]);
+                          }
+                        });
+                      })
+                      .finally(() => collaboratorsManager.close());
                   });
                 }
               }
