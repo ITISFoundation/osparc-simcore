@@ -3,6 +3,7 @@ from typing import Annotated
 
 import packaging.version
 from models_library.utils.change_case import camel_to_snake
+from models_library.utils.common_validators import trim_string_before
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, StringConstraints
 
 from ...models._utils_pydantic import UriSchema
@@ -28,22 +29,31 @@ class ApiServerInputSchema(BaseModel):
 
 
 class BaseService(BaseModel):
-    id: Annotated[str, Field(..., description="Resource identifier")]
+    id: Annotated[
+        str,
+        Field(description="Resource identifier"),
+    ]
     version: Annotated[
-        VersionStr, Field(..., description="Semantic version number of the resource")
+        VersionStr,
+        Field(description="Semantic version number of the resource"),
     ]
     title: Annotated[
         str,
+        trim_string_before(max_length=100),
         StringConstraints(max_length=100),
-        Field(..., description="Human readable name"),
+        Field(description="Human readable name"),
     ]
     description: Annotated[
         str | None,
-        StringConstraints(max_length=500),
+        trim_string_before(max_length=1000),
+        StringConstraints(max_length=1000),
         Field(default=None, description="Description of the resource"),
     ]
+
     url: Annotated[
-        HttpUrl | None, UriSchema(), Field(..., description="Link to get this resource")
+        HttpUrl | None,
+        UriSchema(),
+        Field(description="Link to get this resource"),
     ]
 
     @property
