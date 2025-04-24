@@ -238,7 +238,7 @@ async def wait_and_get_result(
             )
     except (TimeoutError, CancelledError) as error:
         try:
-            await abort(
+            await cancel(
                 rabbitmq_rpc_client,
                 rpc_namespace=rpc_namespace,
                 job_id=job_id,
@@ -270,7 +270,7 @@ async def submit_and_wait(
     except (TimeoutError, CancelledError) as error:
         if async_job_rpc_get is not None:
             try:
-                await abort(
+                await cancel(
                     rabbitmq_rpc_client,
                     rpc_namespace=rpc_namespace,
                     job_id=async_job_rpc_get.job_id,
