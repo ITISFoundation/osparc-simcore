@@ -95,6 +95,10 @@ class SolverService:
         *,
         user_id: UserID,
         product_name: ProductName,
+        # filters
+        solver_id: SolverKeyId | None = None,
+        solver_version: VersionStr | None = None,
+        # pagination
         offset: PageOffsetInt = 0,
         limit: PageLimitInt = DEFAULT_PAGINATION_LIMIT,
     ) -> tuple[list[Job], PageMetaInfoLimitOffset]:
@@ -102,20 +106,29 @@ class SolverService:
 
         # NOTE: perhaps we should get comp_tasks instead of projects! or a combinatino of both?
         # I need inputs_checksum and job_parent_source_name!
+        # FIXME: this is still buggy. soldve_id and solver_version need to be encoded!
+        job_parent_resource_name_filter = "solvers"
+        if solver_id:
+            job_parent_resource_name_filter += f"/{solver_id}"
+            if solver_version:
+                job_parent_resource_name_filter += f"/{solver_version}"
+        elif solver_version:
+            msg = "solver_version is set but solver_id is not. Please provide both or none of them"
+            raise ValueError(msg)
 
         projects_page = await self._webserver_client.list_projects_marked_as_jobs(
             product_name=product_name,
             user_id=user_id,
             offset=offset,
             limit=limit,
-            job_parent_resource_name_filter="solvers",  # TODO: project shouldr eturn parent resource name and workbench
+            job_parent_resource_name_filter=job_parent_resource_name_filter,
         )
 
         jobs: list[Job] = []
 
         for project_job in projects_page.data:
 
-            assert (
+            assert (  # nosec
                 len(project_job.workbench) == 1
             ), "Expected only one solver node in workbench"
 

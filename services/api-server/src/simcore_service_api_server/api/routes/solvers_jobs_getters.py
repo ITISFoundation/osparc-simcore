@@ -18,6 +18,7 @@ from pydantic import NonNegativeInt
 from pydantic.types import PositiveInt
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from servicelib.logging_utils import log_context
+from simcore_service_api_server.models.api_resources import parse_resources_ids
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..._service_solvers import SolverService
@@ -35,6 +36,7 @@ from ...models.schemas.jobs import (
     JobLog,
     JobMetadata,
     JobOutputs,
+    update_job_urls,
 )
 from ...models.schemas.model_adapter import (
     PricingUnitGetLegacy,
@@ -131,11 +133,26 @@ async def list_all_solvers_jobs(
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     page_params: Annotated[PaginationParams, Depends()],
     solver_service: Annotated[SolverService, Depends(SolverService)],
-    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
 ):
-    raise NotImplementedError
+
+    jobs, meta = await solver_service.list_jobs(
+        product_name=product_name,
+        user_id=user_id,
+        offset=page_params.offset,
+        limit=page_params.limit,
+    )
+
+    for job in jobs:
+        solver_key, version, job_id = parse_resources_ids(job.resource_name)
+        update_job_urls(job, solver_key, version, job_id, url_for)
+
+    return create_page(
+        jobs,
+        total=meta.total,
+        params=page_params,
+    )
 
 
 @router.get(
