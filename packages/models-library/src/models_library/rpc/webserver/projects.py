@@ -54,6 +54,7 @@ class ProjectJobRpcGet(BaseModel):
             }
         )
 
+    # Specific to jobs
     job_parent_resource_name: str
 
     @staticmethod
