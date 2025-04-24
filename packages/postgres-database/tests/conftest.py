@@ -9,7 +9,6 @@ from collections.abc import AsyncIterator, Awaitable, Callable, Iterable, Iterat
 from pathlib import Path
 
 import aiopg.sa
-import aiopg.sa.exc
 import pytest
 import simcore_postgres_database.cli
 import sqlalchemy as sa
@@ -39,7 +38,7 @@ from simcore_postgres_database.webserver_models import (
     users,
 )
 from sqlalchemy.engine.row import Row
-from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, create_async_engine
 
 pytest_plugins = [
     "pytest_simcore.pytest_global_environs",
@@ -209,6 +208,30 @@ async def asyncpg_engine(  # <-- WE SHOULD USE THIS ONE
     yield _apg_engine
 
     await _apg_engine.dispose()
+
+
+@pytest.fixture
+async def asyncpg_connection(
+    asyncpg_engine: AsyncEngine,
+) -> AsyncIterator[AsyncConnection]:
+    """Returns an asyncpg connection from an engine to a fully furnished and ready pg database"""
+    async with asyncpg_engine.begin() as conn:
+        yield conn
+
+
+@pytest.fixture(params=["aiopg", "asyncpg"])
+async def connection_factory(
+    request: pytest.FixtureRequest,
+    aiopg_engine: Engine,
+    asyncpg_engine: AsyncEngine,
+) -> AsyncIterator[SAConnection | AsyncConnection]:
+    """Returns an aiopg.sa connection or an asyncpg connection from an engine to a fully furnished and ready pg database"""
+    if request.param == "aiopg":
+        async with aiopg_engine.acquire() as conn:
+            yield conn
+    else:
+        async with asyncpg_engine.begin() as conn:
+            yield conn
 
 
 #
