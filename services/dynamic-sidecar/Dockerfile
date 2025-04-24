@@ -2,7 +2,7 @@
 
 # Define arguments in the global scope
 ARG PYTHON_VERSION="3.11.9"
-ARG UV_VERSION="0.5"
+ARG UV_VERSION="0.6"
 FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv_build
 # we docker image is built based on debian
 FROM python:${PYTHON_VERSION}-slim-bookworm AS base
@@ -196,6 +196,10 @@ COPY --chown=scu:scu --from=prod-only-deps  ${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_D
 COPY --chown=scu:scu services/dynamic-sidecar/docker services/dynamic-sidecar/docker
 RUN chmod +x services/dynamic-sidecar/docker/*.sh
 
+# NOTE: the start period of 3 minutes is to allow the dynamic-sidecar
+# enough time to connect to the externald dependencies. some times the docker
+# networks take time to get created
+# https://docs.docker.com/reference/dockerfile/#healthcheck
 HEALTHCHECK \
   --interval=10s \
   --timeout=5s \

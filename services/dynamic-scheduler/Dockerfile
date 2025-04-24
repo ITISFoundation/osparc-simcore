@@ -2,7 +2,7 @@
 
 # Define arguments in the global scope
 ARG PYTHON_VERSION="3.11.9"
-ARG UV_VERSION="0.5"
+ARG UV_VERSION="0.6"
 FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv_build
 # we docker image is built based on debian
 FROM python:${PYTHON_VERSION}-slim-bookworm AS base
@@ -141,10 +141,13 @@ COPY --chown=scu:scu services/dynamic-scheduler/docker services/dynamic-schedule
 RUN chmod +x services/dynamic-scheduler/docker/*.sh
 
 
-HEALTHCHECK --interval=30s \
-  --timeout=20s \
-  --start-period=30s \
-  --retries=3 \
+# https://docs.docker.com/reference/dockerfile/#healthcheck
+HEALTHCHECK \
+  --interval=10s \
+  --timeout=5s \
+  --start-period=20s \
+  --start-interval=1s \
+  --retries=5 \
   CMD ["python3", "services/dynamic-scheduler/docker/healthcheck.py", "http://localhost:8000/health"]
 
 ENTRYPOINT [ "/bin/sh", "services/dynamic-scheduler/docker/entrypoint.sh" ]

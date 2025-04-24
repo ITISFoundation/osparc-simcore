@@ -109,9 +109,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
     setItemSelected: function(selectedItem) {
       if (selectedItem) {
         this.__selection = [selectedItem];
-        const isFile = osparc.file.FilesTree.isFile(selectedItem);
-        const isMultiDownloadEnabled = osparc.utils.DisabledPlugins.isMultiDownloadEnabled();
-        this.getChildControl("download-button").setEnabled(isFile || isMultiDownloadEnabled); // folders can also be downloaded
+        this.getChildControl("download-button").setEnabled(true); // folders can also be downloaded
         this.getChildControl("delete-button").setEnabled(true); // folders can also be deleted
         this.getChildControl("selected-label").setValue(selectedItem.getLabel());
       } else {
@@ -143,11 +141,10 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
     },
 
     __retrieveURLAndDownloadSelected: function() {
-      const isMultiDownloadEnabled = osparc.utils.DisabledPlugins.isMultiDownloadEnabled();
       if (this.isMultiSelect()) {
         if (this.__selection.length === 1 && osparc.file.FilesTree.isFile(this.__selection[0])) {
           this.__retrieveURLAndDownloadFile(this.__selection[0]);
-        } else if (this.__selection.length > 1 && isMultiDownloadEnabled) {
+        } else if (this.__selection.length > 1) {
           const paths = this.__selection.map(item => item.getPath());
           this.__retrieveURLAndExportData(paths);
         }
@@ -156,7 +153,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
         if (selection) {
           if (osparc.file.FilesTree.isFile(selection)) {
             this.__retrieveURLAndDownloadFile(selection);
-          } else if (isMultiDownloadEnabled) {
+          } else {
             const paths = [selection.getPath()];
             this.__retrieveURLAndExportData(paths);
           }

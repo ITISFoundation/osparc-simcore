@@ -11,6 +11,7 @@ from models_library.api_schemas_catalog.services import (
     ServiceListFilters,
     ServiceUpdateV2,
 )
+from models_library.api_schemas_catalog.services_ports import ServicePortGet
 from models_library.products import ProductName
 from models_library.rest_pagination import PageOffsetInt
 from models_library.rpc_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, PageLimitInt
@@ -198,12 +199,13 @@ async def check_for_service(
     """Checks whether service exists and can be accessed, otherwise it raise"""
     assert app.state.engine  # nosec
 
-    await catalog_services.check_catalog_service(
+    await catalog_services.check_catalog_service_permissions(
         repo=ServicesRepository(app.state.engine),
         product_name=product_name,
         user_id=user_id,
         service_key=service_key,
         service_version=service_version,
+        permission="read",
     )
 
 
@@ -274,3 +276,42 @@ async def list_my_service_history_paginated(
             offset=offset,
         ),
     )
+
+
+@router.expose(
+    reraise_if_error_type=(
+        CatalogItemNotFoundError,
+        CatalogForbiddenError,
+        ValidationError,
+    )
+)
+@log_decorator(_logger, level=logging.DEBUG)
+@validate_call(config={"arbitrary_types_allowed": True})
+async def get_service_ports(
+    app: FastAPI,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+) -> list[ServicePortGet]:
+    """Get service ports (inputs and outputs) for a specific service version"""
+    assert app.state.engine  # nosec
+
+    service_ports = await catalog_services.get_user_services_ports(
+        repo=ServicesRepository(app.state.engine),
+        director_api=get_director_client(app),
+        product_name=product_name,
+        user_id=user_id,
+        service_key=service_key,
+        service_version=service_version,
+    )
+
+    return [
+        ServicePortGet.from_domain_model(
+            kind=port.kind,
+            key=port.key,
+            port=port.port,
+        )
+        for port in service_ports
+    ]

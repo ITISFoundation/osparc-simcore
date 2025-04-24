@@ -85,7 +85,16 @@ qx.Class.define("osparc.task.ExportData", {
             .then(data => {
               if (data && data.link) {
                 const fileName = taskData["result"].split("/").pop();
-                osparc.utils.Utils.downloadLink(data.link, "GET", fileName);
+                const progressCb = null;
+                const loadedCb = () => {
+                  const deleteParams = {
+                    url: {
+                      taskId: task.getTaskId(),
+                    }
+                  };
+                  osparc.data.Resources.fetch("tasks", "delete", deleteParams);
+                }
+                osparc.utils.Utils.downloadLink(data.link, "GET", fileName, progressCb, loadedCb);
               }
             })
         }

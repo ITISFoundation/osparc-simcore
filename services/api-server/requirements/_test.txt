@@ -42,12 +42,11 @@ aws-sam-translator==1.55.0
     #   cfn-lint
 aws-xray-sdk==2.14.0
     # via moto
-boto3==1.35.99
+boto3==1.38.1
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   aws-sam-translator
     #   moto
-botocore==1.35.99
+botocore==1.38.1
     # via
     #   aws-xray-sdk
     #   boto3
@@ -314,7 +313,7 @@ rsa==4.9
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   python-jose
-s3transfer==0.10.4
+s3transfer==0.12.0
     # via boto3
 sarif-om==1.0.4
     # via cfn-lint

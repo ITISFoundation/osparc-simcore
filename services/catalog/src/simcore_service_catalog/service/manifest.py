@@ -36,6 +36,7 @@ from servicelib.utils import limited_gather
 
 from .._constants import DIRECTOR_CACHING_TTL
 from ..clients.director import DirectorClient
+from ..models.services_ports import ServicePort
 from .function_services import get_function_service, is_function_service
 
 _logger = logging.getLogger(__name__)
@@ -123,3 +124,40 @@ async def get_batch_services(
         tasks_group_prefix="manifest.get_batch_services",
     )
     return batch
+
+
+async def get_service_ports(
+    director_client: DirectorClient,
+    *,
+    key: ServiceKey,
+    version: ServiceVersion,
+) -> list[ServicePort]:
+    """Retrieves all ports (inputs and outputs) from a service"""
+    ports = []
+    service = await get_service(
+        director_client=director_client,
+        key=key,
+        version=version,
+    )
+
+    if service.inputs:
+        for input_name, service_input in service.inputs.items():
+            ports.append(
+                ServicePort(
+                    kind="input",
+                    key=input_name,
+                    port=service_input,
+                )
+            )
+
+    if service.outputs:
+        for output_name, service_output in service.outputs.items():
+            ports.append(
+                ServicePort(
+                    kind="output",
+                    key=output_name,
+                    port=service_output,
+                )
+            )
+
+    return ports

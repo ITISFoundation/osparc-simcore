@@ -43,7 +43,7 @@ from tenacity import retry, stop_after_delay, wait_fixed
 _authentication_types = [
     NoAuthentication(),
     TLSAuthentication.model_construct(
-        **TLSAuthentication.model_config["json_schema_extra"]["examples"][0]
+        **TLSAuthentication.model_json_schema()["examples"][0]
     ),
 ]
 
@@ -267,7 +267,9 @@ async def test_get_worker_still_has_results_in_memory(
         )
         assert isinstance(exc, RuntimeError)
     else:
-        result = await future_queued_task.result(timeout=_DASK_SCHEDULER_REACTION_TIME_S)  # type: ignore
+        result = await future_queued_task.result(
+            timeout=_DASK_SCHEDULER_REACTION_TIME_S
+        )  # type: ignore
         assert result == 7
 
     await _wait_for_dask_scheduler_to_change_state()

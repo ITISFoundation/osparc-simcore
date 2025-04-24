@@ -23,17 +23,10 @@ from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx.router import MockRouter
 from servicelib.rabbitmq import RabbitMQRPCClient
+from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
 from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogForbiddenError,
     CatalogItemNotFoundError,
-)
-from servicelib.rabbitmq.rpc_interfaces.catalog.services import (
-    batch_get_my_services,
-    check_for_service,
-    get_service,
-    list_my_service_history_paginated,
-    list_services_paginated,
-    update_service,
 )
 
 pytest_simcore_core_services_selection = [
@@ -118,7 +111,7 @@ async def test_rpc_list_services_paginated_with_no_services_returns_empty_page(
 ):
     assert app
 
-    page = await list_services_paginated(
+    page = await catalog_rpc.list_services_paginated(
         rpc_client, product_name="not_existing_returns_no_services", user_id=user_id
     )
     assert page.data == []
@@ -139,7 +132,7 @@ async def test_rpc_list_services_paginated_with_filters(
     assert app
 
     # only computational services introduced by the background_sync_task_mocked
-    page = await list_services_paginated(
+    page = await catalog_rpc.list_services_paginated(
         rpc_client,
         product_name=product_name,
         user_id=user_id,
@@ -148,7 +141,7 @@ async def test_rpc_list_services_paginated_with_filters(
     assert page.meta.total == page.meta.count
     assert page.meta.total > 0
 
-    page = await list_services_paginated(
+    page = await catalog_rpc.list_services_paginated(
         rpc_client,
         product_name=product_name,
         user_id=user_id,
@@ -157,7 +150,7 @@ async def test_rpc_list_services_paginated_with_filters(
     assert page.meta.total == 0
 
 
-async def test_rpc_catalog_client(
+async def test_rpc_catalog_client_workflow(
     background_sync_task_mocked: None,
     mocked_director_rest_api: MockRouter,
     rpc_client: RabbitMQRPCClient,
@@ -168,7 +161,7 @@ async def test_rpc_catalog_client(
 ):
     assert app
 
-    page = await list_services_paginated(
+    page = await catalog_rpc.list_services_paginated(
         rpc_client, product_name=product_name, user_id=user_id
     )
 
@@ -177,14 +170,14 @@ async def test_rpc_catalog_client(
     service_version = page.data[0].version
 
     with pytest.raises(ValidationError):
-        await list_services_paginated(
+        await catalog_rpc.list_services_paginated(
             rpc_client,
             product_name=product_name,
             user_id=user_id,
             limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE + 1,
         )
 
-    got = await get_service(
+    got = await catalog_rpc.get_service(
         rpc_client,
         product_name=product_name,
         user_id=user_id,
@@ -200,7 +193,7 @@ async def test_rpc_catalog_client(
         if (item.key == service_key and item.version == service_version)
     )
 
-    updated = await update_service(
+    updated = await catalog_rpc.update_service(
         rpc_client,
         product_name=product_name,
         user_id=user_id,
@@ -224,7 +217,7 @@ async def test_rpc_catalog_client(
     assert updated.icon is not None
     assert not updated.classifiers
 
-    got = await get_service(
+    got = await catalog_rpc.get_service(
         rpc_client,
         product_name=product_name,
         user_id=user_id,
@@ -244,7 +237,7 @@ async def test_rpc_get_service_not_found_error(
 ):
 
     with pytest.raises(CatalogItemNotFoundError, match="unknown"):
-        await get_service(
+        await catalog_rpc.get_service(
             rpc_client,
             product_name=product_name,
             user_id=user_id,
@@ -263,7 +256,7 @@ async def test_rpc_get_service_validation_error(
 ):
 
     with pytest.raises(ValidationError, match="service_key"):
-        await get_service(
+        await catalog_rpc.get_service(
             rpc_client,
             product_name=product_name,
             user_id=user_id,
@@ -281,7 +274,7 @@ async def test_rpc_check_for_service(
     user_id: UserID,
 ):
     with pytest.raises(CatalogItemNotFoundError, match="unknown"):
-        await check_for_service(
+        await catalog_rpc.check_for_service(
             rpc_client,
             product_name=product_name,
             user_id=user_id,
@@ -299,8 +292,6 @@ async def test_rpc_get_service_access_rights(
     user_id: UserID,
     other_user: dict[str, Any],
     app: FastAPI,
-    create_fake_service_data: Callable,
-    target_product: ProductName,
 ):
     assert app
     assert user["id"] == user_id
@@ -309,7 +300,7 @@ async def test_rpc_get_service_access_rights(
     service_key = ServiceKey("simcore/services/comp/test-api-rpc-service-0")
     service_version = ServiceVersion("0.0.0")
 
-    service = await get_service(
+    service = await catalog_rpc.get_service(
         rpc_client,
         product_name=product_name,
         user_id=user_id,
@@ -325,7 +316,7 @@ async def test_rpc_get_service_access_rights(
 
     # other_user does not have EXECUTE access -----------------
     with pytest.raises(CatalogForbiddenError, match=service_key):
-        await get_service(
+        await catalog_rpc.get_service(
             rpc_client,
             product_name=product_name,
             user_id=other_user["id"],
@@ -335,7 +326,7 @@ async def test_rpc_get_service_access_rights(
 
     # other_user does not have WRITE access
     with pytest.raises(CatalogForbiddenError, match=service_key):
-        await update_service(
+        await catalog_rpc.update_service(
             rpc_client,
             product_name=product_name,
             user_id=other_user["id"],
@@ -349,7 +340,7 @@ async def test_rpc_get_service_access_rights(
 
     # user_id gives "x access" to other_user ------------
     assert service.access_rights is not None
-    await update_service(
+    await catalog_rpc.update_service(
         rpc_client,
         product_name=product_name,
         user_id=user_id,
@@ -367,7 +358,7 @@ async def test_rpc_get_service_access_rights(
     )
 
     # other user can now GET but NOT UPDATE
-    await get_service(
+    await catalog_rpc.get_service(
         rpc_client,
         product_name=product_name,
         user_id=other_user["id"],
@@ -376,7 +367,7 @@ async def test_rpc_get_service_access_rights(
     )
 
     with pytest.raises(CatalogForbiddenError, match=service_key):
-        await update_service(
+        await catalog_rpc.update_service(
             rpc_client,
             product_name=product_name,
             user_id=other_user["id"],
@@ -390,7 +381,7 @@ async def test_rpc_get_service_access_rights(
 
     # user_id gives "xw access" to other_user ------------------
     assert service.access_rights is not None
-    await update_service(
+    await catalog_rpc.update_service(
         rpc_client,
         product_name=product_name,
         user_id=user_id,
@@ -408,7 +399,7 @@ async def test_rpc_get_service_access_rights(
     )
 
     # other_user can now update and get
-    await update_service(
+    await catalog_rpc.update_service(
         rpc_client,
         product_name=product_name,
         user_id=other_user["id"],
@@ -419,7 +410,7 @@ async def test_rpc_get_service_access_rights(
             "description": "bar",
         },
     )
-    updated_service = await get_service(
+    updated_service = await catalog_rpc.get_service(
         rpc_client,
         product_name=product_name,
         user_id=other_user["id"],
@@ -482,7 +473,7 @@ async def test_rpc_batch_get_my_services(
         (other_service_key, other_service_version),
     ]
 
-    my_services = await batch_get_my_services(
+    my_services = await catalog_rpc.batch_get_my_services(
         rpc_client,
         product_name=product_name,
         user_id=user_id,
@@ -569,7 +560,7 @@ async def test_rpc_list_my_service_history_paginated(
     await services_db_tables_injector(fake_releases + unrelated_releases)
 
     # Call the RPC function
-    page = await list_my_service_history_paginated(
+    page = await catalog_rpc.list_my_service_history_paginated(
         rpc_client,
         product_name=product_name,
         user_id=user_id,
@@ -582,3 +573,133 @@ async def test_rpc_list_my_service_history_paginated(
     assert len(release_history) == 2
     assert release_history[0].version == service_version_2, "expected newest first"
     assert release_history[1].version == service_version_1
+
+
+async def test_rpc_get_service_ports_successful_retrieval(
+    background_sync_task_mocked: None,
+    mocked_director_rest_api: MockRouter,
+    rpc_client: RabbitMQRPCClient,
+    product_name: ProductName,
+    user_id: UserID,
+    app: FastAPI,
+    expected_director_rest_api_list_services: list[dict[str, Any]],
+):
+    """Tests successful retrieval of service ports for a specific service version"""
+    assert app
+
+    # Create a service with known ports
+    expected_service = expected_director_rest_api_list_services[0]
+    service_key = expected_service["key"]
+    service_version = expected_service["version"]
+
+    # Call the RPC function to get service ports
+    ports = await catalog_rpc.get_service_ports(
+        rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        service_key=service_key,
+        service_version=service_version,
+    )
+
+    # Validate the response
+    expected_inputs = expected_service["inputs"]
+    expected_outputs = expected_service["outputs"]
+    assert len(ports) == len(expected_inputs) + len(expected_outputs)
+
+
+async def test_rpc_get_service_ports_not_found(
+    background_sync_task_mocked: None,
+    mocked_director_rest_api: MockRouter,
+    rpc_client: RabbitMQRPCClient,
+    product_name: ProductName,
+    user_id: UserID,
+    app: FastAPI,
+):
+    """Tests that appropriate error is raised when service does not exist"""
+    assert app
+
+    service_version = "1.0.0"
+    non_existent_key = "simcore/services/comp/non-existent-service"
+
+    # Test service not found scenario
+    with pytest.raises(CatalogItemNotFoundError, match="non-existent-service"):
+        await catalog_rpc.get_service_ports(
+            rpc_client,
+            product_name=product_name,
+            user_id=user_id,
+            service_key=non_existent_key,
+            service_version=service_version,
+        )
+
+
+async def test_rpc_get_service_ports_permission_denied(
+    background_sync_task_mocked: None,
+    mocked_director_rest_api: MockRouter,
+    rpc_client: RabbitMQRPCClient,
+    product_name: ProductName,
+    user: dict[str, Any],
+    user_id: UserID,
+    other_user: dict[str, Any],
+    app: FastAPI,
+    create_fake_service_data: Callable,
+    services_db_tables_injector: Callable,
+):
+    """Tests that appropriate error is raised when user doesn't have permission"""
+    assert app
+
+    assert other_user["id"] != user_id
+    assert user["id"] == user_id
+
+    # Create a service with restricted access
+    restricted_service_key = "simcore/services/comp/restricted-service"
+    service_version = "1.0.0"
+
+    fake_restricted_service = create_fake_service_data(
+        restricted_service_key,
+        service_version,
+        team_access=None,
+        everyone_access=None,
+        product=product_name,
+    )
+
+    # Modify access rights to restrict access
+    # Remove user's access if present
+    if (
+        "access_rights" in fake_restricted_service
+        and user["primary_gid"] in fake_restricted_service["access_rights"]
+    ):
+        fake_restricted_service["access_rights"].pop(user["primary_gid"])
+
+    await services_db_tables_injector([fake_restricted_service])
+
+    # Attempt to access without permission
+    with pytest.raises(CatalogForbiddenError):
+        await catalog_rpc.get_service_ports(
+            rpc_client,
+            product_name=product_name,
+            user_id=other_user["id"],  # Use a different user ID
+            service_key=restricted_service_key,
+            service_version=service_version,
+        )
+
+
+async def test_rpc_get_service_ports_validation_error(
+    background_sync_task_mocked: None,
+    mocked_director_rest_api: MockRouter,
+    rpc_client: RabbitMQRPCClient,
+    product_name: ProductName,
+    user_id: UserID,
+    app: FastAPI,
+):
+    """Tests validation error handling for invalid service key format"""
+    assert app
+
+    # Test with invalid service key format
+    with pytest.raises(ValidationError, match="service_key"):
+        await catalog_rpc.get_service_ports(
+            rpc_client,
+            product_name=product_name,
+            user_id=user_id,
+            service_key="invalid-service-key-format",
+            service_version="1.0.0",
+        )

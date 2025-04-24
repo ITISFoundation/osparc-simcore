@@ -888,75 +888,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             // this one is different since it groups all new buttons in one new button
             this.__addTIPPlusButton();
             break;
-          default:
-            this.__addPlusButtons();
-            break;
         }
-      }
-    },
-
-    __addPlusButtons: function() {
-      const plusButtonConfig = osparc.store.Products.getInstance().getNewStudiesUiConfig();
-      if (plusButtonConfig) {
-        plusButtonConfig["resources"].forEach(newStudyData => {
-          if (newStudyData["resourceType"] === "study") {
-            this.__addEmptyStudyPlusButton(newStudyData);
-          } else if (newStudyData["resourceType"] === "service") {
-            this.__addNewStudyFromServiceButton(newStudyData);
-          }
-        });
-      }
-    },
-
-    __addEmptyStudyPlusButton: function(newStudyData) {
-      const mode = this._resourcesContainer.getMode();
-      const defTitle = this.tr("Empty") + " " + osparc.product.Utils.getStudyAlias({
-        firstUpperCase: true
-      });
-      const title = newStudyData["title"] || defTitle;
-      const desc = newStudyData["description"] || this.tr("Start with an empty study");
-      const newEmptyStudyBtn = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
-      newEmptyStudyBtn.setCardKey("new-study");
-      newEmptyStudyBtn.subscribeToFilterGroup("searchBarFilter");
-      osparc.utils.Utils.setIdToWidget(newEmptyStudyBtn, newStudyData["idToWidget"]);
-      newEmptyStudyBtn.addListener("tap", () => this.__newEmptyStudyBtnClicked(newStudyData["newStudyLabel"]));
-      this._resourcesContainer.addNonResourceCard(newEmptyStudyBtn);
-    },
-
-    __addNewStudyFromServiceButton: function(newStudyData) {
-      if ("expectedKey" in newStudyData) {
-        const key = newStudyData["expectedKey"];
-        const latestMetadata = osparc.store.Services.getLatest(key);
-        if (!latestMetadata) {
-          return;
-        }
-        const title = newStudyData.title + " " + osparc.service.Utils.extractVersionDisplay(latestMetadata);
-        const desc = newStudyData.description;
-        const mode = this._resourcesContainer.getMode();
-        const newStudyFromServiceButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
-        newStudyFromServiceButton.setCardKey("new-"+key);
-        if (newStudyData["idToWidget"]) {
-          osparc.utils.Utils.setIdToWidget(newStudyFromServiceButton, newStudyData["idToWidget"]);
-        }
-        newStudyFromServiceButton.addListener("tap", () => this.__newStudyFromServiceBtnClicked(latestMetadata["key"], latestMetadata["version"], newStudyData.newStudyLabel));
-        this._resourcesContainer.addNonResourceCard(newStudyFromServiceButton);
-      } else if ("myMostUsed" in newStudyData) {
-        const excludeFrontend = true;
-        const excludeDeprecated = true
-        osparc.store.Services.getServicesLatestList(excludeFrontend, excludeDeprecated)
-          .then(servicesList => {
-            osparc.service.Utils.sortObjectsBasedOn(servicesList, {
-              "sort": "hits",
-              "order": "down"
-            });
-            for (let i=0; i<newStudyData["myMostUsed"]; i++) {
-              const latestMetadata = servicesList[i];
-              const mode = this._resourcesContainer.getMode();
-              const newStudyFromServiceButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(latestMetadata["name"]) : new osparc.dashboard.ListButtonNew(latestMetadata["name"]);
-              newStudyFromServiceButton.addListener("tap", () => this.__newStudyFromServiceBtnClicked(latestMetadata["key"], latestMetadata["version"], latestMetadata["name"]));
-              this._resourcesContainer.addNonResourceCard(newStudyFromServiceButton);
-            }
-          });
       }
     },
 

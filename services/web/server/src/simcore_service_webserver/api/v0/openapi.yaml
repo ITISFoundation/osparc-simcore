@@ -2536,6 +2536,89 @@ paths:
       responses:
         '204':
           description: Successful Response
+  /v0/computations/-/iterations/latest:
+    get:
+      tags:
+      - computations
+      - projects
+      summary: List Computations Latest Iteration
+      operationId: list_computations_latest_iteration
+      parameters:
+      - name: order_by
+        in: query
+        required: false
+        schema:
+          type: string
+          contentMediaType: application/json
+          contentSchema: {}
+          default: '{"field":"created","direction":"asc"}'
+          title: Order By
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Offset
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_ComputationRunRestGet__'
+  /v0/computations/{project_id}/iterations/latest/tasks:
+    get:
+      tags:
+      - computations
+      - projects
+      summary: List Computations Latest Iteration Tasks
+      operationId: list_computations_latest_iteration_tasks
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Project Id
+      - name: order_by
+        in: query
+        required: false
+        schema:
+          type: string
+          contentMediaType: application/json
+          contentSchema: {}
+          default: '{"field":"start","direction":"asc"}'
+          title: Order By
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Offset
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_ComputationTaskRestGet__'
   /v0/projects/{project_id}:xport:
     post:
       tags:
@@ -8641,6 +8724,46 @@ components:
       - submitted
       - url
       title: ComputationGet
+    ComputationRunRestGet:
+      properties:
+        projectUuid:
+          type: string
+          format: uuid
+          title: Projectuuid
+        iteration:
+          type: integer
+          title: Iteration
+        state:
+          $ref: '#/components/schemas/RunningState'
+        info:
+          type: object
+          title: Info
+        submittedAt:
+          type: string
+          format: date-time
+          title: Submittedat
+        startedAt:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Startedat
+        endedAt:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Endedat
+      type: object
+      required:
+      - projectUuid
+      - iteration
+      - state
+      - info
+      - submittedAt
+      - startedAt
+      - endedAt
+      title: ComputationRunRestGet
     ComputationStart:
       properties:
         force_restart:
@@ -8674,6 +8797,46 @@ components:
       required:
       - pipeline_id
       title: ComputationStarted
+    ComputationTaskRestGet:
+      properties:
+        projectUuid:
+          type: string
+          format: uuid
+          title: Projectuuid
+        nodeId:
+          type: string
+          format: uuid
+          title: Nodeid
+        state:
+          $ref: '#/components/schemas/RunningState'
+        progress:
+          type: number
+          title: Progress
+        image:
+          type: object
+          title: Image
+        startedAt:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Startedat
+        endedAt:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Endedat
+      type: object
+      required:
+      - projectUuid
+      - nodeId
+      - state
+      - progress
+      - image
+      - startedAt
+      - endedAt
+      title: ComputationTaskRestGet
     ConnectServiceToPricingPlanBodyParams:
       properties:
         serviceKey:
@@ -10026,6 +10189,38 @@ components:
           title: Error
       type: object
       title: Envelope[list[ApiKeyGet]]
+    Envelope_list_ComputationRunRestGet__:
+      properties:
+        data:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/ComputationRunRestGet'
+            type: array
+          - type: 'null'
+          title: Data
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[list[ComputationRunRestGet]]
+    Envelope_list_ComputationTaskRestGet__:
+      properties:
+        data:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/ComputationTaskRestGet'
+            type: array
+          - type: 'null'
+          title: Data
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[list[ComputationTaskRestGet]]
     Envelope_list_DatasetMetaData__:
       properties:
         data:

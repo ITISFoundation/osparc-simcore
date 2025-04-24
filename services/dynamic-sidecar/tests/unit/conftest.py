@@ -72,7 +72,7 @@ async def test_client(
 @pytest.fixture
 async def ensure_external_volumes(
     app: FastAPI,
-) -> AsyncIterator[tuple[DockerVolume]]:
+) -> AsyncIterator[tuple[DockerVolume, ...]]:
     """ensures inputs and outputs volumes for the service are present
 
     Emulates creation of volumes by the directorv2 when it spawns the dynamic-sidecar service

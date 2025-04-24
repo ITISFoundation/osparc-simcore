@@ -2,7 +2,7 @@
 
 # Define arguments in the global scope
 ARG PYTHON_VERSION="3.11.9"
-ARG UV_VERSION="0.5"
+ARG UV_VERSION="0.6"
 FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv_build
 # we docker image is built based on debian
 FROM python:${PYTHON_VERSION}-slim-bookworm AS base
@@ -143,7 +143,8 @@ RUN chmod +x services/api-server/docker/*.sh
 
 HEALTHCHECK --interval=10s \
   --timeout=5s \
-  --start-period=5s \
+  --start-period=20s \
+  --start-interval=1s \
   --retries=5 \
   CMD ["python3", "services/api-server/docker/healthcheck.py", "http://localhost:8000/"]
 
