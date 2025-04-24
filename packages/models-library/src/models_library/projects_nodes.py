@@ -272,19 +272,19 @@ class Node(BaseModel):
             return None
         return v
 
-    @classmethod
-    def _convert_old_enum_name(cls, v) -> RunningState:
-        if v == "FAILURE":
-            return RunningState.FAILED
-        return RunningState(v)
-
     @field_validator("state", mode="before")
     @classmethod
     def _convert_from_enum(cls, v):
         if isinstance(v, str):
+
+            def _convert_old_enum_name(v) -> RunningState:
+                if v == "FAILURE":
+                    return RunningState.FAILED
+                return RunningState(v)
+
             # the old version of state was a enum of RunningState
-            running_state_value = cls._convert_old_enum_name(v)
-            return NodeState(currentStatus=running_state_value)
+            running_state_value = _convert_old_enum_name(v)
+            return NodeState.model_validate({"currentStatus": running_state_value})
         return v
 
     @staticmethod

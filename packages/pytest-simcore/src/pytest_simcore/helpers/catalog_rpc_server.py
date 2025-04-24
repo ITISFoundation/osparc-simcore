@@ -25,15 +25,17 @@ from models_library.services_regex import (
 )
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pydantic import NonNegativeInt, TypeAdapter
+from pydantic import NonNegativeInt, TypeAdapter, validate_call
+from pytest_mock import MockType
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 
 
 class CatalogRpcSideEffects:
     # pylint: disable=no-self-use
+    @validate_call(config={"arbitrary_types_allowed": True})
     async def list_services_paginated(
         self,
-        rpc_client: RabbitMQRPCClient,
+        rpc_client: RabbitMQRPCClient | MockType,
         *,
         product_name: ProductName,
         user_id: UserID,
@@ -58,9 +60,10 @@ class CatalogRpcSideEffects:
             offset=offset,
         )
 
+    @validate_call(config={"arbitrary_types_allowed": True})
     async def get_service(
         self,
-        rpc_client: RabbitMQRPCClient,
+        rpc_client: RabbitMQRPCClient | MockType,
         *,
         product_name: ProductName,
         user_id: UserID,
@@ -87,9 +90,10 @@ class CatalogRpcSideEffects:
 
         return got
 
+    @validate_call(config={"arbitrary_types_allowed": True})
     async def update_service(
         self,
-        rpc_client: RabbitMQRPCClient,
+        rpc_client: RabbitMQRPCClient | MockType,
         *,
         product_name: ProductName,
         user_id: UserID,
@@ -108,9 +112,10 @@ class CatalogRpcSideEffects:
         got.key = service_key
         return got.model_copy(update=update.model_dump(exclude_unset=True))
 
+    @validate_call(config={"arbitrary_types_allowed": True})
     async def list_my_service_history_paginated(
         self,
-        rpc_client: RabbitMQRPCClient,
+        rpc_client: RabbitMQRPCClient | MockType,
         *,
         product_name: ProductName,
         user_id: UserID,
@@ -138,9 +143,10 @@ class CatalogRpcSideEffects:
             offset=offset,
         )
 
+    @validate_call(config={"arbitrary_types_allowed": True})
     async def get_service_ports(
         self,
-        rpc_client: RabbitMQRPCClient,
+        rpc_client: RabbitMQRPCClient | MockType,
         *,
         product_name: ProductName,
         user_id: UserID,

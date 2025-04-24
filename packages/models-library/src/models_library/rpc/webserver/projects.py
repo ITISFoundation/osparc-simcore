@@ -29,8 +29,8 @@ class ProjectJobRpcGet(BaseModel):
     workbench: NodesDict
 
     # timestamps
-    creation_date: datetime
-    last_change_date: datetime
+    creation_at: datetime
+    modified_at: datetime
 
     # Specific to jobs
     job_parent_resource_name: str

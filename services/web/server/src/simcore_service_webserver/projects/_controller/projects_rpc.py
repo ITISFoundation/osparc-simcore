@@ -83,9 +83,9 @@ async def list_projects_marked_as_jobs(
             uuid=project.uuid,
             name=project.name,
             description=project.description,
-            workbench={},  # FIXME: this should be extracted
-            creation_date=project.creation_date,
-            last_change_date=project.last_change_date,
+            workbench=project.workbench,
+            creation_at=project.creation_date,
+            modified_at=project.last_change_date,
             job_parent_resource_name=project.job_parent_resource_name,
         )
         for project in projects

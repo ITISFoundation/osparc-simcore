@@ -120,8 +120,13 @@ async def test_rpc_client_list_my_projects_marked_as_jobs(
     assert page.meta.total == 1
     assert page.meta.offset == 0
     assert isinstance(page.data[0], ProjectJobRpcGet)
-    assert page.data[0].uuid == project_uuid
-    assert len(page.data[0].workbench) == len(user_project["workbench"])
+
+    project_job = page.data[0]
+    assert project_job.uuid == project_uuid
+    assert project_job.name == user_project["name"]
+    assert project_job.description == user_project["description"]
+
+    assert set(project_job.workbench.keys()) == set(user_project["workbench"].keys())
 
 
 @pytest.fixture
