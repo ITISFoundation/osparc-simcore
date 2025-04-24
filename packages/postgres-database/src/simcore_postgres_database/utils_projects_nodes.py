@@ -3,15 +3,19 @@ import uuid
 from dataclasses import dataclass
 from typing import Any
 
+import asyncpg.exceptions
 import sqlalchemy
-from aiopg.sa.connection import SAConnection
+import sqlalchemy.exc
 from common_library.errors_classes import OsparcErrorMixin
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.dialects.postgresql.asyncpg import AsyncAdapt_asyncpg_dbapi
 
+from ._protocols import DBConnection
 from .aiopg_errors import ForeignKeyViolation, UniqueViolation
 from .models.projects_node_to_pricing_unit import projects_node_to_pricing_unit
 from .models.projects_nodes import projects_nodes
+from .utils_results import maybe_await
 
 
 #
@@ -80,7 +84,7 @@ class ProjectNodesRepo:
 
     async def add(
         self,
-        connection: SAConnection,
+        connection: DBConnection,
         *,
         nodes: list[ProjectNodeCreate],
     ) -> list[ProjectNode]:
@@ -102,7 +106,7 @@ class ProjectNodesRepo:
                 [
                     {
                         "project_uuid": f"{self.project_uuid}",
-                        **node.model_dump(exclude_unset=True),
+                        **node.model_dump(exclude_unset=True, mode="json"),
                     }
                     for node in nodes
                 ]
@@ -119,7 +123,7 @@ class ProjectNodesRepo:
         try:
             result = await connection.execute(insert_stmt)
             assert result  # nosec
-            rows = await result.fetchall()
+            rows = await maybe_await(result.fetchall())
             assert rows is not None  # nosec
             return [ProjectNode.model_validate(r) for r in rows]
         except ForeignKeyViolation as exc:
@@ -130,8 +134,26 @@ class ProjectNodesRepo:
         except UniqueViolation as exc:
             # this happens if the node already exists on creation
             raise ProjectNodesDuplicateNodeError from exc
+        except sqlalchemy.exc.IntegrityError as exc:
+            # this happens if the node already exists on creation
+            orig_error = exc.orig
+            if isinstance(orig_error, AsyncAdapt_asyncpg_dbapi.IntegrityError):
+                assert hasattr(orig_error, "pgcode")  # nosec
+                if (
+                    orig_error.pgcode
+                    == asyncpg.exceptions.UniqueViolationError.sqlstate
+                ):
+                    raise ProjectNodesDuplicateNodeError from exc
+                if (
+                    orig_error.pgcode
+                    == asyncpg.exceptions.ForeignKeyViolationError.sqlstate
+                ):
+                    raise ProjectNodesProjectNotFoundError(
+                        project_uuid=self.project_uuid
+                    ) from exc
+            raise
 
-    async def list(self, connection: SAConnection) -> list[ProjectNode]:
+    async def list(self, connection: DBConnection) -> list[ProjectNode]:
         """list the nodes in the current project
 
         NOTE: Do not use this in an asyncio.gather call as this will fail!
@@ -145,11 +167,11 @@ class ProjectNodesRepo:
         ).where(projects_nodes.c.project_uuid == f"{self.project_uuid}")
         result = await connection.execute(list_stmt)
         assert result  # nosec
-        rows = await result.fetchall()
+        rows = await maybe_await(result.fetchall())
         assert rows is not None  # nosec
         return [ProjectNode.model_validate(row) for row in rows]
 
-    async def get(self, connection: SAConnection, *, node_id: uuid.UUID) -> ProjectNode:
+    async def get(self, connection: DBConnection, *, node_id: uuid.UUID) -> ProjectNode:
         """get a node in the current project
 
         NOTE: Do not use this in an asyncio.gather call as this will fail!
@@ -167,7 +189,7 @@ class ProjectNodesRepo:
 
         result = await connection.execute(get_stmt)
         assert result  # nosec
-        row = await result.first()
+        row = await maybe_await(result.first())
         if row is None:
             raise ProjectNodesNodeNotFoundError(
                 project_uuid=self.project_uuid, node_id=node_id
@@ -176,7 +198,7 @@ class ProjectNodesRepo:
         return ProjectNode.model_validate(row)
 
     async def update(
-        self, connection: SAConnection, *, node_id: uuid.UUID, **values
+        self, connection: DBConnection, *, node_id: uuid.UUID, **values
     ) -> ProjectNode:
         """update a node in the current project
 
@@ -197,7 +219,7 @@ class ProjectNodesRepo:
             )
         )
         result = await connection.execute(update_stmt)
-        row = await result.first()
+        row = await maybe_await(result.first())
         if not row:
             raise ProjectNodesNodeNotFoundError(
                 project_uuid=self.project_uuid, node_id=node_id
@@ -205,7 +227,7 @@ class ProjectNodesRepo:
         assert row  # nosec
         return ProjectNode.model_validate(row)
 
-    async def delete(self, connection: SAConnection, *, node_id: uuid.UUID) -> None:
+    async def delete(self, connection: DBConnection, *, node_id: uuid.UUID) -> None:
         """delete a node in the current project
 
         NOTE: Do not use this in an asyncio.gather call as this will fail!
@@ -220,7 +242,7 @@ class ProjectNodesRepo:
         await connection.execute(delete_stmt)
 
     async def get_project_node_pricing_unit_id(
-        self, connection: SAConnection, *, node_uuid: uuid.UUID
+        self, connection: DBConnection, *, node_uuid: uuid.UUID
     ) -> tuple | None:
         """get a pricing unit that is connected to the project node or None if there is non connected
 
@@ -243,14 +265,14 @@ class ProjectNodesRepo:
                 & (projects_nodes.c.node_id == f"{node_uuid}")
             )
         )
-        row = await result.fetchone()
+        row = await maybe_await(result.fetchone())
         if row:
             return (row[0], row[1])
         return None
 
     async def connect_pricing_unit_to_project_node(
         self,
-        connection: SAConnection,
+        connection: DBConnection,
         *,
         node_uuid: uuid.UUID,
         pricing_plan_id: int,
@@ -285,7 +307,7 @@ class ProjectNodesRepo:
 
     @staticmethod
     async def get_project_id_from_node_id(
-        connection: SAConnection, *, node_id: uuid.UUID
+        connection: DBConnection, *, node_id: uuid.UUID
     ) -> uuid.UUID:
         """
         WARNING: this function should not be used! it has a flaw! a Node ID is not unique and there can
@@ -299,9 +321,9 @@ class ProjectNodesRepo:
             projects_nodes.c.node_id == f"{node_id}"
         )
         result = await connection.execute(get_stmt)
-        project_ids = await result.fetchall()
+        project_ids = await maybe_await(result.fetchall())
         if not project_ids:
             raise ProjectNodesNodeNotFoundError(project_uuid=None, node_id=node_id)
         if len(project_ids) > 1:
             raise ProjectNodesNonUniqueNodeFoundError(node_id=node_id)
-        return uuid.UUID(project_ids[0][projects_nodes.c.project_uuid])
+        return uuid.UUID(project_ids[0].project_uuid)

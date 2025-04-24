@@ -215,7 +215,7 @@ async def asyncpg_connection(
     asyncpg_engine: AsyncEngine,
 ) -> AsyncIterator[AsyncConnection]:
     """Returns an asyncpg connection from an engine to a fully furnished and ready pg database"""
-    async with asyncpg_engine.begin() as conn:
+    async with asyncpg_engine.connect() as conn:
         yield conn
 
 
@@ -230,7 +230,9 @@ async def connection_factory(
         async with aiopg_engine.acquire() as conn:
             yield conn
     else:
-        async with asyncpg_engine.begin() as conn:
+        async with asyncpg_engine.connect() as conn:
+            # NOTE: this is the default in aiopg so we use the same here to make the tests run
+            await conn.execution_options(isolation_level="AUTOCOMMIT")
             yield conn
 
 
@@ -270,7 +272,9 @@ def create_fake_user(sync_engine: sqlalchemy.engine.Engine) -> Iterator[Callable
 
     created_ids = []
 
-    async def _creator(conn, group: RowProxy | None = None, **overrides) -> RowProxy:
+    async def _creator(
+        conn: SAConnection, group: RowProxy | None = None, **overrides
+    ) -> RowProxy:
         user_id = await conn.scalar(
             users.insert().values(**random_user(**overrides)).returning(users.c.id)
         )
