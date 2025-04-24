@@ -6,10 +6,10 @@ from dataclasses import dataclass, fields
 from typing import Any
 
 import sqlalchemy as sa
-from aiopg.sa.connection import SAConnection
-from aiopg.sa.result import RowProxy
+from common_library.async_tools import maybe_await
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
+from ._protocols import DBConnection
 from .models.groups import GroupType, groups, user_to_groups
 from .models.groups_extra_properties import groups_extra_properties
 from .utils_models import FromRowMixin
@@ -99,24 +99,6 @@ class GroupExtraPropertiesRepo:
         )
 
     @staticmethod
-    async def get(
-        connection: SAConnection, *, gid: int, product_name: str
-    ) -> GroupExtraProperties:
-        warnings.warn(
-            _WARNING_FMSG.format("get", "get_v2"),
-            DeprecationWarning,
-            stacklevel=1,
-        )
-
-        query = GroupExtraPropertiesRepo._get_stmt(gid, product_name)
-        result = await connection.execute(query)
-        assert result  # nosec
-        if row := await result.first():
-            return GroupExtraProperties.from_row_proxy(row)
-        msg = f"Properties for group {gid} not found"
-        raise GroupExtraPropertiesNotFoundError(msg)
-
-    @staticmethod
     async def get_v2(
         engine: AsyncEngine,
         connection: AsyncConnection | None = None,
@@ -173,7 +155,7 @@ class GroupExtraPropertiesRepo:
 
     @staticmethod
     async def get_aggregated_properties_for_user(
-        connection: SAConnection,
+        connection: DBConnection,
         *,
         user_id: int,
         product_name: str,
@@ -196,8 +178,8 @@ class GroupExtraPropertiesRepo:
         )
         assert result  # nosec
 
-        rows: list[RowProxy] | None = await result.fetchall()
-        assert rows is not None  # nosec
+        rows = await maybe_await(result.fetchall())
+        assert isinstance(rows, list)  # nosec
 
         return GroupExtraPropertiesRepo._aggregate(
             rows, user_id, product_name, GroupExtraProperties.from_row_proxy
