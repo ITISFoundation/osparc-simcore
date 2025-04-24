@@ -20,6 +20,7 @@ from unittest import mock
 import distributed
 import fsspec
 import pytest
+from common_library.json_serialization import json_dumps
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.errors import ServiceRuntimeError
 from dask_task_models_library.container_tasks.events import (
@@ -363,7 +364,14 @@ def sleeper_task(
         log_file_url=log_file_url,
         expected_output_data=expected_output_data,
         expected_logs=[
-            '{"input_1": 23, "input_23": "a string input", "the_input_43": 15.0, "the_bool_input_54": false}',
+            json_dumps(
+                {
+                    "input_1": 23,
+                    "input_23": "a string input",
+                    "the_input_43": 15.0,
+                    "the_bool_input_54": False,
+                }
+            ),
             "This is the file contents of file #'001'",
             "This is the file contents of file #'002'",
             "This is the file contents of file #'003'",

@@ -181,7 +181,7 @@ def test_create_deploy_cluster_stack_script(
         "WORKERS_EC2_INSTANCES_CUSTOM_TAGS",
     ]
     assert all(
-        re.search(rf"{i}=\'{{(\".+\":\s\".*\")+}}\'", deploy_script)
+        re.search(rf"{i}=\'{{(\".+\":\s*\".*\")+}}\'", deploy_script)
         for i in dict_settings
     )
 
