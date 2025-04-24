@@ -277,6 +277,14 @@ async def test_async_jobs_cancel(
         job_id_data=job_id_data,
     )
 
+    jobs = await async_jobs.list_jobs(
+        storage_rabbitmq_rpc_client,
+        rpc_namespace=STORAGE_RPC_NAMESPACE,
+        filter_="",  # currently not used
+        job_id_data=job_id_data,
+    )
+    assert async_job_get.job_id not in [job.job_id for job in jobs]
+
     with pytest.raises(JobAbortedError):
         await async_jobs.result(
             storage_rabbitmq_rpc_client,

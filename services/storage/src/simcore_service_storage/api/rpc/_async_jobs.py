@@ -36,7 +36,7 @@ async def cancel(app: FastAPI, job_id: AsyncJobId, job_id_data: AsyncJobNameData
     assert app  # nosec
     assert job_id_data  # nosec
     try:
-        await get_celery_client(app).abort_task(
+        await get_celery_client(app).cancel_task(
             task_context=job_id_data.model_dump(),
             task_uuid=job_id,
         )
