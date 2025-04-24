@@ -354,12 +354,12 @@ def mocked_webserver_rpc_api(
         "mark_project_as_job": mocker.patch.object(
             projects_rpc,
             "mark_project_as_job",
-            side_effects.mark_project_as_job,
+            side_effect=side_effects.mark_project_as_job,
         ),
         "list_projects_marked_as_jobs": mocker.patch.object(
             projects_rpc,
             "list_projects_marked_as_jobs",
-            side_effects.list_projects_marked_as_jobs,
+            side_effect=side_effects.list_projects_marked_as_jobs,
         ),
     }
 

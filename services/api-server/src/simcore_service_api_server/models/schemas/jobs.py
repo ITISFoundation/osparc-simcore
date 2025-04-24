@@ -27,7 +27,6 @@ from pydantic import (
     ValidationInfo,
     field_validator,
 )
-from pydantic.types import JsonDict
 from servicelib.logging_utils import LogLevelInt, LogMessageStr
 from starlette.datastructures import Headers
 
@@ -238,7 +237,7 @@ class JobMetadata(BaseModel):
 #     "jobs/c2789bd2-7385-4e00-91d3-2f100df41185"
 
 
-class JobModel(BaseModel):
+class Job(BaseModel):
     id: JobID
     name: RelativeResourceName
 
@@ -250,41 +249,6 @@ class JobModel(BaseModel):
         ..., description="Runner that executes job"
     )
 
-    @staticmethod
-    def _update_json_schema_extra(schema: JsonDict) -> None:
-        schema.udpate(
-            {
-                "examples": [
-                    {
-                        "id": "f622946d-fd29-35b9-a193-abdd1095167c",
-                        "name": "solvers/isolve/releases/1.3.4/jobs/f622946d-fd29-35b9-a193-abdd1095167c",
-                        "runner_name": "solvers/isolve/releases/1.3.4",
-                        "inputs_checksum": "12345",
-                        "created_at": "2021-01-22T23:59:52.322176",
-                    },
-                ]
-            }
-        )
-
-    model_config = ConfigDict(
-        json_schema_extra=_update_json_schema_extra,
-    )
-
-    @staticmethod
-    def compose_resource_name(
-        parent_name: RelativeResourceName, job_id: UUID
-    ) -> RelativeResourceName:
-        # CAREFUL, this is not guarantee a UNIQUE identifier since the resource
-        # could have some alias entrypoints and the wrong parent_name might be introduced here
-        collection_or_resource_ids = [
-            *split_resource_name(parent_name),
-            "jobs",
-            f"{job_id}",
-        ]
-        return compose_resource_name(*collection_or_resource_ids)
-
-
-class Job(JobModel):
     # Get links to other resources
     url: Annotated[HttpUrl, UriSchema()] | None = Field(
         ..., description="Link to get this resource (self)"
@@ -320,11 +284,6 @@ class Job(JobModel):
             raise ValueError(msg)
         return v
 
-    @property
-    def resource_name(self) -> str:
-        """Relative Resource Name"""
-        return self.name
-
     # constructors ------
 
     @classmethod
@@ -352,6 +311,26 @@ class Job(JobModel):
             parent_name=solver_or_program_name,
             inputs_checksum=inputs.compute_checksum(),
         )
+
+    @classmethod
+    def compose_resource_name(
+        cls, parent_name: RelativeResourceName, job_id: UUID
+    ) -> RelativeResourceName:
+        assert "jobs" not in parent_name  # nosec
+
+        # CAREFUL, this is not guarantee a UNIQUE identifier since the resource
+        # could have some alias entrypoints and the wrong parent_name might be introduced here
+        collection_or_resource_ids = [
+            *split_resource_name(parent_name),
+            "jobs",
+            f"{job_id}",
+        ]
+        return compose_resource_name(*collection_or_resource_ids)
+
+    @property
+    def resource_name(self) -> str:
+        """Relative Resource Name"""
+        return self.name
 
 
 def get_url(

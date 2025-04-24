@@ -8,7 +8,10 @@
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.rest_pagination import PageOffsetInt
-from models_library.rpc.webserver.projects import PageRpcProjectJobRpcGet
+from models_library.rpc.webserver.projects import (
+    PageRpcProjectJobRpcGet,
+    ProjectJobRpcGet,
+)
 from models_library.rpc_pagination import (
     DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     PageLimitInt,
@@ -63,10 +66,10 @@ class WebserverRpcSideEffects:
         if job_parent_resource_name_filter:
             assert not job_parent_resource_name_filter.startswith("/")
 
-        items = PageRpcProjectJobRpcGet.model_json_schema()["examples"]
+        items = ProjectJobRpcGet.model_json_schema()["examples"]
 
         return PageRpcProjectJobRpcGet.create(
-            items[offset, : offset + limit],
+            items[offset : offset + limit],
             total=len(items),
             limit=limit,
             offset=offset,

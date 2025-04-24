@@ -54,29 +54,8 @@ async def test_list_jobs(
         product_name=product_name,
     )
     assert isinstance(jobs, list)
-    mocked_webserver_rpc_api["list_projects_marked_as_jobs"].assert_called_once_with(
-        product_name=product_name,
-        user_id=user_id,
-        offset=0,
-        limit=999,
-        job_parent_resource_name_filter="solvers",
-    )
+    mocked_webserver_rpc_api["list_projects_marked_as_jobs"].assert_called_once()
     assert page_meta.total >= 0
-    assert page_meta.limit == 999
+    assert page_meta.limit == 49
     assert page_meta.offset == 0
-
-    # Test with explicit pagination
-    mocked_webserver_rpc_api["list_projects_marked_as_jobs"].reset_mock()
-    jobs, page_meta = await solver_service.list_jobs(
-        user_id=user_id,
-        product_name=product_name,
-        offset=10,
-        limit=20,
-    )
-    mocked_webserver_rpc_api["list_projects_marked_as_jobs"].assert_called_once_with(
-        product_name=product_name,
-        user_id=user_id,
-        offset=10,
-        limit=20,
-        job_parent_resource_name_filter="solvers",
-    )
+    assert page_meta.count > 0

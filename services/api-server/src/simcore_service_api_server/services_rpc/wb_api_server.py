@@ -219,7 +219,6 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             job_parent_resource_name=job_parent_resource_name,
         )
 
-    @_exception_mapper(rpc_exception_map={})
     async def list_projects_marked_as_jobs(
         self,
         *,

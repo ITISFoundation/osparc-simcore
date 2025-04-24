@@ -17,7 +17,7 @@ from models_library.users import UserID
 from packaging.version import Version
 
 from .api.dependencies.webserver_rpc import get_wb_api_rpc_client
-from .models.schemas.jobs import JobInputs, JobModel
+from .models.schemas.jobs import Job, JobInputs
 from .models.schemas.solvers import Solver, SolverKeyId
 from .services_http.solver_job_models_converters import (
     create_job_inputs_from_node_inputs,
@@ -97,7 +97,7 @@ class SolverService:
         product_name: ProductName,
         offset: PageOffsetInt = 0,
         limit: PageLimitInt = DEFAULT_PAGINATION_LIMIT,
-    ) -> tuple[list[JobModel], PageMetaInfoLimitOffset]:
+    ) -> tuple[list[Job], PageMetaInfoLimitOffset]:
         """Lists all solver jobs for a user with pagination"""
 
         # NOTE: perhaps we should get comp_tasks instead of projects! or a combinatino of both?
@@ -111,27 +111,32 @@ class SolverService:
             job_parent_resource_name_filter="solvers",  # TODO: project shouldr eturn parent resource name and workbench
         )
 
-        jobs: list[JobModel] = []
+        jobs: list[Job] = []
 
-        for prj in projects_page.data:
+        for project_job in projects_page.data:
 
-            assert len(prj.workbench) == 1, "Expected only one solver node in workbench"
+            assert (
+                len(project_job.workbench) == 1
+            ), "Expected only one solver node in workbench"
 
-            solver_node: Node = next(iter(prj.workbench.values()))
+            solver_node: Node = next(iter(project_job.workbench.values()))
             job_inputs: JobInputs = create_job_inputs_from_node_inputs(
                 inputs=solver_node.inputs or {}
             )
-            assert prj.job_parent_resource_name  # nosec
+            assert project_job.job_parent_resource_name  # nosec
 
             jobs.append(
-                JobModel(
-                    id=prj.uuid,
-                    name=JobModel.compose_resource_name(
-                        prj.job_parent_resource_name, prj.uuid
+                Job(
+                    id=project_job.uuid,
+                    name=Job.compose_resource_name(
+                        project_job.job_parent_resource_name, project_job.uuid
                     ),
                     inputs_checksum=job_inputs.compute_checksum(),
-                    created_at=prj.creation_date,
-                    runner_name=prj.job_parent_resource_name,
+                    created_at=project_job.created_at,
+                    runner_name=project_job.job_parent_resource_name,
+                    url=None,
+                    runner_url=None,
+                    outputs_url=None,
                 )
             )
 

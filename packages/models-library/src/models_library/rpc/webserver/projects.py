@@ -29,7 +29,7 @@ class ProjectJobRpcGet(BaseModel):
     workbench: NodesDict
 
     # timestamps
-    creation_at: datetime
+    created_at: datetime
     modified_at: datetime
 
     # Specific to jobs
@@ -46,14 +46,13 @@ class ProjectJobRpcGet(BaseModel):
                         "name": "My project",
                         "description": "My project description",
                         "workbench": {f"{uuid4()}": n for n in nodes_examples[2:3]},
-                        "creation_at": "2023-01-01T00:00:00Z",
+                        "created_at": "2023-01-01T00:00:00Z",
                         "modified_at": "2023-01-01T00:00:00Z",
-                        "job_parent_resource_name": "solvers/foo/release/1.2.3",
+                        "job_parent_resource_name": "solvers/slv_123/release/1.2.3",
                     },
                 ]
             }
         )
-
 
     model_config = ConfigDict(
         extra="forbid",
