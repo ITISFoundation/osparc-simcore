@@ -3,6 +3,7 @@ from typing import Annotated
 
 from fastapi import Depends
 from models_library.api_schemas_catalog.services import LatestServiceGet, ServiceGetV2
+from models_library.api_schemas_catalog.services_ports import ServicePortGet
 from models_library.products import ProductName
 from models_library.rest_pagination import (
     DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
@@ -107,6 +108,36 @@ class CatalogService:
     ) -> ServiceGetV2:
 
         return await catalog_rpc.get_service(
+            self._client,
+            product_name=product_name,
+            user_id=user_id,
+            service_key=name,
+            service_version=version,
+        )
+
+    @_exception_mapper(
+        rpc_exception_map={
+            CatalogItemNotFoundError: ProgramOrSolverOrStudyNotFoundError,
+            CatalogForbiddenError: ServiceForbiddenAccessError,
+            ValidationError: InvalidInputError,
+        }
+    )
+    async def get_service_ports(
+        self,
+        *,
+        product_name: ProductName,
+        user_id: UserID,
+        name: ServiceKey,
+        version: ServiceVersion,
+    ) -> list[ServicePortGet]:
+        """Gets service ports (inputs and outputs) for a specific service version
+
+        Raises:
+            ProgramOrSolverOrStudyNotFoundError: service not found in catalog
+            ServiceForbiddenAccessError: no access rights to read this service
+            InvalidInputError: invalid input parameters
+        """
+        return await catalog_rpc.get_service_ports(
             self._client,
             product_name=product_name,
             user_id=user_id,

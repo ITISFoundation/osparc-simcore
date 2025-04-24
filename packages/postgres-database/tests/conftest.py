@@ -38,6 +38,7 @@ from simcore_postgres_database.webserver_models import (
     user_to_groups,
     users,
 )
+from sqlalchemy.engine.row import Row
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 pytest_plugins = [
@@ -324,18 +325,26 @@ async def create_fake_projects_node(
 
 
 @pytest.fixture
-def create_fake_product(
-    connection: aiopg.sa.connection.SAConnection,
-) -> Callable[..., Awaitable[RowProxy]]:
-    async def _creator(product_name: str) -> RowProxy:
-        result = await connection.execute(
-            sa.insert(products)
-            .values(name=product_name, host_regex=".*")
-            .returning(sa.literal_column("*"))
-        )
-        assert result
-        row = await result.first()
-        assert row
+async def create_fake_product(
+    asyncpg_engine: AsyncEngine,
+) -> AsyncIterator[Callable[[str], Awaitable[Row]]]:
+    created_product_names = set()
+
+    async def _creator(product_name: str) -> Row:
+        async with asyncpg_engine.begin() as connection:
+            result = await connection.execute(
+                sa.insert(products)
+                .values(name=product_name, host_regex=".*")
+                .returning(sa.literal_column("*"))
+            )
+            assert result
+            row = result.one()
+        created_product_names.add(row.name)
         return row
 
-    return _creator
+    yield _creator
+
+    async with asyncpg_engine.begin() as conn:
+        await conn.execute(
+            products.delete().where(products.c.name.in_(created_product_names))
+        )

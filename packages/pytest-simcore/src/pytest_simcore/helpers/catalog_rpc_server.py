@@ -10,6 +10,7 @@ from models_library.api_schemas_catalog.services import (
     ServiceGetV2,
     ServiceListFilters,
 )
+from models_library.api_schemas_catalog.services_ports import ServicePortGet
 from models_library.api_schemas_webserver.catalog import (
     CatalogServiceUpdate,
 )
@@ -135,4 +136,23 @@ class CatalogRpcSideEffects:
             total=total_count,
             limit=limit,
             offset=offset,
+        )
+
+    async def get_service_ports(
+        self,
+        rpc_client: RabbitMQRPCClient,
+        *,
+        product_name: ProductName,
+        user_id: UserID,
+        service_key: ServiceKey,
+        service_version: ServiceVersion,
+    ) -> list[ServicePortGet]:
+        assert rpc_client
+        assert product_name
+        assert user_id
+        assert service_key
+        assert service_version
+
+        return TypeAdapter(list[ServicePortGet]).validate_python(
+            ServicePortGet.model_json_schema()["examples"],
         )

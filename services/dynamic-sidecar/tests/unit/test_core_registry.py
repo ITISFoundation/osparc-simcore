@@ -77,7 +77,9 @@ def mock_registry_settings_with_auth(
     monkeypatch.setenv(
         "DY_DEPLOYMENT_REGISTRY_SETTINGS",
         _get_registry_config(
-            url=docker_registry, user="testuser", password="testpassword"  # noqa: S106
+            url=docker_registry,
+            user="testuser",
+            password="testpassword",  # noqa: S106
         ),
     )
 
