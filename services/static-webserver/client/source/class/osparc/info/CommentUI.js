@@ -84,7 +84,7 @@ qx.Class.define("osparc.info.CommentUI", {
           break;
         case "comment-content":
           control = new osparc.ui.markdown.Markdown().set({
-            backgroundColor: "background-main-2",
+            // backgroundColor: "background-main-2",
             decorator: "rounded",
             noMargin: true,
             paddingLeft: 8,
