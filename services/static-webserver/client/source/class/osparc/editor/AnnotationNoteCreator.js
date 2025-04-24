@@ -92,12 +92,11 @@ qx.Class.define("osparc.editor.AnnotationNoteCreator", {
             recipientsManager.setCaption("Recipient");
             recipientsManager.getActionButton().setLabel(this.tr("Add"));
             recipientsManager.addListener("addCollaborators", e => {
-              const {
-                selectedGids,
-              } = e.getData();
+              const data = e.getData();
+              const recipientGids = data["selectedGids"];
 
-              if (selectedGids && selectedGids.length) {
-                const recipientGid = parseInt(selectedGids[0]);
+              if (recipientGids && recipientGids.length) {
+                const recipientGid = parseInt(recipientGids[0]);
                 this.__setRecipientGid(recipientGid);
                 recipientsManager.close();
 
@@ -107,11 +106,14 @@ qx.Class.define("osparc.editor.AnnotationNoteCreator", {
                   proposeSharing.push(recipientGid);
                 }
                 if (proposeSharing.length) {
-                  console.log("share?", proposeSharing);
-                  const collaboratorsManager = new osparc.share.NewCollaboratorsManager(currentStudy, false);
+                  const collaboratorsManager = new osparc.share.NewCollaboratorsManager(currentStudy, false, true, proposeSharing);
                   collaboratorsManager.addListener("addCollaborators", ev => {
-                    const data = ev.getData();
-                    console.log("share asd", data);
+                    const {
+                      selectedGids,
+                      newAccessRights,
+                    } = e.getData();
+                    console.log("addCollaborators", selectedGids, newAccessRights);
+                    // this._addEditors(selectedGids, newAccessRights);
                     collaboratorsManager.close();
                   });
                 }

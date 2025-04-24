@@ -8,7 +8,7 @@
 qx.Class.define("osparc.share.NewCollaboratorsManager", {
   extend: osparc.ui.window.SingletonWindow,
 
-  construct: function(resourceData, showOrganizations = true, showAccessRights = true) {
+  construct: function(resourceData, showOrganizations = true, showAccessRights = true, preselectCollaboratorGids = []) {
     this.base(arguments, "newCollaboratorsManager", this.tr("New collaborators"));
 
     this.set({
@@ -37,6 +37,16 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
     this.__shareWithEmailEnabled = false;
     if (this.__resourceData["resourceType"] === "study") {
       this.__shareWithEmailEnabled = osparc.utils.DisabledPlugins.isShareWithEmailEnabled();
+    }
+
+    if (preselectCollaboratorGids && preselectCollaboratorGids.length) {
+      preselectCollaboratorGids.forEach(preselectCollaboratorGid => {
+        const potentialCollaboratorList = this.getChildControl("potential-collaborators-list");
+        const found = potentialCollaboratorList.getChildren().find(c => "groupId" in c && c["groupId"] === preselectCollaboratorGid)
+        if (found) {
+          found.setValue(true);
+        }
+      });
     }
 
     this.center();
