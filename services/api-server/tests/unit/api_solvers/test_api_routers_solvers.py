@@ -63,7 +63,7 @@ async def test_list_solvers(
 
 
 async def test_list_solver_ports(
-    mocked_rpc_catalog_service_api: dict,
+    mocked_catalog_rpc_api: dict,
     client: httpx.AsyncClient,
     auth: httpx.BasicAuth,
 ):
@@ -102,7 +102,7 @@ async def test_list_solver_ports(
 
 async def test_list_solvers_with_mocked_catalog(
     client: httpx.AsyncClient,
-    mocked_rpc_catalog_service_api: dict,
+    mocked_catalog_rpc_api: dict,
     auth: httpx.BasicAuth,
 ):
     response = await client.get(f"/{API_VTAG}/solvers", auth=auth)
@@ -111,7 +111,7 @@ async def test_list_solvers_with_mocked_catalog(
 
 async def test_list_releases_with_mocked_catalog(
     client: httpx.AsyncClient,
-    mocked_rpc_catalog_service_api: dict,
+    mocked_catalog_rpc_api: dict,
     auth: httpx.BasicAuth,
 ):
     response = await client.get(f"/{API_VTAG}/solvers/releases", auth=auth)
@@ -120,7 +120,7 @@ async def test_list_releases_with_mocked_catalog(
 
 async def test_list_solver_page_with_mocked_catalog(
     client: httpx.AsyncClient,
-    mocked_rpc_catalog_service_api: dict,
+    mocked_catalog_rpc_api: dict,
     auth: httpx.BasicAuth,
 ):
     response = await client.get(f"/{API_VTAG}/solvers/page", auth=auth)
@@ -130,7 +130,7 @@ async def test_list_solver_page_with_mocked_catalog(
 
 async def test_list_solver_releases_page_with_mocked_catalog(
     client: httpx.AsyncClient,
-    mocked_rpc_catalog_service_api: dict,
+    mocked_catalog_rpc_api: dict,
     auth: httpx.BasicAuth,
 ):
     solver_key = "simcore/services/comp/itis/sleeper"
@@ -143,7 +143,7 @@ async def test_list_solver_releases_page_with_mocked_catalog(
 
 async def test_list_solver_releases_with_mocked_catalog(
     client: httpx.AsyncClient,
-    mocked_rpc_catalog_service_api: dict,
+    mocked_catalog_rpc_api: dict,
     auth: httpx.BasicAuth,
 ):
     solver_key = "simcore/services/comp/itis/sleeper"
@@ -153,7 +153,7 @@ async def test_list_solver_releases_with_mocked_catalog(
 
 async def test_list_solver_ports_with_mocked_catalog(
     client: httpx.AsyncClient,
-    mocked_rpc_catalog_service_api: dict,
+    mocked_catalog_rpc_api: dict,
     auth: httpx.BasicAuth,
 ):
     solver_key = "simcore/services/comp/itis/sleeper"
