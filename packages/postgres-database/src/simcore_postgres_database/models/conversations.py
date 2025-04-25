@@ -1,0 +1,76 @@
+import enum
+
+import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import UUID
+
+from ._common import RefActions, column_created_datetime, column_modified_datetime
+from .base import metadata
+from .projects import projects
+from .users import users
+
+
+class ConversationType(enum.Enum):
+    PROJECT_STATIC = "PROJECT_STATIC"  # Static conversation for the project
+    PROJECT_ANNOTATION = "PROJECT_ANNOTATION"  # Something like sticky note, can be located anywhere in the pipeline UI
+
+
+conversations = sa.Table(
+    "conversations",
+    metadata,
+    sa.Column(
+        "conversation_id",
+        UUID(as_uuid=True),
+        nullable=False,
+        primary_key=True,
+        server_default=sa.text("gen_random_uuid()"),
+    ),
+    sa.Column(
+        "name",
+        sa.String,
+        nullable=False,
+        doc="project reference for this table",
+    ),
+    sa.Column(
+        "project_uuid",
+        sa.String,
+        sa.ForeignKey(
+            projects.c.uuid,
+            name="fk_projects_comments_project_uuid",
+            ondelete=RefActions.CASCADE,
+            onupdate=RefActions.CASCADE,
+        ),
+        index=True,
+        nullable=True,
+    ),
+    # NOTE: if the user gets deleted, it sets to null which should be interpreted as "unknown" user
+    sa.Column(
+        "user_id",
+        sa.BigInteger,
+        sa.ForeignKey(
+            users.c.id,
+            name="fk_projects_comments_user_id",
+            ondelete=RefActions.SET_NULL,
+        ),
+        doc="user who created the comment",
+        nullable=True,
+    ),
+    sa.Column(
+        "type",
+        sa.Enum(ConversationType),
+        doc="Classification of the node associated to this task",
+    ),
+    sa.Column(
+        "product_name",
+        sa.String,
+        sa.ForeignKey(
+            "products.name",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
+            name="fk_resource_tracker_license_packages_product_name",
+        ),
+        nullable=False,
+        doc="Product name identifier. If None, then the item is not exposed",
+    ),
+    column_created_datetime(timezone=True),
+    column_modified_datetime(timezone=True),
+)
