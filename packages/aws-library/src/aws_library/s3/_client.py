@@ -88,16 +88,16 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         session_client = None
         exit_stack = contextlib.AsyncExitStack()
         try:
+            config = Config(
+                signature_version="s3v4", request_checksum_calculation="when_required"
+            )
             session_client = session.client(  # type: ignore[call-overload]
                 "s3",
                 endpoint_url=f"{settings.S3_ENDPOINT}",
                 aws_access_key_id=settings.S3_ACCESS_KEY,
                 aws_secret_access_key=settings.S3_SECRET_KEY,
                 region_name=settings.S3_REGION,
-                config=Config(
-                    signature_version="s3v4",
-                    request_checksum_calculation="when_required",
-                ),
+                config=config,
             )
             assert isinstance(session_client, ClientCreatorContext)  # nosec
 

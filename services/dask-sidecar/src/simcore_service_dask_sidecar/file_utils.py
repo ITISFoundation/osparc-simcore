@@ -53,13 +53,13 @@ CHUNK_SIZE = 4 * 1024 * 1024
 class ClientKWArgsDict(TypedDict, total=False):
     endpoint_url: str
     region_name: str
-    config: dict[str, str]  # For botocore config options
 
 
 class S3FsSettingsDict(TypedDict):
     key: str
     secret: str
     client_kwargs: ClientKWArgsDict
+    config_kwargs: dict[str, str]  # For botocore config options
 
 
 _DEFAULT_AWS_REGION: Final[str] = "us-east-1"
@@ -69,7 +69,11 @@ def _s3fs_settings_from_s3_settings(s3_settings: S3Settings) -> S3FsSettingsDict
     s3fs_settings: S3FsSettingsDict = {
         "key": s3_settings.S3_ACCESS_KEY,
         "secret": s3_settings.S3_SECRET_KEY,
-        "client_kwargs": {"config": {"request_checksum_calculation": "when_required"}},
+        "client_kwargs": {},
+        "config_kwargs": {
+            "request_checksum_calculation": "when_required",
+            "signature_version": "s3v4",
+        },
     }
     if s3_settings.S3_REGION != _DEFAULT_AWS_REGION:
         # NOTE: see https://github.com/boto/boto3/issues/125 why this is so... (sic)
@@ -99,7 +103,7 @@ async def _copy_file(
     dst_storage_kwargs = dst_storage_cfg or {}
     with (
         fsspec.open(f"{src_url}", mode="rb", **src_storage_kwargs) as src_fp,
-        fsspec.open(f"{dst_url}", "wb", **dst_storage_kwargs) as dst_fp,
+        fsspec.open(f"{dst_url}", mode="wb", **dst_storage_kwargs) as dst_fp,
     ):
         assert isinstance(src_fp, IOBase)  # nosec
         assert isinstance(dst_fp, IOBase)  # nosec
