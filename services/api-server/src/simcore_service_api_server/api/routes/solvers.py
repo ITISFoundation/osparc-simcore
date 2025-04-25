@@ -129,46 +129,34 @@ async def get_solvers_page(
 )
 async def list_solvers_releases(
     user_id: Annotated[int, Depends(get_current_user_id)],
-    catalog_service: Annotated[CatalogService, Depends()],
+    solver_service: Annotated[SolverService, Depends(SolverService)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
 ):
 
-    latest_releases = []
+    latest_solvers: list[Solver] = []
     for page_params in iter_pagination_params(limit=DEFAULT_PAGINATION_LIMIT):
-        services, page_meta = await catalog_service.list_latest_releases(
+        solvers, page_meta = await solver_service.latest_solvers(
             user_id=user_id,
             product_name=product_name,
             offset=page_params.offset,
             limit=page_params.limit,
-            filters=ServiceListFilters(service_type=ServiceType.COMPUTATIONAL),
         )
         page_params.total_number_of_items = page_meta.total
-        latest_releases.extend(services)
+        latest_solvers.extend(solvers)
 
     all_solvers = []
-    for service_release in latest_releases:
+    for solver in latest_solvers:
         for page_params in iter_pagination_params(limit=DEFAULT_PAGINATION_LIMIT):
-            services, page_meta = await catalog_service.list_release_history(
+            solvers, page_meta = await solver_service.solver_release_history(
                 product_name=product_name,
                 user_id=user_id,
-                service_key=service_release.key,
+                solver_key=solver.id,
                 offset=page_params.offset,
                 limit=page_params.limit,
             )
             page_params.total_number_of_items = page_meta.total
-            all_solvers.extend(
-                [
-                    Solver.create_from_service_release(
-                        service_key=service_release.key,
-                        description=service_release.description,
-                        contact=service_release.contact,
-                        name=service_release.name,
-                        service=service,
-                    )
-                    for service in services
-                ]
-            )
+            all_solvers.extend(solvers)
 
     for solver in all_solvers:
         solver.url = url_for(
