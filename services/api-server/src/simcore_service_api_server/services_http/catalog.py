@@ -171,25 +171,6 @@ class CatalogApi(BaseServiceClientApi):
 
         return TypeAdapter(list[SolverPort]).validate_python(response.json())
 
-    async def list_latest_releases(
-        self, *, user_id: UserID, product_name: ProductName
-    ) -> list[Solver]:
-        services = await self.list_services(
-            user_id=user_id,
-            product_name=product_name,
-            predicate=None,
-            type_filter="COMPUTATIONAL",
-        )
-        solvers = [service.to_solver() for service in services]
-
-        latest_releases: dict[SolverKeyId, Solver] = {}
-        for solver in solvers:
-            latest = latest_releases.setdefault(solver.id, solver)
-            if latest.pep404_version < solver.pep404_version:
-                latest_releases[solver.id] = solver
-
-        return list(latest_releases.values())
-
     async def list_service_releases(
         self,
         *,

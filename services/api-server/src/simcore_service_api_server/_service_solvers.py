@@ -70,3 +70,41 @@ class SolverService:
         )
 
         return Solver.create_from_service(service)
+
+    async def solver_release_history(
+        self,
+        *,
+        user_id: int,
+        solver_key: SolverKeyId,
+        product_name: str,
+    ) -> list[Solver]:
+
+        service_releases: list[ServiceRelease] = []
+        for page_params in iter_pagination_params(limit=DEFAULT_PAGINATION_LIMIT):
+            releases, page_meta = await self._catalog_service.list_release_history(
+                user_id=user_id,
+                service_key=solver_key,
+                product_name=product_name,
+                offset=page_params.offset,
+                limit=page_params.limit,
+            )
+            page_params.total_number_of_items = page_meta.total
+            service_releases.extend(releases)
+
+        service_instance = await self._catalog_service.get(
+            user_id=user_id,
+            name=solver_key,
+            version=service_releases[-1].version,
+            product_name=product_name,
+        )
+
+        return [
+            Solver.create_from_service_release(
+                service_key=service_instance.key,
+                description=service_instance.description,
+                contact=service_instance.contact,
+                name=service_instance.name,
+                service=service,
+            )
+            for service in service_releases
+        ]

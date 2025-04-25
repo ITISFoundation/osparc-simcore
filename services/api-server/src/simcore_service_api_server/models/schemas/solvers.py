@@ -2,8 +2,11 @@ from typing import Annotated, Any, Literal
 
 from models_library.api_schemas_catalog.services import LatestServiceGet, ServiceGetV2
 from models_library.basic_regex import PUBLIC_VARIABLE_NAME_RE
+from models_library.emails import LowerCaseEmailStr
 from models_library.services import ServiceMetaDataPublished
+from models_library.services_history import ServiceRelease
 from models_library.services_regex import COMPUTATIONAL_SERVICE_KEY_RE
+from models_library.services_types import ServiceKey
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 from ...models.schemas._base import BaseService
@@ -78,6 +81,25 @@ class Solver(BaseService):
             url=None,
             maintainer=data.pop("contact"),
             **data,
+        )
+
+    @classmethod
+    def create_from_service_release(
+        cls,
+        *,
+        service_key: ServiceKey,
+        description: str,
+        contact: LowerCaseEmailStr | None,
+        name: str,
+        service: ServiceRelease
+    ) -> "Solver":
+        return cls(
+            id=service_key,
+            version=service.version,
+            title=name,
+            url=None,
+            description=description,
+            maintainer=contact or "",
         )
 
     @classmethod
