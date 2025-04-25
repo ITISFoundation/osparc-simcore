@@ -17,6 +17,7 @@ from models_library.users import UserID
 from packaging.version import Version
 
 from .api.dependencies.webserver_rpc import get_wb_api_rpc_client
+from .models.api_resources import compose_resource_name
 from .models.schemas.jobs import Job, JobInputs
 from .models.schemas.solvers import Solver, SolverKeyId
 from .services_http.solver_job_models_converters import (
@@ -104,28 +105,34 @@ class SolverService:
     ) -> tuple[list[Job], PageMetaInfoLimitOffset]:
         """Lists all solver jobs for a user with pagination"""
 
-        # NOTE: perhaps we should get comp_tasks instead of projects! or a combinatino of both?
-        # I need inputs_checksum and job_parent_source_name!
-        # FIXME: this is still buggy. soldve_id and solver_version need to be encoded!
-        job_parent_resource_name_filter = "solvers"
+        # 1. Compose job parent resource name prefix
+        collection_or_resource_ids = [
+            "solvers",  # solver_id, "releases", solver_version, "jobs",
+        ]
         if solver_id:
-            job_parent_resource_name_filter += f"/{solver_id}"
+            collection_or_resource_ids.append(solver_id)
             if solver_version:
-                job_parent_resource_name_filter += f"/{solver_version}"
+                collection_or_resource_ids.append("releases")
+                collection_or_resource_ids.append(solver_version)
         elif solver_version:
             msg = "solver_version is set but solver_id is not. Please provide both or none of them"
             raise ValueError(msg)
 
+        job_parent_resource_name_prefix = compose_resource_name(
+            *collection_or_resource_ids
+        )
+
+        # 2. List projects marked as jobs
         projects_page = await self._webserver_client.list_projects_marked_as_jobs(
             product_name=product_name,
             user_id=user_id,
             offset=offset,
             limit=limit,
-            job_parent_resource_name_filter=job_parent_resource_name_filter,
+            job_parent_resource_name_prefix=job_parent_resource_name_prefix,
         )
 
+        # 3. Convert projects to jobs
         jobs: list[Job] = []
-
         for project_job in projects_page.data:
 
             assert (  # nosec
