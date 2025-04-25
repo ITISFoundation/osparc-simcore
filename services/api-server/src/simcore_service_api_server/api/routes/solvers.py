@@ -5,6 +5,7 @@ from typing import Annotated, Any
 
 from common_library.pagination_tools import iter_pagination_params
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi_pagination import create_page
 from httpx import HTTPStatusError
 from models_library.api_schemas_catalog.services import ServiceListFilters
 from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
@@ -99,14 +100,21 @@ async def list_solvers(
 @router.get(
     "/page",
     response_model=Page[Solver],
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
-    status_code=status.HTTP_501_NOT_IMPLEMENTED,
 )
 async def get_solvers_page(
     page_params: Annotated[PaginationParams, Depends()],
+    user_id: Annotated[int, Depends(get_current_user_id)],
+    product_name: Annotated[str, Depends(get_product_name)],
+    solver_service: Annotated[SolverService, Depends(SolverService)],
 ):
-    msg = f"list solvers with pagination={page_params!r}"
-    raise NotImplementedError(msg)
+    """Lists all available solvers (latest version) with pagination"""
+    solvers, page_meta = await solver_service.latest_solvers(
+        user_id=user_id,
+        product_name=product_name,
+        offset=page_params.offset,
+        limit=page_params.limit,
+    )
+    return create_page(solvers, total=len(solvers), params=page_params)
 
 
 @router.get(

@@ -107,3 +107,12 @@ async def test_list_solver_releases_with_mocked_catalog(
 ):
     response = await client.get(f"/{API_VTAG}/solvers/releases", auth=auth)
     assert response.status_code == status.HTTP_200_OK
+
+
+async def test_list_solver_page_with_mocked_catalog(
+    client: httpx.AsyncClient,
+    mocked_rpc_catalog_service_api: dict,
+    auth: httpx.BasicAuth,
+):
+    response = await client.get(f"/{API_VTAG}/solvers/page", auth=auth)
+    assert response.status_code == status.HTTP_200_OK
