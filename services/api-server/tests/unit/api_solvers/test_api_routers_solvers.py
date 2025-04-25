@@ -109,7 +109,7 @@ async def test_list_solvers_with_mocked_catalog(
     assert response.status_code == status.HTTP_200_OK
 
 
-async def test_list_solver_releases_with_mocked_catalog(
+async def test_list_releases_with_mocked_catalog(
     client: httpx.AsyncClient,
     mocked_rpc_catalog_service_api: dict,
     auth: httpx.BasicAuth,
