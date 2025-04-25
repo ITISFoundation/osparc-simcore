@@ -19,6 +19,7 @@ from simcore_postgres_database.utils_projects_metadata import (
     DBProjectNotFoundError,
 )
 from simcore_postgres_database.utils_projects_nodes import ProjectNode
+from sqlalchemy.ext.asyncio import AsyncConnection
 
 
 @pytest.fixture
@@ -47,6 +48,7 @@ async def fake_project(
 )
 async def test_set_project_custom_metadata(
     connection: SAConnection,
+    connection_factory: SAConnection | AsyncConnection,
     create_fake_user: Callable[..., Awaitable[RowProxy]],
     create_fake_project: Callable[..., Awaitable[RowProxy]],
     faker: Faker,
@@ -59,17 +61,19 @@ async def test_set_project_custom_metadata(
     random_project_uuid = faker.uuid4(cast_to=None)
     assert isinstance(random_project_uuid, UUID)
     with pytest.raises(DBProjectNotFoundError):
-        await utils_projects_metadata.get(connection, project_uuid=random_project_uuid)
+        await utils_projects_metadata.get(
+            connection_factory, project_uuid=random_project_uuid
+        )
 
     with pytest.raises(DBProjectNotFoundError):
         await utils_projects_metadata.set_project_custom_metadata(
-            connection,
+            connection_factory,
             project_uuid=random_project_uuid,
             custom_metadata=user_metadata,
         )
 
     project_metadata = await utils_projects_metadata.get(
-        connection, project_uuid=project["uuid"]
+        connection_factory, project_uuid=project["uuid"]
     )
     assert project_metadata is not None
     assert project_metadata.custom is None
@@ -79,7 +83,7 @@ async def test_set_project_custom_metadata(
     assert project_metadata.root_parent_node_id is None
 
     got = await utils_projects_metadata.set_project_custom_metadata(
-        connection,
+        connection_factory,
         project_uuid=project["uuid"],
         custom_metadata=user_metadata,
     )
@@ -91,13 +95,13 @@ async def test_set_project_custom_metadata(
     assert user_metadata == got.custom
 
     project_metadata = await utils_projects_metadata.get(
-        connection, project_uuid=project["uuid"]
+        connection_factory, project_uuid=project["uuid"]
     )
     assert project_metadata is not None
     assert project_metadata == got
 
     got_after_update = await utils_projects_metadata.set_project_custom_metadata(
-        connection,
+        connection_factory,
         project_uuid=project["uuid"],
         custom_metadata={},
     )
@@ -109,6 +113,7 @@ async def test_set_project_custom_metadata(
 
 async def test_set_project_ancestors_with_invalid_parents(
     connection: SAConnection,
+    connection_factory: SAConnection | AsyncConnection,
     create_fake_user: Callable[..., Awaitable[RowProxy]],
     create_fake_project: Callable[..., Awaitable[RowProxy]],
     create_fake_projects_node: Callable[[uuid.UUID], Awaitable[ProjectNode]],
@@ -120,7 +125,7 @@ async def test_set_project_ancestors_with_invalid_parents(
 
     # this is empty
     project_metadata = await utils_projects_metadata.get(
-        connection, project_uuid=project["uuid"]
+        connection_factory, project_uuid=project["uuid"]
     )
     assert project_metadata is not None
     assert project_metadata.custom is None
@@ -137,7 +142,7 @@ async def test_set_project_ancestors_with_invalid_parents(
     # invalid project
     with pytest.raises(DBProjectNotFoundError):
         await utils_projects_metadata.set_project_ancestors(
-            connection,
+            connection_factory,
             project_uuid=random_project_uuid,
             parent_project_uuid=None,
             parent_node_id=None,
@@ -146,14 +151,14 @@ async def test_set_project_ancestors_with_invalid_parents(
     # test invalid combinations
     with pytest.raises(DBProjectInvalidAncestorsError):
         await utils_projects_metadata.set_project_ancestors(
-            connection,
+            connection_factory,
             project_uuid=project["uuid"],
             parent_project_uuid=random_project_uuid,
             parent_node_id=None,
         )
     with pytest.raises(DBProjectInvalidAncestorsError):
         await utils_projects_metadata.set_project_ancestors(
-            connection,
+            connection_factory,
             project_uuid=project["uuid"],
             parent_project_uuid=None,
             parent_node_id=random_node_id,
@@ -162,7 +167,7 @@ async def test_set_project_ancestors_with_invalid_parents(
     # valid combination with invalid project/node
     with pytest.raises(DBProjectInvalidParentProjectError):
         await utils_projects_metadata.set_project_ancestors(
-            connection,
+            connection_factory,
             project_uuid=project["uuid"],
             parent_project_uuid=random_project_uuid,
             parent_node_id=random_node_id,
@@ -171,7 +176,7 @@ async def test_set_project_ancestors_with_invalid_parents(
     # these would make it a parent of itself which is forbiden
     with pytest.raises(DBProjectInvalidAncestorsError):
         await utils_projects_metadata.set_project_ancestors(
-            connection,
+            connection_factory,
             project_uuid=project["uuid"],
             parent_project_uuid=project["uuid"],
             parent_node_id=random_node_id,
@@ -179,7 +184,7 @@ async def test_set_project_ancestors_with_invalid_parents(
 
     with pytest.raises(DBProjectInvalidAncestorsError):
         await utils_projects_metadata.set_project_ancestors(
-            connection,
+            connection_factory,
             project_uuid=project["uuid"],
             parent_project_uuid=project["uuid"],
             parent_node_id=project_node.node_id,
@@ -190,7 +195,7 @@ async def test_set_project_ancestors_with_invalid_parents(
     another_project_node = await create_fake_projects_node(another_project["uuid"])
     with pytest.raises(DBProjectInvalidParentNodeError):
         await utils_projects_metadata.set_project_ancestors(
-            connection,
+            connection_factory,
             project_uuid=another_project["uuid"],
             parent_project_uuid=project["uuid"],
             parent_node_id=random_node_id,
@@ -198,7 +203,7 @@ async def test_set_project_ancestors_with_invalid_parents(
 
     with pytest.raises(DBProjectInvalidParentProjectError):
         await utils_projects_metadata.set_project_ancestors(
-            connection,
+            connection_factory,
             project_uuid=another_project["uuid"],
             parent_project_uuid=random_project_uuid,
             parent_node_id=project_node.node_id,
@@ -208,7 +213,7 @@ async def test_set_project_ancestors_with_invalid_parents(
     yet_another_project = await create_fake_project(connection, user, hidden=False)
     with pytest.raises(DBProjectInvalidParentNodeError):
         await utils_projects_metadata.set_project_ancestors(
-            connection,
+            connection_factory,
             project_uuid=yet_another_project["uuid"],
             parent_project_uuid=project["uuid"],
             parent_node_id=another_project_node.node_id,
@@ -216,7 +221,7 @@ async def test_set_project_ancestors_with_invalid_parents(
 
     with pytest.raises(DBProjectInvalidParentNodeError):
         await utils_projects_metadata.set_project_ancestors(
-            connection,
+            connection_factory,
             project_uuid=yet_another_project["uuid"],
             parent_project_uuid=another_project["uuid"],
             parent_node_id=project_node.node_id,
@@ -225,6 +230,7 @@ async def test_set_project_ancestors_with_invalid_parents(
 
 async def test_set_project_ancestors(
     connection: SAConnection,
+    connection_factory: SAConnection | AsyncConnection,
     create_fake_user: Callable[..., Awaitable[RowProxy]],
     create_fake_project: Callable[..., Awaitable[RowProxy]],
     create_fake_projects_node: Callable[[uuid.UUID], Awaitable[ProjectNode]],
@@ -244,7 +250,7 @@ async def test_set_project_ancestors(
 
     # set ancestry, first the parents
     updated_parent_metadata = await utils_projects_metadata.set_project_ancestors(
-        connection,
+        connection_factory,
         project_uuid=parent_project["uuid"],
         parent_project_uuid=grand_parent_project["uuid"],
         parent_node_id=grand_parent_node.node_id,
@@ -260,7 +266,7 @@ async def test_set_project_ancestors(
 
     # then the child
     updated_child_metadata = await utils_projects_metadata.set_project_ancestors(
-        connection,
+        connection_factory,
         project_uuid=child_project["uuid"],
         parent_project_uuid=parent_project["uuid"],
         parent_node_id=parent_node.node_id,
@@ -276,13 +282,13 @@ async def test_set_project_ancestors(
 
     # check properly updated
     returned_project_metadata = await utils_projects_metadata.get(
-        connection, project_uuid=child_project["uuid"]
+        connection_factory, project_uuid=child_project["uuid"]
     )
     assert returned_project_metadata == updated_child_metadata
 
     # remove the child
     updated_child_metadata = await utils_projects_metadata.set_project_ancestors(
-        connection,
+        connection_factory,
         project_uuid=child_project["uuid"],
         parent_project_uuid=None,
         parent_node_id=None,
@@ -294,7 +300,7 @@ async def test_set_project_ancestors(
 
 
 async def _create_child_project(
-    connection: SAConnection,
+    connection_factory: SAConnection | AsyncConnection,
     user: RowProxy,
     create_fake_project: Callable[..., Awaitable[RowProxy]],
     create_fake_projects_node: Callable[[uuid.UUID], Awaitable[ProjectNode]],
@@ -305,7 +311,7 @@ async def _create_child_project(
     node = await create_fake_projects_node(project["uuid"])
     if parent_project and parent_node:
         await utils_projects_metadata.set_project_ancestors(
-            connection,
+            connection_factory,
             project_uuid=project["uuid"],
             parent_project_uuid=parent_project["uuid"],
             parent_node_id=parent_node.node_id,
@@ -316,6 +322,7 @@ async def _create_child_project(
 @pytest.fixture
 async def create_projects_genealogy(
     connection: SAConnection,
+    connection_factory: SAConnection | AsyncConnection,
     create_fake_project: Callable[..., Awaitable[RowProxy]],
     create_fake_projects_node: Callable[[uuid.UUID], Awaitable[ProjectNode]],
 ) -> Callable[[RowProxy], Awaitable[list[tuple[RowProxy, ProjectNode]]]]:
@@ -328,7 +335,7 @@ async def create_projects_genealogy(
 
         for _ in range(13):
             child_project, child_node = await _create_child_project(
-                connection,
+                connection_factory,
                 user,
                 create_fake_project,
                 create_fake_projects_node,
@@ -346,6 +353,7 @@ async def create_projects_genealogy(
 
 async def test_not_implemented_use_cases(
     connection: SAConnection,
+    connection_factory: SAConnection | AsyncConnection,
     create_fake_user: Callable[..., Awaitable[RowProxy]],
     create_fake_project: Callable[..., Awaitable[RowProxy]],
     create_fake_projects_node: Callable[[uuid.UUID], Awaitable[ProjectNode]],
@@ -367,7 +375,7 @@ async def test_not_implemented_use_cases(
 
     with pytest.raises(NotImplementedError):
         await utils_projects_metadata.set_project_ancestors(
-            connection,
+            connection_factory,
             project_uuid=ancestors[0][0]["uuid"],
             parent_project_uuid=missing_parent_project["uuid"],
             parent_node_id=missing_parent_node.node_id,
@@ -376,7 +384,7 @@ async def test_not_implemented_use_cases(
     # modifying a parent-child relationship in the middle of the genealogy is also not implemented
     with pytest.raises(NotImplementedError):
         await utils_projects_metadata.set_project_ancestors(
-            connection,
+            connection_factory,
             project_uuid=ancestors[3][0]["uuid"],
             parent_project_uuid=missing_parent_project["uuid"],
             parent_node_id=missing_parent_node.node_id,
