@@ -77,7 +77,6 @@ def app_environment(
 @pytest.fixture
 def mock_missing_plugins(app_environment: EnvVarsDict, mocker: MockerFixture):
     mocker.patch("simcore_service_api_server.core.application.webserver.setup")
-    mocker.patch("simcore_service_api_server.core.application.catalog.setup")
     mocker.patch("simcore_service_api_server.core.application.storage.setup")
 
 

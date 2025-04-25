@@ -10,7 +10,6 @@ import pytest
 import simcore_service_api_server.api.routes.solvers
 from pydantic import TypeAdapter
 from pytest_mock import MockFixture
-from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.pagination import OnePage
 from simcore_service_api_server.models.schemas.solvers import Solver, SolverPort
@@ -20,7 +19,6 @@ from starlette import status
 @pytest.mark.skip(reason="Still under development. Currently using fake implementation")
 async def test_list_solvers(
     client: httpx.AsyncClient,
-    mocked_catalog_rest_api: MockRouter,
     mocker: MockFixture,
 ):
     warn = mocker.patch.object(
@@ -65,7 +63,7 @@ async def test_list_solvers(
 
 
 async def test_list_solver_ports(
-    mocked_catalog_rest_api: MockRouter,
+    mocked_rpc_catalog_service_api: dict,
     client: httpx.AsyncClient,
     auth: httpx.BasicAuth,
 ):
@@ -76,7 +74,7 @@ async def test_list_solver_ports(
     assert resp.status_code == status.HTTP_200_OK
 
     assert resp.json() == {
-        "total": 1,
+        "total": 2,
         "items": [
             {
                 "key": "input_1",
@@ -87,6 +85,15 @@ async def test_list_solver_ports(
                     "x_unit": "second",
                     "minimum": 0,
                     "maximum": 5,
+                },
+            },
+            {
+                "key": "output_1",
+                "kind": "output",
+                "content_schema": {
+                    "description": "Integer is generated in range [1-9]",
+                    "title": "File containing one random integer",
+                    "type": "string",
                 },
             },
         ],
