@@ -25,7 +25,6 @@ from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver_http import AuthSession, get_webserver_session
-from ._common import API_SERVER_DEV_FEATURES_ENABLED
 from ._constants import (
     FMSG_CHANGELOG_NEW_IN_VERSION,
     FMSG_CHANGELOG_REMOVED_IN_VERSION_FORMAT,
@@ -127,7 +126,7 @@ async def get_solvers_page(
     description=create_route_description(
         base="Lists all released solvers (not just latest version)",
         deprecated=True,
-        alternative="GET /v0/solvers/releases/page",
+        alternative="GET /v0/solvers/{solver_key}/releases/page",
         changelog=[
             FMSG_CHANGELOG_NEW_IN_VERSION.format("0.5.0", ""),
             FMSG_CHANGELOG_REMOVED_IN_VERSION_FORMAT.format(
@@ -174,19 +173,6 @@ async def list_solvers_releases(
         )
 
     return sorted(all_solvers, key=attrgetter("id", "pep404_version"))
-
-
-@router.get(
-    "/releases/page",
-    response_model=Page[Solver],
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
-    status_code=status.HTTP_501_NOT_IMPLEMENTED,
-)
-async def get_solvers_releases_page(
-    page_params: Annotated[PaginationParams, Depends()],
-):
-    msg = f"list solvers releases with pagination={page_params!r}"
-    raise NotImplementedError(msg)
 
 
 @router.get(
@@ -257,15 +243,28 @@ async def list_solver_releases(
 @router.get(
     "/{solver_key:path}/releases/page",
     response_model=Page[Solver],
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
-    status_code=status.HTTP_501_NOT_IMPLEMENTED,
 )
 async def get_solver_releases_page(
     solver_key: SolverKeyId,
     page_params: Annotated[PaginationParams, Depends()],
+    user_id: Annotated[int, Depends(get_current_user_id)],
+    product_name: Annotated[str, Depends(get_product_name)],
+    solver_service: Annotated[SolverService, Depends(SolverService)],
 ):
-    msg = f"list solver {solver_key=} (one) releases with pagination={page_params!r}"
-    raise NotImplementedError(msg)
+    solvers, page_meta = await solver_service.solver_release_history(
+        user_id=user_id,
+        solver_key=solver_key,
+        product_name=product_name,
+        offset=page_params.offset,
+        limit=page_params.limit,
+    )
+    page_params.limit = page_meta.limit
+    page_params.offset = page_meta.offset
+    return create_page(
+        solvers,
+        total=len(solvers),
+        params=page_params,
+    )
 
 
 @router.get(
