@@ -53,3 +53,38 @@ class ProgramService:
 
         items = [Program.create_from_service(service) for service in page]
         return items, page_meta
+
+    async def list_program_history(
+        self,
+        *,
+        user_id: int,
+        program_key: ProgramKeyId,
+        product_name: str,
+        offset: NonNegativeInt,
+        limit: PositiveInt,
+    ) -> tuple[list[Program], PageMetaInfoLimitOffset]:
+        page, page_meta = await self._catalog_service.list_release_history(
+            user_id=user_id,
+            service_key=program_key,
+            product_name=product_name,
+            offset=offset,
+            limit=limit,
+        )
+
+        program_instance = await self._catalog_service.get(
+            user_id=user_id,
+            name=program_key,
+            version=page[-1].version,
+            product_name=product_name,
+        )
+
+        items = [
+            Program.create_from_service_release(
+                service=service,
+                service_key=program_instance.key,
+                description=program_instance.description,
+                name=program_instance.name,
+            )
+            for service in page
+        ]
+        return items, page_meta

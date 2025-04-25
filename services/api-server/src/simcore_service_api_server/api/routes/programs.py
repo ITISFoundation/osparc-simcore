@@ -64,6 +64,41 @@ async def list_programs(
 
 
 @router.get(
+    "/{program_key:path}/releases",
+    response_model=Page[Program],
+)
+async def list_program_history(
+    program_key: ProgramKeyId,
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    program_service: Annotated[ProgramService, Depends()],
+    url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
+    product_name: Annotated[str, Depends(get_product_name)],
+    page_params: Annotated[PaginationParams, Depends()],
+) -> Page[Program]:
+    """Lists the latest of all available programs"""
+    programs, page_meta = await program_service.list_program_history(
+        program_key=program_key,
+        user_id=user_id,
+        product_name=product_name,
+        offset=page_params.offset,
+        limit=page_params.limit,
+    )
+    page_params.limit = page_meta.limit
+    page_params.offset = page_meta.offset
+
+    for program in programs:
+        program.url = url_for(
+            "get_program_release", program_key=program.id, version=program.version
+        )
+
+    return create_page(
+        programs,
+        total=len(programs),
+        params=page_params,
+    )
+
+
+@router.get(
     "/{program_key:path}/releases/{version}",
     response_model=Program,
 )
