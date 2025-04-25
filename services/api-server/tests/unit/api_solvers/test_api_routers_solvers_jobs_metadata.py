@@ -39,7 +39,7 @@ def _as_path_regex(initial_path: str):
 def mocked_backend(
     mocked_webserver_rest_api: MockRouter,
     mocked_webserver_rpc_api: dict[str, MockType],
-    mocked_rpc_catalog_service_api: dict[str, MockType],
+    mocked_catalog_rpc_api: dict[str, MockType],
     project_tests_dir: Path,
 ) -> MockedBackendApiDict:
     mock_name = "for_test_get_and_update_job_metadata.json"

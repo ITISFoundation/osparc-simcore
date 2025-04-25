@@ -67,6 +67,10 @@ qx.Class.define("osparc.utils.DisabledPlugins", {
       return false;
     },
 
+    isConversationEnabled: function() {
+      return osparc.store.StaticInfo.getInstance().isDevFeaturesEnabled();
+    },
+
     __isPluginDisabled: function(key) {
       const statics = osparc.store.Store.getInstance().get("statics");
       if (statics) {

@@ -3,6 +3,7 @@ from contextlib import suppress
 from pathlib import Path
 from typing import Annotated, Any, TypeAlias
 
+from common_library.json_serialization import json_loads
 from models_library.basic_regex import MIME_TYPE_RE
 from models_library.generics import DictModel
 from models_library.services_types import ServicePortKey
@@ -160,7 +161,7 @@ class TaskOutputData(DictModel[ServicePortKey, PortValue]):
             with suppress(json.JSONDecodeError):
                 # NOTE: The suppression here is ok, since if the data is empty,
                 # there will be a validation error anyway
-                data = json.loads(output_data_file.read_text())
+                data = json_loads(output_data_file.read_text())
 
         for output_key, output_params in schema.items():
             if isinstance(output_params, FilePortSchema):

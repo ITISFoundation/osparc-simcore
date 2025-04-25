@@ -6,12 +6,12 @@ Keeps functionality that couples with the following app modules
 
 """
 
-import json
 import logging
 from pathlib import Path
 from typing import NamedTuple
 
 from aiohttp import web
+from common_library.json_serialization import json_loads
 from models_library.api_schemas_webserver.projects_ui import StudyUI
 from models_library.projects import DateTimeStr, Project, ProjectID
 from models_library.projects_access import AccessRights, GroupIDStr
@@ -194,7 +194,7 @@ async def _add_new_project(
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 
     # validated project is transform in dict via json to use only primitive types
-    project_in: dict = json.loads(
+    project_in: dict = json_loads(
         project.model_dump_json(exclude_none=True, by_alias=True)
     )
 

@@ -31,6 +31,7 @@ from models_library.api_schemas_storage.storage_schemas import HealthCheck
 from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.app_diagnostics import AppStatusCheck
 from models_library.generics import Envelope
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import BaseFileLink, SimcoreS3FileID
 from models_library.users import UserID
@@ -55,55 +56,8 @@ from simcore_service_api_server.services_http.solver_job_outputs import ResultsT
 
 
 @pytest.fixture
-def mocked_rpc_catalog_service_api(
-    app: FastAPI, mocker: MockerFixture
-) -> Iterable[dict[str, MockType]]:
-    """
-    Mocks the RPC catalog service API for testing purposes.
-    """
-
-    class MockRabbitMQRPCClient:
-        pass
-
-    def get_mock_rabbitmq_rpc_client():
-        return MockRabbitMQRPCClient()
-
-    app.dependency_overrides[get_rabbitmq_rpc_client] = get_mock_rabbitmq_rpc_client
-    side_effects = CatalogRpcSideEffects()
-
-    yield {
-        "list_services_paginated": mocker.patch.object(
-            catalog_rpc,
-            "list_services_paginated",
-            autospec=True,
-            side_effect=side_effects.list_services_paginated,
-        ),
-        "get_service": mocker.patch.object(
-            catalog_rpc,
-            "get_service",
-            autospec=True,
-            side_effect=side_effects.get_service,
-        ),
-        "update_service": mocker.patch.object(
-            catalog_rpc,
-            "update_service",
-            autospec=True,
-            side_effect=side_effects.update_service,
-        ),
-        "list_my_service_history_paginated": mocker.patch.object(
-            catalog_rpc,
-            "list_my_service_history_paginated",
-            autospec=True,
-            side_effect=side_effects.list_my_service_history_paginated,
-        ),
-        "get_service_ports": mocker.patch.object(
-            catalog_rpc,
-            "get_service_ports",
-            autospec=True,
-            side_effect=side_effects.get_service_ports,
-        ),
-    }
-    app.dependency_overrides.pop(get_rabbitmq_rpc_client)
+def product_name() -> ProductName:
+    return "osparc"
 
 
 @pytest.fixture
@@ -278,7 +232,7 @@ def mocked_s3_server_url() -> Iterator[HttpUrl]:
     print(f"<-- stopped mock S3 server on {endpoint_url}")
 
 
-## MOCKED stack services --------------------------------------------------
+## MOCKED res/web APIs from simcore services ------------------------------------------
 
 
 @pytest.fixture
@@ -417,6 +371,11 @@ def mocked_webserver_rpc_api(
             "mark_project_as_job",
             side_effects.mark_project_as_job,
         ),
+        "list_projects_marked_as_jobs": mocker.patch.object(
+            projects_rpc,
+            "list_projects_marked_as_jobs",
+            side_effects.list_projects_marked_as_jobs,
+        ),
     }
 
 
@@ -511,6 +470,60 @@ def mocked_catalog_rest_api_base(
             respx_mock.stop()
 
         yield respx_mock
+
+
+@pytest.fixture
+def mocked_catalog_rpc_api(
+    app: FastAPI, mocker: MockerFixture
+) -> Iterable[dict[str, MockType]]:
+    """
+    Mocks the RPC catalog service API for testing purposes.
+    """
+
+    def get_mock_rabbitmq_rpc_client():
+        return MagicMock()
+
+    app.dependency_overrides[get_rabbitmq_rpc_client] = get_mock_rabbitmq_rpc_client
+    side_effects = CatalogRpcSideEffects()
+
+    yield {
+        "list_services_paginated": mocker.patch.object(
+            catalog_rpc,
+            "list_services_paginated",
+            autospec=True,
+            side_effect=side_effects.list_services_paginated,
+        ),
+        "get_service": mocker.patch.object(
+            catalog_rpc,
+            "get_service",
+            autospec=True,
+            side_effect=side_effects.get_service,
+        ),
+        "update_service": mocker.patch.object(
+            catalog_rpc,
+            "update_service",
+            autospec=True,
+            side_effect=side_effects.update_service,
+        ),
+        "list_my_service_history_paginated": mocker.patch.object(
+            catalog_rpc,
+            "list_my_service_history_paginated",
+            autospec=True,
+            side_effect=side_effects.list_my_service_history_paginated,
+        ),
+        "get_service_ports": mocker.patch.object(
+            catalog_rpc,
+            "get_service_ports",
+            autospec=True,
+            side_effect=side_effects.get_service_ports,
+        ),
+    }
+    app.dependency_overrides.pop(get_rabbitmq_rpc_client)
+
+
+#
+# Other Mocks
+#
 
 
 @pytest.fixture

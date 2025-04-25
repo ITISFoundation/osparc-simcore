@@ -166,7 +166,7 @@ async def test_submitting_task_with_failure_results_with_error(
     assert f"{raw_result}" == "Something strange happened: BOOM!"
 
 
-async def test_aborting_task_results_with_aborted_state(
+async def test_cancelling_a_running_task_aborts_and_deletes(
     celery_client: CeleryTaskClient,
 ):
     task_context = TaskContext(user_id=42)
@@ -178,7 +178,7 @@ async def test_aborting_task_results_with_aborted_state(
         task_context=task_context,
     )
 
-    await celery_client.abort_task(task_context, task_uuid)
+    await celery_client.cancel_task(task_context, task_uuid)
 
     for attempt in Retrying(
         retry=retry_if_exception_type(AssertionError),
@@ -192,6 +192,8 @@ async def test_aborting_task_results_with_aborted_state(
     assert (
         await celery_client.get_task_status(task_context, task_uuid)
     ).task_state == TaskState.ABORTED
+
+    assert task_uuid not in await celery_client.list_tasks(task_context)
 
 
 async def test_listing_task_uuids_contains_submitted_task(
