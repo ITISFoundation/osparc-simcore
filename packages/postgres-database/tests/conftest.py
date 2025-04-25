@@ -182,7 +182,9 @@ async def aiopg_engine(
         stacklevel=2,
     )
 
-    async with aiopg.sa.create_engine(dsn=postgres_service) as aiopg_sa_engine:
+    async with aiopg.sa.create_engine(
+        dsn=f"{postgres_service}?application_name=aiopg_engine",
+    ) as aiopg_sa_engine:
         yield aiopg_sa_engine
 
 
@@ -208,15 +210,6 @@ async def asyncpg_engine(  # <-- WE SHOULD USE THIS ONE
     yield _apg_engine
 
     await _apg_engine.dispose()
-
-
-@pytest.fixture
-async def asyncpg_connection(
-    asyncpg_engine: AsyncEngine,
-) -> AsyncIterator[AsyncConnection]:
-    """Returns an asyncpg connection from an engine to a fully furnished and ready pg database"""
-    async with asyncpg_engine.connect() as conn:
-        yield conn
 
 
 @pytest.fixture(params=["aiopg", "asyncpg"])
