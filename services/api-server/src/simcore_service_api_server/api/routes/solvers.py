@@ -3,10 +3,11 @@ from collections.abc import Callable
 from operator import attrgetter
 from typing import Annotated, Any
 
+from common_library.pagination_tools import iter_pagination_params
 from fastapi import APIRouter, Depends, HTTPException, status
-from grpc import services
 from httpx import HTTPStatusError
 from models_library.api_schemas_catalog.services import ServiceListFilters
+from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from models_library.services_enums import ServiceType
 from pydantic import ValidationError
 from simcore_service_api_server.services_rpc.catalog import CatalogService
@@ -29,6 +30,9 @@ from ._constants import (
     FMSG_CHANGELOG_REMOVED_IN_VERSION_FORMAT,
     create_route_description,
 )
+
+DEFAULT_PAGINATION_LIMIT = MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE - 1
+
 
 _logger = logging.getLogger(__name__)
 
@@ -77,7 +81,7 @@ async def list_solvers(
 ):
     """Lists all available solvers (latest version)"""
 
-    services, page_info = await catalog_service.list_latest_releases(
+    services, _ = await catalog_service.list_latest_releases(
         user_id=user_id,
         product_name=product_name,
         filters=ServiceListFilters(service_type=ServiceType.COMPUTATIONAL),
@@ -110,26 +114,52 @@ async def get_solvers_page(
     response_model=list[Solver],
     summary="Lists All Releases",
     responses=_SOLVER_STATUS_CODES,
+    description=create_route_description(
+        base="Lists all released solvers (not just latest version)",
+        deprecated=True,
+        alternative="GET /v0/solvers/releases/page",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.5.0", ""),
+            FMSG_CHANGELOG_REMOVED_IN_VERSION_FORMAT.format(
+                "0.7",
+                "This endpoint is deprecated and will be removed in a future version",
+            ),
+        ],
+    ),
 )
 async def list_solvers_releases(
     user_id: Annotated[int, Depends(get_current_user_id)],
-    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
+    catalog_service: Annotated[CatalogService, Depends()],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
 ):
-    """Lists all released solvers i.e. all released versions
 
-    SEE get_solvers_releases_page for a paginated version of this function
-    """
-    assert await catalog_client.is_responsive()  # nosec
+    latest_releases = []
+    for page_params in iter_pagination_params(limit=DEFAULT_PAGINATION_LIMIT):
+        services, page_meta = await catalog_service.list_latest_releases(
+            user_id=user_id,
+            product_name=product_name,
+            offset=page_params.offset,
+            limit=page_params.limit,
+            filters=ServiceListFilters(service_type=ServiceType.COMPUTATIONAL),
+        )
+        page_params.total_number_of_items = page_meta.total
+        latest_releases.extend(services)
 
-    services = await catalog_client.list_services(
-        user_id=user_id,
-        product_name=product_name,
-        predicate=None,
-        type_filter="COMPUTATIONAL",
-    )
-    solvers = [service.to_solver() for service in services]
+    all_releases = []
+    for service in latest_releases:
+        for page_params in iter_pagination_params(limit=DEFAULT_PAGINATION_LIMIT):
+            services, page_meta = await catalog_service.list_release_history(
+                product_name=product_name,
+                user_id=user_id,
+                service_key=service.id,
+                offset=page_params.offset,
+                limit=page_params.limit,
+            )
+            page_params.total_number_of_items = page_meta.total
+            all_releases.extend(services)
+
+    solvers = [Solver.create_from_service(service) for service in all_releases]
 
     for solver in solvers:
         solver.url = url_for(
