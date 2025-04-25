@@ -9,8 +9,8 @@ import sqlalchemy.exc
 from common_library.async_tools import maybe_await
 from common_library.errors_classes import OsparcErrorMixin
 from pydantic import BaseModel, ConfigDict, Field
+from simcore_postgres_database.utils_aiosqlalchemy import map_db_exception
 from sqlalchemy.dialects.postgresql import insert as pg_insert
-from sqlalchemy.dialects.postgresql.asyncpg import AsyncAdapt_asyncpg_dbapi
 
 from ._protocols import DBConnection
 from .aiopg_errors import ForeignKeyViolation, UniqueViolation
@@ -135,23 +135,19 @@ class ProjectNodesRepo:
             # this happens if the node already exists on creation
             raise ProjectNodesDuplicateNodeError from exc
         except sqlalchemy.exc.IntegrityError as exc:
-            # this happens if the node already exists on creation
-            orig_error = exc.orig
-            if isinstance(orig_error, AsyncAdapt_asyncpg_dbapi.IntegrityError):
-                assert hasattr(orig_error, "pgcode")  # nosec
-                if (
-                    orig_error.pgcode
-                    == asyncpg.exceptions.UniqueViolationError.sqlstate
-                ):
-                    raise ProjectNodesDuplicateNodeError from exc
-                if (
-                    orig_error.pgcode
-                    == asyncpg.exceptions.ForeignKeyViolationError.sqlstate
-                ):
-                    raise ProjectNodesProjectNotFoundError(
-                        project_uuid=self.project_uuid
-                    ) from exc
-            raise
+            raise map_db_exception(
+                exc,
+                {
+                    asyncpg.exceptions.UniqueViolationError.sqlstate: (
+                        ProjectNodesDuplicateNodeError,
+                        {"project_uuid": self.project_uuid},
+                    ),
+                    asyncpg.exceptions.ForeignKeyViolationError.sqlstate: (
+                        ProjectNodesProjectNotFoundError,
+                        {"project_uuid": self.project_uuid},
+                    ),
+                },
+            ) from exc
 
     async def list(self, connection: DBConnection) -> list[ProjectNode]:
         """list the nodes in the current project

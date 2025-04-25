@@ -2,7 +2,9 @@ import datetime
 import uuid
 from typing import Any
 
+import asyncpg
 import sqlalchemy as sa
+import sqlalchemy.exc as sa_exc
 from common_library.async_tools import maybe_await
 from common_library.errors_classes import OsparcErrorMixin
 from pydantic import BaseModel, ConfigDict
@@ -12,6 +14,7 @@ from ._protocols import DBConnection
 from .aiopg_errors import ForeignKeyViolation
 from .models.projects import projects
 from .models.projects_metadata import projects_metadata
+from .utils_aiosqlalchemy import map_db_exception
 
 #
 # Errors
@@ -242,3 +245,13 @@ async def set_project_custom_metadata(
 
     except ForeignKeyViolation as err:
         raise DBProjectNotFoundError(project_uuid=project_uuid) from err
+    except sa_exc.IntegrityError as exc:
+        raise map_db_exception(
+            exc,
+            {
+                asyncpg.exceptions.ForeignKeyViolationError.sqlstate: (
+                    DBProjectNotFoundError,
+                    {"project_uuid": project_uuid},
+                ),
+            },
+        ) from exc
