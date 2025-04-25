@@ -182,25 +182,5 @@ class GroupExtraPropertiesRepo:
         assert isinstance(rows, list)  # nosec
 
         return GroupExtraPropertiesRepo._aggregate(
-            rows, user_id, product_name, GroupExtraProperties.from_row_proxy
+            rows, user_id, product_name, GroupExtraProperties.from_row
         )
-
-    @staticmethod
-    async def get_aggregated_properties_for_user_v2(
-        engine: AsyncEngine,
-        connection: AsyncConnection | None = None,
-        *,
-        user_id: int,
-        product_name: str,
-    ) -> GroupExtraProperties:
-        async with pass_or_acquire_connection(engine, connection) as conn:
-            list_stmt = _list_table_entries_ordered_by_group_type_stmt(
-                user_id=user_id, product_name=product_name
-            )
-            result = await conn.stream(
-                sa.select(list_stmt).order_by(list_stmt.c.type_order)
-            )
-            rows = [row async for row in result]
-            return GroupExtraPropertiesRepo._aggregate(
-                rows, user_id, product_name, GroupExtraProperties.from_row
-            )
