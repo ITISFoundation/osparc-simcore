@@ -10,6 +10,7 @@ from settings_library.director_v0 import DirectorV0Settings
 from settings_library.director_v2 import DirectorV2Settings
 from settings_library.docker_api_proxy import DockerApiProxysettings
 from settings_library.http_client_request import ClientRequestSettings
+from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from settings_library.tracing import TracingSettings
@@ -49,19 +50,19 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             "is disabled if you want to have structured logs!"
         ),
     )
-    DYNAMIC_SCHEDULER_LOG_FILTER_MAPPING: dict[
-        LoggerName, list[MessageSubstring]
-    ] = Field(
-        default_factory=dict,
-        validation_alias=AliasChoices(
-            "LOG_FILTER_MAPPING",
-            "DYNAMIC_SCHEDULER_LOG_FILTER_MAPPING",
-        ),
-        description=(
-            "is a dictionary that maps specific loggers "
-            "(such as 'uvicorn.access' or 'gunicorn.access') to a list "
-            "of log message patterns that should be filtered out."
-        ),
+    DYNAMIC_SCHEDULER_LOG_FILTER_MAPPING: dict[LoggerName, list[MessageSubstring]] = (
+        Field(
+            default_factory=dict,
+            validation_alias=AliasChoices(
+                "LOG_FILTER_MAPPING",
+                "DYNAMIC_SCHEDULER_LOG_FILTER_MAPPING",
+            ),
+            description=(
+                "is a dictionary that maps specific loggers "
+                "(such as 'uvicorn.access' or 'gunicorn.access') to a list "
+                "of log message patterns that should be filtered out."
+            ),
+        )
     )
 
     DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT: datetime.timedelta = Field(
@@ -162,6 +163,14 @@ class ApplicationSettings(_BaseApplicationSettings):
     DYNAMIC_SCHEDULER_DOCKER_API_PROXY: Annotated[
         DockerApiProxysettings,
         Field(json_schema_extra={"auto_default_from_env": True}),
+    ]
+
+    DYNAMIC_SCHEDULER_POSTGRES: Annotated[
+        PostgresSettings,
+        Field(
+            json_schema_extra={"auto_default_from_env": True},
+            description="settings for postgres service",
+        ),
     ]
 
     @field_validator("DYNAMIC_SCHEDULER_UI_MOUNT_PATH", mode="before")
