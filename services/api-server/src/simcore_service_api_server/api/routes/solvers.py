@@ -146,27 +146,36 @@ async def list_solvers_releases(
         page_params.total_number_of_items = page_meta.total
         latest_releases.extend(services)
 
-    all_releases = []
-    for service in latest_releases:
+    all_solvers = []
+    for service_release in latest_releases:
         for page_params in iter_pagination_params(limit=DEFAULT_PAGINATION_LIMIT):
             services, page_meta = await catalog_service.list_release_history(
                 product_name=product_name,
                 user_id=user_id,
-                service_key=service.id,
+                service_key=service_release.key,
                 offset=page_params.offset,
                 limit=page_params.limit,
             )
             page_params.total_number_of_items = page_meta.total
-            all_releases.extend(services)
+            all_solvers.extend(
+                [
+                    Solver.create_from_service_release(
+                        service_key=service_release.key,
+                        description=service_release.description,
+                        contact=service_release.contact,
+                        name=service_release.name,
+                        service=service,
+                    )
+                    for service in services
+                ]
+            )
 
-    solvers = [Solver.create_from_service(service) for service in all_releases]
-
-    for solver in solvers:
+    for solver in all_solvers:
         solver.url = url_for(
             "get_solver_release", solver_key=solver.id, version=solver.version
         )
 
-    return sorted(solvers, key=attrgetter("id", "pep404_version"))
+    return sorted(all_solvers, key=attrgetter("id", "pep404_version"))
 
 
 @router.get(
