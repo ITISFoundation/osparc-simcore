@@ -39,7 +39,7 @@ class CompPipelinesRepository(BaseRepository):
             state=RunningState.PUBLISHED if publish else RunningState.NOT_STARTED,
         )
         insert_stmt = insert(comp_pipeline).values(
-            **pipeline_at_db.model_dump(by_alias=True)
+            **pipeline_at_db.model_dump(mode="json", by_alias=True)
         )
         # FIXME: This is not a nice thing. this part of the information should be kept in comp_runs.
         update_exclusion_policy = set()
@@ -48,7 +48,10 @@ class CompPipelinesRepository(BaseRepository):
         on_update_stmt = insert_stmt.on_conflict_do_update(
             index_elements=[comp_pipeline.c.project_id],
             set_=pipeline_at_db.model_dump(
-                by_alias=True, exclude_unset=True, exclude=update_exclusion_policy
+                mode="json",
+                by_alias=True,
+                exclude_unset=True,
+                exclude=update_exclusion_policy,
             ),
         )
         async with self.db_engine.begin() as conn:

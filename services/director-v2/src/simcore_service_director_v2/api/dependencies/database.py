@@ -28,7 +28,7 @@ def get_base_repository(engine: AsyncEngine, repo_type: type[RepoType]) -> RepoT
     # Get pool metrics
     checkedin = engine.pool.checkedin()  # type: ignore # connections available in pool
     checkedout = engine.pool.checkedout()  # type: ignore # connections in use
-    total_size = engine.pool.size  # type: ignore # current total connections
+    total_size = engine.pool.size()  # type: ignore # current total connections
 
     if checkedin <= 1:
         logger.warning(
