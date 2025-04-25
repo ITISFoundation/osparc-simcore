@@ -116,3 +116,4 @@ async def test_list_solver_page_with_mocked_catalog(
 ):
     response = await client.get(f"/{API_VTAG}/solvers/page", auth=auth)
     assert response.status_code == status.HTTP_200_OK
+    assert len(response.json()["items"]) == response.json()["total"]

@@ -114,6 +114,8 @@ async def get_solvers_page(
         offset=page_params.offset,
         limit=page_params.limit,
     )
+    page_params.limit = page_meta.limit
+    page_params.offset = page_meta.offset
     return create_page(solvers, total=len(solvers), params=page_params)
 
 
