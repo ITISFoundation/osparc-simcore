@@ -39,7 +39,7 @@ def _file_progress_cb(
     asyncio.run_coroutine_threadsafe(
         log_publishing_cb(
             f"{text_prefix}"
-            f" {100.0 * float(value or 0)/float(size or 1):.1f}%"
+            f" {100.0 * float(value or 0) / float(size or 1):.1f}%"
             f" ({ByteSize(value).human_readable() if value else 0} / {ByteSize(size).human_readable() if size else 'NaN'})",
             logging.DEBUG,
         ),
@@ -53,6 +53,7 @@ CHUNK_SIZE = 4 * 1024 * 1024
 class ClientKWArgsDict(TypedDict, total=False):
     endpoint_url: str
     region_name: str
+    config: dict[str, str]  # For botocore config options
 
 
 class S3FsSettingsDict(TypedDict):
@@ -68,7 +69,7 @@ def _s3fs_settings_from_s3_settings(s3_settings: S3Settings) -> S3FsSettingsDict
     s3fs_settings: S3FsSettingsDict = {
         "key": s3_settings.S3_ACCESS_KEY,
         "secret": s3_settings.S3_SECRET_KEY,
-        "client_kwargs": {},
+        "client_kwargs": {"config": {"request_checksum_calculation": "when_required"}},
     }
     if s3_settings.S3_REGION != _DEFAULT_AWS_REGION:
         # NOTE: see https://github.com/boto/boto3/issues/125 why this is so... (sic)
@@ -96,9 +97,10 @@ async def _copy_file(
 ):
     src_storage_kwargs = src_storage_cfg or {}
     dst_storage_kwargs = dst_storage_cfg or {}
-    with fsspec.open(
-        f"{src_url}", mode="rb", **src_storage_kwargs
-    ) as src_fp, fsspec.open(f"{dst_url}", "wb", **dst_storage_kwargs) as dst_fp:
+    with (
+        fsspec.open(f"{src_url}", mode="rb", **src_storage_kwargs) as src_fp,
+        fsspec.open(f"{dst_url}", "wb", **dst_storage_kwargs) as dst_fp,
+    ):
         assert isinstance(src_fp, IOBase)  # nosec
         assert isinstance(dst_fp, IOBase)  # nosec
         file_size = getattr(src_fp, "size", None)
@@ -106,16 +108,19 @@ async def _copy_file(
         total_data_written = 0
         t = time.process_time()
         while data_read:
-            (data_read, data_written,) = await asyncio.get_event_loop().run_in_executor(
+            (
+                data_read,
+                data_written,
+            ) = await asyncio.get_event_loop().run_in_executor(
                 None, _file_chunk_streamer, src_fp, dst_fp
             )
             elapsed_time = time.process_time() - t
             total_data_written += data_written or 0
             await log_publishing_cb(
                 f"{text_prefix}"
-                f" {100.0 * float(total_data_written or 0)/float(file_size or 1):.1f}%"
+                f" {100.0 * float(total_data_written or 0) / float(file_size or 1):.1f}%"
                 f" ({ByteSize(total_data_written).human_readable() if total_data_written else 0} / {ByteSize(file_size).human_readable() if file_size else 'NaN'})"
-                f" [{ByteSize(total_data_written).to('MB')/elapsed_time:.2f} MBytes/s (avg)]",
+                f" [{ByteSize(total_data_written).to('MB') / elapsed_time:.2f} MBytes/s (avg)]",
                 logging.DEBUG,
             )
 
