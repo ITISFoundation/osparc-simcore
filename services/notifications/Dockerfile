@@ -3,11 +3,9 @@
 # Define arguments in the global scope
 ARG PYTHON_VERSION="3.11.9"
 ARG UV_VERSION="0.6"
-
 FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv_build
 # we docker image is built based on debian
 FROM python:${PYTHON_VERSION}-slim-bookworm AS base
-
 
 #
 #  USAGE:
@@ -28,6 +26,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
   apt-get install -y --no-install-recommends \
   gosu \
   && apt-get clean -y \
+  && rm -rf /var/lib/apt/lists/* \
   # verify that the binary works
   && gosu nobody true
 
@@ -56,6 +55,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # Ensures that the python and pip executables used in the image will be
 # those from our virtualenv.
 ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
+
+EXPOSE 8000
 
 # -------------------------- Build stage -------------------
 # Installs build/package management tools and third party dependencies
@@ -131,7 +132,6 @@ WORKDIR /home/scu
 
 # ensure home folder is read/writable for user scu
 RUN chown -R scu /home/scu
-
 # Starting from clean base image, copies pre-installed virtualenv from prod-only-deps
 COPY --chown=scu:scu --from=prod-only-deps  ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
@@ -140,13 +140,14 @@ COPY --chown=scu:scu services/notifications/docker services/notifications/docker
 RUN chmod +x services/notifications/docker/*.sh
 
 
-HEALTHCHECK --interval=30s \
-  --timeout=20s \
-  --start-period=30s \
-  --retries=3 \
+# https://docs.docker.com/reference/dockerfile/#healthcheck
+HEALTHCHECK \
+  --interval=10s \
+  --timeout=5s \
+  --start-period=20s \
+  --start-interval=1s \
+  --retries=5 \
   CMD ["python3", "services/notifications/docker/healthcheck.py", "http://localhost:8000/"]
-
-EXPOSE 8000
 
 ENTRYPOINT [ "/bin/sh", "services/notifications/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/notifications/docker/boot.sh"]
@@ -169,7 +170,6 @@ WORKDIR /devel
 
 RUN chown -R scu:scu "${VIRTUAL_ENV}"
 
-EXPOSE 8000
 EXPOSE 3000
 
 ENTRYPOINT ["/bin/sh", "services/notifications/docker/entrypoint.sh"]
