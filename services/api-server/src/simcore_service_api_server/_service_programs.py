@@ -1,8 +1,11 @@
 from typing import Annotated
 
 from fastapi import Depends
+from models_library.api_schemas_catalog.services import ServiceListFilters
 from models_library.basic_types import VersionStr
+from models_library.rest_pagination import PageMetaInfoLimitOffset
 from models_library.services_enums import ServiceType
+from pydantic import NonNegativeInt, PositiveInt
 
 from .models.schemas.programs import Program, ProgramKeyId
 from .services_rpc.catalog import CatalogService
@@ -31,3 +34,22 @@ class ProgramService:
         assert service.service_type == ServiceType.DYNAMIC  # nosec
 
         return Program.create_from_service(service)
+
+    async def list_latest_programs(
+        self,
+        *,
+        user_id: int,
+        product_name: str,
+        offset: NonNegativeInt,
+        limit: PositiveInt,
+    ) -> tuple[list[Program], PageMetaInfoLimitOffset]:
+        page, page_meta = await self._catalog_service.list_latest_releases(
+            user_id=user_id,
+            product_name=product_name,
+            offset=offset,
+            limit=limit,
+            filters=ServiceListFilters(service_type=ServiceType.DYNAMIC),
+        )
+
+        items = [Program.create_from_service(service) for service in page]
+        return items, page_meta

@@ -113,3 +113,13 @@ async def test_create_program_job(
     # Assert
     assert response.status_code == status.HTTP_201_CREATED
     job = Job.model_validate(response.json())
+
+
+async def test_list_programs(
+    auth: httpx.BasicAuth,
+    client: AsyncClient,
+    mocked_catalog_rpc_api: dict[str, MockType],
+):
+    # Arrange
+    response = await client.get(f"/{API_VTAG}/programs", auth=auth)
+    assert response.status_code == status.HTTP_200_OK
