@@ -2,10 +2,11 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+# pylint: disable=broad-exception-caught
 
 import json
 import subprocess
-from collections.abc import AsyncIterator, Callable, Iterable, Iterator
+from collections.abc import AsyncIterator, Callable, Iterator
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
@@ -45,9 +46,6 @@ from pytest_simcore.helpers.webserver_rpc_server import WebserverRpcSideEffects
 from pytest_simcore.simcore_webserver_projects_rest_api import GET_PROJECT
 from requests.auth import HTTPBasicAuth
 from respx import MockRouter
-from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
-from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
-from simcore_service_api_server.api.dependencies.rabbitmq import get_rabbitmq_rpc_client
 from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.core.settings import ApplicationSettings
 from simcore_service_api_server.repository.api_keys import UserAndProductTuple
@@ -92,10 +90,19 @@ def app_environment(
 def mock_missing_plugins(app_environment: EnvVarsDict, mocker: MockerFixture):
     settings = ApplicationSettings.create_from_envs()
     if settings.API_SERVER_RABBITMQ is None:
-        mocker.patch("simcore_service_api_server.core.application.setup_rabbitmq")
-        mocker.patch(
-            "simcore_service_api_server.core._prometheus_instrumentation.setup_prometheus_instrumentation"
+        import simcore_service_api_server.core.application
+
+        mocker.patch.object(
+            simcore_service_api_server.core.application,
+            "setup_rabbitmq",
+            autospec=True,
         )
+        mocker.patch.object(
+            simcore_service_api_server.core.application,
+            "setup_prometheus_instrumentation",
+            autospec=True,
+        )
+
     return app_environment
 
 
@@ -331,22 +338,13 @@ def mocked_webserver_rest_api_base(
 
 
 @pytest.fixture
-def mocked_webserver_rpc_api(
-    app: FastAPI, mocker: MockerFixture
-) -> dict[str, MockType]:
-    from servicelib.rabbitmq.rpc_interfaces.webserver import projects as projects_rpc
-    from simcore_service_api_server.services_rpc import wb_api_server
-
-    # NOTE: mock_missing_plugins patches `setup_rabbitmq`
-    try:
-        wb_api_server.WbApiRpcClient.get_from_app_state(app)
-    except AttributeError:
-        wb_api_server.setup(
-            app, RabbitMQRPCClient("fake_rpc_client", settings=mocker.MagicMock())
-        )
-
-    settings: ApplicationSettings = app.state.settings
-    assert settings.API_SERVER_WEBSERVER
+def mocked_webserver_rpc_api(mocker: MockerFixture) -> dict[str, MockType]:
+    """
+    Mocks the webserver's simcore service RPC API for testing purposes.
+    """
+    from servicelib.rabbitmq.rpc_interfaces.webserver import (
+        projects as projects_rpc,  # keep import here
+    )
 
     side_effects = WebserverRpcSideEffects()
 
@@ -354,11 +352,13 @@ def mocked_webserver_rpc_api(
         "mark_project_as_job": mocker.patch.object(
             projects_rpc,
             "mark_project_as_job",
+            autospec=True,
             side_effect=side_effects.mark_project_as_job,
         ),
         "list_projects_marked_as_jobs": mocker.patch.object(
             projects_rpc,
             "list_projects_marked_as_jobs",
+            autospec=True,
             side_effect=side_effects.list_projects_marked_as_jobs,
         ),
     }
@@ -458,20 +458,16 @@ def mocked_catalog_rest_api_base(
 
 
 @pytest.fixture
-def mocked_catalog_rpc_api(
-    app: FastAPI, mocker: MockerFixture
-) -> Iterable[dict[str, MockType]]:
+def mocked_catalog_rpc_api(mocker: MockerFixture) -> dict[str, MockType]:
     """
-    Mocks the RPC catalog service API for testing purposes.
+    Mocks the catalog's simcore service RPC API for testing purposes.
     """
+    from servicelib.rabbitmq.rpc_interfaces.catalog import (
+        services as catalog_rpc,  # keep import here
+    )
 
-    def get_mock_rabbitmq_rpc_client():
-        return MagicMock()
-
-    app.dependency_overrides[get_rabbitmq_rpc_client] = get_mock_rabbitmq_rpc_client
     side_effects = CatalogRpcSideEffects()
-
-    yield {
+    return {
         "list_services_paginated": mocker.patch.object(
             catalog_rpc,
             "list_services_paginated",
@@ -503,7 +499,6 @@ def mocked_catalog_rpc_api(
             side_effect=side_effects.get_service_ports,
         ),
     }
-    app.dependency_overrides.pop(get_rabbitmq_rpc_client)
 
 
 #
@@ -633,6 +628,7 @@ def patch_webserver_long_running_project_tasks(
             return self._set_result_and_get_reponse(project_get)
 
         def get_result(self, request: httpx.Request, *, task_id: str):
+            assert request
             return httpx.Response(
                 status.HTTP_200_OK, json={"data": self._results[task_id]}
             )
