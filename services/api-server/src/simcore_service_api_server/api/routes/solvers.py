@@ -105,6 +105,7 @@ async def get_solvers_page(
     user_id: Annotated[int, Depends(get_current_user_id)],
     product_name: Annotated[str, Depends(get_product_name)],
     solver_service: Annotated[SolverService, Depends(SolverService)],
+    url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
     """Lists all available solvers (latest version) with pagination"""
     solvers, page_meta = await solver_service.latest_solvers(
@@ -113,6 +114,12 @@ async def get_solvers_page(
         offset=page_params.offset,
         limit=page_params.limit,
     )
+
+    for solver in solvers:
+        solver.url = url_for(
+            "get_solver_release", solver_key=solver.id, version=solver.version
+        )
+
     page_params.limit = page_meta.limit
     page_params.offset = page_meta.offset
     return create_page(solvers, total=len(solvers), params=page_params)
@@ -218,7 +225,7 @@ async def get_solver(
 async def list_solver_releases(
     solver_key: SolverKeyId,
     user_id: Annotated[int, Depends(get_current_user_id)],
-    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
+    solver_service: Annotated[SolverService, Depends(SolverService)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
 ):
@@ -226,18 +233,24 @@ async def list_solver_releases(
 
     SEE get_solver_releases_page for a paginated version of this function
     """
-    releases: list[Solver] = await catalog_client.list_service_releases(
-        user_id=user_id,
-        solver_key=solver_key,
-        product_name=product_name,
-    )
+    all_releases: list[Solver] = []
+    for page_params in iter_pagination_params(limit=DEFAULT_PAGINATION_LIMIT):
+        solvers, page_meta = await solver_service.solver_release_history(
+            user_id=user_id,
+            solver_key=solver_key,
+            product_name=product_name,
+            offset=page_params.offset,
+            limit=page_params.limit,
+        )
+        page_params.total_number_of_items = page_meta.total
+        all_releases.extend(solvers)
 
-    for solver in releases:
+    for solver in all_releases:
         solver.url = url_for(
             "get_solver_release", solver_key=solver.id, version=solver.version
         )
 
-    return sorted(releases, key=attrgetter("pep404_version"))
+    return sorted(all_releases, key=attrgetter("pep404_version"))
 
 
 @router.get(
@@ -249,6 +262,7 @@ async def get_solver_releases_page(
     page_params: Annotated[PaginationParams, Depends()],
     user_id: Annotated[int, Depends(get_current_user_id)],
     product_name: Annotated[str, Depends(get_product_name)],
+    url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     solver_service: Annotated[SolverService, Depends(SolverService)],
 ):
     solvers, page_meta = await solver_service.solver_release_history(
@@ -258,6 +272,11 @@ async def get_solver_releases_page(
         offset=page_params.offset,
         limit=page_params.limit,
     )
+
+    for solver in solvers:
+        solver.url = url_for(
+            "get_solver_release", solver_key=solver.id, version=solver.version
+        )
     page_params.limit = page_meta.limit
     page_params.offset = page_meta.offset
     return create_page(

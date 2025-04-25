@@ -130,3 +130,13 @@ async def test_list_solver_releases_page_with_mocked_catalog(
     )
     assert response.status_code == status.HTTP_200_OK
     assert len(response.json()["items"]) == response.json()["total"]
+
+
+async def test_list_solver_releases_with_mocked_catalog(
+    client: httpx.AsyncClient,
+    mocked_rpc_catalog_service_api: dict,
+    auth: httpx.BasicAuth,
+):
+    solver_key = "simcore/services/comp/itis/sleeper"
+    response = await client.get(f"/{API_VTAG}/solvers/{solver_key}/releases", auth=auth)
+    assert response.status_code == status.HTTP_200_OK
