@@ -344,8 +344,8 @@ async def list_solver_ports(
         product_name=product_name,
     )
 
-    ports = [SolverPort.model_validate(port.model_dump()) for port in ports]
-    return OnePage[SolverPort].model_validate(dict(items=ports))
+    solver_ports = [SolverPort.model_validate(port.model_dump()) for port in ports]
+    return OnePage[SolverPort].model_validate(dict(items=solver_ports))
 
 
 @router.get(
