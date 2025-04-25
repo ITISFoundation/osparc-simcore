@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import inspect
 import logging
 from collections.abc import Callable, Coroutine
@@ -13,7 +14,6 @@ from celery.contrib.abortable import (  # type: ignore[import-untyped]
 )
 from celery.exceptions import Ignore  # type: ignore[import-untyped]
 from pydantic import NonNegativeInt
-from servicelib.async_utils import cancel_wait_task
 
 from . import get_event_loop
 from .errors import encore_celery_transferrable_error
@@ -48,7 +48,7 @@ def _async_task_wrapper(
     ) -> Callable[Concatenate[AbortableTask, P], R]:
         @wraps(coro)
         def wrapper(task: AbortableTask, *args: P.args, **kwargs: P.kwargs) -> R:
-            fastapi_app = get_fastapi_app(app)
+            event_loop = get_event_loop(get_fastapi_app(app))
             # NOTE: task.request is a thread local object, so we need to pass the id explicitly
             assert task.request.id is not None  # nosec
 
@@ -63,10 +63,17 @@ def _async_task_wrapper(
                             abortable_result = AbortableAsyncResult(task_id, app=app)
                             while not main_task.done():
                                 if abortable_result.is_aborted():
-                                    await cancel_wait_task(
-                                        main_task,
-                                        max_delay=_DEFAULT_CANCEL_TASK_TIMEOUT.total_seconds(),
-                                    )
+                                    main_task.cancel()
+
+                                    with contextlib.suppress(
+                                        asyncio.CancelledError, TimeoutError
+                                    ):
+                                        await asyncio.wait_for(
+                                            asyncio.gather(
+                                                *asyncio.all_tasks(loop=event_loop)
+                                            ),
+                                            timeout=_DEFAULT_CANCEL_TASK_TIMEOUT.total_seconds(),
+                                        )
                                     AbortableAsyncResult(task_id, app=app).forget()
                                     raise TaskAbortedError
                                 await asyncio.sleep(
@@ -90,7 +97,7 @@ def _async_task_wrapper(
 
             return asyncio.run_coroutine_threadsafe(
                 run_task(task.request.id),
-                get_event_loop(fastapi_app),
+                event_loop,
             ).result()
 
         return wrapper
