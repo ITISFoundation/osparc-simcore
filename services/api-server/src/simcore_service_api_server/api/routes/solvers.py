@@ -20,10 +20,8 @@ from ...models.pagination import OnePage, Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.model_adapter import ServicePricingPlanGetLegacy
 from ...models.schemas.solvers import Solver, SolverKeyId, SolverPort
-from ...services_http.catalog import CatalogApi
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
-from ..dependencies.services import get_api_client
 from ..dependencies.webserver_http import AuthSession, get_webserver_session
 from ._constants import (
     FMSG_CHANGELOG_NEW_IN_VERSION,
@@ -336,16 +334,17 @@ async def list_solver_ports(
     solver_key: SolverKeyId,
     version: VersionStr,
     user_id: Annotated[int, Depends(get_current_user_id)],
-    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
+    catalog_service: Annotated[CatalogService, Depends()],
     product_name: Annotated[str, Depends(get_product_name)],
 ):
-    ports = await catalog_client.get_service_ports(
+    ports = await catalog_service.get_service_ports(
         user_id=user_id,
         name=solver_key,
         version=version,
         product_name=product_name,
     )
 
+    ports = [SolverPort.model_validate(port.model_dump()) for port in ports]
     return OnePage[SolverPort].model_validate(dict(items=ports))
 
 

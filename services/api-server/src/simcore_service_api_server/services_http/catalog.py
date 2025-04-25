@@ -1,7 +1,5 @@
-import asyncio
 import logging
 import urllib.parse
-from collections.abc import Callable
 from dataclasses import dataclass
 from functools import partial
 from typing import Final, Literal
@@ -9,14 +7,13 @@ from typing import Final, Literal
 from fastapi import FastAPI, status
 from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
-from models_library.services import ServiceMetaDataPublished, ServiceType
+from models_library.services import ServiceMetaDataPublished
 from models_library.users import UserID
 from pydantic import ConfigDict, TypeAdapter
 from settings_library.catalog import CatalogSettings
 from settings_library.tracing import TracingSettings
 
 from ..exceptions.backend_errors import (
-    ListSolversOrStudiesError,
     ProgramOrSolverOrStudyNotFoundError,
 )
 from ..exceptions.service_errors_utils import service_exception_mapper
@@ -108,43 +105,6 @@ class CatalogApi(BaseServiceClientApi):
     """
 
     @_exception_mapper(
-        http_status_map={status.HTTP_404_NOT_FOUND: ListSolversOrStudiesError}
-    )
-    async def list_services(
-        self,
-        *,
-        user_id: int,
-        product_name: str,
-        predicate: Callable[[TruncatedCatalogServiceOut], bool] | None = None,
-        type_filter: ServiceTypes,
-    ) -> list[TruncatedCatalogServiceOut]:
-
-        response = await self.client.get(
-            "/services",
-            params={"user_id": user_id, "details": True},
-            headers={"x-simcore-products-name": product_name},
-        )
-        response.raise_for_status()
-
-        services: list[
-            TruncatedCatalogServiceOut
-        ] = await asyncio.get_event_loop().run_in_executor(
-            None,
-            _parse_response,
-            TruncatedCatalogServiceOutListAdapter,
-            response,
-        )
-
-        services = [
-            service
-            for service in services
-            if service.service_type == ServiceType[type_filter]
-        ]
-        if predicate is not None:
-            services = [service for service in services if predicate(service)]
-        return services
-
-    @_exception_mapper(
         http_status_map={status.HTTP_404_NOT_FOUND: ProgramOrSolverOrStudyNotFoundError}
     )
     async def get_service_ports(
@@ -170,25 +130,6 @@ class CatalogApi(BaseServiceClientApi):
         response.raise_for_status()
 
         return TypeAdapter(list[SolverPort]).validate_python(response.json())
-
-    async def list_service_releases(
-        self,
-        *,
-        user_id: int,
-        solver_key: SolverKeyId,
-        product_name: str,
-    ) -> list[Solver]:
-        def _this_solver(solver: Solver) -> bool:
-            return solver.id == solver_key
-
-        services = await self.list_services(
-            user_id=user_id,
-            predicate=None,
-            product_name=product_name,
-            type_filter="COMPUTATIONAL",
-        )
-        solvers = [service.to_solver() for service in services]
-        return [solver for solver in solvers if _this_solver(solver)]
 
 
 # MODULES APP SETUP -------------------------------------------------------------
