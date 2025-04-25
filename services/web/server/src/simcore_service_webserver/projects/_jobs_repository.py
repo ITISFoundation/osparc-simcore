@@ -62,12 +62,13 @@ class ProjectJobsRepository(BaseRepository):
         user_id: UserID,
         offset: int = 0,
         limit: int = 10,
-        job_parent_resource_name_filter: str | None = None,
+        job_parent_resource_name_prefix: str | None = None,
     ) -> tuple[int, list[ProjectJobDBGet]]:
         """
         Lists projects marked as jobs for a specific user and product
-        """
 
+        Example: job_parent_resource_name = "/solvers/solver1"
+        """
         # Step 1: Get group IDs associated with the user
         user_groups_query = (
             sa.select(user_to_groups.c.gid)
@@ -96,10 +97,10 @@ class ProjectJobsRepository(BaseRepository):
         )
 
         # Apply job_parent_resource_name_filter if provided
-        if job_parent_resource_name_filter:
+        if job_parent_resource_name_prefix:
             access_query = access_query.where(
                 projects_to_jobs.c.job_parent_resource_name.like(
-                    f"%{job_parent_resource_name_filter}%"
+                    f"{job_parent_resource_name_prefix}%"
                 )
             )
 

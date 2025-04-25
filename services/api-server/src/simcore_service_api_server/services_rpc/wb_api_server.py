@@ -226,7 +226,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         user_id: UserID,
         offset: int = 0,
         limit: int = 50,
-        job_parent_resource_name_filter: str | None = None,
+        job_parent_resource_name_prefix: str | None = None,
     ):
         return await projects_rpc.list_projects_marked_as_jobs(
             rpc_client=self._client,
@@ -234,7 +234,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             user_id=user_id,
             offset=offset,
             limit=limit,
-            job_parent_resource_name_filter=job_parent_resource_name_filter,
+            job_parent_resource_name_prefix=job_parent_resource_name_prefix,
         )
 
 

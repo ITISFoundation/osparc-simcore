@@ -66,7 +66,7 @@ async def list_projects_marked_as_jobs(
     offset: PageOffsetInt,
     limit: PageLimitInt,
     # filters
-    job_parent_resource_name_filter: str | None,
+    job_parent_resource_name_prefix: str | None,
 ) -> PageRpcProjectJobRpcGet:
 
     total, projects = await _jobs_service.list_my_projects_marked_as_jobs(
@@ -75,7 +75,7 @@ async def list_projects_marked_as_jobs(
         user_id=user_id,
         offset=offset,
         limit=limit,
-        job_parent_resource_name_filter=job_parent_resource_name_filter,
+        job_parent_resource_name_prefix=job_parent_resource_name_prefix,
     )
 
     job_projects = [

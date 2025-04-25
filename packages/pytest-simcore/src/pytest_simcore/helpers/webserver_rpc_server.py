@@ -57,14 +57,16 @@ class WebserverRpcSideEffects:
         offset: PageOffsetInt = 0,
         limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
         # filters
-        job_parent_resource_name_filter: str | None = None,
+        job_parent_resource_name_prefix: str | None = None,
     ) -> PageRpcProjectJobRpcGet:
         assert rpc_client
         assert product_name
         assert user_id
 
-        if job_parent_resource_name_filter:
-            assert not job_parent_resource_name_filter.startswith("/")
+        if job_parent_resource_name_prefix:
+            assert not job_parent_resource_name_prefix.startswith("/")
+            assert not job_parent_resource_name_prefix.endswith("%")
+            assert not job_parent_resource_name_prefix.startswith("%")
 
         items = ProjectJobRpcGet.model_json_schema()["examples"]
 
