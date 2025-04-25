@@ -267,7 +267,7 @@ class ProjectNodesRepo:
         )
         row = await maybe_await(result.fetchone())
         if row is not None:
-            return (row.pricing_plan_id, row.pricing_unit_id)
+            return (row.pricing_plan_id, row.pricing_unit_id)  # type: ignore[union-attr]
         return None
 
     async def connect_pricing_unit_to_project_node(

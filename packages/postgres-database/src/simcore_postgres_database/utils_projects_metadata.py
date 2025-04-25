@@ -236,7 +236,7 @@ async def set_project_custom_metadata(
 
     try:
         result = await connection.execute(upsert_stmt)
-        row = await result.first()
+        row = await maybe_await(result.first())
         assert row  # nosec
         return ProjectMetadata.model_validate(row)
 
