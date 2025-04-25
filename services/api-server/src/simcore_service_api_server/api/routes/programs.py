@@ -40,7 +40,7 @@ async def list_programs(
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
     page_params: Annotated[PaginationParams, Depends()],
-) -> Page[Program]:
+):
     """Lists the latest of all available programs"""
     programs, page_meta = await program_service.list_latest_programs(
         user_id=user_id,
@@ -74,7 +74,7 @@ async def list_program_history(
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
     page_params: Annotated[PaginationParams, Depends()],
-) -> Page[Program]:
+):
     """Lists the latest of all available programs"""
     programs, page_meta = await program_service.list_program_history(
         program_key=program_key,
