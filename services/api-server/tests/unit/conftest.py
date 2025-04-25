@@ -458,7 +458,38 @@ def mocked_catalog_rest_api_base(
 
 
 @pytest.fixture
-def mocked_catalog_rpc_api(mocker: MockerFixture) -> dict[str, MockType]:
+def mocked_app_dependencies(app: FastAPI, mocker: MockerFixture) -> Iterator[None]:
+    """
+    Mocks some dependency overrides for the FastAPI app.
+    """
+    from simcore_service_api_server.api.dependencies.rabbitmq import (
+        get_rabbitmq_rpc_client,
+    )
+    from simcore_service_api_server.api.dependencies.webserver_rpc import (
+        get_wb_api_rpc_client,
+    )
+
+    def _get_rabbitmq_rpc_client_override(app: FastAPI):
+        return mocker.MagicMock()
+
+    async def _get_wb_api_rpc_client_override(app: FastAPI):
+        return mocker.MagicMock()
+
+    app.dependency_overrides[get_rabbitmq_rpc_client] = (
+        _get_rabbitmq_rpc_client_override
+    )
+    app.dependency_overrides[get_wb_api_rpc_client] = _get_wb_api_rpc_client_override
+
+    yield
+
+    app.dependency_overrides.pop(get_wb_api_rpc_client, None)
+    app.dependency_overrides.pop(get_rabbitmq_rpc_client, None)
+
+
+@pytest.fixture
+def mocked_catalog_rpc_api(
+    mocked_app_dependencies: None, mocker: MockerFixture
+) -> dict[str, MockType]:
     """
     Mocks the catalog's simcore service RPC API for testing purposes.
     """

@@ -33,10 +33,10 @@ async def test_product_webserver(
     assert client
 
     wallet_to_api_keys_map: dict[int, ApiKeyInDB] = {}
-    wallet_id: int = faker.pyint(min_value=1)
+    wid: int = faker.pyint(min_value=1)
     async for api_key in create_fake_api_keys(2):
-        wallet_id += faker.pyint(min_value=1)
-        wallet_to_api_keys_map[wallet_id] = api_key
+        wid += faker.pyint(min_value=1)
+        wallet_to_api_keys_map[wid] = api_key
 
     def _check_key_product_compatibility(request: httpx.Request, **kwargs):
         assert (

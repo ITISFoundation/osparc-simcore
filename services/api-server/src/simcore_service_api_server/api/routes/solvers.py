@@ -17,7 +17,7 @@ from ...models.schemas.solvers import Solver, SolverKeyId, SolverPort
 from ...services_http.catalog import CatalogApi
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
-from ..dependencies.services import get_api_client
+from ..dependencies.services import get_api_client, get_solver_service
 from ..dependencies.webserver_http import AuthSession, get_webserver_session
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
 from ._constants import (
@@ -153,7 +153,7 @@ async def get_solvers_releases_page(
 async def get_solver(
     solver_key: SolverKeyId,
     user_id: Annotated[int, Depends(get_current_user_id)],
-    solver_service: Annotated[SolverService, Depends(SolverService)],
+    solver_service: Annotated[SolverService, Depends(get_solver_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
 ):
@@ -232,10 +232,10 @@ async def get_solver_release(
     solver_key: SolverKeyId,
     version: VersionStr,
     user_id: Annotated[int, Depends(get_current_user_id)],
-    solver_service: Annotated[SolverService, Depends(SolverService)],
+    solver_service: Annotated[SolverService, Depends(get_solver_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
-) -> Solver:
+):
     """Gets a specific release of a solver"""
     try:
         solver: Solver = await solver_service.get_solver(

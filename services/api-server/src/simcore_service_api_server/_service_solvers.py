@@ -1,7 +1,4 @@
-from typing import Annotated
-
 from common_library.pagination_tools import iter_pagination_params
-from fastapi import Depends
 from models_library.basic_types import VersionStr
 from models_library.products import ProductName
 from models_library.projects_nodes import Node
@@ -16,7 +13,6 @@ from models_library.services_history import ServiceRelease
 from models_library.users import UserID
 from packaging.version import Version
 
-from .api.dependencies.webserver_rpc import get_wb_api_rpc_client
 from .models.api_resources import compose_resource_name
 from .models.schemas.jobs import Job, JobInputs
 from .models.schemas.solvers import Solver, SolverKeyId
@@ -35,8 +31,8 @@ class SolverService:
 
     def __init__(
         self,
-        catalog_service: Annotated[CatalogService, Depends()],
-        webserver_client: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
+        catalog_service: CatalogService,
+        webserver_client: WbApiRpcClient,
     ):
         self._catalog_service = catalog_service
         self._webserver_client = webserver_client
