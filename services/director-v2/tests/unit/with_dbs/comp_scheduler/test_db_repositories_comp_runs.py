@@ -50,52 +50,54 @@ def fake_project_id(faker: Faker) -> ProjectID:
 
 
 async def test_get(
-    aiopg_engine,
+    sqlalchemy_async_engine,
     fake_user_id: UserID,
     fake_project_id: ProjectID,
     publish_project: Callable[[], Awaitable[PublishedProject]],
     create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
 ):
     with pytest.raises(ComputationalRunNotFoundError):
-        await CompRunsRepository(aiopg_engine).get(fake_user_id, fake_project_id)
+        await CompRunsRepository(sqlalchemy_async_engine).get(
+            fake_user_id, fake_project_id
+        )
 
     published_project = await publish_project()
     assert published_project.project.prj_owner
     # there is still no comp run created
     with pytest.raises(ComputationalRunNotFoundError):
-        await CompRunsRepository(aiopg_engine).get(
+        await CompRunsRepository(sqlalchemy_async_engine).get(
             published_project.project.prj_owner, published_project.project.uuid
         )
 
     await create_comp_run(published_project.user, published_project.project)
-    await CompRunsRepository(aiopg_engine).get(
+    await CompRunsRepository(sqlalchemy_async_engine).get(
         published_project.project.prj_owner, published_project.project.uuid
     )
 
 
 async def test_list(
-    aiopg_engine,
+    sqlalchemy_async_engine,
     publish_project: Callable[[], Awaitable[PublishedProject]],
     run_metadata: RunMetadataDict,
     faker: Faker,
 ):
-    assert await CompRunsRepository(aiopg_engine).list_() == []
+    assert await CompRunsRepository(sqlalchemy_async_engine).list_() == []
 
     published_project = await publish_project()
-    assert await CompRunsRepository(aiopg_engine).list_() == []
+    assert await CompRunsRepository(sqlalchemy_async_engine).list_() == []
 
-    created = await CompRunsRepository(aiopg_engine).create(
+    created = await CompRunsRepository(sqlalchemy_async_engine).create(
         user_id=published_project.user["id"],
         project_id=published_project.project.uuid,
         iteration=None,
         metadata=run_metadata,
         use_on_demand_clusters=faker.pybool(),
     )
-    assert await CompRunsRepository(aiopg_engine).list_() == [created]
+    assert await CompRunsRepository(sqlalchemy_async_engine).list_() == [created]
 
     created = [created] + await asyncio.gather(
         *(
-            CompRunsRepository(aiopg_engine).create(
+            CompRunsRepository(sqlalchemy_async_engine).create(
                 user_id=published_project.user["id"],
                 project_id=published_project.project.uuid,
                 iteration=created.iteration + n + 1,
@@ -106,7 +108,8 @@ async def test_list(
         )
     )
     assert sorted(
-        await CompRunsRepository(aiopg_engine).list_(), key=lambda x: x.iteration
+        await CompRunsRepository(sqlalchemy_async_engine).list_(),
+        key=lambda x: x.iteration,
     ) == sorted(created, key=lambda x: x.iteration)
 
     # test with filter of state
@@ -114,13 +117,13 @@ async def test_list(
         s for s in RunningState if s is not RunningState.PUBLISHED
     }
     assert (
-        await CompRunsRepository(aiopg_engine).list_(
+        await CompRunsRepository(sqlalchemy_async_engine).list_(
             filter_by_state=any_state_but_published
         )
         == []
     )
     assert sorted(
-        await CompRunsRepository(aiopg_engine).list_(
+        await CompRunsRepository(sqlalchemy_async_engine).list_(
             filter_by_state={RunningState.PUBLISHED}
         ),
         key=lambda x: x.iteration,
@@ -128,13 +131,13 @@ async def test_list(
 
     # test with never scheduled filter, let's create a bunch of scheduled entries,
     assert sorted(
-        await CompRunsRepository(aiopg_engine).list_(never_scheduled=True),
+        await CompRunsRepository(sqlalchemy_async_engine).list_(never_scheduled=True),
         key=lambda x: x.iteration,
     ) == sorted(created, key=lambda x: x.iteration)
     comp_runs_marked_for_scheduling = random.sample(created, k=25)
     await asyncio.gather(
         *(
-            CompRunsRepository(aiopg_engine).mark_for_scheduling(
+            CompRunsRepository(sqlalchemy_async_engine).mark_for_scheduling(
                 user_id=comp_run.user_id,
                 project_id=comp_run.project_uuid,
                 iteration=comp_run.iteration,
@@ -145,7 +148,7 @@ async def test_list(
     # filter them away
     created = [r for r in created if r not in comp_runs_marked_for_scheduling]
     assert sorted(
-        await CompRunsRepository(aiopg_engine).list_(never_scheduled=True),
+        await CompRunsRepository(sqlalchemy_async_engine).list_(never_scheduled=True),
         key=lambda x: x.iteration,
     ) == sorted(created, key=lambda x: x.iteration)
 
@@ -153,7 +156,7 @@ async def test_list(
     comp_runs_marked_as_processed = random.sample(comp_runs_marked_for_scheduling, k=11)
     await asyncio.gather(
         *(
-            CompRunsRepository(aiopg_engine).mark_as_processed(
+            CompRunsRepository(sqlalchemy_async_engine).mark_as_processed(
                 user_id=comp_run.user_id,
                 project_id=comp_run.project_uuid,
                 iteration=comp_run.iteration,
@@ -170,7 +173,7 @@ async def test_list(
     # since they were just marked as processed now, we will get nothing
     assert (
         sorted(
-            await CompRunsRepository(aiopg_engine).list_(
+            await CompRunsRepository(sqlalchemy_async_engine).list_(
                 never_scheduled=False, processed_since=SCHEDULER_INTERVAL
             ),
             key=lambda x: x.iteration,
@@ -186,7 +189,7 @@ async def test_list(
             list[CompRunsAtDB],
             await asyncio.gather(
                 *(
-                    CompRunsRepository(aiopg_engine).update(
+                    CompRunsRepository(sqlalchemy_async_engine).update(
                         user_id=comp_run.user_id,
                         project_id=comp_run.project_uuid,
                         iteration=comp_run.iteration,
@@ -200,7 +203,7 @@ async def test_list(
     )
     # now we should get them
     assert sorted(
-        await CompRunsRepository(aiopg_engine).list_(
+        await CompRunsRepository(sqlalchemy_async_engine).list_(
             never_scheduled=False, processed_since=SCHEDULER_INTERVAL
         ),
         key=lambda x: x.iteration,
