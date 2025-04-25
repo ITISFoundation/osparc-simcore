@@ -58,21 +58,31 @@ def split_resource_name(resource_name: RelativeResourceName) -> list[str]:
     return [f"{urllib.parse.unquote_plus(p)}" for p in quoted_parts]
 
 
-def split_resource_name_as_dict(
-    resource_name: RelativeResourceName,
-) -> dict[str, str | None]:
-    """Returns a map with
-    resource_ids[Collection-ID] == Resource-ID
-    """
-    parts = split_resource_name(resource_name)
-    return dict(zip(parts[::2], parts[1::2], strict=False))
-
-
 def parse_collections_ids(resource_name: RelativeResourceName) -> list[str]:
+    """
+    Example:
+        resource_name = "solvers/simcore%2Fservices%2Fcomp%2Fisolve/releases/1.3.4/jobs/f622946d-fd29-35b9-a193-abdd1095167c/outputs/output+22"
+        returns ["solvers", "releases", "jobs", "outputs"]
+    """
     parts = split_resource_name(resource_name)
     return parts[::2]
 
 
 def parse_resources_ids(resource_name: RelativeResourceName) -> list[str]:
+    """
+    Example:
+        resource_name = "solvers/simcore%2Fservices%2Fcomp%2Fisolve/releases/1.3.4/jobs/f622946d-fd29-35b9-a193-abdd1095167c/outputs/output+22"
+        returns ["simcore/services/comp/isolve", "1.3.4", "f622946d-fd29-35b9-a193-abdd1095167c", "output 22"]
+    """
     parts = split_resource_name(resource_name)
     return parts[1::2]
+
+
+def split_resource_name_as_dict(
+    resource_name: RelativeResourceName,
+) -> dict[str, str | None]:
+    """
+    Returns a map such as resource_ids[Collection-ID] == Resource-ID
+    """
+    parts = split_resource_name(resource_name)
+    return dict(zip(parts[::2], parts[1::2], strict=False))
