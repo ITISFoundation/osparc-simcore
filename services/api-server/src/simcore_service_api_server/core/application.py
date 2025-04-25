@@ -12,7 +12,7 @@ from .. import exceptions
 from .._meta import API_VERSION, API_VTAG, APP_NAME
 from ..api.root import create_router
 from ..api.routes.health import router as health_router
-from ..services_http import catalog, director_v2, storage, webserver
+from ..services_http import director_v2, storage, webserver
 from ..services_http.rabbitmq import setup_rabbitmq
 from ._prometheus_instrumentation import setup_prometheus_instrumentation
 from .events import create_start_app_handler, create_stop_app_handler
@@ -90,13 +90,6 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
         webserver.setup(
             app,
             settings.API_SERVER_WEBSERVER,
-            tracing_settings=settings.API_SERVER_TRACING,
-        )
-
-    if settings.API_SERVER_CATALOG:
-        catalog.setup(
-            app,
-            settings.API_SERVER_CATALOG,
             tracing_settings=settings.API_SERVER_TRACING,
         )
 
