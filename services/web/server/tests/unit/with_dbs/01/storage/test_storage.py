@@ -538,7 +538,7 @@ async def test_get_async_jobs_status(
     ],
     ids=lambda x: type(x).__name__,
 )
-async def test_abort_async_jobs(
+async def test_cancel_async_jobs(
     user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
