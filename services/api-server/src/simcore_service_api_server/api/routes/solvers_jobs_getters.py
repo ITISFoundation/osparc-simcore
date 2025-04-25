@@ -56,7 +56,7 @@ from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.database import get_db_asyncpg_engine
 from ..dependencies.rabbitmq import get_log_check_timeout, get_log_distributor
-from ..dependencies.services import get_api_client
+from ..dependencies.services import get_api_client, get_solver_service
 from ..dependencies.webserver_http import AuthSession, get_webserver_session
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
 from ._constants import (
@@ -132,7 +132,7 @@ router = APIRouter()
 async def list_all_solvers_jobs(
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     page_params: Annotated[PaginationParams, Depends()],
-    solver_service: Annotated[SolverService, Depends(SolverService)],
+    solver_service: Annotated[SolverService, Depends(get_solver_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
 ):
@@ -176,7 +176,7 @@ async def list_jobs(
     solver_key: SolverKeyId,
     version: VersionStr,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
-    solver_service: Annotated[SolverService, Depends(SolverService)],
+    solver_service: Annotated[SolverService, Depends(get_solver_service)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
@@ -222,7 +222,7 @@ async def get_jobs_page(
     version: VersionStr,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     page_params: Annotated[PaginationParams, Depends()],
-    solver_service: Annotated[SolverService, Depends(SolverService)],
+    solver_service: Annotated[SolverService, Depends(get_solver_service)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
@@ -266,7 +266,7 @@ async def get_job(
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     product_name: Annotated[str, Depends(get_product_name)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
-    solver_service: Annotated[SolverService, Depends(SolverService)],
+    solver_service: Annotated[SolverService, Depends(get_solver_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
     """Gets job of a given solver"""
