@@ -6,7 +6,7 @@ from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.rest_pagination import PageOffsetInt
-from models_library.rpc.webserver.projects import PageRpcProjectRpcGet
+from models_library.rpc.webserver.projects import PageRpcProjectJobRpcGet
 from models_library.rpc_pagination import (
     DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     PageLimitInt,
@@ -53,7 +53,7 @@ async def list_projects_marked_as_jobs(
     limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     # filters
     job_parent_resource_name_filter: str | None = None,
-) -> PageRpcProjectRpcGet:
+) -> PageRpcProjectJobRpcGet:
     result = await rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("list_projects_marked_as_jobs"),
@@ -63,5 +63,5 @@ async def list_projects_marked_as_jobs(
         limit=limit,
         job_parent_resource_name_filter=job_parent_resource_name_filter,
     )
-    assert TypeAdapter(PageRpcProjectRpcGet).validate_python(result)  # nosec
-    return cast(PageRpcProjectRpcGet, result)
+    assert TypeAdapter(PageRpcProjectJobRpcGet).validate_python(result)  # nosec
+    return cast(PageRpcProjectJobRpcGet, result)

@@ -204,7 +204,7 @@ async def test_run_solver_job(
     client: httpx.AsyncClient,
     directorv2_service_openapi_specs: dict[str, Any],
     catalog_service_openapi_specs: dict[str, Any],
-    mocked_rpc_catalog_service_api: dict[str, MockType],
+    mocked_catalog_rpc_api: dict[str, MockType],
     mocked_directorv2_service_api: MockRouter,
     mocked_webserver_rest_api: MockRouter,
     mocked_webserver_rpc_api: dict[str, MockType],

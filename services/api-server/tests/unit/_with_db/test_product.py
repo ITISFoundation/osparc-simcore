@@ -80,7 +80,7 @@ async def test_product_webserver(
 
 async def test_product_catalog(
     client: httpx.AsyncClient,
-    mocked_rpc_catalog_service_api: dict[str, MockType],
+    mocked_catalog_rpc_api: dict[str, MockType],
     create_fake_api_keys: Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB, None]],
 ) -> None:
     assert client
@@ -94,4 +94,4 @@ async def test_product_catalog(
             auth=httpx.BasicAuth(key.api_key, key.api_secret),
         )
 
-    assert mocked_rpc_catalog_service_api["get_service"].called
+    assert mocked_catalog_rpc_api["get_service"].called
