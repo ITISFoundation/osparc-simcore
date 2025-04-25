@@ -13,3 +13,6 @@ dask[distributed]>=2024.4.2 # issue with publish_dataset: https://github.com/das
 #
 # Compatibility/coordination
 #
+# botocore does not always add the checksums to the s3 object metadata leading to issues with CEPH S3
+# see https://github.com/ITISFoundation/osparc-simcore/issues/7585
+botocore<1.36.0

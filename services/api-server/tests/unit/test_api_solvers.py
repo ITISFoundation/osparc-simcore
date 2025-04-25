@@ -60,7 +60,7 @@ async def test_get_solver_pricing_plan(
 )
 async def test_get_latest_solver_release(
     client: AsyncClient,
-    mocked_rpc_catalog_service_api,
+    mocked_catalog_rpc_api,
     auth: httpx.BasicAuth,
     solver_key: str,
     expected_status_code: int,

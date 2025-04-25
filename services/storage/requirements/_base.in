@@ -3,6 +3,7 @@
 #
 
 --constraint ../../../requirements/constraints.txt
+--constraint ./constraints.txt
 
 
 --requirement ../../../packages/aws-library/requirements/_base.in

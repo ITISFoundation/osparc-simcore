@@ -8,7 +8,7 @@ from models_library.api_schemas_webserver.projects import ProjectPatch
 from models_library.api_schemas_webserver.projects_ui import StudyUI
 from models_library.folders import FolderID
 from models_library.groups import GroupID
-from models_library.projects import ClassifierID, ProjectID
+from models_library.projects import ClassifierID, NodesDict, ProjectID
 from models_library.users import UserID
 from models_library.utils.common_validators import (
     empty_str_to_none_pre_validator,
@@ -72,6 +72,8 @@ class ProjectDBGet(BaseModel):
 
 
 class ProjectJobDBGet(ProjectDBGet):
+    workbench: NodesDict
+
     job_parent_resource_name: str
 
 
