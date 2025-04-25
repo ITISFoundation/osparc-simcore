@@ -300,6 +300,7 @@ async def test_set_project_ancestors(
 
 
 async def _create_child_project(
+    connection: SAConnection,
     connection_factory: SAConnection | AsyncConnection,
     user: RowProxy,
     create_fake_project: Callable[..., Awaitable[RowProxy]],
@@ -335,6 +336,7 @@ async def create_projects_genealogy(
 
         for _ in range(13):
             child_project, child_node = await _create_child_project(
+                connection,
                 connection_factory,
                 user,
                 create_fake_project,
