@@ -1,6 +1,6 @@
 aio-pika==9.5.3
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-aiobotocore==2.17.0
+aiobotocore==2.21.1
     # via s3fs
 aiocache==0.12.3
     # via -r requirements/../../../packages/service-library/requirements/_base.in
@@ -67,10 +67,8 @@ blosc==1.11.2
     # via -r requirements/_base.in
 bokeh==3.6.2
     # via dask
-botocore==1.35.93
-    # via
-    #   -c requirements/constraints.txt
-    #   aiobotocore
+botocore==1.37.1
+    # via aiobotocore
 certifi==2024.8.30
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -569,7 +567,6 @@ urllib3==2.2.3
     #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
-    #   aiobotocore
     #   botocore
     #   distributed
     #   requests
