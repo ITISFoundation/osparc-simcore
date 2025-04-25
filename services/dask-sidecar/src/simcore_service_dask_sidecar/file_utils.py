@@ -69,10 +69,15 @@ def _s3fs_settings_from_s3_settings(s3_settings: S3Settings) -> S3FsSettingsDict
     s3fs_settings: S3FsSettingsDict = {
         "key": s3_settings.S3_ACCESS_KEY,
         "secret": s3_settings.S3_SECRET_KEY,
-        "client_kwargs": {},
-        "config_kwargs": {
-            "request_checksum_calculation": "when_required",
-            "signature_version": "s3v4",
+        "client_kwargs": {
+            "config_kwargs": {
+                # This setting tells the S3 client to only calculate checksums when explicitly required
+                # by the operation. This avoids unnecessary checksum calculations for operations that
+                # don't need them, improving performance.
+                # See: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/s3.html#calculating-checksums
+                "request_checksum_calculation": "when_required",
+                "signature_version": "s3v4",
+            }
         },
     }
     if s3_settings.S3_REGION != _DEFAULT_AWS_REGION:
