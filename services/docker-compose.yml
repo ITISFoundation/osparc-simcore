@@ -585,6 +585,9 @@ services:
   docker-api-proxy:
     image: ${DOCKER_REGISTRY:-itisfoundation}/docker-api-proxy:${DOCKER_IMAGE_TAG:-latest}
     init: true
+    environment:
+      DOCKER_API_PROXY_PASSWORD: ${DOCKER_API_PROXY_PASSWORD}
+      DOCKER_API_PROXY_USER : ${DOCKER_API_PROXY_USER}
     deploy:
       placement:
         constraints:

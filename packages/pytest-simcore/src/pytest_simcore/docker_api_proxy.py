@@ -1,7 +1,7 @@
 import logging
 
 import pytest
-from aiohttp import ClientSession, ClientTimeout
+from aiohttp import BasicAuth, ClientSession, ClientTimeout
 from pydantic import TypeAdapter
 from settings_library.docker_api_proxy import DockerApiProxysettings
 from tenacity import before_sleep_log, retry, stop_after_delay, wait_fixed
@@ -22,7 +22,13 @@ _logger = logging.getLogger(__name__)
 async def _wait_till_docker_api_proxy_is_responsive(
     settings: DockerApiProxysettings,
 ) -> None:
-    async with ClientSession(timeout=ClientTimeout(1, 1, 1, 1, 1)) as client:
+    async with ClientSession(
+        timeout=ClientTimeout(1, 1, 1, 1, 1),
+        auth=BasicAuth(
+            settings.DOCKER_API_PROXY_USER,
+            settings.DOCKER_API_PROXY_PASSWORD.get_secret_value(),
+        ),
+    ) as client:
         response = await client.get(f"{settings.base_url}/version")
         assert response.status == 200, await response.text()
 
@@ -44,6 +50,12 @@ async def docker_api_proxy_settings(
         {
             "DOCKER_API_PROXY_HOST": get_localhost_ip(),
             "DOCKER_API_PROXY_PORT": published_port,
+            "DOCKER_API_PROXY_USER": env_vars_for_docker_compose[
+                "DOCKER_API_PROXY_USER"
+            ],
+            "DOCKER_API_PROXY_PASSWORD": env_vars_for_docker_compose[
+                "DOCKER_API_PROXY_PASSWORD"
+            ],
         }
     )
 
