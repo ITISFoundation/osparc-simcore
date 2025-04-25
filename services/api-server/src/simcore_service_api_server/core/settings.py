@@ -153,7 +153,6 @@ class ApplicationSettings(BasicSettings):
 __all__: tuple[str, ...] = (
     "ApplicationSettings",
     "BasicSettings",
-    "CatalogSettings",
     "DirectorV2Settings",
     "StorageSettings",
     "WebServerSettings",
