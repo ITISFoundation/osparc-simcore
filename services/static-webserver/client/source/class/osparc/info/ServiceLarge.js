@@ -505,8 +505,8 @@ qx.Class.define("osparc.info.ServiceLarge", {
     },
 
     __openAccessRights: function() {
-      const permissionsView = osparc.info.ServiceUtils.openAccessRights(this.getService());
-      permissionsView.addListener("updateAccessRights", e => {
+      const collaboratorsView = osparc.info.ServiceUtils.openAccessRights(this.getService());
+      collaboratorsView.addListener("updateAccessRights", e => {
         const updatedServiceData = e.getData();
         this.setService(updatedServiceData);
         this.fireDataEvent("updateService", updatedServiceData);

@@ -10,7 +10,6 @@
 import asyncio
 import collections
 import datetime
-import json
 import logging
 from collections import defaultdict
 from collections.abc import Generator
@@ -21,7 +20,7 @@ from typing import Any, Final, cast
 from uuid import UUID, uuid4
 
 from aiohttp import web
-from common_library.json_serialization import json_dumps
+from common_library.json_serialization import json_dumps, json_loads
 from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
 from models_library.api_schemas_directorv2.dynamic_services import (
     GetProjectInactivityResponse,
@@ -1025,7 +1024,7 @@ async def update_project_node_state(
         project_id=project_id,
         node_id=node_id,
         partial_node=PartialNode.model_construct(
-            state=NodeState(currentStatus=RunningState(new_state))
+            state=NodeState(current_status=RunningState(new_state))
         ),
     )
 
@@ -1598,7 +1597,7 @@ async def add_project_states_for_user(
             prj_node = project["workbench"].get(str(node_id))
             if prj_node is None:
                 continue
-            node_state_dict = json.loads(
+            node_state_dict = json_loads(
                 node_state.model_dump_json(by_alias=True, exclude_unset=True)
             )
             prj_node.setdefault("state", {}).update(node_state_dict)

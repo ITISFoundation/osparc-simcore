@@ -16,17 +16,17 @@
 ************************************************************************ */
 
 
-qx.Class.define("osparc.jobs.JobsBrowser", {
+qx.Class.define("osparc.jobs.RunsBrowser", {
   extend: qx.ui.core.Widget,
 
-  construct() {
+  construct: function() {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
     const jobsFilter = this.getChildControl("jobs-filter");
     this.getChildControl("jobs-ongoing");
-    const jobsTable = this.getChildControl("jobs-table");
+    const jobsTable = this.getChildControl("runs-table");
 
     jobsFilter.getChildControl("textfield").addListener("input", e => {
       const filterText = e.getData();
@@ -34,9 +34,17 @@ qx.Class.define("osparc.jobs.JobsBrowser", {
         text: filterText,
       });
     });
+
+    this.__reloadInterval = setInterval(() => this.getChildControl("runs-table").reloadRuns(), 10*1000);
+  },
+
+  events: {
+    "runSelected": "qx.event.type.Data",
   },
 
   members: {
+    __reloadInterval: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -61,13 +69,25 @@ qx.Class.define("osparc.jobs.JobsBrowser", {
           });
           this.getChildControl("header-filter").add(control);
           break;
-        case "jobs-table":
-          control = new osparc.jobs.JobsTable();
+        case "runs-table":
+          control = new osparc.jobs.RunsTable();
+          control.addListener("runSelected", e => this.fireDataEvent("runSelected", e.getData()));
           this._add(control);
           break;
       }
 
       return control || this.base(arguments, id);
+    },
+
+    reloadRuns: function() {
+      const runsTable = this.getChildControl("runs-table");
+      runsTable.reloadRuns();
+    },
+
+    stopInterval: function() {
+      if (this.__reloadInterval) {
+        clearInterval(this.__reloadInterval);
+      }
     },
   }
 })

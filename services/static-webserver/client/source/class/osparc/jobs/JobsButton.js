@@ -28,12 +28,13 @@ qx.Class.define("osparc.jobs.JobsButton", {
       alignX: "center",
       cursor: "pointer",
       visibility: "excluded",
-      toolTipText: this.tr("Jobs and Clusters"),
+      toolTipText: this.tr("Runs and Clusters"),
     });
+
+    this.addListener("tap", () => osparc.jobs.RunsWindow.openWindow(), this);
 
     const jobsStore = osparc.store.Jobs.getInstance();
     jobsStore.addListener("changeJobs", e => this.__updateJobsButton(), this);
-    this.addListener("tap", () => osparc.jobs.JobsAndClusters.popUpInWindow(), this);
   },
 
   members: {
@@ -41,8 +42,7 @@ qx.Class.define("osparc.jobs.JobsButton", {
       let control;
       switch (id) {
         case "icon": {
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/cog/22");
-          osparc.utils.Utils.addClass(control.getContentElement(), "rotateSlow");
+          control = new qx.ui.basic.Image("@FontAwesome5Solid/tasks/22");
 
           const logoContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
             alignY: "middle"
@@ -76,7 +76,7 @@ qx.Class.define("osparc.jobs.JobsButton", {
       const number = this.getChildControl("number");
 
       const jobsStore = osparc.store.Jobs.getInstance();
-      const nJobs = jobsStore.getJobs().length;
+      const nJobs = jobsStore.getJobs().length > 20 ? "20+" : jobsStore.getJobs().length;
       number.setValue(nJobs.toString());
       nJobs ? this.show() : this.exclude();
     },

@@ -1,6 +1,5 @@
 import asyncio
 import functools
-import json
 import logging
 import urllib.parse
 from collections.abc import AsyncIterator, Awaitable, Callable
@@ -9,7 +8,7 @@ from pprint import pformat
 from typing import Any, Final
 
 import httpx
-from common_library.json_serialization import json_dumps
+from common_library.json_serialization import json_dumps, json_loads
 from fastapi import FastAPI, HTTPException
 from fastapi_lifespan_manager import State
 from models_library.api_schemas_directorv2.services import ServiceExtras
@@ -221,7 +220,7 @@ class DirectorClient:
         _logger.debug("Compiling service extras from labels %s", pformat(labels))
 
         if _SERVICE_RUNTIME_SETTINGS in labels:
-            service_settings: list[dict[str, Any]] = json.loads(
+            service_settings: list[dict[str, Any]] = json_loads(
                 labels[_SERVICE_RUNTIME_SETTINGS]
             )
             for entry in service_settings:

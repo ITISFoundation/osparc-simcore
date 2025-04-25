@@ -56,15 +56,8 @@ qx.Class.define("osparc.utils.DisabledPlugins", {
       return osparc.store.StaticInfo.getInstance().isDevFeaturesEnabled();
     },
 
-    isMultiDownloadEnabled: function() {
-      return osparc.store.StaticInfo.getInstance().isDevFeaturesEnabled();
-    },
-
     isJobsEnabled: function() {
-      if (osparc.store.StaticInfo.getInstance().isDevFeaturesEnabled() && osparc.product.Utils.isS4LProduct()) {
-        return true;
-      }
-      return false;
+      return osparc.store.StaticInfo.getInstance().isDevFeaturesEnabled();
     },
 
     isHypertoolsEnabled: function() {
@@ -72,6 +65,10 @@ qx.Class.define("osparc.utils.DisabledPlugins", {
         return true;
       }
       return false;
+    },
+
+    isConversationEnabled: function() {
+      return osparc.store.StaticInfo.getInstance().isDevFeaturesEnabled();
     },
 
     __isPluginDisabled: function(key) {

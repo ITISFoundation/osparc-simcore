@@ -319,6 +319,25 @@ qx.Class.define("osparc.data.Resources", {
           }
         }
       },
+      "jobs": {
+        useCache: false, // handled in osparc.store.Jobs
+        endpoints: {
+          getPage: {
+            method: "GET",
+            // url: statics.API + "/computations/-/iterations/latest?offset={offset}&limit={limit}&order_by={orderBy}"
+            url: statics.API + "/computations/-/iterations/latest?offset={offset}&limit={limit}&order_by=%7B%22field%22:%22submitted_at%22,%22direction%22:%22desc%22%7D"
+          },
+        }
+      },
+      "subJobs": {
+        useCache: false, // handled in osparc.store.Jobs
+        endpoints: {
+          getPage: {
+            method: "GET",
+            url: statics.API + "/computations/{studyId}/iterations/latest/tasks?offset={offset}&limit={limit}"
+          },
+        }
+      },
       "folders": {
         useCache: true,
         idField: "uuid",
@@ -561,6 +580,10 @@ qx.Class.define("osparc.data.Resources", {
           get: {
             method: "GET",
             url: statics.API + "/tasks"
+          },
+          delete: {
+            method: "DELETE",
+            url: statics.API + "/tasks/{taskId}"
           }
         }
       },

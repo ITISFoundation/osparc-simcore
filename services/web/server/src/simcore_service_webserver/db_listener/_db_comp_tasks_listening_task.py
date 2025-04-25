@@ -4,7 +4,6 @@ of a record in comp_task table is changed.
 """
 
 import asyncio
-import json
 import logging
 from collections.abc import AsyncIterator
 from contextlib import suppress
@@ -14,6 +13,7 @@ from typing import Final, NoReturn
 from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
+from common_library.json_serialization import json_loads
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -152,7 +152,7 @@ async def _listen(app: web.Application, db_engine: Engine) -> NoReturn:
                 continue
             notification = conn.connection.notifies.get_nowait()
             # get the data and the info on what changed
-            payload = _CompTaskNotificationPayload(**json.loads(notification.payload))
+            payload = _CompTaskNotificationPayload(**json_loads(notification.payload))
             _logger.debug("received update from database: %s", f"{payload=}")
             await _handle_db_notification(app, payload, conn)
 

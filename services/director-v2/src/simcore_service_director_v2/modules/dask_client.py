@@ -9,7 +9,6 @@ loads(dumps(my_object))
 """
 
 import asyncio
-import json
 import logging
 import traceback
 from collections.abc import Callable
@@ -21,6 +20,7 @@ from typing import Any, Final, cast
 import dask.typing
 import distributed
 from aiohttp import ClientResponseError
+from common_library.json_serialization import json_dumps
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.io import (
@@ -162,11 +162,11 @@ class DaskClient:
                 _logger.info(
                     "Connection to %s succeeded [%s]",
                     f"dask-scheduler at {endpoint}",
-                    json.dumps(attempt.retry_state.retry_object.statistics),
+                    json_dumps(attempt.retry_state.retry_object.statistics),
                 )
                 _logger.info(
                     "Scheduler info:\n%s",
-                    json.dumps(backend.client.scheduler_info(), indent=2),
+                    json_dumps(backend.client.scheduler_info(), indent=2),
                 )
                 return instance
         # this is to satisfy pylance
@@ -359,7 +359,7 @@ class DaskClient:
             try:
                 # This instance is created only once so it can be reused in calls below
                 node_ports = await dask_utils.create_node_ports(
-                    db_engine=self.app.state.engine,
+                    db_engine=self.app.state.asyncpg_engine,
                     user_id=user_id,
                     project_id=project_id,
                     node_id=node_id,
@@ -439,14 +439,14 @@ class DaskClient:
         def _get_pipeline_statuses(
             dask_scheduler: distributed.Scheduler,
         ) -> dict[dask.typing.Key, DaskSchedulerTaskState | None]:
-            statuses: dict[
-                dask.typing.Key, DaskSchedulerTaskState | None
-            ] = dask_scheduler.get_task_status(keys=job_ids)
+            statuses: dict[dask.typing.Key, DaskSchedulerTaskState | None] = (
+                dask_scheduler.get_task_status(keys=job_ids)
+            )
             return statuses
 
-        task_statuses: dict[
-            dask.typing.Key, DaskSchedulerTaskState | None
-        ] = await self.backend.client.run_on_scheduler(_get_pipeline_statuses)
+        task_statuses: dict[dask.typing.Key, DaskSchedulerTaskState | None] = (
+            await self.backend.client.run_on_scheduler(_get_pipeline_statuses)
+        )
         assert isinstance(task_statuses, dict)  # nosec
 
         _logger.debug("found dask task statuses: %s", f"{task_statuses=}")
@@ -578,10 +578,10 @@ class DaskClient:
 
         with log_catch(_logger, reraise=False):
             # NOTE: this runs directly on the dask-scheduler and may rise exceptions
-            used_resources_per_worker: dict[
-                str, dict[str, Any]
-            ] = await dask_utils.wrap_client_async_routine(
-                self.backend.client.run_on_scheduler(_get_worker_used_resources)
+            used_resources_per_worker: dict[str, dict[str, Any]] = (
+                await dask_utils.wrap_client_async_routine(
+                    self.backend.client.run_on_scheduler(_get_worker_used_resources)
+                )
             )
 
             # let's update the scheduler info, with default to 0s since sometimes

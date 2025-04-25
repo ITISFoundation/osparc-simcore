@@ -1,14 +1,13 @@
-""" Image labels annotations
+"""Image labels annotations
 
 osparc expects the service configuration (in short: config) attached to the service's image as label annotations.
 This module defines how this config is serialized/deserialized to/from docker labels annotations
 """
 
-import json
 from json.decoder import JSONDecodeError
 from typing import Any, TypeAlias
 
-from common_library.json_serialization import json_dumps
+from common_library.json_serialization import json_dumps, json_loads
 
 LabelsAnnotationsDict: TypeAlias = dict[str, str | float | bool | None]
 
@@ -57,7 +56,7 @@ def from_labels(
     for key, label in labels.items():
         if key.startswith(f"{prefix_key}."):
             try:
-                value = json.loads(label)  # type: ignore
+                value = json_loads(label)
             except JSONDecodeError:
                 value = label
 

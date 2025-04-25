@@ -16,13 +16,13 @@
 ************************************************************************ */
 
 
-qx.Class.define("osparc.jobs.JobsTable", {
+qx.Class.define("osparc.jobs.RunsTable", {
   extend: qx.ui.table.Table,
 
   construct: function(filters) {
     this.base(arguments);
 
-    const model = new osparc.jobs.JobsTableModel(filters);
+    const model = new osparc.jobs.RunsTableModel(filters);
     this.setTableModel(model);
 
     this.set({
@@ -32,94 +32,76 @@ qx.Class.define("osparc.jobs.JobsTable", {
     });
 
     const columnModel = this.getTableColumnModel();
-    columnModel.setColumnVisible(this.self().COLS.JOB_ID.column, true);
+    columnModel.setColumnVisible(this.self().COLS.PROJECT_UUID.column, false);
 
     Object.values(this.self().COLS).forEach(col => columnModel.setColumnWidth(col.column, col.width));
 
-    const iconPathInfo = "osparc/circle-info-text.svg";
-    const fontButtonRendererInfo = new osparc.ui.table.cellrenderer.ImageButtonRenderer("info", iconPathInfo);
-    columnModel.setDataCellRenderer(this.self().COLS.INFO.column, fontButtonRendererInfo);
+    const iconPathRun = "osparc/circle-play-text.svg";
+    const fontButtonRendererRun = new osparc.ui.table.cellrenderer.ImageButtonRenderer("run", iconPathRun);
+    columnModel.setDataCellRenderer(this.self().COLS.ACTION_RUN.column, fontButtonRendererRun);
 
     const iconPathStop = "osparc/circle-stop-text.svg";
     const fontButtonRendererStop = new osparc.ui.table.cellrenderer.ImageButtonRenderer("stop", iconPathStop);
     columnModel.setDataCellRenderer(this.self().COLS.ACTION_STOP.column, fontButtonRendererStop);
 
-    const iconPathDelete = "osparc/trash-text.svg";
-    const fontButtonRendererDelete = new osparc.ui.table.cellrenderer.ImageButtonRenderer("delete", iconPathDelete);
-    columnModel.setDataCellRenderer(this.self().COLS.ACTION_DELETE.column, fontButtonRendererDelete);
-
-    const iconPathLogs = "osparc/logs-text.svg";
-    const fontButtonRendererLogs = new osparc.ui.table.cellrenderer.ImageButtonRenderer("logs", iconPathLogs);
-    columnModel.setDataCellRenderer(this.self().COLS.ACTION_LOGS.column, fontButtonRendererLogs);
-
     this.__attachHandlers();
+  },
+
+  events: {
+    "runSelected": "qx.event.type.Data",
   },
 
   statics: {
     COLS: {
-      JOB_ID: {
-        id: "jobId",
+      PROJECT_UUID: {
+        id: "projectUuid",
         column: 0,
-        label: qx.locale.Manager.tr("Job Id"),
+        label: qx.locale.Manager.tr("Project Id"),
         width: 170
       },
-      SOLVER: {
-        id: "solver",
+      PROJECT_NAME: {
+        id: "projectName",
         column: 1,
-        label: qx.locale.Manager.tr("Solver"),
-        width: 100
+        label: qx.locale.Manager.tr("Project Name"),
+        width: 170,
+        sortable: true
       },
-      STATUS: {
-        id: "status",
+      STATE: {
+        id: "state",
         column: 2,
         label: qx.locale.Manager.tr("Status"),
         width: 170
       },
-      PROGRESS: {
-        id: "progress",
-        column: 3,
-        label: qx.locale.Manager.tr("Progress"),
-        width: 80
-      },
       SUBMIT: {
         id: "submit",
-        column: 4,
+        column: 3,
         label: qx.locale.Manager.tr("Submitted"),
-        width: 130
+        width: 130,
+        sortable: true
       },
       START: {
         id: "start",
-        column: 5,
+        column: 4,
         label: qx.locale.Manager.tr("Started"),
-        width: 130
+        width: 130,
+        sortable: true
       },
-      INFO: {
-        id: "info",
+      END: {
+        id: "end",
+        column: 5,
+        label: qx.locale.Manager.tr("Ended"),
+        width: 130,
+        sortable: true
+      },
+      ACTION_RUN: {
+        id: "action_run",
         column: 6,
-        label: qx.locale.Manager.tr("Info"),
+        label: "",
         width: 40
-      },
-      INSTANCE: {
-        id: "instance",
-        column: 7,
-        label: qx.locale.Manager.tr("Instance"),
-        width: 90
       },
       ACTION_STOP: {
-        id: "info",
-        column: 8,
-        label: "",
-        width: 40
-      },
-      ACTION_DELETE: {
-        id: "info",
-        column: 9,
-        label: "",
-        width: 40
-      },
-      ACTION_LOGS: {
-        id: "info",
-        column: 10,
+        id: "action_stop",
+        column: 7,
         label: "",
         width: 40
       },
@@ -127,6 +109,11 @@ qx.Class.define("osparc.jobs.JobsTable", {
   },
 
   members: {
+    reloadRuns: function() {
+      const model = this.getTableModel();
+      model.reloadData();
+    },
+
     __attachHandlers: function() {
       this.addListener("cellTap", e => {
         const row = e.getRow();
@@ -136,6 +123,10 @@ qx.Class.define("osparc.jobs.JobsTable", {
           if (action) {
             this.__handleButtonClick(action, row);
           }
+        } else {
+          const rowData = this.getTableModel().getRowData(row);
+          this.fireDataEvent("runSelected", rowData);
+          this.resetSelection();
         }
       });
     },
@@ -144,14 +135,13 @@ qx.Class.define("osparc.jobs.JobsTable", {
       const rowData = this.getTableModel().getRowData(row);
       switch (action) {
         case "info": {
-          const jobInfo = new osparc.jobs.JobInfo(rowData["jobId"]);
-          osparc.jobs.JobInfo.popUpInWindow(jobInfo);
+          this.fireDataEvent("runSelected", rowData);
           break;
         }
+        case "run":
         case "stop":
-        case "delete":
         case "logs": {
-          const msg = `I wish I could ${action} the job ${rowData["jobId"]}`;
+          const msg = `I wish I could ${action} the job ${rowData["projectUuid"]}`;
           osparc.FlashMessenger.logAs(msg, "WARNING");
           break;
         }

@@ -27,7 +27,9 @@ from .service_settings_nat_rule import NATRule
 from .services_resources import DEFAULT_SINGLE_SERVICE_NAME
 
 _BaseConfig = ConfigDict(
-    extra="forbid", arbitrary_types_allowed=True, ignored_types=(cached_property,)
+    extra="forbid",
+    arbitrary_types_allowed=True,
+    ignored_types=(cached_property,),
 )
 
 

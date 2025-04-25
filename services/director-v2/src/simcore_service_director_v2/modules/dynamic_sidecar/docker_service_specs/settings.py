@@ -1,8 +1,8 @@
-import json
 import logging
 from collections import deque
 from typing import Any, cast
 
+from common_library.json_serialization import json_dumps, json_loads
 from models_library.basic_types import EnvVarKey, PortInt
 from models_library.boot_options import BootOption
 from models_library.docker import (
@@ -156,11 +156,15 @@ def update_service_params_from_settings(
     container_spec = create_service_params["task_template"]["ContainerSpec"]
     # set labels for CPU and Memory limits, for both service and container labels
     # NOTE: cpu-limit is a float not NanoCPUs!!
-    container_spec["Labels"][
-        f"{to_simcore_runtime_docker_label_key('cpu-limit')}"
-    ] = str(
-        float(create_service_params["task_template"]["Resources"]["Limits"]["NanoCPUs"])
-        / (1 * 10**9)
+    container_spec["Labels"][f"{to_simcore_runtime_docker_label_key('cpu-limit')}"] = (
+        str(
+            float(
+                create_service_params["task_template"]["Resources"]["Limits"][
+                    "NanoCPUs"
+                ]
+            )
+            / (1 * 10**9)
+        )
     )
     create_service_params["labels"][
         f"{to_simcore_runtime_docker_label_key('cpu-limit')}"
@@ -370,7 +374,7 @@ def _patch_target_service_into_env_vars(
 
     def _format_env_var(env_var: str, destination_container: list[str]) -> str:
         var_name, var_payload = env_var.split("=")
-        json_encoded = json.dumps(
+        json_encoded = json_dumps(
             {"destination_containers": destination_container, "env_var": var_payload}
         )
         return f"{var_name}={json_encoded}"
@@ -401,7 +405,7 @@ def _get_boot_options(
     if boot_options_encoded is None:
         return None
 
-    boot_options = json.loads(boot_options_encoded)["boot-options"]
+    boot_options = json_loads(boot_options_encoded)["boot-options"]
     log.debug("got boot_options=%s", boot_options)
     return {k: BootOption.model_validate(v) for k, v in boot_options.items()}
 
@@ -443,13 +447,13 @@ async def get_labels_for_involved_services(
     # paths_mapping express how to map dynamic-sidecar paths to the compose-spec volumes
     # where the service expects to find its certain folders
 
-    labels_for_involved_services: dict[
-        str, SimcoreServiceLabels
-    ] = await _extract_osparc_involved_service_labels(
-        catalog_client=catalog_client,
-        service_key=service_key,
-        service_tag=service_tag,
-        service_labels=simcore_service_labels,
+    labels_for_involved_services: dict[str, SimcoreServiceLabels] = (
+        await _extract_osparc_involved_service_labels(
+            catalog_client=catalog_client,
+            service_key=service_key,
+            service_tag=service_tag,
+            service_labels=simcore_service_labels,
+        )
     )
     logging.info("labels_for_involved_services=%s", labels_for_involved_services)
     return labels_for_involved_services

@@ -8,6 +8,7 @@ from typing import Any, Final, cast
 
 import httpx
 from aiocache import Cache, SimpleMemoryCache  # type: ignore[import-untyped]
+from common_library.json_serialization import json_loads
 from fastapi import FastAPI, status
 from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task import create_periodic_task
@@ -380,7 +381,7 @@ async def get_image_labels(
     request_result, headers = await registry_request(
         app, path=path, method="GET", use_cache=not update_cache
     )
-    v1_compatibility_key = json.loads(request_result["history"][0]["v1Compatibility"])
+    v1_compatibility_key = json_loads(request_result["history"][0]["v1Compatibility"])
     container_config: dict[str, Any] = v1_compatibility_key.get(
         "container_config", v1_compatibility_key["config"]
     )
@@ -413,7 +414,7 @@ async def get_image_details(
         if not key.startswith("io.simcore."):
             continue
         try:
-            label_data = json.loads(labels[key])
+            label_data = json_loads(labels[key])
             for label_key in label_data:
                 image_details[label_key] = label_data[label_key]
         except json.decoder.JSONDecodeError:
@@ -483,7 +484,7 @@ async def list_interactive_service_dependencies(
     dependency_keys = []
     if DEPENDENCIES_LABEL_KEY in image_labels:
         try:
-            dependencies = json.loads(image_labels[DEPENDENCIES_LABEL_KEY])
+            dependencies = json_loads(image_labels[DEPENDENCIES_LABEL_KEY])
             dependency_keys = [
                 {"key": dependency["key"], "tag": dependency["tag"]}
                 for dependency in dependencies
