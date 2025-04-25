@@ -3,6 +3,7 @@ import uuid
 from typing import Any
 
 import sqlalchemy as sa
+from common_library.async_tools import maybe_await
 from common_library.errors_classes import OsparcErrorMixin
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -93,7 +94,7 @@ async def get(connection: DBConnection, project_uuid: uuid.UUID) -> ProjectMetad
         .where(projects.c.uuid == f"{project_uuid}")
     )
     result = await connection.execute(get_stmt)
-    row = await result.first()
+    row = await maybe_await(result.first())
     if row is None:
         raise DBProjectNotFoundError(project_uuid=project_uuid)
     return ProjectMetadata.model_validate(row)
@@ -203,7 +204,7 @@ async def set_project_ancestors(
 
     try:
         result = await connection.execute(upsert_stmt)
-        row = await result.first()
+        row = await maybe_await(result.first())
         assert row  # nosec
         return ProjectMetadata.model_validate(row)
 
