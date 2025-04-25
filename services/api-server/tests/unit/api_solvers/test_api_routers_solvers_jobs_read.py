@@ -25,7 +25,7 @@ class MockBackendRouters(NamedTuple):
 @pytest.fixture
 def mocked_backend(
     mocked_webserver_rest_api_base: MockRouter,
-    mocked_rpc_catalog_service_api: dict[str, MockType],
+    mocked_catalog_rpc_api: dict[str, MockType],
     project_tests_dir: Path,
 ) -> MockBackendRouters:
     mock_name = "on_list_jobs.json"
@@ -47,7 +47,7 @@ def mocked_backend(
 
     return MockBackendRouters(
         webserver=mocked_webserver_rest_api_base,
-        catalog=mocked_rpc_catalog_service_api,
+        catalog=mocked_catalog_rpc_api,
     )
 
 

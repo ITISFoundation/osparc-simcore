@@ -67,6 +67,7 @@ def _async_task_wrapper(
                                         main_task,
                                         max_delay=_DEFAULT_CANCEL_TASK_TIMEOUT.total_seconds(),
                                     )
+                                    AbortableAsyncResult(task_id, app=app).forget()
                                     raise TaskAbortedError
                                 await asyncio.sleep(
                                     _DEFAULT_ABORT_TASK_TIMEOUT.total_seconds()

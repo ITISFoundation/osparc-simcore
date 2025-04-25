@@ -2174,19 +2174,19 @@ msgstr ""
 msgid "No Tiers found"
 msgstr ""
 
-#: osparc/info/CommentsList.js
+#: osparc/info/Conversations.js
 msgid "0 Comments"
 msgstr ""
 
-#: osparc/info/CommentsList.js
+#: osparc/info/Conversations.js
 msgid "Load more comments..."
 msgstr ""
 
-#: osparc/info/CommentsList.js
+#: osparc/info/Conversations.js
 msgid "1 Comment"
 msgstr ""
 
-#: osparc/info/CommentsList.js
+#: osparc/info/Conversations.js
 msgid " Comments"
 msgstr ""
 

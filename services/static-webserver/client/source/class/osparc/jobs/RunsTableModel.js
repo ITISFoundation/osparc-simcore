@@ -50,6 +50,10 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
     },
   },
 
+  statics: {
+    SERVER_MAX_LIMIT: 49,
+  },
+
   members: {
     // overridden
     _loadRowCount() {

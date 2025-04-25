@@ -1,14 +1,8 @@
 from copy import deepcopy
 
-from common_library.json_serialization import json_dumps, json_loads
 from pydantic import GetJsonSchemaHandler
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core.core_schema import CoreSchema
-
-
-class BaseConfig:
-    json_loads = json_loads
-    json_dumps = json_dumps
 
 
 class UriSchema:

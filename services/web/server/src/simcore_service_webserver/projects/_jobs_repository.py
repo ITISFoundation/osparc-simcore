@@ -113,6 +113,7 @@ class ProjectJobsRepository(BaseRepository):
         list_query = (
             sa.select(
                 *_PROJECT_DB_COLS,
+                projects.c.workbench,
                 base_query.c.job_parent_resource_name,
             )
             .select_from(

@@ -9,7 +9,6 @@ loads(dumps(my_object))
 """
 
 import asyncio
-import json
 import logging
 import traceback
 from collections.abc import Callable
@@ -21,6 +20,7 @@ from typing import Any, Final, cast
 import dask.typing
 import distributed
 from aiohttp import ClientResponseError
+from common_library.json_serialization import json_dumps
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.io import (
@@ -162,11 +162,11 @@ class DaskClient:
                 _logger.info(
                     "Connection to %s succeeded [%s]",
                     f"dask-scheduler at {endpoint}",
-                    json.dumps(attempt.retry_state.retry_object.statistics),
+                    json_dumps(attempt.retry_state.retry_object.statistics),
                 )
                 _logger.info(
                     "Scheduler info:\n%s",
-                    json.dumps(backend.client.scheduler_info(), indent=2),
+                    json_dumps(backend.client.scheduler_info(), indent=2),
                 )
                 return instance
         # this is to satisfy pylance

@@ -35,7 +35,7 @@ _MAX_PROGRESS_VALUE = 1.0
 class CeleryTaskClient:
     _celery_app: Celery
     _celery_settings: CelerySettings
-    _task_store: TaskInfoStore
+    _task_info_store: TaskInfoStore
 
     async def submit_task(
         self,
@@ -63,22 +63,25 @@ class CeleryTaskClient:
                 if task_metadata.ephemeral
                 else self._celery_settings.CELERY_RESULT_EXPIRES
             )
-            await self._task_store.create_task(task_id, task_metadata, expiry=expiry)
+            await self._task_info_store.create_task(
+                task_id, task_metadata, expiry=expiry
+            )
             return task_uuid
 
     @make_async()
-    def _abort_task(self, task_context: TaskContext, task_uuid: TaskUUID) -> None:
-        AbortableAsyncResult(
-            build_task_id(task_context, task_uuid), app=self._celery_app
-        ).abort()
+    def _abort_task(self, task_id: TaskID) -> None:
+        AbortableAsyncResult(task_id, app=self._celery_app).abort()
 
-    async def abort_task(self, task_context: TaskContext, task_uuid: TaskUUID) -> None:
+    async def cancel_task(self, task_context: TaskContext, task_uuid: TaskUUID) -> None:
         with log_context(
             _logger,
             logging.DEBUG,
-            msg=f"Abort task: {task_context=} {task_uuid=}",
+            msg=f"task cancellation: {task_context=} {task_uuid=}",
         ):
-            await self._abort_task(task_context, task_uuid)
+            task_id = build_task_id(task_context, task_uuid)
+            if not (await self.get_task_status(task_context, task_uuid)).is_done:
+                await self._abort_task(task_id)
+            await self._task_info_store.remove_task(task_id)
 
     @make_async()
     def _forget_task(self, task_id: TaskID) -> None:
@@ -96,10 +99,10 @@ class CeleryTaskClient:
             async_result = self._celery_app.AsyncResult(task_id)
             result = async_result.result
             if async_result.ready():
-                task_metadata = await self._task_store.get_task_metadata(task_id)
+                task_metadata = await self._task_info_store.get_task_metadata(task_id)
                 if task_metadata is not None and task_metadata.ephemeral:
-                    await self._task_store.remove_task(task_id)
                     await self._forget_task(task_id)
+                    await self._task_info_store.remove_task(task_id)
             return result
 
     async def _get_task_progress_report(
@@ -107,7 +110,7 @@ class CeleryTaskClient:
     ) -> ProgressReport:
         if task_state in (TaskState.STARTED, TaskState.RETRY, TaskState.ABORTED):
             task_id = build_task_id(task_context, task_uuid)
-            progress = await self._task_store.get_task_progress(task_id)
+            progress = await self._task_info_store.get_task_progress(task_id)
             if progress is not None:
                 return progress
         if task_state in (
@@ -124,10 +127,7 @@ class CeleryTaskClient:
         )
 
     @make_async()
-    def _get_task_celery_state(
-        self, task_context: TaskContext, task_uuid: TaskUUID
-    ) -> TaskState:
-        task_id = build_task_id(task_context, task_uuid)
+    def _get_task_celery_state(self, task_id: TaskID) -> TaskState:
         return TaskState(self._celery_app.AsyncResult(task_id).state)
 
     async def get_task_status(
@@ -138,7 +138,8 @@ class CeleryTaskClient:
             logging.DEBUG,
             msg=f"Getting task status: {task_context=} {task_uuid=}",
         ):
-            task_state = await self._get_task_celery_state(task_context, task_uuid)
+            task_id = build_task_id(task_context, task_uuid)
+            task_state = await self._get_task_celery_state(task_id)
             return TaskStatus(
                 task_uuid=task_uuid,
                 task_state=task_state,
@@ -153,4 +154,4 @@ class CeleryTaskClient:
             logging.DEBUG,
             msg=f"Listing tasks: {task_context=}",
         ):
-            return await self._task_store.list_tasks(task_context)
+            return await self._task_info_store.list_tasks(task_context)

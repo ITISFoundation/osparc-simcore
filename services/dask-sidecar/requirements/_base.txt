@@ -1,6 +1,6 @@
 aio-pika==9.5.3
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-aiobotocore==2.15.2
+aiobotocore==2.17.0
     # via s3fs
 aiocache==0.12.3
     # via -r requirements/../../../packages/service-library/requirements/_base.in
@@ -67,8 +67,10 @@ blosc==1.11.2
     # via -r requirements/_base.in
 bokeh==3.6.2
     # via dask
-botocore==1.35.36
-    # via aiobotocore
+botocore==1.35.93
+    # via
+    #   -c requirements/constraints.txt
+    #   aiobotocore
 certifi==2024.8.30
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -176,7 +178,9 @@ jinja2==3.1.4
     #   dask
     #   distributed
 jmespath==1.0.1
-    # via botocore
+    # via
+    #   aiobotocore
+    #   botocore
 jsonschema==4.23.0
     # via
     #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/_base.in
@@ -200,6 +204,7 @@ msgpack==1.1.0
     # via distributed
 multidict==6.1.0
     # via
+    #   aiobotocore
     #   aiohttp
     #   yarl
 numpy==2.1.3
@@ -408,6 +413,7 @@ pyinstrument==5.0.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 python-dateutil==2.9.0.post0
     # via
+    #   aiobotocore
     #   arrow
     #   botocore
     #   pandas
@@ -563,6 +569,7 @@ urllib3==2.2.3
     #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
+    #   aiobotocore
     #   botocore
     #   distributed
     #   requests

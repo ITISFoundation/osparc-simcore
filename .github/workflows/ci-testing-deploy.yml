@@ -62,6 +62,7 @@ jobs:
       settings-library: ${{ steps.filter.outputs.settings-library }}
       simcore-sdk: ${{ steps.filter.outputs.simcore-sdk }}
       agent: ${{ steps.filter.outputs.agent }}
+      notifications: ${{ steps.filter.outputs.notifications }}
       api: ${{ steps.filter.outputs.api }}
       api-server: ${{ steps.filter.outputs.api-server }}
       autoscaling: ${{ steps.filter.outputs.autoscaling }}
@@ -147,6 +148,12 @@ jobs:
             agent:
               - 'packages/**'
               - 'services/agent/**'
+              - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
+            notifications:
+              - 'packages/**'
+              - 'services/notifications/**'
               - 'services/docker-compose*'
               - 'scripts/mypy/*'
               - 'mypy.ini'
@@ -602,6 +609,49 @@ jobs:
         with:
           flags: unittests #optional
 
+  unit-test-notifications:
+    needs: changes
+    if: ${{ needs.changes.outputs.notifications == 'true' || github.event_name == 'push' }}
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] notifications"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.11"]
+        os: [ubuntu-24.04]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker-container
+      - name: setup python environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.5.x"
+          enable-cache: false
+          cache-dependency-glob: "**/notifications/requirements/ci.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - name: install
+        run: ./ci/github/unit-testing/notifications.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/notifications.bash typecheck
+      - name: test
+        if: ${{ !cancelled() }}
+        run: ./ci/github/unit-testing/notifications.bash test
+      - uses: codecov/codecov-action@v5
+        if: ${{ !cancelled() }}
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          flags: unittests #optional
 
   unit-test-api:
     needs: changes
@@ -1834,6 +1884,7 @@ jobs:
         unit-test-common-library,
         unit-test-notifications-library,
         unit-test-payments,
+        unit-test-notifications,
         unit-test-dynamic-scheduler,
         unit-test-postgres-database,
         unit-test-python-linting,
