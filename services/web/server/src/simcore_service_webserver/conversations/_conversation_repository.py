@@ -24,7 +24,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.sql import select
 
 from ..db.plugin import get_asyncpg_engine
-from .errors import ConversationErrorNotFoundError, LicensedItemNotFoundError
+from .errors import ConversationErrorNotFoundError
 
 _logger = logging.getLogger(__name__)
 
@@ -115,11 +115,7 @@ async def get(
     select_query = (
         select(*_SELECTION_ARGS)
         .select_from(conversations)
-        .where(
-            conversations.c.conversation_id
-            == conversation_id
-            # & (conversations.c.product_name == product_name)
-        )
+        .where(conversations.c.conversation_id == conversation_id)
     )
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
@@ -134,7 +130,6 @@ async def update(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
-    # product_name: ProductName,
     conversation_id: ConversationID,
     updates: ConversationPatchDB,
 ) -> ConversationDB:
@@ -148,16 +143,12 @@ async def update(
         result = await conn.execute(
             conversations.update()
             .values(**_updates)
-            .where(
-                conversations.c.conversation_id
-                == conversation_id
-                # & (conversations.c.product_name == product_name)
-            )
+            .where(conversations.c.conversation_id == conversation_id)
             .returning(*_SELECTION_ARGS)
         )
         row = result.one_or_none()
         if row is None:
-            raise LicensedItemNotFoundError(conversation_id=conversation_id)
+            raise ConversationErrorNotFoundError(conversation_id=conversation_id)
         return ConversationDB.model_validate(row)
 
 
@@ -166,13 +157,10 @@ async def delete(
     connection: AsyncConnection | None = None,
     *,
     conversation_id: ConversationID,
-    # product_name: ProductName,
 ) -> None:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         await conn.execute(
             conversations.delete().where(
-                conversations.c.conversation_id
-                == conversation_id
-                # & (conversations.c.product_name == product_name)
+                conversations.c.conversation_id == conversation_id
             )
         )
