@@ -3,7 +3,6 @@ import contextlib
 import functools
 import logging
 import urllib.parse
-import warnings
 from collections.abc import AsyncGenerator, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -12,7 +11,6 @@ from typing import Any, Final, Literal, Protocol, cast
 import aioboto3
 from aiobotocore.session import ClientCreatorContext
 from boto3.s3.transfer import TransferConfig
-from botocore import __version__ as botocore_version
 from botocore import exceptions as botocore_exc
 from botocore.client import Config
 from models_library.api_schemas_storage.storage_schemas import (
@@ -22,7 +20,6 @@ from models_library.api_schemas_storage.storage_schemas import (
 )
 from models_library.basic_types import SHA256Str
 from models_library.bytes_iters import BytesIter, DataSize
-from packaging import version
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.bytes_iters import DEFAULT_READ_CHUNK_SIZE, BytesStreamer
 from servicelib.logging_utils import log_catch, log_context
@@ -53,22 +50,6 @@ from ._models import (
     UploadID,
 )
 from ._utils import compute_num_file_chunks, create_final_prefix
-
-_BOTOCORE_VERSION: Final[version.Version] = version.parse(botocore_version)
-_MAX_BOTOCORE_VERSION_COMPATIBLE_WITH_CEPH_S3: Final[version.Version] = version.parse(
-    "1.36.0"
-)
-
-
-def _check_botocore_version() -> None:
-    if _BOTOCORE_VERSION >= _MAX_BOTOCORE_VERSION_COMPATIBLE_WITH_CEPH_S3:
-        warnings.warn(
-            f"Botocore version {botocore_version} is not supported for file uploads with CEPH S3 until CEPH is updated. "
-            "Please use a version < 1.36.0. The upload operation will likely fail.",
-            RuntimeWarning,
-            stacklevel=2,
-        )
-
 
 _logger = logging.getLogger(__name__)
 
@@ -107,13 +88,21 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         session_client = None
         exit_stack = contextlib.AsyncExitStack()
         try:
+            config = Config(
+                # This setting tells the S3 client to only calculate checksums when explicitly required
+                # by the operation. This avoids unnecessary checksum calculations for operations that
+                # don't need them, improving performance.
+                # See: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/s3.html#calculating-checksums
+                signature_version="s3v4",
+                request_checksum_calculation="when_required",  # type: ignore[call-arg]
+            )
             session_client = session.client(  # type: ignore[call-overload]
                 "s3",
                 endpoint_url=f"{settings.S3_ENDPOINT}",
                 aws_access_key_id=settings.S3_ACCESS_KEY,
                 aws_secret_access_key=settings.S3_SECRET_KEY,
                 region_name=settings.S3_REGION,
-                config=Config(signature_version="s3v4"),
+                config=config,
             )
             assert isinstance(session_client, ClientCreatorContext)  # nosec
 
@@ -523,9 +512,6 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         bytes_transfered_cb: UploadedBytesTransferredCallback | None,
     ) -> None:
         """upload a file using aioboto3 transfer manager (e.g. works >5Gb and creates multiple threads)"""
-
-        _check_botocore_version()
-
         upload_options: dict[str, Any] = {
             "Bucket": bucket,
             "Key": object_key,
@@ -550,9 +536,6 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         object_metadata: S3MetaData | None = None,
     ) -> None:
         """copy a file in S3 using aioboto3 transfer manager (e.g. works >5Gb and creates multiple threads)"""
-
-        _check_botocore_version()
-
         copy_options: dict[str, Any] = {
             "CopySource": {"Bucket": bucket, "Key": src_object_key},
             "Bucket": bucket,
@@ -659,7 +642,6 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         file_like_reader: FileLikeReader,
     ) -> None:
         """streams write an object in S3 from an AsyncIterable[bytes]"""
-        _check_botocore_version()
         await self._client.upload_fileobj(file_like_reader, bucket_name, object_key)  # type: ignore[arg-type]
 
     @staticmethod
