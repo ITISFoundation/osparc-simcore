@@ -64,7 +64,6 @@ async def list_project_conversations(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
-    product_name: ProductName,
     project_uuid: ProjectID,
     # pagination
     offset: NonNegativeInt,
@@ -76,10 +75,7 @@ async def list_project_conversations(
     base_query = (
         select(*_SELECTION_ARGS)
         .select_from(conversations)
-        .where(
-            (conversations.c.product_name == product_name)
-            & (conversations.c.project_uuid == project_uuid)
-        )
+        .where(conversations.c.project_uuid == project_uuid)
     )
 
     # Select total count from base_query

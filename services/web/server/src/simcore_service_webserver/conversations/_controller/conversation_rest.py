@@ -25,10 +25,10 @@ _logger = logging.getLogger(__name__)
 
 
 @routes.post(
-    f"/{VTAG}/projects/{{project_id}}/conversations", name="get_current_product_price"
+    f"/{VTAG}/projects/{{project_id}}/conversations", name="create_project_conversation"
 )
 @login_required
-@permission_required("product.price.read")
+# @permission_required("product.price.read")  # MD: Check from projects
 @handle_rest_requests_exceptions
 async def _get_current_product_price(request: web.Request):
     req_ctx = ProductsRequestContext.model_validate(request)

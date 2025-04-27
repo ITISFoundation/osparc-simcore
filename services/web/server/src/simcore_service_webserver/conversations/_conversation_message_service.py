@@ -3,105 +3,66 @@
 import logging
 
 from aiohttp import web
-from models_library.conversations import (  # ConversationDB,; ConversationType,
+from models_library.basic_types import IDStr
+from models_library.conversations import (
     ConversationID,
     ConversationMessageDB,
+    ConversationMessageID,
+    ConversationMessagePatchDB,
     ConversationMessageType,
 )
-from models_library.products import ProductName
-from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.users import UserID
 
-from ..projects.api import check_user_project_permission
-from . import _conversation_message_repository, _conversation_repository
+from ..users.api import get_user_primary_group_id
+from . import _conversation_message_repository
 
 _logger = logging.getLogger(__name__)
 
 
-async def create_project_normal_message(
+async def create_message(
     app: web.Application,
     *,
-    conversation_id: ConversationID,
     user_id: UserID,
-    content: str,
+    conversation_id: ConversationID,
     # Creation attributes
-    name: str,
+    content: str,
     type_: ConversationMessageType,
 ) -> ConversationMessageDB:
-    conversation_db = await _conversation_repository.get(
-        app, conversation_id=conversation_id
-    )
-
-    await check_user_project_permission(
-        app=app,
-        product_name=conversation_db.product_name,
-        user_id=user_id,
-        project_id=conversation_db.project_uuid,
-        permission="read",
-    )
+    _user_group_id = await get_user_primary_group_id(app, user_id=user_id)
 
     return await _conversation_message_repository.create(
         app,
-        name=name,
-        project_uuid=project_uuid,
-        user_id=user_id,
+        conversation_id=conversation_id,
+        user_group_id=_user_group_id,
+        content=content,
         type_=type_,
-        product_name=product_name,
     )
 
 
 async def get_message(
     app: web.Application,
     *,
-    product_name: ProductName,
-    user_id: UserID,
     conversation_id: ConversationID,
+    message_id: ConversationMessageID,
 ) -> ConversationMessageDB:
-    conversation = await _conversation_repository.get(
-        app, conversation_id=conversation_id
-    )
-    assert conversation.project_uuid, "Not Implemented: Conversation has no project"
-
-    await check_user_project_permission(
-        app=app,
-        product_name=product_name,
-        user_id=user_id,
-        project_id=conversation.project_uuid,
-        permission="read",
-    )
-
-    return await _conversation_repository.get(
-        app,
-        conversation_id=conversation_id,
+    return await _conversation_message_repository.get(
+        app, conversation_id=conversation_id, message_id=message_id
     )
 
 
 async def update_message(
     app: web.Application,
     *,
-    product_name: ProductName,
-    user_id: UserID,
     conversation_id: ConversationID,
+    message_id: ConversationMessageID,
     # Update attributes
-    updates,
+    updates: ConversationMessagePatchDB,
 ) -> ConversationMessageDB:
-    conversation = await _conversation_repository.get(
-        app, conversation_id=conversation_id
-    )
-    assert conversation.project_uuid, "Not Implemented: Conversation has no project"
-
-    await check_user_project_permission(
-        app=app,
-        product_name=product_name,
-        user_id=user_id,
-        project_id=conversation.project_uuid,
-        permission="read",
-    )
-
-    return await _conversation_repository.update(
+    return await _conversation_message_repository.update(
         app,
         conversation_id=conversation_id,
+        message_id=message_id,
         updates=updates,
     )
 
@@ -109,51 +70,28 @@ async def update_message(
 async def delete_message(
     app: web.Application,
     *,
-    product_name: ProductName,
-    user_id: UserID,
     conversation_id: ConversationID,
+    message_id: ConversationMessageID,
 ) -> None:
-    conversation = await _conversation_repository.get(
-        app, conversation_id=conversation_id
-    )
-    assert conversation.project_uuid, "Not Implemented: Conversation has no project"
-
-    await check_user_project_permission(
-        app=app,
-        product_name=product_name,
-        user_id=user_id,
-        project_id=conversation.project_uuid,
-        permission="write",
-    )
-
-    await _conversation_repository.delete(
+    await _conversation_message_repository.delete(
         app,
         conversation_id=conversation_id,
+        message_id=message_id,
     )
 
 
 async def list_messages_for_conversation(
     app: web.Application,
     *,
-    product_name: ProductName,
-    user_id: UserID,
-    project_uuid: ProjectID,
+    conversation_id: ConversationID,
+    # pagination
     offset: int = 0,
     limit: int = 20,
 ) -> tuple[int, list[ConversationMessageDB]]:
-    await check_user_project_permission(
-        app=app,
-        product_name=product_name,
-        user_id=user_id,
-        project_id=project_uuid,
-        permission="read",
-    )
-
-    return await _conversation_repository.list_project_conversations(
+    return await _conversation_message_repository.list_(
         app,
-        product_name=product_name,
-        project_uuid=project_uuid,
+        conversation_id=conversation_id,
         offset=offset,
         limit=limit,
-        order_by=OrderBy(field="conversation_id", direction=OrderDirection.DESC),
+        order_by=OrderBy(field=IDStr("message_id"), direction=OrderDirection.DESC),
     )
