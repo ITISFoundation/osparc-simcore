@@ -8,6 +8,10 @@ from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogItemNotFoundError,
     CatalogNotAvailableError,
 )
+from simcore_service_webserver.conversations.errors import (
+    ConversationErrorNotFoundError,
+    ConversationMessageErrorNotFoundError,
+)
 
 from ...exception_handling import (
     ExceptionToHttpErrorMap,
@@ -163,6 +167,18 @@ _PRICING_ERRORS: ExceptionToHttpErrorMap = {
 }
 
 
+_CONVERSATION_ERRORS: ExceptionToHttpErrorMap = {
+    ConversationErrorNotFoundError: HttpErrorInfo(
+        status.HTTP_404_NOT_FOUND,
+        "Conversation not found",
+    ),
+    ConversationMessageErrorNotFoundError: HttpErrorInfo(
+        status.HTTP_404_NOT_FOUND,
+        "Conversation message not found",
+    ),
+}
+
+
 _OTHER_ERRORS: ExceptionToHttpErrorMap = {
     CatalogNotAvailableError: HttpErrorInfo(
         status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -183,6 +199,7 @@ _OTHER_ERRORS: ExceptionToHttpErrorMap = {
 
 
 _ERRORS = [
+    _CONVERSATION_ERRORS,
     _FOLDER_ERRORS,
     _NODE_ERRORS,
     _OTHER_ERRORS,

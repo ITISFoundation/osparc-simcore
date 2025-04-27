@@ -1,8 +1,16 @@
 import logging
-from typing import Any
 
 from aiohttp import web
-from models_library.conversations import ConversationID, ConversationMessageID
+from models_library.api_schemas_webserver.projects_conversations import (
+    ConversationMessageRestGet,
+    ConversationRestGet,
+)
+from models_library.conversations import (
+    ConversationID,
+    ConversationMessageID,
+    ConversationMessageType,
+    ConversationType,
+)
 from models_library.projects import ProjectID
 from models_library.rest_pagination import (
     DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
@@ -24,29 +32,23 @@ from ..._meta import API_VTAG as VTAG
 from ...login.decorators import login_required
 from ...security.decorators import permission_required
 from ...utils_aiohttp import envelope_json_response
-from .. import _comments_service, _conversations_service, _projects_service
+from .. import _conversations_service
 from ._rest_exceptions import handle_plugin_requests_exceptions
 from ._rest_schemas import ProjectPathParams, RequestContext
 
 _logger = logging.getLogger(__name__)
 
+routes = web.RouteTableDef()
+
+
 #
 # projects/*/conversations COLLECTION -------------------------
 #
 
-routes = web.RouteTableDef()
-
 
 class _ProjectConversationsPathParams(BaseModel):
-    project_uuid: ProjectID
+    project_id: ProjectID
     conversation_id: ConversationID
-    model_config = ConfigDict(extra="forbid")
-
-
-class _ProjectConversationsMessagesPathParams(BaseModel):
-    project_uuid: ProjectID
-    conversation_id: ConversationID
-    message_id: ConversationMessageID
     model_config = ConfigDict(extra="forbid")
 
 
@@ -63,18 +65,19 @@ class _ListProjectConversationsQueryParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-# class _ProjectCommentsBodyParams(BaseModel):
-#     contents: str
-#     model_config = ConfigDict(extra="forbid")
+class _ProjectConversationsCreateBodyParams(BaseModel):
+    name: str
+    type: ConversationType
+    model_config = ConfigDict(extra="forbid")
 
 
-#
-### Conversations
-#
+class _ProjectConversationsPutBodyParams(BaseModel):
+    name: str
+    model_config = ConfigDict(extra="forbid")
 
 
 @routes.post(
-    f"/{VTAG}/projects/{{project_uuid}}/conversations",
+    f"/{VTAG}/projects/{{project_id}}/conversations",
     name="create_project_conversation",
 )
 @login_required
@@ -83,22 +86,25 @@ class _ListProjectConversationsQueryParams(BaseModel):
 async def create_project_conversation(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
-    # body_params = await parse_request_body_as(_ProjectCommentsBodyParams, request)
+    body_params = await parse_request_body_as(
+        _ProjectConversationsCreateBodyParams, request
+    )
 
     conversation = await _conversations_service.create_project_conversation(
         app=request.app,
         product_name=req_ctx.product_name,
         user_id=req_ctx.user_id,
-        project_uuid=path_params.project_uuid,
+        project_uuid=path_params.project_id,
         name=body_params.name,
-        type_=body_params.type_,
+        conversation_type=body_params.type,
     )
+    data = ConversationRestGet.from_domain_model(conversation)
 
-    return envelope_json_response({"comment_id": comment_id}, web.HTTPCreated)
+    return envelope_json_response(data, web.HTTPCreated)
 
 
 @routes.get(
-    f"/{VTAG}/projects/{{project_uuid}}/conversations/{{conversation_id}}",
+    f"/{VTAG}/projects/{{project_id}}/conversations",
     name="list_project_conversations",
 )
 @login_required
@@ -106,39 +112,27 @@ async def create_project_conversation(request: web.Request):
 @handle_plugin_requests_exceptions
 async def list_project_conversations(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
-    path_params = parse_request_path_parameters_as(
-        _ProjectConversationsPathParams, request
+    path_params = parse_request_path_parameters_as(ProjectPathParams, request)
+    query_params = parse_request_query_parameters_as(
+        _ListProjectConversationsQueryParams, request
     )
 
-    # query_params: _ListProjectCommentsQueryParams = parse_request_query_parameters_as(
-    #     _ListProjectCommentsQueryParams, request
-    # )
-
-    # ensure the project exists
-    await _projects_service.get_project_for_user(
-        request.app,
-        project_uuid=f"{path_params.project_uuid}",
+    total, conversations = await _conversations_service.list_project_conversations(
+        app=request.app,
+        product_name=req_ctx.product_name,
         user_id=req_ctx.user_id,
-        include_state=False,
-    )
-
-    total_project_comments = await _comments_service.total_project_comments(
-        request=request,
-        project_uuid=path_params.project_uuid,
-    )
-
-    project_comments = await _comments_service.list_project_comments(
-        request=request,
-        project_uuid=path_params.project_uuid,
+        project_uuid=path_params.project_id,
         offset=query_params.offset,
         limit=query_params.limit,
     )
-
-    page = Page[dict[str, Any]].model_validate(
+    page = Page[ConversationRestGet].model_validate(
         paginate_data(
-            chunk=project_comments,
+            chunk=[
+                ConversationRestGet.from_domain_model(conversation)
+                for conversation in conversations
+            ],
             request_url=request.url,
-            total=total_project_comments,
+            total=total,
             limit=query_params.limit,
             offset=query_params.offset,
         )
@@ -150,7 +144,7 @@ async def list_project_conversations(request: web.Request):
 
 
 @routes.put(
-    f"/{VTAG}/projects/{{project_uuid}}/conversations/{{conversation_id}}",
+    f"/{VTAG}/projects/{{project_id}}/conversations/{{conversation_id}}",
     name="update_project_conversation",
 )
 @login_required
@@ -161,27 +155,25 @@ async def update_project_conversation(request: web.Request):
     path_params = parse_request_path_parameters_as(
         _ProjectConversationsPathParams, request
     )
-    # body_params = await parse_request_body_as(_ProjectCommentsBodyParams, request)
+    body_params = await parse_request_body_as(
+        _ProjectConversationsPutBodyParams, request
+    )
 
-    # ensure the project exists
-    await _projects_service.get_project_for_user(
-        request.app,
-        project_uuid=f"{path_params.project_uuid}",
+    conversation = await _conversations_service.update_project_conversation(
+        app=request.app,
+        product_name=req_ctx.product_name,
         user_id=req_ctx.user_id,
-        include_state=False,
+        project_uuid=path_params.project_id,
+        conversation_id=path_params.conversation_id,
+        name=body_params.name,
     )
+    data = ConversationRestGet.from_domain_model(conversation)
 
-    updated_comment = await _comments_service.update_project_comment(
-        request=request,
-        comment_id=path_params.comment_id,
-        project_uuid=path_params.project_uuid,
-        contents=body_params.contents,
-    )
-    return envelope_json_response(updated_comment)
+    return envelope_json_response(data)
 
 
 @routes.delete(
-    f"/{VTAG}/projects/{{project_uuid}}/conversations/{{conversation_id}}",
+    f"/{VTAG}/projects/{{project_id}}/conversations/{{conversation_id}}",
     name="delete_project_conversation",
 )
 @login_required
@@ -193,23 +185,18 @@ async def delete_project_conversation(request: web.Request):
         _ProjectConversationsPathParams, request
     )
 
-    # ensure the project exists
-    await _projects_service.get_project_for_user(
-        request.app,
-        project_uuid=f"{path_params.project_uuid}",
+    await _conversations_service.delete_project_conversation(
+        app=request.app,
+        product_name=req_ctx.product_name,
         user_id=req_ctx.user_id,
-        include_state=False,
-    )
-
-    await _comments_service.delete_project_comment(
-        request=request,
-        comment_id=path_params.comment_id,
+        project_uuid=path_params.project_id,
+        conversation_id=path_params.conversation_id,
     )
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 @routes.get(
-    f"/{VTAG}/projects/{{project_uuid}}/conversations/{{conversation_id}}",
+    f"/{VTAG}/projects/{{project_id}}/conversations/{{conversation_id}}",
     name="get_project_conversation",
 )
 @login_required
@@ -221,57 +208,31 @@ async def get_project_conversation(request: web.Request):
         _ProjectConversationsPathParams, request
     )
 
-    # ensure the project exists
-    await _projects_service.get_project_for_user(
-        request.app,
-        project_uuid=f"{path_params.project_uuid}",
+    conversation = await _conversations_service.get_project_conversation(
+        app=request.app,
+        product_name=req_ctx.product_name,
         user_id=req_ctx.user_id,
-        include_state=False,
+        project_uuid=path_params.project_id,
+        conversation_id=path_params.conversation_id,
     )
+    data = ConversationRestGet.from_domain_model(conversation)
 
-    comment = await _comments_service.get_project_comment(
-        request=request,
-        comment_id=path_params.comment_id,
-    )
-    return envelope_json_response(comment)
+    return envelope_json_response(data)
 
 
-### Conversation Messages
+#
+# projects/*/conversations/*/messages COLLECTION -------------------------
+#
 
 
-@routes.post(
-    f"/{VTAG}/projects/{{project_uuid}}/conversations/{{conversation_id}}/messages",
-    name="create_project_conversation_message",
-)
-@login_required
-@permission_required("project.read")
-@handle_plugin_requests_exceptions
-async def create_project_conversation_message(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
-    path_params = parse_request_path_parameters_as(
-        _ProjectConversationsPathParams, request
-    )
-    # body_params = await parse_request_body_as(_ProjectCommentsBodyParams, request)
-
-    # ensure the project exists
-    await _projects_service.get_project_for_user(
-        request.app,
-        project_uuid=f"{path_params.project_uuid}",
-        user_id=req_ctx.user_id,
-        include_state=False,
-    )
-
-    comment_id = await _comments_service.create_project_comment(
-        request=request,
-        project_uuid=path_params.project_uuid,
-        user_id=req_ctx.user_id,
-        contents=body_params.contents,
-    )
-
-    return envelope_json_response({"comment_id": comment_id}, web.HTTPCreated)
+class _ProjectConversationsMessagesPathParams(BaseModel):
+    project_id: ProjectID
+    conversation_id: ConversationID
+    message_id: ConversationMessageID
+    model_config = ConfigDict(extra="forbid")
 
 
-class _ListProjectCommentsQueryParams(BaseModel):
+class _ListProjectConversationMessagesQueryParams(BaseModel):
     limit: int = Field(
         default=DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
         description="maximum number of items to return (pagination)",
@@ -284,8 +245,49 @@ class _ListProjectCommentsQueryParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
+class _ProjectConversationMessagesCreateBodyParams(BaseModel):
+    content: str
+    type: ConversationMessageType
+    model_config = ConfigDict(extra="forbid")
+
+
+class _ProjectConversationMessagesPutBodyParams(BaseModel):
+    content: str
+    model_config = ConfigDict(extra="forbid")
+
+
+@routes.post(
+    f"/{VTAG}/projects/{{project_id}}/conversations/{{conversation_id}}/messages",
+    name="create_project_conversation_message",
+)
+@login_required
+@permission_required("project.read")
+@handle_plugin_requests_exceptions
+async def create_project_conversation_message(request: web.Request):
+    req_ctx = RequestContext.model_validate(request)
+    path_params = parse_request_path_parameters_as(
+        _ProjectConversationsPathParams, request
+    )
+    body_params = await parse_request_body_as(
+        _ProjectConversationMessagesCreateBodyParams, request
+    )
+
+    message = await _conversations_service.create_project_conversation_message(
+        app=request.app,
+        product_name=req_ctx.product_name,
+        user_id=req_ctx.user_id,
+        project_uuid=path_params.project_id,
+        conversation_id=path_params.conversation_id,
+        content=body_params.content,
+        message_type=body_params.type,
+    )
+    data = ConversationMessageRestGet.from_domain_model(message)
+
+    return envelope_json_response(data, web.HTTPCreated)
+
+
 @routes.get(
-    f"/{VTAG}/projects/{{project_uuid}}/conversations/{{conversation_id}}/messages",
+    f"/{VTAG}/projects/{{project_id}}/conversations/{{conversation_id}}/messages",
     name="list_project_conversation_messages",
 )
 @login_required
@@ -293,36 +295,33 @@ class _ListProjectCommentsQueryParams(BaseModel):
 @handle_plugin_requests_exceptions
 async def list_project_conversation_messages(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
-    path_params = parse_request_path_parameters_as(_ProjectCommentsPathParams, request)
-    query_params: _ListProjectCommentsQueryParams = parse_request_query_parameters_as(
-        _ListProjectCommentsQueryParams, request
+    path_params = parse_request_path_parameters_as(
+        _ProjectConversationsPathParams, request
+    )
+    query_params: _ListProjectConversationMessagesQueryParams = (
+        parse_request_query_parameters_as(
+            _ListProjectConversationMessagesQueryParams, request
+        )
     )
 
-    # ensure the project exists
-    await _projects_service.get_project_for_user(
-        request.app,
-        project_uuid=f"{path_params.project_uuid}",
+    total, messages = await _conversations_service.list_project_conversation_messages(
+        app=request.app,
+        product_name=req_ctx.product_name,
         user_id=req_ctx.user_id,
-        include_state=False,
-    )
-
-    total_project_comments = await _comments_service.total_project_comments(
-        request=request,
-        project_uuid=path_params.project_uuid,
-    )
-
-    project_comments = await _comments_service.list_project_comments(
-        request=request,
-        project_uuid=path_params.project_uuid,
+        project_uuid=path_params.project_id,
+        conversation_id=path_params.conversation_id,
         offset=query_params.offset,
         limit=query_params.limit,
     )
 
-    page = Page[dict[str, Any]].model_validate(
+    page = Page[ConversationMessageRestGet].model_validate(
         paginate_data(
-            chunk=project_comments,
+            chunk=[
+                ConversationMessageRestGet.from_domain_model(message)
+                for message in messages
+            ],
             request_url=request.url,
-            total=total_project_comments,
+            total=total,
             limit=query_params.limit,
             offset=query_params.offset,
         )
@@ -334,7 +333,7 @@ async def list_project_conversation_messages(request: web.Request):
 
 
 @routes.put(
-    f"/{VTAG}/projects/{{project_uuid}}/conversations/{{conversation_id}}/messages/{{message_id}}",
+    f"/{VTAG}/projects/{{project_id}}/conversations/{{conversation_id}}/messages/{{message_id}}",
     name="update_project_conversation_message",
 )
 @login_required
@@ -345,27 +344,26 @@ async def update_project_conversation_message(request: web.Request):
     path_params = parse_request_path_parameters_as(
         _ProjectConversationsMessagesPathParams, request
     )
-    body_params = await parse_request_body_as(_ProjectCommentsBodyParams, request)
+    body_params = await parse_request_body_as(
+        _ProjectConversationMessagesPutBodyParams, request
+    )
 
-    # ensure the project exists
-    await _projects_service.get_project_for_user(
-        request.app,
-        project_uuid=f"{path_params.project_uuid}",
+    message = await _conversations_service.update_project_conversation_message(
+        app=request.app,
+        product_name=req_ctx.product_name,
         user_id=req_ctx.user_id,
-        include_state=False,
+        project_uuid=path_params.project_id,
+        conversation_id=path_params.conversation_id,
+        message_id=path_params.message_id,
+        content=body_params.content,
     )
+    data = ConversationMessageRestGet.from_domain_model(message)
 
-    updated_comment = await _comments_service.update_project_comment(
-        request=request,
-        comment_id=path_params.comment_id,
-        project_uuid=path_params.project_uuid,
-        contents=body_params.contents,
-    )
-    return envelope_json_response(updated_comment)
+    return envelope_json_response(data)
 
 
 @routes.delete(
-    f"/{VTAG}/projects/{{project_uuid}}/conversations/{{conversation_id}}/messages/{{message_id}}",
+    f"/{VTAG}/projects/{{project_id}}/conversations/{{conversation_id}}/messages/{{message_id}}",
     name="delete_project_conversation_message",
 )
 @login_required
@@ -377,23 +375,19 @@ async def delete_project_conversation_message(request: web.Request):
         _ProjectConversationsMessagesPathParams, request
     )
 
-    # ensure the project exists
-    await _projects_service.get_project_for_user(
-        request.app,
-        project_uuid=f"{path_params.project_uuid}",
+    await _conversations_service.delete_project_conversation_message(
+        app=request.app,
+        product_name=req_ctx.product_name,
         user_id=req_ctx.user_id,
-        include_state=False,
-    )
-
-    await _comments_service.delete_project_comment(
-        request=request,
-        comment_id=path_params.comment_id,
+        project_uuid=path_params.project_id,
+        conversation_id=path_params.conversation_id,
+        message_id=path_params.message_id,
     )
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 @routes.get(
-    f"/{VTAG}/projects/{{project_uuid}}/conversations/{{conversation_id}}/messages/{{message_id}}",
+    f"/{VTAG}/projects/{{project_id}}/conversations/{{conversation_id}}/messages/{{message_id}}",
     name="get_project_conversation_message",
 )
 @login_required
@@ -405,16 +399,14 @@ async def get_project_conversation_message(request: web.Request):
         _ProjectConversationsMessagesPathParams, request
     )
 
-    # ensure the project exists
-    await _projects_service.get_project_for_user(
-        request.app,
-        project_uuid=f"{path_params.project_uuid}",
+    message = await _conversations_service.get_project_conversation_message(
+        app=request.app,
+        product_name=req_ctx.product_name,
         user_id=req_ctx.user_id,
-        include_state=False,
+        project_uuid=path_params.project_id,
+        conversation_id=path_params.conversation_id,
+        message_id=path_params.message_id,
     )
+    data = ConversationMessageRestGet.from_domain_model(message)
 
-    comment = await _comments_service.get_project_comment(
-        request=request,
-        comment_id=path_params.comment_id,
-    )
-    return envelope_json_response(comment)
+    return envelope_json_response(data)

@@ -1,7 +1,10 @@
 from datetime import datetime
+from typing import Self
 
 from ..conversations import (
+    ConversationDB,
     ConversationID,
+    ConversationMessageDB,
     ConversationMessageID,
     ConversationMessageType,
     ConversationType,
@@ -25,6 +28,19 @@ class ConversationRestGet(OutputSchema):
     created: datetime
     modified: datetime
 
+    @classmethod
+    def from_domain_model(cls, domain: ConversationDB) -> Self:
+        return cls(
+            conversation_id=domain.conversation_id,
+            product_name=domain.product_name,
+            name=domain.name,
+            project_uuid=domain.project_uuid,
+            user_id=domain.user_id,
+            type=domain.type,
+            created=domain.created,
+            modified=domain.modified,
+        )
+
 
 class ConversationMessageRestGet(OutputSchema):
     message_id: ConversationMessageID
@@ -36,6 +52,18 @@ class ConversationMessageRestGet(OutputSchema):
     # states
     created: datetime
     modified: datetime
+
+    @classmethod
+    def from_domain_model(cls, domain: ConversationMessageDB) -> Self:
+        return cls(
+            message_id=domain.message_id,
+            conversation_id=domain.conversation_id,
+            user_group_id=domain.user_group_id,
+            content=domain.content,
+            type=domain.type,
+            created=domain.created,
+            modified=domain.modified,
+        )
 
 
 class ConversationPatch(InputSchema):
