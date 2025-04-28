@@ -228,6 +228,37 @@ def mocked_s3_server_url() -> Iterator[HttpUrl]:
 
 
 @pytest.fixture
+def mocked_app_dependencies(app: FastAPI, mocker: MockerFixture) -> Iterator[None]:
+    """
+    Mocks some dependency overrides for the FastAPI app.
+    """
+    assert app.state.settings.API_SERVER_RABBITMQ is None
+
+    from simcore_service_api_server.api.dependencies.rabbitmq import (
+        get_rabbitmq_rpc_client,
+    )
+    from simcore_service_api_server.api.dependencies.webserver_rpc import (
+        get_wb_api_rpc_client,
+    )
+
+    def _get_rabbitmq_rpc_client_override():
+        return mocker.MagicMock()
+
+    async def _get_wb_api_rpc_client_override():
+        return mocker.AsyncMock()
+
+    app.dependency_overrides[get_rabbitmq_rpc_client] = (
+        _get_rabbitmq_rpc_client_override
+    )
+    app.dependency_overrides[get_wb_api_rpc_client] = _get_wb_api_rpc_client_override
+
+    yield
+
+    app.dependency_overrides.pop(get_wb_api_rpc_client, None)
+    app.dependency_overrides.pop(get_rabbitmq_rpc_client, None)
+
+
+@pytest.fixture
 def directorv2_service_openapi_specs(
     osparc_simcore_services_dir: Path,
 ) -> dict[str, Any]:
@@ -338,33 +369,6 @@ def mocked_webserver_rest_api_base(
 
 
 @pytest.fixture
-def mocked_webserver_rpc_api(mocker: MockerFixture) -> dict[str, MockType]:
-    """
-    Mocks the webserver's simcore service RPC API for testing purposes.
-    """
-    from servicelib.rabbitmq.rpc_interfaces.webserver import (
-        projects as projects_rpc,  # keep import here
-    )
-
-    side_effects = WebserverRpcSideEffects()
-
-    return {
-        "mark_project_as_job": mocker.patch.object(
-            projects_rpc,
-            "mark_project_as_job",
-            autospec=True,
-            side_effect=side_effects.mark_project_as_job,
-        ),
-        "list_projects_marked_as_jobs": mocker.patch.object(
-            projects_rpc,
-            "list_projects_marked_as_jobs",
-            autospec=True,
-            side_effect=side_effects.list_projects_marked_as_jobs,
-        ),
-    }
-
-
-@pytest.fixture
 def mocked_storage_rest_api_base(
     app: FastAPI,
     storage_service_openapi_specs: dict[str, Any],
@@ -458,32 +462,32 @@ def mocked_catalog_rest_api_base(
 
 
 @pytest.fixture
-def mocked_app_dependencies(app: FastAPI, mocker: MockerFixture) -> Iterator[None]:
+def mocked_webserver_rpc_api(
+    mocked_app_dependencies: None, mocker: MockerFixture
+) -> dict[str, MockType]:
     """
-    Mocks some dependency overrides for the FastAPI app.
+    Mocks the webserver's simcore service RPC API for testing purposes.
     """
-    from simcore_service_api_server.api.dependencies.rabbitmq import (
-        get_rabbitmq_rpc_client,
-    )
-    from simcore_service_api_server.api.dependencies.webserver_rpc import (
-        get_wb_api_rpc_client,
+    from servicelib.rabbitmq.rpc_interfaces.webserver import (
+        projects as projects_rpc,  # keep import here
     )
 
-    def _get_rabbitmq_rpc_client_override(app: FastAPI):
-        return mocker.MagicMock()
+    side_effects = WebserverRpcSideEffects()
 
-    async def _get_wb_api_rpc_client_override(app: FastAPI):
-        return mocker.MagicMock()
-
-    app.dependency_overrides[get_rabbitmq_rpc_client] = (
-        _get_rabbitmq_rpc_client_override
-    )
-    app.dependency_overrides[get_wb_api_rpc_client] = _get_wb_api_rpc_client_override
-
-    yield
-
-    app.dependency_overrides.pop(get_wb_api_rpc_client, None)
-    app.dependency_overrides.pop(get_rabbitmq_rpc_client, None)
+    return {
+        "mark_project_as_job": mocker.patch.object(
+            projects_rpc,
+            "mark_project_as_job",
+            autospec=True,
+            side_effect=side_effects.mark_project_as_job,
+        ),
+        "list_projects_marked_as_jobs": mocker.patch.object(
+            projects_rpc,
+            "list_projects_marked_as_jobs",
+            autospec=True,
+            side_effect=side_effects.list_projects_marked_as_jobs,
+        ),
+    }
 
 
 @pytest.fixture

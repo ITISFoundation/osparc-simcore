@@ -64,7 +64,6 @@ class SolverService:
         solver_key: SolverKeyId,
         product_name: str,
     ) -> Solver:
-        # TODO: Mads, this is not necessary. The first item is the latest!
         service_releases: list[ServiceRelease] = []
         for page_params in iter_pagination_params(limit=DEFAULT_PAGINATION_LIMIT):
             releases, page_meta = await self._catalog_service.list_release_history(
