@@ -284,7 +284,7 @@ class CompRunsRepository(BaseRepository):
                 sa.update(comp_runs)
                 .where(
                     (comp_runs.c.project_uuid == f"{project_id}")
-                    & (comp_runs.c.user_id == f"{user_id}")
+                    & (comp_runs.c.user_id == user_id)
                     & (comp_runs.c.iteration == iteration)
                 )
                 .values(**values)
