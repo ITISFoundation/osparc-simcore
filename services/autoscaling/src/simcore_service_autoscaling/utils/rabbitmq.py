@@ -142,12 +142,11 @@ async def _create_autoscaling_status_message(
 ) -> RabbitAutoscalingStatusMessage:
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
 
+    origin = "unknown"
     if app_settings.AUTOSCALING_NODES_MONITORING:
         origin = f"dynamic:node_labels={app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS!s}"
     elif app_settings.AUTOSCALING_DASK:
         origin = f"computational:scheduler_url={app_settings.AUTOSCALING_DASK.DASK_MONITORING_URL!s}"
-    else:
-        origin = "unknown"
 
     total_nodes = (
         len(cluster.active_nodes)
