@@ -47,14 +47,14 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     getSharedWithOptions: function(resourceType) {
       return [{
         id: "show-all",
-        label: qx.locale.Manager.tr("All ") + osparc.product.Utils.resourceTypeToAlias(resourceType, {
+        label: qx.locale.Manager.tr("All") + " " + osparc.product.Utils.resourceTypeToAlias(resourceType, {
           firstUpperCase: true,
           plural: true
         }),
         icon: "@FontAwesome5Solid/home/20"
       }, {
         id: "my-resources",
-        label: qx.locale.Manager.tr("My ") + osparc.product.Utils.resourceTypeToAlias(resourceType, {
+        label: qx.locale.Manager.tr("My") + " " + osparc.product.Utils.resourceTypeToAlias(resourceType, {
           firstUpperCase: true,
           plural: true
         }),
@@ -65,7 +65,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
         icon: "@FontAwesome5Solid/users/20"
       }, {
         id: "shared-with-everyone",
-        label: qx.locale.Manager.tr("Public") + osparc.product.Utils.resourceTypeToAlias(resourceType, {
+        label: qx.locale.Manager.tr("Public") + " " + osparc.product.Utils.resourceTypeToAlias(resourceType, {
           firstUpperCase: true,
           plural: true
         }),
