@@ -18,6 +18,7 @@ from aws_library.ec2 import (
 from aws_library.ec2._errors import EC2TooManyInstancesError
 from fastapi import FastAPI
 from models_library.generated_models.docker_rest_api import Node, NodeState
+from models_library.rabbitmq_messages import ProgressType
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.utils import limited_gather
 from servicelib.utils_formatting import timedelta_as_minute_second
@@ -51,7 +52,11 @@ from ..utils.buffer_machines_pool_core import (
     get_deactivated_buffer_ec2_tags,
     is_buffer_machine,
 )
-from ..utils.rabbitmq import log_tasks_message, post_autoscaling_status_message
+from ..utils.rabbitmq import (
+    post_autoscaling_status_message,
+    post_tasks_log_message,
+    post_tasks_progress_message,
+)
 from .auto_scaling_mode_base import BaseAutoscaling
 from .docker import get_docker_client
 from .ec2 import get_ec2_client
@@ -354,7 +359,6 @@ async def _sorted_allowed_instance_types(app: FastAPI) -> list[EC2InstanceType]:
 
 async def _activate_and_notify(
     app: FastAPI,
-    auto_scaling_mode: BaseAutoscaling,
     drained_node: AssociatedInstance,
 ) -> AssociatedInstance:
     app_settings = get_application_settings(app)
@@ -363,14 +367,17 @@ async def _activate_and_notify(
         utils_docker.set_node_osparc_ready(
             app_settings, docker_client, drained_node.node, ready=True
         ),
-        log_tasks_message(
+        post_tasks_log_message(
             app,
             drained_node.assigned_tasks,
             "cluster adjusted, service should start shortly...",
             level=logging.INFO,
         ),
-        auto_scaling_mode.progress_message_from_tasks(
-            app, drained_node.assigned_tasks, progress=1.0
+        post_tasks_progress_message(
+            app,
+            tasks=drained_node.assigned_tasks,
+            progress=1.0,
+            progress_type=ProgressType.CLUSTER_UP_SCALING,
         ),
     )
     return dataclasses.replace(drained_node, node=updated_node)
@@ -379,7 +386,6 @@ async def _activate_and_notify(
 async def _activate_drained_nodes(
     app: FastAPI,
     cluster: Cluster,
-    auto_scaling_mode: BaseAutoscaling,
 ) -> Cluster:
     nodes_to_activate = [
         node
@@ -396,10 +402,7 @@ async def _activate_drained_nodes(
         f"activate {len(nodes_to_activate)} drained nodes {[n.ec2_instance.id for n in nodes_to_activate]}",
     ):
         activated_nodes = await asyncio.gather(
-            *(
-                _activate_and_notify(app, auto_scaling_mode, node)
-                for node in nodes_to_activate
-            )
+            *(_activate_and_notify(app, node) for node in nodes_to_activate)
         )
     new_active_node_ids = {node.ec2_instance.id for node in activated_nodes}
     remaining_drained_nodes = [
@@ -787,7 +790,7 @@ async def _launch_instances(
             app, needed_instances, new_instance_tags
         )
     except EC2TooManyInstancesError:
-        await log_tasks_message(
+        await post_tasks_log_message(
             app,
             tasks,
             "The maximum number of machines in the cluster was reached. Please wait for your running jobs "
@@ -829,7 +832,7 @@ async def _launch_instances(
     new_pending_instances: list[EC2InstanceData] = []
     for r in results:
         if isinstance(r, EC2TooManyInstancesError):
-            await log_tasks_message(
+            await post_tasks_log_message(
                 app,
                 tasks,
                 "Exceptionally high load on computational cluster, please try again later.",
@@ -847,9 +850,9 @@ async def _launch_instances(
         f"{sum(n for n in capped_needed_machines.values())} new machines launched"
         ", it might take up to 3 minutes to start, Please wait..."
     )
-    await log_tasks_message(app, tasks, log_message, level=logging.INFO)
+    await post_tasks_log_message(app, tasks, log_message, level=logging.INFO)
     if last_issue:
-        await log_tasks_message(
+        await post_tasks_log_message(
             app,
             tasks,
             "Unexpected issues detected, probably due to high load, please contact support",
@@ -1062,7 +1065,6 @@ async def _try_scale_down_cluster(app: FastAPI, cluster: Cluster) -> Cluster:
 async def _notify_based_on_machine_type(
     app: FastAPI,
     instances: list[AssociatedInstance] | list[NonAssociatedInstance],
-    auto_scaling_mode: BaseAutoscaling,
     *,
     message: str,
 ) -> None:
@@ -1086,22 +1088,20 @@ async def _notify_based_on_machine_type(
             f" est. remaining time: {timedelta_as_minute_second(estimated_time_to_completion)})...please wait..."
         )
         if tasks:
-            await log_tasks_message(app, tasks, message=msg, level=logging.INFO)
-            await auto_scaling_mode.progress_message_from_tasks(
+            await post_tasks_log_message(app, tasks, message=msg, level=logging.INFO)
+            await post_tasks_progress_message(
                 app,
-                tasks,
+                task=tasks,
                 progress=time_since_launch.total_seconds()
                 / instance_max_time_to_start.total_seconds(),
+                progress_type=ProgressType.CLUSTER_UP_SCALING,
             )
 
 
-async def _notify_machine_creation_progress(
-    app: FastAPI, cluster: Cluster, auto_scaling_mode: BaseAutoscaling
-) -> None:
+async def _notify_machine_creation_progress(app: FastAPI, cluster: Cluster) -> None:
     await _notify_based_on_machine_type(
         app,
         cluster.pending_ec2s,
-        auto_scaling_mode,
         message="waiting for machine to join cluster",
     )
 
@@ -1187,7 +1187,7 @@ async def _scale_up_cluster(
     if needed_ec2_instances := await _find_needed_instances(
         app, unassigned_tasks, allowed_instance_types, cluster, auto_scaling_mode
     ):
-        await log_tasks_message(
+        await post_tasks_log_message(
             app,
             unassigned_tasks,
             "service is pending due to missing resources, scaling up cluster now...",
@@ -1224,7 +1224,7 @@ async def _autoscale_cluster(
     )
 
     # 2. activate available drained nodes to cover some of the tasks
-    cluster = await _activate_drained_nodes(app, cluster, auto_scaling_mode)
+    cluster = await _activate_drained_nodes(app, cluster)
 
     # 3. start warm buffer instances to cover the remaining tasks
     cluster = await _start_warm_buffer_instances(app, cluster, auto_scaling_mode)
@@ -1297,5 +1297,5 @@ async def auto_scale_cluster(
     )
 
     # notify
-    await _notify_machine_creation_progress(app, cluster, auto_scaling_mode)
+    await _notify_machine_creation_progress(app, cluster)
     await _notify_autoscaling_status(app, cluster, auto_scaling_mode)

@@ -33,12 +33,6 @@ class BaseAutoscaling(ABC):  # pragma: no cover
 
     @staticmethod
     @abstractmethod
-    async def progress_message_from_tasks(
-        app: FastAPI, tasks: list, progress: float
-    ) -> None: ...
-
-    @staticmethod
-    @abstractmethod
     def get_task_required_resources(task) -> Resources: ...
 
     @staticmethod

@@ -26,7 +26,7 @@ from ..modules.rabbitmq import post_message
 _logger = logging.getLogger(__name__)
 
 
-async def log_tasks_message(
+async def post_tasks_log_message(
     app: FastAPI,
     tasks: list[DockerTask] | list[DaskTask],
     message: str,
@@ -57,7 +57,7 @@ async def log_tasks_message(
         )
 
 
-async def progress_tasks_message(
+async def post_tasks_progress_message(
     app: FastAPI,
     *,
     tasks: list[DockerTask] | list[DaskTask],
@@ -80,7 +80,7 @@ async def progress_tasks_message(
         await asyncio.gather(
             *(
                 _post_task_progress_message_from_dask_task(
-                    app, cast(DockerTask, task), progress, progress_type
+                    app, cast(DaskTask, task), progress, progress_type
                 )
                 for task in tasks
             ),

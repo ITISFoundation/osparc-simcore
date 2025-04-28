@@ -7,7 +7,6 @@ from types_aiobotocore_ec2.literals import InstanceTypeType
 from ..core.settings import get_application_settings
 from ..models import AssociatedInstance
 from ..utils import utils_docker, utils_ec2
-from ..utils.rabbitmq import progress_tasks_message
 from .auto_scaling_mode_base import BaseAutoscaling
 from .docker import get_docker_client
 
@@ -42,12 +41,6 @@ class DynamicAutoscaling(BaseAutoscaling):
             get_docker_client(app),
             service_labels=app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS,
         )
-
-    @staticmethod
-    async def progress_message_from_tasks(
-        app: FastAPI, tasks: list, progress: float
-    ) -> None:
-        await progress_tasks_message(app, tasks, progress=progress)
 
     @staticmethod
     def get_task_required_resources(task) -> Resources:

@@ -88,12 +88,6 @@ class ComputationalAutoscaling(BaseAutoscaling):
             return []
 
     @staticmethod
-    async def progress_message_from_tasks(app: FastAPI, tasks: list, progress: float):
-        assert app  # nosec
-        assert tasks is not None  # nosec
-        _logger.info("PROGRESS: %s", f"{progress:.2f}")
-
-    @staticmethod
     def get_task_required_resources(task) -> Resources:
         return utils.resources_from_dask_task(task)
 
