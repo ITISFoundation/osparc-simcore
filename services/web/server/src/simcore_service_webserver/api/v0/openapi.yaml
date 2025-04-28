@@ -3856,18 +3856,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_TaskGet_'
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Forbidden
         '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
         '409':
           content:
             application/json:
@@ -3985,18 +3985,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Page_ProjectListItem_'
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Forbidden
         '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
         '409':
           content:
             application/json:
@@ -4047,18 +4047,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_ProjectGet_'
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Forbidden
         '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
         '409':
           content:
             application/json:
@@ -4110,18 +4110,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_ProjectGet_'
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Forbidden
         '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
         '409':
           content:
             application/json:
@@ -4174,18 +4174,18 @@ paths:
       responses:
         '204':
           description: Successful Response
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Forbidden
         '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
         '409':
           content:
             application/json:
@@ -4232,18 +4232,18 @@ paths:
       responses:
         '204':
           description: Successful Response
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Forbidden
         '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
         '409':
           content:
             application/json:
@@ -4295,18 +4295,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_TaskGet_'
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Forbidden
         '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
         '409':
           content:
             application/json:
@@ -4400,18 +4400,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Page_ProjectListItem_'
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Forbidden
         '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
         '409':
           content:
             application/json:
@@ -4463,18 +4463,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_GetProjectInactivityResponse_'
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Forbidden
         '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
         '409':
           content:
             application/json:
@@ -6770,14 +6770,14 @@ paths:
       responses:
         '204':
           description: Successful Response
-        '403':
-          description: Forbidden
+        '404':
+          description: Not Found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
-        '404':
-          description: Not Found
+        '403':
+          description: Forbidden
           content:
             application/json:
               schema:
@@ -6837,18 +6837,18 @@ paths:
       responses:
         '204':
           description: Successful Response
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Forbidden
         '404':
           description: Not such a project
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
         '409':
           description: Project is in use and cannot be trashed
           content:
@@ -6897,18 +6897,18 @@ paths:
       responses:
         '204':
           description: Successful Response
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Forbidden
         '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
         '409':
           content:
             application/json:
@@ -6965,14 +6965,14 @@ paths:
       responses:
         '204':
           description: Successful Response
+        '404':
+          description: Not such a folder
         '403':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Forbidden
-        '404':
-          description: Not such a folder
         '409':
           description: One or more projects in the folder are in use and cannot be
             trashed
@@ -7015,18 +7015,18 @@ paths:
       responses:
         '204':
           description: Successful Response
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Forbidden
         '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
         '409':
           content:
             application/json:
@@ -7083,14 +7083,14 @@ paths:
       responses:
         '204':
           description: Successful Response
+        '404':
+          description: Not such a workspace
         '403':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Forbidden
-        '404':
-          description: Not such a workspace
         '409':
           description: One or more projects in the workspace are in use and cannot
             be trashed
@@ -7133,18 +7133,18 @@ paths:
       responses:
         '204':
           description: Successful Response
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Forbidden
         '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
         '409':
           content:
             application/json:
