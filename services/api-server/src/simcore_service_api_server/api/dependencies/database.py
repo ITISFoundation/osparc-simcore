@@ -25,19 +25,6 @@ def get_repository(repo_type: type[BaseRepository]) -> Callable:
         # 2nd one was acquiring a connection per request which works but blocks the director-v2 responsiveness once
         # the max amount of connections is reached
         # now the current solution is to acquire connection when needed.
-
-        # Retrieve connection pool stats from the AsyncEngine
-        pool = engine.raw_connection().pool
-        available_engines = pool.maxsize - (pool.size - pool.freesize)
-        if available_engines <= 1:
-            _logger.warning(
-                "Low pg connections available in pool: pool size=%d, acquired=%d, free=%d, reserved=[%d, %d]",
-                pool.size,
-                pool.size - pool.freesize,
-                pool.freesize,
-                pool.minsize,
-                pool.maxsize,
-            )
         yield repo_type(db_engine=engine)
 
     return _get_repo
