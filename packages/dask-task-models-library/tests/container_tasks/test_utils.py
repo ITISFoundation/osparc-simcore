@@ -1,3 +1,9 @@
+# pylint: disable=too-many-positional-arguments
+# pylint:disable=redefined-outer-name
+# pylint:disable=too-many-arguments
+# pylint:disable=unused-argument
+# pylint:disable=unused-variable
+
 import pytest
 from dask_task_models_library.container_tasks.utils import (
     generate_dask_job_id,
