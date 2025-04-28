@@ -7,6 +7,7 @@ from packaging.version import Version
 from servicelib.fastapi.profiler import initialize_profiler
 from servicelib.fastapi.tracing import initialize_tracing
 from servicelib.logging_utils import config_all_loggers
+from simcore_service_api_server.clients.postgres import setup_postgres
 
 from .. import exceptions
 from .._meta import API_VERSION, API_VTAG, APP_NAME
@@ -80,6 +81,9 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
     add_pagination(app)
 
     app.state.settings = settings
+
+    if settings.API_SERVER_POSTGRES:
+        setup_postgres(app)
 
     setup_rabbitmq(app)
 
