@@ -4813,6 +4813,343 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_ProjectsCommentsAPI_'
+  /v0/projects/{project_id}/conversations:
+    post:
+      tags:
+      - projects
+      - conversations
+      summary: Create Project Conversation
+      operationId: create_project_conversation
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Project Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_ProjectConversationsCreateBodyParams'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ConversationRestGet_'
+    get:
+      tags:
+      - projects
+      - conversations
+      summary: List Project Conversations
+      operationId: list_project_conversations
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Project Id
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          title: Offset
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page_ConversationRestGet_'
+  /v0/projects/{project_id}/conversations/{conversation_id}:
+    put:
+      tags:
+      - projects
+      - conversations
+      summary: Update Project Conversation
+      operationId: update_project_conversation
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Project Id
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_ProjectConversationsPutBodyParams'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ConversationRestGet_'
+    delete:
+      tags:
+      - projects
+      - conversations
+      summary: Delete Project Conversation
+      operationId: delete_project_conversation
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Project Id
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      responses:
+        '204':
+          description: Successful Response
+    get:
+      tags:
+      - projects
+      - conversations
+      summary: Get Project Conversation
+      operationId: get_project_conversation
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Project Id
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ConversationRestGet_'
+  /v0/projects/{project_id}/conversations/{conversation_id}/messages:
+    post:
+      tags:
+      - projects
+      - conversations
+      summary: Create Project Conversation Message
+      operationId: create_project_conversation_message
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Project Id
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_ProjectConversationMessagesCreateBodyParams'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ConversationMessageRestGet_'
+    get:
+      tags:
+      - projects
+      - conversations
+      summary: List Project Conversation Messages
+      operationId: list_project_conversation_messages
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Project Id
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          title: Offset
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page_ConversationMessageRestGet_'
+  /v0/projects/{project_id}/conversations/{conversation_id}/messages/{message_id}:
+    put:
+      tags:
+      - projects
+      - conversations
+      summary: Update Project Conversation Message
+      operationId: update_project_conversation_message
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Project Id
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      - name: message_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Message Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_ProjectConversationMessagesPutBodyParams'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ConversationMessageRestGet_'
+    delete:
+      tags:
+      - projects
+      - conversations
+      summary: Delete Project Conversation Message
+      operationId: delete_project_conversation_message
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Project Id
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      - name: message_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Message Id
+      responses:
+        '204':
+          description: Successful Response
+    get:
+      tags:
+      - projects
+      - conversations
+      summary: Get Project Conversation Message
+      operationId: get_project_conversation_message
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Project Id
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      - name: message_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Message Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ConversationMessageRestGet_'
   /v0/projects/{project_id}/folders/{folder_id}:
     put:
       tags:
@@ -8852,6 +9189,100 @@ components:
       - serviceKey
       - serviceVersion
       title: ConnectServiceToPricingPlanBodyParams
+    ConversationMessageRestGet:
+      properties:
+        messageId:
+          type: string
+          format: uuid
+          title: Messageid
+        conversationId:
+          type: string
+          format: uuid
+          title: Conversationid
+        userGroupId:
+          type: integer
+          exclusiveMinimum: true
+          title: Usergroupid
+          minimum: 0
+        content:
+          type: string
+          title: Content
+        type:
+          $ref: '#/components/schemas/ConversationMessageType'
+        created:
+          type: string
+          format: date-time
+          title: Created
+        modified:
+          type: string
+          format: date-time
+          title: Modified
+      type: object
+      required:
+      - messageId
+      - conversationId
+      - userGroupId
+      - content
+      - type
+      - created
+      - modified
+      title: ConversationMessageRestGet
+    ConversationMessageType:
+      type: string
+      enum:
+      - MESSAGE
+      - NOTIFICATION
+      title: ConversationMessageType
+    ConversationRestGet:
+      properties:
+        conversationId:
+          type: string
+          format: uuid
+          title: Conversationid
+        productName:
+          type: string
+          title: Productname
+        name:
+          type: string
+          title: Name
+        projectUuid:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Projectuuid
+        userId:
+          type: integer
+          exclusiveMinimum: true
+          title: Userid
+          minimum: 0
+        type:
+          $ref: '#/components/schemas/ConversationType'
+        created:
+          type: string
+          format: date-time
+          title: Created
+        modified:
+          type: string
+          format: date-time
+          title: Modified
+      type: object
+      required:
+      - conversationId
+      - productName
+      - name
+      - projectUuid
+      - userId
+      - type
+      - created
+      - modified
+      title: ConversationRestGet
+    ConversationType:
+      type: string
+      enum:
+      - PROJECT_STATIC
+      - PROJECT_ANNOTATION
+      title: ConversationType
     CountryInfoDict:
       properties:
         name:
@@ -9251,6 +9682,32 @@ components:
           title: Error
       type: object
       title: Envelope[ComputationStarted]
+    Envelope_ConversationMessageRestGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/ConversationMessageRestGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[ConversationMessageRestGet]
+    Envelope_ConversationRestGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/ConversationRestGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[ConversationRestGet]
     Envelope_CreditPriceGet_:
       properties:
         data:
@@ -12867,6 +13324,42 @@ components:
       - _links
       - data
       title: Page[CatalogLatestServiceGet]
+    Page_ConversationMessageRestGet_:
+      properties:
+        _meta:
+          $ref: '#/components/schemas/PageMetaInfoLimitOffset'
+        _links:
+          $ref: '#/components/schemas/PageLinks'
+        data:
+          items:
+            $ref: '#/components/schemas/ConversationMessageRestGet'
+          type: array
+          title: Data
+      additionalProperties: false
+      type: object
+      required:
+      - _meta
+      - _links
+      - data
+      title: Page[ConversationMessageRestGet]
+    Page_ConversationRestGet_:
+      properties:
+        _meta:
+          $ref: '#/components/schemas/PageMetaInfoLimitOffset'
+        _links:
+          $ref: '#/components/schemas/PageLinks'
+        data:
+          items:
+            $ref: '#/components/schemas/ConversationRestGet'
+          type: array
+          title: Data
+      additionalProperties: false
+      type: object
+      required:
+      - _meta
+      - _links
+      - data
+      title: Page[ConversationRestGet]
     Page_LicensedItemPurchaseGet_:
       properties:
         _meta:
@@ -16606,6 +17099,52 @@ components:
       required:
       - contents
       title: _ProjectCommentsBodyParams
+    _ProjectConversationMessagesCreateBodyParams:
+      properties:
+        content:
+          type: string
+          title: Content
+        type:
+          $ref: '#/components/schemas/ConversationMessageType'
+      additionalProperties: false
+      type: object
+      required:
+      - content
+      - type
+      title: _ProjectConversationMessagesCreateBodyParams
+    _ProjectConversationMessagesPutBodyParams:
+      properties:
+        content:
+          type: string
+          title: Content
+      additionalProperties: false
+      type: object
+      required:
+      - content
+      title: _ProjectConversationMessagesPutBodyParams
+    _ProjectConversationsCreateBodyParams:
+      properties:
+        name:
+          type: string
+          title: Name
+        type:
+          $ref: '#/components/schemas/ConversationType'
+      additionalProperties: false
+      type: object
+      required:
+      - name
+      - type
+      title: _ProjectConversationsCreateBodyParams
+    _ProjectConversationsPutBodyParams:
+      properties:
+        name:
+          type: string
+          title: Name
+      additionalProperties: false
+      type: object
+      required:
+      - name
+      title: _ProjectConversationsPutBodyParams
     _ProjectGroupAccess:
       properties:
         gid:

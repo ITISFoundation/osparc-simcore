@@ -3,9 +3,9 @@ from enum import auto
 from typing import TypeAlias
 from uuid import UUID
 
-from conftest import UserID
 from models_library.groups import GroupID
 from models_library.projects import ProjectID
+from models_library.users import UserID
 from pydantic import BaseModel, ConfigDict
 from simcore_postgres_database.models.conversation_messages import (
     ConversationMessageType as PostgresConversationMessageType,
