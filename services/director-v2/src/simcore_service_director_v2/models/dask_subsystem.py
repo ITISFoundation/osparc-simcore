@@ -1,5 +1,4 @@
 from enum import Enum
-from typing import TypeAlias
 
 
 # NOTE: mypy fails with src/simcore_service_director_v2/modules/dask_client.py:101:5: error: Dict entry 0 has incompatible type "str": "auto"; expected "Any": "DaskClientTaskState"  [dict-item]
@@ -12,7 +11,3 @@ class DaskClientTaskState(str, Enum):
     ERRED = "ERRED"
     ABORTED = "ABORTED"
     SUCCESS = "SUCCESS"
-
-
-DaskJobID: TypeAlias = str
-DaskResources: TypeAlias = dict[str, int | float]
