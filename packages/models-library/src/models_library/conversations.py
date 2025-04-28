@@ -6,12 +6,6 @@ from uuid import UUID
 from models_library.groups import GroupID
 from models_library.projects import ProjectID
 from pydantic import BaseModel, ConfigDict
-from simcore_postgres_database.models.conversation_messages import (
-    ConversationMessageType as PostgresConversationMessageType,
-)
-from simcore_postgres_database.models.conversations import (
-    ConversationType as PostgresConversationType,
-)
 
 from .products import ProductName
 from .utils.enums import StrAutoEnum
@@ -32,14 +26,6 @@ class ConversationMessageType(StrAutoEnum):
     NOTIFICATION = (
         auto()
     )  # Special type of message used for storing notifications in the conversation
-
-
-assert [member.value for member in ConversationType] == [
-    member.value for member in PostgresConversationType
-]  # nosec
-assert [member.value for member in ConversationMessageType] == [
-    member.value for member in PostgresConversationMessageType
-]  # nosec
 
 
 #
