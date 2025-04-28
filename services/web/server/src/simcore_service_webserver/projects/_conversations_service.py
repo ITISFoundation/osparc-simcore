@@ -16,7 +16,6 @@ from models_library.projects import ProjectID
 from models_library.users import UserID
 from pydantic import PositiveInt
 
-# from ._projects_repository_legacy import APP_PROJECT_DBAPI, ProjectDBAPI
 from ..conversations import conversations_service
 from ._access_rights_service import check_user_project_permission
 
