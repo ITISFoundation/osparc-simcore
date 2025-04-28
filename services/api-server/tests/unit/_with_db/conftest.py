@@ -172,7 +172,7 @@ def app_environment(
         "simcore_service_api_server.core._prometheus_instrumentation.setup_prometheus_instrumentation"
     )
 
-    envs = setenvs_from_dict(monkeypatch, default_app_env_vars)
+    envs = setenvs_from_dict(monkeypatch, {**default_app_env_vars})
     assert "API_SERVER_POSTGRES" not in envs
 
     # Should be sufficient to create settings
