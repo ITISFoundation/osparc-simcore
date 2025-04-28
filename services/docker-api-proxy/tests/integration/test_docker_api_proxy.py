@@ -9,6 +9,7 @@ from pathlib import Path
 import aiodocker
 import pytest
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
+from servicelib.aiohttp import status
 from settings_library.docker_api_proxy import DockerApiProxysettings
 
 HERE = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -61,4 +62,4 @@ async def test_unauthenticated_docker_client(
     async with setup_docker_client(envs) as working_docker:
         with pytest.raises(aiodocker.exceptions.DockerError) as exc:
             await working_docker.system.info()
-        assert exc.value.status == 401
+        assert exc.value.status == status.HTTP_401_UNAUTHORIZED
