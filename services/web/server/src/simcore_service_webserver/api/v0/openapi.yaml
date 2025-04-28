@@ -9256,10 +9256,10 @@ components:
             format: uuid
           - type: 'null'
           title: Projectuuid
-        userId:
+        userGroupId:
           type: integer
           exclusiveMinimum: true
-          title: Userid
+          title: Usergroupid
           minimum: 0
         type:
           $ref: '#/components/schemas/ConversationType'
@@ -9277,7 +9277,7 @@ components:
       - productName
       - name
       - projectUuid
-      - userId
+      - userGroupId
       - type
       - created
       - modified

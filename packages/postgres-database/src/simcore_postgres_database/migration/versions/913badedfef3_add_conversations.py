@@ -1,8 +1,8 @@
 """add conversations
 
-Revision ID: 03d6d6ab0d5f
+Revision ID: 913badedfef3
 Revises: 742123f0933a
-Create Date: 2025-04-28 10:57:35.554780+00:00
+Create Date: 2025-04-28 11:00:05.988864+00:00
 
 """
 
@@ -11,7 +11,7 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = "03d6d6ab0d5f"
+revision = "913badedfef3"
 down_revision = "742123f0933a"
 branch_labels = None
 depends_on = None
@@ -29,7 +29,7 @@ def upgrade():
         ),
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("project_uuid", sa.String(), nullable=True),
-        sa.Column("user_id", sa.BigInteger(), nullable=True),
+        sa.Column("user_group_id", sa.BigInteger(), nullable=True),
         sa.Column(
             "type",
             sa.Enum("PROJECT_STATIC", "PROJECT_ANNOTATION", name="conversationtype"),
@@ -63,9 +63,9 @@ def upgrade():
             ondelete="CASCADE",
         ),
         sa.ForeignKeyConstraint(
-            ["user_id"],
-            ["users.id"],
-            name="fk_projects_comments_user_id",
+            ["user_group_id"],
+            ["groups.gid"],
+            name="fk_conversation_messages_user_primary_gid",
             ondelete="SET NULL",
         ),
         sa.PrimaryKeyConstraint("conversation_id"),

@@ -5,8 +5,8 @@ from sqlalchemy.dialects.postgresql import UUID
 
 from ._common import RefActions, column_created_datetime, column_modified_datetime
 from .base import metadata
+from .groups import groups
 from .projects import projects
-from .users import users
 
 
 class ConversationType(enum.Enum):
@@ -42,16 +42,16 @@ conversations = sa.Table(
         index=True,
         nullable=True,
     ),
-    # NOTE: if the user gets deleted, it sets to null which should be interpreted as "unknown" user
+    # NOTE: if the user primary group ID gets deleted, it sets to null which should be interpreted as "unknown" user
     sa.Column(
-        "user_id",
+        "user_group_id",
         sa.BigInteger,
         sa.ForeignKey(
-            users.c.id,
-            name="fk_projects_comments_user_id",
+            groups.c.gid,
+            name="fk_conversation_messages_user_primary_gid",
             ondelete=RefActions.SET_NULL,
         ),
-        doc="user who created the comment",
+        doc="user primary group ID who created the message",
         nullable=True,
     ),
     sa.Column(
