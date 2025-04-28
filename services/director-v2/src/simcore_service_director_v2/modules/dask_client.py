@@ -53,6 +53,7 @@ from models_library.services import ServiceRunID
 from models_library.users import UserID
 from pydantic import TypeAdapter, ValidationError
 from pydantic.networks import AnyUrl
+from servicelib.fastapi.db_asyncpg_engine import get_engine
 from servicelib.logging_utils import log_catch
 from settings_library.s3 import S3Settings
 from simcore_sdk.node_ports_common.exceptions import NodeportsException
@@ -361,7 +362,7 @@ class DaskClient:
             try:
                 # This instance is created only once so it can be reused in calls below
                 node_ports = await dask_utils.create_node_ports(
-                    db_engine=self.app.state.asyncpg_engine,
+                    db_engine=get_engine(self.app),
                     user_id=user_id,
                     project_id=project_id,
                     node_id=node_id,
