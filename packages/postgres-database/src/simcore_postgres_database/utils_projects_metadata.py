@@ -219,6 +219,31 @@ async def set_project_ancestors(
             ) from err
 
         raise DBProjectNotFoundError(project_uuid=project_uuid) from err
+    except sa_exc.IntegrityError as exc:
+        if "fk_projects_metadata_parent_node_id" in exc.args[0]:
+            raise map_db_exception(
+                exc,
+                {
+                    asyncpg.exceptions.ForeignKeyViolationError.sqlstate: (
+                        DBProjectInvalidParentNodeError,
+                        {
+                            "project_uuid": project_uuid,
+                            "parent_node_id": parent_node_id,
+                        },
+                    ),
+                },
+            ) from exc
+        raise map_db_exception(
+            exc,
+            {
+                asyncpg.exceptions.ForeignKeyViolationError.sqlstate: (
+                    DBProjectNotFoundError,
+                    {
+                        "project_uuid": project_uuid,
+                    },
+                ),
+            },
+        ) from exc
 
 
 async def set_project_custom_metadata(
