@@ -38,6 +38,7 @@ from dask_task_models_library.container_tasks.protocol import (
     TaskOwner,
 )
 from dask_task_models_library.container_tasks.utils import generate_dask_job_id
+from dask_task_models_library.models import DaskJobID, DaskResources
 from dask_task_models_library.resource_constraints import (
     create_ec2_resource_constraint_key,
 )
@@ -70,7 +71,7 @@ from ..core.errors import (
 from ..core.settings import AppSettings, ComputationalBackendSettings
 from ..models.comp_runs import RunMetadataDict
 from ..models.comp_tasks import Image
-from ..models.dask_subsystem import DaskClientTaskState, DaskJobID, DaskResources
+from ..models.dask_subsystem import DaskClientTaskState
 from ..modules.storage import StorageClient
 from ..utils import dask as dask_utils
 from ..utils.dask_client_utils import (
