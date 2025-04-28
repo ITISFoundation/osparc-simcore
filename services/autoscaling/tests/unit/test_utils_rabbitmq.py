@@ -7,8 +7,10 @@
 
 from collections.abc import Awaitable, Callable
 from typing import Any
+from unittest.mock import AsyncMock
 
 import aiodocker
+import pytest
 from faker import Faker
 from fastapi import FastAPI
 from models_library.docker import DockerLabelKey, StandardSimcoreDockerLabels
@@ -48,23 +50,11 @@ pytest_simcore_core_services_selection = [
 pytest_simcore_ops_services_selection = []
 
 
-async def test_post_task_log_message(
-    disable_autoscaling_background_task,
-    enabled_rabbitmq: RabbitSettings,
-    disabled_ec2: None,
-    disabled_ssm: None,
-    mocked_redis_server: None,
-    initialized_app: FastAPI,
+@pytest.fixture
+async def logs_rabbitmq_consumer(
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
     mocker: MockerFixture,
-    async_docker_client: aiodocker.Docker,
-    create_service: Callable[
-        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
-    ],
-    task_template: dict[str, Any],
-    osparc_docker_label_keys: StandardSimcoreDockerLabels,
-    faker: Faker,
-):
+) -> AsyncMock:
     mocked_message_handler = mocker.AsyncMock(return_value=True)
     client = create_rabbitmq_client("pytest_consumer")
     await client.subscribe(
@@ -72,21 +62,68 @@ async def test_post_task_log_message(
         mocked_message_handler,
         topics=[BIND_TO_ALL_TOPICS],
     )
+    return mocked_message_handler
 
-    service_with_labels = await create_service(
-        task_template,
-        osparc_docker_label_keys.to_simcore_runtime_docker_labels(),
-        "running",
+
+@pytest.fixture
+async def progress_rabbitmq_consumer(
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
+    mocker: MockerFixture,
+) -> AsyncMock:
+    mocked_message_handler = mocker.AsyncMock(return_value=True)
+    client = create_rabbitmq_client("pytest_consumer")
+    await client.subscribe(
+        ProgressRabbitMessageNode.get_channel_name(),
+        mocked_message_handler,
+        topics=[BIND_TO_ALL_TOPICS],
     )
-    assert service_with_labels.spec
-    service_tasks = TypeAdapter(list[Task]).validate_python(
-        await async_docker_client.tasks.list(
-            filters={"service": service_with_labels.spec.name}
+    return mocked_message_handler
+
+
+@pytest.fixture
+async def running_service_tasks(
+    create_service: Callable[
+        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
+    ],
+    task_template: dict[str, Any],
+    async_docker_client: aiodocker.Docker,
+) -> Callable[[dict[DockerLabelKey, str]], Awaitable[list[Task]]]:
+    async def _(labels: dict[DockerLabelKey, str]) -> list[Task]:
+        # Simulate a running service
+        service = await create_service(
+            task_template,
+            labels,
+            "running",
         )
-    )
-    assert service_tasks
-    assert len(service_tasks) == 1
+        assert service.spec
 
+        service_tasks = TypeAdapter(list[Task]).validate_python(
+            await async_docker_client.tasks.list(filters={"service": service.spec.name})
+        )
+        assert service_tasks
+        assert len(service_tasks) == 1
+        return service_tasks
+
+    return _
+
+
+async def test_post_task_log_message(
+    disable_autoscaling_background_task,
+    disable_buffers_pool_background_task,
+    enabled_rabbitmq: RabbitSettings,
+    disabled_ec2: None,
+    disabled_ssm: None,
+    mocked_redis_server: None,
+    initialized_app: FastAPI,
+    running_service_tasks: Callable[[dict[DockerLabelKey, str]], Awaitable[list[Task]]],
+    osparc_docker_label_keys: StandardSimcoreDockerLabels,
+    faker: Faker,
+    logs_rabbitmq_consumer: AsyncMock,
+):
+    service_tasks = await running_service_tasks(
+        osparc_docker_label_keys.to_simcore_runtime_docker_labels()
+    )
+    assert len(service_tasks) == 1
     log_message = faker.pystr()
     await post_tasks_log_message(
         initialized_app, tasks=service_tasks, message=log_message, level=0
@@ -97,7 +134,7 @@ async def test_post_task_log_message(
             print(
                 f"--> checking for message in rabbit exchange {LoggerRabbitMessage.get_channel_name()}, {attempt.retry_state.retry_object.statistics}"
             )
-            mocked_message_handler.assert_called_once_with(
+            logs_rabbitmq_consumer.assert_called_once_with(
                 LoggerRabbitMessage(
                     node_id=osparc_docker_label_keys.node_id,
                     project_id=osparc_docker_label_keys.project_id,
@@ -111,74 +148,22 @@ async def test_post_task_log_message(
             print("... message received")
 
 
-async def test_post_task_log_message_does_not_raise_if_service_has_no_labels(
-    disable_autoscaling_background_task,
-    enabled_rabbitmq: RabbitSettings,
-    disabled_ec2: None,
-    disabled_ssm: None,
-    mocked_redis_server: None,
-    initialized_app: FastAPI,
-    async_docker_client: aiodocker.Docker,
-    create_service: Callable[
-        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
-    ],
-    task_template: dict[str, Any],
-    faker: Faker,
-):
-    service_without_labels = await create_service(task_template, {}, "running")
-    assert service_without_labels.spec
-    service_tasks = TypeAdapter(list[Task]).validate_python(
-        await async_docker_client.tasks.list(
-            filters={"service": service_without_labels.spec.name}
-        )
-    )
-    assert service_tasks
-    assert len(service_tasks) == 1
-
-    # this shall not raise any exception even if the task does not contain
-    # the necessary labels
-    await post_tasks_log_message(
-        initialized_app, tasks=service_tasks, message=faker.pystr(), level=0
-    )
-
-
 async def test_post_task_progress_message(
     disable_autoscaling_background_task,
+    disable_buffers_pool_background_task,
     enabled_rabbitmq: RabbitSettings,
     disabled_ec2: None,
     disabled_ssm: None,
     mocked_redis_server: None,
     initialized_app: FastAPI,
-    create_rabbitmq_client: Callable[[str], RabbitMQClient],
-    mocker: MockerFixture,
-    async_docker_client: aiodocker.Docker,
-    create_service: Callable[
-        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
-    ],
-    task_template: dict[str, Any],
+    running_service_tasks: Callable[[dict[DockerLabelKey, str]], Awaitable[list[Task]]],
     osparc_docker_label_keys: StandardSimcoreDockerLabels,
     faker: Faker,
+    progress_rabbitmq_consumer: AsyncMock,
 ):
-    mocked_message_handler = mocker.AsyncMock(return_value=True)
-    client = create_rabbitmq_client("pytest_consumer")
-    await client.subscribe(
-        ProgressRabbitMessageNode.get_channel_name(),
-        mocked_message_handler,
-        topics=[BIND_TO_ALL_TOPICS],
-    )
-
-    service_with_labels = await create_service(
-        task_template,
+    service_tasks = await running_service_tasks(
         osparc_docker_label_keys.to_simcore_runtime_docker_labels(),
-        "running",
     )
-    assert service_with_labels.spec
-    service_tasks = TypeAdapter(list[Task]).validate_python(
-        await async_docker_client.tasks.list(
-            filters={"service": service_with_labels.spec.name}
-        )
-    )
-    assert service_tasks
     assert len(service_tasks) == 1
 
     progress_value = faker.pyfloat(min_value=0)
@@ -194,7 +179,7 @@ async def test_post_task_progress_message(
             print(
                 f"--> checking for message in rabbit exchange {ProgressRabbitMessageNode.get_channel_name()}, {attempt.retry_state.retry_object.statistics}"
             )
-            mocked_message_handler.assert_called_once_with(
+            progress_rabbitmq_consumer.assert_called_once_with(
                 ProgressRabbitMessageNode(
                     node_id=osparc_docker_label_keys.node_id,
                     project_id=osparc_docker_label_keys.project_id,
@@ -208,32 +193,25 @@ async def test_post_task_progress_message(
             print("... message received")
 
 
-async def test_post_task_progress_does_not_raise_if_service_has_no_labels(
+async def test_post_task_messages_does_not_raise_if_service_has_no_labels(
     disable_autoscaling_background_task,
+    disable_buffers_pool_background_task,
     enabled_rabbitmq: RabbitSettings,
     disabled_ec2: None,
     disabled_ssm: None,
     mocked_redis_server: None,
     initialized_app: FastAPI,
-    async_docker_client: aiodocker.Docker,
-    create_service: Callable[
-        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
-    ],
-    task_template: dict[str, Any],
+    running_service_tasks: Callable[[dict[DockerLabelKey, str]], Awaitable[list[Task]]],
     faker: Faker,
 ):
-    service_without_labels = await create_service(task_template, {}, "running")
-    assert service_without_labels.spec
-    service_tasks = TypeAdapter(list[Task]).validate_python(
-        await async_docker_client.tasks.list(
-            filters={"service": service_without_labels.spec.name}
-        )
-    )
-    assert service_tasks
+    service_tasks = await running_service_tasks({})
     assert len(service_tasks) == 1
 
     # this shall not raise any exception even if the task does not contain
     # the necessary labels
+    await post_tasks_log_message(
+        initialized_app, tasks=service_tasks, message=faker.pystr(), level=0
+    )
     await post_tasks_progress_message(
         initialized_app,
         tasks=service_tasks,
