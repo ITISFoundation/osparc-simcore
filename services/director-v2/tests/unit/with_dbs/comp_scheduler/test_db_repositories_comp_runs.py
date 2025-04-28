@@ -30,6 +30,7 @@ from simcore_service_director_v2.modules.comp_scheduler._constants import (
 from simcore_service_director_v2.modules.db.repositories.comp_runs import (
     CompRunsRepository,
 )
+from sqlalchemy.ext.asyncio.engine import AsyncEngine
 
 pytest_simcore_core_services_selection = [
     "postgres",
@@ -50,7 +51,7 @@ def fake_project_id(faker: Faker) -> ProjectID:
 
 
 async def test_get(
-    sqlalchemy_async_engine,
+    sqlalchemy_async_engine: AsyncEngine,
     fake_user_id: UserID,
     fake_project_id: ProjectID,
     publish_project: Callable[[], Awaitable[PublishedProject]],
@@ -76,7 +77,7 @@ async def test_get(
 
 
 async def test_list(
-    sqlalchemy_async_engine,
+    sqlalchemy_async_engine: AsyncEngine,
     publish_project: Callable[[], Awaitable[PublishedProject]],
     run_metadata: RunMetadataDict,
     faker: Faker,
@@ -223,7 +224,7 @@ async def test_list(
         list[CompRunsAtDB],
         await asyncio.gather(
             *(
-                CompRunsRepository(aiopg_engine).update(
+                CompRunsRepository(sqlalchemy_async_engine).update(
                     user_id=comp_run.user_id,
                     project_id=comp_run.project_uuid,
                     iteration=comp_run.iteration,
@@ -236,14 +237,14 @@ async def test_list(
     )
     # so the processed ones shall remain
     assert sorted(
-        await CompRunsRepository(aiopg_engine).list_(
+        await CompRunsRepository(sqlalchemy_async_engine).list_(
             never_scheduled=False, processed_since=SCHEDULER_INTERVAL
         ),
         key=lambda x: x.iteration,
     ) == sorted(comp_runs_marked_as_processed, key=lambda x: x.iteration)
     # the ones waiting for scheduling now
     assert sorted(
-        await CompRunsRepository(aiopg_engine).list_(
+        await CompRunsRepository(sqlalchemy_async_engine).list_(
             never_scheduled=False, scheduled_since=SCHEDULER_INTERVAL
         ),
         key=lambda x: x.iteration,
@@ -253,7 +254,7 @@ async def test_list(
 
 
 async def test_create(
-    aiopg_engine,
+    sqlalchemy_async_engine: AsyncEngine,
     fake_user_id: UserID,
     fake_project_id: ProjectID,
     run_metadata: RunMetadataDict,
@@ -261,7 +262,7 @@ async def test_create(
     publish_project: Callable[[], Awaitable[PublishedProject]],
 ):
     with pytest.raises(ProjectNotFoundError):
-        await CompRunsRepository(aiopg_engine).create(
+        await CompRunsRepository(sqlalchemy_async_engine).create(
             user_id=fake_user_id,
             project_id=fake_project_id,
             iteration=None,
@@ -270,7 +271,7 @@ async def test_create(
         )
     published_project = await publish_project()
     with pytest.raises(UserNotFoundError):
-        await CompRunsRepository(aiopg_engine).create(
+        await CompRunsRepository(sqlalchemy_async_engine).create(
             user_id=fake_user_id,
             project_id=published_project.project.uuid,
             iteration=None,
@@ -278,21 +279,21 @@ async def test_create(
             use_on_demand_clusters=faker.pybool(),
         )
 
-    created = await CompRunsRepository(aiopg_engine).create(
+    created = await CompRunsRepository(sqlalchemy_async_engine).create(
         user_id=published_project.user["id"],
         project_id=published_project.project.uuid,
         iteration=None,
         metadata=run_metadata,
         use_on_demand_clusters=faker.pybool(),
     )
-    got = await CompRunsRepository(aiopg_engine).get(
+    got = await CompRunsRepository(sqlalchemy_async_engine).get(
         user_id=published_project.user["id"],
         project_id=published_project.project.uuid,
     )
     assert created == got
 
     # creating a second one auto increment the iteration
-    created = await CompRunsRepository(aiopg_engine).create(
+    created = await CompRunsRepository(sqlalchemy_async_engine).create(
         user_id=published_project.user["id"],
         project_id=published_project.project.uuid,
         iteration=None,
@@ -303,7 +304,7 @@ async def test_create(
     assert created.iteration == got.iteration + 1
 
     # getting without specifying the iteration returns the latest
-    got = await CompRunsRepository(aiopg_engine).get(
+    got = await CompRunsRepository(sqlalchemy_async_engine).get(
         user_id=published_project.user["id"],
         project_id=published_project.project.uuid,
     )
@@ -311,7 +312,7 @@ async def test_create(
 
 
 async def test_update(
-    aiopg_engine,
+    sqlalchemy_async_engine: AsyncEngine,
     fake_user_id: UserID,
     fake_project_id: ProjectID,
     run_metadata: RunMetadataDict,
@@ -319,13 +320,13 @@ async def test_update(
     publish_project: Callable[[], Awaitable[PublishedProject]],
 ):
     # this updates nothing but also does not complain
-    updated = await CompRunsRepository(aiopg_engine).update(
+    updated = await CompRunsRepository(sqlalchemy_async_engine).update(
         fake_user_id, fake_project_id, faker.pyint(min_value=1)
     )
     assert updated is None
     # now let's create a valid one
     published_project = await publish_project()
-    created = await CompRunsRepository(aiopg_engine).create(
+    created = await CompRunsRepository(sqlalchemy_async_engine).create(
         user_id=published_project.user["id"],
         project_id=published_project.project.uuid,
         iteration=None,
@@ -333,13 +334,13 @@ async def test_update(
         use_on_demand_clusters=faker.pybool(),
     )
 
-    got = await CompRunsRepository(aiopg_engine).get(
+    got = await CompRunsRepository(sqlalchemy_async_engine).get(
         user_id=published_project.user["id"],
         project_id=published_project.project.uuid,
     )
     assert created == got
 
-    updated = await CompRunsRepository(aiopg_engine).update(
+    updated = await CompRunsRepository(sqlalchemy_async_engine).update(
         created.user_id,
         created.project_uuid,
         created.iteration,
@@ -352,20 +353,20 @@ async def test_update(
 
 
 async def test_set_run_result(
-    aiopg_engine,
+    sqlalchemy_async_engine: AsyncEngine,
     run_metadata: RunMetadataDict,
     faker: Faker,
     publish_project: Callable[[], Awaitable[PublishedProject]],
 ):
     published_project = await publish_project()
-    created = await CompRunsRepository(aiopg_engine).create(
+    created = await CompRunsRepository(sqlalchemy_async_engine).create(
         user_id=published_project.user["id"],
         project_id=published_project.project.uuid,
         iteration=None,
         metadata=run_metadata,
         use_on_demand_clusters=faker.pybool(),
     )
-    got = await CompRunsRepository(aiopg_engine).get(
+    got = await CompRunsRepository(sqlalchemy_async_engine).get(
         user_id=published_project.user["id"],
         project_id=published_project.project.uuid,
     )
@@ -373,7 +374,7 @@ async def test_set_run_result(
     assert created.result is not RunningState.PENDING
     assert created.ended is None
 
-    updated = await CompRunsRepository(aiopg_engine).set_run_result(
+    updated = await CompRunsRepository(sqlalchemy_async_engine).set_run_result(
         user_id=created.user_id,
         project_id=created.project_uuid,
         iteration=created.iteration,
@@ -385,7 +386,7 @@ async def test_set_run_result(
     assert updated.result is RunningState.PENDING
     assert updated.ended is None
 
-    final_updated = await CompRunsRepository(aiopg_engine).set_run_result(
+    final_updated = await CompRunsRepository(sqlalchemy_async_engine).set_run_result(
         user_id=created.user_id,
         project_id=created.project_uuid,
         iteration=created.iteration,
@@ -399,27 +400,27 @@ async def test_set_run_result(
 
 
 async def test_mark_for_cancellation(
-    aiopg_engine,
+    sqlalchemy_async_engine: AsyncEngine,
     run_metadata: RunMetadataDict,
     faker: Faker,
     publish_project: Callable[[], Awaitable[PublishedProject]],
 ):
     published_project = await publish_project()
-    created = await CompRunsRepository(aiopg_engine).create(
+    created = await CompRunsRepository(sqlalchemy_async_engine).create(
         user_id=published_project.user["id"],
         project_id=published_project.project.uuid,
         iteration=None,
         metadata=run_metadata,
         use_on_demand_clusters=faker.pybool(),
     )
-    got = await CompRunsRepository(aiopg_engine).get(
+    got = await CompRunsRepository(sqlalchemy_async_engine).get(
         user_id=published_project.user["id"],
         project_id=published_project.project.uuid,
     )
     assert created == got
     assert created.cancelled is None
 
-    updated = await CompRunsRepository(aiopg_engine).mark_for_cancellation(
+    updated = await CompRunsRepository(sqlalchemy_async_engine).mark_for_cancellation(
         user_id=created.user_id,
         project_id=created.project_uuid,
         iteration=created.iteration,
@@ -430,20 +431,20 @@ async def test_mark_for_cancellation(
 
 
 async def test_mark_for_scheduling(
-    aiopg_engine,
+    sqlalchemy_async_engine: AsyncEngine,
     run_metadata: RunMetadataDict,
     faker: Faker,
     publish_project: Callable[[], Awaitable[PublishedProject]],
 ):
     published_project = await publish_project()
-    created = await CompRunsRepository(aiopg_engine).create(
+    created = await CompRunsRepository(sqlalchemy_async_engine).create(
         user_id=published_project.user["id"],
         project_id=published_project.project.uuid,
         iteration=None,
         metadata=run_metadata,
         use_on_demand_clusters=faker.pybool(),
     )
-    got = await CompRunsRepository(aiopg_engine).get(
+    got = await CompRunsRepository(sqlalchemy_async_engine).get(
         user_id=published_project.user["id"],
         project_id=published_project.project.uuid,
     )
@@ -451,7 +452,7 @@ async def test_mark_for_scheduling(
     assert created.scheduled is None
     assert created.processed is None
 
-    updated = await CompRunsRepository(aiopg_engine).mark_for_scheduling(
+    updated = await CompRunsRepository(sqlalchemy_async_engine).mark_for_scheduling(
         user_id=created.user_id,
         project_id=created.project_uuid,
         iteration=created.iteration,
@@ -463,20 +464,20 @@ async def test_mark_for_scheduling(
 
 
 async def test_mark_scheduling_done(
-    aiopg_engine,
+    sqlalchemy_async_engine: AsyncEngine,
     run_metadata: RunMetadataDict,
     faker: Faker,
     publish_project: Callable[[], Awaitable[PublishedProject]],
 ):
     published_project = await publish_project()
-    created = await CompRunsRepository(aiopg_engine).create(
+    created = await CompRunsRepository(sqlalchemy_async_engine).create(
         user_id=published_project.user["id"],
         project_id=published_project.project.uuid,
         iteration=None,
         metadata=run_metadata,
         use_on_demand_clusters=faker.pybool(),
     )
-    got = await CompRunsRepository(aiopg_engine).get(
+    got = await CompRunsRepository(sqlalchemy_async_engine).get(
         user_id=published_project.user["id"],
         project_id=published_project.project.uuid,
     )
@@ -484,7 +485,7 @@ async def test_mark_scheduling_done(
     assert created.scheduled is None
     assert created.processed is None
 
-    updated = await CompRunsRepository(aiopg_engine).mark_as_processed(
+    updated = await CompRunsRepository(sqlalchemy_async_engine).mark_as_processed(
         user_id=created.user_id,
         project_id=created.project_uuid,
         iteration=created.iteration,
