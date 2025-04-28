@@ -201,7 +201,7 @@ def minimal_configuration(
     enabled_dynamic_mode: EnvVarsDict,
     mocked_ec2_instances_envs: EnvVarsDict,
     disabled_rabbitmq: None,
-    disable_dynamic_service_background_task: None,
+    disable_autoscaling_background_task: None,
     disable_buffers_pool_background_task: None,
     mocked_redis_server: None,
 ) -> None: ...
@@ -1075,7 +1075,7 @@ async def test_cluster_scaling_up_and_down_against_aws(
     app_with_docker_join_drained: EnvVarsDict,
     docker_swarm: None,
     disabled_rabbitmq: None,
-    disable_dynamic_service_background_task: None,
+    disable_autoscaling_background_task: None,
     disable_buffers_pool_background_task: None,
     mocked_redis_server: None,
     external_envfile_dict: EnvVarsDict,

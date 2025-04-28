@@ -49,7 +49,7 @@ pytest_simcore_ops_services_selection = []
 
 
 async def test_post_task_log_message(
-    disable_dynamic_service_background_task,
+    disable_autoscaling_background_task,
     enabled_rabbitmq: RabbitSettings,
     disabled_ec2: None,
     disabled_ssm: None,
@@ -112,7 +112,7 @@ async def test_post_task_log_message(
 
 
 async def test_post_task_log_message_does_not_raise_if_service_has_no_labels(
-    disable_dynamic_service_background_task,
+    disable_autoscaling_background_task,
     enabled_rabbitmq: RabbitSettings,
     disabled_ec2: None,
     disabled_ssm: None,
@@ -143,7 +143,7 @@ async def test_post_task_log_message_does_not_raise_if_service_has_no_labels(
 
 
 async def test_post_task_progress_message(
-    disable_dynamic_service_background_task,
+    disable_autoscaling_background_task,
     enabled_rabbitmq: RabbitSettings,
     disabled_ec2: None,
     disabled_ssm: None,
@@ -209,7 +209,7 @@ async def test_post_task_progress_message(
 
 
 async def test_post_task_progress_does_not_raise_if_service_has_no_labels(
-    disable_dynamic_service_background_task,
+    disable_autoscaling_background_task,
     enabled_rabbitmq: RabbitSettings,
     disabled_ec2: None,
     disabled_ssm: None,

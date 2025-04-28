@@ -322,7 +322,7 @@ def mocked_ec2_instances_envs(
 
 
 @pytest.fixture
-def disable_dynamic_service_background_task(mocker: MockerFixture) -> None:
+def disable_autoscaling_background_task(mocker: MockerFixture) -> None:
     mocker.patch(
         "simcore_service_autoscaling.modules.auto_scaling_task.create_periodic_task",
         autospec=True,
