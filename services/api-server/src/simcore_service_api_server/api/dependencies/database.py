@@ -4,6 +4,9 @@ from typing import Annotated
 
 from fastapi import Depends
 from fastapi.requests import Request
+from simcore_postgres_database.utils_aiosqlalchemy import (  # type: ignore[import-not-found] # this on is unclear
+    get_pg_engine_stateinfo,
+)
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ...clients.postgres import get_engine
@@ -25,6 +28,11 @@ def get_repository(repo_type: type[BaseRepository]) -> Callable:
         # 2nd one was acquiring a connection per request which works but blocks the director-v2 responsiveness once
         # the max amount of connections is reached
         # now the current solution is to acquire connection when needed.
+        _logger.debug(
+            "Setting up a repository. Current state of connections: %s",
+            await get_pg_engine_stateinfo(engine),
+        )
+
         yield repo_type(db_engine=engine)
 
     return _get_repo
