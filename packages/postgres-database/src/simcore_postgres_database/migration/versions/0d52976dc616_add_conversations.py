@@ -1,8 +1,8 @@
 """add conversations
 
-Revision ID: 913badedfef3
+Revision ID: 0d52976dc616
 Revises: 742123f0933a
-Create Date: 2025-04-28 11:00:05.988864+00:00
+Create Date: 2025-04-28 11:19:02.029533+00:00
 
 """
 
@@ -11,7 +11,7 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = "913badedfef3"
+revision = "0d52976dc616"
 down_revision = "742123f0933a"
 branch_labels = None
 depends_on = None
@@ -51,21 +51,21 @@ def upgrade():
         sa.ForeignKeyConstraint(
             ["product_name"],
             ["products.name"],
-            name="fk_resource_tracker_license_packages_product_name",
+            name="fk_conversations_product_name",
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),
         sa.ForeignKeyConstraint(
             ["project_uuid"],
             ["projects.uuid"],
-            name="fk_projects_comments_project_uuid",
+            name="fk_projects_conversations_project_uuid",
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),
         sa.ForeignKeyConstraint(
             ["user_group_id"],
             ["groups.gid"],
-            name="fk_conversation_messages_user_primary_gid",
+            name="fk_conversations_user_primary_gid",
             ondelete="SET NULL",
         ),
         sa.PrimaryKeyConstraint("conversation_id"),

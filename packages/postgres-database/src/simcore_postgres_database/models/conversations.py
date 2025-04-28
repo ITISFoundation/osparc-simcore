@@ -35,7 +35,7 @@ conversations = sa.Table(
         sa.String,
         sa.ForeignKey(
             projects.c.uuid,
-            name="fk_projects_comments_project_uuid",
+            name="fk_projects_conversations_project_uuid",
             ondelete=RefActions.CASCADE,
             onupdate=RefActions.CASCADE,
         ),
@@ -48,7 +48,7 @@ conversations = sa.Table(
         sa.BigInteger,
         sa.ForeignKey(
             groups.c.gid,
-            name="fk_conversation_messages_user_primary_gid",
+            name="fk_conversations_user_primary_gid",
             ondelete=RefActions.SET_NULL,
         ),
         doc="user primary group ID who created the message",
@@ -66,7 +66,7 @@ conversations = sa.Table(
             "products.name",
             onupdate=RefActions.CASCADE,
             ondelete=RefActions.CASCADE,
-            name="fk_resource_tracker_license_packages_product_name",
+            name="fk_conversations_product_name",
         ),
         nullable=False,
         doc="Product name identifier. If None, then the item is not exposed",
