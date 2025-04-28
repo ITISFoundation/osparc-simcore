@@ -2,7 +2,7 @@ import datetime
 import uuid
 from typing import Any
 
-import asyncpg
+import asyncpg  # type: ignore[import-untyped]
 import sqlalchemy as sa
 import sqlalchemy.exc as sa_exc
 from common_library.async_tools import maybe_await
