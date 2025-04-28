@@ -17,7 +17,6 @@
 --requirement ../../../packages/service-library/requirements/_fastapi.in
 
 aiofiles
-aiopg[sa]
 cryptography
 fastapi-pagination
 fastapi[all]
