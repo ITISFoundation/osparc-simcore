@@ -12,7 +12,6 @@ from ..conversations import (
 from ..groups import GroupID
 from ..products import ProductName
 from ..projects import ProjectID
-from ..users import UserID
 from ._base import InputSchema, OutputSchema
 
 
@@ -21,7 +20,7 @@ class ConversationRestGet(OutputSchema):
     product_name: ProductName
     name: str
     project_uuid: ProjectID | None
-    user_id: UserID
+    user_group_id: GroupID
     type: ConversationType
 
     # states
@@ -35,7 +34,7 @@ class ConversationRestGet(OutputSchema):
             product_name=domain.product_name,
             name=domain.name,
             project_uuid=domain.project_uuid,
-            user_id=domain.user_id,
+            user_group_id=domain.user_group_id,
             type=domain.type,
             created=domain.created,
             modified=domain.modified,

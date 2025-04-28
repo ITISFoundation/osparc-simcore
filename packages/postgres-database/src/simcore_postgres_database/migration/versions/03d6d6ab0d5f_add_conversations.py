@@ -1,8 +1,8 @@
 """add conversations
 
-Revision ID: 5921537e608d
+Revision ID: 03d6d6ab0d5f
 Revises: 742123f0933a
-Create Date: 2025-04-24 11:25:11.868406+00:00
+Create Date: 2025-04-28 10:57:35.554780+00:00
 
 """
 
@@ -11,7 +11,7 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = "5921537e608d"
+revision = "03d6d6ab0d5f"
 down_revision = "742123f0933a"
 branch_labels = None
 depends_on = None
@@ -35,6 +35,7 @@ def upgrade():
             sa.Enum("PROJECT_STATIC", "PROJECT_ANNOTATION", name="conversationtype"),
             nullable=True,
         ),
+        sa.Column("product_name", sa.String(), nullable=False),
         sa.Column(
             "created",
             sa.DateTime(timezone=True),
@@ -46,6 +47,13 @@ def upgrade():
             sa.DateTime(timezone=True),
             server_default=sa.text("now()"),
             nullable=False,
+        ),
+        sa.ForeignKeyConstraint(
+            ["product_name"],
+            ["products.name"],
+            name="fk_resource_tracker_license_packages_product_name",
+            onupdate="CASCADE",
+            ondelete="CASCADE",
         ),
         sa.ForeignKeyConstraint(
             ["project_uuid"],
@@ -77,7 +85,7 @@ def upgrade():
             nullable=False,
         ),
         sa.Column("conversation_id", postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column("user_group_id", sa.BigInteger(), nullable=False),
+        sa.Column("user_group_id", sa.BigInteger(), nullable=True),
         sa.Column("content", sa.String(), nullable=False),
         sa.Column(
             "type",
@@ -105,8 +113,8 @@ def upgrade():
         ),
         sa.ForeignKeyConstraint(
             ["user_group_id"],
-            ["users.id"],
-            name="fk_conversation_messages_user_id",
+            ["groups.gid"],
+            name="fk_conversation_messages_user_primary_gid",
             ondelete="SET NULL",
         ),
         sa.PrimaryKeyConstraint("message_id"),

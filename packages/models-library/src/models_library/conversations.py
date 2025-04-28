@@ -5,7 +5,6 @@ from uuid import UUID
 
 from models_library.groups import GroupID
 from models_library.projects import ProjectID
-from models_library.users import UserID
 from pydantic import BaseModel, ConfigDict
 from simcore_postgres_database.models.conversation_messages import (
     ConversationMessageType as PostgresConversationMessageType,
@@ -53,7 +52,7 @@ class ConversationDB(BaseModel):
     product_name: ProductName
     name: str
     project_uuid: ProjectID | None
-    user_id: UserID
+    user_group_id: GroupID
     type: ConversationType
 
     # states

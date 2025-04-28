@@ -8,10 +8,10 @@ from models_library.conversations import (
     ConversationPatchDB,
     ConversationType,
 )
+from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy, OrderDirection
-from models_library.users import UserID
 from pydantic import NonNegativeInt
 from simcore_postgres_database.models.conversations import conversations
 from simcore_postgres_database.utils_repos import (
@@ -38,7 +38,7 @@ async def create(
     *,
     name: str,
     project_uuid: ProjectID | None,
-    user_id: UserID,
+    user_group_id: GroupID,
     type_: ConversationType,
     product_name: ProductName,
 ) -> ConversationDB:
@@ -47,8 +47,8 @@ async def create(
             conversations.insert()
             .values(
                 name=name,
-                project_uuid=project_uuid,
-                user_id=user_id,
+                project_uuid=f"{project_uuid}" if project_uuid else None,
+                user_group_id=user_group_id,
                 type=type_,
                 created=func.now(),
                 modified=func.now(),
@@ -75,7 +75,7 @@ async def list_project_conversations(
     base_query = (
         select(*_SELECTION_ARGS)
         .select_from(conversations)
-        .where(conversations.c.project_uuid == project_uuid)
+        .where(conversations.c.project_uuid == f"{project_uuid}")
     )
 
     # Select total count from base_query
@@ -115,7 +115,7 @@ async def get(
     select_query = (
         select(*_SELECTION_ARGS)
         .select_from(conversations)
-        .where(conversations.c.conversation_id == conversation_id)
+        .where(conversations.c.conversation_id == f"{conversation_id}")
     )
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
@@ -143,7 +143,7 @@ async def update(
         result = await conn.execute(
             conversations.update()
             .values(**_updates)
-            .where(conversations.c.conversation_id == conversation_id)
+            .where(conversations.c.conversation_id == f"{conversation_id}")
             .returning(*_SELECTION_ARGS)
         )
         row = result.one_or_none()
@@ -161,6 +161,6 @@ async def delete(
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         await conn.execute(
             conversations.delete().where(
-                conversations.c.conversation_id == conversation_id
+                conversations.c.conversation_id == f"{conversation_id}"
             )
         )

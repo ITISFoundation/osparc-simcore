@@ -6,7 +6,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from ._common import RefActions, column_created_datetime, column_modified_datetime
 from .base import metadata
 from .conversations import conversations
-from .users import users
+from .groups import groups
 
 
 class ConversationMessageType(enum.Enum):
@@ -41,12 +41,12 @@ conversation_messages = sa.Table(
         "user_group_id",
         sa.BigInteger,
         sa.ForeignKey(
-            users.c.id,
-            name="fk_conversation_messages_user_id",
+            groups.c.gid,
+            name="fk_conversation_messages_user_primary_gid",
             ondelete=RefActions.SET_NULL,
         ),
         doc="user primary group ID who created the message",
-        nullable=False,
+        nullable=True,
     ),
     sa.Column(
         "content",

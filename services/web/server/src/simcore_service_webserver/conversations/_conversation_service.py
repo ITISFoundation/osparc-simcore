@@ -15,6 +15,7 @@ from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.users import UserID
 
+from ..users.api import get_user_primary_group_id
 from . import _conversation_repository
 
 _logger = logging.getLogger(__name__)
@@ -33,11 +34,13 @@ async def create_conversation(
     if project_uuid is None:
         raise NotImplementedError
 
+    _user_group_id = await get_user_primary_group_id(app, user_id=user_id)
+
     return await _conversation_repository.create(
         app,
         name=name,
         project_uuid=project_uuid,
-        user_id=user_id,
+        user_group_id=_user_group_id,
         type_=type_,
         product_name=product_name,
     )

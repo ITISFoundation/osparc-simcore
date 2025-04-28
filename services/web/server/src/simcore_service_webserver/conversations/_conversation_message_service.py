@@ -93,5 +93,7 @@ async def list_messages_for_conversation(
         conversation_id=conversation_id,
         offset=offset,
         limit=limit,
-        order_by=OrderBy(field=IDStr("message_id"), direction=OrderDirection.DESC),
+        order_by=OrderBy(
+            field=IDStr("created"), direction=OrderDirection.DESC
+        ),  # NOTE: Message should be ordered by creation date (latest first)
     )
