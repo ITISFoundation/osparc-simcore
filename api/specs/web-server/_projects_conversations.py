@@ -53,11 +53,6 @@ async def create_project_conversation(
 ): ...
 
 
-# assert_handler_signature_against_model(
-#     create_project_conversation, _ProjectConversationsCreateBodyParams
-# )
-
-
 @router.get(
     "/projects/{project_id}/conversations",
     response_model=Page[ConversationRestGet],
@@ -83,11 +78,6 @@ async def update_project_conversation(
 ): ...
 
 
-# assert_handler_signature_against_model(
-#     update_project_conversation, _ProjectConversationsPutBodyParams
-# )
-
-
 @router.delete(
     "/projects/{project_id}/conversations/{conversation_id}",
     status_code=204,
@@ -106,11 +96,6 @@ async def get_project_conversation(
 ): ...
 
 
-#
-# API entrypoints PROJECTS/*/CONVERSATIONS/*/MESSAGES/*
-#
-
-
 @router.post(
     "/projects/{project_id}/conversations/{conversation_id}/messages",
     response_model=Envelope[ConversationMessageRestGet],
@@ -121,11 +106,6 @@ async def create_project_conversation_message(
     conversation_id: ConversationID,
     body: _ProjectConversationMessagesCreateBodyParams,
 ): ...
-
-
-# assert_handler_signature_against_model(
-#     create_project_conversation_message, _ProjectConversationMessagesCreateBodyParams
-# )
 
 
 @router.get(
@@ -140,11 +120,6 @@ async def list_project_conversation_messages(
 ): ...
 
 
-# assert_handler_signature_against_model(
-#     list_project_conversation_messages, _ListProjectConversationMessagesQueryParams
-# )
-
-
 @router.put(
     "/projects/{project_id}/conversations/{conversation_id}/messages/{message_id}",
     response_model=Envelope[ConversationMessageRestGet],
@@ -155,11 +130,6 @@ async def update_project_conversation_message(
     message_id: ConversationMessageID,
     body: _ProjectConversationMessagesPutBodyParams,
 ): ...
-
-
-# assert_handler_signature_against_model(
-#     update_project_conversation_message, _ProjectConversationMessagesPutBodyParams
-# )
 
 
 @router.delete(
