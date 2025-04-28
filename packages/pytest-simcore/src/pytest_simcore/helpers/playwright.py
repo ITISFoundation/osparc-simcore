@@ -401,7 +401,7 @@ class SocketIONodeProgressCompleteWaiter:
     )
     _last_progress_time: datetime = field(default_factory=lambda: datetime.now(tz=UTC))
     _received_messages: list[SocketIOEvent] = field(default_factory=list)
-    _result: bool = True
+    _result: bool = False
 
     def __call__(self, message: str) -> bool:
         # socket.io encodes messages like so
@@ -465,6 +465,7 @@ class SocketIONodeProgressCompleteWaiter:
                 time_since_last_progress,
                 self.node_id,
             )
+            self._result = True
             return True
 
         return False
