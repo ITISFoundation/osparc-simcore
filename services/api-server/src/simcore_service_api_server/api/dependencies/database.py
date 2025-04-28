@@ -4,7 +4,7 @@ from typing import Annotated
 
 from fastapi import Depends
 from fastapi.requests import Request
-from simcore_postgres_database.utils_aiosqlalchemy import (  # type: ignore[import-not-found] # this on is unclear
+from simcore_postgres_database.utils_aiosqlalchemy import (
     get_pg_engine_stateinfo,
 )
 from sqlalchemy.ext.asyncio import AsyncEngine
