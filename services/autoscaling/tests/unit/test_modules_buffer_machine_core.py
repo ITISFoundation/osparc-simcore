@@ -59,7 +59,7 @@ def with_ec2_instance_allowed_types_env(
 @pytest.fixture
 def minimal_configuration(
     disabled_rabbitmq: None,
-    disable_dynamic_service_background_task: None,
+    disable_autoscaling_background_task: None,
     disable_buffers_pool_background_task: None,
     enabled_dynamic_mode: EnvVarsDict,
     mocked_ec2_server_envs: EnvVarsDict,
@@ -509,7 +509,7 @@ async def test_monitor_buffer_machines_terminates_unneeded_pool(
 
 @pytest.fixture
 def pre_pull_images(
-    ec2_instances_allowed_types_with_only_1_buffered: dict[InstanceTypeType, Any]
+    ec2_instances_allowed_types_with_only_1_buffered: dict[InstanceTypeType, Any],
 ) -> list[DockerGenericTag]:
     allowed_ec2_types = ec2_instances_allowed_types_with_only_1_buffered
     allowed_ec2_types_with_pre_pull_images_defined = dict(
@@ -534,7 +534,7 @@ def pre_pull_images(
 async def test_monitor_buffer_machines_against_aws(
     skip_if_external_envfile_dict: None,
     disable_buffers_pool_background_task: None,
-    disable_dynamic_service_background_task: None,
+    disable_autoscaling_background_task: None,
     disabled_rabbitmq: None,
     mocked_redis_server: None,
     external_envfile_dict: EnvVarsDict,
