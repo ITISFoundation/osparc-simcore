@@ -6,7 +6,6 @@
 from pathlib import Path
 from pprint import pprint
 from typing import Any
-from unittest import mock
 from zipfile import ZipFile
 
 import arrow
@@ -212,7 +211,6 @@ async def test_run_solver_job(
     project_id: str,
     solver_key: str,
     solver_version: str,
-    mocked_groups_extra_properties: mock.Mock,
 ):
     oas = directorv2_service_openapi_specs
 

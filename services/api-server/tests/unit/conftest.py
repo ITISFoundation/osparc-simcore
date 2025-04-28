@@ -9,7 +9,6 @@ from collections.abc import AsyncIterator, Callable, Iterable, Iterator
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
-from unittest import mock
 from unittest.mock import MagicMock
 
 import aiohttp.test_utils
@@ -188,20 +187,6 @@ def auth(
     )
 
     return HTTPBasicAuth(user_api_key, user_api_secret)
-
-
-@pytest.fixture
-def mocked_groups_extra_properties(mocker: MockerFixture) -> mock.Mock:
-    from simcore_service_api_server.db.repositories.groups_extra_properties import (
-        GroupsExtraPropertiesRepository,
-    )
-
-    return mocker.patch.object(
-        GroupsExtraPropertiesRepository,
-        "use_on_demand_clusters",
-        autospec=True,
-        return_value=True,
-    )
 
 
 ## MOCKED S3 service --------------------------------------------------
