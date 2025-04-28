@@ -1,3 +1,4 @@
+# pylint:disable=too-many-statements
 """Main application"""
 
 import logging
