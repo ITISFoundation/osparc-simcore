@@ -27,6 +27,7 @@ pytest_plugins = [
     "pytest_simcore.environment_configs",
     "pytest_simcore.faker_projects_data",
     "pytest_simcore.faker_users_data",
+    "pytest_simcore.faker_users_data",
     "pytest_simcore.postgres_service",
     "pytest_simcore.rabbit_service",
     "pytest_simcore.redis_service",
@@ -84,38 +85,55 @@ def app_environment(
     )
 
 
-_PATH_APPLICATION: Final[str] = "simcore_service_dynamic_scheduler.core.events"
+_EVENTS_MODULE: Final[str] = "simcore_service_dynamic_scheduler.core.events"
 
 
 @pytest.fixture
 def disable_rabbitmq_lifespan(mocker: MockerFixture) -> None:
-    mocker.patch(f"{_PATH_APPLICATION}.rabbitmq_lifespan")
-    mocker.patch(f"{_PATH_APPLICATION}.rpc_api_routes_lifespan")
+    mocker.patch(f"{_EVENTS_MODULE}.rabbitmq_lifespan")
+    mocker.patch(f"{_EVENTS_MODULE}.rpc_api_routes_lifespan")
 
 
 @pytest.fixture
 def disable_redis_lifespan(mocker: MockerFixture) -> None:
-    mocker.patch(f"{_PATH_APPLICATION}.redis_lifespan")
+    mocker.patch(f"{_EVENTS_MODULE}.redis_lifespan")
 
 
 @pytest.fixture
 def disable_service_tracker_lifespan(mocker: MockerFixture) -> None:
-    mocker.patch(f"{_PATH_APPLICATION}.service_tracker_lifespan")
+    mocker.patch(f"{_EVENTS_MODULE}.service_tracker_lifespan")
 
 
 @pytest.fixture
 def disable_deferred_manager_lifespan(mocker: MockerFixture) -> None:
-    mocker.patch(f"{_PATH_APPLICATION}.deferred_manager_lifespan")
+    mocker.patch(f"{_EVENTS_MODULE}.deferred_manager_lifespan")
 
 
 @pytest.fixture
 def disable_notifier_lifespan(mocker: MockerFixture) -> None:
-    mocker.patch(f"{_PATH_APPLICATION}.get_notifier_lifespans")
+    mocker.patch(f"{_EVENTS_MODULE}.get_notifier_lifespans")
 
 
 @pytest.fixture
 def disable_status_monitor_lifespan(mocker: MockerFixture) -> None:
-    mocker.patch(f"{_PATH_APPLICATION}.status_monitor_lifespan")
+    mocker.patch(f"{_EVENTS_MODULE}.status_monitor_lifespan")
+
+
+@pytest.fixture
+def disable_postgres_lifespan(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "POSTGRES_USER": "test_user",
+            "POSTGRES_PASSWORD": "test_password",
+            "POSTGRES_DB": "test_db",
+            "POSTGRES_HOST": "test_host",
+        },
+    )
+
+    mocker.patch(f"{_EVENTS_MODULE}.repository_lifespan_manager")
 
 
 MAX_TIME_FOR_APP_TO_STARTUP: Final[float] = 10
