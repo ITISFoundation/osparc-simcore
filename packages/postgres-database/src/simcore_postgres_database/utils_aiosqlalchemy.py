@@ -68,10 +68,7 @@ def map_db_exception(
             orig_error, "pgcode"
         ):
             assert hasattr(orig_error, "pgcode")  # nosec
-            pgcode = orig_error.pgcode  # type: ignore
-        # Extract any message for substring matching
-        if hasattr(orig_error, "pgerror"):
-            assert hasattr(orig_error, "pgerror")  # nosec
+            pgcode = orig_error.pgcode
 
     # Match by pgcode if available
     if pgcode:
