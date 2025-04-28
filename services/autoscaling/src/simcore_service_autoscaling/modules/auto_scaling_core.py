@@ -51,7 +51,7 @@ from ..utils.buffer_machines_pool_core import (
     get_deactivated_buffer_ec2_tags,
     is_buffer_machine,
 )
-from ..utils.rabbitmq import post_autoscaling_status_message
+from ..utils.rabbitmq import log_tasks_message, post_autoscaling_status_message
 from .auto_scaling_mode_base import BaseAutoscaling
 from .docker import get_docker_client
 from .ec2 import get_ec2_client
@@ -363,7 +363,7 @@ async def _activate_and_notify(
         utils_docker.set_node_osparc_ready(
             app_settings, docker_client, drained_node.node, ready=True
         ),
-        auto_scaling_mode.log_message_from_tasks(
+        log_tasks_message(
             app,
             drained_node.assigned_tasks,
             "cluster adjusted, service should start shortly...",
@@ -787,7 +787,7 @@ async def _launch_instances(
             app, needed_instances, new_instance_tags
         )
     except EC2TooManyInstancesError:
-        await auto_scaling_mode.log_message_from_tasks(
+        await log_tasks_message(
             app,
             tasks,
             "The maximum number of machines in the cluster was reached. Please wait for your running jobs "
@@ -829,7 +829,7 @@ async def _launch_instances(
     new_pending_instances: list[EC2InstanceData] = []
     for r in results:
         if isinstance(r, EC2TooManyInstancesError):
-            await auto_scaling_mode.log_message_from_tasks(
+            await log_tasks_message(
                 app,
                 tasks,
                 "Exceptionally high load on computational cluster, please try again later.",
@@ -847,11 +847,9 @@ async def _launch_instances(
         f"{sum(n for n in capped_needed_machines.values())} new machines launched"
         ", it might take up to 3 minutes to start, Please wait..."
     )
-    await auto_scaling_mode.log_message_from_tasks(
-        app, tasks, log_message, level=logging.INFO
-    )
+    await log_tasks_message(app, tasks, log_message, level=logging.INFO)
     if last_issue:
-        await auto_scaling_mode.log_message_from_tasks(
+        await log_tasks_message(
             app,
             tasks,
             "Unexpected issues detected, probably due to high load, please contact support",
@@ -1088,9 +1086,7 @@ async def _notify_based_on_machine_type(
             f" est. remaining time: {timedelta_as_minute_second(estimated_time_to_completion)})...please wait..."
         )
         if tasks:
-            await auto_scaling_mode.log_message_from_tasks(
-                app, tasks, message=msg, level=logging.INFO
-            )
+            await log_tasks_message(app, tasks, message=msg, level=logging.INFO)
             await auto_scaling_mode.progress_message_from_tasks(
                 app,
                 tasks,
@@ -1191,7 +1187,7 @@ async def _scale_up_cluster(
     if needed_ec2_instances := await _find_needed_instances(
         app, unassigned_tasks, allowed_instance_types, cluster, auto_scaling_mode
     ):
-        await auto_scaling_mode.log_message_from_tasks(
+        await log_tasks_message(
             app,
             unassigned_tasks,
             "service is pending due to missing resources, scaling up cluster now...",

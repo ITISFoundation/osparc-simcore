@@ -2,13 +2,12 @@ from aws_library.ec2 import EC2InstanceData, EC2Tags, Resources
 from fastapi import FastAPI
 from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import Node, Task
-from servicelib.logging_utils import LogLevelInt
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.settings import get_application_settings
 from ..models import AssociatedInstance
 from ..utils import utils_docker, utils_ec2
-from ..utils.rabbitmq import log_tasks_message, progress_tasks_message
+from ..utils.rabbitmq import progress_tasks_message
 from .auto_scaling_mode_base import BaseAutoscaling
 from .docker import get_docker_client
 
@@ -43,12 +42,6 @@ class DynamicAutoscaling(BaseAutoscaling):
             get_docker_client(app),
             service_labels=app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS,
         )
-
-    @staticmethod
-    async def log_message_from_tasks(
-        app: FastAPI, tasks: list, message: str, *, level: LogLevelInt
-    ) -> None:
-        await log_tasks_message(app, tasks, message, level=level)
 
     @staticmethod
     async def progress_message_from_tasks(
