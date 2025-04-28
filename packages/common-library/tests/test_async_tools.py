@@ -46,9 +46,6 @@ async def test_make_async_with_executor():
     assert result == 16, "Function should return 16"
 
 
-"""Tests for database result utility functions"""
-
-
 @pytest.mark.asyncio
 async def test_maybe_await_with_coroutine():
     """Test maybe_await with an async function"""
@@ -82,13 +79,13 @@ async def test_maybe_await_with_result_proxy():
     class AsyncResultProxy:
         """Mock async result proxy (aiopg style)"""
 
-        async def fetchone(self) -> Any:
+        async def fetchone(self) -> Any:  # pylint: disable=no-self-use
             return {"id": 1, "name": "test"}
 
     class SyncResultProxy:
         """Mock sync result proxy (asyncpg style)"""
 
-        def fetchone(self) -> Any:
+        def fetchone(self) -> Any:  # pylint: disable=no-self-use
             return {"id": 2, "name": "test2"}
 
     async_result = await maybe_await(AsyncResultProxy().fetchone())
