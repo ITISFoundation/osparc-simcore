@@ -590,19 +590,28 @@ def expected_service_running(
     assertion_output_folder: Path,
 ) -> Generator[ServiceRunning, None, None]:
     started = arrow.utcnow()
-    with log_context(
-        logging.INFO, msg=f"Waiting for node to run. Timeout: {timeout}"
-    ) as ctx:
-        waiter = SocketIONodeProgressCompleteWaiter(
-            node_id=node_id,
-            logger=ctx.logger,
+    with contextlib.ExitStack() as stack:
+        ctx = stack.enter_context(
+            log_context(
+                logging.INFO,
+                msg=f"Waiting for node to run. Timeout: {timeout}",
+            )
         )
+        if is_service_legacy:
+            ctx.logger.info(
+                "⚠️ Legacy service detected. We are skipping websocket messages in this case! ⚠️"
+            )
+        else:
+            waiter = SocketIONodeProgressCompleteWaiter(
+                node_id=node_id,
+                logger=ctx.logger,
+            )
+            stack.enter_context(
+                websocket.expect_event("framereceived", waiter, timeout=timeout)
+            )
         service_running = ServiceRunning(iframe_locator=None)
-        with websocket.expect_event("framereceived", waiter, timeout=timeout):
-            if press_start_button:
-                _trigger_service_start(page, node_id)
-
-            yield service_running
+        if press_start_button:
+            _trigger_service_start(page, node_id)
     elapsed_time = arrow.utcnow() - started
 
     wait_for_service_endpoint_responding(
@@ -635,16 +644,27 @@ def wait_for_service_running(
     In which case this will need further adjutment"""
 
     started = arrow.utcnow()
-    with log_context(
-        logging.INFO, msg=f"Waiting for node to run. Timeout: {timeout}"
-    ) as ctx:
-        waiter = SocketIONodeProgressCompleteWaiter(
-            node_id=node_id,
-            logger=ctx.logger,
+    with contextlib.ExitStack() as stack:
+        ctx = stack.enter_context(
+            log_context(
+                logging.INFO,
+                msg=f"Waiting for node to run. Timeout: {timeout}",
+            )
         )
-        with websocket.expect_event("framereceived", waiter, timeout=timeout):
-            if press_start_button:
-                _trigger_service_start(page, node_id)
+        if is_service_legacy:
+            ctx.logger.info(
+                "⚠️ Legacy service detected. We are skipping websocket messages in this case! ⚠️"
+            )
+        else:
+            waiter = SocketIONodeProgressCompleteWaiter(
+                node_id=node_id,
+                logger=ctx.logger,
+            )
+            stack.enter_context(
+                websocket.expect_event("framereceived", waiter, timeout=timeout)
+            )
+        if press_start_button:
+            _trigger_service_start(page, node_id)
     elapsed_time = arrow.utcnow() - started
     wait_for_service_endpoint_responding(
         node_id,
