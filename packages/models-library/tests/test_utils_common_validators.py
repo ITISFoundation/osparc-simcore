@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Annotated
 
 import pytest
 from models_library.utils.common_validators import (
@@ -6,6 +7,7 @@ from models_library.utils.common_validators import (
     empty_str_to_none_pre_validator,
     none_to_empty_str_pre_validator,
     null_or_none_str_to_none_validator,
+    trim_string_before,
 )
 from pydantic import BaseModel, ValidationError, field_validator
 
@@ -89,3 +91,33 @@ def test_null_or_none_str_to_none_validator():
 
     model = Model.model_validate({"message": ""})
     assert model == Model.model_validate({"message": ""})
+
+
+def test_trim_string_before():
+    max_length = 10
+
+    class ModelWithTrim(BaseModel):
+        text: Annotated[str, trim_string_before(max_length=max_length)]
+
+    # Test with string shorter than max_length
+    short_text = "Short"
+    model = ModelWithTrim(text=short_text)
+    assert model.text == short_text
+
+    # Test with string equal to max_length
+    exact_text = "1234567890"  # 10 characters
+    model = ModelWithTrim(text=exact_text)
+    assert model.text == exact_text
+
+    # Test with string longer than max_length
+    long_text = "This is a very long text that should be trimmed"
+    model = ModelWithTrim(text=long_text)
+    assert model.text == long_text[:max_length]
+    assert len(model.text) == max_length
+
+    # Test with non-string value (should be left unchanged)
+    class ModelWithTrimOptional(BaseModel):
+        text: Annotated[str | None, trim_string_before(max_length=max_length)]
+
+    model = ModelWithTrimOptional(text=None)
+    assert model.text is None
