@@ -16,7 +16,7 @@ from ..api.routes.health import router as health_router
 from ..services_http import catalog, director_v2, storage, webserver
 from ..services_http.rabbitmq import setup_rabbitmq
 from ._prometheus_instrumentation import setup_prometheus_instrumentation
-from .events import create_start_app_handler, create_stop_app_handler
+from .events import on_shutdown, on_startup
 from .openapi import override_openapi_method, use_route_names_as_operation_ids
 from .settings import ApplicationSettings
 
@@ -119,8 +119,8 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
         )
 
     # setup app
-    app.add_event_handler("startup", create_start_app_handler(app))
-    app.add_event_handler("shutdown", create_stop_app_handler(app))
+    app.add_event_handler("startup", on_startup)
+    app.add_event_handler("shutdown", on_shutdown)
 
     exceptions.setup_exception_handlers(
         app, is_debug=settings.SC_BOOT_MODE == BootModeEnum.DEBUG
