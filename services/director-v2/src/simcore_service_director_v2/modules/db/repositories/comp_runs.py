@@ -277,15 +277,15 @@ class CompRunsRepository(BaseRepository):
                     )  # nosec
                     constraint_name = exc.orig.__cause__.constraint_name
 
-                for foreign_key in comp_runs.foreign_keys:
-                    if constraint_name == foreign_key.name:
-                        assert foreign_key.parent is not None  # nosec
-                        exc_type, exc_keys = _POSTGRES_FK_COLUMN_TO_ERROR_MAP[
-                            foreign_key.parent
-                        ]
-                        raise exc_type(
-                            **{f"{k}": locals().get(k) for k in exc_keys}
-                        ) from exc
+                    for foreign_key in comp_runs.foreign_keys:
+                        if constraint_name == foreign_key.name:
+                            assert foreign_key.parent is not None  # nosec
+                            exc_type, exc_keys = _POSTGRES_FK_COLUMN_TO_ERROR_MAP[
+                                foreign_key.parent
+                            ]
+                            raise exc_type(
+                                **{f"{k}": locals().get(k) for k in exc_keys}
+                            ) from exc
             raise DirectorError from exc
 
     async def update(
