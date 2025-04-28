@@ -3,7 +3,7 @@ import logging
 from typing import Any, Final, cast
 
 import arrow
-import asyncpg
+import asyncpg  # type: ignore[import-untyped]
 import sqlalchemy as sa
 import sqlalchemy.exc as sql_exc
 from models_library.api_schemas_directorv2.comp_runs import ComputationRunRpcGet
@@ -267,8 +267,14 @@ class CompRunsRepository(BaseRepository):
                 return CompRunsAtDB.model_validate(row)
         except sql_exc.IntegrityError as exc:
             if isinstance(exc.orig, AsyncAdapt_asyncpg_dbapi.IntegrityError):
-                assert hasattr(exc.orig, "pgcode")  # nosec
+                assert hasattr(exc.orig, "pgcode")  # nosec  # noqa: PT017
                 if exc.orig.pgcode == asyncpg.ForeignKeyViolationError.sqlstate:
+                    assert isinstance(  # noqa: PT017
+                        exc.orig.__cause__, asyncpg.ForeignKeyViolationError
+                    )  # nosec
+                    assert hasattr(  # noqa: PT017
+                        exc.orig.__cause__, "constraint_name"
+                    )  # nosec
                     constraint_name = exc.orig.__cause__.constraint_name
 
                 for foreign_key in comp_runs.foreign_keys:
