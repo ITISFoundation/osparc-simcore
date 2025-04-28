@@ -50,6 +50,7 @@ from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.core.settings import ApplicationSettings
 from simcore_service_api_server.repository.api_keys import UserAndProductTuple
 from simcore_service_api_server.services_http.solver_job_outputs import ResultsTypes
+from simcore_service_api_server.services_rpc.wb_api_server import WbApiRpcClient
 
 
 @pytest.fixture
@@ -245,7 +246,7 @@ def mocked_app_dependencies(app: FastAPI, mocker: MockerFixture) -> Iterator[Non
         return mocker.MagicMock()
 
     async def _get_wb_api_rpc_client_override():
-        return mocker.AsyncMock()
+        return WbApiRpcClient(_client=mocker.MagicMock())
 
     app.dependency_overrides[get_rabbitmq_rpc_client] = (
         _get_rabbitmq_rpc_client_override

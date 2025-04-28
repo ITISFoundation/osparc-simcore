@@ -12,7 +12,6 @@ from pytest_mock import MockType
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
-from simcore_service_api_server.api.dependencies import webserver_rpc
 from simcore_service_api_server.models.pagination import Page
 from simcore_service_api_server.models.schemas.jobs import Job
 from starlette import status
@@ -111,20 +110,17 @@ async def test_list_all_solvers_jobs(
 
     # Basic assertions on the response structure
     assert isinstance(jobs_page.items, list)
-    assert hasattr(jobs_page, "meta")
-    assert hasattr(jobs_page.meta, "total")
+    assert jobs_page.total > 0
+    assert jobs_page.limit == 10
+    assert jobs_page.offset == 0
+    assert jobs_page.total <= len(jobs_page.items)
 
     # Each job should have the expected structure
     for job in jobs_page.items:
-        assert isinstance(job.id, str)
-        assert isinstance(job.name, str)
-        assert hasattr(job, "url")
+        assert job.id
+        assert job.name
+        assert job.url is not None
+        assert job.runner_url is not None
+        assert job.outputs_url is not None
 
-    # Verify interactions with backend services
-    # These will need to be adjusted based on how the endpoint is implemented
-    # For now, we can assume it might use the solver_service's list_jobs method
-
-    # Additional tests could include:
-    # - Testing pagination by retrieving different pages
-    # - Testing with different limit/offset parameters
-    # - Checking that jobs from different solvers are included
+    assert mocked_backend.webserver_rpc["list_projects_marked_as_jobs"].called

@@ -68,7 +68,14 @@ class WebserverRpcSideEffects:
             assert not job_parent_resource_name_prefix.endswith("%")
             assert not job_parent_resource_name_prefix.startswith("%")
 
-        items = ProjectJobRpcGet.model_json_schema()["examples"]
+        items = [
+            item
+            for item in ProjectJobRpcGet.model_json_schema()["examples"]
+            if job_parent_resource_name_prefix is None
+            or item.get("job_parent_resource_name").startswith(
+                job_parent_resource_name_prefix
+            )
+        ]
 
         return PageRpcProjectJobRpcGet.create(
             items[offset : offset + limit],
