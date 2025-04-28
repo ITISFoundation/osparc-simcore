@@ -128,20 +128,26 @@ def test_trim_string_before_with_string_constraints():
 
     class ModelWithTrimAndConstraints(BaseModel):
         text: Annotated[
-            str,
+            str | None,
+            StringConstraints(
+                max_length=max_length
+            ),  # NOTE: order does not matter for validation but has an effect in the openapi schema
             trim_string_before(max_length=max_length),
-            StringConstraints(max_length=max_length),
         ]
 
     # Check that the OpenAPI schema contains the string constraint
     schema = ModelWithTrimAndConstraints.model_json_schema()
-    assert schema["properties"]["text"]["maxLength"] == max_length
+    assert schema["properties"]["text"] == {
+        "anyOf": [{"maxLength": max_length, "type": "string"}, {"type": "null"}],
+        "title": "Text",
+    }
 
     # Test with string longer than max_length
     # This should pass because trim_string_before runs first and trims the input
     # before StringConstraints validation happens
     long_text = "This is a very long text that should be trimmed"
     model = ModelWithTrimAndConstraints(text=long_text)
+    assert model.text is not None
     assert model.text == long_text[:max_length]
     assert len(model.text) == max_length
 

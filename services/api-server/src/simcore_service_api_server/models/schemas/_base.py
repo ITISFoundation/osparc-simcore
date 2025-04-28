@@ -45,8 +45,10 @@ class BaseService(BaseModel):
     ]
     description: Annotated[
         str | None,
+        StringConstraints(  # NOTE: keep StringConstraints before to keep the openapi schema
+            max_length=1000
+        ),
         trim_string_before(max_length=1000),
-        StringConstraints(max_length=1000),
         Field(default=None, description="Description of the resource"),
     ]
 
