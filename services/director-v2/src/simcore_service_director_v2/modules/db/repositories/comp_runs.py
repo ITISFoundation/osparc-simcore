@@ -3,7 +3,9 @@ import logging
 from typing import Any, Final, cast
 
 import arrow
+import asyncpg
 import sqlalchemy as sa
+import sqlalchemy.exc as sql_exc
 from models_library.api_schemas_directorv2.comp_runs import ComputationRunRpcGet
 from models_library.basic_types import IDStr
 from models_library.projects import ProjectID
@@ -12,7 +14,7 @@ from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import PositiveInt
-from simcore_postgres_database.aiopg_errors import ForeignKeyViolation
+from sqlalchemy.dialects.postgresql.asyncpg import AsyncAdapt_asyncpg_dbapi
 from sqlalchemy.sql import or_
 from sqlalchemy.sql.elements import literal_column
 from sqlalchemy.sql.expression import desc
@@ -263,17 +265,21 @@ class CompRunsRepository(BaseRepository):
                 )
                 row = result.one()
                 return CompRunsAtDB.model_validate(row)
-        except ForeignKeyViolation as exc:
-            assert exc.diag.constraint_name  # nosec  # noqa: PT017
-            for foreign_key in comp_runs.foreign_keys:
-                if exc.diag.constraint_name == foreign_key.name:
-                    assert foreign_key.parent is not None  # nosec
-                    exc_type, exc_keys = _POSTGRES_FK_COLUMN_TO_ERROR_MAP[
-                        foreign_key.parent
-                    ]
-                    raise exc_type(
-                        **{f"{k}": locals().get(k) for k in exc_keys}
-                    ) from exc
+        except sql_exc.IntegrityError as exc:
+            if isinstance(exc.orig, AsyncAdapt_asyncpg_dbapi.IntegrityError):
+                assert hasattr(exc.orig, "pgcode")  # nosec
+                if exc.orig.pgcode == asyncpg.ForeignKeyViolationError.sqlstate:
+                    constraint_name = exc.orig.__cause__.constraint_name
+
+                for foreign_key in comp_runs.foreign_keys:
+                    if constraint_name == foreign_key.name:
+                        assert foreign_key.parent is not None  # nosec
+                        exc_type, exc_keys = _POSTGRES_FK_COLUMN_TO_ERROR_MAP[
+                            foreign_key.parent
+                        ]
+                        raise exc_type(
+                            **{f"{k}": locals().get(k) for k in exc_keys}
+                        ) from exc
             raise DirectorError from exc
 
     async def update(
@@ -290,7 +296,7 @@ class CompRunsRepository(BaseRepository):
                 .values(**values)
                 .returning(literal_column("*"))
             )
-            row = result.one()
+            row = result.one_or_none()
             return CompRunsAtDB.model_validate(row) if row else None
 
     async def set_run_result(
