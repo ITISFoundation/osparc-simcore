@@ -14,6 +14,7 @@ import arrow
 import pytest
 import sqlalchemy as sa
 from _helpers import PublishedProject, RunningProject
+from dask_task_models_library.container_tasks.utils import generate_dask_job_id
 from faker import Faker
 from fastapi.encoders import jsonable_encoder
 from models_library.projects import ProjectAtDB, ProjectID
@@ -30,7 +31,6 @@ from simcore_service_director_v2.models.comp_runs import (
 )
 from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB, Image
 from simcore_service_director_v2.utils.computations import to_node_class
-from simcore_service_director_v2.utils.dask import generate_dask_job_id
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 

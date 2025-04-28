@@ -1,6 +1,4 @@
-""" Free helper functions for docker API
-
-"""
+"""Free helper functions for docker API"""
 
 import asyncio
 import collections
@@ -384,7 +382,7 @@ async def compute_cluster_used_resources(
     list_of_used_resources = await logged_gather(
         *(compute_node_used_resources(docker_client, node) for node in nodes)
     )
-    counter = collections.Counter({k: 0 for k in Resources.model_fields})
+    counter = collections.Counter({k: 0 for k in list(Resources.model_fields)})
     for result in list_of_used_resources:
         counter.update(result.model_dump())
 
@@ -413,7 +411,7 @@ async def get_docker_swarm_join_bash_command(*, join_as_drained: bool) -> str:
     decoded_stdout = stdout.decode()
     if match := re.search(_DOCKER_SWARM_JOIN_PATTERN, decoded_stdout):
         capture = match.groupdict()
-        return f"{capture['command']} --availability={'drain' if join_as_drained  else 'active'} {capture['token']} {capture['address']}"
+        return f"{capture['command']} --availability={'drain' if join_as_drained else 'active'} {capture['token']} {capture['address']}"
     msg = f"expected docker '{_DOCKER_SWARM_JOIN_RE}' command not found: received {decoded_stdout}!"
     raise RuntimeError(msg)
 
@@ -445,7 +443,7 @@ def write_compose_file_command(
 ) -> str:
     compose = {
         "services": {
-            f"{image_tag.split('/')[-1].replace(':','-')}": {"image": image_tag}
+            f"{image_tag.split('/')[-1].replace(':', '-')}": {"image": image_tag}
             for n, image_tag in enumerate(docker_tags)
         },
     }

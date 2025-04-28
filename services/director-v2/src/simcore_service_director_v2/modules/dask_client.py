@@ -37,6 +37,8 @@ from dask_task_models_library.container_tasks.protocol import (
     LogFileUploadURL,
     TaskOwner,
 )
+from dask_task_models_library.container_tasks.utils import generate_dask_job_id
+from dask_task_models_library.models import DaskJobID, DaskResources
 from dask_task_models_library.resource_constraints import (
     create_ec2_resource_constraint_key,
 )
@@ -69,7 +71,7 @@ from ..core.errors import (
 from ..core.settings import AppSettings, ComputationalBackendSettings
 from ..models.comp_runs import RunMetadataDict
 from ..models.comp_tasks import Image
-from ..models.dask_subsystem import DaskClientTaskState, DaskJobID, DaskResources
+from ..models.dask_subsystem import DaskClientTaskState
 from ..modules.storage import StorageClient
 from ..utils import dask as dask_utils
 from ..utils.dask_client_utils import (
@@ -310,7 +312,7 @@ class DaskClient:
 
         list_of_node_id_to_job_id: list[PublishedComputationTask] = []
         for node_id, node_image in tasks.items():
-            job_id = dask_utils.generate_dask_job_id(
+            job_id = generate_dask_job_id(
                 service_key=node_image.name,
                 service_version=node_image.tag,
                 user_id=user_id,
