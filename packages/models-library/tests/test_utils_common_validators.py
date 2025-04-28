@@ -9,7 +9,7 @@ from models_library.utils.common_validators import (
     null_or_none_str_to_none_validator,
     trim_string_before,
 )
-from pydantic import BaseModel, ValidationError, field_validator
+from pydantic import BaseModel, StringConstraints, ValidationError, field_validator
 
 
 def test_enums_pre_validator():
@@ -121,3 +121,31 @@ def test_trim_string_before():
 
     model = ModelWithTrimOptional(text=None)
     assert model.text is None
+
+
+def test_trim_string_before_with_string_constraints():
+    max_length = 10
+
+    class ModelWithTrimAndConstraints(BaseModel):
+        text: Annotated[
+            str,
+            trim_string_before(max_length=max_length),
+            StringConstraints(max_length=max_length),
+        ]
+
+    # Check that the OpenAPI schema contains the string constraint
+    schema = ModelWithTrimAndConstraints.model_json_schema()
+    assert schema["properties"]["text"]["maxLength"] == max_length
+
+    # Test with string longer than max_length
+    # This should pass because trim_string_before runs first and trims the input
+    # before StringConstraints validation happens
+    long_text = "This is a very long text that should be trimmed"
+    model = ModelWithTrimAndConstraints(text=long_text)
+    assert model.text == long_text[:max_length]
+    assert len(model.text) == max_length
+
+    # Test with string exactly at max_length
+    exact_text = "1234567890"  # 10 characters
+    model = ModelWithTrimAndConstraints(text=exact_text)
+    assert model.text == exact_text
