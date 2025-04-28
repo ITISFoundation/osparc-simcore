@@ -211,9 +211,9 @@ async def create_user_ids(
                 )
                 assert uid
 
-                _generate_user_ids.generated_ids.append(uid)
+            _generate_user_ids.generated_ids.append(uid)
 
-                yield uid
+            yield uid
 
     _generate_user_ids.generated_ids = []
 
@@ -236,7 +236,7 @@ async def create_product_names(
                 product = random_product(group_id=None)
                 async with async_engine.connect() as conn:
                     result = await conn.execute(
-                        products.select().where(products.c.name == product["name"])
+                        products.select().where(products.c.name == product["name"]),
                     )
                     entry = result.one_or_none()
                     if entry is None:
@@ -274,6 +274,7 @@ async def create_fake_api_keys(
         for _ in range(n):
             product = await anext(products)
             user = await anext(users)
+
             api_auth = random_api_auth(product, user)
             plain_api_secret = api_auth.pop("api_secret")
 
