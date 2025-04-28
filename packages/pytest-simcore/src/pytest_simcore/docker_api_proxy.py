@@ -23,7 +23,7 @@ async def _wait_till_docker_api_proxy_is_responsive(
     settings: DockerApiProxysettings,
 ) -> None:
     async with ClientSession(
-        timeout=ClientTimeout(1, 1, 1, 1, 1),
+        timeout=ClientTimeout(total=1),
         auth=BasicAuth(
             settings.DOCKER_API_PROXY_USER,
             settings.DOCKER_API_PROXY_PASSWORD.get_secret_value(),
