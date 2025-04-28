@@ -8,15 +8,17 @@ from servicelib.fastapi.postgres_lifespan import (
     postgres_database_lifespan,
 )
 
+from .project_networks import ProjectNetworksRepo
+
 _logger = logging.getLogger(__name__)
 
 
 async def _database_lifespan(app: FastAPI, state: State) -> AsyncIterator[State]:
     app.state.engine = state[PostgresLifespanState.POSTGRES_ASYNC_ENGINE]
 
-    # TODO initialize all the repos here?
-
-    # app.state.default_product_name = await repo.get_default_product_name()
+    app.state.repositories = {
+        ProjectNetworksRepo.__name__: ProjectNetworksRepo(app.state.engine),
+    }
 
     yield {}
 
@@ -24,3 +26,10 @@ async def _database_lifespan(app: FastAPI, state: State) -> AsyncIterator[State]
 repository_lifespan_manager = LifespanManager()
 repository_lifespan_manager.add(postgres_database_lifespan)
 repository_lifespan_manager.add(_database_lifespan)
+
+
+def get_project_networks_repo(app: FastAPI) -> ProjectNetworksRepo:
+    assert isinstance(app.state.repositories, dict)  # nosec
+    repo = app.state.repositories.get(ProjectNetworksRepo.__name__)
+    assert isinstance(repo, ProjectNetworksRepo)  # nosec
+    return repo
