@@ -27,7 +27,7 @@ from starlette import status
 
 
 @pytest.fixture
-def bucket_name():
+def bucket_name() -> str:
     return "test-bucket"
 
 
@@ -87,7 +87,7 @@ def mocked_directorv2_service_api(
     presigned_download_link: AnyUrl,
     mocked_directorv2_rest_api_base: MockRouter,
     directorv2_service_openapi_specs: dict[str, Any],
-):
+) -> MockRouter:
     settings: ApplicationSettings = app.state.settings
     assert settings.API_SERVER_DIRECTOR_V2
     oas = directorv2_service_openapi_specs
