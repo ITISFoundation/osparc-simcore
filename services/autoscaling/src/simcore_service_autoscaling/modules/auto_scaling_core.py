@@ -1091,7 +1091,7 @@ async def _notify_based_on_machine_type(
             await post_tasks_log_message(app, tasks, message=msg, level=logging.INFO)
             await post_tasks_progress_message(
                 app,
-                task=tasks,
+                tasks=tasks,
                 progress=time_since_launch.total_seconds()
                 / instance_max_time_to_start.total_seconds(),
                 progress_type=ProgressType.CLUSTER_UP_SCALING,
