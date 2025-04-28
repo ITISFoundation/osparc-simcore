@@ -1787,9 +1787,7 @@ async def test__activate_drained_nodes_with_no_tasks(
 ):
     # no tasks, does nothing and returns True
     empty_cluster = cluster()
-    updated_cluster = await _activate_drained_nodes(
-        initialized_app, empty_cluster, DynamicAutoscaling()
-    )
+    updated_cluster = await _activate_drained_nodes(initialized_app, empty_cluster)
     assert updated_cluster == empty_cluster
 
     active_cluster = cluster(
@@ -1801,9 +1799,7 @@ async def test__activate_drained_nodes_with_no_tasks(
             create_associated_instance(drained_host_node, True)  # noqa: FBT003
         ],
     )
-    updated_cluster = await _activate_drained_nodes(
-        initialized_app, active_cluster, DynamicAutoscaling()
-    )
+    updated_cluster = await _activate_drained_nodes(initialized_app, active_cluster)
     assert updated_cluster == active_cluster
     mock_docker_tag_node.assert_not_called()
 
@@ -1855,7 +1851,7 @@ async def test__activate_drained_nodes_with_no_drained_nodes(
         active_nodes=[create_associated_instance(host_node, True)]  # noqa: FBT003
     )
     updated_cluster = await _activate_drained_nodes(
-        initialized_app, cluster_without_drained_nodes, DynamicAutoscaling()
+        initialized_app, cluster_without_drained_nodes
     )
     assert updated_cluster == cluster_without_drained_nodes
     mock_docker_tag_node.assert_not_called()
@@ -1916,7 +1912,7 @@ async def test__activate_drained_nodes_with_drained_node(
     )
 
     updated_cluster = await _activate_drained_nodes(
-        initialized_app, cluster_with_drained_nodes, DynamicAutoscaling()
+        initialized_app, cluster_with_drained_nodes
     )
     # they are the same nodes, but the availability might have changed here
     assert updated_cluster.active_nodes != cluster_with_drained_nodes.drained_nodes

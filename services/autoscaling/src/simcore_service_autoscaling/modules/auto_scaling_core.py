@@ -369,8 +369,8 @@ async def _activate_and_notify(
         ),
         post_tasks_log_message(
             app,
-            drained_node.assigned_tasks,
-            "cluster adjusted, service should start shortly...",
+            tasks=drained_node.assigned_tasks,
+            message="cluster adjusted, service should start shortly...",
             level=logging.INFO,
         ),
         post_tasks_progress_message(
@@ -792,8 +792,8 @@ async def _launch_instances(
     except EC2TooManyInstancesError:
         await post_tasks_log_message(
             app,
-            tasks,
-            "The maximum number of machines in the cluster was reached. Please wait for your running jobs "
+            tasks=tasks,
+            message="The maximum number of machines in the cluster was reached. Please wait for your running jobs "
             "to complete and try again later or contact osparc support if this issue does not resolve.",
             level=logging.ERROR,
         )
@@ -834,8 +834,8 @@ async def _launch_instances(
         if isinstance(r, EC2TooManyInstancesError):
             await post_tasks_log_message(
                 app,
-                tasks,
-                "Exceptionally high load on computational cluster, please try again later.",
+                tasks=tasks,
+                message="Exceptionally high load on computational cluster, please try again later.",
                 level=logging.ERROR,
             )
         elif isinstance(r, BaseException):
@@ -850,12 +850,14 @@ async def _launch_instances(
         f"{sum(n for n in capped_needed_machines.values())} new machines launched"
         ", it might take up to 3 minutes to start, Please wait..."
     )
-    await post_tasks_log_message(app, tasks, log_message, level=logging.INFO)
+    await post_tasks_log_message(
+        app, tasks=tasks, message=log_message, level=logging.INFO
+    )
     if last_issue:
         await post_tasks_log_message(
             app,
-            tasks,
-            "Unexpected issues detected, probably due to high load, please contact support",
+            tasks=tasks,
+            message="Unexpected issues detected, probably due to high load, please contact support",
             level=logging.ERROR,
         )
 
@@ -1088,7 +1090,9 @@ async def _notify_based_on_machine_type(
             f" est. remaining time: {timedelta_as_minute_second(estimated_time_to_completion)})...please wait..."
         )
         if tasks:
-            await post_tasks_log_message(app, tasks, message=msg, level=logging.INFO)
+            await post_tasks_log_message(
+                app, tasks=tasks, message=msg, level=logging.INFO
+            )
             await post_tasks_progress_message(
                 app,
                 tasks=tasks,
@@ -1189,8 +1193,8 @@ async def _scale_up_cluster(
     ):
         await post_tasks_log_message(
             app,
-            unassigned_tasks,
-            "service is pending due to missing resources, scaling up cluster now...",
+            tasks=unassigned_tasks,
+            message="service is pending due to missing resources, scaling up cluster now...",
             level=logging.INFO,
         )
         new_pending_instances = await _launch_instances(

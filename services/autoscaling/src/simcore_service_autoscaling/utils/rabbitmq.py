@@ -37,9 +37,9 @@ def _get_task_ids(task: DockerTask | DaskTask) -> tuple[UserID, ProjectID, NodeI
 
 async def post_tasks_log_message(
     app: FastAPI,
+    *,
     tasks: list[DockerTask] | list[DaskTask],
     message: str,
-    *,
     level: int = logging.INFO,
 ) -> None:
     if not tasks:

@@ -24,8 +24,8 @@ from pytest_mock.plugin import MockerFixture
 from servicelib.rabbitmq import BIND_TO_ALL_TOPICS, RabbitMQClient
 from settings_library.rabbit import RabbitSettings
 from simcore_service_autoscaling.utils.rabbitmq import (
-    post_task_log_message,
-    post_task_progress_message,
+    post_tasks_log_message,
+    post_tasks_progress_message,
 )
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -88,7 +88,9 @@ async def test_post_task_log_message(
     assert len(service_tasks) == 1
 
     log_message = faker.pystr()
-    await post_task_log_message(initialized_app, service_tasks[0], log_message, 0)
+    await post_tasks_log_message(
+        initialized_app, tasks=service_tasks, message=log_message, level=0
+    )
 
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
@@ -135,7 +137,9 @@ async def test_post_task_log_message_does_not_raise_if_service_has_no_labels(
 
     # this shall not raise any exception even if the task does not contain
     # the necessary labels
-    await post_task_log_message(initialized_app, service_tasks[0], faker.pystr(), 0)
+    await post_tasks_log_message(
+        initialized_app, tasks=service_tasks, message=faker.pystr(), level=0
+    )
 
 
 async def test_post_task_progress_message(
@@ -178,7 +182,12 @@ async def test_post_task_progress_message(
     assert len(service_tasks) == 1
 
     progress_value = faker.pyfloat(min_value=0)
-    await post_task_progress_message(initialized_app, service_tasks[0], progress_value)
+    await post_tasks_progress_message(
+        initialized_app,
+        tasks=service_tasks,
+        progress=progress_value,
+        progress_type=ProgressType.CLUSTER_UP_SCALING,
+    )
 
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
@@ -225,6 +234,9 @@ async def test_post_task_progress_does_not_raise_if_service_has_no_labels(
 
     # this shall not raise any exception even if the task does not contain
     # the necessary labels
-    await post_task_progress_message(
-        initialized_app, service_tasks[0], faker.pyfloat(min_value=0)
+    await post_tasks_progress_message(
+        initialized_app,
+        tasks=service_tasks,
+        progress=faker.pyfloat(min_value=0),
+        progress_type=ProgressType.CLUSTER_UP_SCALING,
     )
