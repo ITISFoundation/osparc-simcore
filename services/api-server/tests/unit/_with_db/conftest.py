@@ -143,12 +143,18 @@ def migrated_db(postgres_service: dict, sync_engine: sqlalchemy.engine.Engine):
     #
     kwargs = postgres_service.copy()
     kwargs.pop("dsn")
+    assert pg_cli.discover.callback is not None
     pg_cli.discover.callback(**kwargs)
+
+    assert pg_cli.upgrade.callback is not None
     pg_cli.upgrade.callback("head")
 
     yield
 
+    assert pg_cli.downgrade.callback is not None
     pg_cli.downgrade.callback("base")
+
+    assert pg_cli.clean.callback is not None
     pg_cli.clean.callback()
 
     postgres_tools.force_drop_all_tables(sync_engine)
