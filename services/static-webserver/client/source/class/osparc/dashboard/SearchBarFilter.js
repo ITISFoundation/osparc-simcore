@@ -65,7 +65,10 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
         icon: "@FontAwesome5Solid/users/20"
       }, {
         id: "shared-with-everyone",
-        label: qx.locale.Manager.tr("Shared with Everyone"),
+        label: qx.locale.Manager.tr("Public") + osparc.product.Utils.resourceTypeToAlias(resourceType, {
+          firstUpperCase: true,
+          plural: true
+        }),
         icon: "@FontAwesome5Solid/globe/20"
       }];
     }
