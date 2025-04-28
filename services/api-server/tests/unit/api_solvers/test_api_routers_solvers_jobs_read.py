@@ -12,19 +12,22 @@ from pytest_mock import MockType
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
+from simcore_service_api_server.api.dependencies import webserver_rpc
 from simcore_service_api_server.models.pagination import Page
 from simcore_service_api_server.models.schemas.jobs import Job
 from starlette import status
 
 
 class MockBackendRouters(NamedTuple):
-    webserver: MockRouter
-    catalog: dict[str, MockType]
+    webserver_rest: MockRouter
+    webserver_rpc: dict[str, MockType]
+    catalog_rpc: dict[str, MockType]
 
 
 @pytest.fixture
 def mocked_backend(
     mocked_webserver_rest_api_base: MockRouter,
+    mocked_webserver_rpc_api: dict[str, MockType],
     mocked_catalog_rpc_api: dict[str, MockType],
     project_tests_dir: Path,
 ) -> MockBackendRouters:
@@ -46,8 +49,9 @@ def mocked_backend(
     )
 
     return MockBackendRouters(
-        webserver=mocked_webserver_rest_api_base,
-        catalog=mocked_catalog_rpc_api,
+        webserver_rest=mocked_webserver_rest_api_base,
+        webserver_rpc=mocked_webserver_rpc_api,
+        catalog_rpc=mocked_catalog_rpc_api,
     )
 
 
@@ -81,5 +85,46 @@ async def test_list_solver_jobs(
     assert jobs_page.items == jobs
 
     # check calls to the deep-backend services
-    assert mocked_backend.webserver["list_projects"].called
-    assert mocked_backend.catalog["get_service"].called
+    assert mocked_backend.webserver_rest["list_projects"].called
+    assert mocked_backend.catalog_rpc["get_service"].called
+
+
+async def test_list_all_solvers_jobs(
+    auth: httpx.BasicAuth,
+    client: httpx.AsyncClient,
+    mocked_backend: MockBackendRouters,
+):
+    """Tests the endpoint that lists all jobs across all solvers."""
+
+    # Call the endpoint with pagination parameters
+    resp = await client.get(
+        f"/{API_VTAG}/solvers/-/releases/-/jobs",
+        auth=auth,
+        params={"limit": 10, "offset": 0},
+    )
+
+    # Verify the response
+    assert resp.status_code == status.HTTP_200_OK
+
+    # Parse and validate the response
+    jobs_page = TypeAdapter(Page[Job]).validate_python(resp.json())
+
+    # Basic assertions on the response structure
+    assert isinstance(jobs_page.items, list)
+    assert hasattr(jobs_page, "meta")
+    assert hasattr(jobs_page.meta, "total")
+
+    # Each job should have the expected structure
+    for job in jobs_page.items:
+        assert isinstance(job.id, str)
+        assert isinstance(job.name, str)
+        assert hasattr(job, "url")
+
+    # Verify interactions with backend services
+    # These will need to be adjusted based on how the endpoint is implemented
+    # For now, we can assume it might use the solver_service's list_jobs method
+
+    # Additional tests could include:
+    # - Testing pagination by retrieving different pages
+    # - Testing with different limit/offset parameters
+    # - Checking that jobs from different solvers are included
