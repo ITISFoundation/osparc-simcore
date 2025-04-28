@@ -1,6 +1,5 @@
 import asyncio
 import logging
-from typing import cast
 
 from aws_library.ec2 import Resources
 from dask_task_models_library.container_tasks.utils import parse_dask_job_id
@@ -26,6 +25,16 @@ from ..modules.rabbitmq import post_message
 _logger = logging.getLogger(__name__)
 
 
+def _get_task_ids(task: DockerTask | DaskTask) -> tuple[UserID, ProjectID, NodeID]:
+    if isinstance(task, DockerTask):
+        labels = StandardSimcoreDockerLabels.from_docker_task(task)
+        return labels.user_id, labels.project_id, labels.node_id
+    _service_key, _service_version, user_id, project_id, node_id = parse_dask_job_id(
+        task.task_id
+    )
+    return user_id, project_id, node_id
+
+
 async def post_tasks_log_message(
     app: FastAPI,
     tasks: list[DockerTask] | list[DaskTask],
@@ -35,23 +44,21 @@ async def post_tasks_log_message(
 ) -> None:
     if not tasks:
         return
-    if isinstance(tasks[0], DockerTask):
+
+    with log_catch(_logger, reraise=False):
         await asyncio.gather(
             *(
-                _post_task_log_message_from_docker_task(
-                    app, cast(DockerTask, task), message, level
+                _post_task_log_message(
+                    app,
+                    user_id=user_id,
+                    project_id=project_id,
+                    node_id=node_id,
+                    log=message,
+                    level=level,
                 )
-                for task in tasks
-            ),
-            return_exceptions=True,
-        )
-    else:
-        await asyncio.gather(
-            *(
-                _post_task_log_message_from_dask_task(
-                    app, cast(DaskTask, task), message, level
+                for user_id, project_id, node_id in (
+                    _get_task_ids(task) for task in tasks
                 )
-                for task in tasks
             ),
             return_exceptions=True,
         )
@@ -66,67 +73,23 @@ async def post_tasks_progress_message(
 ) -> None:
     if not tasks:
         return
-    if isinstance(tasks[0], DockerTask):
+
+    with log_catch(_logger, reraise=False):
         await asyncio.gather(
             *(
-                _post_task_progress_message_from_docker_task(
-                    app, cast(DockerTask, task), progress, progress_type
+                _post_task_progress_message(
+                    app,
+                    user_id=user_id,
+                    project_id=project_id,
+                    node_id=node_id,
+                    progress=progress,
+                    progress_type=progress_type,
                 )
-                for task in tasks
+                for user_id, project_id, node_id in (
+                    _get_task_ids(task) for task in tasks
+                )
             ),
             return_exceptions=True,
-        )
-    else:
-        await asyncio.gather(
-            *(
-                _post_task_progress_message_from_dask_task(
-                    app, cast(DaskTask, task), progress, progress_type
-                )
-                for task in tasks
-            ),
-            return_exceptions=True,
-        )
-
-
-async def _post_task_progress_message_from_docker_task(
-    app: FastAPI,
-    task: DockerTask,
-    progress: float,
-    progress_type: ProgressType,
-) -> None:
-    with log_catch(_logger, reraise=False):
-        simcore_label_keys = StandardSimcoreDockerLabels.from_docker_task(task)
-        await _post_task_progress_message(
-            app,
-            user_id=simcore_label_keys.user_id,
-            project_id=simcore_label_keys.project_id,
-            node_id=simcore_label_keys.node_id,
-            progress=progress,
-            progress_type=progress_type,
-        )
-
-
-async def _post_task_progress_message_from_dask_task(
-    app: FastAPI,
-    task: DaskTask,
-    progress: float,
-    progress_type: ProgressType,
-) -> None:
-    with log_catch(_logger, reraise=False):
-        (
-            _service_key,
-            _service_version,
-            user_id,
-            project_id,
-            node_id,
-        ) = parse_dask_job_id(task.task_id)
-        await _post_task_progress_message(
-            app,
-            user_id=user_id,
-            project_id=project_id,
-            node_id=node_id,
-            progress=progress,
-            progress_type=progress_type,
         )
 
 
@@ -149,42 +112,6 @@ async def _post_task_progress_message(
     await post_message(app, message)
 
 
-async def _post_task_log_message_from_docker_task(
-    app: FastAPI, task: DockerTask, log: str, level: int
-) -> None:
-    with log_catch(_logger, reraise=False):
-        simcore_label_keys = StandardSimcoreDockerLabels.from_docker_task(task)
-        await _post_task_log_message(
-            app,
-            user_id=simcore_label_keys.user_id,
-            project_id=simcore_label_keys.project_id,
-            node_id=simcore_label_keys.node_id,
-            log=log,
-            level=level,
-        )
-
-
-async def _post_task_log_message_from_dask_task(
-    app: FastAPI, task: DaskTask, log: str, level: int
-) -> None:
-    with log_catch(_logger, reraise=False):
-        (
-            _service_key,
-            _service_version,
-            user_id,
-            project_id,
-            node_id,
-        ) = parse_dask_job_id(task.task_id)
-        await _post_task_log_message(
-            app,
-            user_id=user_id,
-            project_id=project_id,
-            node_id=node_id,
-            log=log,
-            level=level,
-        )
-
-
 async def _post_task_log_message(
     app: FastAPI,
     *,
@@ -194,14 +121,16 @@ async def _post_task_log_message(
     log: str,
     level: int,
 ) -> None:
+    cluster_log = f"[cluster] {log}"
+    _logger.log(level, cluster_log)
+
     message = LoggerRabbitMessage.model_construct(
         user_id=user_id,
         project_id=project_id,
         node_id=node_id,
-        messages=[f"[cluster] {log}"],
+        messages=[cluster_log],
         log_level=level,
     )
-    _logger.log(level, message)
     await post_message(app, message)
 
 
@@ -213,24 +142,29 @@ async def _create_autoscaling_status_message(
 ) -> RabbitAutoscalingStatusMessage:
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
 
-    origin = "unknown"
     if app_settings.AUTOSCALING_NODES_MONITORING:
-        origin = f"dynamic:node_labels={app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS}"
+        origin = f"dynamic:node_labels={app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS!s}"
     elif app_settings.AUTOSCALING_DASK:
-        origin = f"computational:scheduler_url={app_settings.AUTOSCALING_DASK.DASK_MONITORING_URL}"
+        origin = f"computational:scheduler_url={app_settings.AUTOSCALING_DASK.DASK_MONITORING_URL!s}"
+    else:
+        origin = "unknown"
+
+    total_nodes = (
+        len(cluster.active_nodes)
+        + len(cluster.drained_nodes)
+        + len(cluster.buffer_drained_nodes)
+    )
+    drained_nodes = len(cluster.drained_nodes) + len(cluster.buffer_drained_nodes)
+
     return RabbitAutoscalingStatusMessage.model_construct(
         origin=origin,
-        nodes_total=len(cluster.active_nodes)
-        + len(cluster.drained_nodes)
-        + len(cluster.buffer_drained_nodes),
+        nodes_total=total_nodes,
         nodes_active=len(cluster.active_nodes),
-        nodes_drained=len(cluster.drained_nodes) + len(cluster.buffer_drained_nodes),
+        nodes_drained=drained_nodes,
         cluster_total_resources=cluster_total_resources.model_dump(),
         cluster_used_resources=cluster_used_resources.model_dump(),
         instances_pending=len(cluster.pending_ec2s),
-        instances_running=len(cluster.active_nodes)
-        + len(cluster.drained_nodes)
-        + len(cluster.buffer_drained_nodes),
+        instances_running=total_nodes,
     )
 
 
