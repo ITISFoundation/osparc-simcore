@@ -6,8 +6,8 @@ from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
 from pydantic import BaseModel, PositiveInt
 
-from ...db.repositories.api_keys import ApiKeysRepository, UserAndProductTuple
-from ...db.repositories.users import UsersRepository
+from ...repository.api_keys import ApiKeysRepository, UserAndProductTuple
+from ...repository.users import UsersRepository
 from .database import get_repository
 
 # SEE https://swagger.io/docs/specification/authentication/basic-authentication/
