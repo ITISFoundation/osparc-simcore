@@ -125,15 +125,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
         switch (sharedWith) {
           case "show-all":
             return false;
-          case "shared-with-everyone": {
-            const everyoneGroupIds = [
-              groupsStore.getEveryoneProductGroup().getGroupId(),
-              groupsStore.getEveryoneGroup().getGroupId(),
-            ];
-            const found = Object.keys(checks).some(gId => everyoneGroupIds.includes(parseInt(gId)));
-            // show those that are shared with "1" or product everyone's groupId
-            return !found;
-          }
           case "my-resources": {
             if (myGroupId in checks) {
               const myAccessRights = checks[myGroupId];
@@ -152,6 +143,15 @@ qx.Class.define("osparc.dashboard.CardBase", {
             }
             // if we get here, it means that it was shared-with-me via an organization
             return false;
+          }
+          case "shared-with-everyone": {
+            const everyoneGroupIds = [
+              groupsStore.getEveryoneProductGroup().getGroupId(),
+              groupsStore.getEveryoneGroup().getGroupId(),
+            ];
+            const found = Object.keys(checks).some(gId => everyoneGroupIds.includes(parseInt(gId)));
+            // show those that are shared with "1" or product everyone's groupId
+            return !found;
           }
           default:
             return true;
