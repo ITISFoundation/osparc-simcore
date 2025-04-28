@@ -452,7 +452,7 @@ async def projects_networks_db(
     engine: AsyncEngine = initialized_app.state.engine
 
     async with engine.begin() as conn:
-        row_data = projects_networks_to_insert.model_dump()
+        row_data = projects_networks_to_insert.model_dump(mode="json")
         insert_stmt = pg_insert(projects_networks).values(**row_data)
         upsert_snapshot = insert_stmt.on_conflict_do_update(
             constraint=projects_networks.primary_key, set_=row_data
