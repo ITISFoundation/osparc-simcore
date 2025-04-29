@@ -8,7 +8,7 @@ import os
 import shutil
 import subprocess
 import sys
-from collections.abc import AsyncGenerator, AsyncIterator, Callable, Iterable
+from collections.abc import AsyncGenerator, Callable, Iterable
 from pathlib import Path
 from typing import TypedDict
 
@@ -18,7 +18,6 @@ import simcore_postgres_database.cli as pg_cli
 import sqlalchemy as sa
 import sqlalchemy.engine
 import yaml
-from aiopg.sa.connection import SAConnection
 from fastapi import FastAPI
 from models_library.api_schemas_api_server.api_keys import ApiKeyInDB
 from pydantic import PositiveInt
@@ -34,8 +33,10 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_postgres_database.models.api_keys import api_keys
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import users
+from simcore_service_api_server.clients.postgres import get_engine
 from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.core.settings import PostgresSettings
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 ## POSTGRES -----
 
@@ -142,12 +143,18 @@ def migrated_db(postgres_service: dict, sync_engine: sqlalchemy.engine.Engine):
     #
     kwargs = postgres_service.copy()
     kwargs.pop("dsn")
+    assert pg_cli.discover.callback is not None
     pg_cli.discover.callback(**kwargs)
+
+    assert pg_cli.upgrade.callback is not None
     pg_cli.upgrade.callback("head")
 
     yield
 
+    assert pg_cli.downgrade.callback is not None
     pg_cli.downgrade.callback("base")
+
+    assert pg_cli.clean.callback is not None
     pg_cli.clean.callback()
 
     postgres_tools.force_drop_all_tables(sync_engine)
@@ -165,7 +172,7 @@ def app_environment(
         "simcore_service_api_server.core._prometheus_instrumentation.setup_prometheus_instrumentation"
     )
 
-    envs = setenvs_from_dict(monkeypatch, default_app_env_vars)
+    envs = setenvs_from_dict(monkeypatch, {**default_app_env_vars})
     assert "API_SERVER_POSTGRES" not in envs
 
     # Should be sufficient to create settings
@@ -184,43 +191,48 @@ def app(app_environment: EnvVarsDict, migrated_db: None) -> FastAPI:
 
 
 @pytest.fixture
-async def connection(app: FastAPI) -> AsyncIterator[SAConnection]:
-    assert app.state.engine
-    async with app.state.engine.acquire() as conn:
-        yield conn
+async def async_engine(app: FastAPI) -> AsyncEngine:
+    return get_engine(app)
 
 
 @pytest.fixture
 async def create_user_ids(
-    connection: SAConnection,
+    async_engine: AsyncEngine,
 ) -> AsyncGenerator[Callable[[PositiveInt], AsyncGenerator[PositiveInt, None]], None]:
     async def _generate_user_ids(n: PositiveInt) -> AsyncGenerator[PositiveInt, None]:
         for _ in range(n):
             while True:
                 user = random_user()
-                result = await connection.execute(
-                    users.select().where(users.c.name == user["name"])
+                async with async_engine.connect() as conn:
+                    result = await conn.execute(
+                        users.select().where(users.c.name == user["name"])
+                    )
+                    entry = result.one_or_none()
+                    if entry is None:
+                        break
+
+            async with async_engine.begin() as conn:
+                uid = await conn.scalar(
+                    users.insert().values(user).returning(users.c.id)
                 )
-                entry = await result.first()
-                if entry is None:
-                    break
-            uid = await connection.scalar(
-                users.insert().values(user).returning(users.c.id)
-            )
-            assert uid
+                assert uid
+
             _generate_user_ids.generated_ids.append(uid)
+
             yield uid
 
     _generate_user_ids.generated_ids = []
+
     yield _generate_user_ids
 
     for uid in _generate_user_ids.generated_ids:
-        await connection.execute(users.delete().where(users.c.id == uid))
+        async with async_engine.begin() as conn:
+            await conn.execute(users.delete().where(users.c.id == uid))
 
 
 @pytest.fixture
 async def create_product_names(
-    connection: SAConnection,
+    async_engine: AsyncEngine,
 ) -> AsyncGenerator[Callable[[PositiveInt], AsyncGenerator[str, None]], None]:
     async def _generate_product_names(
         n: PositiveInt,
@@ -228,29 +240,35 @@ async def create_product_names(
         for _ in range(n):
             while True:
                 product = random_product(group_id=None)
-                result = await connection.execute(
-                    products.select().where(products.c.name == product["name"])
+                async with async_engine.connect() as conn:
+                    result = await conn.execute(
+                        products.select().where(products.c.name == product["name"]),
+                    )
+                    entry = result.one_or_none()
+                    if entry is None:
+                        break
+
+            async with async_engine.begin() as conn:
+                name = await conn.scalar(
+                    products.insert().values(product).returning(products.c.name)
                 )
-                entry = await result.first()
-                if entry is None:
-                    break
-            name = await connection.scalar(
-                products.insert().values(product).returning(products.c.name)
-            )
+
             assert name
             _generate_product_names.generated_names.append(name)
+
             yield name
 
     _generate_product_names.generated_names = []
     yield _generate_product_names
 
     for name in _generate_product_names.generated_names:
-        await connection.execute(products.delete().where(products.c.name == name))
+        async with async_engine.begin() as conn:
+            await conn.execute(products.delete().where(products.c.name == name))
 
 
 @pytest.fixture
 async def create_fake_api_keys(
-    connection: SAConnection,
+    async_engine: AsyncEngine,
     create_user_ids: Callable[[PositiveInt], AsyncGenerator[PositiveInt, None]],
     create_product_names: Callable[[PositiveInt], AsyncGenerator[str, None]],
 ) -> AsyncGenerator[Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB, None]], None]:
@@ -262,27 +280,35 @@ async def create_fake_api_keys(
         for _ in range(n):
             product = await anext(products)
             user = await anext(users)
+
             api_auth = random_api_auth(product, user)
             plain_api_secret = api_auth.pop("api_secret")
-            result = await connection.execute(
-                api_keys.insert()
-                .values(
-                    api_secret=sa.func.crypt(plain_api_secret, sa.func.gen_salt("bf", 10)),
-                    **api_auth,
+
+            async with async_engine.begin() as conn:
+                result = await conn.execute(
+                    api_keys.insert()
+                    .values(
+                        api_secret=sa.func.crypt(
+                            plain_api_secret, sa.func.gen_salt("bf", 10)
+                        ),
+                        **api_auth,
+                    )
+                    .returning(*returning_cols)
                 )
-                .returning(*returning_cols)
-            )
-            row = await result.fetchone()
-            assert row
+                row = result.one()
+                assert row
+
             _generate_fake_api_key.row_ids.append(row.id)
+
             yield ApiKeyInDB.model_validate({"api_secret": plain_api_secret, **row})
 
     _generate_fake_api_key.row_ids = []
     yield _generate_fake_api_key
 
-    await connection.execute(
-        api_keys.delete().where(api_keys.c.id.in_(_generate_fake_api_key.row_ids))
-    )
+    async with async_engine.begin() as conn:
+        await conn.execute(
+            api_keys.delete().where(api_keys.c.id.in_(_generate_fake_api_key.row_ids))
+        )
 
 
 @pytest.fixture

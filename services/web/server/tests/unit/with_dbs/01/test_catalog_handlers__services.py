@@ -45,7 +45,7 @@ def app_environment(
 
 
 @pytest.fixture
-def mocked_rpc_catalog_service_api(mocker: MockerFixture) -> dict[str, MockType]:
+def mocked_catalog_rpc_api(mocker: MockerFixture) -> dict[str, MockType]:
 
     side_effects = CatalogRpcSideEffects()
 
@@ -75,7 +75,7 @@ def mocked_rpc_catalog_service_api(mocker: MockerFixture) -> dict[str, MockType]
 async def test_list_services_latest(
     client: TestClient,
     logged_user: UserInfoDict,
-    mocked_rpc_catalog_service_api: dict[str, MockType],
+    mocked_catalog_rpc_api: dict[str, MockType],
 ):
     assert client.app
     assert client.app.router
@@ -93,7 +93,7 @@ async def test_list_services_latest(
     assert model.data
     assert len(model.data) == model.meta.count
 
-    assert mocked_rpc_catalog_service_api["list_services_paginated"].call_count == 1
+    assert mocked_catalog_rpc_api["list_services_paginated"].call_count == 1
 
 
 @pytest.mark.parametrize(
@@ -293,7 +293,7 @@ async def test_get_compatible_outputs_given_target_inptuts(
 async def test_get_and_patch_service(
     client: TestClient,
     logged_user: UserInfoDict,
-    mocked_rpc_catalog_service_api: dict[str, MockType],
+    mocked_catalog_rpc_api: dict[str, MockType],
     faker: Faker,
 ):
     assert client.app
@@ -317,8 +317,8 @@ async def test_get_and_patch_service(
     assert model.key == service_key
     assert model.version == service_version
 
-    assert mocked_rpc_catalog_service_api["get_service"].call_count == 1
-    assert not mocked_rpc_catalog_service_api["update_service"].called
+    assert mocked_catalog_rpc_api["get_service"].call_count == 1
+    assert not mocked_catalog_rpc_api["update_service"].called
 
     # PATCH
     update = CatalogServiceUpdate(
@@ -348,8 +348,8 @@ async def test_get_and_patch_service(
     assert model.version_display == update.version_display
     assert model.access_rights == update.access_rights
 
-    assert mocked_rpc_catalog_service_api["get_service"].call_count == 1
-    assert mocked_rpc_catalog_service_api["update_service"].call_count == 1
+    assert mocked_catalog_rpc_api["get_service"].call_count == 1
+    assert mocked_catalog_rpc_api["update_service"].call_count == 1
 
 
 @pytest.mark.xfail(reason="service tags entrypoints under development")
@@ -360,7 +360,7 @@ async def test_get_and_patch_service(
 async def test_tags_in_services(
     client: TestClient,
     logged_user: UserInfoDict,
-    mocked_rpc_catalog_service_api: dict[str, MockType],
+    mocked_catalog_rpc_api: dict[str, MockType],
 ):
     assert client.app
     assert client.app.router

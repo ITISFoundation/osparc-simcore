@@ -89,7 +89,7 @@ async def test_associate_ec2_instances_with_nodes_with_no_correspondence(
     nodes = [node() for _ in range(10)]
     ec2_instances = [
         (
-            fake_ec2_instance_data(aws_private_dns=f"ip-10-12-32-{n+1}.internal-data")
+            fake_ec2_instance_data(aws_private_dns=f"ip-10-12-32-{n + 1}.internal-data")
             if valid_ec2_dns
             else fake_ec2_instance_data()
         )
@@ -113,7 +113,7 @@ async def test_associate_ec2_instances_with_corresponding_nodes(
     nodes = []
     ec2_instances = []
     for n in range(10):
-        host_name = f"ip-10-12-32-{n+1}"
+        host_name = f"ip-10-12-32-{n + 1}"
         nodes.append(node(Description={"Hostname": host_name}))
         ec2_instances.append(
             fake_ec2_instance_data(aws_private_dns=f"{host_name}.internal-data")
@@ -143,10 +143,9 @@ def minimal_configuration(
     disabled_rabbitmq: None,
     disabled_ec2: None,
     disabled_ssm: None,
-    disable_dynamic_service_background_task: None,
+    disable_autoscaling_background_task: None,
     mocked_redis_server: None,
-) -> None:
-    ...
+) -> None: ...
 
 
 @pytest.fixture
@@ -367,9 +366,9 @@ def test_sort_drained_nodes(
         fake_node = create_fake_node()
         assert fake_node.spec
         assert fake_node.spec.labels
-        fake_node.spec.labels[
-            _OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY
-        ] = arrow.utcnow().datetime.isoformat()
+        fake_node.spec.labels[_OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY] = (
+            arrow.utcnow().datetime.isoformat()
+        )
         fake_associated_instance = create_associated_instance(
             fake_node,
             terminateable_time=False,

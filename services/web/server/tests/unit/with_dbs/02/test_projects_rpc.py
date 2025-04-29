@@ -12,7 +12,10 @@ from aiohttp.test_utils import TestClient
 from common_library.users_enums import UserRole
 from models_library.products import ProductName
 from models_library.projects import ProjectID
-from models_library.rpc.webserver.projects import PageRpcProjectRpcGet, ProjectRpcGet
+from models_library.rpc.webserver.projects import (
+    PageRpcProjectJobRpcGet,
+    ProjectJobRpcGet,
+)
 from pydantic import ValidationError
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -107,7 +110,7 @@ async def test_rpc_client_list_my_projects_marked_as_jobs(
     )
 
     # List projects marked as jobs
-    page: PageRpcProjectRpcGet = await projects_rpc.list_projects_marked_as_jobs(
+    page: PageRpcProjectJobRpcGet = await projects_rpc.list_projects_marked_as_jobs(
         rpc_client=rpc_client,
         product_name=product_name,
         user_id=user_id,
@@ -116,8 +119,14 @@ async def test_rpc_client_list_my_projects_marked_as_jobs(
 
     assert page.meta.total == 1
     assert page.meta.offset == 0
-    assert isinstance(page.data[0], ProjectRpcGet)
-    assert page.data[0].uuid == project_uuid
+    assert isinstance(page.data[0], ProjectJobRpcGet)
+
+    project_job = page.data[0]
+    assert project_job.uuid == project_uuid
+    assert project_job.name == user_project["name"]
+    assert project_job.description == user_project["description"]
+
+    assert set(project_job.workbench.keys()) == set(user_project["workbench"].keys())
 
 
 @pytest.fixture

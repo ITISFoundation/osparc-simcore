@@ -125,7 +125,7 @@ async def test_create_and_delete_solver_job(
     client: httpx.AsyncClient,
     solver_key: str,
     solver_version: str,
-    mocked_rpc_catalog_service_api: dict[str, MockType],
+    mocked_catalog_rpc_api: dict[str, MockType],
     mocked_backend_services_apis_for_create_and_delete_solver_job: MockedBackendApiDict,
 ):
     # create Job
@@ -155,7 +155,7 @@ async def test_create_and_delete_solver_job(
     assert mock_webserver_router
     assert mock_webserver_router["delete_project"].called
 
-    get_service = mocked_rpc_catalog_service_api["get_service"]
+    get_service = mocked_catalog_rpc_api["get_service"]
     assert get_service
     assert get_service.called
 
@@ -175,7 +175,7 @@ async def test_create_job(
     solver_key: str,
     solver_version: str,
     mocked_backend_services_apis_for_create_and_delete_solver_job: MockedBackendApiDict,
-    mocked_rpc_catalog_service_api: dict[str, MockType],
+    mocked_catalog_rpc_api: dict[str, MockType],
     hidden: bool,
     parent_project_id: UUID | None,
     parent_node_id: UUID | None,

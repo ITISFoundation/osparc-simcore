@@ -81,6 +81,7 @@ async def test_user_can_see_marked_project(
     client: TestClient,
     osparc_product_name: ProductName,
     project_job_fixture: ProjectJobFixture,
+    user_project: ProjectDict,
 ):
     assert client.app
     total_count, result = await list_my_projects_marked_as_jobs(
@@ -96,6 +97,34 @@ async def test_user_can_see_marked_project(
     assert (
         project.job_parent_resource_name == project_job_fixture.job_parent_resource_name
     )
+
+    # Verify workbench structure is maintained
+    assert project.workbench is not None
+    assert isinstance(project.workbench, dict)
+
+    # Compare with original user_project
+    assert len(project.workbench) == len(user_project["workbench"])
+
+    # Check that all node IDs from original project are present
+    for node_id in user_project["workbench"]:
+        assert node_id in project.workbench
+
+        # Check some properties of the nodes
+        original_node = user_project["workbench"][node_id]
+        project_node = project.workbench[node_id]
+
+        assert project_node.key == original_node["key"]
+        assert project_node.version == original_node["version"]
+        assert project_node.label == original_node["label"]
+
+        # Check inputs/outputs if they exist
+        if "inputs" in original_node:
+            assert project_node.inputs is not None
+            assert len(project_node.inputs) == len(original_node["inputs"])
+
+        if "outputs" in original_node:
+            assert project_node.outputs is not None
+            assert len(project_node.outputs) == len(original_node["outputs"])
 
 
 async def test_other_user_cannot_see_marked_project(
