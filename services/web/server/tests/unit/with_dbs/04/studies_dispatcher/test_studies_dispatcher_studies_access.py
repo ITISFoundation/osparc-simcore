@@ -479,9 +479,6 @@ async def test_guest_user_is_not_garbage_collected(
 
     async def _test_guest_user_workflow(request_index):
         print("request #", request_index, "-" * 10)
-
-        # TODO: heartbeat is missing here!
-        # TODO: reduce GC activation period to 0.1 secs
         # every guest uses different client to preserve it's own authorization/authentication cookies
         client: TestClient = await aiohttp_client(web_server)
         assert client.app
@@ -520,5 +517,4 @@ async def test_guest_user_is_not_garbage_collected(
     ]
 
     await asyncio.gather(*request_tasks)
-
     # and now the garbage collector shall delete our users since we are done...
