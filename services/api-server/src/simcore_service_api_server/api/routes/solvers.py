@@ -110,7 +110,7 @@ async def get_solvers_page(
     page_params: Annotated[PaginationParams, Depends()],
     user_id: Annotated[int, Depends(get_current_user_id)],
     product_name: Annotated[str, Depends(get_product_name)],
-    solver_service: Annotated[SolverService, Depends(SolverService)],
+    solver_service: Annotated[SolverService, Depends(get_solver_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
     solvers, page_meta = await solver_service.latest_solvers(
@@ -150,7 +150,7 @@ async def get_solvers_page(
 )
 async def list_solvers_releases(
     user_id: Annotated[int, Depends(get_current_user_id)],
-    solver_service: Annotated[SolverService, Depends(SolverService)],
+    solver_service: Annotated[SolverService, Depends(get_solver_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
 ):
@@ -230,7 +230,7 @@ async def get_solver(
 async def list_solver_releases(
     solver_key: SolverKeyId,
     user_id: Annotated[int, Depends(get_current_user_id)],
-    solver_service: Annotated[SolverService, Depends(SolverService)],
+    solver_service: Annotated[SolverService, Depends(get_solver_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
 ):
@@ -275,7 +275,7 @@ async def get_solver_releases_page(
     user_id: Annotated[int, Depends(get_current_user_id)],
     product_name: Annotated[str, Depends(get_product_name)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
-    solver_service: Annotated[SolverService, Depends(SolverService)],
+    solver_service: Annotated[SolverService, Depends(get_solver_service)],
 ):
     solvers, page_meta = await solver_service.solver_release_history(
         user_id=user_id,
