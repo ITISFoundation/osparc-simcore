@@ -26,7 +26,6 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
   apt-get install -y --no-install-recommends \
   gosu \
   && apt-get clean -y \
-  && rm -rf /var/lib/apt/lists/* \
   # verify that the binary works
   && gosu nobody true
 
@@ -55,8 +54,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # Ensures that the python and pip executables used in the image will be
 # those from our virtualenv.
 ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
-
-EXPOSE 8000
 
 # -------------------------- Build stage -------------------
 # Installs build/package management tools and third party dependencies
@@ -152,6 +149,7 @@ HEALTHCHECK \
 ENTRYPOINT [ "/bin/sh", "services/notifications/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/notifications/docker/boot.sh"]
 
+EXPOSE 8000
 
 # --------------------------Development stage -------------------
 # Source code accessible in host but runs in container
@@ -170,6 +168,7 @@ WORKDIR /devel
 
 RUN chown -R scu:scu "${VIRTUAL_ENV}"
 
+EXPOSE 8000
 EXPOSE 3000
 
 ENTRYPOINT ["/bin/sh", "services/notifications/docker/entrypoint.sh"]

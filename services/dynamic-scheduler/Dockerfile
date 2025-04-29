@@ -56,8 +56,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # those from our virtualenv.
 ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 
-EXPOSE 8000
-
 # -------------------------- Build stage -------------------
 # Installs build/package management tools and third party dependencies
 #
@@ -152,6 +150,7 @@ HEALTHCHECK \
 ENTRYPOINT [ "/bin/sh", "services/dynamic-scheduler/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/dynamic-scheduler/docker/boot.sh"]
 
+EXPOSE 8000
 
 # --------------------------Development stage -------------------
 # Source code accessible in host but runs in container
@@ -170,6 +169,7 @@ WORKDIR /devel
 
 RUN chown -R scu:scu "${VIRTUAL_ENV}"
 
+EXPOSE 8000
 EXPOSE 3000
 
 ENTRYPOINT ["/bin/sh", "services/dynamic-scheduler/docker/entrypoint.sh"]
