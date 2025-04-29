@@ -38,6 +38,7 @@ or from https://gitmoji.dev/
 
 ## Dev-ops
 
-- [ ] No ENV changes or I properly updated ENV (i.e. repo.config)
-
-<!-- Details in  docs/devops-checklist.md -->
+<!--
+- No changes /updated ENV. SEE https://git.speag.com/oSparc/osparc-ops-deployment-configuration/-/blob/configs/README.md?ref_type=heads#how-to-update-env-variables)
+- SEE docs/devops-checklist.md
+-->
