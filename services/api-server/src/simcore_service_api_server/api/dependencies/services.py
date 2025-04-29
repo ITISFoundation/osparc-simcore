@@ -7,7 +7,7 @@ from fastapi import Depends, HTTPException, Request, status
 from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.rabbitmq import RabbitMQRPCClient
-from simcore_service_api_server._service_studies import StudiesService
+from simcore_service_api_server._service_studies import StudyService
 
 from ..._service_jobs import JobService
 from ..._service_solvers import SolverService
@@ -88,9 +88,9 @@ def get_solver_service(
     )
 
 
-def get_studies_service(
+def get_study_service(
     job_service: Annotated[JobService, Depends(get_job_service)],
-) -> StudiesService:
-    return StudiesService(
+) -> StudyService:
+    return StudyService(
         job_service=job_service,
     )

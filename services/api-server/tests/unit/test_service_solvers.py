@@ -17,6 +17,7 @@ from simcore_service_api_server.services_rpc.wb_api_server import WbApiRpcClient
 @pytest.fixture
 def job_service(
     mocker: MockerFixture,
+    mocked_webserver_rest_api_base: dict[str, MockType],
     mocked_webserver_rpc_api: dict[str, MockType],
     product_name: ProductName,
     user_id: UserID,
@@ -65,14 +66,9 @@ async def test_get_solver(
 async def test_list_jobs(
     solver_service: SolverService,
     mocked_webserver_rpc_api: dict[str, MockType],
-    product_name: ProductName,
-    user_id: UserID,
 ):
     # Test default parameters
-    jobs, page_meta = await solver_service.list_jobs(
-        user_id=user_id,
-        product_name=product_name,
-    )
+    jobs, page_meta = await solver_service.list_jobs()
     assert isinstance(jobs, list)
     mocked_webserver_rpc_api["list_projects_marked_as_jobs"].assert_called_once()
     assert page_meta.total >= 0

@@ -13,7 +13,7 @@ from .models.schemas.jobs import Job
 DEFAULT_PAGINATION_LIMIT = MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE - 1
 
 
-class StudiesService:
+class StudyService:
     _job_service: JobService
 
     def __init__(

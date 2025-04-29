@@ -17,7 +17,7 @@ from models_library.projects_nodes_io import NodeID
 from pydantic import HttpUrl, PositiveInt
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_context
-from simcore_service_api_server._service_studies import StudiesService
+from simcore_service_api_server._service_studies import StudyService
 from simcore_service_api_server.models.api_resources import parse_resources_ids
 
 from ...exceptions.backend_errors import ProjectAlreadyStartedError
@@ -51,7 +51,7 @@ from ...services_http.webserver import AuthSession
 from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
-from ..dependencies.services import get_api_client, get_studies_service
+from ..dependencies.services import get_api_client, get_study_service
 from ..dependencies.webserver_http import AuthSession, get_webserver_session
 from ..dependencies.webserver_rpc import (
     get_wb_api_rpc_client,
@@ -97,13 +97,13 @@ def _compose_job_resource_name(study_key, job_id) -> str:
 async def list_study_jobs(
     study_id: StudyID,
     page_params: Annotated[PaginationParams, Depends()],
-    studies_service: Annotated[StudiesService, Depends(get_studies_service)],
+    study_service: Annotated[StudyService, Depends(get_study_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
     msg = f"list study jobs study_id={study_id!r} with pagination={page_params!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
     _logger.debug(msg)
 
-    jobs, meta = await studies_service.list_jobs(
+    jobs, meta = await study_service.list_jobs(
         study_id=study_id,
         offset=page_params.offset,
         limit=page_params.limit,
