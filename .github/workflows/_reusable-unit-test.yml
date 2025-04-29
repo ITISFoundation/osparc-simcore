@@ -1,0 +1,68 @@
+name: Reusable Unit Test Workflow
+
+on:
+  workflow_call:
+    inputs:
+      service_name:
+        required: true
+        type: string
+        description: "The name of the service to test"
+      timeout_minutes:
+        required: false
+        type: number
+        default: 18
+        description: "Timeout in minutes for the test job"
+      dependency_path:
+        required: false
+        type: string
+        default: "**/{service_name}/requirements/ci.txt"
+        description: "Path pattern for dependencies to cache"
+
+jobs:
+  unit_test:
+    name: "[unit] ${{ inputs.service_name }}"
+    timeout-minutes: ${{ inputs.timeout_minutes }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.11"]
+        os: [ubuntu-24.04]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker-container
+      - name: setup python environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.6.x"
+          enable-cache: false
+          cache-dependency-glob: ${{ format(inputs.dependency_path, inputs.service_name) }}
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - name: install
+        run: ./ci/github/unit-testing/${{ inputs.service_name }}.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/${{ inputs.service_name }}.bash typecheck
+      - name: test
+        if: ${{ !cancelled() }}
+        run: ./ci/github/unit-testing/${{ inputs.service_name }}.bash test
+      - name: upload failed tests logs
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.job }}_docker_logs
+          path: ./services/${{ inputs.service_name }}/test_failures
+      - uses: codecov/codecov-action@v5
+        if: ${{ !cancelled() }}
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          flags: unittests
