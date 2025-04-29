@@ -1,3 +1,4 @@
+import asyncio
 from collections.abc import Callable
 from typing import Annotated, Final
 
@@ -10,6 +11,9 @@ from models_library.api_schemas_webserver.functions_wb_schema import (
     FunctionInputSchema,
     FunctionInputsList,
     FunctionJob,
+    FunctionJobCollection,
+    FunctionJobCollectionID,
+    FunctionJobCollectionStatus,
     FunctionJobID,
     FunctionJobStatus,
     FunctionOutputs,
@@ -405,7 +409,7 @@ async def function_job_outputs(
 
 @function_router.post(
     "/{function_id:uuid}:map",
-    response_model=list[FunctionJob],
+    response_model=FunctionJobCollection,
     responses={**_COMMON_FUNCTION_ERROR_RESPONSES},
     description="Map function over input parameters",
 )
@@ -422,116 +426,151 @@ async def map_function(
     catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
 ):
     function_jobs = []
-    for function_inputs in function_inputs_list:
-        function_jobs = [
-            await run_function(
+    function_jobs = [
+        await run_function(
+            wb_api_rpc=wb_api_rpc,
+            function_id=function_id,
+            function_inputs=function_inputs,
+            product_name=product_name,
+            user_id=user_id,
+            webserver_api=webserver_api,
+            url_for=url_for,
+            director2_api=director2_api,
+            request=request,
+            catalog_client=catalog_client,
+        )
+        for function_inputs in function_inputs_list
+    ]
+
+    assert all(
+        function_job.uid is not None for function_job in function_jobs
+    ), "Function job uid should not be None"
+
+    return await register_function_job_collection(
+        wb_api_rpc=wb_api_rpc,
+        function_job_collection=FunctionJobCollection(
+            id=None,
+            title=f"Function job collection of function map {[function_job.uid for function_job in function_jobs]}",
+            description="",
+            job_ids=[function_job.uid for function_job in function_jobs],  # type: ignore
+        ),
+    )
+
+
+_COMMON_FUNCTION_JOB_COLLECTION_ERROR_RESPONSES: Final[dict] = {
+    status.HTTP_404_NOT_FOUND: {
+        "description": "Function job collection not found",
+        "model": ErrorGet,
+    },
+}
+
+
+@function_job_collections_router.get(
+    "",
+    response_model=list[FunctionJobCollection],
+    description="List function job collections",
+)
+async def list_function_job_collections(
+    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
+):
+    return await wb_api_rpc.list_function_job_collections()
+
+
+@function_job_collections_router.get(
+    "/{function_job_collection_id:uuid}",
+    response_model=FunctionJobCollection,
+    responses={**_COMMON_FUNCTION_JOB_COLLECTION_ERROR_RESPONSES},
+    description="Get function job collection",
+)
+async def get_function_job_collection(
+    function_job_collection_id: FunctionJobCollectionID,
+    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
+):
+    return await wb_api_rpc.get_function_job_collection(
+        function_job_collection_id=function_job_collection_id
+    )
+
+
+@function_job_collections_router.post(
+    "",
+    response_model=FunctionJobCollection,
+    description="Register function job collection",
+)
+async def register_function_job_collection(
+    function_job_collection: FunctionJobCollection,
+    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
+):
+    return await wb_api_rpc.register_function_job_collection(
+        function_job_collection=function_job_collection
+    )
+
+
+@function_job_collections_router.delete(
+    "/{function_job_collection_id:uuid}",
+    response_model=None,
+    responses={**_COMMON_FUNCTION_JOB_COLLECTION_ERROR_RESPONSES},
+    description="Delete function job collection",
+)
+async def delete_function_job_collection(
+    function_job_collection_id: FunctionJobCollectionID,
+    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
+):
+    return await wb_api_rpc.delete_function_job_collection(
+        function_job_collection_id=function_job_collection_id
+    )
+
+
+@function_job_collections_router.get(
+    "/{function_job_collection_id:uuid}/function_jobs",
+    response_model=list[FunctionJob],
+    responses={**_COMMON_FUNCTION_JOB_COLLECTION_ERROR_RESPONSES},
+    description="Get the function jobs in function job collection",
+)
+async def function_job_collection_list_function_jobs(
+    function_job_collection_id: FunctionJobCollectionID,
+    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
+):
+    function_job_collection = await get_function_job_collection(
+        function_job_collection_id=function_job_collection_id,
+        wb_api_rpc=wb_api_rpc,
+    )
+    return [
+        await get_function_job(
+            job_id,
+            wb_api_rpc=wb_api_rpc,
+        )
+        for job_id in function_job_collection.job_ids
+    ]
+
+
+@function_job_collections_router.get(
+    "/{function_job_collection_id:uuid}/status",
+    response_model=FunctionJobCollectionStatus,
+    responses={**_COMMON_FUNCTION_JOB_COLLECTION_ERROR_RESPONSES},
+    description="Get function job collection status",
+)
+async def function_job_collection_status(
+    function_job_collection_id: FunctionJobCollectionID,
+    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
+    director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+):
+    function_job_collection = await get_function_job_collection(
+        function_job_collection_id=function_job_collection_id,
+        wb_api_rpc=wb_api_rpc,
+    )
+
+    job_statuses = await asyncio.gather(
+        *[
+            function_job_status(
+                job_id,
                 wb_api_rpc=wb_api_rpc,
-                function_id=function_id,
-                function_inputs=function_inputs,
-                product_name=product_name,
-                user_id=user_id,
-                webserver_api=webserver_api,
-                url_for=url_for,
                 director2_api=director2_api,
-                request=request,
-                catalog_client=catalog_client,
+                user_id=user_id,
             )
-            for function_inputs in function_inputs_list
+            for job_id in function_job_collection.job_ids
         ]
-        # TODO poor system can't handle doing this in parallel, get this fixed  # noqa: FIX002
-        # function_jobs = await asyncio.gather(*function_jobs_tasks)
-
-    return function_jobs
-
-
-# ruff: noqa: ERA001
-
-
-# _logger = logging.getLogger(__name__)
-
-# _COMMON_FUNCTION_JOB_COLLECTION_ERROR_RESPONSES: Final[dict] = {
-#     status.HTTP_404_NOT_FOUND: {
-#         "description": "Function job collection not found",
-#         "model": ErrorGet,
-#     },
-# }
-
-
-# @function_job_collections_router.get(
-#     "",
-#     response_model=FunctionJobCollection,
-#     description="List function job collections",
-# )
-# async def list_function_job_collections(
-#     page_params: Annotated[PaginationParams, Depends()],
-#     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
-# ):
-#     msg = "list function jobs collection not implemented yet"
-#     raise NotImplementedError(msg)
-
-
-# @function_job_collections_router.post(
-#     "", response_model=FunctionJobCollection, description="Create function job"
-# )
-# async def create_function_job_collection(
-#     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
-#     job_ids: Annotated[list[FunctionJob], Depends()],
-# ):
-#     msg = "create function job collection not implemented yet"
-#     raise NotImplementedError(msg)
-
-
-# @function_job_collections_router.get(
-#     "/{function_job_collection_id:uuid}",
-#     response_model=FunctionJobCollection,
-#     responses={**_COMMON_FUNCTION_JOB_COLLECTION_ERROR_RESPONSES},
-#     description="Get function job",
-# )
-# async def get_function_job_collection(
-#     function_job_collection_id: FunctionJobCollectionID,
-#     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
-# ):
-#     msg = "get function job collection not implemented yet"
-#     raise NotImplementedError(msg)
-
-
-# @function_job_collections_router.delete(
-#     "/{function_job_collection_id:uuid}",
-#     response_model=FunctionJob,
-#     responses={**_COMMON_FUNCTION_JOB_COLLECTION_ERROR_RESPONSES},
-#     description="Delete function job collection",
-# )
-# async def delete_function_job_collection(
-#     function_job_collection_id: FunctionJobCollectionID,
-#     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
-# ):
-#     msg = "delete function job collection not implemented yet"
-#     raise NotImplementedError(msg)
-
-
-# @function_job_collections_router.get(
-#     "/{function_job_collection_id:uuid}/function_jobs",
-#     response_model=list[FunctionJob],
-#     responses={**_COMMON_FUNCTION_JOB_COLLECTION_ERROR_RESPONSES},
-#     description="Get the function jobs in function job collection",
-# )
-# async def function_job_collection_list_function_jobs(
-#     function_job_collection_id: FunctionJobCollectionID,
-#     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
-# ):
-#     msg = "function job collection listing not implemented yet"
-#     raise NotImplementedError(msg)
-
-
-# @function_job_collections_router.get(
-#     "/{function_job_collection_id:uuid}/status",
-#     response_model=FunctionJobCollectionStatus,
-#     responses={**_COMMON_FUNCTION_JOB_COLLECTION_ERROR_RESPONSES},
-#     description="Get function job collection status",
-# )
-# async def function_job_collection_status(
-#     function_job_collection_id: FunctionJobCollectionID,
-#     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
-# ):
-#     msg = "function job collection status not implemented yet"
-#     raise NotImplementedError(msg)
+    )
+    return FunctionJobCollectionStatus(
+        status=[job_status.status for job_status in job_statuses]
+    )

@@ -145,11 +145,18 @@ class FunctionJobStatus(BaseModel):
 class FunctionJobCollection(BaseModel):
     """Model for a collection of function jobs"""
 
-    id: FunctionJobCollectionID
+    uid: FunctionJobCollectionID | None
     title: str | None
     description: str | None
     job_ids: list[FunctionJobID]
-    status: str
+
+
+class FunctionJobCollectionDB(BaseModel):
+    """Model for a collection of function jobs"""
+
+    uuid: FunctionJobCollectionID | None
+    title: str | None
+    description: str | None
 
 
 class FunctionJobCollectionStatus(BaseModel):

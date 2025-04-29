@@ -10,6 +10,8 @@ from models_library.api_schemas_webserver.functions_wb_schema import (
     FunctionInputs,
     FunctionInputSchema,
     FunctionJob,
+    FunctionJobCollection,
+    FunctionJobCollectionID,
     FunctionJobID,
     FunctionOutputSchema,
 )
@@ -45,6 +47,9 @@ from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interf
     delete_function_job as _delete_function_job,
 )
 from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interface import (
+    delete_function_job_collection as _delete_function_job_collection,
+)
+from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interface import (
     find_cached_function_job as _find_cached_function_job,
 )
 from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interface import (
@@ -57,7 +62,13 @@ from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interf
     get_function_job as _get_function_job,
 )
 from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interface import (
+    get_function_job_collection as _get_function_job_collection,
+)
+from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interface import (
     get_function_output_schema as _get_function_output_schema,
+)
+from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interface import (
+    list_function_job_collections as _list_function_job_collections,
 )
 from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interface import (
     list_function_jobs as _list_function_jobs,
@@ -73,6 +84,9 @@ from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interf
 )
 from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interface import (
     register_function_job as _register_function_job,
+)
+from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interface import (
+    register_function_job_collection as _register_function_job_collection,
 )
 from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interface import (
     run_function as _run_function,
@@ -340,6 +354,30 @@ class WbApiRpcClient(SingletonInAppStateMixin):
 
     async def list_function_jobs(self) -> list[FunctionJob]:
         return await _list_function_jobs(self._client)
+
+    async def list_function_job_collections(self) -> list[FunctionJobCollection]:
+        return await _list_function_job_collections(self._client)
+
+    async def get_function_job_collection(
+        self, *, function_job_collection_id: FunctionJobCollectionID
+    ) -> FunctionJobCollection:
+        return await _get_function_job_collection(
+            self._client, function_job_collection_id=function_job_collection_id
+        )
+
+    async def register_function_job_collection(
+        self, *, function_job_collection: FunctionJobCollection
+    ) -> FunctionJobCollection:
+        return await _register_function_job_collection(
+            self._client, function_job_collection=function_job_collection
+        )
+
+    async def delete_function_job_collection(
+        self, *, function_job_collection_id: FunctionJobCollectionID
+    ) -> None:
+        return await _delete_function_job_collection(
+            self._client, function_job_collection_id=function_job_collection_id
+        )
 
 
 def setup(app: FastAPI, rabbitmq_rmp_client: RabbitMQRPCClient):

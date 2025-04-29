@@ -9,6 +9,8 @@ from models_library.api_schemas_webserver.functions_wb_schema import (
     FunctionInputs,
     FunctionInputSchema,
     FunctionJob,
+    FunctionJobCollection,
+    FunctionJobCollectionID,
     FunctionJobID,
     FunctionOutputSchema,
 )
@@ -184,4 +186,53 @@ async def find_cached_function_job(
         TypeAdapter(RPCMethodName).validate_python("find_cached_function_job"),
         function_id=function_id,
         inputs=inputs,
+    )
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+async def list_function_job_collections(
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+) -> list[FunctionJobCollection]:
+    return await rabbitmq_rpc_client.request(
+        WEBSERVER_RPC_NAMESPACE,
+        TypeAdapter(RPCMethodName).validate_python("list_function_job_collections"),
+    )
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+async def register_function_job_collection(
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    *,
+    function_job_collection: FunctionJobCollection,
+) -> FunctionJobCollection:
+    return await rabbitmq_rpc_client.request(
+        WEBSERVER_RPC_NAMESPACE,
+        TypeAdapter(RPCMethodName).validate_python("register_function_job_collection"),
+        function_job_collection=function_job_collection,
+    )
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+async def get_function_job_collection(
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    *,
+    function_job_collection_id: FunctionJobCollectionID,
+) -> FunctionJobCollection:
+    return await rabbitmq_rpc_client.request(
+        WEBSERVER_RPC_NAMESPACE,
+        TypeAdapter(RPCMethodName).validate_python("get_function_job_collection"),
+        function_job_collection_id=function_job_collection_id,
+    )
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+async def delete_function_job_collection(
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    *,
+    function_job_collection_id: FunctionJobCollectionID,
+) -> None:
+    return await rabbitmq_rpc_client.request(
+        WEBSERVER_RPC_NAMESPACE,
+        TypeAdapter(RPCMethodName).validate_python("delete_function_job_collection"),
+        function_job_collection_id=function_job_collection_id,
     )

@@ -5817,29 +5817,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "oneOf": [
-                      {
-                        "$ref": "#/components/schemas/ProjectFunctionJob"
-                      },
-                      {
-                        "$ref": "#/components/schemas/PythonCodeFunctionJob"
-                      },
-                      {
-                        "$ref": "#/components/schemas/SolverFunctionJob"
-                      }
-                    ],
-                    "discriminator": {
-                      "propertyName": "function_class",
-                      "mapping": {
-                        "project": "#/components/schemas/ProjectFunctionJob",
-                        "python_code": "#/components/schemas/PythonCodeFunctionJob",
-                        "solver": "#/components/schemas/SolverFunctionJob"
-                      }
-                    }
-                  },
-                  "title": "Response Map Function V0 Functions  Function Id  Map Post"
+                  "$ref": "#/components/schemas/FunctionJobCollection"
                 }
               }
             }
@@ -6217,6 +6195,311 @@
           },
           "404": {
             "description": "Function job not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/function_job_collections": {
+      "get": {
+        "tags": [
+          "function_job_collections"
+        ],
+        "summary": "List Function Job Collections",
+        "description": "List function job collections",
+        "operationId": "list_function_job_collections",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/FunctionJobCollection"
+                  },
+                  "type": "array",
+                  "title": "Response List Function Job Collections V0 Function Job Collections Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "function_job_collections"
+        ],
+        "summary": "Register Function Job Collection",
+        "description": "Register function job collection",
+        "operationId": "register_function_job_collection",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FunctionJobCollection"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FunctionJobCollection"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/function_job_collections/{function_job_collection_id}": {
+      "get": {
+        "tags": [
+          "function_job_collections"
+        ],
+        "summary": "Get Function Job Collection",
+        "description": "Get function job collection",
+        "operationId": "get_function_job_collection",
+        "parameters": [
+          {
+            "name": "function_job_collection_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Function Job Collection Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FunctionJobCollection"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Function job collection not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "function_job_collections"
+        ],
+        "summary": "Delete Function Job Collection",
+        "description": "Delete function job collection",
+        "operationId": "delete_function_job_collection",
+        "parameters": [
+          {
+            "name": "function_job_collection_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Function Job Collection Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "404": {
+            "description": "Function job collection not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/function_job_collections/{function_job_collection_id}/function_jobs": {
+      "get": {
+        "tags": [
+          "function_job_collections"
+        ],
+        "summary": "Function Job Collection List Function Jobs",
+        "description": "Get the function jobs in function job collection",
+        "operationId": "function_job_collection_list_function_jobs",
+        "parameters": [
+          {
+            "name": "function_job_collection_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Function Job Collection Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "oneOf": [
+                      {
+                        "$ref": "#/components/schemas/ProjectFunctionJob"
+                      },
+                      {
+                        "$ref": "#/components/schemas/PythonCodeFunctionJob"
+                      },
+                      {
+                        "$ref": "#/components/schemas/SolverFunctionJob"
+                      }
+                    ],
+                    "discriminator": {
+                      "propertyName": "function_class",
+                      "mapping": {
+                        "project": "#/components/schemas/ProjectFunctionJob",
+                        "python_code": "#/components/schemas/PythonCodeFunctionJob",
+                        "solver": "#/components/schemas/SolverFunctionJob"
+                      }
+                    }
+                  },
+                  "title": "Response Function Job Collection List Function Jobs V0 Function Job Collections  Function Job Collection Id  Function Jobs Get"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Function job collection not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/function_job_collections/{function_job_collection_id}/status": {
+      "get": {
+        "tags": [
+          "function_job_collections"
+        ],
+        "summary": "Function Job Collection Status",
+        "description": "Get function job collection status",
+        "operationId": "function_job_collection_status",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "function_job_collection_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Function Job Collection Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FunctionJobCollectionStatus"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Function job collection not found",
             "content": {
               "application/json": {
                 "schema": {
@@ -7233,6 +7516,77 @@
           "schema_dict"
         ],
         "title": "FunctionInputSchema"
+      },
+      "FunctionJobCollection": {
+        "properties": {
+          "uid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uid"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "job_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Job Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "uid",
+          "title",
+          "description",
+          "job_ids"
+        ],
+        "title": "FunctionJobCollection",
+        "description": "Model for a collection of function jobs"
+      },
+      "FunctionJobCollectionStatus": {
+        "properties": {
+          "status": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "FunctionJobCollectionStatus"
       },
       "FunctionJobStatus": {
         "properties": {

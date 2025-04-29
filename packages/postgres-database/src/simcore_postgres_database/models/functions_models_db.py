@@ -143,9 +143,14 @@ function_job_collections = sa.Table(
         doc="Unique id of the function job collection",
     ),
     sa.Column(
-        "name",
+        "title",
         sa.String,
-        doc="Name of the function job collection",
+        doc="Title of the function job collection",
+    ),
+    sa.Column(
+        "description",
+        sa.String,
+        doc="Description of the function job collection",
     ),
     sa.PrimaryKeyConstraint("uuid", name="function_job_collections_pk"),
 )
