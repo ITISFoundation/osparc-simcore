@@ -10,7 +10,7 @@ from models_library.api_schemas_storage.storage_schemas import (
 )
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from pydantic import ByteSize, PositiveInt, ValidationError
+from pydantic import ByteSize, PositiveInt, StringConstraints, ValidationError
 from servicelib.fastapi.dependencies import get_reverse_url_mapper
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
 from simcore_sdk.node_ports_common.filemanager import (
@@ -20,6 +20,7 @@ from simcore_sdk.node_ports_common.filemanager import (
 
 from ..._service_job import JobService
 from ..._service_programs import ProgramService
+from ...api.routes._constants import DEFAULT_MAX_STRING_LENGTH
 from ...models.basic_types import VersionStr
 from ...models.schemas.jobs import Job, JobInputs
 from ...models.schemas.programs import Program, ProgramKeyId
@@ -82,8 +83,12 @@ async def create_program_job(
     product_name: Annotated[str, Depends(get_product_name)],
     x_simcore_parent_project_uuid: Annotated[ProjectID | None, Header()] = None,
     x_simcore_parent_node_id: Annotated[NodeID | None, Header()] = None,
-    name: Annotated[str | None, Body()] = None,
-    description: Annotated[str | None, Body()] = None,
+    name: Annotated[
+        str | None, StringConstraints(max_length=DEFAULT_MAX_STRING_LENGTH), Body()
+    ] = None,
+    description: Annotated[
+        str | None, StringConstraints(max_length=DEFAULT_MAX_STRING_LENGTH), Body()
+    ] = None,
 ):
     """Creates a program job"""
 
