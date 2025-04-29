@@ -295,7 +295,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ../.github/actions/common-setup-action.yml
+      - uses: ./.github/actions/common-setup-action.yml
         with:
           python-version: ${{ matrix.python }}
           requirements-path: "**/web/server/requirements/ci.txt"
@@ -332,7 +332,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ../.github/actions/common-setup-action.yml
+      - uses: ./.github/actions/common-setup-action.yml
         with:
           python-version: ${{ matrix.python }}
           requirements-path: "**/web/server/requirements/ci.txt"
@@ -364,7 +364,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ../.github/actions/common-setup-action.yml
+      - uses: ./.github/actions/common-setup-action.yml
         with:
           python-version: ${{ matrix.python }}
           requirements-path: "**/web/server/requirements/ci.txt"
@@ -396,7 +396,7 @@ jobs:
         - uses: actions/checkout@v4
           with:
             fetch-depth: 0
-        - uses: ../.github/actions/common-setup-action.yml
+        - uses: ./.github/actions/common-setup-action.yml
           with:
             python-version: ${{ matrix.python }}
             requirements-path: "**/web/server/requirements/ci.txt"
@@ -427,7 +427,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ../.github/actions/common-setup-action.yml
+      - uses: ./.github/actions/common-setup-action.yml
         with:
           python-version: ${{ matrix.python }}
           requirements-path: "**/storage/requirements/ci.txt"
@@ -461,7 +461,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ../.github/actions/common-setup-action.yml
+      - uses: ./.github/actions/common-setup-action.yml
         with:
           python-version: ${{ matrix.python }}
           requirements-path: "**/agent/requirements/ci.txt"
@@ -496,7 +496,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ../.github/actions/common-setup-action.yml
+      - uses: ./.github/actions/common-setup-action.yml
         with:
           python-version: ${{ matrix.python }}
           requirements-path: "**/notifications/requirements/ci.txt"
@@ -529,7 +529,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ../.github/actions/common-setup-action.yml
+      - uses: ./.github/actions/common-setup-action.yml
         with:
           python-version: ${{ matrix.python }}
           requirements-path: "**/api/tests/requirements.txt"
@@ -560,7 +560,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ../.github/actions/common-setup-action.yml
+      - uses: ./.github/actions/common-setup-action.yml
         with:
           python-version: ${{ matrix.python }}
           requirements-path: "**/api-server/requirements/ci.txt"
@@ -597,7 +597,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ../.github/actions/common-setup-action.yml
+      - uses: ./.github/actions/common-setup-action.yml
         with:
           python-version: ${{ matrix.python }}
           requirements-path: "**/autoscaling/requirements/ci.txt"
@@ -631,7 +631,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ../.github/actions/common-setup-action.yml
+      - uses: ./.github/actions/common-setup-action.yml
         with:
           python-version: ${{ matrix.python }}
           requirements-path: "**/catalog/requirements/ci.txt"
@@ -671,7 +671,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ../.github/actions/common-setup-action.yml
+      - uses: ./.github/actions/common-setup-action.yml
         with:
           python-version: ${{ matrix.python }}
           requirements-path: "**/clusters-keeper/requirements/ci.txt"
@@ -716,7 +716,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ../.github/actions/common-setup-action.yml
+      - uses: ./.github/actions/common-setup-action.yml
         with:
           python-version: ${{ matrix.python }}
           requirements-path: "**/datcore-adapter/requirements/ci.txt"
@@ -756,7 +756,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ../.github/actions/common-setup-action.yml
+      - uses: ./.github/actions/common-setup-action.yml
         with:
           python-version: ${{ matrix.python }}
           requirements-path: "**/director/requirements/ci.txt"
@@ -796,7 +796,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ../.github/actions/common-setup-action.yml
+      - uses: ./.github/actions/common-setup-action.yml
         with:
           python-version: ${{ matrix.python }}
           requirements-path: "**/director-v2/requirements/ci.txt"
@@ -836,7 +836,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ../.github/actions/common-setup-action.yml
+      - uses: ./.github/actions/common-setup-action.yml
         with:
           python-version: ${{ matrix.python }}
           requirements-path: "**/aws-library/requirements/ci.txt"
@@ -870,7 +870,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ../.github/actions/common-setup-action.yml
+      - uses: ./.github/actions/common-setup-action.yml
         with:
           python-version: ${{ matrix.python }}
           requirements-path: "**/dask-task-models-library/requirements/ci.txt"
@@ -904,7 +904,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ../.github/actions/common-setup-action.yml
+      - uses: ./.github/actions/common-setup-action.yml
         with:
           python-version: ${{ matrix.python }}
           requirements-path: "**/dask-sidecar/requirements/ci.txt"
@@ -938,7 +938,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ../.github/actions/common-setup-action.yml
+      - uses: ./.github/actions/common-setup-action.yml
         with:
           python-version: ${{ matrix.python }}
           requirements-path: "**/payments/requirements/ci.txt"
@@ -972,7 +972,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ../.github/actions/common-setup-action.yml
+      - uses: ./.github/actions/common-setup-action.yml
         with:
           python-version: ${{ matrix.python }}
           requirements-path: "**/dynamic-scheduler/requirements/ci.txt"
@@ -1006,7 +1006,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ../.github/actions/common-setup-action.yml
+      - uses: ./.github/actions/common-setup-action.yml
         with:
           python-version: ${{ matrix.python }}
           requirements-path: "**/resource-usage-tracker/requirements/ci.txt"
@@ -1050,7 +1050,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ../.github/actions/common-setup-action.yml
+      - uses: ./.github/actions/common-setup-action.yml
         with:
           python-version: ${{ matrix.python }}
           requirements-path: "**/dynamic-sidecar/requirements/ci.txt"
@@ -1084,7 +1084,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ../.github/actions/common-setup-action.yml
+      - uses: ./.github/actions/common-setup-action.yml
         with:
           python-version: ${{ matrix.python }}
           requirements-path: "**/efs-guardian/requirements/ci.txt"
@@ -1129,7 +1129,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ../.github/actions/common-setup-action.yml
+      - uses: ./.github/actions/common-setup-action.yml
         with:
           python-version: ${{ matrix.python }}
           requirements-path: "**/ci/helpers/requirements.txt"
@@ -1154,7 +1154,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ../.github/actions/common-setup-action.yml
+      - uses: ./.github/actions/common-setup-action.yml
         with:
           python-version: ${{ matrix.python }}
           requirements-path: "**/postgres-database/requirements/ci.txt"
@@ -1188,7 +1188,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ../.github/actions/common-setup-action.yml
+      - uses: ./.github/actions/common-setup-action.yml
         with:
           python-version: ${{ matrix.python }}
           requirements-path: "**/notifications-library/requirements/ci.txt"
@@ -1222,7 +1222,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ../.github/actions/common-setup-action.yml
+      - uses: ./.github/actions/common-setup-action.yml
         with:
           python-version: ${{ matrix.python }}
           requirements-path: "**/service-integration/requirements/ci.txt"
@@ -1256,7 +1256,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ../.github/actions/common-setup-action.yml
+      - uses: ./.github/actions/common-setup-action.yml
         with:
           python-version: ${{ matrix.python }}
           requirements-path: "**/service-library/requirements/ci*.txt"
@@ -1290,7 +1290,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ../.github/actions/common-setup-action.yml
+      - uses: ./.github/actions/common-setup-action.yml
         with:
           python-version: ${{ matrix.python }}
           requirements-path: "**/settings-library/requirements/ci.txt"
@@ -1324,7 +1324,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ../.github/actions/common-setup-action.yml
+      - uses: ./.github/actions/common-setup-action.yml
         with:
           python-version: ${{ matrix.python }}
           requirements-path: "**/models-library/requirements/ci.txt"
@@ -1358,7 +1358,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ../.github/actions/common-setup-action.yml
+      - uses: ./.github/actions/common-setup-action.yml
         with:
           python-version: ${{ matrix.python }}
           requirements-path: "**/common-library/requirements/ci.txt"
@@ -1391,7 +1391,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ../.github/actions/common-setup-action.yml
+      - uses: ./.github/actions/common-setup-action.yml
         with:
           python-version: ${{ matrix.python }}
           requirements-path: "**/notifications-library/requirements/ci.txt"
@@ -1425,7 +1425,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ../.github/actions/common-setup-action.yml
+      - uses: ./.github/actions/common-setup-action.yml
         with:
           python-version: ${{ matrix.python }}
           requirements-path: "**/simcore-sdk/requirements/ci.txt"
