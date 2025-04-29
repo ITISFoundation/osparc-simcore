@@ -37,11 +37,13 @@ class ApiServerPrometheusInstrumentation:
             "#Logs in log streaming queue",
             ["job_id"],
             namespace=METRICS_NAMESPACE,
+            registry=self.registry,
         )
         self._health_check_qauge = Gauge(
             "log_stream_health_check",
             "#Failures of log stream health check",
             namespace=METRICS_NAMESPACE,
+            registry=self.registry,
         )
 
     def update_metrics(
