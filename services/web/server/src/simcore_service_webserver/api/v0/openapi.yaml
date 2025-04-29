@@ -4865,8 +4865,11 @@ paths:
         required: false
         schema:
           type: integer
+          minimum: 1
+          exclusiveMaximum: true
           default: 20
           title: Limit
+          maximum: 50
       - name: offset
         in: query
         required: false
@@ -5030,8 +5033,11 @@ paths:
         required: false
         schema:
           type: integer
+          minimum: 1
+          exclusiveMaximum: true
           default: 20
           title: Limit
+          maximum: 50
       - name: offset
         in: query
         required: false
@@ -17136,7 +17142,6 @@ components:
           title: Name
         type:
           $ref: '#/components/schemas/ConversationType'
-      additionalProperties: false
       type: object
       required:
       - name
@@ -17147,7 +17152,6 @@ components:
         name:
           type: string
           title: Name
-      additionalProperties: false
       type: object
       required:
       - name

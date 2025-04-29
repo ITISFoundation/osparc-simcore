@@ -1,6 +1,7 @@
 import logging
 
 from aiohttp import web
+from models_library.api_schemas_webserver._base import InputSchema
 from models_library.api_schemas_webserver.projects_conversations import (
     ConversationMessageRestGet,
     ConversationRestGet,
@@ -11,14 +12,12 @@ from models_library.conversations import (
     ConversationMessageType,
     ConversationType,
 )
-from models_library.projects import ProjectID
 from models_library.rest_pagination import (
-    DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
-    MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
     Page,
+    PageQueryParameters,
 )
 from models_library.rest_pagination_utils import paginate_data
-from pydantic import BaseModel, ConfigDict, Field, NonNegativeInt
+from pydantic import BaseModel, ConfigDict
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -46,34 +45,20 @@ routes = web.RouteTableDef()
 #
 
 
-class _ProjectConversationsPathParams(BaseModel):
-    project_id: ProjectID
+class _ProjectConversationsPathParams(ProjectPathParams):
     conversation_id: ConversationID
-    model_config = ConfigDict(extra="forbid")
 
 
-class _ListProjectConversationsQueryParams(BaseModel):
-    limit: int = Field(
-        default=DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
-        description="maximum number of items to return (pagination)",
-        ge=1,
-        lt=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
-    )
-    offset: NonNegativeInt = Field(
-        default=0, description="index to the first item to return (pagination)"
-    )
-    model_config = ConfigDict(extra="forbid")
+class _ListProjectConversationsQueryParams(PageQueryParameters): ...
 
 
-class _ProjectConversationsCreateBodyParams(BaseModel):
+class _ProjectConversationsCreateBodyParams(InputSchema):
     name: str
     type: ConversationType
-    model_config = ConfigDict(extra="forbid")
 
 
-class _ProjectConversationsPutBodyParams(BaseModel):
+class _ProjectConversationsPutBodyParams(InputSchema):
     name: str
-    model_config = ConfigDict(extra="forbid")
 
 
 @routes.post(
@@ -225,23 +210,12 @@ async def get_project_conversation(request: web.Request):
 #
 
 
-class _ProjectConversationsMessagesPathParams(BaseModel):
-    project_id: ProjectID
-    conversation_id: ConversationID
+class _ProjectConversationsMessagesPathParams(_ProjectConversationsPathParams):
     message_id: ConversationMessageID
     model_config = ConfigDict(extra="forbid")
 
 
-class _ListProjectConversationMessagesQueryParams(BaseModel):
-    limit: int = Field(
-        default=DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
-        description="maximum number of items to return (pagination)",
-        ge=1,
-        lt=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
-    )
-    offset: NonNegativeInt = Field(
-        default=0, description="index to the first item to return (pagination)"
-    )
+class _ListProjectConversationMessagesQueryParams(PageQueryParameters):
     model_config = ConfigDict(extra="forbid")
 
 

@@ -1,12 +1,12 @@
 from ..errors import WebServerBaseError
 
 
-class ConbersationError(WebServerBaseError, ValueError): ...
+class ConversationError(WebServerBaseError, ValueError): ...
 
 
-class ConversationErrorNotFoundError(ConbersationError):
+class ConversationErrorNotFoundError(ConversationError):
     msg_template = "Conversation {conversation_id} not found"
 
 
-class ConversationMessageErrorNotFoundError(ConbersationError):
+class ConversationMessageErrorNotFoundError(ConversationError):
     msg_template = "Conversation {conversation_id} message {message_id} not found"

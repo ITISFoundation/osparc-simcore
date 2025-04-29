@@ -66,7 +66,6 @@ async def test_project_conversations_full_workflow(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     expected: HTTPStatus,
-    postgres_db: sa.engine.Engine,
 ):
     base_url = client.app.router["list_project_conversations"].url_for(
         project_id=user_project["uuid"]
@@ -102,9 +101,6 @@ async def test_project_conversations_full_workflow(
     assert ConversationRestGet.model_validate(data)
 
     # Now we will list all conversations for the project
-    base_url = client.app.router["list_project_conversations"].url_for(
-        project_id=user_project["uuid"]
-    )
     resp = await client.get(f"{base_url}")
     data, _, meta, links = await assert_status(
         resp,
@@ -141,9 +137,7 @@ async def test_project_conversations_full_workflow(
         status.HTTP_204_NO_CONTENT,
     )
 
-    base_url = client.app.router["list_project_conversations"].url_for(
-        project_id=user_project["uuid"]
-    )
+    # Now we will list all conversations for the project
     resp = await client.get(f"{base_url}")
     data, _, meta = await assert_status(
         resp,

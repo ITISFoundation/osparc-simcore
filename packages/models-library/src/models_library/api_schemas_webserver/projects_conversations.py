@@ -16,6 +16,8 @@ from ..products import ProductName
 from ..projects import ProjectID
 from ._base import InputSchema, OutputSchema
 
+### PROJECT CONVERSATION -------------------------------------------------------------------
+
 
 class ConversationRestGet(OutputSchema):
     conversation_id: ConversationID
@@ -41,6 +43,13 @@ class ConversationRestGet(OutputSchema):
         )
 
 
+class ConversationPatch(InputSchema):
+    name: str | None = None
+
+
+###  PROJECT CONVERSATION MESSAGES ---------------------------------------------------------------
+
+
 class ConversationMessageRestGet(OutputSchema):
     message_id: ConversationMessageID
     conversation_id: ConversationID
@@ -61,10 +70,6 @@ class ConversationMessageRestGet(OutputSchema):
             created=domain.created,
             modified=domain.modified,
         )
-
-
-class ConversationPatch(InputSchema):
-    name: str | None = None
 
 
 class ConversationMessagePatch(InputSchema):

@@ -11,7 +11,7 @@ This OAS are the source of truth
 from typing import Literal
 
 from _common import assert_handler_signature_against_model
-from fastapi import APIRouter
+from fastapi import APIRouter, status
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.projects_comments import CommentID, ProjectsCommentsAPI
@@ -41,7 +41,7 @@ router = APIRouter(
     "/projects/{project_uuid}/comments",
     response_model=Envelope[dict[Literal["comment_id"], CommentID]],
     description="Create a new comment for a specific project. The request body should contain the comment contents and user information.",
-    status_code=201,
+    status_code=status.HTTP_201_CREATED,
     deprecated=True,
 )
 async def create_project_comment(
@@ -91,7 +91,7 @@ assert_handler_signature_against_model(
 @router.delete(
     "/projects/{project_uuid}/comments/{comment_id}",
     description="Delete a specific comment associated with a project.",
-    status_code=204,
+    status_code=status.HTTP_204_NO_CONTENT,
     deprecated=True,
 )
 async def delete_project_comment(project_uuid: ProjectID, comment_id: CommentID): ...

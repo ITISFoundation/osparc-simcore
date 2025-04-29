@@ -28,7 +28,6 @@ conversations = sa.Table(
         "name",
         sa.String,
         nullable=False,
-        doc="project reference for this table",
     ),
     sa.Column(
         "project_uuid",

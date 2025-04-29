@@ -19,7 +19,7 @@ from pydantic import PositiveInt
 from ..conversations import conversations_service
 from ._access_rights_service import check_user_project_permission
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 #
