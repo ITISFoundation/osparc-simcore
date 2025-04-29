@@ -68,13 +68,10 @@ class ProjectJobsRepository(BaseRepository):
 
 
         Arguments:
-            product_name -- product identifier of the caller's context
-            user_id -- user identifier of the caller
+            product_name -- caller's context product identifier
+            user_id -- caller's user identifier
 
         Keyword Arguments:
-            connection --  (default: {None})
-            offset -- pagination offset (default: {0})
-            limit --  pagittion limit (default: {10})
             job_parent_resource_name_prefix -- is a prefix to filter the `job_parent_resource_name`. The latter is a
                 path-like string that contains a hierarchy of resources. An example of `job_parent_resource_name` is:
                 `/solvers/simcore%2Fservices%2Fcomp%2Fisolve/releases/1.3.4/jobs/f622946d-fd29-35b9-a193-abdd1095167c`
@@ -109,8 +106,9 @@ class ProjectJobsRepository(BaseRepository):
                 project_to_groups.c.gid.in_(sa.select(user_groups_query.c.gid)),
                 project_to_groups.c.read.is_(True),
                 projects.c.workspace_id.is_(
+                    # ONLY projects in private workspaces
                     None
-                ),  # ONLY projects in private workspaces
+                ),
             )
         )
 
