@@ -1,30 +1,22 @@
 import logging
 from collections.abc import Callable
-from typing import Annotated
 
-from fastapi import Depends
 from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.rest_pagination import PageMetaInfoLimitOffset, PageOffsetInt
+from models_library.rpc_pagination import PageLimitInt
 from models_library.users import UserID
 from pydantic import HttpUrl
-from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.logging_utils import log_context
 
-from .api.dependencies.authentication import (
-    get_current_user_id,
-    get_product_name,
-)
-from .api.dependencies.webserver_http import get_webserver_session
-from .api.dependencies.webserver_rpc import (
-    get_wb_api_rpc_client,
-)
 from .models.schemas.jobs import Job, JobInputs
 from .models.schemas.programs import Program
 from .models.schemas.solvers import Solver
 from .services_http.solver_job_models_converters import (
     create_job_from_project,
+    create_job_inputs_from_node_inputs,
     create_new_project_for_job,
 )
 from .services_http.webserver import AuthSession
@@ -32,9 +24,10 @@ from .services_rpc.wb_api_server import WbApiRpcClient
 
 _logger = logging.getLogger(__name__)
 
+DEFAULT_PAGINATION_LIMIT = 999  # MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE - 1
 
-class JobService(SingletonInAppStateMixin):
-    app_state_name = "JobService"
+
+class JobService:
     _web_rest_api: AuthSession
     _web_rpc_api: WbApiRpcClient
     _user_id: UserID
@@ -43,15 +36,63 @@ class JobService(SingletonInAppStateMixin):
     def __init__(
         self,
         *,
-        web_rest_api: Annotated[AuthSession, Depends(get_webserver_session)],
-        web_rpc_api: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
-        user_id: Annotated[UserID, Depends(get_current_user_id)],
-        product_name: Annotated[ProductName, Depends(get_product_name)],
+        web_rest_api: AuthSession,
+        web_rpc_api: WbApiRpcClient,
+        user_id: UserID,
+        product_name: ProductName,
     ):
         self._web_rest_api = web_rest_api
         self._web_rpc_api = web_rpc_api
         self._user_id = user_id
         self._product_name = product_name
+
+    async def list_jobs_by_resource_prefix(
+        self,
+        *,
+        job_parent_resource_name_prefix: str,
+        offset: PageOffsetInt = 0,
+        limit: PageLimitInt = DEFAULT_PAGINATION_LIMIT,
+    ) -> tuple[list[Job], PageMetaInfoLimitOffset]:
+        """Lists all jobs for a user with pagination based on resource name prefix"""
+
+        # List projects marked as jobs
+        projects_page = await self._web_rpc_api.list_projects_marked_as_jobs(
+            product_name=self._product_name,
+            user_id=self._user_id,
+            offset=offset,
+            limit=limit,
+            job_parent_resource_name_prefix=job_parent_resource_name_prefix,
+        )
+
+        # Convert projects to jobs
+        jobs: list[Job] = []
+        for project_job in projects_page.data:
+            assert (  # nosec
+                len(project_job.workbench) == 1
+            ), "Expected only one solver node in workbench"
+
+            solver_node = next(iter(project_job.workbench.values()))
+            job_inputs: JobInputs = create_job_inputs_from_node_inputs(
+                inputs=solver_node.inputs or {}
+            )
+            assert project_job.job_parent_resource_name  # nosec
+
+            jobs.append(
+                Job(
+                    id=project_job.uuid,
+                    name=Job.compose_resource_name(
+                        project_job.job_parent_resource_name, project_job.uuid
+                    ),
+                    inputs_checksum=job_inputs.compute_checksum(),
+                    created_at=project_job.created_at,
+                    runner_name=project_job.job_parent_resource_name,
+                    url=None,
+                    runner_url=None,
+                    outputs_url=None,
+                )
+            )
+
+        return jobs, projects_page.meta
 
     async def create_job(
         self,

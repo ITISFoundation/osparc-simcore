@@ -4,14 +4,19 @@ from collections.abc import Callable
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, Request, status
+from models_library.products import ProductName
+from models_library.users import UserID
 from servicelib.rabbitmq import RabbitMQRPCClient
 from simcore_service_api_server._service_studies import StudiesService
 
+from ..._service_job import JobService
 from ..._service_solvers import SolverService
 from ...services_rpc.catalog import CatalogService
 from ...services_rpc.wb_api_server import WbApiRpcClient
 from ...utils.client_base import BaseServiceClientApi
+from .authentication import get_current_user_id, get_product_name
 from .rabbitmq import get_rabbitmq_rpc_client
+from .webserver_http import AuthSession, get_webserver_session
 from .webserver_rpc import get_wb_api_rpc_client
 
 
@@ -50,9 +55,27 @@ def get_catalog_service(
     return CatalogService(client=rpc_client)
 
 
+def get_job_service(
+    web_rest_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    web_rpc_api: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
+    product_name: Annotated[ProductName, Depends(get_product_name)],
+) -> JobService:
+    """
+    "Assembles" the JobsService layer to the underlying service and client interfaces
+    in the context of the rest controller (i.e. api/dependencies)
+    """
+    return JobService(
+        web_rest_api=web_rest_api,
+        web_rpc_api=web_rpc_api,
+        user_id=user_id,
+        product_name=product_name,
+    )
+
+
 def get_solver_service(
     catalog_service: Annotated[CatalogService, Depends(get_catalog_service)],
-    webserver_client: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
+    job_service: Annotated[JobService, Depends(get_job_service)],
 ) -> SolverService:
     """
     "Assembles" the SolverService layer to the underlying service and client interfaces
@@ -61,13 +84,13 @@ def get_solver_service(
 
     return SolverService(
         catalog_service=catalog_service,
-        webserver_client=webserver_client,
+        job_service=job_service,
     )
 
 
 def get_studies_service(
-    webserver_client: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
+    job_service: Annotated[JobService, Depends(get_job_service)],
 ) -> StudiesService:
     return StudiesService(
-        webserver_client=webserver_client,
+        job_service=job_service,
     )
