@@ -33,8 +33,8 @@ async def test_get_solver(
 ):
     solver = await solver_service.get_solver(
         user_id=user_id,
-        name="simcore/services/comp/solver-1",
-        version="1.0.0",
+        solver_key="simcore/services/comp/solver-1",
+        solver_version="1.0.0",
         product_name=product_name,
     )
 

@@ -185,8 +185,8 @@ async def list_jobs(
 
     solver = await solver_service.get_solver(
         user_id=user_id,
-        name=solver_key,
-        version=version,
+        solver_key=solver_key,
+        solver_version=version,
         product_name=product_name,
     )
     _logger.debug("Listing Jobs in Solver '%s'", solver.name)
@@ -232,8 +232,8 @@ async def get_jobs_page(
 
     solver = await solver_service.get_solver(
         user_id=user_id,
-        name=solver_key,
-        version=version,
+        solver_key=solver_key,
+        solver_version=version,
         product_name=product_name,
     )
     _logger.debug("Listing Jobs in Solver '%s'", solver.name)
@@ -276,8 +276,8 @@ async def get_job(
 
     solver = await solver_service.get_solver(
         user_id=user_id,
-        name=solver_key,
-        version=version,
+        solver_key=solver_key,
+        solver_version=version,
         product_name=product_name,
     )
     project: ProjectGet = await webserver_api.get_project(project_id=job_id)

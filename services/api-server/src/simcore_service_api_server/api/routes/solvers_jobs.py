@@ -112,8 +112,8 @@ async def create_solver_job(
     # ensures user has access to solver
     solver = await solver_service.get_solver(
         user_id=user_id,
-        name=solver_key,
-        version=version,
+        solver_key=solver_key,
+        solver_version=version,
         product_name=product_name,
     )
     job, project = await job_service.create_job(

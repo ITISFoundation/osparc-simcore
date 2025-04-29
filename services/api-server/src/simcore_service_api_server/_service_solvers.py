@@ -40,15 +40,15 @@ class SolverService:
     async def get_solver(
         self,
         *,
-        user_id: UserID,
-        name: SolverKeyId,
-        version: VersionStr,
         product_name: ProductName,
+        user_id: UserID,
+        solver_key: SolverKeyId,
+        solver_version: VersionStr,
     ) -> Solver:
         service = await self._catalog_service.get(
             user_id=user_id,
-            name=name,
-            version=version,
+            name=solver_key,
+            version=solver_version,
             product_name=product_name,
         )
         assert (  # nosec
@@ -60,9 +60,9 @@ class SolverService:
     async def get_latest_release(
         self,
         *,
+        product_name: str,
         user_id: int,
         solver_key: SolverKeyId,
-        product_name: str,
     ) -> Solver:
         service_releases: list[ServiceRelease] = []
         for page_params in iter_pagination_params(limit=DEFAULT_PAGINATION_LIMIT):
@@ -89,10 +89,10 @@ class SolverService:
     async def list_jobs(
         self,
         *,
-        user_id: UserID,
         product_name: ProductName,
+        user_id: UserID,
         # filters
-        solver_id: SolverKeyId | None = None,
+        solver_key: SolverKeyId | None = None,
         solver_version: VersionStr | None = None,
         # pagination
         offset: PageOffsetInt = 0,
@@ -104,8 +104,8 @@ class SolverService:
         collection_or_resource_ids = [
             "solvers",  # solver_id, "releases", solver_version, "jobs",
         ]
-        if solver_id:
-            collection_or_resource_ids.append(solver_id)
+        if solver_key:
+            collection_or_resource_ids.append(solver_key)
             if solver_version:
                 collection_or_resource_ids.append("releases")
                 collection_or_resource_ids.append(solver_version)

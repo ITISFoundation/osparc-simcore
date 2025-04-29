@@ -240,8 +240,8 @@ async def get_solver_release(
     try:
         solver: Solver = await solver_service.get_solver(
             user_id=user_id,
-            name=solver_key,
-            version=version,
+            solver_key=solver_key,
+            solver_version=version,
             product_name=product_name,
         )
 
