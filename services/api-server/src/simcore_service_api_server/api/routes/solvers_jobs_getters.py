@@ -58,7 +58,6 @@ from ..dependencies.database import get_db_asyncpg_engine
 from ..dependencies.rabbitmq import get_log_check_timeout, get_log_distributor
 from ..dependencies.services import get_api_client, get_solver_service
 from ..dependencies.webserver_http import AuthSession, get_webserver_session
-from ._common import API_SERVER_DEV_FEATURES_ENABLED
 from ._constants import (
     FMSG_CHANGELOG_NEW_IN_VERSION,
     FMSG_CHANGELOG_REMOVED_IN_VERSION_FORMAT,
@@ -126,8 +125,13 @@ router = APIRouter()
 @router.get(
     "/-/releases/-/jobs",
     response_model=Page[Job],
-    description="List of all jobs created for any released solver (paginated)",
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+    description=create_route_description(
+        base="List of all jobs created for any released solver (paginated)",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.8"),
+        ],
+    ),
+    include_in_schema=False,  # TO BE RELEASED in 0.8
 )
 async def list_all_solvers_jobs(
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
