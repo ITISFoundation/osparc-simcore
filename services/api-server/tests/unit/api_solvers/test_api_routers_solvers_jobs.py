@@ -6,7 +6,6 @@
 from pathlib import Path
 from pprint import pprint
 from typing import Any
-from unittest import mock
 from zipfile import ZipFile
 
 import arrow
@@ -28,7 +27,7 @@ from starlette import status
 
 
 @pytest.fixture
-def bucket_name():
+def bucket_name() -> str:
     return "test-bucket"
 
 
@@ -88,7 +87,7 @@ def mocked_directorv2_service_api(
     presigned_download_link: AnyUrl,
     mocked_directorv2_rest_api_base: MockRouter,
     directorv2_service_openapi_specs: dict[str, Any],
-):
+) -> MockRouter:
     settings: ApplicationSettings = app.state.settings
     assert settings.API_SERVER_DIRECTOR_V2
     oas = directorv2_service_openapi_specs
@@ -212,7 +211,6 @@ async def test_run_solver_job(
     project_id: str,
     solver_key: str,
     solver_version: str,
-    mocked_groups_extra_properties: mock.Mock,
 ):
     oas = directorv2_service_openapi_specs
 

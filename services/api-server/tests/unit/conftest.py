@@ -9,7 +9,6 @@ from collections.abc import AsyncIterator, Callable, Iterable, Iterator
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
-from unittest import mock
 from unittest.mock import MagicMock
 
 import aiohttp.test_utils
@@ -51,7 +50,7 @@ from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
 from simcore_service_api_server.api.dependencies.rabbitmq import get_rabbitmq_rpc_client
 from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.core.settings import ApplicationSettings
-from simcore_service_api_server.db.repositories.api_keys import UserAndProductTuple
+from simcore_service_api_server.repository.api_keys import UserAndProductTuple
 from simcore_service_api_server.services_http.solver_job_outputs import ResultsTypes
 
 
@@ -177,31 +176,17 @@ def auth(
 
     # NOTE: here, instead of using the database, we patch repositories interface
     mocker.patch(
-        "simcore_service_api_server.db.repositories.api_keys.ApiKeysRepository.get_user",
+        "simcore_service_api_server.repository.api_keys.ApiKeysRepository.get_user",
         autospec=True,
         return_value=UserAndProductTuple(user_id=user_id, product_name="osparc"),
     )
     mocker.patch(
-        "simcore_service_api_server.db.repositories.users.UsersRepository.get_active_user_email",
+        "simcore_service_api_server.repository.users.UsersRepository.get_active_user_email",
         autospec=True,
         return_value=user_email,
     )
 
     return HTTPBasicAuth(user_api_key, user_api_secret)
-
-
-@pytest.fixture
-def mocked_groups_extra_properties(mocker: MockerFixture) -> mock.Mock:
-    from simcore_service_api_server.db.repositories.groups_extra_properties import (
-        GroupsExtraPropertiesRepository,
-    )
-
-    return mocker.patch.object(
-        GroupsExtraPropertiesRepository,
-        "use_on_demand_clusters",
-        autospec=True,
-        return_value=True,
-    )
 
 
 ## MOCKED S3 service --------------------------------------------------
