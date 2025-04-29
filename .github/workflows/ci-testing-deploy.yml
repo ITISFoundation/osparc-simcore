@@ -215,7 +215,7 @@ jobs:
               - 'scripts/mypy/*'
               - 'mypy.ini'
             invitations:
-              - 'packages/**'test
+              - 'packages/**'
               - 'services/invitations/**'
               - 'services/docker-compose*'
               - 'scripts/mypy/*'
