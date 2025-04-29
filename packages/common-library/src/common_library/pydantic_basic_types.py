@@ -20,7 +20,7 @@ class ConstrainedStr(str):  # noqa: SLOT000
     curtail_length: int | None = None
 
     @classmethod
-    def _validate(cls, __input_value: str) -> str:
+    def _validate(cls, __input_value: str) -> str:  # noqa: PYI063
         if cls.curtail_length and len(__input_value) > cls.curtail_length:
             __input_value = __input_value[: cls.curtail_length]
         return cls(__input_value)
