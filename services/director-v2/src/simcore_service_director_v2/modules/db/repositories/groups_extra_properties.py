@@ -20,7 +20,7 @@ class GroupsExtraPropertiesRepository(BaseRepository):
         user_id: int,
         product_name: str,
     ) -> GroupExtraProperties:
-        async with self.db_engine.acquire() as conn:
+        async with self.db_engine.connect() as conn:
             return await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
                 conn, user_id=user_id, product_name=product_name
             )

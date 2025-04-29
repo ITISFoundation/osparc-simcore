@@ -96,7 +96,6 @@ async def search_public_user(
     search_pattern: str,
     limit: int,
 ) -> list:
-
     _pattern = f"%{search_pattern}%"
 
     query = (
@@ -267,8 +266,8 @@ async def list_user_permissions(
     with contextlib.suppress(GroupExtraPropertiesNotFoundError):
         async with pass_or_acquire_connection(engine, connection) as conn:
             user_group_extra_properties = (
-                await GroupExtraPropertiesRepo.get_aggregated_properties_for_user_v2(
-                    engine, conn, user_id=user_id, product_name=product_name
+                await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
+                    conn, user_id=user_id, product_name=product_name
                 )
             )
         override_services_specifications.allowed = (
@@ -321,7 +320,6 @@ async def search_users_and_get_profile(
     *,
     email_like: str,
 ) -> list[Row]:
-
     users_alias = sa.alias(users, name="users_alias")
 
     invited_by = (
@@ -549,7 +547,6 @@ async def update_user_profile(
 
     if updated_values := update.to_db():
         try:
-
             async with transaction_context(engine=get_asyncpg_engine(app)) as conn:
                 await conn.execute(
                     users.update()

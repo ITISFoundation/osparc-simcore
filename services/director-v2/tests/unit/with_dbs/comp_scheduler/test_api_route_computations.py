@@ -17,7 +17,6 @@ from random import choice
 from typing import Any
 from unittest import mock
 
-import aiopg.sa
 import httpx
 import pytest
 import respx
@@ -63,6 +62,7 @@ from simcore_service_director_v2.modules.db.repositories.comp_tasks._utils impor
     _RAM_SAFE_MARGIN_RATIO,
 )
 from simcore_service_director_v2.utils.computations import to_node_class
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit", "redis"]
 pytest_simcore_ops_services_selection = [
@@ -169,7 +169,6 @@ def mocked_catalog_service_fcts(
     def _mocked_services_details(
         request, service_key: str, service_version: str
     ) -> httpx.Response:
-
         data_published = fake_service_details.model_copy(
             update={
                 "key": urllib.parse.unquote(service_key),
@@ -500,7 +499,7 @@ async def test_create_computation_with_wallet(
     wallet_info: WalletInfo,
     project_nodes_overrides: dict[str, Any],
     default_pricing_plan_aws_ec2_type: str | None,
-    aiopg_engine: aiopg.sa.Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     fake_ec2_cpus: PositiveInt,
     fake_ec2_ram: ByteSize,
 ):
@@ -541,7 +540,7 @@ async def test_create_computation_with_wallet(
             * 2
         )
         # check the project nodes were really overriden now
-        async with aiopg_engine.acquire() as connection:
+        async with sqlalchemy_async_engine.connect() as connection:
             project_nodes_repo = ProjectNodesRepo(project_uuid=proj.uuid)
             for node in await project_nodes_repo.list(connection):
                 if (
