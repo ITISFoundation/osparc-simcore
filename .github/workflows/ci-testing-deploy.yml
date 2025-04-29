@@ -1602,7 +1602,6 @@ jobs:
       # NOTE: DIRECTOR_DEFAULT_MAX_* used for integration-tests that include `director` service
       DIRECTOR_DEFAULT_MAX_MEMORY: 268435456
       DIRECTOR_DEFAULT_MAX_NANO_CPUS: 10000000
-      DIRECTOR_TRACING: null
     steps:
       - uses: actions/checkout@v4
       - name: setup docker buildx
