@@ -5,6 +5,7 @@ from typing import Annotated
 
 from fastapi import Depends, HTTPException, Request, status
 from servicelib.rabbitmq import RabbitMQRPCClient
+from simcore_service_api_server._service_studies import StudiesService
 
 from ..._service_solvers import SolverService
 from ...services_rpc.catalog import CatalogService
@@ -60,5 +61,13 @@ def get_solver_service(
 
     return SolverService(
         catalog_service=catalog_service,
+        webserver_client=webserver_client,
+    )
+
+
+def get_studies_service(
+    webserver_client: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
+) -> StudiesService:
+    return StudiesService(
         webserver_client=webserver_client,
     )

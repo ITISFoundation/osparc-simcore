@@ -14,7 +14,9 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes import InputID, InputTypes
 from models_library.projects_nodes_io import NodeID
 from pydantic import PositiveInt
+from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_context
+from simcore_service_api_server._service_studies import StudiesService
 
 from ...exceptions.backend_errors import ProjectAlreadyStartedError
 from ...models.pagination import Page, PaginationParams
@@ -47,8 +49,8 @@ from ...services_http.webserver import AuthSession
 from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
-from ..dependencies.services import get_api_client
-from ..dependencies.webserver_http import get_webserver_session
+from ..dependencies.services import get_api_client, get_studies_service
+from ..dependencies.webserver_http import AuthSession, get_webserver_session
 from ..dependencies.webserver_rpc import (
     get_wb_api_rpc_client,
 )
@@ -57,9 +59,17 @@ from ._constants import (
     FMSG_CHANGELOG_NEW_IN_VERSION,
     create_route_description,
 )
-from .solvers_jobs import JOBS_STATUS_CODES
+from .solvers_jobs import (
+    JOBS_STATUS_CODES,
+    _compose_job_resource_name,
+)
+
+# pylint: disable=too-many-arguments
+
 
 _logger = logging.getLogger(__name__)
+
+
 router = APIRouter()
 
 
@@ -85,6 +95,9 @@ def _compose_job_resource_name(study_key, job_id) -> str:
 async def list_study_jobs(
     study_id: StudyID,
     page_params: Annotated[PaginationParams, Depends()],
+    studies_service: Annotated[StudiesService, Depends(get_studies_service)],
+    url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
+    product_name: Annotated[str, Depends(get_product_name)],
 ):
     msg = f"list study jobs study_id={study_id!r} with pagination={page_params!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
     raise NotImplementedError(msg)
