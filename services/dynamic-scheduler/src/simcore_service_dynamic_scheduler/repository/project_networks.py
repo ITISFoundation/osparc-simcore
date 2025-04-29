@@ -11,11 +11,11 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 
-class BaseProjectNetwroksError(OsparcErrorMixin, RuntimeError):
+class BaseProjectNetworksError(OsparcErrorMixin, RuntimeError):
     msg_template: str = "project networks unexpected error"
 
 
-class ProjectNetworkNotFoundError(BaseProjectNetwroksError):
+class ProjectNetworkNotFoundError(BaseProjectNetworksError):
     msg_template: str = "no networks found for project {project_id}"
 
 
