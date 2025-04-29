@@ -6216,6 +6216,65 @@
         }
       }
     },
+    "/v0/function_jobs/{function_job_id}/outputs/logfile": {
+      "get": {
+        "tags": [
+          "function_jobs"
+        ],
+        "summary": "Function Job Logfile",
+        "description": "Get function job outputs",
+        "operationId": "function_job_logfile",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "function_job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Function Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Function Job Logfile V0 Function Jobs  Function Job Id  Outputs Logfile Get"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Function job not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v0/function_job_collections": {
       "get": {
         "tags": [

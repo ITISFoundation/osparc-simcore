@@ -36,7 +36,7 @@ _FUNCTION_JOBS_TABLE_COLS = get_columns_from_db_model(
     function_jobs_table, FunctionJobDB
 )
 _FUNCTION_JOB_COLLECTIONS_TABLE_COLS = get_columns_from_db_model(
-    function_jobs_table, FunctionJobCollectionDB
+    function_job_collections_table, FunctionJobCollectionDB
 )
 
 
