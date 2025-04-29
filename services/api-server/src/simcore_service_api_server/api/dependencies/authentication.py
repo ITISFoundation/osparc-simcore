@@ -6,8 +6,8 @@ from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
 from pydantic import BaseModel, PositiveInt
 
-from ...db.repositories.api_keys import ApiKeysRepository, UserAndProductTuple
-from ...db.repositories.users import UsersRepository
+from ...repository.api_keys import ApiKeysRepository, UserAndProductTuple
+from ...repository.users import UsersRepository
 from .database import get_repository
 
 # SEE https://swagger.io/docs/specification/authentication/basic-authentication/
@@ -22,9 +22,9 @@ class Identity(BaseModel):
 
 def _create_exception() -> HTTPException:
     _unauthorized_headers = {
-        "WWW-Authenticate": f'Basic realm="{basic_scheme.realm}"'
-        if basic_scheme.realm
-        else "Basic"
+        "WWW-Authenticate": (
+            f'Basic realm="{basic_scheme.realm}"' if basic_scheme.realm else "Basic"
+        )
     }
     return HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -46,7 +46,7 @@ async def get_current_identity(
     if user_and_product is None:
         exc = _create_exception()
         raise exc
-    email = await users_repo.get_active_user_email(user_and_product.user_id)
+    email = await users_repo.get_active_user_email(user_id=user_and_product.user_id)
     if not email:
         exc = _create_exception()
         raise exc

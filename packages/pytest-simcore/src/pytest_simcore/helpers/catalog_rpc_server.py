@@ -9,10 +9,9 @@ from models_library.api_schemas_catalog.services import (
     LatestServiceGet,
     ServiceGetV2,
     ServiceListFilters,
+    ServiceUpdateV2,
 )
-from models_library.api_schemas_webserver.catalog import (
-    CatalogServiceUpdate,
-)
+from models_library.api_schemas_catalog.services_ports import ServicePortGet
 from models_library.products import ProductName
 from models_library.rest_pagination import PageOffsetInt
 from models_library.rpc_pagination import PageLimitInt, PageRpc
@@ -24,15 +23,17 @@ from models_library.services_regex import (
 )
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pydantic import NonNegativeInt, TypeAdapter
+from pydantic import NonNegativeInt, TypeAdapter, validate_call
+from pytest_mock import MockType
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 
 
 class CatalogRpcSideEffects:
     # pylint: disable=no-self-use
+    @validate_call(config={"arbitrary_types_allowed": True})
     async def list_services_paginated(
         self,
-        rpc_client: RabbitMQRPCClient,
+        rpc_client: RabbitMQRPCClient | MockType,
         *,
         product_name: ProductName,
         user_id: UserID,
@@ -57,9 +58,10 @@ class CatalogRpcSideEffects:
             offset=offset,
         )
 
+    @validate_call(config={"arbitrary_types_allowed": True})
     async def get_service(
         self,
-        rpc_client: RabbitMQRPCClient,
+        rpc_client: RabbitMQRPCClient | MockType,
         *,
         product_name: ProductName,
         user_id: UserID,
@@ -86,16 +88,17 @@ class CatalogRpcSideEffects:
 
         return got
 
+    @validate_call(config={"arbitrary_types_allowed": True})
     async def update_service(
         self,
-        rpc_client: RabbitMQRPCClient,
+        rpc_client: RabbitMQRPCClient | MockType,
         *,
         product_name: ProductName,
         user_id: UserID,
         service_key: ServiceKey,
         service_version: ServiceVersion,
-        update: CatalogServiceUpdate,
-    ):
+        update: ServiceUpdateV2,
+    ) -> ServiceGetV2:
         assert rpc_client
         assert product_name
         assert user_id
@@ -107,9 +110,10 @@ class CatalogRpcSideEffects:
         got.key = service_key
         return got.model_copy(update=update.model_dump(exclude_unset=True))
 
+    @validate_call(config={"arbitrary_types_allowed": True})
     async def list_my_service_history_paginated(
         self,
-        rpc_client: RabbitMQRPCClient,
+        rpc_client: RabbitMQRPCClient | MockType,
         *,
         product_name: ProductName,
         user_id: UserID,
@@ -135,4 +139,24 @@ class CatalogRpcSideEffects:
             total=total_count,
             limit=limit,
             offset=offset,
+        )
+
+    @validate_call(config={"arbitrary_types_allowed": True})
+    async def get_service_ports(
+        self,
+        rpc_client: RabbitMQRPCClient | MockType,
+        *,
+        product_name: ProductName,
+        user_id: UserID,
+        service_key: ServiceKey,
+        service_version: ServiceVersion,
+    ) -> list[ServicePortGet]:
+        assert rpc_client
+        assert product_name
+        assert user_id
+        assert service_key
+        assert service_version
+
+        return TypeAdapter(list[ServicePortGet]).validate_python(
+            ServicePortGet.model_json_schema()["examples"],
         )

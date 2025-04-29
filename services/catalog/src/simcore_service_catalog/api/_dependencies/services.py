@@ -95,9 +95,9 @@ async def get_service_from_manifest(
         return cast(
             ServiceMetaDataPublished,
             await manifest.get_service(
+                director_client=director_client,
                 key=service_key,
                 version=service_version,
-                director_client=director_client,
             ),
         )
 

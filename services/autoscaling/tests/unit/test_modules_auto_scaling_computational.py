@@ -82,7 +82,7 @@ def minimal_configuration(
     local_dask_scheduler_server_envs: EnvVarsDict,
     mocked_ec2_instances_envs: EnvVarsDict,
     disabled_rabbitmq: None,
-    disable_dynamic_service_background_task: None,
+    disable_autoscaling_background_task: None,
     disable_buffers_pool_background_task: None,
     mocked_redis_server: None,
 ) -> None: ...

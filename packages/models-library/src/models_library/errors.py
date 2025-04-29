@@ -34,9 +34,10 @@ class ErrorDict(_ErrorDictRequired, total=False):
     ctx: dict[str, Any]
 
 
-RABBITMQ_CLIENT_UNHEALTHY_MSG = "RabbitMQ client is in a bad state!"
+RABBITMQ_CLIENT_UNHEALTHY_MSG = "RabbitMQ cannot be reached!"
+POSRGRES_DATABASE_UNHEALTHY_MSG = "Postgres cannot be reached!"
 REDIS_CLIENT_UNHEALTHY_MSG = "Redis cannot be reached!"
-DOCKER_API_PROXY_UNHEALTHY_MSG = "docker-api-proxy service is not reachable!"
+DOCKER_API_PROXY_UNHEALTHY_MSG = "docker-api-proxy cannot be reached!"
 
 
 # NOTE: Here we do not just import as 'from pydantic.error_wrappers import ErrorDict'

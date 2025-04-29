@@ -113,8 +113,8 @@ class ProjectAtDB(BaseProjectModel):
 
     published: Annotated[
         bool | None,
-        Field(default=False, description="Defines if a study is available publicly"),
-    ]
+        Field(description="Defines if a study is available publicly"),
+    ] = False
 
     @field_validator("project_type", mode="before")
     @classmethod

@@ -55,10 +55,6 @@ aiohttp==3.11.10
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
     #   aiodocker
-aiopg==1.4.0
-    # via
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
-    #   -r requirements/_base.in
 aiormq==6.8.1
     # via aio-pika
 aiosignal==1.3.1
@@ -86,8 +82,6 @@ arrow==1.3.0
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 asgiref==3.8.1
     # via opentelemetry-instrumentation-asgi
-async-timeout==4.0.3
-    # via aiopg
 asyncpg==0.30.0
     # via sqlalchemy
 attrs==24.2.0
@@ -354,10 +348,8 @@ opentelemetry-api==1.28.2
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
     #   opentelemetry-instrumentation
-    #   opentelemetry-instrumentation-aiopg
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-asyncpg
-    #   opentelemetry-instrumentation-dbapi
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-logging
@@ -379,25 +371,19 @@ opentelemetry-exporter-otlp-proto-http==1.28.2
     # via opentelemetry-exporter-otlp
 opentelemetry-instrumentation==0.49b2
     # via
-    #   opentelemetry-instrumentation-aiopg
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-asyncpg
-    #   opentelemetry-instrumentation-dbapi
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
-opentelemetry-instrumentation-aiopg==0.49b2
-    # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 opentelemetry-instrumentation-asgi==0.49b2
     # via opentelemetry-instrumentation-fastapi
 opentelemetry-instrumentation-asyncpg==0.49b2
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
-opentelemetry-instrumentation-dbapi==0.49b2
-    # via opentelemetry-instrumentation-aiopg
 opentelemetry-instrumentation-fastapi==0.49b2
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 opentelemetry-instrumentation-httpx==0.49b2
@@ -430,7 +416,6 @@ opentelemetry-semantic-conventions==0.49b2
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-asyncpg
-    #   opentelemetry-instrumentation-dbapi
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-redis
@@ -524,9 +509,7 @@ psutil==6.1.0
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 psycopg2-binary==2.9.10
-    # via
-    #   aiopg
-    #   sqlalchemy
+    # via sqlalchemy
 pycparser==2.22
     # via cffi
 pycryptodome==3.21.0
@@ -795,7 +778,7 @@ sqlalchemy==1.4.54
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
-    #   aiopg
+    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
     #   alembic
 starlette==0.41.3
     # via
@@ -952,8 +935,6 @@ wrapt==1.17.0
     # via
     #   deprecated
     #   opentelemetry-instrumentation
-    #   opentelemetry-instrumentation-aiopg
-    #   opentelemetry-instrumentation-dbapi
     #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-redis
 yarl==1.18.3

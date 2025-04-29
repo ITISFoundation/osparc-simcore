@@ -1,8 +1,8 @@
 from typing import Any
 
 import sqlalchemy as sa
-from aiopg.sa.connection import SAConnection
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.ext.asyncio import AsyncConnection
 
 from .models.user_preferences import (
     user_preferences_frontend,
@@ -10,8 +10,7 @@ from .models.user_preferences import (
 )
 
 
-class CouldNotCreateOrUpdateUserPreferenceError(Exception):
-    ...
+class CouldNotCreateOrUpdateUserPreferenceError(Exception): ...
 
 
 class BasePreferencesRepo:
@@ -20,7 +19,7 @@ class BasePreferencesRepo:
     @classmethod
     async def save(
         cls,
-        conn: SAConnection,
+        conn: AsyncConnection,
         *,
         user_id: int,
         product_name: str,
@@ -49,7 +48,7 @@ class BasePreferencesRepo:
     @classmethod
     async def load(
         cls,
-        conn: SAConnection,
+        conn: AsyncConnection,
         *,
         user_id: int,
         product_name: str,

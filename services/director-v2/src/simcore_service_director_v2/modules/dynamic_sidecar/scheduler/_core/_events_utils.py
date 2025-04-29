@@ -1,10 +1,10 @@
 # pylint: disable=relative-beyond-top-level
 
 import asyncio
-import json
 import logging
 from typing import TYPE_CHECKING, Any, cast
 
+from common_library.json_serialization import json_loads
 from fastapi import FastAPI
 from models_library.api_schemas_long_running_tasks.base import ProgressPercent
 from models_library.products import ProductName
@@ -565,7 +565,7 @@ async def prepare_services_environment(
             scheduler_data.key, scheduler_data.version
         )
     )
-    service_outputs_labels = json.loads(
+    service_outputs_labels = json_loads(
         simcore_service_labels.model_dump().get("io.simcore.outputs", "{}")
     ).get("outputs", {})
     _logger.debug(

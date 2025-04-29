@@ -29,7 +29,7 @@ _faker = Faker()
 async def test_get_program_release(
     auth: httpx.BasicAuth,
     client: AsyncClient,
-    mocked_rpc_catalog_service_api: dict[str, MockType],
+    mocked_catalog_rpc_api: dict[str, MockType],
     mocker: MockerFixture,
     user_id: UserID,
 ):
@@ -63,8 +63,8 @@ async def test_create_program_job(
     auth: httpx.BasicAuth,
     client: AsyncClient,
     mocked_webserver_rest_api_base,
-    mocked_rpc_catalog_service_api: dict[str, MockType],
     mocked_webserver_rpc_api: dict[str, MockType],
+    mocked_catalog_rpc_api: dict[str, MockType],
     create_respx_mock_from_capture: CreateRespxMockCallback,
     mocker: MockerFixture,
     user_id: UserID,
