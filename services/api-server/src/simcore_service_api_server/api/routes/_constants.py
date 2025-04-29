@@ -26,6 +26,8 @@ FMSG_DEPRECATED_ROUTE_NOTICE: Final[str] = (
     "Please use `{}` instead.\n\n"
 )
 
+DEFAULT_MAX_STRING_LENGTH: Final[int] = 500
+
 
 def create_route_description(
     *,

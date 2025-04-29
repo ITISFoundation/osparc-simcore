@@ -189,7 +189,7 @@ async def dask_client(
     }[request.param]()
 
     try:
-        assert client.app.state.asyncpg_engine is not None
+        assert client.app.state.engine is not None
 
         # check we can run some simple python script
         def _square(x):
@@ -207,8 +207,8 @@ async def dask_client(
         result = await future
         assert result == -285
     except AttributeError:
-        # enforces existance of 'app.state.asyncpg_engine' and sets to None
-        client.app.state.asyncpg_engine = None
+        # enforces existance of 'app.state.engine' and sets to None
+        client.app.state.engine = None
 
     return client
 

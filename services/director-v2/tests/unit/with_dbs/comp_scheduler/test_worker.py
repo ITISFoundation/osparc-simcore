@@ -136,7 +136,7 @@ async def test_worker_scheduling_parallelism(
     mocked_scheduler_api.assert_called()
 
     @retry(stop=stop_after_delay(5), reraise=True, wait=wait_fixed(0.5))
-    def _assert_expected_called():
+    def _assert_expected_called() -> None:
         assert mocked_scheduler_api.call_count == scheduling_concurrency
 
     _assert_expected_called()

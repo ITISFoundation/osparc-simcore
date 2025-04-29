@@ -1,23 +1,30 @@
+from collections.abc import Mapping
 from dataclasses import fields, is_dataclass
-from typing import TypeVar
+from typing import Any, TypeVar
 
-from aiopg.sa.result import RowProxy
 from sqlalchemy.engine.row import Row
 
 ModelType = TypeVar("ModelType")
 
 
 class FromRowMixin:
-    """Mixin to allow instance construction from aiopg.sa.result.RowProxy"""
+    """Mixin to allow instance construction from database row objects"""
 
     @classmethod
-    def from_row_proxy(cls: type[ModelType], row: RowProxy) -> ModelType:
-        assert is_dataclass(cls)  # nosec
-        field_names = [f.name for f in fields(cls)]
-        return cls(**{k: v for k, v in row.items() if k in field_names})  # type: ignore[return-value]
+    def from_row(cls: type[ModelType], row: Any) -> ModelType:
+        """Creates an instance from a database row.
 
-    @classmethod
-    def from_row(cls: type[ModelType], row: Row) -> ModelType:
+        Supports both Row objects and mapping-like objects.
+        """
         assert is_dataclass(cls)  # nosec
+
+        if isinstance(row, Row):
+            mapping = row._asdict()
+        elif isinstance(row, Mapping):
+            mapping = row
+        else:
+            msg = f"Row must be a Row or Mapping type, got {type(row)}"
+            raise TypeError(msg)
+
         field_names = [f.name for f in fields(cls)]
-        return cls(**{k: v for k, v in row._asdict().items() if k in field_names})  # type: ignore[return-value]
+        return cls(**{k: v for k, v in mapping.items() if k in field_names})  # type: ignore[return-value]
