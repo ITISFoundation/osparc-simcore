@@ -1,7 +1,7 @@
 :8888 {
     handle {
         basicauth {
-            {$DOCKER_API_PROXY_USER} {$DOCKER_API_PROXY_ECRYPTED_PASSWORD}
+            {$DOCKER_API_PROXY_USER} {$DOCKER_API_PROXY_ENCRYPTED_PASSWORD}
         }
 
         reverse_proxy http://localhost:8889 {
