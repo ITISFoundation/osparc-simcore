@@ -283,50 +283,15 @@ jobs:
   unit-test-webserver-01:
     needs: changes
     if: ${{ needs.changes.outputs.webserver == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 25 # if this timeout gets too small, then split the tests
-    name: "[unit] webserver 01"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.11"]
-        os: [ubuntu-24.04]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/web/server/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install webserver
-        run: ./ci/github/unit-testing/webserver.bash install
-      - name: typecheck
-        run: ./ci/github/unit-testing/webserver.bash typecheck
-      - name: test isolated
-        if: ${{ !cancelled() }}
-        run: ./ci/github/unit-testing/webserver.bash test_isolated
-      - name: test
-        if: ${{ !cancelled() }}
-        run: ./ci/github/unit-testing/webserver.bash test_with_db 01
-      - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        with:
-          flags: unittests #optional
-
+    uses: ./.github/workflows/_reusable-unit-test.yml
+    with:
+      service_name: webserver
+      timeout_minutes: 25
+      dependency_path: "**/web/server/requirements/ci.txt"
+      test_mode: "with_db"
+      test_shard: "01"
+      pre_test_step: "test_isolated"
+    secrets: inherit
 
   unit-test-webserver-02:
     needs: changes

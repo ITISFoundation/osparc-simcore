@@ -17,10 +17,25 @@ on:
         type: string
         default: "**/{service_name}/requirements/ci.txt"
         description: "Path pattern for dependencies to cache"
+      test_mode:
+        required: false
+        type: string
+        default: "standard"
+        description: "Test mode to run (standard, isolated, with_db)"
+      test_shard:
+        required: false
+        type: string
+        default: ""
+        description: "Test shard to run (e.g., 01, 02, 03, 04 for webserver)"
+      pre_test_step:
+        required: false
+        type: string
+        default: ""
+        description: "Additional step to run before the test step"
 
 jobs:
   unit_test:
-    name: "[unit] ${{ inputs.service_name }}"
+    name: "[unit] ${{ inputs.service_name }}${{ inputs.test_shard != '' && ' ' || '' }}${{ inputs.test_shard }}"
     timeout-minutes: ${{ inputs.timeout_minutes }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -51,9 +66,20 @@ jobs:
         run: ./ci/github/unit-testing/${{ inputs.service_name }}.bash install
       - name: typecheck
         run: ./ci/github/unit-testing/${{ inputs.service_name }}.bash typecheck
+      # Pre-test step if specified
+      - name: ${{ inputs.pre_test_step }}
+        if: ${{ inputs.pre_test_step != '' && !cancelled() }}
+        run: ./ci/github/unit-testing/${{ inputs.service_name }}.bash ${{ inputs.pre_test_step }}
+      # Test step with different modes
       - name: test
-        if: ${{ !cancelled() }}
+        if: ${{ inputs.test_mode == 'standard' && !cancelled() }}
         run: ./ci/github/unit-testing/${{ inputs.service_name }}.bash test
+      - name: test isolated
+        if: ${{ inputs.test_mode == 'isolated' && !cancelled() }}
+        run: ./ci/github/unit-testing/${{ inputs.service_name }}.bash test_isolated
+      - name: test with db
+        if: ${{ inputs.test_mode == 'with_db' && !cancelled() }}
+        run: ./ci/github/unit-testing/${{ inputs.service_name }}.bash test_with_db ${{ inputs.test_shard }}
       - name: upload failed tests logs
         if: ${{ failure() }}
         uses: actions/upload-artifact@v4
