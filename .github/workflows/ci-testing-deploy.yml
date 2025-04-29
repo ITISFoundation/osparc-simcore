@@ -215,7 +215,7 @@ jobs:
               - 'scripts/mypy/*'
               - 'mypy.ini'
             invitations:
-              - 'packages/**'
+              - 'packages/**'test
               - 'services/invitations/**'
               - 'services/docker-compose*'
               - 'scripts/mypy/*'
@@ -292,24 +292,10 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - uses: ./.github/workflows/actions/common-setup
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/web/server/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
+          requirements-path: "**/web/server/requirements/ci.txt"
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: typecheck

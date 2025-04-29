@@ -12,7 +12,7 @@ inputs:
     required: true
     description: "Path to requirements file for UV cache"
   runner-temp:
-    required: true
+    required: false
     description: "Path to runner temp directory"
 
 runs:
@@ -27,10 +27,18 @@ runs:
       uses: actions/setup-python@v5
       with:
         python-version: ${{ inputs.python-version }}
+    - name: install uv
+      uses: astral-sh/setup-uv@v6
+      with:
+        version: ${{ inputs.uv-version }}
+        enable-cache: false
+        cache-dependency-glob: ${{ inputs.requirements-path }}
     - name: expose github runtime
       uses: crazy-max/ghaction-github-runtime@v3
+      if: ${{ inputs.runner-temp }}
     - name: download docker images
       uses: Wandalen/wretry.action@master
+      if: ${{ inputs.runner-temp }}
       with:
         action: actions/download-artifact@v4
         with: |
@@ -38,9 +46,5 @@ runs:
           path: ${{ inputs.runner-temp }}/build
         attempt_limit: 5
         attempt_delay: 1000
-    - name: install uv
-      uses: astral-sh/setup-uv@v6
-      with:
-        version: ${{ inputs.uv-version }}
-        enable-cache: false
-        cache-dependency-glob: ${{ inputs.requirements-path }}
+    - name: show system version
+      run: ./ci/helpers/show_system_versions.bash
