@@ -16,7 +16,7 @@ from servicelib.rabbitmq.rpc_interfaces.webserver.errors import (
 )
 
 from ...rabbitmq import get_rabbitmq_rpc_server
-from .. import _job_service
+from .. import _jobs_service
 from ..exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 
 router = RPCRouter()
@@ -41,7 +41,7 @@ async def mark_project_as_job(
 
     try:
 
-        await _job_service.set_project_as_job(
+        await _jobs_service.set_project_as_job(
             app,
             product_name=product_name,
             user_id=user_id,
@@ -69,7 +69,7 @@ async def list_projects_marked_as_jobs(
     job_parent_resource_name_prefix: str | None,
 ) -> PageRpcProjectJobRpcGet:
 
-    total, projects = await _job_service.list_my_projects_marked_as_jobs(
+    total, projects = await _jobs_service.list_my_projects_marked_as_jobs(
         app,
         product_name=product_name,
         user_id=user_id,
