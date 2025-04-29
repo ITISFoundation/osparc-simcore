@@ -9,6 +9,7 @@ from models_library.users import UserID
 from pytest_mock import MockerFixture, MockType
 from simcore_service_api_server._service_jobs import JobService
 from simcore_service_api_server._service_solvers import SolverService
+from simcore_service_api_server._service_studies import StudyService
 from simcore_service_api_server.services_rpc.catalog import CatalogService
 from simcore_service_api_server.services_rpc.wb_api_server import WbApiRpcClient
 
@@ -43,3 +44,11 @@ def solver_service(
     job_service: JobService,
 ) -> SolverService:
     return SolverService(catalog_service=catalog_service, job_service=job_service)
+
+
+@pytest.fixture
+def study_service(
+    job_service: JobService,
+) -> StudyService:
+
+    return StudyService(job_service=job_service)
