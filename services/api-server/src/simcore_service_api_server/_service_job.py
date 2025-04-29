@@ -11,16 +11,15 @@ from models_library.users import UserID
 from pydantic import HttpUrl
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.logging_utils import log_context
-from simcore_service_api_server.api.dependencies.authentication import (
+
+from .api.dependencies.authentication import (
     get_current_user_id,
     get_product_name,
 )
-from simcore_service_api_server.api.dependencies.webserver_rpc import (
+from .api.dependencies.webserver_http import get_webserver_session
+from .api.dependencies.webserver_rpc import (
     get_wb_api_rpc_client,
 )
-from simcore_service_api_server.services_rpc.wb_api_server import WbApiRpcClient
-
-from .api.dependencies.webserver_http import get_webserver_session
 from .models.schemas.jobs import Job, JobInputs
 from .models.schemas.programs import Program
 from .models.schemas.solvers import Solver
@@ -29,6 +28,7 @@ from .services_http.solver_job_models_converters import (
     create_new_project_for_job,
 )
 from .services_http.webserver import AuthSession
+from .services_rpc.wb_api_server import WbApiRpcClient
 
 _logger = logging.getLogger(__name__)
 
