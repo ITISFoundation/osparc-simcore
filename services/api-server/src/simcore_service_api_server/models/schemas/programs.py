@@ -106,6 +106,7 @@ class Program(BaseService, ApiServerOutputSchema):
             title=name,
             url=None,
             description=description,
+            version_display=service.version,
         )
 
     @classmethod
