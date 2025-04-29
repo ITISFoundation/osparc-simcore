@@ -21,6 +21,7 @@ from pytest_simcore.helpers.httpx_calls_capture_models import (
     HttpApiCallCaptureModel,
     SideEffectCallback,
 )
+from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.schemas.jobs import Job, JobStatus
 from simcore_service_api_server.models.schemas.model_adapter import (
@@ -59,7 +60,7 @@ def get_inspect_job_side_effect(job_id: str) -> SideEffectCallback:
 )
 async def test_get_solver_job_wallet(
     client: AsyncClient,
-    mocked_webserver_rest_api_base,
+    mocked_webserver_rest_api_base: MockRouter,
     create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
@@ -131,7 +132,7 @@ async def test_get_solver_job_wallet(
 )
 async def test_get_solver_job_pricing_unit(
     client: AsyncClient,
-    mocked_webserver_rest_api_base,
+    mocked_webserver_rest_api_base: MockRouter,
     create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
@@ -202,9 +203,8 @@ async def test_get_solver_job_pricing_unit(
 )
 async def test_start_solver_job_pricing_unit_with_payment(
     client: AsyncClient,
-    mocked_webserver_rest_api_base,
-    mocked_directorv2_rest_api_base,
-    mocked_groups_extra_properties,
+    mocked_webserver_rest_api_base: MockRouter,
+    mocked_directorv2_rest_api_base: MockRouter,
     create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
@@ -212,7 +212,6 @@ async def test_start_solver_job_pricing_unit_with_payment(
     capture_name: str,
     expected_status_code: int,
 ):
-    assert mocked_groups_extra_properties
     _solver_key: str = "simcore/services/comp/isolve"
     _version: str = "2.1.24"
     _job_id: str = "6e52228c-6edd-4505-9131-e901fdad5b17"
@@ -279,14 +278,12 @@ async def test_start_solver_job_pricing_unit_with_payment(
 
 async def test_get_solver_job_pricing_unit_no_payment(
     client: AsyncClient,
-    mocked_webserver_rest_api_base,
-    mocked_directorv2_rest_api_base,
-    mocked_groups_extra_properties,
+    mocked_webserver_rest_api_base: MockRouter,
+    mocked_directorv2_rest_api_base: MockRouter,
     create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
 ):
-    assert mocked_groups_extra_properties
     _solver_key: str = "simcore/services/comp/isolve"
     _version: str = "2.1.24"
     _job_id: str = "1eefc09b-5d08-4022-bc18-33dedbbd7d0f"
@@ -314,14 +311,12 @@ async def test_get_solver_job_pricing_unit_no_payment(
 
 async def test_start_solver_job_conflict(
     client: AsyncClient,
-    mocked_webserver_rest_api_base,
-    mocked_directorv2_rest_api_base,
-    mocked_groups_extra_properties,
+    mocked_webserver_rest_api_base: MockRouter,
+    mocked_directorv2_rest_api_base: MockRouter,
     create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
 ):
-    assert mocked_groups_extra_properties
     _solver_key: str = "simcore/services/comp/itis/sleeper"
     _version: str = "2.0.2"
     _job_id: str = "b9faf8d8-4928-4e50-af40-3690712c5481"
@@ -350,8 +345,7 @@ async def test_start_solver_job_conflict(
 
 async def test_stop_job(
     client: AsyncClient,
-    mocked_directorv2_rest_api_base,
-    mocked_groups_extra_properties,
+    mocked_directorv2_rest_api_base: MockRouter,
     create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
@@ -396,10 +390,9 @@ async def test_stop_job(
 )
 async def test_get_solver_job_outputs(
     client: AsyncClient,
-    mocked_webserver_rest_api_base,
-    mocked_storage_rest_api_base,
-    mocked_groups_extra_properties,
-    mocked_solver_job_outputs,
+    mocked_webserver_rest_api_base: MockRouter,
+    mocked_storage_rest_api_base: MockRouter,
+    mocked_solver_job_outputs: None,
     create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
