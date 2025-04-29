@@ -4,8 +4,13 @@
 ARG PYTHON_VERSION="3.11.9"
 ARG UV_VERSION="0.6"
 FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv_build
-# we docker image is built based on debian
-FROM python:${PYTHON_VERSION}-slim-bookworm AS base
+
+FROM python:${PYTHON_VERSION}-slim-bookworm AS base-arm64
+ENV UV_CONCURRENT_INSTALLS=1
+
+FROM python:${PYTHON_VERSION}-slim-bookworm AS base-amd64
+
+FROM base-${TARGETARCH} AS base
 
 LABEL maintainer=pcrespov
 
