@@ -2,19 +2,19 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-import json
 from functools import partial
 from pathlib import Path
 from typing import Any
 
 import httpx
 import pytest
-from faker import Faker
+from common_library.json_serialization import json_loads
 from fastapi import status
 from httpx import AsyncClient
 from models_library.api_schemas_storage.storage_schemas import FileUploadSchema
 from models_library.users import UserID
 from pytest_mock import MockerFixture, MockType
+from pytest_simcore.helpers.faker_factories import DEFAULT_FAKER
 from pytest_simcore.helpers.httpx_calls_capture_models import (
     CreateRespxMockCallback,
     HttpApiCallCaptureModel,
@@ -22,8 +22,6 @@ from pytest_simcore.helpers.httpx_calls_capture_models import (
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.schemas.jobs import Job
 from simcore_service_api_server.models.schemas.programs import Program
-
-_faker = Faker()
 
 
 async def test_get_program_release(
@@ -53,9 +51,9 @@ async def test_get_program_release(
     "job_name,job_description",
     [
         (None, None),
-        (_faker.name(), None),
-        (None, _faker.sentence()),
-        (_faker.name(), _faker.sentence()),
+        (DEFAULT_FAKER.name(), None),
+        (None, DEFAULT_FAKER.sentence()),
+        (DEFAULT_FAKER.name(), DEFAULT_FAKER.sentence()),
     ],
 )
 @pytest.mark.parametrize("capture_name", ["create_program_job_success.json"])
@@ -96,7 +94,7 @@ async def test_create_program_job(
 
         # first call creates project
         if server_state.get("project_uuid") is None:
-            get_body_field = lambda field: json.loads(
+            get_body_field = lambda field: json_loads(
                 request.content.decode("utf-8")
             ).get(field)
 
