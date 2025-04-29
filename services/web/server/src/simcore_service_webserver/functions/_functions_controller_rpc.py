@@ -10,6 +10,7 @@ from models_library.api_schemas_webserver.functions_wb_schema import (
     FunctionInputSchema,
     FunctionJob,
     FunctionJobClassSpecificData,
+    FunctionJobCollection,
     FunctionJobDB,
     FunctionJobID,
     FunctionOutputSchema,
@@ -290,6 +291,76 @@ async def find_cached_function_job(
     else:  # noqa: RET505
         msg = f"Unsupported function class: [{returned_function_job.function_class}]"
         raise TypeError(msg)
+
+
+@router.expose()
+async def list_function_job_collections(
+    app: web.Application,
+) -> list[FunctionJobCollection]:
+    assert app
+    returned_function_job_collections = (
+        await _functions_repository.list_function_job_collections(
+            app=app,
+        )
+    )
+    return [
+        FunctionJobCollection(
+            uid=function_job_collection.uuid,
+            title=function_job_collection.title,
+            description=function_job_collection.description,
+            job_ids=job_ids,
+        )
+        for function_job_collection, job_ids in returned_function_job_collections
+    ]
+
+
+@router.expose()
+async def register_function_job_collection(
+    app: web.Application, *, function_job_collection: FunctionJobCollection
+) -> FunctionJobCollection:
+    assert app
+    registered_function_job_collection, registered_job_ids = (
+        await _functions_repository.register_function_job_collection(
+            app=app,
+            function_job_collection=function_job_collection,
+        )
+    )
+    return FunctionJobCollection(
+        uid=registered_function_job_collection.uuid,
+        title=registered_function_job_collection.title,
+        description=registered_function_job_collection.description,
+        job_ids=registered_job_ids,
+    )
+
+
+@router.expose()
+async def get_function_job_collection(
+    app: web.Application, *, function_job_collection_id: FunctionJobID
+) -> FunctionJobCollection:
+    assert app
+    returned_function_job_collection, job_ids = (
+        await _functions_repository.get_function_job_collection(
+            app=app,
+            function_job_collection_id=function_job_collection_id,
+        )
+    )
+    return FunctionJobCollection(
+        uid=returned_function_job_collection.uuid,
+        title=returned_function_job_collection.title,
+        description=returned_function_job_collection.description,
+        job_ids=job_ids,
+    )
+
+
+@router.expose()
+async def delete_function_job_collection(
+    app: web.Application, *, function_job_collection_id: FunctionJobID
+) -> None:
+    assert app
+    await _functions_repository.delete_function_job_collection(
+        app=app,
+        function_job_collection_id=function_job_collection_id,
+    )
 
 
 async def register_rpc_routes_on_startup(app: web.Application):
