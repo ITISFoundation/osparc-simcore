@@ -7,6 +7,8 @@ ARG UV_VERSION="0.6"
 FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv_build
 
 FROM python:${PYTHON_VERSION}-slim-bookworm AS base-arm64
+# These environment variables are necessary because of https://github.com/astral-sh/uv/issues/6105
+# and until https://gitlab.com/qemu-project/qemu/-/issues/2846 gets fixed
 ENV UV_CONCURRENT_INSTALLS=1
 
 FROM python:${PYTHON_VERSION}-slim-bookworm AS base-amd64
