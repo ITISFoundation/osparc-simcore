@@ -163,16 +163,12 @@ router = APIRouter()
     include_in_schema=False,  # TO BE RELEASED in 0.8
 )
 async def list_all_solvers_jobs(
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     page_params: Annotated[PaginationParams, Depends()],
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
-    product_name: Annotated[str, Depends(get_product_name)],
 ):
 
     jobs, meta = await solver_service.list_jobs(
-        product_name=product_name,
-        user_id=user_id,
         offset=page_params.offset,
         limit=page_params.limit,
     )
@@ -193,7 +189,7 @@ async def list_all_solvers_jobs(
     response_model=list[Job],
     responses=JOBS_STATUS_CODES,
     description=create_route_description(
-        base="List of jobs in a specific released solver",
+        base="List of jobs in a specific released solver (limited to 20 jobs)",
         deprecated=True,
         alternative="GET /{solver_key}/releases/{version}/jobs/page",
         changelog=[
@@ -214,8 +210,6 @@ async def list_jobs(
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
 ):
-    """List of jobs in a specific released solver (limited to 20 jobs)"""
-
     solver = await solver_service.get_solver(
         user_id=user_id,
         solver_key=solver_key,

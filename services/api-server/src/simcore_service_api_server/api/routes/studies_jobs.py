@@ -6,6 +6,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Header, Query, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
+from fastapi_pagination.api import create_page
 from models_library.api_schemas_webserver.projects import ProjectPatch
 from models_library.api_schemas_webserver.projects_nodes import NodeOutputs
 from models_library.clusters import ClusterID
@@ -13,10 +14,11 @@ from models_library.function_services_catalog.services import file_picker
 from models_library.projects import ProjectID
 from models_library.projects_nodes import InputID, InputTypes
 from models_library.projects_nodes_io import NodeID
-from pydantic import PositiveInt
+from pydantic import HttpUrl, PositiveInt
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_context
 from simcore_service_api_server._service_studies import StudiesService
+from simcore_service_api_server.models.api_resources import parse_resources_ids
 
 from ...exceptions.backend_errors import ProjectAlreadyStartedError
 from ...models.pagination import Page, PaginationParams
@@ -97,10 +99,26 @@ async def list_study_jobs(
     page_params: Annotated[PaginationParams, Depends()],
     studies_service: Annotated[StudiesService, Depends(get_studies_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
-    product_name: Annotated[str, Depends(get_product_name)],
 ):
     msg = f"list study jobs study_id={study_id!r} with pagination={page_params!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
-    raise NotImplementedError(msg)
+    _logger.debug(msg)
+
+    jobs, meta = await studies_service.list_jobs(
+        study_id=study_id,
+        offset=page_params.offset,
+        limit=page_params.limit,
+    )
+
+    for job in jobs:
+        study_id_str, job_id = parse_resources_ids(job.resource_name)
+        assert study_id_str == f"{study_id}"
+        _update_job_urls(job=job, study_id=study_id, job_id=job_id, url_for=url_for)
+
+    return create_page(
+        jobs,
+        total=meta.total,
+        params=page_params,
+    )
 
 
 @router.post(
@@ -434,3 +452,30 @@ async def replace_study_job_custom_metadata(
             job_id=job_id,
         ),
     )
+
+
+def _update_job_urls(
+    *,
+    job: Job,
+    study_id: StudyID,
+    job_id: JobID | str,
+    url_for: Callable[..., HttpUrl],
+) -> Job:
+    job.url = url_for(
+        get_study_job.__name__,
+        study_id=study_id,
+        job_id=job_id,
+    )
+
+    job.runner_url = url_for(
+        "get_study",
+        study_id=study_id,
+    )
+
+    job.outputs_url = url_for(
+        get_study_job_outputs.__name__,
+        study_id=study_id,
+        job_id=job_id,
+    )
+
+    return job
