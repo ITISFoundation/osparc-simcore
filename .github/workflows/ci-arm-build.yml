@@ -55,8 +55,4 @@ jobs:
         run: |
           export DOCKER_IMAGE_TAG="$TAG_PREFIX-latest-arm64"
           export DOCKER_TARGET_PLATFORMS=linux/arm64
-          # These environment variables are necessary because of https://github.com/astral-sh/uv/issues/6105
-          # and until https://gitlab.com/qemu-project/qemu/-/issues/2846 gets fixed
-          export UV_COMPILE_BYTECODE=1
-          export UV_CONCURRENT_INSTALLS=1
           make build push=true
