@@ -9,6 +9,7 @@ import warnings
 from collections.abc import Iterator
 from dataclasses import dataclass
 from io import StringIO
+from typing import Final
 
 import aiohttp
 import pytest
@@ -27,7 +28,7 @@ from .helpers.typing_env import EnvVarsDict
 log = logging.getLogger(__name__)
 
 
-_SERVICES_TO_SKIP = {
+_SERVICES_TO_SKIP: Final[set[str]] = {
     "agent",  # global mode deploy (NO exposed ports, has http API)
     "dask-sidecar",  # global mode deploy (NO exposed ports, **NO** http API)
     "migration",
@@ -41,9 +42,8 @@ _SERVICES_TO_SKIP = {
     "sto-worker-cpu-bound",
 }
 # TODO: unify healthcheck policies see  https://github.com/ITISFoundation/osparc-simcore/pull/2281
-SERVICE_PUBLISHED_PORT = {}
-DEFAULT_SERVICE_HEALTHCHECK_ENTRYPOINT = "/v0/"
-MAP_SERVICE_HEALTHCHECK_ENTRYPOINT = {
+DEFAULT_SERVICE_HEALTHCHECK_ENTRYPOINT: Final[str] = "/v0/"
+MAP_SERVICE_HEALTHCHECK_ENTRYPOINT: Final[dict[str, str]] = {
     "autoscaling": "/",
     "clusters-keeper": "/",
     "dask-scheduler": "/health",
@@ -57,21 +57,23 @@ MAP_SERVICE_HEALTHCHECK_ENTRYPOINT = {
     "resource-usage-tracker": "/",
     "docker-api-proxy": "/version",
 }
-AIOHTTP_BASED_SERVICE_PORT: int = 8080
-FASTAPI_BASED_SERVICE_PORT: int = 8000
-DASK_SCHEDULER_SERVICE_PORT: int = 8787
-DOCKER_API_PROXY_SERVICE_PORT: int = 8888
-
-_SERVICE_NAME_REPLACEMENTS: dict[str, str] = {
-    "dynamic-scheduler": "dynamic-schdlr",
-}
 
 # some services require authentication to access their health-check endpoints
-_BASE_AUTH_ENV_VARS: dict[str, tuple[str, str]] = {
+_BASE_AUTH_ENV_VARS: Final[dict[str, tuple[str, str]]] = {
     "docker-api-proxy": ("DOCKER_API_PROXY_USER", "DOCKER_API_PROXY_PASSWORD"),
 }
 
-_ONE_SEC_TIMEOUT = ClientTimeout(total=1)  # type: ignore
+_SERVICE_NAME_REPLACEMENTS: Final[dict[str, str]] = {
+    "dynamic-scheduler": "dynamic-schdlr",
+}
+
+
+AIOHTTP_BASED_SERVICE_PORT: Final[int] = 8080
+FASTAPI_BASED_SERVICE_PORT: Final[int] = 8000
+DASK_SCHEDULER_SERVICE_PORT: Final[int] = 8787
+DOCKER_API_PROXY_SERVICE_PORT: Final[int] = 8888
+
+_ONE_SEC_TIMEOUT: Final[ClientTimeout] = ClientTimeout(total=1)  # type: ignore
 
 
 async def wait_till_service_healthy(service_name: str, endpoint: URL):
