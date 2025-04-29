@@ -112,7 +112,7 @@ async def create_solver_job(
         product_name=product_name,
     )
     job, _ = await job_service.create_job(
-        name=None,
+        project_name=None,
         description=None,
         solver_or_program=solver,
         inputs=inputs,

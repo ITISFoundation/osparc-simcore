@@ -102,7 +102,7 @@ async def create_program_job(
     )
 
     job, project = await job_service.create_job(
-        name=name,
+        project_name=name,
         description=description,
         solver_or_program=program,
         inputs=inputs,

@@ -62,9 +62,10 @@ class JobService(SingletonInAppStateMixin):
         parent_node_id: NodeID | None,
         url_for: Callable[..., HttpUrl],
         hidden: bool,
-        name: str | None,
+        project_name: str | None,
         description: str | None,
     ) -> tuple[Job, ProjectGet]:
+        """If no project_name is provided, the job name is used as project name."""
         # creates NEW job as prototype
         pre_job = Job.create_job_from_solver_or_program(
             solver_or_program_name=solver_or_program.name, inputs=inputs
@@ -77,7 +78,7 @@ class JobService(SingletonInAppStateMixin):
                 job=pre_job,
                 inputs=inputs,
                 description=description,
-                name=name,
+                project_name=project_name,
             )
             new_project: ProjectGet = await self._web_rest_api.create_project(
                 project_in,

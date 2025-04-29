@@ -123,7 +123,7 @@ def create_new_project_for_job(
     job: Job,
     inputs: JobInputs,
     description: str | None = None,
-    name: str | None = None,
+    project_name: str | None = None,
 ) -> ProjectCreateNew:
     """
     Creates a project for a solver's job
@@ -162,7 +162,7 @@ def create_new_project_for_job(
 
     return ProjectCreateNew(
         uuid=project_id,
-        name=name or job.name,
+        name=project_name or job.name,
         description=description
         or f"Study associated to solver/study/program job:\n{job_info}",
         thumbnail="https://via.placeholder.com/170x120.png",  # type: ignore[arg-type]

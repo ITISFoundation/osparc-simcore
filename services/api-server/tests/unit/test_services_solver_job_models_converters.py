@@ -58,7 +58,7 @@ def test_create_project_model_for_job(faker: Faker):
         job=job,
         inputs=inputs,
         description=None,
-        name=None,
+        project_name=None,
     )
 
     # ensures one-to-one relation
