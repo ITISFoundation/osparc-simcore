@@ -3,7 +3,7 @@ from typing import cast
 
 from aiohttp import web
 from models_library.conversations import (
-    ConversationDB,
+    ConversationGetDB,
     ConversationID,
     ConversationPatchDB,
     ConversationType,
@@ -12,6 +12,7 @@ from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy, OrderDirection
+from models_library.rest_pagination import PageTotalCount
 from pydantic import NonNegativeInt
 from simcore_postgres_database.models.conversations import conversations
 from simcore_postgres_database.utils_repos import (
@@ -29,7 +30,7 @@ from .errors import ConversationErrorNotFoundError
 _logger = logging.getLogger(__name__)
 
 
-_SELECTION_ARGS = get_columns_from_db_model(conversations, ConversationDB)
+_SELECTION_ARGS = get_columns_from_db_model(conversations, ConversationGetDB)
 
 
 async def create(
@@ -41,7 +42,7 @@ async def create(
     user_group_id: GroupID,
     type_: ConversationType,
     product_name: ProductName,
-) -> ConversationDB:
+) -> ConversationGetDB:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.execute(
             conversations.insert()
@@ -57,7 +58,7 @@ async def create(
             .returning(*_SELECTION_ARGS)
         )
         row = result.one()
-        return ConversationDB.model_validate(row)
+        return ConversationGetDB.model_validate(row)
 
 
 async def list_project_conversations(
@@ -70,7 +71,7 @@ async def list_project_conversations(
     limit: NonNegativeInt,
     # ordering
     order_by: OrderBy,
-) -> tuple[int, list[ConversationDB]]:
+) -> tuple[PageTotalCount, list[ConversationGetDB]]:
 
     base_query = (
         select(*_SELECTION_ARGS)
@@ -99,8 +100,8 @@ async def list_project_conversations(
         total_count = await conn.scalar(count_query)
 
         result = await conn.stream(list_query)
-        items: list[ConversationDB] = [
-            ConversationDB.model_validate(row) async for row in result
+        items: list[ConversationGetDB] = [
+            ConversationGetDB.model_validate(row) async for row in result
         ]
 
         return cast(int, total_count), items
@@ -111,7 +112,7 @@ async def get(
     connection: AsyncConnection | None = None,
     *,
     conversation_id: ConversationID,
-) -> ConversationDB:
+) -> ConversationGetDB:
     select_query = (
         select(*_SELECTION_ARGS)
         .select_from(conversations)
@@ -123,7 +124,7 @@ async def get(
         row = result.one_or_none()
         if row is None:
             raise ConversationErrorNotFoundError(conversation_id=conversation_id)
-        return ConversationDB.model_validate(row)
+        return ConversationGetDB.model_validate(row)
 
 
 async def update(
@@ -132,7 +133,7 @@ async def update(
     *,
     conversation_id: ConversationID,
     updates: ConversationPatchDB,
-) -> ConversationDB:
+) -> ConversationGetDB:
     # NOTE: at least 'touch' if updated_values is empty
     _updates = {
         **updates.model_dump(exclude_unset=True),
@@ -149,7 +150,7 @@ async def update(
         row = result.one_or_none()
         if row is None:
             raise ConversationErrorNotFoundError(conversation_id=conversation_id)
-        return ConversationDB.model_validate(row)
+        return ConversationGetDB.model_validate(row)
 
 
 async def delete(

@@ -6,12 +6,13 @@ from aiohttp import web
 from models_library.basic_types import IDStr
 from models_library.conversations import (
     ConversationID,
-    ConversationMessageDB,
+    ConversationMessageGetDB,
     ConversationMessageID,
     ConversationMessagePatchDB,
     ConversationMessageType,
 )
 from models_library.rest_ordering import OrderBy, OrderDirection
+from models_library.rest_pagination import PageTotalCount
 from models_library.users import UserID
 
 from ..users.api import get_user_primary_group_id
@@ -28,7 +29,7 @@ async def create_message(
     # Creation attributes
     content: str,
     type_: ConversationMessageType,
-) -> ConversationMessageDB:
+) -> ConversationMessageGetDB:
     _user_group_id = await get_user_primary_group_id(app, user_id=user_id)
 
     return await _conversation_message_repository.create(
@@ -45,7 +46,7 @@ async def get_message(
     *,
     conversation_id: ConversationID,
     message_id: ConversationMessageID,
-) -> ConversationMessageDB:
+) -> ConversationMessageGetDB:
     return await _conversation_message_repository.get(
         app, conversation_id=conversation_id, message_id=message_id
     )
@@ -58,7 +59,7 @@ async def update_message(
     message_id: ConversationMessageID,
     # Update attributes
     updates: ConversationMessagePatchDB,
-) -> ConversationMessageDB:
+) -> ConversationMessageGetDB:
     return await _conversation_message_repository.update(
         app,
         conversation_id=conversation_id,
@@ -87,7 +88,7 @@ async def list_messages_for_conversation(
     # pagination
     offset: int = 0,
     limit: int = 20,
-) -> tuple[int, list[ConversationMessageDB]]:
+) -> tuple[PageTotalCount, list[ConversationMessageGetDB]]:
     return await _conversation_message_repository.list_(
         app,
         conversation_id=conversation_id,

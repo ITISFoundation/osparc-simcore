@@ -4,9 +4,9 @@ from typing import Self
 from pydantic import Field
 
 from ..conversations import (
-    ConversationDB,
+    ConversationGetDB,
     ConversationID,
-    ConversationMessageDB,
+    ConversationMessageGetDB,
     ConversationMessageID,
     ConversationMessageType,
     ConversationType,
@@ -30,7 +30,7 @@ class ConversationRestGet(OutputSchema):
     modified: datetime
 
     @classmethod
-    def from_domain_model(cls, domain: ConversationDB) -> Self:
+    def from_domain_model(cls, domain: ConversationGetDB) -> Self:
         return cls(
             conversation_id=domain.conversation_id,
             product_name=domain.product_name,
@@ -60,7 +60,7 @@ class ConversationMessageRestGet(OutputSchema):
     modified: datetime
 
     @classmethod
-    def from_domain_model(cls, domain: ConversationMessageDB) -> Self:
+    def from_domain_model(cls, domain: ConversationMessageGetDB) -> Self:
         return cls(
             message_id=domain.message_id,
             conversation_id=domain.conversation_id,

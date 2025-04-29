@@ -2,9 +2,9 @@ import logging
 
 from aiohttp import web
 from models_library.conversations import (
-    ConversationDB,
+    ConversationGetDB,
     ConversationID,
-    ConversationMessageDB,
+    ConversationMessageGetDB,
     ConversationMessageID,
     ConversationMessagePatchDB,
     ConversationMessageType,
@@ -36,7 +36,7 @@ async def create_project_conversation(
     # attributes
     name: str,
     conversation_type: ConversationType,
-) -> ConversationDB:
+) -> ConversationGetDB:
     await check_user_project_permission(
         app,
         product_name=product_name,
@@ -63,7 +63,7 @@ async def list_project_conversations(
     # pagination
     offset: PositiveInt,
     limit: int,
-) -> tuple[int, list[ConversationDB]]:
+) -> tuple[int, list[ConversationGetDB]]:
     await check_user_project_permission(
         app,
         product_name=product_name,
@@ -88,7 +88,7 @@ async def update_project_conversation(
     conversation_id: ConversationID,
     # attributes
     name: str,
-) -> ConversationDB:
+) -> ConversationGetDB:
     await check_user_project_permission(
         app,
         product_name=product_name,
@@ -130,7 +130,7 @@ async def get_project_conversation(
     user_id: UserID,
     project_uuid: ProjectID,
     conversation_id: ConversationID,
-) -> ConversationDB:
+) -> ConversationGetDB:
     await check_user_project_permission(
         app,
         product_name=product_name,
@@ -158,7 +158,7 @@ async def create_project_conversation_message(
     # attributes
     content: str,
     message_type: ConversationMessageType,
-) -> ConversationMessageDB:
+) -> ConversationMessageGetDB:
     await check_user_project_permission(
         app,
         product_name=product_name,
@@ -185,7 +185,7 @@ async def list_project_conversation_messages(
     # pagination
     offset: PositiveInt,
     limit: int,
-) -> tuple[int, list[ConversationMessageDB]]:
+) -> tuple[int, list[ConversationMessageGetDB]]:
     await check_user_project_permission(
         app,
         product_name=product_name,
@@ -211,7 +211,7 @@ async def update_project_conversation_message(
     message_id: ConversationMessageID,
     # attributes
     content: str,
-) -> ConversationMessageDB:
+) -> ConversationMessageGetDB:
     await check_user_project_permission(
         app,
         product_name=product_name,
@@ -256,7 +256,7 @@ async def get_project_conversation_message(
     project_uuid: ProjectID,
     conversation_id: ConversationID,
     message_id: ConversationMessageID,
-) -> ConversationMessageDB:
+) -> ConversationMessageGetDB:
     await check_user_project_permission(
         app,
         product_name=product_name,

@@ -33,7 +33,7 @@ class ConversationMessageType(StrAutoEnum):
 #
 
 
-class ConversationDB(BaseModel):
+class ConversationGetDB(BaseModel):
     conversation_id: ConversationID
     product_name: ProductName
     name: str
@@ -48,7 +48,7 @@ class ConversationDB(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class ConversationMessageDB(BaseModel):
+class ConversationMessageGetDB(BaseModel):
     message_id: ConversationMessageID
     conversation_id: ConversationID
     user_group_id: GroupID
