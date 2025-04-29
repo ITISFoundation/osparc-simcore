@@ -234,9 +234,24 @@ async def _assert_redirected_to_study(
         "OSPARC-SIMCORE" in content
     ), f"Expected front-end rendering workbench's study, got {content!s}"
 
-    # Expects fragment to indicate client where to find newly created project
-    m = re.match(r"/study/([\d\w-]+)", response.real_url.fragment)
-    assert m, f"Expected /study/uuid, got {response.real_url.fragment}"
+    # First check if the fragment indicates an error
+    fragment = response.real_url.fragment
+    error_match = re.match(r"/error", fragment)
+    if error_match:
+        # Parse query parameters to extract error details
+        query_params = urllib.parse.parse_qs(
+            fragment.split("?", 1)[1] if "?" in fragment else ""
+        )
+        error_message = query_params.get("message", ["Unknown error"])[0]
+        error_status = query_params.get("status_code", ["Unknown"])[0]
+
+        pytest.fail(
+            f"Redirected to error page: Status={error_status}, Message={error_message}"
+        )
+
+    # Check for study path if not an error
+    m = re.match(r"/study/([\d\w-]+)", fragment)
+    assert m, f"Expected /study/uuid, got {fragment}"
 
     # Expects auth cookie for current user
     assert _is_user_authenticated(session)
