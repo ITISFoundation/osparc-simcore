@@ -24,6 +24,7 @@ from dask_task_models_library.container_tasks.protocol import (
     ContainerEnvsDict,
     ContainerLabelsDict,
 )
+from dask_task_models_library.container_tasks.utils import generate_dask_job_id
 from distributed import SpecCluster
 from faker import Faker
 from fastapi import FastAPI
@@ -57,8 +58,6 @@ from simcore_service_director_v2.utils.dask import (
     compute_task_labels,
     create_node_ports,
     from_node_reqs_to_dask_resources,
-    generate_dask_job_id,
-    parse_dask_job_id,
     parse_output_data,
 )
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -115,18 +114,6 @@ async def mocked_node_ports_filemanager_fcts(
     }
 
 
-@pytest.fixture(
-    params=["simcore/service/comp/some/fake/service/key", "dockerhub-style/service_key"]
-)
-def service_key(request) -> str:
-    return request.param
-
-
-@pytest.fixture()
-def service_version() -> str:
-    return "1234.32432.2344"
-
-
 @pytest.fixture
 def project_id(faker: Faker) -> ProjectID:
     return ProjectID(faker.uuid4())
@@ -135,30 +122,6 @@ def project_id(faker: Faker) -> ProjectID:
 @pytest.fixture
 def node_id(faker: Faker) -> NodeID:
     return NodeID(faker.uuid4())
-
-
-def test_dask_job_id_serialization(
-    service_key: str,
-    service_version: str,
-    user_id: UserID,
-    project_id: ProjectID,
-    node_id: NodeID,
-):
-    dask_job_id = generate_dask_job_id(
-        service_key, service_version, user_id, project_id, node_id
-    )
-    (
-        parsed_service_key,
-        parsed_service_version,
-        parsed_user_id,
-        parsed_project_id,
-        parsed_node_id,
-    ) = parse_dask_job_id(dask_job_id)
-    assert service_key == parsed_service_key
-    assert service_version == parsed_service_version
-    assert user_id == parsed_user_id
-    assert project_id == parsed_project_id
-    assert node_id == parsed_node_id
 
 
 @pytest.fixture()
@@ -468,7 +431,7 @@ async def test_clean_task_output_and_log_files_if_invalid(
         mock.call(
             user_id=user_id,
             store_id=0,
-            s3_object=f"{published_project.project.uuid}/{sleeper_task.node_id}/{next(iter(fake_io_schema[key].get('fileToKeyMap', {key:key})))}",
+            s3_object=f"{published_project.project.uuid}/{sleeper_task.node_id}/{next(iter(fake_io_schema[key].get('fileToKeyMap', {key: key})))}",
         )
         for key in fake_outputs
     ] + [
@@ -479,7 +442,7 @@ async def test_clean_task_output_and_log_files_if_invalid(
         )
     ]
 
-    def _add_is_directory(entry: mock._Call) -> mock._Call:  # noqa: SLF001
+    def _add_is_directory(entry: mock._Call) -> mock._Call:
         new_kwargs: dict[str, Any] = deepcopy(entry.kwargs)
         new_kwargs["is_directory"] = False
         return mock.call(**new_kwargs)
