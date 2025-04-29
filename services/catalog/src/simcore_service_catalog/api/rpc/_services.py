@@ -242,7 +242,7 @@ async def batch_get_my_services(
 @router.expose(reraise_if_error_type=(ValidationError,))
 @log_decorator(_logger, level=logging.DEBUG)
 @validate_call(config={"arbitrary_types_allowed": True})
-async def list_my_service_history_paginated(
+async def list_my_service_history_sorted(
     app: FastAPI,
     *,
     product_name: ProductName,
@@ -252,6 +252,7 @@ async def list_my_service_history_paginated(
     offset: PageOffsetInt = 0,
     filters: ServiceListFilters | None = None,
 ) -> PageRpcServiceRelease:
+    """sorts service releases by version (latest first)"""
     assert app.state.engine  # nosec
 
     total_count, items = await catalog_services.list_user_service_release_history(
