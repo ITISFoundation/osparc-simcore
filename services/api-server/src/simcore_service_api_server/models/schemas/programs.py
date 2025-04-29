@@ -32,6 +32,8 @@ ProgramKeyId = Annotated[
 class Program(BaseService, ApiServerOutputSchema):
     """A released program with a specific version"""
 
+    version_display: str | None
+
     model_config = ConfigDict(
         extra="ignore",
         json_schema_extra={
@@ -42,6 +44,7 @@ class Program(BaseService, ApiServerOutputSchema):
                 "description": "Simulation framework",
                 "maintainer": "info@itis.swiss",
                 "url": "https://api.osparc.io/v0/solvers/simcore%2Fservices%2Fdynamic%2Fsim4life/releases/8.0.0",
+                "version_display": "8.0.0",
             }
         },
     )
@@ -49,26 +52,42 @@ class Program(BaseService, ApiServerOutputSchema):
     @classmethod
     def create_from_image(cls, image_meta: ServiceMetaDataPublished) -> "Program":
         data = image_meta.model_dump(
-            include={"name", "key", "version", "description", "contact"},
+            include={
+                "name",
+                "key",
+                "version",
+                "description",
+                "contact",
+                "version_display",
+            },
         )
         return cls(
             id=data.pop("key"),
             version=data.pop("version"),
             title=data.pop("name"),
             url=None,
+            version_display=data.pop("version_display"),
             **data,
         )
 
     @classmethod
     def create_from_service(cls, service: ServiceGetV2 | LatestServiceGet) -> "Program":
         data = service.model_dump(
-            include={"name", "key", "version", "description", "contact"},
+            include={
+                "name",
+                "key",
+                "version",
+                "description",
+                "contact",
+                "version_display",
+            },
         )
         return cls(
             id=data.pop("key"),
             version=data.pop("version"),
             title=data.pop("name"),
             url=None,
+            version_display=data.pop("version_display"),
             **data,
         )
 

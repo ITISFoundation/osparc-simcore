@@ -1,8 +1,9 @@
+# pylint: disable=too-many-arguments
 import logging
 from collections.abc import Callable
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Header, HTTPException, status
+from fastapi import APIRouter, Body, Depends, Header, HTTPException, status
 from fastapi_pagination import create_page
 from httpx import HTTPStatusError
 from models_library.api_schemas_storage.storage_schemas import (
@@ -10,7 +11,7 @@ from models_library.api_schemas_storage.storage_schemas import (
 )
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from pydantic import ByteSize, PositiveInt, ValidationError
+from pydantic import ByteSize, PositiveInt, StringConstraints, ValidationError
 from servicelib.fastapi.dependencies import get_reverse_url_mapper
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
 from simcore_sdk.node_ports_common.filemanager import (
@@ -20,6 +21,7 @@ from simcore_sdk.node_ports_common.filemanager import (
 
 from ..._service_job import JobService
 from ..._service_programs import ProgramService
+from ...api.routes._constants import DEFAULT_MAX_STRING_LENGTH
 from ...models.basic_types import VersionStr
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.jobs import Job, JobInputs
@@ -151,11 +153,14 @@ async def create_program_job(
     product_name: Annotated[str, Depends(get_product_name)],
     x_simcore_parent_project_uuid: Annotated[ProjectID | None, Header()] = None,
     x_simcore_parent_node_id: Annotated[NodeID | None, Header()] = None,
+    name: Annotated[
+        str | None, StringConstraints(max_length=DEFAULT_MAX_STRING_LENGTH), Body()
+    ] = None,
+    description: Annotated[
+        str | None, StringConstraints(max_length=DEFAULT_MAX_STRING_LENGTH), Body()
+    ] = None,
 ):
-    """Creates a job in a specific release with given inputs.
-
-    NOTE: This operation does **not** start the job
-    """
+    """Creates a program job"""
 
     # ensures user has access to solver
     inputs = JobInputs(values={})
@@ -167,6 +172,8 @@ async def create_program_job(
     )
 
     job, project = await job_service.create_job(
+        project_name=name,
+        description=description,
         solver_or_program=program,
         inputs=inputs,
         parent_project_uuid=x_simcore_parent_project_uuid,
@@ -174,6 +181,7 @@ async def create_program_job(
         url_for=url_for,
         hidden=False,
     )
+
     # create workspace directory so files can be uploaded to it
     assert len(project.workbench) > 0  # nosec
     node_id = next(iter(project.workbench))
