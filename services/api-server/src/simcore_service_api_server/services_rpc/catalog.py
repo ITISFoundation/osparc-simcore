@@ -2,7 +2,11 @@ from functools import partial
 from typing import Annotated
 
 from fastapi import Depends
-from models_library.api_schemas_catalog.services import LatestServiceGet, ServiceGetV2
+from models_library.api_schemas_catalog.services import (
+    LatestServiceGet,
+    ServiceGetV2,
+    ServiceListFilters,
+)
 from models_library.api_schemas_catalog.services_ports import ServicePortGet
 from models_library.products import ProductName
 from models_library.rest_pagination import (
@@ -48,6 +52,7 @@ class CatalogService:
         user_id: UserID,
         offset: PageOffsetInt = 0,
         limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+        filters: ServiceListFilters | None = None,
     ) -> tuple[list[LatestServiceGet], PageMetaInfoLimitOffset]:
 
         page = await catalog_rpc.list_services_paginated(
@@ -56,6 +61,7 @@ class CatalogService:
             user_id=user_id,
             offset=offset,
             limit=limit,
+            filters=filters,
         )
         meta = PageMetaInfoLimitOffset(
             limit=page.meta.limit,

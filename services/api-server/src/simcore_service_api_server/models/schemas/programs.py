@@ -1,8 +1,10 @@
 from typing import Annotated
 
-from models_library.api_schemas_catalog.services import ServiceGetV2
+from models_library.api_schemas_catalog.services import LatestServiceGet, ServiceGetV2
 from models_library.services import ServiceMetaDataPublished
+from models_library.services_history import ServiceRelease
 from models_library.services_regex import DYNAMIC_SERVICE_KEY_RE
+from models_library.services_types import ServiceKey
 from pydantic import ConfigDict, StringConstraints
 from simcore_service_api_server.models.schemas._base import (
     ApiServerOutputSchema,
@@ -69,7 +71,7 @@ class Program(BaseService, ApiServerOutputSchema):
         )
 
     @classmethod
-    def create_from_service(cls, service: ServiceGetV2) -> "Program":
+    def create_from_service(cls, service: ServiceGetV2 | LatestServiceGet) -> "Program":
         data = service.model_dump(
             include={
                 "name",
@@ -87,6 +89,24 @@ class Program(BaseService, ApiServerOutputSchema):
             url=None,
             version_display=data.pop("version_display"),
             **data,
+        )
+
+    @classmethod
+    def create_from_service_release(
+        cls,
+        *,
+        service_key: ServiceKey,
+        description: str,
+        name: str,
+        service: ServiceRelease
+    ) -> "Program":
+        return cls(
+            id=service_key,
+            version=service.version,
+            title=name,
+            url=None,
+            description=description,
+            version_display=service.version,
         )
 
     @classmethod
