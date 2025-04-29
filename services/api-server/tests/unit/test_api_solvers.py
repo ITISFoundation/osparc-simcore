@@ -7,9 +7,11 @@ from pathlib import Path
 
 import httpx
 import pytest
+import respx
 from fastapi import status
 from httpx import AsyncClient
 from models_library.api_schemas_api_server.pricing_plans import ServicePricingPlanGet
+from pytest_mock import MockType
 from pytest_simcore.helpers.httpx_calls_capture_models import CreateRespxMockCallback
 from simcore_service_api_server._meta import API_VTAG
 
@@ -26,7 +28,7 @@ from simcore_service_api_server._meta import API_VTAG
 )
 async def test_get_solver_pricing_plan(
     client: AsyncClient,
-    mocked_webserver_rest_api_base,
+    mocked_webserver_rest_api_base: respx.MockRouter,
     create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
@@ -60,7 +62,7 @@ async def test_get_solver_pricing_plan(
 )
 async def test_get_latest_solver_release(
     client: AsyncClient,
-    mocked_catalog_rpc_api,
+    mocked_catalog_rpc_api: dict[str, MockType],
     auth: httpx.BasicAuth,
     solver_key: str,
     expected_status_code: int,

@@ -272,6 +272,7 @@ async def create_fake_api_keys(
     create_user_ids: Callable[[PositiveInt], AsyncGenerator[PositiveInt, None]],
     create_product_names: Callable[[PositiveInt], AsyncGenerator[str, None]],
 ) -> AsyncGenerator[Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB, None]], None]:
+
     async def _generate_fake_api_key(n: PositiveInt):
         users, products = create_user_ids(n), create_product_names(n)
         excluded_column = "api_secret"

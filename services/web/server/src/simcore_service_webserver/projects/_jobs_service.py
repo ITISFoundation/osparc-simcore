@@ -56,7 +56,7 @@ async def list_my_projects_marked_as_jobs(
     user_id: UserID,
     offset: int = 0,
     limit: int = 10,
-    job_parent_resource_name_filter: str | None = None,
+    job_parent_resource_name_prefix: str | None = None,
 ) -> tuple[int, list[ProjectJobDBGet]]:
     """
     Lists paginated projects marked as jobs for the given user and product.
@@ -68,5 +68,5 @@ async def list_my_projects_marked_as_jobs(
         product_name=product_name,
         offset=offset,
         limit=limit,
-        job_parent_resource_name_filter=job_parent_resource_name_filter,
+        job_parent_resource_name_prefix=job_parent_resource_name_prefix,
     )

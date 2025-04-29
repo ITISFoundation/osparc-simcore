@@ -52,8 +52,11 @@ from ..dependencies.webserver_http import get_webserver_session
 from ..dependencies.webserver_rpc import (
     get_wb_api_rpc_client,
 )
-from ._common import API_SERVER_DEV_FEATURES_ENABLED
-from ._constants import FMSG_CHANGELOG_CHANGED_IN_VERSION, FMSG_CHANGELOG_NEW_IN_VERSION
+from ._constants import (
+    FMSG_CHANGELOG_CHANGED_IN_VERSION,
+    FMSG_CHANGELOG_NEW_IN_VERSION,
+    create_route_description,
+)
 from .solvers_jobs import JOBS_STATUS_CODES
 
 _logger = logging.getLogger(__name__)
@@ -71,8 +74,13 @@ def _compose_job_resource_name(study_key, job_id) -> str:
 @router.get(
     "/{study_id:uuid}/jobs",
     response_model=Page[Job],
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
-    status_code=status.HTTP_501_NOT_IMPLEMENTED,
+    description=create_route_description(
+        base="List of all jobs created for a given study (paginated)",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.8"),
+        ],
+    ),
+    include_in_schema=False,  # TO BE RELEASED in 0.8
 )
 async def list_study_jobs(
     study_id: StudyID,
@@ -174,8 +182,14 @@ async def create_study_job(
 @router.get(
     "/{study_id:uuid}/jobs/{job_id:uuid}",
     response_model=Job,
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
     status_code=status.HTTP_501_NOT_IMPLEMENTED,
+    description=create_route_description(
+        base="Gets a jobs for a given study",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.8"),
+        ],
+    ),
+    include_in_schema=False,  # TO BE RELEASED in 0.8
 )
 async def get_study_job(
     study_id: StudyID,
