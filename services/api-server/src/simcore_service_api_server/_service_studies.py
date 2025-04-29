@@ -6,7 +6,7 @@ from models_library.rest_pagination import (
 from models_library.rpc_pagination import PageLimitInt
 from simcore_service_api_server.models.schemas.studies import StudyID
 
-from ._service_jobs import JobsService
+from ._service_jobs import JobService
 from .models.api_resources import compose_resource_name
 from .models.schemas.jobs import Job
 
@@ -14,13 +14,13 @@ DEFAULT_PAGINATION_LIMIT = MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE - 1
 
 
 class StudiesService:
-    _jobs_service: JobsService
+    _job_service: JobService
 
     def __init__(
         self,
-        jobs_service: JobsService,
+        job_service: JobService,
     ):
-        self._jobs_service = jobs_service
+        self._job_service = job_service
 
     async def list_jobs(
         self,
@@ -45,7 +45,7 @@ class StudiesService:
         )
 
         # Use the common implementation from JobService
-        return await self._jobs_service.list_jobs_by_resource_prefix(
+        return await self._job_service.list_jobs_by_resource_prefix(
             offset=offset,
             limit=limit,
             job_parent_resource_name_prefix=job_parent_resource_name_prefix,

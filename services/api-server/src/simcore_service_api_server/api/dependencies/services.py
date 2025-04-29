@@ -9,7 +9,7 @@ from models_library.users import UserID
 from servicelib.rabbitmq import RabbitMQRPCClient
 from simcore_service_api_server._service_studies import StudiesService
 
-from ..._service_jobs import JobsService
+from ..._service_jobs import JobService
 from ..._service_solvers import SolverService
 from ...services_rpc.catalog import CatalogService
 from ...services_rpc.wb_api_server import WbApiRpcClient
@@ -55,17 +55,17 @@ def get_catalog_service(
     return CatalogService(client=rpc_client)
 
 
-def get_jobs_service(
+def get_job_service(
     web_rest_api: Annotated[AuthSession, Depends(get_webserver_session)],
     web_rpc_api: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
-) -> JobsService:
+) -> JobService:
     """
     "Assembles" the JobsService layer to the underlying service and client interfaces
     in the context of the rest controller (i.e. api/dependencies)
     """
-    return JobsService(
+    return JobService(
         web_rest_api=web_rest_api,
         web_rpc_api=web_rpc_api,
         user_id=user_id,
@@ -75,7 +75,7 @@ def get_jobs_service(
 
 def get_solver_service(
     catalog_service: Annotated[CatalogService, Depends(get_catalog_service)],
-    jobs_service: Annotated[JobsService, Depends(get_jobs_service)],
+    job_service: Annotated[JobService, Depends(get_job_service)],
 ) -> SolverService:
     """
     "Assembles" the SolverService layer to the underlying service and client interfaces
@@ -84,13 +84,13 @@ def get_solver_service(
 
     return SolverService(
         catalog_service=catalog_service,
-        jobs_service=jobs_service,
+        job_service=job_service,
     )
 
 
 def get_studies_service(
-    jobs_service: Annotated[JobsService, Depends(get_jobs_service)],
+    job_service: Annotated[JobService, Depends(get_job_service)],
 ) -> StudiesService:
     return StudiesService(
-        jobs_service=jobs_service,
+        job_service=job_service,
     )
