@@ -83,7 +83,7 @@ jobs:
       anything-js: ${{ steps.filter.outputs.anything-js }}
     steps:
       - uses: actions/checkout@v4
-      # For pull requests it's not necessary to checkout the code
+        # For pull requests it's not necessary to checkout the code
       - uses: dorny/paths-filter@v3
         id: filter
         with:
@@ -292,6 +292,9 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: ./.github/workflows/actions/common-setup
         with:
           python-version: ${{ matrix.python }}
@@ -326,6 +329,9 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: ./.github/workflows/actions/common-setup
         with:
           python-version: ${{ matrix.python }}
@@ -355,6 +361,9 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: ./.github/workflows/actions/common-setup
         with:
           python-version: ${{ matrix.python }}
@@ -384,6 +393,9 @@ jobs:
           os: [ubuntu-24.04]
         fail-fast: false
       steps:
+        - uses: actions/checkout@v4
+          with:
+            fetch-depth: 0
         - uses: ./.github/workflows/actions/common-setup
           with:
             python-version: ${{ matrix.python }}
@@ -412,6 +424,9 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: ./.github/workflows/actions/common-setup
         with:
           python-version: ${{ matrix.python }}
@@ -443,6 +458,9 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: ./.github/workflows/actions/common-setup
         with:
           python-version: ${{ matrix.python }}
@@ -475,6 +493,9 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: ./.github/workflows/actions/common-setup
         with:
           python-version: ${{ matrix.python }}
@@ -505,6 +526,9 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: ./.github/workflows/actions/common-setup
         with:
           python-version: ${{ matrix.python }}
@@ -533,6 +557,9 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: ./.github/workflows/actions/common-setup
         with:
           python-version: ${{ matrix.python }}
@@ -567,6 +594,9 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: ./.github/workflows/actions/common-setup
         with:
           python-version: ${{ matrix.python }}
@@ -598,6 +628,9 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: ./.github/workflows/actions/common-setup
         with:
           python-version: ${{ matrix.python }}
@@ -635,6 +668,9 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: ./.github/workflows/actions/common-setup
         with:
           python-version: ${{ matrix.python }}
@@ -677,6 +713,9 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: ./.github/workflows/actions/common-setup
         with:
           python-version: ${{ matrix.python }}
@@ -714,6 +753,9 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: ./.github/workflows/actions/common-setup
         with:
           python-version: ${{ matrix.python }}
@@ -751,6 +793,9 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: ./.github/workflows/actions/common-setup
         with:
           python-version: ${{ matrix.python }}
@@ -788,6 +833,9 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: ./.github/workflows/actions/common-setup
         with:
           python-version: ${{ matrix.python }}
@@ -819,6 +867,9 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: ./.github/workflows/actions/common-setup
         with:
           python-version: ${{ matrix.python }}
@@ -850,6 +901,9 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: ./.github/workflows/actions/common-setup
         with:
           python-version: ${{ matrix.python }}
@@ -881,6 +935,9 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: ./.github/workflows/actions/common-setup
         with:
           python-version: ${{ matrix.python }}
@@ -912,6 +969,9 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: ./.github/workflows/actions/common-setup
         with:
           python-version: ${{ matrix.python }}
@@ -943,6 +1003,9 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: ./.github/workflows/actions/common-setup
         with:
           python-version: ${{ matrix.python }}
@@ -984,6 +1047,9 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: ./.github/workflows/actions/common-setup
         with:
           python-version: ${{ matrix.python }}
@@ -1015,6 +1081,9 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: ./.github/workflows/actions/common-setup
         with:
           python-version: ${{ matrix.python }}
@@ -1057,6 +1126,9 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: ./.github/workflows/actions/common-setup
         with:
           python-version: ${{ matrix.python }}
@@ -1079,6 +1151,9 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: ./.github/workflows/actions/common-setup
         with:
           python-version: ${{ matrix.python }}
@@ -1110,6 +1185,9 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: ./.github/workflows/actions/common-setup
         with:
           python-version: ${{ matrix.python }}
@@ -1141,6 +1219,9 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: ./.github/workflows/actions/common-setup
         with:
           python-version: ${{ matrix.python }}
@@ -1172,6 +1253,9 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: ./.github/workflows/actions/common-setup
         with:
           python-version: ${{ matrix.python }}
@@ -1203,6 +1287,9 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: ./.github/workflows/actions/common-setup
         with:
           python-version: ${{ matrix.python }}
@@ -1234,6 +1321,9 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: ./.github/workflows/actions/common-setup
         with:
           python-version: ${{ matrix.python }}
@@ -1265,6 +1355,9 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: ./.github/workflows/actions/common-setup
         with:
           python-version: ${{ matrix.python }}
@@ -1295,6 +1388,9 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: ./.github/workflows/actions/common-setup
         with:
           python-version: ${{ matrix.python }}
@@ -1326,6 +1422,9 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: ./.github/workflows/actions/common-setup
         with:
           python-version: ${{ matrix.python }}
@@ -1410,6 +1509,8 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
@@ -1472,6 +1573,8 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
@@ -1536,6 +1639,8 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
@@ -1604,6 +1709,8 @@ jobs:
       DIRECTOR_DEFAULT_MAX_NANO_CPUS: 10000000
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
@@ -1672,6 +1779,8 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
@@ -1739,6 +1848,8 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
@@ -1803,6 +1914,8 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
@@ -1891,6 +2004,8 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
@@ -1951,6 +2066,8 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
@@ -2017,6 +2134,8 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
@@ -2099,6 +2218,8 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
@@ -2161,6 +2282,8 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
@@ -2225,6 +2348,8 @@ jobs:
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
