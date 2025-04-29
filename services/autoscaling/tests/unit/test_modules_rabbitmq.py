@@ -106,7 +106,7 @@ def test_rabbitmq_initializes(
 
 
 async def test_post_message(
-    disable_dynamic_service_background_task,
+    disable_autoscaling_background_task,
     enabled_rabbitmq: RabbitSettings,
     disabled_ec2: None,
     disabled_ssm: None,

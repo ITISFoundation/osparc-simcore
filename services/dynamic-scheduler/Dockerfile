@@ -56,8 +56,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # those from our virtualenv.
 ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 
-EXPOSE 8000
-
 # -------------------------- Build stage -------------------
 # Installs build/package management tools and third party dependencies
 #
@@ -91,7 +89,6 @@ WORKDIR /build
 
 
 
-
 # --------------------------Prod-depends-only stage -------------------
 # This stage is for production only dependencies that get partially wiped out afterwards (final docker image concerns)
 #
@@ -100,7 +97,7 @@ WORKDIR /build
 #
 FROM build AS prod-only-deps
 
-ENV SC_BUILD_TARGET prod-only-deps
+ENV SC_BUILD_TARGET=prod-only-deps
 
 WORKDIR /build/services/dynamic-scheduler
 
@@ -153,6 +150,7 @@ HEALTHCHECK \
 ENTRYPOINT [ "/bin/sh", "services/dynamic-scheduler/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/dynamic-scheduler/docker/boot.sh"]
 
+EXPOSE 8000
 
 # --------------------------Development stage -------------------
 # Source code accessible in host but runs in container
@@ -170,6 +168,9 @@ ENV SC_BUILD_TARGET=development \
 WORKDIR /devel
 
 RUN chown -R scu:scu "${VIRTUAL_ENV}"
+
+EXPOSE 8000
+EXPOSE 3000
 
 ENTRYPOINT ["/bin/sh", "services/dynamic-scheduler/docker/entrypoint.sh"]
 CMD ["/bin/sh", "services/dynamic-scheduler/docker/boot.sh"]
