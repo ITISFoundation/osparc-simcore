@@ -48,7 +48,7 @@ from ._base import ApiServerInputSchema
 #  - custom metadata
 #
 from .programs import Program, ProgramKeyId
-from .solvers import Solver, SolverKeyId
+from .solvers import Solver
 
 JobID: TypeAlias = UUID
 
@@ -360,36 +360,6 @@ def get_outputs_url(
             job_id=job_id,
         )
     return None
-
-
-def update_job_urls(
-    job: Job,
-    solver_key: SolverKeyId,
-    solver_version: VersionStr,
-    job_id: JobID | str,
-    url_for: Callable[..., HttpUrl],
-) -> Job:
-    job.url = url_for(
-        "get_job",
-        solver_key=solver_key,
-        version=solver_version,
-        job_id=job_id,
-    )
-
-    job.runner_url = url_for(
-        "get_solver_release",
-        solver_key=solver_key,
-        version=solver_version,
-    )
-
-    job.outputs_url = url_for(
-        "get_job_outputs",
-        solver_key=solver_key,
-        version=solver_version,
-        job_id=job_id,
-    )
-
-    return job
 
 
 PercentageInt: TypeAlias = Annotated[int, Field(ge=0, le=100)]

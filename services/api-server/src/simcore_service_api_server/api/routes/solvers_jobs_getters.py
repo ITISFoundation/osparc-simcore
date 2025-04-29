@@ -14,7 +14,7 @@ from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.projects_nodes_io import BaseFileLink
 from models_library.users import UserID
 from models_library.wallets import ZERO_CREDITS
-from pydantic import NonNegativeInt
+from pydantic import HttpUrl, NonNegativeInt
 from pydantic.types import PositiveInt
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from servicelib.logging_utils import log_context
@@ -36,7 +36,6 @@ from ...models.schemas.jobs import (
     JobLog,
     JobMetadata,
     JobOutputs,
-    update_job_urls,
 )
 from ...models.schemas.model_adapter import (
     PricingUnitGetLegacy,
@@ -119,6 +118,36 @@ _LOGSTREAM_STATUS_CODES: dict[int | str, dict[str, Any]] = {
 }
 
 
+def _update_job_urls(
+    job: Job,
+    solver_key: SolverKeyId,
+    solver_version: VersionStr,
+    job_id: JobID | str,
+    url_for: Callable[..., HttpUrl],
+) -> Job:
+    job.url = url_for(
+        "get_job",
+        solver_key=solver_key,
+        version=solver_version,
+        job_id=job_id,
+    )
+
+    job.runner_url = url_for(
+        "get_solver_release",
+        solver_key=solver_key,
+        version=solver_version,
+    )
+
+    job.outputs_url = url_for(
+        "get_job_outputs",
+        solver_key=solver_key,
+        version=solver_version,
+        job_id=job_id,
+    )
+
+    return job
+
+
 router = APIRouter()
 
 
@@ -150,7 +179,7 @@ async def list_all_solvers_jobs(
 
     for job in jobs:
         solver_key, version, job_id = parse_resources_ids(job.resource_name)
-        update_job_urls(job, solver_key, version, job_id, url_for)
+        _update_job_urls(job, solver_key, version, job_id, url_for)
 
     return create_page(
         jobs,
