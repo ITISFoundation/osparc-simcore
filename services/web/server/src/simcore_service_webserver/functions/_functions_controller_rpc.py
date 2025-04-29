@@ -288,6 +288,16 @@ async def find_cached_function_job(
             outputs=None,
             project_job_id=returned_function_job.class_specific_data["project_job_id"],
         )
+    elif returned_function_job.function_class == FunctionClass.solver:  # noqa: RET505
+        return SolverFunctionJob(
+            uid=returned_function_job.uuid,
+            title=returned_function_job.title,
+            description="",
+            function_uid=returned_function_job.function_uuid,
+            inputs=returned_function_job.inputs,
+            outputs=None,
+            solver_job_id=returned_function_job.class_specific_data["solver_job_id"],
+        )
     else:  # noqa: RET505
         msg = f"Unsupported function class: [{returned_function_job.function_class}]"
         raise TypeError(msg)
@@ -338,7 +348,7 @@ async def get_function_job_collection(
     app: web.Application, *, function_job_collection_id: FunctionJobID
 ) -> FunctionJobCollection:
     assert app
-    returned_function_job_collection, job_ids = (
+    returned_function_job_collection, returned_job_ids = (
         await _functions_repository.get_function_job_collection(
             app=app,
             function_job_collection_id=function_job_collection_id,
@@ -348,7 +358,7 @@ async def get_function_job_collection(
         uid=returned_function_job_collection.uuid,
         title=returned_function_job_collection.title,
         description=returned_function_job_collection.description,
-        job_ids=job_ids,
+        job_ids=returned_job_ids,
     )
 
 
