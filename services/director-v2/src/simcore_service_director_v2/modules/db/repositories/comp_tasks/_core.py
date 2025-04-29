@@ -4,7 +4,6 @@ from typing import Any, cast
 
 import arrow
 import sqlalchemy as sa
-from aiopg.sa.result import ResultProxy, RowProxy
 from models_library.api_schemas_directorv2.comp_runs import ComputationTaskRpcGet
 from models_library.basic_types import IDStr
 from models_library.errors import ErrorDict
@@ -35,14 +34,14 @@ _logger = logging.getLogger(__name__)
 
 class CompTasksRepository(BaseRepository):
     async def get_task(self, project_id: ProjectID, node_id: NodeID) -> CompTaskAtDB:
-        async with self.db_engine.acquire() as conn:
+        async with self.db_engine.connect() as conn:
             result = await conn.execute(
                 sa.select(comp_tasks).where(
                     (comp_tasks.c.project_id == f"{project_id}")
                     & (comp_tasks.c.node_id == f"{node_id}")
                 )
             )
-            row = await result.fetchone()
+            row = result.one_or_none()
             if not row:
                 raise ComputationalTaskNotFoundError(node_id=node_id)
             return CompTaskAtDB.model_validate(row)
@@ -52,8 +51,8 @@ class CompTasksRepository(BaseRepository):
         project_id: ProjectID,
     ) -> list[CompTaskAtDB]:
         tasks: list[CompTaskAtDB] = []
-        async with self.db_engine.acquire() as conn:
-            async for row in conn.execute(
+        async with self.db_engine.connect() as conn:
+            async for row in await conn.stream(
                 sa.select(comp_tasks).where(comp_tasks.c.project_id == f"{project_id}")
             ):
                 task_db = CompTaskAtDB.model_validate(row)
@@ -66,8 +65,8 @@ class CompTasksRepository(BaseRepository):
         project_id: ProjectID,
     ) -> list[CompTaskAtDB]:
         tasks: list[CompTaskAtDB] = []
-        async with self.db_engine.acquire() as conn:
-            async for row in conn.execute(
+        async with self.db_engine.connect() as conn:
+            async for row in await conn.stream(
                 sa.select(comp_tasks).where(
                     (comp_tasks.c.project_id == f"{project_id}")
                     & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
@@ -123,10 +122,9 @@ class CompTasksRepository(BaseRepository):
             )
         list_query = list_query.offset(offset).limit(limit)
 
-        async with self.db_engine.acquire() as conn:
+        async with self.db_engine.connect() as conn:
             total_count = await conn.scalar(count_query)
 
-            result = await conn.execute(list_query)
             items = [
                 ComputationTaskRpcGet.model_validate(
                     {
@@ -134,12 +132,12 @@ class CompTasksRepository(BaseRepository):
                         "state": DB_TO_RUNNING_STATE[row["state"]],  # Convert the state
                     }
                 )
-                async for row in result
+                async for row in await conn.stream(list_query)
             ]
             return cast(int, total_count), items
 
     async def task_exists(self, project_id: ProjectID, node_id: NodeID) -> bool:
-        async with self.db_engine.acquire() as conn:
+        async with self.db_engine.connect() as conn:
             nid: str | None = await conn.scalar(
                 sa.select(comp_tasks.c.node_id).where(
                     (comp_tasks.c.project_id == f"{project_id}")
@@ -161,7 +159,7 @@ class CompTasksRepository(BaseRepository):
         rabbitmq_rpc_client: RabbitMQRPCClient,
     ) -> list[CompTaskAtDB]:
         # NOTE: really do an upsert here because of issue https://github.com/ITISFoundation/osparc-simcore/issues/2125
-        async with self.db_engine.acquire() as conn:
+        async with self.db_engine.begin() as conn:
             list_of_comp_tasks_in_project: list[CompTaskAtDB] = (
                 await _utils.generate_tasks_list_from_project(
                     project=project,
@@ -182,7 +180,7 @@ class CompTasksRepository(BaseRepository):
                 )
             )
             # remove the tasks that were removed from project workbench
-            if all_nodes := await result.fetchall():
+            if all_nodes := result.all():
                 node_ids_to_delete = [
                     t.node_id for t in all_nodes if t.node_id not in project.workbench
                 ]
@@ -224,8 +222,7 @@ class CompTasksRepository(BaseRepository):
                     | update_values,
                 ).returning(literal_column("*"))
                 result = await conn.execute(on_update_stmt)
-                row = await result.fetchone()
-                assert row  # nosec
+                row = result.one()
                 inserted_comp_tasks_db.append(CompTaskAtDB.model_validate(row))
                 _logger.debug(
                     "inserted the following tasks in comp_tasks: %s",
@@ -241,7 +238,7 @@ class CompTasksRepository(BaseRepository):
             logging.DEBUG,
             msg=f"update task {project_id=}:{task=} with '{task_kwargs}'",
         ):
-            async with self.db_engine.acquire() as conn:
+            async with self.db_engine.begin() as conn:
                 result = await conn.execute(
                     sa.update(comp_tasks)
                     .where(
@@ -251,15 +248,14 @@ class CompTasksRepository(BaseRepository):
                     .values(**task_kwargs)
                     .returning(literal_column("*"))
                 )
-                row = await result.fetchone()
-                assert row  # nosec
+                row = result.one()
                 return CompTaskAtDB.model_validate(row)
 
     async def mark_project_published_waiting_for_cluster_tasks_as_aborted(
         self, project_id: ProjectID
     ) -> None:
         # block all pending tasks, so the sidecars stop taking them
-        async with self.db_engine.acquire() as conn:
+        async with self.db_engine.begin() as conn:
             await conn.execute(
                 sa.update(comp_tasks)
                 .where(
@@ -328,7 +324,7 @@ class CompTasksRepository(BaseRepository):
         await self._update_task(project_id, node_id, last_heartbeat=heartbeat_time)
 
     async def delete_tasks_from_project(self, project_id: ProjectID) -> None:
-        async with self.db_engine.acquire() as conn:
+        async with self.db_engine.begin() as conn:
             await conn.execute(
                 sa.delete(comp_tasks).where(comp_tasks.c.project_id == f"{project_id}")
             )
@@ -341,9 +337,9 @@ class CompTasksRepository(BaseRepository):
             (comp_tasks.c.project_id == f"{project_id}")
             & (comp_tasks.c.node_id.in_(selection))
         )
-        async with self.db_engine.acquire() as conn:
-            result: ResultProxy = await conn.execute(query)
-            rows: list[RowProxy] | None = await result.fetchall()
+        async with self.db_engine.connect() as conn:
+            result = await conn.execute(query)
+            rows = result.all()
             if rows:
                 assert set(selection) == {f"{_.node_id}" for _ in rows}  # nosec
                 return {NodeID(_.node_id): _.outputs or {} for _ in rows}

@@ -181,11 +181,18 @@ class CompTaskAtDB(BaseModel):
         return v
 
     def to_db_model(self, **exclusion_rules) -> dict[str, Any]:
+        # mode json is used to ensure the UUIDs are converted to strings
         comp_task_dict = self.model_dump(
             mode="json", by_alias=True, exclude_unset=True, **exclusion_rules
         )
+        # Convert state to DB enum value
         if "state" in comp_task_dict:
             comp_task_dict["state"] = RUNNING_STATE_TO_DB[comp_task_dict["state"]].value
+        # but now the datetimes are strings which are not compatible with the DB
+        # so we need to convert them back to datetime objects
+        for field in ["start", "end", "last_heartbeat", "created", "modified"]:
+            if field in comp_task_dict and isinstance(comp_task_dict[field], str):
+                comp_task_dict[field] = dt.datetime.fromisoformat(comp_task_dict[field])
         return comp_task_dict
 
     model_config = ConfigDict(

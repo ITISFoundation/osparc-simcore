@@ -3,7 +3,6 @@ Helper functions to convert models used in
 services/api-server/src/simcore_service_api_server/api/routes/solvers_jobs.py
 """
 
-import urllib.parse
 import uuid
 from collections.abc import Callable
 from datetime import UTC, datetime
@@ -119,7 +118,12 @@ def get_node_id(project_id, solver_id) -> str:
 
 
 def create_new_project_for_job(
-    solver_or_program: Solver | Program, job: Job, inputs: JobInputs
+    *,
+    solver_or_program: Solver | Program,
+    job: Job,
+    inputs: JobInputs,
+    description: str | None = None,
+    project_name: str | None = None,
 ) -> ProjectCreateNew:
     """
     Creates a project for a solver's job
@@ -158,8 +162,9 @@ def create_new_project_for_job(
 
     return ProjectCreateNew(
         uuid=project_id,
-        name=job.name,  # NOTE: this IS an identifier as well. MUST NOT be changed in the case of project APIs!
-        description=f"Study associated to solver job:\n{job_info}",
+        name=project_name or job.name,
+        description=description
+        or f"Study associated to solver/study/program job:\n{job_info}",
         thumbnail="https://via.placeholder.com/170x120.png",  # type: ignore[arg-type]
         workbench={solver_id: solver_service},
         ui=StudyUI(
@@ -194,8 +199,6 @@ def create_job_from_project(
     raise ValidationError
     """
     assert len(project.workbench) == 1  # nosec
-    assert solver_or_program.version in project.name  # nosec
-    assert urllib.parse.quote_plus(solver_or_program.id) in project.name  # nosec
 
     solver_node: Node = next(iter(project.workbench.values()))
     job_inputs: JobInputs = create_job_inputs_from_node_inputs(
@@ -209,7 +212,9 @@ def create_job_from_project(
 
     return Job(
         id=job_id,
-        name=project.name,
+        name=Job.compose_resource_name(
+            parent_name=solver_or_program_name, job_id=job_id
+        ),
         inputs_checksum=job_inputs.compute_checksum(),
         created_at=project.creation_date,  # type: ignore[arg-type]
         runner_name=solver_or_program_name,

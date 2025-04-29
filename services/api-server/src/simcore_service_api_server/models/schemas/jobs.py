@@ -24,8 +24,6 @@ from pydantic import (
     StringConstraints,
     TypeAdapter,
     ValidationError,
-    ValidationInfo,
-    field_validator,
 )
 from servicelib.logging_utils import LogLevelInt, LogMessageStr
 from starlette.datastructures import Headers
@@ -275,20 +273,13 @@ class Job(BaseModel):
         }
     )
 
-    @field_validator("name", mode="before")
-    @classmethod
-    def _check_name(cls, v, info: ValidationInfo):
-        _id = str(info.data["id"])
-        if not v.endswith(f"/{_id}"):
-            msg = f"Resource name [{v}] and id [{_id}] do not match"
-            raise ValueError(msg)
-        return v
-
     # constructors ------
 
     @classmethod
     def create_now(
-        cls, parent_name: RelativeResourceName, inputs_checksum: str
+        cls,
+        parent_name: RelativeResourceName,
+        inputs_checksum: str,
     ) -> "Job":
         global_uuid = uuid4()
 

@@ -32,14 +32,10 @@ from ...services_http.jobs import replace_custom_metadata, start_project, stop_p
 from ...services_http.solver_job_models_converters import (
     create_jobstatus_from_task,
 )
-from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.services import get_api_client, get_solver_service
 from ..dependencies.webserver_http import AuthSession, get_webserver_session
-from ..dependencies.webserver_rpc import (
-    get_wb_api_rpc_client,
-)
 from ._constants import (
     FMSG_CHANGELOG_ADDED_IN_VERSION,
     FMSG_CHANGELOG_CHANGED_IN_VERSION,
@@ -97,7 +93,6 @@ async def create_solver_job(
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
     job_service: Annotated[JobService, Depends()],
-    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
     hidden: Annotated[bool, Query()] = True,
@@ -116,7 +111,9 @@ async def create_solver_job(
         solver_version=version,
         product_name=product_name,
     )
-    job, project = await job_service.create_job(
+    job, _ = await job_service.create_job(
+        project_name=None,
+        description=None,
         solver_or_program=solver,
         inputs=inputs,
         url_for=url_for,
@@ -125,12 +122,6 @@ async def create_solver_job(
         parent_node_id=x_simcore_parent_node_id,
     )
 
-    await wb_api_rpc.mark_project_as_job(
-        product_name=product_name,
-        user_id=user_id,
-        project_uuid=project.uuid,
-        job_parent_resource_name=job.runner_name,
-    )
     return job
 
 

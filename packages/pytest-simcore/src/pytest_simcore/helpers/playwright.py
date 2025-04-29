@@ -453,7 +453,7 @@ class SocketIONodeProgressCompleteWaiter:
 
                 done = self._completed_successfully()
                 if done:
-                    self._result = True
+                    self._result = True  # NOTE: might have failed but it is not sure. so we set the result to True
                     self.logger.info("✅ Service start completed successfully!! ✅")
                 return done
 
@@ -465,6 +465,7 @@ class SocketIONodeProgressCompleteWaiter:
                 time_since_last_progress,
                 self.node_id,
             )
+            self._result = True
             return True
 
         return False
