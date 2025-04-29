@@ -224,7 +224,7 @@ async def set_project_ancestors(
             raise map_db_exception(
                 exc,
                 {
-                    asyncpg.exceptions.ForeignKeyViolationError.sqlstate: (
+                    asyncpg.ForeignKeyViolationError.sqlstate: (
                         DBProjectInvalidParentNodeError,
                         {
                             "project_uuid": project_uuid,
@@ -236,7 +236,7 @@ async def set_project_ancestors(
         raise map_db_exception(
             exc,
             {
-                asyncpg.exceptions.ForeignKeyViolationError.sqlstate: (
+                asyncpg.ForeignKeyViolationError.sqlstate: (
                     DBProjectNotFoundError,
                     {
                         "project_uuid": project_uuid,
