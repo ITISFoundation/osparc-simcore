@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from aiopg.sa import Engine
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 
 @dataclass
@@ -9,4 +9,4 @@ class BaseRepository:
     Repositories are pulled at every request
     """
 
-    db_engine: Engine
+    db_engine: AsyncEngine

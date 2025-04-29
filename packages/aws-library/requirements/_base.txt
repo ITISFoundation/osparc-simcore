@@ -384,7 +384,7 @@ typer==0.15.2
     # via
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
-types-aiobotocore==2.21.0
+types-aiobotocore==2.21.1
     # via -r requirements/_base.in
 types-aiobotocore-ec2==2.21.0
     # via types-aiobotocore

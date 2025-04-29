@@ -54,7 +54,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
         return;
       }
 
-      const readAccessRole = osparc.data.Roles.SERVICE["read"];
+      const readAccessRole = osparc.data.Roles.SERVICES["read"];
       const newAccessRights = this._serializedDataCopy["accessRights"];
       gids.forEach(gid => {
         newAccessRights[gid] = readAccessRole.accessRights;
@@ -111,7 +111,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
     },
 
     _promoteToEditor: function(collaborator, item) {
-      const writeAccessRole = osparc.data.Roles.SERVICE["write"];
+      const writeAccessRole = osparc.data.Roles.SERVICES["write"];
       this.__make(
         collaborator["gid"],
         writeAccessRole.accessRights,
@@ -126,7 +126,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
     },
 
     _demoteToUser: function(collaborator, item) {
-      const readAccessRole = osparc.data.Roles.SERVICE["read"];
+      const readAccessRole = osparc.data.Roles.SERVICES["read"];
       this.__make(
         collaborator["gid"],
         readAccessRole.accessRights,

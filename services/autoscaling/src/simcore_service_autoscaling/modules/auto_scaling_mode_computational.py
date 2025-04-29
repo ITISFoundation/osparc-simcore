@@ -11,7 +11,6 @@ from models_library.docker import (
 )
 from models_library.generated_models.docker_rest_api import Node
 from pydantic import AnyUrl, ByteSize
-from servicelib.logging_utils import LogLevelInt
 from servicelib.utils import logged_gather
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
@@ -87,20 +86,6 @@ class ComputationalAutoscaling(BaseAutoscaling):
                 "No dask scheduler found. TIP: Normal during machine startup."
             )
             return []
-
-    @staticmethod
-    async def log_message_from_tasks(
-        app: FastAPI, tasks: list, message: str, *, level: LogLevelInt
-    ) -> None:
-        assert app  # nosec
-        assert tasks is not None  # nosec
-        _logger.log(level, "LOG: %s", message)
-
-    @staticmethod
-    async def progress_message_from_tasks(app: FastAPI, tasks: list, progress: float):
-        assert app  # nosec
-        assert tasks is not None  # nosec
-        _logger.info("PROGRESS: %s", f"{progress:.2f}")
 
     @staticmethod
     def get_task_required_resources(task) -> Resources:

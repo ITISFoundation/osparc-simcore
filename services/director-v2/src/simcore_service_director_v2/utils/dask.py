@@ -3,7 +3,6 @@ import collections
 import logging
 from collections.abc import Awaitable, Callable, Coroutine, Generator
 from typing import Any, Final, NoReturn, ParamSpec, TypeVar, cast
-from uuid import uuid4
 
 import distributed
 from common_library.json_serialization import json_dumps
@@ -18,6 +17,7 @@ from dask_task_models_library.container_tasks.protocol import (
     ContainerLabelsDict,
     TaskOwner,
 )
+from dask_task_models_library.container_tasks.utils import parse_dask_job_id
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.services import NodeRequirements
 from models_library.docker import DockerLabelKey, StandardSimcoreDockerLabels
@@ -49,7 +49,6 @@ from ..core.errors import (
 )
 from ..models.comp_runs import ProjectMetadataDict, RunMetadataDict
 from ..models.comp_tasks import Image
-from ..models.dask_subsystem import DaskJobID
 from ..modules.osparc_variables.substitutions import (
     resolve_and_substitute_session_variables_in_specs,
     substitute_vendor_secrets_in_specs,
@@ -57,8 +56,6 @@ from ..modules.osparc_variables.substitutions import (
 
 _logger = logging.getLogger(__name__)
 
-ServiceKeyStr = str
-ServiceVersionStr = str
 
 _PVType = _NPItemValue | None
 
@@ -69,40 +66,6 @@ def _get_port_validation_errors(port_key: str, err: ValidationError) -> list[Err
         assert error["loc"][-1] != (port_key,)
         error["loc"] = error["loc"] + (port_key,)
     return list(errors)
-
-
-def generate_dask_job_id(
-    service_key: ServiceKeyStr,
-    service_version: ServiceVersionStr,
-    user_id: UserID,
-    project_id: ProjectID,
-    node_id: NodeID,
-) -> DaskJobID:
-    """creates a dask job id:
-    The job ID shall contain the user_id, project_id, node_id
-    Also, it must be unique
-    and it is shown in the Dask scheduler dashboard website
-    """
-    return DaskJobID(
-        f"{service_key}:{service_version}:userid_{user_id}:projectid_{project_id}:nodeid_{node_id}:uuid_{uuid4()}"
-    )
-
-
-_JOB_ID_PARTS: Final[int] = 6
-
-
-def parse_dask_job_id(
-    job_id: str,
-) -> tuple[ServiceKeyStr, ServiceVersionStr, UserID, ProjectID, NodeID]:
-    parts = job_id.split(":")
-    assert len(parts) == _JOB_ID_PARTS  # nosec
-    return (
-        parts[0],
-        parts[1],
-        TypeAdapter(UserID).validate_python(parts[2][len("userid_") :]),
-        ProjectID(parts[3][len("projectid_") :]),
-        NodeID(parts[4][len("nodeid_") :]),
-    )
 
 
 async def create_node_ports(
@@ -467,8 +430,13 @@ async def dask_sub_consumer_task(
     handler: Callable[[str], Awaitable[None]],
 ) -> NoReturn:
     while True:
-        with log_catch(_logger, reraise=False), log_context(
-            _logger, level=logging.DEBUG, msg=f"dask sub task for topic {dask_sub.name}"
+        with (
+            log_catch(_logger, reraise=False),
+            log_context(
+                _logger,
+                level=logging.DEBUG,
+                msg=f"dask sub task for topic {dask_sub.name}",
+            ),
         ):
             await _dask_sub_consumer(dask_sub, handler)
         # we sleep a bit before restarting
@@ -575,7 +543,6 @@ def check_if_cluster_is_able_to_run_pipeline(
     task_resources: dict[str, Any],
     node_image: Image,
 ) -> None:
-
     _logger.debug(
         "Dask scheduler infos: %s", f"{scheduler_info}"
     )  # NOTE: be careful not to json_dumps this as it sometimes contain keys that are tuples!
