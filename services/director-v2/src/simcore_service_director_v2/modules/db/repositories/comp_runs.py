@@ -48,6 +48,47 @@ _POSTGRES_FK_COLUMN_TO_ERROR_MAP: Final[
 }
 
 
+async def _get_next_iteration(
+    conn: AsyncConnection, user_id: UserID, project_id: ProjectID
+) -> PositiveInt:
+    """Calculate the next iteration number for a project"""
+    last_iteration = await conn.scalar(
+        sa.select(comp_runs.c.iteration)
+        .where(
+            (comp_runs.c.user_id == user_id)
+            & (comp_runs.c.project_uuid == f"{project_id}")
+        )
+        .order_by(desc(comp_runs.c.iteration))
+    )
+    return cast(PositiveInt, (last_iteration or 0) + 1)
+
+
+def _handle_foreign_key_violation(
+    exc: sql_exc.IntegrityError, **error_keys: Any
+) -> None:
+    """Handle foreign key violation errors and raise appropriate exceptions"""
+    if not isinstance(exc.orig, AsyncAdapt_asyncpg_dbapi.IntegrityError):
+        return
+
+    if (
+        not hasattr(exc.orig, "pgcode")
+        or exc.orig.pgcode != asyncpg.ForeignKeyViolationError.sqlstate
+    ):
+        return
+
+    if not isinstance(
+        exc.orig.__cause__, asyncpg.ForeignKeyViolationError
+    ) or not hasattr(exc.orig.__cause__, "constraint_name"):
+        return
+
+    constraint_name = exc.orig.__cause__.constraint_name
+
+    for foreign_key in comp_runs.foreign_keys:
+        if constraint_name == foreign_key.name and foreign_key.parent is not None:
+            exc_type, exc_keys = _POSTGRES_FK_COLUMN_TO_ERROR_MAP[foreign_key.parent]
+            raise exc_type(**{k: error_keys.get(k) for k in exc_keys})
+
+
 class CompRunsRepository(BaseRepository):
     async def get(
         self,
@@ -245,9 +286,7 @@ class CompRunsRepository(BaseRepository):
         try:
             async with transaction_context(self.db_engine) as conn:
                 if iteration is None:
-                    iteration = await self._get_next_iteration(
-                        conn, user_id, project_id
-                    )
+                    iteration = await _get_next_iteration(conn, user_id, project_id)
 
                 result = await conn.execute(
                     comp_runs.insert()  # pylint: disable=no-value-for-parameter
@@ -265,51 +304,8 @@ class CompRunsRepository(BaseRepository):
                 row = result.one()
                 return CompRunsAtDB.model_validate(row)
         except sql_exc.IntegrityError as exc:
-            self._handle_foreign_key_violation(
-                exc, project_id=project_id, user_id=user_id
-            )
+            _handle_foreign_key_violation(exc, project_id=project_id, user_id=user_id)
             raise DirectorError from exc
-
-    async def _get_next_iteration(
-        self, conn: AsyncConnection, user_id: UserID, project_id: ProjectID
-    ) -> PositiveInt:
-        """Calculate the next iteration number for a project"""
-        last_iteration = await conn.scalar(
-            sa.select(comp_runs.c.iteration)
-            .where(
-                (comp_runs.c.user_id == user_id)
-                & (comp_runs.c.project_uuid == f"{project_id}")
-            )
-            .order_by(desc(comp_runs.c.iteration))
-        )
-        return cast(PositiveInt, (last_iteration or 0) + 1)
-
-    def _handle_foreign_key_violation(
-        self, exc: sql_exc.IntegrityError, **error_keys: Any
-    ) -> None:
-        """Handle foreign key violation errors and raise appropriate exceptions"""
-        if not isinstance(exc.orig, AsyncAdapt_asyncpg_dbapi.IntegrityError):
-            return
-
-        if (
-            not hasattr(exc.orig, "pgcode")
-            or exc.orig.pgcode != asyncpg.ForeignKeyViolationError.sqlstate
-        ):
-            return
-
-        if not isinstance(
-            exc.orig.__cause__, asyncpg.ForeignKeyViolationError
-        ) or not hasattr(exc.orig.__cause__, "constraint_name"):
-            return
-
-        constraint_name = exc.orig.__cause__.constraint_name
-
-        for foreign_key in comp_runs.foreign_keys:
-            if constraint_name == foreign_key.name and foreign_key.parent is not None:
-                exc_type, exc_keys = _POSTGRES_FK_COLUMN_TO_ERROR_MAP[
-                    foreign_key.parent
-                ]
-                raise exc_type(**{k: error_keys.get(k) for k in exc_keys})
 
     async def update(
         self, user_id: UserID, project_id: ProjectID, iteration: PositiveInt, **values
