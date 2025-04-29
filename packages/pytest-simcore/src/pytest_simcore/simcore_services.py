@@ -66,6 +66,11 @@ _SERVICE_NAME_REPLACEMENTS: dict[str, str] = {
     "dynamic-scheduler": "dynamic-schdlr",
 }
 
+# some services require authentication to access their health-check endpoints
+_BASE_AUTH_ENV_VARS: dict[str, tuple[str, str]] = {
+    "docker-api-proxy": ("DOCKER_API_PROXY_USER", "DOCKER_API_PROXY_PASSWORD"),
+}
+
 _ONE_SEC_TIMEOUT = ClientTimeout(total=1)  # type: ignore
 
 
@@ -140,9 +145,17 @@ def services_endpoint(
                 DASK_SCHEDULER_SERVICE_PORT,
                 DOCKER_API_PROXY_SERVICE_PORT,
             ]
-            endpoint = URL(
-                f"http://{get_localhost_ip()}:{get_service_published_port(full_service_name, target_ports)}"
-            )
+            if service in _BASE_AUTH_ENV_VARS:
+                user_env, password_env = _BASE_AUTH_ENV_VARS[service]
+                user = env_vars_for_docker_compose[user_env]
+                password = env_vars_for_docker_compose[password_env]
+                endpoint = URL(
+                    f"http://{user}:{password}@{get_localhost_ip()}:{get_service_published_port(full_service_name, target_ports)}"
+                )
+            else:
+                endpoint = URL(
+                    f"http://{get_localhost_ip()}:{get_service_published_port(full_service_name, target_ports)}"
+                )
             services_endpoint[service] = endpoint
         else:
             print(f"Collecting service endpoints: '{service}' skipped")
