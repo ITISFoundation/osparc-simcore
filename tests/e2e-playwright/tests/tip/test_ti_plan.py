@@ -236,15 +236,17 @@ def test_classic_ti_plan(  # noqa: PLR0915
         assert not ws_info.value.is_closed()
         restartable_jlab_websocket = RobustWebSocket(page, ws_info.value)
 
-        with log_context(logging.INFO, "Run optimization") as ctx:
+        with log_context(logging.INFO, "Run optimization") as ctx2:
             run_button = ti_iframe.get_by_role("button", name="Run Optimization")
             run_button.click(timeout=_JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME)
             try:
                 _wait_for_optimization_complete(run_button)
-                ctx.logger.info("Optimization finished!")
+                ctx2.logger.info("Optimization finished!")
             except RetryError as e:
                 last_exc = e.last_attempt.exception()
-                ctx.logger.warning(f"Optimization did not finish in time: {last_exc}")
+                ctx2.logger.warning(
+                    "Optimization did not finish in time: %s", f"{last_exc}"
+                )
 
         with log_context(logging.INFO, "Create report"):
             with log_context(
@@ -262,16 +264,23 @@ def test_classic_ti_plan(  # noqa: PLR0915
 
             if is_product_lite:
                 assert (
-                    not ti_iframe.get_by_role("button", name="Add to Report (0)")
+                    ti_iframe.get_by_role("button", name="Add to Report (0)")
                     .nth(0)
-                    .is_enabled()
-                )
-                assert not ti_iframe.get_by_role(
-                    "button", name="Export to S4L"
-                ).is_enabled()
-                assert not ti_iframe.get_by_role(
-                    "button", name="Export Report"
-                ).is_enabled()
+                    .get_attribute("disabled")
+                    is not None
+                ), "Add to Report button should be disabled in lite product"
+                assert (
+                    ti_iframe.get_by_role("button", name="Export to S4L").get_attribute(
+                        "disabled"
+                    )
+                    is not None
+                ), "Export to S4L button should be disabled in lite product"
+                assert (
+                    ti_iframe.get_by_role("button", name="Export Report").get_attribute(
+                        "disabled"
+                    )
+                    is not None
+                ), "Export Report button should be disabled in lite product"
 
             else:
                 with log_context(

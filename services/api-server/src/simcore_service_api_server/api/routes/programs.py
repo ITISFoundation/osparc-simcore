@@ -4,6 +4,7 @@ from collections.abc import Callable
 from typing import Annotated
 
 from fastapi import APIRouter, Body, Depends, Header, HTTPException, status
+from fastapi_pagination import create_page
 from httpx import HTTPStatusError
 from models_library.api_schemas_storage.storage_schemas import (
     LinkType,
@@ -22,12 +23,81 @@ from ..._service_job import JobService
 from ..._service_programs import ProgramService
 from ...api.routes._constants import DEFAULT_MAX_STRING_LENGTH
 from ...models.basic_types import VersionStr
+from ...models.pagination import Page, PaginationParams
 from ...models.schemas.jobs import Job, JobInputs
 from ...models.schemas.programs import Program, ProgramKeyId
 from ..dependencies.authentication import get_current_user_id, get_product_name
 
 _logger = logging.getLogger(__name__)
 router = APIRouter()
+
+
+@router.get(
+    "",
+    response_model=Page[Program],
+)
+async def list_programs(
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    program_service: Annotated[ProgramService, Depends()],
+    url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
+    product_name: Annotated[str, Depends(get_product_name)],
+    page_params: Annotated[PaginationParams, Depends()],
+):
+    """Lists the latest of all available programs"""
+    programs, page_meta = await program_service.list_latest_programs(
+        user_id=user_id,
+        product_name=product_name,
+        offset=page_params.offset,
+        limit=page_params.limit,
+    )
+    page_params.limit = page_meta.limit
+    page_params.offset = page_meta.offset
+
+    for program in programs:
+        program.url = url_for(
+            "get_program_release", program_key=program.id, version=program.version
+        )
+
+    return create_page(
+        programs,
+        total=len(programs),
+        params=page_params,
+    )
+
+
+@router.get(
+    "/{program_key:path}/releases",
+    response_model=Page[Program],
+)
+async def list_program_history(
+    program_key: ProgramKeyId,
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    program_service: Annotated[ProgramService, Depends()],
+    url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
+    product_name: Annotated[str, Depends(get_product_name)],
+    page_params: Annotated[PaginationParams, Depends()],
+):
+    """Lists the latest of all available programs"""
+    programs, page_meta = await program_service.list_program_history(
+        program_key=program_key,
+        user_id=user_id,
+        product_name=product_name,
+        offset=page_params.offset,
+        limit=page_params.limit,
+    )
+    page_params.limit = page_meta.limit
+    page_params.offset = page_meta.offset
+
+    for program in programs:
+        program.url = url_for(
+            "get_program_release", program_key=program.id, version=program.version
+        )
+
+    return create_page(
+        programs,
+        total=len(programs),
+        params=page_params,
+    )
 
 
 @router.get(

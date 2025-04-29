@@ -8,17 +8,17 @@
 import httpx
 import pytest
 import simcore_service_api_server.api.routes.solvers
+from pydantic import TypeAdapter
 from pytest_mock import MockFixture
-from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
-from simcore_service_api_server.models.schemas.solvers import Solver
+from simcore_service_api_server.models.pagination import OnePage
+from simcore_service_api_server.models.schemas.solvers import Solver, SolverPort
 from starlette import status
 
 
 @pytest.mark.skip(reason="Still under development. Currently using fake implementation")
 async def test_list_solvers(
     client: httpx.AsyncClient,
-    mocked_catalog_rest_api: MockRouter,
     mocker: MockFixture,
 ):
     warn = mocker.patch.object(
@@ -63,7 +63,7 @@ async def test_list_solvers(
 
 
 async def test_list_solver_ports(
-    mocked_catalog_rest_api: MockRouter,
+    mocked_catalog_rpc_api: dict,
     client: httpx.AsyncClient,
     auth: httpx.BasicAuth,
 ):
@@ -74,7 +74,7 @@ async def test_list_solver_ports(
     assert resp.status_code == status.HTTP_200_OK
 
     assert resp.json() == {
-        "total": 1,
+        "total": 2,
         "items": [
             {
                 "key": "input_1",
@@ -87,5 +87,79 @@ async def test_list_solver_ports(
                     "maximum": 5,
                 },
             },
+            {
+                "key": "output_1",
+                "kind": "output",
+                "content_schema": {
+                    "description": "Integer is generated in range [1-9]",
+                    "title": "File containing one random integer",
+                    "type": "string",
+                },
+            },
         ],
     }
+
+
+async def test_list_solvers_with_mocked_catalog(
+    client: httpx.AsyncClient,
+    mocked_catalog_rpc_api: dict,
+    auth: httpx.BasicAuth,
+):
+    response = await client.get(f"/{API_VTAG}/solvers", auth=auth)
+    assert response.status_code == status.HTTP_200_OK
+
+
+async def test_list_releases_with_mocked_catalog(
+    client: httpx.AsyncClient,
+    mocked_catalog_rpc_api: dict,
+    auth: httpx.BasicAuth,
+):
+    response = await client.get(f"/{API_VTAG}/solvers/releases", auth=auth)
+    assert response.status_code == status.HTTP_200_OK
+
+
+async def test_list_solver_page_with_mocked_catalog(
+    client: httpx.AsyncClient,
+    mocked_catalog_rpc_api: dict,
+    auth: httpx.BasicAuth,
+):
+    response = await client.get(f"/{API_VTAG}/solvers/page", auth=auth)
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.json()["items"]) == response.json()["total"]
+
+
+async def test_list_solver_releases_page_with_mocked_catalog(
+    client: httpx.AsyncClient,
+    mocked_catalog_rpc_api: dict,
+    auth: httpx.BasicAuth,
+):
+    solver_key = "simcore/services/comp/itis/sleeper"
+    response = await client.get(
+        f"/{API_VTAG}/solvers/{solver_key}/releases/page", auth=auth
+    )
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.json()["items"]) == response.json()["total"]
+
+
+async def test_list_solver_releases_with_mocked_catalog(
+    client: httpx.AsyncClient,
+    mocked_catalog_rpc_api: dict,
+    auth: httpx.BasicAuth,
+):
+    solver_key = "simcore/services/comp/itis/sleeper"
+    response = await client.get(f"/{API_VTAG}/solvers/{solver_key}/releases", auth=auth)
+    assert response.status_code == status.HTTP_200_OK
+
+
+async def test_list_solver_ports_with_mocked_catalog(
+    client: httpx.AsyncClient,
+    mocked_catalog_rpc_api: dict,
+    auth: httpx.BasicAuth,
+):
+    solver_key = "simcore/services/comp/itis/sleeper"
+    solver_version = "3.2.1"
+    response = await client.get(
+        f"/{API_VTAG}/solvers/{solver_key}/releases/{solver_version}/ports", auth=auth
+    )
+    assert response.status_code == status.HTTP_200_OK
+    assert TypeAdapter(OnePage[SolverPort]).validate_python(response.json())

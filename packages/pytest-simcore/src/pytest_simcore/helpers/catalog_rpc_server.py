@@ -27,6 +27,13 @@ from pydantic import NonNegativeInt, TypeAdapter, validate_call
 from pytest_mock import MockType
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 
+assert ServiceListFilters.model_json_schema()["properties"].keys() == {
+    "service_type"
+}, (
+    "ServiceListFilters is expected to only have the key 'service_type'. "
+    "Please update the mock if the schema changes."
+)
+
 
 class CatalogRpcSideEffects:
     # pylint: disable=no-self-use
@@ -44,11 +51,15 @@ class CatalogRpcSideEffects:
         assert rpc_client
         assert product_name
         assert user_id
-        assert filters is None, "filters not mocked yet"
 
         items = TypeAdapter(list[LatestServiceGet]).validate_python(
             LatestServiceGet.model_json_schema()["examples"],
         )
+        if filters:
+            items = [
+                item for item in items if item.service_type == filters.service_type
+            ]
+
         total_count = len(items)
 
         return PageRpc[LatestServiceGet].create(
