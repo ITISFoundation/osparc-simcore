@@ -7,6 +7,10 @@ on:
         required: true
         type: string
         description: "Python version to use"
+      node-version:
+        required: true
+        type: string
+        description: "Node version to use"
       os:
         required: true
         type: string
@@ -14,32 +18,26 @@ on:
       uv-version:
         required: false
         type: string
-        default: "0.1.25"
         description: "UV version to use"
       run-public-api:
         required: false
         type: boolean
-        default: true
         description: "Whether to run public API tests"
       run-swarm-deploy:
         required: false
         type: boolean
-        default: true
         description: "Whether to run swarm deploy tests"
       run-e2e:
         required: false
         type: boolean
-        default: true
         description: "Whether to run E2E tests"
       run-e2e-playwright:
         required: false
         type: boolean
-        default: true
         description: "Whether to run E2E Playwright tests"
       run-environment-setup:
         required: false
         type: boolean
-        default: true
         description: "Whether to run environment setup tests"
 
 jobs:
