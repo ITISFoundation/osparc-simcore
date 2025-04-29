@@ -1722,7 +1722,7 @@ jobs:
     needs: changes
     if: ${{ needs.changes.outputs.notifications-library == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit]notifications-library"
+    name: "[unit] notifications-library"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
