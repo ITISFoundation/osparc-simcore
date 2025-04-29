@@ -83,7 +83,7 @@ jobs:
       anything-js: ${{ steps.filter.outputs.anything-js }}
     steps:
       - uses: actions/checkout@v4
-        # For pull requests it's not necessary to checkout the code
+      # For pull requests it's not necessary to checkout the code
       - uses: dorny/paths-filter@v3
         id: filter
         with:
@@ -293,12 +293,23 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
         with:
-          fetch-depth: 0
-      - uses: .github/actions/common-setup-action.yml
+          driver: docker-container
+      - name: setup python environment
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-          requirements-path: "**/web/server/requirements/ci.txt"
+      - name: install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.6.x"
+          enable-cache: false
+          cache-dependency-glob: "**/web/server/requirements/ci.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: typecheck
@@ -330,16 +341,26 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
         with:
-          fetch-depth: 0
-      - uses: .github/actions/common-setup-action.yml
+          driver: docker-container
+      - name: setup python environment
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-          requirements-path: "**/web/server/requirements/ci.txt"
+      - name: install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.6.x"
+          enable-cache: false
+          cache-dependency-glob: "**/web/server/requirements/ci.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/webserver.bash test_with_db 02
       - uses: codecov/codecov-action@v5
         if: ${{ !cancelled() }}
@@ -362,16 +383,26 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
         with:
-          fetch-depth: 0
-      - uses: .github/actions/common-setup-action.yml
+          driver: docker-container
+      - name: setup python environment
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-          requirements-path: "**/web/server/requirements/ci.txt"
+      - name: install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.6.x"
+          enable-cache: false
+          cache-dependency-glob: "**/web/server/requirements/ci.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/webserver.bash test_with_db 03
       - uses: codecov/codecov-action@v5
         if: ${{ !cancelled() }}
@@ -394,23 +425,37 @@ jobs:
         fail-fast: false
       steps:
         - uses: actions/checkout@v4
+        - name: setup docker buildx
+          id: buildx
+          uses: docker/setup-buildx-action@v3
           with:
-            fetch-depth: 0
-        - uses: .github/actions/common-setup-action.yml
+            driver: docker-container
+        - name: setup python environment
+          uses: actions/setup-python@v5
           with:
             python-version: ${{ matrix.python }}
-            requirements-path: "**/web/server/requirements/ci.txt"
+        - name: install uv
+          uses: astral-sh/setup-uv@v6
+          with:
+            version: "0.6.x"
+            enable-cache: false
+            cache-dependency-glob: "**/web/server/requirements/ci.txt"
+        - name: show system version
+          run: ./ci/helpers/show_system_versions.bash
         - name: install webserver
           run: ./ci/github/unit-testing/webserver.bash install
         - name: test
-          if: ${{ !cancelled() }}
           run: ./ci/github/unit-testing/webserver.bash test_with_db 04
         - uses: codecov/codecov-action@v5
-          if: ${{ !cancelled() }}
           env:
             CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
           with:
             flags: unittests #optional
+        - name: Upload test results to Codecov
+          if: ${{ !cancelled() }}
+          uses: codecov/test-results-action@v1
+          with:
+            token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-storage:
     needs: changes
@@ -425,12 +470,23 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
         with:
-          fetch-depth: 0
-      - uses: .github/actions/common-setup-action.yml
+          driver: docker-container
+      - name: setup python environment
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-          requirements-path: "**/storage/requirements/ci.txt"
+      - name: install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.6.x"
+          enable-cache: false
+          cache-dependency-glob: "**/storage/requirements/ci.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/storage.bash install
       - name: typecheck
@@ -459,14 +515,25 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
         with:
-          fetch-depth: 0
-      - uses: .github/actions/common-setup-action.yml
+          driver: docker-container
+      - name: setup python environment
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-          requirements-path: "**/agent/requirements/ci.txt"
       - name: install rclone
         run: sudo ./ci/github/helpers/install_rclone.bash
+      - name: install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.6.x"
+          enable-cache: false
+          cache-dependency-glob: "**/agent/requirements/ci.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/agent.bash install
       - name: typecheck
@@ -494,12 +561,23 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
         with:
-          fetch-depth: 0
-      - uses: .github/actions/common-setup-action.yml
+          driver: docker-container
+      - name: setup python environment
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-          requirements-path: "**/notifications/requirements/ci.txt"
+      - name: install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.5.x"
+          enable-cache: false
+          cache-dependency-glob: "**/notifications/requirements/ci.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/notifications.bash install
       - name: typecheck
@@ -527,12 +605,23 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
         with:
-          fetch-depth: 0
-      - uses: .github/actions/common-setup-action.yml
+          driver: docker-container
+      - name: setup python environment
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-          requirements-path: "**/api/tests/requirements.txt"
+      - name: install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.6.x"
+          enable-cache: false
+          cache-dependency-glob: "**/api/tests/requirements.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
       - name: install api
         run: ./ci/github/unit-testing/api.bash install
       - name: test
@@ -558,12 +647,23 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
         with:
-          fetch-depth: 0
-      - uses: .github/actions/common-setup-action.yml
+          driver: docker-container
+      - name: setup python environment
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-          requirements-path: "**/api-server/requirements/ci.txt"
+      - name: install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.6.x"
+          enable-cache: false
+          cache-dependency-glob: "**/api-server/requirements/ci.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/api-server.bash install
       - name: typecheck
@@ -595,12 +695,23 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
         with:
-          fetch-depth: 0
-      - uses: .github/actions/common-setup-action.yml
+          driver: docker-container
+      - name: setup python environment
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-          requirements-path: "**/autoscaling/requirements/ci.txt"
+      - name: install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.6.x"
+          enable-cache: false
+          cache-dependency-glob: "**/autoscaling/requirements/ci.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/autoscaling.bash install
       - name: typecheck
@@ -629,12 +740,23 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
         with:
-          fetch-depth: 0
-      - uses: .github/actions/common-setup-action.yml
+          driver: docker-container
+      - name: setup python environment
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-          requirements-path: "**/catalog/requirements/ci.txt"
+      - name: install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.6.x"
+          enable-cache: false
+          cache-dependency-glob: "**/catalog/requirements/ci.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/catalog.bash install
       - name: typecheck
@@ -669,12 +791,23 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
         with:
-          fetch-depth: 0
-      - uses: .github/actions/common-setup-action.yml
+          driver: docker-container
+      - name: setup python environment
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-          requirements-path: "**/clusters-keeper/requirements/ci.txt"
+      - name: install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.6.x"
+          enable-cache: false
+          cache-dependency-glob: "**/clusters-keeper/requirements/ci.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: |
           make devenv
@@ -714,12 +847,23 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
         with:
-          fetch-depth: 0
-      - uses: .github/actions/common-setup-action.yml
+          driver: docker-container
+      - name: setup python environment
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-          requirements-path: "**/datcore-adapter/requirements/ci.txt"
+      - name: install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.6.x"
+          enable-cache: false
+          cache-dependency-glob: "**/datcore-adapter/requirements/ci.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/datcore-adapter.bash install
       - name: typecheck
@@ -754,12 +898,23 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
         with:
-          fetch-depth: 0
-      - uses: .github/actions/common-setup-action.yml
+          driver: docker-container
+      - name: setup python environment
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-          requirements-path: "**/director/requirements/ci.txt"
+      - name: install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.6.x"
+          enable-cache: false
+          cache-dependency-glob: "**/director/requirements/ci.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/director.bash install
       - name: typecheck
@@ -794,12 +949,23 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
         with:
-          fetch-depth: 0
-      - uses: .github/actions/common-setup-action.yml
+          driver: docker-container
+      - name: setup python environment
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-          requirements-path: "**/director-v2/requirements/ci.txt"
+      - name: install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.6.x"
+          enable-cache: false
+          cache-dependency-glob: "**/director-v2/requirements/ci.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/director-v2.bash install
       - name: typecheck
@@ -834,12 +1000,23 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
         with:
-          fetch-depth: 0
-      - uses: .github/actions/common-setup-action.yml
+          driver: docker-container
+      - name: setup python environment
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-          requirements-path: "**/aws-library/requirements/ci.txt"
+      - name: install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.6.x"
+          enable-cache: false
+          cache-dependency-glob: "**/aws-library/requirements/ci.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/aws-library.bash install
       - name: typecheck
@@ -868,12 +1045,23 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
         with:
-          fetch-depth: 0
-      - uses: .github/actions/common-setup-action.yml
+          driver: docker-container
+      - name: setup python environment
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-          requirements-path: "**/dask-task-models-library/requirements/ci.txt"
+      - name: install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.6.x"
+          enable-cache: false
+          cache-dependency-glob: "**/dask-task-models-library/requirements/ci.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/dask-task-models-library.bash install
       - name: typecheck
@@ -902,12 +1090,23 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
         with:
-          fetch-depth: 0
-      - uses: .github/actions/common-setup-action.yml
+          driver: docker-container
+      - name: setup python environment
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-          requirements-path: "**/dask-sidecar/requirements/ci.txt"
+      - name: install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.6.x"
+          enable-cache: false
+          cache-dependency-glob: "**/dask-sidecar/requirements/ci.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/dask-sidecar.bash install
       - name: typecheck
@@ -936,12 +1135,23 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
         with:
-          fetch-depth: 0
-      - uses: .github/actions/common-setup-action.yml
+          driver: docker-container
+      - name: setup python environment
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-          requirements-path: "**/payments/requirements/ci.txt"
+      - name: install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.6.x"
+          enable-cache: false
+          cache-dependency-glob: "**/payments/requirements/ci.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/payments.bash install
       - name: typecheck
@@ -970,12 +1180,23 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
         with:
-          fetch-depth: 0
-      - uses: .github/actions/common-setup-action.yml
+          driver: docker-container
+      - name: setup python environment
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-          requirements-path: "**/dynamic-scheduler/requirements/ci.txt"
+      - name: install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.6.x"
+          enable-cache: false
+          cache-dependency-glob: "**/dynamic-scheduler/requirements/ci.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/dynamic-scheduler.bash install
       - name: typecheck
@@ -1004,12 +1225,23 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
         with:
-          fetch-depth: 0
-      - uses: .github/actions/common-setup-action.yml
+          driver: docker-container
+      - name: setup python environment
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-          requirements-path: "**/resource-usage-tracker/requirements/ci.txt"
+      - name: install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.6.x"
+          enable-cache: false
+          cache-dependency-glob: "**/resource-usage-tracker/requirements/ci.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: |
           make devenv
@@ -1048,12 +1280,23 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
         with:
-          fetch-depth: 0
-      - uses: .github/actions/common-setup-action.yml
+          driver: docker-container
+      - name: setup python environment
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-          requirements-path: "**/dynamic-sidecar/requirements/ci.txt"
+      - name: install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.6.x"
+          enable-cache: false
+          cache-dependency-glob: "**/dynamic-sidecar/requirements/ci.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/dynamic-sidecar.bash install
       - name: typecheck
@@ -1082,12 +1325,23 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
         with:
-          fetch-depth: 0
-      - uses: .github/actions/common-setup-action.yml
+          driver: docker-container
+      - name: setup python environment
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-          requirements-path: "**/efs-guardian/requirements/ci.txt"
+      - name: install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.6.x"
+          enable-cache: false
+          cache-dependency-glob: "**/efs-guardian/requirements/ci.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: |
           make devenv
@@ -1127,16 +1381,26 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
         with:
-          fetch-depth: 0
-      - uses: .github/actions/common-setup-action.yml
+          driver: docker-container
+      - name: setup python environment
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-          requirements-path: "**/ci/helpers/requirements.txt"
+      - name: install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.6.x"
+          enable-cache: false
+          cache-dependency-glob: "**/ci/helpers/requirements.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/python-linting.bash install
       - name: test
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/python-linting.bash test
 
   unit-test-postgres-database:
@@ -1152,12 +1416,23 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
         with:
-          fetch-depth: 0
-      - uses: .github/actions/common-setup-action.yml
+          driver: docker-container
+      - name: setup python environment
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-          requirements-path: "**/postgres-database/requirements/ci.txt"
+      - name: install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.6.x"
+          enable-cache: false
+          cache-dependency-glob: "**/postgres-database/requirements/ci.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/postgres-database.bash install
       - name: typecheck
@@ -1186,12 +1461,23 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
         with:
-          fetch-depth: 0
-      - uses: .github/actions/common-setup-action.yml
+          driver: docker-container
+      - name: setup python environment
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-          requirements-path: "**/notifications-library/requirements/ci.txt"
+      - name: install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.6.x"
+          enable-cache: false
+          cache-dependency-glob: "**/notifications-library/requirements/ci.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/invitations.bash install
       - name: typecheck
@@ -1220,12 +1506,23 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
         with:
-          fetch-depth: 0
-      - uses: .github/actions/common-setup-action.yml
+          driver: docker-container
+      - name: setup python environment
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-          requirements-path: "**/service-integration/requirements/ci.txt"
+      - name: install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.6.x"
+          enable-cache: false
+          cache-dependency-glob: "**/service-integration/requirements/ci.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/service-integration.bash install
       - name: typecheck
@@ -1254,12 +1551,23 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
         with:
-          fetch-depth: 0
-      - uses: .github/actions/common-setup-action.yml
+          driver: docker-container
+      - name: setup python environment
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-          requirements-path: "**/service-library/requirements/ci*.txt"
+      - name: install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.6.x"
+          enable-cache: false
+          cache-dependency-glob: "**/service-library/requirements/ci*.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/service-library.bash install_all
       - name: typecheck
@@ -1288,12 +1596,23 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
         with:
-          fetch-depth: 0
-      - uses: .github/actions/common-setup-action.yml
+          driver: docker-container
+      - name: setup python environment
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-          requirements-path: "**/settings-library/requirements/ci.txt"
+      - name: install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.6.x"
+          enable-cache: false
+          cache-dependency-glob: "**/settings-library/requirements/ci.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/settings-library.bash install
       - name: typecheck
@@ -1322,18 +1641,28 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
         with:
-          fetch-depth: 0
-      - uses: .github/actions/common-setup-action.yml
+          driver: docker-container
+      - name: setup python environment
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-          requirements-path: "**/models-library/requirements/ci.txt"
+      - name: install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.6.x"
+          enable-cache: false
+          cache-dependency-glob: "**/models-library/requirements/ci.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/models-library.bash install
       - name: typecheck
         run: ./ci/github/unit-testing/models-library.bash typecheck
       - name: test
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/models-library.bash test
       - uses: codecov/codecov-action@v5
         if: ${{ !cancelled() }}
@@ -1356,23 +1685,26 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
         with:
-          fetch-depth: 0
-      - uses: .github/actions/common-setup-action.yml
+          driver: docker-container
+      - name: setup python environment
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-          requirements-path: "**/common-library/requirements/ci.txt"
+      - name: install uv
+        uses: yezz123/setup-uv@v4
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/common-library.bash install
       - name: typecheck
         run: ./ci/github/unit-testing/common-library.bash typecheck
       - name: test
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/common-library.bash test
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
 
@@ -1389,12 +1721,23 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
         with:
-          fetch-depth: 0
-      - uses: .github/actions/common-setup-action.yml
+          driver: docker-container
+      - name: setup python environment
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-          requirements-path: "**/notifications-library/requirements/ci.txt"
+      - name: install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.6.x"
+          enable-cache: false
+          cache-dependency-glob: "**/notifications-library/requirements/ci.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/notifications-library.bash install
       - name: typecheck
@@ -1423,14 +1766,25 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
         with:
-          fetch-depth: 0
-      - uses: .github/actions/common-setup-action.yml
-        with:
-          python-version: ${{ matrix.python }}
-          requirements-path: "**/simcore-sdk/requirements/ci.txt"
+          driver: docker-container
       - name: install rclone
         run: sudo ./ci/github/helpers/install_rclone.bash
+      - name: setup python environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.6.x"
+          enable-cache: false
+          cache-dependency-glob: "**/simcore-sdk/requirements/ci.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/simcore-sdk.bash install
       - name: typecheck
@@ -1509,8 +1863,6 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
@@ -1573,8 +1925,6 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
@@ -1639,8 +1989,6 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
@@ -1707,10 +2055,9 @@ jobs:
       # NOTE: DIRECTOR_DEFAULT_MAX_* used for integration-tests that include `director` service
       DIRECTOR_DEFAULT_MAX_MEMORY: 268435456
       DIRECTOR_DEFAULT_MAX_NANO_CPUS: 10000000
+      DIRECTOR_TRACING: null
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
@@ -1779,8 +2126,6 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
@@ -1848,8 +2193,6 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
@@ -1914,8 +2257,6 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
@@ -2004,8 +2345,6 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
@@ -2066,8 +2405,6 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
@@ -2134,8 +2471,6 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
@@ -2218,8 +2553,6 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
@@ -2282,8 +2615,6 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
@@ -2348,8 +2679,6 @@ jobs:
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
