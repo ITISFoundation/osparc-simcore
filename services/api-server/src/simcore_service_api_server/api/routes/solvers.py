@@ -11,7 +11,6 @@ from models_library.api_schemas_catalog.services import ServiceListFilters
 from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from models_library.services_enums import ServiceType
 from pydantic import ValidationError
-from simcore_service_api_server.services_rpc.catalog import CatalogService
 
 from ..._service_solvers import SolverService
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
@@ -20,6 +19,7 @@ from ...models.pagination import OnePage, Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.model_adapter import ServicePricingPlanGetLegacy
 from ...models.schemas.solvers import Solver, SolverKeyId, SolverPort
+from ...services_rpc.catalog import CatalogService
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.webserver_http import AuthSession, get_webserver_session
