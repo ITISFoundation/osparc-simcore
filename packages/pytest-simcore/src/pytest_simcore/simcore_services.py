@@ -115,13 +115,12 @@ class ServiceHealthcheckEndpoint:
     @classmethod
     def create(cls, service_name: str, baseurl):
         # TODO: unify healthcheck policies see  https://github.com/ITISFoundation/osparc-simcore/pull/2281
-        obj = cls(
+        return cls(
             name=service_name,
             url=URL(
                 f"{baseurl}{MAP_SERVICE_HEALTHCHECK_ENTRYPOINT.get(service_name, DEFAULT_SERVICE_HEALTHCHECK_ENTRYPOINT)}"
             ),
         )
-        return obj
 
 
 @pytest.fixture(scope="module")
