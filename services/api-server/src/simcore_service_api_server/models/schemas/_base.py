@@ -45,7 +45,9 @@ class BaseService(BaseModel):
     ]
     description: Annotated[
         str | None,
-        StringConstraints(  # NOTE: keep StringConstraints before to keep the openapi schema
+        StringConstraints(
+            # NOTE: Place `StringConstraints` before `trim_string_before` for valid OpenAPI schema due to a Pydantic limitation.
+            # SEE `test_trim_string_before_with_string_constraints`
             max_length=1000
         ),
         trim_string_before(max_length=1000),
