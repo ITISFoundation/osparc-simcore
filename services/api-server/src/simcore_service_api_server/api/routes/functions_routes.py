@@ -446,12 +446,13 @@ async def map_function(
         function_job.uid is not None for function_job in function_jobs
     ), "Function job uid should not be None"
 
+    function_job_collection_description = f"Function job collection of map of function {function_id} with {len(function_inputs_list)} inputs"
     return await register_function_job_collection(
         wb_api_rpc=wb_api_rpc,
         function_job_collection=FunctionJobCollection(
-            id=None,
-            title=f"Function job collection of function map {[function_job.uid for function_job in function_jobs]}",
-            description="",
+            uid=None,
+            title="Function job collection of function map",
+            description=function_job_collection_description,
             job_ids=[function_job.uid for function_job in function_jobs],  # type: ignore
         ),
     )
@@ -574,3 +575,47 @@ async def function_job_collection_status(
     return FunctionJobCollectionStatus(
         status=[job_status.status for job_status in job_statuses]
     )
+
+
+# @function_job_router.get(
+#     "/{function_job_id:uuid}/outputs/logfile",
+#     response_model=FunctionOutputsLogfile,
+#     responses={**_COMMON_FUNCTION_JOB_ERROR_RESPONSES},
+#     description="Get function job outputs",
+# )
+# async def function_job_logfile(
+#     function_job_id: FunctionJobID,
+#     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+#     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
+#     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
+# ):
+#     function, function_job = await get_function_from_functionjobid(
+#         wb_api_rpc=wb_api_rpc, function_job_id=function_job_id
+#     )
+
+#     if (
+#         function.function_class == FunctionClass.project
+#         and function_job.function_class == FunctionClass.project
+#     ):
+#         job_outputs = await studies_jobs.get_study_job_output_logfile(
+#             study_id=function.project_id,
+#             job_id=function_job.project_job_id,  # type: ignore
+#             user_id=user_id,
+#             director2_api=director2_api,
+#         )
+
+#         return job_outputs
+#     elif (function.function_class == FunctionClass.solver) and (  # noqa: RET505
+#         function_job.function_class == FunctionClass.solver
+#     ):
+#         job_outputs_logfile = await solvers_jobs_getters.get_job_output_logfile(
+#             director2_api=director2_api,
+#             solver_key=function.solver_key,
+#             version=function.solver_version,
+#             job_id=function_job.solver_job_id,
+#             user_id=user_id,
+#         )
+#         return job_outputs_logfile
+#     else:
+#         msg = f"Function type {function.function_class} not supported"
+#         raise TypeError(msg)

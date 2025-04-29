@@ -43,6 +43,8 @@ FunctionInputsList: TypeAlias = list[FunctionInputs]
 
 FunctionOutputs: TypeAlias = dict[str, Any] | None
 
+FunctionOutputsLogfile: TypeAlias = Any
+
 
 class FunctionBase(BaseModel):
     function_class: FunctionClass
