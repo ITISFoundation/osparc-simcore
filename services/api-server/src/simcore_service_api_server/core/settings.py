@@ -13,7 +13,6 @@ from pydantic import (
 )
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.base import BaseCustomSettings
-from settings_library.catalog import CatalogSettings
 from settings_library.director_v2 import DirectorV2Settings
 from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
@@ -123,9 +122,6 @@ class ApplicationSettings(BasicSettings):
         WebServerSettings | None,
         Field(json_schema_extra={"auto_default_from_env": True}),
     ]
-    API_SERVER_CATALOG: Annotated[
-        CatalogSettings | None, Field(json_schema_extra={"auto_default_from_env": True})
-    ]
     API_SERVER_STORAGE: Annotated[
         StorageSettings | None, Field(json_schema_extra={"auto_default_from_env": True})
     ]
@@ -157,7 +153,6 @@ class ApplicationSettings(BasicSettings):
 __all__: tuple[str, ...] = (
     "ApplicationSettings",
     "BasicSettings",
-    "CatalogSettings",
     "DirectorV2Settings",
     "StorageSettings",
     "WebServerSettings",

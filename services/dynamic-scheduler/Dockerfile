@@ -56,8 +56,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # those from our virtualenv.
 ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 
-EXPOSE 8000
-
 # -------------------------- Build stage -------------------
 # Installs build/package management tools and third party dependencies
 #
@@ -80,6 +78,14 @@ COPY --from=uv_build /uv /uvx /bin/
 # packages may be moved to production image easily by copying the venv
 RUN uv venv "${VIRTUAL_ENV}"
 
+# Set UV_CONCURRENT_INSTALLS=1 for ARM64 to improve build performance
+# These environment variables are necessary because of https://github.com/astral-sh/uv/issues/6105
+# and until https://gitlab.com/qemu-project/qemu/-/issues/2846 gets fixed
+RUN if [ "$TARGETARCH" = "arm64" ]; then \
+  echo "Setting UV_CONCURRENT_INSTALLS=1 for ARM64 architecture"; \
+  export UV_CONCURRENT_INSTALLS=1; \
+  fi
+
 RUN --mount=type=cache,target=/root/.cache/uv \
   uv pip install --upgrade  \
   wheel \
@@ -91,7 +97,6 @@ WORKDIR /build
 
 
 
-
 # --------------------------Prod-depends-only stage -------------------
 # This stage is for production only dependencies that get partially wiped out afterwards (final docker image concerns)
 #
@@ -100,7 +105,7 @@ WORKDIR /build
 #
 FROM build AS prod-only-deps
 
-ENV SC_BUILD_TARGET prod-only-deps
+ENV SC_BUILD_TARGET=prod-only-deps
 
 WORKDIR /build/services/dynamic-scheduler
 
@@ -153,6 +158,7 @@ HEALTHCHECK \
 ENTRYPOINT [ "/bin/sh", "services/dynamic-scheduler/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/dynamic-scheduler/docker/boot.sh"]
 
+EXPOSE 8000
 
 # --------------------------Development stage -------------------
 # Source code accessible in host but runs in container
@@ -170,6 +176,9 @@ ENV SC_BUILD_TARGET=development \
 WORKDIR /devel
 
 RUN chown -R scu:scu "${VIRTUAL_ENV}"
+
+EXPOSE 8000
+EXPOSE 3000
 
 ENTRYPOINT ["/bin/sh", "services/dynamic-scheduler/docker/entrypoint.sh"]
 CMD ["/bin/sh", "services/dynamic-scheduler/docker/boot.sh"]

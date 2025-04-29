@@ -3,8 +3,9 @@ import logging
 from typing import Any, Final, cast
 
 import arrow
+import asyncpg  # type: ignore[import-untyped]
 import sqlalchemy as sa
-from aiopg.sa.result import RowProxy
+import sqlalchemy.exc as sql_exc
 from models_library.api_schemas_directorv2.comp_runs import ComputationRunRpcGet
 from models_library.basic_types import IDStr
 from models_library.projects import ProjectID
@@ -13,7 +14,12 @@ from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import PositiveInt
-from simcore_postgres_database.aiopg_errors import ForeignKeyViolation
+from simcore_postgres_database.utils_repos import (
+    pass_or_acquire_connection,
+    transaction_context,
+)
+from sqlalchemy.dialects.postgresql.asyncpg import AsyncAdapt_asyncpg_dbapi
+from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.sql import or_
 from sqlalchemy.sql.elements import literal_column
 from sqlalchemy.sql.expression import desc
@@ -42,6 +48,47 @@ _POSTGRES_FK_COLUMN_TO_ERROR_MAP: Final[
 }
 
 
+async def _get_next_iteration(
+    conn: AsyncConnection, user_id: UserID, project_id: ProjectID
+) -> PositiveInt:
+    """Calculate the next iteration number for a project"""
+    last_iteration = await conn.scalar(
+        sa.select(comp_runs.c.iteration)
+        .where(
+            (comp_runs.c.user_id == user_id)
+            & (comp_runs.c.project_uuid == f"{project_id}")
+        )
+        .order_by(desc(comp_runs.c.iteration))
+    )
+    return cast(PositiveInt, (last_iteration or 0) + 1)
+
+
+def _handle_foreign_key_violation(
+    exc: sql_exc.IntegrityError, **error_keys: Any
+) -> None:
+    """Handle foreign key violation errors and raise appropriate exceptions"""
+    if not isinstance(exc.orig, AsyncAdapt_asyncpg_dbapi.IntegrityError):
+        return
+
+    if (
+        not hasattr(exc.orig, "pgcode")
+        or exc.orig.pgcode != asyncpg.ForeignKeyViolationError.sqlstate
+    ):
+        return
+
+    if not isinstance(
+        exc.orig.__cause__, asyncpg.ForeignKeyViolationError
+    ) or not hasattr(exc.orig.__cause__, "constraint_name"):
+        return
+
+    constraint_name = exc.orig.__cause__.constraint_name
+
+    for foreign_key in comp_runs.foreign_keys:
+        if constraint_name == foreign_key.name and foreign_key.parent is not None:
+            exc_type, exc_keys = _POSTGRES_FK_COLUMN_TO_ERROR_MAP[foreign_key.parent]
+            raise exc_type(**{k: error_keys.get(k) for k in exc_keys})
+
+
 class CompRunsRepository(BaseRepository):
     async def get(
         self,
@@ -54,7 +101,8 @@ class CompRunsRepository(BaseRepository):
 
         :raises ComputationalRunNotFoundError: no entry found
         """
-        async with self.db_engine.acquire() as conn:
+
+        async with pass_or_acquire_connection(self.db_engine) as conn:
             result = await conn.execute(
                 sa.select(comp_runs)
                 .where(
@@ -65,7 +113,7 @@ class CompRunsRepository(BaseRepository):
                 .order_by(desc(comp_runs.c.iteration))
                 .limit(1)
             )
-            row: RowProxy | None = await result.first()
+            row = result.one_or_none()
             if not row:
                 raise ComputationalRunNotFoundError
             return CompRunsAtDB.model_validate(row)
@@ -132,10 +180,10 @@ class CompRunsRepository(BaseRepository):
         if scheduling_or_conditions:
             conditions.append(sa.or_(*scheduling_or_conditions))
 
-        async with self.db_engine.acquire() as conn:
+        async with self.db_engine.connect() as conn:
             return [
                 CompRunsAtDB.model_validate(row)
-                async for row in conn.execute(
+                async for row in await conn.stream(
                     sa.select(comp_runs).where(
                         sa.and_(True, *conditions)  # noqa: FBT003
                     )
@@ -211,10 +259,9 @@ class CompRunsRepository(BaseRepository):
             )
         list_query = list_query.offset(offset).limit(limit)
 
-        async with self.db_engine.acquire() as conn:
+        async with pass_or_acquire_connection(self.db_engine) as conn:
             total_count = await conn.scalar(count_query)
 
-            result = await conn.execute(list_query)
             items = [
                 ComputationRunRpcGet.model_validate(
                     {
@@ -222,7 +269,7 @@ class CompRunsRepository(BaseRepository):
                         "state": DB_TO_RUNNING_STATE[row["state"]],
                     }
                 )
-                async for row in result
+                async for row in await conn.stream(list_query)
             ]
 
             return cast(int, total_count), items
@@ -237,18 +284,9 @@ class CompRunsRepository(BaseRepository):
         use_on_demand_clusters: bool,
     ) -> CompRunsAtDB:
         try:
-            async with self.db_engine.acquire() as conn:
+            async with transaction_context(self.db_engine) as conn:
                 if iteration is None:
-                    # let's get the latest if it exists
-                    last_iteration = await conn.scalar(
-                        sa.select(comp_runs.c.iteration)
-                        .where(
-                            (comp_runs.c.user_id == user_id)
-                            & (comp_runs.c.project_uuid == f"{project_id}")
-                        )
-                        .order_by(desc(comp_runs.c.iteration))
-                    )
-                    iteration = (last_iteration or 0) + 1
+                    iteration = await _get_next_iteration(conn, user_id, project_id)
 
                 result = await conn.execute(
                     comp_runs.insert()  # pylint: disable=no-value-for-parameter
@@ -263,36 +301,27 @@ class CompRunsRepository(BaseRepository):
                     )
                     .returning(literal_column("*"))
                 )
-                row = await result.first()
+                row = result.one()
                 return CompRunsAtDB.model_validate(row)
-        except ForeignKeyViolation as exc:
-            assert exc.diag.constraint_name  # nosec  # noqa: PT017
-            for foreign_key in comp_runs.foreign_keys:
-                if exc.diag.constraint_name == foreign_key.name:
-                    assert foreign_key.parent is not None  # nosec
-                    exc_type, exc_keys = _POSTGRES_FK_COLUMN_TO_ERROR_MAP[
-                        foreign_key.parent
-                    ]
-                    raise exc_type(
-                        **{f"{k}": locals().get(k) for k in exc_keys}
-                    ) from exc
+        except sql_exc.IntegrityError as exc:
+            _handle_foreign_key_violation(exc, project_id=project_id, user_id=user_id)
             raise DirectorError from exc
 
     async def update(
         self, user_id: UserID, project_id: ProjectID, iteration: PositiveInt, **values
     ) -> CompRunsAtDB | None:
-        async with self.db_engine.acquire() as conn:
+        async with transaction_context(self.db_engine) as conn:
             result = await conn.execute(
                 sa.update(comp_runs)
                 .where(
                     (comp_runs.c.project_uuid == f"{project_id}")
-                    & (comp_runs.c.user_id == f"{user_id}")
+                    & (comp_runs.c.user_id == user_id)
                     & (comp_runs.c.iteration == iteration)
                 )
                 .values(**values)
                 .returning(literal_column("*"))
             )
-            row = await result.first()
+            row = result.one_or_none()
             return CompRunsAtDB.model_validate(row) if row else None
 
     async def set_run_result(

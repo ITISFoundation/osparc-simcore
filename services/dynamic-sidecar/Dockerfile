@@ -135,6 +135,14 @@ COPY --from=uv_build /uv /uvx /bin/
 RUN uv venv "${VIRTUAL_ENV}" \
   && mkdir -p "${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR}"
 
+# Set UV_CONCURRENT_INSTALLS=1 for ARM64 to improve build performance
+# These environment variables are necessary because of https://github.com/astral-sh/uv/issues/6105
+# and until https://gitlab.com/qemu-project/qemu/-/issues/2846 gets fixed
+RUN if [ "$TARGETARCH" = "arm64" ]; then \
+  echo "Setting UV_CONCURRENT_INSTALLS=1 for ARM64 architecture"; \
+  export UV_CONCURRENT_INSTALLS=1; \
+  fi
+
 RUN --mount=type=cache,target=/root/.cache/uv \
   uv pip install --upgrade  \
   wheel \
