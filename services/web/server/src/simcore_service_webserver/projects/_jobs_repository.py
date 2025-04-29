@@ -67,7 +67,12 @@ class ProjectJobsRepository(BaseRepository):
         """
         Lists projects marked as jobs for a specific user and product
 
-        Example: job_parent_resource_name = "/solvers/solver1"
+
+        `job_parent_resource_name_prefix` is a prefix to filter the `job_parent_resource_name`. The latter is a
+        path-like string that contains a hierarchy of resources. An example of `job_parent_resource_name` is:
+            `/solvers/simcore%2Fservices%2Fcomp%2Fisolve/releases/1.3.4/jobs/f622946d-fd29-35b9-a193-abdd1095167c`
+        SEE services/api-server/src/simcore_service_api_server/models/api_resources.py
+
         """
         # Step 1: Get group IDs associated with the user
         user_groups_query = (
