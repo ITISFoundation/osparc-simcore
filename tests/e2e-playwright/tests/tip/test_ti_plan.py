@@ -287,9 +287,9 @@ def test_classic_ti_plan(  # noqa: PLR0915
                     logging.INFO,
                     f"Click button - `Add to Report (0)` and wait for {_JLAB_REPORTING_MAX_TIME}",
                 ):
-                    ti_iframe.get_by_role(
-                        "button", name="Add to Report (0)", disabled=True
-                    ).nth(0).click()
+                    ti_iframe.get_by_role("button", name="Add to Report (0)").nth(
+                        0
+                    ).click()
                     page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
                 with log_context(
                     logging.INFO,
