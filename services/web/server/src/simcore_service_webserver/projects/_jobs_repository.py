@@ -62,10 +62,23 @@ class ProjectJobsRepository(BaseRepository):
         user_id: UserID,
         offset: int = 0,
         limit: int = 10,
-        job_parent_resource_name_filter: str | None = None,
+        job_parent_resource_name_prefix: str | None = None,
     ) -> tuple[int, list[ProjectJobDBGet]]:
-        """
-        Lists projects marked as jobs for a specific user and product
+        """Lists projects marked as jobs for a specific user and product
+
+
+        Arguments:
+            product_name -- caller's context product identifier
+            user_id -- caller's user identifier
+
+        Keyword Arguments:
+            job_parent_resource_name_prefix -- is a prefix to filter the `job_parent_resource_name`. The latter is a
+                path-like string that contains a hierarchy of resources. An example of `job_parent_resource_name` is:
+                `/solvers/simcore%2Fservices%2Fcomp%2Fisolve/releases/1.3.4/jobs/f622946d-fd29-35b9-a193-abdd1095167c`
+                SEE services/api-server/src/simcore_service_api_server/models/api_resources.py (default: {None})
+
+        Returns:
+            total_count, list of projects marked as jobs
         """
 
         # Step 1: Get group IDs associated with the user
@@ -92,14 +105,18 @@ class ProjectJobsRepository(BaseRepository):
                 projects_to_products.c.product_name == product_name,
                 project_to_groups.c.gid.in_(sa.select(user_groups_query.c.gid)),
                 project_to_groups.c.read.is_(True),
+                projects.c.workspace_id.is_(
+                    # ONLY projects in private workspaces
+                    None
+                ),
             )
         )
 
         # Apply job_parent_resource_name_filter if provided
-        if job_parent_resource_name_filter:
+        if job_parent_resource_name_prefix:
             access_query = access_query.where(
                 projects_to_jobs.c.job_parent_resource_name.like(
-                    f"%{job_parent_resource_name_filter}%"
+                    f"{job_parent_resource_name_prefix}%"
                 )
             )
 

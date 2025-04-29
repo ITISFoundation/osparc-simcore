@@ -16,3 +16,7 @@ class MissingWalletError(CustomBaseError):
 
 class ApplicationSetupError(CustomBaseError):
     pass
+
+
+class SolverServiceListJobsFiltersError(CustomBaseError, ValueError):
+    msg_template = "solver_version is set but solver_id is not. Please provide both or none of them"
