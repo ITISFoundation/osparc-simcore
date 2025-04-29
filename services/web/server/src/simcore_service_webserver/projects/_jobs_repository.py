@@ -64,16 +64,26 @@ class ProjectJobsRepository(BaseRepository):
         limit: int = 10,
         job_parent_resource_name_prefix: str | None = None,
     ) -> tuple[int, list[ProjectJobDBGet]]:
+        """Lists projects marked as jobs for a specific user and product
+
+
+        Arguments:
+            product_name -- product identifier of the caller's context
+            user_id -- user identifier of the caller
+
+        Keyword Arguments:
+            connection --  (default: {None})
+            offset -- pagination offset (default: {0})
+            limit --  pagittion limit (default: {10})
+            job_parent_resource_name_prefix -- is a prefix to filter the `job_parent_resource_name`. The latter is a
+                path-like string that contains a hierarchy of resources. An example of `job_parent_resource_name` is:
+                `/solvers/simcore%2Fservices%2Fcomp%2Fisolve/releases/1.3.4/jobs/f622946d-fd29-35b9-a193-abdd1095167c`
+                SEE services/api-server/src/simcore_service_api_server/models/api_resources.py (default: {None})
+
+        Returns:
+            total_count, list of projects marked as jobs
         """
-        Lists projects marked as jobs for a specific user and product
 
-
-        `job_parent_resource_name_prefix` is a prefix to filter the `job_parent_resource_name`. The latter is a
-        path-like string that contains a hierarchy of resources. An example of `job_parent_resource_name` is:
-            `/solvers/simcore%2Fservices%2Fcomp%2Fisolve/releases/1.3.4/jobs/f622946d-fd29-35b9-a193-abdd1095167c`
-        SEE services/api-server/src/simcore_service_api_server/models/api_resources.py
-
-        """
         # Step 1: Get group IDs associated with the user
         user_groups_query = (
             sa.select(user_to_groups.c.gid)
@@ -98,6 +108,9 @@ class ProjectJobsRepository(BaseRepository):
                 projects_to_products.c.product_name == product_name,
                 project_to_groups.c.gid.in_(sa.select(user_groups_query.c.gid)),
                 project_to_groups.c.read.is_(True),
+                projects.c.workspace_id.is_(
+                    None
+                ),  # ONLY projects in private workspaces
             )
         )
 
