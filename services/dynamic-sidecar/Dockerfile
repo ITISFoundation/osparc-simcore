@@ -164,7 +164,7 @@ COPY --chown=root:root services/dynamic-sidecar/scripts/Makefile /root
 #
 FROM build AS prod-only-deps
 
-ENV SC_BUILD_TARGET prod-only-deps
+ENV SC_BUILD_TARGET=prod-only-deps
 
 WORKDIR /build/services/dynamic-sidecar
 
