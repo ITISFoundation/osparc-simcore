@@ -22,13 +22,6 @@ from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.projects._controller._rest_schemas import (
     ProjectPathParams,
 )
-
-# from simcore_service_webserver.projects._controller.conversations_rest import (
-#     _ProjectConversationsPathParams,
-#     _ListProjectConversationMessagesQueryParams,
-#     _ProjectConversationMessagesCreateBodyParams,
-#     _ProjectConversationMessagesPutBodyParams,
-# )
 from simcore_service_webserver.projects._controller.conversations_rest import (
     _ListProjectConversationMessagesQueryParams,
     _ListProjectConversationsQueryParams,
