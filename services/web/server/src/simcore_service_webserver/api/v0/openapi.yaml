@@ -9211,6 +9211,7 @@ components:
           minimum: 0
         content:
           type: string
+          maxLength: 4096
           title: Content
         type:
           $ref: '#/components/schemas/ConversationMessageType'
@@ -9249,6 +9250,7 @@ components:
           title: Productname
         name:
           type: string
+          maxLength: 50
           title: Name
         projectUuid:
           anyOf:

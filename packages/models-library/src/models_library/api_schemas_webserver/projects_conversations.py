@@ -1,6 +1,8 @@
 from datetime import datetime
 from typing import Self
 
+from pydantic import Field
+
 from ..conversations import (
     ConversationDB,
     ConversationID,
@@ -18,12 +20,10 @@ from ._base import InputSchema, OutputSchema
 class ConversationRestGet(OutputSchema):
     conversation_id: ConversationID
     product_name: ProductName
-    name: str
+    name: str = Field(..., max_length=50)
     project_uuid: ProjectID | None
     user_group_id: GroupID
     type: ConversationType
-
-    # states
     created: datetime
     modified: datetime
 
@@ -45,10 +45,8 @@ class ConversationMessageRestGet(OutputSchema):
     message_id: ConversationMessageID
     conversation_id: ConversationID
     user_group_id: GroupID
-    content: str
+    content: str = Field(..., max_length=4096)
     type: ConversationMessageType
-
-    # states
     created: datetime
     modified: datetime
 

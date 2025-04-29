@@ -8,11 +8,11 @@ from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogItemNotFoundError,
     CatalogNotAvailableError,
 )
-from simcore_service_webserver.conversations.errors import (
+
+from ...conversations.errors import (
     ConversationErrorNotFoundError,
     ConversationMessageErrorNotFoundError,
 )
-
 from ...exception_handling import (
     ExceptionToHttpErrorMap,
     HttpErrorInfo,
