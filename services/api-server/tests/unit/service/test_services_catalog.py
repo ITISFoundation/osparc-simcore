@@ -4,13 +4,12 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from fastapi import FastAPI
 from models_library.api_schemas_catalog.services import LatestServiceGet, ServiceGetV2
 from models_library.products import ProductName
 from models_library.services_history import ServiceRelease
 from models_library.users import UserID
 from pydantic import HttpUrl
-from pytest_mock import MockerFixture, MockType
+from pytest_mock import MockType
 from simcore_service_api_server.models.schemas.solvers import Solver
 from simcore_service_api_server.services_rpc.catalog import CatalogService
 
@@ -30,14 +29,11 @@ def to_solver(
 
 
 async def test_catalog_service_read_solvers(
-    app: FastAPI,
     product_name: ProductName,
     user_id: UserID,
-    mocker: MockerFixture,
     mocked_catalog_rpc_api: dict[str, MockType],
+    catalog_service: CatalogService,
 ):
-    catalog_service = CatalogService(client=mocker.MagicMock())
-
     # Step 1: List latest releases in a page
     latest_releases, meta = await catalog_service.list_latest_releases(
         product_name=product_name, user_id=user_id
