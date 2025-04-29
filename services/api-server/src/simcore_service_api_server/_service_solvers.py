@@ -12,6 +12,9 @@ from models_library.services_enums import ServiceType
 from models_library.services_history import ServiceRelease
 from models_library.users import UserID
 from packaging.version import Version
+from simcore_service_api_server.exceptions.custom_errors import (
+    SolverServiceListJobsFiltersError,
+)
 
 from .models.api_resources import compose_resource_name
 from .models.schemas.jobs import Job, JobInputs
@@ -110,8 +113,7 @@ class SolverService:
                 collection_or_resource_ids.append("releases")
                 collection_or_resource_ids.append(solver_version)
         elif solver_version:
-            msg = "solver_version is set but solver_id is not. Please provide both or none of them"
-            raise ValueError(msg)
+            raise SolverServiceListJobsFiltersError
 
         job_parent_resource_name_prefix = compose_resource_name(
             *collection_or_resource_ids
