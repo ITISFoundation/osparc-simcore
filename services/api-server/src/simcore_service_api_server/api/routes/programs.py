@@ -19,7 +19,7 @@ from simcore_sdk.node_ports_common.filemanager import (
     get_upload_links_from_s3,
 )
 
-from ..._service_job import JobService
+from ..._service_jobs import JobsService
 from ..._service_programs import ProgramService
 from ...api.routes._constants import (
     DEFAULT_MAX_STRING_LENGTH,
@@ -164,7 +164,7 @@ async def create_program_job(
     version: VersionStr,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     program_service: Annotated[ProgramService, Depends()],
-    job_service: Annotated[JobService, Depends()],
+    jobs_service: Annotated[JobsService, Depends()],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
     x_simcore_parent_project_uuid: Annotated[ProjectID | None, Header()] = None,
@@ -187,7 +187,7 @@ async def create_program_job(
         product_name=product_name,
     )
 
-    job, project = await job_service.create_job(
+    job, project = await jobs_service.create_job(
         project_name=name,
         description=description,
         solver_or_program=program,

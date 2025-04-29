@@ -27,9 +27,11 @@ _logger = logging.getLogger(__name__)
 DEFAULT_PAGINATION_LIMIT = 999  # MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE - 1
 
 
-class JobService:
+class JobsService:
+    # clients
     _web_rest_api: AuthSession
     _web_rpc_api: WbApiRpcClient
+    # context
     _user_id: UserID
     _product_name: ProductName
 

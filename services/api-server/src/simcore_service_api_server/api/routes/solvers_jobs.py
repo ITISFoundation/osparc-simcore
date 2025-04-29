@@ -12,7 +12,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from pydantic.types import PositiveInt
 
-from ..._service_job import JobService
+from ..._service_jobs import JobsService
 from ..._service_solvers import SolverService
 from ...exceptions.backend_errors import ProjectAlreadyStartedError
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
@@ -92,7 +92,7 @@ async def create_solver_job(
     inputs: JobInputs,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
-    job_service: Annotated[JobService, Depends()],
+    jobs_service: Annotated[JobsService, Depends()],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
     hidden: Annotated[bool, Query()] = True,
@@ -111,7 +111,7 @@ async def create_solver_job(
         solver_version=version,
         product_name=product_name,
     )
-    job, _ = await job_service.create_job(
+    job, _ = await jobs_service.create_job(
         project_name=None,
         description=None,
         solver_or_program=solver,

@@ -17,7 +17,7 @@ from simcore_service_api_server.exceptions.custom_errors import (
     SolverServiceListJobsFiltersError,
 )
 
-from ._service_job import JobService
+from ._service_jobs import JobsService
 from .models.api_resources import compose_resource_name
 from .models.schemas.jobs import Job
 from .models.schemas.solvers import Solver, SolverKeyId
@@ -28,15 +28,15 @@ DEFAULT_PAGINATION_LIMIT = MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE - 1
 
 class SolverService:
     _catalog_service: CatalogService
-    _job_service: JobService
+    _jobs_service: JobsService
 
     def __init__(
         self,
         catalog_service: CatalogService,
-        job_service: JobService,
+        jobs_service: JobsService,
     ):
         self._catalog_service = catalog_service
-        self._job_service = job_service
+        self._jobs_service = jobs_service
 
     async def get_solver(
         self,
@@ -116,7 +116,7 @@ class SolverService:
         )
 
         # Use the common implementation from JobService
-        return await self._job_service.list_jobs_by_resource_prefix(
+        return await self._jobs_service.list_jobs_by_resource_prefix(
             offset=offset,
             limit=limit,
             job_parent_resource_name_prefix=job_parent_resource_name_prefix,
