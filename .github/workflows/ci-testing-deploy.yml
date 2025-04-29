@@ -267,8 +267,6 @@ jobs:
             anything-js:
               - '**/*.js'
   build-test-images:
-    # this step comes first, so that it is executed as first job in push calls
-    # in PR calls this step is anyway skipped
     needs: changes
     if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     uses: ./.github/workflows/_reusable-build-images.yml
@@ -279,8 +277,6 @@ jobs:
       python-version: "3.11"
 
   build-test-images-frontend:
-    # this step comes first, so that it is executed as first job in push calls
-    # in PR calls this step is anyway skipped
     needs: changes
     if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     uses: ./.github/workflows/_reusable-build-images.yml

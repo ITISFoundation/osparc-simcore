@@ -22,18 +22,26 @@ on:
     outputs:
       backend-artifact-name:
         description: "Name of the backend artifact"
-        value: ${{ jobs.build-test-images.outputs.artifact-name }}
+        value: ${{ jobs.build-test-images.outputs.backend-artifact-name }}
       frontend-artifact-name:
         description: "Name of the frontend artifact"
-        value: ${{ jobs.build-test-images-frontend.outputs.artifact-name }}
+        value: ${{ jobs.build-test-images.outputs.frontend-artifact-name }}
 
 jobs:
   build-test-images:
-    if: ${{ inputs.build-backend }}
+    strategy:
+      matrix:
+        type: [backend, frontend]
+        exclude:
+          - type: backend
+            condition: ${{ !inputs.build-backend }}
+          - type: frontend
+            condition: ${{ !inputs.build-frontend }}
     timeout-minutes: 30
     runs-on: ${{ inputs.os }}
     outputs:
-      artifact-name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-backend
+      backend-artifact-name: ${{ matrix.type == 'backend' && format('docker-buildx-images-{0}-{1}-backend', runner.os, github.sha) || '' }}
+      frontend-artifact-name: ${{ matrix.type == 'frontend' && format('docker-buildx-images-{0}-{1}-frontend', runner.os, github.sha) || '' }}
     steps:
       - uses: actions/checkout@v4
       - name: setup docker buildx
@@ -49,37 +57,13 @@ jobs:
         run: |
           export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
           mkdir --parents /${{ runner.temp }}/build
-          make build local-dest=/${{ runner.temp }}/build exclude=static-webserver
+          if [ "${{ matrix.type }}" = "backend" ]; then
+            make build local-dest=/${{ runner.temp }}/build exclude=static-webserver
+          else
+            make build local-dest=/${{ runner.temp }}/build target=static-webserver
+          fi
       - name: upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-backend
-          path: /${{ runner.temp }}/build
-
-  build-test-images-frontend:
-    if: ${{ inputs.build-frontend }}
-    timeout-minutes: 30
-    runs-on: ${{ inputs.os }}
-    outputs:
-      artifact-name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-frontend
-    steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v3
-      - name: show system environs
-        run: ./ci/helpers/show_system_versions.bash
-      - name: build images
-        run: |
-          export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
-          mkdir --parents /${{ runner.temp }}/build
-          make build local-dest=/${{ runner.temp }}/build target=static-webserver
-      - name: upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-frontend
+          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-${{ matrix.type }}
           path: /${{ runner.temp }}/build
