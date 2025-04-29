@@ -262,7 +262,6 @@ jobs:
               - 'packages/**'
               - 'services/**'
               - 'tests/**'
-              - '**/*'
             anything-py:
               - '**/*.py'
             anything-js:
