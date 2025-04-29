@@ -297,222 +297,59 @@ jobs:
   unit-test-webserver-02:
     needs: changes
     if: ${{ needs.changes.outputs.webserver == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 25 # if this timeout gets too small, then split the tests
-    name: "[unit] webserver 02"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.11"]
-        os: [ubuntu-24.04]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/web/server/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install webserver
-        run: ./ci/github/unit-testing/webserver.bash install
-      - name: test
-        run: ./ci/github/unit-testing/webserver.bash test_with_db 02
-      - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        with:
-          flags: unittests #optional
-
+    uses: ./.github/workflows/_reusable-unit-test.yml
+    with:
+      service_name: webserver
+      timeout_minutes: 25
+      dependency_path: "**/web/server/requirements/ci.txt"
+      test_mode: "with_db"
+      test_shard: "02"
+    secrets: inherit
 
   unit-test-webserver-03:
     needs: changes
     if: ${{ needs.changes.outputs.webserver == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 25 # if this timeout gets too small, then split the tests
-    name: "[unit] webserver 03"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.11"]
-        os: [ubuntu-24.04]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/web/server/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install webserver
-        run: ./ci/github/unit-testing/webserver.bash install
-      - name: test
-        run: ./ci/github/unit-testing/webserver.bash test_with_db 03
-      - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        with:
-          flags: unittests #optional
-
+    uses: ./.github/workflows/_reusable-unit-test.yml
+    with:
+      service_name: webserver
+      timeout_minutes: 25
+      dependency_path: "**/web/server/requirements/ci.txt"
+      test_mode: "with_db"
+      test_shard: "03"
+    secrets: inherit
 
   unit-test-webserver-04:
-      needs: changes
-      if: ${{ needs.changes.outputs.webserver == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-      timeout-minutes: 25 # if this timeout gets too small, then split the tests
-      name: "[unit] webserver 04"
-      runs-on: ${{ matrix.os }}
-      strategy:
-        matrix:
-          python: ["3.11"]
-          os: [ubuntu-24.04]
-        fail-fast: false
-      steps:
-        - uses: actions/checkout@v4
-        - name: setup docker buildx
-          id: buildx
-          uses: docker/setup-buildx-action@v3
-          with:
-            driver: docker-container
-        - name: setup python environment
-          uses: actions/setup-python@v5
-          with:
-            python-version: ${{ matrix.python }}
-        - name: install uv
-          uses: astral-sh/setup-uv@v6
-          with:
-            version: "0.6.x"
-            enable-cache: false
-            cache-dependency-glob: "**/web/server/requirements/ci.txt"
-        - name: show system version
-          run: ./ci/helpers/show_system_versions.bash
-        - name: install webserver
-          run: ./ci/github/unit-testing/webserver.bash install
-        - name: test
-          run: ./ci/github/unit-testing/webserver.bash test_with_db 04
-        - uses: codecov/codecov-action@v5
-          env:
-            CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-          with:
-            flags: unittests #optional
-        - name: Upload test results to Codecov
-          if: ${{ !cancelled() }}
-          uses: codecov/test-results-action@v1
-          with:
-            token: ${{ secrets.CODECOV_TOKEN }}
+    needs: changes
+    if: ${{ needs.changes.outputs.webserver == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
+    uses: ./.github/workflows/_reusable-unit-test.yml
+    with:
+      service_name: webserver
+      timeout_minutes: 25
+      dependency_path: "**/web/server/requirements/ci.txt"
+      test_mode: "with_db"
+      test_shard: "04"
+    secrets: inherit
 
   unit-test-storage:
     needs: changes
     if: ${{ needs.changes.outputs.storage == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 25 # if this timeout gets too small, then split the tests
-    name: "[unit] storage"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.11"]
-        os: [ubuntu-24.04]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/storage/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/unit-testing/storage.bash install
-      - name: typecheck
-        run: ./ci/github/unit-testing/storage.bash typecheck
-      - name: test
-        if: ${{ !cancelled() }}
-        run: ./ci/github/unit-testing/storage.bash test
-      - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        with:
-          flags: unittests #optional
-
+    uses: ./.github/workflows/_reusable-unit-test.yml
+    with:
+      service_name: storage
+      timeout_minutes: 25
+      dependency_path: "**/storage/requirements/ci.txt"
+    secrets: inherit
 
   unit-test-agent:
     needs: changes
     if: ${{ needs.changes.outputs.agent == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] agent"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.11"]
-        os: [ubuntu-24.04]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
-      - name: install rclone
-        run: sudo ./ci/github/helpers/install_rclone.bash
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/agent/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/unit-testing/agent.bash install
-      - name: typecheck
-        run: ./ci/github/unit-testing/agent.bash typecheck
-      - name: test
-        if: ${{ !cancelled() }}
-        run: ./ci/github/unit-testing/agent.bash test
-      - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        with:
-          flags: unittests #optional
+    uses: ./.github/workflows/_reusable-unit-test.yml
+    with:
+      service_name: agent
+      timeout_minutes: 18
+      dependency_path: "**/agent/requirements/ci.txt"
+      pre_test_step: "install_rclone"
+    secrets: inherit
 
   unit-test-notifications:
     needs: changes
@@ -536,355 +373,73 @@ jobs:
   unit-test-api-server:
     needs: changes
     if: ${{ needs.changes.outputs.api-server == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] api-server"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.11"]
-        os: [ubuntu-24.04]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/api-server/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/unit-testing/api-server.bash install
-      - name: typecheck
-        run: ./ci/github/unit-testing/api-server.bash typecheck
-      - name: test
-        if: ${{ !cancelled() }}
-        run: ./ci/github/unit-testing/api-server.bash test
-      - name: OAS backwards compatibility check
-        if: ${{ !cancelled() }}
-        run: ./ci/github/unit-testing/api-server.bash openapi-diff
-      - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        with:
-          flags: unittests #optional
-
+    uses: ./.github/workflows/_reusable-unit-test.yml
+    with:
+      service_name: api-server
+      timeout_minutes: 18
+      dependency_path: "**/api-server/requirements/ci.txt"
+      pre_test_step: "openapi-diff"
+    secrets: inherit
 
   unit-test-autoscaling:
     needs: changes
     if: ${{ needs.changes.outputs.autoscaling == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 22 # temporary: mypy takes a huge amount of time to run here, maybe we should cache it
-    name: "[unit] autoscaling"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.11"]
-        os: [ubuntu-24.04]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/autoscaling/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/unit-testing/autoscaling.bash install
-      - name: typecheck
-        run: ./ci/github/unit-testing/autoscaling.bash typecheck
-      - name: test
-        if: ${{ !cancelled() }}
-        run: ./ci/github/unit-testing/autoscaling.bash test
-      - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        with:
-          flags: unittests #optional
-
+    uses: ./.github/workflows/_reusable-unit-test.yml
+    with:
+      service_name: autoscaling
+      timeout_minutes: 22
+      dependency_path: "**/autoscaling/requirements/ci.txt"
+    secrets: inherit
 
   unit-test-catalog:
     needs: changes
     if: ${{ needs.changes.outputs.catalog == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] catalog"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.11"]
-        os: [ubuntu-24.04]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/catalog/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/unit-testing/catalog.bash install
-      - name: typecheck
-        run: ./ci/github/unit-testing/catalog.bash typecheck
-      - name: test
-        if: ${{ !cancelled() }}
-        run: ./ci/github/unit-testing/catalog.bash test
-      - name: upload failed tests logs
-        if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ github.job }}_docker_logs
-          path: ./services/catalog/test_failures
-      - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        with:
-          flags: unittests #optional
-
+    uses: ./.github/workflows/_reusable-unit-test.yml
+    with:
+      service_name: catalog
+      timeout_minutes: 18
+      dependency_path: "**/catalog/requirements/ci.txt"
+    secrets: inherit
 
   unit-test-clusters-keeper:
     needs: changes
     if: ${{ needs.changes.outputs.clusters-keeper == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] clusters-keeper"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.11"]
-        os: [ubuntu-24.04]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/clusters-keeper/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: |
-          make devenv
-          source .venv/bin/activate && \
-          pushd services/clusters-keeper && \
-          make install-ci
-      - name: typecheck
-        run: |
-          source .venv/bin/activate && \
-          uv pip install mypy && \
-          pushd services/clusters-keeper && \
-          make mypy
-      - name: test
-        if: ${{ !cancelled() }}
-        run: |
-          source .venv/bin/activate && \
-          pushd services/clusters-keeper && \
-          make test-ci-unit
-      - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        with:
-          flags: unittests #optional
-
+    uses: ./.github/workflows/_reusable-unit-test.yml
+    with:
+      service_name: clusters-keeper
+      timeout_minutes: 18
+      dependency_path: "**/clusters-keeper/requirements/ci.txt"
+    secrets: inherit
 
   unit-test-datcore-adapter:
     needs: changes
     if: ${{ needs.changes.outputs.datcore-adapter == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] datcore-adapter"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.11"]
-        os: [ubuntu-24.04]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/datcore-adapter/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/unit-testing/datcore-adapter.bash install
-      - name: typecheck
-        run: ./ci/github/unit-testing/datcore-adapter.bash typecheck
-      - name: test
-        if: ${{ !cancelled() }}
-        run: ./ci/github/unit-testing/datcore-adapter.bash test
-      - name: upload failed tests logs
-        if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ github.job }}_docker_logs
-          path: ./services/datcore-adapter/test_failures
-      - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        with:
-          flags: unittests #optional
-
+    uses: ./.github/workflows/_reusable-unit-test.yml
+    with:
+      service_name: datcore-adapter
+      timeout_minutes: 18
+      dependency_path: "**/datcore-adapter/requirements/ci.txt"
+    secrets: inherit
 
   unit-test-director:
     needs: changes
     if: ${{ needs.changes.outputs.director == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] director"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.11"]
-        os: [ubuntu-24.04]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/director/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/unit-testing/director.bash install
-      - name: typecheck
-        run: ./ci/github/unit-testing/director.bash typecheck
-      - name: test
-        if: ${{ !cancelled() }}
-        run: ./ci/github/unit-testing/director.bash test
-      - name: upload failed tests logs
-        if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ github.job }}_docker_logs
-          path: ./services/director/test_failures
-      - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        with:
-          flags: unittests #optional
-
+    uses: ./.github/workflows/_reusable-unit-test.yml
+    with:
+      service_name: director
+      timeout_minutes: 18
+      dependency_path: "**/director/requirements/ci.txt"
+    secrets: inherit
 
   unit-test-director-v2:
     needs: changes
     if: ${{ needs.changes.outputs.director-v2 == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] director-v2"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.11"]
-        os: [ubuntu-24.04]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/director-v2/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/unit-testing/director-v2.bash install
-      - name: typecheck
-        run: ./ci/github/unit-testing/director-v2.bash typecheck
-      - name: test
-        if: ${{ !cancelled() }}
-        run: ./ci/github/unit-testing/director-v2.bash test
-      - name: upload failed tests logs
-        if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ github.job }}_docker_logs
-          path: ./services/director-v2/test_failures
-      - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        with:
-          flags: unittests #optional
-
+    uses: ./.github/workflows/_reusable-unit-test.yml
+    with:
+      service_name: director-v2
+      timeout_minutes: 18
+      dependency_path: "**/director-v2/requirements/ci.txt"
+    secrets: inherit
 
   unit-test-aws-library:
     needs: changes
@@ -1024,248 +579,52 @@ jobs:
   unit-test-payments:
     needs: changes
     if: ${{ needs.changes.outputs.payments == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] payments"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.11"]
-        os: [ubuntu-24.04]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/payments/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/unit-testing/payments.bash install
-      - name: typecheck
-        run: ./ci/github/unit-testing/payments.bash typecheck
-      - name: test
-        if: ${{ !cancelled() }}
-        run: ./ci/github/unit-testing/payments.bash test
-      - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        with:
-          flags: unittests #optional
-
+    uses: ./.github/workflows/_reusable-unit-test.yml
+    with:
+      service_name: payments
+      timeout_minutes: 18
+      dependency_path: "**/payments/requirements/ci.txt"
+    secrets: inherit
 
   unit-test-dynamic-scheduler:
     needs: changes
     if: ${{ needs.changes.outputs.dynamic-scheduler == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] dynamic-scheduler"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.11"]
-        os: [ubuntu-24.04]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/dynamic-scheduler/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/unit-testing/dynamic-scheduler.bash install
-      - name: typecheck
-        run: ./ci/github/unit-testing/dynamic-scheduler.bash typecheck
-      - name: test
-        if: ${{ !cancelled() }}
-        run: ./ci/github/unit-testing/dynamic-scheduler.bash test
-      - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        with:
-          flags: unittests #optional
-
+    uses: ./.github/workflows/_reusable-unit-test.yml
+    with:
+      service_name: dynamic-scheduler
+      timeout_minutes: 18
+      dependency_path: "**/dynamic-scheduler/requirements/ci.txt"
+    secrets: inherit
 
   unit-test-resource-usage-tracker:
     needs: changes
     if: ${{ needs.changes.outputs.resource-usage-tracker == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] resource-usage-tracker"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.11"]
-        os: [ubuntu-24.04]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/resource-usage-tracker/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: |
-          make devenv
-          source .venv/bin/activate && \
-          pushd services/resource-usage-tracker && \
-          make install-ci
-      - name: typecheck
-        run: |
-          source .venv/bin/activate && \
-          pushd services/resource-usage-tracker && \
-          make mypy
-      - name: test
-        if: ${{ !cancelled() }}
-        run: |
-          source .venv/bin/activate && \
-          pushd services/resource-usage-tracker && \
-          make test-ci-unit
-      - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        with:
-          flags: unittests #optional
-
+    uses: ./.github/workflows/_reusable-unit-test.yml
+    with:
+      service_name: resource-usage-tracker
+      timeout_minutes: 18
+      dependency_path: "**/resource-usage-tracker/requirements/ci.txt"
+    secrets: inherit
 
   unit-test-dynamic-sidecar:
     needs: changes
     if: ${{ needs.changes.outputs.dynamic-sidecar == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] dynamic-sidecar"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.11"]
-        os: [ubuntu-24.04]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/dynamic-sidecar/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/unit-testing/dynamic-sidecar.bash install
-      - name: typecheck
-        run: ./ci/github/unit-testing/dynamic-sidecar.bash typecheck
-      - name: test
-        if: ${{ !cancelled() }}
-        run: ./ci/github/unit-testing/dynamic-sidecar.bash test
-      - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        with:
-          flags: unittests #optional
-
+    uses: ./.github/workflows/_reusable-unit-test.yml
+    with:
+      service_name: dynamic-sidecar
+      timeout_minutes: 18
+      dependency_path: "**/dynamic-sidecar/requirements/ci.txt"
+    secrets: inherit
 
   unit-test-efs-guardian:
     needs: changes
     if: ${{ needs.changes.outputs.efs-guardian == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] efs-guardian"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.11"]
-        os: [ubuntu-24.04]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/efs-guardian/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: |
-          make devenv
-          source .venv/bin/activate && \
-          pushd services/efs-guardian && \
-          make install-ci
-      - name: typecheck
-        run: |
-          source .venv/bin/activate && \
-          uv pip install mypy && \
-          pushd services/efs-guardian && \
-          make mypy
-      - name: test
-        if: ${{ !cancelled() }}
-        run: |
-          source .venv/bin/activate && \
-          pushd services/efs-guardian && \
-          make test-ci-unit
-      - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        with:
-          flags: unittests #optional
-
+    uses: ./.github/workflows/_reusable-unit-test.yml
+    with:
+      service_name: efs-guardian
+      timeout_minutes: 18
+      dependency_path: "**/efs-guardian/requirements/ci.txt"
+    secrets: inherit
 
   unit-test-python-linting:
     needs: changes
@@ -1350,47 +709,22 @@ jobs:
   unit-test-invitations:
     needs: changes
     if: ${{ needs.changes.outputs.invitations == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] invitations"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.11"]
-        os: [ubuntu-24.04]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/notifications-library/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/unit-testing/invitations.bash install
-      - name: typecheck
-        run: ./ci/github/unit-testing/invitations.bash typecheck
-      - name: test
-        if: ${{ !cancelled() }}
-        run: ./ci/github/unit-testing/invitations.bash test
-      - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        with:
-          flags: unittests #optional
+    uses: ./.github/workflows/_reusable-unit-test.yml
+    with:
+      service_name: invitations
+      timeout_minutes: 18
+      dependency_path: "**/notifications-library/requirements/ci.txt"
+    secrets: inherit
 
+  unit-test-migration:
+    needs: changes
+    if: ${{ needs.changes.outputs.migration == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
+    uses: ./.github/workflows/_reusable-unit-test.yml
+    with:
+      service_name: migration
+      timeout_minutes: 18
+      dependency_path: "**/migration/requirements/ci.txt"
+    secrets: inherit
 
   unit-test-service-integration:
     needs: changes
@@ -1736,6 +1070,7 @@ jobs:
         unit-test-webserver-02,
         unit-test-webserver-03,
         unit-test-webserver-04,
+        unit-test-migration,
       ]
     runs-on: ubuntu-latest
     steps:
