@@ -14,6 +14,10 @@ from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import PositiveInt
+from simcore_postgres_database.utils_repos import (
+    pass_or_acquire_connection,
+    transaction_context,
+)
 from sqlalchemy.dialects.postgresql.asyncpg import AsyncAdapt_asyncpg_dbapi
 from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.sql import or_
@@ -56,7 +60,8 @@ class CompRunsRepository(BaseRepository):
 
         :raises ComputationalRunNotFoundError: no entry found
         """
-        async with self.db_engine.connect() as conn:
+
+        async with pass_or_acquire_connection(self.db_engine) as conn:
             result = await conn.execute(
                 sa.select(comp_runs)
                 .where(
@@ -213,7 +218,7 @@ class CompRunsRepository(BaseRepository):
             )
         list_query = list_query.offset(offset).limit(limit)
 
-        async with self.db_engine.connect() as conn:
+        async with pass_or_acquire_connection(self.db_engine) as conn:
             total_count = await conn.scalar(count_query)
 
             items = [
@@ -238,7 +243,7 @@ class CompRunsRepository(BaseRepository):
         use_on_demand_clusters: bool,
     ) -> CompRunsAtDB:
         try:
-            async with self.db_engine.begin() as conn:
+            async with transaction_context(self.db_engine) as conn:
                 if iteration is None:
                     iteration = await self._get_next_iteration(
                         conn, user_id, project_id
@@ -309,7 +314,7 @@ class CompRunsRepository(BaseRepository):
     async def update(
         self, user_id: UserID, project_id: ProjectID, iteration: PositiveInt, **values
     ) -> CompRunsAtDB | None:
-        async with self.db_engine.begin() as conn:
+        async with transaction_context(self.db_engine) as conn:
             result = await conn.execute(
                 sa.update(comp_runs)
                 .where(
