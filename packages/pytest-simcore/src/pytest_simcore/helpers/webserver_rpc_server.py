@@ -8,7 +8,10 @@
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.rest_pagination import PageOffsetInt
-from models_library.rpc.webserver.projects import PageRpcProjectJobRpcGet
+from models_library.rpc.webserver.projects import (
+    PageRpcProjectJobRpcGet,
+    ProjectJobRpcGet,
+)
 from models_library.rpc_pagination import (
     DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     PageLimitInt,
@@ -54,19 +57,28 @@ class WebserverRpcSideEffects:
         offset: PageOffsetInt = 0,
         limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
         # filters
-        job_parent_resource_name_filter: str | None = None,
+        job_parent_resource_name_prefix: str | None = None,
     ) -> PageRpcProjectJobRpcGet:
         assert rpc_client
         assert product_name
         assert user_id
 
-        if job_parent_resource_name_filter:
-            assert not job_parent_resource_name_filter.startswith("/")
+        if job_parent_resource_name_prefix:
+            assert not job_parent_resource_name_prefix.startswith("/")
+            assert not job_parent_resource_name_prefix.endswith("%")
+            assert not job_parent_resource_name_prefix.startswith("%")
 
-        items = PageRpcProjectJobRpcGet.model_json_schema()["examples"]
+        items = [
+            item
+            for item in ProjectJobRpcGet.model_json_schema()["examples"]
+            if job_parent_resource_name_prefix is None
+            or item.get("job_parent_resource_name").startswith(
+                job_parent_resource_name_prefix
+            )
+        ]
 
         return PageRpcProjectJobRpcGet.create(
-            items[offset, : offset + limit],
+            items[offset : offset + limit],
             total=len(items),
             limit=limit,
             offset=offset,
