@@ -1,4 +1,4 @@
-from typing import Any, TypeVar
+from typing import Any, TypeAlias, TypeVar
 
 import sqlalchemy as sa
 import sqlalchemy.exc as sql_exc
@@ -36,14 +36,16 @@ async def raise_if_migration_not_ready(engine: AsyncEngine) -> None:
             raise DBMigrationError(msg)
 
 
-T = TypeVar("T", bound=OsparcErrorMixin)
+AsyncpgSQLState: TypeAlias = str
+ErrorT = TypeVar("ErrorT", bound=OsparcErrorMixin)
+ErrorKwars: TypeAlias = dict[str, Any]
 
 
 def map_db_exception(
     exception: Exception,
-    exception_map: dict[str, tuple[type[T], dict[str, Any]]],
-    default_exception: type[T] | None = None,
-) -> T | Exception:
+    exception_map: dict[AsyncpgSQLState, tuple[type[ErrorT], ErrorKwars]],
+    default_exception: type[ErrorT] | None = None,
+) -> ErrorT | Exception:
     """Maps SQLAlchemy database exceptions to domain-specific exceptions.
 
     This function inspects SQLAlchemy and asyncpg exceptions to identify the error type
