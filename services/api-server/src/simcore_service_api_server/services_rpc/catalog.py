@@ -71,7 +71,7 @@ class CatalogService:
         )
         return page.data, meta
 
-    async def list_release_history(
+    async def list_release_history_sorted(
         self,
         *,
         product_name: ProductName,
