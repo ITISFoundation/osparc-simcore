@@ -122,11 +122,11 @@ async def test_resolve_session_environs(faker: Faker, session_context: ContextDi
 @pytest.fixture
 def mock_repo_db_engine(mocker: MockerFixture) -> None:
     @asynccontextmanager
-    async def _acquire():
+    async def _connect():
         yield
 
     mocked_engine = AsyncMock()
-    mocked_engine.acquire = _acquire
+    mocked_engine.connect = _connect
 
     def _get_repository(app: FastAPI, repo_type: type[RepoType]) -> RepoType:
         return repo_type(db_engine=mocked_engine)

@@ -1,5 +1,4 @@
 import sqlalchemy as sa
-from aiopg.sa.result import RowProxy
 from common_library.json_serialization import json_loads
 from models_library.projects import ProjectID
 from models_library.projects_networks import NetworksWithAliases, ProjectsNetworks
@@ -12,14 +11,14 @@ from ._base import BaseRepository
 
 class ProjectsNetworksRepository(BaseRepository):
     async def get_projects_networks(self, project_id: ProjectID) -> ProjectsNetworks:
-        async with self.db_engine.acquire() as conn:
-            row: RowProxy | None = await (
+        async with self.db_engine.connect() as conn:
+            row = (
                 await conn.execute(
                     sa.select(projects_networks).where(
                         projects_networks.c.project_uuid == f"{project_id}"
                     )
                 )
-            ).first()
+            ).one_or_none()
         if not row:
             raise ProjectNetworkNotFoundError(project_id=project_id)
         return ProjectsNetworks.model_validate(row)
@@ -31,7 +30,7 @@ class ProjectsNetworksRepository(BaseRepository):
             {"project_uuid": project_id, "networks_with_aliases": networks_with_aliases}
         )
 
-        async with self.db_engine.acquire() as conn:
+        async with self.db_engine.begin() as conn:
             row_data = json_loads(projects_networks_to_insert.model_dump_json())
             insert_stmt = pg_insert(projects_networks).values(**row_data)
             upsert_snapshot = insert_stmt.on_conflict_do_update(

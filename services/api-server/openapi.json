@@ -1321,7 +1321,7 @@
           "programs"
         ],
         "summary": "Create Program Job",
-        "description": "Creates a job in a specific release with given inputs.\n\nNOTE: This operation does **not** start the job",
+        "description": "Creates a program job",
         "operationId": "create_program_job",
         "security": [
           {
@@ -1384,6 +1384,15 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_create_program_job_v0_programs__program_key__releases__version__jobs_post"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": "Successful Response",
@@ -6056,6 +6065,36 @@
         ],
         "title": "Body_complete_multipart_upload_v0_files__file_id__complete_post"
       },
+      "Body_create_program_job_v0_programs__program_key__releases__version__jobs_post": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "title": "Body_create_program_job_v0_programs__program_key__releases__version__jobs_post"
+      },
       "Body_upload_file_v0_files_content_put": {
         "properties": {
           "file": {
@@ -7715,6 +7754,17 @@
             ],
             "title": "Url",
             "description": "Link to get this resource"
+          },
+          "version_display": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version Display"
           }
         },
         "type": "object",
@@ -7722,7 +7772,8 @@
           "id",
           "version",
           "title",
-          "url"
+          "url",
+          "version_display"
         ],
         "title": "Program",
         "description": "A released program with a specific version",
@@ -7732,7 +7783,8 @@
           "maintainer": "info@itis.swiss",
           "title": "Sim4life",
           "url": "https://api.osparc.io/v0/solvers/simcore%2Fservices%2Fdynamic%2Fsim4life/releases/8.0.0",
-          "version": "8.0.0"
+          "version": "8.0.0",
+          "version_display": "8.0.0"
         }
       },
       "RunningState": {

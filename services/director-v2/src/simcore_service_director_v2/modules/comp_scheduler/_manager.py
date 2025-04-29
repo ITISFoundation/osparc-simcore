@@ -2,7 +2,6 @@ import logging
 from typing import Final
 
 import networkx as nx
-from aiopg.sa import Engine
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.users import UserID
@@ -12,6 +11,7 @@ from servicelib.exception_utils import silence_exceptions
 from servicelib.logging_utils import log_context
 from servicelib.redis import CouldNotAcquireLockError, exclusive
 from servicelib.utils import limited_gather
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ...models.comp_runs import RunMetadataDict
 from ...utils.rabbitmq import publish_project_log
@@ -103,7 +103,9 @@ async def stop_pipeline(
         )
 
 
-async def _get_pipeline_dag(project_id: ProjectID, db_engine: Engine) -> nx.DiGraph:
+async def _get_pipeline_dag(
+    project_id: ProjectID, db_engine: AsyncEngine
+) -> nx.DiGraph:
     comp_pipeline_repo = CompPipelinesRepository.instance(db_engine)
     pipeline_at_db = await comp_pipeline_repo.get_pipeline(project_id)
     return pipeline_at_db.get_graph()
