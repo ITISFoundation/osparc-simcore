@@ -45,15 +45,6 @@ _SOLVER_STATUS_CODES: dict[int | str, dict[str, Any]] = {
 
 router = APIRouter()
 
-## SOLVERS -----------------------------------------------------------------------------------------
-#
-# - TODO: pagination, result ordering, filter field and results fields?? SEE https://cloud.google.com/apis/design/standard_methods#list
-# - TODO: :search? SEE https://cloud.google.com/apis/design/custom_methods#common_custom_methods
-# - TODO: move more of this logic to catalog service
-# - TODO: error handling!!!
-# - TODO: allow release_tags instead of versions in the next iteration.
-#    Would be nice to have /solvers/foo/releases/latest or solvers/foo/releases/3 , similar to docker tagging
-
 
 @router.get(
     "",
@@ -74,10 +65,8 @@ router = APIRouter()
     deprecated=True,
 )
 async def list_solvers(
-    user_id: Annotated[int, Depends(get_current_user_id)],
     catalog_service: Annotated[CatalogService, Depends(get_catalog_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
-    product_name: Annotated[str, Depends(get_product_name)],
 ):
     """Lists all available solvers (latest version)"""
 
@@ -107,8 +96,6 @@ async def list_solvers(
 )
 async def get_solvers_page(
     page_params: Annotated[PaginationParams, Depends()],
-    user_id: Annotated[int, Depends(get_current_user_id)],
-    product_name: Annotated[str, Depends(get_product_name)],
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
@@ -147,10 +134,8 @@ async def get_solvers_page(
     deprecated=True,
 )
 async def list_solvers_releases(
-    user_id: Annotated[int, Depends(get_current_user_id)],
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
-    product_name: Annotated[str, Depends(get_product_name)],
 ):
 
     latest_solvers: list[Solver] = []
@@ -189,10 +174,8 @@ async def list_solvers_releases(
 )
 async def get_solver(
     solver_key: SolverKeyId,
-    user_id: Annotated[int, Depends(get_current_user_id)],
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
-    product_name: Annotated[str, Depends(get_product_name)],
 ):
     """Gets latest release of a solver"""
     # IMPORTANT: by adding /latest, we avoid changing the order of this entry in the router list
@@ -221,10 +204,8 @@ async def get_solver(
 )
 async def list_solver_releases(
     solver_key: SolverKeyId,
-    user_id: Annotated[int, Depends(get_current_user_id)],
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
-    product_name: Annotated[str, Depends(get_product_name)],
 ):
     """Lists all releases of a given (one) solver
 
@@ -262,8 +243,6 @@ async def list_solver_releases(
 async def get_solver_releases_page(
     solver_key: SolverKeyId,
     page_params: Annotated[PaginationParams, Depends()],
-    user_id: Annotated[int, Depends(get_current_user_id)],
-    product_name: Annotated[str, Depends(get_product_name)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
 ):
@@ -294,18 +273,14 @@ async def get_solver_releases_page(
 async def get_solver_release(
     solver_key: SolverKeyId,
     version: VersionStr,
-    user_id: Annotated[int, Depends(get_current_user_id)],
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
-    product_name: Annotated[str, Depends(get_product_name)],
 ):
     """Gets a specific release of a solver"""
     try:
         solver: Solver = await solver_service.get_solver(
-            user_id=user_id,
             solver_key=solver_key,
             solver_version=version,
-            product_name=product_name,
         )
 
         solver.url = url_for(
@@ -335,9 +310,7 @@ async def get_solver_release(
 async def list_solver_ports(
     solver_key: SolverKeyId,
     version: VersionStr,
-    user_id: Annotated[int, Depends(get_current_user_id)],
     catalog_service: Annotated[CatalogService, Depends(get_catalog_service)],
-    product_name: Annotated[str, Depends(get_product_name)],
 ):
     ports = await catalog_service.get_service_ports(
         name=solver_key,
