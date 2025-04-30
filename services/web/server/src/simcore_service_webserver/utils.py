@@ -4,6 +4,7 @@ General utilities and helper functions
 
 import asyncio
 import hashlib
+import ipaddress
 import logging
 import os
 import sys
@@ -173,3 +174,17 @@ def compose_support_error_msg(
 
 def get_traceback_string(exception: BaseException) -> str:
     return "".join(traceback.format_exception(exception))
+
+
+# -----------------------------------------------
+#
+# NETWORK
+#
+
+
+def is_ip_address(host: str) -> bool:
+    try:
+        ipaddress.ip_address(host)
+        return True
+    except ValueError:
+        return False

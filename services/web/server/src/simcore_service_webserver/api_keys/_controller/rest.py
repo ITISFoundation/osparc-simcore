@@ -21,6 +21,7 @@ from ..._meta import API_VTAG
 from ...login.decorators import login_required
 from ...models import RequestContext
 from ...security.decorators import permission_required
+from ...utils import is_ip_address
 from ...utils_aiohttp import envelope_json_response, iter_originating_hosts
 from .. import _service
 from ..models import ApiKey
@@ -38,7 +39,11 @@ class ApiKeysPathParams(StrictRequestParameters):
 
 def _get_api_base_url(request: web.Request) -> str:
     originating_host = next(iter_originating_hosts(request))
-    api_host = f"api.{originating_host}"
+    api_host = (
+        f"api.{originating_host}"
+        if not is_ip_address(originating_host)
+        else originating_host
+    )
     return f"{request.url.with_host(api_host).with_port(None).with_path('')}"
 
 
