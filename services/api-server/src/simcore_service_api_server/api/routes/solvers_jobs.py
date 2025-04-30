@@ -37,7 +37,6 @@ from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.services import get_api_client, get_solver_service
 from ..dependencies.webserver_http import AuthSession, get_webserver_session
 from ._constants import (
-    FMSG_CHANGELOG_ADDED_IN_VERSION,
     FMSG_CHANGELOG_CHANGED_IN_VERSION,
     FMSG_CHANGELOG_NEW_IN_VERSION,
 )
@@ -164,8 +163,10 @@ async def delete_job(
         },
     },
     description="Starts job job_id created with the solver solver_key:version\n\n"
-    + FMSG_CHANGELOG_ADDED_IN_VERSION.format("0.4.3", "query parameter `cluster_id`")
-    + FMSG_CHANGELOG_ADDED_IN_VERSION.format(
+    + FMSG_CHANGELOG_CHANGED_IN_VERSION.format(
+        "0.4.3", "adds query parameter `cluster_id`"
+    )
+    + FMSG_CHANGELOG_CHANGED_IN_VERSION.format(
         "0.6", "responds with a 202 when successfully starting a computation"
     )
     + FMSG_CHANGELOG_CHANGED_IN_VERSION.format(

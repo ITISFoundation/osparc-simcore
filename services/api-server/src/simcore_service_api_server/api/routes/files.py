@@ -30,9 +30,8 @@ from simcore_sdk.node_ports_common.filemanager import (
 )
 from simcore_sdk.node_ports_common.filemanager import upload_path as storage_upload_path
 from simcore_service_api_server.api.routes._constants import (
-    FMSG_CHANGELOG_ADDED_IN_VERSION,
-    FMSG_CHANGELOG_REMOVED_IN_VERSION_FORMAT,
-    create_route_description,
+    FMSG_CHANGELOG_NEW_IN_VERSION,
+    create_route_config,
 )
 from starlette.datastructures import URL
 from starlette.responses import RedirectResponse
@@ -141,16 +140,12 @@ async def _create_domain_file(
     "",
     response_model=list[OutputFile],
     responses=_FILE_STATUS_CODES,
-    description=create_route_description(
-        base="Lists all files stored in the system",
-        deprecated=True,
+    **create_route_config(
+        base_description="Lists all files stored in the system",
+        to_be_removed_in="0.7",
         alternative="GET /v0/files/page",
         changelog=[
-            FMSG_CHANGELOG_ADDED_IN_VERSION.format("0.5", ""),
-            FMSG_CHANGELOG_REMOVED_IN_VERSION_FORMAT.format(
-                "0.7",
-                "This endpoint is deprecated and will be removed in a future version",
-            ),
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.5"),
         ],
     ),
 )
