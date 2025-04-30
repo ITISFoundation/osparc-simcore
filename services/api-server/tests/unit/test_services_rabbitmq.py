@@ -77,7 +77,6 @@ def app_environment(
 @pytest.fixture
 def mock_missing_plugins(app_environment: EnvVarsDict, mocker: MockerFixture):
     mocker.patch("simcore_service_api_server.core.application.webserver.setup")
-    mocker.patch("simcore_service_api_server.core.application.catalog.setup")
     mocker.patch("simcore_service_api_server.core.application.storage.setup")
 
 
@@ -327,13 +326,13 @@ async def log_streamer_with_distributor(
     app: FastAPI,
     project_id: ProjectID,
     user_id: UserID,
-    mocked_directorv2_service_api_base: respx.MockRouter,
+    mocked_directorv2_rest_api_base: respx.MockRouter,
     computation_done: Callable[[], bool],
     log_distributor: LogDistributor,
 ) -> AsyncIterable[LogStreamer]:
     def _get_computation(request: httpx.Request, **kwargs) -> httpx.Response:
         task = ComputationTaskGet.model_validate(
-            ComputationTaskGet.model_config["json_schema_extra"]["examples"][0]
+            ComputationTaskGet.model_json_schema()["examples"][0]
         )
         if computation_done():
             task.state = RunningState.SUCCESS
@@ -342,7 +341,7 @@ async def log_streamer_with_distributor(
             status_code=status.HTTP_200_OK, json=jsonable_encoder(task)
         )
 
-    mocked_directorv2_service_api_base.get(f"/v2/computations/{project_id}").mock(
+    mocked_directorv2_rest_api_base.get(f"/v2/computations/{project_id}").mock(
         side_effect=_get_computation
     )
 
@@ -448,9 +447,7 @@ async def test_log_generator(mocker: MockFixture, faker: Faker):
 
     published_logs: list[str] = []
     for _ in range(10):
-        job_log = JobLog.model_validate(
-            JobLog.model_config["json_schema_extra"]["example"]
-        )
+        job_log = JobLog.model_validate(JobLog.model_json_schema()["example"])
         msg = faker.text()
         published_logs.append(msg)
         job_log.messages = [msg]

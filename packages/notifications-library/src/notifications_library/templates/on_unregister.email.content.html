@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% block title %} {% include 'on_unregister.email.subject.txt' %} {% endblock %}
 {% block content %}
-<p>Dear {{ user.first_name }},</p>
+<p>Dear {{ user.first_name or user.user_name }},</p>
 <p>
   We have received your account closure request, and we want to say thank you for being a part of our platform. While
   we're sad to see you go, we respect your decision.

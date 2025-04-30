@@ -18,9 +18,11 @@ from models_library.products import ProductName
 from models_library.services import ServiceMetaDataPublished
 from models_library.users import UserID
 from pydantic import ConfigDict, TypeAdapter
+from pytest_simcore.helpers.catalog_services import CreateFakeServiceDataCallable
 from pytest_simcore.helpers.faker_factories import (
     random_service_access_rights,
     random_service_meta_data,
+    random_user,
 )
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.postgres_tools import (
@@ -28,15 +30,15 @@ from pytest_simcore.helpers.postgres_tools import (
     insert_and_get_row_lifespan,
 )
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from simcore_postgres_database.models.groups import groups
 from simcore_postgres_database.models.products import products
-from simcore_postgres_database.models.users import users
-from simcore_service_catalog.core.settings import ApplicationSettings
-from simcore_service_catalog.db.tables import (
-    groups,
+from simcore_postgres_database.models.services import (
     services_access_rights,
     services_meta_data,
 )
-from sqlalchemy import tuple_
+from simcore_postgres_database.models.users import users
+from simcore_service_catalog.core.settings import ApplicationSettings
+from sqlalchemy import sql
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -159,6 +161,24 @@ async def user(
         yield row
 
 
+@pytest.fixture
+async def other_user(
+    user_id: UserID,
+    sqlalchemy_async_engine: AsyncEngine,
+    faker: Faker,
+) -> AsyncIterator[dict[str, Any]]:
+
+    _user = random_user(fake=faker, id=user_id + 1)
+    async with insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
+        sqlalchemy_async_engine,
+        table=users,
+        values=_user,
+        pk_col=users.c.id,
+        pk_value=_user["id"],
+    ) as row:
+        yield row
+
+
 @pytest.fixture()
 async def user_groups_ids(
     sqlalchemy_async_engine: AsyncEngine, user: dict[str, Any]
@@ -251,7 +271,7 @@ async def services_db_tables_injector(
     async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(
             services_meta_data.delete().where(
-                tuple_(services_meta_data.c.key, services_meta_data.c.version).in_(
+                sql.tuple_(services_meta_data.c.key, services_meta_data.c.version).in_(
                     inserted_services
                 )
             )
@@ -354,12 +374,12 @@ async def service_metadata_faker(faker: Faker) -> Callable:
     return _fake_factory
 
 
-@pytest.fixture()
+@pytest.fixture
 async def create_fake_service_data(
     user_groups_ids: list[int],
     products_names: list[str],
     faker: Faker,
-) -> Callable:
+) -> CreateFakeServiceDataCallable:
     """Returns a fake factory that creates catalog DATA that can be used to fill
     both services_meta_data and services_access_rights tables
 
@@ -376,11 +396,11 @@ async def create_fake_service_data(
         owner_access, team_access, everyone_access = fake_access_rights
 
     """
-    everyone_gid, user_gid, team_gid = user_groups_ids
+    everyone_gid, user_primary_gid, team_standard_gid = user_groups_ids
 
     def _random_service(**overrides) -> dict[str, Any]:
         return random_service_meta_data(
-            owner_primary_gid=user_gid,
+            owner_primary_gid=user_primary_gid,
             fake=faker,
             **overrides,
         )
@@ -396,9 +416,9 @@ async def create_fake_service_data(
     def _fake_factory(
         key,
         version,
-        team_access=None,
-        everyone_access=None,
-        product=products_names[0],
+        team_access: str | None = None,
+        everyone_access: str | None = None,
+        product: ProductName = products_names[0],
         deprecated: datetime | None = None,
     ) -> tuple[dict[str, Any], ...]:
         service = _random_service(key=key, version=version, deprecated=deprecated)
@@ -420,7 +440,7 @@ async def create_fake_service_data(
             fakes.append(
                 _random_access(
                     service,
-                    gid=team_gid,
+                    gid=team_standard_gid,
                     execute_access="x" in team_access,
                     write_access="w" in team_access,
                     product_name=product,
@@ -447,23 +467,25 @@ def create_director_list_services_from() -> (
 ):
     """Convenience function to merge outputs of
     - `create_fake_service_data` callable with those of
-    - `expected_director_list_services` fixture
+    - `expected_director_rest_api_list_services` fixture
 
-    to produce a new expected_director_list_services
+    to produce a new expected_director_rest_api_list_services
     """
 
     class _Loader(ServiceMetaDataPublished):
         model_config = ConfigDict(extra="ignore", populate_by_name=True)
 
     def _(
-        expected_director_list_services: list[dict[str, Any]],
+        expected_director_rest_api_list_services: list[dict[str, Any]],
         fake_services_data: list,
     ):
         return [
             jsonable_encoder(
                 _Loader.model_validate(
                     {
-                        **next(itertools.cycle(expected_director_list_services)),
+                        **next(
+                            itertools.cycle(expected_director_rest_api_list_services)
+                        ),
                         **data[0],  # service, **access_rights = data
                     }
                 ),

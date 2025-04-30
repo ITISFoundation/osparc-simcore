@@ -5,13 +5,30 @@
 
 import httpx
 import respx
-from fastapi_pagination import Page
+from fastapi_pagination import LimitOffsetPage
 from models_library.api_schemas_datcore_adapter.datasets import (
     DatasetMetaData,
     FileMetaData,
 )
 from pydantic import TypeAdapter
 from starlette import status
+
+
+async def test_get_dataset_entrypoint(
+    async_client: httpx.AsyncClient,
+    pennsieve_dataset_id: str,
+    pennsieve_subsystem_mock: respx.MockRouter | None,
+    pennsieve_api_headers: dict[str, str],
+):
+    response = await async_client.get(
+        f"v0/datasets/{pennsieve_dataset_id}",
+        headers=pennsieve_api_headers,
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert data
+    TypeAdapter(DatasetMetaData).validate_python(data)
 
 
 async def test_list_datasets_entrypoint(
@@ -27,7 +44,7 @@ async def test_list_datasets_entrypoint(
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data
-    TypeAdapter(Page[DatasetMetaData]).validate_python(data)
+    TypeAdapter(LimitOffsetPage[DatasetMetaData]).validate_python(data)
 
 
 async def test_list_dataset_files_legacy_entrypoint(
@@ -63,7 +80,7 @@ async def test_list_dataset_top_level_files_entrypoint(
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data
-    TypeAdapter(Page[FileMetaData]).validate_python(data)
+    TypeAdapter(LimitOffsetPage[FileMetaData]).validate_python(data)
 
 
 async def test_list_dataset_collection_files_entrypoint(
@@ -83,4 +100,4 @@ async def test_list_dataset_collection_files_entrypoint(
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data
-    TypeAdapter(Page[FileMetaData]).validate_python(data)
+    TypeAdapter(LimitOffsetPage[FileMetaData]).validate_python(data)

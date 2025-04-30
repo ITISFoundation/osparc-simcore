@@ -6,7 +6,6 @@
 from pathlib import Path
 from pprint import pprint
 from typing import Any
-from unittest import mock
 from zipfile import ZipFile
 
 import arrow
@@ -18,6 +17,7 @@ from fastapi import FastAPI
 from models_library.services import ServiceMetaDataPublished
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyUrl, HttpUrl, TypeAdapter
+from pytest_mock import MockType
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.core.settings import ApplicationSettings
@@ -27,7 +27,7 @@ from starlette import status
 
 
 @pytest.fixture
-def bucket_name():
+def bucket_name() -> str:
     return "test-bucket"
 
 
@@ -85,15 +85,15 @@ def presigned_download_link(
 def mocked_directorv2_service_api(
     app: FastAPI,
     presigned_download_link: AnyUrl,
-    mocked_directorv2_service_api_base: MockRouter,
+    mocked_directorv2_rest_api_base: MockRouter,
     directorv2_service_openapi_specs: dict[str, Any],
-):
+) -> MockRouter:
     settings: ApplicationSettings = app.state.settings
     assert settings.API_SERVER_DIRECTOR_V2
     oas = directorv2_service_openapi_specs
 
     # pylint: disable=not-context-manager
-    respx_mock = mocked_directorv2_service_api_base
+    respx_mock = mocked_directorv2_rest_api_base
     # check that what we emulate, actually still exists
     path = "/v2/computations/{project_id}/tasks/-/logfile"
     assert path in oas["paths"]
@@ -203,14 +203,14 @@ async def test_run_solver_job(
     client: httpx.AsyncClient,
     directorv2_service_openapi_specs: dict[str, Any],
     catalog_service_openapi_specs: dict[str, Any],
-    mocked_catalog_service_api: MockRouter,
+    mocked_catalog_rpc_api: dict[str, MockType],
     mocked_directorv2_service_api: MockRouter,
-    mocked_webserver_service_api: MockRouter,
+    mocked_webserver_rest_api: MockRouter,
+    mocked_webserver_rpc_api: dict[str, MockType],
     auth: httpx.BasicAuth,
     project_id: str,
     solver_key: str,
     solver_version: str,
-    mocked_groups_extra_properties: mock.Mock,
 ):
     oas = directorv2_service_openapi_specs
 
@@ -278,7 +278,7 @@ async def test_run_solver_job(
         ),
     )
 
-    mocked_webserver_service_api.post(
+    mocked_webserver_rest_api.post(
         path__regex=r"^/v0/computations/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-(3|4|5)[0-9a-fA-F]{3}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}:start$",
         name="webserver_start_job",
     ).respond(
@@ -313,24 +313,8 @@ async def test_run_solver_job(
 
     example = next(
         e
-        for e in ServiceMetaDataPublished.model_config["json_schema_extra"]["examples"]
+        for e in ServiceMetaDataPublished.model_json_schema()["examples"]
         if "boot-options" in e
-    )
-
-    mocked_catalog_service_api.get(
-        # path__regex=r"/services/(?P<service_key>[\w-]+)/(?P<service_version>[0-9\.]+)",
-        path=f"/v0/services/{solver_key}/{solver_version}",
-        name="get_service_v0_services__service_key___service_version__get",
-    ).respond(
-        status.HTTP_200_OK,
-        json=example
-        | {
-            "name": solver_key.split("/")[-1].capitalize(),
-            "description": solver_key.replace("/", " "),
-            "key": solver_key,
-            "version": solver_version,
-            "type": "computational",
-        },
     )
 
     # ---------------------------------------------------------------------------------------------------------
@@ -353,9 +337,9 @@ async def test_run_solver_job(
     )
     assert resp.status_code == status.HTTP_201_CREATED
 
-    assert mocked_webserver_service_api["create_projects"].called
-    assert mocked_webserver_service_api["get_task_status"].called
-    assert mocked_webserver_service_api["get_task_result"].called
+    assert mocked_webserver_rest_api["create_projects"].called
+    assert mocked_webserver_rest_api["get_task_status"].called
+    assert mocked_webserver_rest_api["get_task_result"].called
 
     job = Job.model_validate(resp.json())
 

@@ -6,6 +6,7 @@ from collections.abc import AsyncIterator
 from pathlib import Path
 from typing import Final
 
+import nicegui
 import pytest
 import simcore_service_dynamic_scheduler
 import yaml
@@ -82,38 +83,38 @@ def app_environment(
     )
 
 
-_PATH_APPLICATION: Final[str] = "simcore_service_dynamic_scheduler.core.application"
+_PATH_APPLICATION: Final[str] = "simcore_service_dynamic_scheduler.core.events"
 
 
 @pytest.fixture
 def disable_rabbitmq_lifespan(mocker: MockerFixture) -> None:
-    mocker.patch(f"{_PATH_APPLICATION}.lifespan_rabbitmq")
-    mocker.patch(f"{_PATH_APPLICATION}.lifespan_rpc_api_routes")
+    mocker.patch(f"{_PATH_APPLICATION}.rabbitmq_lifespan")
+    mocker.patch(f"{_PATH_APPLICATION}.rpc_api_routes_lifespan")
 
 
 @pytest.fixture
 def disable_redis_lifespan(mocker: MockerFixture) -> None:
-    mocker.patch(f"{_PATH_APPLICATION}.lifespan_redis")
+    mocker.patch(f"{_PATH_APPLICATION}.redis_lifespan")
 
 
 @pytest.fixture
 def disable_service_tracker_lifespan(mocker: MockerFixture) -> None:
-    mocker.patch(f"{_PATH_APPLICATION}.lifespan_service_tracker")
+    mocker.patch(f"{_PATH_APPLICATION}.service_tracker_lifespan")
 
 
 @pytest.fixture
 def disable_deferred_manager_lifespan(mocker: MockerFixture) -> None:
-    mocker.patch(f"{_PATH_APPLICATION}.lifespan_deferred_manager")
+    mocker.patch(f"{_PATH_APPLICATION}.deferred_manager_lifespan")
 
 
 @pytest.fixture
 def disable_notifier_lifespan(mocker: MockerFixture) -> None:
-    mocker.patch(f"{_PATH_APPLICATION}.get_lifespans_notifier")
+    mocker.patch(f"{_PATH_APPLICATION}.get_notifier_lifespans")
 
 
 @pytest.fixture
 def disable_status_monitor_lifespan(mocker: MockerFixture) -> None:
-    mocker.patch(f"{_PATH_APPLICATION}.lifespan_status_monitor")
+    mocker.patch(f"{_PATH_APPLICATION}.status_monitor_lifespan")
 
 
 MAX_TIME_FOR_APP_TO_STARTUP: Final[float] = 10
@@ -124,6 +125,9 @@ MAX_TIME_FOR_APP_TO_SHUTDOWN: Final[float] = 10
 async def app(
     app_environment: EnvVarsDict, is_pdb_enabled: bool
 ) -> AsyncIterator[FastAPI]:
+    # forces rebuild of middleware stack on next test
+    nicegui.app.user_middleware.clear()
+    nicegui.app.middleware_stack = None
     test_app = create_app()
     async with LifespanManager(
         test_app,

@@ -8,11 +8,12 @@
 
 
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 from playwright.sync_api import Page
 from pydantic import AnyUrl
-from pytest_simcore.helpers.playwright import RestartableWebSocket, ServiceType
+from pytest_simcore.helpers.playwright import RobustWebSocket, ServiceType
 from pytest_simcore.helpers.playwright_sim4life import (
     check_video_streaming,
     interact_with_s4l,
@@ -23,22 +24,24 @@ from pytest_simcore.helpers.playwright_sim4life import (
 def test_sim4life(
     page: Page,
     create_project_from_service_dashboard: Callable[
-        [ServiceType, str, str | None], dict[str, Any]
+        [ServiceType, str, str | None, str | None], dict[str, Any]
     ],
     create_project_from_new_button: Callable[[str], dict[str, Any]],
-    log_in_and_out: RestartableWebSocket,
+    log_in_and_out: RobustWebSocket,
     service_key: str,
+    service_version: str | None,
     use_plus_button: bool,
     is_autoscaled: bool,
     check_videostreaming: bool,
     product_url: AnyUrl,
     is_service_legacy: bool,
+    playwright_test_results_dir: Path,
 ):
     if use_plus_button:
         project_data = create_project_from_new_button(service_key)
     else:
         project_data = create_project_from_service_dashboard(
-            ServiceType.DYNAMIC, service_key, None
+            ServiceType.DYNAMIC, service_key, None, service_version
         )
 
     assert "workbench" in project_data, "Expected workbench to be in project data!"
@@ -56,6 +59,7 @@ def test_sim4life(
         copy_workspace=False,
         product_url=product_url,
         is_service_legacy=is_service_legacy,
+        assertion_output_folder=playwright_test_results_dir,
     )
     s4l_websocket = resp["websocket"]
     s4l_iframe = resp["iframe"]

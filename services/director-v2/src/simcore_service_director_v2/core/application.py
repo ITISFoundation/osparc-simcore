@@ -17,6 +17,7 @@ from ..api.errors.http_error import (
     make_http_error_handler_for_exception,
 )
 from ..api.errors.validation_error import http422_error_handler
+from ..api.rpc.routes import setup_rpc_api_routes
 from ..modules import (
     catalog,
     comp_scheduler,
@@ -183,6 +184,7 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
     )
     if dynamic_scheduler_enabled or computational_backend_enabled:
         rabbitmq.setup(app)
+        setup_rpc_api_routes(app)  # Requires rabbitmq to be setup first
         redis.setup(app)
 
     if dynamic_scheduler_enabled:

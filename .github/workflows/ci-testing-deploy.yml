@@ -25,16 +25,11 @@ on:
 
   workflow_dispatch:
     inputs:
-      tests:
-        description: tests to run
-        required: true
-        default: "all"
-        type: choice
-        options:
-          - unit-tests
-          - integration-tests
-          - system-tests
-          - all
+      force_all_builds:
+        description: 'Run all tests and builds'
+        required: false
+        type: boolean
+        default: false
 
 env:
   # NOTE: 'COLUMNS' is a shell env var that represents the width (number of columns)
@@ -62,6 +57,7 @@ jobs:
       settings-library: ${{ steps.filter.outputs.settings-library }}
       simcore-sdk: ${{ steps.filter.outputs.simcore-sdk }}
       agent: ${{ steps.filter.outputs.agent }}
+      notifications: ${{ steps.filter.outputs.notifications }}
       api: ${{ steps.filter.outputs.api }}
       api-server: ${{ steps.filter.outputs.api-server }}
       autoscaling: ${{ steps.filter.outputs.autoscaling }}
@@ -147,6 +143,12 @@ jobs:
             agent:
               - 'packages/**'
               - 'services/agent/**'
+              - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
+            notifications:
+              - 'packages/**'
+              - 'services/notifications/**'
               - 'services/docker-compose*'
               - 'scripts/mypy/*'
               - 'mypy.ini'
@@ -265,85 +267,29 @@ jobs:
             anything-js:
               - '**/*.js'
   build-test-images:
-    # this step comes first, so that it is executed as first job in push calls
-    # in PR calls this step is anyway skipped
     needs: changes
-    if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 30
-    runs-on: ${{ matrix.os }}
+    if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     strategy:
       matrix:
-        python: ["3.11"]
-        os: [ubuntu-22.04]
+        type: [backend, frontend]
       fail-fast: false
-    name: "[build] docker images (excluding frontend)"
-    steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v3
-      - name: show system environs
-        run: ./ci/helpers/show_system_versions.bash
-      - name: build images
-        run: |
-          export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
-          mkdir --parents /${{ runner.temp }}/build
-          make build local-dest=/${{ runner.temp }}/build exclude=static-webserver
-      - name: upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-backend
-          path: /${{ runner.temp }}/build
-
-  build-test-images-frontend:
-    # this step comes first, so that it is executed as first job in push calls
-    # in PR calls this step is anyway skipped
-    needs: changes
-    if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 30
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.11"]
-        os: [ubuntu-22.04]
-      fail-fast: false
-    name: "[build] docker images (frontend-only)"
-    steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v3
-      - name: show system environs
-        run: ./ci/helpers/show_system_versions.bash
-      - name: build images
-        run: |
-          export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
-          mkdir --parents /${{ runner.temp }}/build
-          make build local-dest=/${{ runner.temp }}/build target=static-webserver
-      - name: upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-frontend
-          path: /${{ runner.temp }}/build
+    uses: ./.github/workflows/_reusable-build-images.yml
+    with:
+      build-backend: ${{ matrix.type == 'backend' }}
+      build-frontend: ${{ matrix.type == 'frontend' }}
+      os: ubuntu-24.04
+      python-version: "3.11"
 
   unit-test-webserver-01:
     needs: changes
-    if: ${{ needs.changes.outputs.webserver == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.webserver == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     timeout-minutes: 25 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 01"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -357,9 +303,9 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
-          version: "0.5.x"
+          version: "0.6.x"
           enable-cache: false
           cache-dependency-glob: "**/web/server/requirements/ci.txt"
       - name: show system version
@@ -384,14 +330,14 @@ jobs:
 
   unit-test-webserver-02:
     needs: changes
-    if: ${{ needs.changes.outputs.webserver == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.webserver == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     timeout-minutes: 25 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 02"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -405,9 +351,9 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
-          version: "0.5.x"
+          version: "0.6.x"
           enable-cache: false
           cache-dependency-glob: "**/web/server/requirements/ci.txt"
       - name: show system version
@@ -426,14 +372,14 @@ jobs:
 
   unit-test-webserver-03:
     needs: changes
-    if: ${{ needs.changes.outputs.webserver == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.webserver == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     timeout-minutes: 25 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 03"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -447,9 +393,9 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
-          version: "0.5.x"
+          version: "0.6.x"
           enable-cache: false
           cache-dependency-glob: "**/web/server/requirements/ci.txt"
       - name: show system version
@@ -468,14 +414,14 @@ jobs:
 
   unit-test-webserver-04:
       needs: changes
-      if: ${{ needs.changes.outputs.webserver == 'true' || github.event_name == 'push' }}
+      if: ${{ needs.changes.outputs.webserver == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
       timeout-minutes: 25 # if this timeout gets too small, then split the tests
       name: "[unit] webserver 04"
       runs-on: ${{ matrix.os }}
       strategy:
         matrix:
           python: ["3.11"]
-          os: [ubuntu-22.04]
+          os: [ubuntu-24.04]
         fail-fast: false
       steps:
         - uses: actions/checkout@v4
@@ -489,9 +435,9 @@ jobs:
           with:
             python-version: ${{ matrix.python }}
         - name: install uv
-          uses: astral-sh/setup-uv@v5
+          uses: astral-sh/setup-uv@v6
           with:
-            version: "0.5.x"
+            version: "0.6.x"
             enable-cache: false
             cache-dependency-glob: "**/web/server/requirements/ci.txt"
         - name: show system version
@@ -513,14 +459,14 @@ jobs:
 
   unit-test-storage:
     needs: changes
-    if: ${{ needs.changes.outputs.storage == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    if: ${{ needs.changes.outputs.storage == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
+    timeout-minutes: 25 # if this timeout gets too small, then split the tests
     name: "[unit] storage"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -534,9 +480,9 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
-          version: "0.5.x"
+          version: "0.6.x"
           enable-cache: false
           cache-dependency-glob: "**/storage/requirements/ci.txt"
       - name: show system version
@@ -558,14 +504,14 @@ jobs:
 
   unit-test-agent:
     needs: changes
-    if: ${{ needs.changes.outputs.agent == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.agent == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] agent"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -581,9 +527,9 @@ jobs:
       - name: install rclone
         run: sudo ./ci/github/helpers/install_rclone.bash
       - name: install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
-          version: "0.5.x"
+          version: "0.6.x"
           enable-cache: false
           cache-dependency-glob: "**/agent/requirements/ci.txt"
       - name: show system version
@@ -602,17 +548,16 @@ jobs:
         with:
           flags: unittests #optional
 
-
-  unit-test-api:
+  unit-test-notifications:
     needs: changes
-    if: ${{ needs.changes.outputs.api == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.notifications == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] api"
+    name: "[unit] notifications"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -626,9 +571,53 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
-          version: "0.5.x"
+          version: "0.6.x"
+          enable-cache: false
+          cache-dependency-glob: "**/notifications/requirements/ci.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - name: install
+        run: ./ci/github/unit-testing/notifications.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/notifications.bash typecheck
+      - name: test
+        if: ${{ !cancelled() }}
+        run: ./ci/github/unit-testing/notifications.bash test
+      - uses: codecov/codecov-action@v5
+        if: ${{ !cancelled() }}
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          flags: unittests #optional
+
+  unit-test-api:
+    needs: changes
+    if: ${{ needs.changes.outputs.api == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] api"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.11"]
+        os: [ubuntu-24.04]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker-container
+      - name: setup python environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.6.x"
           enable-cache: false
           cache-dependency-glob: "**/api/tests/requirements.txt"
       - name: show system version
@@ -647,14 +636,14 @@ jobs:
 
   unit-test-api-server:
     needs: changes
-    if: ${{ needs.changes.outputs.api-server == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.api-server == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] api-server"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -668,9 +657,9 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
-          version: "0.5.x"
+          version: "0.6.x"
           enable-cache: false
           cache-dependency-glob: "**/api-server/requirements/ci.txt"
       - name: show system version
@@ -695,14 +684,14 @@ jobs:
 
   unit-test-autoscaling:
     needs: changes
-    if: ${{ needs.changes.outputs.autoscaling == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.autoscaling == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     timeout-minutes: 22 # temporary: mypy takes a huge amount of time to run here, maybe we should cache it
     name: "[unit] autoscaling"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -716,9 +705,9 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
-          version: "0.5.x"
+          version: "0.6.x"
           enable-cache: false
           cache-dependency-glob: "**/autoscaling/requirements/ci.txt"
       - name: show system version
@@ -740,14 +729,14 @@ jobs:
 
   unit-test-catalog:
     needs: changes
-    if: ${{ needs.changes.outputs.catalog == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.catalog == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] catalog"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -761,9 +750,9 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
-          version: "0.5.x"
+          version: "0.6.x"
           enable-cache: false
           cache-dependency-glob: "**/catalog/requirements/ci.txt"
       - name: show system version
@@ -791,14 +780,14 @@ jobs:
 
   unit-test-clusters-keeper:
     needs: changes
-    if: ${{ needs.changes.outputs.clusters-keeper == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.clusters-keeper == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] clusters-keeper"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -812,9 +801,9 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
-          version: "0.5.x"
+          version: "0.6.x"
           enable-cache: false
           cache-dependency-glob: "**/clusters-keeper/requirements/ci.txt"
       - name: show system version
@@ -847,14 +836,14 @@ jobs:
 
   unit-test-datcore-adapter:
     needs: changes
-    if: ${{ needs.changes.outputs.datcore-adapter == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.datcore-adapter == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] datcore-adapter"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -868,9 +857,9 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
-          version: "0.5.x"
+          version: "0.6.x"
           enable-cache: false
           cache-dependency-glob: "**/datcore-adapter/requirements/ci.txt"
       - name: show system version
@@ -898,14 +887,14 @@ jobs:
 
   unit-test-director:
     needs: changes
-    if: ${{ needs.changes.outputs.director == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.director == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] director"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -919,9 +908,9 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
-          version: "0.5.x"
+          version: "0.6.x"
           enable-cache: false
           cache-dependency-glob: "**/director/requirements/ci.txt"
       - name: show system version
@@ -949,14 +938,14 @@ jobs:
 
   unit-test-director-v2:
     needs: changes
-    if: ${{ needs.changes.outputs.director-v2 == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.director-v2 == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] director-v2"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -970,9 +959,9 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
-          version: "0.5.x"
+          version: "0.6.x"
           enable-cache: false
           cache-dependency-glob: "**/director-v2/requirements/ci.txt"
       - name: show system version
@@ -1000,14 +989,14 @@ jobs:
 
   unit-test-aws-library:
     needs: changes
-    if: ${{ needs.changes.outputs.aws-library == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.aws-library == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] aws-library"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1021,9 +1010,9 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
-          version: "0.5.x"
+          version: "0.6.x"
           enable-cache: false
           cache-dependency-glob: "**/aws-library/requirements/ci.txt"
       - name: show system version
@@ -1045,14 +1034,14 @@ jobs:
 
   unit-test-dask-task-models-library:
     needs: changes
-    if: ${{ needs.changes.outputs.dask-task-models-library == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.dask-task-models-library == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] dask-task-models-library"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1066,9 +1055,9 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
-          version: "0.5.x"
+          version: "0.6.x"
           enable-cache: false
           cache-dependency-glob: "**/dask-task-models-library/requirements/ci.txt"
       - name: show system version
@@ -1090,14 +1079,14 @@ jobs:
 
   unit-test-dask-sidecar:
     needs: changes
-    if: ${{ needs.changes.outputs.dask-sidecar == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.dask-sidecar == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] dask-sidecar"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1111,9 +1100,9 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
-          version: "0.5.x"
+          version: "0.6.x"
           enable-cache: false
           cache-dependency-glob: "**/dask-sidecar/requirements/ci.txt"
       - name: show system version
@@ -1135,14 +1124,14 @@ jobs:
 
   unit-test-payments:
     needs: changes
-    if: ${{ needs.changes.outputs.payments == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.payments == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] payments"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1156,9 +1145,9 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
-          version: "0.5.x"
+          version: "0.6.x"
           enable-cache: false
           cache-dependency-glob: "**/payments/requirements/ci.txt"
       - name: show system version
@@ -1180,14 +1169,14 @@ jobs:
 
   unit-test-dynamic-scheduler:
     needs: changes
-    if: ${{ needs.changes.outputs.dynamic-scheduler == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.dynamic-scheduler == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] dynamic-scheduler"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1201,9 +1190,9 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
-          version: "0.5.x"
+          version: "0.6.x"
           enable-cache: false
           cache-dependency-glob: "**/dynamic-scheduler/requirements/ci.txt"
       - name: show system version
@@ -1225,14 +1214,14 @@ jobs:
 
   unit-test-resource-usage-tracker:
     needs: changes
-    if: ${{ needs.changes.outputs.resource-usage-tracker == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.resource-usage-tracker == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] resource-usage-tracker"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1246,9 +1235,9 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
-          version: "0.5.x"
+          version: "0.6.x"
           enable-cache: false
           cache-dependency-glob: "**/resource-usage-tracker/requirements/ci.txt"
       - name: show system version
@@ -1280,14 +1269,14 @@ jobs:
 
   unit-test-dynamic-sidecar:
     needs: changes
-    if: ${{ needs.changes.outputs.dynamic-sidecar == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.dynamic-sidecar == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] dynamic-sidecar"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1301,9 +1290,9 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
-          version: "0.5.x"
+          version: "0.6.x"
           enable-cache: false
           cache-dependency-glob: "**/dynamic-sidecar/requirements/ci.txt"
       - name: show system version
@@ -1325,14 +1314,14 @@ jobs:
 
   unit-test-efs-guardian:
     needs: changes
-    if: ${{ needs.changes.outputs.efs-guardian == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.efs-guardian == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] efs-guardian"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1346,9 +1335,9 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
-          version: "0.5.x"
+          version: "0.6.x"
           enable-cache: false
           cache-dependency-glob: "**/efs-guardian/requirements/ci.txt"
       - name: show system version
@@ -1381,14 +1370,14 @@ jobs:
 
   unit-test-python-linting:
     needs: changes
-    if: ${{ needs.changes.outputs.anything-py == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.anything-py == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] python-linting"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python: ["3.11", "3.12"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1402,9 +1391,9 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
-          version: "0.5.x"
+          version: "0.6.x"
           enable-cache: false
           cache-dependency-glob: "**/ci/helpers/requirements.txt"
       - name: show system version
@@ -1416,14 +1405,14 @@ jobs:
 
   unit-test-postgres-database:
     needs: changes
-    if: ${{ needs.changes.outputs.postgres-database == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.postgres-database == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] postgres-database"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1437,9 +1426,9 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
-          version: "0.5.x"
+          version: "0.6.x"
           enable-cache: false
           cache-dependency-glob: "**/postgres-database/requirements/ci.txt"
       - name: show system version
@@ -1461,14 +1450,14 @@ jobs:
 
   unit-test-invitations:
     needs: changes
-    if: ${{ needs.changes.outputs.invitations == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.invitations == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] invitations"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1482,9 +1471,9 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
-          version: "0.5.x"
+          version: "0.6.x"
           enable-cache: false
           cache-dependency-glob: "**/notifications-library/requirements/ci.txt"
       - name: show system version
@@ -1506,14 +1495,14 @@ jobs:
 
   unit-test-service-integration:
     needs: changes
-    if: ${{ needs.changes.outputs.service-integration == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.service-integration == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] service-integration"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1527,9 +1516,9 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
-          version: "0.5.x"
+          version: "0.6.x"
           enable-cache: false
           cache-dependency-glob: "**/service-integration/requirements/ci.txt"
       - name: show system version
@@ -1551,14 +1540,14 @@ jobs:
 
   unit-test-service-library:
     needs: changes
-    if: ${{ needs.changes.outputs.service-library == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.service-library == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] service-library"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1572,9 +1561,9 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
-          version: "0.5.x"
+          version: "0.6.x"
           enable-cache: false
           cache-dependency-glob: "**/service-library/requirements/ci*.txt"
       - name: show system version
@@ -1596,14 +1585,14 @@ jobs:
 
   unit-test-settings-library:
     needs: changes
-    if: ${{ needs.changes.outputs.settings-library == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.settings-library == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] settings-library"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1617,9 +1606,9 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
-          version: "0.5.x"
+          version: "0.6.x"
           enable-cache: false
           cache-dependency-glob: "**/settings-library/requirements/ci.txt"
       - name: show system version
@@ -1641,14 +1630,14 @@ jobs:
 
   unit-test-models-library:
     needs: changes
-    if: ${{ needs.changes.outputs.models-library == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.models-library == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] models-library"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1662,9 +1651,9 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
-          version: "0.5.x"
+          version: "0.6.x"
           enable-cache: false
           cache-dependency-glob: "**/models-library/requirements/ci.txt"
       - name: show system version
@@ -1685,14 +1674,14 @@ jobs:
 
   unit-test-common-library:
     needs: changes
-    if: ${{ needs.changes.outputs.common-library == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.common-library == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] common-library"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1707,11 +1696,6 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: install uv
         uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
-        with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1726,14 +1710,14 @@ jobs:
 
   unit-test-notifications-library:
     needs: changes
-    if: ${{ needs.changes.outputs.notifications-library == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.notifications-library == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit]notifications-library"
+    name: "[unit] notifications-library"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1747,9 +1731,9 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
-          version: "0.5.x"
+          version: "0.6.x"
           enable-cache: false
           cache-dependency-glob: "**/notifications-library/requirements/ci.txt"
       - name: show system version
@@ -1771,14 +1755,14 @@ jobs:
 
   unit-test-simcore-sdk:
     needs: changes
-    if: ${{ needs.changes.outputs.simcore-sdk == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.simcore-sdk == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] simcore-sdk"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1794,9 +1778,9 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
-          version: "0.5.x"
+          version: "0.6.x"
           enable-cache: false
           cache-dependency-glob: "**/simcore-sdk/requirements/ci.txt"
       - name: show system version
@@ -1839,6 +1823,7 @@ jobs:
         unit-test-common-library,
         unit-test-notifications-library,
         unit-test-payments,
+        unit-test-notifications,
         unit-test-dynamic-scheduler,
         unit-test-postgres-database,
         unit-test-python-linting,
@@ -1867,14 +1852,14 @@ jobs:
 
   integration-test-webserver-01:
     needs: [changes, build-test-images]
-    if: ${{ needs.changes.outputs.anything-py == 'true' || needs.changes.outputs.webserver == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.anything-py == 'true' || needs.changes.outputs.webserver == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] webserver 01"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1897,14 +1882,14 @@ jobs:
             path: /${{ runner.temp }}/build
           attempt_limit: 5
           attempt_delay: 1000
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
-          version: "0.5.x"
+          version: "0.6.x"
           enable-cache: false
           cache-dependency-glob: "**/web/server/requirements/ci.txt"
+      - name: load docker images
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1936,7 +1921,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1961,14 +1946,14 @@ jobs:
             path: /${{ runner.temp }}/build
           attempt_limit: 5
           attempt_delay: 1000
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
-          version: "0.5.x"
+          version: "0.6.x"
           enable-cache: false
           cache-dependency-glob: "**/web/server/requirements/ci.txt"
+      - name: load docker images
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2000,7 +1985,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -2025,14 +2010,14 @@ jobs:
             path: /${{ runner.temp }}/build
           attempt_limit: 5
           attempt_delay: 1000
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
-          version: "0.5.x"
+          version: "0.6.x"
           enable-cache: false
           cache-dependency-glob: "**/director-v2/requirements/ci.txt"
+      - name: load docker images
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2064,7 +2049,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     env:
       # NOTE: DIRECTOR_DEFAULT_MAX_* used for integration-tests that include `director` service
@@ -2096,16 +2081,16 @@ jobs:
             path: /${{ runner.temp }}/build
           attempt_limit: 5
           attempt_delay: 1000
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
       - name: install rclone
         run: sudo ./ci/github/helpers/install_rclone.bash
       - name: install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
-          version: "0.5.x"
+          version: "0.6.x"
           enable-cache: false
           cache-dependency-glob: "**/director-v2/requirements/ci.txt"
+      - name: load docker images
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2137,7 +2122,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -2162,16 +2147,16 @@ jobs:
             path: /${{ runner.temp }}/build
           attempt_limit: 5
           attempt_delay: 1000
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
       - name: install rclone
         run: sudo ./ci/github/helpers/install_rclone.bash
       - name: install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
-          version: "0.5.x"
+          version: "0.6.x"
           enable-cache: false
           cache-dependency-glob: "**/dynamic-sidecar/requirements/ci.txt"
+      - name: load docker images
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2204,7 +2189,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -2229,14 +2214,14 @@ jobs:
             path: /${{ runner.temp }}/build
           attempt_limit: 5
           attempt_delay: 1000
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
-          version: "0.5.x"
+          version: "0.6.x"
           enable-cache: false
           cache-dependency-glob: "**/docker-api-proxy/requirements/ci.txt"
+      - name: load docker images
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2268,7 +2253,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -2293,14 +2278,14 @@ jobs:
             path: /${{ runner.temp }}/build
           attempt_limit: 5
           attempt_delay: 1000
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
-          version: "0.5.x"
+          version: "0.6.x"
           enable-cache: false
           cache-dependency-glob: "**/simcore-sdk/requirements/ci.txt"
+      - name: load docker images
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2348,15 +2333,15 @@ jobs:
         run: echo "::notice All good!"
 
   system-test-public-api:
-    needs: [changes, build-test-images, build-test-images-frontend]
-    if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' }}
+    needs: [changes, build-test-images]
+    if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     timeout-minutes: 25 # if this timeout gets too small, then split the tests
     name: "[sys] public api"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -2381,14 +2366,14 @@ jobs:
             path: /${{ runner.temp }}/build
           attempt_limit: 5
           attempt_delay: 1000
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
-          version: "0.5.x"
+          version: "0.6.x"
           enable-cache: false
           cache-dependency-glob: "**/public-api/requirements/ci.txt"
+      - name: load docker images
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2408,15 +2393,15 @@ jobs:
         run: ./ci/github/system-testing/public-api.bash clean_up
 
   system-test-swarm-deploy:
-    needs: [changes, build-test-images, build-test-images-frontend]
-    if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' }}
+    needs: [changes, build-test-images]
+    if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[sys] deploy simcore"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -2441,14 +2426,14 @@ jobs:
             path: /${{ runner.temp }}/build
           attempt_limit: 5
           attempt_delay: 1000
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
-          version: "0.5.x"
+          version: "0.6.x"
           enable-cache: false
           cache-dependency-glob: "**/swarm-deploy/requirements/ci.txt"
+      - name: load docker images
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2473,8 +2458,8 @@ jobs:
         run: ./ci/github/system-testing/swarm-deploy.bash clean_up
 
   system-test-e2e:
-    needs: [changes, build-test-images, build-test-images-frontend]
-    if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' }}
+    needs: [changes, build-test-images]
+    if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[sys] e2e"
     runs-on: ${{ matrix.os }}
@@ -2482,7 +2467,7 @@ jobs:
       matrix:
         python: ["3.11"]
         node: [14]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -2512,14 +2497,14 @@ jobs:
             path: /${{ runner.temp }}/build
           attempt_limit: 5
           attempt_delay: 1000
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
-          version: "0.5.x"
+          version: "0.6.x"
           enable-cache: false
           cache-dependency-glob: "**/e2e/requirements/requirements.txt"
+      - name: load docker images
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: setup
@@ -2553,8 +2538,8 @@ jobs:
         run: ./ci/github/system-testing/e2e.bash clean_up
 
   system-test-e2e-playwright:
-    needs: [changes, build-test-images, build-test-images-frontend]
-    if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' }}
+    needs: [changes, build-test-images]
+    if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[sys] e2e-playwright"
     runs-on: ${{ matrix.os }}
@@ -2564,7 +2549,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -2578,9 +2563,9 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
-          version: "0.5.x"
+          version: "0.6.x"
           enable-cache: false
           cache-dependency-glob: "**/e2e-playwright/requirements/ci.txt"
       - name: expose github runtime for buildx
@@ -2626,7 +2611,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -2640,9 +2625,9 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
-          version: "0.5.x"
+          version: "0.6.x"
           enable-cache: false
           cache-dependency-glob: "**/environment-setup/requirements/ci.txt"
       - name: show system version
@@ -2685,7 +2670,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     env:
       # secrets can be set in settings/secrets on github
@@ -2699,6 +2684,12 @@ jobs:
         uses: docker/setup-buildx-action@v3
         with:
           driver: docker-container
+      - name: install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.6.x"
+          enable-cache: false
+          cache-dependency-glob: "**/e2e-playwright/requirements/ci.txt"
       # FIXME: Workaround for https://github.com/actions/download-artifact/issues/249
       - name: download docker images with retry
         uses: Wandalen/wretry.action@master

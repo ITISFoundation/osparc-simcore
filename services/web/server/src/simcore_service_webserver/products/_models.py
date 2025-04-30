@@ -1,6 +1,8 @@
 import logging
 import re
 import string
+from dataclasses import dataclass
+from decimal import Decimal
 from typing import Annotated, Any
 
 from models_library.basic_regex import (
@@ -9,7 +11,7 @@ from models_library.basic_regex import (
 )
 from models_library.basic_types import NonNegativeDecimal
 from models_library.emails import LowerCaseEmailStr
-from models_library.products import ProductName
+from models_library.products import ProductName, StripePriceID, StripeTaxRateID
 from models_library.utils.change_case import snake_to_camel
 from pydantic import (
     BaseModel,
@@ -35,6 +37,25 @@ from simcore_postgres_database.models.products import (
 from ..constants import FRONTEND_APPS_AVAILABLE
 
 _logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class CreditResult:
+    product_name: ProductName
+    credit_amount: Decimal
+
+
+@dataclass(frozen=True)
+class ProductStripeInfo:
+    stripe_price_id: StripePriceID
+    stripe_tax_rate_id: StripeTaxRateID
+
+
+@dataclass(frozen=True)
+class PaymentFields:
+    enabled: bool
+    credits_per_usd: Decimal | None
+    min_payment_amount_usd: Decimal | None
 
 
 class Product(BaseModel):
@@ -193,7 +214,7 @@ class Product(BaseModel):
                             and isinstance(c.server_default.arg, str)  # type: ignore[union-attr]
                         },
                     },
-                    # Example of data in the dabase with a url set with blanks
+                    # Example of data in the database with a url set with blanks
                     {
                         "name": "tis",
                         "display_name": "TI PT",
@@ -221,6 +242,11 @@ class Product(BaseModel):
                             "invitation_form": True,
                             "name": "ACME",
                             "copyright": "© ACME correcaminos",
+                            "ui": {
+                                "logo_url": "https://acme.com/logo",
+                                "strong_color": "#123456",
+                                "project_alias": "study",
+                            },
                         },
                         "issues": [
                             {

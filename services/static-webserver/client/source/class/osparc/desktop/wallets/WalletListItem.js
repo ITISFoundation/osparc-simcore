@@ -24,6 +24,7 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
     const creditsCol = 7;
     const layout = this._getLayout();
     layout.setSpacingX(10);
+    layout.setColumnAlign(0, "left", "middle");
     layout.setColumnWidth(creditsCol, 110);
     layout.setColumnAlign(creditsCol, "right", "middle");
 
@@ -141,9 +142,8 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
               osparc.data.Resources.fetch("wallets", "put", params)
                 .then(() => found.setStatus(newStatus))
                 .catch(err => {
-                  console.error(err);
-                  const msg = err.message || (this.tr("Something went wrong updating the state"));
-                  osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
+                  const msg = this.tr("Something went wrong while updating the state");
+                  osparc.FlashMessenger.logError(err, msg);
                 });
             }
           }, this);
@@ -281,9 +281,9 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
       if (found) {
         const role = this.getChildControl("role");
         if (found["write"]) {
-          role.setValue(osparc.data.Roles.WALLET[2].label);
+          role.setValue(osparc.data.Roles.WALLET["write"].label);
         } else if (found["read"]) {
-          role.setValue(osparc.data.Roles.WALLET[1].label);
+          role.setValue(osparc.data.Roles.WALLET["read"].label);
         }
       }
     },

@@ -1,24 +1,39 @@
 # pylint:disable=protected-access
 # pylint:disable=redefined-outer-name
+# pylint:disable=unused-argument
 
-from collections.abc import Awaitable, Callable
+import math
+import random
+from collections.abc import AsyncIterable, Awaitable, Callable
 from pathlib import Path
+from typing import Any
 
 import pytest
+from aws_library.s3._models import S3ObjectKey
 from faker import Faker
 from models_library.basic_types import SHA256Str
+from models_library.progress_bar import ProgressReport
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
-from pytest_simcore.helpers.storage_utils import FileIDDict
+from pytest_mock import MockerFixture
+from pytest_simcore.helpers.storage_utils import (
+    FileIDDict,
+    ProjectWithFilesParams,
+)
+from servicelib.progress_bar import ProgressBarData
+from simcore_service_storage.constants import LinkType
 from simcore_service_storage.models import FileMetaData
-from simcore_service_storage.modules.db import file_meta_data
+from simcore_service_storage.modules.db.file_meta_data import FileMetaDataRepository
 from simcore_service_storage.modules.s3 import get_s3_client
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-pytest_simcore_core_services_selection = ["postgres"]
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "rabbit",
+]
 pytest_simcore_ops_services_selection = ["adminer"]
 
 
@@ -29,12 +44,32 @@ def file_size() -> ByteSize:
 
 @pytest.fixture
 def mock_copy_transfer_cb() -> Callable[..., None]:
-    def copy_transfer_cb(total_bytes_copied: int, *, file_name: str) -> None:
-        ...
+    def copy_transfer_cb(total_bytes_copied: int, *, file_name: str) -> None: ...
 
     return copy_transfer_cb
 
 
+@pytest.fixture
+async def cleanup_files_closure(
+    simcore_s3_dsm: SimcoreS3DataManager, user_id: UserID
+) -> AsyncIterable[Callable[[SimcoreS3FileID], None]]:
+    to_remove: set[SimcoreS3FileID] = set()
+
+    def _(file_id: SimcoreS3FileID) -> None:
+        to_remove.add(file_id)
+
+    yield _
+
+    for file_id in to_remove:
+        await simcore_s3_dsm.delete_file(user_id, file_id)
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 async def test__copy_path_s3_s3(
     simcore_s3_dsm: SimcoreS3DataManager,
     create_directory_with_files: Callable[
@@ -50,19 +85,23 @@ async def test__copy_path_s3_s3(
     node_id: NodeID,
     mock_copy_transfer_cb: Callable[..., None],
     sqlalchemy_async_engine: AsyncEngine,
+    cleanup_files_closure: Callable[[SimcoreS3FileID], None],
 ):
     def _get_dest_file_id(src: SimcoreS3FileID) -> SimcoreS3FileID:
-        return TypeAdapter(SimcoreS3FileID).validate_python(
+        copy_file_id = TypeAdapter(SimcoreS3FileID).validate_python(
             f"{Path(src).parent}/the-copy"
         )
+        cleanup_files_closure(copy_file_id)
+        return copy_file_id
 
     async def _copy_s3_path(s3_file_id_to_copy: SimcoreS3FileID) -> None:
-        async with sqlalchemy_async_engine.connect() as conn:
-            exiting_fmd = await file_meta_data.get(conn, s3_file_id_to_copy)
+        existing_fmd = await FileMetaDataRepository.instance(
+            sqlalchemy_async_engine
+        ).get(file_id=s3_file_id_to_copy)
 
         await simcore_s3_dsm._copy_path_s3_s3(  # noqa: SLF001
             user_id=user_id,
-            src_fmd=exiting_fmd,
+            src_fmd=existing_fmd,
             dst_file_id=_get_dest_file_id(s3_file_id_to_copy),
             bytes_transfered_cb=mock_copy_transfer_cb,
         )
@@ -103,6 +142,12 @@ async def test__copy_path_s3_s3(
     await _copy_s3_path(simcore_file_id)
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 async def test_upload_and_search(
     simcore_s3_dsm: SimcoreS3DataManager,
     upload_file: Callable[..., Awaitable[tuple[Path, SimcoreS3FileID]]],
@@ -121,3 +166,143 @@ async def test_upload_and_search(
     for file in files:
         assert file.sha256_checksum == checksum
         assert file.file_name in {"file1", "file2"}
+
+
+@pytest.fixture
+async def paths_for_export(
+    random_project_with_files: Callable[
+        [ProjectWithFilesParams],
+        Awaitable[
+            tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
+        ],
+    ],
+) -> set[SimcoreS3FileID]:
+    _, file_mapping = await random_project_with_files(
+        ProjectWithFilesParams(
+            num_nodes=2,
+            allowed_file_sizes=(TypeAdapter(ByteSize).validate_python("1KiB"),),
+            workspace_files_count=4,
+        )
+    )
+
+    to_export: set[SimcoreS3FileID] = set()
+
+    for file_id_dict in file_mapping.values():
+        to_export |= file_id_dict.keys()
+
+    return to_export
+
+
+def _get_folder_and_files_selection(
+    paths_for_export: set[SimcoreS3FileID],
+) -> list[S3ObjectKey]:
+    # select 10 % of files
+
+    random_files: list[SimcoreS3FileID] = [
+        random.choice(list(paths_for_export))  # noqa: S311
+        for _ in range(math.ceil(0.1 * len(paths_for_export)))
+    ]
+
+    all_containing_folders: set[SimcoreS3FileID] = {
+        TypeAdapter(S3ObjectKey).validate_python(f"{Path(f).parent}")
+        for f in random_files
+    }
+
+    element_selection = random_files + list(all_containing_folders)
+
+    # ensure all elements are duplicated and shuffled
+    duplicate_selection = [*element_selection, *element_selection]
+    random.shuffle(duplicate_selection)  # type: ignore
+    return duplicate_selection
+
+
+async def _get_fmds_count(
+    connection: AsyncEngine,
+) -> int:
+    result = await FileMetaDataRepository.instance(connection).list_fmds()
+    return len(result)
+
+
+async def _assert_meta_data_entries_count(
+    connection: AsyncEngine, *, count: int
+) -> None:
+    assert (await _get_fmds_count(connection)) == count
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+async def test_create_s3_export(
+    simcore_s3_dsm: SimcoreS3DataManager,
+    user_id: UserID,
+    paths_for_export: set[SimcoreS3FileID],
+    sqlalchemy_async_engine: AsyncEngine,
+    cleanup_files_closure: Callable[[SimcoreS3FileID], None],
+):
+    initial_fmd_count = await _get_fmds_count(sqlalchemy_async_engine)
+    all_files_to_export = _get_folder_and_files_selection(paths_for_export)
+    selection_to_export = {
+        S3ObjectKey(project_id)
+        for project_id in {Path(p).parents[-2] for p in all_files_to_export}
+    }
+
+    reports: list[ProgressReport] = []
+
+    async def _progress_cb(report: ProgressReport) -> None:
+        reports.append(report)
+
+    await _assert_meta_data_entries_count(
+        sqlalchemy_async_engine, count=initial_fmd_count
+    )
+
+    async with ProgressBarData(
+        num_steps=1, description="data export", progress_report_cb=_progress_cb
+    ) as root_progress_bar:
+        file_id = await simcore_s3_dsm.create_s3_export(
+            user_id, selection_to_export, progress_bar=root_progress_bar
+        )
+    cleanup_files_closure(file_id)
+    # count=2 -> the direcotory and the .zip export
+    await _assert_meta_data_entries_count(
+        sqlalchemy_async_engine, count=initial_fmd_count + 1
+    )
+
+    download_link = await simcore_s3_dsm.create_file_download_link(
+        user_id, file_id, LinkType.PRESIGNED
+    )
+
+    assert file_id in f"{download_link}"
+
+    assert reports[-1].actual_value == 1
+
+
+@pytest.fixture
+def mock_create_and_upload_export_raises_error(mocker: MockerFixture) -> None:
+    async def _raise_error(*args, **kwarts) -> None:
+        msg = "failing as expected"
+        raise RuntimeError(msg)
+
+    mocker.patch(
+        "simcore_service_storage.simcore_s3_dsm.create_and_upload_export",
+        side_effect=_raise_error,
+    )
+
+
+async def test_create_s3_export_abort_upload_upon_error(
+    mock_create_and_upload_export_raises_error: None,
+    simcore_s3_dsm: SimcoreS3DataManager,
+    user_id: UserID,
+    sqlalchemy_async_engine: AsyncEngine,
+):
+    await _assert_meta_data_entries_count(sqlalchemy_async_engine, count=0)
+    with pytest.raises(RuntimeError, match="failing as expected"):
+        async with ProgressBarData(
+            num_steps=1, description="data export"
+        ) as progress_bar:
+            await simcore_s3_dsm.create_s3_export(
+                user_id, [], progress_bar=progress_bar
+            )
+    await _assert_meta_data_entries_count(sqlalchemy_async_engine, count=0)

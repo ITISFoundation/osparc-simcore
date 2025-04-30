@@ -64,14 +64,14 @@ qx.Class.define("osparc.info.ServiceUtils", {
     },
 
     createVersionDisplay: function(key, version) {
-      const versionDisplay = osparc.service.Utils.getVersionDisplay(key, version);
+      const versionDisplay = osparc.store.Services.getVersionDisplay(key, version);
       const label = new qx.ui.basic.Label(versionDisplay);
       osparc.utils.Utils.setIdToWidget(label, "serviceVersion");
       return label;
     },
 
     createReleasedDate: function(key, version) {
-      const releasedDate = osparc.service.Utils.getReleasedDate(key, version);
+      const releasedDate = osparc.store.Services.getReleasedDate(key, version);
       if (releasedDate) {
         const label = new qx.ui.basic.Label();
         label.set({
@@ -367,10 +367,10 @@ qx.Class.define("osparc.info.ServiceUtils", {
       * @param serviceData {Object} Serialized Service Object
       */
     openAccessRights: function(serviceData) {
-      const permissionsView = new osparc.share.CollaboratorsService(serviceData);
+      const collaboratorsView = new osparc.share.CollaboratorsService(serviceData);
       const title = qx.locale.Manager.tr("Share with Collaborators and Organizations");
-      osparc.ui.window.Window.popUpInWindow(permissionsView, title, 400, 300);
-      return permissionsView;
+      osparc.ui.window.Window.popUpInWindow(collaboratorsView, title, 400, 300);
+      return collaboratorsView;
     },
 
     /**

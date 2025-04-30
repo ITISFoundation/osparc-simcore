@@ -30,6 +30,9 @@ def setenvs_from_dict(
         if isinstance(value, bool):
             v = "true" if value else "false"
 
+        if isinstance(value, int | float):
+            v = f"{value}"
+
         assert isinstance(v, str), (
             "caller MUST explicitly stringify values since some cannot be done automatically"
             f"e.g. json-like values. Check {key=},{value=}"

@@ -3,20 +3,26 @@
 import logging
 
 from aiohttp import web
+from common_library.pagination_tools import iter_pagination_params
+from models_library.basic_types import IDStr
+from models_library.folders import FolderID
 from models_library.products import ProductName
-from models_library.rest_ordering import OrderBy
+from models_library.projects import Project, ProjectID
+from models_library.rest_ordering import OrderBy, OrderDirection
+from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from models_library.users import UserID
 from models_library.workspaces import (
     UserWorkspaceWithAccessRights,
     WorkspaceID,
     WorkspaceUpdates,
 )
-from pydantic import NonNegativeInt
 
-from ..projects._db_utils import PermissionStr
+from ..folders.service import delete_folder_with_all_content, list_folders
+from ..projects.api import delete_project_by_user, list_projects
+from ..projects.models import ProjectTypeAPI
 from ..users.api import get_user
 from . import _workspaces_repository as db
-from .errors import WorkspaceAccessForbiddenError
+from ._workspaces_service_crud_read import check_user_workspace_access
 
 _logger = logging.getLogger(__name__)
 
@@ -45,47 +51,6 @@ async def create_workspace(
         workspace_id=created.workspace_id,
         product_name=product_name,
     )
-
-
-async def get_workspace(
-    app: web.Application,
-    *,
-    user_id: UserID,
-    workspace_id: WorkspaceID,
-    product_name: ProductName,
-) -> UserWorkspaceWithAccessRights:
-    return await get_user_workspace(
-        app=app,
-        user_id=user_id,
-        workspace_id=workspace_id,
-        product_name=product_name,
-        permission="read",
-    )
-
-
-async def list_workspaces(
-    app: web.Application,
-    *,
-    user_id: UserID,
-    product_name: ProductName,
-    filter_trashed: bool | None,
-    filter_by_text: str | None,
-    offset: NonNegativeInt,
-    limit: int,
-    order_by: OrderBy,
-) -> tuple[int, list[UserWorkspaceWithAccessRights]]:
-    total_count, workspaces = await db.list_workspaces_for_user(
-        app,
-        user_id=user_id,
-        product_name=product_name,
-        filter_trashed=filter_trashed,
-        filter_by_text=filter_by_text,
-        offset=offset,
-        limit=limit,
-        order_by=order_by,
-    )
-
-    return total_count, workspaces
 
 
 async def update_workspace(
@@ -118,12 +83,12 @@ async def update_workspace(
     )
 
 
-async def delete_workspace(
+async def delete_workspace_with_all_content(
     app: web.Application,
     *,
+    product_name: ProductName,
     user_id: UserID,
     workspace_id: WorkspaceID,
-    product_name: ProductName,
 ) -> None:
     await check_user_workspace_access(
         app=app,
@@ -133,67 +98,69 @@ async def delete_workspace(
         permission="delete",
     )
 
+    # Get all root projects
+    for page_params in iter_pagination_params(limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
+        (
+            projects,
+            page_params.total_number_of_items,
+        ) = await list_projects(
+            app,
+            user_id=user_id,
+            product_name=product_name,
+            show_hidden=False,
+            workspace_id=workspace_id,
+            project_type=ProjectTypeAPI.all,
+            folder_id=None,
+            trashed=None,
+            offset=page_params.offset,
+            limit=page_params.limit,
+            order_by=OrderBy(
+                field=IDStr("last_change_date"), direction=OrderDirection.DESC
+            ),
+        )
+
+        workspace_root_projects: list[ProjectID] = [
+            Project(**project).uuid for project in projects
+        ]
+
+        # Delete projects properly
+        for project_uuid in workspace_root_projects:
+            await delete_project_by_user(
+                app, project_uuid=project_uuid, user_id=user_id
+            )
+
+    # Get all root folders
+    for page_params in iter_pagination_params(limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
+        (
+            folders,
+            page_params.total_number_of_items,
+        ) = await list_folders(
+            app,
+            user_id=user_id,
+            product_name=product_name,
+            workspace_id=workspace_id,
+            folder_id=None,
+            trashed=None,
+            offset=page_params.offset,
+            limit=page_params.limit,
+            order_by=OrderBy(field=IDStr("folder_id"), direction=OrderDirection.ASC),
+        )
+
+        workspace_root_folders: list[FolderID] = [
+            folder.folder_db.folder_id for folder in folders
+        ]
+
+        # Delete folders properly
+        for folder_id in workspace_root_folders:
+            await delete_folder_with_all_content(
+                app,
+                user_id=user_id,
+                product_name=product_name,
+                folder_id=folder_id,
+            )
+
     await db.delete_workspace(
         app,
         workspace_id=workspace_id,
         product_name=product_name,
-    )
-
-
-async def get_user_workspace(
-    app: web.Application,
-    *,
-    user_id: UserID,
-    workspace_id: WorkspaceID,
-    product_name: ProductName,
-    permission: PermissionStr | None,
-) -> UserWorkspaceWithAccessRights:
-    """
-
-    Here checking access is optional. A use case is when the caller has guarantees that
-    `user_id` has granted access and we do not want to re-check
-
-    Raises:
-        WorkspaceAccessForbiddenError: if permission not None and user_id does not have access
-    """
-    workspace: UserWorkspaceWithAccessRights = await db.get_workspace_for_user(
-        app=app, user_id=user_id, workspace_id=workspace_id, product_name=product_name
-    )
-
-    # NOTE: check here is optional
-    if permission is not None:
-        has_user_granted_permission = getattr(
-            workspace.my_access_rights, permission, False
-        )
-        if not has_user_granted_permission:
-            raise WorkspaceAccessForbiddenError(
-                user_id=user_id,
-                workspace_id=workspace_id,
-                product_name=product_name,
-                permission_checked=permission,
-            )
-    return workspace
-
-
-async def check_user_workspace_access(
-    app: web.Application,
-    *,
-    user_id: UserID,
-    workspace_id: WorkspaceID,
-    product_name: ProductName,
-    permission: PermissionStr,
-) -> UserWorkspaceWithAccessRights:
-    """
-    As `get_user_workspace` but here access check is required
-
-    Raises:
-        WorkspaceAccessForbiddenError
-    """
-    return await get_user_workspace(
-        app,
-        user_id=user_id,
-        workspace_id=workspace_id,
-        product_name=product_name,
-        # NOTE: check here is required
-        permission=permission,
     )

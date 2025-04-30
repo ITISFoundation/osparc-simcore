@@ -505,8 +505,8 @@ qx.Class.define("osparc.info.ServiceLarge", {
     },
 
     __openAccessRights: function() {
-      const permissionsView = osparc.info.ServiceUtils.openAccessRights(this.getService());
-      permissionsView.addListener("updateAccessRights", e => {
+      const collaboratorsView = osparc.info.ServiceUtils.openAccessRights(this.getService());
+      collaboratorsView.addListener("updateAccessRights", e => {
         const updatedServiceData = e.getData();
         this.setService(updatedServiceData);
         this.fireDataEvent("updateService", updatedServiceData);
@@ -575,9 +575,8 @@ qx.Class.define("osparc.info.ServiceLarge", {
           this.fireDataEvent("updateService", this.getService());
         })
         .catch(err => {
-          console.error(err);
-          const msg = err.message || this.tr("There was an error while updating the information.");
-          osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
+          const msg = this.tr("An issue occurred while updating the information.");
+          osparc.FlashMessenger.logError(err, msg);
         })
         .finally(() => this.setEnabled(true));
     }

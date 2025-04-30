@@ -16,19 +16,17 @@ from uuid import uuid4
 
 import aioboto3
 import aiodocker
-import aiopg.sa
 import httpx
 import pytest
 import sqlalchemy as sa
 from aiodocker.containers import DockerContainer
-from aiopg.sa import Engine
 from faker import Faker
 from fastapi import FastAPI
 from helpers.shared_comp_utils import (
     assert_and_wait_for_pipeline_status,
     assert_computation_task_out_obj,
 )
-from models_library.api_schemas_directorv2.comp_tasks import ComputationGet
+from models_library.api_schemas_directorv2.computations import ComputationGet
 from models_library.clusters import ClusterAuthentication
 from models_library.projects import (
     Node,
@@ -79,6 +77,7 @@ from simcore_service_director_v2.core.dynamic_services_settings.sidecar import (
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.modules import storage as dv2_modules_storage
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.ext.asyncio import AsyncEngine
 from tenacity import TryAgain
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -110,6 +109,7 @@ pytest_simcore_core_services_selection = [
     "rabbit",
     "redis",
     "storage",
+    "sto-worker",
     "redis",
 ]
 
@@ -292,8 +292,8 @@ def workbench_dynamic_services(
 
 
 @pytest.fixture
-async def db_manager(aiopg_engine: aiopg.sa.engine.Engine) -> DBManager:
-    return DBManager(aiopg_engine)
+async def db_manager(sqlalchemy_async_engine: AsyncEngine) -> DBManager:
+    return DBManager(sqlalchemy_async_engine)
 
 
 def _is_docker_r_clone_plugin_installed() -> bool:
@@ -449,10 +449,10 @@ async def projects_networks_db(
         project_uuid=current_study.uuid, networks_with_aliases=networks_with_aliases
     )
 
-    engine: Engine = initialized_app.state.engine
+    engine: AsyncEngine = initialized_app.state.engine
 
-    async with engine.acquire() as conn:
-        row_data = projects_networks_to_insert.model_dump()
+    async with engine.begin() as conn:
+        row_data = projects_networks_to_insert.model_dump(mode="json")
         insert_stmt = pg_insert(projects_networks).values(**row_data)
         upsert_snapshot = insert_stmt.on_conflict_do_update(
             constraint=projects_networks.primary_key, set_=row_data
@@ -934,15 +934,15 @@ async def test_nodeports_integration(
     `aioboto` instead of `docker` or `storage-data_manager API`.
     """
     # STEP 1
-    dynamic_services_urls: dict[
-        str, str
-    ] = await _start_and_wait_for_dynamic_services_ready(
-        director_v2_client=async_client,
-        product_name=osparc_product_name,
-        user_id=current_user["id"],
-        workbench_dynamic_services=workbench_dynamic_services,
-        current_study=current_study,
-        catalog_url=services_endpoint["catalog"],
+    dynamic_services_urls: dict[str, str] = (
+        await _start_and_wait_for_dynamic_services_ready(
+            director_v2_client=async_client,
+            product_name=osparc_product_name,
+            user_id=current_user["id"],
+            workbench_dynamic_services=workbench_dynamic_services,
+            current_study=current_study,
+            catalog_url=services_endpoint["catalog"],
+        )
     )
 
     # STEP 2

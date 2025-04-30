@@ -38,7 +38,9 @@ from models_library.docker import (
     DockerLabelKey,
     StandardSimcoreDockerLabels,
 )
-from models_library.generated_models.docker_rest_api import Availability
+from models_library.generated_models.docker_rest_api import (
+    Availability,
+)
 from models_library.generated_models.docker_rest_api import Node as DockerNode
 from models_library.generated_models.docker_rest_api import (
     NodeDescription,
@@ -320,7 +322,7 @@ def mocked_ec2_instances_envs(
 
 
 @pytest.fixture
-def disable_dynamic_service_background_task(mocker: MockerFixture) -> None:
+def disable_autoscaling_background_task(mocker: MockerFixture) -> None:
     mocker.patch(
         "simcore_service_autoscaling.modules.auto_scaling_task.create_periodic_task",
         autospec=True,
@@ -757,7 +759,7 @@ async def _assert_wait_for_service_state(
             ), f"service {found_service['Spec']['Name']}'s task is {service_task['Status']['State']}"
             ctx.logger.info(
                 "%s",
-                f"service {found_service['Spec']['Name']} is now {service_task['Status']['State']} {'.'*number_of_success['count']}",
+                f"service {found_service['Spec']['Name']} is now {service_task['Status']['State']} {'.' * number_of_success['count']}",
             )
             number_of_success["count"] += 1
             assert (number_of_success["count"] * WAIT_TIME) >= SUCCESS_STABLE_TIME_S
@@ -774,7 +776,6 @@ def aws_allowed_ec2_instance_type_names() -> list[InstanceTypeType]:
     return [
         "t2.xlarge",
         "t2.2xlarge",
-        "g3.4xlarge",
         "g4dn.2xlarge",
         "g4dn.8xlarge",
         "r5n.4xlarge",
@@ -865,14 +866,21 @@ def cluster() -> Callable[..., Cluster]:
 @pytest.fixture
 async def create_dask_task(
     dask_spec_cluster_client: distributed.Client,
-) -> Callable[[DaskTaskResources], distributed.Future]:
+) -> Callable[..., distributed.Future]:
     def _remote_pytest_fct(x: int, y: int) -> int:
         return x + y
 
-    def _creator(required_resources: DaskTaskResources) -> distributed.Future:
+    def _creator(
+        required_resources: DaskTaskResources, **overrides
+    ) -> distributed.Future:
         # NOTE: pure will ensure dask does not re-use the task results if we run it several times
         future = dask_spec_cluster_client.submit(
-            _remote_pytest_fct, 23, 43, resources=required_resources, pure=False
+            _remote_pytest_fct,
+            23,
+            43,
+            resources=required_resources,
+            pure=False,
+            **overrides,
         )
         assert future
         return future

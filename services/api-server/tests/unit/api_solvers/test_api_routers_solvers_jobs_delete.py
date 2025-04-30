@@ -12,6 +12,7 @@ import pytest
 from faker import Faker
 from models_library.basic_regex import UUID_RE_BASE
 from pydantic import TypeAdapter
+from pytest_mock import MockType
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
 from respx import MockRouter
 from servicelib.common_headers import (
@@ -26,13 +27,13 @@ _faker = Faker()
 
 
 class MockedBackendApiDict(TypedDict):
-    catalog: MockRouter | None
     webserver: MockRouter | None
 
 
 @pytest.fixture
 def mocked_backend_services_apis_for_delete_non_existing_project(
-    mocked_webserver_service_api: MockRouter,
+    mocked_webserver_rest_api: MockRouter,
+    mocked_webserver_rpc_api: dict[str, MockType],
     project_tests_dir: Path,
 ) -> MockedBackendApiDict:
     mock_name = "delete_project_not_found.json"
@@ -49,12 +50,12 @@ def mocked_backend_services_apis_for_delete_non_existing_project(
             status_code=capture.status_code, json=capture.response_body
         )
 
-    mocked_webserver_service_api.delete(
+    mocked_webserver_rest_api.delete(
         path__regex=rf"/projects/(?P<project_id>{UUID_RE_BASE})$",
         name="delete_project",
     ).mock(side_effect=_response)
 
-    return MockedBackendApiDict(webserver=mocked_webserver_service_api, catalog=None)
+    return MockedBackendApiDict(webserver=mocked_webserver_rest_api)
 
 
 @pytest.mark.acceptance_test(
@@ -84,8 +85,8 @@ async def test_delete_non_existing_solver_job(
 
 @pytest.fixture
 def mocked_backend_services_apis_for_create_and_delete_solver_job(
-    mocked_webserver_service_api: MockRouter,
-    mocked_catalog_service_api: MockRouter,
+    mocked_webserver_rest_api: MockRouter,
+    mocked_webserver_rpc_api: dict[str, MockType],
     project_tests_dir: Path,
 ) -> MockedBackendApiDict:
     mock_name = "on_create_job.json"
@@ -95,25 +96,24 @@ def mocked_backend_services_apis_for_create_and_delete_solver_job(
         Path(project_tests_dir / "mocks" / mock_name).read_text()
     )
 
-    capture = captures[0]
-    assert capture.host == "catalog"
-    assert capture.method == "GET"
-    mocked_catalog_service_api.request(
-        method=capture.method, path=capture.path, name="get_service"  # GET service
-    ).respond(status_code=capture.status_code, json=capture.response_body)
+    # capture = captures[0]
+    # assert capture.host == "catalog"
+    # assert capture.method == "GET"
+    # mocked_catalog_rest_api.request(
+    #     method=capture.method, path=capture.path, name="get_service"  # GET service
+    # ).respond(status_code=capture.status_code, json=capture.response_body)
 
     capture = captures[-1]
     assert capture.host == "webserver"
     assert capture.method == "DELETE"
 
-    mocked_webserver_service_api.delete(
+    mocked_webserver_rest_api.delete(
         path__regex=rf"/projects/(?P<project_id>{UUID_RE_BASE})$",
         name="delete_project",
     ).respond(status_code=capture.status_code, json=capture.response_body)
 
     return MockedBackendApiDict(
-        catalog=mocked_catalog_service_api,
-        webserver=mocked_webserver_service_api,
+        webserver=mocked_webserver_rest_api,
     )
 
 
@@ -125,6 +125,7 @@ async def test_create_and_delete_solver_job(
     client: httpx.AsyncClient,
     solver_key: str,
     solver_version: str,
+    mocked_catalog_rpc_api: dict[str, MockType],
     mocked_backend_services_apis_for_create_and_delete_solver_job: MockedBackendApiDict,
 ):
     # create Job
@@ -154,11 +155,9 @@ async def test_create_and_delete_solver_job(
     assert mock_webserver_router
     assert mock_webserver_router["delete_project"].called
 
-    mock_catalog_router = mocked_backend_services_apis_for_create_and_delete_solver_job[
-        "catalog"
-    ]
-    assert mock_catalog_router
-    assert mock_catalog_router["get_service"].called
+    get_service = mocked_catalog_rpc_api["get_service"]
+    assert get_service
+    assert get_service.called
 
     # NOTE: ideas for further tests
     # Run job and try to delete while running
@@ -176,6 +175,7 @@ async def test_create_job(
     solver_key: str,
     solver_version: str,
     mocked_backend_services_apis_for_create_and_delete_solver_job: MockedBackendApiDict,
+    mocked_catalog_rpc_api: dict[str, MockType],
     hidden: bool,
     parent_project_id: UUID | None,
     parent_node_id: UUID | None,

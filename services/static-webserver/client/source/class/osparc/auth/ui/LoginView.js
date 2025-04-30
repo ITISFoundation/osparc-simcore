@@ -215,7 +215,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       const email = this._form.getItems().email;
       const pass = this._form.getItems().password;
 
-      const loginFun = msg => {
+      const loginSuccessful = msg => {
         this.__loginBtn.setFetching(false);
         this.fireDataEvent("done", msg);
         // we don't need the form any more, so remove it and mock-navigate-away
@@ -235,7 +235,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
 
       const twoFactorAuthCbk = (nextStep, message, retryAfter) => {
         this.__loginBtn.setFetching(false);
-        osparc.FlashMessenger.getInstance().logAs(message, "INFO");
+        osparc.FlashMessenger.logAs(message, "INFO");
         this.fireDataEvent("to2FAValidationCode", {
           userEmail: email.getValue(),
           nextStep,
@@ -248,18 +248,18 @@ qx.Class.define("osparc.auth.ui.LoginView", {
         window.history.replaceState(null, window.document.title, window.location.pathname);
       };
 
-      const failFun = msg => {
+      const loginFailed = err => {
         this.__loginBtn.setFetching(false);
         // TODO: can get field info from response here
-        msg = String(msg) || this.tr("Typed an invalid email or password");
+        const message = String(err.message) || this.tr("email or password don't look correct");
         [email, pass].forEach(item => {
           item.set({
-            invalidMessage: msg,
+            invalidMessage: message,
             valid: false
           });
         });
 
-        osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
+        osparc.FlashMessenger.logError(err);
       };
 
       const manager = osparc.auth.Manager.getInstance();
@@ -272,10 +272,10 @@ qx.Class.define("osparc.auth.ui.LoginView", {
               twoFactorAuthCbk(resp.nextStep, resp.message, resp.retryAfter);
             }
           } else if (resp.status === 200) {
-            loginFun(resp.message);
+            loginSuccessful(resp.message);
           }
         })
-        .catch(err => failFun(err));
+        .catch(err => loginFailed(err));
     },
 
     resetValues: function() {

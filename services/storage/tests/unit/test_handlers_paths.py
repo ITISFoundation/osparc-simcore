@@ -16,9 +16,14 @@ from urllib.parse import quote
 import httpx
 import pytest
 import sqlalchemy as sa
+from faker import Faker
 from fastapi import FastAPI, status
 from fastapi_pagination.cursor import CursorPage
-from models_library.api_schemas_storage.storage_schemas import PathMetaDataGet
+from models_library.api_schemas_storage.storage_schemas import (
+    PathMetaDataGet,
+    PathTotalSizeCreate,
+)
+from models_library.api_schemas_webserver.storage import MAX_NUMBER_OF_PATHS_PER_PAGE
 from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
@@ -26,9 +31,10 @@ from pytest_simcore.helpers.fastapi import url_from_operation_id
 from pytest_simcore.helpers.httpx_assert_checks import assert_status
 from pytest_simcore.helpers.storage_utils import FileIDDict, ProjectWithFilesParams
 from simcore_postgres_database.models.projects import projects
+from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-pytest_simcore_core_services_selection = ["postgres"]
+pytest_simcore_core_services_selection = ["postgres", "rabbit"]
 pytest_simcore_ops_services_selection = ["adminer"]
 
 _IsFile: TypeAlias = bool
@@ -115,6 +121,7 @@ async def test_list_paths_root_folder_of_empty_returns_nothing(
     client: httpx.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
+    fake_datcore_tokens: tuple[str, str],
 ):
     await _assert_list_paths(
         initialized_app,
@@ -126,6 +133,12 @@ async def test_list_paths_root_folder_of_empty_returns_nothing(
     )
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 @pytest.mark.parametrize(
     "project_params",
     [
@@ -203,6 +216,60 @@ async def test_list_paths_pagination(
         )
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    "project_params",
+    [
+        ProjectWithFilesParams(
+            num_nodes=1,
+            allowed_file_sizes=(TypeAdapter(ByteSize).validate_python("0b"),),
+            workspace_files_count=MAX_NUMBER_OF_PATHS_PER_PAGE,
+        )
+    ],
+    ids=str,
+)
+async def test_list_paths_pagination_large_page(
+    initialized_app: FastAPI,
+    client: httpx.AsyncClient,
+    location_id: LocationID,
+    user_id: UserID,
+    with_random_project_with_files: tuple[
+        dict[str, Any],
+        dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
+    ],
+):
+    project, list_of_files = with_random_project_with_files
+    selected_node_id = NodeID(random.choice(list(project["workbench"])))  # noqa: S311
+    selected_node_s3_keys = [
+        Path(s3_object_id) for s3_object_id in list_of_files[selected_node_id]
+    ]
+    workspace_file_filter = Path(project["uuid"]) / f"{selected_node_id}" / "workspace"
+    expected_paths = _filter_and_group_paths_one_level_deeper(
+        selected_node_s3_keys, workspace_file_filter
+    )
+    await _assert_list_paths(
+        initialized_app,
+        client,
+        location_id,
+        user_id,
+        file_filter=workspace_file_filter,
+        expected_paths=expected_paths,
+        check_total=False,
+        limit=MAX_NUMBER_OF_PATHS_PER_PAGE,
+    )
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 @pytest.mark.parametrize(
     "project_params, num_projects",
     [
@@ -366,6 +433,12 @@ async def test_list_paths(
 
 
 @pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
     "project_params",
     [
         ProjectWithFilesParams(
@@ -495,3 +568,183 @@ async def test_list_paths_with_display_name_containing_slashes(
         assert page_of_paths.items[0].display_path == Path(
             expected_display_path
         ), "display path parts should be url encoded"
+
+
+async def _assert_compute_path_size(
+    initialized_app: FastAPI,
+    client: httpx.AsyncClient,
+    location_id: LocationID,
+    user_id: UserID,
+    *,
+    path: Path,
+    expected_total_size: int,
+) -> ByteSize:
+    url = url_from_operation_id(
+        client,
+        initialized_app,
+        "compute_path_size",
+        location_id=f"{location_id}",
+        path=f"{path}",
+    ).with_query(user_id=user_id)
+    response = await client.post(f"{url}")
+
+    received, _ = assert_status(
+        response,
+        status.HTTP_200_OK,
+        PathTotalSizeCreate,
+    )
+    assert received
+    assert received.path == path
+    assert received.size == expected_total_size
+    return received.size
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    "project_params",
+    [
+        ProjectWithFilesParams(
+            num_nodes=5,
+            allowed_file_sizes=(TypeAdapter(ByteSize).validate_python("1b"),),
+            workspace_files_count=10,
+        )
+    ],
+    ids=str,
+)
+async def test_path_compute_size(
+    initialized_app: FastAPI,
+    client: httpx.AsyncClient,
+    location_id: LocationID,
+    user_id: UserID,
+    with_random_project_with_files: tuple[
+        dict[str, Any],
+        dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
+    ],
+    project_params: ProjectWithFilesParams,
+):
+    assert (
+        len(project_params.allowed_file_sizes) == 1
+    ), "test preconditions are not filled! allowed file sizes should have only 1 option for this test"
+    project, list_of_files = with_random_project_with_files
+
+    total_num_files = sum(
+        len(files_in_node) for files_in_node in list_of_files.values()
+    )
+
+    # get size of a full project
+    expected_total_size = project_params.allowed_file_sizes[0] * total_num_files
+    path = Path(project["uuid"])
+    await _assert_compute_path_size(
+        initialized_app,
+        client,
+        location_id,
+        user_id,
+        path=path,
+        expected_total_size=expected_total_size,
+    )
+
+    # get size of one of the nodes
+    selected_node_id = NodeID(random.choice(list(project["workbench"])))  # noqa: S311
+    path = Path(project["uuid"]) / f"{selected_node_id}"
+    selected_node_s3_keys = [
+        Path(s3_object_id) for s3_object_id in list_of_files[selected_node_id]
+    ]
+    expected_total_size = project_params.allowed_file_sizes[0] * len(
+        selected_node_s3_keys
+    )
+    await _assert_compute_path_size(
+        initialized_app,
+        client,
+        location_id,
+        user_id,
+        path=path,
+        expected_total_size=expected_total_size,
+    )
+
+    # get size of the outputs of one of the nodes
+    path = Path(project["uuid"]) / f"{selected_node_id}" / "outputs"
+    selected_node_s3_keys = [
+        Path(s3_object_id)
+        for s3_object_id in list_of_files[selected_node_id]
+        if s3_object_id.startswith(f"{path}")
+    ]
+    expected_total_size = project_params.allowed_file_sizes[0] * len(
+        selected_node_s3_keys
+    )
+    await _assert_compute_path_size(
+        initialized_app,
+        client,
+        location_id,
+        user_id,
+        path=path,
+        expected_total_size=expected_total_size,
+    )
+
+    # get size of workspace in one of the nodes (this is semi-cached in the DB)
+    path = Path(project["uuid"]) / f"{selected_node_id}" / "workspace"
+    selected_node_s3_keys = [
+        Path(s3_object_id)
+        for s3_object_id in list_of_files[selected_node_id]
+        if s3_object_id.startswith(f"{path}")
+    ]
+    expected_total_size = project_params.allowed_file_sizes[0] * len(
+        selected_node_s3_keys
+    )
+    workspace_total_size = await _assert_compute_path_size(
+        initialized_app,
+        client,
+        location_id,
+        user_id,
+        path=path,
+        expected_total_size=expected_total_size,
+    )
+
+    # get size of folders inside the workspace
+    folders_inside_workspace = [
+        p[0]
+        for p in _filter_and_group_paths_one_level_deeper(selected_node_s3_keys, path)
+        if p[1] is False
+    ]
+    accumulated_subfolder_size = 0
+    for workspace_subfolder in folders_inside_workspace:
+        selected_node_s3_keys = [
+            Path(s3_object_id)
+            for s3_object_id in list_of_files[selected_node_id]
+            if s3_object_id.startswith(f"{workspace_subfolder}")
+        ]
+        expected_total_size = project_params.allowed_file_sizes[0] * len(
+            selected_node_s3_keys
+        )
+        accumulated_subfolder_size += await _assert_compute_path_size(
+            initialized_app,
+            client,
+            location_id,
+            user_id,
+            path=workspace_subfolder,
+            expected_total_size=expected_total_size,
+        )
+
+    assert workspace_total_size == accumulated_subfolder_size
+
+
+async def test_path_compute_size_inexistent_path(
+    initialized_app: FastAPI,
+    client: httpx.AsyncClient,
+    location_id: LocationID,
+    user_id: UserID,
+    faker: Faker,
+    fake_datcore_tokens: tuple[str, str],
+):
+    await _assert_compute_path_size(
+        initialized_app,
+        client,
+        location_id,
+        user_id,
+        path=Path(faker.file_path(absolute=False)),
+        expected_total_size=0,
+    )

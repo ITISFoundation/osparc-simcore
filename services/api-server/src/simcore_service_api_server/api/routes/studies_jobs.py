@@ -16,8 +16,6 @@ from models_library.projects_nodes_io import NodeID
 from pydantic import PositiveInt
 from servicelib.logging_utils import log_context
 
-from ...api.dependencies.authentication import get_current_user_id
-from ...api.dependencies.services import get_api_client
 from ...exceptions.backend_errors import ProjectAlreadyStartedError
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
@@ -46,10 +44,19 @@ from ...services_http.study_job_models_converters import (
     get_project_and_file_inputs_from_job_inputs,
 )
 from ...services_http.webserver import AuthSession
+from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.application import get_reverse_url_mapper
+from ..dependencies.authentication import get_current_user_id, get_product_name
+from ..dependencies.services import get_api_client
 from ..dependencies.webserver_http import get_webserver_session
-from ._common import API_SERVER_DEV_FEATURES_ENABLED
-from ._constants import FMSG_CHANGELOG_CHANGED_IN_VERSION, FMSG_CHANGELOG_NEW_IN_VERSION
+from ..dependencies.webserver_rpc import (
+    get_wb_api_rpc_client,
+)
+from ._constants import (
+    FMSG_CHANGELOG_CHANGED_IN_VERSION,
+    FMSG_CHANGELOG_NEW_IN_VERSION,
+    create_route_description,
+)
 from .solvers_jobs import JOBS_STATUS_CODES
 
 _logger = logging.getLogger(__name__)
@@ -67,8 +74,13 @@ def _compose_job_resource_name(study_key, job_id) -> str:
 @router.get(
     "/{study_id:uuid}/jobs",
     response_model=Page[Job],
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
-    status_code=status.HTTP_501_NOT_IMPLEMENTED,
+    description=create_route_description(
+        base="List of all jobs created for a given study (paginated)",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.8"),
+        ],
+    ),
+    include_in_schema=False,  # TO BE RELEASED in 0.8
 )
 async def list_study_jobs(
     study_id: StudyID,
@@ -86,7 +98,10 @@ async def create_study_job(
     study_id: StudyID,
     job_inputs: JobInputs,
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    product_name: Annotated[str, Depends(get_product_name)],
     hidden: Annotated[bool, Query()] = True,
     x_simcore_parent_project_uuid: ProjectID | None = Header(default=None),
     x_simcore_parent_node_id: NodeID | None = Header(default=None),
@@ -118,6 +133,13 @@ async def create_study_job(
     await webserver_api.patch_project(
         project_id=job.id,
         patch_params=ProjectPatch(name=job.name),  # type: ignore[arg-type]
+    )
+
+    await wb_api_rpc.mark_project_as_job(
+        product_name=product_name,
+        user_id=user_id,
+        project_uuid=job.id,
+        job_parent_resource_name=job.runner_name,
     )
 
     project_inputs = await webserver_api.get_project_inputs(project_id=project.uuid)
@@ -160,8 +182,14 @@ async def create_study_job(
 @router.get(
     "/{study_id:uuid}/jobs/{job_id:uuid}",
     response_model=Job,
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
     status_code=status.HTTP_501_NOT_IMPLEMENTED,
+    description=create_route_description(
+        base="Gets a jobs for a given study",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.8"),
+        ],
+    ),
+    include_in_schema=False,  # TO BE RELEASED in 0.8
 )
 async def get_study_job(
     study_id: StudyID,

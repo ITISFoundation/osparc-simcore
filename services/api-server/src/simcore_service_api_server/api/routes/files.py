@@ -16,6 +16,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     LinkType,
 )
 from models_library.basic_types import SHA256Str
+from models_library.projects_nodes_io import NodeID
 from pydantic import AnyUrl, ByteSize, PositiveInt, TypeAdapter, ValidationError
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
@@ -28,20 +29,33 @@ from simcore_sdk.node_ports_common.filemanager import (
     get_upload_links_from_s3,
 )
 from simcore_sdk.node_ports_common.filemanager import upload_path as storage_upload_path
+from simcore_service_api_server.api.routes._constants import (
+    FMSG_CHANGELOG_ADDED_IN_VERSION,
+    FMSG_CHANGELOG_REMOVED_IN_VERSION_FORMAT,
+    create_route_description,
+)
 from starlette.datastructures import URL
 from starlette.responses import RedirectResponse
 
+from ...api.dependencies.webserver_http import (
+    get_webserver_session,
+)
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
+from ...models.domain.files import File as DomainFile
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.files import (
-    ClientFile,
     ClientFileUploadData,
-    File,
+)
+from ...models.schemas.files import File as OutputFile
+from ...models.schemas.files import (
     FileUploadData,
     UploadLinks,
+    UserFile,
 )
+from ...models.schemas.jobs import UserFileToProgramJob
 from ...services_http.storage import StorageApi, StorageFileMetaData, to_file_api_model
+from ...services_http.webserver import AuthSession
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
@@ -70,14 +84,14 @@ async def _get_file(
     file_id: UUID,
     storage_client: StorageApi,
     user_id: int,
-):
+) -> DomainFile:
     """Gets metadata for a given file resource"""
 
     try:
-        stored_files: list[
-            StorageFileMetaData
-        ] = await storage_client.search_owned_files(
-            user_id=user_id, file_id=file_id, limit=1
+        stored_files: list[StorageFileMetaData] = (
+            await storage_client.search_owned_files(
+                user_id=user_id, file_id=file_id, limit=1
+            )
         )
         if not stored_files:
             msg = "Not found in storage"
@@ -98,7 +112,48 @@ async def _get_file(
         ) from err
 
 
-@router.get("", response_model=list[File], responses=_FILE_STATUS_CODES)
+async def _create_domain_file(
+    *,
+    webserver_api: AuthSession,
+    file_id: UUID | None,
+    client_file: UserFile | UserFileToProgramJob,
+) -> DomainFile:
+    if isinstance(client_file, UserFile):
+        file = client_file.to_domain_model(file_id=file_id)
+    elif isinstance(client_file, UserFileToProgramJob):
+        project = await webserver_api.get_project(project_id=client_file.job_id)
+        if len(project.workbench) > 1:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Job_id {project.uuid} is not a valid program job.",
+            )
+        node_id = next(iter(project.workbench.keys()))
+        file = client_file.to_domain_model(
+            project_id=project.uuid, node_id=NodeID(node_id)
+        )
+    else:
+        err_msg = f"Invalid client_file type passed: {type(client_file)=}"
+        raise TypeError(err_msg)
+    return file
+
+
+@router.get(
+    "",
+    response_model=list[OutputFile],
+    responses=_FILE_STATUS_CODES,
+    description=create_route_description(
+        base="Lists all files stored in the system",
+        deprecated=True,
+        alternative="GET /v0/files/page",
+        changelog=[
+            FMSG_CHANGELOG_ADDED_IN_VERSION.format("0.5", ""),
+            FMSG_CHANGELOG_REMOVED_IN_VERSION_FORMAT.format(
+                "0.7",
+                "This endpoint is deprecated and will be removed in a future version",
+            ),
+        ],
+    ),
+)
 async def list_files(
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
     user_id: Annotated[int, Depends(get_current_user_id)],
@@ -113,12 +168,12 @@ async def list_files(
     )
 
     # Adapts storage API model to API model
-    all_files: list[File] = []
+    all_files: list[OutputFile] = []
     for stored_file_meta in stored_files:
         try:
             assert stored_file_meta.file_id  # nosec
 
-            file_meta: File = to_file_api_model(stored_file_meta)
+            file_meta = to_file_api_model(stored_file_meta)
 
         except (ValidationError, ValueError, AttributeError) as err:
             _logger.warning(
@@ -129,14 +184,14 @@ async def list_files(
             )
 
         else:
-            all_files.append(file_meta)
+            all_files.append(OutputFile.from_domain_model(file_meta))
 
     return all_files
 
 
 @router.get(
     "/page",
-    response_model=Page[File],
+    response_model=Page[OutputFile],
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
     status_code=status.HTTP_501_NOT_IMPLEMENTED,
 )
@@ -161,7 +216,7 @@ def _get_spooled_file_size(file_io: IO) -> int:
 
 @router.put(
     "/content",
-    response_model=File,
+    response_model=OutputFile,
     responses=_FILE_STATUS_CODES,
 )
 @cancel_on_disconnect
@@ -187,7 +242,7 @@ async def upload_file(
         None, _get_spooled_file_size, file.file
     )
     # assign file_id.
-    file_meta: File = await File.create_from_uploaded(
+    file_meta = await DomainFile.create_from_uploaded(
         file,
         file_size=file_size,
         created_at=datetime.datetime.now(datetime.UTC).isoformat(),
@@ -216,7 +271,7 @@ async def upload_file(
     assert isinstance(upload_result, UploadedFile)  # nosec
 
     file_meta.e_tag = upload_result.etag
-    return file_meta
+    return OutputFile.from_domain_model(file_meta)
 
 
 # NOTE: MaG suggested a single function that can upload one or multiple files instead of having
@@ -239,14 +294,14 @@ async def upload_files(files: list[UploadFile] = FileParam(...)):
 @cancel_on_disconnect
 async def get_upload_links(
     request: Request,
-    client_file: ClientFile,
+    client_file: UserFileToProgramJob | UserFile,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
     """Get upload links for uploading a file to storage"""
     assert request  # nosec
-    file_meta: File = await File.create_from_client_file(
-        client_file,
-        datetime.datetime.now(datetime.UTC).isoformat(),
+    file_meta = await _create_domain_file(
+        webserver_api=webserver_api, file_id=None, client_file=client_file
     )
     _, upload_links = await get_upload_links_from_s3(
         user_id=user_id,
@@ -275,7 +330,7 @@ async def get_upload_links(
 
 @router.get(
     "/{file_id}",
-    response_model=File,
+    response_model=OutputFile,
     responses=_FILE_STATUS_CODES,
 )
 async def get_file(
@@ -294,7 +349,7 @@ async def get_file(
 
 @router.get(
     ":search",
-    response_model=Page[File],
+    response_model=Page[OutputFile],
     responses=_FILE_STATUS_CODES,
 )
 async def search_files_page(
@@ -317,8 +372,11 @@ async def search_files_page(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Not found in storage"
         )
+    file_list = [
+        OutputFile.from_domain_model(to_file_api_model(fmd)) for fmd in stored_files
+    ]
     return create_page(
-        [to_file_api_model(fmd) for fmd in stored_files],
+        file_list,
         total=len(stored_files),
         params=page_params,
     )
@@ -333,7 +391,7 @@ async def delete_file(
     user_id: Annotated[int, Depends(get_current_user_id)],
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
 ):
-    file: File = await _get_file(
+    file = await _get_file(
         file_id=file_id,
         storage_client=storage_client,
         user_id=user_id,
@@ -350,17 +408,17 @@ async def delete_file(
 async def abort_multipart_upload(
     request: Request,
     file_id: UUID,
-    client_file: Annotated[ClientFile, Body(..., embed=True)],
+    client_file: Annotated[UserFileToProgramJob | UserFile, Body(..., embed=True)],
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
+    assert file_id  # nosec
     assert request  # nosec
     assert user_id  # nosec
-    file: File = File(
-        id=file_id,
-        filename=client_file.filename,
-        checksum=client_file.sha256_checksum,
-        e_tag=None,
+
+    file = await _create_domain_file(
+        webserver_api=webserver_api, file_id=file_id, client_file=client_file
     )
     abort_link: URL = await storage_client.create_abort_upload_link(
         file=file, query={"user_id": str(user_id)}
@@ -372,35 +430,34 @@ async def abort_multipart_upload(
 
 @router.post(
     "/{file_id}:complete",
-    response_model=File,
+    response_model=OutputFile,
     responses=_FILE_STATUS_CODES,
 )
 @cancel_on_disconnect
 async def complete_multipart_upload(
     request: Request,
     file_id: UUID,
-    client_file: Annotated[ClientFile, Body(...)],
+    client_file: Annotated[UserFileToProgramJob | UserFile, Body(...)],
     uploaded_parts: Annotated[FileUploadCompletionBody, Body(...)],
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
+    assert file_id  # nosec
     assert request  # nosec
     assert user_id  # nosec
-
-    file: File = File(
-        id=file_id,
-        filename=client_file.filename,
-        checksum=client_file.sha256_checksum,
-        e_tag=None,
+    file = await _create_domain_file(
+        webserver_api=webserver_api, file_id=file_id, client_file=client_file
     )
     complete_link: URL = await storage_client.create_complete_upload_link(
         file=file, query={"user_id": str(user_id)}
     )
 
-    e_tag: ETag = await complete_file_upload(
+    e_tag: ETag | None = await complete_file_upload(
         uploaded_parts=uploaded_parts.parts,
         upload_completion_link=TypeAdapter(AnyUrl).validate_python(f"{complete_link}"),
     )
+    assert e_tag is not None  # nosec
 
     file.e_tag = e_tag
     return file
@@ -429,7 +486,7 @@ async def download_file(
 ):
     # NOTE: application/octet-stream is defined as "arbitrary binary data" in RFC 2046,
     # gets meta
-    file_meta: File = await get_file(file_id, storage_client, user_id)
+    file_meta = await get_file(file_id, storage_client, user_id)
 
     # download from S3 using pre-signed link
     presigned_download_link = await storage_client.get_download_link(

@@ -22,16 +22,17 @@
 qx.Class.define("osparc.data.PollTask", {
   extend: qx.core.Object,
 
-  construct: function(taskData, interval) {
+  construct: function(taskData, interval = 2000) {
     this.base(arguments);
 
-    interval ? this.setPollInterval(interval) : this.initPollInterval();
+    this.setPollInterval(interval);
 
     if (taskData && "task_id" in taskData) {
       this.set({
         taskId: taskData["task_id"],
+        taskName: taskData["task_name"] || "",
         statusHref: taskData["status_href"],
-        resultHref: taskData["result_href"]
+        resultHref: taskData["result_href"],
       });
 
       if ("abort_href" in taskData) {
@@ -56,12 +57,17 @@ qx.Class.define("osparc.data.PollTask", {
     pollInterval: {
       check: "Number",
       nullable: false,
-      init: 1000
+      init: 2000
     },
 
     taskId: {
       check: "String",
       nullable: false
+    },
+
+    taskName: {
+      check: "String",
+      nullable: true
     },
 
     statusHref: {
@@ -92,10 +98,27 @@ qx.Class.define("osparc.data.PollTask", {
 
   statics: {
     extractPathname: function(href) {
-      // For the long running tasks, only the pathname is relevant to the frontend
-      const url = new URL(href);
-      return url.pathname;
-    }
+      try {
+        // For the long running tasks, only the pathname is relevant to the frontend
+        const url = new URL(href);
+        return url.pathname;
+      } catch (_) {
+        return href;
+      }
+    },
+
+    extractProgress: function(updateData) {
+      const toNumberWithMaxTwoDecimals = value => {
+        return Math.round(Number(value) * 100) / 100;
+      };
+
+      if ("task_progress" in updateData) {
+        const taskProgress = updateData["task_progress"];
+        const percent = taskProgress["percent"] ? toNumberWithMaxTwoDecimals(taskProgress["percent"]) : taskProgress["percent"];
+        return percent;
+      }
+      return 0;
+    },
   },
 
   members: {
@@ -112,7 +135,7 @@ qx.Class.define("osparc.data.PollTask", {
           if (resp.status === 200) {
             return resp.json();
           }
-          const errMsg = qx.locale.Manager.tr("Failed polling status");
+          const errMsg = qx.locale.Manager.tr("Unsuccessful polling status");
           const err = new Error(errMsg);
           this.fireDataEvent("pollingError", err);
           throw err;
@@ -148,7 +171,7 @@ qx.Class.define("osparc.data.PollTask", {
           .then(res => res.json())
           .then(result => {
             if ("error" in result && result["error"]) {
-              throw new Error(result["error"]["message"]);
+              throw result["error"];
             }
             if ("data" in result && result["data"]) {
               const resultData = result["data"];
@@ -172,10 +195,8 @@ qx.Class.define("osparc.data.PollTask", {
         fetch(abortPath, {
           method: "DELETE"
         })
-          .then(() => this.fireEvent("taskAborted"))
-          .catch(err => {
-            throw err;
-          });
+          .catch(err => osparc.FlashMessenger.logError(err))
+          .finally(() => this.fireEvent("taskAborted"));
       }
     }
   }

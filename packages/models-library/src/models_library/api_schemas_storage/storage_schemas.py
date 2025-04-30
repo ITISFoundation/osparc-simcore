@@ -9,7 +9,7 @@ IMPORTANT: DO NOT COUPLE these schemas until storage is refactored
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Annotated, Any, Literal, Self, TypeAlias
+from typing import Annotated, Any, Final, Literal, Self, TypeAlias
 from uuid import UUID
 
 from pydantic import (
@@ -404,6 +404,10 @@ class SoftCopyBody(BaseModel):
     link_id: SimcoreS3FileID
 
 
+DEFAULT_NUMBER_OF_PATHS_PER_PAGE: Final[int] = 50
+MAX_NUMBER_OF_PATHS_PER_PAGE: Final[int] = 1000
+
+
 class PathMetaDataGet(BaseModel):
     path: Annotated[Path, Field(description="the path to the current path")]
     display_path: Annotated[
@@ -450,6 +454,34 @@ class PathMetaDataGet(BaseModel):
                         "file_meta_data": FileMetaDataGet.model_json_schema()[
                             "examples"
                         ][0],
+                    },
+                ]
+            }
+        )
+
+    model_config = ConfigDict(
+        extra="forbid", json_schema_extra=_update_json_schema_extra
+    )
+
+
+class PathTotalSizeCreate(BaseModel):
+    path: Path
+    size: ByteSize
+
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    # a folder
+                    {
+                        "path": "f8da77a9-24b9-4eab-aee7-1f0608da1e3e",
+                        "size": 15728640,
+                    },
+                    # 1 file
+                    {
+                        "path": f"f8da77a9-24b9-4eab-aee7-1f0608da1e3e/2f94f80f-633e-4dfa-a983-226b7babe3d7/outputs/output5/{FileMetaDataGet.model_json_schema()['examples'][0]['file_name']}",
+                        "size": 1024,
                     },
                 ]
             }

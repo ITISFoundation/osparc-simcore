@@ -129,27 +129,28 @@ qx.Class.define("osparc.MaintenanceTracker", {
       }
     },
 
+    __messageToRibbon: function(closable) {
+      this.__removeRibbonMessage();
+      const text = this.__getText();
+      const notification = new osparc.notification.RibbonNotification(text, "maintenance", closable);
+      osparc.notification.RibbonNotifications.getInstance().addNotification(notification);
+      this.__lastRibbonMessage = notification;
+    },
+
     __scheduleRibbonMessage: function() {
       const now = new Date();
       const diffClosable = this.getStart().getTime() - now.getTime() - this.self().CLOSABLE_WARN_IN_ADVANCE;
       const diffPermanent = this.getStart().getTime() - now.getTime() - this.self().PERMANENT_WARN_IN_ADVANCE;
 
-      const messageToRibbon = closable => {
-        this.__removeRibbonMessage();
-        const text = this.__getText();
-        const notification = new osparc.notification.RibbonNotification(text, "maintenance", closable);
-        osparc.notification.RibbonNotifications.getInstance().addNotification(notification);
-        this.__lastRibbonMessage = notification;
-      };
       if (diffClosable < 0) {
-        messageToRibbon(true);
+        this.__messageToRibbon(true);
       } else {
-        setTimeout(() => messageToRibbon(true), diffClosable);
+        setTimeout(() => this.__messageToRibbon(true), diffClosable);
       }
       if (diffPermanent < 0) {
-        messageToRibbon(false);
+        this.__messageToRibbon(false);
       } else {
-        setTimeout(() => messageToRibbon(false), diffPermanent);
+        setTimeout(() => this.__messageToRibbon(false), diffPermanent);
       }
     },
 
@@ -166,7 +167,7 @@ qx.Class.define("osparc.MaintenanceTracker", {
         end: null,
         reason: null
       });
-      const reason = qx.locale.Manager.tr("We are under maintenance. Please check back later");
+      const reason = qx.locale.Manager.tr("The service is under maintenance. Please check back later");
       qx.core.Init.getApplication().logout(reason);
     },
 

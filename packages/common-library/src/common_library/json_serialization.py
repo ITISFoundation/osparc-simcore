@@ -1,6 +1,6 @@
-""" Helpers for json serialization
-    - built-in json-like API
-    - implemented using orjson, which  performs better. SEE https://github.com/ijl/orjson?tab=readme-ov-file#performance
+"""Helpers for json serialization
+- built-in json-like API
+- implemented using orjson, which  performs better. SEE https://github.com/ijl/orjson?tab=readme-ov-file#performance
 """
 
 import datetime
@@ -116,6 +116,28 @@ def pydantic_encoder(obj: Any) -> Any:
     # We have exited the for loop without finding a suitable encoder
     msg = f"Object of type '{obj.__class__.__name__}' is not JSON serializable"
     raise TypeError(msg)
+
+
+def representation_encoder(obj: Any):
+    """
+    A fallback encoder that uses `pydantic_encoder` to serialize objects.
+    If serialization fails, it falls back to using `str(obj)`.
+
+    This is practical for representation purposes, such as logging or debugging.
+
+    Example:
+        >>> from common_library.json_serialization import json_dumps, representation_encoder
+        >>> class CustomObject:
+        ...     def __str__(self):
+        ...         return "CustomObjectRepresentation"
+        >>> obj = CustomObject()
+        >>> json_dumps(obj, default=representation_encoder)
+        '"CustomObjectRepresentation"'
+    """
+    try:
+        return pydantic_encoder(obj)
+    except TypeError:
+        return str(obj)
 
 
 def json_dumps(

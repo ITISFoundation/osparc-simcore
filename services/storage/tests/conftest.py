@@ -7,6 +7,7 @@
 
 
 import asyncio
+import datetime
 import logging
 import random
 import sys
@@ -20,6 +21,9 @@ import respx
 import simcore_service_storage
 from asgi_lifespan import LifespanManager
 from aws_library.s3 import SimcoreS3API
+from celery import Celery
+from celery.contrib.testing.worker import TestWorkController, start_worker
+from celery.signals import worker_init, worker_shutdown
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
@@ -56,15 +60,23 @@ from pytest_simcore.helpers.storage_utils_file_meta_data import (
 )
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
+from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from servicelib.utils import limited_gather
+from settings_library.rabbit import RabbitSettings
+from simcore_postgres_database.models.tokens import tokens
 from simcore_postgres_database.storage_models import file_meta_data, projects, users
+from simcore_service_storage.api._worker_tasks.tasks import setup_worker_tasks
 from simcore_service_storage.core.application import create_app
 from simcore_service_storage.core.settings import ApplicationSettings
+from simcore_service_storage.datcore_dsm import DatCoreDataManager
 from simcore_service_storage.dsm import get_dsm_provider
 from simcore_service_storage.models import FileMetaData, FileMetaDataAtDB, S3BucketName
-from simcore_service_storage.modules.long_running_tasks import (
-    get_completed_upload_tasks,
+from simcore_service_storage.modules.celery.signals import (
+    on_worker_init,
+    on_worker_shutdown,
 )
+from simcore_service_storage.modules.celery.utils import get_celery_worker
+from simcore_service_storage.modules.celery.worker import CeleryTaskWorker
 from simcore_service_storage.modules.s3 import get_s3_client
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy import literal_column
@@ -80,15 +92,16 @@ pytest_plugins = [
     "pytest_simcore.aws_s3_service",
     "pytest_simcore.aws_server",
     "pytest_simcore.cli_runner",
+    "pytest_simcore.disk_usage_monitoring",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
     "pytest_simcore.file_extra",
     "pytest_simcore.httpbin_service",
-    "pytest_simcore.minio_service",
     "pytest_simcore.openapi_specs",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pytest_global_environs",
+    "pytest_simcore.rabbit_service",
     "pytest_simcore.repository_paths",
     "pytest_simcore.simcore_storage_data_models",
     "pytest_simcore.simcore_storage_datcore_adapter",
@@ -162,7 +175,6 @@ def app_environment(
     mock_env_devel_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
     external_envfile_dict: EnvVarsDict,
-    mock_rabbit_setup: MockerFixture,
 ) -> EnvVarsDict:
     if external_envfile_dict:
         delenvs_from_dict(monkeypatch, mock_env_devel_environment, raising=False)
@@ -173,17 +185,15 @@ def app_environment(
 
 
 @pytest.fixture
-def app_settings(
-    app_environment: EnvVarsDict,
-    sqlalchemy_async_engine: AsyncEngine,
-    postgres_host_config: dict[str, str],
-    mocked_s3_server_envs: EnvVarsDict,
-    datcore_adapter_service_mock: respx.MockRouter,
-    mocked_redis_server,
-) -> ApplicationSettings:
-    test_app_settings = ApplicationSettings.create_from_envs()
-    print(f"{test_app_settings.model_dump_json(indent=2)=}")
-    return test_app_settings
+def disabled_rabbitmq(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("STORAGE_RABBITMQ", "null")
+
+
+@pytest.fixture
+def enabled_rabbitmq(
+    app_environment: EnvVarsDict, rabbit_service: RabbitSettings
+) -> RabbitSettings:
+    return rabbit_service
 
 
 @pytest.fixture
@@ -192,13 +202,30 @@ async def mocked_redis_server(mocker: MockerFixture) -> None:
     mocker.patch("redis.asyncio.from_url", return_value=mock_redis)
 
 
+@pytest.fixture
+def app_settings(
+    app_environment: EnvVarsDict,
+    enabled_rabbitmq: RabbitSettings,
+    sqlalchemy_async_engine: AsyncEngine,
+    postgres_host_config: dict[str, str],
+    mocked_s3_server_envs: EnvVarsDict,
+    datcore_adapter_service_mock: respx.MockRouter,
+    mocked_redis_server: None,
+) -> ApplicationSettings:
+    test_app_settings = ApplicationSettings.create_from_envs()
+    print(f"{test_app_settings.model_dump_json(indent=2)=}")
+    return test_app_settings
+
+
 _LIFESPAN_TIMEOUT: Final[int] = 10
 
 
 @pytest.fixture
-async def initialized_app(app_settings: ApplicationSettings) -> AsyncIterator[FastAPI]:
-    settings = ApplicationSettings.create_from_envs()
-    app = create_app(settings)
+async def initialized_app(
+    mock_celery_app: None,
+    app_settings: ApplicationSettings,
+) -> AsyncIterator[FastAPI]:
+    app = create_app(app_settings)
     # NOTE: the timeout is sometime too small for CI machines, and even larger machines
     async with LifespanManager(
         app, startup_timeout=_LIFESPAN_TIMEOUT, shutdown_timeout=_LIFESPAN_TIMEOUT
@@ -242,11 +269,11 @@ def simcore_file_id(
 @pytest.fixture(
     params=[
         SimcoreS3DataManager.get_location_id(),
-        # DatCoreDataManager.get_location_id(),
+        DatCoreDataManager.get_location_id(),
     ],
     ids=[
         SimcoreS3DataManager.get_location_name(),
-        # DatCoreDataManager.get_location_name(),
+        DatCoreDataManager.get_location_name(),
     ],
 )
 def location_id(request: pytest.FixtureRequest) -> LocationID:
@@ -332,13 +359,13 @@ def upload_file(
     sqlalchemy_async_engine: AsyncEngine,
     storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
-    initialized_app: FastAPI,
     client: httpx.AsyncClient,
     project_id: ProjectID,
     node_id: NodeID,
     create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
     create_file_of_size: Callable[[ByteSize, str | None], Path],
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
+    with_storage_celery_worker: CeleryTaskWorker,
 ) -> Callable[
     [ByteSize, str, SimcoreS3FileID | None], Awaitable[tuple[Path, SimcoreS3FileID]]
 ]:
@@ -452,8 +479,8 @@ async def with_versioning_enabled(
 async def create_empty_directory(
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
     create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
-    initialized_app: FastAPI,
     client: httpx.AsyncClient,
+    with_storage_celery_worker: CeleryTaskWorker,
 ) -> Callable[[str, ProjectID, NodeID], Awaitable[SimcoreS3FileID]]:
     async def _directory_creator(
         dir_name: str, project_id: ProjectID, node_id: NodeID
@@ -486,8 +513,6 @@ async def create_empty_directory(
         assert file_upload_complete_response
         state_url = URL(f"{file_upload_complete_response.links.state}").relative()
 
-        # check that it finished updating
-        get_completed_upload_tasks(initialized_app).clear()
         # now check for the completion
         async for attempt in AsyncRetrying(
             reraise=True,
@@ -616,7 +641,7 @@ async def delete_directory(
     client: httpx.AsyncClient,
     user_id: UserID,
     location_id: LocationID,
-) -> Callable[..., Awaitable[None]]:
+) -> Callable[[StorageFileID], Awaitable[None]]:
     async def _dir_remover(directory_s3: StorageFileID) -> None:
         delete_url = url_from_operation_id(
             client,
@@ -855,7 +880,10 @@ async def with_random_project_with_files(
         ],
     ],
     project_params: ProjectWithFilesParams,
-) -> tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],]:
+) -> tuple[
+    dict[str, Any],
+    dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
+]:
     return await random_project_with_files(project_params)
 
 
@@ -873,7 +901,9 @@ async def output_file(
         bucket=TypeAdapter(S3BucketName).validate_python("master-simcore"),
         location_id=SimcoreS3DataManager.get_location_id(),
         location_name=SimcoreS3DataManager.get_location_name(),
-        sha256_checksum=faker.sha256(),
+        sha256_checksum=TypeAdapter(SHA256Str).validate_python(
+            faker.sha256(raw_output=False)
+        ),
     )
     file.entity_tag = "df9d868b94e53d18009066ca5cd90e9f"
     file.file_size = ByteSize(12)
@@ -894,3 +924,126 @@ async def output_file(
         result = await conn.execute(
             file_meta_data.delete().where(file_meta_data.c.file_id == row.file_id)
         )
+
+
+@pytest.fixture
+async def fake_datcore_tokens(
+    user_id: UserID, sqlalchemy_async_engine: AsyncEngine, faker: Faker
+) -> AsyncIterator[tuple[str, str]]:
+    token_key = cast(str, faker.uuid4())
+    token_secret = cast(str, faker.uuid4())
+    created_token_ids = []
+    async with sqlalchemy_async_engine.begin() as conn:
+        result = await conn.execute(
+            tokens.insert()
+            .values(
+                user_id=user_id,
+                token_service="pytest",  # noqa: S106
+                token_data={
+                    "service": "pytest",
+                    "token_secret": token_secret,
+                    "token_key": token_key,
+                },
+            )
+            .returning(tokens.c.token_id)
+        )
+        row = result.one()
+        created_token_ids.append(row.token_id)
+    yield token_key, token_secret
+
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            tokens.delete().where(tokens.c.token_id.in_(created_token_ids))
+        )
+
+
+@pytest.fixture(scope="session")
+def celery_config() -> dict[str, Any]:
+    return {
+        "broker_connection_retry_on_startup": True,
+        "broker_url": "memory://localhost//",
+        "result_backend": "cache+memory://localhost//",
+        "result_expires": datetime.timedelta(days=7),
+        "result_extended": True,
+        "pool": "threads",
+        "task_default_queue": "default",
+        "task_send_sent_event": True,
+        "task_track_started": True,
+        "worker_send_task_events": True,
+    }
+
+
+@pytest.fixture
+def mock_celery_app(mocker: MockerFixture, celery_config: dict[str, Any]) -> Celery:
+    celery_app = Celery(**celery_config)
+
+    for module in (
+        "simcore_service_storage.modules.celery._common.create_app",
+        "simcore_service_storage.modules.celery.create_app",
+    ):
+        mocker.patch(module, return_value=celery_app)
+
+    return celery_app
+
+
+@pytest.fixture
+def register_celery_tasks() -> Callable[[Celery], None]:
+    """override if tasks are needed"""
+
+    def _(celery_app: Celery) -> None: ...
+
+    return _
+
+
+@pytest.fixture
+async def with_storage_celery_worker_controller(
+    app_environment: EnvVarsDict,
+    celery_app: Celery,
+    monkeypatch: pytest.MonkeyPatch,
+    register_celery_tasks: Callable[[Celery], None],
+) -> AsyncIterator[TestWorkController]:
+    # Signals must be explicitily connected
+    worker_init.connect(on_worker_init)
+    worker_shutdown.connect(on_worker_shutdown)
+
+    setup_worker_tasks(celery_app)
+    register_celery_tasks(celery_app)
+
+    monkeypatch.setenv("STORAGE_WORKER_MODE", "true")
+    with start_worker(
+        celery_app,
+        pool="threads",
+        concurrency=1,
+        loglevel="info",
+        perform_ping_check=False,
+        queues="default,cpu_bound",
+    ) as worker:
+        yield worker
+
+
+@pytest.fixture
+def with_storage_celery_worker(
+    with_storage_celery_worker_controller: TestWorkController,
+) -> CeleryTaskWorker:
+    assert isinstance(with_storage_celery_worker_controller.app, Celery)
+    return get_celery_worker(with_storage_celery_worker_controller.app)
+
+
+@pytest.fixture
+async def storage_rabbitmq_rpc_client(
+    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
+) -> RabbitMQRPCClient:
+    rpc_client = await rabbitmq_rpc_client("pytest_storage_rpc_client")
+    assert rpc_client
+    return rpc_client
+
+
+@pytest.fixture
+def product_name(faker: Faker) -> str:
+    return faker.name()
+
+
+@pytest.fixture
+def set_log_levels_for_noisy_libraries() -> None:
+    # Reduce the log level for 'werkzeug'
+    logging.getLogger("werkzeug").setLevel(logging.WARNING)

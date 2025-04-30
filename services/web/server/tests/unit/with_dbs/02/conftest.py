@@ -92,36 +92,16 @@ def mock_catalog_api(
 ) -> dict[str, mock.Mock]:
     return {
         "get_service_resources": mocker.patch(
-            "simcore_service_webserver.projects.projects_service.catalog_client.get_service_resources",
+            "simcore_service_webserver.projects._projects_service.catalog_service.get_service_resources",
             return_value=mock_service_resources,
             autospec=True,
         ),
         "get_service": mocker.patch(
-            "simcore_service_webserver.projects.projects_service.catalog_client.get_service",
+            "simcore_service_webserver.projects._projects_service.catalog_service.get_service",
             return_value=mock_service,
             autospec=True,
         ),
     }
-
-
-@pytest.fixture
-async def user_project(
-    client: TestClient,
-    fake_project,
-    logged_user,
-    tests_data_dir: Path,
-    osparc_product_name: str,
-) -> AsyncIterator[ProjectDict]:
-    async with NewProject(
-        fake_project,
-        client.app,
-        user_id=logged_user["id"],
-        product_name=osparc_product_name,
-        tests_data_dir=tests_data_dir,
-    ) as project:
-        print("-----> added project", project["name"])
-        yield project
-        print("<----- removed project", project["name"])
 
 
 @pytest.fixture
@@ -223,7 +203,7 @@ async def create_template_project(
 
 @pytest.fixture
 def fake_services(
-    create_dynamic_service_mock: Callable[..., Awaitable[DynamicServiceGet]]
+    create_dynamic_service_mock: Callable[..., Awaitable[DynamicServiceGet]],
 ) -> Callable[..., Awaitable[list[DynamicServiceGet]]]:
     async def create_fakes(number_services: int) -> list[DynamicServiceGet]:
         return [await create_dynamic_service_mock() for _ in range(number_services)]
@@ -270,7 +250,7 @@ def app_environment(
 ) -> EnvVarsDict:
     envs_plugins = setenvs_from_dict(
         monkeypatch,
-        {},
+        {"WEBSERVER_DEV_FEATURES_ENABLED": "1"},
     )
     return app_environment | envs_plugins
 
@@ -374,7 +354,7 @@ def mock_get_total_project_dynamic_nodes_creation_interval(
 ) -> None:
     _VERY_LONG_LOCK_TIMEOUT_S: Final[float] = 300
     mocker.patch(
-        "simcore_service_webserver.projects.projects_service._nodes_api"
+        "simcore_service_webserver.projects._projects_service._nodes_service"
         ".get_total_project_dynamic_nodes_creation_interval",
         return_value=_VERY_LONG_LOCK_TIMEOUT_S,
     )

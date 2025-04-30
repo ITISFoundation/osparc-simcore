@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-catalog",
     "description": "Manages and maintains a catalog of all published components (e.g. macro-algorithms, scripts, etc)",
-    "version": "0.8.0"
+    "version": "0.8.1"
   },
   "paths": {
     "/": {
@@ -473,7 +473,9 @@
           "services"
         ],
         "summary": "List Services",
+        "description": "Use instead rpc._service.list_services_paginated -> PageRpcServicesGetV2",
         "operationId": "list_services_v0_services_get",
+        "deprecated": true,
         "parameters": [
           {
             "name": "user_id",
@@ -540,7 +542,9 @@
           "services"
         ],
         "summary": "Get Service",
+        "description": "Use instead rpc._service.get_service -> ServiceGetV2",
         "operationId": "get_service_v0_services__service_key___service_version__get",
+        "deprecated": true,
         "parameters": [
           {
             "name": "service_key",
@@ -3102,7 +3106,7 @@
             "type": "string",
             "pattern": "^[^_\\W0-9]\\w*$",
             "title": "Key name",
-            "description": "port identifier name"
+            "description": "Port identifier name"
           },
           "kind": {
             "type": "string",

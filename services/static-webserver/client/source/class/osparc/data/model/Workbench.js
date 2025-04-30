@@ -272,22 +272,23 @@ qx.Class.define("osparc.data.model.Workbench", {
     },
 
     __createNode: function(study, metadata, uuid) {
-      osparc.utils.Utils.localCache.serviceToFavs(metadata.key);
       const node = new osparc.data.model.Node(study, metadata, uuid);
       node.addListener("keyChanged", () => this.fireEvent("reloadModel"), this);
       node.addListener("changeInputNodes", () => this.fireDataEvent("pipelineChanged"), this);
       node.addListener("reloadModel", () => this.fireEvent("reloadModel"), this);
       node.addListener("updateStudyDocument", () => this.fireEvent("updateStudyDocument"), this);
+      osparc.utils.Utils.localCache.serviceToFavs(metadata.key);
       return node;
     },
 
     createNode: async function(key, version) {
       if (!osparc.data.Permissions.getInstance().canDo("study.node.create", true)) {
-        osparc.FlashMessenger.getInstance().logAs(qx.locale.Manager.tr("You are not allowed to add nodes"), "ERROR");
+        const msg = qx.locale.Manager.tr("You are not allowed to add nodes");
+        osparc.FlashMessenger.logError(msg);
         return null;
       }
       if (this.getStudy().isPipelineRunning()) {
-        osparc.FlashMessenger.getInstance().logAs(this.self().CANT_ADD_NODE, "ERROR");
+        osparc.FlashMessenger.logError(this.self().CANT_ADD_NODE);
         return null;
       }
 
@@ -330,7 +331,7 @@ qx.Class.define("osparc.data.model.Workbench", {
           level: "ERROR"
         };
         this.fireDataEvent("showInLogger", errorMsgData);
-        osparc.FlashMessenger.getInstance().logAs(errorMsg, "ERROR");
+        osparc.FlashMessenger.logError(errorMsg);
         return null;
       }
     },
@@ -426,7 +427,7 @@ qx.Class.define("osparc.data.model.Workbench", {
     },
 
     __filePickerNodeRequested: async function(nodeId, portId, file) {
-      const filePickerMetadata = osparc.service.Utils.getFilePicker();
+      const filePickerMetadata = osparc.store.Services.getFilePicker();
       const filePicker = await this.createNode(filePickerMetadata["key"], filePickerMetadata["version"]);
       if (filePicker === null) {
         return;
@@ -459,7 +460,7 @@ qx.Class.define("osparc.data.model.Workbench", {
           } else {
             this.removeNode(filePickerId);
             const msg = qx.locale.Manager.tr("File couldn't be assigned");
-            osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
+            osparc.FlashMessenger.logError(msg);
           }
         });
     },
@@ -469,7 +470,7 @@ qx.Class.define("osparc.data.model.Workbench", {
 
       // create a new ParameterNode
       const type = osparc.utils.Ports.getPortType(requesterNode.getMetaData()["inputs"], portId);
-      const parameterMetadata = osparc.service.Utils.getParameterMetadata(type);
+      const parameterMetadata = osparc.store.Services.getParameterMetadata(type);
       if (parameterMetadata) {
         const parameterNode = await this.createNode(parameterMetadata["key"], parameterMetadata["version"]);
         if (parameterNode === null) {
@@ -487,7 +488,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         if (requesterNode.getPropsForm().addPortLink(portId, pmId, "out_1") !== true) {
           this.removeNode(pmId);
           const msg = qx.locale.Manager.tr("Parameter couldn't be assigned");
-          osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
+          osparc.FlashMessenger.logError(msg);
         }
         this.fireEvent("reloadModel");
       }
@@ -499,7 +500,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       // create a new ProbeNode
       const requesterPortMD = requesterNode.getMetaData()["outputs"][portId];
       const type = osparc.utils.Ports.getPortType(requesterNode.getMetaData()["outputs"], portId);
-      const probeMetadata = osparc.service.Utils.getProbeMetadata(type);
+      const probeMetadata = osparc.store.Services.getProbeMetadata(type);
       if (probeMetadata) {
         const probeNode = await this.createNode(probeMetadata["key"], probeMetadata["version"]);
         if (probeNode === null) {
@@ -519,7 +520,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         if (probeNode.getPropsForm().addPortLink("in_1", nodeId, portId) !== true) {
           this.removeNode(probeId);
           const msg = qx.locale.Manager.tr("Probe couldn't be assigned");
-          osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
+          osparc.FlashMessenger.logError(msg);
         }
         this.fireEvent("reloadModel");
       }
@@ -536,7 +537,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         return false;
       }
       if (this.getStudy().isPipelineRunning()) {
-        osparc.FlashMessenger.getInstance().logAs(this.self().CANT_DELETE_NODE, "ERROR");
+        osparc.FlashMessenger.logAs(this.self().CANT_DELETE_NODE, "ERROR");
         return false;
       }
 
@@ -684,15 +685,20 @@ qx.Class.define("osparc.data.model.Workbench", {
 
     __deserializeNodes: function(workbenchData, workbenchUIData = {}) {
       const nodeIds = Object.keys(workbenchData);
-
-      const metadataPromises = [];
+      const serviceMetadataPromises = [];
       nodeIds.forEach(nodeId => {
         const nodeData = workbenchData[nodeId];
-        metadataPromises.push(osparc.store.Services.getService(nodeData.key, nodeData.version));
+        serviceMetadataPromises.push(osparc.store.Services.getService(nodeData.key, nodeData.version));
       });
-
-      return Promise.all(metadataPromises)
-        .then(values => {
+      return Promise.allSettled(serviceMetadataPromises)
+        .then(results => {
+          const missing = results.filter(result => result.status === "rejected" || result.value === null)
+          if (missing.length) {
+            const errorMsg = qx.locale.Manager.tr("Service metadata missing");
+            osparc.FlashMessenger.logError(errorMsg);
+            return;
+          }
+          const values = results.map(result => result.value);
           // Create first all the nodes
           for (let i=0; i<nodeIds.length; i++) {
             const metadata = values[i];

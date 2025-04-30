@@ -27,10 +27,11 @@ qx.Class.define("osparc.task.TasksButton", {
       width: 30,
       alignX: "center",
       cursor: "pointer",
-      visibility: "excluded"
+      visibility: "excluded",
+      toolTipText: this.tr("Tasks"),
     });
 
-    const tasks = osparc.task.Tasks.getInstance();
+    const tasks = osparc.task.TasksContainer.getInstance();
     tasks.getTasks().addListener("change", e => this.__updateTasksButton(), this);
     this.addListener("tap", () => this.__showTasks(), this);
   },
@@ -40,8 +41,8 @@ qx.Class.define("osparc.task.TasksButton", {
       let control;
       switch (id) {
         case "icon": {
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/cog/24");
-          osparc.utils.Utils.addClass(control.getContentElement(), "rotate");
+          control = new qx.ui.basic.Image("@FontAwesome5Solid/cog/22");
+          osparc.utils.Utils.addClass(control.getContentElement(), "rotateSlow");
 
           const logoContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
             alignY: "middle"
@@ -56,10 +57,11 @@ qx.Class.define("osparc.task.TasksButton", {
         case "number":
           control = new qx.ui.basic.Label().set({
             backgroundColor: "background-main-1",
+            paddingLeft: 4,
             font: "text-12"
           });
           control.getContentElement().setStyles({
-            "border-radius": "4px"
+            "border-radius": "8px"
           });
           this._add(control, {
             bottom: 8,
@@ -71,10 +73,10 @@ qx.Class.define("osparc.task.TasksButton", {
     },
 
     __updateTasksButton: function() {
-      this._createChildControlImpl("icon");
+      this.getChildControl("icon");
       const number = this.getChildControl("number");
 
-      const tasks = osparc.task.Tasks.getInstance();
+      const tasks = osparc.task.TasksContainer.getInstance();
       const nTasks = tasks.getTasks().length;
       number.setValue(nTasks.toString());
       nTasks ? this.show() : this.exclude();
@@ -83,7 +85,7 @@ qx.Class.define("osparc.task.TasksButton", {
     __showTasks: function() {
       const that = this;
       const tapListener = event => {
-        const tasks = osparc.task.Tasks.getInstance();
+        const tasks = osparc.task.TasksContainer.getInstance();
         const tasksContainer = tasks.getTasksContainer();
         if (osparc.utils.Utils.isMouseOnElement(tasksContainer, event)) {
           return;
@@ -103,14 +105,17 @@ qx.Class.define("osparc.task.TasksButton", {
           bounds.top = parseInt(rect.y);
         }
       }
-      const tasks = osparc.task.Tasks.getInstance();
-      tasks.setTasksContainerPosition(bounds.left+bounds.width, osparc.navigation.NavigationBar.HEIGHT+3);
+      const tasks = osparc.task.TasksContainer.getInstance();
+      tasks.setTasksContainerPosition(
+        bounds.left + bounds.width - osparc.task.TaskUI.MAX_WIDTH,
+        osparc.navigation.NavigationBar.HEIGHT + 14
+      );
       tasks.getTasksContainer().show();
       document.addEventListener("mousedown", tapListener);
     },
 
     __hideTasks: function() {
-      const tasks = osparc.task.Tasks.getInstance();
+      const tasks = osparc.task.TasksContainer.getInstance();
       tasks.getTasksContainer().exclude();
     }
   }

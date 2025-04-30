@@ -71,7 +71,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
       const titleLayout = this.__titleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
 
       const prevBtn = new qx.ui.form.Button().set({
-        toolTipText: this.tr("Back to Organizations list"),
+        toolTipText: this.tr("Return to Organizations list"),
         icon: "@FontAwesome5Solid/arrow-left/20",
         backgroundColor: "transparent"
       });
@@ -115,14 +115,14 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
       const thumbnail = orgEditor.getThumbnail();
       osparc.store.Groups.getInstance().patchOrganization(groupId, name, description, thumbnail)
         .then(() => {
-          osparc.FlashMessenger.getInstance().logAs(name + this.tr(" successfully edited"));
+          osparc.FlashMessenger.logAs(name + this.tr(" successfully edited"));
           button.setFetching(false);
           win.close();
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong editing ") + name, "ERROR");
+          const msg = this.tr("Something went wrong while editing ") + name;
+          osparc.FlashMessenger.logError(err, msg);
           button.setFetching(false);
-          console.error(err);
         });
     },
 

@@ -1,41 +1,31 @@
-from datetime import datetime
-from typing import Any, TypeAlias
+from typing import Annotated, Any, TypeAlias
 from uuid import UUID
 
-from models_library.users import UserID
-from pydantic import BaseModel, model_validator
-from typing_extensions import Self
+from pydantic import BaseModel, StringConstraints
 
+from ..products import ProductName
 from ..progress_bar import ProgressReport
+from ..users import UserID
 
 AsyncJobId: TypeAlias = UUID
+AsyncJobName: TypeAlias = Annotated[
+    str, StringConstraints(strip_whitespace=True, min_length=1)
+]
 
 
 class AsyncJobStatus(BaseModel):
     job_id: AsyncJobId
     progress: ProgressReport
     done: bool
-    started: datetime
-    stopped: datetime | None
-
-    @model_validator(mode="after")
-    def _check_consistency(self) -> Self:
-        is_done = self.done
-        is_stopped = self.stopped is not None
-
-        if is_done != is_stopped:
-            msg = f"Inconsistent data: {self.done=}, {self.stopped=}"
-            raise ValueError(msg)
-        return self
 
 
 class AsyncJobResult(BaseModel):
-    result: Any | None
-    error: Any | None
+    result: Any
 
 
 class AsyncJobGet(BaseModel):
     job_id: AsyncJobId
+    job_name: AsyncJobName
 
 
 class AsyncJobAbort(BaseModel):
@@ -46,5 +36,5 @@ class AsyncJobAbort(BaseModel):
 class AsyncJobNameData(BaseModel):
     """Data for controlling access to an async job"""
 
+    product_name: ProductName
     user_id: UserID
-    product_name: str

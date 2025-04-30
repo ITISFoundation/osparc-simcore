@@ -57,30 +57,6 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
       return canWrite;
     },
 
-    getViewerAccessRight: function() {
-      return {
-        "read": true,
-        "write": false,
-        "delete": false
-      };
-    },
-
-    getCollaboratorAccessRight: function() {
-      return {
-        "read": true,
-        "write": true,
-        "delete": false
-      };
-    },
-
-    getOwnerAccessRight: function() {
-      return {
-        "read": true,
-        "write": true,
-        "delete": true
-      };
-    },
-
     __getDeleters: function(studyData) {
       const deleters = [];
       Object.entries(studyData["accessRights"]).forEach(([key, value]) => {
@@ -92,7 +68,7 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
     },
 
     // checks that if the user to remove is an owner, there will still be another owner
-    checkRemoveCollaborator: function(studyData, gid) {
+    canCollaboratorBeRemoved: function(studyData, gid) {
       const ownerGids = this.__getDeleters(studyData);
       if (ownerGids.includes(gid.toString())) {
         return ownerGids.length > 1;
@@ -102,32 +78,34 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
   },
 
   members: {
-    _addEditors: function(gids) {
+    _addEditors: function(gids, newAccessRights) {
       if (gids.length === 0) {
         return;
       }
 
+      const readAccessRole = osparc.data.Roles.STUDY["read"];
+      const writeAccessRole = osparc.data.Roles.STUDY["write"];
+      if (!newAccessRights) {
+        newAccessRights = this._resourceType === "study" ? writeAccessRole.accessRights : readAccessRole.accessRights;
+      }
       const resourceAlias = this._resourceType === "template" ?
         osparc.product.Utils.getTemplateAlias({firstUpperCase: true}) :
         osparc.product.Utils.getStudyAlias({firstUpperCase: true});
       const newCollaborators = {};
       gids.forEach(gid => {
-        newCollaborators[gid] = this._resourceType === "study" ? this.self().getCollaboratorAccessRight() : this.self().getViewerAccessRight();
+        newCollaborators[gid] = newAccessRights;
       });
       osparc.store.Study.addCollaborators(this._serializedDataCopy, newCollaborators)
         .then(() => {
           const text = resourceAlias + this.tr(" successfully shared");
-          osparc.FlashMessenger.getInstance().logAs(text);
+          osparc.FlashMessenger.logAs(text);
           this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           this._reloadCollaboratorsList();
 
           this.__pushNotifications(gids);
           this.__checkShareePermissions(gids);
         })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong sharing the ") + resourceAlias, "ERROR");
-        });
+        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while sharing the ") + resourceAlias));
     },
 
     _deleteMember: function(collaborator, item) {
@@ -138,13 +116,10 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
       return osparc.store.Study.removeCollaborator(this._serializedDataCopy, collaborator["gid"])
         .then(() => {
           this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
-          osparc.FlashMessenger.getInstance().logAs(collaborator["name"] + this.tr(" successfully removed"));
+          osparc.FlashMessenger.logAs(collaborator["name"] + this.tr(" successfully removed"));
           this._reloadCollaboratorsList();
         })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing ") + collaborator["name"], "ERROR");
-        })
+        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while removing ") + collaborator["name"]))
         .finally(() => {
           if (item) {
             item.setEnabled(true);
@@ -158,13 +133,10 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
       osparc.store.Study.updateCollaborator(this._serializedDataCopy, collaboratorGId, newAccessRights)
         .then(() => {
           this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
-          osparc.FlashMessenger.getInstance().logAs(successMsg);
+          osparc.FlashMessenger.logAs(successMsg);
           this._reloadCollaboratorsList();
         })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(failureMsg, "ERROR");
-        })
+        .catch(err => osparc.FlashMessenger.logError(err, failureMsg))
         .finally(() => {
           if (item) {
             item.setEnabled(true);
@@ -173,40 +145,43 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
     },
 
     _promoteToEditor: function(collaborator, item) {
+      const writeAccessRole = osparc.data.Roles.STUDY["write"];
       this.__make(
         collaborator["gid"],
-        this.self().getCollaboratorAccessRight(),
-        this.tr(`Successfully promoted to ${osparc.data.Roles.STUDY[2].label}`),
-        this.tr(`Something went wrong promoting to ${osparc.data.Roles.STUDY[2].label}`),
+        writeAccessRole.accessRights,
+        this.tr(`Successfully promoted to ${writeAccessRole.label}`),
+        this.tr(`Something went wrong while promoting to ${writeAccessRole.label}`),
         item
       );
     },
 
     _promoteToOwner: function(collaborator, item) {
+      const deleteAccessRole = osparc.data.Roles.STUDY["delete"];
       this.__make(
         collaborator["gid"],
-        this.self().getOwnerAccessRight(),
-        this.tr(`Successfully promoted to ${osparc.data.Roles.STUDY[3].label}`),
-        this.tr(`Something went wrong promoting to ${osparc.data.Roles.STUDY[3].label}`),
+        deleteAccessRole.accessRights,
+        this.tr(`Successfully promoted to ${deleteAccessRole.label}`),
+        this.tr(`Something went wrong while promoting to ${deleteAccessRole.label}`),
         item
       );
     },
 
     _demoteToUser: async function(collaborator, item) {
+      const readAccessRole = osparc.data.Roles.STUDY["read"];
       const groupId = collaborator["gid"];
       const demoteToUser = (gid, itm) => {
         this.__make(
           gid,
-          this.self().getViewerAccessRight(),
-          this.tr(`Successfully demoted to ${osparc.data.Roles.STUDY[1].label}`),
-          this.tr(`Something went wrong demoting to ${osparc.data.Roles.STUDY[1].label}`),
+          readAccessRole.accessRights,
+          this.tr(`Successfully demoted to ${readAccessRole.label}`),
+          this.tr(`Something went wrong while demoting to ${readAccessRole.label}`),
           itm
         );
       };
 
       const organization = osparc.store.Groups.getInstance().getOrganization(groupId);
       if (organization) {
-        const msg = this.tr(`Demoting to ${osparc.data.Roles.STUDY[1].label} will remove write access to all the members of the Organization. Are you sure?`);
+        const msg = this.tr(`Demoting to ${readAccessRole.label} will remove write access to all the members of the Organization. Are you sure?`);
         const win = new osparc.ui.window.Confirmation(msg).set({
           caption: this.tr("Demote"),
           confirmAction: "delete",
@@ -225,11 +200,12 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
     },
 
     _demoteToEditor: function(collaborator, item) {
+      const writeAccessRole = osparc.data.Roles.STUDY["write"];
       this.__make(
         collaborator["gid"],
-        this.self().getCollaboratorAccessRight(),
-        this.tr(`Successfully demoted to ${osparc.data.Roles.STUDY[2].label}`),
-        this.tr(`Something went wrong demoting to ${osparc.data.Roles.STUDY[2].label}`),
+        writeAccessRole.accessRights,
+        this.tr(`Successfully demoted to ${writeAccessRole.label}`),
+        this.tr(`Something went wrong while demoting to ${writeAccessRole.label}`),
         item
       );
     },

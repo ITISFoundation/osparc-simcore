@@ -385,8 +385,15 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
         share.addListener("execute", () => this.__openShareWith(), this);
         menu.add(share);
         editButton.setMenu(menu);
-        const val = value["read"] + value["write"] + value["delete"];
-        roleText.setValue(osparc.data.Roles.WORKSPACE[val].label);
+        let id = "noRead";
+        if (value["delete"]) {
+          id = "delete";
+        } else if (value["write"]) {
+          id = "write";
+        } else if (value["read"]) {
+          id = "read";
+        }
+        roleText.setValue(osparc.data.Roles.WORKSPACE[id].label);
         roleText.show();
         roleIcon.show();
       } else {
@@ -410,10 +417,10 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
 
     __openShareWith: function() {
       const workspace = osparc.store.Workspaces.getInstance().getWorkspace(this.getCurrentWorkspaceId());
-      const permissionsView = new osparc.share.CollaboratorsWorkspace(workspace);
+      const collaboratorsView = new osparc.share.CollaboratorsWorkspace(workspace);
       const title = this.tr("Share Workspace");
-      const win = osparc.ui.window.Window.popUpInWindow(permissionsView, title, 500, 400);
-      permissionsView.addListener("updateAccessRights", () => {
+      const win = osparc.ui.window.Window.popUpInWindow(collaboratorsView, title, 500, 400);
+      collaboratorsView.addListener("updateAccessRights", () => {
         win.close();
         this.__updateShareInfo(workspace.getAccessRights());
       }, this);

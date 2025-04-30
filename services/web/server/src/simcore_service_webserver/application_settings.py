@@ -105,6 +105,14 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         bool, Field(description="Enables credit computation features.")
     ] = False
 
+    WEBSERVER_FUNCTIONS: Annotated[
+        bool,
+        Field(
+            validation_alias=AliasChoices("WEBSERVER_FUNCTIONS"),
+            json_schema_extra={_X_DEV_FEATURE_FLAG: True},
+        ),
+    ] = False
+
     WEBSERVER_LOGLEVEL: Annotated[
         LogLevel,
         Field(
@@ -368,6 +376,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     WEBSERVER_TAGS: bool = True
     WEBSERVER_WALLETS: bool = True
     WEBSERVER_WORKSPACES: bool = True
+    WEBSERVER_CONVERSATIONS: bool = True
 
     WEBSERVER_SECURITY: Annotated[
         bool,
@@ -532,6 +541,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
                 "SIMCORE_VCS_RELEASE_TAG": True,
                 "SIMCORE_VCS_RELEASE_URL": True,
                 "SWARM_STACK_NAME": True,
+                "WEBSERVER_DEV_FEATURES_ENABLED": True,
                 "WEBSERVER_LOGIN": {
                     "LOGIN_ACCOUNT_DELETION_RETENTION_DAYS",
                     "LOGIN_2FA_REQUIRED",
@@ -539,10 +549,10 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
                 "WEBSERVER_PROJECTS": {
                     "PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES",
                 },
+                "WEBSERVER_SESSION": {"SESSION_COOKIE_MAX_AGE"},
                 "WEBSERVER_TRASH": {
                     "TRASH_RETENTION_DAYS",
                 },
-                "WEBSERVER_SESSION": {"SESSION_COOKIE_MAX_AGE"},
             },
             exclude_none=True,
         )

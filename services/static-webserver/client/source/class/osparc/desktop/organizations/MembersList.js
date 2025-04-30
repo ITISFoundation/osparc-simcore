@@ -28,38 +28,6 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
   },
 
   statics: {
-    getNoReadAccess: function() {
-      return {
-        "read": false,
-        "write": false,
-        "delete": false
-      };
-    },
-
-    getReadAccess: function() {
-      return {
-        "read": true,
-        "write": false,
-        "delete": false
-      };
-    },
-
-    getWriteAccess: function() {
-      return {
-        "read": true,
-        "write": true,
-        "delete": false
-      };
-    },
-
-    getDeleteAccess: function() {
-      return {
-        "read": true,
-        "write": true,
-        "delete": true
-      };
-    },
-
     sortOrgMembers: function(a, b) {
       const sorted = osparc.share.Collaborators.sortByAccessRights(a["accessRights"], b["accessRights"]);
       if (sorted !== 0) {
@@ -131,11 +99,13 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
         collaboratorsManager.setCaption("Add Members");
         collaboratorsManager.getActionButton().setLabel(this.tr("Add"));
         collaboratorsManager.addListener("addCollaborators", e => {
-          const selectedMembers = e.getData();
-          if (selectedMembers.length) {
+          const {
+            selectedGids,
+          } = e.getData();
+          if (selectedGids.length) {
             const promises = [];
             const usersStore = osparc.store.Users.getInstance();
-            selectedMembers.forEach(selectedMemberGId => promises.push(usersStore.getUser(selectedMemberGId)));
+            selectedGids.forEach(selectedMemberGId => promises.push(usersStore.getUser(selectedMemberGId)));
             Promise.all(promises)
               .then(values => {
                 values.forEach(user => {
@@ -243,8 +213,8 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
       const canIDelete = organization.getAccessRights()["delete"];
 
       const introText = canIWrite ?
-        this.tr("You can add new members and change their roles.") :
-        this.tr("You can't add new members to this Organization. Please contact an Administrator or Manager.");
+        this.tr("You can add new members and assign roles.") :
+        this.tr("You cannot add new members to this Organization. Please contact an Administrator or Manager.");
       this.__introLabel.setValue(introText);
 
       this.__addMembersButton.set({
@@ -342,17 +312,13 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
       request
         .then(newMember => {
           const text = newMemberIdentifier + this.tr(" successfully added");
-          osparc.FlashMessenger.getInstance().logAs(text);
+          osparc.FlashMessenger.logAs(text);
           this.__reloadOrgMembers();
 
           // push 'NEW_ORGANIZATION' notification
           osparc.notification.Notifications.postNewOrganization(newMember.getUserId(), orgId);
         })
-        .catch(err => {
-          const errorMessage = err["message"] || this.tr("Something went wrong adding the user");
-          osparc.FlashMessenger.getInstance().logAs(errorMessage, "ERROR");
-          console.error(err);
-        });
+        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while adding the user")));
     },
 
     __promoteToUser: function(listedMember) {
@@ -360,16 +326,17 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
         return;
       }
 
-      const newAccessRights = this.self().getReadAccess();
+      const readAccessRole = osparc.data.Roles.ORG["read"];
+      const newAccessRights = readAccessRole.accessRights;
       const groupsStore = osparc.store.Groups.getInstance();
       groupsStore.patchMember(this.__currentOrg.getGroupId(), listedMember["id"], newAccessRights)
         .then(() => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr(`Successfully promoted to ${osparc.data.Roles.ORG[1].label}`));
+          osparc.FlashMessenger.logAs(this.tr(`Successfully promoted to ${readAccessRole.label}`));
           this.__reloadOrgMembers();
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong promoting to ") + osparc.data.Roles.ORG[1].label, "ERROR");
-          console.error(err);
+          const msg = this.tr("Something went wrong while promoting to ") + readAccessRole.label;
+          osparc.FlashMessenger.logError(err, msg);
         });
     },
 
@@ -378,21 +345,22 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
         return;
       }
 
+      const noReadAccessRole = osparc.data.Roles.ORG["noRead"];
+      const newAccessRights = noReadAccessRole.accessRights;
       const orgId = this.__currentOrg.getGroupId();
       const userId = "id" in listedMember ? listedMember["id"] : listedMember["key"]
-      const newAccessRights = this.self().getNoReadAccess();
       const groupsStore = osparc.store.Groups.getInstance();
       groupsStore.patchAccessRights(orgId, userId, newAccessRights)
         .then(() => {
           if (msg === undefined) {
-            msg = this.tr(`Successfully demoted to ${osparc.data.Roles.ORG[0].label}`);
+            msg = this.tr(`Successfully demoted to ${noReadAccessRole.label}`);
           }
-          osparc.FlashMessenger.getInstance().logAs(msg);
+          osparc.FlashMessenger.logAs(msg);
           this.__reloadOrgMembers();
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong demoting to ") + osparc.data.Roles.ORG[0].label, "ERROR");
-          console.error(err);
+          const errorMsg = this.tr("Something went wrong while demoting to ") + noReadAccessRole.label;
+          osparc.FlashMessenger.logError(err, errorMsg);
         });
     },
 
@@ -401,18 +369,19 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
         return;
       }
 
+      const writeAccessRole = osparc.data.Roles.ORG["write"];
+      const newAccessRights = writeAccessRole.accessRights;
       const orgId = this.__currentOrg.getGroupId();
       const userId = listedMember["id"];
-      const newAccessRights = this.self().getWriteAccess();
       const groupsStore = osparc.store.Groups.getInstance();
       groupsStore.patchAccessRights(orgId, userId, newAccessRights)
         .then(() => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr(`Successfully promoted to ${osparc.data.Roles.ORG[2].label}`));
+          osparc.FlashMessenger.logAs(this.tr(`Successfully promoted to ${writeAccessRole.label}`));
           this.__reloadOrgMembers();
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong promoting to ") + osparc.data.Roles.ORG[2].label, "ERROR");
-          console.error(err);
+          const msg = this.tr("Something went wrong while promoting to ") + writeAccessRole.label;
+          osparc.FlashMessenger.logError(err, msg);
         });
     },
 
@@ -421,18 +390,19 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
         return;
       }
 
+      const deleteAccessRole = osparc.data.Roles.ORG["delete"];
+      const newAccessRights = deleteAccessRole.accessRights;
       const orgId = this.__currentOrg.getGroupId();
       const userId = listedMember["id"];
-      const newAccessRights = this.self().getDeleteAccess();
       const groupsStore = osparc.store.Groups.getInstance();
       groupsStore.patchAccessRights(orgId, userId, newAccessRights)
         .then(() => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr(`Successfully promoted to ${osparc.data.Roles.ORG[3].label}`));
+          osparc.FlashMessenger.logAs(this.tr(`Successfully promoted to ${deleteAccessRole.label}`));
           this.__reloadOrgMembers();
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong promoting to ") + osparc.data.Roles.ORG[3].label, "ERROR");
-          console.error(err);
+          const msg = this.tr("Something went wrong while promoting to ") + deleteAccessRole.label;
+          osparc.FlashMessenger.logError(err, msg);
         });
     },
 
@@ -441,18 +411,19 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
         return;
       }
 
+      const readAccessRole = osparc.data.Roles.ORG["read"];
+      const newAccessRights = readAccessRole.accessRights;
       const orgId = this.__currentOrg.getGroupId();
       const userId = listedMember["id"];
-      const newAccessRights = this.self().getReadAccess();
       const groupsStore = osparc.store.Groups.getInstance();
       groupsStore.patchAccessRights(orgId, userId, newAccessRights)
         .then(() => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr(`Successfully demoted to ${osparc.data.Roles.ORG[1].label}`));
+          osparc.FlashMessenger.logAs(this.tr(`Successfully demoted to ${readAccessRole.label}`));
           this.__reloadOrgMembers();
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong demoting to ") + osparc.data.Roles.ORG[1].label, "ERROR");
-          console.error(err);
+          const msg = this.tr("Something went wrong while demoting to ") + readAccessRole.label;
+          osparc.FlashMessenger.logError(err, msg);
         });
     },
 
@@ -461,18 +432,19 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
         return;
       }
 
+      const writeAccessRole = osparc.data.Roles.ORG["write"];
+      const newAccessRights = writeAccessRole.accessRights;
       const orgId = this.__currentOrg.getGroupId();
       const userId = listedMember["id"];
-      const newAccessRights = this.self().getWriteAccess();
       const groupsStore = osparc.store.Groups.getInstance();
       groupsStore.patchAccessRights(orgId, userId, newAccessRights)
         .then(() => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr(`Successfully demoted to ${osparc.data.Roles.ORG[3].label}`));
+          osparc.FlashMessenger.logAs(this.tr(`Successfully demoted to ${writeAccessRole.label}`));
           this.__reloadOrgMembers();
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong demoting to ") + osparc.data.Roles.ORG[3].label, "ERROR");
-          console.error(err);
+          const msg =this.tr("Something went wrong while demoting to ") + writeAccessRole.label;
+          osparc.FlashMessenger.logError(err, msg);
         });
     },
 
@@ -480,12 +452,12 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
       const groupsStore = osparc.store.Groups.getInstance();
       return groupsStore.removeMember(this.__currentOrg.getGroupId(), listedMember["id"])
         .then(() => {
-          osparc.FlashMessenger.getInstance().logAs(listedMember["name"] + this.tr(" successfully removed"));
+          osparc.FlashMessenger.logAs(listedMember["name"] + this.tr(" successfully removed"));
           this.__reloadOrgMembers();
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing ") + listedMember["name"], "ERROR");
-          console.error(err);
+          const msg = this.tr("Something went wrong while removing ") + listedMember["name"];
+          osparc.FlashMessenger.logError(err, msg);
         });
     },
 
@@ -508,11 +480,11 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
       const isThereAnyManager = members.some(member => member.getAccessRights()["write"]);
       let rUSure = this.tr("Are you sure you want to leave?");
       if (isThereAnyAdmin) {
-        rUSure += `<br>There is no ${osparc.data.Roles.ORG[2].label} in this Organization.`;
+        rUSure += `<br>There is no ${osparc.data.Roles.ORG["delete"].label} in this Organization.`;
       } else if (isThereAnyManager) {
-        rUSure += `<br>There is no ${osparc.data.Roles.ORG[3].label} in this Organization.`;
+        rUSure += `<br>There is no ${osparc.data.Roles.ORG["write"].label} in this Organization.`;
       }
-      rUSure += "<br><br>" + this.tr("If you Leave, the page will be reloaded.");
+      rUSure += "<br><br>" + this.tr("If you leave, the page will reload.");
       const confirmationWin = new osparc.ui.window.Confirmation(rUSure).set({
         caption: this.tr("Leave Organization"),
         confirmText: this.tr("Leave"),

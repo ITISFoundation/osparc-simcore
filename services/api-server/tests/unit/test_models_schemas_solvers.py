@@ -5,14 +5,15 @@
 from operator import attrgetter
 
 from faker import Faker
-from simcore_service_api_server.models.schemas.solvers import Solver, Version
+from packaging.version import Version
+from simcore_service_api_server.models.schemas.solvers import Solver
 
 
 def test_solvers_sorting_by_name_and_version(faker: Faker):
     # SEE https://packaging.pypa.io/en/latest/version.html
 
     # have a solver
-    one_solver = Solver(**Solver.model_config["json_schema_extra"]["example"])
+    one_solver = Solver(**Solver.model_json_schema()["example"])
 
     assert isinstance(one_solver.pep404_version, Version)
     major, minor, micro = one_solver.pep404_version.release

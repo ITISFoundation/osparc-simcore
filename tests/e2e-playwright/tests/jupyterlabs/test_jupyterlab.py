@@ -11,6 +11,7 @@ import logging
 import re
 from collections.abc import Callable
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Final, Literal
 
 from playwright.sync_api import Page, WebSocket
@@ -19,7 +20,7 @@ from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import (
     MINUTE,
     SECOND,
-    RestartableWebSocket,
+    RobustWebSocket,
     ServiceType,
     wait_for_service_running,
 )
@@ -62,15 +63,17 @@ class _JLabWaitForTerminalWebSocket:
 
 def test_jupyterlab(
     page: Page,
-    log_in_and_out: RestartableWebSocket,
+    log_in_and_out: RobustWebSocket,
     create_project_from_service_dashboard: Callable[
-        [ServiceType, str, str | None], dict[str, Any]
+        [ServiceType, str, str | None, str | None], dict[str, Any]
     ],
     service_key: str,
+    service_version: str | None,
     large_file_size: ByteSize,
     large_file_block_size: ByteSize,
     product_url: AnyUrl,
     is_service_legacy: bool,
+    playwright_test_results_dir: Path,
 ):
     # NOTE: this waits for the jupyter to send message, but is not quite enough
     with (
@@ -86,7 +89,7 @@ def test_jupyterlab(
         ),
     ):
         project_data = create_project_from_service_dashboard(
-            ServiceType.DYNAMIC, service_key, None
+            ServiceType.DYNAMIC, service_key, None, service_version
         )
         assert "workbench" in project_data, "Expected workbench to be in project data!"
         assert isinstance(
@@ -103,6 +106,7 @@ def test_jupyterlab(
             press_start_button=False,
             product_url=product_url,
             is_service_legacy=is_service_legacy,
+            assertion_output_folder=playwright_test_results_dir,
         )
 
     iframe = page.frame_locator("iframe")
@@ -136,9 +140,7 @@ def test_jupyterlab(
                 iframe.get_by_label("Launcher").get_by_text("Terminal").click()
 
             assert not ws_info.value.is_closed()
-            restartable_terminal_web_socket = RestartableWebSocket.create(
-                page, ws_info.value
-            )
+            restartable_terminal_web_socket = RobustWebSocket(page, ws_info.value)
 
             terminal = iframe.locator(
                 "#jp-Terminal-0 > div > div.xterm-screen"
@@ -161,6 +163,8 @@ def test_jupyterlab(
                     f"dd if=/dev/urandom of=output.txt bs={large_file_block_size} count={blocks_count} iflag=fullblock"
                 )
                 terminal.press("Enter")
+
+            restartable_terminal_web_socket.auto_reconnect = False
 
         # NOTE: this is to let some tester see something
         page.wait_for_timeout(2000)

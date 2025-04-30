@@ -4,11 +4,12 @@
 # pylint: disable=too-many-arguments
 
 
-from typing import Annotated, TypeAlias
-from uuid import UUID
+from typing import Annotated, Any, TypeAlias
 
 from fastapi import APIRouter, Depends, Query, status
-from fastapi_pagination.cursor import CursorPage
+from models_library.api_schemas_long_running_tasks.tasks import (
+    TaskGet,
+)
 from models_library.api_schemas_storage.storage_schemas import (
     FileLocation,
     FileMetaDataGet,
@@ -21,19 +22,22 @@ from models_library.api_schemas_storage.storage_schemas import (
     PresignedLink,
 )
 from models_library.api_schemas_webserver.storage import (
+    BatchDeletePathsBodyParams,
     DataExportPost,
     ListPathsQueryParams,
-    StorageAsyncJobGet,
-    StorageAsyncJobResult,
-    StorageAsyncJobStatus,
     StorageLocationPathParams,
+    StoragePathComputeSizeParams,
 )
 from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID
-from models_library.users import UserID
+from models_library.rest_error import EnvelopedError
 from pydantic import AnyUrl, ByteSize
+from servicelib.fastapi.rest_pagination import CustomizedPathsCursorPage
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.storage.schemas import DatasetMetaData, FileMetaData
+from simcore_service_webserver.tasks._exception_handlers import (
+    _TO_HTTP_ERROR_MAP as export_data_http_error_map,
+)
 
 router = APIRouter(
     prefix=f"/{API_VTAG}",
@@ -59,13 +63,35 @@ async def list_storage_locations():
 
 @router.get(
     "/storage/locations/{location_id}/paths",
-    response_model=CursorPage[PathMetaDataGet],
+    response_model=CustomizedPathsCursorPage[PathMetaDataGet],
 )
 async def list_storage_paths(
     _path: Annotated[StorageLocationPathParams, Depends()],
     _query: Annotated[ListPathsQueryParams, Depends()],
 ):
     """Lists the files/directories in WorkingDirectory"""
+
+
+@router.post(
+    "/storage/locations/{location_id}/paths/{path}:size",
+    response_model=Envelope[TaskGet],
+    status_code=status.HTTP_202_ACCEPTED,
+)
+async def compute_path_size(_path: Annotated[StoragePathComputeSizeParams, Depends()]):
+    """Compute the size of a path"""
+
+
+@router.post(
+    "/storage/locations/{location_id}/-/paths:batchDelete",
+    response_model=Envelope[TaskGet],
+    status_code=status.HTTP_202_ACCEPTED,
+    description="Deletes Paths",
+)
+async def batch_delete_paths(
+    _path: Annotated[StorageLocationPathParams, Depends()],
+    _body: Annotated[BatchDeletePathsBodyParams, Depends()],
+):
+    """deletes files/folders if user has the rights to"""
 
 
 @router.get(
@@ -195,46 +221,18 @@ async def is_completed_upload_file(
 
 
 # data export
+_export_data_responses: dict[int | str, dict[str, Any]] = {
+    i.status_code: {"model": EnvelopedError}
+    for i in export_data_http_error_map.values()
+}
+
+
 @router.post(
     "/storage/locations/{location_id}/export-data",
-    response_model=Envelope[StorageAsyncJobGet],
+    response_model=Envelope[TaskGet],
     name="export_data",
     description="Export data",
+    responses=_export_data_responses,
 )
-async def export_data(data_export: DataExportPost, location_id: LocationID):
+async def export_data(export_data: DataExportPost, location_id: LocationID):
     """Trigger data export. Returns async job id for getting status and results"""
-
-
-@router.get(
-    "/storage/async-jobs/{job_id}/status",
-    response_model=Envelope[StorageAsyncJobStatus],
-    name="get_async_job_status",
-)
-async def get_async_job_status(storage_async_job_get: StorageAsyncJobGet, job_id: UUID):
-    """Get async job status"""
-
-
-@router.post(
-    "/storage/async-jobs/{job_id}:abort",
-    name="abort_async_job",
-)
-async def abort_async_job(storage_async_job_get: StorageAsyncJobGet, job_id: UUID):
-    """aborts execution of an async job"""
-
-
-@router.get(
-    "/storage/async-jobs/{job_id}/result",
-    response_model=Envelope[StorageAsyncJobResult],
-    name="get_async_job_result",
-)
-async def get_async_job_result(storage_async_job_get: StorageAsyncJobGet, job_id: UUID):
-    """Get the result of the async job"""
-
-
-@router.get(
-    "/storage/async-jobs",
-    response_model=Envelope[list[StorageAsyncJobGet]],
-    name="get_async_jobs",
-)
-async def get_async_jobs(user_id: UserID):
-    """Retrunsa list of async jobs for the user"""

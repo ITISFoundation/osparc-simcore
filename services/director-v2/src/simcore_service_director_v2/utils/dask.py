@@ -3,10 +3,8 @@ import collections
 import logging
 from collections.abc import Awaitable, Callable, Coroutine, Generator
 from typing import Any, Final, NoReturn, ParamSpec, TypeVar, cast
-from uuid import uuid4
 
 import distributed
-from aiopg.sa.engine import Engine
 from common_library.json_serialization import json_dumps
 from dask_task_models_library.container_tasks.io import (
     FileUrl,
@@ -19,6 +17,7 @@ from dask_task_models_library.container_tasks.protocol import (
     ContainerLabelsDict,
     TaskOwner,
 )
+from dask_task_models_library.container_tasks.utils import parse_dask_job_id
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.services import NodeRequirements
 from models_library.docker import DockerLabelKey, StandardSimcoreDockerLabels
@@ -38,6 +37,7 @@ from simcore_sdk.node_ports_common.exceptions import (
 )
 from simcore_sdk.node_ports_v2 import FileLinkType, Port, links, port_utils
 from simcore_sdk.node_ports_v2.links import ItemValue as _NPItemValue
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..constants import UNDEFINED_DOCKER_LABEL
 from ..core.errors import (
@@ -49,7 +49,6 @@ from ..core.errors import (
 )
 from ..models.comp_runs import ProjectMetadataDict, RunMetadataDict
 from ..models.comp_tasks import Image
-from ..models.dask_subsystem import DaskJobID
 from ..modules.osparc_variables.substitutions import (
     resolve_and_substitute_session_variables_in_specs,
     substitute_vendor_secrets_in_specs,
@@ -57,8 +56,6 @@ from ..modules.osparc_variables.substitutions import (
 
 _logger = logging.getLogger(__name__)
 
-ServiceKeyStr = str
-ServiceVersionStr = str
 
 _PVType = _NPItemValue | None
 
@@ -71,42 +68,11 @@ def _get_port_validation_errors(port_key: str, err: ValidationError) -> list[Err
     return list(errors)
 
 
-def generate_dask_job_id(
-    service_key: ServiceKeyStr,
-    service_version: ServiceVersionStr,
+async def create_node_ports(
+    db_engine: AsyncEngine,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
-) -> DaskJobID:
-    """creates a dask job id:
-    The job ID shall contain the user_id, project_id, node_id
-    Also, it must be unique
-    and it is shown in the Dask scheduler dashboard website
-    """
-    return DaskJobID(
-        f"{service_key}:{service_version}:userid_{user_id}:projectid_{project_id}:nodeid_{node_id}:uuid_{uuid4()}"
-    )
-
-
-_JOB_ID_PARTS: Final[int] = 6
-
-
-def parse_dask_job_id(
-    job_id: str,
-) -> tuple[ServiceKeyStr, ServiceVersionStr, UserID, ProjectID, NodeID]:
-    parts = job_id.split(":")
-    assert len(parts) == _JOB_ID_PARTS  # nosec
-    return (
-        parts[0],
-        parts[1],
-        TypeAdapter(UserID).validate_python(parts[2][len("userid_") :]),
-        ProjectID(parts[3][len("projectid_") :]),
-        NodeID(parts[4][len("nodeid_") :]),
-    )
-
-
-async def create_node_ports(
-    db_engine: Engine, user_id: UserID, project_id: ProjectID, node_id: NodeID
 ) -> node_ports_v2.Nodeports:
     """
     This function create a nodeports object by fetching the node state from the database
@@ -135,7 +101,7 @@ async def create_node_ports(
 
 
 async def parse_output_data(
-    db_engine: Engine,
+    db_engine: AsyncEngine,
     job_id: str,
     data: TaskOutputData,
     ports: node_ports_v2.Nodeports | None = None,
@@ -315,17 +281,19 @@ def compute_task_labels(
         ValidationError
     """
     product_name = run_metadata.get("product_name", UNDEFINED_DOCKER_LABEL)
-    standard_simcore_labels = StandardSimcoreDockerLabels.model_construct(
-        user_id=user_id,
-        project_id=project_id,
-        node_id=node_id,
-        product_name=product_name,
-        simcore_user_agent=run_metadata.get(
-            "simcore_user_agent", UNDEFINED_DOCKER_LABEL
-        ),
-        swarm_stack_name=UNDEFINED_DOCKER_LABEL,  # NOTE: there is currently no need for this label in the comp backend
-        memory_limit=node_requirements.ram,
-        cpu_limit=node_requirements.cpu,
+    standard_simcore_labels = StandardSimcoreDockerLabels.model_validate(
+        {
+            "user_id": user_id,
+            "project_id": project_id,
+            "node_id": node_id,
+            "product_name": product_name,
+            "simcore_user_agent": run_metadata.get(
+                "simcore_user_agent", UNDEFINED_DOCKER_LABEL
+            ),
+            "swarm_stack_name": UNDEFINED_DOCKER_LABEL,  # NOTE: there is currently no need for this label in the comp backend
+            "memory_limit": node_requirements.ram,
+            "cpu_limit": node_requirements.cpu,
+        }
     ).to_simcore_runtime_docker_labels()
     return standard_simcore_labels | TypeAdapter(ContainerLabelsDict).validate_python(
         {
@@ -400,7 +368,7 @@ async def get_service_log_file_download_link(
 
 
 async def clean_task_output_and_log_files_if_invalid(
-    db_engine: Engine,
+    db_engine: AsyncEngine,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
@@ -462,8 +430,13 @@ async def dask_sub_consumer_task(
     handler: Callable[[str], Awaitable[None]],
 ) -> NoReturn:
     while True:
-        with log_catch(_logger, reraise=False), log_context(
-            _logger, level=logging.DEBUG, msg=f"dask sub task for topic {dask_sub.name}"
+        with (
+            log_catch(_logger, reraise=False),
+            log_context(
+                _logger,
+                level=logging.DEBUG,
+                msg=f"dask sub task for topic {dask_sub.name}",
+            ),
         ):
             await _dask_sub_consumer(dask_sub, handler)
         # we sleep a bit before restarting
@@ -570,7 +543,6 @@ def check_if_cluster_is_able_to_run_pipeline(
     task_resources: dict[str, Any],
     node_image: Image,
 ) -> None:
-
     _logger.debug(
         "Dask scheduler infos: %s", f"{scheduler_info}"
     )  # NOTE: be careful not to json_dumps this as it sometimes contain keys that are tuples!
@@ -633,7 +605,7 @@ R = TypeVar("R")
 
 
 async def wrap_client_async_routine(
-    client_coroutine: Coroutine[Any, Any, Any] | Any | None
+    client_coroutine: Coroutine[Any, Any, Any] | Any | None,
 ) -> Any:
     """Dask async behavior does not go well with Pylance as it returns
     a union of types. this wrapper makes both mypy and pylance happy"""

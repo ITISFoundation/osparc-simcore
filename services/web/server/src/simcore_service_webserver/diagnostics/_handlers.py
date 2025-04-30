@@ -1,6 +1,4 @@
-""" Handler functions and routing for diagnostics
-
-"""
+"""Handler functions and routing for diagnostics"""
 
 import asyncio
 import logging
@@ -15,13 +13,13 @@ from servicelib.aiohttp.requests_validation import parse_request_query_parameter
 from servicelib.utils import logged_gather
 
 from .._meta import API_VERSION, APP_NAME, api_version_prefix
-from ..catalog.client import is_catalog_service_responsive
+from ..catalog import catalog_service
 from ..db import plugin
-from ..director_v2 import api as director_v2_api
+from ..director_v2 import director_v2_service
 from ..login.decorators import login_required
 from ..resource_usage._client import is_resource_usage_tracking_service_responsive
 from ..security.decorators import permission_required
-from ..storage import api as storage_api
+from ..storage import api as storage_service
 from ..utils import TaskInfoDict, get_task_info, get_tracemalloc_info
 from ..utils_aiohttp import envelope_json_response
 
@@ -120,18 +118,18 @@ async def get_app_status(request: web.Request):
 
     async def _check_storage():
         check.services["storage"] = {
-            "healthy": await storage_api.is_healthy(request.app),
+            "healthy": await storage_service.is_healthy(request.app),
             "status_url": _get_url_for("get_service_status", service_name="storage"),
         }
 
     async def _check_director2():
         check.services["director_v2"] = {
-            "healthy": await director_v2_api.is_healthy(request.app)
+            "healthy": await director_v2_service.is_healthy(request.app)
         }
 
     async def _check_catalog():
         check.services["catalog"] = {
-            "healthy": await is_catalog_service_responsive(request.app)
+            "healthy": await catalog_service.is_catalog_service_responsive(request.app)
         }
 
     async def _check_resource_usage_tracker():
@@ -160,7 +158,7 @@ async def get_service_status(request: web.Request):
 
     if service_name == "storage":
         with suppress(ClientError):
-            status = await storage_api.get_app_status(request.app)
+            status = await storage_service.get_app_status(request.app)
             return envelope_json_response(status)
 
     raise web.HTTPNotFound

@@ -74,16 +74,16 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
   },
 
   members: {
-    __getRoleInfo: function(i) {
+    __getRoleInfo: function(id) {
       const resource = this.getResourceType();
       if (resource === "study" || resource === "template") {
-        return osparc.data.Roles.STUDY[i];
+        return osparc.data.Roles.STUDY[id];
       } else if (resource === "service") {
-        return osparc.data.Roles.SERVICES[i];
+        return osparc.data.Roles.SERVICES[id];
       } else if (resource === "workspace") {
-        return osparc.data.Roles.WORKSPACE[i];
+        return osparc.data.Roles.WORKSPACE[id];
       } else if (resource === "tag") {
-        return osparc.data.Roles.STUDY[i];
+        return osparc.data.Roles.STUDY[id];
       }
       return undefined;
     },
@@ -138,7 +138,7 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
 
       // highlight me
       const email = osparc.auth.Data.getInstance().getEmail();
-      if (value.includes(email)) {
+      if (value && value.includes(email)) {
         this.addState("selected");
       }
     },
@@ -159,11 +159,11 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
       const accessRights = this.getAccessRights();
       const role = this.getChildControl("role");
       if (this.self().canDelete(accessRights)) {
-        role.setValue(this.__getRoleInfo(3).label);
+        role.setValue(this.__getRoleInfo("delete").label);
       } else if (this.self().canWrite(accessRights)) {
-        role.setValue(this.__getRoleInfo(2).label);
+        role.setValue(this.__getRoleInfo("write").label);
       } else {
-        role.setValue(this.__getRoleInfo(1).label);
+        role.setValue(this.__getRoleInfo("read").label);
       }
     },
 
@@ -173,17 +173,17 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
       });
 
       const accessRights = this.getAccessRights();
-      let currentRole = this.__getRoleInfo(1);
+      let currentRole = this.__getRoleInfo("read");
       if (this.self().canDelete(accessRights)) {
-        currentRole = this.__getRoleInfo(3);
+        currentRole = this.__getRoleInfo("delete");
       } else if (this.self().canWrite(accessRights)) {
-        currentRole = this.__getRoleInfo(2);
+        currentRole = this.__getRoleInfo("write");
       }
 
       // promote/demote actions
       switch (currentRole.id) {
         case "read": {
-          const promoteButton = new qx.ui.menu.Button(this.tr(`Promote to ${this.__getRoleInfo(2).label}`));
+          const promoteButton = new qx.ui.menu.Button(this.tr(`Promote to ${this.__getRoleInfo("write").label}`));
           promoteButton.addListener("execute", () => {
             this.fireDataEvent("promoteToEditor", {
               gid: this.getKey(),
@@ -195,7 +195,7 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
         }
         case "write": {
           const resource = this.getResourceType();
-          const promoteButton = new qx.ui.menu.Button(this.tr(`Promote to ${this.__getRoleInfo(3).label}`));
+          const promoteButton = new qx.ui.menu.Button(this.tr(`Promote to ${this.__getRoleInfo("delete").label}`));
           promoteButton.setVisibility(resource === "service" ? "excluded" : "visible");
           promoteButton.addListener("execute", () => {
             this.fireDataEvent("promoteToOwner", {
@@ -204,7 +204,7 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
             });
           });
           menu.add(promoteButton);
-          const demoteButton = new qx.ui.menu.Button(this.tr(`Demote to ${this.__getRoleInfo(1).label}`));
+          const demoteButton = new qx.ui.menu.Button(this.tr(`Demote to ${this.__getRoleInfo("read").label}`));
           demoteButton.addListener("execute", () => {
             this.fireDataEvent("demoteToUser", {
               gid: this.getKey(),
@@ -215,7 +215,7 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
           break;
         }
         case "delete": {
-          const demoteButton = new qx.ui.menu.Button(this.tr(`Demote to ${this.__getRoleInfo(2).label}`));
+          const demoteButton = new qx.ui.menu.Button(this.tr(`Demote to ${this.__getRoleInfo("write").label}`));
           demoteButton.addListener("execute", () => {
             this.fireDataEvent("demoteToEditor", {
               gid: this.getKey(),

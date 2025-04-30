@@ -28,7 +28,7 @@
  * Here is a little example of how to use the class.
  *
  * <pre class='javascript'>
- *   osparc.FlashMessenger.getInstance().logAs(log);
+ *   osparc.FlashMessenger.logAs(log);
  * </pre>
  */
 
@@ -55,9 +55,68 @@ qx.Class.define("osparc.FlashMessenger", {
 
   statics: {
     MAX_DISPLAYED: 3,
+
+    extractMessage: function(input, defaultMessage = "") {
+      const isValidString = val => {
+        return (
+          typeof val === "string" ||
+          (osparc.utils.Utils.isObject(val) && ("basename" in val) && (val.basename === "LocalizedString"))
+        );
+      }
+      if (input) {
+        if (isValidString(input)) {
+          return input;
+        } else if (osparc.utils.Utils.isObject(input) && "message" in input) {
+          if (isValidString(input["message"])) {
+            return input["message"];
+          } else if (osparc.utils.Utils.isObject(input["message"]) && "message" in input["message"] && isValidString(input["message"]["message"])) {
+            return input["message"]["message"];
+          }
+        }
+      }
+      return defaultMessage;
+    },
+
     logAs: function(message, level, duration) {
       return this.getInstance().logAs(message, level, duration);
-    }
+    },
+
+    logError: function(error, defaultMessage = qx.locale.Manager.tr("Oops... something went wrong"), duration = null) {
+      if (error) {
+        console.error(error);
+      }
+      const msg = this.extractMessage(error, defaultMessage);
+      const flashMessage = this.getInstance().logAs(msg, "ERROR", duration);
+      if (error && error["supportId"]) {
+        flashMessage.addWidget(this.__createCopyOECWidget(msg, error["supportId"]));
+        flashMessage.setDuration(flashMessage.getDuration()*2);
+      }
+      return flashMessage;
+    },
+
+    __createCopyOECWidget: function(message, supportId) {
+      const errorLabel = new qx.ui.basic.Atom().set({
+        label: supportId,
+        icon: "@FontAwesome5Solid/copy/10",
+        iconPosition: "right",
+        gap: 8,
+        cursor: "pointer",
+        alignX: "center",
+        allowGrowX: false,
+      });
+      errorLabel.addListener("tap", () => {
+        const dataToClipboard = {
+          message,
+          supportId,
+          timestamp: new Date().toString(),
+          url: window.location.href,
+          releaseTag: osparc.utils.Utils.getReleaseTag(),
+          studyId: osparc.store.Store.getInstance().getCurrentStudy() || "",
+        }
+        osparc.utils.Utils.copyTextToClipboard(osparc.utils.Utils.prettifyJson(dataToClipboard));
+      });
+      return errorLabel;
+    },
   },
 
   members: {
@@ -68,7 +127,7 @@ qx.Class.define("osparc.FlashMessenger", {
     /**
      * Public function to log a FlashMessage to the user.
      *
-     * @param {String} message Message that the message will show.
+     * @param {String || Object} message Message (or Object containing the message) that the message will show.
      * @param {String="INFO","DEBUG","WARNING","ERROR"} level Level of the warning. The color of the badge will change accordingly.
      * @param {Number} duration
      */
@@ -81,9 +140,7 @@ qx.Class.define("osparc.FlashMessenger", {
     },
 
     log: function(logMessage) {
-      const message = osparc.utils.Utils.isObject(logMessage.message) && "message" in logMessage.message ?
-        logMessage.message.message :
-        logMessage.message;
+      const message = this.self().extractMessage(logMessage);
 
       const level = logMessage.level.toUpperCase(); // "DEBUG", "INFO", "WARNING", "ERROR"
 
@@ -115,14 +172,9 @@ qx.Class.define("osparc.FlashMessenger", {
       }
       this.__displayedMessagesCount++;
 
-      let duration = flashMessage.getDuration();
-      if (duration === null) {
-        const message = flashMessage.getMessage();
-        const wordCount = message.split(" ").length;
-        duration = Math.max(5500, wordCount*500); // An average reader takes 300ms to read a word
-      }
+      const duration = flashMessage.getDuration();
       if (duration !== 0) {
-        qx.event.Timer.once(() => this.removeMessage(flashMessage), this, duration);
+        flashMessage.timer = setTimeout(() => this.removeMessage(flashMessage), duration);
       }
     },
 

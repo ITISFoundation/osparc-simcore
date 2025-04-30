@@ -20,13 +20,13 @@ from ..._constants import (
     LIST_SERVICES_CACHING_TTL,
     RESPONSE_MODEL_POLICY,
 )
-from ...db.repositories.groups import GroupsRepository
-from ...db.repositories.services import ServicesRepository
+from ...clients.director import DirectorClient
 from ...models.services_db import ServiceAccessRightsAtDB, ServiceMetaDataDBGet
-from ...services.director import DirectorApi
-from ..dependencies.database import get_repository
-from ..dependencies.director import get_director_api
-from ..dependencies.services import get_service_from_manifest
+from ...repository.groups import GroupsRepository
+from ...repository.services import ServicesRepository
+from .._dependencies.director import get_director_client
+from .._dependencies.repository import get_repository
+from .._dependencies.services import get_service_from_manifest
 
 _logger = logging.getLogger(__name__)
 
@@ -64,27 +64,29 @@ def _build_cache_key(fct, *_, **kwargs):
     return f"{fct.__name__}_{kwargs['user_id']}_{kwargs['x_simcore_products_name']}_{kwargs['details']}"
 
 
-#
-# Routes
-#
-
 router = APIRouter()
 
 
-# NOTE: this call is pretty expensive and can be called several times
-# (when e2e runs or by the webserver when listing projects) therefore
-# a cache is setup here
-@router.get("", response_model=list[ServiceGet], **RESPONSE_MODEL_POLICY)
+@router.get(
+    "",
+    response_model=list[ServiceGet],
+    **RESPONSE_MODEL_POLICY,
+    deprecated=True,
+    description="Use instead rpc._service.list_services_paginated -> PageRpcServicesGetV2",
+)
 @cancel_on_disconnect
 @cached(
     ttl=LIST_SERVICES_CACHING_TTL,
     key_builder=_build_cache_key,
+    # NOTE: this call is pretty expensive and can be called several times
+    # (when e2e runs or by the webserver when listing projects) therefore
+    # a cache is setup here
 )
 async def list_services(
     request: Request,  # pylint:disable=unused-argument
     *,
     user_id: PositiveInt,
-    director_client: Annotated[DirectorApi, Depends(get_director_api)],
+    director_client: Annotated[DirectorClient, Depends(get_director_client)],
     groups_repository: Annotated[
         GroupsRepository, Depends(get_repository(GroupsRepository))
     ],
@@ -152,7 +154,7 @@ async def list_services(
         services_owner_emails,
     ) = await asyncio.gather(
         cached_registry_services(),
-        services_repo.list_services_access_rights(
+        services_repo.batch_get_services_access_rights(
             key_versions=services_in_db,
             product_name=x_simcore_products_name,
         ),
@@ -192,6 +194,8 @@ async def list_services(
     "/{service_key:path}/{service_version}",
     response_model=ServiceGet,
     **RESPONSE_MODEL_POLICY,
+    deprecated=True,
+    description="Use instead rpc._service.get_service -> ServiceGetV2",
 )
 async def get_service(
     user_id: int,
@@ -226,12 +230,12 @@ async def get_service(
     )
     if service_in_db:
         # we have full access, let's add the access to the output
-        service_access_rights: list[
-            ServiceAccessRightsAtDB
-        ] = await services_repo.get_service_access_rights(
-            service_in_manifest.key,
-            service_in_manifest.version,
-            product_name=x_simcore_products_name,
+        service_access_rights: list[ServiceAccessRightsAtDB] = (
+            await services_repo.get_service_access_rights(
+                service_in_manifest.key,
+                service_in_manifest.version,
+                product_name=x_simcore_products_name,
+            )
         )
         service_data["access_rights"] = {
             rights.gid: rights for rights in service_access_rights

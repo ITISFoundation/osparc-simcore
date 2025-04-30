@@ -2,32 +2,33 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import re
 import urllib.parse
-from unittest.mock import MagicMock
 
 import pytest
-from aiohttp import web
 from aiohttp.test_utils import TestClient
+from aioresponses import aioresponses as AioResponsesMock
 from faker import Faker
 from models_library.api_schemas_catalog.services import ServiceGetV2
 from models_library.api_schemas_webserver.catalog import (
     CatalogServiceGet,
     CatalogServiceUpdate,
 )
-from models_library.products import ProductName
 from models_library.rest_pagination import Page
-from models_library.rpc_pagination import PageLimitInt, PageRpc
-from models_library.services_types import ServiceKey, ServiceVersion
-from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import NonNegativeInt, TypeAdapter
-from pytest_mock import MockerFixture
+from pydantic import TypeAdapter
+from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.catalog_rpc_server import CatalogRpcSideEffects
 from pytest_simcore.helpers.faker_factories import random_icon_url
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
+from simcore_service_webserver.catalog._controller_rest_schemas import (
+    ServiceInputGet,
+    ServiceOutputGet,
+)
 from simcore_service_webserver.db.models import UserRole
 
 
@@ -44,86 +45,25 @@ def app_environment(
 
 
 @pytest.fixture
-def mocked_rpc_catalog_service_api(mocker: MockerFixture) -> dict[str, MagicMock]:
-    async def _list(
-        app: web.Application,
-        *,
-        product_name: ProductName,
-        user_id: UserID,
-        limit: PageLimitInt,
-        offset: NonNegativeInt,
-    ):
-        assert app
-        assert product_name
-        assert user_id
+def mocked_catalog_rpc_api(mocker: MockerFixture) -> dict[str, MockType]:
 
-        items = TypeAdapter(list[ServiceGetV2]).validate_python(
-            ServiceGetV2.model_json_schema()["examples"],
-        )
-        total_count = len(items)
-
-        return PageRpc[ServiceGetV2].create(
-            items[offset : offset + limit],
-            total=total_count,
-            limit=limit,
-            offset=offset,
-        )
-
-    async def _get(
-        app: web.Application,
-        *,
-        product_name: ProductName,
-        user_id: UserID,
-        service_key: ServiceKey,
-        service_version: ServiceVersion,
-    ):
-        assert app
-        assert product_name
-        assert user_id
-
-        got = ServiceGetV2.model_validate(
-            ServiceGetV2.model_json_schema()["examples"][0]
-        )
-        got.version = service_version
-        got.key = service_key
-
-        return got
-
-    async def _update(
-        app: web.Application,
-        *,
-        product_name: ProductName,
-        user_id: UserID,
-        service_key: ServiceKey,
-        service_version: ServiceVersion,
-        update: CatalogServiceUpdate,
-    ):
-        assert app
-        assert product_name
-        assert user_id
-
-        got = ServiceGetV2.model_validate(
-            ServiceGetV2.model_json_schema()["examples"][0]
-        )
-        got.version = service_version
-        got.key = service_key
-        return got.model_copy(update=update.model_dump(exclude_unset=True))
+    side_effects = CatalogRpcSideEffects()
 
     return {
         "list_services_paginated": mocker.patch(
-            "simcore_service_webserver.catalog._api.catalog_rpc.list_services_paginated",
+            "simcore_service_webserver.catalog._service.catalog_rpc.list_services_paginated",
             autospec=True,
-            side_effect=_list,
+            side_effect=side_effects.list_services_paginated,
         ),
         "get_service": mocker.patch(
-            "simcore_service_webserver.catalog._api.catalog_rpc.get_service",
+            "simcore_service_webserver.catalog._service.catalog_rpc.get_service",
             autospec=True,
-            side_effect=_get,
+            side_effect=side_effects.get_service,
         ),
         "update_service": mocker.patch(
-            "simcore_service_webserver.catalog._api.catalog_rpc.update_service",
+            "simcore_service_webserver.catalog._service.catalog_rpc.update_service",
             autospec=True,
-            side_effect=_update,
+            side_effect=side_effects.update_service,
         ),
     }
 
@@ -135,7 +75,7 @@ def mocked_rpc_catalog_service_api(mocker: MockerFixture) -> dict[str, MagicMock
 async def test_list_services_latest(
     client: TestClient,
     logged_user: UserInfoDict,
-    mocked_rpc_catalog_service_api: dict[str, MagicMock],
+    mocked_catalog_rpc_api: dict[str, MockType],
 ):
     assert client.app
     assert client.app.router
@@ -153,7 +93,197 @@ async def test_list_services_latest(
     assert model.data
     assert len(model.data) == model.meta.count
 
-    assert mocked_rpc_catalog_service_api["list_services_paginated"].call_count == 1
+    assert mocked_catalog_rpc_api["list_services_paginated"].call_count == 1
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+async def test_list_inputs(
+    client: TestClient, logged_user: UserInfoDict, aioresponses_mocker: AioResponsesMock
+):
+
+    url_pattern = re.compile(r"http://catalog:8000/v0/services/.*")
+    service_payload = ServiceGetV2.model_json_schema()["examples"][0]
+    aioresponses_mocker.get(
+        url_pattern,
+        status=status.HTTP_200_OK,
+        payload=service_payload,
+    )
+
+    service_key = "simcore/services/comp/itis/sleeper"
+    service_version = "0.1.0"
+    assert client.app and client.app.router
+    url = client.app.router["list_service_inputs"].url_for(
+        service_key=urllib.parse.quote(service_key, safe=""),
+        service_version=service_version,
+    )
+
+    response = await client.get(f"{url}")
+    data, _ = await assert_status(response, status.HTTP_200_OK)
+    TypeAdapter(list[ServiceInputGet]).validate_python(data)
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+async def test_list_outputs(
+    client: TestClient, logged_user: UserInfoDict, aioresponses_mocker: AioResponsesMock
+):
+
+    url_pattern = re.compile(r"http://catalog:8000/v0/services/.*")
+    service_payload = ServiceGetV2.model_json_schema()["examples"][0]
+    aioresponses_mocker.get(
+        url_pattern,
+        status=status.HTTP_200_OK,
+        payload=service_payload,
+    )
+
+    service_key = "simcore/services/comp/itis/sleeper"
+    service_version = "0.1.0"
+    assert client.app and client.app.router
+    url = client.app.router["list_service_outputs"].url_for(
+        service_key=urllib.parse.quote(service_key, safe=""),
+        service_version=service_version,
+    )
+
+    response = await client.get(f"{url}")
+    data, _ = await assert_status(response, status.HTTP_200_OK)
+    TypeAdapter(list[ServiceOutputGet]).validate_python(data)
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+async def test_get_outputs(
+    client: TestClient, logged_user: UserInfoDict, aioresponses_mocker: AioResponsesMock
+):
+
+    url_pattern = re.compile(r"http://catalog:8000/v0/services/.*")
+    service_payload = ServiceGetV2.model_json_schema()["examples"][0]
+    aioresponses_mocker.get(
+        url_pattern,
+        status=status.HTTP_200_OK,
+        payload=service_payload,
+    )
+
+    service_key = "simcore/services/comp/itis/sleeper"
+    service_version = "0.1.0"
+    assert client.app and client.app.router
+    url = client.app.router["get_service_output"].url_for(
+        service_key=urllib.parse.quote(service_key, safe=""),
+        service_version=service_version,
+        output_key=next(iter(service_payload["outputs"].keys())),
+    )
+
+    response = await client.get(f"{url}")
+    data, _ = await assert_status(response, status.HTTP_200_OK)
+    ServiceOutputGet.model_validate(data)
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+async def test_get_inputs(
+    client: TestClient, logged_user: UserInfoDict, aioresponses_mocker: AioResponsesMock
+):
+    url_pattern = re.compile(r"http://catalog:8000/v0/services/.*")
+    service_payload = ServiceGetV2.model_json_schema()["examples"][0]
+    aioresponses_mocker.get(
+        url_pattern,
+        status=status.HTTP_200_OK,
+        payload=service_payload,
+    )
+
+    service_key = "simcore/services/comp/itis/sleeper"
+    service_version = "0.1.0"
+    assert client.app and client.app.router
+    url = client.app.router["get_service_input"].url_for(
+        service_key=urllib.parse.quote(service_key, safe=""),
+        service_version=service_version,
+        input_key=next(iter(service_payload["inputs"].keys())),
+    )
+    response = await client.get(f"{url}")
+    data, _ = await assert_status(response, status.HTTP_200_OK)
+    ServiceInputGet.model_validate(data)
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+async def test_get_compatible_inputs_given_source_outputs(
+    client: TestClient, logged_user: UserInfoDict, aioresponses_mocker: AioResponsesMock
+):
+    url_pattern = re.compile(r"http://catalog:8000/v0/services/.*")
+    service_payload = ServiceGetV2.model_json_schema()["examples"][0]
+    for _ in range(2):
+        aioresponses_mocker.get(
+            url_pattern,
+            status=status.HTTP_200_OK,
+            payload=service_payload,
+        )
+
+    service_key = "simcore/services/comp/itis/sleeper"
+    service_version = "0.1.0"
+    assert client.app and client.app.router
+    url = (
+        client.app.router["get_compatible_inputs_given_source_output"]
+        .url_for(
+            service_key=urllib.parse.quote(service_key, safe=""),
+            service_version=service_version,
+        )
+        .with_query(
+            {
+                "fromService": "simcore/services/comp/itis/sleeper",
+                "fromVersion": "0.1.0",
+                "fromOutput": "output_1",
+            }
+        )
+    )
+    response = await client.get(f"{url}")
+    _, _ = await assert_status(response, status.HTTP_200_OK)
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+async def test_get_compatible_outputs_given_target_inptuts(
+    client: TestClient, logged_user: UserInfoDict, aioresponses_mocker: AioResponsesMock
+):
+    url_pattern = re.compile(r"http://catalog:8000/v0/services/.*")
+    service_payload = ServiceGetV2.model_json_schema()["examples"][0]
+    for _ in range(2):
+        aioresponses_mocker.get(
+            url_pattern,
+            status=status.HTTP_200_OK,
+            payload=service_payload,
+        )
+
+    service_key = "simcore/services/comp/itis/sleeper"
+    service_version = "0.1.0"
+    assert client.app and client.app.router
+    url = (
+        client.app.router["get_compatible_outputs_given_target_input"]
+        .url_for(
+            service_key=urllib.parse.quote(service_key, safe=""),
+            service_version=service_version,
+        )
+        .with_query(
+            {
+                "toService": "simcore/services/comp/itis/sleeper",
+                "toVersion": "0.1.0",
+                "toInput": "input_1",
+            }
+        )
+    )
+    response = await client.get(f"{url}")
+    _, _ = await assert_status(response, status.HTTP_200_OK)
 
 
 @pytest.mark.parametrize(
@@ -163,7 +293,7 @@ async def test_list_services_latest(
 async def test_get_and_patch_service(
     client: TestClient,
     logged_user: UserInfoDict,
-    mocked_rpc_catalog_service_api: dict[str, MagicMock],
+    mocked_catalog_rpc_api: dict[str, MockType],
     faker: Faker,
 ):
     assert client.app
@@ -187,8 +317,8 @@ async def test_get_and_patch_service(
     assert model.key == service_key
     assert model.version == service_version
 
-    assert mocked_rpc_catalog_service_api["get_service"].call_count == 1
-    assert not mocked_rpc_catalog_service_api["update_service"].called
+    assert mocked_catalog_rpc_api["get_service"].call_count == 1
+    assert not mocked_catalog_rpc_api["update_service"].called
 
     # PATCH
     update = CatalogServiceUpdate(
@@ -218,8 +348,8 @@ async def test_get_and_patch_service(
     assert model.version_display == update.version_display
     assert model.access_rights == update.access_rights
 
-    assert mocked_rpc_catalog_service_api["get_service"].call_count == 1
-    assert mocked_rpc_catalog_service_api["update_service"].call_count == 1
+    assert mocked_catalog_rpc_api["get_service"].call_count == 1
+    assert mocked_catalog_rpc_api["update_service"].call_count == 1
 
 
 @pytest.mark.xfail(reason="service tags entrypoints under development")
@@ -230,7 +360,7 @@ async def test_get_and_patch_service(
 async def test_tags_in_services(
     client: TestClient,
     logged_user: UserInfoDict,
-    mocked_rpc_catalog_service_api: dict[str, MagicMock],
+    mocked_catalog_rpc_api: dict[str, MockType],
 ):
     assert client.app
     assert client.app.router

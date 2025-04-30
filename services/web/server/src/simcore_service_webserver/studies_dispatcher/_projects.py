@@ -1,17 +1,17 @@
-""" Projects management
+"""Projects management
 
- Keeps functionality that couples with the following app modules
-    - projects
-    - TMP: add_new_project includes to projects and director_v2 app modules!
+Keeps functionality that couples with the following app modules
+   - projects
+   - TMP: add_new_project includes to projects and director_v2 app modules!
 
 """
 
-import json
 import logging
 from pathlib import Path
 from typing import NamedTuple
 
 from aiohttp import web
+from common_library.json_serialization import json_loads
 from models_library.api_schemas_webserver.projects_ui import StudyUI
 from models_library.projects import DateTimeStr, Project, ProjectID
 from models_library.projects_access import AccessRights, GroupIDStr
@@ -21,9 +21,9 @@ from models_library.services import ServiceKey, ServiceVersion
 from pydantic import AnyUrl, HttpUrl, TypeAdapter
 from servicelib.logging_utils import log_decorator
 
-from ..projects.db import ProjectDBAPI
+from ..projects._projects_repository_legacy import ProjectDBAPI
+from ..projects._projects_service import get_project_for_user
 from ..projects.exceptions import ProjectInvalidRightsError, ProjectNotFoundError
-from ..projects.projects_service import get_project_for_user
 from ..utils import now_str
 from ._core import compose_uuid_from
 from ._models import FileParams, ServiceInfo, ViewerInfo
@@ -188,13 +188,13 @@ async def _add_new_project(
     # TODO: move this to projects_api
     # TODO: this piece was taken from the end of projects.projects_handlers.create_projects
 
-    from ..director_v2.api import create_or_update_pipeline
-    from ..projects.db import APP_PROJECT_DBAPI
+    from ..director_v2.director_v2_service import create_or_update_pipeline
+    from ..projects._projects_repository_legacy import APP_PROJECT_DBAPI
 
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 
     # validated project is transform in dict via json to use only primitive types
-    project_in: dict = json.loads(
+    project_in: dict = json_loads(
         project.model_dump_json(exclude_none=True, by_alias=True)
     )
 

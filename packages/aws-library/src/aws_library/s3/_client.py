@@ -29,7 +29,7 @@ from settings_library.s3 import S3Settings
 from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.literals import BucketLocationConstraintType
 from types_aiobotocore_s3.type_defs import (
-    ListObjectsV2RequestRequestTypeDef,
+    ListObjectsV2RequestTypeDef,
     ObjectIdentifierTypeDef,
 )
 
@@ -64,13 +64,11 @@ ListAnyUrlTypeAdapter: Final[TypeAdapter[list[AnyUrl]]] = TypeAdapter(list[AnyUr
 
 
 class UploadedBytesTransferredCallback(Protocol):
-    def __call__(self, bytes_transferred: int, *, file_name: str) -> None:
-        ...
+    def __call__(self, bytes_transferred: int, *, file_name: str) -> None: ...
 
 
 class CopiedBytesTransferredCallback(Protocol):
-    def __call__(self, total_bytes_copied: int, *, file_name: str) -> None:
-        ...
+    def __call__(self, total_bytes_copied: int, *, file_name: str) -> None: ...
 
 
 @dataclass(frozen=True)
@@ -87,21 +85,38 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         cls, settings: S3Settings, s3_max_concurrency: int = _S3_MAX_CONCURRENCY_DEFAULT
     ) -> "SimcoreS3API":
         session = aioboto3.Session()
-        session_client = session.client(  # type: ignore[call-overload]
-            "s3",
-            endpoint_url=f"{settings.S3_ENDPOINT}",
-            aws_access_key_id=settings.S3_ACCESS_KEY,
-            aws_secret_access_key=settings.S3_SECRET_KEY,
-            region_name=settings.S3_REGION,
-            config=Config(signature_version="s3v4"),
-        )
-        assert isinstance(session_client, ClientCreatorContext)  # nosec
+        session_client = None
         exit_stack = contextlib.AsyncExitStack()
-        s3_client = cast(S3Client, await exit_stack.enter_async_context(session_client))
-        # NOTE: this triggers a botocore.exception.ClientError in case the connection is not made to the S3 backend
-        await s3_client.list_buckets()
+        try:
+            config = Config(
+                # This setting tells the S3 client to only calculate checksums when explicitly required
+                # by the operation. This avoids unnecessary checksum calculations for operations that
+                # don't need them, improving performance.
+                # See: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/s3.html#calculating-checksums
+                signature_version="s3v4",
+                request_checksum_calculation="when_required",  # type: ignore[call-arg]
+            )
+            session_client = session.client(  # type: ignore[call-overload]
+                "s3",
+                endpoint_url=f"{settings.S3_ENDPOINT}",
+                aws_access_key_id=settings.S3_ACCESS_KEY,
+                aws_secret_access_key=settings.S3_SECRET_KEY,
+                region_name=settings.S3_REGION,
+                config=config,
+            )
+            assert isinstance(session_client, ClientCreatorContext)  # nosec
 
-        return cls(s3_client, session, exit_stack, s3_max_concurrency)
+            s3_client = cast(
+                S3Client, await exit_stack.enter_async_context(session_client)
+            )
+            # NOTE: this triggers a botocore.exception.ClientError in case the connection is not made to the S3 backend
+            await s3_client.list_buckets()
+
+            return cls(s3_client, session, exit_stack, s3_max_concurrency)
+        except Exception:
+            await exit_stack.aclose()
+
+            raise
 
     async def close(self) -> None:
         await self._exit_stack.aclose()
@@ -238,7 +253,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
             msg = f"num_objects must be <= {_AWS_MAX_ITEMS_PER_PAGE}"
             raise ValueError(msg)
 
-        list_config: ListObjectsV2RequestRequestTypeDef = {
+        list_config: ListObjectsV2RequestTypeDef = {
             "Bucket": bucket,
             "Prefix": create_final_prefix(prefix, is_partial_prefix=is_partial_prefix),
             "MaxKeys": limit,

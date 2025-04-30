@@ -38,7 +38,6 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.utils import logged_gather
 from settings_library.rabbit import RabbitSettings
-from simcore_service_dynamic_sidecar.core.application import create_app
 from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 from simcore_service_dynamic_sidecar.modules.notifications import (
     PortNotifier,
@@ -80,10 +79,10 @@ def mock_environment(
 
 @pytest.fixture
 async def app(
+    app: FastAPI,
     mock_environment: EnvVarsDict,
     mock_registry_service: AsyncMock,
     mock_storage_check: None,
-    mock_postgres_check: None,
     mocker: MockerFixture,
 ) -> AsyncIterable[FastAPI]:
     mocker.patch(
@@ -91,7 +90,6 @@ async def app(
         return_value=[],
     )
 
-    app: FastAPI = create_app()
     async with LifespanManager(app):
         yield app
 
@@ -217,7 +215,7 @@ async def test_notifier_publish_disk_usage(
                 jsonable_encoder(ServiceDiskUsage(node_id=node_id, usage=usage))
             )
 
-    await _assert_call_count(server_disconnect, call_count=_NUMBER_OF_CLIENTS)
+    await _assert_call_count(server_disconnect, call_count=_NUMBER_OF_CLIENTS * 2)
 
 
 @pytest.fixture
@@ -311,7 +309,7 @@ async def test_notifier_send_input_port_status(
                 )
             )
 
-    await _assert_call_count(server_disconnect, call_count=_NUMBER_OF_CLIENTS)
+    await _assert_call_count(server_disconnect, call_count=_NUMBER_OF_CLIENTS * 2)
 
 
 def _get_on_output_port_spy(
@@ -400,4 +398,4 @@ async def test_notifier_send_output_port_status(
                 )
             )
 
-    await _assert_call_count(server_disconnect, call_count=_NUMBER_OF_CLIENTS)
+    await _assert_call_count(server_disconnect, call_count=_NUMBER_OF_CLIENTS * 2)

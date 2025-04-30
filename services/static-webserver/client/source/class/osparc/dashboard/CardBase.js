@@ -373,11 +373,23 @@ qx.Class.define("osparc.dashboard.CardBase", {
     workbench: {
       check: "Object",
       nullable: true,
-      apply: "__applyWorkbench"
+    },
+
+    services: {
+      check: "Array",
+      init: true,
+      nullable: false,
+      apply: "__applyServices",
+      event: "changeServices",
     },
 
     uiMode: {
-      check: ["workbench", "guided", "app", "standalone"], // "guided" is no longer used
+      check: [
+        "workbench", // =auto, the frontend decides the icon and default view
+        "app", "guided", // "guided" is no longer used
+        "standalone",
+        "pipeline",
+      ],
       nullable: true,
       apply: "__applyUiMode"
     },
@@ -484,13 +496,11 @@ qx.Class.define("osparc.dashboard.CardBase", {
           uuid = resourceData.uuid ? resourceData.uuid : null;
           owner = resourceData.prjOwner ? resourceData.prjOwner : "";
           workbench = resourceData.workbench ? resourceData.workbench : {};
-          icon = osparc.study.Utils.guessIcon(resourceData);
           break;
         case "template":
           uuid = resourceData.uuid ? resourceData.uuid : null;
           owner = resourceData.prjOwner ? resourceData.prjOwner : "";
           workbench = resourceData.workbench ? resourceData.workbench : {};
-          icon = osparc.study.Utils.guessIcon(resourceData);
           break;
         case "service":
           uuid = resourceData.key ? resourceData.key : null;
@@ -519,6 +529,19 @@ qx.Class.define("osparc.dashboard.CardBase", {
         hits: resourceData.hits ? resourceData.hits : defaultHits,
         workbench
       });
+
+      if (resourceData["resourceType"] === "study" || resourceData["resourceType"] === "template") {
+        osparc.store.Services.getStudyServices(resourceData.uuid)
+          .then(resp => {
+            const services = resp["services"];
+            resourceData["services"] = services;
+            this.setServices(services);
+          })
+          .catch(err => console.error(err));
+
+        osparc.study.Utils.guessIcon(resourceData)
+          .then(iconSource => this.setIcon(iconSource));
+      }
     },
 
     __applyMultiSelectionMode: function(value) {
@@ -530,22 +553,20 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     __evalSelectedButton: function() {
       if (
+        this.hasChildControl("menu-selection-stack") &&
         this.hasChildControl("menu-button") &&
         this.hasChildControl("tick-selected") &&
         this.hasChildControl("tick-unselected")
       ) {
-        const menuButton = this.getChildControl("menu-button");
-        const tick = this.getChildControl("tick-selected");
-        const untick = this.getChildControl("tick-unselected");
+        const menuButtonStack = this.getChildControl("menu-selection-stack");
         if (this.isResourceType("study") && this.isMultiSelectionMode()) {
+          const tick = this.getChildControl("tick-selected");
+          const untick = this.getChildControl("tick-unselected");
           const selected = this.getSelected();
-          menuButton.setVisibility("excluded");
-          tick.setVisibility(selected ? "visible" : "excluded");
-          untick.setVisibility(selected ? "excluded" : "visible");
+          menuButtonStack.setSelection(selected ? [tick] : [untick]);
         } else {
-          menuButton.setVisibility("visible");
-          tick.setVisibility("excluded");
-          untick.setVisibility("excluded");
+          const menuButton = this.getChildControl("menu-button");
+          menuButtonStack.setSelection([menuButton]);
         }
       }
     },
@@ -636,39 +657,31 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
     },
 
-    __applyWorkbench: function(workbench) {
-      if (workbench === null) {
-        // it is a service
-        return;
-      }
-
-      if (this.isResourceType("study") || this.isResourceType("template")) {
-        this.setEmptyWorkbench(Object.keys(workbench).length === 0);
-      }
+    __applyServices: function(services) {
+      this.setEmptyWorkbench(services.length === 0);
 
       // Updatable study
-      if (osparc.study.Utils.isWorkbenchRetired(workbench)) {
+      if (osparc.study.Utils.anyServiceRetired(services)) {
         this.setUpdatable("retired");
-      } else if (osparc.study.Utils.isWorkbenchDeprecated(workbench)) {
+      } else if (osparc.study.Utils.anyServiceDeprecated(services)) {
         this.setUpdatable("deprecated");
-      } else {
-        const updatable = osparc.study.Utils.isWorkbenchUpdatable(workbench)
-        if (updatable) {
-          this.setUpdatable("updatable");
-        }
+      } else if (osparc.study.Utils.anyServiceUpdatable(services)) {
+        this.setUpdatable("updatable");
       }
 
       // Block card
-      const unaccessibleServices = osparc.study.Utils.getInaccessibleServices(workbench)
-      if (unaccessibleServices.length) {
+      const cantReadServices = osparc.study.Utils.getCantExecuteServices(services);
+      if (cantReadServices.length) {
         this.setBlocked("UNKNOWN_SERVICES");
-        let image = "@FontAwesome5Solid/ban/";
-        let toolTipText = this.tr("Service info missing");
-        unaccessibleServices.forEach(unSrv => {
-          toolTipText += "<br>" + unSrv.key + ":" + unSrv.version;
+        const image = "@FontAwesome5Solid/ban/";
+        let toolTipText = this.tr("Inaccessible service(s):");
+        cantReadServices.forEach(unSrv => {
+          toolTipText += "<br>" + unSrv.key + ":" + osparc.service.Utils.extractVersionDisplay(unSrv.release);
         });
         this.__showBlockedCard(image, toolTipText);
       }
+
+      this.evaluateMenuButtons();
     },
 
     __applyEmptyWorkbench: function(isEmpty) {
@@ -755,7 +768,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
           break;
         case "FAILED":
           iconSource = "@FontAwesome5Solid/exclamation/10";
-          toolTipText = this.tr("Ran with error");
+          toolTipText = this.tr("Unsuccessful Run");
           borderColor = "error";
           break;
         case "UNKNOWN":
@@ -955,9 +968,14 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
     },
 
-    __openMoreOptions: function() {
+    __openResourceDetails: function(openWindowCB) {
       const resourceData = this.getResourceData();
       const resourceDetails = new osparc.dashboard.ResourceDetails(resourceData);
+      resourceDetails.addListenerOnce("pagesAdded", () => {
+        if (openWindowCB in resourceDetails) {
+          resourceDetails[openWindowCB]();
+        }
+      })
       const win = osparc.dashboard.ResourceDetails.popUpInWindow(resourceDetails);
       [
         "updateStudy",
@@ -989,28 +1007,23 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     openBilling: function() {
-      const moreOpts = this.__openMoreOptions();
-      moreOpts.openBillingSettings();
+      this.__openResourceDetails("openBillingSettings");
     },
 
     openAccessRights: function() {
-      const moreOpts = this.__openMoreOptions();
-      moreOpts.openAccessRights();
+      this.__openResourceDetails("openAccessRights");
     },
 
     openTags: function() {
-      const moreOpts = this.__openMoreOptions();
-      moreOpts.openTags();
+      this.__openResourceDetails("openTags");
     },
 
     __openQualityEditor: function() {
-      const moreOpts = this.__openMoreOptions();
-      moreOpts.openQuality();
+      this.__openResourceDetails("openQuality");
     },
 
     __openUpdateServices: function() {
-      const moreOpts = this.__openMoreOptions();
-      moreOpts.openUpdateServices();
+      this.__openResourceDetails("openUpdateServices");
     },
 
     _getEmptyWorkbenchIcon: function() {

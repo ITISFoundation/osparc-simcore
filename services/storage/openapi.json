@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore_service_storage",
     "description": "Service that manages osparc storage backend",
-    "version": "0.6.0"
+    "version": "0.7.0"
   },
   "paths": {
     "/v0/": {
@@ -332,7 +332,7 @@
               "anyOf": [
                 {
                   "type": "string",
-                  "pattern": "^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$"
+                  "pattern": "^(exports\\/\\d+\\/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}\\.zip)|((api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$)"
                 },
                 {
                   "type": "string",
@@ -430,7 +430,7 @@
               "anyOf": [
                 {
                   "type": "string",
-                  "pattern": "^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$"
+                  "pattern": "^(exports\\/\\d+\\/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}\\.zip)|((api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$)"
                 },
                 {
                   "type": "string",
@@ -509,7 +509,7 @@
               "anyOf": [
                 {
                   "type": "string",
-                  "pattern": "^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$"
+                  "pattern": "^(exports\\/\\d+\\/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}\\.zip)|((api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$)"
                 },
                 {
                   "type": "string",
@@ -643,7 +643,7 @@
               "anyOf": [
                 {
                   "type": "string",
-                  "pattern": "^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$"
+                  "pattern": "^(exports\\/\\d+\\/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}\\.zip)|((api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$)"
                 },
                 {
                   "type": "string",
@@ -707,7 +707,7 @@
               "anyOf": [
                 {
                   "type": "string",
-                  "pattern": "^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$"
+                  "pattern": "^(exports\\/\\d+\\/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}\\.zip)|((api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$)"
                 },
                 {
                   "type": "string",
@@ -771,7 +771,7 @@
               "anyOf": [
                 {
                   "type": "string",
-                  "pattern": "^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$"
+                  "pattern": "^(exports\\/\\d+\\/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}\\.zip)|((api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$)"
                 },
                 {
                   "type": "string",
@@ -852,7 +852,7 @@
               "anyOf": [
                 {
                   "type": "string",
-                  "pattern": "^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$"
+                  "pattern": "^(exports\\/\\d+\\/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}\\.zip)|((api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$)"
                 },
                 {
                   "type": "string",
@@ -923,7 +923,7 @@
               "anyOf": [
                 {
                   "type": "string",
-                  "pattern": "^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$"
+                  "pattern": "^(exports\\/\\d+\\/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}\\.zip)|((api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$)"
                 },
                 {
                   "type": "string",
@@ -1047,8 +1047,8 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "maximum": 100,
-              "minimum": 0,
+              "maximum": 1000,
+              "minimum": 1,
               "default": 50,
               "title": "Size"
             }
@@ -1060,7 +1060,70 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CursorPage_PathMetaDataGet_"
+                  "$ref": "#/components/schemas/CursorPage___T_Customized_PathMetaDataGet_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/locations/{location_id}/paths/{path}:size": {
+      "post": {
+        "tags": [
+          "files"
+        ],
+        "summary": "Compute Path Size",
+        "operationId": "compute_path_size_v0_locations__location_id__paths__path__size_post",
+        "parameters": [
+          {
+            "name": "path",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "path",
+              "title": "Path"
+            }
+          },
+          {
+            "name": "location_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Location Id"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": true,
+              "title": "User Id",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_PathTotalSizeCreate_"
                 }
               }
             }
@@ -1105,60 +1168,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Envelope_S3Settings_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v0/simcore-s3/folders": {
-      "post": {
-        "tags": [
-          "simcore-s3"
-        ],
-        "summary": "Copy Folders From Project",
-        "operationId": "copy_folders_from_project_v0_simcore_s3_folders_post",
-        "parameters": [
-          {
-            "name": "user_id",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/FoldersBody"
-              }
-            }
-          }
-        },
-        "responses": {
-          "202": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Envelope_TaskGet_"
                 }
               }
             }
@@ -1419,7 +1428,7 @@
         ],
         "title": "AppStatusCheck"
       },
-      "CursorPage_PathMetaDataGet_": {
+      "CursorPage___T_Customized_PathMetaDataGet_": {
         "properties": {
           "items": {
             "items": {
@@ -1493,7 +1502,7 @@
         "required": [
           "items"
         ],
-        "title": "CursorPage[PathMetaDataGet]"
+        "title": "CursorPage[~_T]Customized[PathMetaDataGet]"
       },
       "DatasetMetaDataGet": {
         "properties": {
@@ -1748,6 +1757,31 @@
         "type": "object",
         "title": "Envelope[HealthCheck]"
       },
+      "Envelope_PathTotalSizeCreate_": {
+        "properties": {
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PathTotalSizeCreate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "title": "Envelope[PathTotalSizeCreate]"
+      },
       "Envelope_S3Settings_": {
         "properties": {
           "data": {
@@ -1772,31 +1806,6 @@
         },
         "type": "object",
         "title": "Envelope[S3Settings]"
-      },
-      "Envelope_TaskGet_": {
-        "properties": {
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/TaskGet"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "error": {
-            "anyOf": [
-              {},
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Error"
-          }
-        },
-        "type": "object",
-        "title": "Envelope[TaskGet]"
       },
       "Envelope_dict_": {
         "properties": {
@@ -1990,7 +1999,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "pattern": "^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$"
+                "pattern": "^(exports\\/\\d+\\/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}\\.zip)|((api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$)"
               },
               {
                 "type": "string",
@@ -2329,31 +2338,6 @@
         ],
         "title": "FileUploadSchema"
       },
-      "FoldersBody": {
-        "properties": {
-          "source": {
-            "type": "object",
-            "title": "Source"
-          },
-          "destination": {
-            "type": "object",
-            "title": "Destination"
-          },
-          "nodes_map": {
-            "additionalProperties": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "propertyNames": {
-              "format": "uuid"
-            },
-            "type": "object",
-            "title": "Nodes Map"
-          }
-        },
-        "type": "object",
-        "title": "FoldersBody"
-      },
       "HTTPValidationError": {
         "properties": {
           "errors": {
@@ -2465,6 +2449,27 @@
         ],
         "title": "PathMetaDataGet"
       },
+      "PathTotalSizeCreate": {
+        "properties": {
+          "path": {
+            "type": "string",
+            "format": "path",
+            "title": "Path"
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 0,
+            "title": "Size"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "path",
+          "size"
+        ],
+        "title": "PathTotalSizeCreate"
+      },
       "S3Settings": {
         "properties": {
           "S3_ACCESS_KEY": {
@@ -2520,7 +2525,7 @@
         "properties": {
           "link_id": {
             "type": "string",
-            "pattern": "^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$",
+            "pattern": "^(exports\\/\\d+\\/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}\\.zip)|((api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$)",
             "title": "Link Id"
           }
         },
@@ -2529,39 +2534,6 @@
           "link_id"
         ],
         "title": "SoftCopyBody"
-      },
-      "TaskGet": {
-        "properties": {
-          "task_id": {
-            "type": "string",
-            "title": "Task Id"
-          },
-          "task_name": {
-            "type": "string",
-            "title": "Task Name"
-          },
-          "status_href": {
-            "type": "string",
-            "title": "Status Href"
-          },
-          "result_href": {
-            "type": "string",
-            "title": "Result Href"
-          },
-          "abort_href": {
-            "type": "string",
-            "title": "Abort Href"
-          }
-        },
-        "type": "object",
-        "required": [
-          "task_id",
-          "task_name",
-          "status_href",
-          "result_href",
-          "abort_href"
-        ],
-        "title": "TaskGet"
       },
       "UploadedPart": {
         "properties": {

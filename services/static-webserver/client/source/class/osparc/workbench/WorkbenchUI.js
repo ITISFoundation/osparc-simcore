@@ -202,7 +202,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     },
 
     __addStartHint: function() {
-      this.__startHint = new qx.ui.basic.Label(this.tr("Double click to start adding a node")).set({
+      this.__startHint = new qx.ui.basic.Label(this.tr("Double-click to add a node")).set({
         font: "workbench-start-hint",
         textColor: "workbench-start-hint",
         visibility: "excluded"
@@ -299,7 +299,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         return null;
       }
       if (this.getStudy().isPipelineRunning()) {
-        osparc.FlashMessenger.getInstance().logAs(osparc.data.model.Workbench.CANT_ADD_NODE, "ERROR");
+        osparc.FlashMessenger.logError(osparc.data.model.Workbench.CANT_ADD_NODE);
         return null;
       }
       const srvCat = new osparc.workbench.ServiceCatalog();
@@ -1919,7 +1919,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       };
       if (type === "rect") {
         if ([null, undefined].includes(annotation)) {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Draw a rectangle first"), "WARNING");
+          osparc.FlashMessenger.logAs(this.tr("Draw a rectangle first"), "WARNING");
           return false;
         }
         serializeData.attributes = osparc.wrapper.Svg.getRectAttributes(annotation);
@@ -1927,7 +1927,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         serializeData.attributes = initPos;
       }
       if (type === "note") {
-        const noteEditor = new osparc.editor.AnnotationNoteCreator();
+        const noteEditor = new osparc.editor.AnnotationNoteCreator(this.getStudy());
         const win = osparc.editor.AnnotationNoteCreator.popUpInWindow(noteEditor);
         noteEditor.addListener("addNote", () => {
           const gid = noteEditor.getRecipientGid();
@@ -2005,7 +2005,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
               x: e.offsetX,
               y: e.offsetY
             };
-            const service = qx.data.marshal.Json.createModel(osparc.service.Utils.getFilePicker());
+            const service = qx.data.marshal.Json.createModel(osparc.store.Services.getFilePicker());
             const nodeUI = await this.__addNode(service, pos);
             if (nodeUI) {
               const filePicker = new osparc.file.FilePicker(nodeUI.getNode(), "workbench");
@@ -2013,10 +2013,10 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
               filePicker.addListener("fileUploaded", () => this.fireDataEvent("nodeSelected", nodeUI.getNodeId()), this);
             }
           } else {
-            osparc.FlashMessenger.getInstance().logAs(osparc.file.FileDrop.ONE_FILE_ONLY, "ERROR");
+            osparc.FlashMessenger.logError(osparc.file.FileDrop.ONE_FILE_ONLY);
           }
         } else {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Folders are not accepted. You might want to upload a zip file."), "ERROR");
+          osparc.FlashMessenger.logError(this.tr("Folders are not accepted. Please upload a zip file instead."));
         }
       }
     },
@@ -2028,7 +2028,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         const data = this.__isDraggingLink["dragData"];
         this.__isDraggingLink = null;
         const pos = this.__pointerEventToWorkbenchPos(e, false);
-        const service = qx.data.marshal.Json.createModel(osparc.service.Utils.getFilePicker());
+        const service = qx.data.marshal.Json.createModel(osparc.store.Services.getFilePicker());
         const nodeUI = await this.__addNode(service, pos);
         if (nodeUI) {
           const node = nodeUI.getNode();

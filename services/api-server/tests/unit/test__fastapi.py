@@ -26,10 +26,10 @@ from faker import Faker
 from fastapi import APIRouter, FastAPI, status
 from fastapi.testclient import TestClient
 from simcore_service_api_server._meta import API_VTAG
+from simcore_service_api_server.models.schemas.programs import VersionStr
 from simcore_service_api_server.models.schemas.solvers import (
     Solver,
     SolverKeyId,
-    VersionStr,
 )
 
 
@@ -122,8 +122,8 @@ def test_fastapi_route_name_parsing(client: TestClient, app: FastAPI, faker: Fak
     # Ensures ':' is allowed in routes
     # SEE https://github.com/encode/starlette/pull/1657
 
-    solver_key = Solver.model_config["json_schema_extra"]["example"]["id"]
-    version = Solver.model_config["json_schema_extra"]["example"]["version"]
+    solver_key = Solver.model_json_schema()["example"]["id"]
+    version = Solver.model_json_schema()["example"]["version"]
     job_id = faker.uuid4()
 
     # Checks whether parse correctly ":action" suffix

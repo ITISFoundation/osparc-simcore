@@ -6,7 +6,7 @@ import pytest
 from faker import Faker
 from models_library.projects import Project
 from models_library.projects_nodes import InputsDict, InputTypes, SimCoreFileLink
-from pydantic import RootModel, TypeAdapter, create_model
+from pydantic import HttpUrl, RootModel, TypeAdapter, create_model
 from simcore_service_api_server.models.schemas.files import File
 from simcore_service_api_server.models.schemas.jobs import ArgumentTypes, Job, JobInputs
 from simcore_service_api_server.models.schemas.solvers import Solver
@@ -48,10 +48,18 @@ def test_create_project_model_for_job(faker: Faker):
 
     print(inputs.model_dump_json(indent=2))
 
-    job = Job.create_solver_job(solver=solver, inputs=inputs)
+    job = Job.create_job_from_solver_or_program(
+        solver_or_program_name=solver.name, inputs=inputs
+    )
 
     # body of create project!
-    createproject_body = create_new_project_for_job(solver, job, inputs)
+    createproject_body = create_new_project_for_job(
+        solver_or_program=solver,
+        job=job,
+        inputs=inputs,
+        description=None,
+        project_name=None,
+    )
 
     # ensures one-to-one relation
     assert createproject_body.uuid == job.id
@@ -197,23 +205,33 @@ def test_create_job_from_project(faker: Faker):
     solver_key = "simcore/services/comp/itis/sleeper"
     solver_version = "2.0.2"
 
-    def fake_url_for(*args, **kwargs):
-        return faker.url()
+    def fake_url_for(*args, **kwargs) -> HttpUrl:
+        return HttpUrl(faker.url())
+
+    solver = Solver(
+        id=solver_key,
+        version=solver_version,
+        title=faker.text(max_nb_chars=20),
+        maintainer=faker.name(),
+        description=faker.text(max_nb_chars=100),
+        url=None,
+    )
 
     job = create_job_from_project(
-        solver_key, solver_version, project, url_for=fake_url_for
+        solver_or_program=solver, project=project, url_for=fake_url_for
     )
 
     assert job.id == project.uuid
-    assert job.name == project.name
 
-    url_field_names = {name for name in job.model_fields if name.endswith("url")}
-    assert all(getattr(job, _) for _ in url_field_names)
+    non_propagated_fields = {
+        name for name in job.model_fields if name.endswith("url")
+    }.union({"name"})
+    assert all(getattr(job, _) for _ in non_propagated_fields)
 
     # this tends to be a problem
     assert job.inputs_checksum == expected_job.inputs_checksum
-    assert job.model_dump(exclude=url_field_names) == expected_job.model_dump(
-        exclude=url_field_names
+    assert job.model_dump(exclude=non_propagated_fields) == expected_job.model_dump(
+        exclude=non_propagated_fields
     )
 
 

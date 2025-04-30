@@ -9,7 +9,6 @@ from collections.abc import AsyncIterator, Awaitable, Callable, Iterable, Iterat
 from pathlib import Path
 
 import aiopg.sa
-import aiopg.sa.exc
 import pytest
 import simcore_postgres_database.cli
 import sqlalchemy as sa
@@ -25,8 +24,6 @@ from pytest_simcore.helpers.faker_factories import (
     random_project,
     random_user,
 )
-from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
-from simcore_postgres_database.models.clusters import ClusterType, clusters
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.utils_projects_nodes import (
@@ -40,7 +37,8 @@ from simcore_postgres_database.webserver_models import (
     user_to_groups,
     users,
 )
-from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+from sqlalchemy.engine.row import Row
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, create_async_engine
 
 pytest_plugins = [
     "pytest_simcore.pytest_global_environs",
@@ -184,7 +182,9 @@ async def aiopg_engine(
         stacklevel=2,
     )
 
-    async with aiopg.sa.create_engine(dsn=postgres_service) as aiopg_sa_engine:
+    async with aiopg.sa.create_engine(
+        dsn=f"{postgres_service}?application_name=aiopg_engine",
+    ) as aiopg_sa_engine:
         yield aiopg_sa_engine
 
 
@@ -201,7 +201,6 @@ async def asyncpg_engine(  # <-- WE SHOULD USE THIS ONE
     pg_sa_engine: sqlalchemy.engine.Engine,
     _make_asyncpg_engine: Callable[[bool], AsyncEngine],
 ) -> AsyncIterator[AsyncEngine]:
-
     assert (
         pg_sa_engine
     ), "Ensures pg db up, responsive, init (w/ tables) and/or migrated"
@@ -211,6 +210,23 @@ async def asyncpg_engine(  # <-- WE SHOULD USE THIS ONE
     yield _apg_engine
 
     await _apg_engine.dispose()
+
+
+@pytest.fixture(params=["aiopg", "asyncpg"])
+async def connection_factory(
+    request: pytest.FixtureRequest,
+    aiopg_engine: Engine,
+    asyncpg_engine: AsyncEngine,
+) -> AsyncIterator[SAConnection | AsyncConnection]:
+    """Returns an aiopg.sa connection or an asyncpg connection from an engine to a fully furnished and ready pg database"""
+    if request.param == "aiopg":
+        async with aiopg_engine.acquire() as conn:
+            yield conn
+    else:
+        async with asyncpg_engine.connect() as conn:
+            # NOTE: this is the default in aiopg so we use the same here to make the tests run
+            await conn.execution_options(isolation_level="AUTOCOMMIT")
+            yield conn
 
 
 #
@@ -249,7 +265,9 @@ def create_fake_user(sync_engine: sqlalchemy.engine.Engine) -> Iterator[Callable
 
     created_ids = []
 
-    async def _creator(conn, group: RowProxy | None = None, **overrides) -> RowProxy:
+    async def _creator(
+        conn: SAConnection, group: RowProxy | None = None, **overrides
+    ) -> RowProxy:
         user_id = await conn.scalar(
             users.insert().values(**random_user(**overrides)).returning(users.c.id)
         )
@@ -278,37 +296,6 @@ def create_fake_user(sync_engine: sqlalchemy.engine.Engine) -> Iterator[Callable
     assert isinstance(sync_engine, sqlalchemy.engine.Engine)
     with sync_engine.begin() as conn:
         conn.execute(users.delete().where(users.c.id.in_(created_ids)))
-
-
-@pytest.fixture
-async def create_fake_cluster(
-    aiopg_engine: Engine, faker: Faker
-) -> AsyncIterator[Callable[..., Awaitable[int]]]:
-    cluster_ids = []
-    assert cluster_to_groups is not None
-
-    async def _creator(**overrides) -> int:
-        insert_values = {
-            "name": "default cluster name",
-            "type": ClusterType.ON_PREMISE,
-            "description": None,
-            "endpoint": faker.domain_name(),
-            "authentication": faker.pydict(value_types=[str]),
-        }
-        insert_values.update(overrides)
-        async with aiopg_engine.acquire() as conn:
-            cluster_id = await conn.scalar(
-                clusters.insert().values(**insert_values).returning(clusters.c.id)
-            )
-        cluster_ids.append(cluster_id)
-        assert cluster_id
-        return cluster_id
-
-    yield _creator
-
-    # cleanup
-    async with aiopg_engine.acquire() as conn:
-        await conn.execute(clusters.delete().where(clusters.c.id.in_(cluster_ids)))
 
 
 @pytest.fixture
@@ -358,18 +345,26 @@ async def create_fake_projects_node(
 
 
 @pytest.fixture
-def create_fake_product(
-    connection: aiopg.sa.connection.SAConnection,
-) -> Callable[..., Awaitable[RowProxy]]:
-    async def _creator(product_name: str) -> RowProxy:
-        result = await connection.execute(
-            sa.insert(products)
-            .values(name=product_name, host_regex=".*")
-            .returning(sa.literal_column("*"))
-        )
-        assert result
-        row = await result.first()
-        assert row
+async def create_fake_product(
+    asyncpg_engine: AsyncEngine,
+) -> AsyncIterator[Callable[[str], Awaitable[Row]]]:
+    created_product_names = set()
+
+    async def _creator(product_name: str) -> Row:
+        async with asyncpg_engine.begin() as connection:
+            result = await connection.execute(
+                sa.insert(products)
+                .values(name=product_name, host_regex=".*")
+                .returning(sa.literal_column("*"))
+            )
+            assert result
+            row = result.one()
+        created_product_names.add(row.name)
         return row
 
-    return _creator
+    yield _creator
+
+    async with asyncpg_engine.begin() as conn:
+        await conn.execute(
+            products.delete().where(products.c.name.in_(created_product_names))
+        )

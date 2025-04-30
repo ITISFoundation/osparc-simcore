@@ -82,11 +82,10 @@ def minimal_configuration(
     local_dask_scheduler_server_envs: EnvVarsDict,
     mocked_ec2_instances_envs: EnvVarsDict,
     disabled_rabbitmq: None,
-    disable_dynamic_service_background_task: None,
+    disable_autoscaling_background_task: None,
     disable_buffers_pool_background_task: None,
     mocked_redis_server: None,
-) -> None:
-    ...
+) -> None: ...
 
 
 @pytest.fixture
@@ -582,11 +581,11 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         available=with_drain_nodes_labelled,
     )
     # update our fake node
-    fake_attached_node.spec.labels[
-        _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
-    ] = mock_docker_tag_node.call_args_list[0][1]["tags"][
-        _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
-    ]
+    fake_attached_node.spec.labels[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY] = (
+        mock_docker_tag_node.call_args_list[0][1]["tags"][
+            _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
+        ]
+    )
     # check the activate time is later than attach time
     assert arrow.get(
         mock_docker_tag_node.call_args_list[1][1]["tags"][
@@ -611,11 +610,11 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         available=True,
     )
     # update our fake node
-    fake_attached_node.spec.labels[
-        _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
-    ] = mock_docker_tag_node.call_args_list[1][1]["tags"][
-        _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
-    ]
+    fake_attached_node.spec.labels[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY] = (
+        mock_docker_tag_node.call_args_list[1][1]["tags"][
+            _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
+        ]
+    )
     mock_docker_tag_node.reset_mock()
     mock_docker_set_node_availability.assert_not_called()
     mock_rabbitmq_post_message.assert_called_once()
@@ -756,9 +755,9 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     # we artifically set the node to drain
     fake_attached_node.spec.availability = Availability.drain
     fake_attached_node.spec.labels[_OSPARC_SERVICE_READY_LABEL_KEY] = "false"
-    fake_attached_node.spec.labels[
-        _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
-    ] = datetime.datetime.now(tz=datetime.UTC).isoformat()
+    fake_attached_node.spec.labels[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY] = (
+        datetime.datetime.now(tz=datetime.UTC).isoformat()
+    )
 
     # the node will be not be terminated before the timeout triggers
     assert app_settings.AUTOSCALING_EC2_INSTANCES
@@ -960,7 +959,7 @@ async def test_cluster_does_not_scale_up_if_defined_instance_is_not_fitting_reso
                     cpus=5, ram=TypeAdapter(ByteSize).validate_python("36Gib")
                 ),
                 num_tasks=10,
-                expected_instance_type="g3.4xlarge",
+                expected_instance_type="r5n.4xlarge",  # 32 cpus, 128Gib
                 expected_num_instances=4,
             ),
             id="isolve",
@@ -1429,12 +1428,12 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
     [
         pytest.param(
             _ScaleUpParams(
-                imposed_instance_type="g3.4xlarge",  # 1 GPU, 16 CPUs, 122GiB
+                imposed_instance_type="g4dn.2xlarge",  # 1 GPU, 8 CPUs, 32GiB
                 task_resources=Resources(
-                    cpus=16, ram=TypeAdapter(ByteSize).validate_python("30Gib")
+                    cpus=8, ram=TypeAdapter(ByteSize).validate_python("15Gib")
                 ),
                 num_tasks=12,
-                expected_instance_type="g3.4xlarge",  # 1 GPU, 16 CPUs, 122GiB
+                expected_instance_type="g4dn.2xlarge",  # 1 GPU, 8 CPUs, 32GiB
                 expected_num_instances=10,
             ),
             _ScaleUpParams(
@@ -1446,7 +1445,7 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
                 expected_instance_type="g4dn.8xlarge",  # 32CPUs, 128GiB
                 expected_num_instances=7,
             ),
-            id="A batch of services requiring g3.4xlarge and a batch requiring g4dn.8xlarge",
+            id="A batch of services requiring g4dn.2xlarge and a batch requiring g4dn.8xlarge",
         ),
     ],
 )

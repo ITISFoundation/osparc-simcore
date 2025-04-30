@@ -103,7 +103,7 @@ qx.Class.define("osparc.CookieExpirationTracker", {
       const timeout = osparc.utils.Utils.formatSeconds(timeoutSec);
       const text = qx.locale.Manager.tr(`Your session will expire in ${timeout}.<br>Please log out and log in again.`);
       if (this.__message === null) {
-        this.__message = osparc.FlashMessenger.getInstance().logAs(text, "WARNING", timeoutSec*1000);
+        this.__message = osparc.FlashMessenger.logAs(text, "WARNING", timeoutSec*1000);
         this.__message.getChildControl("closebutton").exclude();
       } else {
         this.__message.setMessage(text);
@@ -112,7 +112,7 @@ qx.Class.define("osparc.CookieExpirationTracker", {
     // /FLASH MESSAGE //
 
     __logoutUser: function() {
-      const reason = qx.locale.Manager.tr("Session expired");
+      const reason = qx.locale.Manager.tr("Your session has expired");
       qx.core.Init.getApplication().logout(reason);
     }
   }

@@ -40,7 +40,7 @@ qx.Class.define("osparc.desktop.wallets.MemberListItem", {
 
       // highlight me
       const email = osparc.auth.Data.getInstance().getEmail();
-      if (email === value) {
+      if (value && value.includes(email)) {
         this.addState("selected");
       }
     },
@@ -50,9 +50,9 @@ qx.Class.define("osparc.desktop.wallets.MemberListItem", {
       const accessRights = this.getAccessRights();
       const role = this.getChildControl("role");
       if ("getWrite" in accessRights && accessRights.getWrite()) {
-        role.setValue(osparc.data.Roles.WALLET[2].label);
+        role.setValue(osparc.data.Roles.WALLET["write"].label);
       } else if ("getRead" in accessRights && accessRights.getRead()) {
-        role.setValue(osparc.data.Roles.WALLET[1].label);
+        role.setValue(osparc.data.Roles.WALLET["read"].label);
       }
     },
 
@@ -68,7 +68,7 @@ qx.Class.define("osparc.desktop.wallets.MemberListItem", {
       }
 
       if (options.includes("promoteToAccountant")) {
-        const promoteButton = new qx.ui.menu.Button(this.tr("Promote to ") + osparc.data.Roles.WALLET[2].label);
+        const promoteButton = new qx.ui.menu.Button(this.tr("Promote to ") + osparc.data.Roles.WALLET["write"].label);
         promoteButton.addListener("execute", () => {
           this.fireDataEvent("promoteToAccountant", {
             gid: this.getGid(),
@@ -78,7 +78,7 @@ qx.Class.define("osparc.desktop.wallets.MemberListItem", {
         menu.add(promoteButton);
       }
       if (options.includes("demoteToMember")) {
-        const demoteButton = new qx.ui.menu.Button(this.tr("Demote to ") + osparc.data.Roles.WALLET[1].label);
+        const demoteButton = new qx.ui.menu.Button(this.tr("Demote to ") + osparc.data.Roles.WALLET["read"].label);
         demoteButton.addListener("execute", () => {
           this.fireDataEvent("demoteToMember", {
             gid: this.getGid(),
@@ -94,9 +94,9 @@ qx.Class.define("osparc.desktop.wallets.MemberListItem", {
 
       if (options.includes("removeMember")) {
         const accessRights = this.getAccessRights();
-        let currentRole = osparc.data.Roles.WALLET[1];
+        let currentRole = osparc.data.Roles.WALLET["read"];
         if (accessRights.getWrite()) {
-          currentRole = osparc.data.Roles.WALLET[2];
+          currentRole = osparc.data.Roles.WALLET["write"];
         }
         const removeButton = new qx.ui.menu.Button(this.tr("Remove ") + currentRole.label).set({
           textColor: "danger-red"

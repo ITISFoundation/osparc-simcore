@@ -3,8 +3,7 @@
 import logging
 
 import pytest
-
-from common_library.error_codes import create_error_code
+from common_library.error_codes import create_error_code, parse_error_code_parts
 from common_library.errors_classes import OsparcErrorMixin
 from servicelib.logging_errors import (
     create_troubleshotting_log_kwargs,
@@ -22,7 +21,11 @@ def test_create_troubleshotting_log_message(caplog: pytest.LogCaptureFixture):
     exc = exc_info.value
     error_code = create_error_code(exc)
 
-    assert exc.error_code() == error_code
+    eoc1_fingerprint, eoc1_snapshot = parse_error_code_parts(error_code)
+    eoc2_fingerprint, eoc2_snapshot = parse_error_code_parts(exc.error_code())
+
+    assert eoc1_fingerprint == eoc2_fingerprint
+    assert eoc1_snapshot <= eoc2_snapshot
 
     msg = f"Nice message to user [{error_code}]"
 
@@ -45,7 +48,7 @@ def test_create_troubleshotting_log_message(caplog: pytest.LogCaptureFixture):
     assert log_kwargs["extra"] is not None
     assert (
         # pylint: disable=unsubscriptable-object
-        log_kwargs["extra"]["log_uid"]
+        log_kwargs["extra"].get("log_uid")
         == "123"
     ), "user_id is injected as extra from context"
 

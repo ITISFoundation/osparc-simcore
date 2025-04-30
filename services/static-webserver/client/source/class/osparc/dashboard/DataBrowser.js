@@ -60,7 +60,7 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
 
       this.addListener("appear", () => {
         const treeFolderView = this.getChildControl("tree-folder-view");
-        treeFolderView.getChildControl("folder-tree").populateTree();
+        treeFolderView.getChildControl("folder-tree").populateLocations();
         treeFolderView.getChildControl("folder-viewer").setFolder(treeFolderView.getChildControl("folder-tree").getModel());
       }, this);
     },
@@ -76,7 +76,7 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
       reloadButton.addListener("execute", () => this.__reloadTree(), this);
 
       const selectedFileLayout = treeFolderView.getChildControl("folder-viewer").getChildControl("selected-file-layout");
-      selectedFileLayout.addListener("fileDeleted", e => this.__fileDeleted(e.getData()), this);
+      selectedFileLayout.addListener("pathsDeleted", e => treeFolderView.pathsDeleted(e.getData()), this);
     },
 
     __reloadTree: function() {
@@ -84,39 +84,10 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
 
       const foldersTree = treeFolderView.getChildControl("folder-tree");
       foldersTree.resetCache();
-      foldersTree.populateTree();
+      foldersTree.populateLocations();
 
       const folderViewer = treeFolderView.getChildControl("folder-viewer");
       folderViewer.resetFolder();
     },
-
-    __fileDeleted: function(fileMetadata) {
-      // After deleting a file, try to keep the user in the same folder.
-      // If the folder doesn't longer exist, open the closest available parent
-
-      const path = fileMetadata["fileUuid"].split("/");
-
-      const treeFolderView = this.getChildControl("tree-folder-view");
-      const foldersTree = treeFolderView.getChildControl("folder-tree");
-      const folderViewer = treeFolderView.getChildControl("folder-viewer");
-
-      const openSameFolder = () => {
-        // drop last, which is the file
-        path.pop();
-        treeFolderView.openPath(path);
-      };
-
-      folderViewer.resetFolder();
-      const locationId = fileMetadata["locationId"];
-      const datasetId = path[0];
-      foldersTree.resetCache();
-      foldersTree.populateTree()
-        .then(datasetPromises => {
-          Promise.all(datasetPromises)
-            .then(() => foldersTree.requestDatasetFiles(locationId, datasetId))
-            .then(() => openSameFolder());
-        })
-        .catch(err => console.error(err));
-    }
   }
 });

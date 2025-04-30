@@ -192,7 +192,7 @@ qx.Class.define("osparc.study.BillingSettings", {
       if (myWallets.find(wllt => wllt === wallet)) {
         // It's my wallet
         this._createChildControlImpl("debt-explanation").set({
-          value: this.tr("Top up the Credit Account:<br>Purchase additional credits to bring the Credit Account balance back to a positive value.")
+          value: this.tr("Top up the Credit Account:<br>Purchase additional credits to restore a positive balance.")
         });
         const buyCreditsButton = this._createChildControlImpl("buy-credits-button");
         buyCreditsButton.addListener("execute", () => this.__openBuyCreditsWindow(), this);
@@ -258,10 +258,7 @@ qx.Class.define("osparc.study.BillingSettings", {
           // also switch the study's wallet to this one
           this.__switchWallet(wallet.getWalletId());
         })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.logAs(err.message, "ERROR");
-        });
+        .catch(err => osparc.FlashMessenger.logError(err));
     },
 
     __debtPayed: function() {
@@ -287,12 +284,9 @@ qx.Class.define("osparc.study.BillingSettings", {
         .then(() => {
           this.__studyWalletId = walletId;
           const msg = this.tr("Credit Account saved");
-          osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+          osparc.FlashMessenger.logAs(msg, "INFO");
         })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.logAs(err.message, "ERROR");
-        })
+        .catch(err => osparc.FlashMessenger.logError(err))
         .finally(() => {
           creditAccountBox.setEnabled(true);
         });

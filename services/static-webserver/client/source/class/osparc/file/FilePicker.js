@@ -111,7 +111,7 @@ qx.Class.define("osparc.file.FilePicker", {
       return osparc.file.FilePicker.isOutputFromStore(outputs) || osparc.file.FilePicker.isOutputDownloadLink(outputs);
     },
 
-    setOutputValue: function(node, outputValue) {
+    __setOutputValue: function(node, outputValue) {
       node.setOutputData({
         "outFile": outputValue
       });
@@ -127,7 +127,7 @@ qx.Class.define("osparc.file.FilePicker", {
 
     setOutputValueFromStore: function(node, store, dataset, path, label) {
       if (store !== undefined && path) {
-        osparc.file.FilePicker.setOutputValue(node, {
+        this.__setOutputValue(node, {
           store,
           dataset,
           path,
@@ -138,7 +138,7 @@ qx.Class.define("osparc.file.FilePicker", {
 
     setOutputValueFromLink: function(node, downloadLink, label) {
       if (downloadLink) {
-        osparc.file.FilePicker.setOutputValue(node, {
+        this.__setOutputValue(node, {
           downloadLink,
           label: label ? label : ""
         });
@@ -146,26 +146,24 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     resetOutputValue: function(node) {
-      osparc.file.FilePicker.setOutputValue(node, null);
+      this.__setOutputValue(node, null);
     },
 
     getOutputFileMetadata: function(node) {
       return new Promise((resolve, reject) => {
         const outValue = osparc.file.FilePicker.getOutput(node.getOutputs());
-        const params = {
-          url: {
-            locationId: outValue.store,
-            datasetId: outValue.dataset
-          }
-        };
-        osparc.data.Resources.fetch("storageFiles", "getByLocationAndDataset", params)
-          .then(files => {
-            const fileMetadata = files.find(file => file.file_id === outValue.path);
-            if (fileMetadata) {
-              resolve(fileMetadata);
-            } else {
-              reject();
+        const locationId = outValue.store;
+        const path = outValue.path;
+        osparc.store.Data.getAllItems(locationId, path)
+          .then(items => {
+            if (items && items.length) {
+              const file = items.find(item => item.path === outValue.path);
+              if (file) {
+                resolve(file["file_meta_data"]);
+                return;
+              }
             }
+            reject();
           })
           .catch(() => reject());
       });
@@ -274,7 +272,7 @@ qx.Class.define("osparc.file.FilePicker", {
       if (this.__filesTree) {
         this.__selectedFileFound = false;
         this.__filesTree.resetCache();
-        this.__filesTree.populateTree();
+        this.__filesTree.populateLocations();
       }
     },
 
@@ -432,7 +430,7 @@ qx.Class.define("osparc.file.FilePicker", {
           fileUploader.retrieveUrlAndUpload(files[0]);
           return true;
         }
-        osparc.FlashMessenger.getInstance().logAs(osparc.file.FileDrop.ONE_FILE_ONLY, "ERROR");
+        osparc.FlashMessenger.logError(osparc.file.FileDrop.ONE_FILE_ONLY);
       }
       return false;
     },
@@ -585,9 +583,9 @@ qx.Class.define("osparc.file.FilePicker", {
           folderViewer.setFolder(parent);
         }
       }, this);
-      folderViewer.addListener("requestDatasetFiles", e => {
+      folderViewer.addListener("requestPathItems", e => {
         const data = e.getData();
-        filesTree.requestDatasetFiles(data.locationId, data.datasetId);
+        filesTree.requestPathItems(data.locationId, data.path);
       }, this);
 
       const selectBtn = this.__selectButton = new qx.ui.form.Button(this.tr("Select")).set({

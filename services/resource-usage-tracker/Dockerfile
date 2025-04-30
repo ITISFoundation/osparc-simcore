@@ -2,10 +2,17 @@
 
 # Define arguments in the global scope
 ARG PYTHON_VERSION="3.11.9"
-ARG UV_VERSION="0.5"
+ARG UV_VERSION="0.6"
 FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv_build
-# we docker image is built based on debian
-FROM python:${PYTHON_VERSION}-slim-bookworm AS base
+
+FROM python:${PYTHON_VERSION}-slim-bookworm AS base-arm64
+# These environment variables are necessary because of https://github.com/astral-sh/uv/issues/6105
+# and until https://gitlab.com/qemu-project/qemu/-/issues/2846 gets fixed
+ENV UV_CONCURRENT_INSTALLS=1
+
+FROM python:${PYTHON_VERSION}-slim-bookworm AS base-amd64
+
+FROM base-${TARGETARCH} AS base
 
 #
 #  USAGE:
@@ -81,6 +88,8 @@ COPY --from=uv_build /uv /uvx /bin/
 # packages may be moved to production image easily by copying the venv
 RUN uv venv "${VIRTUAL_ENV}"
 
+
+
 RUN --mount=type=cache,target=/root/.cache/uv \
   uv pip install --upgrade  \
   wheel \
@@ -100,7 +109,7 @@ WORKDIR /build
 #
 FROM build AS prod-only-deps
 
-ENV SC_BUILD_TARGET prod-only-deps
+ENV SC_BUILD_TARGET=prod-only-deps
 
 WORKDIR /build/services/resource-usage-tracker
 
@@ -140,9 +149,12 @@ COPY --chown=scu:scu --from=prod-only-deps  ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 COPY --chown=scu:scu services/resource-usage-tracker/docker services/resource-usage-tracker/docker
 RUN chmod +x services/resource-usage-tracker/docker/*.sh
 
-HEALTHCHECK --interval=10s \
+# https://docs.docker.com/reference/dockerfile/#healthcheck
+HEALTHCHECK \
+  --interval=10s \
   --timeout=5s \
-  --start-period=5s \
+  --start-period=20s \
+  --start-interval=1s \
   --retries=5 \
   CMD ["python3", "services/resource-usage-tracker/docker/healthcheck.py", "http://localhost:8000/"]
 

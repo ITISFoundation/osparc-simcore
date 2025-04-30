@@ -89,8 +89,9 @@ qx.Class.define("osparc.desktop.credits.CreditsPerService", {
               this._add(uiEntry);
             });
           } else {
-            const nothingFound = new qx.ui.basic.Label(this.tr("No usage found")).set({
-              font: "text-14"
+            const nothingFound = new qx.ui.basic.Label(this.tr("No usage records found")).set({
+              font: "text-14",
+              padding: 20,
             });
             this._add(nothingFound);
           }

@@ -389,9 +389,11 @@ async def test_create_containers_task(
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
     shared_store: SharedStore,
 ) -> None:
-    last_progress_message: tuple[str, float] | None = None
+    last_progress_message: tuple[str, ProgressPercent | None] | None = None
 
-    async def create_progress(message: str, percent: float, _: TaskId) -> None:
+    async def create_progress(
+        message: str, percent: ProgressPercent | None, _: TaskId
+    ) -> None:
         nonlocal last_progress_message
         last_progress_message = (message, percent)
         print(message, percent)
@@ -520,6 +522,7 @@ async def test_same_task_id_is_returned_if_task_exists(
 
 
 async def test_containers_down_after_starting(
+    mock_ensure_read_permissions_on_user_service_data: None,
     httpx_async_client: AsyncClient,
     client: Client,
     compose_spec: str,

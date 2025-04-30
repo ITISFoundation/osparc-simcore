@@ -14,17 +14,21 @@ from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.projects_nodes_io import BaseFileLink
 from models_library.users import UserID
 from models_library.wallets import ZERO_CREDITS
-from pydantic import NonNegativeInt
+from pydantic import HttpUrl, NonNegativeInt
 from pydantic.types import PositiveInt
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from servicelib.logging_utils import log_context
+from simcore_service_api_server.models.api_resources import parse_resources_ids
+from sqlalchemy.ext.asyncio import AsyncEngine
 
+from ..._service_solvers import SolverService
 from ...exceptions.custom_errors import InsufficientCreditsError, MissingWalletError
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.basic_types import LogStreamingResponse, VersionStr
+from ...models.domain.files import File as DomainFile
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
-from ...models.schemas.files import File
+from ...models.schemas.files import File as SchemaFile
 from ...models.schemas.jobs import (
     ArgumentTypes,
     Job,
@@ -38,7 +42,6 @@ from ...models.schemas.model_adapter import (
     WalletGetWithAvailableCreditsLegacy,
 )
 from ...models.schemas.solvers import SolverKeyId
-from ...services_http.catalog import CatalogApi
 from ...services_http.director_v2 import DirectorV2Api
 from ...services_http.jobs import (
     get_custom_metadata,
@@ -50,11 +53,15 @@ from ...services_http.solver_job_outputs import ResultsTypes, get_solver_output_
 from ...services_http.storage import StorageApi, to_file_api_model
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
-from ..dependencies.database import Engine, get_db_engine
+from ..dependencies.database import get_db_asyncpg_engine
 from ..dependencies.rabbitmq import get_log_check_timeout, get_log_distributor
-from ..dependencies.services import get_api_client
+from ..dependencies.services import get_api_client, get_solver_service
 from ..dependencies.webserver_http import AuthSession, get_webserver_session
-from ._constants import FMSG_CHANGELOG_NEW_IN_VERSION
+from ._constants import (
+    FMSG_CHANGELOG_NEW_IN_VERSION,
+    FMSG_CHANGELOG_REMOVED_IN_VERSION_FORMAT,
+    create_route_description,
+)
 from .solvers_jobs import (
     JOBS_STATUS_CODES,
     METADATA_STATUS_CODES,
@@ -110,33 +117,109 @@ _LOGSTREAM_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     **DEFAULT_BACKEND_SERVICE_STATUS_CODES,
 }
 
+
+def _update_job_urls(
+    job: Job,
+    solver_key: SolverKeyId,
+    solver_version: VersionStr,
+    job_id: JobID | str,
+    url_for: Callable[..., HttpUrl],
+) -> Job:
+    job.url = url_for(
+        "get_job",
+        solver_key=solver_key,
+        version=solver_version,
+        job_id=job_id,
+    )
+
+    job.runner_url = url_for(
+        "get_solver_release",
+        solver_key=solver_key,
+        version=solver_version,
+    )
+
+    job.outputs_url = url_for(
+        "get_job_outputs",
+        solver_key=solver_key,
+        version=solver_version,
+        job_id=job_id,
+    )
+
+    return job
+
+
 router = APIRouter()
+
+
+@router.get(
+    "/-/releases/-/jobs",
+    response_model=Page[Job],
+    description=create_route_description(
+        base="List of all jobs created for any released solver (paginated)",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.8"),
+        ],
+    ),
+    include_in_schema=False,  # TO BE RELEASED in 0.8
+)
+async def list_all_solvers_jobs(
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    page_params: Annotated[PaginationParams, Depends()],
+    solver_service: Annotated[SolverService, Depends(get_solver_service)],
+    url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
+    product_name: Annotated[str, Depends(get_product_name)],
+):
+
+    jobs, meta = await solver_service.list_jobs(
+        product_name=product_name,
+        user_id=user_id,
+        offset=page_params.offset,
+        limit=page_params.limit,
+    )
+
+    for job in jobs:
+        solver_key, version, job_id = parse_resources_ids(job.resource_name)
+        _update_job_urls(job, solver_key, version, job_id, url_for)
+
+    return create_page(
+        jobs,
+        total=meta.total,
+        params=page_params,
+    )
 
 
 @router.get(
     "/{solver_key:path}/releases/{version}/jobs",
     response_model=list[Job],
     responses=JOBS_STATUS_CODES,
+    description=create_route_description(
+        base="List of jobs in a specific released solver",
+        deprecated=True,
+        alternative="GET /{solver_key}/releases/{version}/jobs/page",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.5"),
+            FMSG_CHANGELOG_REMOVED_IN_VERSION_FORMAT.format(
+                "0.7",
+                "This endpoint is deprecated and will be removed in a future version",
+            ),
+        ],
+    ),
 )
 async def list_jobs(
     solver_key: SolverKeyId,
     version: VersionStr,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
-    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
+    solver_service: Annotated[SolverService, Depends(get_solver_service)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
 ):
-    """List of jobs in a specific released solver (limited to 20 jobs)
+    """List of jobs in a specific released solver (limited to 20 jobs)"""
 
-    - DEPRECATION: This implementation and returned values are deprecated and the will be replaced by that of get_jobs_page
-    - SEE `get_jobs_page` for paginated version of this function
-    """
-
-    solver = await catalog_client.get_service(
+    solver = await solver_service.get_solver(
         user_id=user_id,
-        name=solver_key,
-        version=version,
+        solver_key=solver_key,
+        solver_version=version,
         product_name=product_name,
     )
     _logger.debug("Listing Jobs in Solver '%s'", solver.name)
@@ -147,7 +230,9 @@ async def list_jobs(
 
     jobs: deque[Job] = deque()
     for prj in projects_page.data:
-        job = create_job_from_project(solver_key, version, prj, url_for)
+        job = create_job_from_project(
+            solver_or_program=solver, project=prj, url_for=url_for
+        )
         assert job.id == prj.uuid  # nosec
         assert job.name == prj.name  # nosec
 
@@ -170,7 +255,7 @@ async def get_jobs_page(
     version: VersionStr,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     page_params: Annotated[PaginationParams, Depends()],
-    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
+    solver_service: Annotated[SolverService, Depends(get_solver_service)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
@@ -178,10 +263,10 @@ async def get_jobs_page(
     # NOTE: Different entry to keep backwards compatibility with list_jobs.
     # Eventually use a header with agent version to switch to new interface
 
-    solver = await catalog_client.get_service(
+    solver = await solver_service.get_solver(
         user_id=user_id,
-        name=solver_key,
-        version=version,
+        solver_key=solver_key,
+        solver_version=version,
         product_name=product_name,
     )
     _logger.debug("Listing Jobs in Solver '%s'", solver.name)
@@ -191,7 +276,7 @@ async def get_jobs_page(
     )
 
     jobs: list[Job] = [
-        create_job_from_project(solver_key, version, prj, url_for)
+        create_job_from_project(solver_or_program=solver, project=prj, url_for=url_for)
         for prj in projects_page.data
     ]
 
@@ -211,7 +296,10 @@ async def get_job(
     solver_key: SolverKeyId,
     version: VersionStr,
     job_id: JobID,
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    product_name: Annotated[str, Depends(get_product_name)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    solver_service: Annotated[SolverService, Depends(get_solver_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
     """Gets job of a given solver"""
@@ -219,9 +307,17 @@ async def get_job(
         "Getting Job '%s'", _compose_job_resource_name(solver_key, version, job_id)
     )
 
+    solver = await solver_service.get_solver(
+        user_id=user_id,
+        solver_key=solver_key,
+        solver_version=version,
+        product_name=product_name,
+    )
     project: ProjectGet = await webserver_api.get_project(project_id=job_id)
 
-    job = create_job_from_project(solver_key, version, project, url_for)
+    job = create_job_from_project(
+        solver_or_program=solver, project=project, url_for=url_for
+    )
     assert job.id == job_id  # nosec
     return job  # nosec
 
@@ -236,7 +332,7 @@ async def get_job_outputs(
     version: VersionStr,
     job_id: JobID,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
-    db_engine: Annotated[Engine, Depends(get_db_engine)],
+    async_pg_engine: Annotated[AsyncEngine, Depends(get_db_asyncpg_engine)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
 ):
@@ -263,25 +359,27 @@ async def get_job_outputs(
         user_id=user_id,
         project_uuid=job_id,
         node_uuid=UUID(node_ids[0]),
-        db_engine=db_engine,
+        db_engine=async_pg_engine,
     )
 
     results: dict[str, ArgumentTypes] = {}
     for name, value in outputs.items():
         if isinstance(value, BaseFileLink):
-            file_id: UUID = File.create_id(*value.path.split("/"))
+            file_id: UUID = DomainFile.create_id(*value.path.split("/"))
 
             found = await storage_client.search_owned_files(
                 user_id=user_id, file_id=file_id, limit=1
             )
             if found:
                 assert len(found) == 1  # nosec
-                results[name] = to_file_api_model(found[0])
+                results[name] = SchemaFile.from_domain_model(
+                    to_file_api_model(found[0])
+                )
             else:
-                api_file: File = await storage_client.create_soft_link(
+                api_file = await storage_client.create_soft_link(
                     user_id=user_id, target_s3_path=value.path, as_file_id=file_id
                 )
-                results[name] = api_file
+                results[name] = SchemaFile.from_domain_model(api_file)
         else:
             results[name] = value
 

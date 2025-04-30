@@ -38,30 +38,6 @@ qx.Class.define("osparc.share.CollaboratorsTag", {
     canIDelete: function(myAccessRights) {
       return myAccessRights["delete"];
     },
-
-    getViewerAccessRight: function() {
-      return {
-        "read": true,
-        "write": false,
-        "delete": false
-      };
-    },
-
-    getCollaboratorAccessRight: function() {
-      return {
-        "read": true,
-        "write": true,
-        "delete": false
-      };
-    },
-
-    getOwnerAccessRight: function() {
-      return {
-        "read": true,
-        "write": true,
-        "delete": true
-      };
-    }
   },
 
   members: {
@@ -72,19 +48,17 @@ qx.Class.define("osparc.share.CollaboratorsTag", {
         return;
       }
 
+      const readAccessRole = osparc.data.Roles.STUDY["read"];
       const newCollaborators = {};
-      gids.forEach(gid => newCollaborators[gid] = this.self().getViewerAccessRight());
+      gids.forEach(gid => newCollaborators[gid] = readAccessRole.accessRights);
       osparc.store.Tags.getInstance().addCollaborators(this.__tag.getTagId(), newCollaborators)
         .then(() => {
           const text = this.tr("Tag successfully shared");
-          osparc.FlashMessenger.getInstance().logAs(text);
+          osparc.FlashMessenger.logAs(text);
           this.fireDataEvent("updateAccessRights", this.__tag.serialize());
           this._reloadCollaboratorsList();
         })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong sharing the Tag"), "ERROR");
-        });
+        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while sharing the tag")));
     },
 
     _deleteMember: function(collaborator, item) {
@@ -95,13 +69,10 @@ qx.Class.define("osparc.share.CollaboratorsTag", {
       osparc.store.Tags.getInstance().removeCollaborator(this.__tag.getTagId(), collaborator["gid"])
         .then(() => {
           this.fireDataEvent("updateAccessRights", this.__tag.serialize());
-          osparc.FlashMessenger.getInstance().logAs(collaborator["name"] + this.tr(" successfully removed"));
+          osparc.FlashMessenger.logAs(collaborator["name"] + this.tr(" successfully removed"));
           this._reloadCollaboratorsList();
         })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing ") + collaborator["name"], "ERROR");
-        })
+        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while removing ") + collaborator["name"]))
         .finally(() => {
           if (item) {
             item.setEnabled(true);
@@ -115,13 +86,10 @@ qx.Class.define("osparc.share.CollaboratorsTag", {
       osparc.store.Tags.getInstance().updateCollaborator(this.__tag.getTagId(), collaboratorGId, newAccessRights)
         .then(() => {
           this.fireDataEvent("updateAccessRights", this.__tag.serialize());
-          osparc.FlashMessenger.getInstance().logAs(successMsg);
+          osparc.FlashMessenger.logAs(successMsg);
           this._reloadCollaboratorsList();
         })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(failureMsg, "ERROR");
-        })
+        .catch(err => osparc.FlashMessenger.logError(err, failureMsg))
         .finally(() => {
           if (item) {
             item.setEnabled(true);
@@ -130,41 +98,45 @@ qx.Class.define("osparc.share.CollaboratorsTag", {
     },
 
     _promoteToEditor: function(collaborator, item) {
+      const writeAccessRole = osparc.data.Roles.STUDY["write"];
       this.__make(
         collaborator["gid"],
-        this.self().getCollaboratorAccessRight(),
-        this.tr(`Successfully promoted to ${osparc.data.Roles.STUDY[2].label}`),
-        this.tr(`Something went wrong promoting to ${osparc.data.Roles.STUDY[2].label}`),
+        writeAccessRole.accessRights,
+        this.tr(`Successfully promoted to ${writeAccessRole.label}`),
+        this.tr(`Something went wrong while promoting to ${writeAccessRole.label}`),
         item
       );
     },
 
     _promoteToOwner: function(collaborator, item) {
+      const deleteAccessRole = osparc.data.Roles.STUDY["delete"];
       this.__make(
         collaborator["gid"],
-        this.self().getOwnerAccessRight(),
-        this.tr(`Successfully promoted to ${osparc.data.Roles.STUDY[3].label}`),
-        this.tr(`Something went wrong promoting to ${osparc.data.Roles.STUDY[3].label}`),
+        deleteAccessRole.accessRights,
+        this.tr(`Successfully promoted to ${deleteAccessRole.label}`),
+        this.tr(`Something went wrong while promoting to ${deleteAccessRole.label}`),
         item
       );
     },
 
     _demoteToUser: async function(collaborator, item) {
+      const readAccessRole = osparc.data.Roles.STUDY["read"];
       this.__make(
         collaborator["gid"],
-        this.self().getViewerAccessRight(),
-        this.tr(`Successfully demoted to ${osparc.data.Roles.STUDY[1].label}`),
-        this.tr(`Something went wrong demoting to ${osparc.data.Roles.STUDY[1].label}`),
+        readAccessRole.accessRights,
+        this.tr(`Successfully demoted to ${readAccessRole.label}`),
+        this.tr(`Something went wrong while demoting to ${readAccessRole.label}`),
         item
       );
     },
 
     _demoteToEditor: function(collaborator, item) {
+      const writeAccessRole = osparc.data.Roles.STUDY["write"];
       this.__make(
         collaborator["gid"],
-        this.self().getCollaboratorAccessRight(),
-        this.tr(`Successfully demoted to ${osparc.data.Roles.STUDY[2].label}`),
-        this.tr(`Something went wrong demoting to ${osparc.data.Roles.STUDY[2].label}`),
+        writeAccessRole.accessRights,
+        this.tr(`Successfully demoted to ${writeAccessRole.label}`),
+        this.tr(`Something went wrong while demoting to ${writeAccessRole.label}`),
         item
       );
     }

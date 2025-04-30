@@ -91,6 +91,35 @@ qx.Class.define("osparc.utils.Utils", {
 
     FLOATING_Z_INDEX: 1000001 + 1,
 
+    disableAutocomplete: function(control) {
+      if (control && control.getContentElement()) {
+        control.getContentElement().setAttribute("autocomplete", "off");
+        control.getContentElement().setAttribute("type", "search");
+        control.getContentElement().setAttribute("name", "osparcdontautomplete");
+        control.getContentElement().setAttribute("id", "osparcdontautomplete");
+      }
+    },
+
+    checkImageExists: function(url) {
+      return new Promise(resolve => {
+        const img = new Image();
+        img.onload = () => resolve(true);
+        img.onerror = () => resolve(false);
+        img.src = url;
+      });
+    },
+
+    setUrlSourceToImage: function(image, imgSrc) {
+      let source = osparc.product.Utils.getThumbnailUrl();
+      this.checkImageExists(imgSrc)
+        .then(exists => {
+          if (exists) {
+            source = imgSrc;
+          }
+        })
+        .finally(() => image.setSource(source));
+    },
+
     addWhiteSpaces: function(integer) {
       return new Intl.NumberFormat("fr-FR").format(integer); // french will add white spaces every 3 digits
     },
@@ -109,6 +138,18 @@ qx.Class.define("osparc.utils.Utils", {
         newName += ` (${platformName})`;
       }
       return newName;
+    },
+
+    getIconFromResource: function(resourceMetadata) {
+      if (resourceMetadata) {
+        if (resourceMetadata["icon"]) {
+          return resourceMetadata["icon"];
+        }
+        if (resourceMetadata["thumbnail"]) {
+          return resourceMetadata["thumbnail"];
+        }
+      }
+      return osparc.dashboard.CardBase.PRODUCT_ICON;
     },
 
     isEmail: function(value) {
@@ -465,7 +506,7 @@ qx.Class.define("osparc.utils.Utils", {
       * @param value {Date Object} Date Object
       */
     formatDate: function(value) {
-      // create a date format like "Oct. 19, 2018 11:31 AM"
+      // create a date format like "Oct. 19, 11:31 AM" if it's this year
       const dateFormat = new qx.util.format.DateFormat(
         qx.locale.Date.getDateFormat("medium")
       );
@@ -476,6 +517,7 @@ qx.Class.define("osparc.utils.Utils", {
       yesterday.setDate(yesterday.getDate() - 1);
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
+
       if (today.toDateString() === value.toDateString()) {
         dateStr = qx.locale.Manager.tr("Today");
       } else if (yesterday.toDateString() === value.toDateString()) {
@@ -483,7 +525,14 @@ qx.Class.define("osparc.utils.Utils", {
       } else if (tomorrow.toDateString() === value.toDateString()) {
         dateStr = qx.locale.Manager.tr("Tomorrow");
       } else {
-        dateStr = dateFormat.format(value);
+        const currentYear = today.getFullYear();
+        if (value.getFullYear() === currentYear) {
+          // Remove the year if it's the current year
+          const shortDateFormat = new qx.util.format.DateFormat("MMM d");
+          dateStr = shortDateFormat.format(value);
+        } else {
+          dateStr = dateFormat.format(value);
+        }
       }
       return dateStr;
     },
@@ -568,14 +617,14 @@ qx.Class.define("osparc.utils.Utils", {
     expirationMessage: function(daysToExpiration) {
       let msg = "";
       if (daysToExpiration === 0) {
-        msg = qx.locale.Manager.tr("This account will expire Today.");
+        msg = qx.locale.Manager.tr("Your account will expire today.");
       } else if (daysToExpiration === 1) {
-        msg = qx.locale.Manager.tr("This account will expire Tomorrow.");
+        msg = qx.locale.Manager.tr("Your account will expire tomorrow.");
       } else {
-        msg = qx.locale.Manager.tr("This account will expire in ") + daysToExpiration + qx.locale.Manager.tr(" days.");
+        msg = qx.locale.Manager.tr("Your account will expire in ") + daysToExpiration + qx.locale.Manager.tr(" days.");
       }
       msg += "</br>";
-      msg += qx.locale.Manager.tr("Please contact us by email:");
+      msg += qx.locale.Manager.tr("Please contact us via email:");
       msg += "</br>";
       const supportEmail = osparc.store.VendorInfo.getInstance().getSupportEmail();
       msg += supportEmail;
@@ -809,24 +858,25 @@ qx.Class.define("osparc.utils.Utils", {
           }
         });
         xhr.addEventListener("progress", e => {
-          if (xhr.readyState === XMLHttpRequest.LOADING) {
-            if (xhr.status === 0 || (xhr.status >= 200 && xhr.status < 400)) {
-              if (e["type"] === "progress" && progressCb) {
-                progressCb(e.loaded / e.total);
-              }
-            }
+          if (
+            progressCb &&
+            xhr.readyState === XMLHttpRequest.LOADING &&
+            (xhr.status === 0 || (xhr.status >= 200 && xhr.status < 400)) &&
+            e["type"] === "progress"
+          ) {
+            progressCb(e.loaded / e.total);
           }
         });
         xhr.addEventListener("load", () => {
           if (xhr.status == 200) {
-            if (loadedCb) {
-              loadedCb();
-            }
             const blob = new Blob([xhr.response]);
             if (!fileName) {
               fileName = this.self().filenameFromContentDisposition(xhr);
             }
             this.self().downloadBlobContent(blob, fileName);
+            if (loadedCb) {
+              loadedCb();
+            }
             resolve();
           } else {
             reject(xhr);
@@ -948,7 +998,7 @@ qx.Class.define("osparc.utils.Utils", {
       document.body.removeChild(textArea);
 
       if (copied) {
-        osparc.FlashMessenger.getInstance().logAs(qx.locale.Manager.tr("Copied to clipboard"));
+        osparc.FlashMessenger.logAs(qx.locale.Manager.tr("Copied to clipboard"));
       }
 
       return copied;
@@ -1130,7 +1180,7 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     isObject: function(v) {
-      return typeof v === "object" && v !== null;
+      return typeof v === "object" && v !== null && !Array.isArray(v);
     },
 
     centerTabIcon: function(tabpage) {

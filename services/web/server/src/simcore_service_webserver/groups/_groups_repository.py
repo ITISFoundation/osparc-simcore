@@ -18,9 +18,9 @@ from models_library.groups import (
     StandardGroupUpdate,
 )
 from models_library.users import UserID
-from simcore_postgres_database.errors import UniqueViolation
+from simcore_postgres_database.aiopg_errors import UniqueViolation
 from simcore_postgres_database.models.users import users
-from simcore_postgres_database.utils_products import execute_get_or_create_product_group
+from simcore_postgres_database.utils_products import get_or_create_product_group
 from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
@@ -118,7 +118,7 @@ async def _get_group_and_access_rights_or_raise(
         .select_from(groups.join(user_to_groups, user_to_groups.c.gid == groups.c.gid))
         .where((user_to_groups.c.uid == caller_id) & (user_to_groups.c.gid == group_id))
     )
-    row = result.first()
+    row = result.one_or_none()
     if not row:
         raise GroupNotFoundError(gid=group_id)
 
@@ -173,7 +173,6 @@ async def get_all_user_groups_with_read_access(
     *,
     user_id: UserID,
 ) -> GroupsByTypeTuple:
-
     """
     Returns the user primary group, standard groups and the all group
     """
@@ -370,15 +369,14 @@ async def update_standard_group(
         # NOTE: update does not include access-rights
         access_rights = AccessRightsDict(**row.access_rights)  # type: ignore[typeddict-item]
 
-        result = await conn.stream(
+        result = await conn.execute(
             # pylint: disable=no-value-for-parameter
             groups.update()
             .values(**values)
             .where((groups.c.gid == group_id) & (groups.c.type == GroupType.STANDARD))
             .returning(*_GROUP_COLUMNS)
         )
-        row = await result.fetchone()
-        assert row  # nosec
+        row = result.one()
 
         group = _row_to_model(row)
         return group, access_rights
@@ -442,8 +440,7 @@ async def get_user_from_email(
 def _group_user_cols(caller_id: UserID):
     return (
         users.c.id,
-        users.c.name,
-        *visible_user_profile_cols(caller_id),
+        *visible_user_profile_cols(caller_id, username_label="name"),
         users.c.primary_gid,
     )
 
@@ -758,7 +755,7 @@ async def auto_add_user_to_product_group(
     product_name: str,
 ) -> GroupID:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        product_group_id: GroupID = await execute_get_or_create_product_group(
+        product_group_id: GroupID = await get_or_create_product_group(
             conn, product_name
         )
 

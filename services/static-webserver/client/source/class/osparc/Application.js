@@ -74,7 +74,7 @@ qx.Class.define("osparc.Application", {
       const webSocket = osparc.wrapper.WebSocket.getInstance();
       webSocket.addListener("connect", () => osparc.WatchDog.getInstance().setOnline(true));
       webSocket.addListener("disconnect", () => osparc.WatchDog.getInstance().setOnline(false));
-      webSocket.addListener("logout", () => this.logout(qx.locale.Manager.tr("You were logged out")));
+      webSocket.addListener("logout", () => this.logout(qx.locale.Manager.tr("You have been logged out")));
       // alert the users that they are about to navigate away
       // from osparc. unfortunately it is not possible
       // to provide our own message here
@@ -371,7 +371,7 @@ qx.Class.define("osparc.Application", {
     __checkNewRelease: function() {
       if (osparc.NewRelease.firstTimeISeeThisFrontend()) {
         const newRelease = new osparc.NewRelease();
-        const title = this.tr("New Release");
+        const title = this.tr("New Version Released");
         const win = osparc.ui.window.Window.popUpInWindow(newRelease, title, 350, 135).set({
           clickAwayClose: false,
           resizable: false,
@@ -460,7 +460,7 @@ qx.Class.define("osparc.Application", {
 
             if (osparc.auth.Data.getInstance().isGuest()) {
               const msg = osparc.utils.Utils.createAccountMessage();
-              osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
+              osparc.FlashMessenger.logAs(msg, "WARNING");
             } else if (profile["expirationDate"]) {
               const now = new Date();
               const today = new Date(now.toISOString().slice(0, 10));
@@ -468,7 +468,7 @@ qx.Class.define("osparc.Application", {
               const daysToExpiration = osparc.utils.Utils.daysBetween(today, expirationDay);
               if (daysToExpiration < 7) {
                 const msg = osparc.utils.Utils.expirationMessage(daysToExpiration);
-                osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
+                osparc.FlashMessenger.logAs(msg, "WARNING");
               }
             }
 
@@ -561,15 +561,15 @@ qx.Class.define("osparc.Application", {
 
     __loggedOut: function(forcedReason) {
       if (forcedReason) {
-        osparc.FlashMessenger.getInstance().logAs(forcedReason, "WARNING", 0);
+        osparc.FlashMessenger.logAs(forcedReason, "WARNING", 0);
       } else {
-        osparc.FlashMessenger.getInstance().logAs(this.tr("You are logged out"), "INFO");
+        osparc.FlashMessenger.logAs(this.tr("You have been logged out"), "INFO");
       }
       this.__closeAllAndToLoginPage();
     },
 
     __closeAllAndToLoginPage: function() {
-      osparc.data.PollTasks.getInstance().removeTasks();
+      osparc.store.PollTasks.getInstance().removeTasks();
       osparc.MaintenanceTracker.getInstance().stopTracker();
       osparc.CookieExpirationTracker.getInstance().stopTracker();
       osparc.NewUITracker.getInstance().stopTracker();

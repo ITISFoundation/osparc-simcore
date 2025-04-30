@@ -1,9 +1,8 @@
 """
-    Helper functions to convert models used in
-    services/api-server/src/simcore_service_api_server/api/routes/solvers_jobs.py
+Helper functions to convert models used in
+services/api-server/src/simcore_service_api_server/api/routes/solvers_jobs.py
 """
 
-import urllib.parse
 import uuid
 from collections.abc import Callable
 from datetime import UTC, datetime
@@ -13,10 +12,10 @@ import arrow
 from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
 from models_library.api_schemas_webserver.projects_ui import StudyUI
 from models_library.basic_types import KeyIDStr
+from models_library.projects import Project
 from models_library.projects_nodes import InputID
-from pydantic import TypeAdapter
+from pydantic import HttpUrl, TypeAdapter
 
-from ..models.basic_types import VersionStr
 from ..models.domain.projects import InputTypes, Node, SimCoreFileLink
 from ..models.schemas.files import File
 from ..models.schemas.jobs import (
@@ -25,8 +24,12 @@ from ..models.schemas.jobs import (
     JobInputs,
     JobStatus,
     PercentageInt,
+    get_outputs_url,
+    get_runner_url,
+    get_url,
 )
-from ..models.schemas.solvers import Solver, SolverKeyId
+from ..models.schemas.programs import Program
+from ..models.schemas.solvers import Solver
 from .director_v2 import ComputationTaskGet
 
 # UTILS ------
@@ -115,7 +118,12 @@ def get_node_id(project_id, solver_id) -> str:
 
 
 def create_new_project_for_job(
-    solver: Solver, job: Job, inputs: JobInputs
+    *,
+    solver_or_program: Solver | Program,
+    job: Job,
+    inputs: JobInputs,
+    description: str | None = None,
+    project_name: str | None = None,
 ) -> ProjectCreateNew:
     """
     Creates a project for a solver's job
@@ -131,7 +139,7 @@ def create_new_project_for_job(
     raises ValidationError
     """
     project_id = job.id
-    solver_id = get_node_id(project_id, solver.id)
+    solver_id = get_node_id(project_id, solver_or_program.id)
 
     # map Job inputs with solveri nputs
     # TODO: ArgumentType -> InputTypes dispatcher and reversed
@@ -140,9 +148,9 @@ def create_new_project_for_job(
     )
 
     solver_service = Node(
-        key=solver.id,
-        version=solver.version,
-        label=solver.title,
+        key=solver_or_program.id,
+        version=solver_or_program.version,
+        label=solver_or_program.title,
         inputs=solver_inputs,
         inputs_units={},
     )
@@ -154,8 +162,9 @@ def create_new_project_for_job(
 
     return ProjectCreateNew(
         uuid=project_id,
-        name=job.name,  # NOTE: this IS an identifier as well. MUST NOT be changed in the case of project APIs!
-        description=f"Study associated to solver job:\n{job_info}",
+        name=project_name or job.name,
+        description=description
+        or f"Study associated to solver/study/program job:\n{job_info}",
         thumbnail="https://via.placeholder.com/170x120.png",  # type: ignore[arg-type]
         workbench={solver_id: solver_service},
         ui=StudyUI(
@@ -176,10 +185,10 @@ def create_new_project_for_job(
 
 
 def create_job_from_project(
-    solver_key: SolverKeyId,
-    solver_version: VersionStr,
-    project: ProjectGet,
-    url_for: Callable,
+    *,
+    solver_or_program: Solver | Program,
+    project: ProjectGet | Project,
+    url_for: Callable[..., HttpUrl],
 ) -> Job:
     """
     Given a project, creates a job
@@ -190,51 +199,33 @@ def create_job_from_project(
     raise ValidationError
     """
     assert len(project.workbench) == 1  # nosec
-    assert solver_version in project.name  # nosec
-    assert urllib.parse.quote_plus(solver_key) in project.name  # nosec
 
-    # get solver node
-    node_id = next(iter(project.workbench.keys()))
-    solver_node: Node = project.workbench[node_id]
+    solver_node: Node = next(iter(project.workbench.values()))
     job_inputs: JobInputs = create_job_inputs_from_node_inputs(
         inputs=solver_node.inputs or {}
     )
 
     # create solver's job
-    solver_name = Solver.compose_resource_name(solver_key, solver_version)
+    solver_or_program_name = solver_or_program.resource_name
 
     job_id = project.uuid
 
-    job = Job(
+    return Job(
         id=job_id,
-        name=project.name,
+        name=Job.compose_resource_name(
+            parent_name=solver_or_program_name, job_id=job_id
+        ),
         inputs_checksum=job_inputs.compute_checksum(),
         created_at=project.creation_date,  # type: ignore[arg-type]
-        runner_name=solver_name,
-        url=url_for(
-            "get_job",
-            solver_key=solver_key,
-            version=solver_version,
-            job_id=job_id,
+        runner_name=solver_or_program_name,
+        url=get_url(
+            solver_or_program=solver_or_program, url_for=url_for, job_id=job_id
         ),
-        runner_url=url_for(
-            "get_solver_release",
-            solver_key=solver_key,
-            version=solver_version,
-        ),
-        outputs_url=url_for(
-            "get_job_outputs",
-            solver_key=solver_key,
-            version=solver_version,
-            job_id=job_id,
+        runner_url=get_runner_url(solver_or_program=solver_or_program, url_for=url_for),
+        outputs_url=get_outputs_url(
+            solver_or_program=solver_or_program, url_for=url_for, job_id=job_id
         ),
     )
-
-    assert all(
-        getattr(job, f) for f in job.model_fields.keys() if f.endswith("url")
-    )  # nosec
-
-    return job
 
 
 def create_jobstatus_from_task(task: ComputationTaskGet) -> JobStatus:

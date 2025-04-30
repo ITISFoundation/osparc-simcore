@@ -150,7 +150,7 @@ qx.Class.define("osparc.notification.NotificationUI", {
                 "studyId": resourceId
               }
             };
-            osparc.data.Resources.getOne("studies", params)
+            osparc.data.Resources.fetch("studies", "getOne", params)
               .then(study => {
                 const studyAlias = osparc.product.Utils.getStudyAlias({
                   firstUpperCase: true
@@ -194,7 +194,7 @@ qx.Class.define("osparc.notification.NotificationUI", {
                 "studyId": resourceId
               }
             };
-            osparc.data.Resources.getOne("studies", params)
+            osparc.data.Resources.fetch("studies", "getOne", params)
               .then(study => titleLabel.setValue(`Note added in '${study["name"]}'`))
               .catch(() => this.setEnabled(false));
           }
@@ -273,7 +273,7 @@ qx.Class.define("osparc.notification.NotificationUI", {
         orgsWindow.openOrganizationDetails(orgId);
       } else {
         const msg = this.tr("You don't have access anymore");
-        osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
+        osparc.FlashMessenger.logAs(msg, "WARNING");
       }
     },
 
@@ -283,7 +283,7 @@ qx.Class.define("osparc.notification.NotificationUI", {
           "studyId": studyId
         }
       };
-      osparc.data.Resources.getOne("studies", params)
+      osparc.data.Resources.fetch("studies", "getOne", params)
         .then(studyData => {
           if (studyData) {
             const studyDataCopy = osparc.data.model.Study.deepCloneStudyObject(studyData);
@@ -299,9 +299,9 @@ qx.Class.define("osparc.notification.NotificationUI", {
           }
         })
         .catch(err => {
-          console.error(err);
+          console.warn(err);
           const msg = this.tr("You don't have access anymore");
-          osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
+          osparc.FlashMessenger.logAs(msg, "WARNING");
         });
     },
 
@@ -326,7 +326,7 @@ qx.Class.define("osparc.notification.NotificationUI", {
         }
       } else {
         const msg = this.tr("You don't have access anymore");
-        osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
+        osparc.FlashMessenger.logAs(msg, "WARNING");
       }
     }
   }

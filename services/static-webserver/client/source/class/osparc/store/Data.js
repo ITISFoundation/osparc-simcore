@@ -35,17 +35,52 @@ qx.Class.define("osparc.store.Data", {
     "fileCopied": "qx.event.type.Data",
   },
 
+  statics: {
+    getAllItems: async function(locationId, path, cursor, allItems = []) {
+      if (allItems.length >= 10000) {
+        const msg = qx.locale.Manager.tr("Oops... more than 10.000 items to be listed here. Maybe it's time to make a folder :).");
+        osparc.FlashMessenger.logAs(msg, "WARNING");
+        return allItems;
+      }
+
+      const params = {
+        url: {
+          locationId,
+          path: path || null,
+          cursor: cursor || null,
+        }
+      };
+      let pagResp = null;
+      if (path) {
+        pagResp = await osparc.data.Resources.fetch("storagePaths", cursor ? "getPathsPage" : "getPaths", params);
+      } else {
+        pagResp = await osparc.data.Resources.fetch("storagePaths", cursor ? "getDatasetsPage" : "getDatasets", params);
+      }
+
+      let nextCursor = null;
+      if (pagResp) {
+        if (pagResp["items"]) {
+          allItems.push(...pagResp["items"]);
+        }
+        if (pagResp["next_page"]) {
+          nextCursor = pagResp["next_page"];
+        }
+      }
+
+      if (nextCursor) {
+        return this.getAllItems(locationId, path, nextCursor, allItems);
+      }
+      return allItems;
+    },
+  },
+
   members: {
     __locationsCached: null,
     __datasetsByLocationCached: null,
-    __filesByLocationAndDatasetCached: null,
 
     resetCache: function() {
       this.__locationsCached = [];
       this.__datasetsByLocationCached = {};
-      this.__filesByLocationAndDatasetCached = {};
-
-      osparc.store.Store.getInstance().reset("storageLocations");
     },
 
     getLocationsCached: function() {
@@ -62,8 +97,7 @@ qx.Class.define("osparc.store.Data", {
         if (cachedData) {
           resolve(cachedData);
         } else {
-          // Get available storage locations
-          osparc.data.Resources.get("storageLocations")
+          osparc.data.Resources.fetch("storageLocations", "getLocations")
             .then(locations => {
               // Add them to cache
               this.__locationsCached = locations;
@@ -82,132 +116,51 @@ qx.Class.define("osparc.store.Data", {
       if (locationId in cache && cache[locationId] && cache[locationId].length) {
         const data = {
           location: locationId,
-          datasets: cache[locationId]
+          items: cache[locationId]
         };
         return data;
       }
       return null;
     },
 
-    getDatasetsByLocation: function(locationId) {
-      const emptyData = {
+    getDatasetsByLocation: async function(locationId) {
+      const data = {
         location: locationId,
-        datasets: []
+        items: []
       };
-      return new Promise((resolve, reject) => {
-        // Get list of datasets
-        if (locationId === 1 && !osparc.data.Permissions.getInstance().canDo("storage.datcore.read")) {
-          reject(emptyData);
-        }
-
-        const cachedData = this.getDatasetsByLocationCached(locationId);
-        if (cachedData) {
-          resolve(cachedData);
-        } else {
-          const params = {
-            url: {
-              locationId
-            }
-          };
-          osparc.data.Resources.fetch("storageDatasets", "getByLocation", params)
-            .then(datasets => {
-              const data = {
-                location: locationId,
-                datasets: []
-              };
-              if (datasets && datasets.length>0) {
-                data.datasets = datasets;
-              }
-              // Add it to cache
-              this.__datasetsByLocationCached[locationId] = data.datasets;
-              resolve(data);
-            })
-            .catch(err => {
-              console.error(err);
-              reject(emptyData);
-            });
-        }
-      });
-    },
-
-    getFilesByLocationAndDatasetCached: function(locationId, datasetId) {
-      const cache = this.__filesByLocationAndDatasetCached;
-      if (locationId in cache && datasetId in cache[locationId]) {
-        const data = {
-          location: locationId,
-          dataset: datasetId,
-          files: cache[locationId][datasetId]
-        };
+      if (locationId === 1 && !osparc.data.Permissions.getInstance().canDo("storage.datcore.read")) {
         return data;
       }
-      return null;
+
+      const cachedData = this.getDatasetsByLocationCached(locationId);
+      if (cachedData) {
+        return cachedData;
+      }
+
+      try {
+        const allItems = await this.self().getAllItems(locationId);
+        this.__datasetsByLocationCached[locationId] = allItems;
+        data["items"] = allItems;
+        return data;
+      } catch (err) {
+        console.error(err);
+        return data;
+      }
     },
 
-    getFilesByLocationAndDataset: function(locationId, datasetId) {
-      const emptyData = {
-        location: locationId,
-        dataset: datasetId,
-        files: []
-      };
-      return new Promise((resolve, reject) => {
-        // Get list of file meta data
-        if (locationId === 1 && !osparc.data.Permissions.getInstance().canDo("storage.datcore.read")) {
-          reject(emptyData);
-        }
+    getItemsByLocationAndPath: async function(locationId, path) {
+      // Get list of file meta data
+      if (locationId === 1 && !osparc.data.Permissions.getInstance().canDo("storage.datcore.read")) {
+        return [];
+      }
 
-        const cachedData = this.getFilesByLocationAndDatasetCached(locationId, datasetId);
-        if (cachedData) {
-          resolve(cachedData);
-        } else {
-          const params = {
-            url: {
-              locationId,
-              datasetId
-            }
-          };
-          osparc.data.Resources.fetch("storageFiles", "getByLocationAndDataset", params)
-            .then(files => {
-              const data = {
-                location: locationId,
-                dataset: datasetId,
-                files: files && files.length>0 ? files : []
-              };
-              // Add it to cache
-              if (!(locationId in this.__filesByLocationAndDatasetCached)) {
-                this.__filesByLocationAndDatasetCached[locationId] = {};
-              }
-              this.__filesByLocationAndDatasetCached[locationId][datasetId] = data.files;
-              resolve(data);
-            })
-            .catch(err => {
-              console.error(err);
-              reject(emptyData);
-            });
-        }
-      });
-    },
-
-    getNodeFiles: function(nodeId) {
-      return new Promise((resolve, reject) => {
-        const params = {
-          url: {
-            nodeId: encodeURIComponent(nodeId)
-          }
-        };
-        osparc.data.Resources.fetch("storageFiles", "getByNode", params)
-          .then(files => {
-            console.log("Node Files", files);
-            if (files && files.length>0) {
-              resolve(files);
-            } else {
-              resolve([]);
-            }
-          })
-          .catch(err => {
-            console.error(err);
-            reject([]);
-          });
-      });
+      try {
+        const allItems = await this.self().getAllItems(locationId, path);
+        return allItems;
+      } catch (err) {
+        console.error(err);
+        return [];
+      }
     },
 
     getPresignedLink: function(download = true, locationId, fileUuid, fileSize) {
@@ -264,7 +217,7 @@ qx.Class.define("osparc.store.Data", {
           fileUuid: encodeURIComponent(fileUuid)
         }
       };
-      osparc.data.Resources.fetch("storageFiles", "put", params)
+      osparc.data.Resources.fetch("storageFiles", "copy", params)
         .then(files => {
           const data = {
             data: files,
@@ -274,41 +227,43 @@ qx.Class.define("osparc.store.Data", {
           this.fireDataEvent("fileCopied", data);
         })
         .catch(err => {
-          console.error(err);
-          console.error("Failed copying file", fileUuid, "to", pathId);
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Failed copying file"), "ERROR");
+          osparc.FlashMessenger.logError(err, this.tr("Unsuccessful file copy"));
           this.fireDataEvent("fileCopied", null);
         });
 
       return true;
     },
 
-    // if folder path is provided as fileUuid, it can also be deleted
-    deleteFile: function(locationId, fileUuid) {
+    exportData: function(paths) {
       if (!osparc.data.Permissions.getInstance().canDo("study.node.data.delete", true)) {
         return null;
       }
 
-      // Deletes File
       const params = {
         url: {
-          locationId,
-          fileUuid: encodeURIComponent(fileUuid)
+          locationId: 0,
+        },
+        data: {
+          paths,
         }
       };
-      return osparc.data.Resources.fetch("storageFiles", "delete", params)
-        .then(files => {
-          const data = {
-            data: files,
-            locationId: locationId,
-            fileUuid: fileUuid
-          };
-          return data;
-        })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Failed deleting file"), "ERROR");
-        });
-    }
+      return osparc.data.Resources.fetch("storagePaths", "multiDownload", params);
+    },
+
+    deleteFiles: function(paths) {
+      if (!osparc.data.Permissions.getInstance().canDo("study.node.data.delete", true)) {
+        return null;
+      }
+
+      const params = {
+        url: {
+          locationId: 0,
+        },
+        data: {
+          paths,
+        }
+      };
+      return osparc.data.Resources.fetch("storagePaths", "batchDelete", params);
+    },
   }
 });

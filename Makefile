@@ -44,6 +44,7 @@ SERVICES_NAMES_TO_BUILD := \
 	efs-guardian \
 	invitations \
   migration \
+	notifications \
 	payments \
 	resource-usage-tracker \
 	dynamic-scheduler \
@@ -73,6 +74,7 @@ export STORAGE_API_VERSION    := $(shell cat $(CURDIR)/services/storage/VERSION)
 export INVITATIONS_API_VERSION  := $(shell cat $(CURDIR)/services/invitations/VERSION)
 export PAYMENTS_API_VERSION  := $(shell cat $(CURDIR)/services/payments/VERSION)
 export DYNAMIC_SCHEDULER_API_VERSION  := $(shell cat $(CURDIR)/services/dynamic-scheduler/VERSION)
+export NOTIFICATIONS_API_VERSION  := $(shell cat $(CURDIR)/services/notifications/VERSION)
 export DATCORE_ADAPTER_API_VERSION    := $(shell cat $(CURDIR)/services/datcore-adapter/VERSION)
 export WEBSERVER_API_VERSION  := $(shell cat $(CURDIR)/services/web/server/VERSION)
 
@@ -357,6 +359,8 @@ endef
 show-endpoints:
 	@$(_show_endpoints)
 
+export HOST_UV_CACHE_DIR := $(shell uv cache dir)
+
 up-devel: .stack-simcore-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Deploys local development stack, qx-compile+watch and ops stack (pass 'make ops_disabled=1 up-...' to disable)
 	# Start compile+watch front-end container [front-end]
 	@$(MAKE_C) services/static-webserver/client down compile-dev flags=--watch
@@ -608,6 +612,7 @@ settings-schema.json: ## [container] dumps json-schema settings of all services
 	@$(MAKE_C) services/invitations $@
 	@$(MAKE_C) services/payments $@
 	@$(MAKE_C) services/dynamic-scheduler $@
+	@$(MAKE_C) services/notifications $@
 	@$(MAKE_C) services/storage $@
 	@$(MAKE_C) services/web/server $@
 
@@ -663,6 +668,8 @@ local-registry: .env ## creates a local docker registry and configure simcore to
 					echo configuring host file to redirect $(LOCAL_REGISTRY_HOSTNAME) to 127.0.0.1; \
 					sudo echo 127.0.0.1 $(LOCAL_REGISTRY_HOSTNAME) | sudo tee -a /etc/hosts;\
 					echo done)
+	@$(if $(shell test -f /etc/docker/daemon.json),, \
+			sudo touch /etc/docker/daemon.json)
 	@$(if $(shell jq -e '.["insecure-registries"]? | index("http://$(LOCAL_REGISTRY_HOSTNAME):5000")? // empty' /etc/docker/daemon.json),,\
 					echo configuring docker engine to use insecure local registry...; \
 					jq 'if .["insecure-registries"] | index("http://$(LOCAL_REGISTRY_HOSTNAME):5000") then . else .["insecure-registries"] += ["http://$(LOCAL_REGISTRY_HOSTNAME):5000"] end' /etc/docker/daemon.json > /tmp/daemon.json &&\

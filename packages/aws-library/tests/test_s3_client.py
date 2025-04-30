@@ -27,8 +27,8 @@ import pytest
 from aiohttp import ClientSession
 from aws_library.s3._client import _AWS_MAX_ITEMS_PER_PAGE, S3ObjectKey, SimcoreS3API
 from aws_library.s3._constants import (
-    MULTIPART_COPY_THRESHOLD,
     MULTIPART_UPLOADS_MIN_TOTAL_SIZE,
+    STREAM_READER_CHUNK_SIZE,
 )
 from aws_library.s3._errors import (
     S3BucketInvalidError,
@@ -1133,14 +1133,13 @@ async def test_create_multipart_presigned_upload_link(
     assert s3_metadata.last_modified
     assert s3_metadata.e_tag == f"{json.loads(received_e_tag)}"
 
-    # completing again raises
-    with pytest.raises(S3UploadNotFoundError):
-        await simcore_s3_api.complete_multipart_upload(
-            bucket=with_s3_bucket,
-            object_key=file_id,
-            upload_id=upload_links.upload_id,
-            uploaded_parts=uploaded_parts,
-        )
+    # completing again does not raise anymore (was raising until moto==5.0.21)
+    await simcore_s3_api.complete_multipart_upload(
+        bucket=with_s3_bucket,
+        object_key=file_id,
+        upload_id=upload_links.upload_id,
+        uploaded_parts=uploaded_parts,
+    )
 
 
 @pytest.mark.parametrize(
@@ -1903,7 +1902,7 @@ async def test_workflow_compress_s3_objects_and_local_files_in_a_single_archive_
                 get_zip_bytes_iter(
                     archive_entries,
                     progress_bar=progress_bar,
-                    chunk_size=MULTIPART_COPY_THRESHOLD,
+                    chunk_size=STREAM_READER_CHUNK_SIZE,
                 )
             ),
         )

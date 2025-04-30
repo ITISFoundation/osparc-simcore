@@ -1,4 +1,4 @@
-""" Utils to implement READ operations (from cRud) on the project resource
+"""Utils to implement READ operations (from cRud) on the project resource
 
 
 Read operations are list, get
@@ -19,12 +19,12 @@ from servicelib.utils import logged_gather
 from simcore_postgres_database.models.projects import ProjectType
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
-from ..catalog.client import get_services_for_user_in_product
+from ..catalog import catalog_service
 from ..folders import _folders_repository
-from ..workspaces._workspaces_service import check_user_workspace_access
-from . import projects_service
-from ._projects_db import batch_get_trashed_by_primary_gid
-from .db import ProjectDBAPI
+from ..workspaces.api import check_user_workspace_access
+from . import _projects_service
+from ._projects_repository import batch_get_trashed_by_primary_gid
+from ._projects_repository_legacy import ProjectDBAPI
 from .models import ProjectDict, ProjectTypeAPI
 
 
@@ -65,7 +65,7 @@ async def _aggregate_data_to_projects_from_other_sources(
 
     # udpating `project.state`
     update_state_per_project = [
-        projects_service.add_project_states_for_user(
+        _projects_service.add_project_states_for_user(
             user_id=user_id,
             project=prj,
             is_template=prj_type == ProjectTypeDB.TEMPLATE,
@@ -91,7 +91,7 @@ async def list_projects(  # pylint: disable=too-many-arguments
     folder_id: FolderID | None,
     # attrs filter
     project_type: ProjectTypeAPI,
-    show_hidden: bool,
+    show_hidden: bool,  # NOTE: Be careful, this filters only hidden projects
     trashed: bool | None,
     # search
     search_by_multi_columns: str | None = None,
@@ -104,8 +104,10 @@ async def list_projects(  # pylint: disable=too-many-arguments
 ) -> tuple[list[ProjectDict], int]:
     db = ProjectDBAPI.get_from_app_context(app)
 
-    user_available_services: list[dict] = await get_services_for_user_in_product(
-        app, user_id, product_name, only_key_versions=True
+    user_available_services: list[dict] = (
+        await catalog_service.get_services_for_user_in_product(
+            app, user_id, product_name, only_key_versions=True
+        )
     )
 
     workspace_is_private = True
@@ -173,7 +175,6 @@ async def list_projects_full_depth(
     product_name: str,
     # attrs filter
     trashed: bool | None,
-    tag_ids_list: list[int],
     # pagination
     offset: NonNegativeInt,
     limit: int,
@@ -184,8 +185,10 @@ async def list_projects_full_depth(
 ) -> tuple[list[ProjectDict], int]:
     db = ProjectDBAPI.get_from_app_context(app)
 
-    user_available_services: list[dict] = await get_services_for_user_in_product(
-        app, user_id, product_name, only_key_versions=True
+    user_available_services: list[dict] = (
+        await catalog_service.get_services_for_user_in_product(
+            app, user_id, product_name, only_key_versions=True
+        )
     )
 
     db_projects, db_project_types, total_number_projects = await db.list_projects_dicts(
@@ -195,7 +198,6 @@ async def list_projects_full_depth(
         folder_query=FolderQuery(folder_scope=FolderScope.ALL),
         filter_trashed=trashed,
         filter_by_services=user_available_services,
-        filter_tag_ids_list=tag_ids_list,
         filter_by_project_type=ProjectType.STANDARD,
         search_by_multi_columns=search_by_multi_columns,
         search_by_project_name=search_by_project_name,

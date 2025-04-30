@@ -16,7 +16,9 @@
 
 aioboto3 # s3 storage
 aiofiles # i/o
+asgi_lifespan
 asyncpg # database
+celery[redis]
 httpx
 opentelemetry-instrumentation-botocore
 packaging
@@ -27,3 +29,4 @@ pydantic[dotenv]
 tenacity
 typer
 types-aiobotocore[s3] # s3 storage
+watchdog

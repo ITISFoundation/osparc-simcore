@@ -144,7 +144,6 @@ async def test_schedule_all_pipelines(
     initialized_app: FastAPI,
     published_project: PublishedProject,
     sqlalchemy_async_engine: AsyncEngine,
-    aiopg_engine,
     run_metadata: RunMetadataDict,
     scheduler_rabbit_client_parser: mock.AsyncMock,
 ):
@@ -172,7 +171,6 @@ async def test_schedule_all_pipelines(
     assert comp_run.user_id == published_project.project.prj_owner
     assert comp_run.iteration == 1
     assert comp_run.cancelled is None
-    assert comp_run.cluster_id is None
     assert comp_run.metadata == run_metadata
     assert comp_run.result is RunningState.PUBLISHED
     assert comp_run.scheduled is not None
@@ -191,7 +189,7 @@ async def test_schedule_all_pipelines(
     assert comp_run.modified == start_modified_time
 
     # to simulate that the worker did its job we will set times in the past
-    await CompRunsRepository(aiopg_engine).update(
+    await CompRunsRepository(sqlalchemy_async_engine).update(
         user_id=comp_run.user_id,
         project_id=comp_run.project_uuid,
         iteration=comp_run.iteration,
@@ -246,7 +244,6 @@ async def test_schedule_all_pipelines_logs_error_if_it_find_old_pipelines(
     initialized_app: FastAPI,
     published_project: PublishedProject,
     sqlalchemy_async_engine: AsyncEngine,
-    aiopg_engine,
     run_metadata: RunMetadataDict,
     scheduler_rabbit_client_parser: mock.AsyncMock,
     caplog: pytest.LogCaptureFixture,
@@ -275,7 +272,6 @@ async def test_schedule_all_pipelines_logs_error_if_it_find_old_pipelines(
     assert comp_run.user_id == published_project.project.prj_owner
     assert comp_run.iteration == 1
     assert comp_run.cancelled is None
-    assert comp_run.cluster_id is None
     assert comp_run.metadata == run_metadata
     assert comp_run.result is RunningState.PUBLISHED
     assert comp_run.scheduled is not None
@@ -292,7 +288,7 @@ async def test_schedule_all_pipelines_logs_error_if_it_find_old_pipelines(
     assert comp_run.modified == start_modified_time
 
     # now we artificially set the last_schedule time well in the past
-    await CompRunsRepository(aiopg_engine).update(
+    await CompRunsRepository(sqlalchemy_async_engine).update(
         comp_run.user_id,
         comp_run.project_uuid,
         comp_run.iteration,

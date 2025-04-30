@@ -7,7 +7,6 @@
 import asyncio
 import re
 import urllib.parse
-from collections.abc import AsyncIterator
 from typing import Any
 
 import pytest
@@ -89,7 +88,7 @@ def web_server(redis_service: RedisSettings, web_server: TestServer) -> TestServ
 @pytest.fixture(autouse=True)
 async def director_v2_automock(
     director_v2_service_mock: aioresponses,
-) -> AsyncIterator[aioresponses]:
+) -> aioresponses:
     return director_v2_service_mock
 
 
@@ -283,7 +282,7 @@ def catalog_subsystem_mock(mocker: MockerFixture) -> None:
     ]
 
     mock = mocker.patch(
-        "simcore_service_webserver.projects._crud_api_read.get_services_for_user_in_product",
+        "simcore_service_webserver.projects._crud_api_read.catalog_service.get_services_for_user_in_product",
         autospec=True,
     )
 
@@ -299,7 +298,7 @@ def mocks_on_projects_api(mocker) -> None:
     All projects in this module are UNLOCKED
     """
     mocker.patch(
-        "simcore_service_webserver.projects.projects_service._get_project_lock_state",
+        "simcore_service_webserver.projects._projects_service._get_project_lock_state",
         return_value=ProjectLocked(value=False, status=ProjectStatus.CLOSED),
     )
 
@@ -396,11 +395,11 @@ async def test_dispatch_study_anonymously(
 ):
     assert client.app
     mock_client_director_v2_func = mocker.patch(
-        "simcore_service_webserver.director_v2.api.create_or_update_pipeline",
+        "simcore_service_webserver.director_v2.director_v2_service.create_or_update_pipeline",
         return_value=None,
     )
     mock_dynamic_scheduler_update_project_networks = mocker.patch(
-        "simcore_service_webserver.studies_dispatcher._redirects_handlers.dynamic_scheduler_api.update_projects_networks",
+        "simcore_service_webserver.studies_dispatcher._redirects_handlers.dynamic_scheduler_service.update_projects_networks",
         return_value=None,
     )
 
@@ -462,11 +461,11 @@ async def test_dispatch_logged_in_user(
 ):
     assert client.app
     mock_client_director_v2_pipline_update = mocker.patch(
-        "simcore_service_webserver.director_v2.api.create_or_update_pipeline",
+        "simcore_service_webserver.director_v2.director_v2_service.create_or_update_pipeline",
         return_value=None,
     )
     mock_dynamic_scheduler_update_project_networks = mocker.patch(
-        "simcore_service_webserver.studies_dispatcher._redirects_handlers.dynamic_scheduler_api.update_projects_networks",
+        "simcore_service_webserver.studies_dispatcher._redirects_handlers.dynamic_scheduler_service.update_projects_networks",
         return_value=None,
     )
 

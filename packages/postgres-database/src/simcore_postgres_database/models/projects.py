@@ -1,6 +1,5 @@
-""" Projects table
+"""Projects table"""
 
-"""
 import enum
 
 import sqlalchemy as sa
@@ -171,6 +170,18 @@ projects = sa.Table(
         server_default=sa.text("'{}'::jsonb"),
         doc="DEPRECATED: Read/write/delete access rights of each group (gid) on this project",
     ),
+    ### INDEXES ----------------------------
+    sa.Index(
+        "idx_projects_last_change_date_desc",
+        sa.desc("last_change_date"),
+    ),
+)
+
+# We define the partial index
+sa.Index(
+    "ix_projects_partial_type",
+    projects.c.type,
+    postgresql_where=(projects.c.type == ProjectType.TEMPLATE),
 )
 
 

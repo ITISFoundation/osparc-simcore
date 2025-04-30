@@ -13,6 +13,7 @@ import pytest
 from faker import Faker
 from fastapi import status
 from pydantic import TypeAdapter
+from pytest_mock import MockType
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
 from respx import MockRouter
 from servicelib.common_headers import (
@@ -33,7 +34,8 @@ class MockedBackendApiDict(TypedDict):
 
 @pytest.fixture
 def mocked_backend(
-    mocked_webserver_service_api_base: MockRouter,
+    mocked_webserver_rest_api_base: MockRouter,
+    mocked_webserver_rpc_api: dict[str, MockType],
     project_tests_dir: Path,
 ) -> MockedBackendApiDict:
     mock_name = "for_test_api_routes_studies.json"
@@ -56,7 +58,7 @@ def mocked_backend(
         capture = captures[name]
         assert capture.host == "webserver"
 
-        route = mocked_webserver_service_api_base.request(
+        route = mocked_webserver_rest_api_base.request(
             method=capture.method,
             path__regex=capture.path.removeprefix("/v0") + "$",
             name=capture.name,
@@ -65,9 +67,7 @@ def mocked_backend(
             json=capture.response_body,
         )
         print(route)
-    return MockedBackendApiDict(
-        webserver=mocked_webserver_service_api_base, catalog=None
-    )
+    return MockedBackendApiDict(webserver=mocked_webserver_rest_api_base, catalog=None)
 
 
 @pytest.mark.acceptance_test(
@@ -124,13 +124,13 @@ async def test_studies_read_workflow(
 async def test_list_study_ports(
     client: httpx.AsyncClient,
     auth: httpx.BasicAuth,
-    mocked_webserver_service_api_base: MockRouter,
+    mocked_webserver_rest_api_base: MockRouter,
     fake_study_ports: list[dict[str, Any]],
     study_id: StudyID,
 ):
     # Mocks /projects/{*}/metadata/ports
 
-    mocked_webserver_service_api_base.get(
+    mocked_webserver_rest_api_base.get(
         path__regex=r"/projects/(?P<project_id>[\w-]+)/metadata/ports$",
         name="list_project_metadata_ports",
     ).respond(
@@ -155,15 +155,15 @@ async def test_clone_study(
     client: httpx.AsyncClient,
     auth: httpx.BasicAuth,
     study_id: StudyID,
-    mocked_webserver_service_api_base: MockRouter,
+    mocked_webserver_rest_api_base: MockRouter,
     patch_webserver_long_running_project_tasks: Callable[[MockRouter], MockRouter],
     parent_project_id: UUID | None,
     parent_node_id: UUID | None,
 ):
     # Mocks /projects
-    patch_webserver_long_running_project_tasks(mocked_webserver_service_api_base)
+    patch_webserver_long_running_project_tasks(mocked_webserver_rest_api_base)
 
-    callback = mocked_webserver_service_api_base["create_projects"].side_effect
+    callback = mocked_webserver_rest_api_base["create_projects"].side_effect
     assert callback is not None
 
     def clone_project_side_effect(request: httpx.Request):
@@ -179,9 +179,9 @@ async def test_clone_study(
             assert _parent_node_id == f"{parent_node_id}"
         return callback(request)
 
-    mocked_webserver_service_api_base[
-        "create_projects"
-    ].side_effect = clone_project_side_effect
+    mocked_webserver_rest_api_base["create_projects"].side_effect = (
+        clone_project_side_effect
+    )
 
     _headers = {}
     if parent_project_id is not None:
@@ -192,7 +192,7 @@ async def test_clone_study(
         f"/{API_VTAG}/studies/{study_id}:clone", headers=_headers, auth=auth
     )
 
-    assert mocked_webserver_service_api_base["create_projects"].called
+    assert mocked_webserver_rest_api_base["create_projects"].called
 
     assert resp.status_code == status.HTTP_201_CREATED
 
@@ -201,11 +201,11 @@ async def test_clone_study_not_found(
     client: httpx.AsyncClient,
     auth: httpx.BasicAuth,
     faker: Faker,
-    mocked_webserver_service_api_base: MockRouter,
+    mocked_webserver_rest_api_base: MockRouter,
     patch_webserver_long_running_project_tasks: Callable[[MockRouter], MockRouter],
 ):
     # Mocks /projects
-    mocked_webserver_service_api_base.post(
+    mocked_webserver_rest_api_base.post(
         path__regex=r"/projects",
         name="project_clone",
     ).respond(

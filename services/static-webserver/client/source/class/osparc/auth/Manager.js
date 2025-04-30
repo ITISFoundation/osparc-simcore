@@ -149,8 +149,8 @@ qx.Class.define("osparc.auth.Manager", {
         const url = osparc.data.Resources.resources["auth"].endpoints["postLogin"].url;
         const xhr = new XMLHttpRequest();
         xhr.onload = () => {
+          const resp = JSON.parse(xhr.responseText);
           if (xhr.status === 202) {
-            const resp = JSON.parse(xhr.responseText);
             const data = resp.data;
             const message = osparc.auth.core.Utils.extractMessage(data);
             const retryAfter = osparc.auth.core.Utils.extractRetryAfter(data)
@@ -161,8 +161,7 @@ qx.Class.define("osparc.auth.Manager", {
               nextStep: data["name"]
             });
           } else if (xhr.status === 200) {
-            const resp = JSON.parse(xhr.responseText);
-            osparc.data.Resources.getOne("profile", {}, null, false)
+            osparc.data.Resources.fetch("profile", "getOne")
               .then(profile => {
                 this.__loginUser(profile);
                 const data = resp.data;
@@ -172,17 +171,14 @@ qx.Class.define("osparc.auth.Manager", {
                   message
                 });
               })
-              .catch(err => reject(err.message));
+              .catch(err => reject(err));
+          } else if (resp.error == null) {
+            reject({message: this.tr("Unsuccessful Login")});
           } else {
-            const resp = JSON.parse(xhr.responseText);
-            if (resp.error == null) {
-              reject(this.tr("Login failed"));
-            } else {
-              reject(resp.error.message);
-            }
+            reject(resp.error);
           }
         };
-        xhr.onerror = () => reject(this.tr("Login failed"));
+        xhr.onerror = err => reject(err);
         xhr.open("POST", url, true);
         xhr.setRequestHeader("Content-Type", "application/json");
         xhr.send(JSON.stringify(params));

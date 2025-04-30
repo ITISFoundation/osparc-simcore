@@ -15,7 +15,7 @@ from typing import Any
 from unittest.mock import MagicMock, Mock
 
 import pytest
-import simcore_service_webserver.login._auth_api
+import simcore_service_webserver.login._auth_service
 from aiohttp.test_utils import TestClient
 from aiopg.sa.connection import SAConnection
 from common_library.users_enums import UserRole, UserStatus
@@ -35,7 +35,11 @@ from pytest_simcore.helpers.faker_factories import (
     random_pre_registration_details,
 )
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
-from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
+from pytest_simcore.helpers.webserver_login import (
+    NewUser,
+    UserInfoDict,
+    switch_client_session_to,
+)
 from servicelib.aiohttp import status
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_service_webserver.users._common.schemas import (
@@ -62,15 +66,36 @@ def app_environment(
 
 
 @pytest.fixture
-async def private_user(client: TestClient) -> AsyncIterable[UserInfoDict]:
+def partial_first_name() -> str:
+    return "Jaimito"
+
+
+@pytest.fixture
+def partial_username() -> str:
+    return "COMMON_USERNAME"
+
+
+@pytest.fixture
+def partial_email() -> str:
+    return "@acme.com"
+
+
+@pytest.fixture
+async def private_user(
+    client: TestClient,
+    partial_username: str,
+    partial_email: str,
+    partial_first_name: str,
+) -> AsyncIterable[UserInfoDict]:
     assert client.app
     async with NewUser(
         app=client.app,
         user_data={
-            "name": "jamie01",
-            "first_name": "James",
+            "name": f"james{partial_username}",
+            "first_name": partial_first_name,
             "last_name": "Bond",
-            "email": "james@find.me",
+            "email": f"james{partial_email}",
+            "privacy_hide_username": True,
             "privacy_hide_email": True,
             "privacy_hide_fullname": True,
         },
@@ -79,15 +104,18 @@ async def private_user(client: TestClient) -> AsyncIterable[UserInfoDict]:
 
 
 @pytest.fixture
-async def semi_private_user(client: TestClient) -> AsyncIterable[UserInfoDict]:
+async def semi_private_user(
+    client: TestClient, partial_username: str, partial_first_name: str
+) -> AsyncIterable[UserInfoDict]:
     assert client.app
     async with NewUser(
         app=client.app,
         user_data={
-            "name": "maxwell",
-            "first_name": "James",
+            "name": f"maxwell{partial_username}",
+            "first_name": partial_first_name,
             "last_name": "Maxwell",
             "email": "j@maxwell.me",
+            "privacy_hide_username": False,
             "privacy_hide_email": True,
             "privacy_hide_fullname": False,  # <--
         },
@@ -96,15 +124,18 @@ async def semi_private_user(client: TestClient) -> AsyncIterable[UserInfoDict]:
 
 
 @pytest.fixture
-async def public_user(client: TestClient) -> AsyncIterable[UserInfoDict]:
+async def public_user(
+    client: TestClient, partial_username: str, partial_email: str
+) -> AsyncIterable[UserInfoDict]:
     assert client.app
     async with NewUser(
         app=client.app,
         user_data={
-            "name": "taylie01",
+            "name": f"taylor{partial_username}",
             "first_name": "Taylor",
             "last_name": "Swift",
-            "email": "taylor@find.me",
+            "email": f"taylor{partial_email}",
+            "privacy_hide_username": False,
             "privacy_hide_email": False,
             "privacy_hide_fullname": False,
         },
@@ -112,44 +143,56 @@ async def public_user(client: TestClient) -> AsyncIterable[UserInfoDict]:
         yield usr
 
 
-@pytest.mark.acceptance_test(
-    "https://github.com/ITISFoundation/osparc-issues/issues/1779"
-)
 @pytest.mark.parametrize("user_role", [UserRole.USER])
-async def test_search_users(
+async def test_search_users_by_partial_fullname(
+    user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
-    user_role: UserRole,
-    public_user: UserInfoDict,
-    semi_private_user: UserInfoDict,
+    partial_first_name: str,
     private_user: UserInfoDict,
+    semi_private_user: UserInfoDict,
+    public_user: UserInfoDict,
 ):
     assert client.app
     assert user_role.value == logged_user["role"]
 
+    # logged_user has default settings
     assert private_user["id"] != logged_user["id"]
     assert public_user["id"] != logged_user["id"]
 
     # SEARCH by partial first_name
-    partial_name = "james"
-    assert partial_name in private_user.get("first_name", "").lower()
-    assert partial_name in semi_private_user.get("first_name", "").lower()
+    assert partial_first_name in private_user.get("first_name", "")
+    assert partial_first_name in semi_private_user.get("first_name", "")
+    assert partial_first_name not in public_user.get("first_name", "")
 
     url = client.app.router["search_users"].url_for()
-    resp = await client.post(f"{url}", json={"match": partial_name})
+    resp = await client.post(f"{url}", json={"match": partial_first_name})
     data, _ = await assert_status(resp, status.HTTP_200_OK)
 
+    # expected `semi_private_user` found
     found = TypeAdapter(list[UserGet]).validate_python(data)
     assert found
     assert len(found) == 1
-    assert semi_private_user["name"] == found[0].user_name
+    assert found[0].user_name == semi_private_user["name"]
     assert found[0].first_name == semi_private_user.get("first_name")
     assert found[0].last_name == semi_private_user.get("last_name")
     assert found[0].email is None
 
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_search_users_by_partial_email(
+    user_role: UserRole,
+    logged_user: UserInfoDict,
+    client: TestClient,
+    partial_email: str,
+    public_user: UserInfoDict,
+    semi_private_user: UserInfoDict,
+    private_user: UserInfoDict,
+):
+
     # SEARCH by partial email
-    partial_email = "@find.m"
     assert partial_email in private_user["email"]
+    assert partial_email not in semi_private_user["email"]
     assert partial_email in public_user["email"]
 
     url = client.app.router["search_users"].url_for()
@@ -159,34 +202,13 @@ async def test_search_users(
     found = TypeAdapter(list[UserGet]).validate_python(data)
     assert found
     assert len(found) == 1
+
+    # expected `public_user` found
     assert found[0].user_id == public_user["id"]
     assert found[0].user_name == public_user["name"]
     assert found[0].email == public_user["email"]
     assert found[0].first_name == public_user.get("first_name")
     assert found[0].last_name == public_user.get("last_name")
-
-    # SEARCH by partial username
-    partial_username = "ie01"
-    assert partial_username in private_user["name"]
-    assert partial_username in public_user["name"]
-
-    url = client.app.router["search_users"].url_for()
-    resp = await client.post(f"{url}", json={"match": partial_username})
-    data, _ = await assert_status(resp, status.HTTP_200_OK)
-
-    found = TypeAdapter(list[UserGet]).validate_python(data)
-    assert found
-    assert len(found) == 2
-
-    index = [u.user_id for u in found].index(public_user["id"])
-    assert found[index].user_name == public_user["name"]
-
-    # check privacy
-    index = (index + 1) % 2
-    assert found[index].user_name == private_user["name"]
-    assert found[index].email is None
-    assert found[index].first_name is None
-    assert found[index].last_name is None
 
     # SEARCH user for admin (from a USER)
     url = (
@@ -198,14 +220,80 @@ async def test_search_users(
     await assert_status(resp, status.HTTP_403_FORBIDDEN)
 
 
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_search_users_by_partial_username(
+    user_role: UserRole,
+    logged_user: UserInfoDict,
+    client: TestClient,
+    partial_username: str,
+    public_user: UserInfoDict,
+    semi_private_user: UserInfoDict,
+    private_user: UserInfoDict,
+):
+    assert client.app
+
+    # SEARCH by partial username
+    assert partial_username in private_user["name"]
+    assert partial_username in semi_private_user["name"]
+    assert partial_username in public_user["name"]
+
+    url = client.app.router["search_users"].url_for()
+    resp = await client.post(f"{url}", json={"match": partial_username})
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    found = TypeAdapter(list[UserGet]).validate_python(data)
+    assert found
+    assert len(found) == 2
+
+    # expected `public_user` found
+    index = [u.user_id for u in found].index(public_user["id"])
+    assert found[index].user_name == public_user["name"]
+    assert found[index].email == public_user["email"]
+    assert found[index].first_name == public_user.get("first_name")
+    assert found[index].last_name == public_user.get("last_name")
+
+    # expected `semi_private_user` found
+    index = (index + 1) % 2
+    assert found[index].user_name == semi_private_user["name"]
+    assert found[index].email is None
+    assert found[index].first_name == semi_private_user.get("first_name")
+    assert found[index].last_name == semi_private_user.get("last_name")
+
+
+async def test_search_myself(
+    client: TestClient,
+    public_user: UserInfoDict,
+    semi_private_user: UserInfoDict,
+    private_user: UserInfoDict,
+):
+    assert client.app
+    for user in [public_user, semi_private_user, private_user]:
+        async with switch_client_session_to(client, user):
+
+            # search me
+            url = client.app.router["search_users"].url_for()
+            resp = await client.post(f"{url}", json={"match": user["name"]})
+            data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+            found = TypeAdapter(list[UserGet]).validate_python(data)
+            assert found
+            assert len(found) == 1
+
+            # I can see my own data
+            assert found[0].user_name == user["name"]
+            assert found[0].email == user["email"]
+            assert found[0].first_name == user.get("first_name")
+            assert found[0].last_name == user.get("last_name")
+
+
 @pytest.mark.acceptance_test(
     "https://github.com/ITISFoundation/osparc-issues/issues/1779"
 )
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_get_user_by_group_id(
+    user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
-    user_role: UserRole,
     public_user: UserInfoDict,
     private_user: UserInfoDict,
 ):
@@ -215,7 +303,7 @@ async def test_get_user_by_group_id(
     assert private_user["id"] != logged_user["id"]
     assert public_user["id"] != logged_user["id"]
 
-    # GET user by primary GID
+    # GET public_user by its primary gid
     url = client.app.router["get_all_group_users"].url_for(
         gid=f"{public_user['primary_gid']}"
     )
@@ -229,6 +317,7 @@ async def test_get_user_by_group_id(
     assert users[0].first_name == public_user.get("first_name")
     assert users[0].last_name == public_user.get("last_name")
 
+    # GET private_user by its primary gid
     url = client.app.router["get_all_group_users"].url_for(
         gid=f"{private_user['primary_gid']}"
     )
@@ -238,9 +327,9 @@ async def test_get_user_by_group_id(
     users = TypeAdapter(list[GroupUserGet]).validate_python(data)
     assert len(users) == 1
     assert users[0].id == private_user["id"]
-    assert users[0].user_name == private_user["name"]
-    assert users[0].first_name is None
-    assert users[0].last_name is None
+    assert users[0].user_name is None, "It's private"
+    assert users[0].first_name is None, "It's private"
+    assert users[0].last_name is None, "It's private"
 
 
 @pytest.mark.parametrize(
@@ -274,9 +363,9 @@ async def test_access_rights_on_get_profile(
     ],
 )
 async def test_access_update_profile(
+    user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
-    user_role: UserRole,
     expected: HTTPStatus,
 ):
     assert client.app
@@ -290,9 +379,9 @@ async def test_access_update_profile(
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_get_profile(
+    user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
-    user_role: UserRole,
     primary_group: dict[str, Any],
     standard_groups: list[dict[str, Any]],
     all_group: dict[str, str],
@@ -338,9 +427,9 @@ async def test_get_profile(
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_update_profile(
+    user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
-    user_role: UserRole,
 ):
     assert client.app
 
@@ -379,9 +468,9 @@ async def test_update_profile(
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_profile_workflow(
+    user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
-    user_role: UserRole,
 ):
     assert client.app
 
@@ -414,6 +503,7 @@ async def test_profile_workflow(
     assert updated_profile.user_name == "odei123"
 
     assert updated_profile.privacy != my_profile.privacy
+    assert updated_profile.privacy.hide_username == my_profile.privacy.hide_username
     assert updated_profile.privacy.hide_email == my_profile.privacy.hide_email
     assert updated_profile.privacy.hide_fullname != my_profile.privacy.hide_fullname
 
@@ -421,9 +511,9 @@ async def test_profile_workflow(
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 @pytest.mark.parametrize("invalid_username", ["", "_foo", "superadmin", "foo..-123"])
 async def test_update_wrong_user_name(
+    user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
-    user_role: UserRole,
     invalid_username: str,
 ):
     assert client.app
@@ -440,10 +530,10 @@ async def test_update_wrong_user_name(
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_update_existing_user_name(
+    user_role: UserRole,
     user: UserInfoDict,
     logged_user: UserInfoDict,
     client: TestClient,
-    user_role: UserRole,
 ):
     assert client.app
 
@@ -639,7 +729,7 @@ async def test_search_and_pre_registration(
 
     # Emulating registration of pre-register user
     new_user = (
-        await simcore_service_webserver.login._auth_api.create_user(  # noqa: SLF001
+        await simcore_service_webserver.login._auth_service.create_user(  # noqa: SLF001
             client.app,
             email=account_request_form["email"],
             password=DEFAULT_TEST_PASSWORD,
@@ -699,7 +789,7 @@ def test_preuserprofile_parse_model_from_request_form_data(
 
 
 def test_preuserprofile_parse_model_without_extras(
-    account_request_form: dict[str, Any]
+    account_request_form: dict[str, Any],
 ):
     required = {
         f.alias or f_name

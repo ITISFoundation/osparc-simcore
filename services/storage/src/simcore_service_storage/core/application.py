@@ -26,12 +26,14 @@ from .._meta import (
     APP_FINISHED_BANNER_MSG,
     APP_NAME,
     APP_STARTED_BANNER_MSG,
+    APP_WORKER_STARTED_BANNER_MSG,
 )
 from ..api.rest.routes import setup_rest_api_routes
 from ..api.rpc.routes import setup_rpc_api_routes
 from ..dsm import setup_dsm
 from ..dsm_cleaner import setup_dsm_cleaner
 from ..exceptions.handlers import set_exception_handlers
+from ..modules.celery import setup_celery_client
 from ..modules.db import setup_db
 from ..modules.long_running_tasks import setup_rest_api_long_running_tasks_for_uploads
 from ..modules.rabbitmq import setup as setup_rabbitmq
@@ -52,7 +54,7 @@ _NOISY_LOGGERS = (
 _logger = logging.getLogger(__name__)
 
 
-def create_app(settings: ApplicationSettings) -> FastAPI:
+def create_app(settings: ApplicationSettings) -> FastAPI:  # noqa: C901
     # keep mostly quiet noisy loggers
     quiet_level: int = max(
         min(logging.root.level + _LOG_LEVEL_STEP, logging.CRITICAL), logging.WARNING
@@ -82,15 +84,18 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     setup_s3(app)
     setup_client_session(app)
 
-    setup_rabbitmq(app)
-    setup_rpc_api_routes(app)
+    if not settings.STORAGE_WORKER_MODE:
+        setup_rabbitmq(app)
+        setup_rpc_api_routes(app)
+        setup_celery_client(app)
     setup_rest_api_long_running_tasks_for_uploads(app)
     setup_rest_api_routes(app, API_VTAG)
     set_exception_handlers(app)
 
+    setup_redis(app)
+
     setup_dsm(app)
-    if settings.STORAGE_CLEANER_INTERVAL_S:
-        setup_redis(app)
+    if settings.STORAGE_CLEANER_INTERVAL_S and not settings.STORAGE_WORKER_MODE:
         setup_dsm_cleaner(app)
 
     if settings.STORAGE_PROFILING:
@@ -112,7 +117,10 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
         setup_prometheus_instrumentation(app)
 
     async def _on_startup() -> None:
-        print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201
+        if settings.STORAGE_WORKER_MODE:
+            print(APP_WORKER_STARTED_BANNER_MSG, flush=True)  # noqa: T201
+        else:
+            print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201
 
     async def _on_shutdown() -> None:
         print(APP_FINISHED_BANNER_MSG, flush=True)  # noqa: T201

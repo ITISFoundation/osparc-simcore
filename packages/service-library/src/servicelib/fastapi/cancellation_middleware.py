@@ -20,7 +20,9 @@ async def _message_poller(
     while True:
         message = await receive()
         if message["type"] == "http.disconnect":
-            _logger.info("client disconnected, terminating request to %s!", request.url)
+            _logger.debug(
+                "client disconnected, terminating request to %s!", request.url
+            )
             raise _TerminateTaskGroupError
 
         # Puts the message in the queue
@@ -57,7 +59,6 @@ class RequestCancellationMiddleware:
 
         # Let's make a shared queue for the request messages
         queue: asyncio.Queue[Message] = asyncio.Queue()
-
         request = Request(scope)
 
         with log_context(_logger, logging.DEBUG, f"cancellable request {request.url}"):
@@ -72,6 +73,8 @@ class RequestCancellationMiddleware:
                     await handler_task
                     poller_task.cancel()
             except* _TerminateTaskGroupError:
-                _logger.info(
-                    "The client disconnected. request to %s was cancelled.", request.url
-                )
+                if not handler_task.done():
+                    _logger.info(
+                        "The client disconnected. request to %s was cancelled.",
+                        request.url,
+                    )

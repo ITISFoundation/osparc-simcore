@@ -1,5 +1,5 @@
 """
-    General utilities and helper functions
+General utilities and helper functions
 """
 
 import asyncio
@@ -11,11 +11,8 @@ import traceback
 import tracemalloc
 from datetime import datetime
 from pathlib import Path
-from typing import Any
 
-import orjson
 from common_library.error_codes import ErrorCodeStr
-from models_library.basic_types import SHA1Str
 from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
     TypedDict,
 )
@@ -176,21 +173,3 @@ def compose_support_error_msg(
 
 def get_traceback_string(exception: BaseException) -> str:
     return "".join(traceback.format_exception(exception))
-
-
-# -----------------------------------------------
-#
-# SERIALIZATION, CHECKSUMS,
-#
-
-
-def compute_sha1_on_small_dataset(d: Any) -> SHA1Str:
-    """
-    This should be used for small datasets, otherwise it should be chuncked
-    and aggregated
-
-    More details in test_utils.py:test_compute_sha1_on_small_dataset
-    """
-    # SEE options in https://github.com/ijl/orjson#option
-    data_bytes = orjson.dumps(d, option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SORT_KEYS)
-    return SHA1Str(hashlib.sha1(data_bytes).hexdigest())  # nosec # NOSONAR

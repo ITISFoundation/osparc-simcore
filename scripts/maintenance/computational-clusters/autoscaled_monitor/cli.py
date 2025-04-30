@@ -1,10 +1,13 @@
 import asyncio
+import os
 from pathlib import Path
 from typing import Annotated, Optional
 
 import parse
 import rich
 import typer
+from ansible.inventory.manager import InventoryManager
+from ansible.parsing.dataloader import DataLoader
 from dotenv import dotenv_values
 
 from . import core as api
@@ -17,7 +20,7 @@ from .constants import (
     wallet_id_spec,
 )
 from .ec2 import autoscaling_ec2_client, cluster_keeper_ec2_client
-from .models import AppState
+from .models import AppState, BastionHost
 
 state: AppState = AppState(
     dynamic_parser=parse.compile(DEFAULT_DYNAMIC_EC2_FORMAT),
@@ -32,13 +35,13 @@ state: AppState = AppState(
 app = typer.Typer()
 
 
-def _parse_environment(deploy_config: Path) -> dict[str, str | None]:
+def _parse_repo_config(deploy_config: Path) -> dict[str, str | None]:
     repo_config = deploy_config / "repo.config"
     if not repo_config.exists():
         rich.print(
-            f"[red]{repo_config} does not exist! Please run OPS code to generate it[/red]"
+            f"[red]{repo_config} does not exist! Please run `make repo.config` in {deploy_config} to generate it[/red]"
         )
-        raise typer.Exit(1)
+        raise typer.Exit(os.EX_DATAERR)
 
     environment = dotenv_values(repo_config)
 
@@ -46,11 +49,34 @@ def _parse_environment(deploy_config: Path) -> dict[str, str | None]:
     return environment
 
 
+def _parse_inventory(deploy_config: Path) -> BastionHost:
+    inventory_path = deploy_config / "ansible" / "inventory.ini"
+    if not inventory_path.exists():
+        rich.print(
+            f"[red]{inventory_path} does not exist! Please run `make inventory` in {deploy_config} to generate it[/red]"
+        )
+        raise typer.Exit(os.EX_DATAERR)
+
+    loader = DataLoader()
+    inventory = InventoryManager(loader=loader, sources=[f"{inventory_path}"])
+
+    try:
+        return BastionHost(
+            ip=inventory.groups["CAULDRON_UNIX"].get_vars()["bastion_ip"],
+            user_name=inventory.groups["CAULDRON_UNIX"].get_vars()["bastion_user"],
+        )
+    except KeyError as err:
+        rich.print(
+            f"[red]{inventory_path} invalid! Unable to find bastion_ip in the inventory file. TIP: Please run `make inventory` in {deploy_config} to generate it[/red]"
+        )
+        raise typer.Exit(os.EX_DATAERR) from err
+
+
 @app.callback()
 def main(
     deploy_config: Annotated[
         Path, typer.Option(help="path to the deploy configuration")
-    ]
+    ],
 ):
     """Manages external clusters"""
 
@@ -58,7 +84,8 @@ def main(
     assert (
         deploy_config.is_dir()
     ), "deploy-config argument is not pointing to a directory!"
-    state.environment = _parse_environment(deploy_config)
+    state.environment = _parse_repo_config(deploy_config)
+    state.main_bastion_host = _parse_inventory(deploy_config)
 
     # connect to ec2s
     state.ec2_resource_autoscaling = autoscaling_ec2_client(state)
@@ -102,6 +129,7 @@ def main(
 def summary(
     user_id: Annotated[int, typer.Option(help="filters by the user ID")] = 0,
     wallet_id: Annotated[int, typer.Option(help="filters by the wallet ID")] = 0,
+    as_json: Annotated[bool, typer.Option(help="outputs as json")] = False,
 ) -> None:
     """Show a summary of the current situation of autoscaled EC2 instances.
 
@@ -113,7 +141,10 @@ def summary(
 
     """
 
-    asyncio.run(api.summary(state, user_id or None, wallet_id or None))
+    if not asyncio.run(
+        api.summary(state, user_id or None, wallet_id or None, output_json=as_json)
+    ):
+        raise typer.Exit(1)
 
 
 @app.command()
@@ -124,7 +155,7 @@ def cancel_jobs(
         typer.Option(help="the wallet ID"),
     ] = None,
     *,
-    force: Annotated[
+    abort_in_db: Annotated[
         bool,
         typer.Option(
             help="will also force the job to abort in the database (use only if job is in WAITING FOR CLUSTER/WAITING FOR RESOURCE)"
@@ -138,14 +169,20 @@ def cancel_jobs(
     Keyword Arguments:
         user_id -- the user ID
         wallet_id -- the wallet ID
+        abort_in_db -- will also force the job to abort in the database (use only if job is in WAITING FOR CLUSTER/WAITING FOR RESOURCE)
     """
-    asyncio.run(api.cancel_jobs(state, user_id, wallet_id, force=force))
+    asyncio.run(api.cancel_jobs(state, user_id, wallet_id, abort_in_db=abort_in_db))
 
 
 @app.command()
 def trigger_cluster_termination(
     user_id: Annotated[int, typer.Option(help="the user ID")],
-    wallet_id: Annotated[int, typer.Option(help="the wallet ID")],
+    wallet_id: Annotated[
+        Optional[int | None],  # noqa: UP007 # typer does not understand | syntax
+        typer.Option(help="the wallet ID"),
+    ] = None,
+    *,
+    force: Annotated[bool, typer.Option(help="will not ask for confirmation")] = False,
 ) -> None:
     """this will set the Heartbeat tag on the primary machine to 1 hour, thus ensuring the
     clusters-keeper will properly terminate that cluster.
@@ -153,8 +190,15 @@ def trigger_cluster_termination(
     Keyword Arguments:
         user_id -- the user ID
         wallet_id -- the wallet ID
+        force -- will not ask for confirmation (VERY RISKY! USE WITH CAUTION!)
     """
-    asyncio.run(api.trigger_cluster_termination(state, user_id, wallet_id))
+    asyncio.run(api.trigger_cluster_termination(state, user_id, wallet_id, force=force))
+
+
+@app.command()
+def check_database_connection() -> None:
+    """this will check the connection to simcore database is ready"""
+    asyncio.run(api.check_database_connection(state))
 
 
 if __name__ == "__main__":

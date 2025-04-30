@@ -1,14 +1,12 @@
-""" Free helper functions for AWS API
+"""Free helper functions for AWS API"""
 
-"""
-
-import json
 import logging
 from collections import OrderedDict
 from collections.abc import Callable
 from textwrap import dedent
 
 from aws_library.ec2 import AWSTagKey, AWSTagValue, EC2InstanceType, EC2Tags, Resources
+from common_library.json_serialization import json_dumps
 
 from .._meta import VERSION
 from ..core.errors import ConfigurationError, TaskBestFittingInstanceNotFoundError
@@ -23,12 +21,12 @@ def get_ec2_tags_dynamic(app_settings: ApplicationSettings) -> EC2Tags:
     return {
         AWSTagKey("io.simcore.autoscaling.version"): AWSTagValue(f"{VERSION}"),
         AWSTagKey("io.simcore.autoscaling.monitored_nodes_labels"): AWSTagValue(
-            json.dumps(
+            json_dumps(
                 app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
             )
         ),
         AWSTagKey("io.simcore.autoscaling.monitored_services_labels"): AWSTagValue(
-            json.dumps(
+            json_dumps(
                 app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS
             )
         ),

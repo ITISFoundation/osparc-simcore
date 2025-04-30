@@ -17,7 +17,6 @@ from random import choice
 from typing import Any
 from unittest import mock
 
-import aiopg.sa
 import httpx
 import pytest
 import respx
@@ -25,7 +24,7 @@ from faker import Faker
 from fastapi import FastAPI, status
 from models_library.api_schemas_catalog.services import ServiceGet
 from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
-from models_library.api_schemas_directorv2.comp_tasks import (
+from models_library.api_schemas_directorv2.computations import (
     ComputationCreate,
     ComputationGet,
 )
@@ -63,6 +62,7 @@ from simcore_service_director_v2.modules.db.repositories.comp_tasks._utils impor
     _RAM_SAFE_MARGIN_RATIO,
 )
 from simcore_service_director_v2.utils.computations import to_node_class
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit", "redis"]
 pytest_simcore_ops_services_selection = [
@@ -110,7 +110,7 @@ def fake_service_details(mocks_dir: Path) -> ServiceMetaDataPublished:
 
 @pytest.fixture
 def fake_service_extras() -> ServiceExtras:
-    extra_example = ServiceExtras.model_config["json_schema_extra"]["examples"][2]  # type: ignore
+    extra_example = ServiceExtras.model_json_schema()["examples"][2]  # type: ignore
     random_extras = ServiceExtras(**extra_example)  # type: ignore
     assert random_extras is not None
     return random_extras
@@ -169,7 +169,6 @@ def mocked_catalog_service_fcts(
     def _mocked_services_details(
         request, service_key: str, service_version: str
     ) -> httpx.Response:
-
         data_published = fake_service_details.model_copy(
             update={
                 "key": urllib.parse.unquote(service_key),
@@ -281,14 +280,14 @@ def mocked_catalog_service_fcts_deprecated(
 
 
 assert "json_schema_extra" in RutPricingPlanGet.model_config
-assert isinstance(RutPricingPlanGet.model_config["json_schema_extra"], dict)
-assert isinstance(RutPricingPlanGet.model_config["json_schema_extra"]["examples"], list)
+assert isinstance(RutPricingPlanGet.model_json_schema(), dict)
+assert isinstance(RutPricingPlanGet.model_json_schema()["examples"], list)
 
 
 @pytest.fixture(
     params=[
-        RutPricingPlanGet.model_config["json_schema_extra"]["examples"][0],
-        RutPricingPlanGet.model_config["json_schema_extra"]["examples"][1],
+        RutPricingPlanGet.model_json_schema()["examples"][0],
+        RutPricingPlanGet.model_json_schema()["examples"][1],
     ],
     ids=["with ec2 restriction", "without"],
 )
@@ -329,19 +328,15 @@ def mocked_resource_usage_tracker_service_fcts(
 
     def _mocked_get_pricing_unit(request, pricing_plan_id: int) -> httpx.Response:
         assert "json_schema_extra" in RutPricingUnitGet.model_config
-        assert isinstance(RutPricingUnitGet.model_config["json_schema_extra"], dict)
-        assert isinstance(
-            RutPricingUnitGet.model_config["json_schema_extra"]["examples"], list
-        )
+        assert isinstance(RutPricingUnitGet.model_json_schema(), dict)
+        assert isinstance(RutPricingUnitGet.model_json_schema()["examples"], list)
         return httpx.Response(
             200,
             json=jsonable_encoder(
                 (
                     default_pricing_plan.pricing_units[0]
                     if default_pricing_plan.pricing_units
-                    else RutPricingUnitGet.model_config["json_schema_extra"][
-                        "examples"
-                    ][0]
+                    else RutPricingUnitGet.model_json_schema()["examples"][0]
                 ),
                 by_alias=True,
             ),
@@ -504,7 +499,7 @@ async def test_create_computation_with_wallet(
     wallet_info: WalletInfo,
     project_nodes_overrides: dict[str, Any],
     default_pricing_plan_aws_ec2_type: str | None,
-    aiopg_engine: aiopg.sa.Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     fake_ec2_cpus: PositiveInt,
     fake_ec2_ram: ByteSize,
 ):
@@ -545,7 +540,7 @@ async def test_create_computation_with_wallet(
             * 2
         )
         # check the project nodes were really overriden now
-        async with aiopg_engine.acquire() as connection:
+        async with sqlalchemy_async_engine.connect() as connection:
             project_nodes_repo = ProjectNodesRepo(project_uuid=proj.uuid)
             for node in await project_nodes_repo.list(connection):
                 if (
@@ -596,7 +591,7 @@ async def test_create_computation_with_wallet(
     "default_pricing_plan",
     [
         RutPricingPlanGet.model_validate(
-            RutPricingPlanGet.model_config["json_schema_extra"]["examples"][0]
+            RutPricingPlanGet.model_json_schema()["examples"][0]
         )
     ],
 )
@@ -638,7 +633,7 @@ async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_rai
     "default_pricing_plan",
     [
         RutPricingPlanGet(
-            **RutPricingPlanGet.model_config["json_schema_extra"]["examples"][0]  # type: ignore
+            **RutPricingPlanGet.model_json_schema()["examples"][0]  # type: ignore
         )
     ],
 )

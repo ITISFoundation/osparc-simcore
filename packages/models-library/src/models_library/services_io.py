@@ -30,8 +30,6 @@ class BaseServiceIOModel(BaseModel):
     Base class for service input/outputs
     """
 
-    ## management
-
     ### human readable descriptors
     display_order: float | None = Field(
         None,

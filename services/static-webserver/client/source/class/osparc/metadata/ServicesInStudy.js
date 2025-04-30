@@ -45,6 +45,7 @@ qx.Class.define("osparc.metadata.ServicesInStudy", {
     const servicesInStudy = osparc.study.Utils.extractUniqueServices(this._studyData["workbench"]);
     if (servicesInStudy.length) {
       const promises = [];
+      // the following calls make sure the history of each service is there
       servicesInStudy.forEach(srv => promises.push(osparc.store.Services.getService(srv.key, srv.version)));
       Promise.all(promises)
         .then(() => this._populateLayout());
@@ -82,11 +83,7 @@ qx.Class.define("osparc.metadata.ServicesInStudy", {
           this._populateLayout();
         })
         .catch(err => {
-          if ("message" in err) {
-            osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
-          } else {
-            osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong updating the Service"), "ERROR");
-          }
+          osparc.FlashMessenger.logError(err, this.tr("Something went wrong while updating the service"));
         })
         .finally(() => {
           if (fetchButton) {
@@ -139,7 +136,7 @@ qx.Class.define("osparc.metadata.ServicesInStudy", {
         infoButton.addListener("execute", () => {
           const metadata = osparc.store.Services.getMetadata(node["key"], node["version"]);
           if (metadata === null) {
-            osparc.FlashMessenger.logAs(this.tr("Service information could not be retrieved"), "WARNING");
+            osparc.FlashMessenger.logAs(this.tr("Could not retrieve service information"), "WARNING");
             return;
           }
           const serviceDetails = new osparc.info.ServiceLarge(metadata, {
@@ -166,7 +163,7 @@ qx.Class.define("osparc.metadata.ServicesInStudy", {
 
         const nodeMetadata = osparc.store.Services.getMetadata(node["key"], node["version"]);
         if (nodeMetadata === null) {
-          osparc.FlashMessenger.logAs(this.tr("Some service information could not be retrieved"), "WARNING");
+          osparc.FlashMessenger.logAs(this.tr("Could not retrieve some service information"), "WARNING");
           break;
         }
       }

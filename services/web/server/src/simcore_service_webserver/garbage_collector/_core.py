@@ -1,12 +1,9 @@
-""" Core implementation of garbage collector
-
-
-"""
+"""Core implementation of garbage collector"""
 
 import logging
 
 from aiohttp import web
-from servicelib.logging_utils import log_context
+from servicelib.logging_utils import log_catch, log_context
 
 from ..resource_manager.registry import RedisResourceRegistry, get_registry
 from ._core_disconnected import remove_disconnected_user_resources
@@ -39,21 +36,23 @@ async def collect_garbage(app: web.Application):
     """
     registry: RedisResourceRegistry = get_registry(app)
 
-    with log_context(
+    with log_catch(_logger, reraise=False), log_context(
         _logger, logging.INFO, "Step 1: Removes disconnected user sessions"
     ):
         # Triggers signal to close possible pending opened projects
         # Removes disconnected GUEST users after they finished their sessions
         await remove_disconnected_user_resources(registry, app)
 
-    with log_context(
+    with log_catch(_logger, reraise=False), log_context(
         _logger, logging.INFO, "Step 2: Removes users manually marked for removal"
     ):
         # if a user was manually marked as GUEST it needs to be
         # removed together with all the associated projects
         await remove_users_manually_marked_as_guests(registry, app)
 
-    with log_context(_logger, logging.INFO, "Step 3: Removes orphaned services"):
+    with log_catch(_logger, reraise=False), log_context(
+        _logger, logging.INFO, "Step 3: Removes orphaned services"
+    ):
         # For various reasons, some services remain pending after
         # the projects are closed or the user was disconencted.
         # This will close and remove all these services from

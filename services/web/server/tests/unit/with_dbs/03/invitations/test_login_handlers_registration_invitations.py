@@ -18,7 +18,7 @@ from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import status
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from simcore_service_webserver.invitations.api import generate_invitation
-from simcore_service_webserver.login.handlers_registration import (
+from simcore_service_webserver.login._controller.rest.registration import (
     InvitationCheck,
     InvitationInfo,
 )
@@ -31,7 +31,7 @@ async def test_check_registration_invitation_when_not_required(
     mocker: MockerFixture,
 ):
     mocker.patch(
-        "simcore_service_webserver.login.handlers_registration.get_plugin_settings",
+        "simcore_service_webserver.login._controller.rest.registration.get_plugin_settings",
         autospec=True,
         return_value=LoginSettingsForProduct(
             LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=False,
@@ -61,7 +61,7 @@ async def test_check_registration_invitations_with_old_code(
     mocker: MockerFixture,
 ):
     mocker.patch(
-        "simcore_service_webserver.login.handlers_registration.get_plugin_settings",
+        "simcore_service_webserver.login._controller.rest.registration.get_plugin_settings",
         autospec=True,
         return_value=LoginSettingsForProduct.create_from_envs(
             LOGIN_REGISTRATION_INVITATION_REQUIRED=True,  # <--
@@ -87,7 +87,7 @@ async def test_check_registration_invitation_and_get_email(
 ):
 
     mocker.patch(
-        "simcore_service_webserver.login.handlers_registration.get_plugin_settings",
+        "simcore_service_webserver.login._controller.rest.registration.get_plugin_settings",
         autospec=True,
         return_value=LoginSettingsForProduct.create_from_envs(
             LOGIN_REGISTRATION_INVITATION_REQUIRED=True,  # <--
@@ -113,7 +113,7 @@ def _extract_invitation_code_from_url(invitation_url: HttpUrl) -> str:
 @pytest.mark.acceptance_test()
 async def test_registration_to_different_product(
     mocker: MockerFixture,
-    all_products_names: list[ProductName],
+    app_products_names: list[ProductName],
     client: TestClient,
     guest_email: str,
     guest_password: str,
@@ -122,7 +122,7 @@ async def test_registration_to_different_product(
     assert client.app
 
     mocker.patch(
-        "simcore_service_webserver.login.handlers_registration.get_plugin_settings",
+        "simcore_service_webserver.login._controller.rest.registration.get_plugin_settings",
         autospec=True,
         return_value=LoginSettingsForProduct(
             LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=False,
@@ -146,8 +146,8 @@ async def test_registration_to_different_product(
             headers={X_PRODUCT_NAME_HEADER: product_deployed},
         )
 
-    product_a = all_products_names[0]
-    product_b = all_products_names[1]
+    product_a = app_products_names[0]
+    product_b = app_products_names[1]
 
     # PO creates an two invitations for guest in product A and product B
     invitation_product_a = await generate_invitation(

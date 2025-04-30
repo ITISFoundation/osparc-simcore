@@ -121,6 +121,10 @@ qx.Class.define("osparc.store.StaticInfo", {
         return wsStaticData[key];
       }
       return null;
-    }
+    },
+
+    isDevFeaturesEnabled: function() {
+      return this.getValue("webserverDevFeaturesEnabled");
+    },
   }
 });

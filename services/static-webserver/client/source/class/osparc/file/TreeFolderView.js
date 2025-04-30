@@ -40,6 +40,12 @@ qx.Class.define("osparc.file.TreeFolderView", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "header-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox()).set({
+            marginLeft: 8
+          });
+          this._addAt(control, 0);
+          break;
         case "reload-button":
           control = new qx.ui.form.Button().set({
             label: this.tr("Reload"),
@@ -47,7 +53,17 @@ qx.Class.define("osparc.file.TreeFolderView", {
             icon: "@FontAwesome5Solid/sync-alt/14",
             allowGrowX: false
           });
-          this._add(control);
+          this.getChildControl("header-layout").add(control);
+          break;
+        case "total-size-label":
+          control = new qx.ui.basic.Atom().set({
+            label: this.tr("Calculating Size"),
+            font: "text-14",
+            icon: "@FontAwesome5Solid/spinner/14",
+            allowGrowX: false
+          });
+          osparc.utils.Utils.setIdToWidget(control.getChildControl("label"), "totalSizeLabel");
+          this.getChildControl("header-layout").add(control);
           break;
         case "tree-folder-layout":
           control = new qx.ui.splitpane.Pane("horizontal");
@@ -80,22 +96,32 @@ qx.Class.define("osparc.file.TreeFolderView", {
     },
 
     __buildLayout: function() {
-      this.getChildControl("reload-button");
       const folderTree = this.getChildControl("folder-tree");
       const folderViewer = this.getChildControl("folder-viewer");
 
-      // Connect elements
       folderTree.addListener("selectionChanged", () => {
-        const selectedFolder = folderTree.getSelectedItem();
-        if (selectedFolder && (osparc.file.FilesTree.isDir(selectedFolder) || (selectedFolder.getChildren && selectedFolder.getChildren().length))) {
-          folderViewer.setFolder(selectedFolder);
+        const selectedModel = folderTree.getSelectedItem();
+        if (selectedModel) {
+          if (osparc.file.FilesTree.isDir(selectedModel)) {
+            folderViewer.setFolder(selectedModel);
+          }
+          if (selectedModel.getPath() && !selectedModel.getLoaded()) {
+            selectedModel.setLoaded(true);
+            folderTree.requestPathItems(selectedModel.getLocation(), selectedModel.getPath());
+          }
         }
       }, this);
 
       folderViewer.addListener("openItemSelected", e => {
-        const data = e.getData();
-        folderTree.openNodeAndParents(data);
-        folderTree.setSelection(new qx.data.Array([data]));
+        const selectedModel = e.getData();
+        if (selectedModel) {
+          if (osparc.file.FilesTree.isDir(selectedModel)) {
+            folderViewer.setFolder(selectedModel);
+          }
+          // this will trigger the fetching of the content
+          folderTree.openNodeAndParents(selectedModel);
+          folderTree.setSelection(new qx.data.Array([selectedModel]));
+        }
       }, this);
 
       folderViewer.addListener("folderUp", e => {
@@ -103,32 +129,49 @@ qx.Class.define("osparc.file.TreeFolderView", {
         const parent = folderTree.getParent(currentFolder);
         if (parent) {
           folderTree.setSelection(new qx.data.Array([parent]));
-          folderViewer.setFolder(parent);
+          if (osparc.file.FilesTree.isDir(parent)) {
+            folderViewer.setFolder(parent);
+          }
         }
-      }, this);
-
-      folderViewer.addListener("requestDatasetFiles", e => {
-        const data = e.getData();
-        folderTree.requestDatasetFiles(data.locationId, data.datasetId);
       }, this);
     },
 
-    openPath: function(path) {
-      const foldersTree = this.getChildControl("folder-tree");
-      const folderViewer = this.getChildControl("folder-viewer");
-      let found = false;
-      while (!found && path.length) {
-        found = foldersTree.findItemId(path.join("/"));
-        // look for next parent
-        path.pop();
-      }
-      if (found) {
-        foldersTree.openNodeAndParents(found);
-        foldersTree.setSelection(new qx.data.Array([found]));
-        foldersTree.fireEvent("selectionChanged");
-      } else {
-        folderViewer.resetFolder();
-      }
+    pathsDeleted: function(paths) {
+      this.getChildControl("folder-viewer").resetSelection();
+
+      const folderTree = this.getChildControl("folder-tree");
+      const selectedFolder = folderTree.getSelectedItem();
+      const children = selectedFolder.getChildren();
+      paths.forEach(path => {
+        const found = children.toArray().find(child => child.getPath() === path);
+        if (found) {
+          children.remove(found);
+        }
+      });
+    },
+
+    requestSize: function(pathId) {
+      const totalSize = this.getChildControl("total-size-label");
+      totalSize.getChildControl("icon").getContentElement().addClass("rotate");
+
+      const pollTasks = osparc.store.PollTasks.getInstance();
+      const fetchPromise = osparc.data.Resources.fetch("storagePaths", "requestSize", { url: { pathId } })
+      pollTasks.createPollingTask(fetchPromise)
+        .then(task => {
+          task.addListener("resultReceived", e => {
+            const data = e.getData();
+            const size = (data && "result" in data) ? osparc.utils.Utils.bytesToSize(data["result"]) : "-";
+            totalSize.set({
+              icon: null,
+              label: this.tr("Total size: ") + size,
+            });
+          });
+          task.addListener("pollingError", () => totalSize.hide());
+        })
+        .catch(err => {
+          console.error(err);
+          totalSize.hide();
+        });
     }
   }
 });

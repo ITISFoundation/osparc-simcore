@@ -11,25 +11,26 @@
 
 import asyncio
 import logging
+from collections.abc import AsyncIterator
 from contextlib import suppress
 from pprint import pformat
 from typing import Final
 
 from fastapi import FastAPI, HTTPException
+from fastapi_lifespan_manager import State
 from models_library.services import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from packaging.version import Version
 from pydantic import ValidationError
-from simcore_service_catalog.api.dependencies.director import get_director_api
-from simcore_service_catalog.services import manifest
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from ..db.repositories.groups import GroupsRepository
-from ..db.repositories.projects import ProjectsRepository
-from ..db.repositories.services import ServicesRepository
+from ..api._dependencies.director import get_director_client
 from ..models.services_db import ServiceAccessRightsAtDB, ServiceMetaDataDBCreate
-from ..services import access_rights
+from ..repository.groups import GroupsRepository
+from ..repository.projects import ProjectsRepository
+from ..repository.services import ServicesRepository
+from ..service import access_rights, manifest
 
 _logger = logging.getLogger(__name__)
 
@@ -112,12 +113,12 @@ async def _ensure_registry_and_database_are_synced(app: FastAPI) -> None:
 
     Notice that a services here refers to a 2-tuple (key, version)
     """
-    director_api = get_director_api(app)
+    director_api = get_director_client(app)
     services_in_manifest_map = await manifest.get_services_map(director_api)
 
-    services_in_db: set[
-        tuple[ServiceKey, ServiceVersion]
-    ] = await _list_services_in_database(app.state.engine)
+    services_in_db: set[tuple[ServiceKey, ServiceVersion]] = (
+        await _list_services_in_database(app.state.engine)
+    )
 
     # check that the db has all the services at least once
     missing_services_in_db = set(services_in_manifest_map.keys()) - services_in_db
@@ -232,3 +233,11 @@ async def stop_registry_sync_task(app: FastAPI) -> None:
             await task
         app.state.registry_sync_task = None
     _logger.info("registry syncing task stopped")
+
+
+async def background_task_lifespan(app: FastAPI) -> AsyncIterator[State]:
+    await start_registry_sync_task(app)
+    try:
+        yield {}
+    finally:
+        await stop_registry_sync_task(app)

@@ -1,15 +1,15 @@
 """
-    Collection of functions that create fake raw data that can be used
-    to populate postgres DATABASE, create datasets with consistent values, etc
+Collection of functions that create fake raw data that can be used
+to populate postgres DATABASE, create datasets with consistent values, etc
 
-    Built on top of the idea of Faker library (https://faker.readthedocs.io/en/master/),
-    that generate fake data to bootstrap a database, fill-in stress tests, anonymize data ...
-    etc
+Built on top of the idea of Faker library (https://faker.readthedocs.io/en/master/),
+that generate fake data to bootstrap a database, fill-in stress tests, anonymize data ...
+etc
 
-    NOTE: all outputs MUST be Dict-like or built-in data structures that fit at least
-    required fields in postgres_database.models tables or pydantic models.
+NOTE: all outputs MUST be Dict-like or built-in data structures that fit at least
+required fields in postgres_database.models tables or pydantic models.
 
-    NOTE: to reduce coupling, please import simcore_postgres_database inside of the functions
+NOTE: to reduce coupling, please import simcore_postgres_database inside of the functions
 """
 
 import itertools
@@ -232,7 +232,7 @@ def random_product(
         - group_id: product group ID. SEE get_or_create_product_group to produce `group_id`
         - registration_email_template
     """
-    from simcore_postgres_database.models.products import Vendor, products
+    from simcore_postgres_database.models.products import Vendor, VendorUI, products
 
     name = overrides.get("name")
     suffix = fake.unique.word() if name is None else name
@@ -244,7 +244,7 @@ def random_product(
         "host_regex": r"[a-zA-Z0-9]+\.com",
         "support_email": f"support@{suffix}.io",
         "product_owners_email": fake.random_element(
-            elements=[f"product-onwers@{suffix}.io", None]
+            elements=[f"product-owners@{suffix}.io", None]
         ),
         "twilio_messaging_sid": fake.random_element(
             elements=(None, f"{fake.uuid4()}"[:34])
@@ -257,6 +257,11 @@ def random_product(
             invitation_url=fake.url(),
             invitation_form=fake.boolean(),
             address=fake.address().replace("\n", ". "),
+            ui=VendorUI(
+                logo_url=fake.url(),
+                strong_color=fake.color(),
+                project_alias=fake.random_element(elements=["project", "study"]),
+            ),
         ),
         "registration_email_template": registration_email_template,
         "created": fake.date_time_this_decade(),
@@ -400,7 +405,7 @@ def random_payment_autorecharge(
     return data
 
 
-def random_api_key(
+def random_api_auth(
     product_name: str, user_id: int, fake: Faker = DEFAULT_FAKER, **overrides
 ) -> dict[str, Any]:
     from simcore_postgres_database.models.api_keys import api_keys

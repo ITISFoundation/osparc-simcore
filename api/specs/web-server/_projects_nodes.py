@@ -18,6 +18,7 @@ from models_library.api_schemas_webserver.projects_nodes import (
     NodePatch,
     NodeRetrieve,
     NodeRetrieved,
+    ProjectNodeServicesGet,
     ServiceResourcesDict,
 )
 from models_library.generics import Envelope
@@ -25,11 +26,13 @@ from models_library.groups import GroupID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.projects._crud_handlers import ProjectPathParams
-from simcore_service_webserver.projects._nodes_handlers import (
+from simcore_service_webserver.projects._controller.nodes_rest import (
     NodePathParams,
     _ProjectGroupAccess,
     _ProjectNodePreview,
+)
+from simcore_service_webserver.projects._controller.projects_rest import (
+    ProjectPathParams,
 )
 
 router = APIRouter(
@@ -76,8 +79,7 @@ def delete_node(project_id: str, node_id: str):  # noqa: ARG001
 )
 def retrieve_node(
     project_id: str, node_id: str, _retrieve: NodeRetrieve  # noqa: ARG001
-):
-    ...
+): ...
 
 
 @router.post(
@@ -147,13 +149,19 @@ def get_node_resources(project_id: str, node_id: str):  # noqa: ARG001
 )
 def replace_node_resources(
     project_id: str, node_id: str, _new: ServiceResourcesDict  # noqa: ARG001
-):
-    ...
+): ...
 
 
 #
 # projects/*/nodes/-/services
 #
+
+
+@router.get(
+    "/projects/{project_id}/nodes/-/services",
+    response_model=Envelope[ProjectNodeServicesGet],
+)
+async def get_project_services(project_id: ProjectID): ...
 
 
 @router.get(
@@ -163,8 +171,7 @@ def replace_node_resources(
 )
 async def get_project_services_access_for_gid(
     project_id: ProjectID, for_gid: GroupID  # noqa: ARG001
-):
-    ...
+): ...
 
 
 assert_handler_signature_against_model(
@@ -197,8 +204,7 @@ assert_handler_signature_against_model(list_project_nodes_previews, ProjectPathP
 )
 async def get_project_node_preview(
     project_id: ProjectID, node_id: NodeID  # noqa: ARG001
-):
-    ...
+): ...
 
 
 assert_handler_signature_against_model(get_project_node_preview, NodePathParams)

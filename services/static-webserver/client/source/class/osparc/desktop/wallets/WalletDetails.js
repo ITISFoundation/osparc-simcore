@@ -66,7 +66,7 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
       const titleLayout = this.__titleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
 
       const prevBtn = new qx.ui.form.Button().set({
-        toolTipText: this.tr("Back to Credit Accounts list"),
+        toolTipText: this.tr("Return to Credit Accounts list"),
         icon: "@FontAwesome5Solid/arrow-left/20",
         backgroundColor: "transparent"
       });
@@ -120,14 +120,13 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
       };
       osparc.data.Resources.fetch("wallets", "put", params)
         .then(() => {
-          osparc.FlashMessenger.getInstance().logAs(name + this.tr(" successfully edited"));
+          osparc.FlashMessenger.logAs(name + this.tr(" successfully edited"));
           const wallet = osparc.desktop.credits.Utils.getWallet(walletId);
           wallet.set(params.data);
         })
         .catch(err => {
-          console.error(err);
-          const msg = err.message || (this.tr("Something went wrong editing ") + name);
-          osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
+          const msg = this.tr("Something went wrong while editing ") + name;
+          osparc.FlashMessenger.logError(err, msg);
         })
         .finally(() => {
           button.setFetching(false);

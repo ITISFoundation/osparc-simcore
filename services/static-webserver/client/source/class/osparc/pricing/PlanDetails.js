@@ -64,7 +64,7 @@ qx.Class.define("osparc.pricing.PlanDetails", {
           break;
         case "back-to-pp-button":
           control = new qx.ui.form.Button().set({
-            toolTipText: this.tr("Back to Pricing Plans"),
+            toolTipText: this.tr("Return to Pricing Plans"),
             icon: "@FontAwesome5Solid/arrow-left/20",
             backgroundColor: "transparent"
           });

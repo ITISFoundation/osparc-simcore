@@ -25,25 +25,6 @@ from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
 
 
-@pytest.fixture
-def mock_catalog_api_get_services_for_user_in_product(mocker: MockerFixture):
-    mocker.patch(
-        "simcore_service_webserver.projects._crud_api_read.get_services_for_user_in_product",
-        spec=True,
-        return_value=[],
-    )
-    mocker.patch(
-        "simcore_service_webserver.projects._crud_handlers.get_services_for_user_in_product",
-        spec=True,
-        return_value=[],
-    )
-    mocker.patch(
-        "simcore_service_webserver.projects._crud_handlers.project_uses_available_services",
-        spec=True,
-        return_value=True,
-    )
-
-
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_moving_between_workspaces_user_role_permissions(
     client: TestClient,

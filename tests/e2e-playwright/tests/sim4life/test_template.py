@@ -8,11 +8,12 @@
 
 
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 from playwright.sync_api import Page
 from pydantic import AnyUrl
-from pytest_simcore.helpers.playwright import RestartableWebSocket
+from pytest_simcore.helpers.playwright import RobustWebSocket
 from pytest_simcore.helpers.playwright_sim4life import (
     check_video_streaming,
     interact_with_s4l,
@@ -23,12 +24,13 @@ from pytest_simcore.helpers.playwright_sim4life import (
 def test_template(
     page: Page,
     create_project_from_template_dashboard: Callable[[str], dict[str, Any]],
-    log_in_and_out: RestartableWebSocket,
+    log_in_and_out: RobustWebSocket,
     template_id: str,
     is_autoscaled: bool,
     check_videostreaming: bool,
     product_url: AnyUrl,
     is_service_legacy: bool,
+    playwright_test_results_dir: Path,
 ):
     project_data = create_project_from_template_dashboard(template_id)
 
@@ -47,6 +49,7 @@ def test_template(
         copy_workspace=True,
         product_url=product_url,
         is_service_legacy=is_service_legacy,
+        assertion_output_folder=playwright_test_results_dir,
     )
     s4l_websocket = resp["websocket"]
     s4l_iframe = resp["iframe"]

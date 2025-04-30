@@ -18,11 +18,6 @@ def user_role():
     return UserRole.USER
 
 
-@pytest.fixture
-def product_name():
-    return "osparc"
-
-
 async def test_batch_get_trashed_by_primary_gid(
     client: TestClient,
     logged_user: dict[str, Any],

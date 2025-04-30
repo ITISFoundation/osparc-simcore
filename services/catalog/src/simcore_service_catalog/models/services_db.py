@@ -3,14 +3,23 @@ from typing import Annotated, Any
 
 from common_library.basic_types import DEFAULT_FACTORY
 from models_library.basic_types import IdInt
+from models_library.groups import GroupID
 from models_library.products import ProductName
+from models_library.rest_filters import Filters
 from models_library.services_access import ServiceGroupAccessRights
 from models_library.services_base import ServiceKeyVersion
+from models_library.services_enums import ServiceType
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.utils.common_validators import empty_str_to_none_pre_validator
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import (
+    BaseModel,
+    BeforeValidator,
+    ConfigDict,
+    Field,
+    HttpUrl,
+    field_validator,
+)
 from pydantic.config import JsonDict
-from pydantic.types import PositiveInt
 from simcore_postgres_database.models.services_compatibility import CompatiblePolicyDict
 
 
@@ -20,7 +29,7 @@ class ServiceMetaDataDBGet(BaseModel):
     version: ServiceVersion
 
     # ownership
-    owner: IdInt | None
+    owner: GroupID | None
 
     # display
     name: str
@@ -83,6 +92,12 @@ class ServiceMetaDataDBGet(BaseModel):
     )
 
 
+def _httpurl_to_str(value: HttpUrl | str | None) -> str | None:
+    if isinstance(value, HttpUrl):
+        return f"{value}"
+    return value
+
+
 class ServiceMetaDataDBCreate(BaseModel):
     # primary-keys
     key: ServiceKey
@@ -96,7 +111,7 @@ class ServiceMetaDataDBCreate(BaseModel):
     description: str
     description_ui: bool = False
     thumbnail: str | None = None
-    icon: str | None = None
+    icon: Annotated[str | None, BeforeValidator(_httpurl_to_str)] = None
     version_display: str | None = None
 
     # tagging
@@ -208,7 +223,7 @@ assert (  # nosec
 
 
 class ServiceAccessRightsAtDB(ServiceKeyVersion, ServiceGroupAccessRights):
-    gid: PositiveInt
+    gid: GroupID
     product_name: ProductName
 
     @staticmethod
@@ -231,3 +246,19 @@ class ServiceAccessRightsAtDB(ServiceKeyVersion, ServiceGroupAccessRights):
     model_config = ConfigDict(
         from_attributes=True, json_schema_extra=_update_json_schema_extra
     )
+
+
+class ServiceFiltersDB(Filters):
+    service_type: ServiceType | None = None
+
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "example": {
+                    "by_service_type": "computational",
+                }
+            }
+        )
+
+    model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)

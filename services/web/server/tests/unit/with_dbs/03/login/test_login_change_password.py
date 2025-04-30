@@ -19,8 +19,8 @@ from simcore_service_webserver.login.settings import LoginOptions
 
 
 @pytest.fixture
-def new_password(fake_user_password: str) -> str:
-    return fake_user_password
+def new_password(user_password: str) -> str:
+    return user_password
 
 
 async def test_unauthorized_to_change_password(client: TestClient, new_password: str):

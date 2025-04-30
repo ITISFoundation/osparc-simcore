@@ -34,30 +34,6 @@ qx.Class.define("osparc.share.CollaboratorsWorkspace", {
     canIDelete: function(myAccessRights) {
       return myAccessRights["delete"];
     },
-
-    getViewerAccessRight: function() {
-      return {
-        "read": true,
-        "write": false,
-        "delete": false
-      };
-    },
-
-    getCollaboratorAccessRight: function() {
-      return {
-        "read": true,
-        "write": true,
-        "delete": false
-      };
-    },
-
-    getOwnerAccessRight: function() {
-      return {
-        "read": true,
-        "write": true,
-        "delete": true
-      };
-    }
   },
 
   members: {
@@ -68,19 +44,17 @@ qx.Class.define("osparc.share.CollaboratorsWorkspace", {
         return;
       }
 
+      const writeAccessRole = osparc.data.Roles.WORKSPACE["write"];
       const newCollaborators = {};
-      gids.forEach(gid => newCollaborators[gid] = this.self().getCollaboratorAccessRight());
+      gids.forEach(gid => newCollaborators[gid] = writeAccessRole.accessRights);
       osparc.store.Workspaces.getInstance().addCollaborators(this.__workspace.getWorkspaceId(), newCollaborators)
         .then(() => {
           const text = this.tr("Workspace successfully shared");
-          osparc.FlashMessenger.getInstance().logAs(text);
+          osparc.FlashMessenger.logAs(text);
           this.fireDataEvent("updateAccessRights", this.__workspace.serialize());
           this._reloadCollaboratorsList();
         })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong sharing the Workspace"), "ERROR");
-        });
+        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while sharing the workspace")));
     },
 
     _deleteMember: function(collaborator, item) {
@@ -91,13 +65,10 @@ qx.Class.define("osparc.share.CollaboratorsWorkspace", {
       osparc.store.Workspaces.getInstance().removeCollaborator(this.__workspace.getWorkspaceId(), collaborator["gid"])
         .then(() => {
           this.fireDataEvent("updateAccessRights", this.__workspace.serialize());
-          osparc.FlashMessenger.getInstance().logAs(collaborator["name"] + this.tr(" successfully removed"));
+          osparc.FlashMessenger.logAs(collaborator["name"] + this.tr(" successfully removed"));
           this._reloadCollaboratorsList();
         })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing ") + collaborator["name"], "ERROR");
-        })
+        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while removing ") + collaborator["name"]))
         .finally(() => {
           if (item) {
             item.setEnabled(true);
@@ -111,13 +82,10 @@ qx.Class.define("osparc.share.CollaboratorsWorkspace", {
       osparc.store.Workspaces.getInstance().updateCollaborator(this.__workspace.getWorkspaceId(), collaboratorGId, newAccessRights)
         .then(() => {
           this.fireDataEvent("updateAccessRights", this.__workspace.serialize());
-          osparc.FlashMessenger.getInstance().logAs(successMsg);
+          osparc.FlashMessenger.logAs(successMsg);
           this._reloadCollaboratorsList();
         })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(failureMsg, "ERROR");
-        })
+        .catch(err => osparc.FlashMessenger.logError(err, failureMsg))
         .finally(() => {
           if (item) {
             item.setEnabled(true);
@@ -126,40 +94,43 @@ qx.Class.define("osparc.share.CollaboratorsWorkspace", {
     },
 
     _promoteToEditor: function(collaborator, item) {
+      const writeAccessRole = osparc.data.Roles.WORKSPACE["write"];
       this.__make(
         collaborator["gid"],
-        this.self().getCollaboratorAccessRight(),
-        this.tr(`Successfully promoted to ${osparc.data.Roles.WORKSPACE[2].label}`),
-        this.tr(`Something went wrong promoting to ${osparc.data.Roles.WORKSPACE[2].label}`),
+        writeAccessRole.accessRights,
+        this.tr(`Successfully promoted to ${writeAccessRole.label}`),
+        this.tr(`Something went wrong while promoting to ${writeAccessRole.label}`),
         item
       );
     },
 
     _promoteToOwner: function(collaborator, item) {
+      const deleteAccessRole = osparc.data.Roles.WORKSPACE["delete"];
       this.__make(
         collaborator["gid"],
-        this.self().getOwnerAccessRight(),
-        this.tr(`Successfully promoted to ${osparc.data.Roles.WORKSPACE[3].label}`),
-        this.tr(`Something went wrong promoting to ${osparc.data.Roles.WORKSPACE[3].label}`),
+        deleteAccessRole.accessRights,
+        this.tr(`Successfully promoted to ${deleteAccessRole.label}`),
+        this.tr(`Something went wrong while promoting to ${deleteAccessRole.label}`),
         item
       );
     },
 
     _demoteToUser: async function(collaborator, item) {
+      const readAccessRole = osparc.data.Roles.WORKSPACE["read"];
       const groupId = collaborator["gid"];
       const demoteToUser = (gid, itm) => {
         this.__make(
           gid,
-          this.self().getViewerAccessRight(),
-          this.tr(`Successfully demoted to ${osparc.data.Roles.WORKSPACE[1].label}`),
-          this.tr(`Something went wrong demoting to ${osparc.data.Roles.WORKSPACE[1].label}`),
+          readAccessRole.accessRights,
+          this.tr(`Successfully demoted to ${readAccessRole.label}`),
+          this.tr(`Something went wrong while demoting to ${readAccessRole.label}`),
           itm
         );
       };
 
       const group = osparc.store.Groups.getInstance().getOrganization(groupId);
       if (group) {
-        const msg = this.tr(`Demoting to ${osparc.data.Roles.WORKSPACE[1].label} will remove write access to all the members of the Organization. Are you sure?`);
+        const msg = this.tr(`Demoting to ${readAccessRole.label} will remove write access to all the members of the Organization. Are you sure?`);
         const win = new osparc.ui.window.Confirmation(msg).set({
           caption: this.tr("Demote"),
           confirmAction: "delete",
@@ -178,11 +149,12 @@ qx.Class.define("osparc.share.CollaboratorsWorkspace", {
     },
 
     _demoteToEditor: function(collaborator, item) {
+      const writeAccessRole = osparc.data.Roles.WORKSPACE["write"];
       this.__make(
         collaborator["gid"],
-        this.self().getCollaboratorAccessRight(),
-        this.tr(`Successfully demoted to ${osparc.data.Roles.WORKSPACE[2].label}`),
-        this.tr(`Something went wrong demoting to ${osparc.data.Roles.WORKSPACE[2].label}`),
+        writeAccessRole.accessRights,
+        this.tr(`Successfully demoted to ${writeAccessRole.label}`),
+        this.tr(`Something went wrong while demoting to ${writeAccessRole.label}`),
         item
       );
     }

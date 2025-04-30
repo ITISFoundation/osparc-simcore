@@ -30,10 +30,9 @@ async def test_check_service_health(
 
 async def test_get_service_state(
     client: AsyncClient,
-    mocked_catalog_service_api_base: MockRouter,
-    mocked_directorv2_service_api_base: MockRouter,
-    mocked_storage_service_api_base: MockRouter,
-    mocked_webserver_service_api_base: MockRouter,
+    mocked_directorv2_rest_api_base: MockRouter,
+    mocked_storage_rest_api_base: MockRouter,
+    mocked_webserver_rest_api_base: MockRouter,
 ):
     response = await client.get(f"{API_VTAG}/state")
     assert response.status_code == status.HTTP_200_OK
@@ -45,7 +44,6 @@ async def test_get_service_state(
         "app_name": "simcore-service-api-server",
         "version": version_file.read_text().strip(),
         "services": {
-            "catalog": {"healthy": True},
             "director_v2": {"healthy": True},
             "storage": {"healthy": True},
             "webserver": {"healthy": True},

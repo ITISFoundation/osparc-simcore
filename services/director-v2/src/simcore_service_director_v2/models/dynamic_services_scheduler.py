@@ -1,4 +1,3 @@
-import json
 import logging
 from collections.abc import Mapping
 from datetime import datetime
@@ -10,6 +9,7 @@ from uuid import UUID
 
 import arrow
 from common_library.error_codes import ErrorCodeStr
+from common_library.json_serialization import json_dumps
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceCreate
 from models_library.api_schemas_directorv2.dynamic_services_service import (
     CommonServiceDetails,
@@ -504,7 +504,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
             "product_name": service.product_name,
             "paths_mapping": simcore_service_labels.paths_mapping,
             "callbacks_mapping": simcore_service_labels.callbacks_mapping,
-            "compose_spec": json.dumps(simcore_service_labels.compose_spec),
+            "compose_spec": json_dumps(simcore_service_labels.compose_spec),
             "container_http_entry": simcore_service_labels.container_http_entry,
             "restart_policy": simcore_service_labels.restart_policy,
             "dynamic_sidecar_network_name": names_helper.dynamic_sidecar_network_name,
@@ -541,7 +541,8 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         # compose_spec needs to be json encoded before encoding it to json
         # and storing it in the label
         return self.model_copy(
-            update={"compose_spec": json.dumps(self.compose_spec)}, deep=True
+            update={"compose_spec": json_dumps(self.compose_spec)},
+            deep=True,
         ).model_dump_json()
 
     model_config = ConfigDict(extra="allow", populate_by_name=True)

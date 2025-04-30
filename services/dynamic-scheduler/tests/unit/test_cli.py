@@ -38,7 +38,7 @@ def test_echo_dotenv(cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch):
 
     with monkeypatch.context() as patch:
         setenvs_from_dict(patch, environs)
-        ApplicationSettings.create_from_envs()
+        assert ApplicationSettings.create_from_envs()
 
 
 def test_list_settings(

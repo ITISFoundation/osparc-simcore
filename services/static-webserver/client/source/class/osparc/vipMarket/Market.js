@@ -65,7 +65,7 @@ qx.Class.define("osparc.vipMarket.Market", {
         licensedItemsStore.getLicensedItems(),
         licensedItemsStore.getPurchasedLicensedItems(walletId),
       ])
-        .then(values => {
+        .then(async values => {
           const licensedItems = values[0];
           const purchasedItems = values[1];
           osparc.data.model.LicensedItem.addSeatsFromPurchases(licensedItems, purchasedItems);
@@ -104,6 +104,8 @@ qx.Class.define("osparc.vipMarket.Market", {
             }
           });
 
+          await this.__addFreeItems();
+
           categories.forEach(category => {
             this.__buildViPMarketPage(category, category["items"]);
           });
@@ -111,14 +113,12 @@ qx.Class.define("osparc.vipMarket.Market", {
           if (openCategory) {
             this.__openCategory(openCategory);
           }
-
-          this.__addFreeItems();
         });
     },
 
     __addFreeItems: function() {
       const licensedItemsStore = osparc.store.LicensedItems.getInstance();
-      licensedItemsStore.getLicensedItems()
+      return licensedItemsStore.getLicensedItems()
         .then(async licensedItems => {
           this.__freeItems = [];
           const licensedItemsArr = Object.values(licensedItems);

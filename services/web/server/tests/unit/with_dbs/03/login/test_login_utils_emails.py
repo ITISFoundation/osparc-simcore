@@ -11,18 +11,18 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import make_mocked_request
 from faker import Faker
-from json2html import json2html
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.constants import RQ_PRODUCT_KEY
 from simcore_service_webserver.email.plugin import setup_email
-from simcore_service_webserver.login.plugin import setup_login
-from simcore_service_webserver.login.utils_email import (
+from simcore_service_webserver.login._emails_service import (
     AttachmentTuple,
     get_template_path,
     send_email_from_template,
 )
+from simcore_service_webserver.login.plugin import setup_login
+from simcore_service_webserver.publications._utils import json2html
 from simcore_service_webserver.statics._constants import FRONTEND_APPS_AVAILABLE
 
 
@@ -108,22 +108,6 @@ async def test_render_and_send_mail_for_password(
     http_request: web.Request,
 ):
     link = faker.url()  # some url link
-
-    await send_email_from_template(
-        http_request,
-        from_=f"no-reply@{product_name}.test",
-        to=destination_email,
-        template=await get_template_path(
-            http_request, "reset_password_email_failed.jinja2"
-        ),
-        context={
-            "host": http_request.host,
-            "reason": faker.text(),
-            "product": SimpleNamespace(
-                display_name=product_name.capitalize(), name=product_name
-            ),
-        },
-    )
 
     await send_email_from_template(
         http_request,

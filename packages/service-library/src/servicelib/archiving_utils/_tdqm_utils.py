@@ -1,8 +1,7 @@
 from typing import Final
 
-from pydantic import ByteSize, NonNegativeFloat, NonNegativeInt
+from pydantic import ByteSize, NonNegativeInt
 
-_UNIT_MULTIPLIER: Final[NonNegativeFloat] = 1024.0
 TQDM_FILE_OPTIONS: Final[dict] = {
     "unit": "byte",
     "unit_scale": True,

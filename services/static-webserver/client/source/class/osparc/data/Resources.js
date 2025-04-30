@@ -125,6 +125,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/projects/{studyId}"
           },
+          getServices: {
+            method: "GET",
+            url: statics.API + "/projects/{studyId}/nodes/-/services"
+          },
           getActive: {
             useCache: false,
             method: "GET",
@@ -272,6 +276,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "PUT",
             url: statics.API + "/projects/{studyId}/groups/{gId}"
           },
+          shareWithEmail: {
+            method: "POST",
+            url: statics.API + "/projects/{studyId}:share"
+          },
           addTag: {
             useCache: false,
             method: "POST",
@@ -309,6 +317,25 @@ qx.Class.define("osparc.data.Resources", {
             method: "POST",
             url: statics.API + "/projects/{studyId}/comments"
           }
+        }
+      },
+      "jobs": {
+        useCache: false, // handled in osparc.store.Jobs
+        endpoints: {
+          getPage: {
+            method: "GET",
+            // url: statics.API + "/computations/-/iterations/latest?offset={offset}&limit={limit}&order_by={orderBy}"
+            url: statics.API + "/computations/-/iterations/latest?offset={offset}&limit={limit}&order_by=%7B%22field%22:%22submitted_at%22,%22direction%22:%22desc%22%7D"
+          },
+        }
+      },
+      "subJobs": {
+        useCache: false, // handled in osparc.store.Jobs
+        endpoints: {
+          getPage: {
+            method: "GET",
+            url: statics.API + "/computations/{studyId}/iterations/latest/tasks?offset={offset}&limit={limit}"
+          },
         }
       },
       "folders": {
@@ -549,11 +576,14 @@ qx.Class.define("osparc.data.Resources", {
        */
       "tasks": {
         useCache: false,
-        idField: "id",
         endpoints: {
           get: {
             method: "GET",
             url: statics.API + "/tasks"
+          },
+          delete: {
+            method: "DELETE",
+            url: statics.API + "/tasks/{taskId}"
           }
         }
       },
@@ -562,40 +592,26 @@ qx.Class.define("osparc.data.Resources", {
        * SERVICES
        */
       "services": {
-        useCache: true,
-        idField: ["key", "version"],
-        endpoints: {
-          pricingPlans: {
-            useCache: false,
-            method: "GET",
-            url: statics.API + "/catalog/services/{key}/{version}/pricing-plan"
-          }
-        }
-      },
-
-      /*
-       * SERVICES V2 (web-api >=0.42.0)
-       */
-      "servicesV2": {
         useCache: false, // handled in osparc.store.Services
         idField: ["key", "version"],
         endpoints: {
-          get: {
+          getOne: {
             method: "GET",
-            url: statics.API + "/catalog/services/-/latest"
+            url: statics.API + "/catalog/services/{key}/{version}"
           },
           getPage: {
             method: "GET",
             url: statics.API + "/catalog/services/-/latest?offset={offset}&limit={limit}"
           },
-          getOne: {
-            method: "GET",
-            url: statics.API + "/catalog/services/{key}/{version}"
-          },
           patch: {
             method: "PATCH",
             url: statics.API + "/catalog/services/{key}/{version}"
-          }
+          },
+          pricingPlans: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/catalog/services/{key}/{version}/pricing-plan"
+          },
         }
       },
 
@@ -1176,21 +1192,9 @@ qx.Class.define("osparc.data.Resources", {
       "storageLocations": {
         useCache: true,
         endpoints: {
-          get: {
+          getLocations: {
             method: "GET",
             url: statics.API + "/storage/locations"
-          }
-        }
-      },
-      /*
-       * STORAGE DATASETS
-       */
-      "storageDatasets": {
-        useCache: false,
-        endpoints: {
-          getByLocation: {
-            method: "GET",
-            url: statics.API + "/storage/locations/{locationId}/datasets"
           }
         }
       },
@@ -1200,22 +1204,46 @@ qx.Class.define("osparc.data.Resources", {
       "storageFiles": {
         useCache: false,
         endpoints: {
-          getByLocationAndDataset: {
-            method: "GET",
-            url: statics.API + "/storage/locations/{locationId}/datasets/{datasetId}/metadata"
-          },
-          getByNode: {
-            method: "GET",
-            url: statics.API + "/storage/locations/0/files/metadata?uuid_filter={nodeId}"
-          },
-          put: {
+          copy: {
             method: "PUT",
             url: statics.API + "/storage/locations/{toLoc}/files/{fileName}?extra_location={fromLoc}&extra_source={fileUuid}"
-          },
-          delete: {
-            method: "DELETE",
-            url: statics.API + "/storage/locations/{locationId}/files/{fileUuid}"
           }
+        }
+      },
+      /*
+       * STORAGE PATHS
+       */
+      "storagePaths": {
+        useCache: false,
+        endpoints: {
+          getDatasets: {
+            method: "GET",
+            url: statics.API + "/storage/locations/{locationId}/paths?size=1000"
+          },
+          getDatasetsPage: {
+            method: "GET",
+            url: statics.API + "/storage/locations/{locationId}/paths?cursor={cursor}&size=1000"
+          },
+          getPaths: {
+            method: "GET",
+            url: statics.API + "/storage/locations/{locationId}/paths?file_filter={path}&size=1000"
+          },
+          getPathsPage: {
+            method: "GET",
+            url: statics.API + "/storage/locations/{locationId}/paths?file_filter={path}&cursor={cursor}&size=1000"
+          },
+          multiDownload: {
+            method: "POST",
+            url: statics.API + "/storage/locations/{locationId}/export-data"
+          },
+          batchDelete: {
+            method: "POST",
+            url: statics.API + "/storage/locations/{locationId}/-/paths:batchDelete"
+          },
+          requestSize: {
+            method: "POST",
+            url: statics.API + "/storage/locations/0/paths/{pathId}:size"
+          },
         }
       },
       /*
@@ -1434,6 +1462,7 @@ qx.Class.define("osparc.data.Resources", {
 
           let message = null;
           let status = null;
+          let supportId = null;
           if (e.getData().error) {
             const errorData = e.getData().error;
             if (errorData.message) {
@@ -1448,6 +1477,9 @@ qx.Class.define("osparc.data.Resources", {
               message = errors[0].message;
             }
             status = errorData.status;
+            if (errorData["support_id"]) {
+              supportId = errorData["support_id"];
+            }
           } else {
             const req = e.getRequest();
             message = req.getResponse();
@@ -1464,17 +1496,23 @@ qx.Class.define("osparc.data.Resources", {
                 if ("status" in err && err.status === 401) {
                   // Unauthorized again, the cookie might have expired.
                   // We can assume that all calls after this will respond with 401, so bring the user ot the login page.
-                  qx.core.Init.getApplication().logout(qx.locale.Manager.tr("You were logged out. Your cookie might have expired."));
+                  qx.core.Init.getApplication().logout(qx.locale.Manager.tr("You have been logged out. Your cookie might have expired."));
                 }
               });
           }
 
           if ([404, 503].includes(status)) {
-            message += "<br>Please try again later and/or contact support";
+            // NOTE: a temporary solution to avoid duplicate information
+            if (!message.includes("contact") && !message.includes("try")) {
+              message += "<br>Please try again later and/or contact support";
+            }
           }
           const err = Error(message ? message : `Error while trying to fetch ${endpoint} ${resource}`);
           if (status) {
             err.status = status;
+          }
+          if (supportId) {
+            err.supportId = supportId;
           }
           reject(err);
         };

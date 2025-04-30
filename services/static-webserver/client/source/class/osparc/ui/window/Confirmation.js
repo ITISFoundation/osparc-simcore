@@ -23,19 +23,9 @@ qx.Class.define("osparc.ui.window.Confirmation", {
       this.setMessage(message);
     }
 
-    const confirmButton = this.__confirmButton = new qx.ui.form.Button();
-    confirmButton.set({
-      center: true,
-      minWidth: 100
-    });
+    const confirmButton = this.getChildControl("confirm-button");
     this.bind("confirmText", confirmButton, "label");
-    confirmButton.addListener("execute", () => {
-      this.setConfirmed(true);
-      this.close(1);
-    }, this);
-    const command = new qx.ui.command.Command("Enter");
-    confirmButton.setCommand(command);
-    this.addButton(confirmButton);
+
     this.addCancelButton();
   },
 
@@ -60,10 +50,32 @@ qx.Class.define("osparc.ui.window.Confirmation", {
   },
 
   members: {
-    __confirmButton: null,
+
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "confirm-button": {
+          control = new qx.ui.form.Button().set({
+            appearance: "form-button",
+            center: true,
+            minWidth: 100,
+          });
+          control.addListener("execute", () => {
+            this.setConfirmed(true);
+            this.close(1);
+          }, this);
+          const command = new qx.ui.command.Command("Enter");
+          control.setCommand(command);
+          const btnsLayout = this.getChildControl("buttons-layout");
+          btnsLayout.addAt(control, 1);
+          break;
+        }
+      }
+      return control || this.base(arguments, id);
+    },
 
     getConfirmButton: function() {
-      return this.__confirmButton;
+      return this.getChildControl("confirm-button");
     },
 
     getCancelButton: function() {
@@ -71,19 +83,19 @@ qx.Class.define("osparc.ui.window.Confirmation", {
     },
 
     __applyConfirmAppearance: function(confirmationAction) {
-      const confBtn = this.__confirmButton;
+      const confirmButton = this.getChildControl("confirm-button");
       switch (confirmationAction) {
         case "create":
-          confBtn.setAppearance("strong-button");
+          confirmButton.setAppearance("strong-button");
           break;
         case "warning":
-          confBtn.setAppearance("warning-button");
+          confirmButton.setAppearance("warning-button");
           break;
         case "delete":
-          confBtn.setAppearance("danger-button");
+          confirmButton.setAppearance("danger-button");
           break;
         default:
-          confBtn.resetAppearance();
+          confirmButton.resetAppearance();
           break;
       }
     }

@@ -1,4 +1,3 @@
-import hashlib
 import logging
 from pathlib import Path
 
@@ -6,8 +5,6 @@ import aiofiles
 import httpx
 from aiohttp.typedefs import StrOrURL
 from aws_library.s3 import UploadID
-from models_library.projects_nodes_io import StorageFileID
-from models_library.users import UserID
 
 from ..constants import MAX_CHUNK_SIZE, S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID
 from ..models import FileMetaData, FileMetaDataAtDB
@@ -66,11 +63,6 @@ def is_file_entry_valid(file_metadata: FileMetaData | FileMetaDataAtDB) -> bool:
         and file_metadata.upload_id is None
         and file_metadata.upload_expires_at is None
     )
-
-
-def create_upload_completion_task_name(user_id: UserID, file_id: StorageFileID) -> str:
-    the_hash = hashlib.sha256(f"{user_id}_{file_id}".encode()).hexdigest()
-    return f"upload_complete_task_{the_hash}"
 
 
 def is_valid_managed_multipart_upload(upload_id: UploadID | None) -> bool:

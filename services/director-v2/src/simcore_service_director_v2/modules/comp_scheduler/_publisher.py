@@ -1,7 +1,7 @@
-from aiopg.sa import Engine
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from servicelib.rabbitmq import RabbitMQClient
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ...models.comp_runs import Iteration
 from ..db.repositories.comp_runs import CompRunsRepository
@@ -10,11 +10,11 @@ from ._models import SchedulePipelineRabbitMessage
 
 async def request_pipeline_scheduling(
     rabbitmq_client: RabbitMQClient,
-    db_engine: Engine,
+    db_engine: AsyncEngine,
     *,
     user_id: UserID,
     project_id: ProjectID,
-    iteration: Iteration
+    iteration: Iteration,
 ) -> None:
     # NOTE: we should use the transaction and the asyncpg engine here to ensure 100% consistency
     # https://github.com/ITISFoundation/osparc-simcore/issues/6818

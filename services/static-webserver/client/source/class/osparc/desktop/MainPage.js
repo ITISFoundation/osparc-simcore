@@ -68,6 +68,10 @@ qx.Class.define("osparc.desktop.MainPage", {
     preloadPromises.push(store.getAllClassifiers(true));
     preloadPromises.push(osparc.store.Tags.getInstance().fetchTags());
     preloadPromises.push(osparc.store.Products.getInstance().fetchUiConfig());
+    preloadPromises.push(osparc.store.PollTasks.getInstance().fetchTasks());
+    if (osparc.utils.DisabledPlugins.isJobsEnabled()) {
+      preloadPromises.push(osparc.store.Jobs.getInstance().fetchJobs());
+    }
     Promise.all(preloadPromises)
       .then(() => {
         const mainStack = this.__createMainStack();
@@ -75,6 +79,7 @@ qx.Class.define("osparc.desktop.MainPage", {
           flex: 1
         });
 
+        this.__attachTasks();
         this.__listenToWalletSocket();
         this.__attachHandlers();
       });
@@ -85,6 +90,14 @@ qx.Class.define("osparc.desktop.MainPage", {
     __dashboard: null,
     __loadingPage: null,
     __studyEditor: null,
+
+    __attachTasks: function() {
+      const pollTasks = osparc.store.PollTasks.getInstance();
+      const exportDataTasks = pollTasks.getExportDataTasks();
+      exportDataTasks.forEach(task => {
+        osparc.task.ExportData.exportDataTaskReceived(task, false);
+      });
+    },
 
     __listenToWalletSocket: function() {
       const socket = osparc.wrapper.WebSocket.getInstance();
@@ -153,9 +166,6 @@ qx.Class.define("osparc.desktop.MainPage", {
       }
       this.closeEditor();
       this.__showDashboard();
-      // reset templates
-      this.__dashboard.getTemplateBrowser().invalidateTemplates();
-      this.__dashboard.getTemplateBrowser().reloadResources();
       // reset studies
       this.__dashboard.getStudyBrowser().invalidateStudies();
       this.__dashboard.getStudyBrowser().reloadResources();
@@ -219,35 +229,54 @@ qx.Class.define("osparc.desktop.MainPage", {
 
     __publishTemplate: function(data) {
       const text = this.tr("Started template creation and added to the background tasks");
-      osparc.FlashMessenger.getInstance().logAs(text, "INFO");
+      osparc.FlashMessenger.logAs(text, "INFO");
+
+      const studyId = data["studyData"].uuid;
+      const studyName = data["studyData"].name;
+      const copyData = data["copyData"];
+      const templateAccessRights = data["accessRights"];
+      const templateType = data["templateType"];
 
       const params = {
         url: {
-          "study_id": data["studyData"].uuid,
-          "copy_data": data["copyData"]
+          "study_id": studyId,
+          "copy_data": copyData
         },
-        data: data["studyData"]
       };
       const options = {
         pollTask: true
       };
       const fetchPromise = osparc.data.Resources.fetch("studies", "postToTemplate", params, options);
-      const pollTasks = osparc.data.PollTasks.getInstance();
-      const interval = 1000;
-      pollTasks.createPollingTask(fetchPromise, interval)
+      const pollTasks = osparc.store.PollTasks.getInstance();
+      pollTasks.createPollingTask(fetchPromise)
         .then(task => {
           const templateBrowser = this.__dashboard.getTemplateBrowser();
+          const hypertoolBrowser = this.__dashboard.getHypertoolBrowser();
           if (templateBrowser) {
-            templateBrowser.taskToTemplateReceived(task, data["studyData"].name);
+            templateBrowser.taskToTemplateReceived(task, studyName);
           }
           task.addListener("resultReceived", e => {
             const templateData = e.getData();
-            osparc.store.Study.addCollaborators(templateData, data["accessRights"]);
+            // these operations need to be done after template creation
+            osparc.store.Study.addCollaborators(templateData, templateAccessRights);
+            if (templateType) {
+              const studyUI = osparc.utils.Utils.deepCloneObject(templateData["ui"]);
+              studyUI["templateType"] = templateType;
+              osparc.store.Study.patchStudyData(templateData, "ui", studyUI)
+                .then(() => {
+                  if (templateBrowser) {
+                    templateBrowser.reloadResources();
+                  }
+                  if (hypertoolBrowser) {
+                    hypertoolBrowser.reloadResources();
+                  }
+                });
+            }
           });
         })
         .catch(errMsg => {
-          const msg = this.tr("Something went wrong Duplicating the study<br>") + errMsg;
-          osparc.FlashMessenger.logAs(msg, "ERROR");
+          const msg = this.tr("Something went wrong while duplicating the study<br>") + errMsg;
+          osparc.FlashMessenger.logError(msg);
         });
     },
 
@@ -300,7 +329,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       osparc.data.Resources.fetch("snapshots", "checkout", params)
         .then(snapshotResp => {
           if (!snapshotResp) {
-            const msg = this.tr("Snapshot not found");
+            const msg = this.tr("No snapshot found");
             throw new Error(msg);
           }
           const params2 = {
@@ -308,7 +337,7 @@ qx.Class.define("osparc.desktop.MainPage", {
               "studyId": studyId
             }
           };
-          osparc.data.Resources.getOne("studies", params2)
+          osparc.data.Resources.fetch("studies", "getOne", params2)
             .then(studyData => {
               if (!studyData) {
                 const msg = this.tr("Study not found");
@@ -318,7 +347,7 @@ qx.Class.define("osparc.desktop.MainPage", {
             });
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          osparc.FlashMessenger.logError(err);
           this.__showDashboard();
           return;
         });
@@ -348,7 +377,7 @@ qx.Class.define("osparc.desktop.MainPage", {
         }
       };
       // OM TODO. DO NOT ADD ITERATIONS TO STUDIES CACHE
-      osparc.data.Resources.getOne("studies", params)
+      osparc.data.Resources.fetch("studies", "getOne", params)
         .then(studyData => {
           if (!studyData) {
             const msg = this.tr("Iteration not found");
@@ -357,7 +386,7 @@ qx.Class.define("osparc.desktop.MainPage", {
           osparc.desktop.MainPageHandler.getInstance().loadStudy(studyData);
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          osparc.FlashMessenger.logError(err);
           this.__showDashboard();
           return;
         });

@@ -42,4 +42,6 @@ projects_to_folders = sa.Table(
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
     sa.UniqueConstraint("project_uuid", "folder_id", "user_id"),
+    sa.Index("idx_project_to_folders_project_uuid", "project_uuid"),
+    sa.Index("idx_project_to_folders_user_id", "user_id"),
 )

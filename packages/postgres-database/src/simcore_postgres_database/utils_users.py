@@ -1,18 +1,19 @@
-""" Free functions, repository pattern, errors and data structures for the users resource
-    i.e. models.users main table and all its relations
+"""Free functions, repository pattern, errors and data structures for the users resource
+i.e. models.users main table and all its relations
 """
 
 import re
 import secrets
 import string
 from datetime import datetime
+from typing import Any, Final
 
 import sqlalchemy as sa
-from aiopg.sa.connection import SAConnection
-from aiopg.sa.result import RowProxy
+from common_library.async_tools import maybe_await
 from sqlalchemy import Column
 
-from .errors import UniqueViolation
+from ._protocols import DBConnection
+from .aiopg_errors import UniqueViolation
 from .models.users import UserRole, UserStatus, users
 from .models.users_details import users_pre_registration_details
 
@@ -25,32 +26,42 @@ class UserNotFoundInRepoError(BaseUserRepoError):
     pass
 
 
+# NOTE: see MyProfilePatch.user_name
+MIN_USERNAME_LEN: Final[int] = 4
+
+
+def _generate_random_chars(length: int = MIN_USERNAME_LEN) -> str:
+    """returns `length` random digit character"""
+    return "".join(secrets.choice(string.digits) for _ in range(length))
+
+
 def _generate_username_from_email(email: str) -> str:
     username = email.split("@")[0]
 
     # Remove any non-alphanumeric characters and convert to lowercase
-    return re.sub(r"[^a-zA-Z0-9]", "", username).lower()
+    username = re.sub(r"[^a-zA-Z0-9]", "", username).lower()
+
+    # Ensure the username is at least 4 characters long
+    if len(username) < MIN_USERNAME_LEN:
+        username += _generate_random_chars(length=MIN_USERNAME_LEN - len(username))
+
+    return username
 
 
-def _generate_random_chars(length=5) -> str:
-    """returns `length` random digit character"""
-    return "".join(secrets.choice(string.digits) for _ in range(length - 1))
-
-
-def generate_alternative_username(username) -> str:
+def generate_alternative_username(username: str) -> str:
     return f"{username}_{_generate_random_chars()}"
 
 
 class UsersRepo:
     @staticmethod
     async def new_user(
-        conn: SAConnection,
+        conn: DBConnection,
         email: str,
         password_hash: str,
         status: UserStatus,
         expires_at: datetime | None,
-    ) -> RowProxy:
-        data = {
+    ) -> Any:
+        data: dict[str, Any] = {
             "name": _generate_username_from_email(email),
             "email": email,
             "password_hash": password_hash,
@@ -65,7 +76,7 @@ class UsersRepo:
                 user_id = await conn.scalar(
                     users.insert().values(**data).returning(users.c.id)
                 )
-            except UniqueViolation:  # noqa: PERF203
+            except UniqueViolation:
                 data["name"] = generate_alternative_username(data["name"])
 
         result = await conn.execute(
@@ -77,13 +88,15 @@ class UsersRepo:
                 users.c.status,
             ).where(users.c.id == user_id)
         )
-        row = await result.first()
-        assert row  # nosec
+        row = await maybe_await(result.first())
+        from aiopg.sa.result import RowProxy
+
+        assert isinstance(row, RowProxy)  # nosec
         return row
 
     @staticmethod
     async def join_and_update_from_pre_registration_details(
-        conn: SAConnection, new_user_id: int, new_user_email: str
+        conn: DBConnection, new_user_id: int, new_user_email: str
     ) -> None:
         """After a user is created, it can be associated with information provided during invitation
 
@@ -99,6 +112,10 @@ class UsersRepo:
             .where(users_pre_registration_details.c.pre_email == new_user_email)
             .values(user_id=new_user_id)
         )
+
+        from aiopg.sa.result import ResultProxy
+
+        assert isinstance(result, ResultProxy)  # nosec
 
         if result.rowcount:
             pre_columns = (
@@ -124,13 +141,13 @@ class UsersRepo:
                     users_pre_registration_details.c.pre_email == new_user_email
                 )
             )
-            if details := await result.fetchone():
+            if details := await maybe_await(result.fetchone()):
                 await conn.execute(
                     users.update()
                     .where(users.c.id == new_user_id)
                     .values(
-                        first_name=details.pre_first_name,
-                        last_name=details.pre_last_name,
+                        first_name=details.pre_first_name,  # type: ignore[union-attr]
+                        last_name=details.pre_last_name,  # type: ignore[union-attr]
                     )
                 )
 
@@ -158,15 +175,14 @@ class UsersRepo:
         )
 
     @staticmethod
-    async def get_billing_details(conn: SAConnection, user_id: int) -> RowProxy | None:
+    async def get_billing_details(conn: DBConnection, user_id: int) -> Any | None:
         result = await conn.execute(
             UsersRepo.get_billing_details_query(user_id=user_id)
         )
-        value: RowProxy | None = await result.fetchone()
-        return value
+        return await maybe_await(result.fetchone())
 
     @staticmethod
-    async def get_role(conn: SAConnection, user_id: int) -> UserRole:
+    async def get_role(conn: DBConnection, user_id: int) -> UserRole:
         value: UserRole | None = await conn.scalar(
             sa.select(users.c.role).where(users.c.id == user_id)
         )
@@ -177,7 +193,7 @@ class UsersRepo:
         raise UserNotFoundInRepoError
 
     @staticmethod
-    async def get_email(conn: SAConnection, user_id: int) -> str:
+    async def get_email(conn: DBConnection, user_id: int) -> str:
         value: str | None = await conn.scalar(
             sa.select(users.c.email).where(users.c.id == user_id)
         )
@@ -188,7 +204,7 @@ class UsersRepo:
         raise UserNotFoundInRepoError
 
     @staticmethod
-    async def get_active_user_email(conn: SAConnection, user_id: int) -> str:
+    async def get_active_user_email(conn: DBConnection, user_id: int) -> str:
         value: str | None = await conn.scalar(
             sa.select(users.c.email).where(
                 (users.c.status == UserStatus.ACTIVE) & (users.c.id == user_id)
@@ -201,7 +217,7 @@ class UsersRepo:
         raise UserNotFoundInRepoError
 
     @staticmethod
-    async def is_email_used(conn: SAConnection, email: str) -> bool:
+    async def is_email_used(conn: DBConnection, email: str) -> bool:
         email = email.lower()
 
         registered = await conn.scalar(
@@ -231,9 +247,16 @@ def is_public(hide_attribute: Column, caller_id: int):
     return hide_attribute.is_(False) | (users.c.id == caller_id)
 
 
-def visible_user_profile_cols(caller_id: int):
+def visible_user_profile_cols(caller_id: int, *, username_label: str):
     """Returns user profile columns with visibility constraints applied based on privacy settings."""
     return (
+        sa.case(
+            (
+                is_private(users.c.privacy_hide_username, caller_id),
+                None,
+            ),
+            else_=users.c.name,
+        ).label(username_label),
         sa.case(
             (
                 is_private(users.c.privacy_hide_email, caller_id),

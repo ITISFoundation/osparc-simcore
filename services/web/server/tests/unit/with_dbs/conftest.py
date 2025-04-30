@@ -1,21 +1,21 @@
-""" Configuration for unit testing with a postgress fixture
-
-    - Unit testing of webserver app with a postgress service as fixture
-    - Starts test session by running a postgres container as a fixture (see postgress_service)
-
-    IMPORTANT: remember that these are still unit-tests!
-"""
-
-# nopycln: file
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
 
 import asyncio
 import random
 import sys
 import textwrap
-from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable, Iterator
+import warnings
+from collections.abc import (
+    AsyncGenerator,
+    AsyncIterable,
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    Iterator,
+)
 from copy import deepcopy
 from decimal import Decimal
 from pathlib import Path
@@ -35,11 +35,13 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
 from aiopg.sa import create_engine
-from aiopg.sa.connection import SAConnection
 from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
+from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobStatus
 from models_library.products import ProductName
+from models_library.progress_bar import ProgressReport
 from models_library.services_enums import ServiceState
+from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
 from pytest_docker.plugin import Services
 from pytest_mock import MockerFixture
@@ -52,9 +54,10 @@ from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsy
 from pytest_simcore.helpers.webserver_projects import NewProject
 from redis import Redis
 from servicelib.aiohttp.application_keys import APP_AIOPG_ENGINE_KEY
-from servicelib.aiohttp.long_running_tasks.client import LRTask
-from servicelib.aiohttp.long_running_tasks.server import ProgressPercent, TaskProgress
 from servicelib.common_aiopg_utils import DSN
+from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
+    AsyncJobComposedResult,
+)
 from settings_library.email import SMTPSettings
 from settings_library.redis import RedisDatabase, RedisSettings
 from simcore_postgres_database.models.groups_extra_properties import (
@@ -71,11 +74,13 @@ from simcore_service_webserver.application_settings_utils import AppConfigDict
 from simcore_service_webserver.constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.db.plugin import get_database_engine
 from simcore_service_webserver.projects.models import ProjectDict
+from simcore_service_webserver.projects.utils import NodesMap
 from simcore_service_webserver.statics._constants import (
     FRONTEND_APP_DEFAULT,
     FRONTEND_APPS_AVAILABLE,
 )
 from sqlalchemy import exc as sql_exceptions
+from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -288,8 +293,7 @@ def catalog_subsystem_mock(
         return services_in_project
 
     for namespace in (
-        "simcore_service_webserver.projects._crud_api_read.get_services_for_user_in_product",
-        "simcore_service_webserver.projects._crud_handlers.get_services_for_user_in_product",
+        "simcore_service_webserver.projects._crud_api_read.catalog_service.get_services_for_user_in_product",
     ):
         mock = mocker.patch(
             namespace,
@@ -344,29 +348,47 @@ def disable_static_webserver(monkeypatch: pytest.MonkeyPatch) -> Callable:
 
 
 @pytest.fixture
-async def storage_subsystem_mock(mocker: MockerFixture) -> MockedStorageSubsystem:
+async def storage_subsystem_mock(
+    mocker: MockerFixture, faker: Faker
+) -> MockedStorageSubsystem:
     """
     Patches client calls to storage service
 
     Patched functions are exposed within projects but call storage subsystem
     """
 
-    async def _mock_copy_data_from_project(app, src_prj, dst_prj, nodes_map, user_id):
+    async def _mock_copy_data_from_project(
+        app: web.Application,
+        *,
+        source_project: ProjectDict,
+        destination_project: ProjectDict,
+        nodes_map: NodesMap,
+        user_id: UserID,
+        product_name: str,
+    ) -> AsyncGenerator[AsyncJobComposedResult, None]:
         print(
-            f"MOCK copying data project {src_prj['uuid']} -> {dst_prj['uuid']} "
+            f"MOCK copying data project {source_project['uuid']} -> {destination_project['uuid']} "
             f"with {len(nodes_map)} s3 objects by user={user_id}"
         )
 
-        yield LRTask(TaskProgress(message="pytest mocked fct, started"))
+        yield AsyncJobComposedResult(
+            AsyncJobStatus(
+                job_id=faker.uuid4(cast_to=None),
+                progress=ProgressReport(actual_value=0),
+                done=False,
+            )
+        )
 
-        async def _mock_result():
+        async def _mock_result() -> None:
             return None
 
-        yield LRTask(
-            TaskProgress(
-                message="pytest mocked fct, finished", percent=ProgressPercent(1.0)
+        yield AsyncJobComposedResult(
+            AsyncJobStatus(
+                job_id=faker.uuid4(cast_to=None),
+                progress=ProgressReport(actual_value=1),
+                done=True,
             ),
-            _result=_mock_result(),
+            _mock_result(),
         )
 
     mock = mocker.patch(
@@ -383,7 +405,7 @@ async def storage_subsystem_mock(mocker: MockerFixture) -> MockedStorageSubsyste
     )
 
     mock2 = mocker.patch(
-        "simcore_service_webserver.projects.projects_service.storage_api.delete_data_folders_of_project_node",
+        "simcore_service_webserver.projects._projects_service.storage_service.delete_data_folders_of_project_node",
         autospec=True,
         return_value=None,
     )
@@ -400,7 +422,7 @@ async def storage_subsystem_mock(mocker: MockerFixture) -> MockedStorageSubsyste
 @pytest.fixture
 def asyncpg_storage_system_mock(mocker):
     return mocker.patch(
-        "simcore_service_webserver.login.storage.AsyncpgStorage.delete_user",
+        "simcore_service_webserver.login._login_repository_legacy.AsyncpgStorage.delete_user",
         return_value="",
     )
 
@@ -425,7 +447,7 @@ async def mocked_dynamic_services_interface(
         )
 
     mock["director_v2.api.create_or_update_pipeline"] = mocker.patch(
-        "simcore_service_webserver.director_v2.api.create_or_update_pipeline",
+        "simcore_service_webserver.director_v2.director_v2_service.create_or_update_pipeline",
         autospec=True,
         return_value=None,
     )
@@ -535,11 +557,46 @@ async def aiopg_engine(postgres_db: sa.engine.Engine) -> AsyncIterator[aiopg.sa.
     engine = await create_engine(f"{postgres_db.url}")
     assert engine
 
+    warnings.warn(
+        "The 'aiopg_engine' fixture is deprecated and will be removed in a future release. "
+        "Please use 'asyncpg_engine' fixture instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     yield engine
 
     if engine:
         engine.close()
         await engine.wait_closed()
+
+
+@pytest.fixture
+async def asyncpg_engine(  # <-- WE SHOULD USE THIS ONE instead of aiopg_engine
+    postgres_db: sa.engine.Engine, is_pdb_enabled: bool
+) -> AsyncIterable[AsyncEngine]:
+    # NOTE: call to postgres BEFORE app starts
+    dsn = f"{postgres_db.url}".replace("postgresql://", "postgresql+asyncpg://")
+    minsize = 1
+    maxsize = 50
+
+    engine: AsyncEngine = create_async_engine(
+        dsn,
+        pool_size=minsize,
+        max_overflow=maxsize - minsize,
+        connect_args={
+            "server_settings": {
+                "application_name": "webserver_tests_with_dbs:asyncpg_engine"
+            }
+        },
+        pool_pre_ping=True,  # https://docs.sqlalchemy.org/en/14/core/pooling.html#dealing-with-disconnects
+        future=True,  # this uses sqlalchemy 2.0 API, shall be removed when sqlalchemy 2.0 is released
+        echo=is_pdb_enabled,
+    )
+
+    yield engine
+
+    await engine.dispose()
 
 
 # REDIS CORE SERVICE ------------------------------------------------------
@@ -679,23 +736,13 @@ async def with_permitted_override_services_specifications(
 
 
 @pytest.fixture
-async def _pre_connection(postgres_db: sa.engine.Engine) -> AsyncIterable[SAConnection]:
-    # NOTE: call to postgres BEFORE app starts
-    async with await create_engine(
-        f"{postgres_db.url}"
-    ) as engine, engine.acquire() as conn:
-        yield conn
-
-
-@pytest.fixture
-async def all_products_names(
-    _pre_connection: SAConnection,
+async def app_products_names(
+    asyncpg_engine: AsyncEngine,
 ) -> AsyncIterable[list[ProductName]]:
-    # default product
-    result = await _pre_connection.execute(
-        products.select().order_by(products.c.priority)
-    )
-    rows = await result.fetchall()
+    async with asyncpg_engine.connect() as conn:
+        # default product
+        result = await conn.execute(products.select().order_by(products.c.priority))
+        rows = result.fetchall()
     assert rows
     assert len(rows) == 1
     osparc_product_row = rows[0]
@@ -706,37 +753,40 @@ async def all_products_names(
     priority = 1
     for name in FRONTEND_APPS_AVAILABLE:
         if name != FRONTEND_APP_DEFAULT:
-            result = await _pre_connection.execute(
-                products.insert().values(
-                    random_product(
-                        name=name,
-                        priority=priority,
-                        login_settings=osparc_product_row.login_settings,
-                        group_id=None,
+            async with asyncpg_engine.begin() as conn:
+                result = await conn.execute(
+                    products.insert().values(
+                        random_product(
+                            name=name,
+                            priority=priority,
+                            login_settings=osparc_product_row.login_settings,
+                            group_id=None,
+                        )
                     )
                 )
-            )
-            await get_or_create_product_group(_pre_connection, product_name=name)
+                await get_or_create_product_group(conn, product_name=name)
             priority += 1
 
-    # get all products
-    result = await _pre_connection.execute(
-        sa.select(products.c.name).order_by(products.c.priority)
-    )
-    rows = await result.fetchall()
+    async with asyncpg_engine.connect() as conn:
+        # get all products
+        result = await conn.execute(
+            sa.select(products.c.name).order_by(products.c.priority)
+        )
+        rows = result.fetchall()
 
     yield [r.name for r in rows]
 
-    await _pre_connection.execute(products_prices.delete())
-    await _pre_connection.execute(
-        products.delete().where(products.c.name != FRONTEND_APP_DEFAULT)
-    )
+    async with asyncpg_engine.begin() as conn:
+        await conn.execute(products_prices.delete())
+        await conn.execute(
+            products.delete().where(products.c.name != FRONTEND_APP_DEFAULT)
+        )
 
 
 @pytest.fixture
 async def all_product_prices(
-    _pre_connection: SAConnection,
-    all_products_names: list[ProductName],
+    asyncpg_engine: AsyncEngine,
+    app_products_names: list[ProductName],
     faker: Faker,
 ) -> dict[ProductName, Decimal | None]:
     """Initial list of prices for all products"""
@@ -748,23 +798,24 @@ async def all_product_prices(
         "tiplite": Decimal(5),
         "s4l": Decimal(9),
         "s4llite": Decimal(0),  # free of charge
-        "s4lacad": Decimal(1.1),
+        "s4lacad": Decimal("1.1"),
     }
 
     result = {}
-    for product_name in all_products_names:
+    for product_name in app_products_names:
         usd_or_none = product_price.get(product_name)
         if usd_or_none is not None:
-            await _pre_connection.execute(
-                products_prices.insert().values(
-                    product_name=product_name,
-                    usd_per_credit=usd_or_none,
-                    comment=faker.sentence(),
-                    min_payment_amount_usd=10,
-                    stripe_price_id=faker.pystr(),
-                    stripe_tax_rate_id=faker.pystr(),
+            async with asyncpg_engine.begin() as conn:
+                await conn.execute(
+                    products_prices.insert().values(
+                        product_name=product_name,
+                        usd_per_credit=usd_or_none,
+                        comment=faker.sentence(),
+                        min_payment_amount_usd=10,
+                        stripe_price_id=faker.pystr(),
+                        stripe_tax_rate_id=faker.pystr(),
+                    )
                 )
-            )
 
         result[product_name] = usd_or_none
 
@@ -774,23 +825,23 @@ async def all_product_prices(
 @pytest.fixture
 async def latest_osparc_price(
     all_product_prices: dict[ProductName, Decimal],
-    _pre_connection: SAConnection,
+    asyncpg_engine: AsyncEngine,
 ) -> Decimal:
     """This inserts a new price for osparc in the history
     (i.e. the old price of osparc is still in the database)
     """
-
-    usd = await _pre_connection.scalar(
-        products_prices.insert()
-        .values(
-            product_name="osparc",
-            usd_per_credit=all_product_prices["osparc"] + 5,
-            comment="New price for osparc",
-            stripe_price_id="stripe-price-id",
-            stripe_tax_rate_id="stripe-tax-rate-id",
+    async with asyncpg_engine.begin() as conn:
+        usd = await conn.scalar(
+            products_prices.insert()
+            .values(
+                product_name="osparc",
+                usd_per_credit=all_product_prices["osparc"] + 5,
+                comment="New price for osparc",
+                stripe_price_id="stripe-price-id",
+                stripe_tax_rate_id="stripe-tax-rate-id",
+            )
+            .returning(products_prices.c.usd_per_credit)
         )
-        .returning(products_prices.c.usd_per_credit)
-    )
     assert usd is not None
     assert usd != all_product_prices["osparc"]
     return Decimal(usd)

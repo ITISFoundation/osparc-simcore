@@ -150,7 +150,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
           const statusLabel = nodeStatus.getChildControl("label");
           const requestOpenLogger = () => this.fireEvent("requestOpenLogger");
           const evaluateLabel = () => {
-            const failed = statusLabel.getValue() === "Failed";
+            const failed = statusLabel.getValue() === "Unsuccessful";
             statusLabel.setCursor(failed ? "pointer" : "auto");
             if (nodeStatus.hasListener("tap")) {
               nodeStatus.removeListener("tap", requestOpenLogger);

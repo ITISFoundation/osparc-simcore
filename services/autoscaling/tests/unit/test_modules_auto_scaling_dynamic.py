@@ -201,11 +201,10 @@ def minimal_configuration(
     enabled_dynamic_mode: EnvVarsDict,
     mocked_ec2_instances_envs: EnvVarsDict,
     disabled_rabbitmq: None,
-    disable_dynamic_service_background_task: None,
+    disable_autoscaling_background_task: None,
     disable_buffers_pool_background_task: None,
     mocked_redis_server: None,
-) -> None:
-    ...
+) -> None: ...
 
 
 def _assert_rabbit_autoscaling_message_sent(
@@ -626,11 +625,11 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
     )
     # update our fake node
     fake_attached_node.spec.labels[_OSPARC_SERVICE_READY_LABEL_KEY] = "true"
-    fake_attached_node.spec.labels[
-        _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
-    ] = mock_docker_tag_node.call_args_list[2][1]["tags"][
-        _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
-    ]
+    fake_attached_node.spec.labels[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY] = (
+        mock_docker_tag_node.call_args_list[2][1]["tags"][
+            _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
+        ]
+    )
     # check the activate time is later than attach time
     assert arrow.get(
         mock_docker_tag_node.call_args_list[1][1]["tags"][
@@ -661,11 +660,11 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
         available=True,
     )
     # update our fake node
-    fake_attached_node.spec.labels[
-        _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
-    ] = mock_docker_tag_node.call_args_list[1][1]["tags"][
-        _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
-    ]
+    fake_attached_node.spec.labels[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY] = (
+        mock_docker_tag_node.call_args_list[1][1]["tags"][
+            _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
+        ]
+    )
     mock_docker_tag_node.reset_mock()
     mock_docker_set_node_availability.assert_not_called()
 
@@ -852,9 +851,9 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
     if not with_drain_nodes_labelled:
         fake_attached_node.spec.availability = Availability.drain
     fake_attached_node.spec.labels[_OSPARC_SERVICE_READY_LABEL_KEY] = "false"
-    fake_attached_node.spec.labels[
-        _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
-    ] = datetime.datetime.now(tz=datetime.UTC).isoformat()
+    fake_attached_node.spec.labels[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY] = (
+        datetime.datetime.now(tz=datetime.UTC).isoformat()
+    )
 
     # the node will not be terminated before the timeout triggers
     assert app_settings.AUTOSCALING_EC2_INSTANCES
@@ -1076,7 +1075,7 @@ async def test_cluster_scaling_up_and_down_against_aws(
     app_with_docker_join_drained: EnvVarsDict,
     docker_swarm: None,
     disabled_rabbitmq: None,
-    disable_dynamic_service_background_task: None,
+    disable_autoscaling_background_task: None,
     disable_buffers_pool_background_task: None,
     mocked_redis_server: None,
     external_envfile_dict: EnvVarsDict,
@@ -1150,7 +1149,7 @@ async def test_cluster_scaling_up_and_down_against_aws(
                     cpus=5, ram=TypeAdapter(ByteSize).validate_python("36Gib")
                 ),
                 num_services=10,
-                expected_instance_type="g3.4xlarge",  # 1 GPU, 16 CPUs, 122GiB
+                expected_instance_type="r5n.4xlarge",  # 1 GPU, 16 CPUs, 128GiB
                 expected_num_instances=4,
             ),
             id="sim4life-light",
@@ -1238,12 +1237,12 @@ async def test_cluster_scaling_up_starts_multiple_instances(
     [
         pytest.param(
             _ScaleUpParams(
-                imposed_instance_type="g3.4xlarge",  # 1 GPU, 16 CPUs, 122GiB
+                imposed_instance_type="g4dn.2xlarge",  # 1 GPU, 8 CPUs, 32GiB
                 service_resources=Resources(
-                    cpus=16, ram=TypeAdapter(ByteSize).validate_python("30Gib")
+                    cpus=8, ram=TypeAdapter(ByteSize).validate_python("15Gib")
                 ),
                 num_services=12,
-                expected_instance_type="g3.4xlarge",  # 1 GPU, 16 CPUs, 122GiB
+                expected_instance_type="g4dn.2xlarge",  # 1 GPU, 8 CPUs, 32GiB
                 expected_num_instances=10,
             ),
             _ScaleUpParams(
@@ -1788,9 +1787,7 @@ async def test__activate_drained_nodes_with_no_tasks(
 ):
     # no tasks, does nothing and returns True
     empty_cluster = cluster()
-    updated_cluster = await _activate_drained_nodes(
-        initialized_app, empty_cluster, DynamicAutoscaling()
-    )
+    updated_cluster = await _activate_drained_nodes(initialized_app, empty_cluster)
     assert updated_cluster == empty_cluster
 
     active_cluster = cluster(
@@ -1802,9 +1799,7 @@ async def test__activate_drained_nodes_with_no_tasks(
             create_associated_instance(drained_host_node, True)  # noqa: FBT003
         ],
     )
-    updated_cluster = await _activate_drained_nodes(
-        initialized_app, active_cluster, DynamicAutoscaling()
-    )
+    updated_cluster = await _activate_drained_nodes(initialized_app, active_cluster)
     assert updated_cluster == active_cluster
     mock_docker_tag_node.assert_not_called()
 
@@ -1856,7 +1851,7 @@ async def test__activate_drained_nodes_with_no_drained_nodes(
         active_nodes=[create_associated_instance(host_node, True)]  # noqa: FBT003
     )
     updated_cluster = await _activate_drained_nodes(
-        initialized_app, cluster_without_drained_nodes, DynamicAutoscaling()
+        initialized_app, cluster_without_drained_nodes
     )
     assert updated_cluster == cluster_without_drained_nodes
     mock_docker_tag_node.assert_not_called()
@@ -1917,7 +1912,7 @@ async def test__activate_drained_nodes_with_drained_node(
     )
 
     updated_cluster = await _activate_drained_nodes(
-        initialized_app, cluster_with_drained_nodes, DynamicAutoscaling()
+        initialized_app, cluster_with_drained_nodes
     )
     # they are the same nodes, but the availability might have changed here
     assert updated_cluster.active_nodes != cluster_with_drained_nodes.drained_nodes
@@ -2300,9 +2295,9 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
     # simulate one of the hot buffer is not drained anymore and took the pending service
     random_fake_node = random.choice(fake_hot_buffer_nodes)  # noqa: S311
     random_fake_node.spec.labels[_OSPARC_SERVICE_READY_LABEL_KEY] = "true"
-    random_fake_node.spec.labels[
-        _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
-    ] = arrow.utcnow().isoformat()
+    random_fake_node.spec.labels[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY] = (
+        arrow.utcnow().isoformat()
+    )
     random_fake_node.spec.availability = Availability.active
     # simulate the fact that the warm buffer that just started is not yet visible
     mock_find_node_with_name_returns_fake_node.return_value = None

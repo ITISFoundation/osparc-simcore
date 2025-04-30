@@ -69,14 +69,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       event: "changeCurrentFolderId"
     },
 
-    multiSelection: {
-      check: "Boolean",
-      init: false,
-      nullable: false,
-      event: "changeMultiSelection",
-      apply: "__applyMultiSelection"
-    },
-
     // Ordering by Possibilities:
     // field: type | uuid | name | description | prj_owner | creation_date | last_change_date
     // direction: asc | desc
@@ -123,10 +115,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               osparc.notification.Notifications.getInstance().addNotifications(notifications);
             });
         })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.logAs(err.message, "ERROR");
-        });
+        .catch(err => osparc.FlashMessenger.logError(err));
     },
 
     __getActiveStudy: function() {
@@ -262,34 +251,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         return;
       }
 
-      osparc.data.Resources.get("tasks")
-        .then(tasks => {
-          if (tasks && tasks.length) {
-            this.__tasksReceived(tasks);
-          }
-        });
-
-      // Show "Contact Us" message if services.length === 0
-      // Most probably is a product-stranger user (it can also be that the catalog is down)
-      osparc.store.Services.getServicesLatest()
-        .then(services => {
-          if (Object.keys(services).length === 0) {
-            const noAccessText = new qx.ui.basic.Label().set({
-              selectable: true,
-              rich: true,
-              font: "text-18",
-              paddingTop: 20
-            });
-            let msg = this.tr("It seems you don't have access to this product.");
-            msg += "</br>";
-            msg += "</br>";
-            msg += this.tr("Please contact us:");
-            msg += "</br>";
-            const supportEmail = osparc.store.VendorInfo.getInstance().getSupportEmail();
-            noAccessText.setValue(msg + supportEmail);
-            this._addToLayout(noAccessText);
-          }
-        });
+      this.__tasksToCards();
 
       this._loadingResourcesBtn.setFetching(true);
       this._loadingResourcesBtn.setVisibility("visible");
@@ -338,8 +300,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           }
         })
         .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.logAs(err.message, "ERROR");
+          osparc.FlashMessenger.logError(err);
           // stop fetching
           if (this._resourcesContainer.getFlatList()) {
             this._resourcesContainer.getFlatList().nextRequest = null;
@@ -383,7 +344,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
                 studyId
               }
             };
-            osparc.data.Resources.getOne("studies", params)
+            osparc.data.Resources.fetch("studies", "getOne", params)
               .then(studyData => {
                 this.__studyStateReceived(study["uuid"], studyData["state"]);
               });
@@ -413,6 +374,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.__configureStudyCards(cards);
 
       this.__addNewStudyButtons();
+
+      this.__tasksToCards();
 
       const loadMoreBtn = this.__createLoadMoreButton();
       loadMoreBtn.set({
@@ -470,13 +433,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => {
           this.__reloadWorkspaces();
           const msg = this.tr("Successfully deleted");
-          osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+          osparc.FlashMessenger.logAs(msg, "INFO");
           this._resourceFilter.setTrashEmpty(false);
         })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
-        });
+        .catch(err => osparc.FlashMessenger.logError(err));
     },
 
     _untrashWorkspaceRequested: function(workspace) {
@@ -484,13 +444,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => {
           this.__reloadWorkspaces();
           const msg = this.tr("Successfully restored");
-          osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+          osparc.FlashMessenger.logAs(msg, "INFO");
           this._resourceFilter.evaluateTrashEmpty();
         })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
-        });
+        .catch(err => osparc.FlashMessenger.logError(err));
     },
 
     _deleteWorkspaceRequested: function(workspaceId) {
@@ -498,13 +455,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => {
           this.__reloadWorkspaces();
           const msg = this.tr("Successfully deleted");
-          osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+          osparc.FlashMessenger.logAs(msg, "INFO");
           this._resourceFilter.evaluateTrashEmpty();
         })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.logAs(err.message, "ERROR");
-        })
+        .catch(err => osparc.FlashMessenger.logError(err))
     },
     // /WORKSPACES
 
@@ -584,10 +538,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.store.Folders.getInstance().moveFolderToWorkspace(folderId, destWorkspaceId) // first move to workspace
         .then(() => osparc.store.Folders.getInstance().moveFolderToFolder(folderId, destFolderId)) // then move to folder
         .then(() => this.__reloadFolders())
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
-        });
+        .catch(err => osparc.FlashMessenger.logError(err));
     },
 
     __folderToFolderRequested: function(folderId, workspaceId, destWorkspaceId, destFolderId) {
@@ -608,13 +559,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => {
           this.__reloadFolders();
           const msg = this.tr("Successfully deleted");
-          osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+          osparc.FlashMessenger.logAs(msg, "INFO");
           this._resourceFilter.setTrashEmpty(false);
         })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
-        });
+        .catch(err => osparc.FlashMessenger.logError(err));
     },
 
     _trashFolderRequested: function(folderId) {
@@ -640,13 +588,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => {
           this.__reloadFolders();
           const msg = this.tr("Successfully restored");
-          osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+          osparc.FlashMessenger.logAs(msg, "INFO");
           this._resourceFilter.evaluateTrashEmpty();
         })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
-        })
+        .catch(err => osparc.FlashMessenger.logError(err))
     },
 
     _deleteFolderRequested: function(folderId) {
@@ -654,7 +599,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => {
           this.__reloadFolders();
           const msg = this.tr("Successfully deleted");
-          osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+          osparc.FlashMessenger.logAs(msg, "INFO");
           this._resourceFilter.evaluateTrashEmpty();
         })
         .catch(err => console.error(err));
@@ -667,7 +612,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         card.addListener("tap", e => this.__studyCardClicked(card, e.getNativeEvent().shiftKey), this);
         this._populateCardMenu(card);
 
-        this.__attachDragHandlers(card);
+        if (this.getCurrentContext() !== "trash") {
+          this.__attachDragHandlers(card);
+        }
       });
     },
 
@@ -729,11 +676,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this.setMultiSelection(false);
       });
 
-      const store = osparc.store.Store.getInstance();
-      store.addListener("changeTags", () => {
+      const tagsStore = osparc.store.Tags.getInstance();
+      tagsStore.addListener("tagsChanged", () => {
         this.invalidateStudies();
         this.__reloadStudies();
       }, this);
+
+      const store = osparc.store.Store.getInstance();
       store.addListener("studyStateChanged", e => {
         const {
           studyId,
@@ -889,6 +838,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this.__createFolder(data);
       }, this);
 
+      newPlusButtonMenu.addListener("changeTab", e => this.fireDataEvent("changeTab", e.getData()));
+
       newPlusButtonMenu.addListener("newEmptyStudyClicked", e => {
         const {
           newStudyLabel,
@@ -937,85 +888,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             // this one is different since it groups all new buttons in one new button
             this.__addTIPPlusButton();
             break;
-          default:
-            this.__addPlusButtons();
-            break;
         }
-      }
-    },
-
-    __addPlusButtons: function() {
-      const plusButtonConfig = osparc.store.Products.getInstance().getNewStudiesUiConfig();
-      if (plusButtonConfig) {
-        plusButtonConfig["resources"].forEach(newStudyData => {
-          if (newStudyData["resourceType"] === "study") {
-            this.__addEmptyStudyPlusButton(newStudyData);
-          } else if (newStudyData["resourceType"] === "service") {
-            this.__addNewStudyFromServiceButton(newStudyData);
-          }
-        });
-      }
-    },
-
-    __addEmptyStudyPlusButton: function(newStudyData) {
-      const mode = this._resourcesContainer.getMode();
-      const defTitle = this.tr("Empty") + " " + osparc.product.Utils.getStudyAlias({
-        firstUpperCase: true
-      });
-      const title = newStudyData["title"] || defTitle;
-      const desc = newStudyData["description"] || this.tr("Start with an empty study");
-      const newEmptyStudyBtn = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
-      newEmptyStudyBtn.setCardKey("new-study");
-      newEmptyStudyBtn.subscribeToFilterGroup("searchBarFilter");
-      osparc.utils.Utils.setIdToWidget(newEmptyStudyBtn, newStudyData["idToWidget"]);
-      newEmptyStudyBtn.addListener("tap", () => this.__newEmptyStudyBtnClicked(newStudyData["newStudyLabel"]));
-      this._resourcesContainer.addNonResourceCard(newEmptyStudyBtn);
-    },
-
-    __addNewStudyFromServiceButton: function(newStudyData) {
-      if ("expectedKey" in newStudyData) {
-        const key = newStudyData["expectedKey"];
-        // Include deprecated versions, they should all be updatable to a non deprecated version
-        const versions = osparc.service.Utils.getVersions(key, false);
-        if (versions.length && newStudyData) {
-          // scale to latest compatible
-          const latestVersion = versions[0];
-          const latestCompatible = osparc.service.Utils.getLatestCompatible(key, latestVersion);
-          osparc.store.Services.getService(latestCompatible["key"], latestCompatible["version"])
-            .then(latestMetadata => {
-              // make sure this one is not deprecated
-              if (osparc.service.Utils.isDeprecated(latestMetadata)) {
-                return;
-              }
-              const title = newStudyData.title + " " + osparc.service.Utils.extractVersionDisplay(latestMetadata);
-              const desc = newStudyData.description;
-              const mode = this._resourcesContainer.getMode();
-              const newStudyFromServiceButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
-              newStudyFromServiceButton.setCardKey("new-"+key);
-              if (newStudyData["idToWidget"]) {
-                osparc.utils.Utils.setIdToWidget(newStudyFromServiceButton, newStudyData["idToWidget"]);
-              }
-              newStudyFromServiceButton.addListener("tap", () => this.__newStudyFromServiceBtnClicked(latestMetadata["key"], latestMetadata["version"], newStudyData.newStudyLabel));
-              this._resourcesContainer.addNonResourceCard(newStudyFromServiceButton);
-            })
-        }
-      } else if ("myMostUsed" in newStudyData) {
-        const excludeFrontend = true;
-        const excludeDeprecated = true
-        osparc.store.Services.getServicesLatestList(excludeFrontend, excludeDeprecated)
-          .then(servicesList => {
-            osparc.service.Utils.sortObjectsBasedOn(servicesList, {
-              "sort": "hits",
-              "order": "down"
-            });
-            for (let i=0; i<newStudyData["myMostUsed"]; i++) {
-              const latestMetadata = servicesList[i];
-              const mode = this._resourcesContainer.getMode();
-              const newStudyFromServiceButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(latestMetadata["name"]) : new osparc.dashboard.ListButtonNew(latestMetadata["name"]);
-              newStudyFromServiceButton.addListener("tap", () => this.__newStudyFromServiceBtnClicked(latestMetadata["key"], latestMetadata["version"], latestMetadata["name"]));
-              this._resourcesContainer.addNonResourceCard(newStudyFromServiceButton);
-            }
-          });
       }
     },
 
@@ -1034,29 +907,25 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         newPlansBtn.setEnabled(true);
 
         newPlansBtn.addListener("tap", () => {
-          osparc.data.Resources.get("templates")
-            .then(templates => {
-              if (templates) {
-                const newStudies = new osparc.dashboard.NewStudies(newStudiesConfig);
-                newStudies.addListener("templatesLoaded", () => {
-                  newStudies.setGroupBy("category");
-                  const winTitle = this.tr("New Plan");
-                  const win = osparc.ui.window.Window.popUpInWindow(newStudies, winTitle, osparc.dashboard.NewStudies.WIDTH+40, 300).set({
-                    clickAwayClose: false,
-                    resizable: true
-                  });
-                  newStudies.addListener("newStudyClicked", e => {
-                    win.close();
-                    const templateInfo = e.getData();
-                    const templateData = templates.find(t => t.name === templateInfo.expectedTemplateLabel);
-                    if (templateData) {
-                      this.__newPlanBtnClicked(templateData, templateInfo.newStudyLabel);
-                    }
-                  });
-                  osparc.utils.Utils.setIdToWidget(win, "newStudiesWindow");
-                });
+          const templates = osparc.store.Templates.getInstance().getTemplates();
+          if (templates) {
+            const newStudies = new osparc.dashboard.NewStudies(newStudiesConfig);
+            newStudies.setGroupBy("category");
+            const winTitle = this.tr("New Plan");
+            const win = osparc.ui.window.Window.popUpInWindow(newStudies, winTitle, osparc.dashboard.NewStudies.WIDTH+40, 300).set({
+              clickAwayClose: false,
+              resizable: true
+            });
+            newStudies.addListener("newStudyClicked", e => {
+              win.close();
+              const templateInfo = e.getData();
+              const templateData = templates.find(t => t.name === templateInfo.expectedTemplateLabel);
+              if (templateData) {
+                this.__newPlanBtnClicked(templateData, templateInfo.newStudyLabel);
               }
             });
+            osparc.utils.Utils.setIdToWidget(win, "newStudiesWindow");
+          }
         });
       }
     },
@@ -1465,7 +1334,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return selectButton;
     },
 
-    __applyMultiSelection: function(value) {
+    // override
+    _applyMultiSelection: function(value) {
       this._resourcesContainer.getCards().forEach(studyItem => {
         if (osparc.dashboard.ResourceBrowserBase.isCardButtonItem(studyItem)) {
           studyItem.setMultiSelectionMode(value);
@@ -1521,8 +1391,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(studyData => this.__startStudyAfterCreating(studyData["uuid"]))
         .catch(err => {
           this._hideLoadingPage();
-          osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
-          console.error(err);
+          osparc.FlashMessenger.logError(err);
         });
     },
 
@@ -1541,8 +1410,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(studyData => this.__startStudyAfterCreating(studyData["uuid"]))
         .catch(err => {
           this._hideLoadingPage();
-          osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
-          console.error(err);
+          osparc.FlashMessenger.logError(err);
         });
     },
 
@@ -1556,8 +1424,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(studyId => this.__startStudyAfterCreating(studyId))
         .catch(err => {
           this._hideLoadingPage();
-          osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
-          console.error(err);
+          osparc.FlashMessenger.logError(err);
         });
     },
 
@@ -1746,21 +1613,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __updateName: function(studyData, name) {
       osparc.store.Study.patchStudyData(studyData, "name", name)
         .then(() => this._updateStudyData(studyData))
-        .catch(err => {
-          console.error(err);
-          const msg = err.message || this.tr("Something went wrong Renaming");
-          osparc.FlashMessenger.logAs(msg, "ERROR");
-        });
+        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while renaming")));
     },
 
     __updateThumbnail: function(studyData, url) {
       osparc.store.Study.patchStudyData(studyData, "thumbnail", url)
         .then(() => this._updateStudyData(studyData))
-        .catch(err => {
-          console.error(err);
-          const msg = err.message || this.tr("Something went wrong updating the Thumbnail");
-          osparc.FlashMessenger.logAs(msg, "ERROR");
-        });
+        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while updating the thumbnail")));
     },
 
     __getStudyDataMenuButton: function(card) {
@@ -1783,10 +1642,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.__moveStudyToWorkspace(studyData, destWorkspaceId) // first move to workspace
         .then(() => this.__moveStudyToFolder(studyData, destFolderId)) // then move to folder
         .then(() => this.__removeFromStudyList(studyData["uuid"]))
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.logAs(err.message, "ERROR");
-        });
+        .catch(err => osparc.FlashMessenger.logError(err));
     },
 
     __studyToFolderRequested: function(studyData, destWorkspaceId, destFolderId) {
@@ -1865,21 +1721,52 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       convertToPipelineButton["convertToPipelineButton"] = true;
       const uiMode = osparc.study.Utils.getUiMode(studyData);
       convertToPipelineButton.setVisibility(uiMode === "standalone" ? "visible" : "excluded");
-      convertToPipelineButton.addListener("execute", () => {
-        this.__updateUIMode(studyData, "workbench")
-          .catch(err => {
-            console.error(err);
-            const msg = err.message || this.tr("Something went wrong Converting to Pipeline");
-            osparc.FlashMessenger.logAs(msg, "ERROR");
+      convertToPipelineButton.addListener("execute", () => this.__convertToPipelineClicked(studyData), this);
+      return convertToPipelineButton;
+    },
+
+    __convertToPipelineClicked: function(studyData) {
+      let message = this.tr("Would you like to convert this project to a pipeline?");
+      message += "<br>" + this.tr("Alternatively, you can create a copy of the project and convert the copy instead.");
+      const confirmationWin = new osparc.ui.window.Confirmation();
+      confirmationWin.set({
+        caption: this.tr("Convert to Pipeline"),
+        confirmText: this.tr("Convert"),
+        confirmAction: "create",
+        message,
+      });
+      confirmationWin.getChildControl("cancel-button").exclude();
+      const copyOptionButton = new qx.ui.form.Button().set({
+        appearance: "form-button-text",
+        label: this.tr("Create a copy and convert it"),
+      });
+      confirmationWin.getChildControl("buttons-layout").addAt(copyOptionButton, 0);
+      confirmationWin.addListener("close", () => {
+        if (confirmationWin.getConfirmed()) {
+          this.__updateUIMode(studyData, "pipeline")
+            .then(() => osparc.FlashMessenger.logAs(this.tr("Project converted to pipeline"), "INFO"))
+            .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while converting to pipeline")));
+        }
+      });
+      copyOptionButton.addListener("execute", () => {
+        confirmationWin.close();
+        this.__duplicateStudy(studyData)
+          .then(task => {
+            task.addListener("resultReceived", e => {
+              const copiedStudy = e.getData();
+              this.__updateUIMode(copiedStudy, "pipeline")
+                .then(() => osparc.FlashMessenger.logAs(this.tr("Project's copy converted to pipeline"), "INFO"))
+                .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while converting the copy to pipeline")));
+            }, this);
           });
       }, this);
-      return convertToPipelineButton;
+      confirmationWin.open();
     },
 
     __updateUIMode: function(studyData, uiMode) {
       const studyUI = osparc.utils.Utils.deepCloneObject(studyData["ui"]);
       studyUI["mode"] = uiMode;
-      return osparc.info.StudyUtils.patchStudyData(studyData, "ui", studyUI)
+      return osparc.store.Study.patchStudyData(studyData, "ui", studyUI)
         .then(() => this._updateStudyData(studyData))
     },
 
@@ -1968,85 +1855,55 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return this._resourcesList.find(study => study.uuid === id);
     },
 
-    __createDuplicateCard: function(studyName) {
-      const isGrid = this._resourcesContainer.getMode() === "grid";
-      const duplicatingStudyCard = isGrid ? new osparc.dashboard.GridButtonPlaceholder() : new osparc.dashboard.ListButtonPlaceholder();
-      duplicatingStudyCard.buildLayout(
-        this.tr("Duplicating ") + studyName,
-        osparc.task.Duplicate.ICON + (isGrid ? "60" : "24"),
-        null,
-        true
-      );
-      return duplicatingStudyCard;
-    },
-
     __duplicateStudy: function(studyData) {
-      const text = this.tr("Duplicate process started and added to the background tasks");
-      osparc.FlashMessenger.getInstance().logAs(text, "INFO");
-
-      const params = {
-        url: {
-          "studyId": studyData["uuid"]
-        }
-      };
-      const options = {
-        pollTask: true
-      };
-      const fetchPromise = osparc.data.Resources.fetch("studies", "duplicate", params, options);
-      const interval = 1000;
-      const pollTasks = osparc.data.PollTasks.getInstance();
-      pollTasks.createPollingTask(fetchPromise, interval)
-        .then(task => this.__taskDuplicateReceived(task, studyData["name"]))
-        .catch(err => {
-          console.error(err);
-          const msg = err.message || this.tr("Something went wrong Duplicating");
-          osparc.FlashMessenger.logAs(msg, "ERROR");
-        });
+      osparc.study.Utils.duplicateStudy(studyData)
+        .then(task => {
+          this.__taskDuplicateReceived(task, studyData["name"]);
+          return task;
+        })
+        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while duplicating")));
     },
 
     __exportStudy: function(studyData) {
-      const exportTask = new osparc.task.Export(studyData);
-      exportTask.start();
-      exportTask.setSubtitle(this.tr("Preparing files"));
+      const exportTaskUI = new osparc.task.Export(studyData);
+      exportTaskUI.setSubtitle(this.tr("Preparing files"));
+
+      osparc.task.TasksContainer.getInstance().addTaskUI(exportTaskUI);
+
       const text = this.tr("Exporting process started and added to the background tasks");
-      osparc.FlashMessenger.getInstance().logAs(text, "INFO");
+      osparc.FlashMessenger.logAs(text, "INFO");
 
       const url = window.location.href + "v0/projects/" + studyData["uuid"] + ":xport";
       const progressCB = () => {
         const textSuccess = this.tr("Download started");
-        exportTask.setSubtitle(textSuccess);
+        exportTaskUI.setSubtitle(textSuccess);
       };
       osparc.utils.Utils.downloadLink(url, "POST", null, progressCB)
         .catch(err => {
-          console.error(err);
-          const msg = osparc.data.Resources.getErrorMsg(JSON.parse(err.response)) || this.tr("Something went wrong Exporting the study");
-          osparc.FlashMessenger.logAs(msg, "ERROR");
-        })
-        .finally(() => {
-          exportTask.stop();
+          const msg = osparc.data.Resources.getErrorMsg(JSON.parse(err.response)) || this.tr("Something went wrong while exporting the study");
+          osparc.FlashMessenger.logError(err, msg);
         });
     },
 
     __importStudy: function(file) {
       const uploadingLabel = this.tr("Uploading file");
-      const importTask = new osparc.task.Import();
-      importTask.start();
-      importTask.setSubtitle(uploadingLabel);
+      const importTaskUI = new osparc.task.Import();
+      importTaskUI.setSubtitle(uploadingLabel);
+
+      osparc.task.TasksContainer.getInstance().addTaskUI(importTaskUI);
 
       const text = this.tr("Importing process started and added to the background tasks");
-      osparc.FlashMessenger.getInstance().logAs(text, "INFO");
+      osparc.FlashMessenger.logAs(text, "INFO");
 
-      const isGrid = this._resourcesContainer.getMode() === "grid";
-      const importingStudyCard = isGrid ? new osparc.dashboard.GridButtonPlaceholder() : new osparc.dashboard.ListButtonPlaceholder();
-      importingStudyCard.buildLayout(
-        this.tr("Importing Study..."),
-        "@FontAwesome5Solid/cloud-upload-alt/" + (isGrid ? "60" : "24"),
-        uploadingLabel,
-        true
-      );
-      importingStudyCard.subscribeToFilterGroup("searchBarFilter");
-      this._resourcesContainer.addNonResourceCard(importingStudyCard);
+      const cardTitle = this.tr("Importing Study...");
+      const cardIcon = "@FontAwesome5Solid/cloud-upload-alt";
+      const importingStudyCard = this._addTaskCard(null, cardTitle, cardIcon);
+      if (importingStudyCard) {
+        this.__attachImportEventHandler(file, importTaskUI, importingStudyCard);
+      }
+    },
 
+    __attachImportEventHandler: function(file, importTaskUI, importingStudyCard) {
       const body = new FormData();
       body.append("fileName", file);
 
@@ -2059,7 +1916,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           if (percentComplete === 100) {
             const processingLabel = this.tr("Processing study");
             importingStudyCard.getChildControl("state-label").setValue(processingLabel);
-            importTask.setSubtitle(processingLabel);
+            importTaskUI.setSubtitle(processingLabel);
             importingStudyCard.getChildControl("progress-bar").exclude();
           }
         } else {
@@ -2071,7 +1928,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         if (req.status == 200) {
           const processingLabel = this.tr("Processing study");
           importingStudyCard.getChildControl("state-label").setValue(processingLabel);
-          importTask.setSubtitle(processingLabel);
+          importTaskUI.setSubtitle(processingLabel);
           importingStudyCard.getChildControl("progress-bar").exclude();
           const data = JSON.parse(req.responseText);
           const params = {
@@ -2079,37 +1936,29 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               "studyId": data["data"]["uuid"]
             }
           };
-          osparc.data.Resources.getOne("studies", params)
+          osparc.data.Resources.fetch("studies", "getOne", params)
             .then(studyData => this._updateStudyData(studyData))
-            .catch(err => {
-              console.error(err);
-              const msg = this.tr("Something went wrong Fetching the study");
-              osparc.FlashMessenger.logAs(msg, "ERROR");
-            })
+            .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while fetching the study")))
             .finally(() => {
-              importTask.stop();
               this._resourcesContainer.removeNonResourceCard(importingStudyCard);
             });
         } else if (req.status == 400) {
-          importTask.stop();
           this._resourcesContainer.removeNonResourceCard(importingStudyCard);
-          const msg = osparc.data.Resources.getErrorMsg(JSON.parse(req.response)) || this.tr("Something went wrong Importing the study");
-          osparc.FlashMessenger.logAs(msg, "ERROR");
+          const msg = osparc.data.Resources.getErrorMsg(JSON.parse(req.response)) || this.tr("Something went wrong while importing the study");
+          osparc.FlashMessenger.logError(msg);
         }
       });
       req.addEventListener("error", e => {
         // transferFailed
-        importTask.stop();
         this._resourcesContainer.removeNonResourceCard(importingStudyCard);
-        const msg = osparc.data.Resources.getErrorMsg(e) || this.tr("Something went wrong Importing the study");
-        osparc.FlashMessenger.logAs(msg, "ERROR");
+        const msg = osparc.data.Resources.getErrorMsg(e) || this.tr("Something went wrong while importing the study");
+        osparc.FlashMessenger.logError(msg);
       });
       req.addEventListener("abort", e => {
         // transferAborted
-        importTask.stop();
         this._resourcesContainer.removeNonResourceCard(importingStudyCard);
-        const msg = osparc.data.Resources.getErrorMsg(e) || this.tr("Something went wrong Importing the study");
-        osparc.FlashMessenger.logAs(msg, "ERROR");
+        const msg = osparc.data.Resources.getErrorMsg(e) || this.tr("Something went wrong while importing the study");
+        osparc.FlashMessenger.logError(msg);
       });
       req.open("POST", "/v0/projects:import", true);
       req.send(body);
@@ -2120,13 +1969,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => {
           this.__removeFromStudyList(studyData.uuid);
           const msg = this.tr("Successfully restored");
-          osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+          osparc.FlashMessenger.logAs(msg, "INFO");
           this._resourceFilter.evaluateTrashEmpty();
         })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
-        })
+        .catch(err => osparc.FlashMessenger.logError(err))
         .finally(() => this.resetSelection());
     },
 
@@ -2135,13 +1981,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => {
           this.__removeFromStudyList(studyData.uuid);
           const msg = this.tr("Successfully deleted");
-          osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+          osparc.FlashMessenger.logAs(msg, "INFO");
           this._resourceFilter.setTrashEmpty(false);
         })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
-        })
+        .catch(err => osparc.FlashMessenger.logError(err))
         .finally(() => this.resetSelection());
     },
 
@@ -2175,10 +2018,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
       operationPromise
         .then(() => this.__removeFromStudyList(studyData.uuid))
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
-        })
+        .catch(err => osparc.FlashMessenger.logError(err))
         .finally(() => this.resetSelection());
     },
 
@@ -2230,58 +2070,48 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     // TASKS //
-    __tasksReceived: function(tasks) {
-      tasks.forEach(taskData => this._taskDataReceived(taskData));
-    },
-
-    _taskDataReceived: function(taskData) {
-      // a bit hacky
-      if (taskData["task_id"].includes("from_study") && !taskData["task_id"].includes("as_template")) {
-        const interval = 1000;
-        const pollTasks = osparc.data.PollTasks.getInstance();
-        const task = pollTasks.addTask(taskData, interval);
-        if (task === null) {
-          return;
-        }
-        // ask backend for studyData?
+    __tasksToCards: function() {
+      const tasks = osparc.store.PollTasks.getInstance().getDuplicateStudyTasks();
+      tasks.forEach(task => {
         const studyName = "";
         this.__taskDuplicateReceived(task, studyName);
-      }
+      });
     },
 
     __taskDuplicateReceived: function(task, studyName) {
       const duplicateTaskUI = new osparc.task.Duplicate(studyName);
       duplicateTaskUI.setTask(task);
-      duplicateTaskUI.start();
-      const duplicatingStudyCard = this.__createDuplicateCard(studyName);
-      duplicatingStudyCard.setTask(task);
-      duplicatingStudyCard.subscribeToFilterGroup("searchBarFilter");
-      this._resourcesContainer.addNonResourceCard(duplicatingStudyCard);
-      this.__attachDuplicateEventHandler(task, duplicateTaskUI, duplicatingStudyCard);
+
+      osparc.task.TasksContainer.getInstance().addTaskUI(duplicateTaskUI);
+
+      const cardTitle = this.tr("Duplicating ") + studyName;
+      const duplicatingStudyCard = this._addTaskCard(task, cardTitle, osparc.task.Duplicate.ICON);
+      if (duplicatingStudyCard) {
+        this.__attachDuplicateEventHandler(task);
+      }
     },
 
-    __attachDuplicateEventHandler: function(task, taskUI, duplicatingStudyCard) {
-      const finished = (msg, msgLevel) => {
-        if (msg) {
-          osparc.FlashMessenger.logAs(msg, msgLevel);
-        }
-        taskUI.stop();
-        this._resourcesContainer.removeNonResourceCard(duplicatingStudyCard);
+    __attachDuplicateEventHandler: function(task) {
+      const finished = () => {
+        this._removeTaskCard(task);
       };
 
-      task.addListener("taskAborted", () => {
-        const msg = this.tr("Duplication cancelled");
-        finished(msg, "INFO");
-      });
       task.addListener("resultReceived", e => {
         finished();
         const duplicatedStudyData = e.getData();
         this._updateStudyData(duplicatedStudyData);
+        const msg = this.tr("Duplication completed");
+        osparc.FlashMessenger.logAs(msg, "INFO");
+      });
+      task.addListener("taskAborted", () => {
+        finished();
+        const msg = this.tr("Duplication cancelled");
+        osparc.FlashMessenger.logAs(msg, "WARNING");
       });
       task.addListener("pollingError", e => {
+        finished();
         const err = e.getData();
-        const msg = this.tr("Something went wrong Duplicating the study<br>") + err.message;
-        finished(msg, "ERROR");
+        osparc.FlashMessenger.logError(err);
       });
     }
     // TASKS //

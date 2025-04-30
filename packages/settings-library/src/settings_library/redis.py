@@ -1,8 +1,8 @@
 from enum import IntEnum
 
-from pydantic import TypeAdapter
 from pydantic.networks import RedisDsn
 from pydantic.types import SecretStr
+from pydantic_settings import SettingsConfigDict
 
 from .base import BaseCustomSettings
 from .basic_types import PortInt
@@ -18,13 +18,14 @@ class RedisDatabase(IntEnum):
     DISTRIBUTED_IDENTIFIERS = 6
     DEFERRED_TASKS = 7
     DYNAMIC_SERVICES = 8
+    CELERY_TASKS = 9
 
 
 class RedisSettings(BaseCustomSettings):
     # host
     REDIS_SECURE: bool = False
     REDIS_HOST: str = "redis"
-    REDIS_PORT: PortInt = TypeAdapter(PortInt).validate_python(6789)
+    REDIS_PORT: PortInt = 6789
 
     # auth
     REDIS_USER: str | None = None
@@ -42,6 +43,18 @@ class RedisSettings(BaseCustomSettings):
                 ),
                 host=self.REDIS_HOST,
                 port=self.REDIS_PORT,
-                path=f"/{db_index}",
+                path=f"{db_index}",
             )
         )
+
+    model_config = SettingsConfigDict(
+        json_schema_extra={
+            "examples": [
+                # minimal required
+                {
+                    "REDIS_USER": "user",
+                    "REDIS_PASSWORD": "foobar",  # NOSONAR
+                }
+            ],
+        }
+    )

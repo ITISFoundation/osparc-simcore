@@ -1,4 +1,4 @@
-""" handles access to *public* studies
+"""handles access to *public* studies
 
     Handles a request to share a given sharable study via '/study/{id}'
 
@@ -27,12 +27,12 @@ from servicelib.aiohttp.typing_extension import Handler
 from servicelib.logging_errors import create_troubleshotting_log_kwargs
 
 from ..constants import INDEX_RESOURCE_NAME
-from ..director_v2._core_computations import create_or_update_pipeline
-from ..dynamic_scheduler import api as dynamic_scheduler_api
+from ..director_v2 import director_v2_service
+from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..products import products_web
-from ..projects._groups_db import get_project_group
+from ..projects._groups_repository import get_project_group
+from ..projects._projects_repository_legacy import ProjectDBAPI
 from ..projects.api import check_user_project_permission
-from ..projects.db import ProjectDBAPI
 from ..projects.exceptions import (
     ProjectGroupNotFoundError,
     ProjectInvalidRightsError,
@@ -141,7 +141,7 @@ async def copy_study_to_account(
     - Replaces template parameters by values passed in query
     - Avoids multiple copies of the same template on each account
     """
-    from ..projects.db import APP_PROJECT_DBAPI
+    from ..projects._projects_repository_legacy import APP_PROJECT_DBAPI
     from ..projects.utils import clone_project_document, substitute_parameterized_inputs
 
     db: ProjectDBAPI = request.config_dict[APP_PROJECT_DBAPI]
@@ -195,24 +195,25 @@ async def copy_study_to_account(
         )
         async for lr_task in copy_data_folders_from_project(
             request.app,
-            template_project,
-            project,
-            nodes_map,
-            user["id"],
+            source_project=template_project,
+            destination_project=project,
+            nodes_map=nodes_map,
+            user_id=user["id"],
+            product_name=product_name,
         ):
             _logger.info(
                 "copying %s into %s for %s: %s",
                 f"{template_project['uuid']=}",
                 f"{project['uuid']}",
                 f"{user['id']}",
-                f"{lr_task.progress=}",
+                f"{lr_task.status.progress=}",
             )
-            if lr_task.done():
+            if lr_task.done:
                 await lr_task.result()
-        await create_or_update_pipeline(
+        await director_v2_service.create_or_update_pipeline(
             request.app, user["id"], project["uuid"], product_name
         )
-        await dynamic_scheduler_api.update_projects_networks(
+        await dynamic_scheduler_service.update_projects_networks(
             request.app, project_id=ProjectID(project["uuid"])
         )
 

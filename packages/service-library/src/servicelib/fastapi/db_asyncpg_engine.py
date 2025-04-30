@@ -1,4 +1,5 @@
 import logging
+import warnings
 
 from fastapi import FastAPI
 from settings_library.postgres import PostgresSettings
@@ -7,19 +8,26 @@ from simcore_postgres_database.utils_aiosqlalchemy import (  # type: ignore[impo
 )
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from ..db_asyncpg_utils import create_async_engine_and_pg_database_ready
+from ..db_asyncpg_utils import create_async_engine_and_database_ready
 from ..logging_utils import log_context
 
 _logger = logging.getLogger(__name__)
 
 
 async def connect_to_db(app: FastAPI, settings: PostgresSettings) -> None:
+    warnings.warn(
+        "The 'connect_to_db' function is deprecated and will be removed in a future release. "
+        "Please use 'postgres_lifespan' instead for managing the database connection lifecycle.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     with log_context(
         _logger,
         logging.DEBUG,
         f"Connecting and migraging {settings.dsn_with_async_sqlalchemy}",
     ):
-        engine = await create_async_engine_and_pg_database_ready(settings)
+        engine = await create_async_engine_and_database_ready(settings)
 
     app.state.engine = engine
     _logger.debug(

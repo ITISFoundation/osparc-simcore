@@ -3,16 +3,18 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 from uuid import UUID
 
 import arrow
 import pytest
 from aiohttp.test_utils import TestClient
 from common_library.users_enums import UserRole
+from models_library.basic_types import IDStr
+from models_library.rest_ordering import OrderBy, OrderDirection
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from simcore_service_webserver.projects import (
-    _projects_db as projects_service_repository,
+    _projects_repository as projects_service_repository,
 )
 from simcore_service_webserver.projects.exceptions import ProjectNotFoundError
 from simcore_service_webserver.projects.models import ProjectDBGet, ProjectDict
@@ -55,7 +57,9 @@ async def test_patch_project(
     assert client.app
 
     # This will change after in patched_project
-    assert user_project["creationDate"] == user_project["lastChangeDate"]
+    creation_date = datetime.fromisoformat(user_project["creationDate"])
+    last_change_date = datetime.fromisoformat(user_project["lastChangeDate"])
+    assert abs(creation_date - last_change_date) < timedelta(seconds=1)
 
     # Patch valid project
     patch_data = {"name": "Updated Project Name"}
@@ -135,10 +139,11 @@ async def test_list_trashed_projects(client: TestClient, trashed_project: Projec
     (
         total_count,
         trashed_projects,
-    ) = await projects_service_repository.list_trashed_projects(
+    ) = await projects_service_repository.list_projects_db_get_as_admin(
         client.app,
         trashed_explicitly=True,
         trashed_before=arrow.utcnow().datetime + timedelta(days=1),
+        order_by=OrderBy(field=IDStr("trashed"), direction=OrderDirection.ASC),
     )
 
     assert total_count == 1

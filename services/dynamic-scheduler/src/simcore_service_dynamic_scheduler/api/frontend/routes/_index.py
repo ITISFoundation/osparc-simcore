@@ -1,6 +1,5 @@
-import json
-
 import httpx
+from common_library.json_serialization import json_dumps, json_loads
 from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
 from nicegui import APIRouter, app, ui
@@ -39,7 +38,7 @@ def _render_service_details(node_id: NodeID, service: TrackedServiceModel) -> No
             service.dynamic_service_start.product_name,
         )
         service_status = (
-            json.loads(service.service_status) if service.service_status else {}
+            json_loads(service.service_status) if service.service_status else {}
         )
         dict_to_render["Service State"] = (
             "label",
@@ -119,7 +118,7 @@ def _get_clean_hashable(model: TrackedServiceModel) -> dict:
 
 def _get_hash(items: list[tuple[NodeID, TrackedServiceModel]]) -> int:
     return hash(
-        json.dumps([(f"{key}", _get_clean_hashable(model)) for key, model in items])
+        json_dumps([(f"{key}", _get_clean_hashable(model)) for key, model in items])
     )
 
 

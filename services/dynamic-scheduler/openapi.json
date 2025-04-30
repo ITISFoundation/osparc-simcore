@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-dynamic-scheduler web API",
     "description": "Service that manages lifecycle of dynamic services",
-    "version": "1.0.0"
+    "version": "1.1.0"
   },
   "paths": {
     "/health": {
@@ -44,6 +44,32 @@
           }
         }
       }
+    },
+    "/v1/ops/running-services": {
+      "get": {
+        "tags": [
+          "ops"
+        ],
+        "summary": "Running Services",
+        "description": "returns all running dynamic services. Used by ops internall to determine\nwhen it is safe to shutdown the platform",
+        "operationId": "running_services_v1_ops_running_services_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RunningDynamicServiceDetails"
+                  },
+                  "type": "array",
+                  "title": "Response Running Services V1 Ops Running Services Get"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -77,6 +103,9 @@
           },
           "docs_url": {
             "type": "string",
+            "maxLength": 2083,
+            "minLength": 1,
+            "format": "uri",
             "title": "Docs Url"
           }
         },
@@ -87,6 +116,150 @@
           "docs_url"
         ],
         "title": "Meta"
+      },
+      "RunningDynamicServiceDetails": {
+        "properties": {
+          "service_key": {
+            "type": "string",
+            "pattern": "^simcore/services/dynamic/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+            "title": "Service Key",
+            "description": "distinctive name for the node based on the docker registry path"
+          },
+          "service_version": {
+            "type": "string",
+            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+            "title": "Service Version",
+            "description": "semantic version number of the node"
+          },
+          "user_id": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "User Id",
+            "minimum": 0
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Id"
+          },
+          "service_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Service Uuid"
+          },
+          "service_basepath": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "path"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Service Basepath",
+            "description": "predefined path where the dynamic service should be served. If empty, the service shall use the root endpoint."
+          },
+          "boot_type": {
+            "$ref": "#/components/schemas/ServiceBootType",
+            "description": "Describes how the dynamic services was started (legacy=V0, modern=V2).Since legacy services do not have this label it defaults to V0.",
+            "default": "V0"
+          },
+          "service_host": {
+            "type": "string",
+            "title": "Service Host",
+            "description": "the service swarm internal host name"
+          },
+          "service_port": {
+            "type": "integer",
+            "exclusiveMaximum": true,
+            "exclusiveMinimum": true,
+            "title": "Service Port",
+            "description": "the service swarm internal port",
+            "maximum": 65535,
+            "minimum": 0
+          },
+          "published_port": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMaximum": true,
+                "exclusiveMinimum": true,
+                "maximum": 65535,
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published Port",
+            "description": "the service swarm published port if any",
+            "deprecated": true
+          },
+          "entry_point": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entry Point",
+            "description": "if empty the service entrypoint is on the root endpoint.",
+            "deprecated": true
+          },
+          "service_state": {
+            "$ref": "#/components/schemas/ServiceState",
+            "description": "service current state"
+          },
+          "service_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Service Message",
+            "description": "additional information related to service state"
+          }
+        },
+        "type": "object",
+        "required": [
+          "service_key",
+          "service_version",
+          "user_id",
+          "project_id",
+          "service_uuid",
+          "service_host",
+          "service_port",
+          "service_state"
+        ],
+        "title": "RunningDynamicServiceDetails"
+      },
+      "ServiceBootType": {
+        "type": "string",
+        "enum": [
+          "V0",
+          "V2"
+        ],
+        "title": "ServiceBootType"
+      },
+      "ServiceState": {
+        "type": "string",
+        "enum": [
+          "failed",
+          "pending",
+          "pulling",
+          "starting",
+          "running",
+          "stopping",
+          "complete",
+          "idle"
+        ],
+        "title": "ServiceState"
       }
     }
   }

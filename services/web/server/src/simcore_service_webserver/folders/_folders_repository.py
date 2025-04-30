@@ -245,7 +245,9 @@ async def list_(  # pylint: disable=too-many-arguments,too-many-branches
 
     # Ordering and pagination
     list_query = (
-        combined_query.order_by(_to_expression(order_by)).offset(offset).limit(limit)
+        combined_query.order_by(_to_expression(order_by), folders_v2.c.folder_id)
+        .offset(offset)
+        .limit(limit)
     )
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
@@ -258,13 +260,14 @@ async def list_(  # pylint: disable=too-many-arguments,too-many-branches
         return cast(int, total_count), folders
 
 
-async def list_trashed_folders(
+async def list_folders_db_as_admin(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
     # filter
     trashed_explicitly: bool | UnSet = UnSet.VALUE,
     trashed_before: datetime | UnSet = UnSet.VALUE,
+    shared_workspace_id: WorkspaceID | UnSet = UnSet.VALUE,  # <-- Workspace filter
     # pagination
     offset: NonNegativeInt,
     limit: int,
@@ -273,28 +276,35 @@ async def list_trashed_folders(
 ) -> tuple[int, list[FolderDB]]:
     """
     NOTE: this is app-wide i.e. no product, user or workspace filtered
-    TODO: check with MD about workspaces
     """
-    base_query = sql.select(_FOLDER_DB_MODEL_COLS).where(
-        folders_v2.c.trashed.is_not(None)
-    )
+    base_query = sql.select(*_FOLDER_DB_MODEL_COLS)
 
     if is_set(trashed_explicitly):
         assert isinstance(trashed_explicitly, bool)  # nosec
         base_query = base_query.where(
-            folders_v2.c.trashed_explicitly.is_(trashed_explicitly)
+            (folders_v2.c.trashed_explicitly.is_(trashed_explicitly))
+            & (folders_v2.c.trashed.is_not(None))
         )
 
     if is_set(trashed_before):
         assert isinstance(trashed_before, datetime)  # nosec
-        base_query = base_query.where(folders_v2.c.trashed < trashed_before)
+        base_query = base_query.where(
+            (folders_v2.c.trashed < trashed_before)
+            & (folders_v2.c.trashed.is_not(None))
+        )
+
+    if is_set(shared_workspace_id):
+        assert isinstance(shared_workspace_id, int)  # nosec
+        base_query = base_query.where(folders_v2.c.workspace_id == shared_workspace_id)
 
     # Select total count from base_query
     count_query = sql.select(sql.func.count()).select_from(base_query.subquery())
 
     # Ordering and pagination
     list_query = (
-        base_query.order_by(_to_expression(order_by)).offset(offset).limit(limit)
+        base_query.order_by(_to_expression(order_by), folders_v2.c.folder_id)
+        .offset(offset)
+        .limit(limit)
     )
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
@@ -306,7 +316,9 @@ async def list_trashed_folders(
 
 
 def _create_base_select_query(folder_id: FolderID, product_name: ProductName) -> Select:
-    return sql.select(*_FOLDER_DB_MODEL_COLS,).where(
+    return sql.select(
+        *_FOLDER_DB_MODEL_COLS,
+    ).where(
         (folders_v2.c.product_name == product_name)
         & (folders_v2.c.folder_id == folder_id)
     )
@@ -374,7 +386,7 @@ async def update(
     parent_folder_id: FolderID | None | UnSet = UnSet.VALUE,
     trashed: datetime | None | UnSet = UnSet.VALUE,
     trashed_explicitly: bool | UnSet = UnSet.VALUE,
-    trashed_by: UserID | UnSet = UnSet.VALUE,  # who trashed
+    trashed_by: UserID | None | UnSet = UnSet.VALUE,  # who trashed
     workspace_id: WorkspaceID | None | UnSet = UnSet.VALUE,
     user_id: UserID | None | UnSet = UnSet.VALUE,  # ownership
 ) -> FolderDB:
@@ -532,7 +544,7 @@ async def get_all_folders_and_projects_ids_recursively(
     product_name: ProductName,
 ) -> tuple[list[FolderID], list[ProjectID]]:
     """
-    The purpose of this function is to retrieve all projects within the provided folder ID.
+    The purpose of this function is to retrieve all subfolders and projects within the provided folder ID.
     """
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:

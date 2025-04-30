@@ -26,6 +26,10 @@ PageLimitInt: TypeAlias = Annotated[
     int, Field(ge=1, lt=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE)
 ]
 
+PageOffsetInt: TypeAlias = NonNegativeInt
+
+PageTotalCount: TypeAlias = NonNegativeInt
+
 DEFAULT_NUMBER_OF_ITEMS_PER_PAGE: Final[PageLimitInt] = TypeAdapter(
     PageLimitInt
 ).validate_python(20)
@@ -51,20 +55,24 @@ class CursorQueryParameters(RequestParameters):
 class PageQueryParameters(RequestParameters):
     """Use as pagination options in query parameters"""
 
-    limit: PageLimitInt = Field(
-        default=TypeAdapter(PageLimitInt).validate_python(
-            DEFAULT_NUMBER_OF_ITEMS_PER_PAGE
+    limit: Annotated[
+        PageLimitInt,
+        Field(
+            default=TypeAdapter(PageLimitInt).validate_python(
+                DEFAULT_NUMBER_OF_ITEMS_PER_PAGE
+            ),
+            description="maximum number of items to return (pagination)",
         ),
-        description="maximum number of items to return (pagination)",
-    )
-    offset: NonNegativeInt = Field(
-        default=0, description="index to the first item to return (pagination)"
-    )
+    ]
+    offset: Annotated[
+        PageOffsetInt,
+        Field(default=0, description="index to the first item to return (pagination)"),
+    ]
 
 
 class PageMetaInfoLimitOffset(BaseModel):
     limit: PositiveInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE
-    total: NonNegativeInt
+    total: PageTotalCount
     offset: NonNegativeInt = 0
     count: NonNegativeInt
 
@@ -120,8 +128,7 @@ class PageLinks(
             BeforeValidator(lambda x: str(TypeAdapter(AnyHttpUrl).validate_python(x))),
         ]
     ]
-):
-    ...
+): ...
 
 
 ItemT = TypeVar("ItemT")

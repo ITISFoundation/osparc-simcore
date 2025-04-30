@@ -15,7 +15,7 @@ from servicelib.aiohttp.aiopg_utils import is_pg_responsive
 from servicelib.aiohttp.application_keys import APP_AIOPG_ENGINE_KEY
 from servicelib.logging_utils import log_context
 from servicelib.retry_policies import PostgresRetryPolicyUponInitialization
-from simcore_postgres_database.errors import DBAPIError
+from simcore_postgres_database.aiopg_errors import DBAPIError
 from simcore_postgres_database.utils_aiopg import (
     DBMigrationError,
     close_engine,

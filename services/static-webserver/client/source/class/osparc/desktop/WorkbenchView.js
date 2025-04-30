@@ -54,8 +54,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       });
     },
 
-    openStudyDataManager: function(node) {
-      const win = osparc.widget.StudyDataManager.popUpInWindow(null, node.getNodeId(), node.getLabel());
+    openNodeDataManager: function(node) {
+      const win = osparc.widget.StudyDataManager.popUpInWindow(node.getStudy().getUuid(), node.getNodeId(), node.getLabel());
       const closeBtn = win.getChildControl("close-button");
       osparc.utils.Utils.setIdToWidget(closeBtn, "nodeDataManagerCloseBtn");
     }
@@ -369,7 +369,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         dragMechanism: true,
         hideRoot: true
       });
-      filesTree.populateTree();
+      filesTree.populateLocations();
       const storagePage = this.__storagePage = this.__createTabPage("@FontAwesome5Solid/database", this.tr("Storage"), filesTree, this.self().PRIMARY_COL_BG_COLOR);
       tabViewPrimary.add(storagePage);
 
@@ -438,11 +438,24 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       this.__addTopBarSpacer(topBar);
 
+      if (osparc.utils.DisabledPlugins.isConversationEnabled()) {
+        const commentsButton = new qx.ui.form.Button().set({
+          appearance: "form-button-outlined",
+          toolTipText: this.tr("Conversations"),
+          icon: "@FontAwesome5Solid/comments/16",
+          marginRight: 10,
+          marginTop: 7,
+          ...osparc.navigation.NavigationBar.BUTTON_OPTIONS
+        });
+        commentsButton.addListener("execute", () => osparc.info.Conversations.popUpInWindow(study.serialize()));
+        topBar.add(commentsButton);
+      }
+
       const startAppButtonTB = this.__startAppButtonTB = new qx.ui.form.Button().set({
         appearance: "form-button-outlined",
         label: this.tr("App Mode"),
         toolTipText: this.tr("Start App Mode"),
-        icon: "@FontAwesome5Solid/play/14",
+        icon: osparc.dashboard.CardBase.MODE_APP,
         marginRight: 10,
         marginTop: 7,
         ...osparc.navigation.NavigationBar.BUTTON_OPTIONS
@@ -837,7 +850,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const startAppBtn = this.__startAppButton = new qx.ui.form.Button().set({
         label: this.tr("Start"),
-        icon: "@FontAwesome5Solid/play/14",
+        icon: osparc.dashboard.CardBase.MODE_APP,
         toolTipText: this.tr("Start App Mode"),
         height: buttonsHeight
       });
@@ -1015,7 +1028,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       // HEADER
       const nodeMetadata = node.getMetaData();
-      const version = osparc.service.Utils.getVersionDisplay(nodeMetadata["key"], nodeMetadata["version"]);
+      const version = osparc.store.Services.getVersionDisplay(nodeMetadata["key"], nodeMetadata["version"]);
       const header = new qx.ui.basic.Label(`${nodeMetadata["name"]} ${version}`).set({
         paddingLeft: 5
       });
@@ -1046,7 +1059,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         allowGrowY: false
       });
       osparc.utils.Utils.setIdToWidget(nodeFilesBtn, "nodeFilesBtn");
-      nodeFilesBtn.addListener("execute", () => this.self().openStudyDataManager(node));
+      nodeFilesBtn.addListener("execute", () => this.self().openNodeDataManager(node));
       outputsBox.add(nodeFilesBtn);
 
       const outputs = new osparc.desktop.PanelView(this.tr("Outputs"), outputsBox);

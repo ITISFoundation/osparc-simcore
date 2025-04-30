@@ -46,20 +46,6 @@ qx.Class.define("osparc.share.CollaboratorsService", {
       }
       return canWrite;
     },
-
-    getCollaboratorAccessRight: function() {
-      return {
-        "execute": true,
-        "write": false
-      };
-    },
-
-    getOwnerAccessRight: function() {
-      return {
-        "execute": true,
-        "write": true
-      };
-    },
   },
 
   members: {
@@ -68,21 +54,19 @@ qx.Class.define("osparc.share.CollaboratorsService", {
         return;
       }
 
+      const readAccessRole = osparc.data.Roles.SERVICES["read"];
       const newAccessRights = this._serializedDataCopy["accessRights"];
       gids.forEach(gid => {
-        newAccessRights[gid] = this.self().getCollaboratorAccessRight();
+        newAccessRights[gid] = readAccessRole.accessRights;
       });
       osparc.store.Services.patchServiceData(this._serializedDataCopy, "accessRights", newAccessRights)
         .then(() => {
           this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           const text = this.tr("Service successfully shared");
-          osparc.FlashMessenger.getInstance().logAs(text);
+          osparc.FlashMessenger.logAs(text);
           this._reloadCollaboratorsList();
         })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong sharing the Service"), "ERROR");
-        });
+        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while sharing the service")));
     },
 
     _deleteMember: function(collaborator, item) {
@@ -92,7 +76,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
 
       const success = delete this._serializedDataCopy["accessRights"][collaborator["gid"]];
       if (!success) {
-        osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Member"), "ERROR");
+        osparc.FlashMessenger.logError(this.tr("Something went wrong while removing member"));
         if (item) {
           item.setEnabled(true);
         }
@@ -102,13 +86,10 @@ qx.Class.define("osparc.share.CollaboratorsService", {
       osparc.store.Services.patchServiceData(this._serializedDataCopy, "accessRights", this._serializedDataCopy["accessRights"])
         .then(() => {
           this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
-          osparc.FlashMessenger.getInstance().logAs(collaborator["name"] + this.tr(" successfully removed"));
+          osparc.FlashMessenger.logAs(collaborator["name"] + this.tr(" successfully removed"));
           this._reloadCollaboratorsList();
         })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing ") + collaborator["name"], "ERROR");
-        })
+        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while removing ") + collaborator["name"]))
         .finally(() => {
           if (item) {
             item.setEnabled(true);
@@ -122,42 +103,41 @@ qx.Class.define("osparc.share.CollaboratorsService", {
       osparc.store.Services.patchServiceData(this._serializedDataCopy, "accessRights", this._serializedDataCopy["accessRights"])
         .then(() => {
           this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
-          osparc.FlashMessenger.getInstance().logAs(successMsg);
+          osparc.FlashMessenger.logAs(successMsg);
           this._reloadCollaboratorsList();
         })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(failureMsg, "ERROR");
-        })
+        .catch(err => osparc.FlashMessenger.logError(err, failureMsg))
         .finally(() => item.setEnabled(true));
     },
 
     _promoteToEditor: function(collaborator, item) {
+      const writeAccessRole = osparc.data.Roles.SERVICES["write"];
       this.__make(
         collaborator["gid"],
-        this.self().getOwnerAccessRight(),
-        this.tr(`Successfully promoted to ${osparc.data.Roles.SERVICE[2].label}`),
-        this.tr(`Something went wrong promoting to ${osparc.data.Roles.SERVICE[2].label}`),
+        writeAccessRole.accessRights,
+        this.tr(`Successfully promoted to ${writeAccessRole.label}`),
+        this.tr(`Something went wrong while promoting to ${writeAccessRole.label}`),
         item
       );
     },
 
     _promoteToOwner: function(collaborator, item) {
-      osparc.FlashMessenger.getInstance().logAs(this.tr("Operation not available"), "WARNING");
+      osparc.FlashMessenger.logAs(this.tr("Operation not available"), "WARNING");
     },
 
     _demoteToUser: function(collaborator, item) {
+      const readAccessRole = osparc.data.Roles.SERVICES["read"];
       this.__make(
         collaborator["gid"],
-        this.self().getCollaboratorAccessRight(),
-        this.tr(`Successfully demoted to ${osparc.data.Roles.SERVICE[1].label}`),
-        this.tr(`Something went wrong demoting ${osparc.data.Roles.SERVICE[1].label}`),
+        readAccessRole.accessRights,
+        this.tr(`Successfully demoted to ${readAccessRole.label}`),
+        this.tr(`Something went wrong while demoting ${readAccessRole.label}`),
         item
       );
     },
 
     _demoteToEditor: function(collaborator, item) {
-      osparc.FlashMessenger.getInstance().logAs(this.tr("Operation not available"), "WARNING");
+      osparc.FlashMessenger.logAs(this.tr("Operation not available"), "WARNING");
     }
   }
 });

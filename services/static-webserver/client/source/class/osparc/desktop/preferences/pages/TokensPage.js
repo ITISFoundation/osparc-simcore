@@ -97,11 +97,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
             showAPIKeyWindow.center();
             showAPIKeyWindow.open();
           })
-          .catch(err => {
-            const errorMsg = err.message || this.tr("Cannot create API Key");
-            osparc.FlashMessenger.getInstance().logAs(errorMsg, "ERROR");
-            console.error(err);
-          })
+          .catch(err => osparc.FlashMessenger.logError(err, this.tr("Cannot create API Key")))
           .finally(() => this.__requestAPIKeyBtn.setFetching(false));
       }, this);
       createAPIKeyWindow.open();
@@ -160,11 +156,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
           };
           osparc.data.Resources.fetch("apiKeys", "delete", params)
             .then(() => this.__rebuildAPIKeysList())
-            .catch(err => {
-              const errorMsg = err.message || this.tr("Cannot delete API Key");
-              osparc.FlashMessenger.getInstance().logAs(errorMsg, "ERROR");
-              console.error(err)
-            });
+            .catch(err => osparc.FlashMessenger.logError(err, this.tr("Cannot delete API Key")));
         }
       }, this);
     },
@@ -181,12 +173,12 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
 
     __createTokensSection: function() {
       // layout
-      const box = osparc.ui.window.TabbedView.createSectionBox(this.tr("External Service Tokens"));
+      const box = osparc.ui.window.TabbedView.createSectionBox(this.tr("API Tokens for External Services"));
 
-      const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr("Enter the API tokens to access external services."));
+      const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr("Provide the API tokens needed to access external services."));
       box.add(label);
 
-      const validTokensGB = this.__validTokensGB = osparc.ui.window.TabbedView.createSectionBox(this.tr("Existing Tokens"));
+      const validTokensGB = this.__validTokensGB = osparc.ui.window.TabbedView.createSectionBox(this.tr("Current Tokens"));
       box.add(validTokensGB);
 
       const supportedExternalsGB = this.__supportedExternalsGB = osparc.ui.window.TabbedView.createSectionBox(this.tr("Supported services")).set({
@@ -288,7 +280,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
         return;
       }
 
-      const msg = this.tr("Do you want to delete the Token?");
+      const msg = this.tr("Are you sure you want to delete this token?");
       const win = new osparc.ui.window.Confirmation(msg).set({
         caption: this.tr("Delete Token"),
         confirmText: this.tr("Delete"),
@@ -334,13 +326,13 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
 
       const newTokenKey = new qx.ui.form.TextField();
       newTokenKey.set({
-        placeholder: this.tr("Input your token key")
+        placeholder: this.tr("Enter your token key")
       });
       form.add(newTokenKey, this.tr("Key"));
 
       const newTokenSecret = new qx.ui.form.TextField();
       newTokenSecret.set({
-        placeholder: this.tr("Input your token secret")
+        placeholder: this.tr("Enter your token secret")
       });
       form.add(newTokenSecret, this.tr("Secret"));
 

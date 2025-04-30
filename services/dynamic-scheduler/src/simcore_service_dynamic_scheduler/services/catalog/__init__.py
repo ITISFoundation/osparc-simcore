@@ -1,7 +1,7 @@
 from ._public_client import CatalogPublicClient
-from ._setup import lifespan_catalog
+from ._setup import catalog_lifespan
 
 __all__: tuple[str, ...] = (
     "CatalogPublicClient",
-    "lifespan_catalog",
+    "catalog_lifespan",
 )

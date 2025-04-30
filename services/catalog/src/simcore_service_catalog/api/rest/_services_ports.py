@@ -6,7 +6,7 @@ from models_library.api_schemas_catalog.services_ports import ServicePortGet
 from models_library.services_metadata_published import ServiceMetaDataPublished
 
 from ..._constants import RESPONSE_MODEL_POLICY
-from ..dependencies.services import (
+from .._dependencies.services import (
     AccessInfo,
     check_service_read_access,
     get_service_from_manifest,
@@ -31,10 +31,18 @@ async def list_service_ports(
 
     if service.inputs:
         for name, input_port in service.inputs.items():
-            ports.append(ServicePortGet.from_service_io("input", name, input_port))
+            ports.append(
+                ServicePortGet.from_domain_model(
+                    kind="input", key=name, port=input_port
+                )
+            )
 
     if service.outputs:
         for name, output_port in service.outputs.items():
-            ports.append(ServicePortGet.from_service_io("output", name, output_port))
+            ports.append(
+                ServicePortGet.from_domain_model(
+                    kind="output", key=name, port=output_port
+                )
+            )
 
     return ports

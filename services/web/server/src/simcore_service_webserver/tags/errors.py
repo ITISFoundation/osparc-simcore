@@ -1,8 +1,9 @@
+# pylint: disable=too-many-ancestors
+
 from ..errors import WebServerBaseError
 
 
-class TagsPermissionError(WebServerBaseError, PermissionError):
-    ...
+class TagsPermissionError(WebServerBaseError, PermissionError): ...
 
 
 class ShareTagWithEveryoneNotAllowedError(TagsPermissionError):

@@ -76,7 +76,7 @@ def mock_get_current_identity() -> Identity:
 
 
 @pytest.fixture()
-def run_test_server(
+def running_test_server_url(
     app: FastAPI,
 ):
     """

@@ -69,7 +69,7 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
           "studyId": studyId
         }
       };
-      osparc.data.Resources.getOne("studies", params)
+      osparc.data.Resources.fetch("studies", "getOne", params)
         .then(studyData => {
           if (!studyData) {
             const msg = qx.locale.Manager.tr("Study not found");
@@ -78,7 +78,7 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
           this.loadStudy(studyData);
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          osparc.FlashMessenger.logError(err);
           this.showDashboard();
           return;
         });
@@ -102,23 +102,27 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
         throw new Error(msg);
       }
 
-      // check if it's corrupt
-      if (osparc.study.Utils.isCorrupt(studyData)) {
+      // check if there is any linked node missing
+      if (osparc.study.Utils.isAnyLinkedNodeMissing(studyData)) {
         const msg = `${qx.locale.Manager.tr("We encountered an issue with the")} ${studyAlias} <br>${qx.locale.Manager.tr("Please contact support.")}`;
         throw new Error(msg);
       }
 
       this.setLoadingPageHeader(qx.locale.Manager.tr("Loading ") + studyData.name);
       this.showLoadingPage();
-      const inaccessibleServices = osparc.study.Utils.getInaccessibleServices(studyData["workbench"])
-      if (inaccessibleServices.length) {
-        const msg = osparc.study.Utils.getInaccessibleServicesMsg(inaccessibleServices, studyData["workbench"]);
-        osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
-        this.showDashboard();
-        return;
-      }
-      this.showStudyEditor();
-      this.__studyEditor.setStudyData(studyData);
+
+      osparc.store.Services.getStudyServicesMetadata(studyData)
+        .finally(() => {
+          const inaccessibleServices = osparc.store.Services.getInaccessibleServices(studyData["workbench"]);
+          if (inaccessibleServices.length) {
+            const msg = osparc.store.Services.getInaccessibleServicesMsg(inaccessibleServices, studyData["workbench"]);
+            osparc.FlashMessenger.logError(msg);
+            this.showDashboard();
+            return;
+          }
+          this.showStudyEditor();
+          this.__studyEditor.setStudyData(studyData);
+        });
     }
   }
 });

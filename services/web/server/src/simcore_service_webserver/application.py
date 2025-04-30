@@ -1,6 +1,5 @@
-""" Main application
-
-"""
+# pylint:disable=too-many-statements
+"""Main application"""
 
 import logging
 from pprint import pformat
@@ -8,6 +7,7 @@ from typing import Any
 
 from aiohttp import web
 from servicelib.aiohttp.application import create_safe_application
+from simcore_service_webserver.tasks.plugin import setup_tasks
 
 from ._meta import WELCOME_DB_LISTENER_MSG, WELCOME_GC_MSG, WELCOME_MSG, info
 from .activity.plugin import setup_activity
@@ -15,6 +15,7 @@ from .announcements.plugin import setup_announcements
 from .api_keys.plugin import setup_api_keys
 from .application_settings import get_application_settings, setup_settings
 from .catalog.plugin import setup_catalog
+from .conversations.plugin import setup_conversations
 from .db.plugin import setup_db
 from .db_listener.plugin import setup_db_listener
 from .diagnostics.plugin import setup_diagnostics, setup_profiling_middleware
@@ -23,6 +24,7 @@ from .dynamic_scheduler.plugin import setup_dynamic_scheduler
 from .email.plugin import setup_email
 from .exporter.plugin import setup_exporter
 from .folders.plugin import setup_folders
+from .functions.plugin import setup_functions
 from .garbage_collector.plugin import setup_garbage_collector
 from .groups.plugin import setup_groups
 from .invitations.plugin import setup_invitations
@@ -121,6 +123,7 @@ def create_application() -> web.Application:
     setup_director_v2(app)
     setup_dynamic_scheduler(app)
     setup_storage(app)
+    setup_tasks(app)
     setup_catalog(app)
 
     # resource management
@@ -133,8 +136,14 @@ def create_application() -> web.Application:
     # folders
     setup_folders(app)
 
+    # functions
+    setup_functions(app)
+
     # projects
     setup_projects(app)
+
+    # conversations
+    setup_conversations(app)
 
     # licenses
     setup_licenses(app)

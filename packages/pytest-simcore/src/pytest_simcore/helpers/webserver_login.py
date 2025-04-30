@@ -1,4 +1,6 @@
+import contextlib
 import re
+from collections.abc import AsyncIterator
 from datetime import datetime
 from typing import Any, TypedDict
 
@@ -9,8 +11,11 @@ from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole, UserStatus
 from simcore_service_webserver.groups.api import auto_add_user_to_product_group
 from simcore_service_webserver.login._constants import MSG_LOGGED_IN
-from simcore_service_webserver.login._registration import create_invitation_token
-from simcore_service_webserver.login.storage import AsyncpgStorage, get_plugin_storage
+from simcore_service_webserver.login._invitations_service import create_invitation_token
+from simcore_service_webserver.login._login_repository_legacy import (
+    AsyncpgStorage,
+    get_plugin_storage,
+)
 from simcore_service_webserver.products.products_service import list_products
 from simcore_service_webserver.security.api import clean_auth_policy_cache
 from yarl import URL
@@ -184,6 +189,30 @@ class LoggedUser(NewUser):
         # reused during the test, then it creates quite some noise
         await clean_auth_policy_cache(self.client.app)
         return await super().__aexit__(*args)
+
+
+@contextlib.asynccontextmanager
+async def switch_client_session_to(
+    client: TestClient, user: UserInfoDict
+) -> AsyncIterator[TestClient]:
+    assert client.app
+
+    await client.post(f'{client.app.router["auth_logout"].url_for()}')
+    # sometimes 4xx if user already logged out. Ignore
+
+    resp = await client.post(
+        f'{client.app.router["auth_login"].url_for()}',
+        json={
+            "email": user["email"],
+            "password": user["raw_password"],
+        },
+    )
+    await assert_status(resp, status.HTTP_200_OK)
+
+    yield client
+
+    resp = await client.post(f'{client.app.router["auth_logout"].url_for()}')
+    await assert_status(resp, status.HTTP_200_OK)
 
 
 class NewInvitation(NewUser):

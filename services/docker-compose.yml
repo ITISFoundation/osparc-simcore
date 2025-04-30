@@ -220,6 +220,7 @@ services:
       PRIMARY_EC2_INSTANCES_PROMETHEUS_PASSWORD: ${PRIMARY_EC2_INSTANCES_PROMETHEUS_PASSWORD}
       PRIMARY_EC2_INSTANCES_MAX_START_TIME: ${PRIMARY_EC2_INSTANCES_MAX_START_TIME}
       PRIMARY_EC2_INSTANCES_DOCKER_DEFAULT_ADDRESS_POOL: ${PRIMARY_EC2_INSTANCES_DOCKER_DEFAULT_ADDRESS_POOL}
+      PRIMARY_EC2_INSTANCES_RABBIT: ${PRIMARY_EC2_INSTANCES_RABBIT}
       RABBIT_HOST: ${RABBIT_HOST}
       RABBIT_PASSWORD: ${RABBIT_PASSWORD}
       RABBIT_PORT: ${RABBIT_PORT}
@@ -584,6 +585,9 @@ services:
   docker-api-proxy:
     image: ${DOCKER_REGISTRY:-itisfoundation}/docker-api-proxy:${DOCKER_IMAGE_TAG:-latest}
     init: true
+    environment:
+      DOCKER_API_PROXY_PASSWORD: ${DOCKER_API_PROXY_PASSWORD}
+      DOCKER_API_PROXY_USER : ${DOCKER_API_PROXY_USER}
     deploy:
       placement:
         constraints:
@@ -1095,6 +1099,35 @@ services:
       TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT: ${TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT}
       TRACING_OPENTELEMETRY_COLLECTOR_PORT: ${TRACING_OPENTELEMETRY_COLLECTOR_PORT}
 
+  notifications:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/notifications:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+
+    environment:
+      LOG_FILTER_MAPPING : ${LOG_FILTER_MAPPING}
+      LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
+
+      NOTIFICATIONS_LOGLEVEL: ${NOTIFICATIONS_LOGLEVEL}
+      NOTIFICATIONS_TRACING: ${NOTIFICATIONS_TRACING}
+
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_ENDPOINT: ${POSTGRES_ENDPOINT}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_USER: ${POSTGRES_USER}
+
+      RABBIT_HOST: ${RABBIT_HOST}
+      RABBIT_PASSWORD: ${RABBIT_PASSWORD}
+      RABBIT_PORT: ${RABBIT_PORT}
+      RABBIT_SECURE: ${RABBIT_SECURE}
+      RABBIT_USER: ${RABBIT_USER}
+
+      TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT: ${TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT}
+      TRACING_OPENTELEMETRY_COLLECTOR_PORT: ${TRACING_OPENTELEMETRY_COLLECTOR_PORT}
+
+
   dask-sidecar:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
     init: true
@@ -1152,9 +1185,7 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
     init: true
     hostname: "sto-{{.Node.Hostname}}-{{.Task.Slot}}"
-    environment:
-      BF_API_KEY: ${BF_API_KEY}
-      BF_API_SECRET: ${BF_API_SECRET}
+    environment: &storage_environment
       DATCORE_ADAPTER_HOST: ${DATCORE_ADAPTER_HOST:-datcore-adapter}
       LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
       LOG_FILTER_MAPPING : ${LOG_FILTER_MAPPING}
@@ -1179,19 +1210,41 @@ services:
       S3_ENDPOINT: ${S3_ENDPOINT}
       S3_REGION: ${S3_REGION}
       S3_SECRET_KEY: ${S3_SECRET_KEY}
+      STORAGE_WORKER_MODE: "false"
       STORAGE_LOGLEVEL: ${STORAGE_LOGLEVEL}
       STORAGE_MONITORING_ENABLED: 1
       STORAGE_PROFILING: ${STORAGE_PROFILING}
       STORAGE_PORT: ${STORAGE_PORT}
       TRACING_OPENTELEMETRY_COLLECTOR_PORT: ${TRACING_OPENTELEMETRY_COLLECTOR_PORT}
       TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT: ${TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT}
-    networks:
+    networks: &storage_networks
       - default
       - interactive_services_subnet
       - storage_subnet
 
+  sto-worker:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-master-github-latest}
+    init: true
+    hostname: "sto-worker-{{.Node.Hostname}}-{{.Task.Slot}}"
+    environment:
+      <<: *storage_environment
+      STORAGE_WORKER_MODE: "true"
+      CELERY_CONCURRENCY: 100
+    networks: *storage_networks
+
+  sto-worker-cpu-bound:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-master-github-latest}
+    init: true
+    hostname: "sto-worker-cpu-bound-{{.Node.Hostname}}-{{.Task.Slot}}"
+    environment:
+      <<: *storage_environment
+      STORAGE_WORKER_MODE: "true"
+      CELERY_CONCURRENCY: 1
+      CELERY_QUEUES: "cpu_bound"
+    networks: *storage_networks
+
   rabbit:
-    image: itisfoundation/rabbitmq:3.11.2-management
+    image: itisfoundation/rabbitmq:3.13.7-management
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
@@ -1274,7 +1327,7 @@ services:
         "--loglevel",
         "verbose",
         "--databases",
-        "9",
+        "10",
         "--appendonly",
         "yes",
         "--requirepass",

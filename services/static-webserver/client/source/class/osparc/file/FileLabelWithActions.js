@@ -21,7 +21,7 @@
  *   It is used together with a virtual tree of files where the selection is displayed
  * in the text field and the download and delete are related to that selection.
  * Download and deleted methods are also provided.
- * If a file is deleted it fires "fileDeleted" data event
+ * If a file is deleted it fires "pathsDeleted" data event
  *
  * *Example*
  *
@@ -54,7 +54,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
   },
 
   events: {
-    "fileDeleted": "qx.event.type.Data"
+    "pathsDeleted": "qx.event.type.Data",
   },
 
   properties: {
@@ -109,8 +109,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
     setItemSelected: function(selectedItem) {
       if (selectedItem) {
         this.__selection = [selectedItem];
-        const isFile = osparc.file.FilesTree.isFile(selectedItem);
-        this.getChildControl("download-button").setEnabled(isFile);
+        this.getChildControl("download-button").setEnabled(true); // folders can also be downloaded
         this.getChildControl("delete-button").setEnabled(true); // folders can also be deleted
         this.getChildControl("selected-label").setValue(selectedItem.getLabel());
       } else {
@@ -143,15 +142,21 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
 
     __retrieveURLAndDownloadSelected: function() {
       if (this.isMultiSelect()) {
-        this.__selection.forEach(selection => {
-          if (selection && osparc.file.FilesTree.isFile(selection)) {
-            this.__retrieveURLAndDownloadFile(selection);
-          }
-        });
+        if (this.__selection.length === 1 && osparc.file.FilesTree.isFile(this.__selection[0])) {
+          this.__retrieveURLAndDownloadFile(this.__selection[0]);
+        } else if (this.__selection.length > 1) {
+          const paths = this.__selection.map(item => item.getPath());
+          this.__retrieveURLAndExportData(paths);
+        }
       } else if (this.__selection.length) {
         const selection = this.__selection[0];
-        if (selection && osparc.file.FilesTree.isFile(selection)) {
-          this.__retrieveURLAndDownloadFile(selection);
+        if (selection) {
+          if (osparc.file.FilesTree.isFile(selection)) {
+            this.__retrieveURLAndDownloadFile(selection);
+          } else {
+            const paths = [selection.getPath()];
+            this.__retrieveURLAndExportData(paths);
+          }
         }
       }
     },
@@ -165,6 +170,15 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
             osparc.DownloadLinkTracker.getInstance().downloadLinkUnattended(data.link, data.fileName);
           }
         });
+    },
+
+    __retrieveURLAndExportData: function(paths) {
+      const dataStore = osparc.store.Data.getInstance();
+      const fetchPromise = dataStore.exportData(paths);
+      const pollTasks = osparc.store.PollTasks.getInstance();
+      pollTasks.createPollingTask(fetchPromise)
+        .then(task => osparc.task.ExportData.exportDataTaskReceived(task))
+        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Unsuccessful files download")));
     },
 
     __deleteSelected: function() {
@@ -182,14 +196,22 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
       } else if (this.__selection.length) {
         const selection = this.__selection[0];
         if (selection) {
+          toBeDeleted.push(selection);
           if (osparc.file.FilesTree.isDir(selection)) {
             isFolderSelected = true;
           }
         }
       }
+      if (toBeDeleted.length === 0) {
+        return;
+      }
+      if (toBeDeleted[0].getLocation() != 0) {
+        osparc.FlashMessenger.logAs(this.tr("You can only delete files in the local storage"), "WARNING");
+        return;
+      }
 
-      let msg = this.tr("This operation cannot be undone.");
-      msg += isFolderSelected ? ("<br>"+this.tr("All the content of the folders will be deleted.")) : "";
+      let msg = this.tr("This action cannot be undone.");
+      msg += isFolderSelected ? ("<br>"+this.tr("All contents within the folders will be deleted.")) : "";
       msg += "<br>" + this.tr("Do you want to proceed?");
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
         caption: this.tr("Delete"),
@@ -206,36 +228,71 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
     },
 
     __doDeleteSelected: function(toBeDeleted) {
-      const requests = [];
-      toBeDeleted.forEach(selection => {
-        if (selection) {
-          let request = null;
-          if (osparc.file.FilesTree.isFile(selection)) {
-            request = this.__deleteItem(selection.getFileId(), selection.getLocation());
-          } else {
-            request = this.__deleteItem(selection.getPath(), selection.getLocation());
-          }
-          if (request) {
-            requests.push(request);
-          }
-        }
-      });
-      Promise.all(requests)
-        .then(datas => {
-          if (datas.length) {
-            this.fireDataEvent("fileDeleted", datas[0]);
-            osparc.FlashMessenger.getInstance().logAs(this.tr("Items successfully deleted"), "INFO");
-          }
-        });
+      if (toBeDeleted.length === 0) {
+        osparc.FlashMessenger.logAs(this.tr("Nothing to delete"), "ERROR");
+        return;
+      } else if (toBeDeleted.length > 0) {
+        const paths = toBeDeleted.map(item => item.getPath());
+        const dataStore = osparc.store.Data.getInstance();
+        const fetchPromise = dataStore.deleteFiles(paths);
+        const pollTasks = osparc.store.PollTasks.getInstance();
+        pollTasks.createPollingTask(fetchPromise)
+          .then(task => this.__deleteTaskReceived(task, paths))
+          .catch(err => osparc.FlashMessenger.logError(err, this.tr("Unsuccessful files deletion")));
+      }
     },
 
-    __deleteItem: function(itemId, locationId) {
-      if (locationId !== 0 && locationId !== "0") {
-        osparc.FlashMessenger.getInstance().logAs(this.tr("Only items in simcore.s3 can be deleted"));
-        return null;
+    __deleteTaskReceived: function(task, paths) {
+      const taskUI = new osparc.task.TaskUI();
+      taskUI.setIcon("@FontAwesome5Solid/trash/14");
+      taskUI.setTitle(this.tr("Deleting files"));
+      taskUI.setTask(task);
+      osparc.task.TasksContainer.getInstance().addTaskUI(taskUI);
+
+      const progressWindow = new osparc.ui.window.Progress(
+        this.tr("Delete files"),
+        "@FontAwesome5Solid/trash/14",
+        this.tr("Deleting files..."),
+      );
+      if (task.getAbortHref()) {
+        const cancelButton = progressWindow.addCancelButton();
+        cancelButton.setLabel(this.tr("Ignore"));
+        const abortButton = new qx.ui.form.Button().set({
+          label: this.tr("Cancel"),
+          center: true,
+          minWidth: 100,
+        });
+        abortButton.addListener("execute", () => task.abortRequested());
+        progressWindow.addButton(abortButton);
+        abortButton.set({
+          appearance: "danger-button",
+        });
       }
-      const dataStore = osparc.store.Data.getInstance();
-      return dataStore.deleteFile(locationId, itemId);
+      progressWindow.open();
+
+      task.addListener("updateReceived", e => {
+        const data = e.getData();
+        if (data["task_progress"]) {
+          if ("message" in data["task_progress"] && data["task_progress"]["message"]) {
+            progressWindow.setMessage(data["task_progress"]["message"]);
+          }
+          progressWindow.setProgress(osparc.data.PollTask.extractProgress(data) * 100);
+        }
+      }, this);
+      task.addListener("resultReceived", e => {
+        osparc.FlashMessenger.logAs(this.tr("Items successfully deleted"), "INFO");
+        this.fireDataEvent("pathsDeleted", paths);
+        progressWindow.close();
+      });
+      task.addListener("taskAborted", () => {
+        osparc.FlashMessenger.logAs(this.tr("Deletion aborted"), "WARNING");
+        progressWindow.close();
+      });
+      task.addListener("pollingError", e => {
+        const err = e.getData();
+        osparc.FlashMessenger.logError(err);
+        progressWindow.close();
+      });
     },
   }
 });
