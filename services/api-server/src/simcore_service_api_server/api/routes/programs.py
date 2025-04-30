@@ -23,7 +23,8 @@ from ..._service_job import JobService
 from ..._service_programs import ProgramService
 from ...api.routes._constants import (
     DEFAULT_MAX_STRING_LENGTH,
-    create_route_config,
+    FMSG_CHANGELOG_NEW_IN_VERSION,
+    create_route_description,
 )
 from ...models.basic_types import VersionStr
 from ...models.pagination import Page, PaginationParams
@@ -38,10 +39,13 @@ router = APIRouter()
 @router.get(
     "",
     response_model=Page[Program],
-    **create_route_config(
-        base_description="Lists the latest of all available programs",
-        to_be_released_in="0.8",
+    description=create_route_description(
+        base="Lists the latest of all available programs",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.8"),
+        ],
     ),
+    include_in_schema=False,  # TO BE RELEASED in 0.8
 )
 async def list_programs(
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
@@ -74,10 +78,13 @@ async def list_programs(
 @router.get(
     "/{program_key:path}/releases",
     response_model=Page[Program],
-    **create_route_config(
-        base_description="Lists the latest of all available programs",
-        to_be_released_in="0.8",
+    description=create_route_description(
+        base="Lists the latest of all available programs",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.8"),
+        ],
     ),
+    include_in_schema=False,  # TO BE RELEASED in 0.8
 )
 async def list_program_history(
     program_key: ProgramKeyId,
