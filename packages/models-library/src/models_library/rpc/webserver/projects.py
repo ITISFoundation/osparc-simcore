@@ -29,7 +29,7 @@ class ProjectJobRpcGet(BaseModel):
     workbench: NodesDict
 
     # timestamps
-    creation_at: datetime
+    created_at: datetime
     modified_at: datetime
 
     # Specific to jobs
@@ -43,12 +43,30 @@ class ProjectJobRpcGet(BaseModel):
                 "examples": [
                     {
                         "uuid": "12345678-1234-5678-1234-123456789012",
-                        "name": "My project",
-                        "description": "My project description",
+                        "name": "A solver job",
+                        "description": "A description of a solver job with a single node",
                         "workbench": {f"{uuid4()}": n for n in nodes_examples[2:3]},
-                        "creation_at": "2023-01-01T00:00:00Z",
+                        "created_at": "2023-01-01T00:00:00Z",
                         "modified_at": "2023-01-01T00:00:00Z",
-                        "job_parent_resource_name": "solvers/foo/release/1.2.3",
+                        "job_parent_resource_name": "solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.0.2",
+                    },
+                    {
+                        "uuid": "00000000-1234-5678-1234-123456789012",
+                        "name": "A study job",
+                        "description": "A description of a study job with many node",
+                        "workbench": {f"{uuid4()}": n for n in nodes_examples},
+                        "created_at": "2023-02-01T00:00:00Z",
+                        "modified_at": "2023-02-01T00:00:00Z",
+                        "job_parent_resource_name": "studies/96642f2a-a72c-11ef-8776-02420a00087d",
+                    },
+                    {
+                        "uuid": "00000000-0000-5678-1234-123456789012",
+                        "name": "A program job",
+                        "description": "A program of a solver job with a single node",
+                        "workbench": {f"{uuid4()}": n for n in nodes_examples[2:3]},
+                        "created_at": "2023-03-01T00:00:00Z",
+                        "modified_at": "2023-03-01T00:00:00Z",
+                        "job_parent_resource_name": "program/simcore%2Fservices%2Fdynamic%2Fjupyter/releases/5.0.2",
                     },
                 ]
             }

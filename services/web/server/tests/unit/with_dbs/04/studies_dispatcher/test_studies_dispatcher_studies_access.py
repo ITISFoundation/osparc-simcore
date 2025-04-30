@@ -234,9 +234,24 @@ async def _assert_redirected_to_study(
         "OSPARC-SIMCORE" in content
     ), f"Expected front-end rendering workbench's study, got {content!s}"
 
-    # Expects fragment to indicate client where to find newly created project
-    m = re.match(r"/study/([\d\w-]+)", response.real_url.fragment)
-    assert m, f"Expected /study/uuid, got {response.real_url.fragment}"
+    # First check if the fragment indicates an error
+    fragment = response.real_url.fragment
+    error_match = re.match(r"/error", fragment)
+    if error_match:
+        # Parse query parameters to extract error details
+        query_params = urllib.parse.parse_qs(
+            fragment.split("?", 1)[1] if "?" in fragment else ""
+        )
+        error_message = query_params.get("message", ["Unknown error"])[0]
+        error_status = query_params.get("status_code", ["Unknown"])[0]
+
+        pytest.fail(
+            f"Redirected to error page: Status={error_status}, Message={error_message}"
+        )
+
+    # Check for study path if not an error
+    m = re.match(r"/study/([\d\w-]+)", fragment)
+    assert m, f"Expected /study/uuid, got {fragment}"
 
     # Expects auth cookie for current user
     assert _is_user_authenticated(session)
@@ -435,7 +450,17 @@ async def test_access_cookie_of_expired_user(
 
 
 @pytest.mark.flaky(max_runs=3)
-@pytest.mark.parametrize("number_of_simultaneous_requests", [1, 2, 32])
+@pytest.mark.parametrize(
+    "number_of_simultaneous_requests",
+    [
+        1,
+        2,
+        16,
+        # NOTE: The number of simultaneous anonymous users is limited by system load.
+        # A GuestUsersLimitError is raised if user creation exceeds the MAX_DELAY_TO_CREATE_USER threshold.
+        # This test is flaky due to its dependency on app runtime conditions. Avoid increasing simultaneous requests.
+    ],
+)
 async def test_guest_user_is_not_garbage_collected(
     number_of_simultaneous_requests: int,
     web_server: TestServer,
@@ -454,9 +479,6 @@ async def test_guest_user_is_not_garbage_collected(
 
     async def _test_guest_user_workflow(request_index):
         print("request #", request_index, "-" * 10)
-
-        # TODO: heartbeat is missing here!
-        # TODO: reduce GC activation period to 0.1 secs
         # every guest uses different client to preserve it's own authorization/authentication cookies
         client: TestClient = await aiohttp_client(web_server)
         assert client.app
@@ -495,5 +517,4 @@ async def test_guest_user_is_not_garbage_collected(
     ]
 
     await asyncio.gather(*request_tasks)
-
     # and now the garbage collector shall delete our users since we are done...

@@ -200,9 +200,7 @@ def create_job_from_project(
     """
     assert len(project.workbench) == 1  # nosec
 
-    # get solver node
-    node_id = next(iter(project.workbench.keys()))
-    solver_node: Node = project.workbench[node_id]
+    solver_node: Node = next(iter(project.workbench.values()))
     job_inputs: JobInputs = create_job_inputs_from_node_inputs(
         inputs=solver_node.inputs or {}
     )
@@ -212,7 +210,7 @@ def create_job_from_project(
 
     job_id = project.uuid
 
-    job = Job(
+    return Job(
         id=job_id,
         name=Job.compose_resource_name(
             parent_name=solver_or_program_name, job_id=job_id
@@ -228,8 +226,6 @@ def create_job_from_project(
             solver_or_program=solver_or_program, url_for=url_for, job_id=job_id
         ),
     )
-
-    return job
 
 
 def create_jobstatus_from_task(task: ComputationTaskGet) -> JobStatus:

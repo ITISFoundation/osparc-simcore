@@ -22,6 +22,7 @@ from ...models.schemas.solvers import Solver, SolverKeyId, SolverPort
 from ...services_rpc.catalog import CatalogService
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
+from ..dependencies.services import get_solver_service
 from ..dependencies.webserver_http import AuthSession, get_webserver_session
 from ._constants import (
     FMSG_CHANGELOG_NEW_IN_VERSION,
@@ -97,15 +98,21 @@ async def list_solvers(
 @router.get(
     "/page",
     response_model=Page[Solver],
+    description=create_route_description(
+        base="Lists the latest version of all available solvers (paginated)",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.8"),
+        ],
+    ),
+    include_in_schema=False,  # TO BE RELEASED in 0.8
 )
 async def get_solvers_page(
     page_params: Annotated[PaginationParams, Depends()],
     user_id: Annotated[int, Depends(get_current_user_id)],
     product_name: Annotated[str, Depends(get_product_name)],
-    solver_service: Annotated[SolverService, Depends(SolverService)],
+    solver_service: Annotated[SolverService, Depends(get_solver_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
-    """Lists all available solvers (latest version) with pagination"""
     solvers, page_meta = await solver_service.latest_solvers(
         user_id=user_id,
         product_name=product_name,
@@ -143,7 +150,7 @@ async def get_solvers_page(
 )
 async def list_solvers_releases(
     user_id: Annotated[int, Depends(get_current_user_id)],
-    solver_service: Annotated[SolverService, Depends(SolverService)],
+    solver_service: Annotated[SolverService, Depends(get_solver_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
 ):
@@ -189,10 +196,10 @@ async def list_solvers_releases(
 async def get_solver(
     solver_key: SolverKeyId,
     user_id: Annotated[int, Depends(get_current_user_id)],
-    solver_service: Annotated[SolverService, Depends(SolverService)],
+    solver_service: Annotated[SolverService, Depends(get_solver_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
-) -> Solver:
+):
     """Gets latest release of a solver"""
     # IMPORTANT: by adding /latest, we avoid changing the order of this entry in the router list
     # otherwise, {solver_key:path} will override and consume any of the paths that follow.
@@ -223,7 +230,7 @@ async def get_solver(
 async def list_solver_releases(
     solver_key: SolverKeyId,
     user_id: Annotated[int, Depends(get_current_user_id)],
-    solver_service: Annotated[SolverService, Depends(SolverService)],
+    solver_service: Annotated[SolverService, Depends(get_solver_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
 ):
@@ -254,6 +261,13 @@ async def list_solver_releases(
 @router.get(
     "/{solver_key:path}/releases/page",
     response_model=Page[Solver],
+    description=create_route_description(
+        base="Lists all releases of a give solver (paginated)",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.8"),
+        ],
+    ),
+    include_in_schema=False,  # TO BE RELEASED in 0.8
 )
 async def get_solver_releases_page(
     solver_key: SolverKeyId,
@@ -261,7 +275,7 @@ async def get_solver_releases_page(
     user_id: Annotated[int, Depends(get_current_user_id)],
     product_name: Annotated[str, Depends(get_product_name)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
-    solver_service: Annotated[SolverService, Depends(SolverService)],
+    solver_service: Annotated[SolverService, Depends(get_solver_service)],
 ):
     solvers, page_meta = await solver_service.solver_release_history(
         user_id=user_id,
@@ -293,16 +307,16 @@ async def get_solver_release(
     solver_key: SolverKeyId,
     version: VersionStr,
     user_id: Annotated[int, Depends(get_current_user_id)],
-    solver_service: Annotated[SolverService, Depends(SolverService)],
+    solver_service: Annotated[SolverService, Depends(get_solver_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
-) -> Solver:
+):
     """Gets a specific release of a solver"""
     try:
         solver: Solver = await solver_service.get_solver(
             user_id=user_id,
-            name=solver_key,
-            version=version,
+            solver_key=solver_key,
+            solver_version=version,
             product_name=product_name,
         )
 

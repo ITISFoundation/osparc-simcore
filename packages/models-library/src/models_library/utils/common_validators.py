@@ -1,4 +1,4 @@
-""" Reusable validators
+"""Reusable validators
 
     Example:
 
@@ -22,8 +22,17 @@ from typing import Any
 
 from common_library.json_serialization import json_loads
 from orjson import JSONDecodeError
-from pydantic import BaseModel
+from pydantic import BaseModel, BeforeValidator
 from pydantic.alias_generators import to_camel
+
+
+def trim_string_before(max_length: int) -> BeforeValidator:
+    def _trim(value: str):
+        if isinstance(value, str):
+            return value[:max_length]
+        return value
+
+    return BeforeValidator(_trim)
 
 
 def empty_str_to_none_pre_validator(value: Any):

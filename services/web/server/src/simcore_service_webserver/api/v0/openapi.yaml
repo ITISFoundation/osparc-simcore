@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.63.0
+  version: 0.64.0
 servers:
 - url: ''
   description: webserver
@@ -3856,18 +3856,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_TaskGet_'
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Forbidden
         '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
         '409':
           content:
             application/json:
@@ -3985,18 +3985,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Page_ProjectListItem_'
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Forbidden
         '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
         '409':
           content:
             application/json:
@@ -4047,18 +4047,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_ProjectGet_'
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Forbidden
         '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
         '409':
           content:
             application/json:
@@ -4110,18 +4110,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_ProjectGet_'
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Forbidden
         '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
         '409':
           content:
             application/json:
@@ -4174,18 +4174,18 @@ paths:
       responses:
         '204':
           description: Successful Response
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Forbidden
         '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
         '409':
           content:
             application/json:
@@ -4232,18 +4232,18 @@ paths:
       responses:
         '204':
           description: Successful Response
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Forbidden
         '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
         '409':
           content:
             application/json:
@@ -4295,18 +4295,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_TaskGet_'
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Forbidden
         '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
         '409':
           content:
             application/json:
@@ -4400,18 +4400,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Page_ProjectListItem_'
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Forbidden
         '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
         '409':
           content:
             application/json:
@@ -4463,18 +4463,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_GetProjectInactivityResponse_'
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Forbidden
         '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
         '409':
           content:
             application/json:
@@ -4661,6 +4661,7 @@ paths:
       description: Create a new comment for a specific project. The request body should
         contain the comment contents and user information.
       operationId: create_project_comment
+      deprecated: true
       parameters:
       - name: project_uuid
         in: path
@@ -4689,6 +4690,7 @@ paths:
       summary: List Project Comments
       description: Retrieve all comments for a specific project.
       operationId: list_project_comments
+      deprecated: true
       parameters:
       - name: project_uuid
         in: path
@@ -4728,6 +4730,7 @@ paths:
       description: Update the contents of a specific comment for a project. The request
         body should contain the updated comment contents.
       operationId: update_project_comment
+      deprecated: true
       parameters:
       - name: project_uuid
         in: path
@@ -4764,6 +4767,7 @@ paths:
       summary: Delete Project Comment
       description: Delete a specific comment associated with a project.
       operationId: delete_project_comment
+      deprecated: true
       parameters:
       - name: project_uuid
         in: path
@@ -4790,6 +4794,7 @@ paths:
       summary: Get Project Comment
       description: Retrieve a specific comment by its ID within a project.
       operationId: get_project_comment
+      deprecated: true
       parameters:
       - name: project_uuid
         in: path
@@ -4813,6 +4818,349 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_ProjectsCommentsAPI_'
+  /v0/projects/{project_id}/conversations:
+    post:
+      tags:
+      - projects
+      - conversations
+      summary: Create Project Conversation
+      operationId: create_project_conversation
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Project Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_ProjectConversationsCreateBodyParams'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ConversationRestGet_'
+    get:
+      tags:
+      - projects
+      - conversations
+      summary: List Project Conversations
+      operationId: list_project_conversations
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Project Id
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          exclusiveMaximum: true
+          default: 20
+          title: Limit
+          maximum: 50
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          title: Offset
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page_ConversationRestGet_'
+  /v0/projects/{project_id}/conversations/{conversation_id}:
+    put:
+      tags:
+      - projects
+      - conversations
+      summary: Update Project Conversation
+      operationId: update_project_conversation
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Project Id
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_ProjectConversationsPutBodyParams'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ConversationRestGet_'
+    delete:
+      tags:
+      - projects
+      - conversations
+      summary: Delete Project Conversation
+      operationId: delete_project_conversation
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Project Id
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      responses:
+        '204':
+          description: Successful Response
+    get:
+      tags:
+      - projects
+      - conversations
+      summary: Get Project Conversation
+      operationId: get_project_conversation
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Project Id
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ConversationRestGet_'
+  /v0/projects/{project_id}/conversations/{conversation_id}/messages:
+    post:
+      tags:
+      - projects
+      - conversations
+      summary: Create Project Conversation Message
+      operationId: create_project_conversation_message
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Project Id
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_ProjectConversationMessagesCreateBodyParams'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ConversationMessageRestGet_'
+    get:
+      tags:
+      - projects
+      - conversations
+      summary: List Project Conversation Messages
+      operationId: list_project_conversation_messages
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Project Id
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          exclusiveMaximum: true
+          default: 20
+          title: Limit
+          maximum: 50
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          title: Offset
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page_ConversationMessageRestGet_'
+  /v0/projects/{project_id}/conversations/{conversation_id}/messages/{message_id}:
+    put:
+      tags:
+      - projects
+      - conversations
+      summary: Update Project Conversation Message
+      operationId: update_project_conversation_message
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Project Id
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      - name: message_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Message Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_ProjectConversationMessagesPutBodyParams'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ConversationMessageRestGet_'
+    delete:
+      tags:
+      - projects
+      - conversations
+      summary: Delete Project Conversation Message
+      operationId: delete_project_conversation_message
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Project Id
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      - name: message_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Message Id
+      responses:
+        '204':
+          description: Successful Response
+    get:
+      tags:
+      - projects
+      - conversations
+      summary: Get Project Conversation Message
+      operationId: get_project_conversation_message
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Project Id
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      - name: message_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Message Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ConversationMessageRestGet_'
   /v0/projects/{project_id}/folders/{folder_id}:
     put:
       tags:
@@ -6770,14 +7118,14 @@ paths:
       responses:
         '204':
           description: Successful Response
-        '403':
-          description: Forbidden
+        '404':
+          description: Not Found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
-        '404':
-          description: Not Found
+        '403':
+          description: Forbidden
           content:
             application/json:
               schema:
@@ -6837,18 +7185,18 @@ paths:
       responses:
         '204':
           description: Successful Response
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Forbidden
         '404':
           description: Not such a project
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
         '409':
           description: Project is in use and cannot be trashed
           content:
@@ -6897,18 +7245,18 @@ paths:
       responses:
         '204':
           description: Successful Response
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Forbidden
         '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
         '409':
           content:
             application/json:
@@ -6965,14 +7313,14 @@ paths:
       responses:
         '204':
           description: Successful Response
+        '404':
+          description: Not such a folder
         '403':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Forbidden
-        '404':
-          description: Not such a folder
         '409':
           description: One or more projects in the folder are in use and cannot be
             trashed
@@ -7015,18 +7363,18 @@ paths:
       responses:
         '204':
           description: Successful Response
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Forbidden
         '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
         '409':
           content:
             application/json:
@@ -7083,14 +7431,14 @@ paths:
       responses:
         '204':
           description: Successful Response
+        '404':
+          description: Not such a workspace
         '403':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Forbidden
-        '404':
-          description: Not such a workspace
         '409':
           description: One or more projects in the workspace are in use and cannot
             be trashed
@@ -7133,18 +7481,18 @@ paths:
       responses:
         '204':
           description: Successful Response
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Forbidden
         '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
         '409':
           content:
             application/json:
@@ -8852,6 +9200,102 @@ components:
       - serviceKey
       - serviceVersion
       title: ConnectServiceToPricingPlanBodyParams
+    ConversationMessageRestGet:
+      properties:
+        messageId:
+          type: string
+          format: uuid
+          title: Messageid
+        conversationId:
+          type: string
+          format: uuid
+          title: Conversationid
+        userGroupId:
+          type: integer
+          exclusiveMinimum: true
+          title: Usergroupid
+          minimum: 0
+        content:
+          type: string
+          maxLength: 4096
+          title: Content
+        type:
+          $ref: '#/components/schemas/ConversationMessageType'
+        created:
+          type: string
+          format: date-time
+          title: Created
+        modified:
+          type: string
+          format: date-time
+          title: Modified
+      type: object
+      required:
+      - messageId
+      - conversationId
+      - userGroupId
+      - content
+      - type
+      - created
+      - modified
+      title: ConversationMessageRestGet
+    ConversationMessageType:
+      type: string
+      enum:
+      - MESSAGE
+      - NOTIFICATION
+      title: ConversationMessageType
+    ConversationRestGet:
+      properties:
+        conversationId:
+          type: string
+          format: uuid
+          title: Conversationid
+        productName:
+          type: string
+          title: Productname
+        name:
+          type: string
+          maxLength: 50
+          title: Name
+        projectUuid:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Projectuuid
+        userGroupId:
+          type: integer
+          exclusiveMinimum: true
+          title: Usergroupid
+          minimum: 0
+        type:
+          $ref: '#/components/schemas/ConversationType'
+        created:
+          type: string
+          format: date-time
+          title: Created
+        modified:
+          type: string
+          format: date-time
+          title: Modified
+      type: object
+      required:
+      - conversationId
+      - productName
+      - name
+      - projectUuid
+      - userGroupId
+      - type
+      - created
+      - modified
+      title: ConversationRestGet
+    ConversationType:
+      type: string
+      enum:
+      - PROJECT_STATIC
+      - PROJECT_ANNOTATION
+      title: ConversationType
     CountryInfoDict:
       properties:
         name:
@@ -9251,6 +9695,32 @@ components:
           title: Error
       type: object
       title: Envelope[ComputationStarted]
+    Envelope_ConversationMessageRestGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/ConversationMessageRestGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[ConversationMessageRestGet]
+    Envelope_ConversationRestGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/ConversationRestGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[ConversationRestGet]
     Envelope_CreditPriceGet_:
       properties:
         data:
@@ -12867,6 +13337,42 @@ components:
       - _links
       - data
       title: Page[CatalogLatestServiceGet]
+    Page_ConversationMessageRestGet_:
+      properties:
+        _meta:
+          $ref: '#/components/schemas/PageMetaInfoLimitOffset'
+        _links:
+          $ref: '#/components/schemas/PageLinks'
+        data:
+          items:
+            $ref: '#/components/schemas/ConversationMessageRestGet'
+          type: array
+          title: Data
+      additionalProperties: false
+      type: object
+      required:
+      - _meta
+      - _links
+      - data
+      title: Page[ConversationMessageRestGet]
+    Page_ConversationRestGet_:
+      properties:
+        _meta:
+          $ref: '#/components/schemas/PageMetaInfoLimitOffset'
+        _links:
+          $ref: '#/components/schemas/PageLinks'
+        data:
+          items:
+            $ref: '#/components/schemas/ConversationRestGet'
+          type: array
+          title: Data
+      additionalProperties: false
+      type: object
+      required:
+      - _meta
+      - _links
+      - data
+      title: Page[ConversationRestGet]
     Page_LicensedItemPurchaseGet_:
       properties:
         _meta:
@@ -16606,6 +17112,50 @@ components:
       required:
       - contents
       title: _ProjectCommentsBodyParams
+    _ProjectConversationMessagesCreateBodyParams:
+      properties:
+        content:
+          type: string
+          title: Content
+        type:
+          $ref: '#/components/schemas/ConversationMessageType'
+      additionalProperties: false
+      type: object
+      required:
+      - content
+      - type
+      title: _ProjectConversationMessagesCreateBodyParams
+    _ProjectConversationMessagesPutBodyParams:
+      properties:
+        content:
+          type: string
+          title: Content
+      additionalProperties: false
+      type: object
+      required:
+      - content
+      title: _ProjectConversationMessagesPutBodyParams
+    _ProjectConversationsCreateBodyParams:
+      properties:
+        name:
+          type: string
+          title: Name
+        type:
+          $ref: '#/components/schemas/ConversationType'
+      type: object
+      required:
+      - name
+      - type
+      title: _ProjectConversationsCreateBodyParams
+    _ProjectConversationsPutBodyParams:
+      properties:
+        name:
+          type: string
+          title: Name
+      type: object
+      required:
+      - name
+      title: _ProjectConversationsPutBodyParams
     _ProjectGroupAccess:
       properties:
         gid:
