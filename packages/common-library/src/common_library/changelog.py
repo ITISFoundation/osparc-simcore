@@ -1,38 +1,18 @@
+"""
+CHANGELOG formatted-messages for API routes
+
+- Append at the bottom of the route's description
+- These are displayed in the swagger doc
+- These are displayed in client's doc as well (auto-generator)
+- Inspired on this idea https://www.sphinx-doc.org/en/master/usage/restructuredtext/directives.html#describing-changes-between-versions
+"""
+
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from enum import Enum, auto
-from typing import Any, ClassVar, Final, cast
+from typing import Any, ClassVar, cast
 
 from packaging.version import Version
-
-from ..._meta import API_VERSION
-
-#
-# CHANGELOG formatted-messages for API routes
-#
-# - Append at the bottom of the route's description
-# - These are displayed in the swagger doc
-# - These are displayed in client's doc as well (auto-generator)
-# - Inspired on this idea https://www.sphinx-doc.org/en/master/usage/restructuredtext/directives.html#describing-changes-between-versions
-#
-
-# newly created endpoint in given version
-FMSG_CHANGELOG_NEW_IN_VERSION: Final[str] = "New in *version {}*\n"
-
-# changes in given version with message
-FMSG_CHANGELOG_CHANGED_IN_VERSION: Final[str] = "Changed in *version {}*: {}\n"
-
-# marked as deprecated
-FMSG_CHANGELOG_DEPRECATED_IN_VERSION: Final[str] = (
-    "🚨 **Deprecated**: This endpoint is deprecated and will be removed in a future release.\n"
-    "Please use `{}` instead.\n\n"
-)
-
-# marked as deprecated and will be removed in given version
-FMSG_CHANGELOG_REMOVED_IN_VERSION: Final[str] = "Removed in *version {}*: {}\n"
-
-
-DEFAULT_MAX_STRING_LENGTH: Final[int] = 500
 
 
 class ChangelogType(Enum):
@@ -201,6 +181,7 @@ def validate_changelog(changelog: Sequence[ChangelogEntry]) -> None:
 def create_route_config(
     base_description: str = "",
     *,
+    current_version: str | Version,
     changelog: Sequence[ChangelogEntry] | None = None,
 ) -> dict[str, Any]:
     """
@@ -212,6 +193,7 @@ def create_route_config(
 
     Args:
         base_description: Main route description
+        current_version: Current version of the API
         changelog: List of changelog entries indicating version history
 
     Returns:
@@ -222,10 +204,12 @@ def create_route_config(
 
     validate_changelog(changelog_list)
 
+    if isinstance(current_version, str):
+        current_version = Version(current_version)
+
     # Determine endpoint state
     is_deprecated = False
     is_unreleased = False
-    current_version = Version(API_VERSION)
 
     # Get the first entry (NEW) to check if unreleased
     if changelog_list and changelog_list[0].entry_type == ChangelogType.NEW:
