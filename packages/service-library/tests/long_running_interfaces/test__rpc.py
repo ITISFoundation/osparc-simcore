@@ -14,10 +14,10 @@ from servicelib.long_running_interfaces._errors import (
     NoResultIsAvailableError,
 )
 from servicelib.long_running_interfaces._models import (
-    JobName,
     JobStatus,
     JobUniqueId,
     LongRunningNamespace,
+    RemoteHandlerName,
     ResultModel,
     StartParams,
 )
@@ -51,7 +51,7 @@ async def client_rpc_interface(
     await client.teardown()
 
 
-class MockServerInterface(BaseServerJobInterface):
+class _MockServerInterface(BaseServerJobInterface):
     def __init__(self) -> None:
         self._storage: dict[JobUniqueId, Any] = {}
         self._task: Task | None = None
@@ -82,10 +82,12 @@ class MockServerInterface(BaseServerJobInterface):
 
     async def start(
         self,
+        name: RemoteHandlerName,
         unique_id: JobUniqueId,
+        params: StartParams,
         timeout: timedelta,  # noqa: ASYNC109
-        **params: StartParams,
     ) -> None:
+        print(f"starging {name}")
         self._storage[unique_id] = {
             "params": params,
             "time_remaining": int(timeout.total_seconds()),
@@ -94,10 +96,10 @@ class MockServerInterface(BaseServerJobInterface):
     async def remove(self, unique_id: JobUniqueId) -> None:
         del self._storage[unique_id]
 
-    async def is_present(self, unique_id: JobName) -> bool:
+    async def is_present(self, unique_id: RemoteHandlerName) -> bool:
         return unique_id in self._storage
 
-    async def is_running(self, unique_id: JobName) -> bool:
+    async def is_running(self, unique_id: RemoteHandlerName) -> bool:
         if unique_id not in self._storage:
             return False
         data = self._get_from_storage(unique_id)
@@ -113,8 +115,8 @@ class MockServerInterface(BaseServerJobInterface):
 
 
 @pytest.fixture
-async def initilized_server_interface() -> AsyncIterable[MockServerInterface]:
-    interface = MockServerInterface()
+async def initilized_server_interface() -> AsyncIterable[_MockServerInterface]:
+    interface = _MockServerInterface()
     await interface.setup()
     yield interface
     await interface.teardown()
@@ -124,7 +126,7 @@ async def initilized_server_interface() -> AsyncIterable[MockServerInterface]:
 async def server_rpc_interface(
     rabbit_service: RabbitSettings,
     long_running_namespace: LongRunningNamespace,
-    initilized_server_interface: MockServerInterface,
+    initilized_server_interface: _MockServerInterface,
 ) -> AsyncIterable[ServerRPCInterface]:
     server = ServerRPCInterface(
         rabbit_service, long_running_namespace, initilized_server_interface
@@ -138,7 +140,7 @@ async def test_workflow(
     server_rpc_interface: ServerRPCInterface,
     client_rpc_interface: ClientRPCInterface,
     unique_id: JobUniqueId,
-    initilized_server_interface: MockServerInterface,
+    initilized_server_interface: _MockServerInterface,
 ) -> None:
 
     # not started yet
@@ -147,7 +149,9 @@ async def test_workflow(
         assert await client_rpc_interface.get_result(unique_id)
 
     # after start
-    await client_rpc_interface.start(unique_id, timeout=timedelta(seconds=4))
+    await client_rpc_interface.start(
+        "handler_name", unique_id, timeout=timedelta(seconds=4)
+    )
 
     assert await client_rpc_interface.get_status(unique_id) == JobStatus.RUNNING
     with pytest.raises(NoResultIsAvailableError):

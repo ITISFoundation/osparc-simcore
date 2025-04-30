@@ -1,6 +1,7 @@
 import traceback
 from abc import ABC, abstractmethod
 from datetime import timedelta
+from typing import Any
 
 from servicelib.rabbitmq import RPCRouter
 from settings_library.rabbit import RabbitSettings
@@ -12,6 +13,7 @@ from .._models import (
     JobStatus,
     JobUniqueId,
     LongRunningNamespace,
+    RemoteHandlerName,
     ResultModel,
     StartParams,
 )
@@ -24,9 +26,10 @@ class BaseServerJobInterface(ABC):
     @abstractmethod
     async def start(
         self,
+        name: RemoteHandlerName,
         unique_id: JobUniqueId,
+        params: StartParams,
         timeout: timedelta,  # noqa: ASYNC109
-        **params: StartParams,
     ) -> None:
         """used to start a jbo"""
 
@@ -43,7 +46,7 @@ class BaseServerJobInterface(ABC):
         """returns True if the job is currently running"""
 
     @abstractmethod
-    async def get_result(self, unique_id: JobUniqueId) -> ResultModel:
+    async def get_result(self, unique_id: JobUniqueId) -> Any | None:
         """provides the result of the job once finished"""
 
 
@@ -86,14 +89,15 @@ class ServerRPCInterface:
 
     async def start(
         self,
+        name: RemoteHandlerName,
         unique_id: JobUniqueId,
+        params: StartParams,
         timeout: timedelta,  # noqa: ASYNC109
-        **params: StartParams,
     ) -> None:
         if await self.job_interface.is_present(unique_id):
             raise AlreadyStartedError(unique_id=unique_id)
 
-        await self.job_interface.start(unique_id, timeout, **params)
+        await self.job_interface.start(name, unique_id, params, timeout)
 
     async def remove(self, unique_id: JobUniqueId) -> None:
         if await self.job_interface.is_present(unique_id):
@@ -116,7 +120,8 @@ class ServerRPCInterface:
             raise NoResultIsAvailableError(unique_id=unique_id)
 
         try:
-            return await self.job_interface.get_result(unique_id)
+            result = await self.job_interface.get_result(unique_id)
+            return ResultModel(data=result)
         except Exception as e:  # pylint:disable=broad-exception-caught
             formatted_traceback = "\n".join(traceback.format_tb(e.__traceback__))
             return ResultModel(

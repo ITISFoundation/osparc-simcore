@@ -11,6 +11,7 @@ from .._models import (
     JobStatus,
     JobUniqueId,
     LongRunningNamespace,
+    RemoteHandlerName,
     ResultModel,
     StartParams,
 )
@@ -44,6 +45,7 @@ class ClientRPCInterface:
 
     async def start(
         self,
+        name: RemoteHandlerName,
         unique_id: JobUniqueId,
         *,
         timeout: timedelta,  # noqa: ASYNC109
@@ -54,6 +56,7 @@ class ClientRPCInterface:
         result = await self._rabbitmq_rpc_client.request(
             self._rpc_namespace,
             TypeAdapter(RPCMethodName).validate_python("start"),
+            name=name,
             unique_id=unique_id,
             params=params,
             timeout=timeout,
