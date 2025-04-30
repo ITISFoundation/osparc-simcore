@@ -52,7 +52,7 @@ async def list_projects_marked_as_jobs(
     offset: PageOffsetInt = 0,
     limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     # filters
-    job_parent_resource_name_filter: str | None = None,
+    job_parent_resource_name_prefix: str | None = None,
 ) -> PageRpcProjectJobRpcGet:
     result = await rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
@@ -61,7 +61,7 @@ async def list_projects_marked_as_jobs(
         user_id=user_id,
         offset=offset,
         limit=limit,
-        job_parent_resource_name_filter=job_parent_resource_name_filter,
+        job_parent_resource_name_prefix=job_parent_resource_name_prefix,
     )
     assert TypeAdapter(PageRpcProjectJobRpcGet).validate_python(result)  # nosec
     return cast(PageRpcProjectJobRpcGet, result)

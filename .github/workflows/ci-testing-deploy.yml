@@ -573,7 +573,7 @@ jobs:
       - name: install uv
         uses: astral-sh/setup-uv@v6
         with:
-          version: "0.5.x"
+          version: "0.6.x"
           enable-cache: false
           cache-dependency-glob: "**/notifications/requirements/ci.txt"
       - name: show system version

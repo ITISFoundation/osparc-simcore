@@ -40,7 +40,7 @@ def _start_job_side_effect(
     return capture.response_body
 
 
-def get_inspect_job_side_effect(job_id: str) -> SideEffectCallback:
+def _get_inspect_job_side_effect(job_id: str) -> SideEffectCallback:
     def _inspect_job_side_effect(
         request: httpx.Request,
         path_params: dict[str, Any],
@@ -250,7 +250,7 @@ async def test_start_solver_job_pricing_unit_with_payment(
         _start_job_side_effect,
     ]
     if expected_status_code == status.HTTP_202_ACCEPTED:
-        callbacks.append(get_inspect_job_side_effect(job_id=_job_id))
+        callbacks.append(_get_inspect_job_side_effect(job_id=_job_id))
 
     _put_pricing_plan_and_unit_side_effect.was_called = False
     create_respx_mock_from_capture(
@@ -296,7 +296,7 @@ async def test_get_solver_job_pricing_unit_no_payment(
         capture_path=project_tests_dir / "mocks" / "start_job_no_payment.json",
         side_effects_callbacks=[
             _start_job_side_effect,
-            get_inspect_job_side_effect(job_id=_job_id),
+            _get_inspect_job_side_effect(job_id=_job_id),
         ],
     )
 
@@ -329,7 +329,7 @@ async def test_start_solver_job_conflict(
         capture_path=project_tests_dir / "mocks" / "start_solver_job.json",
         side_effects_callbacks=[
             _start_job_side_effect,
-            get_inspect_job_side_effect(job_id=_job_id),
+            _get_inspect_job_side_effect(job_id=_job_id),
         ],
     )
 
@@ -370,7 +370,7 @@ async def test_stop_job(
         capture_path=project_tests_dir / "mocks" / "stop_job.json",
         side_effects_callbacks=[
             _stop_job_side_effect,
-            get_inspect_job_side_effect(job_id=_job_id),
+            _get_inspect_job_side_effect(job_id=_job_id),
         ],
     )
 
