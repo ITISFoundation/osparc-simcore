@@ -1,4 +1,4 @@
-FROM alpine:3.21 AS base
+FROM caddy:2.10.0-alpine AS base
 
 LABEL maintainer=GitHK
 
@@ -29,10 +29,11 @@ HEALTHCHECK \
   --start-period=20s \
   --start-interval=1s \
   --retries=5 \
-  CMD curl http://localhost:8888/version || exit 1
+  CMD curl --fail-with-body --user ${DOCKER_API_PROXY_USER}:${DOCKER_API_PROXY_PASSWORD} http://localhost:8888/version
 
 COPY --chown=scu:scu services/docker-api-proxy/docker services/docker-api-proxy/docker
-RUN chmod +x services/docker-api-proxy/docker/*.sh
+RUN chmod +x services/docker-api-proxy/docker/*.sh && \
+  mv services/docker-api-proxy/docker/Caddyfile /etc/caddy/Caddyfile
 
 ENTRYPOINT [ "/bin/sh", "services/docker-api-proxy/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/docker-api-proxy/docker/boot.sh"]
