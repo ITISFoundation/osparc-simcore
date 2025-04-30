@@ -60,7 +60,7 @@ class JobService:
     ) -> tuple[list[Job], PageMetaInfoLimitOffset]:
         """Lists all jobs for a user with pagination based on resource name prefix"""
 
-        # List projects marked as jobs
+        # 1. List projects marked as jobs
         projects_page = await self._web_rpc_api.list_projects_marked_as_jobs(
             product_name=self._product_name,
             user_id=self._user_id,
@@ -69,7 +69,7 @@ class JobService:
             job_parent_resource_name_prefix=job_parent_resource_name_prefix,
         )
 
-        # Convert projects to jobs
+        # 2. Convert projects to jobs
         jobs: list[Job] = []
         for project_job in projects_page.data:
             assert (  # nosec

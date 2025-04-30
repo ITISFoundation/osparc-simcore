@@ -35,7 +35,7 @@ _exception_mapper = partial(service_exception_mapper, service_name="CatalogServi
 
 
 class CatalogService:
-    _rpc_client: RabbitMQRPCClient
+    _client: RabbitMQRPCClient
 
     # context
     _user_id: UserID
@@ -48,7 +48,7 @@ class CatalogService:
         user_id: UserID,
         product_name: ProductName,
     ):
-        self._rpc_client = rpc_client
+        self._client = rpc_client
 
         self._user_id = user_id
         self._product_name = product_name
@@ -62,7 +62,7 @@ class CatalogService:
     ) -> tuple[list[LatestServiceGet], PageMetaInfoLimitOffset]:
 
         page = await catalog_rpc.list_services_paginated(
-            self._rpc_client,
+            self._client,
             product_name=self._product_name,
             user_id=self._user_id,
             offset=offset,
@@ -86,7 +86,7 @@ class CatalogService:
     ) -> tuple[list[ServiceRelease], PageMetaInfoLimitOffset]:
 
         page = await catalog_rpc.list_my_service_history_paginated(
-            self._rpc_client,
+            self._client,
             product_name=self._product_name,
             user_id=self._user_id,
             service_key=service_key,
@@ -116,7 +116,7 @@ class CatalogService:
     ) -> ServiceGetV2:
 
         return await catalog_rpc.get_service(
-            self._rpc_client,
+            self._client,
             product_name=self._product_name,
             user_id=self._user_id,
             service_key=name,
@@ -144,7 +144,7 @@ class CatalogService:
             InvalidInputError: invalid input parameters
         """
         return await catalog_rpc.get_service_ports(
-            self._rpc_client,
+            self._client,
             product_name=self._product_name,
             user_id=self._user_id,
             service_key=name,
