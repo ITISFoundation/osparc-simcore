@@ -5276,25 +5276,6 @@
         }
       }
     },
-    "/v0/functions/ping": {
-      "post": {
-        "tags": [
-          "functions"
-        ],
-        "summary": "Ping",
-        "operationId": "ping",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        }
-      }
-    },
     "/v0/functions": {
       "get": {
         "tags": [
@@ -5400,6 +5381,16 @@
                       "solver": "#/components/schemas/SolverFunction"
                     }
                   }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Function not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -5513,27 +5504,60 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "404": {
+            "description": "Function not found",
+            "content": {
+              "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/ProjectFunction"
-                    },
-                    {
-                      "$ref": "#/components/schemas/PythonCodeFunction"
-                    },
-                    {
-                      "$ref": "#/components/schemas/SolverFunction"
-                    }
-                  ],
-                  "discriminator": {
-                    "propertyName": "function_class",
-                    "mapping": {
-                      "project": "#/components/schemas/ProjectFunction",
-                      "python_code": "#/components/schemas/PythonCodeFunction",
-                      "solver": "#/components/schemas/SolverFunction"
-                    }
-                  },
-                  "title": "Response Delete Function V0 Functions  Function Id  Delete"
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/functions/{function_id}/input_schema": {
+      "get": {
+        "tags": [
+          "functions"
+        ],
+        "summary": "Get Function Inputschema",
+        "description": "Get function input schema",
+        "operationId": "get_function_inputschema",
+        "parameters": [
+          {
+            "name": "function_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Function Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FunctionInputSchema"
                 }
               }
             }
@@ -5547,6 +5571,139 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/functions/{function_id}/output_schema": {
+      "get": {
+        "tags": [
+          "functions"
+        ],
+        "summary": "Get Function Outputschema",
+        "description": "Get function input schema",
+        "operationId": "get_function_outputschema",
+        "parameters": [
+          {
+            "name": "function_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Function Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FunctionInputSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Function not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/functions/{function_id}:validate_inputs": {
+      "post": {
+        "tags": [
+          "functions"
+        ],
+        "summary": "Validate Function Inputs",
+        "description": "Validate inputs against the function's input schema",
+        "operationId": "validate_function_inputs",
+        "parameters": [
+          {
+            "name": "function_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Function Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Inputs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "prefixItems": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "string"
+                    }
+                  ],
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "title": "Response Validate Function Inputs V0 Functions  Function Id  Validate Inputs Post"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid inputs"
+          },
+          "404": {
+            "description": "Function not found"
           },
           "422": {
             "description": "Validation Error",
@@ -5630,114 +5787,6 @@
                     }
                   },
                   "title": "Response Run Function V0 Functions  Function Id  Run Post"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Function not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorGet"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v0/functions/{function_id}/input_schema": {
-      "get": {
-        "tags": [
-          "functions"
-        ],
-        "summary": "Get Function Input Schema",
-        "description": "Get function",
-        "operationId": "get_function_input_schema",
-        "parameters": [
-          {
-            "name": "function_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Function Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/FunctionInputSchema"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Function not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorGet"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v0/functions/{function_id}/output_schema": {
-      "get": {
-        "tags": [
-          "functions"
-        ],
-        "summary": "Get Function Output Schema",
-        "description": "Get function",
-        "operationId": "get_function_output_schema",
-        "parameters": [
-          {
-            "name": "function_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Function Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/FunctionOutputSchema"
                 }
               }
             }
@@ -7564,7 +7613,6 @@
         },
         "type": "object",
         "required": [
-          "uid",
           "title",
           "description",
           "job_ids"
