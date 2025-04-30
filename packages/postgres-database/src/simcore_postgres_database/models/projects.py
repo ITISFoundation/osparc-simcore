@@ -173,9 +173,7 @@ projects = sa.Table(
     ### INDEXES ----------------------------
     sa.Index(
         "idx_projects_last_change_date_desc",
-        "last_change_date",
-        postgresql_using="btree",
-        postgresql_ops={"last_change_date": "DESC"},
+        sa.desc("last_change_date"),
     ),
 )
 

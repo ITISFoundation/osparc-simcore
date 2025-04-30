@@ -376,6 +376,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     WEBSERVER_TAGS: bool = True
     WEBSERVER_WALLETS: bool = True
     WEBSERVER_WORKSPACES: bool = True
+    WEBSERVER_CONVERSATIONS: bool = True
 
     WEBSERVER_SECURITY: Annotated[
         bool,

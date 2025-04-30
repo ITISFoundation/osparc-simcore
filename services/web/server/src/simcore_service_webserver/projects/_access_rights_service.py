@@ -100,9 +100,9 @@ async def has_user_project_access_rights(
 async def check_user_project_permission(
     app: web.Application,
     *,
-    project_id: ProjectID,
-    user_id: UserID,
     product_name: ProductName,
+    user_id: UserID,
+    project_id: ProjectID,
     permission: PermissionStr = "read",
 ) -> UserProjectAccessRightsWithWorkspace:
     _user_project_access_rights = await get_user_project_access_rights(
