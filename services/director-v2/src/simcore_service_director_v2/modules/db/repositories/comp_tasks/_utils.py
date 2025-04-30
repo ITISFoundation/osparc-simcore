@@ -3,7 +3,6 @@ import logging
 from decimal import Decimal
 from typing import Any, Final, cast
 
-import aiopg.sa
 import arrow
 from dask_task_models_library.container_tasks.protocol import ContainerEnvsDict
 from models_library.api_schemas_catalog.services import ServiceGet
@@ -47,6 +46,7 @@ from servicelib.rabbitmq.rpc_interfaces.clusters_keeper.ec2_instances import (
     get_instance_type_details,
 )
 from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
+from sqlalchemy.ext.asyncio import AsyncConnection
 
 from .....core.errors import (
     ClustersKeeperNotAvailableError,
@@ -143,12 +143,12 @@ async def _get_node_infos(
             None,
         )
 
-    result: tuple[
-        ServiceMetaDataPublished, ServiceExtras, SimcoreServiceLabels
-    ] = await asyncio.gather(
-        _get_service_details(catalog_client, user_id, product_name, node),
-        catalog_client.get_service_extras(node.key, node.version),
-        catalog_client.get_service_labels(node.key, node.version),
+    result: tuple[ServiceMetaDataPublished, ServiceExtras, SimcoreServiceLabels] = (
+        await asyncio.gather(
+            _get_service_details(catalog_client, user_id, product_name, node),
+            catalog_client.get_service_extras(node.key, node.version),
+            catalog_client.get_service_labels(node.key, node.version),
+        )
     )
     return result
 
@@ -156,7 +156,7 @@ async def _get_node_infos(
 async def _generate_task_image(
     *,
     catalog_client: CatalogClient,
-    connection: aiopg.sa.connection.SAConnection,
+    connection: AsyncConnection,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
@@ -190,7 +190,7 @@ async def _generate_task_image(
 
 
 async def _get_pricing_and_hardware_infos(
-    connection: aiopg.sa.connection.SAConnection,
+    connection: AsyncConnection,
     rut_client: ResourceUsageTrackerClient,
     *,
     is_wallet: bool,
@@ -244,14 +244,14 @@ async def _get_pricing_and_hardware_infos(
     return pricing_info, hardware_info
 
 
-_RAM_SAFE_MARGIN_RATIO: Final[
-    float
-] = 0.1  # NOTE: machines always have less available RAM than advertised
+_RAM_SAFE_MARGIN_RATIO: Final[float] = (
+    0.1  # NOTE: machines always have less available RAM than advertised
+)
 _CPUS_SAFE_MARGIN: Final[float] = 0.1
 
 
 async def _update_project_node_resources_from_hardware_info(
-    connection: aiopg.sa.connection.SAConnection,
+    connection: AsyncConnection,
     *,
     is_wallet: bool,
     project_id: ProjectID,
@@ -264,11 +264,11 @@ async def _update_project_node_resources_from_hardware_info(
     if not hardware_info.aws_ec2_instances:
         return
     try:
-        unordered_list_ec2_instance_types: list[
-            EC2InstanceTypeGet
-        ] = await get_instance_type_details(
-            rabbitmq_rpc_client,
-            instance_type_names=set(hardware_info.aws_ec2_instances),
+        unordered_list_ec2_instance_types: list[EC2InstanceTypeGet] = (
+            await get_instance_type_details(
+                rabbitmq_rpc_client,
+                instance_type_names=set(hardware_info.aws_ec2_instances),
+            )
         )
 
         assert unordered_list_ec2_instance_types  # nosec
@@ -335,7 +335,7 @@ async def generate_tasks_list_from_project(
     published_nodes: list[NodeID],
     user_id: UserID,
     product_name: str,
-    connection: aiopg.sa.connection.SAConnection,
+    connection: AsyncConnection,
     rut_client: ResourceUsageTrackerClient,
     wallet_info: WalletInfo | None,
     rabbitmq_rpc_client: RabbitMQRPCClient,

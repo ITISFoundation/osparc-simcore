@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Annotated
 
 import pytest
 from models_library.utils.common_validators import (
@@ -6,8 +7,9 @@ from models_library.utils.common_validators import (
     empty_str_to_none_pre_validator,
     none_to_empty_str_pre_validator,
     null_or_none_str_to_none_validator,
+    trim_string_before,
 )
-from pydantic import BaseModel, ValidationError, field_validator
+from pydantic import BaseModel, StringConstraints, ValidationError, field_validator
 
 
 def test_enums_pre_validator():
@@ -89,3 +91,67 @@ def test_null_or_none_str_to_none_validator():
 
     model = Model.model_validate({"message": ""})
     assert model == Model.model_validate({"message": ""})
+
+
+def test_trim_string_before():
+    max_length = 10
+
+    class ModelWithTrim(BaseModel):
+        text: Annotated[str, trim_string_before(max_length=max_length)]
+
+    # Test with string shorter than max_length
+    short_text = "Short"
+    model = ModelWithTrim(text=short_text)
+    assert model.text == short_text
+
+    # Test with string equal to max_length
+    exact_text = "1234567890"  # 10 characters
+    model = ModelWithTrim(text=exact_text)
+    assert model.text == exact_text
+
+    # Test with string longer than max_length
+    long_text = "This is a very long text that should be trimmed"
+    model = ModelWithTrim(text=long_text)
+    assert model.text == long_text[:max_length]
+    assert len(model.text) == max_length
+
+    # Test with non-string value (should be left unchanged)
+    class ModelWithTrimOptional(BaseModel):
+        text: Annotated[str | None, trim_string_before(max_length=max_length)]
+
+    model = ModelWithTrimOptional(text=None)
+    assert model.text is None
+
+
+def test_trim_string_before_with_string_constraints():
+    max_length = 10
+
+    class ModelWithTrimAndConstraints(BaseModel):
+        text: Annotated[
+            str | None,
+            StringConstraints(
+                max_length=max_length
+            ),  # NOTE: order does not matter for validation but has an effect in the openapi schema
+            trim_string_before(max_length=max_length),
+        ]
+
+    # Check that the OpenAPI schema contains the string constraint
+    schema = ModelWithTrimAndConstraints.model_json_schema()
+    assert schema["properties"]["text"] == {
+        "anyOf": [{"maxLength": max_length, "type": "string"}, {"type": "null"}],
+        "title": "Text",
+    }
+
+    # Test with string longer than max_length
+    # This should pass because trim_string_before runs first and trims the input
+    # before StringConstraints validation happens
+    long_text = "This is a very long text that should be trimmed"
+    model = ModelWithTrimAndConstraints(text=long_text)
+    assert model.text is not None
+    assert model.text == long_text[:max_length]
+    assert len(model.text) == max_length
+
+    # Test with string exactly at max_length
+    exact_text = "1234567890"  # 10 characters
+    model = ModelWithTrimAndConstraints(text=exact_text)
+    assert model.text == exact_text

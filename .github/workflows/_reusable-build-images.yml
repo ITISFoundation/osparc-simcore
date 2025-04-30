@@ -1,0 +1,61 @@
+name: Reusable Build Images
+
+on:
+  workflow_call:
+    inputs:
+      build-backend:
+        required: true
+        type: boolean
+        description: "Whether backend images should be built"
+      build-frontend:
+        required: true
+        type: boolean
+        description: "Whether frontend images should be built"
+      python-version:
+        required: true
+        type: string
+        description: "Python version to use"
+      os:
+        required: true
+        type: string
+        description: "Runner OS to use"
+
+jobs:
+  build-test-images:
+    timeout-minutes: 30
+    runs-on: ${{ inputs.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker-container
+      - name: expose github runtime for buildx
+        uses: crazy-max/ghaction-github-runtime@v3
+      - name: show system environs
+        run: ./ci/helpers/show_system_versions.bash
+      - name: build backend images
+        if: ${{ inputs.build-backend }}
+        run: |
+          export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
+          mkdir --parents /${{ runner.temp }}/build
+          make build local-dest=/${{ runner.temp }}/build exclude=static-webserver
+      - name: build frontend images
+        if: ${{ inputs.build-frontend }}
+        run: |
+          export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
+          mkdir --parents /${{ runner.temp }}/build
+          make build local-dest=/${{ runner.temp }}/build target=static-webserver
+      - name: upload backend artifacts
+        if: ${{ inputs.build-backend }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-backend
+          path: /${{ runner.temp }}/build
+      - name: upload frontend artifacts
+        if: ${{ inputs.build-frontend }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-frontend
+          path: /${{ runner.temp }}/build

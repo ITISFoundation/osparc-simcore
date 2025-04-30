@@ -17,7 +17,7 @@ from simcore_service_api_server.models.api_resources import (
 
 def test_parse_resource_id():
     resource_name = "solvers/simcore%2Fservices%2Fcomp%2Fisolve/releases/1.3.4/jobs/f622946d-fd29-35b9-a193-abdd1095167c/outputs/output+22"
-    parts = [
+    parts = (
         "solvers",
         "simcore/services/comp/isolve",
         "releases",
@@ -26,7 +26,7 @@ def test_parse_resource_id():
         "f622946d-fd29-35b9-a193-abdd1095167c",
         "outputs",
         "output 22",
-    ]
+    )
 
     # cannot use this because cannot convert into URL? except {:path} in starlette ???
     assert str(Path(*parts)) == urllib.parse.unquote_plus(resource_name)
@@ -44,10 +44,10 @@ def test_parse_resource_id():
 
     collection_to_resource_id_map = split_resource_name_as_dict(resource_name)
     # Collection-ID -> Resource-ID
-    assert list(collection_to_resource_id_map.keys()) == parse_collections_ids(
+    assert tuple(collection_to_resource_id_map.keys()) == parse_collections_ids(
         resource_name
     )
-    assert list(collection_to_resource_id_map.values()) == parse_resources_ids(
+    assert tuple(collection_to_resource_id_map.values()) == parse_resources_ids(
         resource_name
     )
 

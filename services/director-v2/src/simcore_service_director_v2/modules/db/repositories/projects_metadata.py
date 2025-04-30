@@ -2,7 +2,6 @@ from dataclasses import dataclass
 
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from simcore_postgres_database.utils_projects_metadata import ProjectMetadata
 from simcore_postgres_database.utils_projects_metadata import (
     get as projects_metadata_get,
 )
@@ -24,10 +23,8 @@ class ProjectsMetadataRepository(BaseRepository):
         Raises:
             DBProjectNotFoundError: project not found
         """
-        async with self.db_engine.acquire() as conn:
-            project_metadata: ProjectMetadata = await projects_metadata_get(
-                conn, project_id
-            )
+        async with self.db_engine.connect() as conn:
+            project_metadata = await projects_metadata_get(conn, project_id)
         return ProjectAncestors(
             parent_project_uuid=project_metadata.parent_project_uuid,
             parent_node_id=project_metadata.parent_node_id,

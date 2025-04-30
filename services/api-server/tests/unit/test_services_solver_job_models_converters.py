@@ -53,7 +53,13 @@ def test_create_project_model_for_job(faker: Faker):
     )
 
     # body of create project!
-    createproject_body = create_new_project_for_job(solver, job, inputs)
+    createproject_body = create_new_project_for_job(
+        solver_or_program=solver,
+        job=job,
+        inputs=inputs,
+        description=None,
+        project_name=None,
+    )
 
     # ensures one-to-one relation
     assert createproject_body.uuid == job.id
@@ -216,15 +222,16 @@ def test_create_job_from_project(faker: Faker):
     )
 
     assert job.id == project.uuid
-    assert job.name == project.name
 
-    url_field_names = {name for name in job.model_fields if name.endswith("url")}
-    assert all(getattr(job, _) for _ in url_field_names)
+    non_propagated_fields = {
+        name for name in job.model_fields if name.endswith("url")
+    }.union({"name"})
+    assert all(getattr(job, _) for _ in non_propagated_fields)
 
     # this tends to be a problem
     assert job.inputs_checksum == expected_job.inputs_checksum
-    assert job.model_dump(exclude=url_field_names) == expected_job.model_dump(
-        exclude=url_field_names
+    assert job.model_dump(exclude=non_propagated_fields) == expected_job.model_dump(
+        exclude=non_propagated_fields
     )
 
 
