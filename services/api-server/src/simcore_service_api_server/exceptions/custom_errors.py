@@ -18,5 +18,10 @@ class ApplicationSetupError(CustomBaseError):
     pass
 
 
-class SolverServiceListJobsFiltersError(CustomBaseError, ValueError):
-    msg_template = "solver_version is set but solver_id is not. Please provide both or none of them"
+class ServiceConfigurationError(CustomBaseError, ValueError):
+    msg_template = "{service_cls_name} invalid configuration: {detail_msg}."
+
+
+class SolverServiceListJobsFiltersError(ServiceConfigurationError):
+    service_cls_name = "SolverService"
+    detail_msg = "solver_version is set but solver_id is not. Please provide both or none of them"

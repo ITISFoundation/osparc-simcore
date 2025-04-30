@@ -8,7 +8,7 @@ from models_library.rpc_pagination import PageLimitInt
 from models_library.users import UserID
 from simcore_service_api_server.models.schemas.studies import StudyID
 
-from ._service_jobs import JobService
+from ._service_jobs import JobService, check_user_product_consistency
 from .models.api_resources import compose_resource_name
 from .models.schemas.jobs import Job
 
@@ -33,12 +33,12 @@ class StudyService:
         self._product_name = product_name
 
         # context
-        if user_id != self._job_service._user_id:
-            msg = f"User ID {user_id} does not match job service user ID {self._job_service._user_id}"
-            raise ValueError(msg)
-        if product_name != self._job_service._product_name:
-            msg = f"Product name {product_name} does not match job service product name {self._job_service._product_name}"
-            raise ValueError(msg)
+        check_user_product_consistency(
+            service_cls_name=self.__class__.__name__,
+            user_id=user_id,
+            product_name=product_name,
+            job_service=job_service,
+        )
 
         self._user_id = user_id
         self._product_name = product_name
@@ -61,13 +61,11 @@ class StudyService:
         if study_id:
             collection_or_resource_ids.append(f"{study_id}")
 
-        job_parent_resource_name_prefix = compose_resource_name(
-            *collection_or_resource_ids
-        )
+        job_parent_resource_name = compose_resource_name(*collection_or_resource_ids)
 
-        # Use the common implementation from JobService
+        # 2. list jobs under job_parent_resource_name
         return await self._job_service.list_jobs_by_resource_prefix(
             offset=offset,
             limit=limit,
-            job_parent_resource_name_prefix=job_parent_resource_name_prefix,
+            job_parent_resource_name_prefix=job_parent_resource_name,
         )
