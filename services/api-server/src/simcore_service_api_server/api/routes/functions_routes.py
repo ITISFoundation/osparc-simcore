@@ -2,7 +2,9 @@ import asyncio
 from collections.abc import Callable
 from typing import Annotated, Final
 
+import jsonschema
 from fastapi import APIRouter, Depends, Request, status
+from jsonschema import ValidationError
 from models_library.api_schemas_webserver.functions_wb_schema import (
     Function,
     FunctionClass,
@@ -17,7 +19,6 @@ from models_library.api_schemas_webserver.functions_wb_schema import (
     FunctionJobID,
     FunctionJobStatus,
     FunctionOutputs,
-    FunctionOutputSchema,
     ProjectFunctionJob,
     SolverFunctionJob,
 )
@@ -56,21 +57,12 @@ _COMMON_FUNCTION_ERROR_RESPONSES: Final[dict] = {
 }
 
 
-@function_router.post("/ping")
-async def ping(
-    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
-):
-    return await wb_api_rpc.ping()
-
-
-@function_router.get("", response_model=list[Function], description="List functions")
-async def list_functions(
-    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
-):
-    return await wb_api_rpc.list_functions()
-
-
-@function_router.post("", response_model=Function, description="Create function")
+@function_router.post(
+    "",
+    response_model=Function,
+    responses={**_COMMON_FUNCTION_ERROR_RESPONSES},
+    description="Create function",
+)
 async def register_function(
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     function: Function,
@@ -91,6 +83,13 @@ async def get_function(
     return await wb_api_rpc.get_function(function_id=function_id)
 
 
+@function_router.get("", response_model=list[Function], description="List functions")
+async def list_functions(
+    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
+):
+    return await wb_api_rpc.list_functions()
+
+
 def join_inputs(
     default_inputs: FunctionInputs | None,
     function_inputs: FunctionInputs | None,
@@ -105,13 +104,66 @@ def join_inputs(
     return {**default_inputs, **function_inputs}
 
 
+@function_router.get(
+    "/{function_id:uuid}/input_schema",
+    response_model=FunctionInputSchema,
+    responses={**_COMMON_FUNCTION_ERROR_RESPONSES},
+    description="Get function input schema",
+)
+async def get_function_inputschema(
+    function_id: FunctionID,
+    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
+):
+    function = await wb_api_rpc.get_function(function_id=function_id)
+    return function.input_schema
+
+
+@function_router.get(
+    "/{function_id:uuid}/output_schema",
+    response_model=FunctionInputSchema,
+    responses={**_COMMON_FUNCTION_ERROR_RESPONSES},
+    description="Get function input schema",
+)
+async def get_function_outputschema(
+    function_id: FunctionID,
+    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
+):
+    function = await wb_api_rpc.get_function(function_id=function_id)
+    return function.output_schema
+
+
+@function_router.post(
+    "/{function_id:uuid}:validate_inputs",
+    response_model=tuple[bool, str],
+    responses={
+        status.HTTP_400_BAD_REQUEST: {"description": "Invalid inputs"},
+        status.HTTP_404_NOT_FOUND: {"description": "Function not found"},
+    },
+    description="Validate inputs against the function's input schema",
+)
+async def validate_function_inputs(
+    function_id: FunctionID,
+    inputs: FunctionInputs,
+    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
+):
+    function = await wb_api_rpc.get_function(function_id=function_id)
+
+    if function.input_schema is None:
+        return True, "No input schema defined for this function"
+    try:
+        jsonschema.validate(instance=inputs, schema=function.input_schema.schema_dict)  # type: ignore
+    except ValidationError as err:
+        return False, str(err)
+    return True, "Inputs are valid"
+
+
 @function_router.post(
     "/{function_id:uuid}:run",
     response_model=FunctionJob,
     responses={**_COMMON_FUNCTION_ERROR_RESPONSES},
     description="Run function",
 )
-async def run_function(
+async def run_function(  # noqa: PLR0913
     request: Request,
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
@@ -133,6 +185,18 @@ async def run_function(
         to_run_function.default_inputs,
         function_inputs,
     )
+
+    if to_run_function.input_schema is not None:
+        is_valid, validation_str = await validate_function_inputs(
+            function_id=to_run_function.uid,
+            inputs=joined_inputs,
+            wb_api_rpc=wb_api_rpc,
+        )
+        if not is_valid:
+            msg = (
+                f"Function {to_run_function.uid} inputs are not valid: {validation_str}"
+            )
+            raise ValidationError(msg)
 
     if cached_function_job := await wb_api_rpc.find_cached_function_job(
         function_id=to_run_function.uid,
@@ -211,7 +275,7 @@ async def run_function(
 
 @function_router.delete(
     "/{function_id:uuid}",
-    response_model=Function,
+    response_model=None,
     responses={**_COMMON_FUNCTION_ERROR_RESPONSES},
     description="Delete function",
 )
@@ -220,32 +284,6 @@ async def delete_function(
     function_id: FunctionID,
 ):
     return await wb_api_rpc.delete_function(function_id=function_id)
-
-
-@function_router.get(
-    "/{function_id:uuid}/input_schema",
-    response_model=FunctionInputSchema,
-    responses={**_COMMON_FUNCTION_ERROR_RESPONSES},
-    description="Get function",
-)
-async def get_function_input_schema(
-    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
-    function_id: FunctionID,
-):
-    return await wb_api_rpc.get_function_input_schema(function_id=function_id)
-
-
-@function_router.get(
-    "/{function_id:uuid}/output_schema",
-    response_model=FunctionOutputSchema,
-    responses={**_COMMON_FUNCTION_ERROR_RESPONSES},
-    description="Get function",
-)
-async def get_function_output_schema(
-    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
-    function_id: FunctionID,
-):
-    return await wb_api_rpc.get_function_output_schema(function_id=function_id)
 
 
 _COMMON_FUNCTION_JOB_ERROR_RESPONSES: Final[dict] = {
@@ -415,7 +453,7 @@ async def function_job_outputs(
     responses={**_COMMON_FUNCTION_ERROR_RESPONSES},
     description="Map function over input parameters",
 )
-async def map_function(
+async def map_function(  # noqa: PLR0913
     function_id: FunctionID,
     function_inputs_list: FunctionInputsList,
     request: Request,
@@ -581,6 +619,8 @@ async def function_job_collection_status(
     )
 
 
+# ruff: noqa: ERA001
+
 # @function_job_router.get(
 #     "/{function_job_id:uuid}/outputs/logfile",
 #     response_model=FunctionOutputsLogfile,
@@ -609,7 +649,7 @@ async def function_job_collection_status(
 #         )
 
 #         return job_outputs
-#     elif (function.function_class == FunctionClass.solver) and (  # noqa: RET505
+#     elif (function.function_class == FunctionClass.solver) and (
 #         function_job.function_class == FunctionClass.solver
 #     ):
 #         job_outputs_logfile = await solvers_jobs_getters.get_job_output_logfile(
