@@ -37,9 +37,9 @@ class ApiKeysPathParams(StrictRequestParameters):
 
 
 def _get_api_base_url(request: web.Request) -> str:
-    originating_host = next(iter_originating_hosts(request), None)
+    originating_host = next(iter_originating_hosts(request))
     api_host = f"api.{originating_host}"
-    return f"{request.url.with_host(api_host)}"
+    return f"{request.url.with_host(api_host).with_port(None).with_path('')}"
 
 
 @routes.post(f"/{API_VTAG}/auth/api-keys", name="create_api_key")
