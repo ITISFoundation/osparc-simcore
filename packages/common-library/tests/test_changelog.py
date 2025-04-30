@@ -20,7 +20,7 @@ from pytest_mock import MockerFixture
 
 
 @pytest.fixture
-def mock_api_version(mocker: MockerFixture) -> str:
+def current_api_version(mocker: MockerFixture) -> str:
     """Fixture to mock the API_VERSION for testing purposes"""
     return "0.7.0"
 
@@ -51,7 +51,13 @@ def test_changelog_entry_classes():
     assert deprecated_entry.entry_type == ChangelogType.DEPRECATED
     assert deprecated_entry.get_version() == Version("0.7.0")
     assert "Deprecated" in deprecated_entry.to_string()
+    assert "in *version 0.7.0*" in deprecated_entry.to_string()
     assert "/v1/better-endpoint" in deprecated_entry.to_string()
+
+    # Test DeprecatedEndpoint without version
+    deprecated_no_version = DeprecatedEndpoint("/v1/better-endpoint")
+    assert "Deprecated" in deprecated_no_version.to_string()
+    assert "in *version" not in deprecated_no_version.to_string()
 
     # Test RemovedEndpoint
     removed_entry = RemovedEndpoint("0.9.0", "Use the new endpoint instead")
@@ -114,7 +120,7 @@ def test_create_route_description():
     assert "Changed in *version 0.6.0*: Added authentication" in desc
 
 
-def test_create_route_config_for_deprecated_endpoints(mock_api_version: str) -> None:
+def test_create_route_config_for_deprecated_endpoints(current_api_version: str) -> None:
     """Test route configuration for deprecated endpoints"""
     alternative_route = "/v1/new-endpoint"
     changelog = [
@@ -125,7 +131,7 @@ def test_create_route_config_for_deprecated_endpoints(mock_api_version: str) -> 
     config = create_route_config(
         base_description="This is a deprecated endpoint",
         changelog=changelog,
-        current_version=Version(mock_api_version),
+        current_version=Version(current_api_version),
     )
 
     expected_config = {
@@ -141,10 +147,10 @@ def test_create_route_config_for_deprecated_endpoints(mock_api_version: str) -> 
 
 
 def test_create_route_config_for_to_be_released_endpoints(
-    mock_api_version: str,
+    current_api_version: str,
 ) -> None:
     """Test route configuration for endpoints that will be released in future versions"""
-    future_version = f"{int(Version(mock_api_version).major) + 1}.0.0"
+    future_version = f"{int(Version(current_api_version).major) + 1}.0.0"
     changelog = [
         NewEndpoint(future_version),
     ]
@@ -152,7 +158,7 @@ def test_create_route_config_for_to_be_released_endpoints(
     config = create_route_config(
         base_description=f"This is a feature coming in version {future_version}",
         changelog=changelog,
-        current_version=Version(mock_api_version),
+        current_version=Version(current_api_version),
     )
 
     expected_config = {
@@ -167,7 +173,7 @@ def test_create_route_config_for_to_be_released_endpoints(
     assert config == expected_config
 
 
-def test_create_route_config_with_removal_notice(mock_api_version: str) -> None:
+def test_create_route_config_with_removal_notice(current_api_version: str) -> None:
     """Test route configuration with explicit removal notice in changelog"""
     removal_message = "Use the new endpoint instead"
     alternative_route = "/v1/better-endpoint"
@@ -181,12 +187,12 @@ def test_create_route_config_with_removal_notice(mock_api_version: str) -> None:
     config = create_route_config(
         base_description="This endpoint will be removed in version 0.9.0",
         changelog=changelog,
-        current_version=Version(mock_api_version),
+        current_version=current_api_version,
     )
 
     expected_config = {
         "deprecated": True,
-        "include_in_schema": True,
+        "include_in_schema": False,  # Changed from True to False due to REMOVED entry
         "description": create_route_description(
             base="This endpoint will be removed in version 0.9.0",
             changelog=changelog,
@@ -196,14 +202,14 @@ def test_create_route_config_with_removal_notice(mock_api_version: str) -> None:
     assert config == expected_config
 
 
-def test_create_route_config_with_regular_endpoint(mock_api_version: str) -> None:
+def test_create_route_config_with_regular_endpoint(current_api_version: str) -> None:
     """Test route configuration for a standard endpoint (not deprecated, not upcoming)"""
     changelog = [NewEndpoint("0.5.0")]
 
     config = create_route_config(
         base_description="This is a standard endpoint",
         changelog=changelog,
-        current_version=mock_api_version,
+        current_version=current_api_version,
     )
 
     expected_config = {
@@ -218,7 +224,7 @@ def test_create_route_config_with_regular_endpoint(mock_api_version: str) -> Non
     assert config == expected_config
 
 
-def test_create_route_config_with_mixed_changelog(mock_api_version: str) -> None:
+def test_create_route_config_with_mixed_changelog(current_api_version: str) -> None:
 
     alternative_route = "/v1/better-endpoint"
     changelog = [
@@ -232,12 +238,12 @@ def test_create_route_config_with_mixed_changelog(mock_api_version: str) -> None
     config = create_route_config(
         base_description="This endpoint has a complex history",
         changelog=changelog,
-        current_version=mock_api_version,
+        current_version=current_api_version,
     )
 
     expected_config = {
         "deprecated": True,
-        "include_in_schema": True,
+        "include_in_schema": False,  # Changed from True to False due to REMOVED entry
         "description": create_route_description(
             base="This endpoint has a complex history",
             changelog=changelog,
@@ -247,11 +253,11 @@ def test_create_route_config_with_mixed_changelog(mock_api_version: str) -> None
     assert config == expected_config
 
 
-def test_create_route_config_with_empty_changelog(mock_api_version: str) -> None:
+def test_create_route_config_with_empty_changelog(current_api_version: str) -> None:
 
     config = create_route_config(
         base_description="This endpoint has no changelog",
-        current_version=mock_api_version,
+        current_version=current_api_version,
     )
 
     expected_config = {
@@ -264,3 +270,15 @@ def test_create_route_config_with_empty_changelog(mock_api_version: str) -> None
     }
 
     assert config == expected_config
+
+
+# Add a new test to explicitly verify the version display in deprecated endpoints
+def test_deprecated_endpoint_with_version():
+    """Test that DeprecatedEndpoint correctly displays the version information when available"""
+    # With version
+    deprecated_with_version = DeprecatedEndpoint("/new/endpoint", "0.8.0")
+    assert "in *version 0.8.0*" in deprecated_with_version.to_string()
+
+    # Without version
+    deprecated_without_version = DeprecatedEndpoint("/new/endpoint")
+    assert "in *version" not in deprecated_without_version.to_string()

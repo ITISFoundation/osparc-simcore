@@ -2,7 +2,7 @@
 CHANGELOG formatted-messages for API routes
 
 - Append at the bottom of the route's description
-- These are displayed in the swagger doc
+- These are displayed in the swagger/redoc doc
 - These are displayed in client's doc as well (auto-generator)
 - Inspired on this idea https://www.sphinx-doc.org/en/master/usage/restructuredtext/directives.html#describing-changes-between-versions
 """
@@ -81,8 +81,12 @@ class DeprecatedEndpoint(ChangelogEntry):
         self.version = version
 
     def to_string(self) -> str:
+        base_message = "🚨 **Deprecated**"
+        if self.version:
+            base_message += f" in *version {self.version}*"
+
         return (
-            "🚨 **Deprecated**: This endpoint is deprecated and will be removed in a future release.\n"
+            f"{base_message}: This endpoint is deprecated and will be removed in a future release.\n"
             f"Please use `{self.alternative_route}` instead.\n\n"
         )
 
@@ -188,7 +192,7 @@ def create_route_config(
     Creates route configuration options including description based on changelog entries.
 
     The function analyzes the changelog to determine if the endpoint:
-    - Is not yet released (if the earliest entry version is in the future)
+    - Is released and visible (if the earliest entry version is not in the future and not removed)
     - Is deprecated (if there's a DEPRECATED entry in the changelog)
 
     Args:
@@ -209,23 +213,26 @@ def create_route_config(
 
     # Determine endpoint state
     is_deprecated = False
-    is_unreleased = False
+    is_released = True  # Assume released by default
+    is_removed = False
 
-    # Get the first entry (NEW) to check if unreleased
+    # Get the first entry (NEW) to check if released
     if changelog_list and changelog_list[0].entry_type == ChangelogType.NEW:
         first_entry = cast(NewEndpoint, changelog_list[0])
         first_version = first_entry.get_version()
         if first_version and first_version > current_version:
-            is_unreleased = True
+            is_released = False
 
-    # Check for deprecation
+    # Check for deprecation and removal
     for entry in changelog_list:
         if entry.entry_type == ChangelogType.DEPRECATED:
             is_deprecated = True
-            break
+        elif entry.entry_type == ChangelogType.REMOVED:
+            is_removed = True
 
     # Set route options based on endpoint state
-    route_options["include_in_schema"] = not is_unreleased
+    # An endpoint is included in schema if it's released and not removed
+    route_options["include_in_schema"] = is_released and not is_removed
     route_options["deprecated"] = is_deprecated
 
     # Create description
