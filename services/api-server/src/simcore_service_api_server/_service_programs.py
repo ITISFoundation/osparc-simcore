@@ -17,10 +17,8 @@ class ProgramService:
     async def get_program(
         self,
         *,
-        user_id: int,
         name: ProgramKeyId,
         version: VersionStr,
-        product_name: str,
     ) -> Program:
         service = await self._catalog_service.get(
             name=name,
@@ -33,8 +31,6 @@ class ProgramService:
     async def list_latest_programs(
         self,
         *,
-        user_id: int,
-        product_name: str,
         offset: NonNegativeInt,
         limit: PositiveInt,
     ) -> tuple[list[Program], PageMetaInfoLimitOffset]:
@@ -50,9 +46,7 @@ class ProgramService:
     async def list_program_history(
         self,
         *,
-        user_id: int,
         program_key: ProgramKeyId,
-        product_name: str,
         offset: NonNegativeInt,
         limit: PositiveInt,
     ) -> tuple[list[Program], PageMetaInfoLimitOffset]:

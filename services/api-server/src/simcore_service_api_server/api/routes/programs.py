@@ -50,15 +50,11 @@ router = APIRouter()
     include_in_schema=False,  # TO BE RELEASED in 0.8
 )
 async def list_programs(
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     program_service: Annotated[ProgramService, Depends(get_program_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
-    product_name: Annotated[str, Depends(get_product_name)],
     page_params: Annotated[PaginationParams, Depends()],
 ):
     programs, page_meta = await program_service.list_latest_programs(
-        user_id=user_id,
-        product_name=product_name,
         offset=page_params.offset,
         limit=page_params.limit,
     )
@@ -90,16 +86,12 @@ async def list_programs(
 )
 async def list_program_history(
     program_key: ProgramKeyId,
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     program_service: Annotated[ProgramService, Depends(get_program_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
-    product_name: Annotated[str, Depends(get_product_name)],
     page_params: Annotated[PaginationParams, Depends()],
 ):
     programs, page_meta = await program_service.list_program_history(
         program_key=program_key,
-        user_id=user_id,
-        product_name=product_name,
         offset=page_params.offset,
         limit=page_params.limit,
     )
@@ -125,18 +117,14 @@ async def list_program_history(
 async def get_program_release(
     program_key: ProgramKeyId,
     version: VersionStr,
-    user_id: Annotated[int, Depends(get_current_user_id)],
     program_service: Annotated[ProgramService, Depends(get_program_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
-    product_name: Annotated[str, Depends(get_product_name)],
 ) -> Program:
     """Gets a specific release of a solver"""
     try:
         program = await program_service.get_program(
-            user_id=user_id,
             name=program_key,
             version=version,
-            product_name=product_name,
         )
 
         program.url = url_for(
@@ -183,10 +171,8 @@ async def create_program_job(
     # ensures user has access to solver
     inputs = JobInputs(values={})
     program = await program_service.get_program(
-        user_id=user_id,
         name=program_key,
         version=version,
-        product_name=product_name,
     )
 
     job, project = await job_service.create_job(
