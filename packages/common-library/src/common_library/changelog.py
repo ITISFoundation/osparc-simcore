@@ -21,7 +21,7 @@ class ChangelogType(Enum):
     NEW = auto()
     CHANGED = auto()
     DEPRECATED = auto()
-    REMOVED = auto()
+    RETIRED = auto()
 
 
 class ChangelogEntry(ABC):
@@ -94,17 +94,17 @@ class DeprecatedEndpoint(ChangelogEntry):
         return Version(self.version) if self.version else None
 
 
-class RemovedEndpoint(ChangelogEntry):
+class RetiredEndpoint(ChangelogEntry):
     """Indicates when an endpoint will be or was removed"""
 
-    entry_type = ChangelogType.REMOVED
+    entry_type = ChangelogType.RETIRED
 
     def __init__(self, version: str, message: str):
         self.version = version
         self.message = message
 
     def to_string(self) -> str:
-        return f"Removed in *version {self.version}*: {self.message}\n"
+        return f"Retired in *version {self.version}*: {self.message}\n"
 
     def get_version(self) -> Version:
         return Version(self.version)
@@ -227,7 +227,7 @@ def create_route_config(
     for entry in changelog_list:
         if entry.entry_type == ChangelogType.DEPRECATED:
             is_deprecated = True
-        elif entry.entry_type == ChangelogType.REMOVED:
+        elif entry.entry_type == ChangelogType.RETIRED:
             is_removed = True
 
     # Set route options based on endpoint state

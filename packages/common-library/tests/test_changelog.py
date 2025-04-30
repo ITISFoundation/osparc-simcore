@@ -10,7 +10,7 @@ from common_library.changelog import (
     ChangelogType,
     DeprecatedEndpoint,
     NewEndpoint,
-    RemovedEndpoint,
+    RetiredEndpoint,
     create_route_config,
     create_route_description,
     validate_changelog,
@@ -28,7 +28,7 @@ def current_api_version(mocker: MockerFixture) -> str:
 def test_changelog_entry_types():
     assert ChangelogType.NEW.value < ChangelogType.CHANGED.value
     assert ChangelogType.CHANGED.value < ChangelogType.DEPRECATED.value
-    assert ChangelogType.DEPRECATED.value < ChangelogType.REMOVED.value
+    assert ChangelogType.DEPRECATED.value < ChangelogType.RETIRED.value
 
 
 def test_changelog_entry_classes():
@@ -59,11 +59,11 @@ def test_changelog_entry_classes():
     assert "Deprecated" in deprecated_no_version.to_string()
     assert "in *version" not in deprecated_no_version.to_string()
 
-    # Test RemovedEndpoint
-    removed_entry = RemovedEndpoint("0.9.0", "Use the new endpoint instead")
-    assert removed_entry.entry_type == ChangelogType.REMOVED
+    # Test RetiredEndpoint
+    removed_entry = RetiredEndpoint("0.9.0", "Use the new endpoint instead")
+    assert removed_entry.entry_type == ChangelogType.RETIRED
     assert removed_entry.get_version() == Version("0.9.0")
-    assert "Removed in *version 0.9.0*" in removed_entry.to_string()
+    assert "Retired in *version 0.9.0*" in removed_entry.to_string()
     assert "Use the new endpoint instead" in removed_entry.to_string()
 
 
@@ -181,7 +181,7 @@ def test_create_route_config_with_removal_notice(current_api_version: str) -> No
     changelog = [
         NewEndpoint("0.5.0"),
         DeprecatedEndpoint(alternative_route),
-        RemovedEndpoint("0.9.0", removal_message),
+        RetiredEndpoint("0.9.0", removal_message),
     ]
 
     config = create_route_config(
@@ -232,7 +232,7 @@ def test_create_route_config_with_mixed_changelog(current_api_version: str) -> N
         ChangedEndpoint("0.6.0", "Added authentication"),
         ChangedEndpoint("0.6.2", "Fixed a bug"),
         DeprecatedEndpoint(alternative_route),
-        RemovedEndpoint("0.9.0", "Use the new endpoint instead"),
+        RetiredEndpoint("0.9.0", "Use the new endpoint instead"),
     ]
 
     config = create_route_config(
