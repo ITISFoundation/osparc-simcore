@@ -1,6 +1,7 @@
 # pylint:disable=redefined-outer-name
 
 import logging
+from collections.abc import Iterable
 from contextlib import suppress
 from pathlib import Path
 from typing import Any
@@ -244,14 +245,33 @@ def test_log_context(
     assert len(caplog.messages) == 2
 
 
+@pytest.fixture
+def log_format_with_module_name() -> Iterable[None]:
+    for handler in logging.root.handlers:
+        original_formatter = handler.formatter
+        handler.setFormatter(
+            logging.Formatter(
+                "%(asctime)s %(levelname)s %(module)s:%(filename)s:%(lineno)d %(message)s",
+                datefmt="%Y-%m-%d %H:%M:%S",
+            )
+        )
+
+    yield
+
+    for handler in logging.root.handlers:
+        handler.formatter = original_formatter
+
+
 def test_log_context_caller_is_included_in_log(
     caplog: pytest.LogCaptureFixture,
+    log_format_with_module_name: None,
 ):
     caplog.clear()
 
     with log_context(_logger, logging.ERROR, "a test message"):
         ...
 
+    # Verify file name is in the log
     assert Path(__file__).name in caplog.text
 
 
