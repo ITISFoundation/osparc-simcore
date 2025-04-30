@@ -139,26 +139,24 @@ class SolverService:
     async def solver_release_history(
         self,
         *,
-        user_id: UserID,
         solver_key: SolverKeyId,
-        product_name: ProductName,
         offset: NonNegativeInt,
         limit: PositiveInt,
     ) -> tuple[list[Solver], PageMetaInfoLimitOffset]:
 
         releases, page_meta = await self._catalog_service.list_release_history(
-            user_id=user_id,
+            user_id=self._user_id,
             service_key=solver_key,
-            product_name=product_name,
+            product_name=self._product_name,
             offset=offset,
             limit=limit,
         )
 
         service_instance = await self._catalog_service.get(
-            user_id=user_id,
+            user_id=self._user_id,
             name=solver_key,
             version=releases[-1].version,
-            product_name=product_name,
+            product_name=self._product_name,
         )
 
         return [
@@ -175,15 +173,13 @@ class SolverService:
     async def latest_solvers(
         self,
         *,
-        user_id: UserID,
-        product_name: ProductName,
         offset: NonNegativeInt,
         limit: PositiveInt,
     ) -> tuple[list[Solver], PageMetaInfoLimitOffset]:
         """Lists the latest solvers with pagination."""
         services, page_meta = await self._catalog_service.list_latest_releases(
-            user_id=user_id,
-            product_name=product_name,
+            user_id=self._user_id,
+            product_name=self._product_name,
             offset=offset,
             limit=limit,
             filters=ServiceListFilters(service_type=ServiceType.COMPUTATIONAL),
