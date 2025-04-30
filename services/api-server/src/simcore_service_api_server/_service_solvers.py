@@ -51,7 +51,7 @@ class SolverService:
         solver_key: SolverKeyId,
         product_name: str,
     ) -> Solver:
-        releases, _ = await self._catalog_service.list_release_history_sorted(
+        releases, _ = await self._catalog_service.list_release_history_latest_first(
             user_id=user_id,
             service_key=solver_key,
             product_name=product_name,
@@ -79,12 +79,14 @@ class SolverService:
         limit: PositiveInt,
     ) -> tuple[list[Solver], PageMetaInfoLimitOffset]:
 
-        releases, page_meta = await self._catalog_service.list_release_history_sorted(
-            user_id=user_id,
-            service_key=solver_key,
-            product_name=product_name,
-            offset=offset,
-            limit=limit,
+        releases, page_meta = (
+            await self._catalog_service.list_release_history_latest_first(
+                user_id=user_id,
+                service_key=solver_key,
+                product_name=product_name,
+                offset=offset,
+                limit=limit,
+            )
         )
 
         service_instance = await self._catalog_service.get(

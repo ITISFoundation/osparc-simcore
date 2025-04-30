@@ -63,7 +63,7 @@ class ProgramService:
         offset: NonNegativeInt,
         limit: PositiveInt,
     ) -> tuple[list[Program], PageMetaInfoLimitOffset]:
-        page, page_meta = await self._catalog_service.list_release_history_sorted(
+        page, page_meta = await self._catalog_service.list_release_history_latest_first(
             user_id=user_id,
             service_key=program_key,
             product_name=product_name,

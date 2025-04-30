@@ -49,7 +49,7 @@ async def test_catalog_service_read_solvers(
 
     # Step 2: Select one release and list solver releases
     selected_solver = solver_releases_page[0]
-    releases, meta = await catalog_service.list_release_history_sorted(
+    releases, meta = await catalog_service.list_release_history_latest_first(
         product_name=product_name,
         user_id=user_id,
         service_key=selected_solver.id,
