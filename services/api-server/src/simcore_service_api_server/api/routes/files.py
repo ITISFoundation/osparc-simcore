@@ -153,6 +153,7 @@ async def _create_domain_file(
             ),
         ],
     ),
+    deprecated=True,
 )
 async def list_files(
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],

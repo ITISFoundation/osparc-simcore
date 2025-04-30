@@ -71,6 +71,7 @@ router = APIRouter()
             ),
         ],
     ),
+    deprecated=True,
 )
 async def list_solvers(
     user_id: Annotated[int, Depends(get_current_user_id)],
@@ -143,6 +144,7 @@ async def get_solvers_page(
             ),
         ],
     ),
+    deprecated=True,
 )
 async def list_solvers_releases(
     user_id: Annotated[int, Depends(get_current_user_id)],

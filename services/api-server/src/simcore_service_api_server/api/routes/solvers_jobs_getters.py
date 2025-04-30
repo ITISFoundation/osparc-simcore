@@ -52,7 +52,7 @@ from ...services_http.solver_job_models_converters import create_job_from_projec
 from ...services_http.solver_job_outputs import ResultsTypes, get_solver_output_results
 from ...services_http.storage import StorageApi, to_file_api_model
 from ..dependencies.application import get_reverse_url_mapper
-from ..dependencies.authentication import get_current_user_id, get_product_name
+from ..dependencies.authentication import get_current_user_id
 from ..dependencies.database import get_db_asyncpg_engine
 from ..dependencies.rabbitmq import get_log_check_timeout, get_log_distributor
 from ..dependencies.services import get_api_client, get_solver_service
@@ -118,36 +118,6 @@ _LOGSTREAM_STATUS_CODES: dict[int | str, dict[str, Any]] = {
 }
 
 
-def _update_job_urls(
-    job: Job,
-    solver_key: SolverKeyId,
-    solver_version: VersionStr,
-    job_id: JobID | str,
-    url_for: Callable[..., HttpUrl],
-) -> Job:
-    job.url = url_for(
-        "get_job",
-        solver_key=solver_key,
-        version=solver_version,
-        job_id=job_id,
-    )
-
-    job.runner_url = url_for(
-        "get_solver_release",
-        solver_key=solver_key,
-        version=solver_version,
-    )
-
-    job.outputs_url = url_for(
-        "get_job_outputs",
-        solver_key=solver_key,
-        version=solver_version,
-        job_id=job_id,
-    )
-
-    return job
-
-
 router = APIRouter()
 
 
@@ -200,15 +170,14 @@ async def list_all_solvers_jobs(
             ),
         ],
     ),
+    deprecated=True,
 )
 async def list_jobs(
     solver_key: SolverKeyId,
     version: VersionStr,
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
-    product_name: Annotated[str, Depends(get_product_name)],
 ):
     solver = await solver_service.get_solver(
         solver_key=solver_key,
@@ -245,12 +214,10 @@ async def list_jobs(
 async def get_jobs_page(
     solver_key: SolverKeyId,
     version: VersionStr,
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     page_params: Annotated[PaginationParams, Depends()],
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
-    product_name: Annotated[str, Depends(get_product_name)],
 ):
     # NOTE: Different entry to keep backwards compatibility with list_jobs.
     # Eventually use a header with agent version to switch to new interface
@@ -286,8 +253,6 @@ async def get_job(
     solver_key: SolverKeyId,
     version: VersionStr,
     job_id: JobID,
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
-    product_name: Annotated[str, Depends(get_product_name)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
@@ -544,3 +509,33 @@ async def get_log_stream(
         return LogStreamingResponse(
             log_streamer.log_generator(),
         )
+
+
+def _update_job_urls(
+    job: Job,
+    solver_key: SolverKeyId,
+    solver_version: VersionStr,
+    job_id: JobID | str,
+    url_for: Callable[..., HttpUrl],
+) -> Job:
+    job.url = url_for(
+        get_job.__name__,
+        solver_key=solver_key,
+        version=solver_version,
+        job_id=job_id,
+    )
+
+    job.runner_url = url_for(
+        "get_solver_release",
+        solver_key=solver_key,
+        version=solver_version,
+    )
+
+    job.outputs_url = url_for(
+        "get_job_outputs",
+        solver_key=solver_key,
+        version=solver_version,
+        job_id=job_id,
+    )
+
+    return job
