@@ -1,4 +1,9 @@
+from contextlib import suppress
 from typing import Any, Final
+
+from packaging.version import Version
+
+from ..._meta import API_VERSION
 
 #
 # CHANGELOG formatted-messages for API routes
@@ -15,13 +20,15 @@ FMSG_CHANGELOG_NEW_IN_VERSION: Final[str] = "New in *version {}*\n"
 # changes in given version with message
 FMSG_CHANGELOG_CHANGED_IN_VERSION: Final[str] = "Changed in *version {}*: {}\n"
 
-# marked as deprecated and will be removed in given version
-FMSG_CHANGELOG_REMOVED_IN_VERSION: Final[str] = "Removed in *version {}*: {}\n"
-
-FMSG_CHANGELOG_DEPRECATED: Final[str] = (
+# marked as deprecated
+FMSG_CHANGELOG_DEPRECATED_IN_VERSION: Final[str] = (
     "🚨 **Deprecated**: This endpoint is deprecated and will be removed in a future release.\n"
     "Please use `{}` instead.\n\n"
 )
+
+# marked as deprecated and will be removed in given version
+FMSG_CHANGELOG_REMOVED_IN_VERSION: Final[str] = "Removed in *version {}*: {}\n"
+
 
 DEFAULT_MAX_STRING_LENGTH: Final[int] = 500
 
@@ -29,26 +36,26 @@ DEFAULT_MAX_STRING_LENGTH: Final[int] = 500
 def create_route_description(
     *,
     base: str = "",
-    deprecated: bool = False,
-    alternative: str | None = None,  # alternative route to use
     changelog: list[str] | None = None,
+    deprecated_in: str | None = None,
+    alternative: str | None = None,
 ) -> str:
     """
     Builds a consistent route description with optional deprecation and changelog information.
 
     Args:
         base (str): Main route description.
-        deprecated (tuple): (retirement_date, alternative_route) if deprecated.
-        changelog (List[str]): List of formatted changelog strings.
+        changelog (list[str]): List of formatted changelog strings.
+        deprecated_in (str, optional): Version when this endpoint was deprecated.
+        alternative (str, optional): Alternative route to use if deprecated.
 
     Returns:
         str: Final description string.
     """
     parts = []
 
-    if deprecated:
-        assert alternative, "If deprecated, alternative must be provided"  # nosec
-        parts.append(FMSG_CHANGELOG_DEPRECATED.format(alternative))
+    if deprecated_in and alternative:
+        parts.append(FMSG_CHANGELOG_DEPRECATED_IN_VERSION.format(alternative))
 
     if base:
         parts.append(base)
@@ -62,63 +69,63 @@ def create_route_description(
 def create_route_config(
     base_description: str = "",
     *,
-    to_be_released_in: str | None = None,
-    to_be_removed_in: str | None = None,
-    alternative: str | None = None,
     changelog: list[str] | None = None,
 ) -> dict[str, Any]:
     """
-    Creates route configuration options including description.
+    Creates route configuration options including description based on changelog history.
+
+    The function analyzes the changelog to determine if the endpoint:
+    - Is not yet released (if the earliest entry is in a future version)
+    - Is deprecated (if there's a removal notice in the changelog)
 
     Args:
         base_description: Main route description
-        to_be_released_in: Version where this route will be released (for upcoming features)
-        to_be_removed_in: Version where this route will be removed (for deprecated endpoints)
-        alternative: Alternative route to use (required if to_be_removed_in is provided)
-        changelog: List of formatted changelog strings
+        changelog: List of formatted changelog strings indicating version history
 
     Returns:
         dict: Route configuration options that can be used as kwargs for route decorators
     """
     route_options: dict[str, Any] = {}
+    changelog = changelog or []
 
-    # Build changelog
-    if changelog is None:
-        changelog = []
+    # Parse changelog to determine endpoint state
+    is_deprecated = False
+    alternative = None
+    is_released = False
+    current_version = Version(API_VERSION)
 
-    if to_be_released_in:
-        # Add version information to the changelog if not already there
-        version_note = FMSG_CHANGELOG_NEW_IN_VERSION.format(to_be_released_in)
-        if not any(version_note in item for item in changelog):
-            changelog.append(version_note)
-        # Hide from schema until released
-        route_options["include_in_schema"] = False
+    for entry in changelog:
+        # Check for deprecation/removal entries
+        if FMSG_CHANGELOG_DEPRECATED_IN_VERSION.split("{")[0] in entry:
+            is_deprecated = True
+            # Extract alternative from deprecation message if possible
+            with suppress(IndexError, AttributeError):
+                alternative = entry.split("Please use `")[1].split("`")[0]
 
-    if to_be_removed_in:
-        # Require an alternative route if this endpoint will be removed
-        assert (  # nosec
-            alternative
-        ), "If to_be_removed_in is provided, alternative must be provided"  # nosec
+        # Check for new version entries to determine if this is unreleased
+        elif FMSG_CHANGELOG_NEW_IN_VERSION.split("{")[0] in entry:
+            try:
+                version_str = entry.split("New in *version ")[1].split("*")[0]
+                entry_version = Version(version_str)
+                # If the first/earliest entry version is greater than current API version,
+                # this endpoint is not yet released
+                if current_version < entry_version:
+                    is_released = True
+            except (IndexError, ValueError, AttributeError):
+                pass
 
-        # Add removal notice to the changelog if not already there
-        removal_message = (
-            "This endpoint is deprecated and will be removed in a future version"
-        )
-        removal_note = FMSG_CHANGELOG_REMOVED_IN_VERSION.format(
-            to_be_removed_in, removal_message
-        )
-        if not any(removal_note in item for item in changelog):
-            changelog.append(removal_note)
-
-        # Mark as deprecated
-        route_options["deprecated"] = True
+    # Set route options based on endpoint state
+    route_options["include_in_schema"] = is_released
+    route_options["deprecated"] = is_deprecated
 
     # Create description
     route_options["description"] = create_route_description(
         base=base_description,
-        deprecated=bool(to_be_removed_in),
-        alternative=alternative,
         changelog=changelog,
+        deprecated_in=(
+            "Unknown" if is_deprecated else None
+        ),  # We don't extract exact version
+        alternative=alternative,
     )
 
     return route_options
