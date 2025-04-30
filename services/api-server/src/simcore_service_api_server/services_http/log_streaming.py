@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from asyncio import Queue
-from collections.abc import AsyncIterable
+from collections.abc import AsyncIterable, Iterator
 from typing import Final
 
 from common_library.error_codes import create_error_code
@@ -86,8 +86,9 @@ class LogDistributor:
         del self._log_streamers[job_id]
 
     @property
-    def get_log_queue_sizes(self) -> dict[JobID, int]:
-        return {k: v.qsize() for k, v in self._log_streamers.items()}
+    def iter_log_queue_sizes(self) -> Iterator[tuple[JobID, int]]:
+        for k, v in self._log_streamers.items():
+            yield k, v.qsize()
 
 
 class LogStreamer:
