@@ -2,6 +2,7 @@
 
 import logging
 from contextlib import suppress
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -241,6 +242,17 @@ def test_log_context(
     with log_context(_logger, logging.ERROR, msg, *args, extra=extra):
         ...
     assert len(caplog.messages) == 2
+
+
+def test_log_context_caller_is_included_in_log(
+    caplog: pytest.LogCaptureFixture,
+):
+    caplog.clear()
+
+    with log_context(_logger, logging.ERROR, "a test message"):
+        ...
+
+    assert Path(__file__).name in caplog.text
 
 
 @pytest.mark.parametrize("level", _ALL_LOGGING_LEVELS, ids=_to_level_name)

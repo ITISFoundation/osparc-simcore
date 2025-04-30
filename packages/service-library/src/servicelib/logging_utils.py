@@ -415,7 +415,9 @@ def log_context(
     if extra:
         kwargs["extra"] = extra
     log_msg = f"Starting {msg} ..."
-    logger.log(level, log_msg, *args, **kwargs, stacklevel=3)
+
+    stackelvel = 3  # NOTE: 1 => log_context, 2 => contextlib, 3 => caller
+    logger.log(level, log_msg, *args, **kwargs, stacklevel=stackelvel)
     yield
     duration = (
         f" in {(datetime.now() - start ).total_seconds()}s"  # noqa: DTZ005
@@ -423,7 +425,7 @@ def log_context(
         else ""
     )
     log_msg = f"Finished {msg}{duration}"
-    logger.log(level, log_msg, *args, **kwargs, stacklevel=3)
+    logger.log(level, log_msg, *args, **kwargs, stacklevel=stackelvel)
 
 
 def guess_message_log_level(message: str) -> LogLevelInt:
