@@ -59,8 +59,6 @@ class SolverService:
     async def get_solver(
         self,
         *,
-        product_name: ProductName,
-        user_id: UserID,
         solver_key: SolverKeyId,
         solver_version: VersionStr,
     ) -> Solver:
@@ -77,8 +75,6 @@ class SolverService:
     async def get_latest_release(
         self,
         *,
-        product_name: str,
-        user_id: int,
         solver_key: SolverKeyId,
     ) -> Solver:
         service_releases: list[ServiceRelease] = []

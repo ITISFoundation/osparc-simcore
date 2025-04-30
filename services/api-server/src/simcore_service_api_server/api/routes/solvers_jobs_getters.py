@@ -211,10 +211,8 @@ async def list_jobs(
     product_name: Annotated[str, Depends(get_product_name)],
 ):
     solver = await solver_service.get_solver(
-        user_id=user_id,
         solver_key=solver_key,
         solver_version=version,
-        product_name=product_name,
     )
     _logger.debug("Listing Jobs in Solver '%s'", solver.name)
 
@@ -258,10 +256,8 @@ async def get_jobs_page(
     # Eventually use a header with agent version to switch to new interface
 
     solver = await solver_service.get_solver(
-        user_id=user_id,
         solver_key=solver_key,
         solver_version=version,
-        product_name=product_name,
     )
     _logger.debug("Listing Jobs in Solver '%s'", solver.name)
 
@@ -302,10 +298,8 @@ async def get_job(
     )
 
     solver = await solver_service.get_solver(
-        user_id=user_id,
         solver_key=solver_key,
         solver_version=version,
-        product_name=product_name,
     )
     project: ProjectGet = await webserver_api.get_project(project_id=job_id)
 

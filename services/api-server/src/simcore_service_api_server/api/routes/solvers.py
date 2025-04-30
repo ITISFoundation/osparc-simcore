@@ -197,9 +197,7 @@ async def get_solver(
     # otherwise, {solver_key:path} will override and consume any of the paths that follow.
     try:
         solver = await solver_service.get_latest_release(
-            user_id=user_id,
             solver_key=solver_key,
-            product_name=product_name,
         )
         solver.url = url_for(
             "get_solver_release", solver_key=solver.id, version=solver.version
