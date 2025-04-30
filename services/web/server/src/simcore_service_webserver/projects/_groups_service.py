@@ -160,14 +160,16 @@ async def delete_project_group(
     project_db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
     project = await project_db.get_project_db(project_id)
     project_owner_user: dict = await users_service.get_user(app, project.prj_owner)
-    if project_owner_user["primary_gid"] == group_id:
-        if user["primary_gid"] != project_owner_user["primary_gid"]:
-            # Only the owner of the project can delete the owner group
-            raise ProjectInvalidRightsError(
-                user_id=user_id,
-                project_uuid=project_id,
-                reason=f"User does not have access to modify owner project group in project {project_id}",
-            )
+    if (
+        project_owner_user["primary_gid"] == group_id
+        and user["primary_gid"] != project_owner_user["primary_gid"]
+    ):
+        # Only the owner of the project can delete the owner group
+        raise ProjectInvalidRightsError(
+            user_id=user_id,
+            project_uuid=project_id,
+            reason=f"User does not have access to modify owner project group in project {project_id}",
+        )
 
     await _groups_repository.delete_project_group(
         app=app, project_id=project_id, group_id=group_id
