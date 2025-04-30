@@ -1,6 +1,3 @@
-from typing import Annotated
-
-from fastapi import Depends
 from models_library.api_schemas_catalog.services import ServiceListFilters
 from models_library.basic_types import VersionStr
 from models_library.rest_pagination import PageMetaInfoLimitOffset
@@ -14,7 +11,7 @@ from .services_rpc.catalog import CatalogService
 class ProgramService:
     _catalog_service: CatalogService
 
-    def __init__(self, _catalog_service: Annotated[CatalogService, Depends()]):
+    def __init__(self, _catalog_service: CatalogService):
         self._catalog_service = _catalog_service
 
     async def get_program(

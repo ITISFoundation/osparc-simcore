@@ -5,7 +5,11 @@ from models_library.api_schemas_webserver.projects import ProjectCreateNew, Proj
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.rest_pagination import PageMetaInfoLimitOffset, PageOffsetInt
+from models_library.rest_pagination import (
+    MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
+    PageMetaInfoLimitOffset,
+    PageOffsetInt,
+)
 from models_library.rpc_pagination import PageLimitInt
 from models_library.users import UserID
 from pydantic import HttpUrl
@@ -23,8 +27,6 @@ from .services_http.webserver import AuthSession
 from .services_rpc.wb_api_server import WbApiRpcClient
 
 _logger = logging.getLogger(__name__)
-
-DEFAULT_PAGINATION_LIMIT = 999  # MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE - 1
 
 
 class JobService:
@@ -53,7 +55,7 @@ class JobService:
         *,
         job_parent_resource_name_prefix: str,
         offset: PageOffsetInt = 0,
-        limit: PageLimitInt = DEFAULT_PAGINATION_LIMIT,
+        limit: PageLimitInt = MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE - 1,
     ) -> tuple[list[Job], PageMetaInfoLimitOffset]:
         """Lists all jobs for a user with pagination based on resource name prefix"""
 

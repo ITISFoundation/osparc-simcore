@@ -29,14 +29,30 @@ DEFAULT_PAGINATION_LIMIT = MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE - 1
 class SolverService:
     _catalog_service: CatalogService
     _job_service: JobService
+    # context
+    _user_id: UserID
+    _product_name: ProductName
 
     def __init__(
         self,
         catalog_service: CatalogService,
         job_service: JobService,
+        user_id: UserID,
+        product_name: ProductName,
     ):
         self._catalog_service = catalog_service
         self._job_service = job_service
+
+        # context
+        if user_id != self._job_service._user_id:
+            msg = f"User ID {user_id} does not match job service user ID {self._job_service._user_id}"
+            raise ValueError(msg)
+        if product_name != self._job_service._product_name:
+            msg = f"Product name {product_name} does not match job service product name {self._job_service._product_name}"
+            raise ValueError(msg)
+
+        self._user_id = user_id
+        self._product_name = product_name
 
     async def get_solver(
         self,

@@ -1,7 +1,5 @@
 from functools import partial
-from typing import Annotated
 
-from fastapi import Depends
 from models_library.api_schemas_catalog.services import (
     LatestServiceGet,
     ServiceGetV2,
@@ -31,7 +29,6 @@ from simcore_service_api_server.exceptions.backend_errors import (
     ServiceForbiddenAccessError,
 )
 
-from ..api.dependencies.rabbitmq import get_rabbitmq_rpc_client
 from ..exceptions.service_errors_utils import service_exception_mapper
 
 _exception_mapper = partial(service_exception_mapper, service_name="CatalogService")
@@ -40,9 +37,7 @@ _exception_mapper = partial(service_exception_mapper, service_name="CatalogServi
 class CatalogService:
     _client: RabbitMQRPCClient
 
-    def __init__(
-        self, client: Annotated[RabbitMQRPCClient, Depends(get_rabbitmq_rpc_client)]
-    ):
+    def __init__(self, client: RabbitMQRPCClient):
         self._client = client
 
     async def list_latest_releases(

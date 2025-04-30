@@ -7,6 +7,7 @@ from fastapi import Depends, HTTPException, Request, status
 from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.rabbitmq import RabbitMQRPCClient
+from simcore_service_api_server._service_programs import ProgramService
 from simcore_service_api_server._service_studies import StudyService
 
 from ..._service_jobs import JobService
@@ -76,21 +77,36 @@ def get_job_service(
 def get_solver_service(
     catalog_service: Annotated[CatalogService, Depends(get_catalog_service)],
     job_service: Annotated[JobService, Depends(get_job_service)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
+    product_name: Annotated[ProductName, Depends(get_product_name)],
 ) -> SolverService:
     """
     "Assembles" the SolverService layer to the underlying service and client interfaces
     in the context of the rest controller (i.e. api/dependencies)
     """
-
     return SolverService(
         catalog_service=catalog_service,
         job_service=job_service,
+        user_id=user_id,
+        product_name=product_name,
     )
 
 
 def get_study_service(
     job_service: Annotated[JobService, Depends(get_job_service)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
+    product_name: Annotated[ProductName, Depends(get_product_name)],
 ) -> StudyService:
     return StudyService(
         job_service=job_service,
+        user_id=user_id,
+        product_name=product_name,
+    )
+
+
+def get_program_service(
+    catalog_service: Annotated[CatalogService, Depends(get_catalog_service)],
+) -> ProgramService:
+    return ProgramService(
+        _catalog_service=catalog_service,
     )

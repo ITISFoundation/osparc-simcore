@@ -22,7 +22,7 @@ from ...models.schemas.solvers import Solver, SolverKeyId, SolverPort
 from ...services_rpc.catalog import CatalogService
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
-from ..dependencies.services import get_solver_service
+from ..dependencies.services import get_catalog_service, get_solver_service
 from ..dependencies.webserver_http import AuthSession, get_webserver_session
 from ._constants import (
     FMSG_CHANGELOG_NEW_IN_VERSION,
@@ -74,7 +74,7 @@ router = APIRouter()
 )
 async def list_solvers(
     user_id: Annotated[int, Depends(get_current_user_id)],
-    catalog_service: Annotated[CatalogService, Depends()],
+    catalog_service: Annotated[CatalogService, Depends(get_catalog_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
 ):
@@ -348,7 +348,7 @@ async def list_solver_ports(
     solver_key: SolverKeyId,
     version: VersionStr,
     user_id: Annotated[int, Depends(get_current_user_id)],
-    catalog_service: Annotated[CatalogService, Depends()],
+    catalog_service: Annotated[CatalogService, Depends(get_catalog_service)],
     product_name: Annotated[str, Depends(get_product_name)],
 ):
     ports = await catalog_service.get_service_ports(

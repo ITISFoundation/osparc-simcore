@@ -225,6 +225,7 @@ async def create_study_job(
 async def get_study_job(
     study_id: StudyID,
     job_id: JobID,
+    study_service: Annotated[StudyService, Depends(get_study_service)],
 ):
     msg = f"get study job study_id={study_id!r} job_id={job_id!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
     raise NotImplementedError(msg)

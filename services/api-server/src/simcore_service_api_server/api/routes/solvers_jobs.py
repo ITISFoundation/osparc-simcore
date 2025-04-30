@@ -34,7 +34,7 @@ from ...services_http.solver_job_models_converters import (
 )
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
-from ..dependencies.services import get_api_client, get_solver_service
+from ..dependencies.services import get_api_client, get_job_service, get_solver_service
 from ..dependencies.webserver_http import AuthSession, get_webserver_session
 from ._constants import (
     FMSG_CHANGELOG_ADDED_IN_VERSION,
@@ -92,7 +92,7 @@ async def create_solver_job(
     inputs: JobInputs,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
-    job_service: Annotated[JobService, Depends()],
+    job_service: Annotated[JobService, Depends(get_job_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
     hidden: Annotated[bool, Query()] = True,
