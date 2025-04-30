@@ -70,6 +70,8 @@ class ProgramService:
             offset=offset,
             limit=limit,
         )
+        if len(page) == 0:
+            return [], page_meta
 
         program_instance = await self._catalog_service.get(
             user_id=user_id,

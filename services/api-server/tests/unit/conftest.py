@@ -458,8 +458,14 @@ def mocked_catalog_rest_api_base(
 
 
 @pytest.fixture
+def catalog_rpc_side_effects(request) -> Any:
+    param = request.param if request.param is not None else CatalogRpcSideEffects()
+    return param
+
+
+@pytest.fixture
 def mocked_catalog_rpc_api(
-    app: FastAPI, mocker: MockerFixture
+    app: FastAPI, mocker: MockerFixture, catalog_rpc_side_effects: CatalogRpcSideEffects
 ) -> Iterable[dict[str, MockType]]:
     """
     Mocks the RPC catalog service API for testing purposes.
@@ -469,38 +475,37 @@ def mocked_catalog_rpc_api(
         return MagicMock()
 
     app.dependency_overrides[get_rabbitmq_rpc_client] = get_mock_rabbitmq_rpc_client
-    side_effects = CatalogRpcSideEffects()
 
     yield {
         "list_services_paginated": mocker.patch.object(
             catalog_rpc,
             "list_services_paginated",
             autospec=True,
-            side_effect=side_effects.list_services_paginated,
+            side_effect=catalog_rpc_side_effects.list_services_paginated,
         ),
         "get_service": mocker.patch.object(
             catalog_rpc,
             "get_service",
             autospec=True,
-            side_effect=side_effects.get_service,
+            side_effect=catalog_rpc_side_effects.get_service,
         ),
         "update_service": mocker.patch.object(
             catalog_rpc,
             "update_service",
             autospec=True,
-            side_effect=side_effects.update_service,
+            side_effect=catalog_rpc_side_effects.update_service,
         ),
         "list_my_service_history_latest_first": mocker.patch.object(
             catalog_rpc,
             "list_my_service_history_latest_first",
             autospec=True,
-            side_effect=side_effects.list_my_service_history_latest_first,
+            side_effect=catalog_rpc_side_effects.list_my_service_history_latest_first,
         ),
         "get_service_ports": mocker.patch.object(
             catalog_rpc,
             "get_service_ports",
             autospec=True,
-            side_effect=side_effects.get_service_ports,
+            side_effect=catalog_rpc_side_effects.get_service_ports,
         ),
     }
     app.dependency_overrides.pop(get_rabbitmq_rpc_client)

@@ -2,6 +2,7 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
+from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
 from typing import Any
@@ -12,6 +13,8 @@ from common_library.json_serialization import json_loads
 from fastapi import status
 from httpx import AsyncClient
 from models_library.api_schemas_storage.storage_schemas import FileUploadSchema
+from models_library.rpc_pagination import PageRpc
+from models_library.services_history import ServiceRelease
 from models_library.users import UserID
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.faker_factories import DEFAULT_FAKER
@@ -158,6 +161,37 @@ async def test_list_latest_programs(
 
 
 async def test_list_program_history(
+    auth: httpx.BasicAuth,
+    client: AsyncClient,
+    mocked_catalog_rpc_api: dict[str, MockType],
+):
+    program_key = "simcore/services/dynamic/my_program"
+    # Arrange
+    response = await client.get(
+        f"/{API_VTAG}/programs/{program_key}/releases", auth=auth
+    )
+    assert response.status_code == status.HTTP_200_OK
+
+
+@dataclass
+class _MockCatalogRpcSideEffects:
+    async def list_services_paginated(*args, **kwargs): ...
+    async def get_service(*args, **kwargs): ...
+    async def update_service(*args, **kwargs): ...
+    async def get_service_ports(*args, **kwargs): ...
+    async def list_my_service_history_latest_first(*args, **kwargs):
+        return PageRpc[ServiceRelease].create(
+            [],
+            total=0,
+            limit=10,
+            offset=0,
+        )
+
+
+@pytest.mark.parametrize(
+    "catalog_rpc_side_effects", [_MockCatalogRpcSideEffects()], indirect=True
+)
+async def test_list_program_history_no_program(
     auth: httpx.BasicAuth,
     client: AsyncClient,
     mocked_catalog_rpc_api: dict[str, MockType],
