@@ -121,7 +121,7 @@ async def delete_function(
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         await conn.execute(
-            functions_table.delete().where(functions_table.c.uuid == int(function_id))
+            functions_table.delete().where(functions_table.c.uuid == function_id)
         )
 
 
@@ -138,6 +138,7 @@ async def register_function_job(
             .values(
                 function_uuid=function_job.function_uuid,
                 inputs=function_job.inputs,
+                outputs=function_job.outputs,
                 function_class=function_job.function_class,
                 class_specific_data=function_job.class_specific_data,
                 title=function_job.title,
@@ -188,6 +189,20 @@ async def list_function_jobs(
             return []
 
         return [FunctionJobDB.model_validate(dict(row)) for row in rows]
+
+
+async def delete_function_job(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    function_job_id: FunctionID,
+) -> None:
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        await conn.execute(
+            function_jobs_table.delete().where(
+                function_jobs_table.c.uuid == function_job_id
+            )
+        )
 
 
 async def find_cached_function_job(
