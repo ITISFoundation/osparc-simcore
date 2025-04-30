@@ -1,6 +1,6 @@
 import io
 import logging
-from collections.abc import Callable
+from collections.abc import Callable, Generator
 from typing import Any, Generic, Literal, TypeAlias, TypeVar
 
 from aiohttp import web
@@ -128,3 +128,10 @@ class NextPage(BaseModel, Generic[PageParameters]):
         ..., description="Code name to the front-end page. Ideally a PageStr"
     )
     parameters: PageParameters | None = None
+
+
+def iter_originating_hosts(request) -> Generator[str, None, None]:
+    if (forwarded := request.headers.get("X-Forwarded-Host")) is not None:
+        yield forwarded
+    if request.host is not None:
+        yield request.host
