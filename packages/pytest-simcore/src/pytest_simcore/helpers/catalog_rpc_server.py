@@ -5,6 +5,8 @@
 # pylint: disable=unused-variable
 
 
+from dataclasses import dataclass
+
 from models_library.api_schemas_catalog.services import (
     LatestServiceGet,
     ServiceGetV2,
@@ -170,4 +172,21 @@ class CatalogRpcSideEffects:
 
         return TypeAdapter(list[ServicePortGet]).validate_python(
             ServicePortGet.model_json_schema()["examples"],
+        )
+
+
+@dataclass
+class ZeroListingCatalogRpcSideEffects:
+    """Catalog RPC mocks that return empty lists"""
+
+    async def list_services_paginated(*args, **kwargs): ...
+    async def get_service(*args, **kwargs): ...
+    async def update_service(*args, **kwargs): ...
+    async def get_service_ports(*args, **kwargs): ...
+    async def list_my_service_history_latest_first(*args, **kwargs):
+        return PageRpc[ServiceRelease].create(
+            [],
+            total=0,
+            limit=10,
+            offset=0,
         )

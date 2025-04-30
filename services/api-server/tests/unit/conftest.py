@@ -459,8 +459,9 @@ def mocked_catalog_rest_api_base(
 
 @pytest.fixture
 def catalog_rpc_side_effects(request) -> Any:
-    param = request.param if request.param is not None else CatalogRpcSideEffects()
-    return param
+    if "param" in dir(request) and request.param is not None:
+        return request.param
+    return CatalogRpcSideEffects()
 
 
 @pytest.fixture
