@@ -23,10 +23,8 @@ class ProgramService:
         product_name: str,
     ) -> Program:
         service = await self._catalog_service.get(
-            user_id=user_id,
             name=name,
             version=version,
-            product_name=product_name,
         )
         assert service.service_type == ServiceType.DYNAMIC  # nosec
 
@@ -41,8 +39,6 @@ class ProgramService:
         limit: PositiveInt,
     ) -> tuple[list[Program], PageMetaInfoLimitOffset]:
         page, page_meta = await self._catalog_service.list_latest_releases(
-            user_id=user_id,
-            product_name=product_name,
             offset=offset,
             limit=limit,
             filters=ServiceListFilters(service_type=ServiceType.DYNAMIC),
@@ -61,18 +57,14 @@ class ProgramService:
         limit: PositiveInt,
     ) -> tuple[list[Program], PageMetaInfoLimitOffset]:
         page, page_meta = await self._catalog_service.list_release_history(
-            user_id=user_id,
             service_key=program_key,
-            product_name=product_name,
             offset=offset,
             limit=limit,
         )
 
         program_instance = await self._catalog_service.get(
-            user_id=user_id,
             name=program_key,
             version=page[-1].version,
-            product_name=product_name,
         )
 
         items = [

@@ -48,12 +48,16 @@ def get_api_client(client_type: type[BaseServiceClientApi]) -> Callable:
 
 def get_catalog_service(
     rpc_client: Annotated[RabbitMQRPCClient, Depends(get_rabbitmq_rpc_client)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
+    product_name: Annotated[ProductName, Depends(get_product_name)],
 ):
     """
     "Assembles" the CatalogService layer to the RabbitMQ client
     in the context of the rest controller (i.e. api/dependencies)
     """
-    return CatalogService(client=rpc_client)
+    return CatalogService(
+        rpc_client=rpc_client, user_id=user_id, product_name=product_name
+    )
 
 
 def get_job_service(

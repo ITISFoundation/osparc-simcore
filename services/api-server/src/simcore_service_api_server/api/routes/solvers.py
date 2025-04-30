@@ -81,8 +81,6 @@ async def list_solvers(
     """Lists all available solvers (latest version)"""
 
     services, _ = await catalog_service.list_latest_releases(
-        user_id=user_id,
-        product_name=product_name,
         filters=ServiceListFilters(service_type=ServiceType.COMPUTATIONAL),
     )
     solvers = [Solver.create_from_service(service=service) for service in services]
@@ -342,10 +340,8 @@ async def list_solver_ports(
     product_name: Annotated[str, Depends(get_product_name)],
 ):
     ports = await catalog_service.get_service_ports(
-        user_id=user_id,
         name=solver_key,
         version=version,
-        product_name=product_name,
     )
 
     solver_ports = [SolverPort.model_validate(port.model_dump()) for port in ports]

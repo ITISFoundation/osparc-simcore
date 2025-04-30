@@ -51,6 +51,8 @@ class SolverService:
             job_service=job_service,
         )
 
+        # TODO: check consistency with user_id and product_name in _job_service
+
         self._user_id = user_id
         self._product_name = product_name
 
@@ -63,10 +65,8 @@ class SolverService:
         solver_version: VersionStr,
     ) -> Solver:
         service = await self._catalog_service.get(
-            user_id=user_id,
             name=solver_key,
             version=solver_version,
-            product_name=product_name,
         )
         assert (  # nosec
             service.service_type == ServiceType.COMPUTATIONAL
@@ -84,9 +84,7 @@ class SolverService:
         service_releases: list[ServiceRelease] = []
         for page_params in iter_pagination_params(limit=DEFAULT_PAGINATION_LIMIT):
             releases, page_meta = await self._catalog_service.list_release_history(
-                user_id=user_id,
                 service_key=solver_key,
-                product_name=product_name,
                 offset=page_params.offset,
                 limit=page_params.limit,
             )
@@ -95,10 +93,8 @@ class SolverService:
 
         release = sorted(service_releases, key=lambda s: Version(s.version))[-1]
         service = await self._catalog_service.get(
-            user_id=user_id,
             name=solver_key,
             version=release.version,
-            product_name=product_name,
         )
 
         return Solver.create_from_service(service)
@@ -145,18 +141,14 @@ class SolverService:
     ) -> tuple[list[Solver], PageMetaInfoLimitOffset]:
 
         releases, page_meta = await self._catalog_service.list_release_history(
-            user_id=self._user_id,
             service_key=solver_key,
-            product_name=self._product_name,
             offset=offset,
             limit=limit,
         )
 
         service_instance = await self._catalog_service.get(
-            user_id=self._user_id,
             name=solver_key,
             version=releases[-1].version,
-            product_name=self._product_name,
         )
 
         return [
@@ -178,8 +170,6 @@ class SolverService:
     ) -> tuple[list[Solver], PageMetaInfoLimitOffset]:
         """Lists the latest solvers with pagination."""
         services, page_meta = await self._catalog_service.list_latest_releases(
-            user_id=self._user_id,
-            product_name=self._product_name,
             offset=offset,
             limit=limit,
             filters=ServiceListFilters(service_type=ServiceType.COMPUTATIONAL),

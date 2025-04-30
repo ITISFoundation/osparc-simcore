@@ -103,8 +103,12 @@ def job_service(
 @pytest.fixture
 def catalog_service(
     mocked_rpc_client: MockType,
+    product_name: ProductName,
+    user_id: UserID,
 ) -> CatalogService:
-    return CatalogService(client=mocked_rpc_client)
+    return CatalogService(
+        rpc_client=mocked_rpc_client, user_id=user_id, product_name=product_name
+    )
 
 
 @pytest.fixture

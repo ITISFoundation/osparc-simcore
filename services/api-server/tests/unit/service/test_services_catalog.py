@@ -35,9 +35,7 @@ async def test_catalog_service_read_solvers(
     catalog_service: CatalogService,
 ):
     # Step 1: List latest releases in a page
-    latest_releases, meta = await catalog_service.list_latest_releases(
-        product_name=product_name, user_id=user_id
-    )
+    latest_releases, meta = await catalog_service.list_latest_releases()
     solver_releases_page = [_to_solver_schema(srv) for srv in latest_releases]
 
     assert solver_releases_page, "Releases page should not be empty"
@@ -46,8 +44,6 @@ async def test_catalog_service_read_solvers(
     # Step 2: Select one release and list solver releases
     selected_solver = solver_releases_page[0]
     releases, meta = await catalog_service.list_release_history(
-        product_name=product_name,
-        user_id=user_id,
         service_key=selected_solver.id,
     )
     assert releases, "Solver releases should not be empty"
@@ -57,8 +53,6 @@ async def test_catalog_service_read_solvers(
     oldest_release: ServiceRelease = releases[-1]
 
     service: ServiceGetV2 = await catalog_service.get(
-        product_name=product_name,
-        user_id=user_id,
         name=selected_solver.id,
         version=oldest_release.version,
     )
@@ -68,8 +62,6 @@ async def test_catalog_service_read_solvers(
 
     # Step 4: Get service ports for the solver
     ports = await catalog_service.get_service_ports(
-        product_name=product_name,
-        user_id=user_id,
         name=selected_solver.id,
         version=oldest_release.version,
     )
