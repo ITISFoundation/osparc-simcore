@@ -122,7 +122,7 @@ def _decode_functionjob(
             description="",
             function_uid=functionjob_db.function_uuid,
             inputs=functionjob_db.inputs,
-            outputs=None,
+            outputs=functionjob_db.outputs,
             project_job_id=functionjob_db.class_specific_data["project_job_id"],
         )
     elif functionjob_db.function_class == FunctionClass.solver:  # noqa: RET505
@@ -132,7 +132,7 @@ def _decode_functionjob(
             description="",
             function_uid=functionjob_db.function_uuid,
             inputs=functionjob_db.inputs,
-            outputs=None,
+            outputs=functionjob_db.outputs,
             solver_job_id=functionjob_db.class_specific_data["solver_job_id"],
         )
     else:
@@ -148,7 +148,7 @@ def _encode_functionjob(
             title=functionjob.title,
             function_uuid=functionjob.function_uid,
             inputs=functionjob.inputs,
-            outputs=None,
+            outputs=functionjob.outputs,
             class_specific_data=FunctionJobClassSpecificData(
                 {
                     "project_job_id": str(functionjob.project_job_id),
@@ -161,7 +161,7 @@ def _encode_functionjob(
             title=functionjob.title,
             function_uuid=functionjob.function_uid,
             inputs=functionjob.inputs,
-            outputs=None,
+            outputs=functionjob.outputs,
             class_specific_data=FunctionJobClassSpecificData(
                 {
                     "solver_job_id": str(functionjob.solver_job_id),
@@ -268,6 +268,17 @@ async def register_function_job(
 
 
 @router.expose()
+async def delete_function_job(
+    app: web.Application, *, function_job_id: FunctionJobID
+) -> None:
+    assert app
+    await _functions_repository.delete_function_job(
+        app=app,
+        function_job_id=function_job_id,
+    )
+
+
+@router.expose()
 async def find_cached_function_job(
     app: web.Application, *, function_id: FunctionID, inputs: FunctionInputs
 ) -> FunctionJob | None:
@@ -298,7 +309,7 @@ async def find_cached_function_job(
             outputs=None,
             solver_job_id=returned_function_job.class_specific_data["solver_job_id"],
         )
-    else:  # noqa: RET505
+    else:
         msg = f"Unsupported function class: [{returned_function_job.function_class}]"
         raise TypeError(msg)
 
