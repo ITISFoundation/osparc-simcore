@@ -17,15 +17,15 @@ ConversationMessageID: TypeAlias = UUID
 class ConversationType(StrAutoEnum):
     PROJECT_STATIC = auto()  # Static conversation for the project
     PROJECT_ANNOTATION = (
-        auto()
-    )  # Something like sticky note, can be located anywhere in the pipeline UI
+        auto()  # Something like sticky note, can be located anywhere in the pipeline UI
+    )
 
 
 class ConversationMessageType(StrAutoEnum):
     MESSAGE = auto()
     NOTIFICATION = (
-        auto()
-    )  # Special type of message used for storing notifications in the conversation
+        auto()  # Special type of message used for storing notifications in the conversation
+    )
 
 
 #

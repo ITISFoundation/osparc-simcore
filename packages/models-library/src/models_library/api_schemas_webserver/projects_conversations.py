@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Self
+from typing import Annotated, Self
 
 from pydantic import Field
 
@@ -22,7 +22,7 @@ from ._base import InputSchema, OutputSchema
 class ConversationRestGet(OutputSchema):
     conversation_id: ConversationID
     product_name: ProductName
-    name: str = Field(..., max_length=50)
+    name: Annotated[str, Field(max_length=50)]
     project_uuid: ProjectID | None
     user_group_id: GroupID
     type: ConversationType
@@ -54,7 +54,7 @@ class ConversationMessageRestGet(OutputSchema):
     message_id: ConversationMessageID
     conversation_id: ConversationID
     user_group_id: GroupID
-    content: str = Field(..., max_length=4096)
+    content: Annotated[str, Field(max_length=4096)]
     type: ConversationMessageType
     created: datetime
     modified: datetime
