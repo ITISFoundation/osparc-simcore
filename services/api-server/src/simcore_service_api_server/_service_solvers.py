@@ -11,6 +11,9 @@ from models_library.rest_pagination import (
 from models_library.services_enums import ServiceType
 from models_library.users import UserID
 from pydantic import NonNegativeInt, PositiveInt
+from simcore_service_api_server.exceptions.backend_errors import (
+    ProgramOrSolverOrStudyNotFoundError,
+)
 
 from .models.schemas.solvers import Solver, SolverKeyId
 from .services_rpc.catalog import CatalogService
@@ -59,7 +62,8 @@ class SolverService:
             limit=1,
         )
 
-        assert len(releases) == 1  # nosec
+        if len(releases) == 0:
+            raise ProgramOrSolverOrStudyNotFoundError(name=solver_key, version="latest")
         service = await self._catalog_service.get(
             user_id=user_id,
             name=solver_key,
