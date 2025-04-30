@@ -152,7 +152,7 @@ class ProjectGet(OutputSchema):
                     "uuid": "a8b0f384-bd08-4793-ab25-65d5a755f4b6",
                     "name": "My Project",
                     "description": "This is a sample project",
-                    "thumbnail": "http://example.com/thumbnail.png",
+                    "thumbnail": "https://example.com/thumbnail.png",
                     "workbench": {},
                     "prj_owner": "user@email.com",
                     "access_rights": {},
