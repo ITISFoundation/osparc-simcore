@@ -31,6 +31,9 @@ async def catalog_rpc_side_effect():
 
 @pytest.fixture
 def mocked_rpc_client(mocker: MockerFixture) -> MockType:
+    """This fixture mocks the RabbitMQRPCClient.request method which is used
+    in all RPC clients in the api-server, regardeless of the namespace.
+    """
 
     async def _request(
         namespace: RPCNamespace,
