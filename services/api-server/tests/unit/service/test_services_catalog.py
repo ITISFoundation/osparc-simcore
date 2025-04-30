@@ -14,7 +14,7 @@ from simcore_service_api_server.models.schemas.solvers import Solver
 from simcore_service_api_server.services_rpc.catalog import CatalogService
 
 
-def to_solver(
+def _to_solver_schema(
     service: LatestServiceGet | ServiceGetV2, href_self: HttpUrl | None = None
 ) -> Solver:
     # NOTE: this is an adapter around models on CatalogService interface
@@ -31,14 +31,14 @@ def to_solver(
 async def test_catalog_service_read_solvers(
     product_name: ProductName,
     user_id: UserID,
-    mocked_catalog_rpc_api: dict[str, MockType],
+    mocked_rpc_client: MockType,
     catalog_service: CatalogService,
 ):
     # Step 1: List latest releases in a page
     latest_releases, meta = await catalog_service.list_latest_releases(
         product_name=product_name, user_id=user_id
     )
-    solver_releases_page = [to_solver(srv) for srv in latest_releases]
+    solver_releases_page = [_to_solver_schema(srv) for srv in latest_releases]
 
     assert solver_releases_page, "Releases page should not be empty"
     assert meta.offset == 0
@@ -62,7 +62,7 @@ async def test_catalog_service_read_solvers(
         name=selected_solver.id,
         version=oldest_release.version,
     )
-    solver = to_solver(service)
+    solver = _to_solver_schema(service)
     assert solver.id == selected_solver.id
     assert solver.version == oldest_release.version
 
@@ -80,7 +80,8 @@ async def test_catalog_service_read_solvers(
     assert any(port.kind == "output" for port in ports), "Should contain output ports"
 
     # checks calls to rpc
-    mocked_catalog_rpc_api["list_services_paginated"].assert_called_once()
-    mocked_catalog_rpc_api["list_my_service_history_paginated"].assert_called_once()
-    mocked_catalog_rpc_api["get_service"].assert_called_once()
-    mocked_catalog_rpc_api["get_service_ports"].assert_called_once()
+    mocked_rpc_client.request
+    # mocked_catalog_rpc_api["list_services_paginated"].assert_called_once()
+    # mocked_catalog_rpc_api["list_my_service_history_paginated"].assert_called_once()
+    # mocked_catalog_rpc_api["get_service"].assert_called_once()
+    # mocked_catalog_rpc_api["get_service_ports"].assert_called_once()

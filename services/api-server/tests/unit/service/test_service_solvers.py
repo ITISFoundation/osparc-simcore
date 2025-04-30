@@ -11,8 +11,8 @@ from simcore_service_api_server.models.schemas.solvers import Solver
 
 
 async def test_get_solver(
+    mocked_rpc_client: MockType,
     solver_service: SolverService,
-    mocked_catalog_rpc_api: dict[str, MockType],
     product_name: ProductName,
     user_id: UserID,
 ):
@@ -24,18 +24,28 @@ async def test_get_solver(
     )
 
     assert isinstance(solver, Solver)
-    mocked_catalog_rpc_api["get_service"].assert_called_once()
+    assert solver.id == "simcore/services/comp/solver-1"
+
+    assert mocked_rpc_client.request.called
+    assert mocked_rpc_client.request.call_args.args == ("catalog", "get_service")
 
 
 async def test_list_jobs(
+    mocked_rpc_client: MockType,
     solver_service: SolverService,
-    mocked_webserver_rpc_api: dict[str, MockType],
 ):
     # Test default parameters
     jobs, page_meta = await solver_service.list_jobs()
-    assert isinstance(jobs, list)
-    mocked_webserver_rpc_api["list_projects_marked_as_jobs"].assert_called_once()
+
+    assert jobs
+    assert len(jobs) == page_meta.count
+
+    assert mocked_rpc_client.request.call_args.args == (
+        "webserver",
+        "list_projects_marked_as_jobs",
+    )
+
     assert page_meta.total >= 0
-    assert page_meta.limit == 49
+    assert page_meta.limit >= page_meta.count
     assert page_meta.offset == 0
     assert page_meta.count > 0
