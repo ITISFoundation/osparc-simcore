@@ -490,11 +490,11 @@ def mocked_catalog_rpc_api(
             autospec=True,
             side_effect=side_effects.update_service,
         ),
-        "list_my_service_history_sorted": mocker.patch.object(
+        "list_my_service_history_latest_first": mocker.patch.object(
             catalog_rpc,
-            "list_my_service_history_sorted",
+            "list_my_service_history_latest_first",
             autospec=True,
-            side_effect=side_effects.list_my_service_history_sorted,
+            side_effect=side_effects.list_my_service_history_latest_first,
         ),
         "get_service_ports": mocker.patch.object(
             catalog_rpc,

@@ -242,7 +242,7 @@ async def batch_get_my_services(
 @router.expose(reraise_if_error_type=(ValidationError,))
 @log_decorator(_logger, level=logging.DEBUG)
 @validate_call(config={"arbitrary_types_allowed": True})
-async def list_my_service_history_sorted(
+async def list_my_service_history_latest_first(
     app: FastAPI,
     *,
     product_name: ProductName,

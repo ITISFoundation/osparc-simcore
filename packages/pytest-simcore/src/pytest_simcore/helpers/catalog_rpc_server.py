@@ -122,7 +122,7 @@ class CatalogRpcSideEffects:
         return got.model_copy(update=update.model_dump(exclude_unset=True))
 
     @validate_call(config={"arbitrary_types_allowed": True})
-    async def list_my_service_history_sorted(
+    async def list_my_service_history_latest_first(
         self,
         rpc_client: RabbitMQRPCClient | MockType,
         *,

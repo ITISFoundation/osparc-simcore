@@ -194,7 +194,7 @@ async def batch_get_my_services(
 
 
 @validate_call(config={"arbitrary_types_allowed": True})
-async def list_my_service_history_sorted(  # pylint: disable=too-many-arguments
+async def list_my_service_history_latest_first(  # pylint: disable=too-many-arguments
     rpc_client: RabbitMQRPCClient,
     *,
     product_name: ProductName,
@@ -211,7 +211,9 @@ async def list_my_service_history_sorted(  # pylint: disable=too-many-arguments
     """
     result = await rpc_client.request(
         CATALOG_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python("list_my_service_history_sorted"),
+        TypeAdapter(RPCMethodName).validate_python(
+            "list_my_service_history_latest_first"
+        ),
         product_name=product_name,
         user_id=user_id,
         service_key=service_key,
