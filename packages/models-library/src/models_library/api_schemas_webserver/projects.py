@@ -1,4 +1,4 @@
-""" rest API schema models for projects
+"""rest API schema models for projects
 
 
 SEE rationale in https://fastapi.tiangolo.com/tutorial/extra-models/#multiple-models
@@ -19,6 +19,7 @@ from pydantic import (
     PlainSerializer,
     field_validator,
 )
+from pydantic.config import JsonDict
 
 from ..api_schemas_long_running_tasks.tasks import TaskGet
 from ..basic_types import LongTruncatedStr, ShortTruncatedStr
@@ -53,9 +54,9 @@ class ProjectCreateNew(InputSchema):
     access_rights: dict[GroupIDStr, AccessRights]
 
     tags: Annotated[list[int], Field(default_factory=list)] = DEFAULT_FACTORY
-    classifiers: Annotated[
-        list[ClassifierID], Field(default_factory=list)
-    ] = DEFAULT_FACTORY
+    classifiers: Annotated[list[ClassifierID], Field(default_factory=list)] = (
+        DEFAULT_FACTORY
+    )
 
     ui: StudyUI | None = None
 
@@ -143,7 +144,31 @@ class ProjectGet(OutputSchema):
         none_to_empty_str_pre_validator
     )
 
-    model_config = ConfigDict(frozen=False)
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            examples=[
+                {
+                    "uuid": "a8b0f384-bd08-4793-ab25-65d5a755f4b6",
+                    "name": "My Project",
+                    "description": "This is a sample project",
+                    "thumbnail": "http://example.com/thumbnail.png",
+                    "workbench": {},
+                    "prj_owner": "user@email.com",
+                    "access_rights": {},
+                    "trashed_at": None,
+                    "trashed_by": None,
+                    "dev": {},
+                    "tags": [],
+                    "workspace_id": None,
+                    "folder_id": None,
+                    "creation_date": "2023-01-01T00:00:00Z",
+                    "last_change_date": "2023-01-02T00:00:00Z",
+                }
+            ]
+        )
+
+    model_config = ConfigDict(frozen=False, json_schema_extra=_update_json_schema_extra)
 
     @classmethod
     def from_domain_model(cls, project_data: dict[str, Any]) -> Self:
@@ -168,8 +193,7 @@ class ProjectGet(OutputSchema):
 TaskProjectGet: TypeAlias = TaskGet
 
 
-class ProjectListItem(ProjectGet):
-    ...
+class ProjectListItem(ProjectGet): ...
 
 
 class ProjectReplace(InputSchema):
