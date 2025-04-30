@@ -62,7 +62,13 @@ def echo_dotenv(ctx: typer.Context, *, minimal: bool = True):
             DockerApiProxysettings.create_from_envs(
                 DOCKER_API_PROXY_HOST=os.environ.get(
                     "DOCKER_API_PROXY_HOST", "replace-with-proxy-host"
-                )
+                ),
+                DOCKER_API_PROXY_USER=os.environ.get(
+                    "DOCKER_API_PROXY_USER", "replace-with-proxy-user"
+                ),
+                DOCKER_API_PROXY_PASSWORD=os.environ.get(
+                    "DOCKER_API_PROXY_PASSWORD", "replace-with-proxy-password"
+                ),
             ),
         ),
     )
