@@ -61,6 +61,12 @@ async def server(
         raise RuntimeError(msg)
 
     @registry.expose()
+    async def raising_after_sleep_f(duration: float) -> None:
+        await asyncio.sleep(duration)
+        msg = "I always raise an error"
+        raise RuntimeError(msg)
+
+    @registry.expose()
     async def sleep_forever_f() -> None:
         while True:  # noqa: ASYNC110
             await asyncio.sleep(1)
@@ -126,6 +132,17 @@ async def test_timeout_error(server: Server, client: Client):
     with pytest.raises(TimedOutError):
         await client.ensure_result(
             "sleep_forever_f", expected_type=type(None), timeout=timedelta(seconds=1)
+        )
+
+
+async def test_timeout_during_failing_retry(server: Server, client: Client):
+    with pytest.raises(TimedOutError):
+        await client.ensure_result(
+            "raising_after_sleep_f",
+            expected_type=type(None),
+            timeout=timedelta(seconds=2),
+            retry_count=100,
+            duration=1,
         )
 
 
