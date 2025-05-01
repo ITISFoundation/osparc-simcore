@@ -19,7 +19,6 @@ from ._meta import print_dask_sidecar_banner
 from .computational_sidecar.core import ComputationalSidecar
 from .dask_utils import TaskPublisher, get_current_task_resources, monitor_task_abortion
 from .rabbitmq import RabbitMQPlugin
-from .rabbitmq import on_shutdown as shutdown_rabbitmq
 from .settings import ApplicationSettings
 
 _logger = logging.getLogger(__name__)
@@ -86,9 +85,9 @@ async def dask_setup(worker: distributed.Worker) -> None:
                 await worker.plugin_add(RabbitMQPlugin(settings.DASK_SIDECAR_RABBITMQ))
 
 
-async def dask_teardown(worker: distributed.Worker) -> None:
+async def dask_teardown(_worker: distributed.Worker) -> None:
     with log_context(dask_worker_logger, logging.INFO, "tear down dask worker"):
-        await shutdown_rabbitmq(worker)
+        ...
 
 
 async def _run_computational_sidecar_async(
