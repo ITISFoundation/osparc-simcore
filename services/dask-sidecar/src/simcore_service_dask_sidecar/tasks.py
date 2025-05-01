@@ -18,7 +18,7 @@ from settings_library.s3 import S3Settings
 from ._meta import print_dask_sidecar_banner
 from .computational_sidecar.core import ComputationalSidecar
 from .dask_utils import TaskPublisher, get_current_task_resources, monitor_task_abortion
-from .rabbitmq import RabbitMQPlugin
+from .rabbitmq_plugin import RabbitMQPlugin
 from .settings import ApplicationSettings
 
 _logger = logging.getLogger(__name__)
@@ -41,7 +41,7 @@ class GracefulKiller:
 
     def exit_gracefully(self, *_args):
         tasks = asyncio.all_tasks()
-        dask_worker_logger.warning(
+        _logger.warning(
             "Application shutdown detected!\n %s",
             pformat([t.get_name() for t in tasks]),
         )
@@ -69,8 +69,8 @@ async def dask_setup(worker: distributed.Worker) -> None:
         tracing_settings=None,  # no tracing for dask sidecar
     )
 
-    with log_context(dask_worker_logger, logging.INFO, "Launch dask worker"):
-        dask_worker_logger.info("app settings: %s", settings.model_dump_json(indent=1))
+    with log_context(_logger, logging.INFO, "Launch dask worker"):
+        _logger.info("app settings: %s", settings.model_dump_json(indent=1))
 
         print_dask_sidecar_banner()
 
@@ -78,15 +78,13 @@ async def dask_setup(worker: distributed.Worker) -> None:
             GracefulKiller(worker)
 
             loop = asyncio.get_event_loop()
-            dask_worker_logger.info(
-                "We do have a running loop in the main thread: %s", f"{loop=}"
-            )
+            _logger.info("We do have a running loop in the main thread: %s", f"{loop=}")
             if settings.DASK_SIDECAR_RABBITMQ:
                 await worker.plugin_add(RabbitMQPlugin(settings.DASK_SIDECAR_RABBITMQ))
 
 
-async def dask_teardown(_worker: distributed.Worker) -> None:
-    with log_context(dask_worker_logger, logging.INFO, "tear down dask worker"):
+async def dask_teardown(worker: distributed.Worker) -> None:
+    with log_context(_logger, logging.INFO, f"tear down dask {worker.address}"):
         ...
 
 
