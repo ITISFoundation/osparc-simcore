@@ -18,7 +18,7 @@ from settings_library.s3 import S3Settings
 from ._meta import print_dask_sidecar_banner
 from .computational_sidecar.core import ComputationalSidecar
 from .dask_utils import TaskPublisher, get_current_task_resources, monitor_task_abortion
-from .settings import Settings
+from .settings import ApplicationSettings
 
 _logger = logging.getLogger(__name__)
 
@@ -53,7 +53,7 @@ class GracefulKiller:
 
 async def dask_setup(worker: distributed.Worker) -> None:
     """This is a special function recognized by the dask worker when starting with flag --preload"""
-    settings = Settings.create_from_envs()
+    settings = ApplicationSettings.create_from_envs()
     # set up logging
     logging.basicConfig(level=settings.LOG_LEVEL.value)
     logging.root.setLevel(level=settings.LOG_LEVEL.value)

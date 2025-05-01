@@ -27,7 +27,7 @@ from yarl import URL
 
 from ..dask_utils import TaskPublisher
 from ..file_utils import pull_file_from_remote, push_file_to_remote
-from ..settings import Settings
+from ..settings import ApplicationSettings
 from .docker_utils import (
     create_container_config,
     get_computational_shared_data_mount_point,
@@ -172,7 +172,7 @@ class ComputationalSidecar:
         # NOTE: this is for tracing purpose
         _logger.info("Running task owner: %s", self.task_parameters.task_owner)
 
-        settings = Settings.create_from_envs()
+        settings = ApplicationSettings.create_from_envs()
         run_id = f"{uuid4()}"
         async with Docker() as docker_client, TaskSharedVolumes(
             Path(f"{settings.SIDECAR_COMP_SERVICES_SHARED_FOLDER}/{run_id}")

@@ -8,9 +8,7 @@ from settings_library.base import BaseCustomSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
 
-class Settings(BaseCustomSettings, MixinLoggingSettings):
-    """Dask-sidecar app settings"""
-
+class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     SC_BUILD_TARGET: str | None = None
     SC_BOOT_MODE: str | None = None
     LOG_LEVEL: Annotated[
@@ -22,14 +20,10 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
         ),
     ] = LogLevel.INFO
 
-    # sidecar config ---
-
     SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME: str
     SIDECAR_COMP_SERVICES_SHARED_FOLDER: Path
 
     SIDECAR_INTERVAL_TO_CHECK_TASK_ABORTED_S: int | None = 5
-
-    # dask config ----
 
     DASK_START_AS_SCHEDULER: bool | None = Field(
         default=False, description="If this env is set, then the app boots as scheduler"

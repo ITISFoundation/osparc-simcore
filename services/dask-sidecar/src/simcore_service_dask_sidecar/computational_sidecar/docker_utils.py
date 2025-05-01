@@ -40,7 +40,7 @@ from settings_library.s3 import S3Settings
 
 from ..dask_utils import TaskPublisher
 from ..file_utils import push_file_to_remote
-from ..settings import Settings
+from ..settings import ApplicationSettings
 from .constants import LEGACY_SERVICE_LOG_FILE_NAME
 from .models import (
     LEGACY_INTEGRATION_VERSION,
@@ -474,7 +474,7 @@ async def get_image_labels(
 
 
 async def get_computational_shared_data_mount_point(docker_client: Docker) -> Path:
-    app_settings = Settings.create_from_envs()
+    app_settings = ApplicationSettings.create_from_envs()
     try:
         logger.debug(
             "getting computational shared data mount point for %s",
