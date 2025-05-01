@@ -10,7 +10,7 @@ import os
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_dask_sidecar._meta import API_VERSION
 from simcore_service_dask_sidecar.cli import main
-from simcore_service_dask_sidecar.settings import Settings
+from simcore_service_dask_sidecar.settings import ApplicationSettings
 from typer.testing import CliRunner
 
 
@@ -28,5 +28,5 @@ def test_list_settings(cli_runner: CliRunner, app_environment: EnvVarsDict):
     result = cli_runner.invoke(main, ["settings", "--show-secrets", "--as-json"])
     assert result.exit_code == os.EX_OK, result.output
 
-    settings = Settings(result.output)
-    assert settings.model_dump() == Settings.create_from_envs().model_dump()
+    settings = ApplicationSettings(result.output)
+    assert settings.model_dump() == ApplicationSettings.create_from_envs().model_dump()
