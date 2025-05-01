@@ -1,6 +1,4 @@
-""" command line interface for migration
-
-"""
+"""command line interface for migration"""
 
 # pylint: disable=wildcard-import
 # pylint: disable=unused-wildcard-import
@@ -127,7 +125,7 @@ def discover(**cli_inputs) -> dict | None:
 
             return cfg
 
-        except Exception as err:  # pylint: disable=broad-except  # noqa: PERF203
+        except Exception as err:  # pylint: disable=broad-except
             inline_msg = str(err).replace("\n", ". ")
             click.echo(f"<- {test.__name__} failed : {inline_msg}")
 
