@@ -51,8 +51,6 @@ class SolverService:
             job_service=job_service,
         )
 
-        # TODO: check consistency with user_id and product_name in _job_service
-
         self._user_id = user_id
         self._product_name = product_name
 
