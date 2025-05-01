@@ -18,8 +18,8 @@ from settings_library.s3 import S3Settings
 from ._meta import print_dask_sidecar_banner
 from .computational_sidecar.core import ComputationalSidecar
 from .dask_utils import TaskPublisher, get_current_task_resources, monitor_task_abortion
+from .rabbitmq import RabbitMQPlugin
 from .rabbitmq import on_shutdown as shutdown_rabbitmq
-from .rabbitmq import on_startup as setup_rabbitmq
 from .settings import ApplicationSettings
 
 _logger = logging.getLogger(__name__)
@@ -83,7 +83,7 @@ async def dask_setup(worker: distributed.Worker) -> None:
                 "We do have a running loop in the main thread: %s", f"{loop=}"
             )
             if settings.DASK_SIDECAR_RABBITMQ:
-                await setup_rabbitmq(worker, settings.DASK_SIDECAR_RABBITMQ)
+                await worker.plugin_add(RabbitMQPlugin(settings.DASK_SIDECAR_RABBITMQ))
 
 
 async def dask_teardown(worker: distributed.Worker) -> None:
