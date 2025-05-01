@@ -24,7 +24,7 @@ class ChangelogType(Enum):
     RETIRED = auto()
 
 
-class ChangelogEntry(ABC):
+class ChangelogEntryAbstract(ABC):
     """Base class for changelog entries"""
 
     entry_type: ClassVar[ChangelogType]
@@ -32,15 +32,13 @@ class ChangelogEntry(ABC):
     @abstractmethod
     def to_string(self) -> str:
         """Converts entry to a formatted string for documentation"""
-        pass
 
     @abstractmethod
     def get_version(self) -> Version | None:
         """Returns the version associated with this entry, if any"""
-        pass
 
 
-class NewEndpoint(ChangelogEntry):
+class NewEndpoint(ChangelogEntryAbstract):
     """Indicates when an endpoint was first added"""
 
     entry_type = ChangelogType.NEW
@@ -55,7 +53,7 @@ class NewEndpoint(ChangelogEntry):
         return Version(self.version)
 
 
-class ChangedEndpoint(ChangelogEntry):
+class ChangedEndpoint(ChangelogEntryAbstract):
     """Indicates a change to an existing endpoint"""
 
     entry_type = ChangelogType.CHANGED
@@ -71,7 +69,7 @@ class ChangedEndpoint(ChangelogEntry):
         return Version(self.version)
 
 
-class DeprecatedEndpoint(ChangelogEntry):
+class DeprecatedEndpoint(ChangelogEntryAbstract):
     """Indicates an endpoint is deprecated and should no longer be used"""
 
     entry_type = ChangelogType.DEPRECATED
@@ -94,7 +92,7 @@ class DeprecatedEndpoint(ChangelogEntry):
         return Version(self.version) if self.version else None
 
 
-class RetiredEndpoint(ChangelogEntry):
+class RetiredEndpoint(ChangelogEntryAbstract):
     """Indicates when an endpoint will be or was removed"""
 
     entry_type = ChangelogType.RETIRED
@@ -113,7 +111,7 @@ class RetiredEndpoint(ChangelogEntry):
 def create_route_description(
     *,
     base: str = "",
-    changelog: Sequence[ChangelogEntry] | None = None,
+    changelog: Sequence[ChangelogEntryAbstract] | None = None,
 ) -> str:
     """
     Builds a consistent route description with optional changelog information.
@@ -137,7 +135,7 @@ def create_route_description(
     return "\n\n".join(parts)
 
 
-def validate_changelog(changelog: Sequence[ChangelogEntry]) -> None:
+def validate_changelog(changelog: Sequence[ChangelogEntryAbstract]) -> None:
     """
     Validates that the changelog entries follow the correct lifecycle order.
 
@@ -186,7 +184,7 @@ def create_route_config(
     base_description: str = "",
     *,
     current_version: str | Version,
-    changelog: Sequence[ChangelogEntry] | None = None,
+    changelog: Sequence[ChangelogEntryAbstract] | None = None,
 ) -> dict[str, Any]:
     """
     Creates route configuration options including description based on changelog entries.
