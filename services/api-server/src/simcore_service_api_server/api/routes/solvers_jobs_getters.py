@@ -170,7 +170,6 @@ async def list_all_solvers_jobs(
             ),
         ],
     ),
-    deprecated=True,
 )
 async def list_jobs(
     solver_key: SolverKeyId,

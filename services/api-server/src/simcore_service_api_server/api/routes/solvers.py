@@ -62,7 +62,6 @@ router = APIRouter()
             ),
         ],
     ),
-    deprecated=True,
 )
 async def list_solvers(
     catalog_service: Annotated[CatalogService, Depends(get_catalog_service)],
@@ -131,7 +130,6 @@ async def get_solvers_page(
             ),
         ],
     ),
-    deprecated=True,
 )
 async def list_solvers_releases(
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
