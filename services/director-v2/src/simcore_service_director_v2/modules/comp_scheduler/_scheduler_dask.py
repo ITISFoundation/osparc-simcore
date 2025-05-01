@@ -363,6 +363,7 @@ class DaskScheduler(BaseCompScheduler):
                 await self._process_started_tasks(
                     [task],
                     user_id=user_id,
+                    project_id=project_id,
                     iteration=run.iteration,
                     run_metadata=run.metadata,
                 )
