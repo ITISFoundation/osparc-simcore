@@ -15,7 +15,6 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes import InputID, InputTypes
 from models_library.projects_nodes_io import NodeID
 from pydantic import HttpUrl, PositiveInt
-from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_context
 from simcore_service_api_server._service_studies import StudyService
 from simcore_service_api_server.models.api_resources import parse_resources_ids
@@ -227,6 +226,7 @@ async def get_study_job(
     job_id: JobID,
     study_service: Annotated[StudyService, Depends(get_study_service)],
 ):
+    assert study_service  # nosec
     msg = f"get study job study_id={study_id!r} job_id={job_id!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
     raise NotImplementedError(msg)
 
