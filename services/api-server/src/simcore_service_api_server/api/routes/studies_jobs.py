@@ -62,7 +62,6 @@ from ._constants import (
 )
 from .solvers_jobs import (
     JOBS_STATUS_CODES,
-    _compose_job_resource_name,
 )
 
 # pylint: disable=too-many-arguments

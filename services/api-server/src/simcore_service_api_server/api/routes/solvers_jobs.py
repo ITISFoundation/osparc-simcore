@@ -47,7 +47,7 @@ _logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-def _compose_job_resource_name(solver_key, solver_version, job_id) -> str:
+def compose_job_resource_name(solver_key, solver_version, job_id) -> str:
     """Creates a unique resource name for solver's jobs"""
     return Job.compose_resource_name(
         parent_name=Solver.compose_resource_name(solver_key, solver_version),
@@ -134,7 +134,7 @@ async def delete_job(
     job_id: JobID,
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
-    job_name = _compose_job_resource_name(solver_key, version, job_id)
+    job_name = compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Deleting Job '%s'", job_name)
 
     await webserver_api.delete_project(project_id=job_id)
@@ -180,7 +180,7 @@ async def start_job(
         ClusterID | None, Query(deprecated=True)
     ] = None,
 ):
-    job_name = _compose_job_resource_name(solver_key, version, job_id)
+    job_name = compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Start Job '%s'", job_name)
 
     try:
@@ -222,7 +222,7 @@ async def stop_job(
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
 ):
-    job_name = _compose_job_resource_name(solver_key, version, job_id)
+    job_name = compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Stopping Job '%s'", job_name)
 
     return await stop_project(
@@ -242,7 +242,7 @@ async def inspect_job(
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
 ) -> JobStatus:
-    job_name = _compose_job_resource_name(solver_key, version, job_id)
+    job_name = compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Inspecting Job '%s'", job_name)
 
     task = await director2_api.get_computation(project_id=job_id, user_id=user_id)
@@ -265,7 +265,7 @@ async def replace_job_custom_metadata(
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
-    job_name = _compose_job_resource_name(solver_key, version, job_id)
+    job_name = compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Custom metadata for '%s'", job_name)
 
     return await replace_custom_metadata(
