@@ -16,7 +16,6 @@ from models_library.users import UserID
 from pydantic import HttpUrl
 from servicelib.logging_utils import log_context
 
-from .exceptions.custom_errors import ServiceConfigurationError
 from .models.schemas.jobs import Job, JobInputs
 from .models.schemas.programs import Program
 from .models.schemas.solvers import Solver
@@ -142,21 +141,3 @@ class JobService:
             job_id=job.id,
         )
         return job, new_project
-
-
-def check_user_product_consistency(
-    service_cls_name: str,
-    job_service: JobService,
-    user_id: UserID,
-    product_name: ProductName,
-) -> None:
-    if user_id != job_service.user_id:
-        msg = f"User ID {user_id} does not match job service user ID {job_service.user_id}"
-        raise ServiceConfigurationError(
-            service_cls_name=service_cls_name, detail_msg=msg
-        )
-    if product_name != job_service.product_name:
-        msg = f"Product name {product_name} does not match job service product name {job_service.product_name}"
-        raise ServiceConfigurationError(
-            service_cls_name=service_cls_name, detail_msg=msg
-        )

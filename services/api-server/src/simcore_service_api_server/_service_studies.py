@@ -9,7 +9,8 @@ from models_library.rest_pagination import (
 from models_library.rpc_pagination import PageLimitInt
 from models_library.users import UserID
 
-from ._service_jobs import JobService, check_user_product_consistency
+from ._service_jobs import JobService
+from ._service_utils import check_user_product_consistency
 from .models.api_resources import compose_resource_name
 from .models.schemas.jobs import Job
 from .models.schemas.studies import StudyID
@@ -24,12 +25,11 @@ class StudyService:
     product_name: ProductName
 
     def __post_init__(self):
-        # Context check
         check_user_product_consistency(
             service_cls_name=self.__class__.__name__,
+            service_provider=self.job_service,
             user_id=self.user_id,
             product_name=self.product_name,
-            job_service=self.job_service,
         )
 
     async def list_jobs(

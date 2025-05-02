@@ -13,7 +13,8 @@ from models_library.services_enums import ServiceType
 from models_library.users import UserID
 from pydantic import NonNegativeInt, PositiveInt
 
-from ._service_jobs import JobService, check_user_product_consistency
+from ._service_jobs import JobService
+from ._service_utils import check_user_product_consistency
 from .exceptions.backend_errors import (
     ProgramOrSolverOrStudyNotFoundError,
 )
@@ -36,12 +37,18 @@ class SolverService:
     product_name: ProductName
 
     def __post_init__(self):
-        # Context check
         check_user_product_consistency(
             service_cls_name=self.__class__.__name__,
+            service_provider=self.catalog_service,
             user_id=self.user_id,
             product_name=self.product_name,
-            job_service=self.job_service,
+        )
+
+        check_user_product_consistency(
+            service_cls_name=self.__class__.__name__,
+            service_provider=self.job_service,
+            user_id=self.user_id,
+            product_name=self.product_name,
         )
 
     async def get_solver(
