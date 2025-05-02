@@ -10,6 +10,7 @@ from typing import Any, Final, cast
 
 import aiofiles
 import aiofiles.tempfile
+import aiohttp
 import arrow
 from aiodocker import Docker, DockerError
 from aiodocker.containers import DockerContainer
@@ -268,42 +269,57 @@ async def _parse_container_docker_logs(
     with log_context(
         logger, logging.DEBUG, "started monitoring of >=1.0 service - using docker logs"
     ):
-        async with aiofiles.tempfile.TemporaryDirectory() as tmp_dir:
-            log_file_path = (
-                Path(tmp_dir)
-                / f"{service_key.split(sep='/')[-1]}_{service_version}.logs"
+        assert isinstance(container.docker.connector, aiohttp.UnixConnector)  # nosec
+        async with Docker(
+            session=aiohttp.ClientSession(
+                connector=aiohttp.UnixConnector(container.docker.connector.path),
+                timeout=aiohttp.ClientTimeout(total=_AIODOCKER_LOGS_TIMEOUT_S),
             )
-            log_file_path.parent.mkdir(parents=True, exist_ok=True)
-            async with aiofiles.open(log_file_path, mode="wb+") as log_fp:
-                async for log_line in cast(
-                    AsyncGenerator[str, None],
-                    container.log(
-                        stdout=True,
-                        stderr=True,
-                        follow=True,
-                        timestamps=True,
-                        timeout=_AIODOCKER_LOGS_TIMEOUT_S,
-                    ),
-                ):
-                    log_msg_without_timestamp = log_line.split(" ", maxsplit=1)[1]
-                    logger.info(
-                        "[%s]: %s",
-                        f"{service_key}:{service_version} - {container.id}{container_name}",
-                        log_msg_without_timestamp,
-                    )
-                    await log_fp.write(log_line.encode("utf-8"))
-                    # NOTE: here we remove the timestamp, only needed for the file
-                    await _parse_and_publish_logs(
-                        log_msg_without_timestamp,
-                        task_publishers=task_publishers,
-                        progress_regexp=progress_regexp,
-                        progress_bar=progress_bar,
-                    )
+        ) as docker_client_for_logs:
+            # NOTE: this is a workaround for aiodocker not being able to get the container
+            # logs when the container is not running
+            container_for_long_running_logs = (
+                await docker_client_for_logs.containers.get(container.id)
+            )
+            # NOTE: this is a workaround for aiodocker not being able to get the container
+            # logs when the container is not running
+            await container.show()
+            await container_for_long_running_logs.show()
+            async with aiofiles.tempfile.TemporaryDirectory() as tmp_dir:
+                log_file_path = (
+                    Path(tmp_dir)
+                    / f"{service_key.split(sep='/')[-1]}_{service_version}.logs"
+                )
+                log_file_path.parent.mkdir(parents=True, exist_ok=True)
+                async with aiofiles.open(log_file_path, mode="wb+") as log_fp:
+                    async for log_line in cast(
+                        AsyncGenerator[str, None],
+                        container_for_long_running_logs.log(
+                            stdout=True,
+                            stderr=True,
+                            follow=True,
+                            timestamps=True,
+                        ),
+                    ):
+                        log_msg_without_timestamp = log_line.split(" ", maxsplit=1)[1]
+                        logger.info(
+                            "[%s]: %s",
+                            f"{service_key}:{service_version} - {container_for_long_running_logs.id}{container_name}",
+                            log_msg_without_timestamp,
+                        )
+                        await log_fp.write(log_line.encode("utf-8"))
+                        # NOTE: here we remove the timestamp, only needed for the file
+                        await _parse_and_publish_logs(
+                            log_msg_without_timestamp,
+                            task_publishers=task_publishers,
+                            progress_regexp=progress_regexp,
+                            progress_bar=progress_bar,
+                        )
 
-            # copy the log file to the log_file_url
-            await push_file_to_remote(
-                log_file_path, log_file_url, log_publishing_cb, s3_settings
-            )
+                # copy the log file to the log_file_url
+                await push_file_to_remote(
+                    log_file_path, log_file_url, log_publishing_cb, s3_settings
+                )
 
 
 async def _monitor_container_logs(  # noqa: PLR0913 # pylint: disable=too-many-arguments
@@ -325,6 +341,7 @@ async def _monitor_container_logs(  # noqa: PLR0913 # pylint: disable=too-many-a
     Services above are not creating a file and use the usual docker logging. These logs
     are retrieved using the usual cli 'docker logs CONTAINERID'
     """
+
     with log_catch(logger, reraise=False):
         container_info = await container.show()
         container_name = container_info.get("Name", "undefined")
