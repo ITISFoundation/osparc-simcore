@@ -39,6 +39,19 @@ from pydantic import (
 )
 
 
+# Message helper functions
+def print_info(message: str) -> None:
+    typer.secho(message, fg=typer.colors.BLUE)
+
+
+def print_success(message: str) -> None:
+    typer.secho(message, fg=typer.colors.GREEN)
+
+
+def print_error(message: str) -> None:
+    typer.secho(f"Error: {message}", fg=typer.colors.RED, err=True)
+
+
 class LoginCredentials(BaseModel):
     """Request body model for login endpoint"""
 
@@ -183,24 +196,15 @@ async def pre_register_users_from_file(
                 extras=user_data.extras,
             )
             results.append(result)
-            typer.secho(
-                f"Successfully pre-registered user: {user_data.email}",
-                fg=typer.colors.GREEN,
-            )
+            print_success(f"Successfully pre-registered user: {user_data.email}")
 
         except HTTPStatusError as e:
-            typer.secho(
-                f"Failed to pre-register user {user_data.email} with {e.response.status_code}: {e.response.text}",
-                fg=typer.colors.RED,
-                err=True,
+            print_error(
+                f"Failed to pre-register user {user_data.email} with {e.response.status_code}: {e.response.text}"
             )
 
         except Exception as e:
-            typer.secho(
-                f"Failed to pre-register user {user_data.email}: {str(e)}",
-                fg=typer.colors.RED,
-                err=True,
-            )
+            print_error(f"Failed to pre-register user {user_data.email}: {str(e)}")
 
     return results
 
@@ -222,25 +226,16 @@ async def create_invitations_from_list(
                 extra_credits=extra_credits,
             )
             results.append({"email": email, "invitation": result})
-            typer.secho(
-                f"Successfully generated invitation for: {email}",
-                fg=typer.colors.GREEN,
-            )
+            print_success(f"Successfully generated invitation for: {email}")
 
         except HTTPStatusError as e:
-            typer.secho(
-                f"Failed to generate invitation for {email} with {e.response.status_code}: {e.response.text}",
-                fg=typer.colors.RED,
-                err=True,
+            print_error(
+                f"Failed to generate invitation for {email} with {e.response.status_code}: {e.response.text}"
             )
             results.append({"email": email, "error": str(e)})
 
         except Exception as e:
-            typer.secho(
-                f"Failed to generate invitation for {email}: {str(e)}",
-                fg=typer.colors.RED,
-                err=True,
-            )
+            print_error(f"Failed to generate invitation for {email}: {str(e)}")
             results.append({"email": email, "error": str(e)})
 
     return results
@@ -260,30 +255,20 @@ async def run_pre_registration(
             users_data_raw
         )
     except json.JSONDecodeError:
-        typer.secho(
-            f"Error: {users_file_path} is not a valid JSON file",
-            fg=typer.colors.RED,
-            err=True,
-        )
+        print_error(f"{users_file_path} is not a valid JSON file")
         sys.exit(os.EX_DATAERR)
     except ValidationError as e:
-        typer.secho(
-            f"Error: Invalid user data format: {e}", fg=typer.colors.RED, err=True
-        )
+        print_error(f"Invalid user data format: {e}")
         sys.exit(os.EX_DATAERR)
     except Exception as e:
-        typer.secho(
-            f"Error reading or parsing {users_file_path}: {str(e)}",
-            fg=typer.colors.RED,
-            err=True,
-        )
+        print_error(f"Reading or parsing {users_file_path}: {str(e)}")
         sys.exit(os.EX_IOERR)
 
     # Create an HTTP client and process
     async with AsyncClient(base_url=base_url, timeout=30) as client:
         try:
             # Login as admin
-            typer.secho(f"Logging in as {admin_email}...", fg=typer.colors.BLUE)
+            print_info(f"Logging in as {admin_email}...")
             await login(
                 client=client,
                 email=admin_email,
@@ -291,14 +276,9 @@ async def run_pre_registration(
             )
 
             # Pre-register users
-            typer.secho(
-                f"Pre-registering {len(users_data)} users...", fg=typer.colors.BLUE
-            )
+            print_info(f"Pre-registering {len(users_data)} users...")
             results = await pre_register_users_from_file(client, users_data)
-            typer.secho(
-                f"Successfully pre-registered {len(results)} users",
-                fg=typer.colors.GREEN,
-            )
+            print_success(f"Successfully pre-registered {len(results)} users")
 
             # Dump results to a file
             timestamp = datetime.datetime.now(tz=datetime.UTC).strftime("%Y%m%d_%H%M%S")
@@ -307,17 +287,14 @@ async def run_pre_registration(
             output_path = users_file_path.parent / output_filename
 
             output_path.write_text(json.dumps(results, indent=1))
-            typer.secho(
-                f"Results written to {output_path}",
-                fg=typer.colors.GREEN,
-            )
+            print_success(f"Results written to {output_path}")
 
             # Logout
-            typer.secho("Logging out...", fg=typer.colors.BLUE)
+            print_info("Logging out...")
             await logout_current_user(client)
 
         except Exception as e:
-            typer.secho(f"Error: {str(e)}", fg=typer.colors.RED, err=True)
+            print_error(f"{str(e)}")
             sys.exit(os.EX_SOFTWARE)
 
 
@@ -333,7 +310,7 @@ async def run_generate_invitation(
     async with AsyncClient(base_url=base_url, timeout=30) as client:
         try:
             # Login as admin
-            typer.secho(f"Logging in as {admin_email}...", fg=typer.colors.BLUE)
+            print_info(f"Logging in as {admin_email}...")
             await login(
                 client=client,
                 email=admin_email,
@@ -341,46 +318,33 @@ async def run_generate_invitation(
             )
 
             # Generate invitation
-            typer.secho(
-                f"Generating invitation for {guest_email}...", fg=typer.colors.BLUE
-            )
+            print_info(f"Generating invitation for {guest_email}...")
             result = await create_invitation(
                 client, guest_email, trial_days=trial_days, extra_credits=extra_credits
             )
 
             # Display invitation link
-            typer.secho(
-                f"Successfully generated invitation for {guest_email}",
-                fg=typer.colors.GREEN,
-            )
-            typer.secho(
-                f"Invitation link: {result.get('link', 'No link returned')}",
-                fg=typer.colors.GREEN,
-            )
+            print_success(f"Successfully generated invitation for {guest_email}")
+            print_success(f"Invitation link: {result.get('link', 'No link returned')}")
 
             # Save result to a file
             timestamp = datetime.datetime.now(tz=datetime.UTC).strftime("%Y%m%d_%H%M%S")
             output_filename = f"invitation_{guest_email.split('@')[0]}_{timestamp}.json"
             output_path = Path(output_filename)
             output_path.write_text(json.dumps(result, indent=1))
-            typer.secho(
-                f"Result written to {output_path}",
-                fg=typer.colors.GREEN,
-            )
+            print_success(f"Result written to {output_path}")
 
             # Logout
-            typer.secho("Logging out...", fg=typer.colors.BLUE)
+            print_info("Logging out...")
             await logout_current_user(client)
 
         except HTTPStatusError as e:
-            typer.secho(
-                f"Failed to generate invitation with {e.response.status_code}: {e.response.text}",
-                fg=typer.colors.RED,
-                err=True,
+            print_error(
+                f"Failed to generate invitation with {e.response.status_code}: {e.response.text}"
             )
             sys.exit(os.EX_SOFTWARE)
         except Exception as e:
-            typer.secho(f"Error: {str(e)}", fg=typer.colors.RED, err=True)
+            print_error(f"{str(e)}")
             sys.exit(os.EX_SOFTWARE)
 
 
@@ -407,10 +371,8 @@ async def run_bulk_invitation(
                 # List of objects with email property (like pre-registered users)
                 data = [item["email"].lower() for item in data]
             else:
-                typer.secho(
-                    "Error: File must contain either a list of email strings or objects with 'email' property",
-                    fg=typer.colors.RED,
-                    err=True,
+                print_error(
+                    "File must contain either a list of email strings or objects with 'email' property"
                 )
                 sys.exit(os.EX_DATAERR)
 
@@ -418,40 +380,24 @@ async def run_bulk_invitation(
                 list[Annotated[BeforeValidator(lambda s: s.lower()), EmailStr]]
             ).validate_python(data)
         else:
-            typer.secho(
-                "Error: File must contain a JSON array",
-                fg=typer.colors.RED,
-                err=True,
-            )
+            print_error("File must contain a JSON array")
             sys.exit(os.EX_DATAERR)
 
     except json.JSONDecodeError:
-        typer.secho(
-            f"Error: {emails_file_path} is not a valid JSON file",
-            fg=typer.colors.RED,
-            err=True,
-        )
+        print_error(f"{emails_file_path} is not a valid JSON file")
         sys.exit(os.EX_DATAERR)
     except ValidationError as e:
-        typer.secho(
-            f"Error: Invalid email format: {e}",
-            fg=typer.colors.RED,
-            err=True,
-        )
+        print_error(f"Invalid email format: {e}")
         sys.exit(os.EX_DATAERR)
     except Exception as e:
-        typer.secho(
-            f"Error reading or parsing {emails_file_path}: {str(e)}",
-            fg=typer.colors.RED,
-            err=True,
-        )
+        print_error(f"Reading or parsing {emails_file_path}: {str(e)}")
         sys.exit(os.EX_IOERR)
 
     # Create an HTTP client and process
     async with AsyncClient(base_url=base_url, timeout=30) as client:
         try:
             # Login as admin
-            typer.secho(f"Logging in as {admin_email}...", fg=typer.colors.BLUE)
+            print_info(f"Logging in as {admin_email}...")
             await login(
                 client=client,
                 email=admin_email,
@@ -459,18 +405,14 @@ async def run_bulk_invitation(
             )
 
             # Generate invitations
-            typer.secho(
-                f"Generating invitations for {len(emails)} users...",
-                fg=typer.colors.BLUE,
-            )
+            print_info(f"Generating invitations for {len(emails)} users...")
             results = await create_invitations_from_list(
                 client, emails, trial_days=trial_days, extra_credits=extra_credits
             )
 
             successful = sum(1 for r in results if "invitation" in r)
-            typer.secho(
-                f"Successfully generated {successful} invitations out of {len(emails)} users",
-                fg=typer.colors.GREEN,
+            print_success(
+                f"Successfully generated {successful} invitations out of {len(emails)} users"
             )
 
             # Dump results to a file
@@ -480,17 +422,14 @@ async def run_bulk_invitation(
             output_path = emails_file_path.parent / output_filename
 
             output_path.write_text(json.dumps(results, indent=1))
-            typer.secho(
-                f"Results written to {output_path}",
-                fg=typer.colors.GREEN,
-            )
+            print_success(f"Results written to {output_path}")
 
             # Logout
-            typer.secho("Logging out...", fg=typer.colors.BLUE)
+            print_info("Logging out...")
             await logout_current_user(client)
 
         except Exception as e:
-            typer.secho(f"Error: {str(e)}", fg=typer.colors.RED, err=True)
+            print_error(f"{str(e)}")
             sys.exit(os.EX_SOFTWARE)
 
 
@@ -544,20 +483,15 @@ def pre_register(
     firstName, lastName, email, and optionally institution, phone, address, city, state, postalCode, country.
     """
     if not users_file.exists():
-        typer.secho(
-            f"Error: File {users_file} does not exist", fg=typer.colors.RED, err=True
-        )
-        raise typer.Exit(code=os.EX_NOINPUT)
+        print_error(f"File {users_file} does not exist")
+        sys.exit(os.EX_NOINPUT)
 
     if not admin_email:
         admin_email = typer.prompt("Admin email")
 
-    typer.secho(
-        f"Pre-registering users from {users_file} using {base_url}",
-        fg=typer.colors.BLUE,
-    )
+    print_info(f"Pre-registering users from {users_file} using {base_url}")
     asyncio.run(run_pre_registration(base_url, users_file, admin_email, admin_password))
-    typer.secho("Pre-registration completed", fg=typer.colors.GREEN)
+    print_success("Pre-registration completed")
 
 
 @app.command()
@@ -592,25 +526,14 @@ def invite(
 
     # Validate trial_days and extra_credits
     if trial_days is not None and trial_days <= 0:
-        typer.secho(
-            "Error: Trial days must be a positive integer",
-            fg=typer.colors.RED,
-            err=True,
-        )
-        raise typer.Exit(code=os.EX_USAGE)
+        print_error("Trial days must be a positive integer")
+        sys.exit(os.EX_USAGE)
 
     if extra_credits is not None and (extra_credits < 0 or extra_credits >= 500):
-        typer.secho(
-            "Error: Extra credits must be between 0 and 499",
-            fg=typer.colors.RED,
-            err=True,
-        )
-        raise typer.Exit(code=os.EX_USAGE)
+        print_error("Extra credits must be between 0 and 499")
+        sys.exit(os.EX_USAGE)
 
-    typer.secho(
-        f"Generating invitation for {guest_email} using {base_url}",
-        fg=typer.colors.BLUE,
-    )
+    print_info(f"Generating invitation for {guest_email} using {base_url}")
     asyncio.run(
         run_generate_invitation(
             base_url,
@@ -621,7 +544,7 @@ def invite(
             extra_credits,
         )
     )
-    typer.secho("Invitation generation completed", fg=typer.colors.GREEN)
+    print_success("Invitation generation completed")
 
 
 @app.command()
@@ -657,35 +580,22 @@ def invite_all(
     2. A list of objects with an email property: [{"email": "user1@example.com", ...}, ...]
     """
     if not emails_file.exists():
-        typer.secho(
-            f"Error: File {emails_file} does not exist", fg=typer.colors.RED, err=True
-        )
-        raise typer.Exit(code=os.EX_NOINPUT)
+        print_error(f"File {emails_file} does not exist")
+        sys.exit(os.EX_NOINPUT)
 
     if not admin_email:
         admin_email = typer.prompt("Admin email")
 
     # Validate trial_days and extra_credits
     if trial_days is not None and trial_days <= 0:
-        typer.secho(
-            "Error: Trial days must be a positive integer",
-            fg=typer.colors.RED,
-            err=True,
-        )
-        raise typer.Exit(code=os.EX_USAGE)
+        print_error("Trial days must be a positive integer")
+        sys.exit(os.EX_USAGE)
 
     if extra_credits is not None and (extra_credits < 0 or extra_credits >= 500):
-        typer.secho(
-            "Error: Extra credits must be between 0 and 499",
-            fg=typer.colors.RED,
-            err=True,
-        )
-        raise typer.Exit(code=os.EX_USAGE)
+        print_error("Extra credits must be between 0 and 499")
+        sys.exit(os.EX_USAGE)
 
-    typer.secho(
-        f"Generating invitations for users in {emails_file} using {base_url}",
-        fg=typer.colors.BLUE,
-    )
+    print_info(f"Generating invitations for users in {emails_file} using {base_url}")
     asyncio.run(
         run_bulk_invitation(
             base_url,
@@ -696,7 +606,7 @@ def invite_all(
             extra_credits,
         )
     )
-    typer.secho("Bulk invitation completed", fg=typer.colors.GREEN)
+    print_success("Bulk invitation completed")
 
 
 if __name__ == "__main__":
