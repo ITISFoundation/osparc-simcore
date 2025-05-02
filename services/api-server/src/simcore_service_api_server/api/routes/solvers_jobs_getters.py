@@ -18,12 +18,12 @@ from pydantic import HttpUrl, NonNegativeInt
 from pydantic.types import PositiveInt
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from servicelib.logging_utils import log_context
-from simcore_service_api_server.models.api_resources import parse_resources_ids
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..._service_solvers import SolverService
 from ...exceptions.custom_errors import InsufficientCreditsError, MissingWalletError
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
+from ...models.api_resources import parse_resources_ids
 from ...models.basic_types import LogStreamingResponse, VersionStr
 from ...models.domain.files import File as DomainFile
 from ...models.pagination import Page, PaginationParams

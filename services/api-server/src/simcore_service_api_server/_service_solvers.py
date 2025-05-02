@@ -12,14 +12,14 @@ from models_library.rpc_pagination import PageLimitInt
 from models_library.services_enums import ServiceType
 from models_library.users import UserID
 from pydantic import NonNegativeInt, PositiveInt
-from simcore_service_api_server.exceptions.backend_errors import (
-    ProgramOrSolverOrStudyNotFoundError,
-)
-from simcore_service_api_server.exceptions.custom_errors import (
-    SolverServiceListJobsFiltersError,
-)
 
 from ._service_jobs import JobService, check_user_product_consistency
+from .exceptions.backend_errors import (
+    ProgramOrSolverOrStudyNotFoundError,
+)
+from .exceptions.custom_errors import (
+    SolverServiceListJobsFiltersError,
+)
 from .models.api_resources import compose_resource_name
 from .models.schemas.jobs import Job
 from .models.schemas.solvers import Solver, SolverKeyId

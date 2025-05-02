@@ -6,13 +6,13 @@ from models_library.services_history import ServiceRelease
 from models_library.services_regex import DYNAMIC_SERVICE_KEY_RE
 from models_library.services_types import ServiceKey
 from pydantic import ConfigDict, StringConstraints
-from simcore_service_api_server.models.schemas._base import (
-    ApiServerOutputSchema,
-    BaseService,
-)
 
 from ..api_resources import compose_resource_name
 from ..basic_types import VersionStr
+from ._base import (
+    ApiServerOutputSchema,
+    BaseService,
+)
 
 # - API will add flexibility to identify solver resources using aliases. Analogously to docker images e.g. a/b == a/b:latest == a/b:2.3
 #

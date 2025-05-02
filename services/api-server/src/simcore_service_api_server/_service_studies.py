@@ -8,11 +8,11 @@ from models_library.rest_pagination import (
 )
 from models_library.rpc_pagination import PageLimitInt
 from models_library.users import UserID
-from simcore_service_api_server.models.schemas.studies import StudyID
 
 from ._service_jobs import JobService, check_user_product_consistency
 from .models.api_resources import compose_resource_name
 from .models.schemas.jobs import Job
+from .models.schemas.studies import StudyID
 
 DEFAULT_PAGINATION_LIMIT = MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE - 1
 

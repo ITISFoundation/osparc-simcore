@@ -7,11 +7,11 @@ from fastapi import Depends, HTTPException, Request, status
 from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.rabbitmq import RabbitMQRPCClient
-from simcore_service_api_server._service_programs import ProgramService
-from simcore_service_api_server._service_studies import StudyService
 
 from ..._service_jobs import JobService
+from ..._service_programs import ProgramService
 from ..._service_solvers import SolverService
+from ..._service_studies import StudyService
 from ...services_rpc.catalog import CatalogService
 from ...services_rpc.wb_api_server import WbApiRpcClient
 from ...utils.client_base import BaseServiceClientApi

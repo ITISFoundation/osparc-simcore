@@ -16,10 +16,10 @@ from models_library.projects_nodes import InputID, InputTypes
 from models_library.projects_nodes_io import NodeID
 from pydantic import HttpUrl, PositiveInt
 from servicelib.logging_utils import log_context
-from simcore_service_api_server._service_studies import StudyService
-from simcore_service_api_server.models.api_resources import parse_resources_ids
 
+from ..._service_studies import StudyService
 from ...exceptions.backend_errors import ProjectAlreadyStartedError
+from ...models.api_resources import parse_resources_ids
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.jobs import (

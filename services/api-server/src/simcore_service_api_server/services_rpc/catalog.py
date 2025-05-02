@@ -23,12 +23,12 @@ from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogForbiddenError,
     CatalogItemNotFoundError,
 )
-from simcore_service_api_server.exceptions.backend_errors import (
+
+from ..exceptions.backend_errors import (
     InvalidInputError,
     ProgramOrSolverOrStudyNotFoundError,
     ServiceForbiddenAccessError,
 )
-
 from ..exceptions.service_errors_utils import service_exception_mapper
 
 _exception_mapper = partial(service_exception_mapper, service_name="CatalogService")
