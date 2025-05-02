@@ -90,6 +90,7 @@ def _print_dynamic_instances(
     instances: list[DynamicInstance],
     environment: dict[str, str | None],
     aws_region: str,
+    output: Path | None,
 ) -> None:
     time_now = arrow.utcnow()
     table = Table(
@@ -152,13 +153,18 @@ def _print_dynamic_instances(
             f"{_create_graylog_permalinks(environment, instance.ec2_instance)}",
             end_section=True,
         )
-    rich.print(table, flush=True)
+    if output:
+        with output.open("w") as fp:
+            rich.print(table, flush=True, file=fp)
+    else:
+        rich.print(table, flush=True)
 
 
 def _print_computational_clusters(
     clusters: list[ComputationalCluster],
     environment: dict[str, str | None],
     aws_region: str,
+    output: Path | None,
 ) -> None:
     time_now = arrow.utcnow()
     table = Table(
@@ -245,7 +251,11 @@ def _print_computational_clusters(
                 ),
             )
         table.add_row(end_section=True)
-    rich.print(table)
+    if output:
+        with output.open("a") as fp:
+            rich.print(table, file=fp)
+    else:
+        rich.print(table)
 
 
 async def _fetch_instance_details(
@@ -416,6 +426,7 @@ async def _parse_dynamic_instances(
 def _print_summary_as_json(
     dynamic_instances: list[DynamicInstance],
     computational_clusters: list[ComputationalCluster],
+    output: Path | None,
 ) -> None:
     result = {
         "dynamic_instances": [
@@ -462,11 +473,20 @@ def _print_summary_as_json(
             for cluster in computational_clusters
         ],
     }
-    rich.print_json(json.dumps(result))
+
+    if output:
+        output.write_text(json.dumps(result))
+    else:
+        rich.print_json(json.dumps(result))
 
 
 async def summary(
-    state: AppState, user_id: int | None, wallet_id: int | None, *, output_json: bool
+    state: AppState,
+    user_id: int | None,
+    wallet_id: int | None,
+    *,
+    output_json: bool,
+    output: Path | None,
 ) -> bool:
     # get all the running instances
     assert state.ec2_resource_autoscaling
@@ -486,18 +506,22 @@ async def summary(
     )
 
     if output_json:
-        _print_summary_as_json(dynamic_autoscaled_instances, computational_clusters)
+        _print_summary_as_json(
+            dynamic_autoscaled_instances, computational_clusters, output=output
+        )
 
     if not output_json:
         _print_dynamic_instances(
             dynamic_autoscaled_instances,
             state.environment,
             state.ec2_resource_autoscaling.meta.client.meta.region_name,
+            output=output,
         )
         _print_computational_clusters(
             computational_clusters,
             state.environment,
             state.ec2_resource_clusters_keeper.meta.client.meta.region_name,
+            output=output,
         )
 
     time_threshold = arrow.utcnow().shift(minutes=-30).datetime
