@@ -47,7 +47,7 @@ class NewEndpoint(ChangelogEntryAbstract):
         self.version = version
 
     def to_string(self) -> str:
-        return f"New in *version {self.version}*\n"
+        return f"New in *version {self.version}*"
 
     def get_version(self) -> Version:
         return Version(self.version)
@@ -63,7 +63,7 @@ class ChangedEndpoint(ChangelogEntryAbstract):
         self.message = message
 
     def to_string(self) -> str:
-        return f"Changed in *version {self.version}*: {self.message}\n"
+        return f"Changed in *version {self.version}*: {self.message}"
 
     def get_version(self) -> Version:
         return Version(self.version)
@@ -85,7 +85,7 @@ class DeprecatedEndpoint(ChangelogEntryAbstract):
 
         return (
             f"{base_message}: This endpoint is deprecated and will be removed in a future release.\n"
-            f"Please use `{self.alternative_route}` instead.\n\n"
+            f"Please use `{self.alternative_route}` instead."
         )
 
     def get_version(self) -> Version | None:
@@ -102,7 +102,7 @@ class RetiredEndpoint(ChangelogEntryAbstract):
         self.message = message
 
     def to_string(self) -> str:
-        return f"Retired in *version {self.version}*: {self.message}\n"
+        return f"Retired in *version {self.version}*: {self.message}"
 
     def get_version(self) -> Version:
         return Version(self.version)
@@ -129,7 +129,7 @@ def create_route_description(
         parts.append(base)
 
     if changelog:
-        changelog_strings = [entry.to_string() for entry in changelog]
+        changelog_strings = [f"> {entry.to_string()}" for entry in changelog]
         parts.append("\n".join(changelog_strings))
 
     return "\n\n".join(parts)
