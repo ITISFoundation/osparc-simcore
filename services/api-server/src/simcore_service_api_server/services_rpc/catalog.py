@@ -71,7 +71,7 @@ class CatalogService:
         )
         return page.data, meta
 
-    async def list_release_history(
+    async def list_release_history_latest_first(
         self,
         *,
         product_name: ProductName,
@@ -81,7 +81,7 @@ class CatalogService:
         limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     ) -> tuple[list[ServiceRelease], PageMetaInfoLimitOffset]:
 
-        page = await catalog_rpc.list_my_service_history_paginated(
+        page = await catalog_rpc.list_my_service_history_latest_first(
             self._client,
             product_name=product_name,
             user_id=user_id,
