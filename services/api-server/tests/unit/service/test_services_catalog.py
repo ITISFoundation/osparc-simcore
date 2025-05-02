@@ -43,7 +43,7 @@ async def test_catalog_service_read_solvers(
 
     # Step 2: Select one release and list solver releases
     selected_solver = solver_releases_page[0]
-    releases, meta = await catalog_service.list_release_history(
+    releases, meta = await catalog_service.list_release_history_latest_first(
         service_key=selected_solver.id,
     )
     assert releases, "Solver releases should not be empty"
