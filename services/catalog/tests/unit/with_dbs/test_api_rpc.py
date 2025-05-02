@@ -560,7 +560,7 @@ async def test_rpc_list_my_service_history_paginated(
     await services_db_tables_injector(fake_releases + unrelated_releases)
 
     # Call the RPC function
-    page = await catalog_rpc.list_my_service_history_paginated(
+    page = await catalog_rpc.list_my_service_history_latest_first(
         rpc_client,
         product_name=product_name,
         user_id=user_id,
