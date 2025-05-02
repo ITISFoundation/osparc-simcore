@@ -1,4 +1,3 @@
-from common_library.pagination_tools import iter_pagination_params
 from models_library.api_schemas_catalog.services import ServiceListFilters
 from models_library.basic_types import VersionStr
 from models_library.products import ProductName
@@ -10,10 +9,11 @@ from models_library.rest_pagination import (
 )
 from models_library.rpc_pagination import PageLimitInt
 from models_library.services_enums import ServiceType
-from models_library.services_history import ServiceRelease
 from models_library.users import UserID
-from packaging.version import Version
 from pydantic import NonNegativeInt, PositiveInt
+from simcore_service_api_server.exceptions.backend_errors import (
+    ProgramOrSolverOrStudyNotFoundError,
+)
 from simcore_service_api_server.exceptions.custom_errors import (
     SolverServiceListJobsFiltersError,
 )
@@ -69,23 +69,20 @@ class SolverService:
         user_id: int,
         solver_key: SolverKeyId,
     ) -> Solver:
-        service_releases: list[ServiceRelease] = []
-        for page_params in iter_pagination_params(limit=DEFAULT_PAGINATION_LIMIT):
-            releases, page_meta = await self._catalog_service.list_release_history(
-                user_id=user_id,
-                service_key=solver_key,
-                product_name=product_name,
-                offset=page_params.offset,
-                limit=page_params.limit,
-            )
-            page_params.total_number_of_items = page_meta.total
-            service_releases.extend(releases)
+        releases, _ = await self._catalog_service.list_release_history_latest_first(
+            user_id=user_id,
+            service_key=solver_key,
+            product_name=product_name,
+            offset=0,
+            limit=1,
+        )
 
-        release = sorted(service_releases, key=lambda s: Version(s.version))[-1]
+        if len(releases) == 0:
+            raise ProgramOrSolverOrStudyNotFoundError(name=solver_key, version="latest")
         service = await self._catalog_service.get(
             user_id=user_id,
             name=solver_key,
-            version=release.version,
+            version=releases[0].version,
             product_name=product_name,
         )
 
@@ -171,12 +168,14 @@ class SolverService:
         limit: PositiveInt,
     ) -> tuple[list[Solver], PageMetaInfoLimitOffset]:
 
-        releases, page_meta = await self._catalog_service.list_release_history(
-            user_id=user_id,
-            service_key=solver_key,
-            product_name=product_name,
-            offset=offset,
-            limit=limit,
+        releases, page_meta = (
+            await self._catalog_service.list_release_history_latest_first(
+                user_id=user_id,
+                service_key=solver_key,
+                product_name=product_name,
+                offset=offset,
+                limit=limit,
+            )
         )
 
         service_instance = await self._catalog_service.get(

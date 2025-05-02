@@ -1,9 +1,12 @@
+# pylint: disable=no-self-use
 # pylint: disable=not-context-manager
 # pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+
+from dataclasses import dataclass
 
 from models_library.api_schemas_catalog.services import (
     LatestServiceGet,
@@ -122,7 +125,7 @@ class CatalogRpcSideEffects:
         return got.model_copy(update=update.model_dump(exclude_unset=True))
 
     @validate_call(config={"arbitrary_types_allowed": True})
-    async def list_my_service_history_paginated(
+    async def list_my_service_history_latest_first(
         self,
         rpc_client: RabbitMQRPCClient | MockType,
         *,
@@ -170,4 +173,21 @@ class CatalogRpcSideEffects:
 
         return TypeAdapter(list[ServicePortGet]).validate_python(
             ServicePortGet.model_json_schema()["examples"],
+        )
+
+
+@dataclass
+class ZeroListingCatalogRpcSideEffects:
+    """Catalog RPC mocks that return empty lists"""
+
+    async def list_services_paginated(self, *args, **kwargs): ...
+    async def get_service(self, *args, **kwargs): ...
+    async def update_service(self, *args, **kwargs): ...
+    async def get_service_ports(self, *args, **kwargs): ...
+    async def list_my_service_history_latest_first(self, *args, **kwargs):
+        return PageRpc[ServiceRelease].create(
+            [],
+            total=0,
+            limit=10,
+            offset=0,
         )

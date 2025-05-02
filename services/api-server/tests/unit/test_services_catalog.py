@@ -49,7 +49,7 @@ async def test_catalog_service_read_solvers(
 
     # Step 2: Select one release and list solver releases
     selected_solver = solver_releases_page[0]
-    releases, meta = await catalog_service.list_release_history(
+    releases, meta = await catalog_service.list_release_history_latest_first(
         product_name=product_name,
         user_id=user_id,
         service_key=selected_solver.id,
@@ -85,6 +85,6 @@ async def test_catalog_service_read_solvers(
 
     # checks calls to rpc
     mocked_catalog_rpc_api["list_services_paginated"].assert_called_once()
-    mocked_catalog_rpc_api["list_my_service_history_paginated"].assert_called_once()
+    mocked_catalog_rpc_api["list_my_service_history_latest_first"].assert_called_once()
     mocked_catalog_rpc_api["get_service"].assert_called_once()
     mocked_catalog_rpc_api["get_service_ports"].assert_called_once()
