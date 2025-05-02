@@ -39,27 +39,25 @@ from pydantic import (
 )
 
 
-# Message helper functions
-def print_info(message: str) -> None:
+def _print_info(message: str) -> None:
     typer.secho(message, fg=typer.colors.BLUE)
 
 
-def print_success(message: str) -> None:
+def _print_success(message: str) -> None:
     typer.secho(message, fg=typer.colors.GREEN)
 
 
-def print_error(message: str) -> None:
+def _print_error(message: str) -> None:
     typer.secho(f"Error: {message}", fg=typer.colors.RED, err=True)
 
 
-class LoginCredentials(BaseModel):
+class LoginCredentialsRequest(BaseModel):
     """Request body model for login endpoint"""
 
     email: EmailStr
     password: SecretStr
 
 
-# TODO: move classes to models-library from webserver and use them here
 class PreRegisterUserRequest(BaseModel):
     """Request body model for pre-registering a user"""
 
@@ -90,7 +88,7 @@ async def _login(
     """Login user with the provided credentials"""
     path = "/v0/auth/login"
 
-    credentials = LoginCredentials(email=email, password=password)
+    credentials = LoginCredentialsRequest(email=email, password=password)
 
     response = await client.post(
         path,
@@ -196,15 +194,15 @@ async def _pre_register_users_from_list(
                 extras=user_data.extras,
             )
             results.append(result)
-            print_success(f"Successfully pre-registered user: {user_data.email}")
+            _print_success(f"Successfully pre-registered user: {user_data.email}")
 
         except HTTPStatusError as e:
-            print_error(
+            _print_error(
                 f"Failed to pre-register user {user_data.email} with {e.response.status_code}: {e.response.text}"
             )
 
         except Exception as e:
-            print_error(f"Failed to pre-register user {user_data.email}: {str(e)}")
+            _print_error(f"Failed to pre-register user {user_data.email}: {str(e)}")
 
     return results
 
@@ -226,16 +224,16 @@ async def _create_invitations_from_list(
                 extra_credits=extra_credits,
             )
             results.append({"email": email, "invitation": result})
-            print_success(f"Successfully generated invitation for: {email}")
+            _print_success(f"Successfully generated invitation for: {email}")
 
         except HTTPStatusError as e:
-            print_error(
+            _print_error(
                 f"Failed to generate invitation for {email} with {e.response.status_code}: {e.response.text}"
             )
             results.append({"email": email, "error": str(e)})
 
         except Exception as e:
-            print_error(f"Failed to generate invitation for {email}: {str(e)}")
+            _print_error(f"Failed to generate invitation for {email}: {str(e)}")
             results.append({"email": email, "error": str(e)})
 
     return results
@@ -255,20 +253,20 @@ async def run_pre_registration(
             users_data_raw
         )
     except json.JSONDecodeError:
-        print_error(f"{users_file_path} is not a valid JSON file")
+        _print_error(f"{users_file_path} is not a valid JSON file")
         sys.exit(os.EX_DATAERR)
     except ValidationError as e:
-        print_error(f"Invalid user data format: {e}")
+        _print_error(f"Invalid user data format: {e}")
         sys.exit(os.EX_DATAERR)
     except Exception as e:
-        print_error(f"Reading or parsing {users_file_path}: {str(e)}")
+        _print_error(f"Reading or parsing {users_file_path}: {str(e)}")
         sys.exit(os.EX_IOERR)
 
     # Create an HTTP client and process
     async with AsyncClient(base_url=base_url, timeout=30) as client:
         try:
             # Login as admin
-            print_info(f"Logging in as {admin_email}...")
+            _print_info(f"Logging in as {admin_email}...")
             await _login(
                 client=client,
                 email=admin_email,
@@ -276,9 +274,9 @@ async def run_pre_registration(
             )
 
             # Pre-register users
-            print_info(f"Pre-registering {len(users_data)} users...")
+            _print_info(f"Pre-registering {len(users_data)} users...")
             results = await _pre_register_users_from_list(client, users_data)
-            print_success(f"Successfully pre-registered {len(results)} users")
+            _print_success(f"Successfully pre-registered {len(results)} users")
 
             # Dump results to a file
             timestamp = datetime.datetime.now(tz=datetime.UTC).strftime("%Y%m%d_%H%M%S")
@@ -287,14 +285,14 @@ async def run_pre_registration(
             output_path = users_file_path.parent / output_filename
 
             output_path.write_text(json.dumps(results, indent=1))
-            print_success(f"Results written to {output_path}")
+            _print_success(f"Results written to {output_path}")
 
             # Logout
-            print_info("Logging out...")
+            _print_info("Logging out...")
             await _logout_current_user(client)
 
         except Exception as e:
-            print_error(f"{str(e)}")
+            _print_error(f"{str(e)}")
             sys.exit(os.EX_SOFTWARE)
 
 
@@ -310,7 +308,7 @@ async def run_create_invitation(
     async with AsyncClient(base_url=base_url, timeout=30) as client:
         try:
             # Login as admin
-            print_info(f"Logging in as {admin_email}...")
+            _print_info(f"Logging in as {admin_email}...")
             await _login(
                 client=client,
                 email=admin_email,
@@ -318,33 +316,33 @@ async def run_create_invitation(
             )
 
             # Generate invitation
-            print_info(f"Generating invitation for {guest_email}...")
+            _print_info(f"Generating invitation for {guest_email}...")
             result = await _create_invitation(
                 client, guest_email, trial_days=trial_days, extra_credits=extra_credits
             )
 
             # Display invitation link
-            print_success(f"Successfully generated invitation for {guest_email}")
-            print_success(f"Invitation link: {result.get('link', 'No link returned')}")
+            _print_success(f"Successfully generated invitation for {guest_email}")
+            _print_success(f"Invitation link: {result.get('link', 'No link returned')}")
 
             # Save result to a file
             timestamp = datetime.datetime.now(tz=datetime.UTC).strftime("%Y%m%d_%H%M%S")
             output_filename = f"invitation_{guest_email.split('@')[0]}_{timestamp}.json"
             output_path = Path(output_filename)
             output_path.write_text(json.dumps(result, indent=1))
-            print_success(f"Result written to {output_path}")
+            _print_success(f"Result written to {output_path}")
 
             # Logout
-            print_info("Logging out...")
+            _print_info("Logging out...")
             await _logout_current_user(client)
 
         except HTTPStatusError as e:
-            print_error(
+            _print_error(
                 f"Failed to generate invitation with {e.response.status_code}: {e.response.text}"
             )
             sys.exit(os.EX_SOFTWARE)
         except Exception as e:
-            print_error(f"{str(e)}")
+            _print_error(f"{str(e)}")
             sys.exit(os.EX_SOFTWARE)
 
 
@@ -371,7 +369,7 @@ async def run_bulk_create_invitation(
                 # List of objects with email property (like pre-registered users)
                 data = [item["email"].lower() for item in data]
             else:
-                print_error(
+                _print_error(
                     "File must contain either a list of email strings or objects with 'email' property"
                 )
                 sys.exit(os.EX_DATAERR)
@@ -380,24 +378,24 @@ async def run_bulk_create_invitation(
                 list[Annotated[BeforeValidator(lambda s: s.lower()), EmailStr]]
             ).validate_python(data)
         else:
-            print_error("File must contain a JSON array")
+            _print_error("File must contain a JSON array")
             sys.exit(os.EX_DATAERR)
 
     except json.JSONDecodeError:
-        print_error(f"{emails_file_path} is not a valid JSON file")
+        _print_error(f"{emails_file_path} is not a valid JSON file")
         sys.exit(os.EX_DATAERR)
     except ValidationError as e:
-        print_error(f"Invalid email format: {e}")
+        _print_error(f"Invalid email format: {e}")
         sys.exit(os.EX_DATAERR)
     except Exception as e:
-        print_error(f"Reading or parsing {emails_file_path}: {str(e)}")
+        _print_error(f"Reading or parsing {emails_file_path}: {str(e)}")
         sys.exit(os.EX_IOERR)
 
     # Create an HTTP client and process
     async with AsyncClient(base_url=base_url, timeout=30) as client:
         try:
             # Login as admin
-            print_info(f"Logging in as {admin_email}...")
+            _print_info(f"Logging in as {admin_email}...")
             await _login(
                 client=client,
                 email=admin_email,
@@ -405,13 +403,13 @@ async def run_bulk_create_invitation(
             )
 
             # Generate invitations
-            print_info(f"Generating invitations for {len(emails)} users...")
+            _print_info(f"Generating invitations for {len(emails)} users...")
             results = await _create_invitations_from_list(
                 client, emails, trial_days=trial_days, extra_credits=extra_credits
             )
 
             successful = sum(1 for r in results if "invitation" in r)
-            print_success(
+            _print_success(
                 f"Successfully generated {successful} invitations out of {len(emails)} users"
             )
 
@@ -422,14 +420,14 @@ async def run_bulk_create_invitation(
             output_path = emails_file_path.parent / output_filename
 
             output_path.write_text(json.dumps(results, indent=1))
-            print_success(f"Results written to {output_path}")
+            _print_success(f"Results written to {output_path}")
 
             # Logout
-            print_info("Logging out...")
+            _print_info("Logging out...")
             await _logout_current_user(client)
 
         except Exception as e:
-            print_error(f"{str(e)}")
+            _print_error(f"{str(e)}")
             sys.exit(os.EX_SOFTWARE)
 
 
@@ -483,15 +481,15 @@ def pre_register(
     firstName, lastName, email, and optionally institution, phone, address, city, state, postalCode, country.
     """
     if not users_file.exists():
-        print_error(f"File {users_file} does not exist")
+        _print_error(f"File {users_file} does not exist")
         sys.exit(os.EX_NOINPUT)
 
     if not admin_email:
         admin_email = typer.prompt("Admin email")
 
-    print_info(f"Pre-registering users from {users_file} using {base_url}")
+    _print_info(f"Pre-registering users from {users_file} using {base_url}")
     asyncio.run(run_pre_registration(base_url, users_file, admin_email, admin_password))
-    print_success("Pre-registration completed")
+    _print_success("Pre-registration completed")
 
 
 @app.command()
@@ -526,14 +524,14 @@ def invite(
 
     # Validate trial_days and extra_credits
     if trial_days is not None and trial_days <= 0:
-        print_error("Trial days must be a positive integer")
+        _print_error("Trial days must be a positive integer")
         sys.exit(os.EX_USAGE)
 
     if extra_credits is not None and (extra_credits < 0 or extra_credits >= 500):
-        print_error("Extra credits must be between 0 and 499")
+        _print_error("Extra credits must be between 0 and 499")
         sys.exit(os.EX_USAGE)
 
-    print_info(f"Generating invitation for {guest_email} using {base_url}")
+    _print_info(f"Generating invitation for {guest_email} using {base_url}")
     asyncio.run(
         run_create_invitation(
             base_url,
@@ -544,7 +542,7 @@ def invite(
             extra_credits,
         )
     )
-    print_success("Invitation generation completed")
+    _print_success("Invitation generation completed")
 
 
 @app.command()
@@ -580,7 +578,7 @@ def invite_all(
     2. A list of objects with an email property: [{"email": "user1@example.com", ...}, ...]
     """
     if not emails_file.exists():
-        print_error(f"File {emails_file} does not exist")
+        _print_error(f"File {emails_file} does not exist")
         sys.exit(os.EX_NOINPUT)
 
     if not admin_email:
@@ -588,14 +586,14 @@ def invite_all(
 
     # Validate trial_days and extra_credits
     if trial_days is not None and trial_days <= 0:
-        print_error("Trial days must be a positive integer")
+        _print_error("Trial days must be a positive integer")
         sys.exit(os.EX_USAGE)
 
     if extra_credits is not None and (extra_credits < 0 or extra_credits >= 500):
-        print_error("Extra credits must be between 0 and 499")
+        _print_error("Extra credits must be between 0 and 499")
         sys.exit(os.EX_USAGE)
 
-    print_info(f"Generating invitations for users in {emails_file} using {base_url}")
+    _print_info(f"Generating invitations for users in {emails_file} using {base_url}")
     asyncio.run(
         run_bulk_create_invitation(
             base_url,
@@ -606,7 +604,7 @@ def invite_all(
             extra_credits,
         )
     )
-    print_success("Bulk invitation completed")
+    _print_success("Bulk invitation completed")
 
 
 if __name__ == "__main__":
