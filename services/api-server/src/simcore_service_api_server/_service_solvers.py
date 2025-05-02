@@ -66,9 +66,9 @@ class SolverService:
         solver_key: SolverKeyId,
     ) -> Solver:
         releases, _ = await self.catalog_service.list_release_history_latest_first(
-            service_key=solver_key,
-            offset=0,
-            limit=1,
+            filter_by_service_key=solver_key,
+            pagination_offset=0,
+            pagination_limit=1,
         )
 
         if len(releases) == 0:
@@ -121,9 +121,9 @@ class SolverService:
 
         releases, page_meta = (
             await self.catalog_service.list_release_history_latest_first(
-                service_key=solver_key,
-                offset=offset,
-                limit=limit,
+                filter_by_service_key=solver_key,
+                pagination_offset=offset,
+                pagination_limit=limit,
             )
         )
 
@@ -151,8 +151,8 @@ class SolverService:
     ) -> tuple[list[Solver], PageMetaInfoLimitOffset]:
         """Lists the latest solvers with pagination."""
         services, page_meta = await self.catalog_service.list_latest_releases(
-            offset=offset,
-            limit=limit,
+            pagination_offset=offset,
+            pagination_limit=limit,
             filters=ServiceListFilters(service_type=ServiceType.COMPUTATIONAL),
         )
 

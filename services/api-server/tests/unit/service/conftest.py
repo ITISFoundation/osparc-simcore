@@ -110,7 +110,7 @@ def catalog_service(
     user_id: UserID,
 ) -> CatalogService:
     return CatalogService(
-        rpc_client=mocked_rpc_client, user_id=user_id, product_name=product_name
+        _rpc_client=mocked_rpc_client, user_id=user_id, product_name=product_name
     )
 
 

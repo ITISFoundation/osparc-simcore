@@ -35,8 +35,8 @@ class ProgramService:
         pagination_limit: PositiveInt,
     ) -> tuple[list[Program], PageMetaInfoLimitOffset]:
         page, page_meta = await self.catalog_service.list_latest_releases(
-            offset=pagination_offset,
-            limit=pagination_limit,
+            pagination_offset=pagination_offset,
+            pagination_limit=pagination_limit,
             filters=ServiceListFilters(service_type=ServiceType.DYNAMIC),
         )
 
@@ -51,9 +51,9 @@ class ProgramService:
         limit: PositiveInt,
     ) -> tuple[list[Program], PageMetaInfoLimitOffset]:
         page, page_meta = await self.catalog_service.list_release_history_latest_first(
-            service_key=program_key,
-            offset=offset,
-            limit=limit,
+            filter_by_service_key=program_key,
+            pagination_offset=offset,
+            pagination_limit=limit,
         )
         if len(page) == 0:
             return [], page_meta

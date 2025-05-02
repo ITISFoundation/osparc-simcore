@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from functools import partial
 
 from models_library.api_schemas_catalog.services import (
@@ -34,39 +35,26 @@ from ..exceptions.service_errors_utils import service_exception_mapper
 _exception_mapper = partial(service_exception_mapper, service_name="CatalogService")
 
 
+@dataclass(frozen=True, kw_only=True)
 class CatalogService:
-    _client: RabbitMQRPCClient
-
-    # context
-    _user_id: UserID
-    _product_name: ProductName
-
-    def __init__(
-        self,
-        *,
-        rpc_client: RabbitMQRPCClient,
-        user_id: UserID,
-        product_name: ProductName,
-    ):
-        self._client = rpc_client
-
-        self._user_id = user_id
-        self._product_name = product_name
+    _rpc_client: RabbitMQRPCClient
+    user_id: UserID
+    product_name: ProductName
 
     async def list_latest_releases(
         self,
         *,
-        offset: PageOffsetInt = 0,
-        limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+        pagination_offset: PageOffsetInt = 0,
+        pagination_limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
         filters: ServiceListFilters | None = None,
     ) -> tuple[list[LatestServiceGet], PageMetaInfoLimitOffset]:
 
         page = await catalog_rpc.list_services_paginated(
-            self._client,
-            product_name=self._product_name,
-            user_id=self._user_id,
-            offset=offset,
-            limit=limit,
+            self._rpc_client,
+            product_name=self.product_name,
+            user_id=self.user_id,
+            offset=pagination_offset,
+            limit=pagination_limit,
             filters=filters,
         )
         meta = PageMetaInfoLimitOffset(
@@ -80,18 +68,18 @@ class CatalogService:
     async def list_release_history_latest_first(
         self,
         *,
-        service_key: ServiceKey,
-        offset: PageOffsetInt = 0,
-        limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+        filter_by_service_key: ServiceKey,
+        pagination_offset: PageOffsetInt = 0,
+        pagination_limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     ) -> tuple[list[ServiceRelease], PageMetaInfoLimitOffset]:
 
         page = await catalog_rpc.list_my_service_history_latest_first(
-            self._client,
-            product_name=self._product_name,
-            user_id=self._user_id,
-            service_key=service_key,
-            offset=offset,
-            limit=limit,
+            self._rpc_client,
+            product_name=self.product_name,
+            user_id=self.user_id,
+            service_key=filter_by_service_key,
+            offset=pagination_offset,
+            limit=pagination_limit,
         )
         meta = PageMetaInfoLimitOffset(
             limit=page.meta.limit,
@@ -116,9 +104,9 @@ class CatalogService:
     ) -> ServiceGetV2:
 
         return await catalog_rpc.get_service(
-            self._client,
-            product_name=self._product_name,
-            user_id=self._user_id,
+            self._rpc_client,
+            product_name=self.product_name,
+            user_id=self.user_id,
             service_key=name,
             service_version=version,
         )
@@ -144,9 +132,9 @@ class CatalogService:
             InvalidInputError: invalid input parameters
         """
         return await catalog_rpc.get_service_ports(
-            self._client,
-            product_name=self._product_name,
-            user_id=self._user_id,
+            self._rpc_client,
+            product_name=self.product_name,
+            user_id=self.user_id,
             service_key=name,
             service_version=version,
         )

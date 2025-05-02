@@ -56,7 +56,7 @@ def get_catalog_service(
     in the context of the rest controller (i.e. api/dependencies)
     """
     return CatalogService(
-        rpc_client=rpc_client, user_id=user_id, product_name=product_name
+        _rpc_client=rpc_client, user_id=user_id, product_name=product_name
     )
 
 
@@ -112,5 +112,5 @@ def get_program_service(
     catalog_service: Annotated[CatalogService, Depends(get_catalog_service)],
 ) -> ProgramService:
     return ProgramService(
-        _catalog_service=catalog_service,
+        catalog_service=catalog_service,
     )
