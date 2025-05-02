@@ -29,6 +29,7 @@ import typer
 from httpx import AsyncClient, HTTPStatusError
 from pydantic import (
     BaseModel,
+    BeforeValidator,
     EmailStr,
     Field,
     PositiveInt,
@@ -91,7 +92,7 @@ async def login(
 
 
 async def logout_current_user(client: AsyncClient):
-    path = "/auth/logout"
+    path = "/v0/auth/logout"
     r = await client.post(path)
     r.raise_for_status()
 
@@ -133,7 +134,7 @@ async def pre_register_user(
     return response.json()["data"]
 
 
-async def generate_invitation(
+async def create_invitation(
     client: AsyncClient,
     guest_email: EmailStr,
     trial_days: PositiveInt | None = None,
@@ -204,7 +205,7 @@ async def pre_register_users_from_file(
     return results
 
 
-async def generate_invitations_from_list(
+async def create_invitations_from_list(
     client: AsyncClient,
     emails: list[EmailStr],
     trial_days: PositiveInt | None = None,
@@ -214,7 +215,7 @@ async def generate_invitations_from_list(
     results = []
     for email in emails:
         try:
-            result = await generate_invitation(
+            result = await create_invitation(
                 client=client,
                 guest_email=email,
                 trial_days=trial_days,
@@ -343,7 +344,7 @@ async def run_generate_invitation(
             typer.secho(
                 f"Generating invitation for {guest_email}...", fg=typer.colors.BLUE
             )
-            result = await generate_invitation(
+            result = await create_invitation(
                 client, guest_email, trial_days=trial_days, extra_credits=extra_credits
             )
 
@@ -401,10 +402,10 @@ async def run_bulk_invitation(
         if isinstance(data, list):
             if all(isinstance(item, str) for item in data):
                 # Simple list of email strings
-                emails = TypeAdapter(list[EmailStr]).validate_python(data)
+                data = data
             elif all(isinstance(item, dict) and "email" in item for item in data):
                 # List of objects with email property (like pre-registered users)
-                emails = [item["email"] for item in data]
+                data = [item["email"].lower() for item in data]
             else:
                 typer.secho(
                     "Error: File must contain either a list of email strings or objects with 'email' property",
@@ -412,6 +413,10 @@ async def run_bulk_invitation(
                     err=True,
                 )
                 sys.exit(os.EX_DATAERR)
+
+            emails = TypeAdapter(
+                list[Annotated[BeforeValidator(lambda s: s.lower()), EmailStr]]
+            ).validate_python(data)
         else:
             typer.secho(
                 "Error: File must contain a JSON array",
@@ -428,7 +433,11 @@ async def run_bulk_invitation(
         )
         sys.exit(os.EX_DATAERR)
     except ValidationError as e:
-        typer.secho(f"Error: Invalid email format: {e}", fg=typer.colors.RED, err=True)
+        typer.secho(
+            f"Error: Invalid email format: {e}",
+            fg=typer.colors.RED,
+            err=True,
+        )
         sys.exit(os.EX_DATAERR)
     except Exception as e:
         typer.secho(
@@ -454,7 +463,7 @@ async def run_bulk_invitation(
                 f"Generating invitations for {len(emails)} users...",
                 fg=typer.colors.BLUE,
             )
-            results = await generate_invitations_from_list(
+            results = await create_invitations_from_list(
                 client, emails, trial_days=trial_days, extra_credits=extra_credits
             )
 
