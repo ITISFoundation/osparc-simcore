@@ -2,13 +2,15 @@
 # requires-python = ">=3.11"
 # dependencies = [
 #     "httpx",
+#     "pydantic",
+#     "typer",
 # ]
 # ///
 
-from typing import Any
+from typing import Annotated, Any
 
 from httpx import AsyncClient
-from pydantic import BaseModel, EmailStr, SecretStr
+from pydantic import BaseModel, EmailStr, Field, SecretStr
 
 
 class LoginCredentials(BaseModel):
@@ -18,30 +20,41 @@ class LoginCredentials(BaseModel):
     password: SecretStr
 
 
+# TODO: move classes to models-library from webserver and use them here
 class PreRegisterUserRequest(BaseModel):
     """Request body model for pre-registering a user"""
 
     firstName: str
     lastName: str
     email: EmailStr
+    instititution: str | None = None
     phone: str | None = None
     address: str | None = None
     city: str | None = None
+    state: Annotated[str | None, Field(description="State, province, canton, ...")]
     postalCode: str | None = None
     country: str | None = None
+    extras: dict[str, Any] = {}
 
 
 class PreRegisterUserResponse(BaseModel):
     """Response model for pre-registered user"""
 
-    firstName: str
-    lastName: str
+    # ONLY for admins
+    firstName: str | None
+    lastName: str | None
     email: EmailStr
-    phone: str | None = None
-    address: str | None = None
-    city: str | None = None
-    postalCode: str | None = None
-    country: str | None = None
+    institution: str | None
+    phone: str | None
+    address: str | None
+    city: str | None
+    state: Annotated[str | None, Field(description="State, province, canton, ...")]
+    postal_code: str | None
+    country: str | None
+    extras: dict[str, Any] = {}
+
+    # authorization
+    invited_by: str | None = None
 
 
 class InvitationGenerateRequest(BaseModel):
@@ -58,12 +71,6 @@ class InvitationGenerated(BaseModel):
     guest: EmailStr
     created: str
     invitationLink: str
-
-
-async def logout_current_user(client: AsyncClient):
-    path = "/auth/logout"
-    r = await client.post(path)
-    r.raise_for_status()
 
 
 async def login(
@@ -92,6 +99,12 @@ async def login(
     response.raise_for_status()
 
     return response.json()["data"]
+
+
+async def logout_current_user(client: AsyncClient):
+    path = "/auth/logout"
+    r = await client.post(path)
+    r.raise_for_status()
 
 
 async def pre_register_user(
