@@ -8,13 +8,13 @@
 # ///
 """
 Examples of usage:
-    $ uv run pre_register_users.py --help
+    $ uv run pre_registration.py --help
 
-    $ uv run pre_register_users.py pre-register pre_register_users.json --base-url http://localhost:8001 --email admin@email.com
+    $ uv run pre_registration.py pre-register pre_register_users.json --base-url http://localhost:8001 --email admin@email.com
 
-    $ uv run pre_register_users.py invite user@example.com --base-url http://localhost:8001 --email admin@email.com
+    $ uv run pre_registration.py invite user@example.com --base-url http://localhost:8001 --email admin@email.com
 
-    $ uv run pre_register_users.py invite-all users.json --base-url http://localhost:8001 --email admin@email.com
+    $ uv run pre_registration.py invite-all users.json --base-url http://localhost:8001 --email admin@email.com
 """
 
 import asyncio
