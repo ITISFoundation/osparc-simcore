@@ -35,11 +35,9 @@ class StudyService:
     async def list_jobs(
         self,
         *,
-        # filters
-        study_id: StudyID | None = None,
-        # pagination
-        offset: PageOffsetInt = 0,
-        limit: PageLimitInt = DEFAULT_PAGINATION_LIMIT,
+        filter_by_study_id: StudyID | None = None,
+        pagination_offset: PageOffsetInt = 0,
+        pagination_limit: PageLimitInt = DEFAULT_PAGINATION_LIMIT,
     ) -> tuple[list[Job], PageMetaInfoLimitOffset]:
         """Lists all solver jobs for a user with pagination"""
 
@@ -47,14 +45,14 @@ class StudyService:
         collection_or_resource_ids: list[str] = [
             "study",  # study_id, "jobs",
         ]
-        if study_id:
-            collection_or_resource_ids.append(f"{study_id}")
+        if filter_by_study_id:
+            collection_or_resource_ids.append(f"{filter_by_study_id}")
 
         job_parent_resource_name = compose_resource_name(*collection_or_resource_ids)
 
         # 2. list jobs under job_parent_resource_name
         return await self.job_service.list_jobs_by_resource_prefix(
-            offset=offset,
-            limit=limit,
+            offset=pagination_offset,
+            limit=pagination_limit,
             job_parent_resource_name_prefix=job_parent_resource_name,
         )

@@ -43,7 +43,7 @@ async def test_list_jobs_with_study_id(
 ):
     # Test with a specific study ID
     study_id = StudyID("914c7c33-8fb6-4164-9787-7b88b5c148bf")
-    jobs, page_meta = await study_service.list_jobs(study_id=study_id)
+    jobs, page_meta = await study_service.list_jobs(filter_by_study_id=study_id)
 
     assert isinstance(jobs, list)
 

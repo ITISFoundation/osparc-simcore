@@ -102,9 +102,9 @@ async def list_study_jobs(
     _logger.debug(msg)
 
     jobs, meta = await study_service.list_jobs(
-        study_id=study_id,
-        offset=page_params.offset,
-        limit=page_params.limit,
+        filter_by_study_id=study_id,
+        pagination_offset=page_params.offset,
+        pagination_limit=page_params.limit,
     )
 
     for job in jobs:
