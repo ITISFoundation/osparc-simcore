@@ -1,5 +1,6 @@
 import logging
 from collections.abc import Callable
+from dataclasses import dataclass
 
 from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
 from models_library.products import ProductName
@@ -30,24 +31,12 @@ from .services_rpc.wb_api_server import WbApiRpcClient
 _logger = logging.getLogger(__name__)
 
 
+@dataclass(frozen=True, kw_only=True)
 class JobService:
-    _web_rest_client: AuthSession
-    _web_rpc_client: WbApiRpcClient
-    _user_id: UserID
-    _product_name: ProductName
-
-    def __init__(
-        self,
-        *,
-        web_rest_client: AuthSession,
-        web_rpc_client: WbApiRpcClient,
-        user_id: UserID,
-        product_name: ProductName,
-    ):
-        self._web_rest_client = web_rest_client
-        self._web_rpc_client = web_rpc_client
-        self._user_id = user_id
-        self._product_name = product_name
+    web_rest_client: AuthSession
+    web_rpc_client: WbApiRpcClient
+    user_id: UserID
+    product_name: ProductName
 
     async def list_jobs_by_resource_prefix(
         self,
@@ -59,9 +48,9 @@ class JobService:
         """Lists all jobs for a user with pagination based on resource name prefix"""
 
         # 1. List projects marked as jobs
-        projects_page = await self._web_rpc_client.list_projects_marked_as_jobs(
-            product_name=self._product_name,
-            user_id=self._user_id,
+        projects_page = await self.web_rpc_client.list_projects_marked_as_jobs(
+            product_name=self.product_name,
+            user_id=self.user_id,
             offset=offset,
             limit=limit,
             job_parent_resource_name_prefix=job_parent_resource_name_prefix,
@@ -126,15 +115,15 @@ class JobService:
                 description=description,
                 project_name=project_name,
             )
-            new_project: ProjectGet = await self._web_rest_client.create_project(
+            new_project: ProjectGet = await self.web_rest_client.create_project(
                 project_in,
                 is_hidden=hidden,
                 parent_project_uuid=parent_project_uuid,
                 parent_node_id=parent_node_id,
             )
-            await self._web_rpc_client.mark_project_as_job(
-                product_name=self._product_name,
-                user_id=self._user_id,
+            await self.web_rpc_client.mark_project_as_job(
+                product_name=self.product_name,
+                user_id=self.user_id,
                 project_uuid=new_project.uuid,
                 job_parent_resource_name=pre_job.runner_name,
             )
@@ -153,14 +142,6 @@ class JobService:
             job_id=job.id,
         )
         return job, new_project
-
-    @property
-    def user_id(self) -> UserID:
-        return self._user_id
-
-    @property
-    def product_name(self) -> ProductName:
-        return self._product_name
 
 
 def check_user_product_consistency(

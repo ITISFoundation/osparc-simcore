@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 from models_library.products import ProductName
 from models_library.rest_pagination import (
     MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
@@ -15,33 +17,20 @@ from .models.schemas.jobs import Job
 DEFAULT_PAGINATION_LIMIT = MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE - 1
 
 
+@dataclass(frozen=True, kw_only=True)
 class StudyService:
-    _job_service: JobService
+    job_service: JobService
+    user_id: UserID
+    product_name: ProductName
 
-    # context
-    _user_id: UserID
-    _product_name: ProductName
-
-    def __init__(
-        self,
-        job_service: JobService,
-        user_id: UserID,
-        product_name: ProductName,
-    ):
-        self._job_service = job_service
-        self._user_id = user_id
-        self._product_name = product_name
-
-        # context
+    def __post_init__(self):
+        # Context check
         check_user_product_consistency(
             service_cls_name=self.__class__.__name__,
-            user_id=user_id,
-            product_name=product_name,
-            job_service=job_service,
+            user_id=self.user_id,
+            product_name=self.product_name,
+            job_service=self.job_service,
         )
-
-        self._user_id = user_id
-        self._product_name = product_name
 
     async def list_jobs(
         self,
@@ -64,7 +53,7 @@ class StudyService:
         job_parent_resource_name = compose_resource_name(*collection_or_resource_ids)
 
         # 2. list jobs under job_parent_resource_name
-        return await self._job_service.list_jobs_by_resource_prefix(
+        return await self.job_service.list_jobs_by_resource_prefix(
             offset=offset,
             limit=limit,
             job_parent_resource_name_prefix=job_parent_resource_name,

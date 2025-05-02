@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 from models_library.api_schemas_catalog.services import ServiceListFilters
 from models_library.basic_types import VersionStr
 from models_library.rest_pagination import PageMetaInfoLimitOffset
@@ -8,11 +10,9 @@ from .models.schemas.programs import Program, ProgramKeyId
 from .services_rpc.catalog import CatalogService
 
 
+@dataclass(frozen=True, kw_only=True)
 class ProgramService:
-    _catalog_service: CatalogService
-
-    def __init__(self, _catalog_service: CatalogService):
-        self._catalog_service = _catalog_service
+    catalog_service: CatalogService
 
     async def get_program(
         self,
@@ -20,7 +20,7 @@ class ProgramService:
         name: ProgramKeyId,
         version: VersionStr,
     ) -> Program:
-        service = await self._catalog_service.get(
+        service = await self.catalog_service.get(
             name=name,
             version=version,
         )
@@ -34,7 +34,7 @@ class ProgramService:
         offset: NonNegativeInt,
         limit: PositiveInt,
     ) -> tuple[list[Program], PageMetaInfoLimitOffset]:
-        page, page_meta = await self._catalog_service.list_latest_releases(
+        page, page_meta = await self.catalog_service.list_latest_releases(
             offset=offset,
             limit=limit,
             filters=ServiceListFilters(service_type=ServiceType.DYNAMIC),
@@ -50,7 +50,7 @@ class ProgramService:
         offset: NonNegativeInt,
         limit: PositiveInt,
     ) -> tuple[list[Program], PageMetaInfoLimitOffset]:
-        page, page_meta = await self._catalog_service.list_release_history_latest_first(
+        page, page_meta = await self.catalog_service.list_release_history_latest_first(
             service_key=program_key,
             offset=offset,
             limit=limit,
@@ -58,7 +58,7 @@ class ProgramService:
         if len(page) == 0:
             return [], page_meta
 
-        program_instance = await self._catalog_service.get(
+        program_instance = await self.catalog_service.get(
             name=program_key,
             version=page[-1].version,
         )

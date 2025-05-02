@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 from models_library.api_schemas_catalog.services import ServiceListFilters
 from models_library.basic_types import VersionStr
 from models_library.products import ProductName
@@ -26,33 +28,21 @@ from .services_rpc.catalog import CatalogService
 DEFAULT_PAGINATION_LIMIT = MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE - 1
 
 
+@dataclass(frozen=True, kw_only=True)
 class SolverService:
-    _catalog_service: CatalogService
-    _job_service: JobService
-    # context
-    _user_id: UserID
-    _product_name: ProductName
+    catalog_service: CatalogService
+    job_service: JobService
+    user_id: UserID
+    product_name: ProductName
 
-    def __init__(
-        self,
-        catalog_service: CatalogService,
-        job_service: JobService,
-        user_id: UserID,
-        product_name: ProductName,
-    ):
-        self._catalog_service = catalog_service
-        self._job_service = job_service
-
-        # context
+    def __post_init__(self):
+        # Context check
         check_user_product_consistency(
             service_cls_name=self.__class__.__name__,
-            user_id=user_id,
-            product_name=product_name,
-            job_service=job_service,
+            user_id=self.user_id,
+            product_name=self.product_name,
+            job_service=self.job_service,
         )
-
-        self._user_id = user_id
-        self._product_name = product_name
 
     async def get_solver(
         self,
@@ -60,7 +50,7 @@ class SolverService:
         solver_key: SolverKeyId,
         solver_version: VersionStr,
     ) -> Solver:
-        service = await self._catalog_service.get(
+        service = await self.catalog_service.get(
             name=solver_key,
             version=solver_version,
         )
@@ -75,7 +65,7 @@ class SolverService:
         *,
         solver_key: SolverKeyId,
     ) -> Solver:
-        releases, _ = await self._catalog_service.list_release_history_latest_first(
+        releases, _ = await self.catalog_service.list_release_history_latest_first(
             service_key=solver_key,
             offset=0,
             limit=1,
@@ -83,7 +73,7 @@ class SolverService:
 
         if len(releases) == 0:
             raise ProgramOrSolverOrStudyNotFoundError(name=solver_key, version="latest")
-        service = await self._catalog_service.get(
+        service = await self.catalog_service.get(
             name=solver_key,
             version=releases[0].version,
         )
@@ -117,7 +107,7 @@ class SolverService:
         job_parent_resource_name = compose_resource_name(*collection_or_resource_ids)
 
         # 2. list jobs under job_parent_resource_name
-        return await self._job_service.list_jobs_by_resource_prefix(
+        return await self.job_service.list_jobs_by_resource_prefix(
             offset=offset,
             limit=limit,
             job_parent_resource_name_prefix=job_parent_resource_name,
@@ -132,14 +122,14 @@ class SolverService:
     ) -> tuple[list[Solver], PageMetaInfoLimitOffset]:
 
         releases, page_meta = (
-            await self._catalog_service.list_release_history_latest_first(
+            await self.catalog_service.list_release_history_latest_first(
                 service_key=solver_key,
                 offset=offset,
                 limit=limit,
             )
         )
 
-        service_instance = await self._catalog_service.get(
+        service_instance = await self.catalog_service.get(
             name=solver_key,
             version=releases[-1].version,
         )
@@ -162,7 +152,7 @@ class SolverService:
         limit: PositiveInt,
     ) -> tuple[list[Solver], PageMetaInfoLimitOffset]:
         """Lists the latest solvers with pagination."""
-        services, page_meta = await self._catalog_service.list_latest_releases(
+        services, page_meta = await self.catalog_service.list_latest_releases(
             offset=offset,
             limit=limit,
             filters=ServiceListFilters(service_type=ServiceType.COMPUTATIONAL),
