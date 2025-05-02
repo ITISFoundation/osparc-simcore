@@ -30,7 +30,7 @@ def create_unique_api_name_for(
     return f"__auto_{uuid5(uuid.NAMESPACE_DNS, f'{product_name}/{user_id}/{project_id}/{node_id}')}"
 
 
-async def compute_user_api_key(
+async def create_user_api_key(
     app: FastAPI,  # pylint: disable=unused-argument
     product_name: ProductName,
     user_id: UserID,
@@ -83,7 +83,7 @@ async def delete_api_key_by_key(
 
 
 __all__: tuple[str, ...] = (
-    "compute_user_api_key",
+    "create_user_api_key",
     "create_user_api_secret",
     "delete_api_key_by_key",
 )
