@@ -129,10 +129,11 @@ def create_route_description(
         parts.append(base)
 
     if changelog:
-        changelog_strings = [f"> {entry.to_string()}" for entry in changelog]
+        # NOTE: Adds a markdown section as : | New in version 0.6.0
+        changelog_strings = [f"> {entry.to_string()}\n" for entry in changelog]
         parts.append("\n".join(changelog_strings))
 
-    return "\n\n".join(parts)
+    return "\n".join(parts)
 
 
 def validate_changelog(changelog: Sequence[ChangelogEntryAbstract]) -> None:
