@@ -84,7 +84,7 @@ class InvitationGenerateRequest(BaseModel):
     extraCreditsInUsd: Annotated[int, Field(ge=0, lt=500)] | None = None
 
 
-async def login(
+async def _login(
     client: AsyncClient, email: EmailStr, password: SecretStr
 ) -> dict[str, Any]:
     """Login user with the provided credentials"""
@@ -104,13 +104,13 @@ async def login(
     return response.json()["data"]
 
 
-async def logout_current_user(client: AsyncClient):
+async def _logout_current_user(client: AsyncClient):
     path = "/v0/auth/logout"
     r = await client.post(path)
     r.raise_for_status()
 
 
-async def pre_register_user(
+async def _pre_register_user(
     client: AsyncClient,
     first_name: str,
     last_name: str,
@@ -147,7 +147,7 @@ async def pre_register_user(
     return response.json()["data"]
 
 
-async def create_invitation(
+async def _create_invitation(
     client: AsyncClient,
     guest_email: EmailStr,
     trial_days: PositiveInt | None = None,
@@ -173,7 +173,7 @@ async def create_invitation(
     return response.json()["data"]
 
 
-async def pre_register_users_from_file(
+async def _pre_register_users_from_list(
     client: AsyncClient,
     users_data: list[PreRegisterUserRequest],
 ) -> list[dict[str, Any]]:
@@ -181,7 +181,7 @@ async def pre_register_users_from_file(
     results = []
     for user_data in users_data:
         try:
-            result = await pre_register_user(
+            result = await _pre_register_user(
                 client=client,
                 first_name=user_data.firstName,
                 last_name=user_data.lastName,
@@ -209,7 +209,7 @@ async def pre_register_users_from_file(
     return results
 
 
-async def create_invitations_from_list(
+async def _create_invitations_from_list(
     client: AsyncClient,
     emails: list[EmailStr],
     trial_days: PositiveInt | None = None,
@@ -219,7 +219,7 @@ async def create_invitations_from_list(
     results = []
     for email in emails:
         try:
-            result = await create_invitation(
+            result = await _create_invitation(
                 client=client,
                 guest_email=email,
                 trial_days=trial_days,
@@ -269,7 +269,7 @@ async def run_pre_registration(
         try:
             # Login as admin
             print_info(f"Logging in as {admin_email}...")
-            await login(
+            await _login(
                 client=client,
                 email=admin_email,
                 password=admin_password,
@@ -277,7 +277,7 @@ async def run_pre_registration(
 
             # Pre-register users
             print_info(f"Pre-registering {len(users_data)} users...")
-            results = await pre_register_users_from_file(client, users_data)
+            results = await _pre_register_users_from_list(client, users_data)
             print_success(f"Successfully pre-registered {len(results)} users")
 
             # Dump results to a file
@@ -291,14 +291,14 @@ async def run_pre_registration(
 
             # Logout
             print_info("Logging out...")
-            await logout_current_user(client)
+            await _logout_current_user(client)
 
         except Exception as e:
             print_error(f"{str(e)}")
             sys.exit(os.EX_SOFTWARE)
 
 
-async def run_generate_invitation(
+async def run_create_invitation(
     base_url: str,
     guest_email: EmailStr,
     admin_email: str,
@@ -311,7 +311,7 @@ async def run_generate_invitation(
         try:
             # Login as admin
             print_info(f"Logging in as {admin_email}...")
-            await login(
+            await _login(
                 client=client,
                 email=admin_email,
                 password=admin_password,
@@ -319,7 +319,7 @@ async def run_generate_invitation(
 
             # Generate invitation
             print_info(f"Generating invitation for {guest_email}...")
-            result = await create_invitation(
+            result = await _create_invitation(
                 client, guest_email, trial_days=trial_days, extra_credits=extra_credits
             )
 
@@ -336,7 +336,7 @@ async def run_generate_invitation(
 
             # Logout
             print_info("Logging out...")
-            await logout_current_user(client)
+            await _logout_current_user(client)
 
         except HTTPStatusError as e:
             print_error(
@@ -348,7 +348,7 @@ async def run_generate_invitation(
             sys.exit(os.EX_SOFTWARE)
 
 
-async def run_bulk_invitation(
+async def run_bulk_create_invitation(
     base_url: str,
     emails_file_path: Path,
     admin_email: str,
@@ -398,7 +398,7 @@ async def run_bulk_invitation(
         try:
             # Login as admin
             print_info(f"Logging in as {admin_email}...")
-            await login(
+            await _login(
                 client=client,
                 email=admin_email,
                 password=admin_password,
@@ -406,7 +406,7 @@ async def run_bulk_invitation(
 
             # Generate invitations
             print_info(f"Generating invitations for {len(emails)} users...")
-            results = await create_invitations_from_list(
+            results = await _create_invitations_from_list(
                 client, emails, trial_days=trial_days, extra_credits=extra_credits
             )
 
@@ -426,7 +426,7 @@ async def run_bulk_invitation(
 
             # Logout
             print_info("Logging out...")
-            await logout_current_user(client)
+            await _logout_current_user(client)
 
         except Exception as e:
             print_error(f"{str(e)}")
@@ -535,7 +535,7 @@ def invite(
 
     print_info(f"Generating invitation for {guest_email} using {base_url}")
     asyncio.run(
-        run_generate_invitation(
+        run_create_invitation(
             base_url,
             guest_email,
             admin_email,
@@ -597,7 +597,7 @@ def invite_all(
 
     print_info(f"Generating invitations for users in {emails_file} using {base_url}")
     asyncio.run(
-        run_bulk_invitation(
+        run_bulk_create_invitation(
             base_url,
             emails_file,
             admin_email,
