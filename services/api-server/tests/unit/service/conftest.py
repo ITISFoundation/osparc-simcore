@@ -96,8 +96,8 @@ def job_service(
     user_id: UserID,
 ) -> JobService:
     return JobService(
-        web_rest_api=auth_session,
-        web_rpc_api=wb_api_rpc_client,
+        web_rest_client=auth_session,
+        web_rpc_client=wb_api_rpc_client,
         user_id=user_id,
         product_name=product_name,
     )
