@@ -435,13 +435,6 @@ def sleeper_task_unexpected_output(
     return sleeper_task
 
 
-@pytest.fixture
-def hugely_talkative_ubuntu_task(
-    sidecar_task: Callable[..., ServiceExampleParam],
-) -> ServiceExampleParam:
-    return sidecar_task(command=["/bin/bash", "-c", "some stupid failing command"])
-
-
 @pytest.fixture()
 def caplog_info_level(
     caplog: pytest.LogCaptureFixture,
