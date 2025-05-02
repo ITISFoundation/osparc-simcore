@@ -33,8 +33,8 @@ _logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True, kw_only=True)
 class JobService:
-    web_rest_client: AuthSession
-    web_rpc_client: WbApiRpcClient
+    _web_rest_client: AuthSession
+    _web_rpc_client: WbApiRpcClient
     user_id: UserID
     product_name: ProductName
 
@@ -48,7 +48,7 @@ class JobService:
         """Lists all jobs for a user with pagination based on resource name prefix"""
 
         # 1. List projects marked as jobs
-        projects_page = await self.web_rpc_client.list_projects_marked_as_jobs(
+        projects_page = await self._web_rpc_client.list_projects_marked_as_jobs(
             product_name=self.product_name,
             user_id=self.user_id,
             offset=pagination_offset,
@@ -115,13 +115,13 @@ class JobService:
                 description=description,
                 project_name=project_name,
             )
-            new_project: ProjectGet = await self.web_rest_client.create_project(
+            new_project: ProjectGet = await self._web_rest_client.create_project(
                 project_in,
                 is_hidden=hidden,
                 parent_project_uuid=parent_project_uuid,
                 parent_node_id=parent_node_id,
             )
-            await self.web_rpc_client.mark_project_as_job(
+            await self._web_rpc_client.mark_project_as_job(
                 product_name=self.product_name,
                 user_id=self.user_id,
                 project_uuid=new_project.uuid,

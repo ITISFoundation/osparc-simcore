@@ -71,8 +71,8 @@ def get_job_service(
     in the context of the rest controller (i.e. api/dependencies)
     """
     return JobService(
-        web_rest_client=web_rest_api,
-        web_rpc_client=web_rpc_api,
+        _web_rest_client=web_rest_api,
+        _web_rpc_client=web_rpc_api,
         user_id=user_id,
         product_name=product_name,
     )
