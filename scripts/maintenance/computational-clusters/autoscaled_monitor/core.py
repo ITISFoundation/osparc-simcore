@@ -786,18 +786,22 @@ async def terminate_instances(
         state, user_id, wallet_id
     )
 
-    if not dynamic_instances:
+    dynamic_autoscaled_instances = await _parse_dynamic_instances(
+        state, dynamic_instances, state.ssh_key_path, user_id, wallet_id
+    )
+
+    if not dynamic_autoscaled_instances:
         rich.print("no instances found")
         raise typer.Exit(0)
 
-    for instance in dynamic_instances:
+    for instance in dynamic_autoscaled_instances:
         rich.print(
-            f"terminating instance {instance.instance_id} with name {utils.get_instance_name(instance)}"
+            f"terminating instance {instance.ec2_instance.instance_id} with name {utils.get_instance_name(instance.ec2_instance)}"
         )
         if force is True or typer.confirm(
-            f"Are you sure you want to terminate instance {instance.instance_id}?"
+            f"Are you sure you want to terminate instance {instance.ec2_instance.instance_id}?"
         ):
-            instance.terminate()
-            rich.print(f"terminated instance {instance.instance_id}")
+            instance.ec2_instance.terminate()
+            rich.print(f"terminated instance {instance.ec2_instance.instance_id}")
         else:
             rich.print("not terminating anything")
