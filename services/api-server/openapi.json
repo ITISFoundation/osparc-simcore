@@ -301,7 +301,6 @@
             }
           }
         },
-        "deprecated": true,
         "security": [
           {
             "HTTPBasic": []
@@ -1502,7 +1501,6 @@
             }
           }
         },
-        "deprecated": true,
         "security": [
           {
             "HTTPBasic": []
@@ -1594,7 +1592,6 @@
             }
           }
         },
-        "deprecated": true,
         "security": [
           {
             "HTTPBasic": []
@@ -2370,7 +2367,6 @@
         "summary": "List Jobs",
         "description": "\ud83d\udea8 **Deprecated**: This endpoint is deprecated and will be removed in a future release.\nPlease use `GET /{solver_key}/releases/{version}/jobs/page` instead.\n\n\n\nList of jobs in a specific released solver (limited to 20 jobs)\n\nNew in *version 0.5*\n\nRemoved in *version 0.7*: This endpoint is deprecated and will be removed in a future version",
         "operationId": "list_jobs",
-        "deprecated": true,
         "security": [
           {
             "HTTPBasic": []
