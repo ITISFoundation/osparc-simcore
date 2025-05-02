@@ -145,7 +145,7 @@ async def list_all_solvers_jobs(
 
     for job in jobs:
         solver_key, version, job_id = parse_resources_ids(job.resource_name)
-        _update_job_urls(job, solver_key, version, job_id, url_for)
+        _update_solver_job_urls(job, solver_key, version, job_id, url_for)
 
     return create_page(
         jobs,
@@ -510,7 +510,7 @@ async def get_log_stream(
         )
 
 
-def _update_job_urls(
+def _update_solver_job_urls(
     job: Job,
     solver_key: SolverKeyId,
     solver_version: VersionStr,

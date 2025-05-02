@@ -110,7 +110,9 @@ async def list_study_jobs(
     for job in jobs:
         study_id_str, job_id = parse_resources_ids(job.resource_name)
         assert study_id_str == f"{study_id}"
-        _update_job_urls(job=job, study_id=study_id, job_id=job_id, url_for=url_for)
+        _update_study_job_urls(
+            job=job, study_id=study_id, job_id=job_id, url_for=url_for
+        )
 
     return create_page(
         jobs,
@@ -454,7 +456,7 @@ async def replace_study_job_custom_metadata(
     )
 
 
-def _update_job_urls(
+def _update_study_job_urls(
     *,
     job: Job,
     study_id: StudyID,
