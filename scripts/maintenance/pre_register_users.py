@@ -2,12 +2,17 @@
 # requires-python = ">=3.11"
 # dependencies = [
 #     "httpx",
-#     "pydantic",
+#     "pydantic[email]",
 #     "typer",
 # ]
 # ///
-
+#
+#  Examples of usage:
+#      uv run pre_register_users.py --help
+#
+#      uv run pre_register_users.py pre_register_users.json --base-url http://localhost:8001 --email admin@localhost --password admin --users-file /path/to/users.json
 import asyncio
+import datetime
 import json
 import os
 import sys
@@ -15,7 +20,7 @@ from pathlib import Path
 from typing import Annotated, Any
 
 import typer
-from httpx import AsyncClient
+from httpx import AsyncClient, HTTPStatusError
 from pydantic import BaseModel, EmailStr, Field, SecretStr, TypeAdapter, ValidationError
 
 
@@ -41,26 +46,6 @@ class PreRegisterUserRequest(BaseModel):
     postalCode: str | None = None
     country: str | None = None
     extras: dict[str, Any] = {}
-
-
-class PreRegisterUserResponse(BaseModel):
-    """Response model for pre-registered user"""
-
-    # ONLY for admins
-    firstName: str | None
-    lastName: str | None
-    email: EmailStr
-    institution: str | None
-    phone: str | None
-    address: str | None
-    city: str | None
-    state: Annotated[str | None, Field(description="State, province, canton, ...")]
-    postal_code: str | None
-    country: str | None
-    extras: dict[str, Any] = {}
-
-    # authorization
-    invited_by: str | None = None
 
 
 class InvitationGenerateRequest(BaseModel):
@@ -100,7 +85,11 @@ async def login(
     credentials = LoginCredentials(email=email, password=password)
 
     response = await client.post(
-        path, json=credentials.model_dump(exclude_none=True, mode="json")
+        path,
+        json={
+            "email": credentials.email,
+            "password": credentials.password.get_secret_value(),
+        },
     )
     response.raise_for_status()
 
@@ -126,7 +115,7 @@ async def pre_register_user(
     postal_code: str | None = None,
     country: str | None = None,
     extras: dict[str, Any] = {},
-) -> PreRegisterUserResponse:
+) -> dict[str, Any]:
     """Pre-register a user in the system
 
     Args:
@@ -157,20 +146,18 @@ async def pre_register_user(
         email=email,
         instititution=institution,
         phone=phone,
-        address=address,
-        city=city,
+        address=address or "",
+        city=city or "",
         state=state,
-        postalCode=postal_code,
+        postalCode=postal_code or "",
         country=country,
         extras=extras,
     )
 
-    response = await client.post(
-        path, json=user_data.model_dump(exclude_none=True, mode="json")
-    )
+    response = await client.post(path, json=user_data.model_dump(mode="json"))
     response.raise_for_status()
 
-    return PreRegisterUserResponse(**response.json()["data"])
+    return response.json()["data"]
 
 
 async def generate_invitation(
@@ -203,7 +190,7 @@ async def generate_invitation(
 async def pre_register_users_from_file(
     client: AsyncClient,
     users_data: list[PreRegisterUserRequest],
-) -> list[PreRegisterUserResponse]:
+) -> list[dict[str, Any]]:
     """Pre-registers multiple users from a list of user data
 
     Args:
@@ -235,6 +222,14 @@ async def pre_register_users_from_file(
                 f"Successfully pre-registered user: {user_data.email}",
                 fg=typer.colors.GREEN,
             )
+
+        except HTTPStatusError as e:
+            typer.secho(
+                f"Failed to pre-register user {user_data.email} with {e.response.status_code}: {e.response.text}",
+                fg=typer.colors.RED,
+                err=True,
+            )
+
         except Exception as e:
             typer.secho(
                 f"Failed to pre-register user {user_data.email}: {str(e)}",
@@ -292,8 +287,8 @@ async def run_pre_registration(
             typer.secho(f"Logging in as {admin_email}...", fg=typer.colors.BLUE)
             await login(
                 client=client,
-                email=EmailStr(admin_email),
-                password=SecretStr(admin_password),
+                email=admin_email,
+                password=admin_password,
             )
 
             # Pre-register users
@@ -303,6 +298,26 @@ async def run_pre_registration(
             results = await pre_register_users_from_file(client, users_data)
             typer.secho(
                 f"Successfully pre-registered {len(results)} users",
+                fg=typer.colors.GREEN,
+            )
+
+            # Dump results to a file
+            timestamp = datetime.datetime.now(tz=datetime.UTC).strftime("%Y%m%d_%H%M%S")
+            input_filename = users_file_path.stem
+            output_filename = f"{input_filename}_results_{timestamp}.json"
+            output_path = users_file_path.parent / output_filename
+
+            # Convert results to serializable format
+            serializable_results = []
+            for result in results:
+                if isinstance(result, dict):
+                    serializable_results.append(result)
+                else:
+                    serializable_results.append(result)
+
+            output_path.write_text(json.dumps(serializable_results, indent=1))
+            typer.secho(
+                f"Results written to {output_path}",
                 fg=typer.colors.GREEN,
             )
 
