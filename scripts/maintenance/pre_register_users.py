@@ -307,15 +307,7 @@ async def run_pre_registration(
             output_filename = f"{input_filename}_results_{timestamp}.json"
             output_path = users_file_path.parent / output_filename
 
-            # Convert results to serializable format
-            serializable_results = []
-            for result in results:
-                if isinstance(result, dict):
-                    serializable_results.append(result)
-                else:
-                    serializable_results.append(result)
-
-            output_path.write_text(json.dumps(serializable_results, indent=1))
+            output_path.write_text(json.dumps(results, indent=1))
             typer.secho(
                 f"Results written to {output_path}",
                 fg=typer.colors.GREEN,
