@@ -83,12 +83,10 @@ class SolverService:
     async def list_jobs(
         self,
         *,
-        # filters
-        solver_key: SolverKeyId | None = None,
-        solver_version: VersionStr | None = None,
-        # pagination
-        offset: PageOffsetInt = 0,
-        limit: PageLimitInt = DEFAULT_PAGINATION_LIMIT,
+        filter_by_solver_key: SolverKeyId | None = None,
+        filter_by_solver_version: VersionStr | None = None,
+        pagination_offset: PageOffsetInt = 0,
+        pagination_limit: PageLimitInt = DEFAULT_PAGINATION_LIMIT,
     ) -> tuple[list[Job], PageMetaInfoLimitOffset]:
         """Lists all solver jobs for a user with pagination"""
 
@@ -96,21 +94,21 @@ class SolverService:
         collection_or_resource_ids = [
             "solvers",  # solver_id, "releases", solver_version, "jobs",
         ]
-        if solver_key:
-            collection_or_resource_ids.append(solver_key)
-            if solver_version:
+        if filter_by_solver_key:
+            collection_or_resource_ids.append(filter_by_solver_key)
+            if filter_by_solver_version:
                 collection_or_resource_ids.append("releases")
-                collection_or_resource_ids.append(solver_version)
-        elif solver_version:
+                collection_or_resource_ids.append(filter_by_solver_version)
+        elif filter_by_solver_version:
             raise SolverServiceListJobsFiltersError
 
         job_parent_resource_name = compose_resource_name(*collection_or_resource_ids)
 
         # 2. list jobs under job_parent_resource_name
-        return await self.job_service.list_jobs_by_resource_prefix(
-            offset=offset,
-            limit=limit,
-            job_parent_resource_name_prefix=job_parent_resource_name,
+        return await self.job_service.list_jobs(
+            pagination_offset=pagination_offset,
+            pagination_limit=pagination_limit,
+            filter_by_job_parent_resource_name_prefix=job_parent_resource_name,
         )
 
     async def solver_release_history(

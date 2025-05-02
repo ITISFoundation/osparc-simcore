@@ -51,8 +51,8 @@ class StudyService:
         job_parent_resource_name = compose_resource_name(*collection_or_resource_ids)
 
         # 2. list jobs under job_parent_resource_name
-        return await self.job_service.list_jobs_by_resource_prefix(
-            offset=pagination_offset,
-            limit=pagination_limit,
-            job_parent_resource_name_prefix=job_parent_resource_name,
+        return await self.job_service.list_jobs(
+            pagination_offset=pagination_offset,
+            pagination_limit=pagination_limit,
+            filter_by_job_parent_resource_name_prefix=job_parent_resource_name,
         )

@@ -31,12 +31,12 @@ class ProgramService:
     async def list_latest_programs(
         self,
         *,
-        offset: NonNegativeInt,
-        limit: PositiveInt,
+        pagination_offset: NonNegativeInt,
+        pagination_limit: PositiveInt,
     ) -> tuple[list[Program], PageMetaInfoLimitOffset]:
         page, page_meta = await self.catalog_service.list_latest_releases(
-            offset=offset,
-            limit=limit,
+            offset=pagination_offset,
+            limit=pagination_limit,
             filters=ServiceListFilters(service_type=ServiceType.DYNAMIC),
         )
 

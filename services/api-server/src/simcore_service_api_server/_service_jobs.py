@@ -38,12 +38,12 @@ class JobService:
     user_id: UserID
     product_name: ProductName
 
-    async def list_jobs_by_resource_prefix(
+    async def list_jobs(
         self,
         *,
-        job_parent_resource_name_prefix: str,
-        offset: PageOffsetInt = 0,
-        limit: PageLimitInt = MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE - 1,
+        filter_by_job_parent_resource_name_prefix: str,
+        pagination_offset: PageOffsetInt = 0,
+        pagination_limit: PageLimitInt = MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE - 1,
     ) -> tuple[list[Job], PageMetaInfoLimitOffset]:
         """Lists all jobs for a user with pagination based on resource name prefix"""
 
@@ -51,9 +51,9 @@ class JobService:
         projects_page = await self.web_rpc_client.list_projects_marked_as_jobs(
             product_name=self.product_name,
             user_id=self.user_id,
-            offset=offset,
-            limit=limit,
-            job_parent_resource_name_prefix=job_parent_resource_name_prefix,
+            offset=pagination_offset,
+            limit=pagination_limit,
+            job_parent_resource_name_prefix=filter_by_job_parent_resource_name_prefix,
         )
 
         # 2. Convert projects to jobs

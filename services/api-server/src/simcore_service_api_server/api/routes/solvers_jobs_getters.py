@@ -139,8 +139,8 @@ async def list_all_solvers_jobs(
 ):
 
     jobs, meta = await solver_service.list_jobs(
-        offset=page_params.offset,
-        limit=page_params.limit,
+        pagination_offset=page_params.offset,
+        pagination_limit=page_params.limit,
     )
 
     for job in jobs:
