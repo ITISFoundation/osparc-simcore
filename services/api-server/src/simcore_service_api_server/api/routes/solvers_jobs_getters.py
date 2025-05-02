@@ -3,6 +3,7 @@
 import logging
 from collections import deque
 from collections.abc import Callable
+from functools import partial
 from typing import Annotated, Any, Union
 from uuid import UUID
 
@@ -16,10 +17,10 @@ from models_library.users import UserID
 from models_library.wallets import ZERO_CREDITS
 from pydantic import HttpUrl, NonNegativeInt
 from pydantic.types import PositiveInt
-from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from servicelib.logging_utils import log_context
 from simcore_service_api_server.models.api_resources import parse_resources_ids
 from sqlalchemy.ext.asyncio import AsyncEngine
+from starlette.background import BackgroundTask
 
 from ..._service_solvers import SolverService
 from ...exceptions.custom_errors import InsufficientCreditsError, MissingWalletError
@@ -526,7 +527,6 @@ async def get_job_pricing_unit(
     response_class=LogStreamingResponse,
     responses=_LOGSTREAM_STATUS_CODES,
 )
-@cancel_on_disconnect
 async def get_log_stream(
     request: Request,
     solver_key: SolverKeyId,
@@ -553,6 +553,8 @@ async def get_log_stream(
             log_distributor=log_distributor,
             log_check_timeout=log_check_timeout,
         )
+        await log_distributor.register(job_id, log_streamer.queue)
         return LogStreamingResponse(
             log_streamer.log_generator(),
+            background=BackgroundTask(partial(log_distributor.deregister, job_id)),
         )

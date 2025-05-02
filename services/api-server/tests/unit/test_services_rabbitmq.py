@@ -451,7 +451,7 @@ async def test_log_generator(mocker: MockFixture, faker: Faker):
         msg = faker.text()
         published_logs.append(msg)
         job_log.messages = [msg]
-        await log_streamer._queue.put(job_log)
+        await log_streamer.queue.put(job_log)
 
     collected_logs: list[str] = []
     async for log in log_streamer.log_generator():
