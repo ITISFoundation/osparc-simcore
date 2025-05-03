@@ -30,7 +30,7 @@ from ...models.basic_types import VersionStr
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.jobs import Job, JobInputs
 from ...models.schemas.programs import Program, ProgramKeyId
-from ..dependencies.authentication import get_current_user_id, get_product_name
+from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_job_service, get_program_service
 
 _logger = logging.getLogger(__name__)
@@ -156,7 +156,6 @@ async def create_program_job(
     program_service: Annotated[ProgramService, Depends(get_program_service)],
     job_service: Annotated[JobService, Depends(get_job_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
-    product_name: Annotated[str, Depends(get_product_name)],
     x_simcore_parent_project_uuid: Annotated[ProjectID | None, Header()] = None,
     x_simcore_parent_node_id: Annotated[NodeID | None, Header()] = None,
     name: Annotated[

@@ -147,4 +147,4 @@ def study_service(
 def program_service(
     catalog_service: CatalogService,
 ) -> ProgramService:
-    return ProgramService(_catalog_service=catalog_service)
+    return ProgramService(catalog_service=catalog_service)
