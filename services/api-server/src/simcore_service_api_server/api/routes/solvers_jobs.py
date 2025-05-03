@@ -12,7 +12,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from pydantic.types import PositiveInt
 
-from ..._service_job import JobService
+from ..._service_jobs import JobService
 from ..._service_solvers import SolverService
 from ...exceptions.backend_errors import ProjectAlreadyStartedError
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
@@ -33,8 +33,8 @@ from ...services_http.solver_job_models_converters import (
     create_jobstatus_from_task,
 )
 from ..dependencies.application import get_reverse_url_mapper
-from ..dependencies.authentication import get_current_user_id, get_product_name
-from ..dependencies.services import get_api_client, get_solver_service
+from ..dependencies.authentication import get_current_user_id
+from ..dependencies.services import get_api_client, get_job_service, get_solver_service
 from ..dependencies.webserver_http import AuthSession, get_webserver_session
 from ._constants import (
     FMSG_CHANGELOG_ADDED_IN_VERSION,
@@ -47,7 +47,7 @@ _logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-def _compose_job_resource_name(solver_key, solver_version, job_id) -> str:
+def compose_job_resource_name(solver_key, solver_version, job_id) -> str:
     """Creates a unique resource name for solver's jobs"""
     return Job.compose_resource_name(
         parent_name=Solver.compose_resource_name(solver_key, solver_version),
@@ -90,11 +90,9 @@ async def create_solver_job(
     solver_key: SolverKeyId,
     version: VersionStr,
     inputs: JobInputs,
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
-    job_service: Annotated[JobService, Depends()],
+    job_service: Annotated[JobService, Depends(get_job_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
-    product_name: Annotated[str, Depends(get_product_name)],
     hidden: Annotated[bool, Query()] = True,
     x_simcore_parent_project_uuid: Annotated[ProjectID | None, Header()] = None,
     x_simcore_parent_node_id: Annotated[NodeID | None, Header()] = None,
@@ -106,10 +104,8 @@ async def create_solver_job(
 
     # ensures user has access to solver
     solver = await solver_service.get_solver(
-        user_id=user_id,
         solver_key=solver_key,
         solver_version=version,
-        product_name=product_name,
     )
     job, _ = await job_service.create_job(
         project_name=None,
@@ -138,7 +134,7 @@ async def delete_job(
     job_id: JobID,
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
-    job_name = _compose_job_resource_name(solver_key, version, job_id)
+    job_name = compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Deleting Job '%s'", job_name)
 
     await webserver_api.delete_project(project_id=job_id)
@@ -184,7 +180,7 @@ async def start_job(
         ClusterID | None, Query(deprecated=True)
     ] = None,
 ):
-    job_name = _compose_job_resource_name(solver_key, version, job_id)
+    job_name = compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Start Job '%s'", job_name)
 
     try:
@@ -226,7 +222,7 @@ async def stop_job(
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
 ):
-    job_name = _compose_job_resource_name(solver_key, version, job_id)
+    job_name = compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Stopping Job '%s'", job_name)
 
     return await stop_project(
@@ -246,7 +242,7 @@ async def inspect_job(
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
 ) -> JobStatus:
-    job_name = _compose_job_resource_name(solver_key, version, job_id)
+    job_name = compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Inspecting Job '%s'", job_name)
 
     task = await director2_api.get_computation(project_id=job_id, user_id=user_id)
@@ -269,7 +265,7 @@ async def replace_job_custom_metadata(
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
-    job_name = _compose_job_resource_name(solver_key, version, job_id)
+    job_name = compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Custom metadata for '%s'", job_name)
 
     return await replace_custom_metadata(
