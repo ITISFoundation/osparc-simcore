@@ -210,17 +210,16 @@ def check_database_connection() -> None:
 
 
 @app.command()
-def terminate_instances(
-    user_id: Annotated[int, typer.Option(help="the user ID")],
-    wallet_id: Annotated[
-        Optional[int | None],  # noqa: UP007 # typer does not understand | syntax
-        typer.Option(help="the wallet ID"),
-    ] = None,
+def terminate_dynamic_instances(
+    user_id: Annotated[int | None, typer.Option(help="the user ID")] = None,
+    instance_id: Annotated[str | None, typer.Option(help="the instance ID")] = None,
     *,
     force: Annotated[bool, typer.Option(help="will not ask for confirmation")] = False,
 ) -> None:
-    """this will terminate the instance(s) used for the given user/wallet"""
-    asyncio.run(api.terminate_instances(state, user_id, wallet_id, force=force))
+    """this will terminate the instance(s) used for the given user or instance ID."""
+    asyncio.run(
+        api.terminate_dynamic_instances(state, user_id, instance_id, force=force)
+    )
 
 
 if __name__ == "__main__":
