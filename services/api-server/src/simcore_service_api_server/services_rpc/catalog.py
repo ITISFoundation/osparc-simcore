@@ -1,7 +1,6 @@
+from dataclasses import dataclass
 from functools import partial
-from typing import Annotated
 
-from fastapi import Depends
 from models_library.api_schemas_catalog.services import (
     LatestServiceGet,
     ServiceGetV2,
@@ -25,42 +24,37 @@ from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogForbiddenError,
     CatalogItemNotFoundError,
 )
-from simcore_service_api_server.exceptions.backend_errors import (
+
+from ..exceptions.backend_errors import (
     InvalidInputError,
     ProgramOrSolverOrStudyNotFoundError,
     ServiceForbiddenAccessError,
 )
-
-from ..api.dependencies.rabbitmq import get_rabbitmq_rpc_client
 from ..exceptions.service_errors_utils import service_exception_mapper
 
 _exception_mapper = partial(service_exception_mapper, service_name="CatalogService")
 
 
+@dataclass(frozen=True, kw_only=True)
 class CatalogService:
-    _client: RabbitMQRPCClient
-
-    def __init__(
-        self, client: Annotated[RabbitMQRPCClient, Depends(get_rabbitmq_rpc_client)]
-    ):
-        self._client = client
+    _rpc_client: RabbitMQRPCClient
+    user_id: UserID
+    product_name: ProductName
 
     async def list_latest_releases(
         self,
         *,
-        product_name: ProductName,
-        user_id: UserID,
-        offset: PageOffsetInt = 0,
-        limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+        pagination_offset: PageOffsetInt = 0,
+        pagination_limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
         filters: ServiceListFilters | None = None,
     ) -> tuple[list[LatestServiceGet], PageMetaInfoLimitOffset]:
 
         page = await catalog_rpc.list_services_paginated(
-            self._client,
-            product_name=product_name,
-            user_id=user_id,
-            offset=offset,
-            limit=limit,
+            self._rpc_client,
+            product_name=self.product_name,
+            user_id=self.user_id,
+            offset=pagination_offset,
+            limit=pagination_limit,
             filters=filters,
         )
         meta = PageMetaInfoLimitOffset(
@@ -71,23 +65,21 @@ class CatalogService:
         )
         return page.data, meta
 
-    async def list_release_history(
+    async def list_release_history_latest_first(
         self,
         *,
-        product_name: ProductName,
-        user_id: UserID,
-        service_key: ServiceKey,
-        offset: PageOffsetInt = 0,
-        limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+        filter_by_service_key: ServiceKey,
+        pagination_offset: PageOffsetInt = 0,
+        pagination_limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     ) -> tuple[list[ServiceRelease], PageMetaInfoLimitOffset]:
 
-        page = await catalog_rpc.list_my_service_history_paginated(
-            self._client,
-            product_name=product_name,
-            user_id=user_id,
-            service_key=service_key,
-            offset=offset,
-            limit=limit,
+        page = await catalog_rpc.list_my_service_history_latest_first(
+            self._rpc_client,
+            product_name=self.product_name,
+            user_id=self.user_id,
+            service_key=filter_by_service_key,
+            offset=pagination_offset,
+            limit=pagination_limit,
         )
         meta = PageMetaInfoLimitOffset(
             limit=page.meta.limit,
@@ -107,16 +99,14 @@ class CatalogService:
     async def get(
         self,
         *,
-        product_name: ProductName,
-        user_id: UserID,
         name: ServiceKey,
         version: ServiceVersion,
     ) -> ServiceGetV2:
 
         return await catalog_rpc.get_service(
-            self._client,
-            product_name=product_name,
-            user_id=user_id,
+            self._rpc_client,
+            product_name=self.product_name,
+            user_id=self.user_id,
             service_key=name,
             service_version=version,
         )
@@ -131,8 +121,6 @@ class CatalogService:
     async def get_service_ports(
         self,
         *,
-        product_name: ProductName,
-        user_id: UserID,
         name: ServiceKey,
         version: ServiceVersion,
     ) -> list[ServicePortGet]:
@@ -144,9 +132,9 @@ class CatalogService:
             InvalidInputError: invalid input parameters
         """
         return await catalog_rpc.get_service_ports(
-            self._client,
-            product_name=product_name,
-            user_id=user_id,
+            self._rpc_client,
+            product_name=self.product_name,
+            user_id=self.user_id,
             service_key=name,
             service_version=version,
         )
