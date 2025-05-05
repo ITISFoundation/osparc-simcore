@@ -85,7 +85,7 @@ class LogDistributor:
         await self._rabbit_client.remove_topics(
             LoggerRabbitMessage.get_channel_name(), topics=[f"{job_id}.*"]
         )
-        del self._log_streamers[job_id]
+        self._log_streamers.pop(job_id)
 
     @property
     def iter_log_queue_sizes(self) -> Iterator[tuple[JobID, int]]:
