@@ -18,6 +18,7 @@ def _list_running_ec2_instances(
     custom_tags: dict[str, str],
     user_id: int | None,
     wallet_id: int | None,
+    instance_id: str | None,
 ) -> ServiceResourceInstancesCollection:
     # get all the running instances
 
@@ -37,7 +38,8 @@ def _list_running_ec2_instances(
         ec2_filters.append({"Name": "tag:user_id", "Values": [f"{user_id}"]})
     if wallet_id:
         ec2_filters.append({"Name": "tag:wallet_id", "Values": [f"{wallet_id}"]})
-
+    if instance_id:
+        ec2_filters.append({"Name": "instance-id", "Values": [f"{instance_id}"]})
     return ec2_resource.instances.filter(Filters=ec2_filters)
 
 
@@ -66,13 +68,16 @@ async def list_computational_instances_from_ec2(
         custom_tags,
         user_id,
         wallet_id,
+        None,
     )
 
 
 async def list_dynamic_instances_from_ec2(
     state: AppState,
-    user_id: int | None,
-    wallet_id: int | None,
+    *,
+    filter_by_user_id: int | None,
+    filter_by_wallet_id: int | None,
+    filter_by_instance_id: str | None,
 ) -> ServiceResourceInstancesCollection:
     assert state.environment["EC2_INSTANCES_KEY_NAME"]
     custom_tags = {}
@@ -83,8 +88,9 @@ async def list_dynamic_instances_from_ec2(
         state.ec2_resource_autoscaling,
         state.environment["EC2_INSTANCES_KEY_NAME"],
         custom_tags,
-        user_id,
-        wallet_id,
+        filter_by_user_id,
+        filter_by_wallet_id,
+        filter_by_instance_id,
     )
 
 
@@ -99,6 +105,7 @@ async def get_computational_bastion_instance(state: AppState) -> Instance:
         state.ec2_resource_clusters_keeper,
         state.environment["PRIMARY_EC2_INSTANCES_KEY_NAME"],
         {},
+        None,
         None,
         None,
     )
@@ -118,6 +125,7 @@ async def get_dynamic_bastion_instance(state: AppState) -> Instance:
         state.ec2_resource_autoscaling,
         state.environment["EC2_INSTANCES_KEY_NAME"],
         {},
+        None,
         None,
         None,
     )

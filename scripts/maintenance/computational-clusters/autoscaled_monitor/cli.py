@@ -209,5 +209,18 @@ def check_database_connection() -> None:
     asyncio.run(api.check_database_connection(state))
 
 
+@app.command()
+def terminate_dynamic_instances(
+    user_id: Annotated[int | None, typer.Option(help="the user ID")] = None,
+    instance_id: Annotated[str | None, typer.Option(help="the instance ID")] = None,
+    *,
+    force: Annotated[bool, typer.Option(help="will not ask for confirmation")] = False,
+) -> None:
+    """this will terminate the instance(s) used for the given user or instance ID."""
+    asyncio.run(
+        api.terminate_dynamic_instances(state, user_id, instance_id, force=force)
+    )
+
+
 if __name__ == "__main__":
     app()

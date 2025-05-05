@@ -491,7 +491,10 @@ async def summary(
     # get all the running instances
     assert state.ec2_resource_autoscaling
     dynamic_instances = await ec2.list_dynamic_instances_from_ec2(
-        state, user_id, wallet_id
+        state,
+        filter_by_user_id=user_id,
+        filter_by_wallet_id=wallet_id,
+        filter_by_instance_id=None,
     )
     dynamic_autoscaled_instances = await _parse_dynamic_instances(
         state, dynamic_instances, state.ssh_key_path, user_id, wallet_id
@@ -776,3 +779,48 @@ async def trigger_cluster_termination(
 
 async def check_database_connection(state: AppState) -> None:
     await db.check_db_connection(state)
+
+
+async def terminate_dynamic_instances(
+    state: AppState,
+    user_id: int | None,
+    instance_id: str | None,
+    *,
+    force: bool,
+) -> None:
+    if not user_id and not instance_id:
+        rich.print("either define user_id or instance_id!")
+        raise typer.Exit(2)
+    dynamic_instances = await ec2.list_dynamic_instances_from_ec2(
+        state,
+        filter_by_user_id=None,
+        filter_by_wallet_id=None,
+        filter_by_instance_id=instance_id,
+    )
+
+    dynamic_autoscaled_instances = await _parse_dynamic_instances(
+        state, dynamic_instances, state.ssh_key_path, user_id, None
+    )
+
+    if not dynamic_autoscaled_instances:
+        rich.print("no instances found")
+        raise typer.Exit(1)
+
+    _print_dynamic_instances(
+        dynamic_autoscaled_instances,
+        state.environment,
+        state.ec2_resource_autoscaling.meta.client.meta.region_name,
+        output=None,
+    )
+
+    for instance in dynamic_autoscaled_instances:
+        rich.print(
+            f"terminating instance {instance.ec2_instance.instance_id} with name {utils.get_instance_name(instance.ec2_instance)}"
+        )
+        if force is True or typer.confirm(
+            f"Are you sure you want to terminate instance {instance.ec2_instance.instance_id}?"
+        ):
+            instance.ec2_instance.terminate()
+            rich.print(f"terminated instance {instance.ec2_instance.instance_id}")
+        else:
+            rich.print("not terminating anything")
