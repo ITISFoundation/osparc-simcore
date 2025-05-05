@@ -17,6 +17,7 @@ from dask_task_models_library.container_tasks.protocol import TaskOwner
 from distributed.worker import get_worker
 from distributed.worker_state_machine import TaskState
 from models_library.progress_bar import ProgressReport
+from models_library.rabbitmq_messages import LoggerRabbitMessage
 from servicelib.logging_utils import LogLevelInt, LogMessageStr, log_catch
 
 _logger = logging.getLogger(__name__)
@@ -82,13 +83,32 @@ class TaskPublisher:
                 self._last_published_progress_value = rounded_value
             _logger.debug("PROGRESS: %s", rounded_value)
 
-    def publish_logs(
+    async def publish_logs(
         self,
         *,
         message: LogMessageStr,
         log_level: LogLevelInt,
     ) -> None:
         with log_catch(logger=_logger, reraise=False):
+
+            base_message = LoggerRabbitMessage(
+                user_id=self.task_owner.user_id,
+                project_id=self.task_owner.project_id,
+                node_id=self.task_owner.node_id,
+                messages=[message],
+                log_level=log_level,
+            )
+            if self.task_owner.has_parent:
+                assert self.task_owner.parent_project_id  # nosec
+                assert self.task_owner.parent_node_id  # nosec
+                parent_message = LoggerRabbitMessage(
+                    user_id=self.task_owner.user_id,
+                    project_id=self.task_owner.parent_project_id,
+                    node_id=self.task_owner.parent_node_id,
+                    messages=[message],
+                    log_level=log_level,
+                )
+
             publish_event(
                 self.logs,
                 TaskLogEvent.from_dask_worker(
