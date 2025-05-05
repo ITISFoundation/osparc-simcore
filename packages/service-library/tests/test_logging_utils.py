@@ -1,4 +1,5 @@
 # pylint:disable=redefined-outer-name
+# pylint:disable=unused-argument
 
 import logging
 from collections.abc import Iterable
