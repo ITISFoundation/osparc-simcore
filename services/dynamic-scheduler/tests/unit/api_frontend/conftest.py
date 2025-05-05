@@ -10,12 +10,14 @@ from unittest.mock import AsyncMock
 
 import nicegui
 import pytest
+import sqlalchemy as sa
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 from hypercorn.asyncio import serve
 from hypercorn.config import Config
 from playwright.async_api import Page, async_playwright
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.postgres_tools import PostgresTestConfig
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
@@ -55,6 +57,8 @@ def mock_remove_tracked_service(mocker: MockerFixture) -> AsyncMock:
 @pytest.fixture
 def app_environment(
     app_environment: EnvVarsDict,
+    postgres_db: sa.engine.Engine,
+    postgres_host_config: PostgresTestConfig,
     disable_status_monitor_background_task: None,
     rabbit_service: RabbitSettings,
     redis_service: RedisSettings,

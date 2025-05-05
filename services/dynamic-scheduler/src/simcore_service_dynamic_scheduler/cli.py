@@ -3,6 +3,7 @@ import os
 
 import typer
 from settings_library.docker_api_proxy import DockerApiProxysettings
+from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.utils_cli import (
     create_settings_command,
@@ -49,13 +50,28 @@ def echo_dotenv(ctx: typer.Context, *, minimal: bool = True):
                 RABBIT_SECURE=os.environ.get("RABBIT_SECURE", "0"),
                 RABBIT_USER=os.environ.get("RABBIT_USER", "replace-with-rabbit-user"),
                 RABBIT_PASSWORD=os.environ.get(
-                    "RABBIT_PASSWORD", "replace-with-rabbit-user"
+                    "RABBIT_PASSWORD", "replace-with-rabbit-password"
                 ),
             ),
         ),
         DYNAMIC_SCHEDULER_UI_STORAGE_SECRET=os.environ.get(
             "DYNAMIC_SCHEDULER_UI_STORAGE_SECRET",
             "replace-with-ui-storage-secret",
+        ),
+        DYNAMIC_SCHEDULER_POSTGRES=os.environ.get(
+            "DYNAMIC_SCHEDULER_POSTGRES",
+            PostgresSettings.create_from_envs(
+                POSTGRES_HOST=os.environ.get(
+                    "POSTGRES_HOST", "replace-with-postgres-host"
+                ),
+                POSTGRES_USER=os.environ.get(
+                    "POSTGRES_USER", "replace-with-postgres-user"
+                ),
+                POSTGRES_PASSWORD=os.environ.get(
+                    "POSTGRES_PASSWORD", "replace-with-postgres-password"
+                ),
+                POSTGRES_DB=os.environ.get("POSTGRES_DB", "replace-with-postgres-db"),
+            ),
         ),
         DYNAMIC_SCHEDULER_DOCKER_API_PROXY=os.environ.get(
             "DYNAMIC_SCHEDULER_DOCKER_API_PROXY",

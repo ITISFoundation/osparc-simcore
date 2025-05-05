@@ -21,6 +21,7 @@ from simcore_service_dynamic_scheduler.services.catalog import CatalogPublicClie
 
 @pytest.fixture
 def app_environment(
+    disable_postgres_lifespan: None,
     disable_redis_lifespan: None,
     disable_rabbitmq_lifespan: None,
     disable_service_tracker_lifespan: None,

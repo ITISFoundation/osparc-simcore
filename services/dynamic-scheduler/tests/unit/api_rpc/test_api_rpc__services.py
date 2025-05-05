@@ -179,6 +179,7 @@ def app_environment(
 
 @pytest.fixture
 async def rpc_client(
+    disable_postgres_lifespan: None,
     app_environment: EnvVarsDict,
     mock_director_v2_service_state: None,
     mock_director_v0_service_state: None,
