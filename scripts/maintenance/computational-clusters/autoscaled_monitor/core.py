@@ -491,7 +491,10 @@ async def summary(
     # get all the running instances
     assert state.ec2_resource_autoscaling
     dynamic_instances = await ec2.list_dynamic_instances_from_ec2(
-        state, user_id=user_id, wallet_id=wallet_id, instance_id=None
+        state,
+        filter_by_user_id=user_id,
+        filter_by_wallet_id=wallet_id,
+        filter_by_instance_id=None,
     )
     dynamic_autoscaled_instances = await _parse_dynamic_instances(
         state, dynamic_instances, state.ssh_key_path, user_id, wallet_id
@@ -787,9 +790,12 @@ async def terminate_dynamic_instances(
 ) -> None:
     if not user_id and not instance_id:
         rich.print("either define user_id or instance_id!")
-        raise typer.Exit(127)
+        raise typer.Exit(2)
     dynamic_instances = await ec2.list_dynamic_instances_from_ec2(
-        state, user_id=None, wallet_id=None, instance_id=instance_id
+        state,
+        filter_by_user_id=None,
+        filter_by_wallet_id=None,
+        filter_by_instance_id=instance_id,
     )
 
     dynamic_autoscaled_instances = await _parse_dynamic_instances(
@@ -798,7 +804,7 @@ async def terminate_dynamic_instances(
 
     if not dynamic_autoscaled_instances:
         rich.print("no instances found")
-        raise typer.Exit(0)
+        raise typer.Exit(1)
 
     _print_dynamic_instances(
         dynamic_autoscaled_instances,

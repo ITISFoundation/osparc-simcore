@@ -75,9 +75,9 @@ async def list_computational_instances_from_ec2(
 async def list_dynamic_instances_from_ec2(
     state: AppState,
     *,
-    user_id: int | None,
-    wallet_id: int | None,
-    instance_id: str | None,
+    filter_by_user_id: int | None,
+    filter_by_wallet_id: int | None,
+    filter_by_instance_id: str | None,
 ) -> ServiceResourceInstancesCollection:
     assert state.environment["EC2_INSTANCES_KEY_NAME"]
     custom_tags = {}
@@ -88,9 +88,9 @@ async def list_dynamic_instances_from_ec2(
         state.ec2_resource_autoscaling,
         state.environment["EC2_INSTANCES_KEY_NAME"],
         custom_tags,
-        user_id,
-        wallet_id,
-        instance_id,
+        filter_by_user_id,
+        filter_by_wallet_id,
+        filter_by_instance_id,
     )
 
 
