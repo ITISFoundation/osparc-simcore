@@ -127,9 +127,11 @@ def main(
 
 @app.command()
 def summary(
+    *,
     user_id: Annotated[int, typer.Option(help="filters by the user ID")] = 0,
     wallet_id: Annotated[int, typer.Option(help="filters by the wallet ID")] = 0,
     as_json: Annotated[bool, typer.Option(help="outputs as json")] = False,
+    output: Annotated[Path | None, typer.Option(help="outputs to a file")] = None,
 ) -> None:
     """Show a summary of the current situation of autoscaled EC2 instances.
 
@@ -142,7 +144,13 @@ def summary(
     """
 
     if not asyncio.run(
-        api.summary(state, user_id or None, wallet_id or None, output_json=as_json)
+        api.summary(
+            state,
+            user_id or None,
+            wallet_id or None,
+            output_json=as_json,
+            output=output,
+        )
     ):
         raise typer.Exit(1)
 
