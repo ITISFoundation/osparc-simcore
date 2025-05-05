@@ -11,11 +11,11 @@ from dask_task_models_library.container_tasks.protocol import (
     ContainerTaskParameters,
     LogFileUploadURL,
 )
-from distributed.worker import logger as dask_worker_logger
-from servicelib.logging_utils import config_all_loggers, log_context
+from servicelib.logging_utils import log_context
 from settings_library.s3 import S3Settings
 
 from ._meta import print_dask_sidecar_banner
+from .app_utils import setup_app_logging
 from .computational_sidecar.core import ComputationalSidecar
 from .dask_utils import TaskPublisher, get_current_task_resources, monitor_task_abortion
 from .rabbitmq_plugin import RabbitMQPlugin
@@ -53,21 +53,9 @@ class GracefulKiller:
 
 
 async def dask_setup(worker: distributed.Worker) -> None:
-    """This is a special function recognized by the dask worker when starting with flag --preload"""
+    """This is a special function recognized by dask when starting with flag --preload"""
     settings = ApplicationSettings.create_from_envs()
-    # set up logging
-    logging.basicConfig(level=settings.DASK_SIDECAR_LOGLEVEL.value)
-    logging.root.setLevel(level=settings.DASK_SIDECAR_LOGLEVEL.value)
-    dask_worker_logger.setLevel(level=settings.DASK_SIDECAR_LOGLEVEL.value)
-    # NOTE: Dask attaches a StreamHandler to the logger in distributed
-    # removing them solves dual propagation of logs
-    for handler in logging.getLogger("distributed").handlers:
-        logging.getLogger("distributed").removeHandler(handler)
-    config_all_loggers(
-        log_format_local_dev_enabled=settings.DASK_LOG_FORMAT_LOCAL_DEV_ENABLED,
-        logger_filter_mapping=settings.DASK_LOG_FILTER_MAPPING,
-        tracing_settings=None,  # no tracing for dask sidecar
-    )
+    setup_app_logging(settings)
 
     with log_context(_logger, logging.INFO, "Launch dask worker"):
         _logger.info("app settings: %s", settings.model_dump_json(indent=1))
@@ -79,6 +67,7 @@ async def dask_setup(worker: distributed.Worker) -> None:
 
             loop = asyncio.get_event_loop()
             _logger.info("We do have a running loop in the main thread: %s", f"{loop=}")
+
             if settings.DASK_SIDECAR_RABBITMQ:
                 await worker.plugin_add(RabbitMQPlugin(settings.DASK_SIDECAR_RABBITMQ))
 
