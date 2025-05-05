@@ -45,7 +45,7 @@ async def test_confirmation_token_workflow(
     )
     request = make_mocked_request(
         "GET",
-        "http://example.com/auth/confirmation/{code}",
+        "https://example.com/auth/confirmation/{code}",
         app=app,
         headers={"Host": "example.com"},
     )
@@ -56,7 +56,7 @@ async def test_confirmation_token_workflow(
     )
 
     # Assertions
-    assert confirmation_link.startswith("http://example.com/auth/confirmation/")
+    assert confirmation_link.startswith("https://example.com/auth/confirmation/")
     assert confirmation["code"] in confirmation_link
 
 

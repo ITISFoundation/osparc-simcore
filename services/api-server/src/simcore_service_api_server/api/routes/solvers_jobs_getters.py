@@ -18,13 +18,13 @@ from models_library.wallets import ZERO_CREDITS
 from pydantic import HttpUrl, NonNegativeInt
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_context
-from simcore_service_api_server.models.api_resources import parse_resources_ids
 from sqlalchemy.ext.asyncio import AsyncEngine
 from starlette.background import BackgroundTask
 
 from ..._service_solvers import SolverService
 from ...exceptions.custom_errors import InsufficientCreditsError, MissingWalletError
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
+from ...models.api_resources import parse_resources_ids
 from ...models.basic_types import LogStreamingResponse, VersionStr
 from ...models.domain.files import File as DomainFile
 from ...models.pagination import Page, PaginationParams
@@ -53,7 +53,7 @@ from ...services_http.solver_job_models_converters import create_job_from_projec
 from ...services_http.solver_job_outputs import ResultsTypes, get_solver_output_results
 from ...services_http.storage import StorageApi, to_file_api_model
 from ..dependencies.application import get_reverse_url_mapper
-from ..dependencies.authentication import get_current_user_id, get_product_name
+from ..dependencies.authentication import get_current_user_id
 from ..dependencies.database import get_db_asyncpg_engine
 from ..dependencies.rabbitmq import get_log_check_timeout, get_log_distributor
 from ..dependencies.services import get_api_client, get_solver_service
@@ -66,7 +66,7 @@ from ._constants import (
 from .solvers_jobs import (
     JOBS_STATUS_CODES,
     METADATA_STATUS_CODES,
-    _compose_job_resource_name,
+    compose_job_resource_name,
 )
 from .wallets import WALLET_STATUS_CODES
 
@@ -119,36 +119,6 @@ _LOGSTREAM_STATUS_CODES: dict[int | str, dict[str, Any]] = {
 }
 
 
-def _update_job_urls(
-    job: Job,
-    solver_key: SolverKeyId,
-    solver_version: VersionStr,
-    job_id: JobID | str,
-    url_for: Callable[..., HttpUrl],
-) -> Job:
-    job.url = url_for(
-        "get_job",
-        solver_key=solver_key,
-        version=solver_version,
-        job_id=job_id,
-    )
-
-    job.runner_url = url_for(
-        "get_solver_release",
-        solver_key=solver_key,
-        version=solver_version,
-    )
-
-    job.outputs_url = url_for(
-        "get_job_outputs",
-        solver_key=solver_key,
-        version=solver_version,
-        job_id=job_id,
-    )
-
-    return job
-
-
 router = APIRouter()
 
 
@@ -164,23 +134,19 @@ router = APIRouter()
     include_in_schema=False,  # TO BE RELEASED in 0.8
 )
 async def list_all_solvers_jobs(
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     page_params: Annotated[PaginationParams, Depends()],
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
-    product_name: Annotated[str, Depends(get_product_name)],
 ):
 
     jobs, meta = await solver_service.list_jobs(
-        product_name=product_name,
-        user_id=user_id,
-        offset=page_params.offset,
-        limit=page_params.limit,
+        pagination_offset=page_params.offset,
+        pagination_limit=page_params.limit,
     )
 
     for job in jobs:
         solver_key, version, job_id = parse_resources_ids(job.resource_name)
-        _update_job_urls(job, solver_key, version, job_id, url_for)
+        _update_solver_job_urls(job, solver_key, version, job_id, url_for)
 
     return create_page(
         jobs,
@@ -194,7 +160,7 @@ async def list_all_solvers_jobs(
     response_model=list[Job],
     responses=JOBS_STATUS_CODES,
     description=create_route_description(
-        base="List of jobs in a specific released solver",
+        base="List of jobs in a specific released solver (limited to 20 jobs)",
         deprecated=True,
         alternative="GET /{solver_key}/releases/{version}/jobs/page",
         changelog=[
@@ -209,19 +175,13 @@ async def list_all_solvers_jobs(
 async def list_jobs(
     solver_key: SolverKeyId,
     version: VersionStr,
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
-    product_name: Annotated[str, Depends(get_product_name)],
 ):
-    """List of jobs in a specific released solver (limited to 20 jobs)"""
-
     solver = await solver_service.get_solver(
-        user_id=user_id,
         solver_key=solver_key,
         solver_version=version,
-        product_name=product_name,
     )
     _logger.debug("Listing Jobs in Solver '%s'", solver.name)
 
@@ -254,21 +214,17 @@ async def list_jobs(
 async def get_jobs_page(
     solver_key: SolverKeyId,
     version: VersionStr,
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     page_params: Annotated[PaginationParams, Depends()],
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
-    product_name: Annotated[str, Depends(get_product_name)],
 ):
     # NOTE: Different entry to keep backwards compatibility with list_jobs.
     # Eventually use a header with agent version to switch to new interface
 
     solver = await solver_service.get_solver(
-        user_id=user_id,
         solver_key=solver_key,
         solver_version=version,
-        product_name=product_name,
     )
     _logger.debug("Listing Jobs in Solver '%s'", solver.name)
 
@@ -297,22 +253,18 @@ async def get_job(
     solver_key: SolverKeyId,
     version: VersionStr,
     job_id: JobID,
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
-    product_name: Annotated[str, Depends(get_product_name)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
     """Gets job of a given solver"""
     _logger.debug(
-        "Getting Job '%s'", _compose_job_resource_name(solver_key, version, job_id)
+        "Getting Job '%s'", compose_job_resource_name(solver_key, version, job_id)
     )
 
     solver = await solver_service.get_solver(
-        user_id=user_id,
         solver_key=solver_key,
         solver_version=version,
-        product_name=product_name,
     )
     project: ProjectGet = await webserver_api.get_project(project_id=job_id)
 
@@ -337,7 +289,7 @@ async def get_job_outputs(
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
 ):
-    job_name = _compose_job_resource_name(solver_key, version, job_id)
+    job_name = compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Get Job '%s' outputs", job_name)
 
     project: ProjectGet = await webserver_api.get_project(project_id=job_id)
@@ -405,7 +357,7 @@ async def get_job_output_logfile(
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
 ):
-    job_name = _compose_job_resource_name(solver_key, version, job_id)
+    job_name = compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Get Job '%s' outputs logfile", job_name)
 
     project_id = job_id
@@ -459,7 +411,7 @@ async def get_job_custom_metadata(
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
-    job_name = _compose_job_resource_name(solver_key, version, job_id)
+    job_name = compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Custom metadata for '%s'", job_name)
 
     return await get_custom_metadata(
@@ -487,7 +439,7 @@ async def get_job_wallet(
     job_id: JobID,
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ) -> WalletGetWithAvailableCreditsLegacy:
-    job_name = _compose_job_resource_name(solver_key, version, job_id)
+    job_name = compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Getting wallet for job '%s'", job_name)
 
     if project_wallet := await webserver_api.get_project_wallet(project_id=job_id):
@@ -509,7 +461,7 @@ async def get_job_pricing_unit(
     job_id: JobID,
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
-    job_name = _compose_job_resource_name(solver_key, version, job_id)
+    job_name = compose_job_resource_name(solver_key, version, job_id)
     with log_context(_logger, logging.DEBUG, "Get pricing unit"):
         _logger.debug("job: %s", job_name)
         project: ProjectGet = await webserver_api.get_project(project_id=job_id)
@@ -540,7 +492,7 @@ async def get_log_stream(
 ):
     assert request  # nosec
 
-    job_name = _compose_job_resource_name(solver_key, version, job_id)
+    job_name = compose_job_resource_name(solver_key, version, job_id)
     with log_context(
         _logger, logging.DEBUG, f"Streaming logs for {job_name=} and {user_id=}"
     ):
@@ -558,3 +510,33 @@ async def get_log_stream(
             log_streamer.log_generator(),
             background=BackgroundTask(partial(log_distributor.deregister, job_id)),
         )
+
+
+def _update_solver_job_urls(
+    job: Job,
+    solver_key: SolverKeyId,
+    solver_version: VersionStr,
+    job_id: JobID | str,
+    url_for: Callable[..., HttpUrl],
+) -> Job:
+    job.url = url_for(
+        get_job.__name__,
+        solver_key=solver_key,
+        version=solver_version,
+        job_id=job_id,
+    )
+
+    job.runner_url = url_for(
+        "get_solver_release",
+        solver_key=solver_key,
+        version=solver_version,
+    )
+
+    job.outputs_url = url_for(
+        "get_job_outputs",
+        solver_key=solver_key,
+        version=solver_version,
+        job_id=job_id,
+    )
+
+    return job
