@@ -138,5 +138,5 @@ def iter_originating_hosts(request: web.Request) -> Generator[str, None, None]:
         request.headers.get("X-Forwarded-Host"),
         request.host,
     ):
-        if host:
+        if host is not None:
             yield host.partition(":")[0]  # exclude port, if any
