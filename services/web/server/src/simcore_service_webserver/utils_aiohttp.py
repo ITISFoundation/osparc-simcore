@@ -1,6 +1,6 @@
 import io
 import logging
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Generator
 from typing import Any, Generic, Literal, TypeAlias, TypeVar
 
 from aiohttp import web
@@ -130,7 +130,7 @@ class NextPage(BaseModel, Generic[PageParameters]):
     parameters: PageParameters | None = None
 
 
-def iter_originating_hosts(request: web.Request) -> Iterable[str]:
+def iter_originating_hosts(request: web.Request) -> Generator[str, None, None]:
     #
     # SEE https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-Host
     # SEE https://doc.traefik.io/traefik/getting-started/faq/#what-are-the-forwarded-headers-when-proxying-http-requests
