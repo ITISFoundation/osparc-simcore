@@ -20,6 +20,8 @@ from models_library.progress_bar import ProgressReport
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from servicelib.logging_utils import LogLevelInt, LogMessageStr, log_catch
 
+from .rabbitmq_plugin import get_rabbitmq_client
+
 _logger = logging.getLogger(__name__)
 
 
@@ -90,7 +92,7 @@ class TaskPublisher:
         log_level: LogLevelInt,
     ) -> None:
         with log_catch(logger=_logger, reraise=False):
-
+            rabbitmq_client = get_rabbitmq_client(get_worker())
             base_message = LoggerRabbitMessage(
                 user_id=self.task_owner.user_id,
                 project_id=self.task_owner.project_id,
@@ -98,6 +100,7 @@ class TaskPublisher:
                 messages=[message],
                 log_level=log_level,
             )
+            await rabbitmq_client.publish(base_message.channel_name, base_message)
             if self.task_owner.has_parent:
                 assert self.task_owner.parent_project_id  # nosec
                 assert self.task_owner.parent_node_id  # nosec
@@ -108,6 +111,7 @@ class TaskPublisher:
                     messages=[message],
                     log_level=log_level,
                 )
+                await rabbitmq_client.publish(parent_message.channel_name, base_message)
 
             publish_event(
                 self.logs,
