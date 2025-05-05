@@ -65,3 +65,17 @@ class RabbitMQPlugin(distributed.WorkerPlugin):
                 msg="RabbitMQ client is not available. Please check the configuration."
             )
         return self._client
+
+
+def get_rabbitmq_client(worker: distributed.Worker) -> RabbitMQClient:
+    """Returns the RabbitMQ client or raises an error if not available"""
+    if not worker.plugins:
+        raise ConfigurationError(
+            msg="RabbitMQ client is not available. Please check the configuration."
+        )
+    rabbitmq_plugin = worker.plugins.get(RabbitMQPlugin.name)
+    if not isinstance(rabbitmq_plugin, RabbitMQPlugin):
+        raise ConfigurationError(
+            msg="RabbitMQ client is not available. Please check the configuration."
+        )
+    return rabbitmq_plugin.get_client()
