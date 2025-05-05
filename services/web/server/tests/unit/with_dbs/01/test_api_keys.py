@@ -122,7 +122,7 @@ async def test_create_api_key(
         assert "apiKey" in data
         assert "apiSecret" in data
         assert "apiBaseUrl" in data
-        assert data["apiBaseUrl"] == "https://api.osparc.io/"
+        assert data["apiBaseUrl"] == "http://api.osparc.io/"
 
         resp = await client.get("/v0/auth/api-keys")
         data, _ = await assert_status(resp, expected)
