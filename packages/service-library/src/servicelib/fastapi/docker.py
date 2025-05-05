@@ -30,31 +30,19 @@ async def remote_docker_client_lifespan(
 ) -> AsyncIterator[State]:
     settings: DockerApiProxysettings = state[_DOCKER_API_PROXY_SETTINGS]
 
-    session: ClientSession | None = None
-    if settings.DOCKER_API_PROXY_USER and settings.DOCKER_API_PROXY_PASSWORD:
-        session = ClientSession(
-            auth=aiohttp.BasicAuth(
-                login=settings.DOCKER_API_PROXY_USER,
-                password=settings.DOCKER_API_PROXY_PASSWORD.get_secret_value(),
-            )
-        )
-
     async with AsyncExitStack() as exit_stack:
-        if settings.DOCKER_API_PROXY_USER and settings.DOCKER_API_PROXY_PASSWORD:
-            await exit_stack.enter_async_context(
-                ClientSession(
-                    auth=aiohttp.BasicAuth(
-                        login=settings.DOCKER_API_PROXY_USER,
-                        password=settings.DOCKER_API_PROXY_PASSWORD.get_secret_value(),
-                    )
+        session = await exit_stack.enter_async_context(
+            ClientSession(
+                auth=aiohttp.BasicAuth(
+                    login=settings.DOCKER_API_PROXY_USER,
+                    password=settings.DOCKER_API_PROXY_PASSWORD.get_secret_value(),
                 )
             )
-
-        client = await exit_stack.enter_async_context(
-            aiodocker.Docker(url=settings.base_url, session=session)
         )
 
-        app.state.remote_docker_client = client
+        app.state.remote_docker_client = await exit_stack.enter_async_context(
+            aiodocker.Docker(url=settings.base_url, session=session)
+        )
 
         await wait_till_docker_api_proxy_is_responsive(app)
 

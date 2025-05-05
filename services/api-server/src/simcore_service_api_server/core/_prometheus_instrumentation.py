@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import timedelta
 from typing import Final, cast
@@ -37,25 +38,29 @@ class ApiServerPrometheusInstrumentation:
             "#Logs in log streaming queue",
             ["job_id"],
             namespace=METRICS_NAMESPACE,
+            registry=self.registry,
         )
         self._health_check_qauge = Gauge(
             "log_stream_health_check",
             "#Failures of log stream health check",
             namespace=METRICS_NAMESPACE,
+            registry=self.registry,
         )
 
     def update_metrics(
-        self, log_queue_sizes: dict[JobID, int], health_check_failure_count: PositiveInt
+        self,
+        iter_log_queue_sizes: Iterator[tuple[JobID, int]],
+        health_check_failure_count: PositiveInt,
     ):
         self._health_check_qauge.set(health_check_failure_count)
         self._logstreaming_queues.clear()
-        for job_id, length in log_queue_sizes.items():
+        for job_id, length in iter_log_queue_sizes:
             self._logstreaming_queues.labels(job_id=job_id).set(length)
 
 
 async def _collect_prometheus_metrics_task(app: FastAPI):
     get_instrumentation(app).update_metrics(
-        log_queue_sizes=get_log_distributor(app).get_log_queue_sizes,
+        iter_log_queue_sizes=get_log_distributor(app).iter_log_queue_sizes,
         health_check_failure_count=get_health_checker(app).health_check_failure_count,
     )
 

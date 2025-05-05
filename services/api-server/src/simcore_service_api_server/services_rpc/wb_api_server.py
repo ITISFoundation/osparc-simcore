@@ -44,7 +44,6 @@ from servicelib.rabbitmq.rpc_interfaces.webserver.licenses.licensed_items import
 from servicelib.rabbitmq.rpc_interfaces.webserver.licenses.licensed_items import (
     release_licensed_item_for_wallet as _release_licensed_item_for_wallet,
 )
-from simcore_service_api_server.models.api_resources import RelativeResourceName
 
 from ..exceptions.backend_errors import (
     CanNotCheckoutServiceIsNotRunningError,
@@ -52,6 +51,7 @@ from ..exceptions.backend_errors import (
     LicensedItemCheckoutNotFoundError,
 )
 from ..exceptions.service_errors_utils import service_exception_mapper
+from ..models.api_resources import RelativeResourceName
 from ..models.pagination import Page, PaginationParams
 from ..models.schemas.model_adapter import (
     LicensedItemCheckoutGet,

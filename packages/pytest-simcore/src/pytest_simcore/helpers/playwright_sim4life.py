@@ -26,7 +26,7 @@ _S4L_SOCKETIO_REGEX: Final[re.Pattern] = re.compile(
     r"^(?P<protocol>[^:]+)://(?P<node_id>[^\.]+)\.services\.(?P<hostname>[^\/]+)\/socket\.io\/.+$"
 )
 _EC2_STARTUP_MAX_WAIT_TIME: Final[int] = 1 * MINUTE
-_S4L_MAX_STARTUP_TIME: Final[int] = 1 * MINUTE
+_S4L_MAX_STARTUP_TIME: Final[int] = 2 * MINUTE
 _S4L_DOCKER_PULLING_MAX_TIME: Final[int] = 10 * MINUTE
 _S4L_AUTOSCALED_MAX_STARTUP_TIME: Final[int] = (
     _EC2_STARTUP_MAX_WAIT_TIME + _S4L_DOCKER_PULLING_MAX_TIME + _S4L_MAX_STARTUP_TIME

@@ -15,8 +15,8 @@ class DockerApiProxysettings(BaseCustomSettings):
     )
     DOCKER_API_PROXY_SECURE: bool = False
 
-    DOCKER_API_PROXY_USER: str | None = None
-    DOCKER_API_PROXY_PASSWORD: SecretStr | None = None
+    DOCKER_API_PROXY_USER: str
+    DOCKER_API_PROXY_PASSWORD: SecretStr
 
     @cached_property
     def base_url(self) -> str:

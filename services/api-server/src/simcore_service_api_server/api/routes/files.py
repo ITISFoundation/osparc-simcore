@@ -29,11 +29,6 @@ from simcore_sdk.node_ports_common.filemanager import (
     get_upload_links_from_s3,
 )
 from simcore_sdk.node_ports_common.filemanager import upload_path as storage_upload_path
-from simcore_service_api_server.api.routes._constants import (
-    FMSG_CHANGELOG_ADDED_IN_VERSION,
-    FMSG_CHANGELOG_REMOVED_IN_VERSION_FORMAT,
-    create_route_description,
-)
 from starlette.datastructures import URL
 from starlette.responses import RedirectResponse
 
@@ -59,6 +54,11 @@ from ...services_http.webserver import AuthSession
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
+from ._constants import (
+    FMSG_CHANGELOG_ADDED_IN_VERSION,
+    FMSG_CHANGELOG_REMOVED_IN_VERSION_FORMAT,
+    create_route_description,
+)
 
 _logger = logging.getLogger(__name__)
 router = APIRouter()

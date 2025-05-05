@@ -6,6 +6,9 @@ from servicelib.fastapi.docker import (
     create_remote_docker_client_input_state,
     remote_docker_client_lifespan,
 )
+from servicelib.fastapi.postgres_lifespan import (
+    create_postgres_database_input_state,
+)
 from servicelib.fastapi.prometheus_instrumentation import (
     create_prometheus_instrumentationmain_input_state,
     prometheus_instrumentation_lifespan,
@@ -13,6 +16,7 @@ from servicelib.fastapi.prometheus_instrumentation import (
 
 from .._meta import APP_FINISHED_BANNER_MSG, APP_STARTED_BANNER_MSG
 from ..api.rpc.routes import rpc_api_routes_lifespan
+from ..repository.events import repository_lifespan_manager
 from ..services.catalog import catalog_lifespan
 from ..services.deferred_manager import deferred_manager_lifespan
 from ..services.director_v0 import director_v0_lifespan
@@ -36,6 +40,7 @@ async def _settings_lifespan(app: FastAPI) -> AsyncIterator[State]:
     settings: ApplicationSettings = app.state.settings
 
     yield {
+        **create_postgres_database_input_state(settings.DYNAMIC_SCHEDULER_POSTGRES),
         **create_prometheus_instrumentationmain_input_state(
             enabled=settings.DYNAMIC_SCHEDULER_PROMETHEUS_INSTRUMENTATION_ENABLED
         ),
@@ -49,6 +54,7 @@ def create_app_lifespan() -> LifespanManager:
     app_lifespan = LifespanManager()
     app_lifespan.add(_settings_lifespan)
 
+    app_lifespan.include(repository_lifespan_manager)
     app_lifespan.add(director_v2_lifespan)
     app_lifespan.add(director_v0_lifespan)
     app_lifespan.add(catalog_lifespan)
