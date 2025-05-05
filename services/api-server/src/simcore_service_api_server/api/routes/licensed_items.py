@@ -6,9 +6,6 @@ from models_library.resource_tracker_licensed_items_checkouts import (
     LicensedItemCheckoutID,
 )
 from pydantic import PositiveInt
-from simcore_service_api_server.api.dependencies.resource_usage_tracker_rpc import (
-    get_resource_usage_tracker_client,
-)
 
 from ...api.dependencies.authentication import get_current_user_id, get_product_name
 from ...api.dependencies.webserver_rpc import get_wb_api_rpc_client
@@ -17,6 +14,9 @@ from ...models.pagination import Page, PaginationParams
 from ...models.schemas.model_adapter import LicensedItemCheckoutGet, LicensedItemGet
 from ...services_rpc.resource_usage_tracker import ResourceUsageTrackerClient
 from ...services_rpc.wb_api_server import WbApiRpcClient
+from ..dependencies.resource_usage_tracker_rpc import (
+    get_resource_usage_tracker_client,
+)
 
 router = APIRouter()
 

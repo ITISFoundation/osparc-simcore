@@ -492,8 +492,15 @@ def mocked_webserver_rpc_api(
 
 
 @pytest.fixture
+def catalog_rpc_side_effects(request) -> Any:
+    if "param" in dir(request) and request.param is not None:
+        return request.param
+    return CatalogRpcSideEffects()
+
+
+@pytest.fixture
 def mocked_catalog_rpc_api(
-    mocked_app_dependencies: None, mocker: MockerFixture
+    mocked_app_dependencies: None, mocker: MockerFixture, catalog_rpc_side_effects: Any
 ) -> dict[str, MockType]:
     """
     Mocks the catalog's simcore service RPC API for testing purposes.
@@ -502,37 +509,36 @@ def mocked_catalog_rpc_api(
         services as catalog_rpc,  # keep import here
     )
 
-    side_effects = CatalogRpcSideEffects()
     return {
         "list_services_paginated": mocker.patch.object(
             catalog_rpc,
             "list_services_paginated",
             autospec=True,
-            side_effect=side_effects.list_services_paginated,
+            side_effect=catalog_rpc_side_effects.list_services_paginated,
         ),
         "get_service": mocker.patch.object(
             catalog_rpc,
             "get_service",
             autospec=True,
-            side_effect=side_effects.get_service,
+            side_effect=catalog_rpc_side_effects.get_service,
         ),
         "update_service": mocker.patch.object(
             catalog_rpc,
             "update_service",
             autospec=True,
-            side_effect=side_effects.update_service,
+            side_effect=catalog_rpc_side_effects.update_service,
         ),
-        "list_my_service_history_paginated": mocker.patch.object(
+        "list_my_service_history_latest_first": mocker.patch.object(
             catalog_rpc,
-            "list_my_service_history_paginated",
+            "list_my_service_history_latest_first",
             autospec=True,
-            side_effect=side_effects.list_my_service_history_paginated,
+            side_effect=catalog_rpc_side_effects.list_my_service_history_latest_first,
         ),
         "get_service_ports": mocker.patch.object(
             catalog_rpc,
             "get_service_ports",
             autospec=True,
-            side_effect=side_effects.get_service_ports,
+            side_effect=catalog_rpc_side_effects.get_service_ports,
         ),
     }
 

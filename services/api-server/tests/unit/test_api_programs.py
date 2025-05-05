@@ -14,6 +14,7 @@ from httpx import AsyncClient
 from models_library.api_schemas_storage.storage_schemas import FileUploadSchema
 from models_library.users import UserID
 from pytest_mock import MockerFixture, MockType
+from pytest_simcore.helpers.catalog_rpc_server import ZeroListingCatalogRpcSideEffects
 from pytest_simcore.helpers.faker_factories import DEFAULT_FAKER
 from pytest_simcore.helpers.httpx_calls_capture_models import (
     CreateRespxMockCallback,
@@ -158,6 +159,22 @@ async def test_list_latest_programs(
 
 
 async def test_list_program_history(
+    auth: httpx.BasicAuth,
+    client: AsyncClient,
+    mocked_catalog_rpc_api: dict[str, MockType],
+):
+    program_key = "simcore/services/dynamic/my_program"
+    # Arrange
+    response = await client.get(
+        f"/{API_VTAG}/programs/{program_key}/releases", auth=auth
+    )
+    assert response.status_code == status.HTTP_200_OK
+
+
+@pytest.mark.parametrize(
+    "catalog_rpc_side_effects", [ZeroListingCatalogRpcSideEffects()], indirect=True
+)
+async def test_list_program_history_no_program(
     auth: httpx.BasicAuth,
     client: AsyncClient,
     mocked_catalog_rpc_api: dict[str, MockType],
