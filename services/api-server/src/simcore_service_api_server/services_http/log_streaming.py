@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from asyncio import Queue
-from collections.abc import AsyncIterable
+from collections.abc import AsyncIterable, Iterator
 from typing import Final
 
 from common_library.error_codes import create_error_code
@@ -69,6 +69,7 @@ class LogDistributor:
         return False
 
     async def register(self, job_id: JobID, queue: Queue[JobLog]):
+        _logger.debug("Registering log streamer for job_id=%s", job_id)
         if job_id in self._log_streamers:
             raise LogStreamerRegistrationConflictError(job_id=job_id)
         self._log_streamers[job_id] = queue
@@ -77,17 +78,19 @@ class LogDistributor:
         )
 
     async def deregister(self, job_id: JobID):
+        _logger.debug("Deregistering log streamer for job_id=%s", job_id)
         if job_id not in self._log_streamers:
             msg = f"No stream was connected to {job_id}."
             raise LogStreamerNotRegisteredError(details=msg, job_id=job_id)
         await self._rabbit_client.remove_topics(
             LoggerRabbitMessage.get_channel_name(), topics=[f"{job_id}.*"]
         )
-        del self._log_streamers[job_id]
+        self._log_streamers.pop(job_id)
 
     @property
-    def get_log_queue_sizes(self) -> dict[JobID, int]:
-        return {k: v.qsize() for k, v in self._log_streamers.items()}
+    def iter_log_queue_sizes(self) -> Iterator[tuple[JobID, int]]:
+        for k, v in self._log_streamers.items():
+            yield k, v.qsize()
 
 
 class LogStreamer:
@@ -102,7 +105,7 @@ class LogStreamer:
     ):
         self._user_id = user_id
         self._director2_api = director2_api
-        self._queue: Queue[JobLog] = Queue()
+        self.queue: Queue[JobLog] = Queue()
         self._job_id: JobID = job_id
         self._log_distributor: LogDistributor = log_distributor
         self._log_check_timeout: NonNegativeInt = log_check_timeout
@@ -115,12 +118,11 @@ class LogStreamer:
 
     async def log_generator(self) -> AsyncIterable[str]:
         try:
-            await self._log_distributor.register(self._job_id, self._queue)
             done: bool = False
             while not done:
                 try:
                     log: JobLog = await asyncio.wait_for(
-                        self._queue.get(), timeout=self._log_check_timeout
+                        self.queue.get(), timeout=self._log_check_timeout
                     )
                     yield log.model_dump_json() + _NEW_LINE
                 except TimeoutError:
@@ -144,6 +146,3 @@ class LogStreamer:
                 )
             )
             yield ErrorGet(errors=[error_msg]).model_dump_json() + _NEW_LINE
-
-        finally:
-            await self._log_distributor.deregister(self._job_id)

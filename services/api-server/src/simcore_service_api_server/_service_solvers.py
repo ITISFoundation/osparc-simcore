@@ -1,8 +1,8 @@
-from common_library.pagination_tools import iter_pagination_params
+from dataclasses import dataclass
+
 from models_library.api_schemas_catalog.services import ServiceListFilters
 from models_library.basic_types import VersionStr
 from models_library.products import ProductName
-from models_library.projects_nodes import Node
 from models_library.rest_pagination import (
     MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
     PageMetaInfoLimitOffset,
@@ -10,51 +10,56 @@ from models_library.rest_pagination import (
 )
 from models_library.rpc_pagination import PageLimitInt
 from models_library.services_enums import ServiceType
-from models_library.services_history import ServiceRelease
 from models_library.users import UserID
-from packaging.version import Version
 from pydantic import NonNegativeInt, PositiveInt
-from simcore_service_api_server.exceptions.custom_errors import (
+
+from ._service_jobs import JobService
+from ._service_utils import check_user_product_consistency
+from .exceptions.backend_errors import (
+    ProgramOrSolverOrStudyNotFoundError,
+)
+from .exceptions.custom_errors import (
     SolverServiceListJobsFiltersError,
 )
-
 from .models.api_resources import compose_resource_name
-from .models.schemas.jobs import Job, JobInputs
+from .models.schemas.jobs import Job
 from .models.schemas.solvers import Solver, SolverKeyId
-from .services_http.solver_job_models_converters import (
-    create_job_inputs_from_node_inputs,
-)
 from .services_rpc.catalog import CatalogService
-from .services_rpc.wb_api_server import WbApiRpcClient
 
 DEFAULT_PAGINATION_LIMIT = MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE - 1
 
 
+@dataclass(frozen=True, kw_only=True)
 class SolverService:
-    _catalog_service: CatalogService
-    _webserver_client: WbApiRpcClient
+    catalog_service: CatalogService
+    job_service: JobService
+    user_id: UserID
+    product_name: ProductName
 
-    def __init__(
-        self,
-        catalog_service: CatalogService,
-        webserver_client: WbApiRpcClient,
-    ):
-        self._catalog_service = catalog_service
-        self._webserver_client = webserver_client
+    def __post_init__(self):
+        check_user_product_consistency(
+            service_cls_name=self.__class__.__name__,
+            service_provider=self.catalog_service,
+            user_id=self.user_id,
+            product_name=self.product_name,
+        )
+
+        check_user_product_consistency(
+            service_cls_name=self.__class__.__name__,
+            service_provider=self.job_service,
+            user_id=self.user_id,
+            product_name=self.product_name,
+        )
 
     async def get_solver(
         self,
         *,
-        product_name: ProductName,
-        user_id: UserID,
         solver_key: SolverKeyId,
         solver_version: VersionStr,
     ) -> Solver:
-        service = await self._catalog_service.get(
-            user_id=user_id,
+        service = await self.catalog_service.get(
             name=solver_key,
             version=solver_version,
-            product_name=product_name,
         )
         assert (  # nosec
             service.service_type == ServiceType.COMPUTATIONAL
@@ -65,28 +70,19 @@ class SolverService:
     async def get_latest_release(
         self,
         *,
-        product_name: str,
-        user_id: int,
         solver_key: SolverKeyId,
     ) -> Solver:
-        service_releases: list[ServiceRelease] = []
-        for page_params in iter_pagination_params(limit=DEFAULT_PAGINATION_LIMIT):
-            releases, page_meta = await self._catalog_service.list_release_history(
-                user_id=user_id,
-                service_key=solver_key,
-                product_name=product_name,
-                offset=page_params.offset,
-                limit=page_params.limit,
-            )
-            page_params.total_number_of_items = page_meta.total
-            service_releases.extend(releases)
+        releases, _ = await self.catalog_service.list_release_history_latest_first(
+            filter_by_service_key=solver_key,
+            pagination_offset=0,
+            pagination_limit=1,
+        )
 
-        release = sorted(service_releases, key=lambda s: Version(s.version))[-1]
-        service = await self._catalog_service.get(
-            user_id=user_id,
+        if len(releases) == 0:
+            raise ProgramOrSolverOrStudyNotFoundError(name=solver_key, version="latest")
+        service = await self.catalog_service.get(
             name=solver_key,
-            version=release.version,
-            product_name=product_name,
+            version=releases[0].version,
         )
 
         return Solver.create_from_service(service)
@@ -94,14 +90,10 @@ class SolverService:
     async def list_jobs(
         self,
         *,
-        product_name: ProductName,
-        user_id: UserID,
-        # filters
-        solver_key: SolverKeyId | None = None,
-        solver_version: VersionStr | None = None,
-        # pagination
-        offset: PageOffsetInt = 0,
-        limit: PageLimitInt = DEFAULT_PAGINATION_LIMIT,
+        filter_by_solver_key: SolverKeyId | None = None,
+        filter_by_solver_version: VersionStr | None = None,
+        pagination_offset: PageOffsetInt = 0,
+        pagination_limit: PageLimitInt = DEFAULT_PAGINATION_LIMIT,
     ) -> tuple[list[Job], PageMetaInfoLimitOffset]:
         """Lists all solver jobs for a user with pagination"""
 
@@ -109,81 +101,42 @@ class SolverService:
         collection_or_resource_ids = [
             "solvers",  # solver_id, "releases", solver_version, "jobs",
         ]
-        if solver_key:
-            collection_or_resource_ids.append(solver_key)
-            if solver_version:
+        if filter_by_solver_key:
+            collection_or_resource_ids.append(filter_by_solver_key)
+            if filter_by_solver_version:
                 collection_or_resource_ids.append("releases")
-                collection_or_resource_ids.append(solver_version)
-        elif solver_version:
+                collection_or_resource_ids.append(filter_by_solver_version)
+        elif filter_by_solver_version:
             raise SolverServiceListJobsFiltersError
 
-        job_parent_resource_name_prefix = compose_resource_name(
-            *collection_or_resource_ids
+        job_parent_resource_name = compose_resource_name(*collection_or_resource_ids)
+
+        # 2. list jobs under job_parent_resource_name
+        return await self.job_service.list_jobs(
+            pagination_offset=pagination_offset,
+            pagination_limit=pagination_limit,
+            filter_by_job_parent_resource_name_prefix=job_parent_resource_name,
         )
-
-        # 2. List projects marked as jobs
-        projects_page = await self._webserver_client.list_projects_marked_as_jobs(
-            product_name=product_name,
-            user_id=user_id,
-            offset=offset,
-            limit=limit,
-            job_parent_resource_name_prefix=job_parent_resource_name_prefix,
-        )
-
-        # 3. Convert projects to jobs
-        jobs: list[Job] = []
-        for project_job in projects_page.data:
-
-            assert (  # nosec
-                len(project_job.workbench) == 1
-            ), "Expected only one solver node in workbench"
-
-            solver_node: Node = next(iter(project_job.workbench.values()))
-            job_inputs: JobInputs = create_job_inputs_from_node_inputs(
-                inputs=solver_node.inputs or {}
-            )
-            assert project_job.job_parent_resource_name  # nosec
-
-            jobs.append(
-                Job(
-                    id=project_job.uuid,
-                    name=Job.compose_resource_name(
-                        project_job.job_parent_resource_name, project_job.uuid
-                    ),
-                    inputs_checksum=job_inputs.compute_checksum(),
-                    created_at=project_job.created_at,
-                    runner_name=project_job.job_parent_resource_name,
-                    url=None,
-                    runner_url=None,
-                    outputs_url=None,
-                )
-            )
-
-        return jobs, projects_page.meta
 
     async def solver_release_history(
         self,
         *,
-        user_id: UserID,
         solver_key: SolverKeyId,
-        product_name: ProductName,
         offset: NonNegativeInt,
         limit: PositiveInt,
     ) -> tuple[list[Solver], PageMetaInfoLimitOffset]:
 
-        releases, page_meta = await self._catalog_service.list_release_history(
-            user_id=user_id,
-            service_key=solver_key,
-            product_name=product_name,
-            offset=offset,
-            limit=limit,
+        releases, page_meta = (
+            await self.catalog_service.list_release_history_latest_first(
+                filter_by_service_key=solver_key,
+                pagination_offset=offset,
+                pagination_limit=limit,
+            )
         )
 
-        service_instance = await self._catalog_service.get(
-            user_id=user_id,
+        service_instance = await self.catalog_service.get(
             name=solver_key,
             version=releases[-1].version,
-            product_name=product_name,
         )
 
         return [
@@ -200,17 +153,13 @@ class SolverService:
     async def latest_solvers(
         self,
         *,
-        user_id: UserID,
-        product_name: ProductName,
         offset: NonNegativeInt,
         limit: PositiveInt,
     ) -> tuple[list[Solver], PageMetaInfoLimitOffset]:
         """Lists the latest solvers with pagination."""
-        services, page_meta = await self._catalog_service.list_latest_releases(
-            user_id=user_id,
-            product_name=product_name,
-            offset=offset,
-            limit=limit,
+        services, page_meta = await self.catalog_service.list_latest_releases(
+            pagination_offset=offset,
+            pagination_limit=limit,
             filters=ServiceListFilters(service_type=ServiceType.COMPUTATIONAL),
         )
 

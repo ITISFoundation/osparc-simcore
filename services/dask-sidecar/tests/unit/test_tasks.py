@@ -208,13 +208,13 @@ def sleeper_task(
             "the_input_43": 15.0,
             "the_bool_input_54": False,
             **{
-                f"some_file_input_{index+1}": FileUrl(url=file)
+                f"some_file_input_{index + 1}": FileUrl(url=file)
                 for index, file in enumerate(list_of_files)
             },
             **{
-                f"some_file_input_with_mapping{index+1}": FileUrl(
+                f"some_file_input_with_mapping{index + 1}": FileUrl(
                     url=file,
-                    file_mapping=f"{index+1}/some_file_input_{index+1}",
+                    file_mapping=f"{index + 1}/some_file_input_{index + 1}",
                 )
                 for index, file in enumerate(list_of_files)
             },
@@ -241,7 +241,7 @@ def sleeper_task(
     )
     list_of_bash_commands += _bash_check_env_exist(
         variable_name="SIMCORE_NANO_CPUS_LIMIT",
-        variable_value=f"{int(_DEFAULT_MAX_RESOURCES['CPU']*1e9)}",
+        variable_value=f"{int(_DEFAULT_MAX_RESOURCES['CPU'] * 1e9)}",
     )
     list_of_bash_commands += _bash_check_env_exist(
         variable_name="SIMCORE_MEMORY_BYTES_LIMIT",
@@ -268,7 +268,7 @@ def sleeper_task(
         f"echo '{faker.text(max_nb_chars=17216)}'",
         f"(test -f ${{INPUT_FOLDER}}/{input_json_file_name} || (echo ${{INPUT_FOLDER}}/{input_json_file_name} file does not exists && exit 1))",
         f"echo $(cat ${{INPUT_FOLDER}}/{input_json_file_name})",
-        f"sleep {randint(1,4)}",  # noqa: S311
+        f"sleep {randint(1, 4)}",  # noqa: S311
     ]
 
     # defines the expected outputs
@@ -709,3 +709,47 @@ def test_running_service_that_generates_unexpected_data_raises_exception(
         run_computational_sidecar(
             **sleeper_task_unexpected_output.sidecar_params(),
         )
+
+
+@pytest.mark.parametrize(
+    "integration_version, boot_mode", [("1.0.0", BootMode.CPU)], indirect=True
+)
+def test_delayed_logging_with_small_timeout_raises_exception(
+    caplog: pytest.LogCaptureFixture,
+    app_environment: EnvVarsDict,
+    dask_subsystem_mock: dict[str, mock.Mock],
+    sidecar_task: Callable[..., ServiceExampleParam],
+    mocked_get_image_labels: mock.Mock,
+    mocker: MockerFixture,
+):
+    """https://github.com/aio-libs/aiodocker/issues/901"""
+    # Mock the timeout with a very small value
+    mocker.patch(
+        "simcore_service_dask_sidecar.computational_sidecar.docker_utils._AIODOCKER_LOGS_TIMEOUT_S",
+        0.5,  # Small timeout that should cause failure
+    )
+
+    # Configure the task to sleep first and then generate logs
+    waiting_task = sidecar_task(
+        command=[
+            "/bin/bash",
+            "-c",
+            'echo "Starting task"; sleep 5; echo "After sleep"',
+        ]
+    )
+
+    # Execute the task and expect a timeout exception in the logs
+    with caplog.at_level(logging.ERROR, logger="simcore_service_dask_sidecar"):
+        run_computational_sidecar(**waiting_task.sidecar_params())
+        assert len(caplog.records) == 1
+        record = caplog.records[0]
+        assert record.exc_info
+        assert isinstance(record.exc_info[1], TimeoutError)
+    caplog.clear()
+    mocker.patch(
+        "simcore_service_dask_sidecar.computational_sidecar.docker_utils._AIODOCKER_LOGS_TIMEOUT_S",
+        10,  # larger timeout to avoid issues
+    )
+    with caplog.at_level(logging.ERROR, logger="simcore_service_dask_sidecar"):
+        run_computational_sidecar(**waiting_task.sidecar_params())
+        assert len(caplog.records) == 0
