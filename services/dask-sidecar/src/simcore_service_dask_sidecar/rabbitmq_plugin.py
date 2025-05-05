@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Awaitable
 
 import distributed
 from models_library.rabbitmq_messages import RabbitMessageBase
@@ -21,32 +22,42 @@ class RabbitMQPlugin(distributed.WorkerPlugin):
     def __init__(self, settings: RabbitSettings):
         self._settings = settings
 
-    async def setup(self, worker: distributed.Worker) -> None:
+    def setup(self, worker: distributed.Worker) -> Awaitable[None]:
         """Called when the plugin is attached to a worker"""
-        if not self._settings:
-            _logger.warning("RabbitMQ client is de-activated (no settings provided)")
-            return
 
-        with log_context(
-            _logger,
-            logging.INFO,
-            f"RabbitMQ client initialization for worker {worker.address}",
-        ):
-            await wait_till_rabbitmq_responsive(self._settings.dsn)
-            self._client = RabbitMQClient(
-                client_name="dask-sidecar", settings=self._settings
-            )
+        async def _() -> None:
+            if not self._settings:
+                _logger.warning(
+                    "RabbitMQ client is de-activated (no settings provided)"
+                )
+                return
 
-    async def teardown(self, worker: distributed.Worker) -> None:
+            with log_context(
+                _logger,
+                logging.INFO,
+                f"RabbitMQ client initialization for worker {worker.address}",
+            ):
+                await wait_till_rabbitmq_responsive(self._settings.dsn)
+                self._client = RabbitMQClient(
+                    client_name="dask-sidecar", settings=self._settings
+                )
+
+        return _()
+
+    def teardown(self, worker: distributed.Worker) -> Awaitable[None]:
         """Called when the worker shuts down or the plugin is removed"""
-        with log_context(
-            _logger,
-            logging.INFO,
-            f"RabbitMQ client teardown for worker {worker.address}",
-        ):
-            if self._client:
-                await self._client.close()
-                self._client = None
+
+        async def _() -> None:
+            with log_context(
+                _logger,
+                logging.INFO,
+                f"RabbitMQ client teardown for worker {worker.address}",
+            ):
+                if self._client:
+                    await self._client.close()
+                    self._client = None
+
+        return _()
 
     def get_client(self) -> RabbitMQClient:
         """Returns the RabbitMQ client or raises an error if not available"""
