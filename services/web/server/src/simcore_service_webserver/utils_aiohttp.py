@@ -136,7 +136,7 @@ def iter_originating_hosts(request) -> Generator[str, None, None]:
     # SEE https://doc.traefik.io/traefik/getting-started/faq/#what-are-the-forwarded-headers-when-proxying-http-requests
     for host in (
         request.headers.get("X-Forwarded-Host"),
-        request.host,
+        request.url.host,
     ):
         if host:
             yield host
