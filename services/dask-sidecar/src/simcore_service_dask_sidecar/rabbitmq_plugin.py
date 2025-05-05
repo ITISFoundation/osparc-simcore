@@ -2,8 +2,7 @@ import logging
 from collections.abc import Awaitable
 
 import distributed
-from models_library.rabbitmq_messages import RabbitMessageBase
-from servicelib.logging_utils import log_catch, log_context
+from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RabbitMQClient, wait_till_rabbitmq_responsive
 from settings_library.rabbit import RabbitSettings
 
@@ -66,9 +65,3 @@ class RabbitMQPlugin(distributed.WorkerPlugin):
                 msg="RabbitMQ client is not available. Please check the configuration."
             )
         return self._client
-
-    async def publish(self, *, channel_name: str, message: RabbitMessageBase) -> None:
-        """Publishes a message to the specified channel"""
-        with log_catch(_logger, reraise=False):
-            if self._client:
-                await self._client.publish(channel_name, message)
