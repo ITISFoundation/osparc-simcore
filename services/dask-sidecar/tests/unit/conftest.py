@@ -108,7 +108,7 @@ def local_cluster(app_environment: EnvVarsDict) -> Iterator[distributed.LocalClu
     with distributed.LocalCluster(
         worker_class=distributed.Worker,
         resources={"CPU": 10, "GPU": 10},
-        preload="simcore_service_dask_sidecar.tasks",
+        preload="simcore_service_dask_sidecar.worker",
     ) as cluster:
         assert cluster
         assert isinstance(cluster, distributed.LocalCluster)
@@ -131,7 +131,7 @@ async def async_local_cluster(
     async with distributed.LocalCluster(
         worker_class=distributed.Worker,
         resources={"CPU": 10, "GPU": 10},
-        preload="simcore_service_dask_sidecar.tasks",
+        preload="simcore_service_dask_sidecar.worker",
         asynchronous=True,
     ) as cluster:
         assert cluster

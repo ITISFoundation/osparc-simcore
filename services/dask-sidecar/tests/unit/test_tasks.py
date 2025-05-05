@@ -58,7 +58,7 @@ from simcore_service_dask_sidecar.computational_sidecar.models import (
 )
 from simcore_service_dask_sidecar.dask_utils import _DEFAULT_MAX_RESOURCES
 from simcore_service_dask_sidecar.file_utils import _s3fs_settings_from_s3_settings
-from simcore_service_dask_sidecar.tasks import run_computational_sidecar
+from simcore_service_dask_sidecar.worker import run_computational_sidecar
 
 logger = logging.getLogger(__name__)
 
