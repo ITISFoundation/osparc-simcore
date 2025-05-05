@@ -32,6 +32,7 @@ from simcore_service_dynamic_scheduler.services.service_tracker import (
 from tenacity import AsyncRetrying, stop_after_delay, wait_fixed
 
 pytest_simcore_core_services_selection = [
+    "postgres",
     "rabbit",
     "redis",
 ]

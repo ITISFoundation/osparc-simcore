@@ -28,9 +28,12 @@ isort==6.0.1
 mccabe==0.7.0
     # via pylint
 mypy==1.15.0
-    # via -r requirements/../../../requirements/devenv.txt
-mypy-extensions==1.0.0
     # via
+    #   -c requirements/_test.txt
+    #   -r requirements/../../../requirements/devenv.txt
+mypy-extensions==1.1.0
+    # via
+    #   -c requirements/_test.txt
     #   black
     #   mypy
 nodeenv==1.9.1
