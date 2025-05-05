@@ -139,4 +139,4 @@ def iter_originating_hosts(request) -> Generator[str, None, None]:
         request.host,
     ):
         if host:
-            yield host.partition(":")[0]
+            yield host
