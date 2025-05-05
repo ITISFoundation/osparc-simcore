@@ -118,31 +118,44 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     filterSharedWith: function(checks, sharedWith) {
-      if (sharedWith && sharedWith !== "show-all") {
+      if (sharedWith && checks) {
         const groupsStore = osparc.store.Groups.getInstance();
         const myGroupId = groupsStore.getMyGroupId();
-        if (checks && myGroupId in checks) {
-          const myAccessRights = checks[myGroupId];
-          const totalAccess = "delete" in myAccessRights ? myAccessRights["delete"] : myAccessRights["write"];
-          if (sharedWith === "my-resources") {
-            return !totalAccess;
-          } else if (sharedWith === "shared-with-me") {
-            return totalAccess;
-          } else if (sharedWith === "shared-with-everyone") {
+
+        switch (sharedWith) {
+          case "show-all":
+            return false;
+          case "my-resources": {
+            if (myGroupId in checks) {
+              const myAccessRights = checks[myGroupId];
+              const totalAccess = "delete" in myAccessRights ? myAccessRights["delete"] : myAccessRights["write"];
+              // show those that I have ownership of: have explicit delete (study/template) or write (service) access
+              return !totalAccess;
+            }
+            return true;
+          }
+          case "shared-with-me": {
+            if (myGroupId in checks) {
+              const myAccessRights = checks[myGroupId];
+              const totalAccess = "delete" in myAccessRights ? myAccessRights["delete"] : myAccessRights["write"];
+              // hide those that I'm ownership of: have explicit and delete (study/template) or write (service) access
+              return totalAccess;
+            }
+            // if we get here, it means that it was shared-with-me via an organization
+            return false;
+          }
+          case "shared-with-everyone": {
             const everyoneGroupIds = [
               groupsStore.getEveryoneProductGroup().getGroupId(),
               groupsStore.getEveryoneGroup().getGroupId(),
             ];
             const found = Object.keys(checks).some(gId => everyoneGroupIds.includes(parseInt(gId)));
+            // show those that are shared with "1" or product everyone's groupId
             return !found;
           }
-          return false;
+          default:
+            return true;
         }
-        // if we get here, it means that it was shared-with-me via an organization
-        if (sharedWith === "shared-with-me") {
-          return false;
-        }
-        return true;
       }
       return false;
     },
