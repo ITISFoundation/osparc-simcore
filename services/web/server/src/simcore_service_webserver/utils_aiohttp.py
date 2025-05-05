@@ -139,4 +139,4 @@ def iter_originating_hosts(request: web.Request) -> Generator[str, None, None]:
         request.host,
     ):
         if host:
-            yield host
+            yield host.partition(":")[0]  # exclude port, if any
