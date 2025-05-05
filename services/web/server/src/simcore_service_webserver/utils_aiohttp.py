@@ -130,13 +130,13 @@ class NextPage(BaseModel, Generic[PageParameters]):
     parameters: PageParameters | None = None
 
 
-def iter_originating_hosts(request) -> Generator[str, None, None]:
+def iter_originating_hosts(request: web.Request) -> Generator[str, None, None]:
     #
     # SEE https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-Host
     # SEE https://doc.traefik.io/traefik/getting-started/faq/#what-are-the-forwarded-headers-when-proxying-http-requests
     for host in (
         request.headers.get("X-Forwarded-Host"),
-        request.url.host,
+        request.host,
     ):
         if host:
             yield host
