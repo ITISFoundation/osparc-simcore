@@ -3,6 +3,7 @@ from dataclasses import asdict
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
+from common_library.network import is_ip_address
 from models_library.api_schemas_webserver.auth import (
     ApiKeyCreateRequest,
     ApiKeyCreateResponse,
@@ -21,7 +22,6 @@ from ..._meta import API_VTAG
 from ...login.decorators import login_required
 from ...models import RequestContext
 from ...security.decorators import permission_required
-from ...utils import is_ip_address
 from ...utils_aiohttp import envelope_json_response, iter_originating_hosts
 from .. import _service
 from ..models import ApiKey
