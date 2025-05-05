@@ -3,7 +3,7 @@ from typing import Any
 
 import sqlalchemy as sa
 from aiohttp import web
-from common_library.users_enums import UserRole
+from common_library.users_enums import AccountRequestStatus, UserRole
 from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.users import (
@@ -485,6 +485,118 @@ async def is_user_in_product_name(
         value = await conn.scalar(query)
         assert value is None or value == user_id  # nosec
         return value is not None
+
+
+async def list_users_for_admin(
+    engine: AsyncEngine,
+    connection: AsyncConnection | None = None,
+    *,
+    filter_approved: bool | None = None,
+    limit: int = 50,
+    offset: int = 0,
+    include_deleted: bool = False,
+) -> tuple[list[dict[str, Any]], int]:
+    """
+    Gets users data for admin with pagination support using SQLAlchemy expressions
+
+    Args:
+        engine: The database engine
+        connection: Optional existing connection to reuse
+        filter_approved: If set, filters users by their approval status
+        limit: Maximum number of users to return
+        offset: Number of users to skip for pagination
+        include_deleted: Whether to include users marked as deleted
+
+    Returns:
+        Tuple of (list of user data, total count)
+    """
+
+    # Define the join between users and users_pre_registration_details
+    joined_tables = users.outerjoin(
+        users_pre_registration_details,
+        users.c.id == users_pre_registration_details.c.user_id,
+    )
+
+    # Basic where clause - exclude deleted by default
+    where_conditions = []
+    if not include_deleted:
+        where_conditions.append(users.c.status != UserStatus.DELETED)
+
+    # Add filtering by approval status if requested
+    if filter_approved is not None:
+        if filter_approved:
+            where_conditions.append(
+                users_pre_registration_details.c.account_request_status
+                == AccountRequestStatus.APPROVED
+            )
+        else:
+            where_conditions.append(
+                users_pre_registration_details.c.account_request_status
+                != AccountRequestStatus.APPROVED
+            )
+
+    # Combine all conditions with AND
+    where_clause = sa.and_(*where_conditions) if where_conditions else sa.true()
+
+    # Count query to get total number of users
+    count_query = (
+        sa.select(sa.func.count().label("total"))
+        .select_from(joined_tables)
+        .where(where_clause)
+    )
+
+    # Main query to get user data
+    main_query = (
+        sa.select(
+            users.c.id.label("user_id"),
+            users.c.name,
+            sa.case(
+                (users.c.email.is_(None), users_pre_registration_details.c.pre_email),
+                else_=users.c.email,
+            ).label("email"),
+            sa.case(
+                (
+                    users.c.first_name.is_(None),
+                    users_pre_registration_details.c.pre_first_name,
+                ),
+                else_=users.c.first_name,
+            ).label("first_name"),
+            sa.case(
+                (
+                    users.c.last_name.is_(None),
+                    users_pre_registration_details.c.pre_last_name,
+                ),
+                else_=users.c.last_name,
+            ).label("last_name"),
+            users.c.status,
+            users.c.created,
+            users_pre_registration_details.c.institution,
+            users_pre_registration_details.c.pre_phone.label("phone"),
+            users_pre_registration_details.c.address,
+            users_pre_registration_details.c.city,
+            users_pre_registration_details.c.state,
+            users_pre_registration_details.c.postal_code,
+            users_pre_registration_details.c.country,
+            users_pre_registration_details.c.extras,
+            users_pre_registration_details.c.account_request_status,
+        )
+        .select_from(joined_tables)
+        .where(where_clause)
+        .order_by(users.c.created.desc())  # newest first
+        .limit(limit)
+        .offset(offset)
+    )
+
+    async with pass_or_acquire_connection(engine, connection) as conn:
+        # Get total count
+        count_result = await conn.execute(count_query)
+        total_count = count_result.scalar()
+
+        # Get user records
+        result = await conn.execute(main_query)
+        records = result.mappings().all()
+
+    return list(records), total_count
 
 
 #
