@@ -89,9 +89,9 @@ class CreditPriceGet(OutputSchema):
     )
 
 
-class ProductHostRpcGet(BaseModel):
+class ProductBaseUrlRpcGet(BaseModel):
     product_name: ProductName
-    host: str
+    base_url: str
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:

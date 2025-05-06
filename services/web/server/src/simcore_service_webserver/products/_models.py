@@ -14,6 +14,7 @@ from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName, StripePriceID, StripeTaxRateID
 from models_library.utils.change_case import snake_to_camel
 from pydantic import (
+    AnyHttpUrl,
     BaseModel,
     BeforeValidator,
     ConfigDict,
@@ -87,7 +88,7 @@ class Product(BaseModel):
         re.Pattern, BeforeValidator(str.strip), Field(..., description="Host regex")
     ]
 
-    host: Annotated[str, BeforeValidator(str.strip), Field(..., description="Host")]
+    base_url: Annotated[AnyHttpUrl, Field(..., description="Base URL of the product")]
 
     support_email: Annotated[
         LowerCaseEmailStr,

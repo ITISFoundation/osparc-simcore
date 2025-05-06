@@ -24,7 +24,7 @@ class ProductTemplateNotFoundError(ProductError):
     msg_template = "Missing template {template_name} for product"
 
 
-class ProductHostNotFoundError(ProductError):
+class ProductBaseUrlNotFoundError(ProductError):
     msg_template = "Missing host for product {product_name}"
 
 

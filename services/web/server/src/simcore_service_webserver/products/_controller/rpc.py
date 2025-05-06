@@ -4,7 +4,7 @@ from aiohttp import web
 from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.api_schemas_webserver.products import (
     CreditResultRpcGet,
-    ProductHostRpcGet,
+    ProductBaseUrlRpcGet,
 )
 from models_library.products import ProductName
 from servicelib.rabbitmq import RPCRouter
@@ -31,13 +31,13 @@ async def get_credit_amount(
 
 
 @router.expose()
-async def get_product_host(
+async def get_product_base_url(
     app: web.Application,
     *,
     product_name: ProductName,
-) -> ProductHostRpcGet:
-    host: str = await _service.get_product_host(app, product_name=product_name)
-    return ProductHostRpcGet(product_name=product_name, host=host)
+) -> ProductBaseUrlRpcGet:
+    base_url: str = await _service.get_product_base_url(app, product_name=product_name)
+    return ProductBaseUrlRpcGet(product_name=product_name, base_url=base_url)
 
 
 async def _register_rpc_routes_on_startup(app: web.Application):
