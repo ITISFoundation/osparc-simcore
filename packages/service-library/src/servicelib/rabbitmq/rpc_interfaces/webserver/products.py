@@ -1,7 +1,6 @@
 import logging
 
 from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
-from models_library.api_schemas_webserver.products import ProductBaseUrlRpcGet
 from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
 from pydantic import TypeAdapter
@@ -25,5 +24,5 @@ async def get_product_base_url(
         product_name=product_name,
     )
     assert resp  # nosec
-    assert isinstance(resp, ProductBaseUrlRpcGet)  # nosec
-    return resp.base_url
+    assert isinstance(resp, str)  # nosec
+    return resp
