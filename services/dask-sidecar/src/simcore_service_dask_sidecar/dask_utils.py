@@ -138,7 +138,7 @@ async def monitor_task_abortion(
         if task := next(
             (t for t in asyncio.all_tasks() if t.get_name() == task_name), None
         ):
-            task_publishers.publish_logs(
+            await task_publishers.publish_logs(
                 message="[sidecar] cancelling task...", log_level=logging.INFO
             )
             task.cancel()
@@ -158,7 +158,7 @@ async def monitor_task_abortion(
 
         yield
     except asyncio.CancelledError as exc:
-        task_publishers.publish_logs(
+        await task_publishers.publish_logs(
             message="[sidecar] task run was aborted", log_level=logging.INFO
         )
 

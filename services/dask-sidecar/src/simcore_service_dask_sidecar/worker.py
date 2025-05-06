@@ -15,11 +15,11 @@ from servicelib.logging_utils import log_context
 from settings_library.s3 import S3Settings
 
 from ._meta import print_dask_sidecar_banner
-from .app_utils import setup_app_logging
 from .computational_sidecar.core import ComputationalSidecar
 from .dask_utils import TaskPublisher, get_current_task_resources, monitor_task_abortion
 from .rabbitmq_plugin import RabbitMQPlugin
 from .settings import ApplicationSettings
+from .utils.logs import setup_app_logging
 
 _logger = logging.getLogger(__name__)
 

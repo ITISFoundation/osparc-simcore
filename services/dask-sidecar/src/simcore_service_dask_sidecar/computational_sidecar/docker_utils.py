@@ -188,7 +188,7 @@ async def _parse_and_publish_logs(
     if progress_value is not None:
         await progress_bar.set_(round(progress_value * 100.0))
 
-    task_publishers.publish_logs(
+    await task_publishers.publish_logs(
         message=log_line, log_level=guess_message_log_level(log_line)
     )
 

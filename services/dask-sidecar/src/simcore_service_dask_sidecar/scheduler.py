@@ -4,8 +4,8 @@ import distributed
 from servicelib.logging_utils import log_context
 
 from ._meta import print_dask_scheduler_banner
-from .app_utils import setup_app_logging
 from .settings import ApplicationSettings
+from .utils.logs import setup_app_logging
 
 _logger = logging.getLogger(__name__)
 

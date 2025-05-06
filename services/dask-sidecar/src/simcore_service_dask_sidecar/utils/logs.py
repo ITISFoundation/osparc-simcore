@@ -2,7 +2,7 @@ import logging
 
 from servicelib.logging_utils import config_all_loggers
 
-from .settings import ApplicationSettings
+from ..settings import ApplicationSettings
 
 
 def setup_app_logging(settings: ApplicationSettings) -> None:
