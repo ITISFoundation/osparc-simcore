@@ -608,6 +608,10 @@ def expected_service_running(
             waiter = SocketIONodeProgressCompleteWaiter(
                 node_id=node_id,
                 logger=ctx.logger,
+                max_idle_timeout=min(
+                    _SOCKET_IO_NODE_PROGRESS_WAITER_MAX_IDLE_TIMEOUT,
+                    timedelta(seconds=timeout / 1000 - 10),
+                ),
             )
             stack.enter_context(
                 websocket.expect_event("framereceived", waiter, timeout=timeout)
@@ -666,6 +670,10 @@ def wait_for_service_running(
             waiter = SocketIONodeProgressCompleteWaiter(
                 node_id=node_id,
                 logger=ctx.logger,
+                max_idle_timeout=min(
+                    _SOCKET_IO_NODE_PROGRESS_WAITER_MAX_IDLE_TIMEOUT,
+                    timedelta(seconds=timeout / 1000 - 10),
+                ),
             )
             stack.enter_context(
                 websocket.expect_event("framereceived", waiter, timeout=timeout)
