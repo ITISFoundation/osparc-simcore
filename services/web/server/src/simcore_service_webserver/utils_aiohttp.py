@@ -134,9 +134,20 @@ def iter_originating_hosts(request: web.Request) -> Iterator[str]:
     #
     # SEE https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-Host
     # SEE https://doc.traefik.io/traefik/getting-started/faq/#what-are-the-forwarded-headers-when-proxying-http-requests
-    for host in (
-        request.headers.get("X-Forwarded-Host"),
-        request.host,
-    ):
-        if host is not None:
-            yield host.partition(":")[0]  # exclude port, if any
+    seen = set()
+
+    forwarded = request.headers.get("X-Forwarded-Host")
+    if forwarded:
+        # X-Forwarded-Host can contain a comma-separated list of hosts
+        # (when the request passes through multiple proxies)
+        for host in forwarded.split(","):
+            stripped_host = host.strip().partition(":")[0]
+            if stripped_host and stripped_host not in seen:
+                seen.add(stripped_host)
+                yield host
+
+    # Fallback to request.host
+    if request.host:
+        host = request.host.partition(":")[0]
+        if host not in seen:
+            yield host
