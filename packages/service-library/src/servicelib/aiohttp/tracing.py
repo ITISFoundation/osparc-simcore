@@ -1,6 +1,4 @@
-""" Adds aiohttp middleware for tracing using opentelemetry instrumentation.
-
-"""
+"""Adds aiohttp middleware for tracing using opentelemetry instrumentation."""
 
 import logging
 
@@ -38,6 +36,13 @@ try:
 except ImportError:
     HAS_REQUESTS = False
 
+try:
+    from opentelemetry.instrumentation.aio_pika import AioPikaInstrumentor
+
+    HAS_AIO_PIKA = True
+except ImportError:
+    HAS_AIO_PIKA = False
+
 
 def setup_tracing(
     app: web.Application,
@@ -68,7 +73,9 @@ def setup_tracing(
     trace.set_tracer_provider(TracerProvider(resource=resource))
     tracer_provider: trace.TracerProvider = trace.get_tracer_provider()
 
-    tracing_destination: str = f"{URL(opentelemetry_collector_endpoint).with_port(opentelemetry_collector_port).with_path('/v1/traces')}"
+    tracing_destination: str = (
+        f"{URL(opentelemetry_collector_endpoint).with_port(opentelemetry_collector_port).with_path('/v1/traces')}"
+    )
 
     _logger.info(
         "Trying to connect service %s to tracing collector at %s.",
@@ -116,3 +123,11 @@ def setup_tracing(
             msg="Attempting to add requests opentelemetry autoinstrumentation...",
         ):
             RequestsInstrumentor().instrument()
+
+    if HAS_AIO_PIKA:
+        with log_context(
+            _logger,
+            logging.INFO,
+            msg="Attempting to add aio_pika opentelemetry autoinstrumentation...",
+        ):
+            AioPikaInstrumentor().instrument()
