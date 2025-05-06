@@ -30,12 +30,6 @@ try:
 except ImportError:
     HAS_BOTOCORE = False
 try:
-    from opentelemetry.instrumentation.aiopg import AiopgInstrumentor
-
-    HAS_AIOPG = True
-except ImportError:
-    HAS_AIOPG = False
-try:
     from opentelemetry.instrumentation.requests import RequestsInstrumentor
 
     HAS_REQUESTS = True
@@ -114,13 +108,7 @@ def setup_tracing(
 
     # Instrument aiohttp client
     AioHttpClientInstrumentor().instrument()
-    if HAS_AIOPG:
-        with log_context(
-            _logger,
-            logging.INFO,
-            msg="Attempting to add aio-pg opentelemetry autoinstrumentation...",
-        ):
-            AiopgInstrumentor().instrument()
+
     if HAS_BOTOCORE:
         with log_context(
             _logger,

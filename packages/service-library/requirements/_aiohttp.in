@@ -11,6 +11,5 @@ attrs
 jsonschema
 opentelemetry-instrumentation-aiohttp-client
 opentelemetry-instrumentation-aiohttp-server
-opentelemetry-instrumentation-aiopg
 prometheus_client
 werkzeug

@@ -128,18 +128,6 @@ def uninstrument_opentelemetry():
     except ImportError:
         pass
     try:
-        from opentelemetry.instrumentation.aiopg import AiopgInstrumentor
-
-        AiopgInstrumentor().uninstrument()
-    except ImportError:
-        pass
-    try:
-        from opentelemetry.instrumentation.asyncpg import AsyncPGInstrumentor
-
-        AsyncPGInstrumentor().uninstrument()
-    except ImportError:
-        pass
-    try:
         from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
         FastAPIInstrumentor().uninstrument()

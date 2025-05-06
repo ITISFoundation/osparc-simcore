@@ -20,16 +20,6 @@ from yarl import URL
 _logger = logging.getLogger(__name__)
 
 try:
-    from opentelemetry.instrumentation.asyncpg import (  # type: ignore[import-not-found]
-        AsyncPGInstrumentor,
-    )
-
-    HAS_ASYNCPG = True
-except ImportError:
-    HAS_ASYNCPG = False
-
-try:
-    from opentelemetry.instrumentation.aiopg import AiopgInstrumentor
 
     HAS_AIOPG = True
 except ImportError:
@@ -103,13 +93,6 @@ def initialize_tracing(
     # Instrument FastAPI
     FastAPIInstrumentor().instrument_app(app)
 
-    if HAS_AIOPG:
-        with log_context(
-            _logger,
-            logging.INFO,
-            msg="Attempting to add asyncpg opentelemetry autoinstrumentation...",
-        ):
-            AiopgInstrumentor().instrument()
     if HAS_AIOPIKA_INSTRUMENTOR:
         with log_context(
             _logger,
@@ -117,13 +100,6 @@ def initialize_tracing(
             msg="Attempting to add aio_pika opentelemetry autoinstrumentation...",
         ):
             AioPikaInstrumentor().instrument()
-    if HAS_ASYNCPG:
-        with log_context(
-            _logger,
-            logging.INFO,
-            msg="Attempting to add asyncpg opentelemetry autoinstrumentation...",
-        ):
-            AsyncPGInstrumentor().instrument()
     if HAS_REDIS:
         with log_context(
             _logger,
