@@ -5,7 +5,7 @@
 from aiohttp import web
 from models_library.users import UserID
 
-from ..projects import _projects_service
+from ..projects import projects_service
 from ..projects.models import ProjectDict
 
 
@@ -16,6 +16,6 @@ async def get_project_from_function(
     user_id: UserID,
 ) -> ProjectDict:
 
-    return await _projects_service.get_project_for_user(
+    return await projects_service.get_project_for_user(
         app=app, project_uuid=function_uuid, user_id=user_id
     )
