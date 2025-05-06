@@ -14,6 +14,7 @@ from ._repository import ProductRepository
 from .errors import (
     BelowMinimumPaymentError,
     MissingStripeConfigError,
+    ProductHostNotFoundError,
     ProductNotFoundError,
     ProductPriceNotDefinedError,
     ProductTemplateNotFoundError,
@@ -134,6 +135,14 @@ async def get_template_content(app: web.Application, *, template_name: str):
     if not content:
         raise ProductTemplateNotFoundError(template_name=template_name)
     return content
+
+
+async def get_product_host(app: web.Application, *, product_name) -> str:
+    repo = ProductRepository.create_from_app(app)
+    host = await repo.get_product_host(product_name)
+    if not host:
+        raise ProductHostNotFoundError(product_name=product_name)
+    return host
 
 
 async def auto_create_products_groups(

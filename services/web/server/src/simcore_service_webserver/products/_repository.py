@@ -42,6 +42,7 @@ _PRODUCTS_COLUMNS = [
     products.c.display_name,
     products.c.short_name,
     products.c.host_regex,
+    products.c.host,
     products.c.support_email,
     products.c.product_owners_email,
     products.c.twilio_messaging_sid,
@@ -214,6 +215,16 @@ class ProductRepository(BaseRepository):
             result = await conn.execute(query)
             row = result.one_or_none()
             return dict(**row.ui) if row else None
+
+    async def get_product_host(
+        self, product_name: ProductName, connection: AsyncConnection | None = None
+    ) -> str | None:
+        query = sa.select(products.c.host).where(products.c.name == product_name)
+
+        async with pass_or_acquire_connection(self.engine, connection) as conn:
+            result = await conn.execute(query)
+            row = result.one_or_none()
+            return f"{row.host}" if row else None
 
     async def auto_create_products_groups(
         self,

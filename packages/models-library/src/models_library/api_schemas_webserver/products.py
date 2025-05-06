@@ -89,6 +89,28 @@ class CreditPriceGet(OutputSchema):
     )
 
 
+class ProductHostRpcGet(BaseModel):
+    product_name: ProductName
+    host: str
+
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "product_name": "osparc",
+                        "credit_amount": "osparc.io",
+                    },
+                ]
+            }
+        )
+
+    model_config = ConfigDict(
+        json_schema_extra=_update_json_schema_extra,
+    )
+
+
 class ProductTemplateGet(OutputSchema):
     id_: Annotated[IDStr, Field(alias="id")]
     content: str

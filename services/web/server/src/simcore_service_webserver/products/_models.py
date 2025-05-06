@@ -87,6 +87,8 @@ class Product(BaseModel):
         re.Pattern, BeforeValidator(str.strip), Field(..., description="Host regex")
     ]
 
+    host: Annotated[str, BeforeValidator(str.strip), Field(..., description="Host")]
+
     support_email: Annotated[
         LowerCaseEmailStr,
         Field(

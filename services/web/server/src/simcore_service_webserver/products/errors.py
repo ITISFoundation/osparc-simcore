@@ -24,6 +24,10 @@ class ProductTemplateNotFoundError(ProductError):
     msg_template = "Missing template {template_name} for product"
 
 
+class ProductHostNotFoundError(ProductError):
+    msg_template = "Missing host for product {product_name}"
+
+
 class MissingStripeConfigError(ProductError):
     msg_template = (
         "Missing product stripe for product {product_name}.\n"
