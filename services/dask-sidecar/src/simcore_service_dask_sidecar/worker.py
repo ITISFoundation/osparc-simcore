@@ -68,8 +68,8 @@ async def dask_setup(worker: distributed.Worker) -> None:
             loop = asyncio.get_event_loop()
             _logger.info("We do have a running loop in the main thread: %s", f"{loop=}")
 
-            if settings.DASK_SIDECAR_RABBITMQ:
-                await worker.plugin_add(RabbitMQPlugin(settings.DASK_SIDECAR_RABBITMQ))
+        if settings.DASK_SIDECAR_RABBITMQ:
+            await worker.plugin_add(RabbitMQPlugin(settings.DASK_SIDECAR_RABBITMQ))
 
 
 async def dask_teardown(worker: distributed.Worker) -> None:
