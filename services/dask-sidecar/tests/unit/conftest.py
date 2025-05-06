@@ -25,6 +25,7 @@ from pytest_localftpserver.servers import ProcessFTPServer
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from settings_library.rabbit import RabbitSettings
 from settings_library.s3 import S3Settings
 from simcore_service_dask_sidecar.file_utils import _s3fs_settings_from_s3_settings
 from yarl import URL
@@ -81,6 +82,7 @@ def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     env_devel_dict: EnvVarsDict,
     shared_data_folder: Path,
+    rabbit_service: RabbitSettings,
 ) -> EnvVarsDict:
     # configured as worker
     envs = setenvs_from_dict(
@@ -89,6 +91,7 @@ def app_environment(
             # .env-devel
             **env_devel_dict,
             # Variables directly define inside Dockerfile
+            "DASK_WORKER_RABBITMQ": rabbit_service.model_dump_json(),
             "SC_BOOT_MODE": "debug",
             "SIDECAR_LOGLEVEL": "DEBUG",
             "SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME": "simcore_computational_shared_data",

@@ -60,7 +60,11 @@ from simcore_service_dask_sidecar.dask_utils import _DEFAULT_MAX_RESOURCES
 from simcore_service_dask_sidecar.file_utils import _s3fs_settings_from_s3_settings
 from simcore_service_dask_sidecar.worker import run_computational_sidecar
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
+
+pytest_simcore_core_services_selection = [
+    "rabbit",
+]
 
 
 @pytest.fixture()
@@ -159,7 +163,10 @@ def _bash_check_env_exist(variable_name: str, variable_value: str) -> list[str]:
     ]
 
 
-@pytest.fixture(params=list(BootMode), ids=str)
+@pytest.fixture(
+    params=list(BootMode),
+    ids=lambda v: f"boot_mode.{v.name}",
+)
 def boot_mode(request: pytest.FixtureRequest) -> BootMode:
     return request.param
 
@@ -441,9 +448,6 @@ def caplog_info_level(
 ) -> Iterable[pytest.LogCaptureFixture]:
     with caplog.at_level(logging.INFO, logger="simcore_service_dask_sidecar"):
         yield caplog
-
-
-# from pydantic.json_schema import JsonDict
 
 
 @pytest.fixture
