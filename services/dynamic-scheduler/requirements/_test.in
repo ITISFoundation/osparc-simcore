@@ -26,3 +26,5 @@ pytest-runner
 pytest-sugar
 python-dotenv
 respx
+sqlalchemy[mypy]
+types-psycopg2

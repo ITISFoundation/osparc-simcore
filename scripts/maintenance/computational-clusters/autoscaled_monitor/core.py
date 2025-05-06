@@ -90,6 +90,7 @@ def _print_dynamic_instances(
     instances: list[DynamicInstance],
     environment: dict[str, str | None],
     aws_region: str,
+    output: Path | None,
 ) -> None:
     time_now = arrow.utcnow()
     table = Table(
@@ -152,13 +153,18 @@ def _print_dynamic_instances(
             f"{_create_graylog_permalinks(environment, instance.ec2_instance)}",
             end_section=True,
         )
-    rich.print(table, flush=True)
+    if output:
+        with output.open("w") as fp:
+            rich.print(table, flush=True, file=fp)
+    else:
+        rich.print(table, flush=True)
 
 
 def _print_computational_clusters(
     clusters: list[ComputationalCluster],
     environment: dict[str, str | None],
     aws_region: str,
+    output: Path | None,
 ) -> None:
     time_now = arrow.utcnow()
     table = Table(
@@ -245,7 +251,11 @@ def _print_computational_clusters(
                 ),
             )
         table.add_row(end_section=True)
-    rich.print(table)
+    if output:
+        with output.open("a") as fp:
+            rich.print(table, file=fp)
+    else:
+        rich.print(table)
 
 
 async def _fetch_instance_details(
@@ -416,6 +426,7 @@ async def _parse_dynamic_instances(
 def _print_summary_as_json(
     dynamic_instances: list[DynamicInstance],
     computational_clusters: list[ComputationalCluster],
+    output: Path | None,
 ) -> None:
     result = {
         "dynamic_instances": [
@@ -446,7 +457,11 @@ def _print_summary_as_json(
                     "user_id": cluster.primary.user_id,
                     "wallet_id": cluster.primary.wallet_id,
                     "disk_space": cluster.primary.disk_space.human_readable(),
-                    "last_heartbeat": cluster.primary.last_heartbeat.isoformat(),
+                    "last_heartbeat": (
+                        cluster.primary.last_heartbeat.isoformat()
+                        if cluster.primary.last_heartbeat
+                        else "n/a"
+                    ),
                 },
                 "workers": [
                     {
@@ -462,16 +477,28 @@ def _print_summary_as_json(
             for cluster in computational_clusters
         ],
     }
-    rich.print_json(json.dumps(result))
+
+    if output:
+        output.write_text(json.dumps(result))
+    else:
+        rich.print_json(json.dumps(result))
 
 
 async def summary(
-    state: AppState, user_id: int | None, wallet_id: int | None, *, output_json: bool
+    state: AppState,
+    user_id: int | None,
+    wallet_id: int | None,
+    *,
+    output_json: bool,
+    output: Path | None,
 ) -> bool:
     # get all the running instances
     assert state.ec2_resource_autoscaling
     dynamic_instances = await ec2.list_dynamic_instances_from_ec2(
-        state, user_id, wallet_id
+        state,
+        filter_by_user_id=user_id,
+        filter_by_wallet_id=wallet_id,
+        filter_by_instance_id=None,
     )
     dynamic_autoscaled_instances = await _parse_dynamic_instances(
         state, dynamic_instances, state.ssh_key_path, user_id, wallet_id
@@ -486,18 +513,22 @@ async def summary(
     )
 
     if output_json:
-        _print_summary_as_json(dynamic_autoscaled_instances, computational_clusters)
+        _print_summary_as_json(
+            dynamic_autoscaled_instances, computational_clusters, output=output
+        )
 
     if not output_json:
         _print_dynamic_instances(
             dynamic_autoscaled_instances,
             state.environment,
             state.ec2_resource_autoscaling.meta.client.meta.region_name,
+            output=output,
         )
         _print_computational_clusters(
             computational_clusters,
             state.environment,
             state.ec2_resource_clusters_keeper.meta.client.meta.region_name,
+            output=output,
         )
 
     time_threshold = arrow.utcnow().shift(minutes=-30).datetime
@@ -704,7 +735,7 @@ async def cancel_jobs(  # noqa: C901, PLR0912
 
 
 async def trigger_cluster_termination(
-    state: AppState, user_id: int, wallet_id: int, *, force: bool
+    state: AppState, user_id: int, wallet_id: int | None, *, force: bool
 ) -> None:
     assert state.ec2_resource_clusters_keeper
     computational_instances = await ec2.list_computational_instances_from_ec2(
@@ -722,6 +753,7 @@ async def trigger_cluster_termination(
         computational_clusters,
         state.environment,
         state.ec2_resource_clusters_keeper.meta.client.meta.region_name,
+        output=None,
     )
     if (force is True) or typer.confirm(
         "Are you sure you want to trigger termination of that cluster?"
@@ -751,3 +783,49 @@ async def trigger_cluster_termination(
 
 async def check_database_connection(state: AppState) -> None:
     await db.check_db_connection(state)
+
+
+async def terminate_dynamic_instances(
+    state: AppState,
+    user_id: int | None,
+    instance_id: str | None,
+    *,
+    force: bool,
+) -> None:
+    if not user_id and not instance_id:
+        rich.print("either define user_id or instance_id!")
+        raise typer.Exit(2)
+    dynamic_instances = await ec2.list_dynamic_instances_from_ec2(
+        state,
+        filter_by_user_id=None,
+        filter_by_wallet_id=None,
+        filter_by_instance_id=instance_id,
+    )
+
+    dynamic_autoscaled_instances = await _parse_dynamic_instances(
+        state, dynamic_instances, state.ssh_key_path, user_id, None
+    )
+
+    if not dynamic_autoscaled_instances:
+        rich.print("no instances found")
+        raise typer.Exit(1)
+
+    assert state.ec2_resource_autoscaling  # nosec
+    _print_dynamic_instances(
+        dynamic_autoscaled_instances,
+        state.environment,
+        state.ec2_resource_autoscaling.meta.client.meta.region_name,
+        output=None,
+    )
+
+    for instance in dynamic_autoscaled_instances:
+        rich.print(
+            f"terminating instance {instance.ec2_instance.instance_id} with name {utils.get_instance_name(instance.ec2_instance)}"
+        )
+        if force is True or typer.confirm(
+            f"Are you sure you want to terminate instance {instance.ec2_instance.instance_id}?"
+        ):
+            instance.ec2_instance.terminate()
+            rich.print(f"terminated instance {instance.ec2_instance.instance_id}")
+        else:
+            rich.print("not terminating anything")

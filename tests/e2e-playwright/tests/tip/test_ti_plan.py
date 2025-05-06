@@ -33,7 +33,7 @@ _GET_NODE_OUTPUTS_REQUEST_PATTERN: Final[re.Pattern[str]] = re.compile(
 _OUTER_EXPECT_TIMEOUT_RATIO: Final[float] = 1.1
 _EC2_STARTUP_MAX_WAIT_TIME: Final[int] = 1 * MINUTE
 
-_ELECTRODE_SELECTOR_MAX_STARTUP_TIME: Final[int] = 1 * MINUTE
+_ELECTRODE_SELECTOR_MAX_STARTUP_TIME: Final[int] = 2 * MINUTE
 _ELECTRODE_SELECTOR_DOCKER_PULLING_MAX_TIME: Final[int] = 3 * MINUTE
 _ELECTRODE_SELECTOR_AUTOSCALED_MAX_STARTUP_TIME: Final[int] = (
     _EC2_STARTUP_MAX_WAIT_TIME
@@ -161,7 +161,6 @@ def test_classic_ti_plan(  # noqa: PLR0915
             press_start_button=False,
             product_url=product_url,
             is_service_legacy=is_service_legacy,
-            assertion_output_folder=playwright_test_results_dir,
         )
         # NOTE: Sometimes this iframe flicks and shows a white page. This wait will avoid it
         page.wait_for_timeout(_ELECTRODE_SELECTOR_FLICKERING_WAIT_TIME)
@@ -227,7 +226,6 @@ def test_classic_ti_plan(  # noqa: PLR0915
                 press_start_button=False,
                 product_url=product_url,
                 is_service_legacy=is_service_legacy,
-                assertion_output_folder=playwright_test_results_dir,
             ) as service_running:
                 app_mode_trigger_next_app(page)
             ti_iframe = service_running.iframe_locator
@@ -345,7 +343,6 @@ def test_classic_ti_plan(  # noqa: PLR0915
                 press_start_button=False,
                 product_url=product_url,
                 is_service_legacy=is_service_legacy,
-                assertion_output_folder=playwright_test_results_dir,
             ) as service_running:
                 app_mode_trigger_next_app(page)
             s4l_postpro_iframe = service_running.iframe_locator

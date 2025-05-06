@@ -21,8 +21,6 @@ aiohttp==3.11.13
     #   aiobotocore
 aioitertools==0.12.0
     # via aiobotocore
-aiopg==1.4.0
-    # via -r requirements/_test.in
 aiormq==6.8.1
     # via
     #   -c requirements/_base.txt
@@ -43,8 +41,6 @@ asgi-lifespan==2.1.0
     # via -r requirements/_test.in
 async-asgi-testclient==1.4.11
     # via -r requirements/_test.in
-async-timeout==4.0.3
-    # via aiopg
 attrs==25.1.0
     # via
     #   -c requirements/_base.txt
@@ -227,11 +223,6 @@ psutil==6.1.0
     # via
     #   -c requirements/_base.txt
     #   distributed
-psycopg2-binary==2.9.10
-    # via
-    #   -c requirements/_base.txt
-    #   aiopg
-    #   sqlalchemy
 pytest==8.3.5
     # via
     #   -r requirements/_test.in
@@ -299,7 +290,6 @@ sqlalchemy==1.4.54
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-    #   aiopg
     #   alembic
 sqlalchemy2-stubs==0.0.2a38
     # via sqlalchemy

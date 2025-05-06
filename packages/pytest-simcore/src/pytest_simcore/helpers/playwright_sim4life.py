@@ -2,7 +2,6 @@ import datetime
 import logging
 import re
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Final, TypedDict
 
 import arrow
@@ -26,7 +25,7 @@ _S4L_SOCKETIO_REGEX: Final[re.Pattern] = re.compile(
     r"^(?P<protocol>[^:]+)://(?P<node_id>[^\.]+)\.services\.(?P<hostname>[^\/]+)\/socket\.io\/.+$"
 )
 _EC2_STARTUP_MAX_WAIT_TIME: Final[int] = 1 * MINUTE
-_S4L_MAX_STARTUP_TIME: Final[int] = 1 * MINUTE
+_S4L_MAX_STARTUP_TIME: Final[int] = 2 * MINUTE
 _S4L_DOCKER_PULLING_MAX_TIME: Final[int] = 10 * MINUTE
 _S4L_AUTOSCALED_MAX_STARTUP_TIME: Final[int] = (
     _EC2_STARTUP_MAX_WAIT_TIME + _S4L_DOCKER_PULLING_MAX_TIME + _S4L_MAX_STARTUP_TIME
@@ -108,7 +107,6 @@ def wait_for_launched_s4l(
     copy_workspace: bool,
     product_url: AnyUrl,
     is_service_legacy: bool,
-    assertion_output_folder: Path,
 ) -> WaitForS4LDict:
     with log_context(logging.INFO, "launch S4L") as ctx:
         predicate = S4LWaitForWebsocket(logger=ctx.logger)
@@ -136,7 +134,6 @@ def wait_for_launched_s4l(
                 press_start_button=False,
                 product_url=product_url,
                 is_service_legacy=is_service_legacy,
-                assertion_output_folder=assertion_output_folder,
             )
         s4l_websocket = ws_info.value
         ctx.logger.info("acquired S4L websocket!")

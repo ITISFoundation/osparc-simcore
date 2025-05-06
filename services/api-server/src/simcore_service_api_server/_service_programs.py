@@ -1,6 +1,5 @@
-from typing import Annotated
+from dataclasses import dataclass
 
-from fastapi import Depends
 from models_library.api_schemas_catalog.services import ServiceListFilters
 from models_library.basic_types import VersionStr
 from models_library.rest_pagination import PageMetaInfoLimitOffset
@@ -11,25 +10,19 @@ from .models.schemas.programs import Program, ProgramKeyId
 from .services_rpc.catalog import CatalogService
 
 
+@dataclass(frozen=True, kw_only=True)
 class ProgramService:
-    _catalog_service: CatalogService
-
-    def __init__(self, _catalog_service: Annotated[CatalogService, Depends()]):
-        self._catalog_service = _catalog_service
+    catalog_service: CatalogService
 
     async def get_program(
         self,
         *,
-        user_id: int,
         name: ProgramKeyId,
         version: VersionStr,
-        product_name: str,
     ) -> Program:
-        service = await self._catalog_service.get(
-            user_id=user_id,
+        service = await self.catalog_service.get(
             name=name,
             version=version,
-            product_name=product_name,
         )
         assert service.service_type == ServiceType.DYNAMIC  # nosec
 
@@ -38,16 +31,12 @@ class ProgramService:
     async def list_latest_programs(
         self,
         *,
-        user_id: int,
-        product_name: str,
-        offset: NonNegativeInt,
-        limit: PositiveInt,
+        pagination_offset: NonNegativeInt,
+        pagination_limit: PositiveInt,
     ) -> tuple[list[Program], PageMetaInfoLimitOffset]:
-        page, page_meta = await self._catalog_service.list_latest_releases(
-            user_id=user_id,
-            product_name=product_name,
-            offset=offset,
-            limit=limit,
+        page, page_meta = await self.catalog_service.list_latest_releases(
+            pagination_offset=pagination_offset,
+            pagination_limit=pagination_limit,
             filters=ServiceListFilters(service_type=ServiceType.DYNAMIC),
         )
 
@@ -57,25 +46,21 @@ class ProgramService:
     async def list_program_history(
         self,
         *,
-        user_id: int,
         program_key: ProgramKeyId,
-        product_name: str,
         offset: NonNegativeInt,
         limit: PositiveInt,
     ) -> tuple[list[Program], PageMetaInfoLimitOffset]:
-        page, page_meta = await self._catalog_service.list_release_history(
-            user_id=user_id,
-            service_key=program_key,
-            product_name=product_name,
-            offset=offset,
-            limit=limit,
+        page, page_meta = await self.catalog_service.list_release_history_latest_first(
+            filter_by_service_key=program_key,
+            pagination_offset=offset,
+            pagination_limit=limit,
         )
+        if len(page) == 0:
+            return [], page_meta
 
-        program_instance = await self._catalog_service.get(
-            user_id=user_id,
+        program_instance = await self.catalog_service.get(
             name=program_key,
             version=page[-1].version,
-            product_name=product_name,
         )
 
         items = [

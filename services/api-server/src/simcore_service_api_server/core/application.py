@@ -7,12 +7,12 @@ from packaging.version import Version
 from servicelib.fastapi.profiler import initialize_profiler
 from servicelib.fastapi.tracing import initialize_tracing
 from servicelib.logging_utils import config_all_loggers
-from simcore_service_api_server.clients.postgres import setup_postgres
 
 from .. import exceptions
 from .._meta import API_VERSION, API_VTAG, APP_NAME
 from ..api.root import create_router
 from ..api.routes.health import router as health_router
+from ..clients.postgres import setup_postgres
 from ..services_http import director_v2, storage, webserver
 from ..services_http.rabbitmq import setup_rabbitmq
 from ._prometheus_instrumentation import setup_prometheus_instrumentation
