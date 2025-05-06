@@ -4,6 +4,7 @@ import functools
 import logging
 from copy import deepcopy
 from typing import Any, Final, TypeVar
+from urllib.parse import urlparse, urlunparse
 
 from fastapi import FastAPI
 from models_library.osparc_variable_identifier import (
@@ -42,7 +43,13 @@ TBaseModel = TypeVar("TBaseModel", bound=BaseModel)
 
 
 def _make_api_server_base_url(base_url: str):
-    return f"api.{base_url}"
+    parsed = urlparse(base_url)
+    hostname = parsed.hostname or ""
+
+    if not hostname.startswith("api."):
+        hostname = f"api.{hostname}"
+
+    return urlunparse((parsed.scheme, hostname, "", "", "", ""))
 
 
 async def substitute_vendor_secrets_in_model(
