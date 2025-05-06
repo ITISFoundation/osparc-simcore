@@ -13,7 +13,6 @@ from collections.abc import Generator
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from enum import Enum, unique
-from pathlib import Path
 from typing import Any, Final
 
 import arrow
@@ -590,7 +589,6 @@ def expected_service_running(
     press_start_button: bool,
     product_url: AnyUrl,
     is_service_legacy: bool,
-    assertion_output_folder: Path,
 ) -> Generator[ServiceRunning, None, None]:
     started = arrow.utcnow()
     with contextlib.ExitStack() as stack:
@@ -610,6 +608,10 @@ def expected_service_running(
             waiter = SocketIONodeProgressCompleteWaiter(
                 node_id=node_id,
                 logger=ctx.logger,
+                max_idle_timeout=min(
+                    _SOCKET_IO_NODE_PROGRESS_WAITER_MAX_IDLE_TIMEOUT,
+                    timedelta(seconds=timeout / 1000 - 10),
+                ),
             )
             stack.enter_context(
                 websocket.expect_event("framereceived", waiter, timeout=timeout)
@@ -647,7 +649,6 @@ def wait_for_service_running(
     press_start_button: bool,
     product_url: AnyUrl,
     is_service_legacy: bool,
-    assertion_output_folder: Path,
 ) -> FrameLocator:
     """NOTE: if the service was already started this will not work as some of the required websocket events will not be emitted again
     In which case this will need further adjutment"""
@@ -669,6 +670,10 @@ def wait_for_service_running(
             waiter = SocketIONodeProgressCompleteWaiter(
                 node_id=node_id,
                 logger=ctx.logger,
+                max_idle_timeout=min(
+                    _SOCKET_IO_NODE_PROGRESS_WAITER_MAX_IDLE_TIMEOUT,
+                    timedelta(seconds=timeout / 1000 - 10),
+                ),
             )
             stack.enter_context(
                 websocket.expect_event("framereceived", waiter, timeout=timeout)

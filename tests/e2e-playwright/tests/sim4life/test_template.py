@@ -8,7 +8,6 @@
 
 
 from collections.abc import Callable
-from pathlib import Path
 from typing import Any
 
 from playwright.sync_api import Page
@@ -30,7 +29,6 @@ def test_template(
     check_videostreaming: bool,
     product_url: AnyUrl,
     is_service_legacy: bool,
-    playwright_test_results_dir: Path,
 ):
     project_data = create_project_from_template_dashboard(template_id)
 
@@ -49,7 +47,6 @@ def test_template(
         copy_workspace=True,
         product_url=product_url,
         is_service_legacy=is_service_legacy,
-        assertion_output_folder=playwright_test_results_dir,
     )
     s4l_websocket = resp["websocket"]
     s4l_iframe = resp["iframe"]

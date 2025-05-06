@@ -26,6 +26,12 @@ _TASK_TO_PIPELINE_CONVERSIONS = {
         RunningState.NOT_STARTED,
         RunningState.WAITING_FOR_CLUSTER,
     ): RunningState.WAITING_FOR_CLUSTER,
+    # if there are tasks waiting for resources and nothing is running/pending, then the pipeline is also waiting for resources
+    (
+        RunningState.PUBLISHED,
+        RunningState.NOT_STARTED,
+        RunningState.WAITING_FOR_RESOURCES,
+    ): RunningState.WAITING_FOR_RESOURCES,
     # if there are PENDING states that means the pipeline was published and is awaiting sidecars
     (
         RunningState.PENDING,
