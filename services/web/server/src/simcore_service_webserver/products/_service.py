@@ -23,7 +23,7 @@ from .errors import (
 from .models import Product
 
 
-def _make_api_server_base_url(base_url: str):
+def _make_api_server_base_url(base_url: str) -> str:
     parsed = urlparse(base_url)
     hostname = parsed.hostname or ""
 

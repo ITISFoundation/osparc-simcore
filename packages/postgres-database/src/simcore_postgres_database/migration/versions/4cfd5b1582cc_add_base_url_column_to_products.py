@@ -1,8 +1,8 @@
 """Add base_url column to products
 
-Revision ID: 972981ff823a
+Revision ID: 4cfd5b1582cc
 Revises: 0d52976dc616
-Create Date: 2025-05-06 11:28:58.402681+00:00
+Create Date: 2025-05-06 14:35:52.213784+00:00
 
 """
 
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "972981ff823a"
+revision = "4cfd5b1582cc"
 down_revision = "0d52976dc616"
 branch_labels = None
 depends_on = None
@@ -21,7 +21,7 @@ def upgrade():
     op.add_column(
         "products",
         sa.Column(
-            "base_url", sa.String(), server_default="https://osparc.io", nullable=True
+            "base_url", sa.String(), server_default="https://osparc.io", nullable=False
         ),
     )
     # ### end Alembic commands ###

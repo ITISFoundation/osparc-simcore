@@ -157,6 +157,7 @@ products = sa.Table(
     sa.Column(
         "base_url",
         sa.String,
+        nullable=False,
         server_default="https://osparc.io",
         doc="Base URL of the product.",
     ),
