@@ -15,6 +15,8 @@ import fsspec
 import pytest
 import simcore_service_dask_sidecar
 from aiobotocore.session import AioBaseClient, get_session
+from common_library.json_serialization import json_dumps
+from common_library.serialization import model_dump_with_secrets
 from dask_task_models_library.container_tasks.protocol import TaskOwner
 from faker import Faker
 from models_library.projects import ProjectID
@@ -91,7 +93,9 @@ def app_environment(
             # .env-devel
             **env_devel_dict,
             # Variables directly define inside Dockerfile
-            "DASK_WORKER_RABBITMQ": rabbit_service.model_dump_json(),
+            "DASK_SIDECAR_RABBITMQ": json_dumps(
+                model_dump_with_secrets(rabbit_service, show_secrets=True)
+            ),
             "SC_BOOT_MODE": "debug",
             "SIDECAR_LOGLEVEL": "DEBUG",
             "SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME": "simcore_computational_shared_data",
