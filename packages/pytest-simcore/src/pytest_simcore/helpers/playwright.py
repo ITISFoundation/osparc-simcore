@@ -13,7 +13,6 @@ from collections.abc import Generator
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from enum import Enum, unique
-from pathlib import Path
 from typing import Any, Final
 
 import arrow
@@ -590,7 +589,6 @@ def expected_service_running(
     press_start_button: bool,
     product_url: AnyUrl,
     is_service_legacy: bool,
-    assertion_output_folder: Path,
 ) -> Generator[ServiceRunning, None, None]:
     started = arrow.utcnow()
     with contextlib.ExitStack() as stack:
@@ -647,7 +645,6 @@ def wait_for_service_running(
     press_start_button: bool,
     product_url: AnyUrl,
     is_service_legacy: bool,
-    assertion_output_folder: Path,
 ) -> FrameLocator:
     """NOTE: if the service was already started this will not work as some of the required websocket events will not be emitted again
     In which case this will need further adjutment"""
