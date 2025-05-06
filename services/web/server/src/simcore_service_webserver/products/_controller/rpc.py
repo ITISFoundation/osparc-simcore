@@ -30,12 +30,12 @@ async def get_credit_amount(
 
 
 @router.expose()
-async def get_product_base_url(
+async def get_product_api_base_url(
     app: web.Application,
     *,
     product_name: ProductName,
 ) -> str:
-    return await _service.get_product_base_url(app, product_name=product_name)
+    return await _service.get_product_api_base_url(app, product_name=product_name)
 
 
 async def _register_rpc_routes_on_startup(app: web.Application):

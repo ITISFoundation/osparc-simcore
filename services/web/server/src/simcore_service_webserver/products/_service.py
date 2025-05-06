@@ -1,5 +1,6 @@
 from decimal import Decimal
 from typing import Any
+from urllib.parse import urlparse, urlunparse
 
 from aiohttp import web
 from models_library.groups import GroupID
@@ -20,6 +21,16 @@ from .errors import (
     ProductTemplateNotFoundError,
 )
 from .models import Product
+
+
+def _make_api_server_base_url(base_url: str):
+    parsed = urlparse(base_url)
+    hostname = parsed.hostname or ""
+
+    if not hostname.startswith("api."):
+        hostname = f"api.{hostname}"
+
+    return urlunparse((parsed.scheme, hostname, "", "", "", ""))
 
 
 async def load_products(app: web.Application) -> list[Product]:
@@ -137,12 +148,13 @@ async def get_template_content(app: web.Application, *, template_name: str):
     return content
 
 
-async def get_product_base_url(app: web.Application, *, product_name) -> str:
+async def get_product_api_base_url(app: web.Application, *, product_name) -> str:
     repo = ProductRepository.create_from_app(app)
     base_url = await repo.get_product_base_url(product_name)
     if not base_url:
         raise ProductBaseUrlNotFoundError(product_name=product_name)
-    return base_url
+
+    return _make_api_server_base_url(base_url)
 
 
 async def auto_create_products_groups(

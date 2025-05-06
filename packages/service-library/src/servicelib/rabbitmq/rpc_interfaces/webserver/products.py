@@ -12,7 +12,7 @@ _logger = logging.getLogger(__name__)
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def get_product_base_url(
+async def get_product_api_base_url(
     rpc_client: RabbitMQRPCClient,
     *,
     product_name: ProductName,
@@ -20,7 +20,7 @@ async def get_product_base_url(
 
     resp = await rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python("get_product_base_url"),
+        TypeAdapter(RPCMethodName).validate_python("get_product_api_base_url"),
         product_name=product_name,
     )
     assert resp  # nosec
