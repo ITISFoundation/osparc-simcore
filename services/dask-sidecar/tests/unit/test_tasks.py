@@ -8,7 +8,7 @@ import asyncio
 import json
 import logging
 import re
-from collections.abc import Callable, Coroutine, Iterable
+from collections.abc import AsyncIterator, Callable, Coroutine, Iterable
 
 # copied out from dask
 from dataclasses import dataclass
@@ -23,10 +23,7 @@ import pytest
 from common_library.json_serialization import json_dumps
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.errors import ServiceRuntimeError
-from dask_task_models_library.container_tasks.events import (
-    TaskLogEvent,
-    TaskProgressEvent,
-)
+from dask_task_models_library.container_tasks.events import TaskProgressEvent
 from dask_task_models_library.container_tasks.io import (
     FileUrl,
     TaskInputData,
@@ -39,12 +36,14 @@ from dask_task_models_library.container_tasks.protocol import (
 )
 from faker import Faker
 from models_library.basic_types import EnvVarKey
+from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.services import ServiceMetaDataPublished
 from models_library.services_resources import BootMode
 from packaging import version
 from pydantic import AnyUrl, SecretStr, TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from servicelib.rabbitmq._client import RabbitMQClient
 from settings_library.s3 import S3Settings
 from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
     LEGACY_SERVICE_LOG_FILE_NAME,
@@ -466,6 +465,19 @@ def mocked_get_image_labels(
     )
 
 
+@pytest.fixture
+async def log_rabbit_client_parser(
+    create_rabbitmq_client: Callable[[str], RabbitMQClient], mocker: MockerFixture
+) -> AsyncIterator[mock.AsyncMock]:
+    client = create_rabbitmq_client("dask_sidecar_pytest_logs_consumer")
+    mock = mocker.AsyncMock(return_value=True)
+    queue_name, _ = await client.subscribe(
+        LoggerRabbitMessage.get_channel_name(), mock, exclusive_queue=False
+    )
+    yield mock
+    await client.unsubscribe(queue_name)
+
+
 def test_run_computational_sidecar_real_fct(
     caplog_info_level: pytest.LogCaptureFixture,
     event_loop: asyncio.AbstractEventLoop,
@@ -474,6 +486,7 @@ def test_run_computational_sidecar_real_fct(
     sleeper_task: ServiceExampleParam,
     mocked_get_image_labels: mock.Mock,
     s3_settings: S3Settings,
+    log_rabbit_client_parser: mock.AsyncMock,
 ):
     output_data = run_computational_sidecar(
         **sleeper_task.sidecar_params(),
@@ -484,10 +497,11 @@ def test_run_computational_sidecar_real_fct(
         sleeper_task.service_key,
         sleeper_task.service_version,
     )
-    for event in [TaskProgressEvent, TaskLogEvent]:
+    for event in [TaskProgressEvent]:
         dask_subsystem_mock["dask_event_publish"].assert_any_call(
             name=event.topic_name()
         )
+    log_rabbit_client_parser.assert_called_once()
 
     # check that the task produces expected logs
     for log in sleeper_task.expected_logs:
@@ -562,13 +576,6 @@ def test_run_multiple_computational_sidecar_dask(
 
 
 @pytest.fixture
-def log_sub(
-    dask_client: distributed.Client,
-) -> distributed.Sub:
-    return distributed.Sub(TaskLogEvent.topic_name(), client=dask_client)
-
-
-@pytest.fixture
 def progress_sub(dask_client: distributed.Client) -> distributed.Sub:
     return distributed.Sub(TaskProgressEvent.topic_name(), client=dask_client)
 
@@ -579,10 +586,10 @@ def progress_sub(dask_client: distributed.Client) -> distributed.Sub:
 async def test_run_computational_sidecar_dask(
     dask_client: distributed.Client,
     sleeper_task: ServiceExampleParam,
-    log_sub: distributed.Sub,
     progress_sub: distributed.Sub,
     mocked_get_image_labels: mock.Mock,
     s3_settings: S3Settings,
+    log_rabbit_client_parser: mock.AsyncMock,
 ):
     future = dask_client.submit(
         run_computational_sidecar,
@@ -607,7 +614,9 @@ async def test_run_computational_sidecar_dask(
     ), "ordering of progress values incorrectly sorted!"
     assert worker_progresses[0] == 0, "missing/incorrect initial progress value"
     assert worker_progresses[-1] == 1, "missing/incorrect final progress value"
-    worker_logs = [TaskLogEvent.model_validate_json(msg).log for msg in log_sub.buffer]
+    log_rabbit_client_parser.assert_called_once()
+    # worker_logs = [TaskLogEvent.model_validate_json(msg).log for msg in log_sub.buffer]
+    worker_logs = []
     print(f"<-- we got {len(worker_logs)} lines of logs")
 
     for log in sleeper_task.expected_logs:
@@ -641,9 +650,9 @@ async def test_run_computational_sidecar_dask(
 async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub(
     dask_client: distributed.Client,
     sidecar_task: Callable[..., ServiceExampleParam],
-    log_sub: distributed.Sub,
     progress_sub: distributed.Sub,
     mocked_get_image_labels: mock.Mock,
+    log_rabbit_client_parser: mock.AsyncMock,
 ):
     mocked_get_image_labels.assert_not_called()
     NUMBER_OF_LOGS = 20000
@@ -679,7 +688,9 @@ async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub
     assert worker_progresses[0] == 0, "missing/incorrect initial progress value"
     assert worker_progresses[-1] == 1, "missing/incorrect final progress value"
 
-    worker_logs = [TaskLogEvent.model_validate_json(msg).log for msg in log_sub.buffer]
+    log_rabbit_client_parser.assert_called_once()
+    # worker_logs = [TaskLogEvent.model_validate_json(msg).log for msg in log_sub.buffer]
+    worker_logs = []
     # check all the awaited logs are in there
     filtered_worker_logs = filter(lambda log: "This is iteration" in log, worker_logs)
     assert len(list(filtered_worker_logs)) == NUMBER_OF_LOGS

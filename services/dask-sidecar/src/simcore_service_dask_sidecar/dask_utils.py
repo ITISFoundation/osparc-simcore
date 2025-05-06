@@ -9,7 +9,6 @@ import distributed
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.events import (
     BaseTaskEvent,
-    TaskLogEvent,
     TaskProgressEvent,
 )
 from dask_task_models_library.container_tasks.io import TaskCancelEventName
@@ -66,11 +65,9 @@ class TaskPublisher:
     task_owner: TaskOwner
     progress: distributed.Pub = field(init=False)
     _last_published_progress_value: float = -1
-    logs: distributed.Pub = field(init=False)
 
     def __post_init__(self) -> None:
         self.progress = distributed.Pub(TaskProgressEvent.topic_name())
-        self.logs = distributed.Pub(TaskLogEvent.topic_name())
 
     def publish_progress(self, report: ProgressReport) -> None:
         rounded_value = round(report.percent_value, ndigits=2)
@@ -113,12 +110,6 @@ class TaskPublisher:
                 )
                 await rabbitmq_client.publish(parent_message.channel_name, base_message)
 
-            publish_event(
-                self.logs,
-                TaskLogEvent.from_dask_worker(
-                    log=message, log_level=log_level, task_owner=self.task_owner
-                ),
-            )
         _logger.log(log_level, message)
 
 
