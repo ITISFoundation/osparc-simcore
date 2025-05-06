@@ -117,7 +117,7 @@ else
   fi
 
   # GPUs
-  num_gpus=$(python -c "from simcore_service_dask_sidecar.utils import num_available_gpus; print(num_available_gpus());")
+  num_gpus=$(python -c "from simcore_service_dask_sidecar.utils.gpus import num_available_gpus; print(num_available_gpus());")
 
   # RAM (is computed similarly as the default dask-sidecar computation)
   _value=$(python -c "import psutil; print(int(psutil.virtual_memory().total * $num_cpus/$(nproc)))")
@@ -128,7 +128,7 @@ else
 
   # add the GPUs if there are any
   if [ "$num_gpus" -gt 0 ]; then
-    total_vram=$(python -c "from simcore_service_dask_sidecar.utils import video_memory; print(video_memory());")
+    total_vram=$(python -c "from simcore_service_dask_sidecar.utils.gpus import video_memory; print(video_memory());")
     resources="$resources,GPU=$num_gpus,VRAM=$total_vram"
   fi
 

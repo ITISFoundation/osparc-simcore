@@ -9,7 +9,7 @@ import json
 import logging
 import re
 import threading
-from collections.abc import AsyncIterator, Callable, Coroutine, Iterable
+from collections.abc import AsyncIterator, Callable, Iterable
 
 # copied out from dask
 from dataclasses import dataclass
@@ -613,7 +613,7 @@ def test_run_multiple_computational_sidecar_dask(
 
     results = dask_client.gather(futures)
     assert results
-    assert not isinstance(results, Coroutine)
+    assert isinstance(results, list)
     # for result in results:
     # check that the task produce the expected data, not less not more
     for output_data in results:
@@ -708,6 +708,7 @@ async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub
     progress_sub: distributed.Sub,
     mocked_get_image_labels: mock.Mock,
     log_rabbit_client_parser: mock.AsyncMock,
+    task_owner: TaskOwner,
 ):
     mocked_get_image_labels.assert_not_called()
     NUMBER_OF_LOGS = 200
@@ -745,6 +746,7 @@ async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub
 
     await asyncio.sleep(5)
     assert log_rabbit_client_parser.called
+
     worker_logs = [
         message
         for msg in log_rabbit_client_parser.call_args_list
@@ -752,7 +754,11 @@ async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub
     ]
     # check all the awaited logs are in there
     filtered_worker_logs = filter(lambda log: "This is iteration" in log, worker_logs)
-    assert len(list(filtered_worker_logs)) == NUMBER_OF_LOGS
+    assert (
+        len(list(filtered_worker_logs)) == (2 * NUMBER_OF_LOGS)
+        if task_owner.has_parent
+        else NUMBER_OF_LOGS
+    )
     mocked_get_image_labels.assert_called()
 
 

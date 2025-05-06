@@ -1,8 +1,10 @@
+import asyncio
 import logging
+from asyncio import AbstractEventLoop
 from collections.abc import Awaitable
 
 import distributed
-from servicelib.logging_utils import log_context
+from servicelib.logging_utils import log_catch, log_context
 from servicelib.rabbitmq import RabbitMQClient, wait_till_rabbitmq_responsive
 from settings_library.rabbit import RabbitSettings
 
@@ -15,6 +17,7 @@ class RabbitMQPlugin(distributed.WorkerPlugin):
     """Dask Worker Plugin for RabbitMQ integration"""
 
     name = "rabbitmq_plugin"
+    _loop: AbstractEventLoop | None = None
     _client: RabbitMQClient | None = None
     _settings: RabbitSettings | None = None
 
@@ -36,6 +39,7 @@ class RabbitMQPlugin(distributed.WorkerPlugin):
                 logging.INFO,
                 f"RabbitMQ client initialization for worker {worker.address}",
             ):
+                self._loop = asyncio.get_event_loop()
                 await wait_till_rabbitmq_responsive(self._settings.dsn)
                 self._client = RabbitMQClient(
                     client_name="dask-sidecar", settings=self._settings
@@ -53,7 +57,15 @@ class RabbitMQPlugin(distributed.WorkerPlugin):
                 f"RabbitMQ client teardown for worker {worker.address}",
             ):
                 if self._client:
-                    await self._client.close()
+                    current_loop = asyncio.get_event_loop()
+                    if self._loop != current_loop:
+                        _logger.warning(
+                            "RabbitMQ client is de-activated (loop mismatch)"
+                        )
+                    assert self._loop  # nosec
+                    with log_catch(_logger, reraise=False):
+                        await asyncio.wait_for(self._client.close(), timeout=5.0)
+
                     self._client = None
 
         return _()

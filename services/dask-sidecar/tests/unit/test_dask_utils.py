@@ -6,7 +6,6 @@
 
 import asyncio
 import concurrent.futures
-import logging
 import time
 from collections.abc import AsyncIterator, Callable, Coroutine
 from typing import Any
@@ -14,7 +13,7 @@ from typing import Any
 import distributed
 import pytest
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
-from dask_task_models_library.container_tasks.events import TaskLogEvent
+from dask_task_models_library.container_tasks.events import TaskProgressEvent
 from dask_task_models_library.container_tasks.io import TaskCancelEventName
 from dask_task_models_library.container_tasks.protocol import TaskOwner
 from simcore_service_dask_sidecar.dask_utils import (
@@ -33,16 +32,20 @@ from tenacity.wait import wait_fixed
 DASK_TASK_STARTED_EVENT = "task_started"
 DASK_TESTING_TIMEOUT_S = 25
 
+pytest_simcore_core_services_selection = [
+    "rabbit",
+]
+
 
 def test_publish_event(
     dask_client: distributed.Client, job_id: str, task_owner: TaskOwner
 ):
     dask_pub = distributed.Pub("some_topic", client=dask_client)
     dask_sub = distributed.Sub("some_topic", client=dask_client)
-    event_to_publish = TaskLogEvent(
+    event_to_publish = TaskProgressEvent(
         job_id=job_id,
-        log="the log",
-        log_level=logging.INFO,
+        msg="the log",
+        progress=1,
         task_owner=task_owner,
     )
     publish_event(dask_pub=dask_pub, event=event_to_publish)
@@ -53,7 +56,7 @@ def test_publish_event(
     message = dask_sub.get(timeout=DASK_TESTING_TIMEOUT_S)
     assert message is not None
     assert isinstance(message, str)
-    received_task_log_event = TaskLogEvent.model_validate_json(message)
+    received_task_log_event = TaskProgressEvent.model_validate_json(message)
     assert received_task_log_event == event_to_publish
 
 
@@ -62,8 +65,8 @@ async def test_publish_event_async(
 ):
     dask_pub = distributed.Pub("some_topic", client=async_dask_client)
     dask_sub = distributed.Sub("some_topic", client=async_dask_client)
-    event_to_publish = TaskLogEvent(
-        job_id=job_id, log="the log", log_level=logging.INFO, task_owner=task_owner
+    event_to_publish = TaskProgressEvent(
+        job_id=job_id, msg="the log", progress=2, task_owner=task_owner
     )
     publish_event(dask_pub=dask_pub, event=event_to_publish)
 
@@ -74,7 +77,7 @@ async def test_publish_event_async(
     assert isinstance(message, Coroutine)
     message = await message
     assert message is not None
-    received_task_log_event = TaskLogEvent.model_validate_json(message)
+    received_task_log_event = TaskProgressEvent.model_validate_json(message)
     assert received_task_log_event == event_to_publish
 
 
@@ -117,11 +120,10 @@ async def test_publish_event_async_using_task(
 
     async def _dask_publisher_task(pub: distributed.Pub) -> None:
         print("--> starting publisher task")
-        for n in range(NUMBER_OF_MESSAGES):
-            event_to_publish = TaskLogEvent(
+        for _ in range(NUMBER_OF_MESSAGES):
+            event_to_publish = TaskProgressEvent(
                 job_id=job_id,
-                log=f"the log {n}",
-                log_level=logging.INFO,
+                progress=0.5,
                 task_owner=task_owner,
             )
             publish_event(dask_pub=pub, event=event_to_publish)

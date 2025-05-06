@@ -10,13 +10,17 @@ import aiodocker
 import pytest
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from simcore_service_dask_sidecar.utils import num_available_gpus
+from simcore_service_dask_sidecar.utils.gpus import num_available_gpus
+
+pytest_simcore_core_services_selection = [
+    "rabbit",
+]
 
 
 @pytest.fixture
 def mock_aiodocker(mocker: MockerFixture) -> mock.MagicMock:
     return mocker.patch(
-        "simcore_service_dask_sidecar.utils.aiodocker.Docker", autospec=True
+        "simcore_service_dask_sidecar.utils.gpus.aiodocker.Docker", autospec=True
     )
 
 

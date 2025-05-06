@@ -13,6 +13,10 @@ from simcore_service_dask_sidecar.cli import main
 from simcore_service_dask_sidecar.settings import ApplicationSettings
 from typer.testing import CliRunner
 
+pytest_simcore_core_services_selection = [
+    "rabbit",
+]
+
 
 def test_cli_help_and_version(cli_runner: CliRunner):
     # invitations-maker --help
