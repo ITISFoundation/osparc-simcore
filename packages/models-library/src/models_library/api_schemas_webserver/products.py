@@ -100,7 +100,7 @@ class ProductBaseUrlRpcGet(BaseModel):
                 "examples": [
                     {
                         "product_name": "osparc",
-                        "credit_amount": "osparc.io",
+                        "base_url": "https://osparc.io",
                     },
                 ]
             }
