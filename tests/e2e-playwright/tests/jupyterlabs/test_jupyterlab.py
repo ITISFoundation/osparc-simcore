@@ -11,7 +11,6 @@ import logging
 import re
 from collections.abc import Callable
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Any, Final, Literal
 
 from playwright.sync_api import Page, WebSocket
@@ -73,7 +72,6 @@ def test_jupyterlab(
     large_file_block_size: ByteSize,
     product_url: AnyUrl,
     is_service_legacy: bool,
-    playwright_test_results_dir: Path,
 ):
     # NOTE: this waits for the jupyter to send message, but is not quite enough
     with (
@@ -106,7 +104,6 @@ def test_jupyterlab(
             press_start_button=False,
             product_url=product_url,
             is_service_legacy=is_service_legacy,
-            assertion_output_folder=playwright_test_results_dir,
         )
 
     iframe = page.frame_locator("iframe")
