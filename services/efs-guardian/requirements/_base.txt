@@ -280,7 +280,6 @@ opentelemetry-api==1.27.0
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-asgi
-    #   opentelemetry-instrumentation-asyncpg
     #   opentelemetry-instrumentation-botocore
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-httpx
@@ -306,7 +305,6 @@ opentelemetry-instrumentation==0.48b0
     # via
     #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-asgi
-    #   opentelemetry-instrumentation-asyncpg
     #   opentelemetry-instrumentation-botocore
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-httpx
@@ -319,8 +317,6 @@ opentelemetry-instrumentation-aio-pika==0.48b0
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-asgi==0.48b0
     # via opentelemetry-instrumentation-fastapi
-opentelemetry-instrumentation-asyncpg==0.48b0
-    # via -r requirements/../../../packages/postgres-database/requirements/_base.in
 opentelemetry-instrumentation-botocore==0.48b0
     # via -r requirements/../../../packages/aws-library/requirements/_base.in
 opentelemetry-instrumentation-fastapi==0.48b0
@@ -355,7 +351,6 @@ opentelemetry-sdk==1.27.0
 opentelemetry-semantic-conventions==0.48b0
     # via
     #   opentelemetry-instrumentation-asgi
-    #   opentelemetry-instrumentation-asyncpg
     #   opentelemetry-instrumentation-botocore
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-httpx

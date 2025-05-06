@@ -232,7 +232,6 @@ opentelemetry-api==1.30.0
     #   opentelemetry-exporter-otlp-proto-http
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-aio-pika
-    #   opentelemetry-instrumentation-asyncpg
     #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
@@ -253,7 +252,6 @@ opentelemetry-exporter-otlp-proto-http==1.30.0
 opentelemetry-instrumentation==0.51b0
     # via
     #   opentelemetry-instrumentation-aio-pika
-    #   opentelemetry-instrumentation-asyncpg
     #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
@@ -261,8 +259,6 @@ opentelemetry-instrumentation-aio-pika==0.51b0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-instrumentation-asyncpg==0.51b0
-    # via -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
 opentelemetry-instrumentation-logging==0.51b0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
@@ -289,7 +285,6 @@ opentelemetry-sdk==1.30.0
 opentelemetry-semantic-conventions==0.51b0
     # via
     #   opentelemetry-instrumentation
-    #   opentelemetry-instrumentation-asyncpg
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-sdk

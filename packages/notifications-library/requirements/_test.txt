@@ -54,7 +54,6 @@ mypy-extensions==1.0.0
     # via mypy
 packaging==24.2
     # via
-    #   -c requirements/_base.txt
     #   pytest
     #   pytest-sugar
 pluggy==1.5.0
