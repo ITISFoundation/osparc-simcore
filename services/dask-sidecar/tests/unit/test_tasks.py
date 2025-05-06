@@ -44,6 +44,7 @@ from pydantic import AnyUrl, SecretStr, TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq._client import RabbitMQClient
+from servicelib.rabbitmq._constants import BIND_TO_ALL_TOPICS
 from settings_library.s3 import S3Settings
 from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
     LEGACY_SERVICE_LOG_FILE_NAME,
@@ -67,7 +68,9 @@ pytest_simcore_core_services_selection = [
 
 
 @pytest.fixture()
-def dask_subsystem_mock(mocker: MockerFixture) -> dict[str, mock.Mock]:
+def dask_subsystem_mock(
+    mocker: MockerFixture, create_rabbitmq_client: Callable[[str], RabbitMQClient]
+) -> dict[str, mock.Mock]:
     # mock dask client
     dask_client_mock = mocker.patch("distributed.Client", autospec=True)
 
@@ -106,6 +109,13 @@ def dask_subsystem_mock(mocker: MockerFixture) -> dict[str, mock.Mock]:
         "simcore_service_dask_sidecar.dask_utils.is_current_task_aborted",
         autospec=True,
         return_value=False,
+    )
+    # mock dask rabbitmq plugin
+    mock_rabbitmq_client = create_rabbitmq_client("pytest_dask_sidecar_logs_publisher")
+    mocker.patch(
+        "simcore_service_dask_sidecar.dask_utils.get_rabbitmq_client",
+        autospec=True,
+        return_value=mock_rabbitmq_client,
     )
 
     return {
@@ -149,10 +159,6 @@ class ServiceExampleParam:
             "log_file_url": self.log_file_url,
             "s3_settings": self.s3_settings,
         }
-
-
-pytest_simcore_core_services_selection = ["postgres"]
-pytest_simcore_ops_services_selection = []
 
 
 def _bash_check_env_exist(variable_name: str, variable_value: str) -> list[str]:
@@ -472,7 +478,10 @@ async def log_rabbit_client_parser(
     client = create_rabbitmq_client("dask_sidecar_pytest_logs_consumer")
     mock = mocker.AsyncMock(return_value=True)
     queue_name, _ = await client.subscribe(
-        LoggerRabbitMessage.get_channel_name(), mock, exclusive_queue=False
+        LoggerRabbitMessage.get_channel_name(),
+        mock,
+        exclusive_queue=False,
+        topics=[BIND_TO_ALL_TOPICS],
     )
     yield mock
     await client.unsubscribe(queue_name)
@@ -501,7 +510,7 @@ def test_run_computational_sidecar_real_fct(
         dask_subsystem_mock["dask_event_publish"].assert_any_call(
             name=event.topic_name()
         )
-    log_rabbit_client_parser.assert_called_once()
+    assert log_rabbit_client_parser.called
 
     # check that the task produces expected logs
     for log in sleeper_task.expected_logs:
@@ -584,12 +593,13 @@ def progress_sub(dask_client: distributed.Client) -> distributed.Sub:
     "integration_version, boot_mode", [("1.0.0", BootMode.CPU)], indirect=True
 )
 async def test_run_computational_sidecar_dask(
-    dask_client: distributed.Client,
+    app_environment: EnvVarsDict,
     sleeper_task: ServiceExampleParam,
     progress_sub: distributed.Sub,
     mocked_get_image_labels: mock.Mock,
     s3_settings: S3Settings,
     log_rabbit_client_parser: mock.AsyncMock,
+    dask_client: distributed.Client,
 ):
     future = dask_client.submit(
         run_computational_sidecar,
@@ -614,9 +624,14 @@ async def test_run_computational_sidecar_dask(
     ), "ordering of progress values incorrectly sorted!"
     assert worker_progresses[0] == 0, "missing/incorrect initial progress value"
     assert worker_progresses[-1] == 1, "missing/incorrect final progress value"
-    log_rabbit_client_parser.assert_called_once()
-    # worker_logs = [TaskLogEvent.model_validate_json(msg).log for msg in log_sub.buffer]
-    worker_logs = []
+    await asyncio.sleep(5)
+    assert log_rabbit_client_parser.called
+    worker_logs = [
+        message
+        for msg in log_rabbit_client_parser.call_args_list
+        for message in LoggerRabbitMessage.model_validate_json(msg.args[0]).messages
+    ]
+
     print(f"<-- we got {len(worker_logs)} lines of logs")
 
     for log in sleeper_task.expected_logs:
@@ -688,9 +703,13 @@ async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub
     assert worker_progresses[0] == 0, "missing/incorrect initial progress value"
     assert worker_progresses[-1] == 1, "missing/incorrect final progress value"
 
-    log_rabbit_client_parser.assert_called_once()
-    # worker_logs = [TaskLogEvent.model_validate_json(msg).log for msg in log_sub.buffer]
-    worker_logs = []
+    await asyncio.sleep(5)
+    assert log_rabbit_client_parser.called
+    worker_logs = [
+        message
+        for msg in log_rabbit_client_parser.call_args_list
+        for message in LoggerRabbitMessage.model_validate_json(msg.args[0]).messages
+    ]
     # check all the awaited logs are in there
     filtered_worker_logs = filter(lambda log: "This is iteration" in log, worker_logs)
     assert len(list(filtered_worker_logs)) == NUMBER_OF_LOGS
