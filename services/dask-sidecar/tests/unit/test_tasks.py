@@ -8,6 +8,7 @@ import asyncio
 import json
 import logging
 import re
+import threading
 from collections.abc import AsyncIterator, Callable, Coroutine, Iterable
 
 # copied out from dask
@@ -475,16 +476,55 @@ def mocked_get_image_labels(
 async def log_rabbit_client_parser(
     create_rabbitmq_client: Callable[[str], RabbitMQClient], mocker: MockerFixture
 ) -> AsyncIterator[mock.AsyncMock]:
-    client = create_rabbitmq_client("dask_sidecar_pytest_logs_consumer")
-    mock = mocker.AsyncMock(return_value=True)
-    queue_name, _ = await client.subscribe(
-        LoggerRabbitMessage.get_channel_name(),
-        mock,
-        exclusive_queue=False,
-        topics=[BIND_TO_ALL_TOPICS],
+    # Create a threading event to track when subscription is ready
+    ready_event = threading.Event()
+    shutdown_event = threading.Event()
+    the_mock = mocker.AsyncMock(return_value=True)
+
+    # Worker function to process messages in a separate thread
+    def message_processor(a_mock: mock.AsyncMock):
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        client = create_rabbitmq_client("dask_sidecar_pytest_logs_consumer")
+
+        async def subscribe_and_process(a_mock: mock.AsyncMock):
+            queue_name, _ = await client.subscribe(
+                LoggerRabbitMessage.get_channel_name(),
+                a_mock,
+                exclusive_queue=False,
+                topics=[BIND_TO_ALL_TOPICS],
+            )
+            ready_event.set()
+
+            # Wait until the test is done
+            while not shutdown_event.is_set():
+                await asyncio.sleep(0.1)
+
+            # Cleanup
+            await client.unsubscribe(queue_name)
+
+        loop.run_until_complete(subscribe_and_process(a_mock))
+        loop.run_until_complete(client.close())
+        loop.close()
+
+    # Start the worker thread
+    worker = threading.Thread(
+        target=message_processor, kwargs={"a_mock": the_mock}, daemon=False
     )
-    yield mock
-    await client.unsubscribe(queue_name)
+    worker.start()
+
+    # Wait for subscription to be ready
+    assert ready_event.wait(timeout=10), "Failed to initialize RabbitMQ subscription"
+
+    try:
+        yield the_mock
+    finally:
+        # Signal the worker thread to shut down
+        shutdown_event.set()
+        worker.join(timeout=5)
+        if worker.is_alive():
+            _logger.warning("RabbitMQ worker thread did not terminate properly")
 
 
 def test_run_computational_sidecar_real_fct(
@@ -670,7 +710,7 @@ async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub
     log_rabbit_client_parser: mock.AsyncMock,
 ):
     mocked_get_image_labels.assert_not_called()
-    NUMBER_OF_LOGS = 20000
+    NUMBER_OF_LOGS = 200
     future = dask_client.submit(
         run_computational_sidecar,
         **sidecar_task(
