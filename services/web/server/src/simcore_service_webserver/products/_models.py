@@ -14,7 +14,6 @@ from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName, StripePriceID, StripeTaxRateID
 from models_library.utils.change_case import snake_to_camel
 from pydantic import (
-    AnyHttpUrl,
     BaseModel,
     BeforeValidator,
     ConfigDict,
@@ -87,8 +86,6 @@ class Product(BaseModel):
     host_regex: Annotated[
         re.Pattern, BeforeValidator(str.strip), Field(..., description="Host regex")
     ]
-
-    base_url: Annotated[AnyHttpUrl, Field(..., description="Base URL of the product")]
 
     support_email: Annotated[
         LowerCaseEmailStr,
@@ -203,7 +200,6 @@ class Product(BaseModel):
                         # fake mandatory
                         "name": "osparc",
                         "host_regex": r"([\.-]{0,1}osparc[\.-])",
-                        "base_url": "https://osparc.io",
                         "twilio_messaging_sid": "1" * 34,
                         "registration_email_template": "osparc_registration_email",
                         "login_settings": {
@@ -224,7 +220,6 @@ class Product(BaseModel):
                         "display_name": "TI PT",
                         "short_name": "TIPI",
                         "host_regex": r"(^tis[\.-])|(^ti-solutions\.)|(^ti-plan\.)",
-                        "base_url": "https://tis.io",
                         "support_email": "support@foo.com",
                         "manual_url": "https://foo.com",
                         "issues_login_url": None,
@@ -240,7 +235,6 @@ class Product(BaseModel):
                         "display_name": "o²S²PARC FOO",
                         "short_name": "osparcf",
                         "host_regex": "([\\.-]{0,1}osparcf[\\.-])",
-                        "base_url": "https://osparcf.io",
                         "support_email": "foo@osparcf.io",
                         "vendor": {
                             "url": "https://acme.com",
