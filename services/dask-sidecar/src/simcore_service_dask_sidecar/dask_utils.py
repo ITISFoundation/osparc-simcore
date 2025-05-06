@@ -93,7 +93,7 @@ class TaskPublisher:
     ) -> None:
         with log_catch(logger=_logger, reraise=False):
             rabbitmq_client = get_rabbitmq_client(get_worker())
-            base_message = LoggerRabbitMessage(
+            base_message = LoggerRabbitMessage.model_construct(
                 user_id=self.task_owner.user_id,
                 project_id=self.task_owner.project_id,
                 node_id=self.task_owner.node_id,
@@ -104,7 +104,7 @@ class TaskPublisher:
             if self.task_owner.has_parent:
                 assert self.task_owner.parent_project_id  # nosec
                 assert self.task_owner.parent_node_id  # nosec
-                parent_message = LoggerRabbitMessage(
+                parent_message = LoggerRabbitMessage.model_construct(
                     user_id=self.task_owner.user_id,
                     project_id=self.task_owner.parent_project_id,
                     node_id=self.task_owner.parent_node_id,
