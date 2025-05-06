@@ -457,7 +457,11 @@ def _print_summary_as_json(
                     "user_id": cluster.primary.user_id,
                     "wallet_id": cluster.primary.wallet_id,
                     "disk_space": cluster.primary.disk_space.human_readable(),
-                    "last_heartbeat": cluster.primary.last_heartbeat.isoformat(),
+                    "last_heartbeat": (
+                        cluster.primary.last_heartbeat.isoformat()
+                        if cluster.primary.last_heartbeat
+                        else "n/a"
+                    ),
                 },
                 "workers": [
                     {
