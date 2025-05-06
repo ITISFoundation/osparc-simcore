@@ -1,6 +1,4 @@
-""" Adds fastapi middleware for tracing using opentelemetry instrumentation.
-
-"""
+"""Adds fastapi middleware for tracing using opentelemetry instrumentation."""
 
 import logging
 
@@ -60,6 +58,15 @@ try:
 except ImportError:
     HAS_REQUESTS = False
 
+try:
+    from opentelemetry.instrumentation.aio_pika.aio_pika_instrumentor import (
+        AioPikaInstrumentor,
+    )
+
+    HAS_AIOPIKA_INSTRUMENTOR = True
+except ImportError:
+    HAS_AIOPIKA_INSTRUMENTOR = False
+
 
 def initialize_tracing(
     app: FastAPI, tracing_settings: TracingSettings, service_name: str
@@ -80,7 +87,9 @@ def initialize_tracing(
         f"{tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT}"
     )
 
-    tracing_destination: str = f"{URL(opentelemetry_collector_endpoint).with_port(tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_PORT).with_path('/v1/traces')}"
+    tracing_destination: str = (
+        f"{URL(opentelemetry_collector_endpoint).with_port(tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_PORT).with_path('/v1/traces')}"
+    )
 
     _logger.info(
         "Trying to connect service %s to opentelemetry tracing collector at %s.",
@@ -101,6 +110,13 @@ def initialize_tracing(
             msg="Attempting to add asyncpg opentelemetry autoinstrumentation...",
         ):
             AiopgInstrumentor().instrument()
+    if HAS_AIOPIKA_INSTRUMENTOR:
+        with log_context(
+            _logger,
+            logging.INFO,
+            msg="Attempting to add aio_pika opentelemetry autoinstrumentation...",
+        ):
+            AioPikaInstrumentor().instrument()
     if HAS_ASYNCPG:
         with log_context(
             _logger,
