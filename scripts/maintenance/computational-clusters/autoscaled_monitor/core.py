@@ -810,6 +810,7 @@ async def terminate_dynamic_instances(
         rich.print("no instances found")
         raise typer.Exit(1)
 
+    assert state.ec2_resource_autoscaling  # nosec
     _print_dynamic_instances(
         dynamic_autoscaled_instances,
         state.environment,
