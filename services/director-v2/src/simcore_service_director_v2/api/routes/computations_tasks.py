@@ -154,7 +154,7 @@ async def get_task_log_file(
     comp_tasks_repo: Annotated[
         CompTasksRepository, Depends(get_repository(CompTasksRepository))
     ],
-) -> TaskLogFileGet:  # MATUS CHECK
+) -> TaskLogFileGet:
     """Returns a link to download logs file of a give task.
     The log is only available when the task is done
     """
