@@ -5,6 +5,7 @@
 
 import asyncio
 import json
+from collections.abc import AsyncIterator
 
 import pytest
 from aiopg.sa.engine import Engine, SAConnection
@@ -25,7 +26,9 @@ async def db_connection(aiopg_engine: Engine) -> SAConnection:
 
 
 @pytest.fixture()
-async def db_notification_queue(db_connection: SAConnection) -> asyncio.Queue:
+async def db_notification_queue(
+    db_connection: SAConnection,
+) -> AsyncIterator[asyncio.Queue]:
     listen_query = f"LISTEN {DB_CHANNEL_NAME};"
     await db_connection.execute(listen_query)
     notifications_queue: asyncio.Queue = db_connection.connection.notifies
