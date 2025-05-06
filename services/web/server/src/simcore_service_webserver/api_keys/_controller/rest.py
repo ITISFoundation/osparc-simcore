@@ -37,8 +37,11 @@ class ApiKeysPathParams(StrictRequestParameters):
     api_key_id: IDStr
 
 
-def _get_api_base_url(request: web.Request) -> str:
-    originating_host = next(iter_originating_hosts(request))
+def _get_api_base_url(request: web.Request) -> str | None:
+    originating_host = next(iter_originating_hosts(request), None)
+    if not originating_host:
+        return None
+
     api_host = (
         f"api.{originating_host}"
         if not is_ip_address(originating_host)
@@ -66,7 +69,7 @@ async def create_api_key(request: web.Request):
     api_key = ApiKeyCreateResponse.model_validate(
         {
             **asdict(created_api_key),
-            "api_base_url": _get_api_base_url(request),
+            "api_base_url": _get_api_base_url(request) or "",
         }
     )
 
