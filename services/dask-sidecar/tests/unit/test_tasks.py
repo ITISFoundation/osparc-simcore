@@ -57,8 +57,10 @@ from simcore_service_dask_sidecar.computational_sidecar.models import (
     LEGACY_INTEGRATION_VERSION,
     ImageLabels,
 )
-from simcore_service_dask_sidecar.dask_utils import _DEFAULT_MAX_RESOURCES
-from simcore_service_dask_sidecar.file_utils import _s3fs_settings_from_s3_settings
+from simcore_service_dask_sidecar.utils.dask import _DEFAULT_MAX_RESOURCES
+from simcore_service_dask_sidecar.utils.files import (
+    _s3fs_settings_from_s3_settings,
+)
 from simcore_service_dask_sidecar.worker import run_computational_sidecar
 
 _logger = logging.getLogger(__name__)
@@ -77,10 +79,10 @@ def dask_subsystem_mock(
 
     # mock tasks get worker and state
     dask_distributed_worker_mock = mocker.patch(
-        "simcore_service_dask_sidecar.dask_utils.get_worker", autospec=True
+        "simcore_service_dask_sidecar.utils.dask.get_worker", autospec=True
     )
     dask_task_mock = mocker.patch(
-        "simcore_service_dask_sidecar.dask_utils.TaskState", autospec=True
+        "simcore_service_dask_sidecar.utils.dask.TaskState", autospec=True
     )
     dask_task_mock.resource_restrictions = {}
     dask_distributed_worker_mock.return_value.state.tasks.get.return_value = (
@@ -99,22 +101,22 @@ def dask_subsystem_mock(
     )
     # mock dask event publishing
     dask_utils_publish_event_mock = mocker.patch(
-        "simcore_service_dask_sidecar.dask_utils.distributed.Pub",
+        "simcore_service_dask_sidecar.utils.dask.distributed.Pub",
         autospec=True,
     )
     mocker.patch(
-        "simcore_service_dask_sidecar.dask_utils.distributed.Sub",
+        "simcore_service_dask_sidecar.utils.dask.distributed.Sub",
         autospec=True,
     )
     mocker.patch(
-        "simcore_service_dask_sidecar.dask_utils.is_current_task_aborted",
+        "simcore_service_dask_sidecar.utils.dask.is_current_task_aborted",
         autospec=True,
         return_value=False,
     )
     # mock dask rabbitmq plugin
     mock_rabbitmq_client = create_rabbitmq_client("pytest_dask_sidecar_logs_publisher")
     mocker.patch(
-        "simcore_service_dask_sidecar.dask_utils.get_rabbitmq_client",
+        "simcore_service_dask_sidecar.utils.dask.get_rabbitmq_client",
         autospec=True,
         return_value=mock_rabbitmq_client,
     )

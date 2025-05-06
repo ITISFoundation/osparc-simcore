@@ -38,9 +38,9 @@ from servicelib.logging_utils import (
 from servicelib.progress_bar import ProgressBarData
 from settings_library.s3 import S3Settings
 
-from ..dask_utils import TaskPublisher
-from ..file_utils import push_file_to_remote
 from ..settings import ApplicationSettings
+from ..utils.dask import TaskPublisher
+from ..utils.files import push_file_to_remote
 from .constants import LEGACY_SERVICE_LOG_FILE_NAME
 from .models import (
     LEGACY_INTEGRATION_VERSION,

@@ -25,9 +25,9 @@ from servicelib.progress_bar import ProgressBarData
 from settings_library.s3 import S3Settings
 from yarl import URL
 
-from ..dask_utils import TaskPublisher
-from ..file_utils import pull_file_from_remote, push_file_to_remote
 from ..settings import ApplicationSettings
+from ..utils.dask import TaskPublisher
+from ..utils.files import pull_file_from_remote, push_file_to_remote
 from .docker_utils import (
     create_container_config,
     get_computational_shared_data_mount_point,

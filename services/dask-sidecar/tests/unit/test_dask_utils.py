@@ -16,7 +16,7 @@ from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.events import TaskProgressEvent
 from dask_task_models_library.container_tasks.io import TaskCancelEventName
 from dask_task_models_library.container_tasks.protocol import TaskOwner
-from simcore_service_dask_sidecar.dask_utils import (
+from simcore_service_dask_sidecar.utils.dask import (
     _DEFAULT_MAX_RESOURCES,
     TaskPublisher,
     get_current_task_resources,

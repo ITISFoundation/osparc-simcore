@@ -29,7 +29,9 @@ from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.rabbit import RabbitSettings
 from settings_library.s3 import S3Settings
-from simcore_service_dask_sidecar.file_utils import _s3fs_settings_from_s3_settings
+from simcore_service_dask_sidecar.utils.files import (
+    _s3fs_settings_from_s3_settings,
+)
 from yarl import URL
 
 pytest_plugins = [
