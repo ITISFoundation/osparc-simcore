@@ -3,6 +3,7 @@
 # pylint: disable=unused-variable
 
 import json
+import warnings
 from collections.abc import AsyncIterator, Iterator
 from typing import Final
 
@@ -212,6 +213,12 @@ async def aiopg_engine(
 
     engine = await create_engine(str(postgres_db.url))
 
+    warnings.warn(
+        "The 'aiopg_engine' fixture is deprecated and will be removed in a future release. "
+        "Please use 'asyncpg_engine' fixture instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     yield engine
 
     if engine:
