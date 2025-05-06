@@ -23,9 +23,8 @@ from models_library.wallets import WalletID
 from pydantic import BaseModel
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.logging_utils import log_context
-from servicelib.rabbitmq.rpc_interfaces.webserver.products import get_product_host
+from servicelib.rabbitmq.rpc_interfaces.webserver.products import get_product_base_url
 
-from ...core.settings import get_application_settings
 from ...modules.rabbitmq import get_rabbitmq_rpc_client
 from ...utils.db import get_repository
 from ...utils.osparc_variables import (
@@ -43,7 +42,7 @@ TBaseModel = TypeVar("TBaseModel", bound=BaseModel)
 
 
 def _make_api_server_base_url(base_url: str):
-    pass
+    return f"api.{base_url}"
 
 
 async def substitute_vendor_secrets_in_model(
@@ -200,7 +199,6 @@ async def resolve_and_substitute_session_variables_in_model(
             # if it raises an error vars need replacement
             raise_if_unresolved_osparc_variable_identifier_found(model)
     except UnresolvedOsparcVariableIdentifierError:
-        api_server_base_url = get_application_settings(app)
         table = OsparcSessionVariablesTable.get_from_app_state(app)
         identifiers = await resolve_variables_from_context(
             table.copy(),
@@ -212,9 +210,11 @@ async def resolve_and_substitute_session_variables_in_model(
                 node_id=node_id,
                 run_id=service_run_id,
                 wallet_id=wallet_id,
-                api_server_base_url=get_product_host(
-                    get_rabbitmq_rpc_client(app),
-                    product_name=product_name,
+                api_server_base_url=_make_api_server_base_url(
+                    await get_product_base_url(
+                        get_rabbitmq_rpc_client(app),
+                        product_name=product_name,
+                    ),
                 ),
             ),
         )
@@ -260,9 +260,11 @@ async def resolve_and_substitute_session_variables_in_specs(
                     node_id=node_id,
                     run_id=service_run_id,
                     wallet_id=wallet_id,
-                    api_server_base_url=get_product_host(
-                        get_rabbitmq_rpc_client(app),
-                        product_name=product_name,
+                    api_server_base_url=_make_api_server_base_url(
+                        await get_product_base_url(
+                            get_rabbitmq_rpc_client(app),
+                            product_name=product_name,
+                        ),
                     ),
                 ),
             )

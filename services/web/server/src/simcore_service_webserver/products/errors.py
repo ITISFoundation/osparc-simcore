@@ -25,7 +25,7 @@ class ProductTemplateNotFoundError(ProductError):
 
 
 class ProductBaseUrlNotFoundError(ProductError):
-    msg_template = "Missing host for product {product_name}"
+    msg_template = "Missing base url for product {product_name}"
 
 
 class MissingStripeConfigError(ProductError):

@@ -16,7 +16,7 @@ async def get_product_base_url(
     rpc_client: RabbitMQRPCClient,
     *,
     product_name: ProductName,
-) -> None:
+) -> str:
 
     base_url = await rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
@@ -24,4 +24,5 @@ async def get_product_base_url(
         product_name=product_name,
     )
     assert base_url  # nosec
+    assert isinstance(base_url, str)  # nosec
     return base_url
