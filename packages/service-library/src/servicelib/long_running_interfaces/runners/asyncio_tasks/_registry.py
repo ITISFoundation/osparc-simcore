@@ -1,7 +1,7 @@
 from collections.abc import Callable
 from typing import Any, Self, TypeVar
 
-from ...long_running_interfaces import RemoteHandlerName
+from ..._models import RemoteHandlerName
 
 DecoratedCallable = TypeVar("DecoratedCallable", bound=Callable[..., Any])
 

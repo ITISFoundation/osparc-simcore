@@ -5,13 +5,9 @@ from typing import Any, Final
 
 from pydantic import NonNegativeFloat
 
-from ...async_utils import cancel_wait_task
-from ...long_running_interfaces import (
-    BaseServerJobInterface,
-    JobUniqueId,
-    RemoteHandlerName,
-    StartParams,
-)
+from ....async_utils import cancel_wait_task
+from ..._models import JobUniqueId, RemoteHandlerName, StartParams
+from ...runners.base import BaseServerJobInterface
 from ._errors import HandlerNotRegisteredError, TaskNotFoundError
 from ._registry import AsyncTaskRegistry
 

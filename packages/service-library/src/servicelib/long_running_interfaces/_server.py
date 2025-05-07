@@ -1,7 +1,8 @@
 from settings_library.rabbit import RabbitSettings
 
 from ._models import LongRunningNamespace
-from ._rpc.server import BaseServerJobInterface, ServerRPCInterface
+from ._rpc.server import ServerRPCInterface
+from .runners.base import BaseServerJobInterface
 
 
 class Server:

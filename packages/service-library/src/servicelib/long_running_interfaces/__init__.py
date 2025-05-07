@@ -6,8 +6,8 @@ from ._models import (
     ResultModel,
     StartParams,
 )
-from ._rpc.server import BaseServerJobInterface
 from ._server import Server
+from .runners.base import BaseServerJobInterface
 
 __all__ = (
     "BaseServerJobInterface",
