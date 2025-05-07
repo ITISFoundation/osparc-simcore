@@ -9,8 +9,13 @@ from typing import Any
 
 import pytest
 from pydantic import NonNegativeInt, ValidationError
-from servicelib.long_running_interfaces import Client, LongRunningNamespace, Server
-from servicelib.long_running_interfaces._errors import FinishedWithError, TimedOutError
+from servicelib.long_running_interfaces import (
+    Client,
+    FinishedWithError,
+    LongRunningNamespace,
+    Server,
+    TimedOutError,
+)
 from servicelib.long_running_interfaces.runners.asyncio_tasks import (
     AsyncioTasksJobInterface,
     AsyncTaskRegistry,
