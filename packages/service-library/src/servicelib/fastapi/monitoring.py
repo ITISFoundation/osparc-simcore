@@ -10,9 +10,9 @@ from fastapi_lifespan_manager import State
 from prometheus_client import CollectorRegistry
 from servicelib.prometheus_metrics import (
     PrometheusMetrics,
+    get_prometheus_metrics,
     record_request_metrics,
     record_response_metrics,
-    setup_prometheus_metrics,
 )
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.types import ASGIApp
@@ -23,7 +23,7 @@ from ..common_headers import (
 )
 
 _logger = logging.getLogger(__name__)
-kPROMETHEUS_METRICS = "prometheus_metrics"
+_PROMETHEUS_METRICS = "prometheus_metrics"
 
 
 class PrometheusMiddleware(BaseHTTPMiddleware):
@@ -69,7 +69,7 @@ def initialize_prometheus_instrumentation(app: FastAPI) -> None:
     # NOTE: this cannot be ran once the application is started
 
     # NOTE: use that registry to prevent having a global one
-    metrics = setup_prometheus_metrics()
+    metrics = get_prometheus_metrics()
     app.state.prometheus_metrics = metrics
     app.add_middleware(PrometheusMiddleware, metrics=metrics)
 

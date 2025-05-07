@@ -52,7 +52,7 @@ def _get_exemplar() -> dict[str, str] | None:
     return {"TraceID": trace_id}
 
 
-def setup_prometheus_metrics() -> PrometheusMetrics:
+def get_prometheus_metrics() -> PrometheusMetrics:
     # app-scope registry
     registry = CollectorRegistry(auto_describe=False)
 

@@ -15,9 +15,9 @@ from prometheus_client.registry import CollectorRegistry
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.prometheus_metrics import (
     PrometheusMetrics,
+    get_prometheus_metrics,
     record_request_metrics,
     record_response_metrics,
-    setup_prometheus_metrics,
 )
 
 from ..common_headers import (
@@ -28,11 +28,11 @@ from ..logging_utils import log_catch
 
 log = logging.getLogger(__name__)
 
-kPROMETHEUS_METRICS: Final[str] = f"{__name__}.prometheus_metrics"  # noqa: N816
+_PROMETHEUS_METRICS: Final[str] = f"{__name__}.prometheus_metrics"  # noqa: N816
 
 
 def get_collector_registry(app: web.Application) -> CollectorRegistry:
-    metrics = app[kPROMETHEUS_METRICS]
+    metrics = app[_PROMETHEUS_METRICS]
     assert isinstance(metrics, PrometheusMetrics)  # nosec
     return metrics.registry
 
@@ -75,7 +75,7 @@ def middleware_factory(
                 with log_catch(logger=log, reraise=False):
                     await enter_middleware_cb(request)
 
-            metrics = request.app[kPROMETHEUS_METRICS]
+            metrics = request.app[_PROMETHEUS_METRICS]
             assert isinstance(metrics, PrometheusMetrics)  # nosec
 
             user_agent = request.headers.get(
@@ -154,7 +154,7 @@ def setup_monitoring(
     enter_middleware_cb: EnterMiddlewareCB | None = None,
     exit_middleware_cb: ExitMiddlewareCB | None = None,
 ):
-    app[kPROMETHEUS_METRICS] = setup_prometheus_metrics()
+    app[_PROMETHEUS_METRICS] = get_prometheus_metrics()
 
     # WARNING: ensure ERROR middleware is over this one
     #
