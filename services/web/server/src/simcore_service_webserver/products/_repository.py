@@ -224,7 +224,7 @@ class ProductRepository(BaseRepository):
         async with pass_or_acquire_connection(self.engine, connection) as conn:
             result = await conn.execute(query)
             row = result.one()
-            if row.base_url == products.c.base_url.server_default.arg:
+            if row.base_url == products.c.base_url.server_default.arg:  # type: ignore[union-attr]
                 raise ProductBaseUrlNotSetError(product_name=product_name)
 
             return row.base_url
