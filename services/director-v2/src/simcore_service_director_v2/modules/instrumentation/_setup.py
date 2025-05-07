@@ -10,12 +10,10 @@ from ._models import DirectorV2Instrumentation
 
 
 def setup(app: FastAPI) -> None:
-    instrumentator = setup_prometheus_instrumentation(app)
+    registry = setup_prometheus_instrumentation(app)
 
     async def on_startup() -> None:
-        app.state.instrumentation = DirectorV2Instrumentation(
-            registry=instrumentator.registry
-        )
+        app.state.instrumentation = DirectorV2Instrumentation(registry=registry)
 
     app.add_event_handler("startup", on_startup)
 

@@ -66,11 +66,11 @@ async def _collect_prometheus_metrics_task(app: FastAPI):
 
 
 def setup_prometheus_instrumentation(app: FastAPI):
-    instrumentator = setup_rest_instrumentation(app)
+    registry = setup_rest_instrumentation(app)
 
     async def on_startup() -> None:
         app.state.instrumentation = ApiServerPrometheusInstrumentation(
-            registry=instrumentator.registry
+            registry=registry
         )
         await wait_till_log_distributor_ready(app)
         app.state.instrumentation_task = create_periodic_task(

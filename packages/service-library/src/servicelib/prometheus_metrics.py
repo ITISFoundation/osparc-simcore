@@ -111,11 +111,9 @@ def _get_exemplar() -> dict[str, str] | None:
     return {"TraceID": trace_id}
 
 
-def setup_prometheus_metrics(app_name: str, **app_info_kwargs) -> PrometheusMetrics:
+def setup_prometheus_metrics() -> PrometheusMetrics:
     # app-scope registry
-    target_info = {"application_name": app_name}
-    target_info.update(app_info_kwargs)
-    registry = CollectorRegistry(auto_describe=False, target_info=target_info)
+    registry = CollectorRegistry(auto_describe=False)
 
     # automatically collects process metrics
     process_collector = ProcessCollector(registry=registry)
@@ -129,7 +127,6 @@ def setup_prometheus_metrics(app_name: str, **app_info_kwargs) -> PrometheusMetr
         name="http_requests",
         documentation="Total requests count",
         labelnames=[
-            "app_name",
             "method",
             "endpoint",
             "http_status",
@@ -141,14 +138,14 @@ def setup_prometheus_metrics(app_name: str, **app_info_kwargs) -> PrometheusMetr
     in_flight_requests = Gauge(
         name="http_in_flight_requests",
         documentation="Number of requests in process",
-        labelnames=["app_name", "method", "endpoint", "simcore_user_agent"],
+        labelnames=["method", "endpoint", "simcore_user_agent"],
         registry=registry,
     )
 
     response_latency_with_labels = Histogram(
         name="http_request_latency_seconds_with_labels",
         documentation="Time processing a request with detailed labels",
-        labelnames=["app_name", "method", "endpoint", "simcore_user_agent"],
+        labelnames=["method", "endpoint", "simcore_user_agent"],
         registry=registry,
         buckets=(0.1, 0.5, 1),
     )
@@ -157,7 +154,6 @@ def setup_prometheus_metrics(app_name: str, **app_info_kwargs) -> PrometheusMetr
         name="http_request_latency_seconds_detailed_buckets",
         documentation="Time processing a request with detailed buckets but no labels",
         registry=registry,
-        labelnames=["app_name"],
         buckets=(0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10),
     )
 
@@ -177,7 +173,6 @@ def setup_prometheus_metrics(app_name: str, **app_info_kwargs) -> PrometheusMetr
 def record_request_metrics(
     *,
     metrics: PrometheusMetrics,
-    app_name: str,
     method: str,
     endpoint: str,
     user_agent: str,
@@ -194,7 +189,7 @@ def record_request_metrics(
     """
 
     with metrics.in_flight_requests.labels(
-        app_name, method, endpoint, user_agent
+        method, endpoint, user_agent
     ).track_inprogress():
 
         start = perf_counter()
@@ -204,9 +199,9 @@ def record_request_metrics(
         amount = perf_counter() - start
         exemplar = _get_exemplar()
         metrics.response_latency_with_labels.labels(
-            app_name, method, endpoint, user_agent
+            method, endpoint, user_agent
         ).observe(amount=amount, exemplar=exemplar)
-        metrics.response_latency_detailed_buckets.labels(app_name).observe(
+        metrics.response_latency_detailed_buckets.labels().observe(
             amount=amount, exemplar=exemplar
         )
 
@@ -214,13 +209,12 @@ def record_request_metrics(
 def record_response_metrics(
     *,
     metrics: PrometheusMetrics,
-    app_name: str,
     method: str,
     endpoint: str,
     user_agent: str,
     http_status: int,
 ) -> None:
     exemplar = _get_exemplar()
-    metrics.request_count.labels(
-        app_name, method, endpoint, http_status, user_agent
-    ).inc(exemplar=exemplar)
+    metrics.request_count.labels(method, endpoint, http_status, user_agent).inc(
+        exemplar=exemplar
+    )

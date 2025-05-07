@@ -4,7 +4,8 @@
 
 
 from asyncio import AbstractEventLoop
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import pytest
 from aiohttp import web
@@ -37,7 +38,7 @@ def client(
     for resource in app.router.resources():
         print(resource)
 
-    setup_monitoring(app, app_name="pytest_app", version="0.0.1")
+    setup_monitoring(app, app_name="pytest_app")
 
     return event_loop.run_until_complete(
         aiohttp_client(app, server_kwargs={"port": ports[0]})

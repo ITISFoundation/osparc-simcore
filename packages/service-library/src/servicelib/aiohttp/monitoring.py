@@ -84,7 +84,6 @@ def middleware_factory(
 
             with record_request_metrics(
                 metrics=metrics,
-                app_name=app_name,
                 method=request.method,
                 endpoint=canonical_endpoint,
                 user_agent=user_agent,
@@ -115,7 +114,6 @@ def middleware_factory(
 
             record_response_metrics(
                 metrics=metrics,
-                app_name=app_name,
                 method=request.method,
                 endpoint=canonical_endpoint,
                 user_agent=user_agent,
@@ -155,9 +153,8 @@ def setup_monitoring(
     *,
     enter_middleware_cb: EnterMiddlewareCB | None = None,
     exit_middleware_cb: ExitMiddlewareCB | None = None,
-    **app_info_kwargs,
 ):
-    app[kPROMETHEUS_METRICS] = setup_prometheus_metrics(app_name, **app_info_kwargs)
+    app[kPROMETHEUS_METRICS] = setup_prometheus_metrics()
 
     # WARNING: ensure ERROR middleware is over this one
     #

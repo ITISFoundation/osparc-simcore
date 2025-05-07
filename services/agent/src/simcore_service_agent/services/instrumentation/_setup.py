@@ -12,12 +12,10 @@ def setup_instrumentation(app: FastAPI) -> None:
     if not settings.AGENT_PROMETHEUS_INSTRUMENTATION_ENABLED:
         return
 
-    instrumentator = setup_prometheus_instrumentation(app)
+    registry = setup_prometheus_instrumentation(app)
 
     async def on_startup() -> None:
-        app.state.instrumentation = AgentInstrumentation(
-            registry=instrumentator.registry
-        )
+        app.state.instrumentation = AgentInstrumentation(registry=registry)
 
     app.add_event_handler("startup", on_startup)
 

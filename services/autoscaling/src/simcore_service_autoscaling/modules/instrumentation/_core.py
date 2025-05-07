@@ -16,7 +16,7 @@ def setup(app: FastAPI) -> None:
         return
 
     # NOTE: this must be setup before application startup
-    instrumentator = setup_rest_instrumentation(app)
+    registry = setup_rest_instrumentation(app)
 
     async def on_startup() -> None:
         metrics_subsystem = (
@@ -24,12 +24,11 @@ def setup(app: FastAPI) -> None:
         )
         app.state.instrumentation = (
             AutoscalingInstrumentation(  # pylint: disable=unexpected-keyword-arg
-                registry=instrumentator.registry, subsystem=metrics_subsystem
+                registry=registry, subsystem=metrics_subsystem
             )
         )
 
-    async def on_shutdown() -> None:
-        ...
+    async def on_shutdown() -> None: ...
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)

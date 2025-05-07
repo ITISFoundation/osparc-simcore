@@ -3,43 +3,92 @@
 from collections.abc import AsyncIterator
 from typing import Final
 
-from fastapi import FastAPI
+import prometheus_client
+from fastapi import FastAPI, Request, Response
 from fastapi_lifespan_manager import State
 from prometheus_client import CollectorRegistry
-from prometheus_fastapi_instrumentator import Instrumentator
+from servicelib.prometheus_metrics import (
+    PrometheusMetrics,
+    record_request_metrics,
+    record_response_metrics,
+    setup_prometheus_metrics,
+)
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.types import ASGIApp
+
+from ..common_headers import (
+    UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+    X_SIMCORE_USER_AGENT,
+)
+
+kPROMETHEUS_METRICS = "prometheus_metrics"
+
+
+class PrometheusMiddleware(BaseHTTPMiddleware):
+    def __init__(self, app: ASGIApp, metrics: PrometheusMetrics):
+        super().__init__(app)
+        self.metrics = metrics
+
+    async def dispatch(
+        self, request: Request, call_next: RequestResponseEndpoint
+    ) -> Response:
+        canonical_endpoint = request.url.path
+        user_agent = request.headers.get(
+            X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+        )
+
+        try:
+            with record_request_metrics(
+                metrics=self.metrics,
+                method=request.method,
+                endpoint=canonical_endpoint,
+                user_agent=user_agent,
+            ):
+                response = await call_next(request)
+        finally:
+            record_response_metrics(
+                metrics=self.metrics,
+                method=request.method,
+                endpoint=canonical_endpoint,
+                user_agent=user_agent,
+                http_status=response.status_code,
+            )
+
+        return response
 
 
 def initialize_prometheus_instrumentation(app: FastAPI) -> None:
     # NOTE: this cannot be ran once the application is started
 
     # NOTE: use that registry to prevent having a global one
-    app.state.prometheus_registry = registry = CollectorRegistry(auto_describe=True)
-    app.state.prometheus_instrumentator = Instrumentator(
-        should_instrument_requests_inprogress=False,  # bug in https://github.com/trallnag/prometheus-fastapi-instrumentator/issues/317
-        inprogress_labels=False,
-        registry=registry,
-    )
-    app.state.prometheus_instrumentator.instrument(app)
+    metrics = setup_prometheus_metrics()
+    app.state.prometheus_metrics = metrics
+    app.add_middleware(PrometheusMiddleware, metrics=metrics)
 
 
 def _startup(app: FastAPI) -> None:
-    assert isinstance(app.state.prometheus_instrumentator, Instrumentator)  # nosec
-    app.state.prometheus_instrumentator.expose(app, include_in_schema=False)
+    @app.get("/metrics")
+    async def metrics_endpoint(request: Request) -> Response:
+        """
+        Exposes the Prometheus metrics endpoint.
+        """
+        prometheus_metrics = request.app.state.prometheus_metrics
+        assert isinstance(prometheus_metrics, PrometheusMetrics)  # nosec
+        return Response(
+            content=prometheus_client.generate_latest(prometheus_metrics.registry),
+            media_type="text/plain",
+        )
 
 
 def _shutdown(app: FastAPI) -> None:
-    assert isinstance(app.state.prometheus_registry, CollectorRegistry)  # nosec
-    registry = app.state.prometheus_registry
+    prometheus_metrics = app.state.prometheus_metrics
+    assert isinstance(prometheus_metrics, PrometheusMetrics)  # nosec
+    registry = prometheus_metrics.registry
     for collector in list(registry._collector_to_names.keys()):  # noqa: SLF001
         registry.unregister(collector)
 
 
-def get_prometheus_instrumentator(app: FastAPI) -> Instrumentator:
-    assert isinstance(app.state.prometheus_instrumentator, Instrumentator)  # nosec
-    return app.state.prometheus_instrumentator
-
-
-def setup_prometheus_instrumentation(app: FastAPI) -> Instrumentator:
+def setup_prometheus_instrumentation(app: FastAPI) -> CollectorRegistry:
     initialize_prometheus_instrumentation(app)
 
     async def _on_startup() -> None:
@@ -51,7 +100,10 @@ def setup_prometheus_instrumentation(app: FastAPI) -> Instrumentator:
     app.add_event_handler("startup", _on_startup)
     app.add_event_handler("shutdown", _on_shutdown)
 
-    return get_prometheus_instrumentator(app)
+    prometheus_metrics = app.state.prometheus_metrics
+    assert isinstance(prometheus_metrics, PrometheusMetrics)  # nosec
+
+    return prometheus_metrics.registry
 
 
 _PROMETHEUS_INSTRUMENTATION_ENABLED: Final[str] = "prometheus_instrumentation_enabled"
