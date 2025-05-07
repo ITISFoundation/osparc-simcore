@@ -77,9 +77,6 @@ from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interf
     list_functions as _list_functions,
 )
 from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interface import (
-    ping as _ping,
-)
-from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interface import (
     register_function as _register_function,
 )
 from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interface import (
@@ -259,9 +256,6 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             stopped_at=licensed_item_checkout_get.stopped_at,
             num_of_seats=licensed_item_checkout_get.num_of_seats,
         )
-
-    async def ping(self) -> str:
-        return await _ping(self._client)
 
     async def mark_project_as_job(
         self,

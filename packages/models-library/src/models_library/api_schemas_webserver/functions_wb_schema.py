@@ -13,7 +13,7 @@ FunctionID: TypeAlias = projects.ProjectID
 FunctionJobID: TypeAlias = projects.ProjectID
 FileID: TypeAlias = UUID
 
-InputTypes: TypeAlias = FileID | float | int | bool | str | list | None
+InputTypes: TypeAlias = FileID | float | int | bool | str | list
 
 
 class FunctionSchema(BaseModel):
@@ -48,31 +48,31 @@ FunctionOutputsLogfile: TypeAlias = Any
 
 class FunctionBase(BaseModel):
     function_class: FunctionClass
-    uid: FunctionID | None = None
-    title: str | None = None
-    description: str | None = None
-    input_schema: FunctionInputSchema | None = None
-    output_schema: FunctionOutputSchema | None = None
-    default_inputs: FunctionInputs | None = None
+    uid: FunctionID | None
+    title: str = ""
+    description: str = ""
+    input_schema: FunctionInputSchema | None
+    output_schema: FunctionOutputSchema | None
+    default_inputs: FunctionInputs
 
 
 class FunctionDB(BaseModel):
     function_class: FunctionClass
-    uuid: FunctionJobID | None = None
-    title: str | None = None
-    description: str | None = None
-    input_schema: FunctionInputSchema | None = None
-    output_schema: FunctionOutputSchema | None = None
-    default_inputs: FunctionInputs | None = None
+    uuid: FunctionJobID | None
+    title: str = ""
+    description: str = ""
+    input_schema: FunctionInputSchema | None
+    output_schema: FunctionOutputSchema | None
+    default_inputs: FunctionInputs
     class_specific_data: FunctionClassSpecificData
 
 
 class FunctionJobDB(BaseModel):
-    uuid: FunctionJobID | None = None
+    uuid: FunctionJobID | None
     function_uuid: FunctionID
-    title: str | None = None
-    inputs: FunctionInputs | None = None
-    outputs: FunctionOutputs | None = None
+    title: str = ""
+    inputs: FunctionInputs
+    outputs: FunctionOutputs
     class_specific_data: FunctionJobClassSpecificData
     function_class: FunctionClass
 
@@ -94,7 +94,7 @@ SolverJobID: TypeAlias = UUID
 class SolverFunction(FunctionBase):
     function_class: Literal[FunctionClass.solver] = FunctionClass.solver
     solver_key: SolverKeyId
-    solver_version: str
+    solver_version: str = ""
 
 
 class PythonCodeFunction(FunctionBase):
@@ -111,12 +111,12 @@ FunctionJobCollectionID: TypeAlias = projects.ProjectID
 
 
 class FunctionJobBase(BaseModel):
-    uid: FunctionJobID | None = None
-    title: str | None = None
-    description: str | None = None
+    uid: FunctionJobID | None
+    title: str = ""
+    description: str = ""
     function_uid: FunctionID
-    inputs: FunctionInputs | None = None
-    outputs: FunctionOutputs | None = None
+    inputs: FunctionInputs
+    outputs: FunctionOutputs
     function_class: FunctionClass
 
 
@@ -147,18 +147,18 @@ class FunctionJobStatus(BaseModel):
 class FunctionJobCollection(BaseModel):
     """Model for a collection of function jobs"""
 
-    uid: FunctionJobCollectionID | None = None
-    title: str | None
-    description: str | None
+    uid: FunctionJobCollectionID | None
+    title: str = ""
+    description: str = ""
     job_ids: list[FunctionJobID]
 
 
 class FunctionJobCollectionDB(BaseModel):
     """Model for a collection of function jobs"""
 
-    uuid: FunctionJobCollectionID | None
-    title: str | None
-    description: str | None
+    uuid: FunctionJobCollectionID
+    title: str = ""
+    description: str = ""
 
 
 class FunctionJobCollectionStatus(BaseModel):

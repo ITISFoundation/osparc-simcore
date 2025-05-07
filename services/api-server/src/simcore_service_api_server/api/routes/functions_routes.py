@@ -24,9 +24,9 @@ from models_library.api_schemas_webserver.functions_wb_schema import (
 )
 from pydantic import PositiveInt
 from servicelib.fastapi.dependencies import get_reverse_url_mapper
+from simcore_service_api_server._service_jobs import JobService
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from ..._service_job import JobService
 from ..._service_solvers import SolverService
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.jobs import (
@@ -38,7 +38,7 @@ from ...services_http.webserver import AuthSession
 from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.database import get_db_asyncpg_engine
-from ..dependencies.services import get_api_client
+from ..dependencies.services import get_api_client, get_job_service, get_solver_service
 from ..dependencies.webserver_http import get_webserver_session
 from ..dependencies.webserver_rpc import (
     get_wb_api_rpc_client,
@@ -173,8 +173,8 @@ async def run_function(  # noqa: PLR0913
     function_inputs: FunctionInputs,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     product_name: Annotated[str, Depends(get_product_name)],
-    solver_service: Annotated[SolverService, Depends()],
-    job_service: Annotated[JobService, Depends()],
+    solver_service: Annotated[SolverService, Depends(get_solver_service)],
+    job_service: Annotated[JobService, Depends(get_job_service)],
 ):
 
     to_run_function = await wb_api_rpc.get_function(function_id=function_id)
@@ -227,6 +227,7 @@ async def run_function(  # noqa: PLR0913
         return await register_function_job(
             wb_api_rpc=wb_api_rpc,
             function_job=ProjectFunctionJob(
+                uid=None,
                 function_uid=to_run_function.uid,
                 title=f"Function job of function {to_run_function.uid}",
                 description=to_run_function.description,
@@ -245,8 +246,6 @@ async def run_function(  # noqa: PLR0913
             url_for=url_for,
             x_simcore_parent_project_uuid=None,
             x_simcore_parent_node_id=None,
-            user_id=user_id,
-            product_name=product_name,
         )
         await solvers_jobs.start_job(
             request=request,
@@ -260,6 +259,7 @@ async def run_function(  # noqa: PLR0913
         return await register_function_job(
             wb_api_rpc=wb_api_rpc,
             function_job=SolverFunctionJob(
+                uid=None,
                 function_uid=to_run_function.uid,
                 title=f"Function job of function {to_run_function.uid}",
                 description=to_run_function.description,
@@ -463,8 +463,8 @@ async def map_function(  # noqa: PLR0913
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     product_name: Annotated[str, Depends(get_product_name)],
-    solver_service: Annotated[SolverService, Depends()],
-    job_service: Annotated[JobService, Depends()],
+    solver_service: Annotated[SolverService, Depends(get_solver_service)],
+    job_service: Annotated[JobService, Depends(get_job_service)],
 ):
     function_jobs = []
     function_jobs = [
