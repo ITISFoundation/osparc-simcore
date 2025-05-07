@@ -21,7 +21,7 @@ qx.Class.define("osparc.info.CommentAdd", {
 
   /**
     * @param studyId {String} Study Id
-    * @param conversationId {int} Conversation Id
+    * @param conversationId {String} Conversation Id
     */
   construct: function(studyId, conversationId = null) {
     this.base(arguments);
@@ -120,7 +120,10 @@ qx.Class.define("osparc.info.CommentAdd", {
         } else {
           // create new conversation first
           this.__addConversation()
-            .then(() => this.__addComment())
+            .then(data => {
+              this.__conversationId = data["conversationId"];
+              this.__addComment();
+            })
         }
       });
     },
@@ -135,12 +138,13 @@ qx.Class.define("osparc.info.CommentAdd", {
             conversationId: this.__conversationId,
           },
           data: {
-            "contents": comment
+            "content": comment,
+            "type": "MESSAGE",
           }
         };
         osparc.data.Resources.fetch("conversations", "addMessage", params)
-          .then(() => {
-            this.fireEvent("commentAdded");
+          .then(data => {
+            this.fireDataEvent("commentAdded", data);
             commentField.getChildControl("text-area").setValue("");
           })
           .catch(err => osparc.FlashMessenger.logError(err));

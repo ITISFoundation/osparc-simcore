@@ -38,72 +38,79 @@ qx.Class.define("osparc.info.Conversation", {
 
     this.__buildLayout();
 
-    this.fetchComments();
+    this.fetchMessages();
   },
 
   members: {
     __studyData: null,
     __conversationId: null,
     __nextRequestParams: null,
-    __commentsTitle: null,
-    __commentsList: null,
-    __loadMoreComments: null,
+    __messagesTitle: null,
+    __messagesList: null,
+    __loadMoreMessages: null,
 
     __buildLayout: function() {
-      this.__commentsTitle = new qx.ui.basic.Label();
-      this._add(this.__commentsTitle);
+      this.__messagesTitle = new qx.ui.basic.Label();
+      this._add(this.__messagesTitle);
 
-      this.__commentsList = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
+      this.__messagesList = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
         alignY: "middle"
       });
-      this._add(this.__commentsList, {
+      this._add(this.__messagesList, {
         flex: 1
       });
 
-      this.__loadMoreComments = new osparc.ui.form.FetchButton(this.tr("Load more comments..."));
-      this.__loadMoreComments.addListener("execute", () => this.fetchComments(false));
-      this._add(this.__loadMoreComments);
+      this.__loadMoreMessages = new osparc.ui.form.FetchButton(this.tr("Load more messages..."));
+      this.__loadMoreMessages.addListener("execute", () => this.fetchMessages(false));
+      this._add(this.__loadMoreMessages);
 
       if (osparc.data.model.Study.canIWrite(this.__studyData["accessRights"])) {
-        const addComments = new osparc.info.CommentAdd(this.__studyData["uuid"], this.__conversationId);
-        addComments.setPaddingLeft(10);
-        addComments.addListener("commentAdded", () => this.fetchComments());
-        this._add(addComments);
+        const addMessages = new osparc.info.CommentAdd(this.__studyData["uuid"], this.__conversationId);
+        addMessages.setPaddingLeft(10);
+        addMessages.addListener("commentAdded", e => {
+          const data = e.getData();
+          if (this.__conversationId === null) {
+            this.__conversationId = data["conversationId"];
+          }
+          this.fetchMessages();
+        });
+        this._add(addMessages);
       }
     },
 
-    fetchComments: function(removeComments = true) {
+    fetchMessages: function(removeMessages = true) {
       if (this.__conversationId === null) {
-        this.__commentsList.hide();
-        this.__loadMoreComments.hide();
+        this.__messagesList.hide();
+        this.__loadMoreMessages.hide();
         return;
       }
 
-      this.__loadMoreComments.show();
-      this.__loadMoreComments.setFetching(true);
+      this.__loadMoreMessages.show();
+      this.__loadMoreMessages.setFetching(true);
 
-      if (removeComments) {
-        this.__commentsList.removeAll();
+      if (removeMessages) {
+        this.__messagesList.removeAll();
       }
 
       this.__getNextRequest()
         .then(resp => {
-          const comments = resp["data"];
-          this.__addComments(comments);
+          const messages = resp["data"];
+          this.__addMessages(messages);
           this.__nextRequestParams = resp["_links"]["next"];
           if (this.__nextRequestParams === null) {
-            this.__loadMoreComments.exclude();
+            this.__loadMoreMessages.exclude();
           }
         })
-        .finally(() => this.__loadMoreComments.setFetching(false));
+        .finally(() => this.__loadMoreMessages.setFetching(false));
     },
 
     __getNextRequest: function() {
       const params = {
         url: {
           studyId: this.__studyData["uuid"],
+          conversationId: this.__conversationId,
           offset: 0,
-          limit: 20
+          limit: 42
         }
       };
       const nextRequestParams = this.__nextRequestParams;
@@ -114,19 +121,19 @@ qx.Class.define("osparc.info.Conversation", {
       const options = {
         resolveWResponse: true
       };
-      return osparc.data.Resources.fetch("studyComments", "getPage", params, options);
+      return osparc.data.Resources.fetch("conversations", "getMessagesPage", params, options);
     },
 
-    __addComments: function(comments) {
-      if (comments.length === 1) {
-        this.__commentsTitle.setValue(this.tr("1 Comment"));
-      } else if (comments.length > 1) {
-        this.__commentsTitle.setValue(comments.length + this.tr(" Comments"));
+    __addMessages: function(messages) {
+      if (messages.length === 1) {
+        this.__messagesTitle.setValue(this.tr("1 Message"));
+      } else if (messages.length > 1) {
+        this.__messagesTitle.setValue(messages.length + this.tr(" Messages"));
       }
 
-      comments.forEach(comment => {
-        const commentUi = new osparc.info.CommentUI(comment);
-        this.__commentsList.add(commentUi);
+      messages.forEach(message => {
+        const messageUi = new osparc.info.CommentUI(message);
+        this.__messagesList.add(messageUi);
       });
     }
   }
