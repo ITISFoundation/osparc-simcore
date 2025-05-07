@@ -96,13 +96,19 @@ qx.Class.define("osparc.info.CommentAdd", {
           });
           break;
         }
+        case "buttons-layout": {
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+            alignX: "right"
+          }));
+          this._add(control);
+          break;
+        }
         case "add-comment-button": {
-          control = new qx.ui.form.Button(this.tr("Add")).set({
+          control = new qx.ui.form.Button(this.tr("Add message")).set({
             appearance: "form-button",
             allowGrowX: false,
-            alignX: "right"
           });
-          this._add(control);
+          this.getChildControl("buttons-layout").add(control);
           break;
         }
       }
