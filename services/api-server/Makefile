@@ -89,7 +89,7 @@ APP_URL:=http://$(get_my_ip).nip.io:8006
 
 
 test-api: ## Runs schemathesis against development server (NOTE: make up-devel first)
-	@docker run schemathesis/schemathesis:stable run \
+	@docker run schemathesis/schemathesis:stable run --experimental=openapi-3.1 \
 		"$(APP_URL)/api/v0/openapi.json"
 
 

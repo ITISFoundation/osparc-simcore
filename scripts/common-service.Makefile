@@ -137,7 +137,7 @@ info: ## displays service info
 
 .PHONY: _run-test-dev _run-test-ci
 
-TEST_TARGET := $(if $(target),$(target),$(CURDIR)/tests/unit)
+# TEST_TARGET := $(if $(target),$(target),$(CURDIR)/tests/unit)
 PYTEST_ADDITIONAL_PARAMETERS := $(if $(pytest-parameters),$(pytest-parameters),)
 _run-test-dev: _check_venv_active
 	# runs tests for development (e.g w/ pdb)
@@ -153,7 +153,6 @@ _run-test-dev: _check_venv_active
 		--failed-first \
 		--junitxml=junit.xml -o junit_family=legacy \
 		--keep-docker-up \
-		--pdb \
 		-vv \
 		$(PYTEST_ADDITIONAL_PARAMETERS) \
 		$(TEST_TARGET)

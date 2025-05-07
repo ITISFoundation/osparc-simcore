@@ -4,10 +4,14 @@ from uuid import uuid4
 import pytest
 from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
+from fastapi_pagination import add_pagination
 from models_library.api_schemas_webserver.functions_wb_schema import (
     Function,
     FunctionJob,
     FunctionJobCollection,
+)
+from models_library.rest_pagination import (
+    PageMetaInfoLimitOffset,
 )
 from pydantic import TypeAdapter
 from simcore_service_api_server.api.routes.functions_routes import (
@@ -28,6 +32,7 @@ def _api_app() -> FastAPI:
     fastapi_app.include_router(
         function_job_collections_router, prefix="/function_job_collections"
     )
+    add_pagination(fastapi_app)
 
     # Mock authentication dependency
     async def mock_auth_dependency() -> int:
@@ -89,9 +94,23 @@ class FakeWbApiRpc:
             )
         return {"status": "success", "function_id": function_id, "inputs": inputs}
 
-    async def list_functions(self) -> list:
+    async def list_functions(
+        self,
+        pagination_offset: int,
+        pagination_limit: int,
+    ) -> tuple[list[Function], PageMetaInfoLimitOffset]:
         # Mimic listing all functions
-        return list(self._functions.values())
+        functions_list = list(self._functions.values())[
+            pagination_offset : pagination_offset + pagination_limit
+        ]
+        total_count = len(self._functions)
+        page_meta_info = PageMetaInfoLimitOffset(
+            total=total_count,
+            limit=pagination_limit,
+            offset=pagination_offset,
+            count=len(functions_list),
+        )
+        return functions_list, page_meta_info
 
     async def delete_function(self, function_id: str) -> None:
         # Mimic deleting a function
@@ -125,9 +144,23 @@ class FakeWbApiRpc:
             raise HTTPException(status_code=404, detail="Function job not found")
         return self._function_jobs[function_job_id]
 
-    async def list_function_jobs(self) -> list:
+    async def list_function_jobs(
+        self,
+        pagination_offset: int,
+        pagination_limit: int,
+    ) -> tuple[list[FunctionJob], PageMetaInfoLimitOffset]:
         # Mimic listing all function jobs
-        return list(self._function_jobs.values())
+        function_jobs_list = list(self._function_jobs.values())[
+            pagination_offset : pagination_offset + pagination_limit
+        ]
+        total_count = len(self._function_jobs)
+        page_meta_info = PageMetaInfoLimitOffset(
+            total=total_count,
+            limit=pagination_limit,
+            offset=pagination_offset,
+            count=len(function_jobs_list),
+        )
+        return function_jobs_list, page_meta_info
 
     async def delete_function_job(self, function_job_id: str) -> None:
         # Mimic deleting a function job
@@ -163,9 +196,23 @@ class FakeWbApiRpc:
             )
         return self._function_job_collections[function_job_collection_id]
 
-    async def list_function_job_collections(self) -> list:
+    async def list_function_job_collections(
+        self,
+        pagination_offset: int,
+        pagination_limit: int,
+    ) -> tuple[list[FunctionJobCollection], PageMetaInfoLimitOffset]:
         # Mimic listing all function job collections
-        return list(self._function_job_collections.values())
+        function_job_collections_list = list(self._function_job_collections.values())[
+            pagination_offset : pagination_offset + pagination_limit
+        ]
+        total_count = len(self._function_job_collections)
+        page_meta_info = PageMetaInfoLimitOffset(
+            total=total_count,
+            limit=pagination_limit,
+            offset=pagination_offset,
+            count=len(function_job_collections_list),
+        )
+        return function_job_collections_list, page_meta_info
 
     async def delete_function_job_collection(
         self, function_job_collection_id: str
@@ -279,9 +326,9 @@ def test_list_functions(api_app: FastAPI) -> None:
     assert post_response.status_code == 200
 
     # List functions
-    response = client.get("/functions")
+    response = client.get("/functions", params={"limit": 10, "offset": 0})
     assert response.status_code == 200
-    data = response.json()
+    data = response.json()["items"]
     assert len(data) > 0
     assert data[0]["title"] == sample_function["title"]
 
@@ -488,7 +535,7 @@ def test_list_function_jobs(api_app: FastAPI) -> None:
     # Now, list function jobs
     response = client.get("/function_jobs")
     assert response.status_code == 200
-    data = response.json()
+    data = response.json()["items"]
     assert len(data) > 0
     assert data[0]["title"] == mock_function_job["title"]
 

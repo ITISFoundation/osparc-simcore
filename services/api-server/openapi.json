@@ -5277,48 +5277,6 @@
       }
     },
     "/v0/functions": {
-      "get": {
-        "tags": [
-          "functions"
-        ],
-        "summary": "List Functions",
-        "description": "List functions",
-        "operationId": "list_functions",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "oneOf": [
-                      {
-                        "$ref": "#/components/schemas/ProjectFunction"
-                      },
-                      {
-                        "$ref": "#/components/schemas/PythonCodeFunction"
-                      },
-                      {
-                        "$ref": "#/components/schemas/SolverFunction"
-                      }
-                    ],
-                    "discriminator": {
-                      "propertyName": "function_class",
-                      "mapping": {
-                        "project": "#/components/schemas/ProjectFunction",
-                        "python_code": "#/components/schemas/PythonCodeFunction",
-                        "solver": "#/components/schemas/SolverFunction"
-                      }
-                    }
-                  },
-                  "type": "array",
-                  "title": "Response List Functions V0 Functions Get"
-                }
-              }
-            }
-          }
-        }
-      },
       "post": {
         "tags": [
           "functions"
@@ -5327,6 +5285,7 @@
         "description": "Create function",
         "operationId": "register_function",
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -5341,7 +5300,6 @@
                     "$ref": "#/components/schemas/SolverFunction"
                   }
                 ],
-                "title": "Function",
                 "discriminator": {
                   "propertyName": "function_class",
                   "mapping": {
@@ -5349,11 +5307,11 @@
                     "python_code": "#/components/schemas/PythonCodeFunction",
                     "solver": "#/components/schemas/SolverFunction"
                   }
-                }
+                },
+                "title": "Function"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -5372,7 +5330,6 @@
                       "$ref": "#/components/schemas/SolverFunction"
                     }
                   ],
-                  "title": "Response Register Function V0 Functions Post",
                   "discriminator": {
                     "propertyName": "function_class",
                     "mapping": {
@@ -5380,7 +5337,8 @@
                       "python_code": "#/components/schemas/PythonCodeFunction",
                       "solver": "#/components/schemas/SolverFunction"
                     }
-                  }
+                  },
+                  "title": "Response Register Function V0 Functions Post"
                 }
               }
             }
@@ -5391,6 +5349,61 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "functions"
+        ],
+        "summary": "List Functions",
+        "description": "List functions",
+        "operationId": "list_functions",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_Annotated_Union_ProjectFunction__PythonCodeFunction__SolverFunction___FieldInfo_annotation_NoneType__required_True__discriminator__function_class____"
                 }
               }
             }
@@ -5902,35 +5915,48 @@
         "summary": "List Function Jobs",
         "description": "List function jobs",
         "operationId": "list_function_jobs",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "oneOf": [
-                      {
-                        "$ref": "#/components/schemas/ProjectFunctionJob"
-                      },
-                      {
-                        "$ref": "#/components/schemas/PythonCodeFunctionJob"
-                      },
-                      {
-                        "$ref": "#/components/schemas/SolverFunctionJob"
-                      }
-                    ],
-                    "discriminator": {
-                      "propertyName": "function_class",
-                      "mapping": {
-                        "project": "#/components/schemas/ProjectFunctionJob",
-                        "python_code": "#/components/schemas/PythonCodeFunctionJob",
-                        "solver": "#/components/schemas/SolverFunctionJob"
-                      }
-                    }
-                  },
-                  "type": "array",
-                  "title": "Response List Function Jobs V0 Function Jobs Get"
+                  "$ref": "#/components/schemas/Page_Annotated_Union_ProjectFunctionJob__PythonCodeFunctionJob__SolverFunctionJob___FieldInfo_annotation_NoneType__required_True__discriminator__function_class____"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -5945,6 +5971,7 @@
         "description": "Create function job",
         "operationId": "register_function_job",
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -5959,7 +5986,6 @@
                     "$ref": "#/components/schemas/SolverFunctionJob"
                   }
                 ],
-                "title": "Function Job",
                 "discriminator": {
                   "propertyName": "function_class",
                   "mapping": {
@@ -5967,11 +5993,11 @@
                     "python_code": "#/components/schemas/PythonCodeFunctionJob",
                     "solver": "#/components/schemas/SolverFunctionJob"
                   }
-                }
+                },
+                "title": "Function Job"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -5990,7 +6016,6 @@
                       "$ref": "#/components/schemas/SolverFunctionJob"
                     }
                   ],
-                  "title": "Response Register Function Job V0 Function Jobs Post",
                   "discriminator": {
                     "propertyName": "function_class",
                     "mapping": {
@@ -5998,7 +6023,8 @@
                       "python_code": "#/components/schemas/PythonCodeFunctionJob",
                       "solver": "#/components/schemas/SolverFunctionJob"
                     }
-                  }
+                  },
+                  "title": "Response Register Function Job V0 Function Jobs Post"
                 }
               }
             }
@@ -6273,17 +6299,48 @@
         "summary": "List Function Job Collections",
         "description": "List function job collections",
         "operationId": "list_function_job_collections",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/FunctionJobCollection"
-                  },
-                  "type": "array",
-                  "title": "Response List Function Job Collections V0 Function Job Collections Get"
+                  "$ref": "#/components/schemas/Page_FunctionJobCollection_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -6298,14 +6355,14 @@
         "description": "Register function job collection",
         "operationId": "register_function_job_collection",
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/FunctionJobCollection"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -8710,6 +8767,160 @@
         ],
         "title": "OnePage[StudyPort]"
       },
+      "Page_Annotated_Union_ProjectFunctionJob__PythonCodeFunctionJob__SolverFunctionJob___FieldInfo_annotation_NoneType__required_True__discriminator__function_class____": {
+        "properties": {
+          "items": {
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/ProjectFunctionJob"
+                },
+                {
+                  "$ref": "#/components/schemas/PythonCodeFunctionJob"
+                },
+                {
+                  "$ref": "#/components/schemas/SolverFunctionJob"
+                }
+              ],
+              "discriminator": {
+                "propertyName": "function_class",
+                "mapping": {
+                  "project": "#/components/schemas/ProjectFunctionJob",
+                  "python_code": "#/components/schemas/PythonCodeFunctionJob",
+                  "solver": "#/components/schemas/SolverFunctionJob"
+                }
+              }
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Offset"
+          },
+          "links": {
+            "$ref": "#/components/schemas/Links"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset",
+          "links"
+        ],
+        "title": "Page[Annotated[Union[ProjectFunctionJob, PythonCodeFunctionJob, SolverFunctionJob], FieldInfo(annotation=NoneType, required=True, discriminator='function_class')]]"
+      },
+      "Page_Annotated_Union_ProjectFunction__PythonCodeFunction__SolverFunction___FieldInfo_annotation_NoneType__required_True__discriminator__function_class____": {
+        "properties": {
+          "items": {
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/ProjectFunction"
+                },
+                {
+                  "$ref": "#/components/schemas/PythonCodeFunction"
+                },
+                {
+                  "$ref": "#/components/schemas/SolverFunction"
+                }
+              ],
+              "discriminator": {
+                "propertyName": "function_class",
+                "mapping": {
+                  "project": "#/components/schemas/ProjectFunction",
+                  "python_code": "#/components/schemas/PythonCodeFunction",
+                  "solver": "#/components/schemas/SolverFunction"
+                }
+              }
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Offset"
+          },
+          "links": {
+            "$ref": "#/components/schemas/Links"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset",
+          "links"
+        ],
+        "title": "Page[Annotated[Union[ProjectFunction, PythonCodeFunction, SolverFunction], FieldInfo(annotation=NoneType, required=True, discriminator='function_class')]]"
+      },
       "Page_File_": {
         "properties": {
           "items": {
@@ -8768,6 +8979,65 @@
           "links"
         ],
         "title": "Page[File]"
+      },
+      "Page_FunctionJobCollection_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/FunctionJobCollection"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Offset"
+          },
+          "links": {
+            "$ref": "#/components/schemas/Links"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset",
+          "links"
+        ],
+        "title": "Page[FunctionJobCollection]"
       },
       "Page_Job_": {
         "properties": {
