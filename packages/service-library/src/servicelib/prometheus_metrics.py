@@ -1,3 +1,5 @@
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 
 from prometheus_client import (
@@ -72,3 +74,45 @@ def setup_prometheus_metrics(app_name: str, **app_info_kwargs) -> PrometheusMetr
         in_flight_requests=in_flight_requests,
         response_latency=response_latency,
     )
+
+
+@contextmanager
+def record_request_metrics(
+    *,
+    metrics: PrometheusMetrics,
+    app_name: str,
+    method: str,
+    endpoint: str,
+    user_agent: str,
+) -> Iterator[None]:
+    """
+    Context manager to record Prometheus metrics for a request.
+
+    Args:
+        metrics (PrometheusMetrics): The Prometheus metrics instance.
+        app_name (str): The application name.
+        method (str): The HTTP method.
+        endpoint (str): The canonical endpoint.
+        user_agent (str): The user agent header value.
+    """
+
+    with metrics.in_flight_requests.labels(
+        app_name, method, endpoint, user_agent
+    ).track_inprogress(), metrics.response_latency.labels(
+        app_name, method, endpoint, user_agent
+    ).time():
+        yield
+
+
+def record_response_metrics(
+    *,
+    metrics: PrometheusMetrics,
+    app_name: str,
+    method: str,
+    endpoint: str,
+    user_agent: str,
+    status_code: int,
+) -> None:
+    metrics.request_count.labels(
+        app_name, method, endpoint, status_code, user_agent
+    ).inc()

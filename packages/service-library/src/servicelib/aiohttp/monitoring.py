@@ -15,6 +15,8 @@ from prometheus_client.registry import CollectorRegistry
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.prometheus_metrics import (
     PrometheusMetrics,
+    record_request_metrics,
+    record_response_metrics,
     setup_prometheus_metrics,
 )
 
@@ -141,9 +143,6 @@ def middleware_factory(
         resp: web.StreamResponse = web.HTTPInternalServerError(
             reason="Unexpected exception"
         )
-        # NOTE: a canonical endpoint is `/v0/projects/{project_id}/node/{node_uuid}``
-        # vs a resolved endpoint `/v0/projects/51e4bdf4-2cc7-43be-85a6-627a4c0afb77/nodes/51e4bdf4-2cc7-43be-85a6-627a4c0afb77`
-        # which would create way to many different endpoints for monitoring!
         canonical_endpoint = request.path
         if request.match_info.route.resource:
             canonical_endpoint = request.match_info.route.resource.canonical
@@ -155,32 +154,18 @@ def middleware_factory(
 
             metrics = request.app[kPROMETHEUS_METRICS]
             assert isinstance(metrics, PrometheusMetrics)  # nosec
-            # prometheus probes
-            metrics.request_count.labels(
-                app_name,
-                request.method,
-                canonical_endpoint,
-                resp.status,
-                request.headers.get(
-                    X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
-                ),
-            ).inc()
 
-            with metrics.in_flight_requests.labels(
-                app_name,
-                request.method,
-                canonical_endpoint,
-                request.headers.get(
-                    X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
-                ),
-            ).track_inprogress(), metrics.response_latency.labels(
-                app_name,
-                request.method,
-                canonical_endpoint,
-                request.headers.get(
-                    X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
-                ),
-            ).time():
+            user_agent = request.headers.get(
+                X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+            )
+
+            with record_request_metrics(
+                metrics=metrics,
+                app_name=app_name,
+                method=request.method,
+                endpoint=canonical_endpoint,
+                user_agent=user_agent,
+            ):
                 resp = await handler(request)
 
             assert isinstance(  # nosec
@@ -188,26 +173,31 @@ def middleware_factory(
             ), "Forgot envelope middleware?"
 
         except web.HTTPServerError as exc:
-            # Transforms exception into response object and log exception
             resp = exc
             log_exception = exc
         except web.HTTPException as exc:
-            # Transforms non-HTTPServerError exceptions into response object
             resp = exc
             log_exception = None
         except asyncio.CancelledError as exc:
-            # Mostly for logging
             resp = web.HTTPInternalServerError(reason=f"{exc}")
             log_exception = exc
             raise
         except Exception as exc:  # pylint: disable=broad-except
-            # Prevents issue #1025.
             resp = web.HTTPInternalServerError(reason=f"{exc}")
             resp.__cause__ = exc
             log_exception = exc
 
         finally:
             resp_time_secs: float = time.time() - start_time
+
+            record_response_metrics(
+                metrics=metrics,
+                app_name=app_name,
+                method=request.method,
+                endpoint=canonical_endpoint,
+                user_agent=user_agent,
+                http_status=resp.status,
+            )
 
             if exit_middleware_cb:
                 with log_catch(logger=log, reraise=False):
@@ -229,7 +219,6 @@ def middleware_factory(
 
         return resp
 
-    # adds identifier
     setattr(  # noqa: B010
         middleware_handler, "__middleware_name__", f"{__name__}.monitor_{app_name}"
     )
