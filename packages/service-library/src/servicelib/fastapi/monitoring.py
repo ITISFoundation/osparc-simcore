@@ -1,13 +1,14 @@
 # pylint: disable=protected-access
 
+import asyncio
 import logging
 from collections.abc import AsyncIterator
 from typing import Final
 
-import prometheus_client
 from fastapi import FastAPI, Request, Response, status
 from fastapi_lifespan_manager import State
 from prometheus_client import CollectorRegistry
+from prometheus_client.exposition import CONTENT_TYPE_LATEST, generate_latest
 from servicelib.prometheus_metrics import (
     PrometheusMetrics,
     get_prometheus_metrics,
@@ -77,15 +78,14 @@ def initialize_prometheus_instrumentation(app: FastAPI) -> None:
 def _startup(app: FastAPI) -> None:
     @app.get("/metrics", include_in_schema=False)
     async def metrics_endpoint(request: Request) -> Response:
-        """
-        Exposes the Prometheus metrics endpoint.
-        """
         prometheus_metrics = request.app.state.prometheus_metrics
         assert isinstance(prometheus_metrics, PrometheusMetrics)  # nosec
-        return Response(
-            content=prometheus_client.generate_latest(prometheus_metrics.registry),
-            media_type="text/plain",
+
+        content = await asyncio.get_event_loop().run_in_executor(
+            None, generate_latest, prometheus_metrics.registry
         )
+
+        return Response(content=content, headers={"Content-Type": CONTENT_TYPE_LATEST})
 
 
 def _shutdown(app: FastAPI) -> None:

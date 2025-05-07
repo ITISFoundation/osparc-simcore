@@ -6,10 +6,10 @@ import time
 from collections.abc import Awaitable, Callable
 from typing import Final
 
-import prometheus_client
 from aiohttp import web
-from prometheus_client import (
+from prometheus_client.exposition import (
     CONTENT_TYPE_LATEST,
+    generate_latest,
 )
 from prometheus_client.registry import CollectorRegistry
 from servicelib.aiohttp.typing_extension import Handler
@@ -41,9 +41,7 @@ async def metrics_handler(request: web.Request):
     registry = get_collector_registry(request.app)
 
     # NOTE: Cannot use ProcessPoolExecutor because registry is not pickable
-    result = await request.loop.run_in_executor(
-        None, prometheus_client.generate_latest, registry
-    )
+    result = await request.loop.run_in_executor(None, generate_latest, registry)
     response = web.Response(body=result)
     response.content_type = CONTENT_TYPE_LATEST
     return response
