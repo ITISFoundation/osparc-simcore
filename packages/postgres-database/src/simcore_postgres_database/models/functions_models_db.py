@@ -96,7 +96,7 @@ function_jobs = sa.Table(
             functions.c.uuid,
             onupdate=RefActions.CASCADE,
             ondelete=RefActions.CASCADE,
-            name="fk_functions_to_function_jobs_to_function_uuid",
+            name="fk_function_jobs_to_function_uuid",
         ),
         nullable=False,
         index=True,

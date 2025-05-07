@@ -15,24 +15,15 @@ from models_library.api_schemas_webserver.functions_wb_schema import (
     FunctionOutputSchema,
 )
 from models_library.rabbitmq_basic_types import RPCMethodName
+from models_library.rest_pagination import (
+    PageMetaInfoLimitOffset,
+)
 from pydantic import TypeAdapter
 
 from .....logging_utils import log_decorator
 from .... import RabbitMQRPCClient
 
 _logger = logging.getLogger(__name__)
-
-
-@log_decorator(_logger, level=logging.DEBUG)
-async def ping(
-    rabbitmq_rpc_client: RabbitMQRPCClient,
-) -> str:
-    result = await rabbitmq_rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python("ping"),
-    )
-    assert isinstance(result, str)  # nosec
-    return result
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -103,10 +94,44 @@ async def delete_function(
 @log_decorator(_logger, level=logging.DEBUG)
 async def list_functions(
     rabbitmq_rpc_client: RabbitMQRPCClient,
-) -> list[Function]:
+    *pagination_limit: int,
+    pagination_offset: int,
+) -> tuple[list[Function], PageMetaInfoLimitOffset]:
     return await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("list_functions"),
+        pagination_offset=pagination_offset,
+        pagination_limit=pagination_limit,
+    )
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+async def list_function_jobs(
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    *,
+    pagination_limit: int,
+    pagination_offset: int,
+) -> tuple[list[FunctionJob], PageMetaInfoLimitOffset]:
+    return await rabbitmq_rpc_client.request(
+        WEBSERVER_RPC_NAMESPACE,
+        TypeAdapter(RPCMethodName).validate_python("list_function_jobs"),
+        pagination_offset=pagination_offset,
+        pagination_limit=pagination_limit,
+    )
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+async def list_function_job_collections(
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    *,
+    pagination_limit: int,
+    pagination_offset: int,
+) -> tuple[list[FunctionJobCollection], PageMetaInfoLimitOffset]:
+    return await rabbitmq_rpc_client.request(
+        WEBSERVER_RPC_NAMESPACE,
+        TypeAdapter(RPCMethodName).validate_python("list_function_job_collections"),
+        pagination_offset=pagination_offset,
+        pagination_limit=pagination_limit,
     )
 
 
@@ -152,16 +177,6 @@ async def get_function_job(
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def list_function_jobs(
-    rabbitmq_rpc_client: RabbitMQRPCClient,
-) -> list[FunctionJob]:
-    return await rabbitmq_rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python("list_function_jobs"),
-    )
-
-
-@log_decorator(_logger, level=logging.DEBUG)
 async def delete_function_job(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
@@ -186,16 +201,6 @@ async def find_cached_function_job(
         TypeAdapter(RPCMethodName).validate_python("find_cached_function_job"),
         function_id=function_id,
         inputs=inputs,
-    )
-
-
-@log_decorator(_logger, level=logging.DEBUG)
-async def list_function_job_collections(
-    rabbitmq_rpc_client: RabbitMQRPCClient,
-) -> list[FunctionJobCollection]:
-    return await rabbitmq_rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python("list_function_job_collections"),
     )
 
 

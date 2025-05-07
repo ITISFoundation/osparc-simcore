@@ -19,6 +19,9 @@ from models_library.api_schemas_webserver.functions_wb_schema import (
     SolverFunction,
     SolverFunctionJob,
 )
+from models_library.rest_pagination import (
+    PageMetaInfoLimitOffset,
+)
 from servicelib.rabbitmq import RPCRouter
 
 from ..rabbitmq import get_rabbitmq_rpc_server
@@ -192,18 +195,6 @@ async def get_function_job(
 
 
 @router.expose()
-async def list_function_jobs(app: web.Application) -> list[FunctionJob]:
-    assert app
-    returned_function_jobs = await _functions_repository.list_function_jobs(
-        app=app,
-    )
-    return [
-        _decode_functionjob(returned_function_job)
-        for returned_function_job in returned_function_jobs
-    ]
-
-
-@router.expose()
 async def get_function_input_schema(
     app: web.Application, *, function_id: FunctionID
 ) -> FunctionInputSchema:
@@ -240,14 +231,63 @@ async def get_function_output_schema(
 
 
 @router.expose()
-async def list_functions(app: web.Application) -> list[Function]:
+async def list_functions(
+    app: web.Application,
+    pagination_limit: int,
+    pagination_offset: int,
+) -> tuple[list[Function], PageMetaInfoLimitOffset]:
     assert app
-    returned_functions = await _functions_repository.list_functions(
+    returned_functions, page = await _functions_repository.list_functions(
         app=app,
+        pagination_limit=pagination_limit,
+        pagination_offset=pagination_offset,
     )
     return [
         _decode_function(returned_function) for returned_function in returned_functions
-    ]
+    ], page
+
+
+@router.expose()
+async def list_function_jobs(
+    app: web.Application,
+    pagination_limit: int,
+    pagination_offset: int,
+) -> tuple[list[FunctionJob], PageMetaInfoLimitOffset]:
+    assert app
+    returned_function_jobs, page = await _functions_repository.list_function_jobs(
+        app=app,
+        pagination_limit=pagination_limit,
+        pagination_offset=pagination_offset,
+    )
+    return [
+        _decode_functionjob(returned_function_job)
+        for returned_function_job in returned_function_jobs
+    ], page
+
+
+@router.expose()
+async def list_function_job_collections(
+    app: web.Application,
+    pagination_limit: int,
+    pagination_offset: int,
+) -> tuple[list[FunctionJobCollection], PageMetaInfoLimitOffset]:
+    assert app
+    returned_function_job_collections, page = (
+        await _functions_repository.list_function_job_collections(
+            app=app,
+            pagination_limit=pagination_limit,
+            pagination_offset=pagination_offset,
+        )
+    )
+    return [
+        FunctionJobCollection(
+            uid=function_job_collection.uuid,
+            title=function_job_collection.title,
+            description=function_job_collection.description,
+            job_ids=job_ids,
+        )
+        for function_job_collection, job_ids in returned_function_job_collections
+    ], page
 
 
 @router.expose()
@@ -315,27 +355,6 @@ async def find_cached_function_job(
     else:
         msg = f"Unsupported function class: [{returned_function_job.function_class}]"
         raise TypeError(msg)
-
-
-@router.expose()
-async def list_function_job_collections(
-    app: web.Application,
-) -> list[FunctionJobCollection]:
-    assert app
-    returned_function_job_collections = (
-        await _functions_repository.list_function_job_collections(
-            app=app,
-        )
-    )
-    return [
-        FunctionJobCollection(
-            uid=function_job_collection.uuid,
-            title=function_job_collection.title,
-            description=function_job_collection.description,
-            job_ids=job_ids,
-        )
-        for function_job_collection, job_ids in returned_function_job_collections
-    ]
 
 
 @router.expose()

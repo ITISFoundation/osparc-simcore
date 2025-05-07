@@ -4,6 +4,7 @@ from typing import Annotated, Final
 
 import jsonschema
 from fastapi import APIRouter, Depends, Request, status
+from fastapi_pagination.api import create_page
 from jsonschema import ValidationError
 from models_library.api_schemas_webserver.functions_wb_schema import (
     Function,
@@ -28,6 +29,7 @@ from simcore_service_api_server._service_jobs import JobService
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..._service_solvers import SolverService
+from ...models.pagination import PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.jobs import (
     JobInputs,
@@ -86,8 +88,18 @@ async def get_function(
 @function_router.get("", response_model=list[Function], description="List functions")
 async def list_functions(
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
+    page_params: Annotated[PaginationParams, Depends()],
 ):
-    return await wb_api_rpc.list_functions()
+    functions_list, meta = await wb_api_rpc.list_functions(
+        pagination_offset=page_params.offset,
+        pagination_limit=page_params.limit,
+    )
+
+    return create_page(
+        functions_list,
+        total=meta.total,
+        params=page_params,
+    )
 
 
 def join_inputs(
@@ -322,8 +334,9 @@ async def get_function_job(
 )
 async def list_function_jobs(
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
+    page_params: Annotated[PaginationParams, Depends()],
 ):
-    return await wb_api_rpc.list_function_jobs()
+    return await wb_api_rpc.list_function_jobs(page_params=page_params)
 
 
 @function_job_router.delete(
@@ -515,8 +528,9 @@ _COMMON_FUNCTION_JOB_COLLECTION_ERROR_RESPONSES: Final[dict] = {
 )
 async def list_function_job_collections(
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
+    page_params: Annotated[PaginationParams, Depends()],
 ):
-    return await wb_api_rpc.list_function_job_collections()
+    return await wb_api_rpc.list_function_job_collections(page_params=page_params)
 
 
 @function_job_collections_router.get(
