@@ -36,6 +36,27 @@ qx.Class.define("osparc.info.Conversation", {
       showCloseButton: false,
     });
 
+    const tabButton = this.getChildControl("button").set({
+      cursor: "text",
+    });
+    tabButton.addListener("execute", () => {
+      const titleEditor = new osparc.widget.Renamer(tabButton.getLabel());
+      titleEditor.addListener("labelChanged", e => {
+        titleEditor.close();
+        const newLabel = e.getData()["newLabel"];
+        if (this.__conversationId) {
+          this.__renameConversation(newLabel);
+        } else {
+          // create new conversation first
+          osparc.study.Conversations.addConversation(this.__studyId)
+            .then(data => {
+              this.__conversationId = data["conversationId"];
+              this.__renameConversation(newLabel);
+            })
+        }
+      }, this);
+    });
+
     this.__buildLayout();
 
     this.fetchMessages();
@@ -135,6 +156,13 @@ qx.Class.define("osparc.info.Conversation", {
         const messageUi = new osparc.info.CommentUI(message);
         this.__messagesList.add(messageUi);
       });
+    },
+
+    __renameConversation: function(newLabel) {
+      osparc.study.Conversations.renameConversation(this.__studyId, this.__conversationId, newLabel)
+        .then(() => {
+          this.getChildControl("button").setLabel(newLabel);
+        });
     }
   }
 });

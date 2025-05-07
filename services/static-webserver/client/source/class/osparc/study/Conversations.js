@@ -30,6 +30,36 @@ qx.Class.define("osparc.study.Conversations", {
     this.fetchConversations(studyData);
   },
 
+  statics: {
+    addConversation: function(studyId, name = "new 1") {
+      const params = {
+        url: {
+          studyId,
+        },
+        data: {
+          name,
+          "type": "PROJECT_STATIC",
+        }
+      };
+      return osparc.data.Resources.fetch("conversations", "addConversation", params)
+        .catch(err => osparc.FlashMessenger.logError(err));
+    },
+
+    renameConversation: function(studyId, conversationId, name) {
+      const params = {
+        url: {
+          studyId,
+          conversationId,
+        },
+        data: {
+          name,
+        }
+      };
+      return osparc.data.Resources.fetch("conversations", "renameConversation", params)
+        .catch(err => osparc.FlashMessenger.logError(err));
+    },
+  },
+
   members: {
     _createChildControlImpl: function(id) {
       let control;
