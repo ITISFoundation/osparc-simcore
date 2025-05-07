@@ -187,7 +187,6 @@ class DaskClient:
     def register_handlers(self, task_handlers: TaskHandlers) -> None:
         _event_consumer_map = [
             (self.backend.progress_sub, task_handlers.task_progress_handler),
-            (self.backend.logs_sub, task_handlers.task_log_handler),
         ]
         self._subscribed_tasks = [
             asyncio.create_task(

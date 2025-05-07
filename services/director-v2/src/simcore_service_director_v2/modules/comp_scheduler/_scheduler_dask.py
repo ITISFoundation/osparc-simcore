@@ -8,7 +8,6 @@ from dataclasses import dataclass
 import arrow
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.events import (
-    TaskLogEvent,
     TaskProgressEvent,
 )
 from dask_task_models_library.container_tasks.io import TaskOutputData
@@ -38,7 +37,6 @@ from ...utils.dask import (
 )
 from ...utils.dask_client_utils import TaskHandlers
 from ...utils.rabbitmq import (
-    publish_service_log,
     publish_service_progress,
     publish_service_resource_tracking_stopped,
     publish_service_stopped_metrics,
@@ -92,7 +90,6 @@ class DaskScheduler(BaseCompScheduler):
         self.dask_clients_pool.register_handlers(
             TaskHandlers(
                 self._task_progress_change_handler,
-                self._task_log_change_handler,
             )
         )
 
@@ -378,27 +375,3 @@ class DaskScheduler(BaseCompScheduler):
                 node_id=node_id,
                 progress=task_progress_event.progress,
             )
-
-    async def _task_log_change_handler(self, event: str) -> None:
-        with log_catch(_logger, reraise=False):
-            task_log_event = TaskLogEvent.model_validate_json(event)
-            _logger.debug("received task log update: %s", task_log_event)
-            await publish_service_log(
-                self.rabbitmq_client,
-                user_id=task_log_event.task_owner.user_id,
-                project_id=task_log_event.task_owner.project_id,
-                node_id=task_log_event.task_owner.node_id,
-                log=task_log_event.log,
-                log_level=task_log_event.log_level,
-            )
-            if task_log_event.task_owner.has_parent:
-                assert task_log_event.task_owner.parent_project_id  # nosec
-                assert task_log_event.task_owner.parent_node_id  # nosec
-                await publish_service_log(
-                    self.rabbitmq_client,
-                    user_id=task_log_event.task_owner.user_id,
-                    project_id=task_log_event.task_owner.parent_project_id,
-                    node_id=task_log_event.task_owner.parent_node_id,
-                    log=task_log_event.log,
-                    log_level=task_log_event.log_level,
-                )
