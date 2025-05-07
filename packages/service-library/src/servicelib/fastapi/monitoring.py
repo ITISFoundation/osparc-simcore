@@ -1,5 +1,12 @@
+# pylint: disable=protected-access
+
+from collections.abc import AsyncIterator
+from typing import Final
+
 import prometheus_client
 from fastapi import FastAPI, Request, Response
+from fastapi_lifespan_manager import State
+from prometheus_client import CollectorRegistry
 from servicelib.prometheus_metrics import (
     PrometheusMetrics,
     record_request_metrics,
@@ -50,20 +57,72 @@ class PrometheusMiddleware(BaseHTTPMiddleware):
         return response
 
 
-def setup_monitoring(
-    app: FastAPI,
-) -> None:
+def initialize_prometheus_instrumentation(app: FastAPI) -> None:
+    # NOTE: this cannot be ran once the application is started
+
+    # NOTE: use that registry to prevent having a global one
     metrics = setup_prometheus_metrics()
     app.state.prometheus_metrics = metrics
     app.add_middleware(PrometheusMiddleware, metrics=metrics)
 
+
+def _startup(app: FastAPI) -> None:
     @app.get("/metrics")
     async def metrics_endpoint(request: Request) -> Response:
         """
         Exposes the Prometheus metrics endpoint.
         """
-        registry = request.app.state.prometheus_metrics.registry
+        prometheus_metrics = request.app.state.prometheus_metrics
+        assert isinstance(prometheus_metrics, PrometheusMetrics)  # nosec
         return Response(
-            content=prometheus_client.generate_latest(registry),
+            content=prometheus_client.generate_latest(prometheus_metrics.registry),
             media_type="text/plain",
         )
+
+
+def _shutdown(app: FastAPI) -> None:
+    prometheus_metrics = app.state.prometheus_metrics
+    assert isinstance(prometheus_metrics, PrometheusMetrics)  # nosec
+    registry = prometheus_metrics.registry
+    for collector in list(registry._collector_to_names.keys()):  # noqa: SLF001
+        registry.unregister(collector)
+
+
+def setup_prometheus_instrumentation(app: FastAPI) -> CollectorRegistry:
+    initialize_prometheus_instrumentation(app)
+
+    async def _on_startup() -> None:
+        _startup(app)
+
+    def _on_shutdown() -> None:
+        _shutdown(app)
+
+    app.add_event_handler("startup", _on_startup)
+    app.add_event_handler("shutdown", _on_shutdown)
+
+    prometheus_metrics = app.state.prometheus_metrics
+    assert isinstance(prometheus_metrics, PrometheusMetrics)  # nosec
+
+    return prometheus_metrics.registry
+
+
+_PROMETHEUS_INSTRUMENTATION_ENABLED: Final[str] = "prometheus_instrumentation_enabled"
+
+
+def create_prometheus_instrumentationmain_input_state(*, enabled: bool) -> State:
+    return {_PROMETHEUS_INSTRUMENTATION_ENABLED: enabled}
+
+
+async def prometheus_instrumentation_lifespan(
+    app: FastAPI, state: State
+) -> AsyncIterator[State]:
+    # NOTE: requires ``initialize_prometheus_instrumentation`` to be called before the
+    # lifespan of the applicaiton runs, usually rigth after the ``FastAPI`` instance is created
+
+    instrumentaiton_enabled = state.get(_PROMETHEUS_INSTRUMENTATION_ENABLED, False)
+    if instrumentaiton_enabled:
+
+        _startup(app)
+    yield {}
+    if instrumentaiton_enabled:
+        _shutdown(app)
