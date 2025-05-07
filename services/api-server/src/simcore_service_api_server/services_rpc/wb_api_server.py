@@ -22,6 +22,12 @@ from models_library.projects import ProjectID
 from models_library.resource_tracker_licensed_items_checkouts import (
     LicensedItemCheckoutID,
 )
+from models_library.rest_pagination import (
+    DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+    PageLimitInt,
+    PageMetaInfoLimitOffset,
+    PageOffsetInt,
+)
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -312,8 +318,42 @@ class WbApiRpcClient(SingletonInAppStateMixin):
     async def delete_function(self, *, function_id: FunctionID) -> None:
         return await _delete_function(self._client, function_id=function_id)
 
-    async def list_functions(self) -> list[Function]:
-        return await _list_functions(self._client)
+    async def list_functions(
+        self,
+        *,
+        pagination_offset: PageOffsetInt = 0,
+        pagination_limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+    ) -> tuple[list[Function], PageMetaInfoLimitOffset]:
+
+        return await _list_functions(
+            self._client,
+            pagination_offset=pagination_offset,
+            pagination_limit=pagination_limit,
+        )
+
+    async def list_function_jobs(
+        self,
+        *,
+        pagination_offset: PageOffsetInt = 0,
+        pagination_limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+    ) -> tuple[list[FunctionJob], PageMetaInfoLimitOffset]:
+        return await _list_function_jobs(
+            self._client,
+            pagination_offset=pagination_offset,
+            pagination_limit=pagination_limit,
+        )
+
+    async def list_function_job_collections(
+        self,
+        *,
+        pagination_offset: PageOffsetInt = 0,
+        pagination_limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+    ) -> tuple[list[FunctionJobCollection], PageMetaInfoLimitOffset]:
+        return await _list_function_job_collections(
+            self._client,
+            pagination_offset=pagination_offset,
+            pagination_limit=pagination_limit,
+        )
 
     async def run_function(
         self, *, function_id: FunctionID, inputs: FunctionInputs
@@ -345,12 +385,6 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         return await _find_cached_function_job(
             self._client, function_id=function_id, inputs=inputs
         )
-
-    async def list_function_jobs(self) -> list[FunctionJob]:
-        return await _list_function_jobs(self._client)
-
-    async def list_function_job_collections(self) -> list[FunctionJobCollection]:
-        return await _list_function_job_collections(self._client)
 
     async def get_function_job_collection(
         self, *, function_job_collection_id: FunctionJobCollectionID

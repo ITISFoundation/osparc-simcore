@@ -10,6 +10,9 @@ from models_library.api_schemas_webserver.functions_wb_schema import (
     FunctionJobDB,
     FunctionJobID,
 )
+from models_library.rest_pagination import (
+    PageMetaInfoLimitOffset,
+)
 from simcore_postgres_database.models.functions_models_db import (
     function_job_collections as function_job_collections_table,
 )
@@ -28,6 +31,7 @@ from simcore_postgres_database.utils_repos import (
 )
 from sqlalchemy import Text, cast
 from sqlalchemy.ext.asyncio import AsyncConnection
+from sqlalchemy.sql import func
 
 from ..db.plugin import get_asyncpg_engine
 
@@ -105,15 +109,117 @@ async def get_function(
 async def list_functions(
     app: web.Application,
     connection: AsyncConnection | None = None,
-) -> list[FunctionDB]:
+    *,
+    pagination_limit: int,
+    pagination_offset: int,
+) -> tuple[list[FunctionDB], PageMetaInfoLimitOffset]:
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(functions_table.select().where())
+        total_count_result = await conn.scalar(
+            func.count().select().select_from(functions_table)
+        )
+        result = await conn.stream(
+            functions_table.select().offset(pagination_offset).limit(pagination_limit)
+        )
         rows = await result.all()
         if rows is None:
-            return []
+            return [], PageMetaInfoLimitOffset(
+                total=0, offset=pagination_offset, limit=pagination_limit, count=0
+            )
 
-        return [FunctionDB.model_validate(dict(row)) for row in rows]
+        return [
+            FunctionDB.model_validate(dict(row)) for row in rows
+        ], PageMetaInfoLimitOffset(
+            total=total_count_result,
+            offset=pagination_offset,
+            limit=pagination_limit,
+            count=len(rows),
+        )
+
+
+async def list_function_jobs(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    pagination_limit: int,
+    pagination_offset: int,
+) -> tuple[list[FunctionJobDB], PageMetaInfoLimitOffset]:
+
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        total_count_result = await conn.scalar(
+            func.count().select().select_from(function_jobs_table)
+        )
+        result = await conn.stream(
+            function_jobs_table.select()
+            .offset(pagination_offset)
+            .limit(pagination_limit)
+        )
+        rows = await result.all()
+        if rows is None:
+            return [], PageMetaInfoLimitOffset(
+                total=0, offset=pagination_offset, limit=pagination_limit, count=0
+            )
+
+        return [
+            FunctionJobDB.model_validate(dict(row)) for row in rows
+        ], PageMetaInfoLimitOffset(
+            total=total_count_result,
+            offset=pagination_offset,
+            limit=pagination_limit,
+            count=len(rows),
+        )
+
+
+async def list_function_job_collections(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    pagination_limit: int,
+    pagination_offset: int,
+) -> tuple[
+    list[tuple[FunctionJobCollectionDB, list[FunctionJobID]]],
+    PageMetaInfoLimitOffset,
+]:
+    """
+    Returns a list of function job collections and their associated job ids.
+    """
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        total_count_result = await conn.scalar(
+            func.count().select().select_from(function_job_collections_table)
+        )
+        result = await conn.stream(
+            function_job_collections_table.select()
+            .offset(pagination_offset)
+            .limit(pagination_limit)
+        )
+        rows = await result.all()
+        if rows is None:
+            return [], PageMetaInfoLimitOffset(
+                total=0, offset=pagination_offset, limit=pagination_limit, count=0
+            )
+
+        collections = []
+        for row in rows:
+            collection = FunctionJobCollectionDB.model_validate(dict(row))
+            job_result = await conn.stream(
+                function_job_collections_to_function_jobs_table.select().where(
+                    function_job_collections_to_function_jobs_table.c.function_job_collection_uuid
+                    == row["uuid"]
+                )
+            )
+            job_rows = await job_result.all()
+            job_ids = (
+                [job_row["function_job_uuid"] for job_row in job_rows]
+                if job_rows
+                else []
+            )
+            collections.append((collection, job_ids))
+        return collections, PageMetaInfoLimitOffset(
+            total=total_count_result,
+            offset=pagination_offset,
+            limit=pagination_limit,
+            count=len(rows),
+        )
 
 
 async def delete_function(
@@ -181,20 +287,6 @@ async def get_function_job(
         return FunctionJobDB.model_validate(dict(row))
 
 
-async def list_function_jobs(
-    app: web.Application,
-    connection: AsyncConnection | None = None,
-) -> list[FunctionJobDB]:
-
-    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(function_jobs_table.select().where())
-        rows = await result.all()
-        if rows is None:
-            return []
-
-        return [FunctionJobDB.model_validate(dict(row)) for row in rows]
-
-
 async def delete_function_job(
     app: web.Application,
     connection: AsyncConnection | None = None,
@@ -236,35 +328,6 @@ async def find_cached_function_job(
                 return job
 
         return None
-
-
-async def list_function_job_collections(
-    app: web.Application,
-    connection: AsyncConnection | None = None,
-) -> list[tuple[FunctionJobCollectionDB, list[FunctionJobID]]]:
-    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(function_job_collections_table.select().where())
-        rows = await result.all()
-        if rows is None:
-            return []
-
-        collections = []
-        for row in rows:
-            collection = FunctionJobCollection.model_validate(dict(row))
-            job_result = await conn.stream(
-                function_job_collections_to_function_jobs_table.select().where(
-                    function_job_collections_to_function_jobs_table.c.function_job_collection_uuid
-                    == row["uuid"]
-                )
-            )
-            job_rows = await job_result.all()
-            job_ids = (
-                [job_row["function_job_uuid"] for job_row in job_rows]
-                if job_rows
-                else []
-            )
-            collections.append((collection, job_ids))
-        return collections
 
 
 async def get_function_job_collection(

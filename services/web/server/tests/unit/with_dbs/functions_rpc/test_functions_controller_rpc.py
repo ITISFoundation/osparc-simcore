@@ -111,11 +111,70 @@ async def test_list_functions(client):
     assert registered_function.uid is not None
 
     # List functions
-    functions = await functions_rpc.list_functions(app=client.app)
+    functions, _ = await functions_rpc.list_functions(
+        app=client.app, pagination_limit=10, pagination_offset=0
+    )
 
     # Assert the list contains the registered function
     assert len(functions) > 0
     assert any(f.uid == registered_function.uid for f in functions)
+
+
+async def delete_all_registered_functions(client):
+    # This function is a placeholder for the actual implementation
+    # that deletes all registered functions from the database.
+    functions, _ = await functions_rpc.list_functions(
+        app=client.app, pagination_limit=100, pagination_offset=0
+    )
+    for function in functions:
+        assert function.uid is not None
+        await functions_rpc.delete_function(app=client.app, function_id=function.uid)
+
+
+@pytest.mark.asyncio
+async def test_list_functions_empty(client):
+    await delete_all_registered_functions(client)
+    # List functions when none are registered
+    functions, _ = await functions_rpc.list_functions(
+        app=client.app, pagination_limit=10, pagination_offset=0
+    )
+
+    # Assert the list is empty
+    assert len(functions) == 0
+
+
+@pytest.mark.asyncio
+async def test_list_functions_with_pagination(client, mock_function):
+    await delete_all_registered_functions(client)
+
+    # Register multiple functions
+    TOTAL_FUNCTIONS = 3
+    for _ in range(TOTAL_FUNCTIONS):
+        await functions_rpc.register_function(app=client.app, function=mock_function)
+
+    functions, page_info = await functions_rpc.list_functions(
+        app=client.app, pagination_limit=2, pagination_offset=0
+    )
+
+    # List functions with pagination
+    functions, page_info = await functions_rpc.list_functions(
+        app=client.app, pagination_limit=2, pagination_offset=0
+    )
+
+    # Assert the list contains the correct number of functions
+    assert len(functions) == 2
+    assert page_info.count == 2
+    assert page_info.total == TOTAL_FUNCTIONS
+
+    # List the next page of functions
+    functions, page_info = await functions_rpc.list_functions(
+        app=client.app, pagination_limit=2, pagination_offset=2
+    )
+
+    # Assert the list contains the correct number of functions
+    assert len(functions) == 1
+    assert page_info.count == 1
+    assert page_info.total == TOTAL_FUNCTIONS
 
 
 @pytest.mark.asyncio
@@ -267,7 +326,9 @@ async def test_list_function_jobs(client, mock_function):
     )
 
     # List function jobs
-    jobs = await functions_rpc.list_function_jobs(app=client.app)
+    jobs, _ = await functions_rpc.list_function_jobs(
+        app=client.app, pagination_limit=10, pagination_offset=0
+    )
 
     # Assert the list contains the registered job
     assert len(jobs) > 0
@@ -370,6 +431,62 @@ async def test_function_job_collection(client, mock_function):
         await functions_rpc.get_function_job(
             app=client.app, function_job_id=registered_collection.uid
         )
+
+
+@pytest.mark.asyncio
+async def test_list_function_job_collections(client, mock_function):
+    # Register the function first
+    registered_function = await functions_rpc.register_function(
+        app=client.app, function=mock_function
+    )
+    assert registered_function.uid is not None
+
+    # Create a function job collection
+    function_job_ids = []
+    for _ in range(3):
+        registered_function_job = ProjectFunctionJob(
+            uid=None,
+            function_uid=registered_function.uid,
+            title="Test Function Job",
+            description="A test function job",
+            project_job_id=uuid4(),
+            inputs={"input1": "value1"},
+            outputs={"output1": "result1"},
+        )
+        # Register the function job
+        registered_job = await functions_rpc.register_function_job(
+            app=client.app, function_job=registered_function_job
+        )
+        assert registered_job.uid is not None
+        function_job_ids.append(registered_job.uid)
+
+    function_job_collection = FunctionJobCollection(
+        uid=None,
+        title="Test Function Job Collection",
+        description="A test function job collection",
+        job_ids=function_job_ids,
+    )
+
+    # Register the function job collection
+    registered_collections = [
+        await functions_rpc.register_function_job_collection(
+            app=client.app, function_job_collection=function_job_collection
+        )
+        for _ in range(3)
+    ]
+    assert all(
+        registered_collection.uid is not None
+        for registered_collection in registered_collections
+    )
+
+    # List function job collections
+    collections, _ = await functions_rpc.list_function_job_collections(
+        app=client.app, pagination_limit=1, pagination_offset=1
+    )
+
+    # Assert the list contains the registered collection
+    assert len(collections) == 1
+    assert collections[0].uid == registered_collections[1].uid
 
 
 # @pytest.mark.asyncio
