@@ -87,7 +87,7 @@ class _MockServerInterface(BaseServerJobInterface):
         params: StartParams,
         timeout: timedelta,  # noqa: ASYNC109
     ) -> None:
-        print(f"starging {name}")
+        print(f"starting {name}")
         self._storage[unique_id] = {
             "params": params,
             "time_remaining": int(timeout.total_seconds()),

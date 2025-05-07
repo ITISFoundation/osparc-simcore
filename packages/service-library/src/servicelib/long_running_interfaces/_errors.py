@@ -30,7 +30,7 @@ class AlreadyStartedError(BaseLongRunningError):
 
 
 class JobNotFoundError(BaseLongRunningError):
-    msg_template = "unique_id='{unique_id}' is not presnet"
+    msg_template = "unique_id='{unique_id}' is not present"
 
 
 class NoResultIsAvailableError(BaseLongRunningError):
