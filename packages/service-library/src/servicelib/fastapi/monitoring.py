@@ -67,7 +67,7 @@ def initialize_prometheus_instrumentation(app: FastAPI) -> None:
 
 
 def _startup(app: FastAPI) -> None:
-    @app.get("/metrics")
+    @app.get("/metrics", include_in_schema=False)
     async def metrics_endpoint(request: Request) -> Response:
         """
         Exposes the Prometheus metrics endpoint.
