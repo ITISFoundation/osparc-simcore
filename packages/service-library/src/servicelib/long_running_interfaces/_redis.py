@@ -24,9 +24,7 @@ class ClientStoreInterface:
     ) -> None:
         self.long_running_namespace = long_running_namespace
         self.redis_sdk = RedisClientSDK(
-            redis_settings.build_redis_dsn(
-                RedisDatabase.DEFERRED_TASKS  # TODO: requires separate DB for sure
-            ),
+            redis_settings.build_redis_dsn(RedisDatabase.DISTRIBUTED_IDENTIFIERS),
             decode_responses=True,
             client_name="example_app",
         )
