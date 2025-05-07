@@ -7581,26 +7581,14 @@
             "title": "Uid"
           },
           "title": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Title"
+            "type": "string",
+            "title": "Title",
+            "default": ""
           },
           "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
+            "type": "string",
+            "title": "Description",
+            "default": ""
           },
           "job_ids": {
             "items": {
@@ -7613,8 +7601,7 @@
         },
         "type": "object",
         "required": [
-          "title",
-          "description",
+          "uid",
           "job_ids"
         ],
         "title": "FunctionJobCollection",
@@ -9225,26 +9212,14 @@
             "title": "Uid"
           },
           "title": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Title"
+            "type": "string",
+            "title": "Title",
+            "default": ""
           },
           "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
+            "type": "string",
+            "title": "Description",
+            "default": ""
           },
           "input_schema": {
             "anyOf": [
@@ -9285,6 +9260,10 @@
         },
         "type": "object",
         "required": [
+          "uid",
+          "input_schema",
+          "output_schema",
+          "default_inputs",
           "project_id"
         ],
         "title": "ProjectFunction"
@@ -9304,26 +9283,14 @@
             "title": "Uid"
           },
           "title": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Title"
+            "type": "string",
+            "title": "Title",
+            "default": ""
           },
           "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
+            "type": "string",
+            "title": "Description",
+            "default": ""
           },
           "function_uid": {
             "type": "string",
@@ -9366,7 +9333,10 @@
         },
         "type": "object",
         "required": [
+          "uid",
           "function_uid",
+          "inputs",
+          "outputs",
           "project_job_id"
         ],
         "title": "ProjectFunctionJob"
@@ -9392,26 +9362,14 @@
             "title": "Uid"
           },
           "title": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Title"
+            "type": "string",
+            "title": "Title",
+            "default": ""
           },
           "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
+            "type": "string",
+            "title": "Description",
+            "default": ""
           },
           "input_schema": {
             "anyOf": [
@@ -9451,6 +9409,10 @@
         },
         "type": "object",
         "required": [
+          "uid",
+          "input_schema",
+          "output_schema",
+          "default_inputs",
           "code_url"
         ],
         "title": "PythonCodeFunction"
@@ -9470,26 +9432,14 @@
             "title": "Uid"
           },
           "title": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Title"
+            "type": "string",
+            "title": "Title",
+            "default": ""
           },
           "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
+            "type": "string",
+            "title": "Description",
+            "default": ""
           },
           "function_uid": {
             "type": "string",
@@ -9527,7 +9477,10 @@
         },
         "type": "object",
         "required": [
-          "function_uid"
+          "uid",
+          "function_uid",
+          "inputs",
+          "outputs"
         ],
         "title": "PythonCodeFunctionJob"
       },
@@ -9689,26 +9642,14 @@
             "title": "Uid"
           },
           "title": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Title"
+            "type": "string",
+            "title": "Title",
+            "default": ""
           },
           "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
+            "type": "string",
+            "title": "Description",
+            "default": ""
           },
           "input_schema": {
             "anyOf": [
@@ -9748,13 +9689,17 @@
           },
           "solver_version": {
             "type": "string",
-            "title": "Solver Version"
+            "title": "Solver Version",
+            "default": ""
           }
         },
         "type": "object",
         "required": [
-          "solver_key",
-          "solver_version"
+          "uid",
+          "input_schema",
+          "output_schema",
+          "default_inputs",
+          "solver_key"
         ],
         "title": "SolverFunction"
       },
@@ -9773,26 +9718,14 @@
             "title": "Uid"
           },
           "title": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Title"
+            "type": "string",
+            "title": "Title",
+            "default": ""
           },
           "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
+            "type": "string",
+            "title": "Description",
+            "default": ""
           },
           "function_uid": {
             "type": "string",
@@ -9835,7 +9768,10 @@
         },
         "type": "object",
         "required": [
+          "uid",
           "function_uid",
+          "inputs",
+          "outputs",
           "solver_job_id"
         ],
         "title": "SolverFunctionJob"
