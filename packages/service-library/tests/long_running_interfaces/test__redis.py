@@ -54,7 +54,7 @@ async def test_get_set_delete(
     assert await client_store_interface.get(unique_id) is None
 
 
-async def test_remove_not_exising(client_store_interface: ClientStoreInterface):
+async def test_remove_not_existing(client_store_interface: ClientStoreInterface):
     await client_store_interface.remove("missing")
 
 
@@ -84,7 +84,7 @@ async def test_key_does_not_expire(
     assert await client_store_interface.get(unique_id) is not None
     assert await client_store_interface.get_existing(unique_id)
 
-    # wait a bit and key shoult still be there
+    # wait a bit and key should still be there
     await asyncio.sleep(job_timeout.total_seconds())
 
     assert await client_store_interface.get(unique_id) is not None

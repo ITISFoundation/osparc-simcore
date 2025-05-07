@@ -34,7 +34,7 @@ class AsyncioTasksJobInterface(BaseServerJobInterface):
         params: StartParams,
         timeout: timedelta,  # noqa: ASYNC109
     ) -> None:
-        """used to start a jbo"""
+        """used to start a job"""
         if name not in self.registry.handlers:
             raise HandlerNotRegisteredError(name=name)
 

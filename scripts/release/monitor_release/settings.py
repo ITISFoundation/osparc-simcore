@@ -116,7 +116,7 @@ def get_release_settings(env_file_path: Path):
                 starts_with="staging-simcore_staging",
             )
         case _:
-            msg = f"Unknown {deployment=}. Please setupa a new ReleaseSettings for this configuration"
+            msg = f"Unknown {deployment=}. Please setup a a new ReleaseSettings for this configuration"
             raise ValueError(msg)
 
     return settings

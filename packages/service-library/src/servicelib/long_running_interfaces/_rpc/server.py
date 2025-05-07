@@ -31,7 +31,7 @@ class BaseServerJobInterface(ABC):
         params: StartParams,
         timeout: timedelta,  # noqa: ASYNC109
     ) -> None:
-        """used to start a jbo"""
+        """used to start a job"""
 
     @abstractmethod
     async def remove(self, unique_id: JobUniqueId) -> None:

@@ -58,7 +58,7 @@ class _MockServerInterface(BaseServerJobInterface):
         self.result_raises: bool = False
 
     async def _worker(self) -> None:
-        # decreates duration for each task
+        # decreases duration for each task
         for unique_id in set(self._storage.keys()):
             if entry := self._storage.get(unique_id, None):
                 entry["time_remaining"] -= 1
