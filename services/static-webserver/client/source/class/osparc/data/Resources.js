@@ -322,9 +322,17 @@ qx.Class.define("osparc.data.Resources", {
       "conversations": {
         useCache: false,
         endpoints: {
-          get: {
+          addConversation: {
+            method: "POST",
+            url: statics.API + "/projects/{studyId}/conversations"
+          },
+          getPage: {
             method: "GET",
             url: statics.API + "/projects/{studyId}/conversations?offset={offset}&limit={limit}"
+          },
+          addMessage: {
+            method: "POST",
+            url: statics.API + "/projects/{studyId}/conversations/{conversationId}/messages"
           },
         }
       },

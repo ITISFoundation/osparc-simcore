@@ -60,7 +60,7 @@ qx.Class.define("osparc.study.Conversations", {
           limit: 42,
         }
       };
-      osparc.data.Resources.fetch("conversations", "get", params)
+      osparc.data.Resources.fetch("conversations", "getPage", params)
         .then(conversations => {
           const conversationsLayout = this.getChildControl("conversations-layout");
           console.log("Conversations fetched", conversations);

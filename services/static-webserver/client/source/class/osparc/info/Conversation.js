@@ -65,7 +65,7 @@ qx.Class.define("osparc.info.Conversation", {
       this._add(this.__loadMoreComments);
 
       if (osparc.data.model.Study.canIWrite(this.__studyData["accessRights"])) {
-        const addComments = new osparc.info.CommentAdd(this.__studyData["uuid"]);
+        const addComments = new osparc.info.CommentAdd(this.__studyData["uuid"], this.__conversationId);
         addComments.setPaddingLeft(10);
         addComments.addListener("commentAdded", () => this.fetchComments());
         this._add(addComments);

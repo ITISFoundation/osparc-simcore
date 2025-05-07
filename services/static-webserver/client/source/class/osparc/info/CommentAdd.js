@@ -21,11 +21,13 @@ qx.Class.define("osparc.info.CommentAdd", {
 
   /**
     * @param studyId {String} Study Id
+    * @param conversationId {int} Conversation Id
     */
-  construct: function(studyId) {
+  construct: function(studyId, conversationId = null) {
     this.base(arguments);
 
     this.__studyId = studyId;
+    this.__conversationId = conversationId;
 
     this._setLayout(new qx.ui.layout.VBox(5));
 
@@ -37,6 +39,9 @@ qx.Class.define("osparc.info.CommentAdd", {
   },
 
   members: {
+    __studyId: null,
+    __conversationId: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -107,27 +112,53 @@ qx.Class.define("osparc.info.CommentAdd", {
 
     __buildLayout: function() {
       this.getChildControl("thumbnail");
-      const commentField = this.getChildControl("comment-field");
+      this.getChildControl("comment-field");
       const addButton = this.getChildControl("add-comment-button");
       addButton.addListener("execute", () => {
-        const commentText = commentField.getChildControl("text-area").getValue();
-        if (commentText) {
-          const params = {
-            url: {
-              studyId: this.__studyId
-            },
-            data: {
-              "contents": commentText
-            }
-          };
-          osparc.data.Resources.fetch("studyComments", "addComment", params)
-            .then(() => {
-              this.fireEvent("commentAdded");
-              commentField.getChildControl("text-area").setValue("");
-            })
-            .catch(err => osparc.FlashMessenger.logError(err));
+        if (this.__conversationId) {
+          this.__addComment();
+        } else {
+          // create new conversation first
+          this.__addConversation()
+            .then(() => this.__addComment())
         }
       });
+    },
+
+    __addComment: function() {
+      const commentField = this.getChildControl("comment-field");
+      const comment = commentField.getChildControl("text-area").getValue();
+      if (comment) {
+        const params = {
+          url: {
+            studyId: this.__studyId,
+            conversationId: this.__conversationId,
+          },
+          data: {
+            "contents": comment
+          }
+        };
+        osparc.data.Resources.fetch("conversations", "addMessage", params)
+          .then(() => {
+            this.fireEvent("commentAdded");
+            commentField.getChildControl("text-area").setValue("");
+          })
+          .catch(err => osparc.FlashMessenger.logError(err));
+      }
+    },
+
+    __addConversation: function() {
+      const params = {
+        url: {
+          studyId: this.__studyId,
+        },
+        data: {
+          "name": "hello 1",
+          "type": "PROJECT_STATIC",
+        }
+      };
+      return osparc.data.Resources.fetch("conversations", "addConversation", params)
+        .catch(err => osparc.FlashMessenger.logError(err));
     }
   }
 });
