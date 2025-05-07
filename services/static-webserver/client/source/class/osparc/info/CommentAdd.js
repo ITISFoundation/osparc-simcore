@@ -138,22 +138,11 @@ qx.Class.define("osparc.info.CommentAdd", {
       const commentField = this.getChildControl("comment-field");
       const comment = commentField.getChildControl("text-area").getValue();
       if (comment) {
-        const params = {
-          url: {
-            studyId: this.__studyId,
-            conversationId: this.__conversationId,
-          },
-          data: {
-            "content": comment,
-            "type": "MESSAGE",
-          }
-        };
-        osparc.data.Resources.fetch("conversations", "addMessage", params)
+        osparc.study.Conversations.addMessage(this.__studyId, this.__conversationId, comment)
           .then(data => {
             this.fireDataEvent("commentAdded", data);
             commentField.getChildControl("text-area").setValue("");
-          })
-          .catch(err => osparc.FlashMessenger.logError(err));
+          });
       }
     },
   }
