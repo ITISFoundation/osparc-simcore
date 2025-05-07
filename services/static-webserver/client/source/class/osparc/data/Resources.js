@@ -319,6 +319,15 @@ qx.Class.define("osparc.data.Resources", {
           }
         }
       },
+      "conversations": {
+        useCache: false,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/projects/{studyId}/conversations?offset={offset}&limit={limit}"
+          },
+        }
+      },
       "jobs": {
         useCache: false, // handled in osparc.store.Jobs
         endpoints: {

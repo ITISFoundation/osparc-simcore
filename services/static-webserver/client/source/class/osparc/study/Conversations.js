@@ -25,130 +25,62 @@ qx.Class.define("osparc.study.Conversations", {
   construct: function(studyData) {
     this.base(arguments);
 
-    this.__studyData = studyData;
+    this._setLayout(new qx.ui.layout.VBox());
 
-    this._setLayout(new qx.ui.layout.VBox(10));
-
-    this.__buildLayout();
-
-    // this.fetchConversations();
-    this.fetchComments();
-  },
-
-  statics: {
-    popUpInWindow: function(studyData) {
-      const conversations = new osparc.study.Conversations(studyData);
-      const title = qx.locale.Manager.tr("Conversations");
-      const viewWidth = 600;
-      const viewHeight = 700;
-      const win = osparc.ui.window.Window.popUpInWindow(conversations, title, viewWidth, viewHeight);
-      return win;
-    },
+    this.fetchConversations(studyData);
   },
 
   members: {
-    __studyData: null,
-    __nextRequestParams: null,
-
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "title":
-          control = new qx.ui.basic.Label().set({
-            value: this.tr("0 Comments")
-          });
+        case "loading-button":
+          control = new osparc.ui.form.FetchButton();
           this._add(control);
           break;
-        case "comments-list":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
-            alignY: "middle"
-          });
+        case "conversations-layout":
+          control = new qx.ui.tabview.TabView();
           this._add(control, {
             flex: 1
           });
-          break;
-        case "load-more-button":
-          control = new osparc.ui.form.FetchButton(this.tr("Load more comments..."));
-          control.addListener("execute", () => this.fetchComments(false));
-          this._add(control);
-          break;
-        case "add-comment":
-          if (osparc.data.model.Study.canIWrite(this.__studyData["accessRights"])) {
-            control = new osparc.info.CommentAdd(this.__studyData["uuid"]);
-            control.setPaddingLeft(10);
-            control.addListener("commentAdded", () => this.fetchComments());
-            this._add(control);
-          }
           break;
       }
 
       return control || this.base(arguments, id);
     },
 
-    __buildLayout: function() {
-      this.getChildControl("title");
-      this.getChildControl("comments-list");
-      this.getChildControl("load-more-button");
-      this.getChildControl("add-comment");
-    },
-
-    fetchConversations: function() {
-    },
-
-    fetchComments: function(removeComments = true) {
-      const loadMoreButton = this.getChildControl("load-more-button");
-      loadMoreButton.show();
+    fetchConversations: function(studyData) {
+      const loadMoreButton = this.getChildControl("loading-button");
       loadMoreButton.setFetching(true);
 
-      if (removeComments) {
-        this.getChildControl("comments-list").removeAll();
-      }
-
-      this.__getNextRequest()
-        .then(resp => {
-          const comments = resp["data"];
-          this.__addComments(comments);
-          this.__nextRequestParams = resp["_links"]["next"];
-          if (this.__nextRequestParams === null) {
-            loadMoreButton.exclude();
-          }
-        })
-        .finally(() => loadMoreButton.setFetching(false));
-    },
-
-    __getNextRequest: function() {
       const params = {
         url: {
-          studyId: this.__studyData["uuid"],
-          conversationId: this.__studyData["uuid"],
+          studyId: studyData["uuid"],
           offset: 0,
-          limit: 40
+          limit: 42,
         }
       };
-      const nextRequestParams = this.__nextRequestParams;
-      if (nextRequestParams) {
-        params.url.offset = nextRequestParams.offset;
-        params.url.limit = nextRequestParams.limit;
-      }
-      const options = {
-        resolveWResponse: true
-      };
-      return osparc.data.Resources.fetch("studyComments", "getPage", params, options);
+      osparc.data.Resources.fetch("conversations", "get", params)
+        .then(conversations => {
+          const conversationsLayout = this.getChildControl("conversations-layout");
+          console.log("Conversations fetched", conversations);
+          if (conversations.length === 0) {
+            const noConversationTab = new osparc.info.Conversation(studyData);
+            noConversationTab.setLabel(this.tr("new 1"));
+            conversationsLayout.add(noConversationTab);
+          } else {
+            conversations.forEach(conversation => {
+              const conversationId = conversation["id"];
+              const conversationTab = new osparc.info.Conversation(studyData, conversationId);
+              conversationTab.setLabel(conversation["name"]);
+              conversationsLayout.add(conversationTab);
+            });
+          }
+        })
+        .finally(() => {
+          loadMoreButton.setFetching(false);
+          loadMoreButton.exclude();
+        });
     },
-
-    __addComments: function(comments) {
-      const commentsTitle = this.getChildControl("title");
-      if (comments.length === 1) {
-        commentsTitle.setValue(this.tr("1 Comment"));
-      } else if (comments.length > 1) {
-        commentsTitle.setValue(comments.length + this.tr(" Comments"));
-      }
-
-      const commentsList = this.getChildControl("comments-list");
-      comments.forEach(comment => {
-        const commentUi = new osparc.info.CommentUI(comment);
-        commentsList.add(commentUi);
-      });
-    }
   }
 });
