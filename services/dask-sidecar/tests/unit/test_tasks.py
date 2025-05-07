@@ -713,7 +713,7 @@ async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub
     task_owner: TaskOwner,
 ):
     mocked_get_image_labels.assert_not_called()
-    NUMBER_OF_LOGS = 200
+    NUMBER_OF_LOGS = 20000
     future = dask_client.submit(
         run_computational_sidecar,
         **sidecar_task(
