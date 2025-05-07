@@ -5,6 +5,7 @@
 
 
 from decimal import Decimal
+from unittest.mock import AsyncMock
 
 import pytest
 from aiohttp import web
@@ -196,10 +197,33 @@ async def test_auto_create_products_groups(app: web.Application):
     ), f"Invalid {groups}"
 
 
+async def test_get_product_api_base_url(
+    default_product_name: ProductName, mocker: MockerFixture
+):
+    app = web.Application()
+
+    mocker.patch(
+        "simcore_service_webserver.products._service.ProductRepository.create_from_app"
+    ).return_value.get_product_base_url = AsyncMock(return_value="https://osparc.io")
+
+    api_base_url = await _service.get_product_api_base_url(
+        app, product_name=default_product_name
+    )
+
+    assert api_base_url == "https://api.osparc.io"
+
+
 async def test_get_product_api_base_url_default(
     app: web.Application, default_product_name: ProductName
 ):
-    base_url = await _service.get_product_api_base_url(
-        app, product_name=default_product_name
-    )
-    assert base_url == "https://api.must.be.filled"
+    api_base_url = await _service.get_product_api_base_url(app, product_name="aaaaa")
+    assert api_base_url == "https://api.must.be.filled"
+
+
+async def test_get_product_api_base_url_for_not_existing_product_raises(
+    app: web.Application,
+):
+    with pytest.raises(ProductNotFoundError):
+        await _service.get_product_api_base_url(
+            app, product_name="not-existing-product"
+        )
