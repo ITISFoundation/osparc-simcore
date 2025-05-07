@@ -115,15 +115,15 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
 
-    exceptions.setup_exception_handlers(
-        app, is_debug=settings.SC_BOOT_MODE == BootModeEnum.DEBUG
-    )
-
     if settings.API_SERVER_PROFILING:
         initialize_profiler(app)
 
     if app.state.settings.API_SERVER_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)
+
+    exceptions.setup_exception_handlers(
+        app, is_debug=settings.SC_BOOT_MODE == BootModeEnum.DEBUG
+    )
 
     # routing
 

@@ -1,10 +1,11 @@
 # pylint: disable=protected-access
 
+import logging
 from collections.abc import AsyncIterator
 from typing import Final
 
 import prometheus_client
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, Request, Response, status
 from fastapi_lifespan_manager import State
 from prometheus_client import CollectorRegistry
 from servicelib.prometheus_metrics import (
@@ -21,6 +22,7 @@ from ..common_headers import (
     X_SIMCORE_USER_AGENT,
 )
 
+_logger = logging.getLogger(__name__)
 kPROMETHEUS_METRICS = "prometheus_metrics"
 
 
@@ -45,13 +47,19 @@ class PrometheusMiddleware(BaseHTTPMiddleware):
                 user_agent=user_agent,
             ):
                 response = await call_next(request)
+                status_code = response.status_code
+        except Exception:  # pylint: disable=broad-except
+            # NOTE: The prometheus metrics middleware should be "outside" exception handling
+            # middleware so at this point starlette should turn an exception into a 500
+            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+            raise
         finally:
             record_response_metrics(
                 metrics=self.metrics,
                 method=request.method,
                 endpoint=canonical_endpoint,
                 user_agent=user_agent,
-                http_status=response.status_code,
+                http_status=status_code,
             )
 
         return response
