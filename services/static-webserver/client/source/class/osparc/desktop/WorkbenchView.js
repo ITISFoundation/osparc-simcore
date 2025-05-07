@@ -869,7 +869,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__editSlidesButton.setEnabled(canIWrite);
         const canStart = study.hasSlideshow() || study.getWorkbench().isPipelineLinear();
         this.__startAppButton.setEnabled(canStart);
-        this.__startAppButtonTB.setVisibility(canStart ? "visible" : "hidden");
+        this.__startAppButtonTB.setVisibility(canStart ? "visible" : "excluded");
       }
     },
 
