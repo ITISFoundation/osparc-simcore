@@ -216,7 +216,9 @@ async def test_get_product_api_base_url(
 async def test_get_product_api_base_url_default(
     app: web.Application, default_product_name: ProductName
 ):
-    api_base_url = await _service.get_product_api_base_url(app, product_name="aaaaa")
+    api_base_url = await _service.get_product_api_base_url(
+        app, product_name=default_product_name
+    )
     assert api_base_url == "https://api.must.be.filled"
 
 
