@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 from prometheus_client import (
     Counter,
     Gauge,
@@ -8,32 +10,33 @@ from prometheus_client import (
 )
 from prometheus_client.registry import CollectorRegistry
 
-kREQUEST_COUNT = f"{__name__}.request_count"  # noqa: N816
-kINFLIGHTREQUESTS = f"{__name__}.in_flight_requests"  # noqa: N816
-kRESPONSELATENCY = f"{__name__}.in_response_latency"  # noqa: N816
 
-kCOLLECTOR_REGISTRY = f"{__name__}.collector_registry"  # noqa: N816
-kPROCESS_COLLECTOR = f"{__name__}.collector_process"  # noqa: N816
-kPLATFORM_COLLECTOR = f"{__name__}.collector_platform"  # noqa: N816
-kGC_COLLECTOR = f"{__name__}.collector_gc"  # noqa: N816
+@dataclass
+class PrometheusMetrics:
+    registry: CollectorRegistry
+    process_collector: ProcessCollector
+    platform_collector: PlatformCollector
+    gc_collector: GCCollector
+    request_count: Counter
+    in_flight_requests: Gauge
+    response_latency: Summary
 
 
-def setup_prometheus_metrics(app, app_name: str, **app_info_kwargs):
+def setup_prometheus_metrics(app_name: str, **app_info_kwargs) -> PrometheusMetrics:
     # app-scope registry
     target_info = {"application_name": app_name}
     target_info.update(app_info_kwargs)
-    app[kCOLLECTOR_REGISTRY] = reg = CollectorRegistry(
-        auto_describe=False, target_info=target_info
-    )
+    registry = CollectorRegistry(auto_describe=False, target_info=target_info)
+
     # automatically collects process metrics
-    app[kPROCESS_COLLECTOR] = ProcessCollector(registry=reg)
+    process_collector = ProcessCollector(registry=registry)
     # automatically collects python_info metrics
-    app[kPLATFORM_COLLECTOR] = PlatformCollector(registry=reg)
+    platform_collector = PlatformCollector(registry=registry)
     # automatically collects python garbage collector metrics
-    app[kGC_COLLECTOR] = GCCollector(registry=reg)
+    gc_collector = GCCollector(registry=registry)
 
     # Total number of requests processed
-    app[kREQUEST_COUNT] = Counter(
+    request_count = Counter(
         name="http_requests",
         documentation="Total requests count",
         labelnames=[
@@ -43,19 +46,29 @@ def setup_prometheus_metrics(app, app_name: str, **app_info_kwargs):
             "http_status",
             "simcore_user_agent",
         ],
-        registry=reg,
+        registry=registry,
     )
 
-    app[kINFLIGHTREQUESTS] = Gauge(
+    in_flight_requests = Gauge(
         name="http_in_flight_requests",
         documentation="Number of requests in process",
         labelnames=["app_name", "method", "endpoint", "simcore_user_agent"],
-        registry=reg,
+        registry=registry,
     )
 
-    app[kRESPONSELATENCY] = Summary(
+    response_latency = Summary(
         name="http_request_latency_seconds",
         documentation="Time processing a request",
         labelnames=["app_name", "method", "endpoint", "simcore_user_agent"],
-        registry=reg,
+        registry=registry,
+    )
+
+    return PrometheusMetrics(
+        registry=registry,
+        process_collector=process_collector,
+        platform_collector=platform_collector,
+        gc_collector=gc_collector,
+        request_count=request_count,
+        in_flight_requests=in_flight_requests,
+        response_latency=response_latency,
     )

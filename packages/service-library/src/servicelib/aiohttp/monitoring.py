@@ -4,7 +4,7 @@ import asyncio
 import logging
 import time
 from collections.abc import Awaitable, Callable
-from typing import cast
+from typing import Final
 
 import prometheus_client
 from aiohttp import web
@@ -14,10 +14,7 @@ from prometheus_client import (
 from prometheus_client.registry import CollectorRegistry
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.prometheus_metrics import (
-    kCOLLECTOR_REGISTRY,
-    kINFLIGHTREQUESTS,
-    kREQUEST_COUNT,
-    kRESPONSELATENCY,
+    PrometheusMetrics,
     setup_prometheus_metrics,
 )
 
@@ -28,6 +25,8 @@ from ..common_headers import (
 from ..logging_utils import log_catch
 
 log = logging.getLogger(__name__)
+
+kPROMETHEUS_METRICS: Final[str] = f"{__name__}.prometheus_metrics"  # noqa: N816
 
 
 #
@@ -108,7 +107,9 @@ log = logging.getLogger(__name__)
 
 
 def get_collector_registry(app: web.Application) -> CollectorRegistry:
-    return cast(CollectorRegistry, app[kCOLLECTOR_REGISTRY])
+    metrics = app[kPROMETHEUS_METRICS]
+    assert isinstance(metrics, PrometheusMetrics)  # nosec
+    return metrics.registry
 
 
 async def metrics_handler(request: web.Request):
@@ -152,8 +153,10 @@ def middleware_factory(
                 with log_catch(logger=log, reraise=False):
                     await enter_middleware_cb(request)
 
+            metrics = request.app[kPROMETHEUS_METRICS]
+            assert isinstance(metrics, PrometheusMetrics)  # nosec
             # prometheus probes
-            request.app[kREQUEST_COUNT].labels(
+            metrics.request_count.labels(
                 app_name,
                 request.method,
                 canonical_endpoint,
@@ -163,17 +166,14 @@ def middleware_factory(
                 ),
             ).inc()
 
-            in_flight_gauge = request.app[kINFLIGHTREQUESTS]
-            response_summary = request.app[kRESPONSELATENCY]
-
-            with in_flight_gauge.labels(
+            with metrics.in_flight_requests.labels(
                 app_name,
                 request.method,
                 canonical_endpoint,
                 request.headers.get(
                     X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
                 ),
-            ).track_inprogress(), response_summary.labels(
+            ).track_inprogress(), metrics.response_latency.labels(
                 app_name,
                 request.method,
                 canonical_endpoint,
@@ -245,7 +245,7 @@ def setup_monitoring(
     exit_middleware_cb: ExitMiddlewareCB | None = None,
     **app_info_kwargs,
 ):
-    setup_prometheus_metrics(app, app_name, **app_info_kwargs)
+    app[kPROMETHEUS_METRICS] = setup_prometheus_metrics(app_name, **app_info_kwargs)
 
     # WARNING: ensure ERROR middleware is over this one
     #
