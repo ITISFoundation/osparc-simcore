@@ -305,20 +305,6 @@ qx.Class.define("osparc.data.Resources", {
           },
         }
       },
-      "studyComments": {
-        useCache: true,
-        idField: "uuid",
-        endpoints: {
-          getPage: {
-            method: "GET",
-            url: statics.API + "/projects/{studyId}/comments?offset={offset}&limit={limit}"
-          },
-          addComment: {
-            method: "POST",
-            url: statics.API + "/projects/{studyId}/comments"
-          }
-        }
-      },
       "conversations": {
         useCache: false,
         endpoints: {
