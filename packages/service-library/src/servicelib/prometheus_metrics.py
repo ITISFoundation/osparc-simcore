@@ -205,9 +205,9 @@ def record_request_metrics(
         metrics.response_latency_with_labels.labels(
             app_name, method, endpoint, user_agent
         ).observe(amount=amount, exemplar=exemplar)
-        metrics.response_latency_detailed_buckets.labels(
-            app_name, method, endpoint, user_agent
-        ).observe(amount=amount, exemplar=exemplar)
+        metrics.response_latency_detailed_buckets.labels().observe(
+            amount=amount, exemplar=exemplar
+        )
 
 
 def record_response_metrics(
