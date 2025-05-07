@@ -152,15 +152,3 @@ async def test_timeout_error_retry_count_zero(server: Server, client: Client):
 
     assert "retry_count" in f"{exec_info.value}"
     assert "Input should be greater than 0" in f"{exec_info.value}"
-
-
-# Figure out how to cause interruption in SERVER & CLIENT code, in order to
-#   simulate shakyness in the tests
-# write something that cancels and restarts the job runtime
-
-# TODO: add the following tests
-# start a job and wait for it to finish
-# start a job that takes too much time
-# start a job that raises an error
-# start a job that after 95% of timeout raises an errors x times in a row
-#   (we can test if it can successfully finish)
