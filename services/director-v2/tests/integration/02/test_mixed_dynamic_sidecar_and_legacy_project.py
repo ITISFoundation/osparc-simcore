@@ -49,6 +49,7 @@ pytest_simcore_core_services_selection = [
     "rabbit",
     "redis",
     "storage",
+    "webserver",
 ]
 
 pytest_simcore_ops_services_selection = ["adminer", "minio", "portainer"]
@@ -112,8 +113,7 @@ def minimal_configuration(
     dy_static_file_server_dynamic_sidecar_compose_spec_service: dict,
     simcore_services_ready: None,
     ensure_swarm_and_networks: None,
-):
-    ...
+): ...
 
 
 @pytest.fixture

@@ -111,6 +111,7 @@ pytest_simcore_core_services_selection = [
     "storage",
     "sto-worker",
     "redis",
+    "webserver",
 ]
 
 pytest_simcore_ops_services_selection = [
