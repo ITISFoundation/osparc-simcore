@@ -107,7 +107,7 @@ qx.Class.define("osparc.info.Conversation", {
 
       const trashButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/times/12").set({
         ...buttonsAesthetics,
-        paddingLeft: 4,
+        paddingLeft: 4, // adds spacing between buttons
       });
       trashButton.addListener("execute", () => {
         osparc.study.Conversations.deleteConversation(this.__studyData["uuid"], this.getConversationId())
