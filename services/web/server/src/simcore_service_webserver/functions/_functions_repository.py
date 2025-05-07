@@ -40,12 +40,16 @@ _FUNCTION_JOB_COLLECTIONS_TABLE_COLS = get_columns_from_db_model(
 )
 
 
-async def create_function(
+async def register_function(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
     function: FunctionDB,
 ) -> FunctionDB:
+
+    if function.uuid is not None:
+        msg = "Function uid is not None. Cannot register function."
+        raise ValueError(msg)
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(

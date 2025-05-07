@@ -17,6 +17,7 @@ from models_library.api_schemas_webserver.functions_wb_schema import (
 @pytest.fixture
 def mock_function() -> Function:
     return ProjectFunction(
+        uid=None,
         title="Test Function",
         description="A test function",
         input_schema=FunctionInputSchema(
@@ -96,6 +97,7 @@ async def test_get_function_not_found(client):
 async def test_list_functions(client):
     # Register a function first
     mock_function = ProjectFunction(
+        uid=None,
         title="Test Function",
         description="A test function",
         input_schema=None,
@@ -179,6 +181,7 @@ async def test_register_function_job(client, mock_function):
     assert registered_function.uid is not None
 
     function_job = ProjectFunctionJob(
+        uid=None,
         function_uid=registered_function.uid,
         title="Test Function Job",
         description="A test function job",
@@ -207,6 +210,7 @@ async def test_get_function_job(client, mock_function):
     assert registered_function.uid is not None
 
     function_job = ProjectFunctionJob(
+        uid=None,
         function_uid=registered_function.uid,
         title="Test Function Job",
         description="A test function job",
@@ -248,6 +252,7 @@ async def test_list_function_jobs(client, mock_function):
     assert registered_function.uid is not None
 
     function_job = ProjectFunctionJob(
+        uid=None,
         function_uid=registered_function.uid,
         title="Test Function Job",
         description="A test function job",
@@ -278,6 +283,7 @@ async def test_delete_function_job(client, mock_function):
     assert registered_function.uid is not None
 
     function_job = ProjectFunctionJob(
+        uid=None,
         function_uid=registered_function.uid,
         title="Test Function Job",
         description="A test function job",
@@ -313,6 +319,7 @@ async def test_function_job_collection(client, mock_function):
     assert registered_function.uid is not None
 
     registered_function_job = ProjectFunctionJob(
+        uid=None,
         function_uid=registered_function.uid,
         title="Test Function Job",
         description="A test function job",
@@ -324,6 +331,7 @@ async def test_function_job_collection(client, mock_function):
     function_job_ids = []
     for _ in range(3):
         registered_function_job = ProjectFunctionJob(
+            uid=None,
             function_uid=registered_function.uid,
             title="Test Function Job",
             description="A test function job",
@@ -339,6 +347,7 @@ async def test_function_job_collection(client, mock_function):
         function_job_ids.append(registered_job.uid)
 
     function_job_collection = FunctionJobCollection(
+        uid=None,
         title="Test Function Job Collection",
         description="A test function job collection",
         job_ids=function_job_ids,
