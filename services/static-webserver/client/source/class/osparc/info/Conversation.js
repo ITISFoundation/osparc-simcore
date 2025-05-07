@@ -21,13 +21,18 @@ qx.Class.define("osparc.info.Conversation", {
 
   /**
     * @param studyData {String} Study Data
-    * @param conversationId {int} Conversation Id
+    * @param conversationId {String} Conversation Id
     */
-  construct: function(studyData, conversationId = null) {
+  construct: function(studyData, conversationId) {
     this.base(arguments);
 
     this.__studyData = studyData;
-    this.__conversationId = conversationId;
+
+    if (conversationId) {
+      this.setConversationId(conversationId);
+    }
+
+
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
@@ -44,8 +49,8 @@ qx.Class.define("osparc.info.Conversation", {
       titleEditor.addListener("labelChanged", e => {
         titleEditor.close();
         const newLabel = e.getData()["newLabel"];
-        if (this.__conversationId) {
-          osparc.study.Conversations.renameConversation(this.__studyData["uuid"], this.__conversationId, newLabel)
+        if (this.getConversationId()) {
+          osparc.study.Conversations.renameConversation(this.__studyData["uuid"], this.getConversationId(), newLabel)
             .then(() => {
               this.getChildControl("button").setLabel(newLabel);
             });
@@ -53,7 +58,7 @@ qx.Class.define("osparc.info.Conversation", {
           // create new conversation first
           osparc.study.Conversations.addConversation(this.__studyData["uuid"], newLabel)
             .then(data => {
-              this.__conversationId = data["conversationId"];
+              this.setConversationId(data["conversationId"]);
               this.getChildControl("button").setLabel(newLabel);
             });
         }
@@ -61,15 +66,26 @@ qx.Class.define("osparc.info.Conversation", {
       titleEditor.center();
       titleEditor.open();
     });
+    this.bind("conversationId", tabButton, "showCloseButton", {
+      converter: value => Boolean(value)
+    });
 
     this.__buildLayout();
 
     this.fetchMessages();
   },
 
+  properties: {
+    conversationId: {
+      check: "String",
+      init: null,
+      nullable: false,
+      event: "changeConversationId"
+    },
+  },
+
   members: {
     __studyData: null,
-    __conversationId: null,
     __nextRequestParams: null,
     __messagesTitle: null,
     __messagesList: null,
@@ -91,12 +107,12 @@ qx.Class.define("osparc.info.Conversation", {
       this._add(this.__loadMoreMessages);
 
       if (osparc.data.model.Study.canIWrite(this.__studyData["accessRights"])) {
-        const addMessages = new osparc.info.CommentAdd(this.__studyData["uuid"], this.__conversationId);
+        const addMessages = new osparc.info.CommentAdd(this.__studyData["uuid"], this.getConversationId());
         addMessages.setPaddingLeft(10);
         addMessages.addListener("commentAdded", e => {
           const data = e.getData();
-          if (this.__conversationId === null) {
-            this.__conversationId = data["conversationId"];
+          if (this.getConversationId()) {
+            this.setConversationId(data["conversationId"]);
           }
           this.fetchMessages();
         });
@@ -105,7 +121,7 @@ qx.Class.define("osparc.info.Conversation", {
     },
 
     fetchMessages: function(removeMessages = true) {
-      if (this.__conversationId === null) {
+      if (this.getConversationId() === null) {
         this.__messagesList.hide();
         this.__loadMoreMessages.hide();
         return;
@@ -134,7 +150,7 @@ qx.Class.define("osparc.info.Conversation", {
       const params = {
         url: {
           studyId: this.__studyData["uuid"],
-          conversationId: this.__conversationId,
+          conversationId: this.getConversationId(),
           offset: 0,
           limit: 42
         }
