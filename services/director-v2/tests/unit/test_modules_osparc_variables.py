@@ -160,6 +160,14 @@ async def fake_app(faker: Faker) -> AsyncIterable[FastAPI]:
         yield app
 
 
+@pytest.fixture
+def mock_rpc_calls(mocker: MockerFixture, fake_app: FastAPI) -> None:
+    fake_app.state.rabbitmq_rpc_client = AsyncMock()
+    mocker.patch.object(
+        substitutions, "get_product_api_base_url", return_value="https://osparc.io"
+    )
+
+
 @pytest.mark.parametrize("wallet_id", [None, 12])
 async def test_resolve_and_substitute_session_variables_in_specs(
     mock_user_repo: None,
@@ -167,6 +175,7 @@ async def test_resolve_and_substitute_session_variables_in_specs(
     fake_app: FastAPI,
     faker: Faker,
     wallet_id: WalletID | None,
+    mock_rpc_calls: None,
 ):
     specs = {
         "product_name": "${OSPARC_VARIABLE_PRODUCT_NAME}",
@@ -211,7 +220,10 @@ def mock_get_vendor_secrets(mocker: MockerFixture, mock_repo_db_engine: None) ->
 
 
 async def test_substitute_vendor_secrets_in_specs(
-    mock_get_vendor_secrets: None, fake_app: FastAPI, faker: Faker
+    mock_get_vendor_secrets: None,
+    fake_app: FastAPI,
+    faker: Faker,
+    mock_rpc_calls: None,
 ):
     specs = {
         "vendor_secret_one": "${OSPARC_VARIABLE_VENDOR_SECRET_ONE}",
@@ -223,8 +235,10 @@ async def test_substitute_vendor_secrets_in_specs(
         fake_app,
         specs=specs,
         product_name="a_product",
-        service_key=ServiceKey("simcore/services/dynamic/fake"),
-        service_version=ServiceVersion("0.0.1"),
+        service_key=TypeAdapter(ServiceKey).validate_python(
+            "simcore/services/dynamic/fake"
+        ),
+        service_version=TypeAdapter(ServiceVersion).validate_python("0.0.1"),
     )
     print("REPLACED SPECS\n", replaced_specs)
 
