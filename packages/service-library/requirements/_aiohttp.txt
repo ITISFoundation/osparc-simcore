@@ -50,20 +50,29 @@ opentelemetry-api==1.30.0
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-aiohttp-client
     #   opentelemetry-instrumentation-aiohttp-server
+    #   opentelemetry-instrumentation-aiopg
+    #   opentelemetry-instrumentation-dbapi
     #   opentelemetry-semantic-conventions
 opentelemetry-instrumentation==0.51b0
     # via
     #   opentelemetry-instrumentation-aiohttp-client
     #   opentelemetry-instrumentation-aiohttp-server
+    #   opentelemetry-instrumentation-aiopg
+    #   opentelemetry-instrumentation-dbapi
 opentelemetry-instrumentation-aiohttp-client==0.51b0
     # via -r requirements/_aiohttp.in
 opentelemetry-instrumentation-aiohttp-server==0.51b0
     # via -r requirements/_aiohttp.in
+opentelemetry-instrumentation-aiopg==0.51b0
+    # via -r requirements/_aiohttp.in
+opentelemetry-instrumentation-dbapi==0.51b0
+    # via opentelemetry-instrumentation-aiopg
 opentelemetry-semantic-conventions==0.51b0
     # via
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-aiohttp-client
     #   opentelemetry-instrumentation-aiohttp-server
+    #   opentelemetry-instrumentation-dbapi
 opentelemetry-util-http==0.51b0
     # via
     #   opentelemetry-instrumentation-aiohttp-client
@@ -111,6 +120,8 @@ wrapt==1.17.2
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-aiohttp-client
     #   opentelemetry-instrumentation-aiohttp-server
+    #   opentelemetry-instrumentation-aiopg
+    #   opentelemetry-instrumentation-dbapi
 yarl==1.18.3
     # via aiohttp
 zipp==3.21.0
