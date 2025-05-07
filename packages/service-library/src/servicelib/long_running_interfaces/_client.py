@@ -246,7 +246,7 @@ class Client:
         return result
 
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
-    async def ensure_result(  # type: ignore[valid-type]
+    async def ensure_result(
         self,
         name: RemoteHandlerName,
         *,

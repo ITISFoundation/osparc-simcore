@@ -34,7 +34,7 @@ class ClientStoreInterface:
     def _get_key(self, unique_id: JobUniqueId) -> str:
         return f"{_REDIS_PREFIX}::{self.long_running_namespace}::{unique_id}"
 
-    async def setup(self) -> None:
+    async def setup(self) -> None:  # pylint:disable=no-self-use
         _logger.debug("finished setup")
 
     async def teardown(self) -> None:
