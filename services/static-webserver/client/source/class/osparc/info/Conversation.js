@@ -114,8 +114,26 @@ qx.Class.define("osparc.info.Conversation", {
         paddingLeft: 4, // adds spacing between buttons
       });
       trashButton.addListener("execute", () => {
-        osparc.study.Conversations.deleteConversation(this.__studyData["uuid"], this.getConversationId())
-          .then(() => this.fireEvent("conversationDeleted"));
+        const deleteConversation = () => {
+          osparc.study.Conversations.deleteConversation(this.__studyData["uuid"], this.getConversationId())
+            .then(() => this.fireEvent("conversationDeleted"));
+        }
+        if (this.__messagesList.getChildren().length === 0) {
+          deleteConversation();
+        } else {
+          const msg = this.tr("Are you sure you want to delete the conversation?");
+          const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
+            caption: this.tr("Delete Conversation"),
+            confirmText: this.tr("Delete"),
+            confirmAction: "delete"
+          });
+          confirmationWin.open();
+          confirmationWin.addListener("close", () => {
+            if (confirmationWin.getConfirmed()) {
+              deleteConversation();
+            }
+          }, this);
+        }
       });
       // eslint-disable-next-line no-underscore-dangle
       tabButton._add(trashButton, {
