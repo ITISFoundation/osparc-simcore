@@ -52,7 +52,7 @@ qx.Class.define("osparc.study.Conversations", {
           conversationId,
         },
       };
-      return osparc.data.Resources.fetch("conversations", "addConversation", params)
+      return osparc.data.Resources.fetch("conversations", "deleteConversation", params)
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
@@ -94,6 +94,7 @@ qx.Class.define("osparc.study.Conversations", {
       const loadMoreButton = this.getChildControl("loading-button");
       loadMoreButton.setFetching(true);
 
+      const conversationsLayout = this.getChildControl("conversations-layout");
       const params = {
         url: {
           studyId: studyData["uuid"],
@@ -103,16 +104,23 @@ qx.Class.define("osparc.study.Conversations", {
       };
       osparc.data.Resources.fetch("conversations", "getConversationsPage", params)
         .then(conversations => {
-          const conversationsLayout = this.getChildControl("conversations-layout");
           if (conversations.length === 0) {
             const noConversationTab = new osparc.info.Conversation(studyData);
             noConversationTab.setLabel(this.tr("new 1"));
+            noConversationTab.addListener("conversationDeleted", () => {
+              this._removeAll();
+              this.fetchConversations(studyData);
+            });
             conversationsLayout.add(noConversationTab);
           } else {
             conversations.forEach(conversation => {
               const conversationId = conversation["conversationId"];
               const conversationTab = new osparc.info.Conversation(studyData, conversationId);
               conversationTab.setLabel(conversation["name"]);
+              conversationTab.addListener("conversationDeleted", () => {
+                this._removeAll();
+                this.fetchConversations(studyData);
+              });
               conversationsLayout.add(conversationTab);
             });
           }

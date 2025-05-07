@@ -58,6 +58,10 @@ qx.Class.define("osparc.info.Conversation", {
     },
   },
 
+  events: {
+    "conversationDeleted": "qx.event.type.Event",
+  },
+
   members: {
     __studyData: null,
     __nextRequestParams: null,
@@ -74,7 +78,7 @@ qx.Class.define("osparc.info.Conversation", {
         padding: 0,
         backgroundColor: "transparent",
       };
-      const renameButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/pencil-alt/12").set({
+      const renameButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/pencil-alt/10").set({
         ...buttonsAesthetics,
       });
       renameButton.addListener("execute", () => {
@@ -111,6 +115,7 @@ qx.Class.define("osparc.info.Conversation", {
       });
       trashButton.addListener("execute", () => {
         osparc.study.Conversations.deleteConversation(this.__studyData["uuid"], this.getConversationId())
+          .then(() => this.fireEvent("conversationDeleted"));
       });
       // eslint-disable-next-line no-underscore-dangle
       tabButton._add(trashButton, {
