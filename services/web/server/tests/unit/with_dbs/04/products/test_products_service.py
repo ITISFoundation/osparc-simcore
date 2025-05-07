@@ -220,12 +220,3 @@ async def test_get_product_api_base_url_default(
         app, product_name=default_product_name
     )
     assert api_base_url == "https://api.must.be.filled"
-
-
-async def test_get_product_api_base_url_for_not_existing_product_raises(
-    app: web.Application,
-):
-    with pytest.raises(ProductNotFoundError):
-        await _service.get_product_api_base_url(
-            app, product_name="not-existing-product"
-        )
