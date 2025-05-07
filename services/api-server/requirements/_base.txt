@@ -350,6 +350,7 @@ opentelemetry-api==1.32.1
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-asgi
+    #   opentelemetry-instrumentation-asyncpg
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-logging
@@ -373,6 +374,7 @@ opentelemetry-instrumentation==0.53b1
     # via
     #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-asgi
+    #   opentelemetry-instrumentation-asyncpg
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-logging
@@ -384,6 +386,10 @@ opentelemetry-instrumentation-aio-pika==0.53b1
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-asgi==0.53b1
     # via opentelemetry-instrumentation-fastapi
+opentelemetry-instrumentation-asyncpg==0.53b1
+    # via
+    #   -r requirements/../../../packages/postgres-database/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
 opentelemetry-instrumentation-fastapi==0.53b1
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 opentelemetry-instrumentation-httpx==0.53b1
@@ -415,6 +421,7 @@ opentelemetry-semantic-conventions==0.53b1
     # via
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-asgi
+    #   opentelemetry-instrumentation-asyncpg
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-redis
