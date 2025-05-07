@@ -40,14 +40,14 @@ class Server:
         long_running_namespace: LongRunningNamespace,
         job_interface: BaseServerJobInterface,
     ) -> None:
-        self._rpc_interface = ServerRPCInterface(
+        self.rpc_interface = ServerRPCInterface(
             rabbit_settings, long_running_namespace, job_interface
         )
 
     # TODO: register jobs! and then use the interface to run them!!!
 
     async def setup(self) -> None:
-        await self._rpc_interface.setup()
+        await self.rpc_interface.setup()
 
     async def teardown(self) -> None:
-        await self._rpc_interface.teardown()
+        await self.rpc_interface.teardown()

@@ -9,6 +9,7 @@ from typing import Any
 
 import pytest
 from pydantic import NonNegativeInt, ValidationError
+from servicelib.async_utils import cancel_wait_task
 from servicelib.long_running_interfaces import (
     Client,
     FinishedWithError,
@@ -22,6 +23,12 @@ from servicelib.long_running_interfaces.runners.asyncio_tasks import (
 )
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_delay,
+    wait_fixed,
+)
 
 pytest_simcore_core_services_selection = [
     "rabbit",
@@ -157,3 +164,31 @@ async def test_timeout_error_retry_count_zero(server: Server, client: Client):
 
     assert "retry_count" in f"{exec_info.value}"
     assert "Input should be greater than 0" in f"{exec_info.value}"
+
+
+@retry(
+    wait=wait_fixed(0.1),
+    stop=stop_after_delay(5),
+    retry=retry_if_exception_type(AssertionError),
+)  # NOTE: function has to be async or the loop does not get a cahce to switch between retries
+async def _assert_tasks_count(server: Server, count: int) -> None:
+    assert isinstance(server.rpc_interface.job_interface, AsyncioTasksJobInterface)
+    task_count = len(
+        server.rpc_interface.job_interface._tasks.values()  # noqa: SLF001 # pylint:disable=protected-access
+    )
+    assert task_count == count
+
+
+async def test_cancellation_from_client(server: Server, client: Client):
+    async def _to_run() -> None:
+        await client.ensure_result(
+            "sleep_forever_f", expected_type=type(None), timeout=timedelta(seconds=1)
+        )
+
+    await _assert_tasks_count(server, count=0)
+
+    task = asyncio.create_task(_to_run())
+    await _assert_tasks_count(server, count=1)
+
+    await cancel_wait_task(task, max_delay=5)
+    await _assert_tasks_count(server, count=0)

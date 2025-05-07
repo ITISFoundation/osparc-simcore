@@ -70,6 +70,3 @@ class AsyncioTasksJobInterface(BaseServerJobInterface):
 
         task = self._tasks[unique_id]
         return task.result()
-
-
-# TODO: add tests individually for these so we knoe they work when registring starting and stopping and all the operations. Also cancellation
