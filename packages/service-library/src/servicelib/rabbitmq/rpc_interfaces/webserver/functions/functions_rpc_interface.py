@@ -94,7 +94,8 @@ async def delete_function(
 @log_decorator(_logger, level=logging.DEBUG)
 async def list_functions(
     rabbitmq_rpc_client: RabbitMQRPCClient,
-    *pagination_limit: int,
+    *,
+    pagination_limit: int,
     pagination_offset: int,
 ) -> tuple[list[Function], PageMetaInfoLimitOffset]:
     return await rabbitmq_rpc_client.request(
