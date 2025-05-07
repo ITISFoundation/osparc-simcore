@@ -27,6 +27,8 @@ async def client_store_interface(
     client = ClientStoreInterface(redis_service, long_running_namespace)
     await client.setup()
 
+    await client.redis_sdk.redis.flushdb()
+
     yield client
 
     await client.teardown()
@@ -45,7 +47,7 @@ async def test_get_set_delete(
 ):
     assert await client_store_interface.get(unique_id) is None
 
-    await client_store_interface.set(unique_id, schedule_model, timeout=job_timeout)
+    await client_store_interface.set(unique_id, schedule_model, expire=job_timeout)
     assert await client_store_interface.get(unique_id) == schedule_model
 
     await client_store_interface.remove(unique_id)
@@ -62,7 +64,7 @@ async def test_auto_save_get(
     schedule_model: ScheduleModel,
     job_timeout: timedelta,
 ):
-    await client_store_interface.set(unique_id, schedule_model, timeout=job_timeout)
+    await client_store_interface.set(unique_id, schedule_model, expire=job_timeout)
 
     assert await client_store_interface.get(unique_id) == schedule_model
     async with client_store_interface.auto_save_get(unique_id) as auto_saved:
@@ -71,17 +73,35 @@ async def test_auto_save_get(
     assert await client_store_interface.get(unique_id) == auto_saved
 
 
-async def test_expired_key(
+async def test_key_does_not_expire(
     client_store_interface: ClientStoreInterface,
     unique_id: JobUniqueId,
     schedule_model: ScheduleModel,
     job_timeout: timedelta,
 ):
-    await client_store_interface.set(unique_id, schedule_model, timeout=job_timeout)
+    # check key does not expire
+    await client_store_interface.set(unique_id, schedule_model, expire=None)
+    assert await client_store_interface.get(unique_id) is not None
+    assert await client_store_interface.get_existing(unique_id)
+
+    # wait a bit and key shoult still be there
+    await asyncio.sleep(job_timeout.total_seconds())
 
     assert await client_store_interface.get(unique_id) is not None
     assert await client_store_interface.get_existing(unique_id)
 
+
+async def test_key_actually_expires(
+    client_store_interface: ClientStoreInterface,
+    unique_id: JobUniqueId,
+    schedule_model: ScheduleModel,
+    job_timeout: timedelta,
+):
+    await client_store_interface.set(unique_id, schedule_model, expire=job_timeout)
+    assert await client_store_interface.get(unique_id) is not None
+    assert await client_store_interface.get_existing(unique_id)
+
+    # check that key actially expires
     await asyncio.sleep(job_timeout.total_seconds())
 
     assert await client_store_interface.get(unique_id) is None
@@ -89,8 +109,9 @@ async def test_expired_key(
         await client_store_interface.get_existing(unique_id)
 
 
-async def test_update_timeout_not_existing(
-    client_store_interface: ClientStoreInterface,
-    job_timeout: timedelta,
+async def test_update_entry_expiry_not_existing(
+    client_store_interface: ClientStoreInterface, job_timeout: timedelta
 ):
-    await client_store_interface.update_timeout("missing", timeout=job_timeout)
+    await client_store_interface.update_entry_expiry(
+        "missing_asdads", expire=job_timeout
+    )

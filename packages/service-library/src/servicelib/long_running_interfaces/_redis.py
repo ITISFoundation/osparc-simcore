@@ -23,7 +23,7 @@ class ClientStoreInterface:
         long_running_namespace: LongRunningNamespace,
     ) -> None:
         self.long_running_namespace = long_running_namespace
-        self._redis_sdk = RedisClientSDK(
+        self.redis_sdk = RedisClientSDK(
             redis_settings.build_redis_dsn(
                 RedisDatabase.DEFERRED_TASKS  # TODO: requires separate DB for sure
             ),
@@ -38,11 +38,11 @@ class ClientStoreInterface:
         _logger.debug("finished setup")
 
     async def teardown(self) -> None:
-        await self._redis_sdk.shutdown()
+        await self.redis_sdk.shutdown()
 
     async def get(self, unique_id: JobUniqueId) -> ScheduleModel | None:
         key = self._get_key(unique_id)
-        raw_data = await self._redis_sdk.redis.get(key)
+        raw_data = await self.redis_sdk.redis.get(key)
 
         if raw_data is None:
             return None
@@ -53,18 +53,22 @@ class ClientStoreInterface:
         unique_id: JobUniqueId,
         schedule_data: ScheduleModel,
         *,
-        timeout: timedelta | None,  # noqa: ASYNC109
+        expire: timedelta | None,
     ) -> None:
+        """
+        timeout -- if None means to keep the existing ttl if one was set previously
+        """
+
         key = self._get_key(unique_id)
 
-        if timeout is None:
+        if expire is None:
             expire_seconds = None
             keep_ttl = True
         else:
-            expire_seconds = int(timeout.total_seconds())
+            expire_seconds = int(expire.total_seconds())
             keep_ttl = False
 
-        await self._redis_sdk.redis.set(
+        await self.redis_sdk.redis.set(
             key,
             schedule_data.model_dump_json().encode(),
             ex=expire_seconds,
@@ -73,7 +77,7 @@ class ClientStoreInterface:
 
     async def remove(self, unique_id: JobUniqueId) -> None:
         key = self._get_key(unique_id)
-        await self._redis_sdk.redis.delete(key)
+        await self.redis_sdk.redis.delete(key)
 
     async def get_existing(self, unique_id: JobUniqueId) -> ScheduleModel:
         data = await self.get(unique_id)
@@ -81,11 +85,11 @@ class ClientStoreInterface:
             raise UnexpectedJobNotFoundError(unique_id=unique_id)
         return data
 
-    async def update_timeout(
-        self, unique_id: JobUniqueId, *, timeout: timedelta  # noqa: ASYNC109
+    async def update_entry_expiry(
+        self, unique_id: JobUniqueId, *, expire: timedelta
     ) -> None:
         key = self._get_key(unique_id)
-        await self._redis_sdk.redis.expire(key, time=int(timeout.total_seconds()))
+        await self.redis_sdk.redis.expire(key, time=int(expire.total_seconds()))
 
     @asynccontextmanager
     async def auto_save_get(
@@ -93,4 +97,4 @@ class ClientStoreInterface:
     ) -> AsyncIterator[ScheduleModel]:
         data = await self.get_existing(unique_id)
         yield data
-        await self.set(unique_id, data, timeout=None)
+        await self.set(unique_id, data, expire=None)
