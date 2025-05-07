@@ -131,8 +131,17 @@ qx.Class.define("osparc.study.Conversations", {
           conversationsLayout.add(conversationTab);
         });
       }
-      const newConversation = new qx.ui.tabview.Page(null, "@FontAwesome5Solid/plus/12");
-      conversationsLayout.add(newConversation);
-    }
+
+      const newConversationButton = new qx.ui.form.Button().set({
+        icon: "@FontAwesome5Solid/plus/12",
+        toolTipText: this.tr("Add new conversation"),
+        allowGrowX: false,
+        backgroundColor: "transparent",
+      });
+      newConversationButton.addListener("execute", () => {
+        osparc.study.Conversations.addConversation(studyData["uuid"], "new " + (conversations.length + 1))
+      });
+      conversationsLayout.getChildControl("bar").add(newConversationButton);
+    },
   }
 });
