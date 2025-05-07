@@ -2,6 +2,7 @@ import asyncio
 import logging
 from asyncio import AbstractEventLoop
 from collections.abc import Awaitable
+from typing import Final
 
 import distributed
 from servicelib.logging_utils import log_catch, log_context
@@ -11,6 +12,10 @@ from settings_library.rabbit import RabbitSettings
 from .errors import ConfigurationError
 
 _logger = logging.getLogger(__name__)
+
+_RABBITMQ_CONFIGURATION_ERROR: Final[str] = (
+    "RabbitMQ client is not available. Please check the configuration."
+)
 
 
 class RabbitMQPlugin(distributed.WorkerPlugin):
@@ -73,21 +78,15 @@ class RabbitMQPlugin(distributed.WorkerPlugin):
     def get_client(self) -> RabbitMQClient:
         """Returns the RabbitMQ client or raises an error if not available"""
         if not self._client:
-            raise ConfigurationError(
-                msg="RabbitMQ client is not available. Please check the configuration."
-            )
+            raise ConfigurationError(msg=_RABBITMQ_CONFIGURATION_ERROR)
         return self._client
 
 
 def get_rabbitmq_client(worker: distributed.Worker) -> RabbitMQClient:
     """Returns the RabbitMQ client or raises an error if not available"""
     if not worker.plugins:
-        raise ConfigurationError(
-            msg="RabbitMQ client is not available. Please check the configuration."
-        )
+        raise ConfigurationError(msg=_RABBITMQ_CONFIGURATION_ERROR)
     rabbitmq_plugin = worker.plugins.get(RabbitMQPlugin.name)
     if not isinstance(rabbitmq_plugin, RabbitMQPlugin):
-        raise ConfigurationError(
-            msg="RabbitMQ client is not available. Please check the configuration."
-        )
+        raise ConfigurationError(msg=_RABBITMQ_CONFIGURATION_ERROR)
     return rabbitmq_plugin.get_client()
