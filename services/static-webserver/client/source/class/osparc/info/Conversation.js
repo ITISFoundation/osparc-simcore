@@ -45,16 +45,21 @@ qx.Class.define("osparc.info.Conversation", {
         titleEditor.close();
         const newLabel = e.getData()["newLabel"];
         if (this.__conversationId) {
-          this.__renameConversation(newLabel);
+          osparc.study.Conversations.renameConversation(this.__studyData["uuid"], this.__conversationId, newLabel)
+            .then(() => {
+              this.getChildControl("button").setLabel(newLabel);
+            });
         } else {
           // create new conversation first
-          osparc.study.Conversations.addConversation(this.__studyId)
+          osparc.study.Conversations.addConversation(this.__studyData["uuid"], newLabel)
             .then(data => {
               this.__conversationId = data["conversationId"];
-              this.__renameConversation(newLabel);
-            })
+              this.getChildControl("button").setLabel(newLabel);
+            });
         }
       }, this);
+      titleEditor.center();
+      titleEditor.open();
     });
 
     this.__buildLayout();
@@ -157,12 +162,5 @@ qx.Class.define("osparc.info.Conversation", {
         this.__messagesList.add(messageUi);
       });
     },
-
-    __renameConversation: function(newLabel) {
-      osparc.study.Conversations.renameConversation(this.__studyId, this.__conversationId, newLabel)
-        .then(() => {
-          this.getChildControl("button").setLabel(newLabel);
-        });
-    }
   }
 });
