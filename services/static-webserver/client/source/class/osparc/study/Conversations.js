@@ -31,6 +31,15 @@ qx.Class.define("osparc.study.Conversations", {
   },
 
   statics: {
+    popUpInWindow: function(studyData) {
+      const conversations = new osparc.study.Conversations(studyData);
+      const title = qx.locale.Manager.tr("Conversations");
+      const viewWidth = 600;
+      const viewHeight = 700;
+      const win = osparc.ui.window.Window.popUpInWindow(conversations, title, viewWidth, viewHeight);
+      return win;
+    },
+
     addConversation: function(studyId, name = "new 1") {
       const params = {
         url: {
