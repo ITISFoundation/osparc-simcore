@@ -28,6 +28,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 from ..constants import FRONTEND_APPS_AVAILABLE
 from ..db.base_repository import BaseRepository
 from ._models import PaymentFields, Product, ProductStripeInfo
+from .errors import ProductBaseUrlNotSetError
 
 _logger = logging.getLogger(__name__)
 
@@ -222,8 +223,11 @@ class ProductRepository(BaseRepository):
 
         async with pass_or_acquire_connection(self.engine, connection) as conn:
             result = await conn.execute(query)
-            row = result.one_or_none()
-            return f"{row.base_url}" if row else None
+            row = result.one()
+            if row.base_url == products.c.base_url.server_default.arg:
+                raise ProductBaseUrlNotSetError(product_name=product_name)
+
+            return row.base_url
 
     async def auto_create_products_groups(
         self,

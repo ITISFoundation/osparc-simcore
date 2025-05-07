@@ -24,8 +24,8 @@ class ProductTemplateNotFoundError(ProductError):
     msg_template = "Missing template {template_name} for product"
 
 
-class ProductBaseUrlNotFoundError(ProductError):
-    msg_template = "Missing base url for product {product_name}"
+class ProductBaseUrlNotSetError(ProductError):
+    msg_template = "Base url for product {product_name} is not set"
 
 
 class MissingStripeConfigError(ProductError):

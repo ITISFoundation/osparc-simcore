@@ -21,6 +21,7 @@ from simcore_service_webserver.products._repository import ProductRepository
 from simcore_service_webserver.products.errors import (
     BelowMinimumPaymentError,
     MissingStripeConfigError,
+    ProductBaseUrlNotSetError,
     ProductNotFoundError,
     ProductPriceNotDefinedError,
     ProductTemplateNotFoundError,
@@ -213,10 +214,8 @@ async def test_get_product_api_base_url(
     assert api_base_url == "https://api.osparc.io"
 
 
-async def test_get_product_api_base_url_default(
+async def test_get_product_api_base_url_not_set_raises(
     app: web.Application, default_product_name: ProductName
 ):
-    api_base_url = await _service.get_product_api_base_url(
-        app, product_name=default_product_name
-    )
-    assert api_base_url == "https://api.must.be.filled"
+    with pytest.raises(ProductBaseUrlNotSetError):
+        await _service.get_product_api_base_url(app, product_name=default_product_name)

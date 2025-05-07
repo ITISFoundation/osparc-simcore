@@ -15,7 +15,6 @@ from ._repository import ProductRepository
 from .errors import (
     BelowMinimumPaymentError,
     MissingStripeConfigError,
-    ProductBaseUrlNotFoundError,
     ProductNotFoundError,
     ProductPriceNotDefinedError,
     ProductTemplateNotFoundError,
@@ -151,8 +150,6 @@ async def get_template_content(app: web.Application, *, template_name: str):
 async def get_product_api_base_url(app: web.Application, *, product_name) -> str:
     repo = ProductRepository.create_from_app(app)
     base_url = await repo.get_product_base_url(product_name)
-    if not base_url:
-        raise ProductBaseUrlNotFoundError(product_name=product_name)
 
     return _make_api_server_base_url(base_url)
 
