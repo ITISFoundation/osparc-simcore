@@ -12,7 +12,7 @@ from ...long_running_interfaces import (
     RemoteHandlerName,
     StartParams,
 )
-from ._errors import HandlerNotRegisteredError, TaksNotFoundError
+from ._errors import HandlerNotRegisteredError, TaskNotFoundError
 from ._registry import AsyncTaskRegistry
 
 _MAX_CANCEL_DURATION_S: Final[NonNegativeFloat] = 1
@@ -70,7 +70,7 @@ class AsyncioTasksJobInterface(BaseServerJobInterface):
     async def get_result(self, unique_id: JobUniqueId) -> Any | None:
         """provides the result of the job once finished"""
         if unique_id not in self._tasks:
-            raise TaksNotFoundError(unique_id=unique_id)
+            raise TaskNotFoundError(unique_id=unique_id)
 
         task = self._tasks[unique_id]
         return task.result()

@@ -180,7 +180,7 @@ class Client:
         """returns a string in the follwoing format `[{remaining}/{total}]`"""
         schedule_data = await self._store_interface.get(unique_id)
         attempt = (
-            "unkown"
+            "unknown"
             if schedule_data is None
             else retry_count - schedule_data.remaining_attempts
         )
@@ -236,7 +236,7 @@ class Client:
 
                 if result.error is not None:
                     _logger.debug(
-                        "'%s' '%s' ended with erorr='%s'", name, unique_id, result.error
+                        "'%s' '%s' ended with error='%s'", name, unique_id, result.error
                     )
                     await asyncio.sleep(_SLEEP_BEFORE_RETRY.total_seconds())
                     continue  # tries again if there any attempts left

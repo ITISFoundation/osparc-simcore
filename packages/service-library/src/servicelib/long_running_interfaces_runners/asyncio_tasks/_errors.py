@@ -15,5 +15,5 @@ class HandlerNotRegisteredError(BaseAsyncioTasksError):
     msg_template = "a handler name='{name}' was not found"
 
 
-class TaksNotFoundError(BaseAsyncioTasksError):
+class TaskNotFoundError(BaseAsyncioTasksError):
     msg_template = "no task found for unique_id='{unique_id}'"
