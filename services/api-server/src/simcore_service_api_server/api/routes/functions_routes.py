@@ -29,7 +29,7 @@ from simcore_service_api_server._service_jobs import JobService
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..._service_solvers import SolverService
-from ...models.pagination import PaginationParams
+from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.jobs import (
     JobInputs,
@@ -85,7 +85,7 @@ async def get_function(
     return await wb_api_rpc.get_function(function_id=function_id)
 
 
-@function_router.get("", response_model=list[Function], description="List functions")
+@function_router.get("", response_model=Page[Function], description="List functions")
 async def list_functions(
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     page_params: Annotated[PaginationParams, Depends()],
@@ -97,6 +97,45 @@ async def list_functions(
 
     return create_page(
         functions_list,
+        total=meta.total,
+        params=page_params,
+    )
+
+
+@function_job_router.get(
+    "", response_model=Page[FunctionJob], description="List function jobs"
+)
+async def list_function_jobs(
+    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
+    page_params: Annotated[PaginationParams, Depends()],
+):
+    function_jobs_list, meta = await wb_api_rpc.list_function_jobs(
+        pagination_offset=page_params.offset,
+        pagination_limit=page_params.limit,
+    )
+
+    return create_page(
+        function_jobs_list,
+        total=meta.total,
+        params=page_params,
+    )
+
+
+@function_job_collections_router.get(
+    "",
+    response_model=Page[FunctionJobCollection],
+    description="List function job collections",
+)
+async def list_function_job_collections(
+    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
+    page_params: Annotated[PaginationParams, Depends()],
+):
+    function_job_collection_list, meta = await wb_api_rpc.list_function_job_collections(
+        pagination_offset=page_params.offset,
+        pagination_limit=page_params.limit,
+    )
+    return create_page(
+        function_job_collection_list,
         total=meta.total,
         params=page_params,
     )
@@ -329,19 +368,6 @@ async def get_function_job(
     return await wb_api_rpc.get_function_job(function_job_id=function_job_id)
 
 
-@function_job_router.get(
-    "", response_model=list[FunctionJob], description="List function jobs"
-)
-async def list_function_jobs(
-    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
-    page_params: Annotated[PaginationParams, Depends()],
-):
-    return await wb_api_rpc.list_function_jobs(
-        pagination_offset=page_params.offset,
-        pagination_limit=page_params.limit,
-    )
-
-
 @function_job_router.delete(
     "/{function_job_id:uuid}",
     response_model=None,
@@ -522,21 +548,6 @@ _COMMON_FUNCTION_JOB_COLLECTION_ERROR_RESPONSES: Final[dict] = {
         "model": ErrorGet,
     },
 }
-
-
-@function_job_collections_router.get(
-    "",
-    response_model=list[FunctionJobCollection],
-    description="List function job collections",
-)
-async def list_function_job_collections(
-    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
-    page_params: Annotated[PaginationParams, Depends()],
-):
-    return await wb_api_rpc.list_function_job_collections(
-        pagination_offset=page_params.offset,
-        pagination_limit=page_params.limit,
-    )
 
 
 @function_job_collections_router.get(
