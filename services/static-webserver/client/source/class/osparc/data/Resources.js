@@ -320,6 +320,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "PUT",
             url: statics.API + "/projects/{studyId}/conversations/{conversationId}"
           },
+          deleteConversation: {
+            method: "PUT",
+            url: statics.API + "/projects/{studyId}/conversations/{conversationId}"
+          },
           addMessage: {
             method: "POST",
             url: statics.API + "/projects/{studyId}/conversations/{conversationId}/messages"

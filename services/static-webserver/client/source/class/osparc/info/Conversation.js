@@ -32,8 +32,6 @@ qx.Class.define("osparc.info.Conversation", {
       this.setConversationId(conversationId);
     }
 
-
-
     this._setLayout(new qx.ui.layout.VBox(10));
 
     this.set({
@@ -41,34 +39,10 @@ qx.Class.define("osparc.info.Conversation", {
       showCloseButton: false,
     });
 
-    const tabButton = this.getChildControl("button").set({
-      cursor: "text",
+    this.getChildControl("button").set({
+      font: "text-13",
     });
-    tabButton.addListener("execute", () => {
-      const titleEditor = new osparc.widget.Renamer(tabButton.getLabel());
-      titleEditor.addListener("labelChanged", e => {
-        titleEditor.close();
-        const newLabel = e.getData()["newLabel"];
-        if (this.getConversationId()) {
-          osparc.study.Conversations.renameConversation(this.__studyData["uuid"], this.getConversationId(), newLabel)
-            .then(() => {
-              this.getChildControl("button").setLabel(newLabel);
-            });
-        } else {
-          // create new conversation first
-          osparc.study.Conversations.addConversation(this.__studyData["uuid"], newLabel)
-            .then(data => {
-              this.setConversationId(data["conversationId"]);
-              this.getChildControl("button").setLabel(newLabel);
-            });
-        }
-      }, this);
-      titleEditor.center();
-      titleEditor.open();
-    });
-    this.bind("conversationId", tabButton, "showCloseButton", {
-      converter: value => Boolean(value)
-    });
+    this.__addConversationButtons();
 
     this.__buildLayout();
 
@@ -90,6 +64,63 @@ qx.Class.define("osparc.info.Conversation", {
     __messagesTitle: null,
     __messagesList: null,
     __loadMoreMessages: null,
+
+    __addConversationButtons: function() {
+      const tabButton = this.getChildControl("button");
+
+      const buttonsAesthetics = {
+        focusable: false,
+        keepActive: true,
+        padding: 0,
+        backgroundColor: "transparent",
+      };
+      const renameButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/pencil-alt/12").set({
+        ...buttonsAesthetics,
+      });
+      renameButton.addListener("execute", () => {
+        const titleEditor = new osparc.widget.Renamer(tabButton.getLabel());
+        titleEditor.addListener("labelChanged", e => {
+          titleEditor.close();
+          const newLabel = e.getData()["newLabel"];
+          if (this.getConversationId()) {
+            osparc.study.Conversations.renameConversation(this.__studyData["uuid"], this.getConversationId(), newLabel)
+              .then(() => {
+                this.getChildControl("button").setLabel(newLabel);
+              });
+          } else {
+            // create new conversation first
+            osparc.study.Conversations.addConversation(this.__studyData["uuid"], newLabel)
+              .then(data => {
+                this.setConversationId(data["conversationId"]);
+                this.getChildControl("button").setLabel(newLabel);
+              });
+          }
+        }, this);
+        titleEditor.center();
+        titleEditor.open();
+      });
+      // eslint-disable-next-line no-underscore-dangle
+      tabButton._add(renameButton, {
+        row: 0,
+        column: 3
+      });
+
+      const trashButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/times/12").set({
+        ...buttonsAesthetics,
+        paddingLeft: 4,
+      });
+      trashButton.addListener("execute", () => {
+        osparc.study.Conversations.deleteConversation(this.__studyData["uuid"], this.getConversationId())
+      });
+      // eslint-disable-next-line no-underscore-dangle
+      tabButton._add(trashButton, {
+        row: 0,
+        column: 4
+      });
+      this.bind("conversationId", trashButton, "visibility", {
+        converter: value => value ? "visible" : "excluded"
+      });
+    },
 
     __buildLayout: function() {
       this.__messagesTitle = new qx.ui.basic.Label();

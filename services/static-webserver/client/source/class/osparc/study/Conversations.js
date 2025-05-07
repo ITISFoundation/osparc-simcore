@@ -45,6 +45,17 @@ qx.Class.define("osparc.study.Conversations", {
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
+    deleteConversation: function(studyId, conversationId) {
+      const params = {
+        url: {
+          studyId,
+          conversationId,
+        },
+      };
+      return osparc.data.Resources.fetch("conversations", "addConversation", params)
+        .catch(err => osparc.FlashMessenger.logError(err));
+    },
+
     renameConversation: function(studyId, conversationId, name) {
       const params = {
         url: {
