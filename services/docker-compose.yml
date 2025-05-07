@@ -1271,6 +1271,7 @@ services:
       - rabbit_data:/var/lib/rabbitmq
     networks:
       - default
+      - computational_services_subnet
       - interactive_services_subnet
       - autoscaling_subnet
     healthcheck:
