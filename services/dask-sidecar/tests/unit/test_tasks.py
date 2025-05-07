@@ -114,11 +114,16 @@ def dask_subsystem_mock(
         return_value=False,
     )
     # mock dask rabbitmq plugin
+    mock_dask_rabbitmq_plugin = mocker.patch(
+        "simcore_service_dask_sidecar.rabbitmq_plugin.RabbitMQPlugin", autospec=True
+    )
     mock_rabbitmq_client = create_rabbitmq_client("pytest_dask_sidecar_logs_publisher")
+    mock_dask_rabbitmq_plugin.get_client.return_value = mock_rabbitmq_client
+
     mocker.patch(
         "simcore_service_dask_sidecar.utils.dask.get_rabbitmq_client",
         autospec=True,
-        return_value=mock_rabbitmq_client,
+        return_value=mock_dask_rabbitmq_plugin,
     )
 
     return {
