@@ -194,3 +194,12 @@ async def test_auto_create_products_groups(app: web.Application):
     assert all(
         group_id is not None for group_id in groups.values()
     ), f"Invalid {groups}"
+
+
+async def test_get_product_api_base_url_default(
+    app: web.Application, default_product_name: ProductName
+):
+    base_url = await _service.get_product_api_base_url(
+        app, product_name=default_product_name
+    )
+    assert base_url == "https://api.must.be.filled"
