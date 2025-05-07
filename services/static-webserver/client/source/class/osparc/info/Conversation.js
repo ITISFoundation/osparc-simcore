@@ -147,7 +147,7 @@ qx.Class.define("osparc.info.Conversation", {
         addMessages.setPaddingLeft(10);
         addMessages.addListener("commentAdded", e => {
           const data = e.getData();
-          if (this.getConversationId()) {
+          if (data["conversationId"]) {
             this.setConversationId(data["conversationId"]);
           }
           this.fetchMessages();
@@ -158,11 +158,13 @@ qx.Class.define("osparc.info.Conversation", {
 
     fetchMessages: function(removeMessages = true) {
       if (this.getConversationId() === null) {
+        this.__messagesTitle.setValue(this.tr("No messages yet"));
         this.__messagesList.hide();
         this.__loadMoreMessages.hide();
         return;
       }
 
+      this.__messagesList.show();
       this.__loadMoreMessages.show();
       this.__loadMoreMessages.setFetching(true);
 
