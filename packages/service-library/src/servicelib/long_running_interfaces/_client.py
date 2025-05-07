@@ -294,7 +294,7 @@ class Client:
             ) from e
         finally:
             # when completed remove the task form memory both on the server and the client
-            # NOTE: unsure if these should be caught and ingored. In the case we decide to
-            # catch them there should be some automatic cleanup in case the are forgotten
+            # NOTE: unsure if these should be caught and ignored. In the case we decide to
+            # catch them there should be some automatic cleanup in case they are forgotten
             await self._rpc_interface.remove(unique_id)
             await self._store_interface.remove(unique_id)
