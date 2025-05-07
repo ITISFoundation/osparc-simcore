@@ -93,7 +93,6 @@ qx.Class.define("osparc.study.Conversations", {
       osparc.data.Resources.fetch("conversations", "getConversationsPage", params)
         .then(conversations => {
           const conversationsLayout = this.getChildControl("conversations-layout");
-          console.log("Conversations fetched", conversations);
           if (conversations.length === 0) {
             const noConversationTab = new osparc.info.Conversation(studyData);
             noConversationTab.setLabel(this.tr("new 1"));
