@@ -158,7 +158,7 @@ products = sa.Table(
         "base_url",
         sa.String,
         nullable=False,
-        server_default="https://osparc.io",
+        server_default="https://MUST.BE.FILLED",
         doc="Base URL of the product.",
     ),
     # EMAILS --------------------
