@@ -47,6 +47,7 @@ from simcore_service_director_v2.constants import UNDEFINED_DOCKER_LABEL
 from simcore_service_director_v2.models.comp_runs import RunMetadataDict
 from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB
 from simcore_service_director_v2.modules.dask_clients_pool import DaskClientsPool
+from simcore_service_director_v2.modules.osparc_variables import substitutions
 from simcore_service_director_v2.utils.dask import (
     _LOGS_FILE_NAME,
     _to_human_readable_resource_values,
@@ -507,6 +508,14 @@ def _app_config_with_dask_client(
     )
 
 
+@pytest.fixture
+def mock_rpc_calls(mocker: MockerFixture, initialized_app: FastAPI) -> None:
+    initialized_app.state.rabbitmq_rpc_client = mock.AsyncMock()
+    mocker.patch.object(
+        substitutions, "get_product_api_base_url", return_value="https://osparc.io"
+    )
+
+
 async def test_check_if_cluster_is_able_to_run_pipeline(
     _app_config_with_dask_client: None,
     project_id: ProjectID,
@@ -614,6 +623,7 @@ async def test_compute_task_envs(
     input_task_envs: ContainerEnvsDict,
     expected_computed_task_envs: ContainerEnvsDict,
     resource_tracking_run_id: ServiceRunID,
+    mock_rpc_calls: None,
 ):
     sleeper_task: CompTaskAtDB = published_project.tasks[1]
     sleeper_task.image.envs = input_task_envs
