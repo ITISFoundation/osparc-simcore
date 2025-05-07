@@ -218,7 +218,7 @@ class ProductRepository(BaseRepository):
 
     async def get_product_base_url(
         self, product_name: ProductName, connection: AsyncConnection | None = None
-    ) -> str | None:
+    ) -> str:
         query = sa.select(products.c.base_url).where(products.c.name == product_name)
 
         async with pass_or_acquire_connection(self.engine, connection) as conn:
