@@ -3,6 +3,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from time import perf_counter
 
+from opentelemetry import trace
 from prometheus_client import (
     Counter,
     Gauge,
@@ -102,6 +103,14 @@ class PrometheusMetrics:
     response_latency_detailed_buckets: Histogram
 
 
+def _get_exemplar() -> dict[str, str] | None:
+    current_span = trace.get_current_span()
+    if not current_span.is_recording():
+        return None
+    trace_id = trace.format_trace_id(current_span.get_span_context().trace_id)
+    return {"TraceID": trace_id}
+
+
 def setup_prometheus_metrics(app_name: str, **app_info_kwargs) -> PrometheusMetrics:
     # app-scope registry
     target_info = {"application_name": app_name}
@@ -192,12 +201,13 @@ def record_request_metrics(
         yield
 
         amount = perf_counter() - start
+        exemplar = _get_exemplar()
         metrics.response_latency_with_labels.labels(
             app_name, method, endpoint, user_agent
-        ).observe(amount=amount)
+        ).observe(amount=amount, exemplar=exemplar)
         metrics.response_latency_detailed_buckets.labels(
             app_name, method, endpoint, user_agent
-        ).observe(amount=amount)
+        ).observe(amount=amount, exemplar=exemplar)
 
 
 def record_response_metrics(
@@ -209,6 +219,7 @@ def record_response_metrics(
     user_agent: str,
     http_status: int,
 ) -> None:
+    exemplar = _get_exemplar()
     metrics.request_count.labels(
         app_name, method, endpoint, http_status, user_agent
-    ).inc()
+    ).inc(exemplar=exemplar)
