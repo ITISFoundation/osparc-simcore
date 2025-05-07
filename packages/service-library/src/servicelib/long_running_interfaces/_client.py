@@ -1,10 +1,10 @@
 import asyncio
 import logging
 from datetime import timedelta
-from typing import Any, Final, TypeVar
+from typing import Annotated, Any, Final, TypeVar
 from uuid import uuid4
 
-from pydantic import ConfigDict, NonNegativeInt, validate_call
+from pydantic import ConfigDict, Field, NonNegativeInt, validate_call
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 
@@ -111,7 +111,7 @@ class Client:
                     params=params,
                     remaining_attempts=retry_count,
                 ),
-                timeout=timeout,
+                expire=timeout,
             )
 
     async def _decrease_remaining_attempts_or_raise(
@@ -147,7 +147,9 @@ class Client:
                 await self._rpc_interface.start(
                     name, unique_id, timeout=timeout, **params
                 )
-                await self._store_interface.update_timeout(unique_id, timeout=timeout)
+                await self._store_interface.update_entry_expiry(
+                    unique_id, expire=timeout
+                )
             except AlreadyStartedError:
                 _logger.info(
                     "unique_id='%s', was already running, did not start", unique_id
@@ -232,7 +234,7 @@ class Client:
         expected_type: type[ResultType],
         timeout: timedelta,  # noqa: ASYNC109
         is_unique: bool = False,
-        retry_count: NonNegativeInt = 3,
+        retry_count: Annotated[NonNegativeInt, Field(gt=0)] = 3,
         **params: Any,
     ) -> ResultType:
 
