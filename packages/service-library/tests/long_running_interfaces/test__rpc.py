@@ -106,12 +106,12 @@ class _MockServerInterface(BaseServerJobInterface):
         is_running: bool = data.get("time_remaining", 0) > 0
         return is_running
 
-    async def get_result(self, unique_id: JobUniqueId) -> ResultModel:
+    async def get_result(self, unique_id: JobUniqueId) -> str:
         if self.result_raises:
             msg = "raising as requested"
             raise RuntimeError(msg)
 
-        return ResultModel(data=f"{unique_id} done")
+        return f"{unique_id} done"
 
 
 @pytest.fixture
@@ -169,7 +169,7 @@ async def test_workflow(
                 await client_rpc_interface.get_status(unique_id) == JobStatus.FINISHED
             )
 
-    # finally the result
+    # result should be ready
     assert await client_rpc_interface.get_result(unique_id) == ResultModel(
         data=f"{unique_id} done"
     )
