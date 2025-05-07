@@ -336,7 +336,10 @@ async def list_function_jobs(
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     page_params: Annotated[PaginationParams, Depends()],
 ):
-    return await wb_api_rpc.list_function_jobs(page_params=page_params)
+    return await wb_api_rpc.list_function_jobs(
+        pagination_offset=page_params.offset,
+        pagination_limit=page_params.limit,
+    )
 
 
 @function_job_router.delete(
@@ -530,7 +533,10 @@ async def list_function_job_collections(
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     page_params: Annotated[PaginationParams, Depends()],
 ):
-    return await wb_api_rpc.list_function_job_collections(page_params=page_params)
+    return await wb_api_rpc.list_function_job_collections(
+        pagination_offset=page_params.offset,
+        pagination_limit=page_params.limit,
+    )
 
 
 @function_job_collections_router.get(
