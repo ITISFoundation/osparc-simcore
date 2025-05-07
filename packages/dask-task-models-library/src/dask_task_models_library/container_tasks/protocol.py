@@ -7,6 +7,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.services_resources import BootMode
 from models_library.users import UserID
 from pydantic import AnyUrl, BaseModel, ConfigDict, model_validator
+from pydantic.config import JsonDict
 from settings_library.s3 import S3Settings
 
 from .docker import DockerBasicAuth
@@ -44,25 +45,31 @@ class TaskOwner(BaseModel):
             raise ValueError(msg)
         return values
 
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "user_id": 32,
+                        "project_id": "ec7e595a-63ee-46a1-a04a-901b11b649f8",
+                        "node_id": "39467d89-b659-4914-9359-c40b1b6d1d6d",
+                        "parent_project_id": None,
+                        "parent_node_id": None,
+                    },
+                    {
+                        "user_id": 32,
+                        "project_id": "ec7e595a-63ee-46a1-a04a-901b11b649f8",
+                        "node_id": "39467d89-b659-4914-9359-c40b1b6d1d6d",
+                        "parent_project_id": "887e595a-63ee-46a1-a04a-901b11b649f8",
+                        "parent_node_id": "aa467d89-b659-4914-9359-c40b1b6d1d6d",
+                    },
+                ]
+            }
+        )
+
     model_config = ConfigDict(
-        json_schema_extra={
-            "examples": [
-                {
-                    "user_id": 32,
-                    "project_id": "ec7e595a-63ee-46a1-a04a-901b11b649f8",
-                    "node_id": "39467d89-b659-4914-9359-c40b1b6d1d6d",
-                    "parent_project_id": None,
-                    "parent_node_id": None,
-                },
-                {
-                    "user_id": 32,
-                    "project_id": "ec7e595a-63ee-46a1-a04a-901b11b649f8",
-                    "node_id": "39467d89-b659-4914-9359-c40b1b6d1d6d",
-                    "parent_project_id": "887e595a-63ee-46a1-a04a-901b11b649f8",
-                    "parent_node_id": "aa467d89-b659-4914-9359-c40b1b6d1d6d",
-                },
-            ]
-        }
+        json_schema_extra=_update_json_schema_extra,
     )
 
 
@@ -83,13 +90,17 @@ class ContainerTaskParameters(BaseModel):
                 {
                     "image": "ubuntu",
                     "tag": "latest",
-                    "input_data": TaskInputData.model_config["json_schema_extra"]["examples"][0],  # type: ignore[index]
-                    "output_data_keys": TaskOutputDataSchema.model_config["json_schema_extra"]["examples"][0],  # type: ignore[index]
+                    "input_data": TaskInputData.model_json_schema()["examples"][0],
+                    "output_data_keys": TaskOutputDataSchema.model_json_schema()[
+                        "examples"
+                    ][
+                        0
+                    ],  # type: ignore[index]
                     "command": ["sleep 10", "echo hello"],
                     "envs": {"MYENV": "is an env"},
                     "labels": {"io.simcore.thelabel": "is amazing"},
                     "boot_mode": BootMode.CPU.value,
-                    "task_owner": TaskOwner.model_config["json_schema_extra"]["examples"][0],  # type: ignore[index]
+                    "task_owner": TaskOwner.model_json_schema()["examples"][0],
                 },
             ]
         }
@@ -104,5 +115,4 @@ class ContainerRemoteFct(Protocol):
         docker_auth: DockerBasicAuth,
         log_file_url: LogFileUploadURL,
         s3_settings: S3Settings | None,
-    ) -> TaskOutputData:
-        ...
+    ) -> TaskOutputData: ...
