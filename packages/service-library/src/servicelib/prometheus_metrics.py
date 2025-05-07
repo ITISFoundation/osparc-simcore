@@ -12,6 +12,82 @@ from prometheus_client import (
 )
 from prometheus_client.registry import CollectorRegistry
 
+#
+# CAUTION CAUTION CAUTION NOTE:
+# Be very careful with metrics. pay attention to metrics cardinatity.
+# Each time series takes about 3kb of overhead in Prometheus
+#
+# CAUTION: every unique combination of key-value label pairs represents a new time series
+#
+# If a metrics is not needed, don't add it!! It will collapse the application AND prometheus
+#
+# references:
+# https://prometheus.io/docs/practices/naming/
+# https://www.robustperception.io/cardinality-is-key
+# https://www.robustperception.io/why-does-prometheus-use-so-much-ram
+# https://promcon.io/2019-munich/slides/containing-your-cardinality.pdf
+# https://grafana.com/docs/grafana-cloud/how-do-i/control-prometheus-metrics-usage/usage-analysis-explore/
+#
+
+
+# This creates the following basic metrics:
+# # HELP process_virtual_memory_bytes Virtual memory size in bytes.
+# # TYPE process_virtual_memory_bytes gauge
+# process_virtual_memory_bytes 8.12425216e+08
+# # HELP process_resident_memory_bytes Resident memory size in bytes.
+# # TYPE process_resident_memory_bytes gauge
+# process_resident_memory_bytes 1.2986368e+08
+# # HELP process_start_time_seconds Start time of the process since unix epoch in seconds.
+# # TYPE process_start_time_seconds gauge
+# process_start_time_seconds 1.6418063518e+09
+# # HELP process_cpu_seconds_total Total user and system CPU time spent in seconds.
+# # TYPE process_cpu_seconds_total counter
+# process_cpu_seconds_total 9.049999999999999
+# # HELP process_open_fds Number of open file descriptors.
+# # TYPE process_open_fds gauge
+# process_open_fds 29.0
+# # HELP process_max_fds Maximum number of open file descriptors.
+# # TYPE process_max_fds gauge
+# process_max_fds 1.048576e+06
+# # HELP python_info Python platform information
+# # TYPE python_info gauge
+# python_info{implementation="CPython",major="3",minor="8",patchlevel="10",version="3.9.12"} 1.0
+# # HELP python_gc_objects_collected_total Objects collected during gc
+# # TYPE python_gc_objects_collected_total counter
+# python_gc_objects_collected_total{generation="0"} 7328.0
+# python_gc_objects_collected_total{generation="1"} 614.0
+# python_gc_objects_collected_total{generation="2"} 0.0
+# # HELP python_gc_objects_uncollectable_total Uncollectable object found during GC
+# # TYPE python_gc_objects_uncollectable_total counter
+# python_gc_objects_uncollectable_total{generation="0"} 0.0
+# python_gc_objects_uncollectable_total{generation="1"} 0.0
+# python_gc_objects_uncollectable_total{generation="2"} 0.0
+# # HELP python_gc_collections_total Number of times this generation was collected
+# # TYPE python_gc_collections_total counter
+# python_gc_collections_total{generation="0"} 628.0
+# python_gc_collections_total{generation="1"} 57.0
+# python_gc_collections_total{generation="2"} 5.0
+# # HELP http_requests_total Total requests count
+# # TYPE http_requests_total counter
+# http_requests_total{app_name="simcore_service_webserver",endpoint="/v0/",http_status="200",method="GET"} 15.0
+# # HELP http_requests_created Total requests count
+# # TYPE http_requests_created gauge
+# http_requests_created{app_name="simcore_service_webserver",endpoint="/v0/",http_status="200",method="GET"} 1.6418063614890063e+09
+# # HELP http_in_flight_requests Number of requests in process
+# # TYPE http_in_flight_requests gauge
+# http_in_flight_requests{app_name="simcore_service_webserver",endpoint="/v0/",method="GET"} 0.0
+# http_in_flight_requests{app_name="simcore_service_webserver",endpoint="/metrics",method="GET"} 1.0
+# # HELP http_request_latency_seconds Time processing a request
+# # TYPE http_request_latency_seconds summary
+# http_request_latency_seconds_count{app_name="simcore_service_webserver",endpoint="/v0/",method="GET"} 15.0
+# http_request_latency_seconds_sum{app_name="simcore_service_webserver",endpoint="/v0/",method="GET"} 0.007384857000033662
+# http_request_latency_seconds_count{app_name="simcore_service_webserver",endpoint="/metrics",method="GET"} 0.0
+# http_request_latency_seconds_sum{app_name="simcore_service_webserver",endpoint="/metrics",method="GET"} 0.0
+# # HELP http_request_latency_seconds_created Time processing a request
+# # TYPE http_request_latency_seconds_created gauge
+# http_request_latency_seconds_created{app_name="simcore_service_webserver",endpoint="/v0/",method="GET"} 1.6418063614873598e+09
+# http_request_latency_seconds_created{app_name="simcore_service_webserver",endpoint="/metrics",method="GET"} 1.641806371709292e+09
+
 
 @dataclass
 class PrometheusMetrics:
@@ -111,8 +187,8 @@ def record_response_metrics(
     method: str,
     endpoint: str,
     user_agent: str,
-    status_code: int,
+    http_status: int,
 ) -> None:
     metrics.request_count.labels(
-        app_name, method, endpoint, status_code, user_agent
+        app_name, method, endpoint, http_status, user_agent
     ).inc()
