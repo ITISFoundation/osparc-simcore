@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from servicelib.fastapi.prometheus_instrumentation import (
+from servicelib.fastapi.monitoring import (
     setup_prometheus_instrumentation,
 )
 from simcore_service_agent.core.settings import ApplicationSettings

@@ -9,7 +9,7 @@ from prometheus_client import CollectorRegistry, Gauge
 from pydantic import PositiveInt
 from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task import create_periodic_task
-from servicelib.fastapi.prometheus_instrumentation import (
+from servicelib.fastapi.monitoring import (
     setup_prometheus_instrumentation as setup_rest_instrumentation,
 )
 from servicelib.logging_utils import log_catch

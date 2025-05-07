@@ -3,7 +3,7 @@ from typing import cast
 
 from fastapi import FastAPI
 from prometheus_client import CollectorRegistry, Counter
-from servicelib.fastapi.prometheus_instrumentation import (
+from servicelib.fastapi.monitoring import (
     setup_prometheus_instrumentation,
 )
 from servicelib.instrumentation import MetricsBase, get_metrics_namespace

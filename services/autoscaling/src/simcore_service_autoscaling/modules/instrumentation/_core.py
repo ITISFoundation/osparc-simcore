@@ -1,7 +1,7 @@
 from typing import cast
 
 from fastapi import FastAPI
-from servicelib.fastapi.prometheus_instrumentation import (
+from servicelib.fastapi.monitoring import (
     setup_prometheus_instrumentation as setup_rest_instrumentation,
 )
 

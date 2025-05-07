@@ -4,10 +4,10 @@ from fastapi import FastAPI
 from fastapi.middleware.gzip import GZipMiddleware
 from models_library.basic_types import BootModeEnum
 from servicelib.fastapi import timing_middleware
-from servicelib.fastapi.openapi import override_fastapi_openapi_method
-from servicelib.fastapi.prometheus_instrumentation import (
+from servicelib.fastapi.monitoring import (
     initialize_prometheus_instrumentation,
 )
+from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.tracing import initialize_tracing
 from starlette.middleware.base import BaseHTTPMiddleware
 
