@@ -157,6 +157,7 @@ def setup_prometheus_metrics(app_name: str, **app_info_kwargs) -> PrometheusMetr
         name="http_request_latency_seconds_detailed_buckets",
         documentation="Time processing a request with detailed buckets but no labels",
         registry=registry,
+        labelnames=["app_name"],
         buckets=(0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10),
     )
 
@@ -205,7 +206,7 @@ def record_request_metrics(
         metrics.response_latency_with_labels.labels(
             app_name, method, endpoint, user_agent
         ).observe(amount=amount, exemplar=exemplar)
-        metrics.response_latency_detailed_buckets.labels().observe(
+        metrics.response_latency_detailed_buckets.labels(app_name).observe(
             amount=amount, exemplar=exemplar
         )
 
