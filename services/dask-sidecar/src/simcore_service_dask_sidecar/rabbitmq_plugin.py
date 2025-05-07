@@ -1,12 +1,15 @@
 import asyncio
 import logging
+import threading
 from asyncio import AbstractEventLoop
 from collections.abc import Awaitable
 from typing import Final
 
 import distributed
+from servicelib.async_utils import cancel_wait_task
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.rabbitmq import RabbitMQClient, wait_till_rabbitmq_responsive
+from servicelib.rabbitmq._models import RabbitMessage
 from settings_library.rabbit import RabbitSettings
 
 from .errors import ConfigurationError
@@ -22,12 +25,39 @@ class RabbitMQPlugin(distributed.WorkerPlugin):
     """Dask Worker Plugin for RabbitMQ integration"""
 
     name = "rabbitmq_plugin"
-    _loop: AbstractEventLoop | None = None
+    _main_thread_loop: AbstractEventLoop | None = None
     _client: RabbitMQClient | None = None
     _settings: RabbitSettings | None = None
+    _message_queue: asyncio.Queue | None = None
+    _message_processor: asyncio.Task | None = None
 
     def __init__(self, settings: RabbitSettings):
         self._settings = settings
+
+    async def _process_messages(self) -> None:
+        """Process messages from worker threads in the main thread"""
+        assert self._message_queue is not None  # nosec
+        assert self._client is not None  # nosec
+
+        _logger.info("Starting message processor for RabbitMQ")
+        try:
+            while True:
+                # Get message from queue
+                exchange_name, message_data = await self._message_queue.get()
+
+                try:
+                    # Publish to RabbitMQ
+                    await self._client.publish(exchange_name, message_data)
+                except Exception as e:
+                    _logger.exception("Failed to publish message: %s", str(e))
+                finally:
+                    # Mark task as done
+                    self._message_queue.task_done()
+        except asyncio.CancelledError:
+            _logger.info("RabbitMQ message processor shutting down")
+            raise
+        except Exception:
+            _logger.exception("Unexpected error in RabbitMQ message processor")
 
     def setup(self, worker: distributed.Worker) -> Awaitable[None]:
         """Called when the plugin is attached to a worker"""
@@ -39,15 +69,28 @@ class RabbitMQPlugin(distributed.WorkerPlugin):
                 )
                 return
 
+            if threading.current_thread() is threading.main_thread():
+                _logger.info(
+                    "RabbitMQ client plugin setup is in the main thread! That is good."
+                )
+            else:
+                msg = "RabbitMQ client plugin setup is not the main thread!"
+                raise ConfigurationError(msg=msg)
+
             with log_context(
                 _logger,
                 logging.INFO,
                 f"RabbitMQ client initialization for worker {worker.address}",
             ):
-                self._loop = asyncio.get_event_loop()
+                self._main_thread_loop = asyncio.get_event_loop()
                 await wait_till_rabbitmq_responsive(self._settings.dsn)
                 self._client = RabbitMQClient(
                     client_name="dask-sidecar", settings=self._settings
+                )
+
+                self._message_queue = asyncio.Queue()
+                self._message_processor = asyncio.create_task(
+                    self._process_messages(), name="rabbit_message_processor"
                 )
 
         return _()
@@ -61,17 +104,32 @@ class RabbitMQPlugin(distributed.WorkerPlugin):
                 logging.INFO,
                 f"RabbitMQ client teardown for worker {worker.address}",
             ):
-                if self._client:
-                    current_loop = asyncio.get_event_loop()
-                    if self._loop != current_loop:
-                        _logger.warning(
-                            "RabbitMQ client is de-activated (loop mismatch)"
-                        )
-                    assert self._loop  # nosec
-                    with log_catch(_logger, reraise=False):
-                        await asyncio.wait_for(self._client.close(), timeout=5.0)
+                if not self._client:
+                    return
+                if threading.current_thread() is threading.main_thread():
+                    _logger.info(
+                        "RabbitMQ client plugin setup is in the main thread! That is good."
+                    )
+                else:
+                    _logger.warning(
+                        "RabbitMQ client plugin setup is not the main thread!"
+                    )
 
-                    self._client = None
+                # Cancel the message processor task
+                if self._message_processor:
+                    with log_catch(_logger, reraise=False):
+                        await cancel_wait_task(self._message_processor, max_delay=5)
+                    self._message_processor = None
+
+                # close client
+                current_loop = asyncio.get_event_loop()
+                if self._main_thread_loop != current_loop:
+                    _logger.warning("RabbitMQ client is de-activated (loop mismatch)")
+                assert self._main_thread_loop  # nosec
+                with log_catch(_logger, reraise=False):
+                    await asyncio.wait_for(self._client.close(), timeout=5.0)
+
+                self._client = None
 
         return _()
 
@@ -81,12 +139,35 @@ class RabbitMQPlugin(distributed.WorkerPlugin):
             raise ConfigurationError(msg=_RABBITMQ_CONFIGURATION_ERROR)
         return self._client
 
+    async def publish_message_from_any_thread(
+        self, exchange_name: str, message_data: RabbitMessage
+    ) -> None:
+        """Enqueue a message to be published to RabbitMQ from any thread"""
+        assert self._message_queue  # nosec
 
-def get_rabbitmq_client(worker: distributed.Worker) -> RabbitMQClient:
+        if threading.current_thread() is threading.main_thread():
+            # If we're in the main thread, add directly to the queue
+            await self._message_queue.put((exchange_name, message_data))
+            return
+
+        # If we're in a worker thread, we need to use a different approach
+        assert self._main_thread_loop  # nosec
+
+        # Create a Future in the main thread's event loop
+        future = asyncio.run_coroutine_threadsafe(
+            self._message_queue.put((exchange_name, message_data)),
+            self._main_thread_loop,
+        )
+
+        # waiting here is quick, just queueing
+        future.result()
+
+
+def get_rabbitmq_client(worker: distributed.Worker) -> RabbitMQPlugin:
     """Returns the RabbitMQ client or raises an error if not available"""
     if not worker.plugins:
         raise ConfigurationError(msg=_RABBITMQ_CONFIGURATION_ERROR)
     rabbitmq_plugin = worker.plugins.get(RabbitMQPlugin.name)
     if not isinstance(rabbitmq_plugin, RabbitMQPlugin):
         raise ConfigurationError(msg=_RABBITMQ_CONFIGURATION_ERROR)
-    return rabbitmq_plugin.get_client()
+    return rabbitmq_plugin

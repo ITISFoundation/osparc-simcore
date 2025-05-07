@@ -97,7 +97,9 @@ class TaskPublisher:
                 messages=[message],
                 log_level=log_level,
             )
-            await rabbitmq_client.publish(base_message.channel_name, base_message)
+            await rabbitmq_client.publish_message_from_any_thread(
+                base_message.channel_name, base_message
+            )
             if self.task_owner.has_parent:
                 assert self.task_owner.parent_project_id  # nosec
                 assert self.task_owner.parent_node_id  # nosec
@@ -108,7 +110,9 @@ class TaskPublisher:
                     messages=[message],
                     log_level=log_level,
                 )
-                await rabbitmq_client.publish(parent_message.channel_name, base_message)
+                await rabbitmq_client.publish_message_from_any_thread(
+                    parent_message.channel_name, base_message
+                )
 
         _logger.log(log_level, message)
 
