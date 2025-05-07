@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 
-qx.Class.define("osparc.info.Conversations", {
+qx.Class.define("osparc.study.Conversations", {
   extend: qx.ui.core.Widget,
 
   /**
@@ -31,12 +31,13 @@ qx.Class.define("osparc.info.Conversations", {
 
     this.__buildLayout();
 
+    // this.fetchConversations();
     this.fetchComments();
   },
 
   statics: {
     popUpInWindow: function(studyData) {
-      const conversations = new osparc.info.Conversations(studyData);
+      const conversations = new osparc.study.Conversations(studyData);
       const title = qx.locale.Manager.tr("Conversations");
       const viewWidth = 600;
       const viewHeight = 700;
@@ -91,6 +92,9 @@ qx.Class.define("osparc.info.Conversations", {
       this.getChildControl("add-comment");
     },
 
+    fetchConversations: function() {
+    },
+
     fetchComments: function(removeComments = true) {
       const loadMoreButton = this.getChildControl("load-more-button");
       loadMoreButton.show();
@@ -116,8 +120,9 @@ qx.Class.define("osparc.info.Conversations", {
       const params = {
         url: {
           studyId: this.__studyData["uuid"],
+          conversationId: this.__studyData["uuid"],
           offset: 0,
-          limit: 20
+          limit: 40
         }
       };
       const nextRequestParams = this.__nextRequestParams;

@@ -447,7 +447,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           marginTop: 7,
           ...osparc.navigation.NavigationBar.BUTTON_OPTIONS
         });
-        commentsButton.addListener("execute", () => osparc.info.Conversations.popUpInWindow(study.serialize()));
+        commentsButton.addListener("execute", () => osparc.study.Conversations.popUpInWindow(study.serialize()));
         topBar.add(commentsButton);
       }
 
