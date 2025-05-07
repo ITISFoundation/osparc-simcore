@@ -64,8 +64,6 @@ async def dask_setup(worker: distributed.Worker) -> None:
     with log_context(_logger, logging.INFO, "Launch dask worker"):
         _logger.info("app settings: %s", settings.model_dump_json(indent=1))
 
-        print_dask_sidecar_banner()
-
         if threading.current_thread() is threading.main_thread():
             GracefulKiller(worker)
 
@@ -73,7 +71,11 @@ async def dask_setup(worker: distributed.Worker) -> None:
             _logger.info("We do have a running loop in the main thread: %s", f"{loop=}")
 
         if settings.DASK_SIDECAR_RABBITMQ:
-            await worker.plugin_add(RabbitMQPlugin(settings.DASK_SIDECAR_RABBITMQ))
+            await worker.plugin_add(
+                RabbitMQPlugin(settings.DASK_SIDECAR_RABBITMQ), catch_errors=False
+            )
+
+        print_dask_sidecar_banner()
 
 
 async def dask_teardown(worker: distributed.Worker) -> None:
