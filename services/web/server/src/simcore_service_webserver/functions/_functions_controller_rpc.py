@@ -36,7 +36,7 @@ async def ping(app: web.Application) -> str:
 @router.expose()
 async def register_function(app: web.Application, *, function: Function) -> Function:
     assert app
-    saved_function = await _functions_repository.create_function(
+    saved_function = await _functions_repository.register_function(
         app=app, function=_encode_function(function)
     )
     return _decode_function(saved_function)
@@ -90,6 +90,7 @@ def _encode_function(
         raise TypeError(msg)
 
     return FunctionDB(
+        uuid=function.uid,
         title=function.title,
         description=function.description,
         input_schema=function.input_schema,
@@ -145,6 +146,7 @@ def _encode_functionjob(
 ) -> FunctionJobDB:
     if functionjob.function_class == FunctionClass.project:
         return FunctionJobDB(
+            uuid=functionjob.uid,
             title=functionjob.title,
             function_uuid=functionjob.function_uid,
             inputs=functionjob.inputs,
@@ -158,6 +160,7 @@ def _encode_functionjob(
         )
     elif functionjob.function_class == FunctionClass.solver:  # noqa: RET505
         return FunctionJobDB(
+            uuid=functionjob.uid,
             title=functionjob.title,
             function_uuid=functionjob.function_uid,
             inputs=functionjob.inputs,

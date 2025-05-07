@@ -182,12 +182,14 @@ class FakeWbApiRpc:
 def test_register_function(api_app) -> None:
     client = TestClient(api_app)
     sample_function = {
+        "uid": None,
         "title": "test_function",
         "function_class": "project",
         "project_id": str(uuid4()),
         "description": "A test function",
         "input_schema": {"schema_dict": {}},
         "output_schema": {"schema_dict": {}},
+        "default_inputs": None,
     }
     response = client.post("/functions", json=sample_function)
     assert response.status_code == 200
@@ -221,12 +223,14 @@ def test_get_function(api_app: FastAPI) -> None:
     project_id = str(uuid4())
     # First, register a sample function so that it exists
     sample_function = {
+        "uid": None,
         "title": "example_function",
         "function_class": "project",
         "project_id": project_id,
         "description": "An example function",
         "input_schema": {"schema_dict": {}},
         "output_schema": {"schema_dict": {}},
+        "default_inputs": None,
     }
     post_response = client.post("/functions", json=sample_function)
     assert post_response.status_code == 200
@@ -262,12 +266,14 @@ def test_list_functions(api_app: FastAPI) -> None:
     client = TestClient(api_app)
     # Register a sample function
     sample_function = {
+        "uid": None,
         "title": "example_function",
         "function_class": "project",
         "project_id": str(uuid4()),
         "description": "An example function",
         "input_schema": {"schema_dict": {}},
         "output_schema": {"schema_dict": {}},
+        "default_inputs": None,
     }
     post_response = client.post("/functions", json=sample_function)
     assert post_response.status_code == 200
@@ -285,6 +291,7 @@ def test_get_function_input_schema(api_app: FastAPI) -> None:
     project_id = str(uuid4())
     # Register a sample function
     sample_function = {
+        "uid": None,
         "title": "example_function",
         "function_class": "project",
         "project_id": project_id,
@@ -296,6 +303,7 @@ def test_get_function_input_schema(api_app: FastAPI) -> None:
             }
         },
         "output_schema": {"schema_dict": {}},
+        "default_inputs": None,
     }
     post_response = client.post("/functions", json=sample_function)
     assert post_response.status_code == 200
@@ -315,6 +323,7 @@ def test_get_function_output_schema(api_app: FastAPI) -> None:
     project_id = str(uuid4())
     # Register a sample function
     sample_function = {
+        "uid": None,
         "title": "example_function",
         "function_class": "project",
         "project_id": project_id,
@@ -326,6 +335,7 @@ def test_get_function_output_schema(api_app: FastAPI) -> None:
                 "properties": {"output1": {"type": "string"}},
             }
         },
+        "default_inputs": None,
     }
     post_response = client.post("/functions", json=sample_function)
     assert post_response.status_code == 200
@@ -344,6 +354,7 @@ def test_validate_function_inputs(api_app: FastAPI) -> None:
     project_id = str(uuid4())
     # Register a sample function
     sample_function = {
+        "uid": None,
         "title": "example_function",
         "function_class": "project",
         "project_id": project_id,
@@ -355,6 +366,7 @@ def test_validate_function_inputs(api_app: FastAPI) -> None:
             }
         },
         "output_schema": {"schema_dict": {}},
+        "default_inputs": None,
     }
     post_response = client.post("/functions", json=sample_function)
     assert post_response.status_code == 200
@@ -376,12 +388,14 @@ def test_delete_function(api_app: FastAPI) -> None:
     project_id = str(uuid4())
     # Register a sample function
     sample_function = {
+        "uid": None,
         "title": "example_function",
         "function_class": "project",
         "project_id": project_id,
         "description": "An example function",
         "input_schema": {"schema_dict": {}},
         "output_schema": {"schema_dict": {}},
+        "default_inputs": None,
     }
     post_response = client.post("/functions", json=sample_function)
     assert post_response.status_code == 200
@@ -398,6 +412,7 @@ def test_register_function_job(api_app: FastAPI) -> None:
 
     client = TestClient(api_app)
     mock_function_job = {
+        "uid": None,
         "function_uid": str(uuid4()),
         "title": "Test Function Job",
         "description": "A test function job",
@@ -415,6 +430,7 @@ def test_register_function_job(api_app: FastAPI) -> None:
     response_data = response.json()
     assert response_data["uid"] is not None
     response_data.pop("uid", None)  # Remove the uid field
+    mock_function_job.pop("uid", None)  # Remove the uid field
     assert response_data == mock_function_job
 
 
@@ -423,6 +439,7 @@ def test_get_function_job(api_app: FastAPI) -> None:
 
     client = TestClient(api_app)
     mock_function_job = {
+        "uid": None,
         "function_uid": str(uuid4()),
         "title": "Test Function Job",
         "description": "A test function job",
@@ -454,6 +471,7 @@ def test_list_function_jobs(api_app: FastAPI) -> None:
 
     client = TestClient(api_app)
     mock_function_job = {
+        "uid": None,
         "function_uid": str(uuid4()),
         "title": "Test Function Job",
         "description": "A test function job",
@@ -480,6 +498,7 @@ def test_delete_function_job(api_app: FastAPI) -> None:
 
     client = TestClient(api_app)
     mock_function_job = {
+        "uid": None,
         "function_uid": str(uuid4()),
         "title": "Test Function Job",
         "description": "A test function job",
@@ -505,6 +524,7 @@ def test_register_function_job_collection(api_app: FastAPI) -> None:
     client = TestClient(api_app)
 
     mock_function_job_collection = {
+        "uid": None,
         "title": "Test Collection",
         "description": "A test function job collection",
         "job_ids": [str(uuid4()), str(uuid4())],
@@ -520,6 +540,7 @@ def test_register_function_job_collection(api_app: FastAPI) -> None:
     response_data = response.json()
     assert response_data["uid"] is not None
     response_data.pop("uid", None)  # Remove the uid field
+    mock_function_job_collection.pop("uid", None)  # Remove the uid field
     assert response_data == mock_function_job_collection
 
 
@@ -527,6 +548,7 @@ def test_get_function_job_collection(api_app: FastAPI) -> None:
     # Arrange
     client = TestClient(api_app)
     mock_function_job_collection = {
+        "uid": None,
         "title": "Test Collection",
         "description": "A test function job collection",
         "job_ids": [str(uuid4()), str(uuid4())],
