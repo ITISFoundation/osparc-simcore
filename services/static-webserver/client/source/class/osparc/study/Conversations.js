@@ -94,7 +94,6 @@ qx.Class.define("osparc.study.Conversations", {
       const loadMoreButton = this.getChildControl("loading-button");
       loadMoreButton.setFetching(true);
 
-      const conversationsLayout = this.getChildControl("conversations-layout");
       const params = {
         url: {
           studyId: studyData["uuid"],
@@ -103,32 +102,37 @@ qx.Class.define("osparc.study.Conversations", {
         }
       };
       osparc.data.Resources.fetch("conversations", "getConversationsPage", params)
-        .then(conversations => {
-          if (conversations.length === 0) {
-            const noConversationTab = new osparc.info.Conversation(studyData);
-            noConversationTab.setLabel(this.tr("new 1"));
-            noConversationTab.addListener("conversationDeleted", () => {
-              this._removeAll();
-              this.fetchConversations(studyData);
-            });
-            conversationsLayout.add(noConversationTab);
-          } else {
-            conversations.forEach(conversation => {
-              const conversationId = conversation["conversationId"];
-              const conversationTab = new osparc.info.Conversation(studyData, conversationId);
-              conversationTab.setLabel(conversation["name"]);
-              conversationTab.addListener("conversationDeleted", () => {
-                this._removeAll();
-                this.fetchConversations(studyData);
-              });
-              conversationsLayout.add(conversationTab);
-            });
-          }
-        })
+        .then(conversations => this.__addConversations(conversations, studyData))
         .finally(() => {
           loadMoreButton.setFetching(false);
           loadMoreButton.exclude();
         });
     },
+
+    __addConversations: function(conversations, studyData) {
+      const conversationsLayout = this.getChildControl("conversations-layout");
+      if (conversations.length === 0) {
+        const noConversationTab = new osparc.info.Conversation(studyData);
+        noConversationTab.setLabel(this.tr("new 1"));
+        noConversationTab.addListener("conversationDeleted", () => {
+          this._removeAll();
+          this.fetchConversations(studyData);
+        });
+        conversationsLayout.add(noConversationTab);
+      } else {
+        conversations.forEach(conversation => {
+          const conversationId = conversation["conversationId"];
+          const conversationTab = new osparc.info.Conversation(studyData, conversationId);
+          conversationTab.setLabel(conversation["name"]);
+          conversationTab.addListener("conversationDeleted", () => {
+            this._removeAll();
+            this.fetchConversations(studyData);
+          });
+          conversationsLayout.add(conversationTab);
+        });
+      }
+      const newConversation = new qx.ui.tabview.Page(null, "@FontAwesome5Solid/plus/12");
+      conversationsLayout.add(newConversation);
+    }
   }
 });
