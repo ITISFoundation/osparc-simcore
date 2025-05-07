@@ -8,12 +8,9 @@ from datetime import timedelta
 from typing import Any
 
 import pytest
-from pydantic import NonNegativeInt
+from pydantic import NonNegativeInt, ValidationError
 from servicelib.long_running_interfaces import Client, LongRunningNamespace, Server
-from servicelib.long_running_interfaces._errors import (
-    NoMoreRetryAttemptsError,
-    TimedOutError,
-)
+from servicelib.long_running_interfaces._errors import FinishedWithError, TimedOutError
 from servicelib.long_running_interfaces_runners.asyncio_tasks import (
     AsyncioTasksJobInterface,
     AsyncTaskRegistry,
@@ -80,16 +77,6 @@ async def server(
     await server.teardown()
 
 
-# Figure out how to cause interruption in SERVER & CLIENT code, in order to simulate shakyness in the tests
-# write something that cancels and restarts the job runtime
-
-# TODO: add the following tests
-# start a job and wait for it to finish
-# start a job that takes too much time
-# start a job that raises an error
-# start a job that after 95% of timeout raises an errors x times in a row (we can test if it can successfully finish)
-
-
 @dataclass
 class _CustomClass:
     number: float
@@ -123,11 +110,6 @@ async def test_workflow(
     assert type(result) is expected_type
 
 
-# TODO: count error in logs to be sure soemthing is worng
-# TODO: count that it's missing with retry_count=0 and that it raises a vlidation error
-# TODO: figure out a way to raise the error
-
-
 async def test_timeout_error(server: Server, client: Client):
     with pytest.raises(TimedOutError):
         await client.ensure_result(
@@ -147,13 +129,38 @@ async def test_timeout_during_failing_retry(server: Server, client: Client):
 
 
 @pytest.mark.parametrize("retry_count", [1, 2])
-async def test_stops_after_n_retry_attempts(
+async def test_raisese_after_n_retry_attempts(
     server: Server, client: Client, retry_count: NonNegativeInt
 ):
-    with pytest.raises(NoMoreRetryAttemptsError):
+    with pytest.raises(FinishedWithError):
         await client.ensure_result(
             "raising_f",
             expected_type=type(None),
             timeout=timedelta(seconds=10),
             retry_count=retry_count,
         )
+
+
+async def test_timeout_error_retry_count_zero(server: Server, client: Client):
+    with pytest.raises(ValidationError) as exec_info:
+        await client.ensure_result(
+            "some_f",
+            expected_type=type(None),
+            timeout=timedelta(seconds=10),
+            retry_count=0,
+        )
+
+    assert "retry_count" in f"{exec_info.value}"
+    assert "Input should be greater than 0" in f"{exec_info.value}"
+
+
+# Figure out how to cause interruption in SERVER & CLIENT code, in order to
+#   simulate shakyness in the tests
+# write something that cancels and restarts the job runtime
+
+# TODO: add the following tests
+# start a job and wait for it to finish
+# start a job that takes too much time
+# start a job that raises an error
+# start a job that after 95% of timeout raises an errors x times in a row
+#   (we can test if it can successfully finish)

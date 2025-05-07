@@ -10,8 +10,9 @@ from settings_library.redis import RedisSettings
 
 from ._errors import (
     AlreadyStartedError,
-    NoMoreRetryAttemptsError,
+    FinishedWithError,
     TimedOutError,
+    UnexpectedNoMoreRetryAttemptsError,
     UnexpectedResultTypeError,
     UnexpectedStatusError,
 )
@@ -128,8 +129,26 @@ class Client:
             remaining_attempts = await self._format_remaining_attempts(
                 unique_id, retry_count
             )
-            raise NoMoreRetryAttemptsError(
+            # report remote error if there is one
+            if last_result and last_result.error is not None:
+                _logger.warning(
+                    "unique_id='%s', finished with error from remote: %s='%s'\n%s",
+                    unique_id,
+                    last_result.error.error_type,
+                    last_result.error.error_message,
+                    last_result.error.traceback,
+                )
+                raise FinishedWithError(
+                    unique_id=unique_id,
+                    error=last_result.error.error_type,
+                    message=last_result.error.error_message,
+                    traceback=last_result.error.traceback,
+                )
+
+            # NOTE: this edge case should not happen
+            raise UnexpectedNoMoreRetryAttemptsError(
                 unique_id=unique_id,
+                retry_count=retry_count,
                 remaining_attempts=remaining_attempts,
                 last_result=last_result,
             )

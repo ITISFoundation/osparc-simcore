@@ -125,5 +125,9 @@ class ServerRPCInterface:
         except Exception as e:  # pylint:disable=broad-exception-caught
             formatted_traceback = "\n".join(traceback.format_tb(e.__traceback__))
             return ResultModel(
-                error=ErrorModel(error_message=f"{e}", traceback=formatted_traceback)
+                error=ErrorModel(
+                    error_type=type(e),
+                    error_message=f"{e}",
+                    traceback=formatted_traceback,
+                )
             )

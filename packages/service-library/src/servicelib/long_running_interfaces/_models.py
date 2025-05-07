@@ -38,6 +38,7 @@ class UniqueIdModel(BaseModel):
 
 
 class ErrorModel(BaseModel):
+    error_type: type
     error_message: str
     traceback: str
 
