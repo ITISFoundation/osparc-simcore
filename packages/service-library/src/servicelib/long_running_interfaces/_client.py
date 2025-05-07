@@ -293,6 +293,8 @@ class Client:
                 remaining_attempts=remaining_attempts,
             ) from e
         finally:
+            # NOTE this is also ran when this function is cancelled
+
             # when completed remove the task form memory both on the server and the client
             # NOTE: unsure if these should be caught and ignored. In the case we decide to
             # catch them there should be some automatic cleanup in case they are forgotten
