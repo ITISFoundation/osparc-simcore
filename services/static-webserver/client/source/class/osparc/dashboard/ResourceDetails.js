@@ -333,7 +333,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         this.__getBillingPage,
         this.__getServicesUpdatePage,
         this.__getServicesBootOptionsPage,
-        this.__getCommentsPage,
+        this.__getConversationsPage,
         this.__getPermissionsPage,
         this.__getSaveAsTemplatePage,
         this.__getTagsPage,
@@ -509,20 +509,20 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       return page;
     },
 
-    __getCommentsPage: function() {
+    __getConversationsPage: function() {
       const resourceData = this.__resourceData;
       if (osparc.utils.Resources.isService(resourceData)) {
         return null;
       }
 
-      const id = "Comments";
-      const title = this.tr("Comments");
+      const id = "Conversations";
+      const title = this.tr("Conversations");
       const iconSrc = "@FontAwesome5Solid/comments/22";
       const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
       this.__addOpenButton(page);
 
       const lazyLoadContent = () => {
-        const conversations = new osparc.info.Conversations(resourceData);
+        const conversations = new osparc.study.Conversations(resourceData);
         page.addToContent(conversations);
       }
       page.addListenerOnce("appear", lazyLoadContent, this);

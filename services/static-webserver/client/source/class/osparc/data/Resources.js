@@ -305,18 +305,33 @@ qx.Class.define("osparc.data.Resources", {
           },
         }
       },
-      "studyComments": {
-        useCache: true,
-        idField: "uuid",
+      "conversations": {
+        useCache: false,
         endpoints: {
-          getPage: {
-            method: "GET",
-            url: statics.API + "/projects/{studyId}/comments?offset={offset}&limit={limit}"
-          },
-          addComment: {
+          addConversation: {
             method: "POST",
-            url: statics.API + "/projects/{studyId}/comments"
-          }
+            url: statics.API + "/projects/{studyId}/conversations"
+          },
+          getConversationsPage: {
+            method: "GET",
+            url: statics.API + "/projects/{studyId}/conversations?offset={offset}&limit={limit}"
+          },
+          renameConversation: {
+            method: "PUT",
+            url: statics.API + "/projects/{studyId}/conversations/{conversationId}"
+          },
+          deleteConversation: {
+            method: "DELETE",
+            url: statics.API + "/projects/{studyId}/conversations/{conversationId}"
+          },
+          addMessage: {
+            method: "POST",
+            url: statics.API + "/projects/{studyId}/conversations/{conversationId}/messages"
+          },
+          getMessagesPage: {
+            method: "GET",
+            url: statics.API + "/projects/{studyId}/conversations/{conversationId}/messages?offset={offset}&limit={limit}"
+          },
         }
       },
       "jobs": {
