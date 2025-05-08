@@ -29,6 +29,8 @@ from . import _functions_repository
 
 router = RPCRouter()
 
+# pylint: disable=no-else-return
+
 
 @router.expose()
 async def ping(app: web.Application) -> str:
