@@ -1200,7 +1200,7 @@ async def is_node_id_present_in_any_project_workbench(
     app: web.Application,
     node_id: NodeID,
 ) -> bool:
-    """If the node_id is present in one of the projects' workbenche returns True"""
+    """If the node_id is presnet in one of the projects' workbenche returns True"""
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
     return await db.node_id_exists(node_id)
 
