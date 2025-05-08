@@ -31,11 +31,14 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
 
     // overridden
     initResources: function() {
-      this._resourcesList = [];
-      this.getChildControl("resources-layout");
-      this.reloadResources();
-      this.__attachEventHandlers();
-      this._hideLoadingPage();
+      osparc.store.Templates.getInstance().fetchAllTemplates()
+        .then(() => {
+          this._resourcesList = [];
+          this.getChildControl("resources-layout");
+          this.reloadResources();
+          this.__attachEventHandlers();
+          this._hideLoadingPage();
+        });
     },
 
     reloadResources: function(useCache = true) {
