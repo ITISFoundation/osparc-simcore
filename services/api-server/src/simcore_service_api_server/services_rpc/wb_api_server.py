@@ -121,6 +121,8 @@ from ..models.schemas.model_adapter import (
     LicensedResource,
 )
 
+# pylint: disable=too-many-public-methods
+
 _exception_mapper = partial(service_exception_mapper, service_name="WebApiServer")
 
 
