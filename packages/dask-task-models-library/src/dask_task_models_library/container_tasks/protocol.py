@@ -93,9 +93,7 @@ class ContainerTaskParameters(BaseModel):
                     "input_data": TaskInputData.model_json_schema()["examples"][0],
                     "output_data_keys": TaskOutputDataSchema.model_json_schema()[
                         "examples"
-                    ][
-                        0
-                    ],  # type: ignore[index]
+                    ][0],
                     "command": ["sleep 10", "echo hello"],
                     "envs": {"MYENV": "is an env"},
                     "labels": {"io.simcore.thelabel": "is amazing"},
