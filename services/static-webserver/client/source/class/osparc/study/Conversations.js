@@ -90,7 +90,7 @@ qx.Class.define("osparc.study.Conversations", {
           "type": "MESSAGE",
         }
       };
-      osparc.data.Resources.fetch("conversations", "addMessage", params)
+      return osparc.data.Resources.fetch("conversations", "addMessage", params)
         .catch(err => osparc.FlashMessenger.logError(err));
     },
   },
