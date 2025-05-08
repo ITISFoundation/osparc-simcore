@@ -24,6 +24,7 @@ from simcore_service_dask_sidecar.utils.files import (
     pull_file_from_remote,
     push_file_to_remote,
 )
+from types_aiobotocore_s3 import S3Client
 
 
 @pytest.fixture()
@@ -53,11 +54,11 @@ def ftp_remote_file_url(ftpserver: ProcessFTPServer, faker: Faker) -> AnyUrl:
 @pytest.fixture
 async def s3_presigned_link_remote_file_url(
     s3_settings: S3Settings,
-    aiobotocore_s3_client,
+    s3_client: S3Client,
     faker: Faker,
 ) -> AnyUrl:
     return TypeAdapter(AnyUrl).validate_python(
-        await aiobotocore_s3_client.generate_presigned_url(
+        await s3_client.generate_presigned_url(
             "put_object",
             Params={"Bucket": s3_settings.S3_BUCKET_NAME, "Key": faker.file_name()},
             ExpiresIn=30,
@@ -239,8 +240,7 @@ async def test_pull_file_from_remote(
 async def test_pull_file_from_remote_s3_presigned_link(
     s3_settings: S3Settings,
     s3_remote_file_url: AnyUrl,
-    aiobotocore_s3_client,
-    bucket: str,
+    s3_client: S3Client,
     tmp_path: Path,
     faker: Faker,
     mocked_log_publishing_cb: mock.AsyncMock,
@@ -261,15 +261,17 @@ async def test_pull_file_from_remote_s3_presigned_link(
     # create a corresponding presigned get link
     assert s3_remote_file_url.path
     remote_file_url = TypeAdapter(AnyUrl).validate_python(
-        await aiobotocore_s3_client.generate_presigned_url(
+        await s3_client.generate_presigned_url(
             "get_object",
             Params={
                 "Bucket": s3_settings.S3_BUCKET_NAME,
                 "Key": s3_remote_file_url.path.removeprefix("/"),
             },
             ExpiresIn=30,
-        ),
+        )
     )
+    assert remote_file_url.scheme.startswith("http")
+    print(f"remote_file_url: {remote_file_url}")
     # now let's get the file through the util
     dst_path = tmp_path / faker.file_name()
     await pull_file_from_remote(
