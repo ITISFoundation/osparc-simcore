@@ -40,7 +40,7 @@ ResultType = TypeVar("ResultType")
 
 
 def _get_correlation_id(*, is_unique: bool) -> CorrelationID:
-    return f"{uuid4()}" if is_unique else _UNIQUE_CORRELATION_ID
+    return _UNIQUE_CORRELATION_ID if is_unique else f"{uuid4()}"
 
 
 class Client:
@@ -255,6 +255,26 @@ class Client:
         retry_count: Annotated[NonNegativeInt, Field(gt=0)] = 3,
         **params: Any,
     ) -> ResultType:
+        """Involes a remote handler and waits for the result.
+
+        Arguments:
+            name -- handler to invoke on remote
+            expected_type -- expected type of the result
+            timeout -- maximum time to wait for the result
+
+        Keyword Arguments:
+            is_unique -- only one instance of this task can exsist at any given time (default: {False})
+            retry_count -- how many times to retry execution before giving up (default: {3})
+
+        Raises:
+            UnexpectedResultTypeError: wrong result type
+            TimedOutError: did not finish in time
+            NoMoreRetryAttemptsError: no more retry attempts left and still raised an error
+            FinishedWithError: task on remove finised with an error
+
+        Returns:
+            the resturn value of the handler invoked remotley
+        """
 
         correlation_id = _get_correlation_id(is_unique=is_unique)
         unique_id = UniqueIdModel(
