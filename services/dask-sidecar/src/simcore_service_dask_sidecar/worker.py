@@ -71,9 +71,13 @@ async def dask_setup(worker: distributed.Worker) -> None:
             _logger.info("We do have a running loop in the main thread: %s", f"{loop=}")
 
         if settings.DASK_SIDECAR_RABBITMQ:
-            await worker.plugin_add(
-                RabbitMQPlugin(settings.DASK_SIDECAR_RABBITMQ), catch_errors=False
-            )
+            try:
+                await worker.plugin_add(
+                    RabbitMQPlugin(settings.DASK_SIDECAR_RABBITMQ), catch_errors=False
+                )
+            except Exception:
+                await worker.close()
+                raise
 
         print_dask_sidecar_banner()
 
