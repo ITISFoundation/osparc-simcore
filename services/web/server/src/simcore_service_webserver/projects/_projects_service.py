@@ -596,6 +596,7 @@ async def _start_dynamic_service(  # noqa: C901
     service_key: ServiceKey,
     service_version: ServiceVersion,
     product_name: str,
+    product_api_base_url: str,
     user_id: UserID,
     project_uuid: ProjectID,
     node_uuid: NodeID,
@@ -767,6 +768,7 @@ async def _start_dynamic_service(  # noqa: C901
             app=request.app,
             dynamic_service_start=DynamicServiceStart(
                 product_name=product_name,
+                product_api_base_url=product_api_base_url,
                 can_save=save_state,
                 project_id=project_uuid,
                 user_id=user_id,
@@ -869,7 +871,8 @@ async def add_project_node(
 
 async def start_project_node(
     request: web.Request,
-    product_name: str,
+    product_name: ProductName,
+    product_api_base_url: str,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,

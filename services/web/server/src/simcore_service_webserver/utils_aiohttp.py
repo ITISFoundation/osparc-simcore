@@ -7,6 +7,7 @@ from aiohttp import web
 from aiohttp.web_exceptions import HTTPError, HTTPException
 from aiohttp.web_routedef import RouteDef, RouteTableDef
 from common_library.json_serialization import json_dumps
+from common_library.network import is_ip_address
 from models_library.generics import Envelope
 from pydantic import BaseModel, Field
 from servicelib.common_headers import X_FORWARDED_PROTO
@@ -151,3 +152,16 @@ def iter_originating_hosts(request: web.Request) -> Iterator[str]:
         host = request.host.partition(":")[0]
         if host not in seen:
             yield host
+
+
+def get_api_base_url(request: web.Request) -> str | None:
+    originating_host = next(iter_originating_hosts(request), None)
+    if not originating_host:
+        return None
+
+    api_host = (
+        f"api.{originating_host}"
+        if not is_ip_address(originating_host)
+        else originating_host
+    )
+    return f"{request.url.with_host(api_host).with_port(None).with_path('')}"
