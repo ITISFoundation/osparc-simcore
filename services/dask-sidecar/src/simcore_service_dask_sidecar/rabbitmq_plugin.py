@@ -39,25 +39,14 @@ class RabbitMQPlugin(distributed.WorkerPlugin):
         assert self._message_queue is not None  # nosec
         assert self._client is not None  # nosec
 
-        _logger.info("Starting message processor for RabbitMQ")
-        try:
+        with log_context(_logger, logging.INFO, "RabbitMQ message processor"):
             while True:
-                # Get message from queue
-                exchange_name, message_data = await self._message_queue.get()
-
-                try:
-                    # Publish to RabbitMQ
-                    await self._client.publish(exchange_name, message_data)
-                except Exception as e:
-                    _logger.exception("Failed to publish message: %s", str(e))
-                finally:
-                    # Mark task as done
-                    self._message_queue.task_done()
-        except asyncio.CancelledError:
-            _logger.info("RabbitMQ message processor shutting down")
-            raise
-        except Exception:
-            _logger.exception("Unexpected error in RabbitMQ message processor")
+                with log_catch(_logger, reraise=False):
+                    exchange_name, message_data = await self._message_queue.get()
+                    try:
+                        await self._client.publish(exchange_name, message_data)
+                    finally:
+                        self._message_queue.task_done()
 
     def setup(self, worker: distributed.Worker) -> Awaitable[None]:
         """Called when the plugin is attached to a worker"""
