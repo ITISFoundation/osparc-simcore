@@ -1,6 +1,6 @@
 from typing import Annotated, TypeAlias
 
-from pydantic import AnyHttpUrl, BaseModel, ByteSize, ConfigDict, Field
+from pydantic import AnyHttpUrl, BaseModel, BeforeValidator, ByteSize, ConfigDict, Field
 from pydantic.config import JsonDict
 
 from ..resource_tracker import HardwareInfo, PricingInfo
@@ -41,11 +41,9 @@ class DynamicServiceCreate(ServiceDetails):
 
     product_name: Annotated[str, Field(..., description="Current product name")]
     product_api_base_url: Annotated[
-        AnyHttpUrl,
-        Field(
-            ...,
-            description="Base url of the product",
-        ),
+        str,
+        BeforeValidator(lambda v: f"{AnyHttpUrl(v)}"),
+        Field(..., description="Current product API base URL"),
     ]
     can_save: Annotated[
         bool, Field(..., description="the service data must be saved when closing")
