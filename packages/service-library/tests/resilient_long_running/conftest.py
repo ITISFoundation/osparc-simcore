@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 import pytest
-from servicelib.long_running_interfaces._models import JobUniqueId, LongRunningNamespace
+from servicelib.resilent_long_running._models import JobUniqueId, LongRunningNamespace
 
 
 @pytest.fixture

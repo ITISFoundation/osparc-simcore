@@ -9,11 +9,11 @@ from typing import Any, Final
 import pytest
 from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task import create_periodic_task
-from servicelib.long_running_interfaces._errors import (
+from servicelib.resilent_long_running._errors import (
     JobNotFoundError,
     NoResultIsAvailableError,
 )
-from servicelib.long_running_interfaces._models import (
+from servicelib.resilent_long_running._models import (
     JobStatus,
     JobUniqueId,
     LongRunningNamespace,
@@ -21,8 +21,8 @@ from servicelib.long_running_interfaces._models import (
     ResultModel,
     StartParams,
 )
-from servicelib.long_running_interfaces._rpc.client import ClientRPCInterface
-from servicelib.long_running_interfaces._rpc.server import (
+from servicelib.resilent_long_running._rpc.client import ClientRPCInterface
+from servicelib.resilent_long_running._rpc.server import (
     BaseServerJobInterface,
     ServerRPCInterface,
 )

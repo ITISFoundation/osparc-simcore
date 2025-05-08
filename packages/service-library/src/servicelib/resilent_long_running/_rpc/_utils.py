@@ -1,7 +1,7 @@
 from typing import Final
 
 from models_library.rabbitmq_basic_types import RPCNamespace
-from servicelib.long_running_interfaces._models import LongRunningNamespace
+from servicelib.resilent_long_running._models import LongRunningNamespace
 
 _RPC_NAME: Final[str] = "long_running_interface"
 

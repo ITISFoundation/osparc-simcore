@@ -6,13 +6,13 @@ from collections.abc import AsyncIterable
 from datetime import timedelta
 
 import pytest
-from servicelib.long_running_interfaces._errors import UnexpectedJobNotFoundError
-from servicelib.long_running_interfaces._models import (
+from servicelib.resilent_long_running._errors import UnexpectedJobNotFoundError
+from servicelib.resilent_long_running._models import (
     JobUniqueId,
     LongRunningNamespace,
     ScheduleModel,
 )
-from servicelib.long_running_interfaces._redis import ClientStoreInterface
+from servicelib.resilent_long_running._redis import ClientStoreInterface
 from settings_library.redis import RedisSettings
 
 pytest_simcore_core_services_selection = [

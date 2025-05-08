@@ -10,15 +10,15 @@ from typing import Any
 import pytest
 from pydantic import NonNegativeInt, ValidationError
 from servicelib.async_utils import cancel_wait_task
-from servicelib.long_running_interfaces import (
+from servicelib.resilent_long_running import (
     Client,
     FinishedWithError,
     LongRunningNamespace,
     Server,
     TimedOutError,
 )
-from servicelib.long_running_interfaces._models import JobUniqueId
-from servicelib.long_running_interfaces.runners.asyncio_tasks import (
+from servicelib.resilent_long_running._models import JobUniqueId
+from servicelib.resilent_long_running.runners.asyncio_tasks import (
     AsyncioTasksJobInterface,
     AsyncTaskRegistry,
 )
