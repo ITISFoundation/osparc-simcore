@@ -136,6 +136,21 @@ async def server_rpc_interface(
     await server.teardown()
 
 
+async def _wait_to_be_finished(
+    client_rpc_interface: ClientRPCInterface, unique_id: JobUniqueId
+) -> None:
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(1),
+        stop=stop_after_delay(10),
+        retry=retry_if_exception_type(AssertionError),
+        reraise=True,
+    ):
+        with attempt:
+            assert (
+                await client_rpc_interface.get_status(unique_id) == JobStatus.FINISHED
+            )
+
+
 async def test_workflow(
     server_rpc_interface: ServerRPCInterface,
     client_rpc_interface: ClientRPCInterface,
@@ -157,22 +172,30 @@ async def test_workflow(
     with pytest.raises(NoResultIsAvailableError):
         assert await client_rpc_interface.get_result(unique_id)
 
-    # wait to be finsiehd
-    async for attempt in AsyncRetrying(
-        wait=wait_fixed(1),
-        stop=stop_after_delay(10),
-        retry=retry_if_exception_type(AssertionError),
-        reraise=True,
-    ):
-        with attempt:
-            assert (
-                await client_rpc_interface.get_status(unique_id) == JobStatus.FINISHED
-            )
+    await _wait_to_be_finished(client_rpc_interface, unique_id)
 
     # result should be ready
     assert await client_rpc_interface.get_result(unique_id) == ResultModel(
         data=f"{unique_id} done"
     )
+
+    # result and corresponding task is automatically removed once retruned
+    with pytest.raises(JobNotFoundError):
+        await client_rpc_interface.get_result(unique_id)
+
+
+async def test_finishes_with_error(
+    server_rpc_interface: ServerRPCInterface,
+    client_rpc_interface: ClientRPCInterface,
+    unique_id: JobUniqueId,
+    initilized_server_interface: _MockServerInterface,
+) -> None:
+
+    await client_rpc_interface.start(
+        "handler_name", unique_id, timeout=timedelta(seconds=4)
+    )
+
+    await _wait_to_be_finished(client_rpc_interface, unique_id)
 
     # simulates an error in the result
     initilized_server_interface.result_raises = True

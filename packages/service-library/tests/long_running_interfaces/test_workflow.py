@@ -211,21 +211,23 @@ async def _cancel_task_in_server(server: Server) -> None:
         task.cancel()
 
 
+async def _to_run(client: Client, retry_count: NonNegativeInt) -> None:
+    result = await client.ensure_result(
+        "sleep_for_f",
+        expected_type=type(None),
+        timeout=timedelta(seconds=10),
+        duration=2,
+        retry_count=retry_count,
+    )
+    assert result is None
+
+
 async def test_cancellation_from_server_retires_and_finishes(
     server: Server, client: Client
 ):
-    async def _to_run() -> None:
-        result = await client.ensure_result(
-            "sleep_for_f",
-            expected_type=type(None),
-            timeout=timedelta(seconds=10),
-            duration=2,
-        )
-        assert result is None
-
     await _assert_tasks_count(server, count=0)
 
-    task = asyncio.create_task(_to_run())
+    task = asyncio.create_task(_to_run(client, retry_count=3))
     await _assert_tasks_count(server, count=1)
 
     await _cancel_task_in_server(server)
@@ -236,19 +238,9 @@ async def test_cancellation_from_server_retires_and_finishes(
 async def test_cancellation_from_server_fails_if_no_more_retries_available(
     server: Server, client: Client
 ):
-    async def _to_run() -> None:
-        result = await client.ensure_result(
-            "sleep_for_f",
-            expected_type=type(None),
-            timeout=timedelta(seconds=10),
-            duration=2,
-            retry_count=1,
-        )
-        assert result is None
-
     await _assert_tasks_count(server, count=0)
 
-    task = asyncio.create_task(_to_run())
+    task = asyncio.create_task(_to_run(client, retry_count=1))
     await _assert_tasks_count(server, count=1)
 
     await _cancel_task_in_server(server)
