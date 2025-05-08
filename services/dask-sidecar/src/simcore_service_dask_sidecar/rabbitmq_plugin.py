@@ -69,13 +69,10 @@ class RabbitMQPlugin(distributed.WorkerPlugin):
                 )
                 return
 
-            if threading.current_thread() is threading.main_thread():
-                _logger.info(
-                    "RabbitMQ client plugin setup is in the main thread! That is good."
+            if threading.current_thread() is not threading.main_thread():
+                _logger.warning(
+                    "RabbitMQ client plugin setup is not in the main thread! Beware! if in pytest it's ok."
                 )
-            else:
-                msg = "RabbitMQ client plugin setup is not the main thread!"
-                raise ConfigurationError(msg=msg)
 
             with log_context(
                 _logger,

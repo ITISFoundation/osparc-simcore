@@ -119,6 +119,9 @@ def dask_subsystem_mock(
     )
     mock_rabbitmq_client = create_rabbitmq_client("pytest_dask_sidecar_logs_publisher")
     mock_dask_rabbitmq_plugin.get_client.return_value = mock_rabbitmq_client
+    mock_dask_rabbitmq_plugin.publish_message_from_any_thread = (
+        mock_rabbitmq_client.publish
+    )
 
     mocker.patch(
         "simcore_service_dask_sidecar.utils.dask.get_rabbitmq_client",
@@ -707,7 +710,9 @@ async def test_run_computational_sidecar_dask(
 
 
 @pytest.mark.parametrize(
-    "integration_version, boot_mode", [("1.0.0", BootMode.CPU)], indirect=True
+    "integration_version, boot_mode, task_owner",
+    [("1.0.0", BootMode.CPU, "no_parent_node")],
+    indirect=True,
 )
 async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub(
     dask_client: distributed.Client,
@@ -715,7 +720,6 @@ async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub
     progress_sub: distributed.Sub,
     mocked_get_image_labels: mock.Mock,
     log_rabbit_client_parser: mock.AsyncMock,
-    task_owner: TaskOwner,
 ):
     mocked_get_image_labels.assert_not_called()
     NUMBER_OF_LOGS = 20000
@@ -761,11 +765,7 @@ async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub
     ]
     # check all the awaited logs are in there
     filtered_worker_logs = filter(lambda log: "This is iteration" in log, worker_logs)
-    assert (
-        len(list(filtered_worker_logs)) == (2 * NUMBER_OF_LOGS)
-        if task_owner.has_parent
-        else NUMBER_OF_LOGS
-    )
+    assert len(list(filtered_worker_logs)) == NUMBER_OF_LOGS
     mocked_get_image_labels.assert_called()
 
 
