@@ -32,11 +32,13 @@ async def register_function(
     *,
     function: Function,
 ) -> Function:
-    return await rabbitmq_rpc_client.request(
+    result: Function = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("register_function"),
         function=function,
     )
+    assert isinstance(result, Function)  # nosec
+    return result
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -45,11 +47,13 @@ async def get_function(
     *,
     function_id: FunctionID,
 ) -> Function:
-    return await rabbitmq_rpc_client.request(
+    result: Function = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("get_function"),
         function_id=function_id,
     )
+    assert isinstance(result, Function)  # nosec
+    return result
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -58,11 +62,13 @@ async def get_function_input_schema(
     *,
     function_id: FunctionID,
 ) -> FunctionInputSchema:
-    return await rabbitmq_rpc_client.request(
+    result: FunctionInputSchema = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("get_function_input_schema"),
         function_id=function_id,
     )
+    assert isinstance(result, FunctionInputSchema)  # nosec
+    return result
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -71,11 +77,13 @@ async def get_function_output_schema(
     *,
     function_id: FunctionID,
 ) -> FunctionOutputSchema:
-    return await rabbitmq_rpc_client.request(
+    result: FunctionOutputSchema = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("get_function_output_schema"),
         function_id=function_id,
     )
+    assert isinstance(result, FunctionOutputSchema)  # nosec
+    return result
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -84,11 +92,13 @@ async def delete_function(
     *,
     function_id: FunctionID,
 ) -> None:
-    return await rabbitmq_rpc_client.request(
+    result: None = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("delete_function"),
         function_id=function_id,
     )
+    assert result is None  # nosec
+    return result
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -98,12 +108,17 @@ async def list_functions(
     pagination_limit: int,
     pagination_offset: int,
 ) -> tuple[list[Function], PageMetaInfoLimitOffset]:
-    return await rabbitmq_rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python("list_functions"),
-        pagination_offset=pagination_offset,
-        pagination_limit=pagination_limit,
+    result: tuple[list[Function], PageMetaInfoLimitOffset] = (
+        await rabbitmq_rpc_client.request(
+            WEBSERVER_RPC_NAMESPACE,
+            TypeAdapter(RPCMethodName).validate_python("list_functions"),
+            pagination_offset=pagination_offset,
+            pagination_limit=pagination_limit,
+        )
     )
+    assert isinstance(result, tuple)
+    assert len(result) == 2  # nosec
+    assert isinstance(result[0], list)  # nosec
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -113,12 +128,19 @@ async def list_function_jobs(
     pagination_limit: int,
     pagination_offset: int,
 ) -> tuple[list[FunctionJob], PageMetaInfoLimitOffset]:
-    return await rabbitmq_rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python("list_function_jobs"),
-        pagination_offset=pagination_offset,
-        pagination_limit=pagination_limit,
+    result: tuple[list[FunctionJob], PageMetaInfoLimitOffset] = (
+        await rabbitmq_rpc_client.request(
+            WEBSERVER_RPC_NAMESPACE,
+            TypeAdapter(RPCMethodName).validate_python("list_function_jobs"),
+            pagination_offset=pagination_offset,
+            pagination_limit=pagination_limit,
+        )
     )
+    assert isinstance(result, tuple)
+    assert len(result) == 2  # nosec
+    assert isinstance(result[0], list)  # nosec
+    assert isinstance(result[1], PageMetaInfoLimitOffset)  # nosec
+    return result
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -128,12 +150,19 @@ async def list_function_job_collections(
     pagination_limit: int,
     pagination_offset: int,
 ) -> tuple[list[FunctionJobCollection], PageMetaInfoLimitOffset]:
-    return await rabbitmq_rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python("list_function_job_collections"),
-        pagination_offset=pagination_offset,
-        pagination_limit=pagination_limit,
+    result: tuple[list[FunctionJobCollection], PageMetaInfoLimitOffset] = (
+        await rabbitmq_rpc_client.request(
+            WEBSERVER_RPC_NAMESPACE,
+            TypeAdapter(RPCMethodName).validate_python("list_function_job_collections"),
+            pagination_offset=pagination_offset,
+            pagination_limit=pagination_limit,
+        )
     )
+    assert isinstance(result, tuple)
+    assert len(result) == 2  # nosec
+    assert isinstance(result[0], list)  # nosec
+    assert isinstance(result[1], PageMetaInfoLimitOffset)  # nosec
+    return result
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -143,12 +172,14 @@ async def run_function(
     function_id: FunctionID,
     inputs: FunctionInputs,
 ) -> FunctionJob:
-    return await rabbitmq_rpc_client.request(
+    result: FunctionJob = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("run_function"),
         function_id=function_id,
         inputs=inputs,
     )
+    assert isinstance(result, FunctionJob)  # nosec
+    return result
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -157,11 +188,13 @@ async def register_function_job(
     *,
     function_job: FunctionJob,
 ) -> FunctionJob:
-    return await rabbitmq_rpc_client.request(
+    result: FunctionJob = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("register_function_job"),
         function_job=function_job,
     )
+    assert isinstance(result, FunctionJob)  # nosec
+    return result
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -170,11 +203,13 @@ async def get_function_job(
     *,
     function_job_id: FunctionJobID,
 ) -> FunctionJob:
-    return await rabbitmq_rpc_client.request(
+    result: FunctionJob = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("get_function_job"),
         function_job_id=function_job_id,
     )
+    assert isinstance(result, FunctionJob)  # nosec
+    return result
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -183,11 +218,13 @@ async def delete_function_job(
     *,
     function_job_id: FunctionJobID,
 ) -> None:
-    return await rabbitmq_rpc_client.request(
+    result: None = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("delete_function_job"),
         function_job_id=function_job_id,
     )
+    assert result is None  # nosec
+    return result
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -197,12 +234,16 @@ async def find_cached_function_job(
     function_id: FunctionID,
     inputs: FunctionInputs,
 ) -> FunctionJob | None:
-    return await rabbitmq_rpc_client.request(
+    result: FunctionJob = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("find_cached_function_job"),
         function_id=function_id,
         inputs=inputs,
     )
+    if result is None:
+        return None
+    assert isinstance(result, FunctionJob)  # nosec
+    return result
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -211,11 +252,13 @@ async def register_function_job_collection(
     *,
     function_job_collection: FunctionJobCollection,
 ) -> FunctionJobCollection:
-    return await rabbitmq_rpc_client.request(
+    result: FunctionJobCollection = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("register_function_job_collection"),
         function_job_collection=function_job_collection,
     )
+    assert isinstance(result, FunctionJobCollection)  # nosec
+    return result
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -224,11 +267,13 @@ async def get_function_job_collection(
     *,
     function_job_collection_id: FunctionJobCollectionID,
 ) -> FunctionJobCollection:
-    return await rabbitmq_rpc_client.request(
+    result: FunctionJobCollection = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("get_function_job_collection"),
         function_job_collection_id=function_job_collection_id,
     )
+    assert isinstance(result, FunctionJobCollection)  # nosec
+    return result
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -237,8 +282,10 @@ async def delete_function_job_collection(
     *,
     function_job_collection_id: FunctionJobCollectionID,
 ) -> None:
-    return await rabbitmq_rpc_client.request(
+    result: None = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("delete_function_job_collection"),
         function_job_collection_id=function_job_collection_id,
     )
+    assert result is None
+    return result
