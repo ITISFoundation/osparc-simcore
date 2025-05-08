@@ -1,4 +1,5 @@
 import traceback
+from asyncio import CancelledError
 from datetime import timedelta
 
 from servicelib.rabbitmq import RPCRouter
@@ -91,7 +92,10 @@ class ServerRPCInterface:
         try:
             result = await self.job_interface.get_result(unique_id)
             return ResultModel(data=result)
-        except Exception as e:  # pylint:disable=broad-exception-caught
+        except (  # pylint:disable=broad-exception-caught
+            Exception,
+            CancelledError,
+        ) as e:
             formatted_traceback = "\n".join(traceback.format_tb(e.__traceback__))
             return ResultModel(
                 error=ErrorModel(

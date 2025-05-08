@@ -61,7 +61,7 @@ class AsyncioTasksJobInterface(BaseServerJobInterface):
             return False
 
         task = self._tasks[unique_id]
-        return not task.done()
+        return not task.done() and not task.cancelled()
 
     async def get_result(self, unique_id: JobUniqueId) -> Any | None:
         """provides the result of the job once finished"""

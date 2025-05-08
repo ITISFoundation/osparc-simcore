@@ -1,4 +1,3 @@
-import logging
 from datetime import timedelta
 from typing import TypeVar
 
@@ -16,9 +15,6 @@ from .._models import (
     StartParams,
 )
 from ._utils import get_rpc_namespace
-
-_logger = logging.getLogger(__name__)
-
 
 ResultType = TypeVar("ResultType")
 

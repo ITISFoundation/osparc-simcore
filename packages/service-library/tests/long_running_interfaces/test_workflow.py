@@ -2,6 +2,7 @@
 # pylint:disable=unused-argument
 
 import asyncio
+from asyncio import CancelledError
 from collections.abc import AsyncIterable
 from dataclasses import dataclass
 from datetime import timedelta
@@ -17,6 +18,7 @@ from servicelib.long_running_interfaces import (
     Server,
     TimedOutError,
 )
+from servicelib.long_running_interfaces._models import JobUniqueId
 from servicelib.long_running_interfaces.runners.asyncio_tasks import (
     AsyncioTasksJobInterface,
     AsyncTaskRegistry,
@@ -74,6 +76,10 @@ async def server(
         await asyncio.sleep(duration)
         msg = "I always raise an error"
         raise RuntimeError(msg)
+
+    @registry.expose()
+    async def sleep_for_f(duration: float) -> None:
+        await asyncio.sleep(duration)
 
     @registry.expose()
     async def sleep_forever_f() -> None:
@@ -166,17 +172,20 @@ async def test_timeout_error_retry_count_zero(server: Server, client: Client):
     assert "Input should be greater than 0" in f"{exec_info.value}"
 
 
+def _get_tasks(server: Server) -> dict[JobUniqueId, asyncio.Task]:
+    assert isinstance(server.rpc_interface.job_interface, AsyncioTasksJobInterface)
+    # pylint:disable=protected-access
+    return server.rpc_interface.job_interface._tasks  # noqa: SLF001
+
+
 @retry(
     wait=wait_fixed(0.1),
     stop=stop_after_delay(5),
     retry=retry_if_exception_type(AssertionError),
 )  # NOTE: function has to be async or the loop does not get a cahce to switch between retries
 async def _assert_tasks_count(server: Server, count: int) -> None:
-    assert isinstance(server.rpc_interface.job_interface, AsyncioTasksJobInterface)
-    task_count = len(
-        server.rpc_interface.job_interface._tasks.values()  # noqa: SLF001 # pylint:disable=protected-access
-    )
-    assert task_count == count
+    tasks = _get_tasks(server)
+    assert len(tasks.values()) == count
 
 
 async def test_cancellation_from_client(server: Server, client: Client):
@@ -190,5 +199,37 @@ async def test_cancellation_from_client(server: Server, client: Client):
     task = asyncio.create_task(_to_run())
     await _assert_tasks_count(server, count=1)
 
+    # cancel from client side
     await cancel_wait_task(task, max_delay=5)
     await _assert_tasks_count(server, count=0)
+
+
+async def _cancel_task_in_server(server: Server) -> None:
+    tasks = _get_tasks(server)
+    assert len(tasks.values()) == 1
+
+    for task in tasks.values():
+        task.cancel()
+
+
+async def test_cancellation_from_server(server: Server, client: Client):
+    async def _to_run() -> None:
+        result = await client.ensure_result(
+            "sleep_for_f",
+            expected_type=type(None),
+            timeout=timedelta(seconds=30),
+            duration=5,
+        )
+        assert result is None
+
+    await _assert_tasks_count(server, count=0)
+
+    task = asyncio.create_task(_to_run())
+    await _assert_tasks_count(server, count=1)
+
+    await _cancel_task_in_server(server)
+
+    with pytest.raises(FinishedWithError) as exec_info:
+        await task
+
+    assert exec_info.value.error == CancelledError
