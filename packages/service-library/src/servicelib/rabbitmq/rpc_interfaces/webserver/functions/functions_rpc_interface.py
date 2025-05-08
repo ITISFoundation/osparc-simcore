@@ -1,4 +1,5 @@
 import logging
+from typing import get_origin
 
 from models_library.api_schemas_webserver import (
     WEBSERVER_RPC_NAMESPACE,
@@ -37,7 +38,7 @@ async def register_function(
         TypeAdapter(RPCMethodName).validate_python("register_function"),
         function=function,
     )
-    assert isinstance(result, Function)  # nosec
+    assert isinstance(result, get_origin(Function) or Function)  # nosec
     return result
 
 
@@ -52,7 +53,7 @@ async def get_function(
         TypeAdapter(RPCMethodName).validate_python("get_function"),
         function_id=function_id,
     )
-    assert isinstance(result, Function)  # nosec
+    assert isinstance(result, get_origin(Function) or Function)  # nosec
     return result
 
 
@@ -117,8 +118,9 @@ async def list_functions(
         )
     )
     assert isinstance(result, tuple)
-    assert len(result) == 2  # nosec
     assert isinstance(result[0], list)  # nosec
+    assert isinstance(result[1], PageMetaInfoLimitOffset)  # nosec
+    return result
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -137,7 +139,6 @@ async def list_function_jobs(
         )
     )
     assert isinstance(result, tuple)
-    assert len(result) == 2  # nosec
     assert isinstance(result[0], list)  # nosec
     assert isinstance(result[1], PageMetaInfoLimitOffset)  # nosec
     return result
@@ -159,7 +160,6 @@ async def list_function_job_collections(
         )
     )
     assert isinstance(result, tuple)
-    assert len(result) == 2  # nosec
     assert isinstance(result[0], list)  # nosec
     assert isinstance(result[1], PageMetaInfoLimitOffset)  # nosec
     return result
@@ -178,7 +178,7 @@ async def run_function(
         function_id=function_id,
         inputs=inputs,
     )
-    assert isinstance(result, FunctionJob)  # nosec
+    assert isinstance(result, get_origin(FunctionJob) or FunctionJob)  # nosec
     return result
 
 
@@ -193,7 +193,7 @@ async def register_function_job(
         TypeAdapter(RPCMethodName).validate_python("register_function_job"),
         function_job=function_job,
     )
-    assert isinstance(result, FunctionJob)  # nosec
+    assert isinstance(result, get_origin(FunctionJob) or FunctionJob)  # nosec
     return result
 
 
@@ -208,7 +208,7 @@ async def get_function_job(
         TypeAdapter(RPCMethodName).validate_python("get_function_job"),
         function_job_id=function_job_id,
     )
-    assert isinstance(result, FunctionJob)  # nosec
+    assert isinstance(result, get_origin(FunctionJob) or FunctionJob)  # nosec
     return result
 
 
@@ -242,7 +242,7 @@ async def find_cached_function_job(
     )
     if result is None:
         return None
-    assert isinstance(result, FunctionJob)  # nosec
+    assert isinstance(result, get_origin(FunctionJob) or FunctionJob)  # nosec
     return result
 
 

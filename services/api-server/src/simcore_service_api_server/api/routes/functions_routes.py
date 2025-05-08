@@ -201,10 +201,10 @@ async def validate_function_inputs(
 ):
     function = await wb_api_rpc.get_function(function_id=function_id)
 
-    if function.input_schema is None:
+    if function.input_schema is None or function.input_schema.schema_dict is None:
         return True, "No input schema defined for this function"
     try:
-        jsonschema.validate(instance=inputs, schema=function.input_schema.schema_dict)  # type: ignore
+        jsonschema.validate(instance=inputs, schema=function.input_schema.schema_dict)
     except ValidationError as err:
         return False, str(err)
     return True, "Inputs are valid"
@@ -421,7 +421,7 @@ async def function_job_status(
     ):
         job_status = await studies_jobs.inspect_study_job(
             study_id=function.project_id,
-            job_id=function_job.project_job_id,  # type: ignore
+            job_id=function_job.project_job_id,
             user_id=user_id,
             director2_api=director2_api,
         )
@@ -466,7 +466,7 @@ async def function_job_outputs(
     ):
         job_outputs = await studies_jobs.get_study_job_outputs(
             study_id=function.project_id,
-            job_id=function_job.project_job_id,  # type: ignore
+            job_id=function_job.project_job_id,
             user_id=user_id,
             webserver_api=webserver_api,
             storage_client=storage_client,
@@ -539,7 +539,11 @@ async def map_function(  # noqa: PLR0913
             uid=None,
             title="Function job collection of function map",
             description=function_job_collection_description,
-            job_ids=[function_job.uid for function_job in function_jobs],  # type: ignore
+            job_ids=[
+                function_job.uid
+                for function_job in function_jobs
+                if function_job.uid is not None
+            ],
         ),
     )
 
