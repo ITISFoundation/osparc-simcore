@@ -202,17 +202,9 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       preResourcePromises.push(osparc.store.Services.getServicesLatest(false));
       Promise.all(preResourcePromises)
         .then(() => {
-          [
-            this.__studyBrowser,
-            this.__templateBrowser,
-            this.__hypertoolBrowser,
-            this.__serviceBrowser,
-            this.__dataBrowser
-          ].forEach(resourceBrowser => {
-            if (resourceBrowser) {
-              resourceBrowser.initResources();
-            }
-          });
+          this.__studyBrowser.initResources();
+          this.__serviceBrowser.initResources();
+          this.__dataBrowser.initResources();
         })
         .catch(err => console.error(err));
     },
