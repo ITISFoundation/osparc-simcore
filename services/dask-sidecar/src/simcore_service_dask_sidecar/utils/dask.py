@@ -111,7 +111,7 @@ class TaskPublisher:
                     log_level=log_level,
                 )
                 await rabbitmq_client.publish_message_from_any_thread(
-                    parent_message.channel_name, base_message
+                    parent_message.channel_name, parent_message
                 )
 
         _logger.log(log_level, message)
