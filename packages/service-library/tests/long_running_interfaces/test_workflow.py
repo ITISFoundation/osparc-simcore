@@ -217,8 +217,8 @@ async def test_cancellation_from_server(server: Server, client: Client):
         result = await client.ensure_result(
             "sleep_for_f",
             expected_type=type(None),
-            timeout=timedelta(seconds=30),
-            duration=5,
+            timeout=timedelta(seconds=10),
+            duration=2,
         )
         assert result is None
 
