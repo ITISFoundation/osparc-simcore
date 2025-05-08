@@ -17,6 +17,8 @@ InputTypes: TypeAlias = FileID | float | int | bool | str | list
 
 
 class FunctionSchema(BaseModel):
+    """Schema for function input/output"""
+
     schema_dict: dict[str, Any] | None  # JSON Schema
 
 
@@ -163,3 +165,52 @@ class FunctionJobCollectionDB(BaseModel):
 
 class FunctionJobCollectionStatus(BaseModel):
     status: list[str]
+
+
+class FunctionNotFoundError(Exception):
+    """Exception raised when a function is not found"""
+
+    def __init__(self, function_id: FunctionID):
+        self.function_id = function_id
+        super().__init__(f"Function {function_id} not found")
+
+
+class FunctionJobNotFoundError(Exception):
+    """Exception raised when a function job is not found"""
+
+    def __init__(self, function_job_id: FunctionJobID):
+        self.function_job_id = function_job_id
+        super().__init__(f"Function job {function_job_id} not found")
+
+
+class FunctionJobCollectionNotFoundError(Exception):
+    """Exception raised when a function job collection is not found"""
+
+    def __init__(self, function_job_collection_id: FunctionJobCollectionID):
+        self.function_job_collection_id = function_job_collection_id
+        super().__init__(
+            f"Function job collection {function_job_collection_id} not found"
+        )
+
+
+class RegisterFunctionWithUIDError(Exception):
+    """Exception raised when registering a function with a UID"""
+
+    def __init__(self):
+        super().__init__("Cannot register Function with a UID")
+
+
+class UnsupportedFunctionClassError(Exception):
+    """Exception raised when a function class is not supported"""
+
+    def __init__(self, function_class: str):
+        self.function_class = function_class
+        super().__init__(f"Function class {function_class} is not supported")
+
+
+class UnsupportedFunctionJobClassError(Exception):
+    """Exception raised when a function job class is not supported"""
+
+    def __init__(self, function_job_class: str):
+        self.function_job_class = function_job_class
+        super().__init__(f"Function job class {function_job_class} is not supported")

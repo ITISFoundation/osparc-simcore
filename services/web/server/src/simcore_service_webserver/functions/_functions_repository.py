@@ -7,8 +7,12 @@ from models_library.api_schemas_webserver.functions_wb_schema import (
     FunctionInputs,
     FunctionJobCollection,
     FunctionJobCollectionDB,
+    FunctionJobCollectionNotFoundError,
     FunctionJobDB,
     FunctionJobID,
+    FunctionJobNotFoundError,
+    FunctionNotFoundError,
+    RegisterFunctionWithUIDError,
 )
 from models_library.rest_pagination import (
     PageMetaInfoLimitOffset,
@@ -52,8 +56,7 @@ async def register_function(
 ) -> FunctionDB:
 
     if function.uuid is not None:
-        msg = "Function uid is not None. Cannot register function."
-        raise ValueError(msg)
+        raise RegisterFunctionWithUIDError
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(
@@ -79,9 +82,10 @@ async def register_function(
         )
         row = await result.first()
 
-        if row is None:
-            msg = "No row was returned from the database after creating function."
-            raise ValueError(msg)
+        assert row is not None, (
+            "No row was returned from the database after creating function."
+            f" Function: {function}"
+        )  # nosec
 
         return FunctionDB.model_validate(dict(row))
 
@@ -100,9 +104,7 @@ async def get_function(
         row = await result.first()
 
         if row is None:
-            msg = f"No function found with id {function_id}."
-            raise web.HTTPNotFound(reason=msg)
-
+            raise FunctionNotFoundError(function_id=function_id)
         return FunctionDB.model_validate(dict(row))
 
 
@@ -258,9 +260,10 @@ async def register_function_job(
         )
         row = await result.first()
 
-        if row is None:
-            msg = "No row was returned from the database after creating function job."
-            raise ValueError(msg)
+        assert row is not None, (
+            "No row was returned from the database after creating function job."
+            f" Function job: {function_job}"
+        )  # nosec
 
         return FunctionJobDB.model_validate(dict(row))
 
@@ -281,8 +284,7 @@ async def get_function_job(
         row = await result.first()
 
         if row is None:
-            msg = f"No function job found with id {function_job_id}."
-            raise web.HTTPNotFound(reason=msg)
+            raise FunctionJobNotFoundError(function_job_id=function_job_id)
 
         return FunctionJobDB.model_validate(dict(row))
 
@@ -319,13 +321,19 @@ async def find_cached_function_job(
 
         rows = await result.all()
 
-        if rows is None:
+        if rows is None or len(rows) == 0:
             return None
 
-        for row in rows:
-            job = FunctionJobDB.model_validate(dict(row))
-            if job.inputs == inputs:
-                return job
+        assert len(rows) == 1, (
+            "More than one function job found with the same function id and inputs."
+            f" Function id: {function_id}, Inputs: {inputs}"
+        )  # nosec
+
+        row = rows[0]
+
+        job = FunctionJobDB.model_validate(dict(row))
+        if job.inputs == inputs:
+            return job
 
         return None
 
@@ -346,8 +354,9 @@ async def get_function_job_collection(
         row = await result.first()
 
         if row is None:
-            msg = f"No function job collection found with id {function_job_collection_id}."
-            raise web.HTTPNotFound(reason=msg)
+            raise FunctionJobCollectionNotFoundError(
+                function_job_collection_id=function_job_collection_id
+            )
 
         # Retrieve associated job ids from the join table
         job_result = await conn.stream(
@@ -383,9 +392,10 @@ async def register_function_job_collection(
         )
         row = await result.first()
 
-        if row is None:
-            msg = "No row was returned from the database after creating function job collection."
-            raise ValueError(msg)
+        assert row is not None, (
+            "No row was returned from the database after creating function job collection."
+            f" Function job collection: {function_job_collection}"
+        )  # nosec
 
         for job_id in function_job_collection.job_ids:
             await conn.execute(

@@ -18,6 +18,8 @@ from models_library.api_schemas_webserver.functions_wb_schema import (
     ProjectFunctionJob,
     SolverFunction,
     SolverFunctionJob,
+    UnsupportedFunctionClassError,
+    UnsupportedFunctionJobClassError,
 )
 from models_library.rest_pagination import (
     PageMetaInfoLimitOffset,
@@ -30,12 +32,6 @@ from . import _functions_repository
 router = RPCRouter()
 
 # pylint: disable=no-else-return
-
-
-@router.expose()
-async def ping(app: web.Application) -> str:
-    assert app
-    return "pong from webserver"
 
 
 @router.expose()
@@ -72,8 +68,7 @@ def _decode_function(
             default_inputs=function.default_inputs,
         )
     else:
-        msg = f"Unsupported function class: [{function.function_class}]"
-        raise TypeError(msg)
+        raise UnsupportedFunctionClassError(function_class=function.function_class)
 
 
 def _encode_function(
@@ -91,8 +86,7 @@ def _encode_function(
             }
         )
     else:
-        msg = f"Unsupported function class: {function.function_class}"
-        raise TypeError(msg)
+        raise UnsupportedFunctionClassError(function_class=function.function_class)
 
     return FunctionDB(
         uuid=function.uid,
@@ -142,8 +136,9 @@ def _decode_functionjob(
             solver_job_id=functionjob_db.class_specific_data["solver_job_id"],
         )
     else:
-        msg = f"Unsupported function class: [{functionjob_db.function_class}]"
-        raise TypeError(msg)
+        raise UnsupportedFunctionJobClassError(
+            function_job_class=functionjob_db.function_class
+        )
 
 
 def _encode_functionjob(
@@ -178,8 +173,9 @@ def _encode_functionjob(
             function_class=functionjob.function_class,
         )
     else:
-        msg = f"Unsupported function class: [{functionjob.function_class}]"
-        raise TypeError(msg)
+        raise UnsupportedFunctionJobClassError(
+            function_job_class=functionjob.function_class
+        )
 
 
 @router.expose()
@@ -355,8 +351,9 @@ async def find_cached_function_job(
             solver_job_id=returned_function_job.class_specific_data["solver_job_id"],
         )
     else:
-        msg = f"Unsupported function class: [{returned_function_job.function_class}]"
-        raise TypeError(msg)
+        raise UnsupportedFunctionJobClassError(
+            function_job_class=returned_function_job.function_class
+        )
 
 
 @router.expose()
