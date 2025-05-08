@@ -5,10 +5,10 @@
 - Every product has a front-end with exactly the same name
 """
 
-import json
 from typing import Literal
 
 import sqlalchemy as sa
+from common_library.json_serialization import json_dumps
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
 from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
@@ -51,7 +51,7 @@ class Vendor(TypedDict, total=False):
     invitation_url: str  # How to request a trial invitation? (if applies)
     invitation_form: bool  # If True, it takes precendence over invitation_url and asks the FE to show the form (if defined)
 
-    release_notes_url_template: str  # a template url where `{vtag}` will be replaced, eg: "http://example.com/{vtag}.md"
+    release_notes_url_template: str  # a template url where `{vtag}` will be replaced, eg: "https://example.com/{vtag}.md"
 
     ui: VendorUI
 
@@ -114,7 +114,7 @@ class ProductLoginSettingsDict(TypedDict, total=False):
 
 # NOTE: defaults affects migration!!
 LOGIN_SETTINGS_DEFAULT = ProductLoginSettingsDict()  # = {}
-_LOGIN_SETTINGS_SERVER_DEFAULT = json.dumps(LOGIN_SETTINGS_DEFAULT)
+_LOGIN_SETTINGS_SERVER_DEFAULT = json_dumps(LOGIN_SETTINGS_DEFAULT)
 
 
 #

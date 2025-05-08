@@ -6,6 +6,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Header, Query, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
+from fastapi_pagination.api import create_page
 from models_library.api_schemas_webserver.projects import ProjectPatch
 from models_library.api_schemas_webserver.projects_nodes import NodeOutputs
 from models_library.clusters import ClusterID
@@ -13,10 +14,12 @@ from models_library.function_services_catalog.services import file_picker
 from models_library.projects import ProjectID
 from models_library.projects_nodes import InputID, InputTypes
 from models_library.projects_nodes_io import NodeID
-from pydantic import PositiveInt
+from pydantic import HttpUrl, PositiveInt
 from servicelib.logging_utils import log_context
 
+from ..._service_studies import StudyService
 from ...exceptions.backend_errors import ProjectAlreadyStartedError
+from ...models.api_resources import parse_resources_ids
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.jobs import (
@@ -47,16 +50,26 @@ from ...services_http.webserver import AuthSession
 from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
-from ..dependencies.services import get_api_client
-from ..dependencies.webserver_http import get_webserver_session
+from ..dependencies.services import get_api_client, get_study_service
+from ..dependencies.webserver_http import AuthSession, get_webserver_session
 from ..dependencies.webserver_rpc import (
     get_wb_api_rpc_client,
 )
-from ._common import API_SERVER_DEV_FEATURES_ENABLED
-from ._constants import FMSG_CHANGELOG_CHANGED_IN_VERSION, FMSG_CHANGELOG_NEW_IN_VERSION
-from .solvers_jobs import JOBS_STATUS_CODES
+from ._constants import (
+    FMSG_CHANGELOG_CHANGED_IN_VERSION,
+    FMSG_CHANGELOG_NEW_IN_VERSION,
+    create_route_description,
+)
+from .solvers_jobs import (
+    JOBS_STATUS_CODES,
+)
+
+# pylint: disable=too-many-arguments
+
 
 _logger = logging.getLogger(__name__)
+
+
 router = APIRouter()
 
 
@@ -71,15 +84,41 @@ def _compose_job_resource_name(study_key, job_id) -> str:
 @router.get(
     "/{study_id:uuid}/jobs",
     response_model=Page[Job],
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
-    status_code=status.HTTP_501_NOT_IMPLEMENTED,
+    description=create_route_description(
+        base="List of all jobs created for a given study (paginated)",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.8"),
+        ],
+    ),
+    include_in_schema=False,  # TO BE RELEASED in 0.8
 )
 async def list_study_jobs(
     study_id: StudyID,
     page_params: Annotated[PaginationParams, Depends()],
+    study_service: Annotated[StudyService, Depends(get_study_service)],
+    url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
     msg = f"list study jobs study_id={study_id!r} with pagination={page_params!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
-    raise NotImplementedError(msg)
+    _logger.debug(msg)
+
+    jobs, meta = await study_service.list_jobs(
+        filter_by_study_id=study_id,
+        pagination_offset=page_params.offset,
+        pagination_limit=page_params.limit,
+    )
+
+    for job in jobs:
+        study_id_str, job_id = parse_resources_ids(job.resource_name)
+        assert study_id_str == f"{study_id}"
+        _update_study_job_urls(
+            job=job, study_id=study_id, job_id=job_id, url_for=url_for
+        )
+
+    return create_page(
+        jobs,
+        total=meta.total,
+        params=page_params,
+    )
 
 
 @router.post(
@@ -174,13 +213,21 @@ async def create_study_job(
 @router.get(
     "/{study_id:uuid}/jobs/{job_id:uuid}",
     response_model=Job,
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
     status_code=status.HTTP_501_NOT_IMPLEMENTED,
+    description=create_route_description(
+        base="Gets a jobs for a given study",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.8"),
+        ],
+    ),
+    include_in_schema=False,  # TO BE RELEASED in 0.8
 )
 async def get_study_job(
     study_id: StudyID,
     job_id: JobID,
+    study_service: Annotated[StudyService, Depends(get_study_service)],
 ):
+    assert study_service  # nosec
     msg = f"get study job study_id={study_id!r} job_id={job_id!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
     raise NotImplementedError(msg)
 
@@ -405,3 +452,30 @@ async def replace_study_job_custom_metadata(
             job_id=job_id,
         ),
     )
+
+
+def _update_study_job_urls(
+    *,
+    job: Job,
+    study_id: StudyID,
+    job_id: JobID | str,
+    url_for: Callable[..., HttpUrl],
+) -> Job:
+    job.url = url_for(
+        get_study_job.__name__,
+        study_id=study_id,
+        job_id=job_id,
+    )
+
+    job.runner_url = url_for(
+        "get_study",
+        study_id=study_id,
+    )
+
+    job.outputs_url = url_for(
+        get_study_job_outputs.__name__,
+        study_id=study_id,
+        job_id=job_id,
+    )
+
+    return job

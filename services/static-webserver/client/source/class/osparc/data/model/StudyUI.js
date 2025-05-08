@@ -33,7 +33,8 @@ qx.Class.define("osparc.data.model.StudyUI", {
       slideshow: new osparc.data.model.Slideshow(studyDataUI && studyDataUI.slideshow ? studyDataUI.slideshow : this.getSlideshow()),
       currentNodeId: studyDataUI && studyDataUI.currentNodeId ? studyDataUI.currentNodeId : this.initCurrentNodeId(),
       mode: studyDataUI && studyDataUI.mode ? studyDataUI.mode : this.initMode(),
-      annotations: {}
+      annotations: {},
+      templateType: studyDataUI && studyDataUI.templateType ? studyDataUI.templateType : null,
     });
 
     if ("annotations" in studyDataUI) {
@@ -79,7 +80,18 @@ qx.Class.define("osparc.data.model.StudyUI", {
       check: "Object",
       init: {},
       nullable: true
-    }
+    },
+
+    templateType: {
+      check: [null, "hypertool"],
+      init: null,
+      nullable: true,
+      event: "changeTemplateType",
+    },
+  },
+
+  statics: {
+    HYPERTOOL_TYPE: "hypertool",
   },
 
   members: {

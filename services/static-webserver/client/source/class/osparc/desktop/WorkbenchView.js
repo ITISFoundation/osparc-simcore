@@ -438,6 +438,19 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       this.__addTopBarSpacer(topBar);
 
+      if (osparc.utils.DisabledPlugins.isConversationEnabled()) {
+        const commentsButton = new qx.ui.form.Button().set({
+          appearance: "form-button-outlined",
+          toolTipText: this.tr("Conversations"),
+          icon: "@FontAwesome5Solid/comments/16",
+          marginRight: 10,
+          marginTop: 7,
+          ...osparc.navigation.NavigationBar.BUTTON_OPTIONS
+        });
+        commentsButton.addListener("execute", () => osparc.info.Conversations.popUpInWindow(study.serialize()));
+        topBar.add(commentsButton);
+      }
+
       const startAppButtonTB = this.__startAppButtonTB = new qx.ui.form.Button().set({
         appearance: "form-button-outlined",
         label: this.tr("App Mode"),

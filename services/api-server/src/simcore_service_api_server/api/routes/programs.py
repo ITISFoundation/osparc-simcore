@@ -1,65 +1,113 @@
+# pylint: disable=too-many-arguments
 import logging
 from collections.abc import Callable
-from operator import attrgetter
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Header, HTTPException, status
+from fastapi import APIRouter, Body, Depends, Header, HTTPException, status
+from fastapi_pagination import create_page
 from httpx import HTTPStatusError
 from models_library.api_schemas_storage.storage_schemas import (
     LinkType,
 )
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from pydantic import ByteSize, PositiveInt, ValidationError
+from pydantic import ByteSize, PositiveInt, StringConstraints, ValidationError
 from servicelib.fastapi.dependencies import get_reverse_url_mapper
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
 from simcore_sdk.node_ports_common.filemanager import (
     complete_file_upload,
     get_upload_links_from_s3,
 )
-from simcore_service_api_server._service import create_solver_or_program_job
-from simcore_service_api_server.api.dependencies.webserver_http import (
-    get_webserver_session,
-)
-from simcore_service_api_server.services_http.webserver import AuthSession
 
+from ..._service_jobs import JobService
+from ..._service_programs import ProgramService
+from ...api.routes._constants import (
+    DEFAULT_MAX_STRING_LENGTH,
+    FMSG_CHANGELOG_NEW_IN_VERSION,
+    create_route_description,
+)
 from ...models.basic_types import VersionStr
+from ...models.pagination import Page, PaginationParams
 from ...models.schemas.jobs import Job, JobInputs
 from ...models.schemas.programs import Program, ProgramKeyId
-from ...services_http.catalog import CatalogApi
-from ..dependencies.authentication import get_current_user_id, get_product_name
-from ..dependencies.services import get_api_client
+from ..dependencies.authentication import get_current_user_id
+from ..dependencies.services import get_job_service, get_program_service
 
 _logger = logging.getLogger(__name__)
+
 router = APIRouter()
 
 
-@router.get("", response_model=list[Program], include_in_schema=False)
+@router.get(
+    "",
+    response_model=Page[Program],
+    description=create_route_description(
+        base="Lists the latest of all available programs",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.8"),
+        ],
+    ),
+    include_in_schema=False,  # TO BE RELEASED in 0.8
+)
 async def list_programs(
-    user_id: Annotated[int, Depends(get_current_user_id)],
-    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
+    program_service: Annotated[ProgramService, Depends(get_program_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
-    product_name: Annotated[str, Depends(get_product_name)],
+    page_params: Annotated[PaginationParams, Depends()],
 ):
-    """Lists all available solvers (latest version)
-
-    SEE get_solvers_page for paginated version of this function
-    """
-    services = await catalog_client.list_services(
-        user_id=user_id,
-        product_name=product_name,
-        predicate=None,
-        type_filter="DYNAMIC",
+    programs, page_meta = await program_service.list_latest_programs(
+        pagination_offset=page_params.offset,
+        pagination_limit=page_params.limit,
     )
-
-    programs = [service.to_program() for service in services]
+    page_params.limit = page_meta.limit
+    page_params.offset = page_meta.offset
 
     for program in programs:
         program.url = url_for(
             "get_program_release", program_key=program.id, version=program.version
         )
 
-    return sorted(programs, key=attrgetter("id"))
+    return create_page(
+        programs,
+        total=len(programs),
+        params=page_params,
+    )
+
+
+@router.get(
+    "/{program_key:path}/releases",
+    response_model=Page[Program],
+    description=create_route_description(
+        base="Lists the latest of all available programs",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.8"),
+        ],
+    ),
+    include_in_schema=False,  # TO BE RELEASED in 0.8
+)
+async def list_program_history(
+    program_key: ProgramKeyId,
+    program_service: Annotated[ProgramService, Depends(get_program_service)],
+    url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
+    page_params: Annotated[PaginationParams, Depends()],
+):
+    programs, page_meta = await program_service.list_program_history(
+        program_key=program_key,
+        offset=page_params.offset,
+        limit=page_params.limit,
+    )
+    page_params.limit = page_meta.limit
+    page_params.offset = page_meta.offset
+
+    for program in programs:
+        program.url = url_for(
+            "get_program_release", program_key=program.id, version=program.version
+        )
+
+    return create_page(
+        programs,
+        total=len(programs),
+        params=page_params,
+    )
 
 
 @router.get(
@@ -69,18 +117,14 @@ async def list_programs(
 async def get_program_release(
     program_key: ProgramKeyId,
     version: VersionStr,
-    user_id: Annotated[int, Depends(get_current_user_id)],
-    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
+    program_service: Annotated[ProgramService, Depends(get_program_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
-    product_name: Annotated[str, Depends(get_product_name)],
 ) -> Program:
     """Gets a specific release of a solver"""
     try:
-        program = await catalog_client.get_program(
-            user_id=user_id,
+        program = await program_service.get_program(
             name=program_key,
             version=version,
-            product_name=product_name,
         )
 
         program.url = url_for(
@@ -109,29 +153,30 @@ async def create_program_job(
     program_key: ProgramKeyId,
     version: VersionStr,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
-    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
-    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    program_service: Annotated[ProgramService, Depends(get_program_service)],
+    job_service: Annotated[JobService, Depends(get_job_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
-    product_name: Annotated[str, Depends(get_product_name)],
     x_simcore_parent_project_uuid: Annotated[ProjectID | None, Header()] = None,
     x_simcore_parent_node_id: Annotated[NodeID | None, Header()] = None,
+    name: Annotated[
+        str | None, StringConstraints(max_length=DEFAULT_MAX_STRING_LENGTH), Body()
+    ] = None,
+    description: Annotated[
+        str | None, StringConstraints(max_length=DEFAULT_MAX_STRING_LENGTH), Body()
+    ] = None,
 ):
-    """Creates a job in a specific release with given inputs.
-
-    NOTE: This operation does **not** start the job
-    """
+    """Creates a program job"""
 
     # ensures user has access to solver
     inputs = JobInputs(values={})
-    program = await catalog_client.get_program(
-        user_id=user_id,
+    program = await program_service.get_program(
         name=program_key,
         version=version,
-        product_name=product_name,
     )
 
-    job, project = await create_solver_or_program_job(
-        webserver_api=webserver_api,
+    job, project = await job_service.create_job(
+        project_name=name,
+        description=description,
         solver_or_program=program,
         inputs=inputs,
         parent_project_uuid=x_simcore_parent_project_uuid,
@@ -139,6 +184,7 @@ async def create_program_job(
         url_for=url_for,
         hidden=False,
     )
+
     # create workspace directory so files can be uploaded to it
     assert len(project.workbench) > 0  # nosec
     node_id = next(iter(project.workbench))

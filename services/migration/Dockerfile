@@ -2,10 +2,17 @@
 
 # Define arguments in the global scope
 ARG PYTHON_VERSION="3.11.9"
-ARG UV_VERSION="0.5"
+ARG UV_VERSION="0.6"
 FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv_build
-# we docker image is built based on debian
-FROM python:${PYTHON_VERSION}-slim-bookworm AS base
+
+FROM python:${PYTHON_VERSION}-slim-bookworm AS base-arm64
+# These environment variables are necessary because of https://github.com/astral-sh/uv/issues/6105
+# and until https://gitlab.com/qemu-project/qemu/-/issues/2846 gets fixed
+ENV UV_CONCURRENT_INSTALLS=1
+
+FROM python:${PYTHON_VERSION}-slim-bookworm AS base-amd64
+
+FROM base-${TARGETARCH} AS base
 
 LABEL maintainer=sanderegg
 
@@ -53,6 +60,8 @@ COPY --from=uv_build /uv /uvx /bin/
 # NOTE: python virtualenv is used here such that installed packages may be moved to production image easily by copying the venv
 RUN uv venv "${VIRTUAL_ENV}"
 
+
+
 RUN --mount=type=cache,target=/root/.cache/uv \
   uv pip install --upgrade  \
   wheel \
@@ -95,11 +104,13 @@ RUN chown -R scu /home/scu
 COPY --chown=scu:scu --from=build ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 COPY --chown=scu:scu services/migration/docker services/migration/docker
 
+# https://docs.docker.com/reference/dockerfile/#healthcheck
 HEALTHCHECK \
-  --interval=5s \
-  --timeout=10s \
-  --start-period=1ms \
-  --retries=50 \
+  --interval=10s \
+  --timeout=5s \
+  --start-period=20s \
+  --start-interval=1s \
+  --retries=5 \
   CMD [ "/bin/sh", "/home/scu/services/migration/docker/healthcheck.sh"]
 
 ENTRYPOINT [ "/bin/sh", "services/migration/docker/entrypoint.sh" ]

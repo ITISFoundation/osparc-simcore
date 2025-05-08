@@ -13,8 +13,6 @@ from random import choice
 from typing import Any
 from unittest import mock
 
-import aiopg
-import aiopg.sa
 import pytest
 from _helpers import PublishedProject, set_comp_task_inputs, set_comp_task_outputs
 from dask_task_models_library.container_tasks.io import (
@@ -26,6 +24,7 @@ from dask_task_models_library.container_tasks.protocol import (
     ContainerEnvsDict,
     ContainerLabelsDict,
 )
+from dask_task_models_library.container_tasks.utils import generate_dask_job_id
 from distributed import SpecCluster
 from faker import Faker
 from fastapi import FastAPI
@@ -59,10 +58,9 @@ from simcore_service_director_v2.utils.dask import (
     compute_task_labels,
     create_node_ports,
     from_node_reqs_to_dask_resources,
-    generate_dask_job_id,
-    parse_dask_job_id,
     parse_output_data,
 )
+from sqlalchemy.ext.asyncio import AsyncEngine
 from yarl import URL
 
 pytest_simcore_core_services_selection = [
@@ -116,18 +114,6 @@ async def mocked_node_ports_filemanager_fcts(
     }
 
 
-@pytest.fixture(
-    params=["simcore/service/comp/some/fake/service/key", "dockerhub-style/service_key"]
-)
-def service_key(request) -> str:
-    return request.param
-
-
-@pytest.fixture()
-def service_version() -> str:
-    return "1234.32432.2344"
-
-
 @pytest.fixture
 def project_id(faker: Faker) -> ProjectID:
     return ProjectID(faker.uuid4())
@@ -136,30 +122,6 @@ def project_id(faker: Faker) -> ProjectID:
 @pytest.fixture
 def node_id(faker: Faker) -> NodeID:
     return NodeID(faker.uuid4())
-
-
-def test_dask_job_id_serialization(
-    service_key: str,
-    service_version: str,
-    user_id: UserID,
-    project_id: ProjectID,
-    node_id: NodeID,
-):
-    dask_job_id = generate_dask_job_id(
-        service_key, service_version, user_id, project_id, node_id
-    )
-    (
-        parsed_service_key,
-        parsed_service_version,
-        parsed_user_id,
-        parsed_project_id,
-        parsed_node_id,
-    ) = parse_dask_job_id(dask_job_id)
-    assert service_key == parsed_service_key
-    assert service_version == parsed_service_version
-    assert user_id == parsed_user_id
-    assert project_id == parsed_project_id
-    assert node_id == parsed_node_id
 
 
 @pytest.fixture()
@@ -243,7 +205,7 @@ def fake_task_output_data(
 
 
 async def test_parse_output_data(
-    aiopg_engine: aiopg.sa.engine.Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     published_project: PublishedProject,
     user_id: UserID,
     fake_io_schema: dict[str, dict[str, str]],
@@ -254,7 +216,7 @@ async def test_parse_output_data(
     sleeper_task: CompTaskAtDB = published_project.tasks[1]
     no_outputs = {}
     await set_comp_task_outputs(
-        aiopg_engine, sleeper_task.node_id, fake_io_schema, no_outputs
+        sqlalchemy_async_engine, sleeper_task.node_id, fake_io_schema, no_outputs
     )
     # mock the set_value function so we can test it is called correctly
     mocked_node_ports_set_value_fct = mocker.patch(
@@ -269,7 +231,7 @@ async def test_parse_output_data(
         published_project.project.uuid,
         sleeper_task.node_id,
     )
-    await parse_output_data(aiopg_engine, dask_job_id, fake_task_output_data)
+    await parse_output_data(sqlalchemy_async_engine, dask_job_id, fake_task_output_data)
 
     # the FileUrl types are converted to a pure url
     expected_values = {
@@ -298,7 +260,7 @@ def _app_config_with_db(
 
 async def test_compute_input_data(
     _app_config_with_db: None,
-    aiopg_engine: aiopg.sa.engine.Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     initialized_app: FastAPI,
     user_id: UserID,
     published_project: PublishedProject,
@@ -328,7 +290,7 @@ async def test_compute_input_data(
         for key, value_type in fake_io_schema.items()
     }
     await set_comp_task_inputs(
-        aiopg_engine, sleeper_task.node_id, fake_io_schema, fake_inputs
+        sqlalchemy_async_engine, sleeper_task.node_id, fake_io_schema, fake_inputs
     )
 
     # mock the get_value function so we can test it is called correctly
@@ -347,7 +309,7 @@ async def test_compute_input_data(
         side_effect=return_fake_input_value(),
     )
     node_ports = await create_node_ports(
-        db_engine=initialized_app.state.engine,
+        db_engine=sqlalchemy_async_engine,
         user_id=user_id,
         project_id=published_project.project.uuid,
         node_id=sleeper_task.node_id,
@@ -376,7 +338,7 @@ def tasks_file_link_scheme(tasks_file_link_type: FileLinkType) -> tuple:
 
 async def test_compute_output_data_schema(
     _app_config_with_db: None,
-    aiopg_engine: aiopg.sa.engine.Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     initialized_app: FastAPI,
     user_id: UserID,
     published_project: PublishedProject,
@@ -389,11 +351,11 @@ async def test_compute_output_data_schema(
     # simulate pre-created file links
     no_outputs = {}
     await set_comp_task_outputs(
-        aiopg_engine, sleeper_task.node_id, fake_io_schema, no_outputs
+        sqlalchemy_async_engine, sleeper_task.node_id, fake_io_schema, no_outputs
     )
 
     node_ports = await create_node_ports(
-        db_engine=initialized_app.state.engine,
+        db_engine=sqlalchemy_async_engine,
         user_id=user_id,
         project_id=published_project.project.uuid,
         node_id=sleeper_task.node_id,
@@ -425,7 +387,7 @@ async def test_compute_output_data_schema(
 
 @pytest.mark.parametrize("entry_exists_returns", [True, False])
 async def test_clean_task_output_and_log_files_if_invalid(
-    aiopg_engine: aiopg.sa.engine.Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     user_id: UserID,
     published_project: PublishedProject,
     mocked_node_ports_filemanager_fcts: dict[str, mock.MagicMock],
@@ -438,9 +400,9 @@ async def test_clean_task_output_and_log_files_if_invalid(
     # BEFORE the task is actually run. In case there is a failure at running
     # the task, these entries shall be cleaned up. The way to check this is
     # by asking storage if these file really exist. If not they get deleted.
-    mocked_node_ports_filemanager_fcts[
-        "entry_exists"
-    ].return_value = entry_exists_returns
+    mocked_node_ports_filemanager_fcts["entry_exists"].return_value = (
+        entry_exists_returns
+    )
 
     sleeper_task = published_project.tasks[1]
 
@@ -456,11 +418,11 @@ async def test_clean_task_output_and_log_files_if_invalid(
         if value_type["type"] == "data:*/*"
     }
     await set_comp_task_outputs(
-        aiopg_engine, sleeper_task.node_id, fake_io_schema, fake_outputs
+        sqlalchemy_async_engine, sleeper_task.node_id, fake_io_schema, fake_outputs
     )
     # this should ask for the 2 files + the log file
     await clean_task_output_and_log_files_if_invalid(
-        aiopg_engine,
+        sqlalchemy_async_engine,
         user_id,
         published_project.project.uuid,
         published_project.tasks[1].node_id,
@@ -469,7 +431,7 @@ async def test_clean_task_output_and_log_files_if_invalid(
         mock.call(
             user_id=user_id,
             store_id=0,
-            s3_object=f"{published_project.project.uuid}/{sleeper_task.node_id}/{next(iter(fake_io_schema[key].get('fileToKeyMap', {key:key})))}",
+            s3_object=f"{published_project.project.uuid}/{sleeper_task.node_id}/{next(iter(fake_io_schema[key].get('fileToKeyMap', {key: key})))}",
         )
         for key in fake_outputs
     ] + [
@@ -480,7 +442,7 @@ async def test_clean_task_output_and_log_files_if_invalid(
         )
     ]
 
-    def _add_is_directory(entry: mock._Call) -> mock._Call:  # noqa: SLF001
+    def _add_is_directory(entry: mock._Call) -> mock._Call:
         new_kwargs: dict[str, Any] = deepcopy(entry.kwargs)
         new_kwargs["is_directory"] = False
         return mock.call(**new_kwargs)
@@ -500,7 +462,7 @@ async def test_clean_task_output_and_log_files_if_invalid(
     "req_example", NodeRequirements.model_config["json_schema_extra"]["examples"]
 )
 def test_node_requirements_correctly_convert_to_dask_resources(
-    req_example: dict[str, Any]
+    req_example: dict[str, Any],
 ):
     node_reqs = NodeRequirements(**req_example)
     assert node_reqs

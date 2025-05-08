@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import TypeVar
 
-from aiopg.sa import Engine
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 RepositoryType = TypeVar("RepositoryType", bound="BaseRepository")
 
@@ -12,8 +12,8 @@ class BaseRepository:
     Repositories are pulled at every request
     """
 
-    db_engine: Engine
+    db_engine: AsyncEngine
 
     @classmethod
-    def instance(cls: type[RepositoryType], db_engine: Engine) -> RepositoryType:
+    def instance(cls: type[RepositoryType], db_engine: AsyncEngine) -> RepositoryType:
         return cls(db_engine=db_engine)

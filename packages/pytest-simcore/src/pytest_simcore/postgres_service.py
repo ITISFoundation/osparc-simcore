@@ -3,6 +3,7 @@
 # pylint: disable=unused-variable
 
 import json
+import warnings
 from collections.abc import AsyncIterator, Iterator
 from typing import Final
 
@@ -10,15 +11,15 @@ import docker
 import pytest
 import sqlalchemy as sa
 import tenacity
-from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
-from pytest_simcore.helpers.typing_env import EnvVarsDict
 from sqlalchemy.ext.asyncio import AsyncEngine
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 from .helpers.docker import get_service_published_port
 from .helpers.host import get_localhost_ip
+from .helpers.monkeypatch_envs import setenvs_from_dict
 from .helpers.postgres_tools import PostgresTestConfig, migrated_pg_tables_context
+from .helpers.typing_env import EnvVarsDict
 
 _TEMPLATE_DB_TO_RESTORE = "template_simcore_db"
 
@@ -212,6 +213,12 @@ async def aiopg_engine(
 
     engine = await create_engine(str(postgres_db.url))
 
+    warnings.warn(
+        "The 'aiopg_engine' fixture is deprecated and will be removed in a future release. "
+        "Please use 'asyncpg_engine' fixture instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     yield engine
 
     if engine:

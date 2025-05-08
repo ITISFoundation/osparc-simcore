@@ -7,7 +7,6 @@ from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from typing import Any
 from uuid import uuid4
 
-import aiopg.sa
 import pytest
 import sqlalchemy as sa
 from faker import Faker
@@ -20,6 +19,7 @@ from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodeCreate,
     ProjectNodesRepo,
 )
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 
 @pytest.fixture()
@@ -63,7 +63,7 @@ def registered_user(
 
 @pytest.fixture
 async def project(
-    aiopg_engine: aiopg.sa.engine.Engine, faker: Faker
+    sqlalchemy_async_engine: AsyncEngine, faker: Faker
 ) -> AsyncIterator[Callable[..., Awaitable[ProjectAtDB]]]:
     created_project_ids: list[str] = []
 
@@ -86,17 +86,22 @@ async def project(
             "workbench": {},
         }
         project_config.update(**project_overrides)
-        async with aiopg_engine.acquire() as con, con.begin():
+        async with sqlalchemy_async_engine.connect() as con, con.begin():
             result = await con.execute(
                 projects.insert()
                 .values(**project_config)
                 .returning(sa.literal_column("*"))
             )
 
-            inserted_project = ProjectAtDB.model_validate(await result.first())
+            inserted_project = ProjectAtDB.model_validate(result.one())
             project_nodes_repo = ProjectNodesRepo(project_uuid=project_uuid)
             # NOTE: currently no resources is passed until it becomes necessary
-            default_node_config = {"required_resources": {}, "key": faker.pystr(), "version": faker.pystr(), "label": faker.pystr()}
+            default_node_config = {
+                "required_resources": {},
+                "key": faker.pystr(),
+                "version": faker.pystr(),
+                "label": faker.pystr(),
+            }
             if project_nodes_overrides:
                 default_node_config.update(project_nodes_overrides)
             await project_nodes_repo.add(
@@ -113,7 +118,7 @@ async def project(
     yield creator
 
     # cleanup
-    async with aiopg_engine.acquire() as con:
+    async with sqlalchemy_async_engine.begin() as con:
         await con.execute(
             projects.delete().where(projects.c.uuid.in_(created_project_ids))
         )
@@ -121,9 +126,7 @@ async def project(
 
 
 @pytest.fixture
-def pipeline(
-    postgres_db: sa.engine.Engine,
-) -> Iterator[Callable[..., dict[str, Any]]]:
+def pipeline(postgres_db: sa.engine.Engine) -> Iterator[Callable[..., dict[str, Any]]]:
     created_pipeline_ids: list[str] = []
 
     def creator(**pipeline_kwargs) -> dict[str, Any]:

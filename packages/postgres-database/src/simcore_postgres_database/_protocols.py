@@ -1,35 +1,49 @@
 """Common protocols to annotate equivalent connections:
-        - sqlalchemy.ext.asyncio.AsyncConnection
-        - aiopg.sa.connection.SAConnection
+    - sqlalchemy.ext.asyncio.AsyncConnection
+    - aiopg.sa.connection.SAConnection
 
-
-    Purpose: to reduce dependency wit aiopg (expected full migration to asyncpg)
+Purpose: to reduce dependency with aiopg (expected full migration to asyncpg)
 """
 
-from typing import Protocol
+from collections.abc import Awaitable
+from typing import Any, Protocol, TypeAlias, TypeVar
+
+from sqlalchemy.sql import Executable
+
+# Type for query results
+Result = TypeVar("Result")
+
+# Type alias for methods that can be either async or sync
+MaybeCoro: TypeAlias = Awaitable[Result] | Result
+
+
+class ResultProxy(Protocol):
+    """Protocol for query result objects from both engines
+
+    Handles both aiopg's async methods and SQLAlchemy asyncpg's sync methods.
+    This is temporary until we fully migrate to asyncpg.
+    """
+
+    def fetchall(self) -> MaybeCoro[list[Any]]: ...
+    def fetchone(self) -> MaybeCoro[Any | None]: ...
+    def first(self) -> MaybeCoro[Any | None]: ...
 
 
 class DBConnection(Protocol):
-    # Prototype to account for aiopg and asyncio connection classes, i.e.
-    #   from aiopg.sa.connection import SAConnection
-    #   from sqlalchemy.ext.asyncio import AsyncConnection
-    async def scalar(self, *args, **kwargs):
-        ...
+    """Protocol to account for both aiopg and SQLAlchemy async connections"""
 
-    async def execute(self, *args, **kwargs):
-        ...
+    async def scalar(
+        self,
+        statement: Executable,
+        parameters: dict[str, Any] | None = None,
+        *,
+        execution_options: dict[str, Any] | None = None,
+    ) -> Any: ...
 
-    async def begin(self):
-        ...
-
-
-class AiopgConnection(Protocol):
-    # Prototype to account for aiopg-only (this protocol avoids import <-> installation)
-    async def scalar(self, *args, **kwargs):
-        ...
-
-    async def execute(self, *args, **kwargs):
-        ...
-
-    async def begin(self):
-        ...
+    async def execute(
+        self,
+        statement: Executable,
+        parameters: dict[str, Any] | None = None,
+        *,
+        execution_options: dict[str, Any] | None = None,
+    ) -> ResultProxy: ...

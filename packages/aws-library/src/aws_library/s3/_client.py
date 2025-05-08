@@ -88,13 +88,21 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         session_client = None
         exit_stack = contextlib.AsyncExitStack()
         try:
+            config = Config(
+                # This setting tells the S3 client to only calculate checksums when explicitly required
+                # by the operation. This avoids unnecessary checksum calculations for operations that
+                # don't need them, improving performance.
+                # See: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/s3.html#calculating-checksums
+                signature_version="s3v4",
+                request_checksum_calculation="when_required",  # type: ignore[call-arg]
+            )
             session_client = session.client(  # type: ignore[call-overload]
                 "s3",
                 endpoint_url=f"{settings.S3_ENDPOINT}",
                 aws_access_key_id=settings.S3_ACCESS_KEY,
                 aws_secret_access_key=settings.S3_SECRET_KEY,
                 region_name=settings.S3_REGION,
-                config=Config(signature_version="s3v4"),
+                config=config,
             )
             assert isinstance(session_client, ClientCreatorContext)  # nosec
 

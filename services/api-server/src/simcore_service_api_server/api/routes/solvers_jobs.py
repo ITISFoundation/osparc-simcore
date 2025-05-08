@@ -12,7 +12,8 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from pydantic.types import PositiveInt
 
-from ..._service import create_solver_or_program_job
+from ..._service_jobs import JobService
+from ..._service_solvers import SolverService
 from ...exceptions.backend_errors import ProjectAlreadyStartedError
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.basic_types import VersionStr
@@ -26,20 +27,15 @@ from ...models.schemas.jobs import (
     JobStatus,
 )
 from ...models.schemas.solvers import Solver, SolverKeyId
-from ...services_http.catalog import CatalogApi
 from ...services_http.director_v2 import DirectorV2Api
 from ...services_http.jobs import replace_custom_metadata, start_project, stop_project
 from ...services_http.solver_job_models_converters import (
     create_jobstatus_from_task,
 )
-from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.application import get_reverse_url_mapper
-from ..dependencies.authentication import get_current_user_id, get_product_name
-from ..dependencies.services import get_api_client
+from ..dependencies.authentication import get_current_user_id
+from ..dependencies.services import get_api_client, get_job_service, get_solver_service
 from ..dependencies.webserver_http import AuthSession, get_webserver_session
-from ..dependencies.webserver_rpc import (
-    get_wb_api_rpc_client,
-)
 from ._constants import (
     FMSG_CHANGELOG_ADDED_IN_VERSION,
     FMSG_CHANGELOG_CHANGED_IN_VERSION,
@@ -51,7 +47,7 @@ _logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-def _compose_job_resource_name(solver_key, solver_version, job_id) -> str:
+def compose_job_resource_name(solver_key, solver_version, job_id) -> str:
     """Creates a unique resource name for solver's jobs"""
     return Job.compose_resource_name(
         parent_name=Solver.compose_resource_name(solver_key, solver_version),
@@ -90,16 +86,13 @@ JOBS_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     status_code=status.HTTP_201_CREATED,
     responses=JOBS_STATUS_CODES,
 )
-async def create_solver_job(
+async def create_solver_job(  # noqa: PLR0913
     solver_key: SolverKeyId,
     version: VersionStr,
     inputs: JobInputs,
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
-    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
-    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
-    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
+    solver_service: Annotated[SolverService, Depends(get_solver_service)],
+    job_service: Annotated[JobService, Depends(get_job_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
-    product_name: Annotated[str, Depends(get_product_name)],
     hidden: Annotated[bool, Query()] = True,
     x_simcore_parent_project_uuid: Annotated[ProjectID | None, Header()] = None,
     x_simcore_parent_node_id: Annotated[NodeID | None, Header()] = None,
@@ -110,14 +103,13 @@ async def create_solver_job(
     """
 
     # ensures user has access to solver
-    solver = await catalog_client.get_solver(
-        user_id=user_id,
-        name=solver_key,
-        version=version,
-        product_name=product_name,
+    solver = await solver_service.get_solver(
+        solver_key=solver_key,
+        solver_version=version,
     )
-    job, project = await create_solver_or_program_job(
-        webserver_api=webserver_api,
+    job, _ = await job_service.create_job(
+        project_name=None,
+        description=None,
         solver_or_program=solver,
         inputs=inputs,
         url_for=url_for,
@@ -126,12 +118,6 @@ async def create_solver_job(
         parent_node_id=x_simcore_parent_node_id,
     )
 
-    await wb_api_rpc.mark_project_as_job(
-        product_name=product_name,
-        user_id=user_id,
-        project_uuid=project.uuid,
-        job_parent_resource_name=job.runner_name,
-    )
     return job
 
 
@@ -148,7 +134,7 @@ async def delete_job(
     job_id: JobID,
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
-    job_name = _compose_job_resource_name(solver_key, version, job_id)
+    job_name = compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Deleting Job '%s'", job_name)
 
     await webserver_api.delete_project(project_id=job_id)
@@ -194,7 +180,7 @@ async def start_job(
         ClusterID | None, Query(deprecated=True)
     ] = None,
 ):
-    job_name = _compose_job_resource_name(solver_key, version, job_id)
+    job_name = compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Start Job '%s'", job_name)
 
     try:
@@ -236,7 +222,7 @@ async def stop_job(
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
 ):
-    job_name = _compose_job_resource_name(solver_key, version, job_id)
+    job_name = compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Stopping Job '%s'", job_name)
 
     return await stop_project(
@@ -256,7 +242,7 @@ async def inspect_job(
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
 ) -> JobStatus:
-    job_name = _compose_job_resource_name(solver_key, version, job_id)
+    job_name = compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Inspecting Job '%s'", job_name)
 
     task = await director2_api.get_computation(project_id=job_id, user_id=user_id)
@@ -279,7 +265,7 @@ async def replace_job_custom_metadata(
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
-    job_name = _compose_job_resource_name(solver_key, version, job_id)
+    job_name = compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Custom metadata for '%s'", job_name)
 
     return await replace_custom_metadata(

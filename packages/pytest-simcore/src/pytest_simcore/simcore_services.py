@@ -9,6 +9,7 @@ import warnings
 from collections.abc import Iterator
 from dataclasses import dataclass
 from io import StringIO
+from typing import Final
 
 import aiohttp
 import pytest
@@ -27,7 +28,7 @@ from .helpers.typing_env import EnvVarsDict
 log = logging.getLogger(__name__)
 
 
-_SERVICES_TO_SKIP = {
+_SERVICES_TO_SKIP: Final[set[str]] = {
     "agent",  # global mode deploy (NO exposed ports, has http API)
     "dask-sidecar",  # global mode deploy (NO exposed ports, **NO** http API)
     "migration",
@@ -41,12 +42,12 @@ _SERVICES_TO_SKIP = {
     "sto-worker-cpu-bound",
 }
 # TODO: unify healthcheck policies see  https://github.com/ITISFoundation/osparc-simcore/pull/2281
-SERVICE_PUBLISHED_PORT = {}
-DEFAULT_SERVICE_HEALTHCHECK_ENTRYPOINT = "/v0/"
-MAP_SERVICE_HEALTHCHECK_ENTRYPOINT = {
+DEFAULT_SERVICE_HEALTHCHECK_ENTRYPOINT: Final[str] = "/v0/"
+MAP_SERVICE_HEALTHCHECK_ENTRYPOINT: Final[dict[str, str]] = {
     "autoscaling": "/",
     "clusters-keeper": "/",
     "dask-scheduler": "/health",
+    "notifications": "/",
     "datcore-adapter": "/v0/live",
     "director-v2": "/",
     "dynamic-schdlr": "/",
@@ -56,16 +57,23 @@ MAP_SERVICE_HEALTHCHECK_ENTRYPOINT = {
     "resource-usage-tracker": "/",
     "docker-api-proxy": "/version",
 }
-AIOHTTP_BASED_SERVICE_PORT: int = 8080
-FASTAPI_BASED_SERVICE_PORT: int = 8000
-DASK_SCHEDULER_SERVICE_PORT: int = 8787
-DOCKER_API_PROXY_SERVICE_PORT: int = 8888
 
-_SERVICE_NAME_REPLACEMENTS: dict[str, str] = {
+# some services require authentication to access their health-check endpoints
+_BASE_AUTH_ENV_VARS: Final[dict[str, tuple[str, str]]] = {
+    "docker-api-proxy": ("DOCKER_API_PROXY_USER", "DOCKER_API_PROXY_PASSWORD"),
+}
+
+_SERVICE_NAME_REPLACEMENTS: Final[dict[str, str]] = {
     "dynamic-scheduler": "dynamic-schdlr",
 }
 
-_ONE_SEC_TIMEOUT = ClientTimeout(total=1)  # type: ignore
+
+AIOHTTP_BASED_SERVICE_PORT: Final[int] = 8080
+FASTAPI_BASED_SERVICE_PORT: Final[int] = 8000
+DASK_SCHEDULER_SERVICE_PORT: Final[int] = 8787
+DOCKER_API_PROXY_SERVICE_PORT: Final[int] = 8888
+
+_ONE_SEC_TIMEOUT: Final[ClientTimeout] = ClientTimeout(total=1)  # type: ignore
 
 
 async def wait_till_service_healthy(service_name: str, endpoint: URL):
@@ -107,13 +115,12 @@ class ServiceHealthcheckEndpoint:
     @classmethod
     def create(cls, service_name: str, baseurl):
         # TODO: unify healthcheck policies see  https://github.com/ITISFoundation/osparc-simcore/pull/2281
-        obj = cls(
+        return cls(
             name=service_name,
             url=URL(
                 f"{baseurl}{MAP_SERVICE_HEALTHCHECK_ENTRYPOINT.get(service_name, DEFAULT_SERVICE_HEALTHCHECK_ENTRYPOINT)}"
             ),
         )
-        return obj
 
 
 @pytest.fixture(scope="module")
@@ -139,9 +146,17 @@ def services_endpoint(
                 DASK_SCHEDULER_SERVICE_PORT,
                 DOCKER_API_PROXY_SERVICE_PORT,
             ]
-            endpoint = URL(
-                f"http://{get_localhost_ip()}:{get_service_published_port(full_service_name, target_ports)}"
-            )
+            if service in _BASE_AUTH_ENV_VARS:
+                user_env, password_env = _BASE_AUTH_ENV_VARS[service]
+                user = env_vars_for_docker_compose[user_env]
+                password = env_vars_for_docker_compose[password_env]
+                endpoint = URL(
+                    f"http://{user}:{password}@{get_localhost_ip()}:{get_service_published_port(full_service_name, target_ports)}"
+                )
+            else:
+                endpoint = URL(
+                    f"http://{get_localhost_ip()}:{get_service_published_port(full_service_name, target_ports)}"
+                )
             services_endpoint[service] = endpoint
         else:
             print(f"Collecting service endpoints: '{service}' skipped")

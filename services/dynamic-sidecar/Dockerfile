@@ -2,10 +2,17 @@
 
 # Define arguments in the global scope
 ARG PYTHON_VERSION="3.11.9"
-ARG UV_VERSION="0.5"
+ARG UV_VERSION="0.6"
 FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv_build
-# we docker image is built based on debian
-FROM python:${PYTHON_VERSION}-slim-bookworm AS base
+
+FROM python:${PYTHON_VERSION}-slim-bookworm AS base-arm64
+# These environment variables are necessary because of https://github.com/astral-sh/uv/issues/6105
+# and until https://gitlab.com/qemu-project/qemu/-/issues/2846 gets fixed
+ENV UV_CONCURRENT_INSTALLS=1
+
+FROM python:${PYTHON_VERSION}-slim-bookworm AS base-amd64
+
+FROM base-${TARGETARCH} AS base
 #
 #  USAGE:
 #     cd sercices/dynamic-sidecar
@@ -135,7 +142,9 @@ COPY --from=uv_build /uv /uvx /bin/
 RUN uv venv "${VIRTUAL_ENV}" \
   && mkdir -p "${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR}"
 
+
 RUN --mount=type=cache,target=/root/.cache/uv \
+  echo ${UV_CONCURRENT_INSTALLS} && \
   uv pip install --upgrade  \
   wheel \
   setuptools
@@ -156,7 +165,7 @@ COPY --chown=root:root services/dynamic-sidecar/scripts/Makefile /root
 #
 FROM build AS prod-only-deps
 
-ENV SC_BUILD_TARGET prod-only-deps
+ENV SC_BUILD_TARGET=prod-only-deps
 
 WORKDIR /build/services/dynamic-sidecar
 
@@ -196,6 +205,10 @@ COPY --chown=scu:scu --from=prod-only-deps  ${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_D
 COPY --chown=scu:scu services/dynamic-sidecar/docker services/dynamic-sidecar/docker
 RUN chmod +x services/dynamic-sidecar/docker/*.sh
 
+# NOTE: the start period of 3 minutes is to allow the dynamic-sidecar
+# enough time to connect to the externald dependencies. some times the docker
+# networks take time to get created
+# https://docs.docker.com/reference/dockerfile/#healthcheck
 HEALTHCHECK \
   --interval=10s \
   --timeout=5s \

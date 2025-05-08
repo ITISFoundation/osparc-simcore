@@ -77,7 +77,6 @@ def app_environment(
 @pytest.fixture
 def mock_missing_plugins(app_environment: EnvVarsDict, mocker: MockerFixture):
     mocker.patch("simcore_service_api_server.core.application.webserver.setup")
-    mocker.patch("simcore_service_api_server.core.application.catalog.setup")
     mocker.patch("simcore_service_api_server.core.application.storage.setup")
 
 
@@ -362,6 +361,7 @@ async def test_log_streamer_with_distributor(
     project_id: ProjectID,
     node_id: NodeID,
     produce_logs: Callable,
+    log_distributor: LogDistributor,
     log_streamer_with_distributor: LogStreamer,
     faker: Faker,
     computation_done: Callable[[], bool],
@@ -376,12 +376,21 @@ async def test_log_streamer_with_distributor(
 
     publish_task = asyncio.create_task(_log_publisher())
 
+    @asynccontextmanager
+    async def registered_log_streamer():
+        await log_distributor.register(project_id, log_streamer_with_distributor.queue)
+        try:
+            yield
+        finally:
+            await log_distributor.deregister(project_id)
+
     collected_messages: list[str] = []
-    async for log in log_streamer_with_distributor.log_generator():
-        job_log: JobLog = JobLog.model_validate_json(log)
-        assert len(job_log.messages) == 1
-        assert job_log.job_id == project_id
-        collected_messages.append(job_log.messages[0])
+    async with registered_log_streamer():
+        async for log in log_streamer_with_distributor.log_generator():
+            job_log: JobLog = JobLog.model_validate_json(log)
+            assert len(job_log.messages) == 1
+            assert job_log.job_id == project_id
+            collected_messages.append(job_log.messages[0])
 
     if not publish_task.done():
         publish_task.cancel()
@@ -452,7 +461,7 @@ async def test_log_generator(mocker: MockFixture, faker: Faker):
         msg = faker.text()
         published_logs.append(msg)
         job_log.messages = [msg]
-        await log_streamer._queue.put(job_log)
+        await log_streamer.queue.put(job_log)
 
     collected_logs: list[str] = []
     async for log in log_streamer.log_generator():

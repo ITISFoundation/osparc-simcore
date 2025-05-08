@@ -2,16 +2,19 @@ import datetime
 import uuid
 from typing import Any
 
+import asyncpg  # type: ignore[import-untyped]
 import sqlalchemy as sa
-from aiopg.sa.connection import SAConnection
-from aiopg.sa.result import ResultProxy, RowProxy
+import sqlalchemy.exc as sa_exc
+from common_library.async_tools import maybe_await
 from common_library.errors_classes import OsparcErrorMixin
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
+from ._protocols import DBConnection
 from .aiopg_errors import ForeignKeyViolation
 from .models.projects import projects
 from .models.projects_metadata import projects_metadata
+from .utils_aiosqlalchemy import map_db_exception
 
 #
 # Errors
@@ -65,7 +68,7 @@ class ProjectMetadata(BaseModel):
 #
 
 
-async def get(connection: SAConnection, project_uuid: uuid.UUID) -> ProjectMetadata:
+async def get(connection: DBConnection, project_uuid: uuid.UUID) -> ProjectMetadata:
     """
     Raises:
         DBProjectNotFoundError: project not found
@@ -93,8 +96,8 @@ async def get(connection: SAConnection, project_uuid: uuid.UUID) -> ProjectMetad
         )
         .where(projects.c.uuid == f"{project_uuid}")
     )
-    result: ResultProxy = await connection.execute(get_stmt)
-    row: RowProxy | None = await result.first()
+    result = await connection.execute(get_stmt)
+    row = await maybe_await(result.first())
     if row is None:
         raise DBProjectNotFoundError(project_uuid=project_uuid)
     return ProjectMetadata.model_validate(row)
@@ -114,7 +117,7 @@ def _check_valid_ancestors_combination(
 
 
 async def _project_has_any_child(
-    connection: SAConnection, project_uuid: uuid.UUID
+    connection: DBConnection, project_uuid: uuid.UUID
 ) -> bool:
     get_stmt = sa.select(projects_metadata.c.project_uuid).where(
         projects_metadata.c.parent_project_uuid == f"{project_uuid}"
@@ -125,7 +128,7 @@ async def _project_has_any_child(
 
 
 async def _compute_root_parent_from_parent(
-    connection: SAConnection,
+    connection: DBConnection,
     *,
     project_uuid: uuid.UUID,
     parent_project_uuid: uuid.UUID | None,
@@ -152,7 +155,7 @@ async def _compute_root_parent_from_parent(
 
 
 async def set_project_ancestors(
-    connection: SAConnection,
+    connection: DBConnection,
     *,
     project_uuid: uuid.UUID,
     parent_project_uuid: uuid.UUID | None,
@@ -203,8 +206,8 @@ async def set_project_ancestors(
     ).returning(sa.literal_column("*"))
 
     try:
-        result: ResultProxy = await connection.execute(upsert_stmt)
-        row: RowProxy | None = await result.first()
+        result = await connection.execute(upsert_stmt)
+        row = await maybe_await(result.first())
         assert row  # nosec
         return ProjectMetadata.model_validate(row)
 
@@ -216,10 +219,35 @@ async def set_project_ancestors(
             ) from err
 
         raise DBProjectNotFoundError(project_uuid=project_uuid) from err
+    except sa_exc.IntegrityError as exc:
+        if "fk_projects_metadata_parent_node_id" in exc.args[0]:
+            raise map_db_exception(
+                exc,
+                {
+                    asyncpg.ForeignKeyViolationError.sqlstate: (
+                        DBProjectInvalidParentNodeError,
+                        {
+                            "project_uuid": project_uuid,
+                            "parent_node_id": parent_node_id,
+                        },
+                    ),
+                },
+            ) from exc
+        raise map_db_exception(
+            exc,
+            {
+                asyncpg.ForeignKeyViolationError.sqlstate: (
+                    DBProjectNotFoundError,
+                    {
+                        "project_uuid": project_uuid,
+                    },
+                ),
+            },
+        ) from exc
 
 
 async def set_project_custom_metadata(
-    connection: SAConnection,
+    connection: DBConnection,
     *,
     project_uuid: uuid.UUID,
     custom_metadata: dict[str, Any],
@@ -235,10 +263,20 @@ async def set_project_custom_metadata(
     ).returning(sa.literal_column("*"))
 
     try:
-        result: ResultProxy = await connection.execute(upsert_stmt)
-        row: RowProxy | None = await result.first()
+        result = await connection.execute(upsert_stmt)
+        row = await maybe_await(result.first())
         assert row  # nosec
         return ProjectMetadata.model_validate(row)
 
     except ForeignKeyViolation as err:
         raise DBProjectNotFoundError(project_uuid=project_uuid) from err
+    except sa_exc.IntegrityError as exc:
+        raise map_db_exception(
+            exc,
+            {
+                asyncpg.exceptions.ForeignKeyViolationError.sqlstate: (
+                    DBProjectNotFoundError,
+                    {"project_uuid": project_uuid},
+                ),
+            },
+        ) from exc

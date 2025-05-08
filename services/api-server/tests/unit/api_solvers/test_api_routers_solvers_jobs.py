@@ -6,7 +6,6 @@
 from pathlib import Path
 from pprint import pprint
 from typing import Any
-from unittest import mock
 from zipfile import ZipFile
 
 import arrow
@@ -28,7 +27,7 @@ from starlette import status
 
 
 @pytest.fixture
-def bucket_name():
+def bucket_name() -> str:
     return "test-bucket"
 
 
@@ -88,7 +87,7 @@ def mocked_directorv2_service_api(
     presigned_download_link: AnyUrl,
     mocked_directorv2_rest_api_base: MockRouter,
     directorv2_service_openapi_specs: dict[str, Any],
-):
+) -> MockRouter:
     settings: ApplicationSettings = app.state.settings
     assert settings.API_SERVER_DIRECTOR_V2
     oas = directorv2_service_openapi_specs
@@ -204,7 +203,7 @@ async def test_run_solver_job(
     client: httpx.AsyncClient,
     directorv2_service_openapi_specs: dict[str, Any],
     catalog_service_openapi_specs: dict[str, Any],
-    mocked_catalog_rest_api: MockRouter,
+    mocked_catalog_rpc_api: dict[str, MockType],
     mocked_directorv2_service_api: MockRouter,
     mocked_webserver_rest_api: MockRouter,
     mocked_webserver_rpc_api: dict[str, MockType],
@@ -212,7 +211,6 @@ async def test_run_solver_job(
     project_id: str,
     solver_key: str,
     solver_version: str,
-    mocked_groups_extra_properties: mock.Mock,
 ):
     oas = directorv2_service_openapi_specs
 
@@ -317,22 +315,6 @@ async def test_run_solver_job(
         e
         for e in ServiceMetaDataPublished.model_json_schema()["examples"]
         if "boot-options" in e
-    )
-
-    mocked_catalog_rest_api.get(
-        # path__regex=r"/services/(?P<service_key>[\w-]+)/(?P<service_version>[0-9\.]+)",
-        path=f"/v0/services/{solver_key}/{solver_version}",
-        name="get_service_v0_services__service_key___service_version__get",
-    ).respond(
-        status.HTTP_200_OK,
-        json=example
-        | {
-            "name": solver_key.split("/")[-1].capitalize(),
-            "description": solver_key.replace("/", " "),
-            "key": solver_key,
-            "version": solver_version,
-            "type": "computational",
-        },
     )
 
     # ---------------------------------------------------------------------------------------------------------

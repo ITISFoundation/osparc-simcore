@@ -5,7 +5,19 @@ from models_library.api_schemas_webserver.functions_wb_schema import (
     FunctionDB,
     FunctionID,
     FunctionInputs,
+    FunctionJobCollection,
+    FunctionJobCollectionDB,
     FunctionJobDB,
+    FunctionJobID,
+)
+from models_library.rest_pagination import (
+    PageMetaInfoLimitOffset,
+)
+from simcore_postgres_database.models.functions_models_db import (
+    function_job_collections as function_job_collections_table,
+)
+from simcore_postgres_database.models.functions_models_db import (
+    function_job_collections_to_function_jobs as function_job_collections_to_function_jobs_table,
 )
 from simcore_postgres_database.models.functions_models_db import (
     function_jobs as function_jobs_table,
@@ -19,6 +31,7 @@ from simcore_postgres_database.utils_repos import (
 )
 from sqlalchemy import Text, cast
 from sqlalchemy.ext.asyncio import AsyncConnection
+from sqlalchemy.sql import func
 
 from ..db.plugin import get_asyncpg_engine
 
@@ -26,14 +39,21 @@ _FUNCTIONS_TABLE_COLS = get_columns_from_db_model(functions_table, FunctionDB)
 _FUNCTION_JOBS_TABLE_COLS = get_columns_from_db_model(
     function_jobs_table, FunctionJobDB
 )
+_FUNCTION_JOB_COLLECTIONS_TABLE_COLS = get_columns_from_db_model(
+    function_job_collections_table, FunctionJobCollectionDB
+)
 
 
-async def create_function(
+async def register_function(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
     function: FunctionDB,
 ) -> FunctionDB:
+
+    if function.uuid is not None:
+        msg = "Function uid is not None. Cannot register function."
+        raise ValueError(msg)
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(
@@ -53,6 +73,7 @@ async def create_function(
                 ),
                 function_class=function.function_class,
                 class_specific_data=function.class_specific_data,
+                default_inputs=function.default_inputs,
             )
             .returning(*_FUNCTIONS_TABLE_COLS)
         )
@@ -88,15 +109,117 @@ async def get_function(
 async def list_functions(
     app: web.Application,
     connection: AsyncConnection | None = None,
-) -> list[FunctionDB]:
+    *,
+    pagination_limit: int,
+    pagination_offset: int,
+) -> tuple[list[FunctionDB], PageMetaInfoLimitOffset]:
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(functions_table.select().where())
+        total_count_result = await conn.scalar(
+            func.count().select().select_from(functions_table)
+        )
+        result = await conn.stream(
+            functions_table.select().offset(pagination_offset).limit(pagination_limit)
+        )
         rows = await result.all()
         if rows is None:
-            return []
+            return [], PageMetaInfoLimitOffset(
+                total=0, offset=pagination_offset, limit=pagination_limit, count=0
+            )
 
-        return [FunctionDB.model_validate(dict(row)) for row in rows]
+        return [
+            FunctionDB.model_validate(dict(row)) for row in rows
+        ], PageMetaInfoLimitOffset(
+            total=total_count_result,
+            offset=pagination_offset,
+            limit=pagination_limit,
+            count=len(rows),
+        )
+
+
+async def list_function_jobs(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    pagination_limit: int,
+    pagination_offset: int,
+) -> tuple[list[FunctionJobDB], PageMetaInfoLimitOffset]:
+
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        total_count_result = await conn.scalar(
+            func.count().select().select_from(function_jobs_table)
+        )
+        result = await conn.stream(
+            function_jobs_table.select()
+            .offset(pagination_offset)
+            .limit(pagination_limit)
+        )
+        rows = await result.all()
+        if rows is None:
+            return [], PageMetaInfoLimitOffset(
+                total=0, offset=pagination_offset, limit=pagination_limit, count=0
+            )
+
+        return [
+            FunctionJobDB.model_validate(dict(row)) for row in rows
+        ], PageMetaInfoLimitOffset(
+            total=total_count_result,
+            offset=pagination_offset,
+            limit=pagination_limit,
+            count=len(rows),
+        )
+
+
+async def list_function_job_collections(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    pagination_limit: int,
+    pagination_offset: int,
+) -> tuple[
+    list[tuple[FunctionJobCollectionDB, list[FunctionJobID]]],
+    PageMetaInfoLimitOffset,
+]:
+    """
+    Returns a list of function job collections and their associated job ids.
+    """
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        total_count_result = await conn.scalar(
+            func.count().select().select_from(function_job_collections_table)
+        )
+        result = await conn.stream(
+            function_job_collections_table.select()
+            .offset(pagination_offset)
+            .limit(pagination_limit)
+        )
+        rows = await result.all()
+        if rows is None:
+            return [], PageMetaInfoLimitOffset(
+                total=0, offset=pagination_offset, limit=pagination_limit, count=0
+            )
+
+        collections = []
+        for row in rows:
+            collection = FunctionJobCollectionDB.model_validate(dict(row))
+            job_result = await conn.stream(
+                function_job_collections_to_function_jobs_table.select().where(
+                    function_job_collections_to_function_jobs_table.c.function_job_collection_uuid
+                    == row["uuid"]
+                )
+            )
+            job_rows = await job_result.all()
+            job_ids = (
+                [job_row["function_job_uuid"] for job_row in job_rows]
+                if job_rows
+                else []
+            )
+            collections.append((collection, job_ids))
+        return collections, PageMetaInfoLimitOffset(
+            total=total_count_result,
+            offset=pagination_offset,
+            limit=pagination_limit,
+            count=len(rows),
+        )
 
 
 async def delete_function(
@@ -108,7 +231,7 @@ async def delete_function(
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         await conn.execute(
-            functions_table.delete().where(functions_table.c.uuid == int(function_id))
+            functions_table.delete().where(functions_table.c.uuid == function_id)
         )
 
 
@@ -125,6 +248,7 @@ async def register_function_job(
             .values(
                 function_uuid=function_job.function_uuid,
                 inputs=function_job.inputs,
+                outputs=function_job.outputs,
                 function_class=function_job.function_class,
                 class_specific_data=function_job.class_specific_data,
                 title=function_job.title,
@@ -163,18 +287,18 @@ async def get_function_job(
         return FunctionJobDB.model_validate(dict(row))
 
 
-async def list_function_jobs(
+async def delete_function_job(
     app: web.Application,
     connection: AsyncConnection | None = None,
-) -> list[FunctionJobDB]:
-
+    *,
+    function_job_id: FunctionID,
+) -> None:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(function_jobs_table.select().where())
-        rows = await result.all()
-        if rows is None:
-            return []
-
-        return [FunctionJobDB.model_validate(dict(row)) for row in rows]
+        await conn.execute(
+            function_jobs_table.delete().where(
+                function_jobs_table.c.uuid == function_job_id
+            )
+        )
 
 
 async def find_cached_function_job(
@@ -204,3 +328,93 @@ async def find_cached_function_job(
                 return job
 
         return None
+
+
+async def get_function_job_collection(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    function_job_collection_id: FunctionID,
+) -> tuple[FunctionJobCollectionDB, list[FunctionJobID]]:
+
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        result = await conn.stream(
+            function_job_collections_table.select().where(
+                function_job_collections_table.c.uuid == function_job_collection_id
+            )
+        )
+        row = await result.first()
+
+        if row is None:
+            msg = f"No function job collection found with id {function_job_collection_id}."
+            raise web.HTTPNotFound(reason=msg)
+
+        # Retrieve associated job ids from the join table
+        job_result = await conn.stream(
+            function_job_collections_to_function_jobs_table.select().where(
+                function_job_collections_to_function_jobs_table.c.function_job_collection_uuid
+                == row["uuid"]
+            )
+        )
+        job_rows = await job_result.all()
+
+        job_ids = (
+            [job_row["function_job_uuid"] for job_row in job_rows] if job_rows else []
+        )
+
+        job_collection = FunctionJobCollectionDB.model_validate(dict(row))
+        return job_collection, job_ids
+
+
+async def register_function_job_collection(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    function_job_collection: FunctionJobCollection,
+) -> tuple[FunctionJobCollectionDB, list[FunctionJobID]]:
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        result = await conn.stream(
+            function_job_collections_table.insert()
+            .values(
+                title=function_job_collection.title,
+                description=function_job_collection.description,
+            )
+            .returning(*_FUNCTION_JOB_COLLECTIONS_TABLE_COLS)
+        )
+        row = await result.first()
+
+        if row is None:
+            msg = "No row was returned from the database after creating function job collection."
+            raise ValueError(msg)
+
+        for job_id in function_job_collection.job_ids:
+            await conn.execute(
+                function_job_collections_to_function_jobs_table.insert().values(
+                    function_job_collection_uuid=row["uuid"],
+                    function_job_uuid=job_id,
+                )
+            )
+
+        job_collection = FunctionJobCollectionDB.model_validate(dict(row))
+        return job_collection, function_job_collection.job_ids
+
+
+async def delete_function_job_collection(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    function_job_collection_id: FunctionID,
+) -> None:
+
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        await conn.execute(
+            function_job_collections_table.delete().where(
+                function_job_collections_table.c.uuid == function_job_collection_id
+            )
+        )
+        await conn.execute(
+            function_job_collections_to_function_jobs_table.delete().where(
+                function_job_collections_to_function_jobs_table.c.function_job_collection_uuid
+                == function_job_collection_id
+            )
+        )

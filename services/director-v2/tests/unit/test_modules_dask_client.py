@@ -390,7 +390,9 @@ async def test_dask_does_report_any_non_base_exception_derived_error(
     )  # type: ignore
     assert task_exception
     assert isinstance(task_exception, exc)
-    task_traceback = await future.traceback(timeout=_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS)  # type: ignore
+    task_traceback = await future.traceback(
+        timeout=_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS
+    )  # type: ignore
     assert task_traceback
     trace = traceback.format_exception(task_exception)
     assert trace
@@ -625,7 +627,9 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
     assert published_computation_task[0].job_id in list_of_persisted_datasets
     assert list_of_persisted_datasets[0] == published_computation_task[0].job_id
     # get the persisted future from the scheduler back
-    task_future = await dask_client.backend.client.get_dataset(name=published_computation_task[0].job_id)  # type: ignore
+    task_future = await dask_client.backend.client.get_dataset(
+        name=published_computation_task[0].job_id
+    )  # type: ignore
     assert task_future
     assert isinstance(task_future, distributed.Future)
     assert task_future.key == published_computation_task[0].job_id

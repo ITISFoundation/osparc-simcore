@@ -1,5 +1,5 @@
 """
-    Models Front-end UI
+Models Front-end UI
 """
 
 from typing import Annotated, Literal, NotRequired
@@ -20,6 +20,7 @@ from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard
 
 from ..projects_nodes_io import NodeID, NodeIDStr
 from ..utils.common_validators import empty_str_to_none_pre_validator
+from ._base import OutputSchema
 from .projects_nodes_ui import MarkerUI, PositionUI
 
 
@@ -79,14 +80,15 @@ class AnnotationUI(BaseModel):
     )
 
 
-class StudyUI(BaseModel):
+class StudyUI(OutputSchema):
     # Model fully controlled by the UI and stored under `projects.ui`
     icon: HttpUrl | None = None
 
     workbench: dict[NodeIDStr, WorkbenchUI] | None = None
     slideshow: dict[NodeIDStr, SlideshowUI] | None = None
-    current_node_id: Annotated[NodeID | None, Field(alias="currentNodeId")] = None
+    current_node_id: NodeID | None = None
     annotations: dict[NodeIDStr, AnnotationUI] | None = None
+    template_type: Literal["hypertool"] | None = None
 
     _empty_is_none = field_validator("*", mode="before")(
         empty_str_to_none_pre_validator
@@ -169,6 +171,7 @@ class StudyUI(BaseModel):
                             },
                         },
                         "current_node_id": "4b3345e5-861f-47b0-8b52-a4508449be79",
+                        "template_type": "hypertool",
                     },
                 ]
             }

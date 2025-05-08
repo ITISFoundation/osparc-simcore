@@ -1,3 +1,4 @@
+# pylint:disable=redefined-outer-name
 # pylint:disable=unused-argument
 
 import os
@@ -29,7 +30,9 @@ def test_cli_help_and_version(cli_runner: CliRunner):
     assert result.stdout.strip() == API_VERSION
 
 
-def test_echo_dotenv(cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch):
+def test_echo_dotenv(
+    app_environment: EnvVarsDict, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+):
     # simcore-service-dynamic-scheduler echo-dotenv
     result = cli_runner.invoke(cli_main, "echo-dotenv")
     assert result.exit_code == os.EX_OK, _format_cli_error(result)
@@ -41,19 +44,17 @@ def test_echo_dotenv(cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch):
         ApplicationSettings.create_from_envs()
 
 
+def _get_default_environs(cli_runner: CliRunner) -> EnvVarsDict:
+    result = cli_runner.invoke(cli_main, "echo-dotenv")
+    assert result.exit_code == os.EX_OK, _format_cli_error(result)
+    return load_dotenv(result.stdout)
+
+
 def test_list_settings(
     cli_runner: CliRunner, app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ):
     with monkeypatch.context() as patch:
-        setenvs_from_dict(
-            patch,
-            {
-                **app_environment,
-                "DYNAMIC_SCHEDULER_TRACING": "{}",
-                "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT": "http://replace-with-opentelemetry-collector",
-                "TRACING_OPENTELEMETRY_COLLECTOR_PORT": "4318",
-            },
-        )
+        setenvs_from_dict(patch, _get_default_environs(cli_runner))
 
         # simcore-service-dynamic-scheduler settings --show-secrets --as-json
         result = cli_runner.invoke(
@@ -61,12 +62,8 @@ def test_list_settings(
         )
         assert result.exit_code == os.EX_OK, _format_cli_error(result)
 
-    print(result.output)
-    settings = ApplicationSettings(result.output)
-    assert settings.model_dump() == ApplicationSettings.create_from_envs().model_dump()
-
-
-def test_main(app_environment: EnvVarsDict):
-    from simcore_service_dynamic_scheduler.main import the_app
-
-    assert the_app
+        print(result.output)
+        settings = ApplicationSettings(result.output)
+        assert (
+            settings.model_dump() == ApplicationSettings.create_from_envs().model_dump()
+        )

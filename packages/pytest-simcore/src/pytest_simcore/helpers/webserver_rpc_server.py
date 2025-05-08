@@ -7,9 +7,19 @@
 
 from models_library.products import ProductName
 from models_library.projects import ProjectID
+from models_library.rest_pagination import PageOffsetInt
+from models_library.rpc.webserver.projects import (
+    PageRpcProjectJobRpcGet,
+    ProjectJobRpcGet,
+)
+from models_library.rpc_pagination import (
+    DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+    PageLimitInt,
+)
 from models_library.users import UserID
 from pydantic import TypeAdapter, validate_call
-from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
+from pytest_mock import MockType
+from servicelib.rabbitmq import RabbitMQRPCClient
 
 
 class WebserverRpcSideEffects:
@@ -18,7 +28,7 @@ class WebserverRpcSideEffects:
     @validate_call(config={"arbitrary_types_allowed": True})
     async def mark_project_as_job(
         self,
-        rpc_client: RabbitMQRPCClient,
+        rpc_client: RabbitMQRPCClient | MockType,
         *,
         product_name: ProductName,
         user_id: UserID,
@@ -35,3 +45,41 @@ class WebserverRpcSideEffects:
         assert user_id
 
         TypeAdapter(ProjectID).validate_python(project_uuid)
+
+    @validate_call(config={"arbitrary_types_allowed": True})
+    async def list_projects_marked_as_jobs(
+        self,
+        rpc_client: RabbitMQRPCClient | MockType,
+        *,
+        product_name: ProductName,
+        user_id: UserID,
+        # pagination
+        offset: PageOffsetInt = 0,
+        limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+        # filters
+        job_parent_resource_name_prefix: str | None = None,
+    ) -> PageRpcProjectJobRpcGet:
+        assert rpc_client
+        assert product_name
+        assert user_id
+
+        if job_parent_resource_name_prefix:
+            assert not job_parent_resource_name_prefix.startswith("/")
+            assert not job_parent_resource_name_prefix.endswith("%")
+            assert not job_parent_resource_name_prefix.startswith("%")
+
+        items = [
+            item
+            for item in ProjectJobRpcGet.model_json_schema()["examples"]
+            if job_parent_resource_name_prefix is None
+            or item.get("job_parent_resource_name").startswith(
+                job_parent_resource_name_prefix
+            )
+        ]
+
+        return PageRpcProjectJobRpcGet.create(
+            items[offset : offset + limit],
+            total=len(items),
+            limit=limit,
+            offset=offset,
+        )

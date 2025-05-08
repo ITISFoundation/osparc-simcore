@@ -12,6 +12,7 @@ from dask_task_models_library.container_tasks.events import (
     TaskProgressEvent,
 )
 from dask_task_models_library.container_tasks.io import TaskOutputData
+from dask_task_models_library.container_tasks.utils import parse_dask_job_id
 from models_library.clusters import BaseCluster
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
@@ -33,7 +34,6 @@ from ...models.comp_tasks import CompTaskAtDB
 from ...models.dask_subsystem import DaskClientTaskState
 from ...utils.dask import (
     clean_task_output_and_log_files_if_invalid,
-    parse_dask_job_id,
     parse_output_data,
 )
 from ...utils.dask_client_utils import TaskHandlers

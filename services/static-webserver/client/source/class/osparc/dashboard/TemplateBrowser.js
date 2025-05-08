@@ -18,12 +18,15 @@
 qx.Class.define("osparc.dashboard.TemplateBrowser", {
   extend: osparc.dashboard.ResourceBrowserBase,
 
-  construct: function() {
+  construct: function(templateType = null) {
     this._resourceType = "template";
+    this.__templateType = templateType;
+
     this.base(arguments);
   },
 
   members: {
+    __templateType: null,
     __updateAllButton: null,
 
     // overridden
@@ -35,16 +38,12 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       this._hideLoadingPage();
     },
 
-    reloadResources: function() {
+    reloadResources: function(useCache = true) {
       if (osparc.data.Permissions.getInstance().canDo("studies.templates.read")) {
-        this.__reloadTemplates();
+        this.__reloadTemplates(useCache);
       } else {
         this.__setResourcesToList([]);
       }
-    },
-
-    invalidateTemplates: function() {
-      osparc.store.Store.getInstance().invalidate("templates");
     },
 
     __attachEventHandlers: function() {
@@ -74,15 +73,21 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       }
     },
 
-    __reloadTemplates: function() {
+    __reloadTemplates: function(useCache) {
       this.__tasksToCards();
 
-      osparc.data.Resources.getInstance().getAllPages("templates")
-        .then(templates => this.__setResourcesToList(templates))
-        .catch(err => {
-          console.error(err);
-          this.__setResourcesToList([]);
-        });
+      const templatesStore = osparc.store.Templates.getInstance();
+      if (useCache) {
+        const templates = templatesStore.getTemplates();
+        this.__setResourcesToList(templates);
+      } else {
+        templatesStore.fetchAllTemplates()
+          .then(templates => this.__setResourcesToList(templates))
+          .catch(err => {
+            console.error(err);
+            this.__setResourcesToList([]);
+          });
+      }
     },
 
     _updateTemplateData: function(templateData) {
@@ -97,7 +102,8 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
 
     __setResourcesToList: function(templatesList) {
       templatesList.forEach(template => template["resourceType"] = "template");
-      this._resourcesList = templatesList;
+      this._resourcesList = templatesList.filter(template => osparc.study.Utils.extractTemplateType(template) === this.__templateType);
+      this.fireDataEvent("showTab", Boolean(this._resourcesList.length));
       this._reloadCards();
     },
 

@@ -54,6 +54,11 @@ from ...services_http.webserver import AuthSession
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
+from ._constants import (
+    FMSG_CHANGELOG_ADDED_IN_VERSION,
+    FMSG_CHANGELOG_REMOVED_IN_VERSION_FORMAT,
+    create_route_description,
+)
 
 _logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -132,7 +137,23 @@ async def _create_domain_file(
     return file
 
 
-@router.get("", response_model=list[OutputFile], responses=_FILE_STATUS_CODES)
+@router.get(
+    "",
+    response_model=list[OutputFile],
+    responses=_FILE_STATUS_CODES,
+    description=create_route_description(
+        base="Lists all files stored in the system",
+        deprecated=True,
+        alternative="GET /v0/files/page",
+        changelog=[
+            FMSG_CHANGELOG_ADDED_IN_VERSION.format("0.5", ""),
+            FMSG_CHANGELOG_REMOVED_IN_VERSION_FORMAT.format(
+                "0.7",
+                "This endpoint is deprecated and will be removed in a future version",
+            ),
+        ],
+    ),
+)
 async def list_files(
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
     user_id: Annotated[int, Depends(get_current_user_id)],

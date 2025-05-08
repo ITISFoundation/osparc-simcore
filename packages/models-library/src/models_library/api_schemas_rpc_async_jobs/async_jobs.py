@@ -1,12 +1,16 @@
-from typing import Any, TypeAlias
+from typing import Annotated, Any, TypeAlias
 from uuid import UUID
 
-from models_library.users import UserID
-from pydantic import BaseModel
+from pydantic import BaseModel, StringConstraints
 
+from ..products import ProductName
 from ..progress_bar import ProgressReport
+from ..users import UserID
 
 AsyncJobId: TypeAlias = UUID
+AsyncJobName: TypeAlias = Annotated[
+    str, StringConstraints(strip_whitespace=True, min_length=1)
+]
 
 
 class AsyncJobStatus(BaseModel):
@@ -21,6 +25,7 @@ class AsyncJobResult(BaseModel):
 
 class AsyncJobGet(BaseModel):
     job_id: AsyncJobId
+    job_name: AsyncJobName
 
 
 class AsyncJobAbort(BaseModel):
@@ -31,5 +36,5 @@ class AsyncJobAbort(BaseModel):
 class AsyncJobNameData(BaseModel):
     """Data for controlling access to an async job"""
 
+    product_name: ProductName
     user_id: UserID
-    product_name: str

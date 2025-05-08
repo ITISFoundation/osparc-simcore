@@ -3,13 +3,14 @@ from pathlib import Path
 from typing import TypeAlias
 from uuid import uuid4
 
-import orjson
 from aws_library.s3 import S3MetaData, SimcoreS3API
 from aws_library.s3._constants import STREAM_READER_CHUNK_SIZE
 from aws_library.s3._models import S3ObjectKey
+from common_library.json_serialization import json_dumps, json_loads
 from models_library.api_schemas_storage.storage_schemas import S3BucketName
-from models_library.projects import ProjectID
+from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_nodes_io import (
+    NodeIDStr,
     SimcoreS3DirectoryID,
     SimcoreS3FileID,
     StorageFileID,
@@ -27,6 +28,7 @@ from ..exceptions.errors import FileMetaDataNotFoundError, ProjectAccessRightErr
 from ..models import FileMetaData, FileMetaDataAtDB, GenericCursor, PathMetaData
 from ..modules.db.access_layer import AccessLayerRepository
 from ..modules.db.file_meta_data import FileMetaDataRepository, TotalChildren
+from ..modules.db.projects import ProjectRepository
 from .utils import convert_db_to_model
 
 
@@ -165,17 +167,55 @@ def _base_path_parent(base_path: UserSelectionStr, s3_object: S3ObjectKey) -> st
     return f"{result}"
 
 
+def _get_project_ids(user_selecton: set[UserSelectionStr]) -> list[ProjectID]:
+    results = []
+    for selected in user_selecton:
+        project_id = ProjectID(Path(selected).parts[0])
+        results.append(project_id)
+    return results
+
+
+def _replace_node_id_project_id_in_path(
+    ids_names_map: dict[ProjectID, dict[ProjectIDStr | NodeIDStr, str]], path: str
+) -> str:
+    path_parts = Path(path).parts
+    if len(path_parts) == 0:
+        return path
+
+    if len(path_parts) == 1:
+        return ids_names_map[ProjectID(path)][path].replace("/", "_")
+
+    project_id_str = path_parts[0]
+    project_id = ProjectID(project_id_str)
+    node_id_str = path_parts[1]
+    return "/".join(
+        (
+            ids_names_map[project_id][project_id_str].replace("/", "_"),
+            ids_names_map[project_id][node_id_str].replace("/", "_"),
+            *path_parts[2:],
+        )
+    )
+
+
 async def create_and_upload_export(
     s3_client: SimcoreS3API,
+    project_repository: ProjectRepository,
     bucket: S3BucketName,
     *,
     source_object_keys: set[tuple[UserSelectionStr, StorageFileID]],
     destination_object_keys: StorageFileID,
     progress_bar: ProgressBarData,
 ) -> None:
+    ids_names_map = await project_repository.get_project_id_and_node_id_to_names_map(
+        project_uuids=_get_project_ids(user_selecton={x[0] for x in source_object_keys})
+    )
+
     archive_entries: ArchiveEntries = [
         (
-            _base_path_parent(selection, s3_object),
+            _base_path_parent(
+                _replace_node_id_project_id_in_path(ids_names_map, selection),
+                _replace_node_id_project_id_in_path(ids_names_map, s3_object),
+            ),
             await s3_client.get_bytes_streamer_from_object(bucket, s3_object),
         )
         for (selection, s3_object) in source_object_keys
@@ -210,7 +250,7 @@ async def list_child_paths_from_s3(
     """
     objects_cursor = None
     if cursor is not None:
-        cursor_params = orjson.loads(cursor)
+        cursor_params = json_loads(cursor)
         assert cursor_params["file_filter"] == f"{file_filter}"  # nosec
         objects_cursor = cursor_params["objects_next_cursor"]
     list_s3_objects, objects_next_cursor = await s3_client.list_objects(
@@ -237,7 +277,7 @@ async def list_child_paths_from_s3(
     ]
     next_cursor = None
     if objects_next_cursor:
-        next_cursor = orjson.dumps(
+        next_cursor = json_dumps(
             {
                 "file_filter": f"{file_filter}",
                 "objects_next_cursor": objects_next_cursor,

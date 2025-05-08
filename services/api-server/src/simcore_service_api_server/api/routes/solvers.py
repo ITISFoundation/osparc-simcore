@@ -3,23 +3,35 @@ from collections.abc import Callable
 from operator import attrgetter
 from typing import Annotated, Any
 
+from common_library.pagination_tools import iter_pagination_params
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi_pagination import create_page
 from httpx import HTTPStatusError
+from models_library.api_schemas_catalog.services import ServiceListFilters
+from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+from models_library.services_enums import ServiceType
 from pydantic import ValidationError
 
+from ..._service_solvers import SolverService
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.basic_types import VersionStr
 from ...models.pagination import OnePage, Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.model_adapter import ServicePricingPlanGetLegacy
 from ...models.schemas.solvers import Solver, SolverKeyId, SolverPort
-from ...services_http.catalog import CatalogApi
+from ...services_rpc.catalog import CatalogService
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
-from ..dependencies.services import get_api_client
+from ..dependencies.services import get_catalog_service, get_solver_service
 from ..dependencies.webserver_http import AuthSession, get_webserver_session
-from ._common import API_SERVER_DEV_FEATURES_ENABLED
-from ._constants import FMSG_CHANGELOG_NEW_IN_VERSION
+from ._constants import (
+    FMSG_CHANGELOG_NEW_IN_VERSION,
+    FMSG_CHANGELOG_REMOVED_IN_VERSION_FORMAT,
+    create_route_description,
+)
+
+DEFAULT_PAGINATION_LIMIT = MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE - 1
+
 
 _logger = logging.getLogger(__name__)
 
@@ -33,30 +45,34 @@ _SOLVER_STATUS_CODES: dict[int | str, dict[str, Any]] = {
 
 router = APIRouter()
 
-## SOLVERS -----------------------------------------------------------------------------------------
-#
-# - TODO: pagination, result ordering, filter field and results fields?? SEE https://cloud.google.com/apis/design/standard_methods#list
-# - TODO: :search? SEE https://cloud.google.com/apis/design/custom_methods#common_custom_methods
-# - TODO: move more of this logic to catalog service
-# - TODO: error handling!!!
-# - TODO: allow release_tags instead of versions in the next iteration.
-#    Would be nice to have /solvers/foo/releases/latest or solvers/foo/releases/3 , similar to docker tagging
 
-
-@router.get("", response_model=list[Solver], responses=_SOLVER_STATUS_CODES)
+@router.get(
+    "",
+    response_model=list[Solver],
+    responses=_SOLVER_STATUS_CODES,
+    description=create_route_description(
+        base="Lists all available solvers (latest version)",
+        deprecated=True,
+        alternative="GET /v0/solvers/page",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.5.0", ""),
+            FMSG_CHANGELOG_REMOVED_IN_VERSION_FORMAT.format(
+                "0.7",
+                "This endpoint is deprecated and will be removed in a future version",
+            ),
+        ],
+    ),
+)
 async def list_solvers(
-    user_id: Annotated[int, Depends(get_current_user_id)],
-    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
+    catalog_service: Annotated[CatalogService, Depends(get_catalog_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
-    product_name: Annotated[str, Depends(get_product_name)],
 ):
-    """Lists all available solvers (latest version)
+    """Lists all available solvers (latest version)"""
 
-    SEE get_solvers_page for paginated version of this function
-    """
-    solvers: list[Solver] = await catalog_client.list_latest_releases(
-        user_id=user_id, product_name=product_name
+    services, _ = await catalog_service.list_latest_releases(
+        filters=ServiceListFilters(service_type=ServiceType.COMPUTATIONAL),
     )
+    solvers = [Solver.create_from_service(service=service) for service in services]
 
     for solver in solvers:
         solver.url = url_for(
@@ -69,14 +85,32 @@ async def list_solvers(
 @router.get(
     "/page",
     response_model=Page[Solver],
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
-    status_code=status.HTTP_501_NOT_IMPLEMENTED,
+    description=create_route_description(
+        base="Lists the latest version of all available solvers (paginated)",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.8"),
+        ],
+    ),
+    include_in_schema=False,  # TO BE RELEASED in 0.8
 )
 async def get_solvers_page(
     page_params: Annotated[PaginationParams, Depends()],
+    solver_service: Annotated[SolverService, Depends(get_solver_service)],
+    url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
-    msg = f"list solvers with pagination={page_params!r}"
-    raise NotImplementedError(msg)
+    solvers, page_meta = await solver_service.latest_solvers(
+        offset=page_params.offset,
+        limit=page_params.limit,
+    )
+
+    for solver in solvers:
+        solver.url = url_for(
+            "get_solver_release", solver_key=solver.id, version=solver.version
+        )
+
+    page_params.limit = page_meta.limit
+    page_params.offset = page_meta.offset
+    return create_page(solvers, total=len(solvers), params=page_params)
 
 
 @router.get(
@@ -84,46 +118,50 @@ async def get_solvers_page(
     response_model=list[Solver],
     summary="Lists All Releases",
     responses=_SOLVER_STATUS_CODES,
+    description=create_route_description(
+        base="Lists all released solvers (not just latest version)",
+        deprecated=True,
+        alternative="GET /v0/solvers/{solver_key}/releases/page",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.5.0", ""),
+            FMSG_CHANGELOG_REMOVED_IN_VERSION_FORMAT.format(
+                "0.7",
+                "This endpoint is deprecated and will be removed in a future version",
+            ),
+        ],
+    ),
 )
 async def list_solvers_releases(
-    user_id: Annotated[int, Depends(get_current_user_id)],
-    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
+    solver_service: Annotated[SolverService, Depends(get_solver_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
-    product_name: Annotated[str, Depends(get_product_name)],
 ):
-    """Lists all released solvers i.e. all released versions
 
-    SEE get_solvers_releases_page for a paginated version of this function
-    """
-    assert await catalog_client.is_responsive()  # nosec
+    latest_solvers: list[Solver] = []
+    for page_params in iter_pagination_params(limit=DEFAULT_PAGINATION_LIMIT):
+        solvers, page_meta = await solver_service.latest_solvers(
+            offset=page_params.offset,
+            limit=page_params.limit,
+        )
+        page_params.total_number_of_items = page_meta.total
+        latest_solvers.extend(solvers)
 
-    services = await catalog_client.list_services(
-        user_id=user_id,
-        product_name=product_name,
-        predicate=None,
-        type_filter="COMPUTATIONAL",
-    )
-    solvers = [service.to_solver() for service in services]
+    all_solvers = []
+    for solver in latest_solvers:
+        for page_params in iter_pagination_params(limit=DEFAULT_PAGINATION_LIMIT):
+            solvers, page_meta = await solver_service.solver_release_history(
+                solver_key=solver.id,
+                offset=page_params.offset,
+                limit=page_params.limit,
+            )
+            page_params.total_number_of_items = page_meta.total
+            all_solvers.extend(solvers)
 
-    for solver in solvers:
+    for solver in all_solvers:
         solver.url = url_for(
             "get_solver_release", solver_key=solver.id, version=solver.version
         )
 
-    return sorted(solvers, key=attrgetter("id", "pep404_version"))
-
-
-@router.get(
-    "/releases/page",
-    response_model=Page[Solver],
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
-    status_code=status.HTTP_501_NOT_IMPLEMENTED,
-)
-async def get_solvers_releases_page(
-    page_params: Annotated[PaginationParams, Depends()],
-):
-    msg = f"list solvers releases with pagination={page_params!r}"
-    raise NotImplementedError(msg)
+    return sorted(all_solvers, key=attrgetter("id", "pep404_version"))
 
 
 @router.get(
@@ -134,19 +172,15 @@ async def get_solvers_releases_page(
 )
 async def get_solver(
     solver_key: SolverKeyId,
-    user_id: Annotated[int, Depends(get_current_user_id)],
-    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
+    solver_service: Annotated[SolverService, Depends(get_solver_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
-    product_name: Annotated[str, Depends(get_product_name)],
-) -> Solver:
+):
     """Gets latest release of a solver"""
     # IMPORTANT: by adding /latest, we avoid changing the order of this entry in the router list
     # otherwise, {solver_key:path} will override and consume any of the paths that follow.
     try:
-        solver = await catalog_client.get_latest_release(
-            user_id=user_id,
+        solver = await solver_service.get_latest_release(
             solver_key=solver_key,
-            product_name=product_name,
         )
         solver.url = url_for(
             "get_solver_release", solver_key=solver.id, version=solver.version
@@ -168,41 +202,65 @@ async def get_solver(
 )
 async def list_solver_releases(
     solver_key: SolverKeyId,
-    user_id: Annotated[int, Depends(get_current_user_id)],
-    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
+    solver_service: Annotated[SolverService, Depends(get_solver_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
-    product_name: Annotated[str, Depends(get_product_name)],
 ):
     """Lists all releases of a given (one) solver
 
     SEE get_solver_releases_page for a paginated version of this function
     """
-    releases: list[Solver] = await catalog_client.list_service_releases(
-        user_id=user_id,
-        solver_key=solver_key,
-        product_name=product_name,
-    )
+    all_releases: list[Solver] = []
+    for page_params in iter_pagination_params(limit=DEFAULT_PAGINATION_LIMIT):
+        solvers, page_meta = await solver_service.solver_release_history(
+            solver_key=solver_key,
+            offset=page_params.offset,
+            limit=page_params.limit,
+        )
+        page_params.total_number_of_items = page_meta.total
+        all_releases.extend(solvers)
 
-    for solver in releases:
+    for solver in all_releases:
         solver.url = url_for(
             "get_solver_release", solver_key=solver.id, version=solver.version
         )
 
-    return sorted(releases, key=attrgetter("pep404_version"))
+    return sorted(all_releases, key=attrgetter("pep404_version"))
 
 
 @router.get(
     "/{solver_key:path}/releases/page",
     response_model=Page[Solver],
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
-    status_code=status.HTTP_501_NOT_IMPLEMENTED,
+    description=create_route_description(
+        base="Lists all releases of a give solver (paginated)",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.8"),
+        ],
+    ),
+    include_in_schema=False,  # TO BE RELEASED in 0.8
 )
 async def get_solver_releases_page(
     solver_key: SolverKeyId,
     page_params: Annotated[PaginationParams, Depends()],
+    url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
+    solver_service: Annotated[SolverService, Depends(get_solver_service)],
 ):
-    msg = f"list solver {solver_key=} (one) releases with pagination={page_params!r}"
-    raise NotImplementedError(msg)
+    solvers, page_meta = await solver_service.solver_release_history(
+        solver_key=solver_key,
+        offset=page_params.offset,
+        limit=page_params.limit,
+    )
+
+    for solver in solvers:
+        solver.url = url_for(
+            "get_solver_release", solver_key=solver.id, version=solver.version
+        )
+    page_params.limit = page_meta.limit
+    page_params.offset = page_meta.offset
+    return create_page(
+        solvers,
+        total=len(solvers),
+        params=page_params,
+    )
 
 
 @router.get(
@@ -213,18 +271,14 @@ async def get_solver_releases_page(
 async def get_solver_release(
     solver_key: SolverKeyId,
     version: VersionStr,
-    user_id: Annotated[int, Depends(get_current_user_id)],
-    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
+    solver_service: Annotated[SolverService, Depends(get_solver_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
-    product_name: Annotated[str, Depends(get_product_name)],
-) -> Solver:
+):
     """Gets a specific release of a solver"""
     try:
-        solver: Solver = await catalog_client.get_solver(
-            user_id=user_id,
-            name=solver_key,
-            version=version,
-            product_name=product_name,
+        solver: Solver = await solver_service.get_solver(
+            solver_key=solver_key,
+            solver_version=version,
         )
 
         solver.url = url_for(
@@ -254,18 +308,15 @@ async def get_solver_release(
 async def list_solver_ports(
     solver_key: SolverKeyId,
     version: VersionStr,
-    user_id: Annotated[int, Depends(get_current_user_id)],
-    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
-    product_name: Annotated[str, Depends(get_product_name)],
+    catalog_service: Annotated[CatalogService, Depends(get_catalog_service)],
 ):
-    ports = await catalog_client.get_service_ports(
-        user_id=user_id,
+    ports = await catalog_service.get_service_ports(
         name=solver_key,
         version=version,
-        product_name=product_name,
     )
 
-    return OnePage[SolverPort].model_validate({"items": ports})
+    solver_ports = [SolverPort.model_validate(port.model_dump()) for port in ports]
+    return OnePage[SolverPort].model_validate(dict(items=solver_ports))
 
 
 @router.get(

@@ -921,7 +921,7 @@ async def test_find_node_with_name_with_common_prefixed_nodes(
     mocked_aiodocker = mocker.patch.object(autoscaling_docker, "nodes", autospec=True)
     mocked_aiodocker.list.return_value = [
         create_fake_node(
-            Description=NodeDescription(Hostname=f"{common_prefix}{'1'*(i+1)}")
+            Description=NodeDescription(Hostname=f"{common_prefix}{'1' * (i + 1)}")
         )
         for i in range(3)
     ]
@@ -941,7 +941,7 @@ async def test_find_node_with_smaller_name_with_common_prefixed_nodes_returns_no
     mocked_aiodocker = mocker.patch.object(autoscaling_docker, "nodes", autospec=True)
     mocked_aiodocker.list.return_value = [
         create_fake_node(
-            Description=NodeDescription(Hostname=f"{common_prefix}{'1'*(i+1)}")
+            Description=NodeDescription(Hostname=f"{common_prefix}{'1' * (i + 1)}")
         )
         for i in range(3)
     ]
@@ -1022,7 +1022,7 @@ def test_get_new_node_docker_tags(
     disabled_ssm: None,
     mocked_redis_server: None,
     enabled_dynamic_mode: EnvVarsDict,
-    disable_dynamic_service_background_task: None,
+    disable_autoscaling_background_task: None,
     app_settings: ApplicationSettings,
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
 ):
@@ -1167,7 +1167,7 @@ async def test_set_node_osparc_ready(
     disabled_ssm: None,
     mocked_redis_server: None,
     enabled_dynamic_mode: EnvVarsDict,
-    disable_dynamic_service_background_task: None,
+    disable_autoscaling_background_task: None,
     app_settings: ApplicationSettings,
     autoscaling_docker: AutoscalingDocker,
     host_node: Node,
@@ -1210,7 +1210,7 @@ async def test_set_node_found_empty(
     disabled_ssm: None,
     mocked_redis_server: None,
     enabled_dynamic_mode: EnvVarsDict,
-    disable_dynamic_service_background_task: None,
+    disable_autoscaling_background_task: None,
     host_node: Node,
     autoscaling_docker: AutoscalingDocker,
 ):
@@ -1254,7 +1254,7 @@ async def test_set_node_begin_termination_process(
     disabled_ssm: None,
     mocked_redis_server: None,
     enabled_dynamic_mode: EnvVarsDict,
-    disable_dynamic_service_background_task: None,
+    disable_autoscaling_background_task: None,
     host_node: Node,
     autoscaling_docker: AutoscalingDocker,
 ):
@@ -1287,7 +1287,7 @@ async def test_attach_node(
     disabled_ssm: None,
     mocked_redis_server: None,
     enabled_dynamic_mode: EnvVarsDict,
-    disable_dynamic_service_background_task: None,
+    disable_autoscaling_background_task: None,
     app_settings: ApplicationSettings,
     autoscaling_docker: AutoscalingDocker,
     host_node: Node,

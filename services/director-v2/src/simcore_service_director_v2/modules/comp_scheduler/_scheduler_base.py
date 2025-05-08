@@ -21,7 +21,6 @@ from typing import Final
 
 import arrow
 import networkx as nx
-from aiopg.sa.engine import Engine
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_state import RunningState
@@ -33,6 +32,7 @@ from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
 from servicelib.redis import RedisClientSDK
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ...constants import UNDEFINED_STR_METADATA
 from ...core.errors import (
@@ -79,7 +79,7 @@ _MAX_WAITING_FOR_CLUSTER_TIMEOUT_IN_MIN: Final[int] = 10
 
 def _auto_schedule_callback(
     loop: asyncio.AbstractEventLoop,
-    db_engine: Engine,
+    db_engine: AsyncEngine,
     rabbit_mq_client: RabbitMQClient,
     *,
     user_id: UserID,
@@ -116,7 +116,7 @@ class SortedTasks:
 
 
 async def _triage_changed_tasks(
-    changed_tasks: list[tuple[_Previous, _Current]]
+    changed_tasks: list[tuple[_Previous, _Current]],
 ) -> SortedTasks:
     started_tasks = [
         current
@@ -158,7 +158,7 @@ async def _triage_changed_tasks(
 
 @dataclass
 class BaseCompScheduler(ABC):
-    db_engine: Engine
+    db_engine: AsyncEngine
     rabbitmq_client: RabbitMQClient
     rabbitmq_rpc_client: RabbitMQRPCClient
     settings: ComputationalBackendSettings
@@ -242,9 +242,13 @@ class BaseCompScheduler(ABC):
     async def _set_states_following_failed_to_aborted(
         self, project_id: ProjectID, dag: nx.DiGraph
     ) -> dict[NodeIDStr, CompTaskAtDB]:
-        tasks: dict[NodeIDStr, CompTaskAtDB] = await self._get_pipeline_tasks(
-            project_id, dag
-        )
+        tasks = await self._get_pipeline_tasks(project_id, dag)
+        # Perform a reverse topological sort to ensure tasks are ordered from last to first
+        sorted_node_ids = list(reversed(list(nx.topological_sort(dag))))
+        tasks = {
+            node_id: tasks[node_id] for node_id in sorted_node_ids if node_id in tasks
+        }
+        # we need the tasks ordered from the last task to the first
         node_ids_to_set_as_aborted: set[NodeIDStr] = set()
         for task in tasks.values():
             if task.state == RunningState.FAILED:
@@ -651,8 +655,10 @@ class BaseCompScheduler(ABC):
     ) -> None:
         # get any running task and stop them
         comp_tasks_repo = CompTasksRepository.instance(self.db_engine)
-        await comp_tasks_repo.mark_project_published_waiting_for_cluster_tasks_as_aborted(
-            project_id
+        await (
+            comp_tasks_repo.mark_project_published_waiting_for_cluster_tasks_as_aborted(
+                project_id
+            )
         )
         # stop any remaining running task, these are already submitted
         if tasks_to_stop := [
