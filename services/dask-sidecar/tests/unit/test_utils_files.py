@@ -265,7 +265,7 @@ async def test_pull_file_from_remote_s3_presigned_link(
             "get_object",
             Params={
                 "Bucket": s3_settings.S3_BUCKET_NAME,
-                "Key": s3_remote_file_url.path.removeprefix("/"),
+                "Key": f"{s3_remote_file_url.path.removeprefix('/')}",
             },
             ExpiresIn=30,
         )
@@ -283,6 +283,59 @@ async def test_pull_file_from_remote_s3_presigned_link(
     )
     assert dst_path.exists()
     assert dst_path.read_text() == TEXT_IN_FILE
+    mocked_log_publishing_cb.assert_called()
+
+
+async def test_pull_file_from_remote_s3_presigned_link_invalid_file(
+    s3_settings: S3Settings,
+    s3_remote_file_url: AnyUrl,
+    s3_client: S3Client,
+    tmp_path: Path,
+    faker: Faker,
+    mocked_log_publishing_cb: mock.AsyncMock,
+):
+    storage_kwargs = _s3fs_settings_from_s3_settings(s3_settings)
+    # put some file on the remote
+    TEXT_IN_FILE = faker.text()
+    with cast(
+        fsspec.core.OpenFile,
+        fsspec.open(
+            f"{s3_remote_file_url}",
+            mode="wt",
+            **storage_kwargs,
+        ),
+    ) as fp:
+        fp.write(TEXT_IN_FILE)
+
+    # create a corresponding presigned get link
+    assert s3_remote_file_url.path
+    invalid_remote_file_url = TypeAdapter(AnyUrl).validate_python(
+        await s3_client.generate_presigned_url(
+            "get_object",
+            Params={
+                "Bucket": s3_settings.S3_BUCKET_NAME,
+                "Key": f"{s3_remote_file_url.path.removeprefix('/')}_invalid",
+            },
+            ExpiresIn=30,
+        )
+    )
+    assert invalid_remote_file_url.scheme.startswith("http")
+    print(f"remote_file_url: {invalid_remote_file_url}")
+    # now let's get the file through the util
+    dst_path = tmp_path / faker.file_name()
+    with pytest.raises(
+        FileNotFoundError,
+        match=rf"{s3_remote_file_url.path.removeprefix('/')}_invalid",
+    ):
+        await pull_file_from_remote(
+            src_url=invalid_remote_file_url,
+            target_mime_type=None,
+            dst_path=dst_path,
+            log_publishing_cb=mocked_log_publishing_cb,
+            s3_settings=None,
+        )
+
+    assert not dst_path.exists()
     mocked_log_publishing_cb.assert_called()
 
 
