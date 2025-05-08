@@ -1,6 +1,4 @@
-""" user's session plugin
-
-"""
+"""user's session plugin"""
 
 import logging
 
@@ -43,4 +41,4 @@ def setup_session(app: web.Application):
         samesite=settings.SESSION_COOKIE_SAMESITE,
     )
     aiohttp_session.setup(app=app, storage=encrypted_cookie_sessions)
-    app.middlewares[-1].__middleware_name__ = f"{__name__}.session"  # type: ignore[union-attr] # PC this attribute does not exist and mypy does not like it
+    app.middlewares[-1].__middleware_name__ = f"{__name__}.session"  # type: ignore[attr-defined] # PC this attribute does not exist and mypy does not like it
