@@ -48,7 +48,11 @@ class ServerRPCInterface:
             self.result,
         ):
             router.expose(
-                reraise_if_error_type=(JobNotFoundError, NoResultIsAvailableError)
+                reraise_if_error_type=(
+                    JobNotFoundError,
+                    AlreadyStartedError,
+                    NoResultIsAvailableError,
+                )
             )(handler)
 
         await self._rabbitmq_rpc_server.register_router(router, self._rpc_namespace)

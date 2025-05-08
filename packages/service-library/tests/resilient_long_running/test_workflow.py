@@ -18,11 +18,13 @@ from servicelib.resilent_long_running import (
     Server,
     TimedOutError,
 )
+from servicelib.resilent_long_running._client import AlreadyStartedError
 from servicelib.resilent_long_running._models import JobUniqueId
 from servicelib.resilent_long_running.runners.asyncio_tasks import (
     AsyncioTasksJobInterface,
     AsyncTaskRegistry,
 )
+from servicelib.utils import limited_gather
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from tenacity import (
@@ -65,6 +67,10 @@ async def server(
     @registry.expose()
     async def echo_f(data: Any) -> Any:
         return data
+
+    @registry.expose()
+    async def inc_number_f(number: int) -> int:
+        return number + 1
 
     @registry.expose()
     async def raising_f() -> None:
@@ -132,6 +138,25 @@ async def test_workflow(
     )
     assert result == echo_value
     assert type(result) is expected_type
+
+
+@pytest.mark.parametrize("is_unique", [True, False])
+async def test_workflow_paralle_calls_to_same_handler(
+    server: Server, client: Client, is_unique: bool
+):
+    async def _to_run(number: int) -> None:
+        result = await client.ensure_result(
+            "inc_number_f",
+            expected_type=int,
+            timeout=timedelta(seconds=30),
+            number=number,
+            is_unique=is_unique,
+        )
+        assert result == number + 1
+
+    count = 100
+    await limited_gather(*(_to_run(number) for number in range(count)), limit=count)
+    await _assert_tasks_count(server, count=0)
 
 
 @pytest.mark.parametrize("is_unique", [True, False])
@@ -319,18 +344,36 @@ def client_process(
         process.kill()
 
 
-@pytest.mark.parametrize("is_unique", [False])
+async def test_start_unique_task_twice_is_not_allowed(server: Server, client: Client):
+    async def _runner() -> None:
+        await client.ensure_result(
+            "sleep_for_f",
+            expected_type=type(None),
+            timeout=timedelta(seconds=30),
+            duration=2,
+            is_unique=True,
+        )
+
+    with pytest.raises(AlreadyStartedError):
+        await limited_gather(*(_runner() for _ in range(2)), limit=2)
+
+
 async def test_cancellation_of_client_can_resume_process(
     server: Server,
     client_process: Callable[[Callable[[Client], Awaitable[None]]], Process],
     client: Client,
-    is_unique: bool,
 ):
     await _assert_tasks_count(server, count=0)
 
+    # NOTE: only when the task is maked as unique can the client pickup
+    # the running handler running on remote once it's restarted
+
+    # NOTE: you cannot start the same unique task twice
+    # a task is unique when all of it's parameters are the same and is maked as unique
+
     async def _runner(client_: Client) -> None:
         await _sleep_for_ensure_result(
-            client_, retry_count=3, timeout=timedelta(minutes=1), is_unique=is_unique
+            client_, retry_count=3, timeout=timedelta(minutes=1), is_unique=True
         )
 
     # start task in process

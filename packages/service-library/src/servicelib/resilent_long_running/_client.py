@@ -9,7 +9,6 @@ from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 
 from ._errors import (
-    AlreadyStartedError,
     FinishedWithError,
     NoMoreRetryAttemptsError,
     TimedOutError,
@@ -161,17 +160,8 @@ class Client:
     ) -> None:
         # if job is missing on server side start it
         if await self._rpc_interface.get_status(unique_id) == JobStatus.NOT_FOUND:
-            try:
-                await self._rpc_interface.start(
-                    name, unique_id, timeout=timeout, **params
-                )
-                await self._store_interface.update_entry_expiry(
-                    unique_id, expire=timeout
-                )
-            except AlreadyStartedError:
-                _logger.info(
-                    "unique_id='%s', was already running, did not start", unique_id
-                )
+            await self._rpc_interface.start(name, unique_id, timeout=timeout, **params)
+            await self._store_interface.update_entry_expiry(unique_id, expire=timeout)
 
     async def _format_remaining_attempts(
         self, unique_id: JobUniqueId, retry_count: NonNegativeInt
@@ -263,14 +253,15 @@ class Client:
             timeout -- maximum time to wait for the result
 
         Keyword Arguments:
-            is_unique -- only one instance of this task can exsist at any given time (default: {False})
+            is_unique -- only one instance of the remote handler can exsist at any given time (default: {False})
             retry_count -- how many times to retry execution before giving up (default: {3})
 
         Raises:
             UnexpectedResultTypeError: wrong result type
             TimedOutError: did not finish in time
+            AlreadyStartedError: a handler marked as unique with the same params is already running
             NoMoreRetryAttemptsError: no more retry attempts left and still raised an error
-            FinishedWithError: task on remove finised with an error
+            FinishedWithError: handler on remove finised with an error
 
         Returns:
             the resturn value of the handler invoked remotley
