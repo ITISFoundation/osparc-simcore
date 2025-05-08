@@ -128,7 +128,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
           buttonId: "hypertoolsTabBtn",
           label: this.tr("HYPERTOOLS"),
           icon: "@FontAwesome5Solid/copy/"+tabIconSize,
-          initVisibility: "excluded",
+          // initVisibility: "excluded",
           buildLayout: this.__createHypertoolsBrowser
         });
       }
@@ -172,26 +172,25 @@ qx.Class.define("osparc.dashboard.Dashboard", {
         osparc.utils.Utils.setIdToWidget(tabButton, buttonId);
         tabPage.setLayout(new qx.ui.layout.Grow());
 
-        const viewLayout = buildLayout.call(this);
+        const resourceBrowser = buildLayout.call(this);
         tabButton.addListener("execute", () => {
-          if (viewLayout.resetSelection) {
-            viewLayout.resetSelection();
+          if (resourceBrowser.resetSelection) {
+            resourceBrowser.resetSelection();
           }
         }, this);
-        viewLayout.addListener("changeTab", e => {
+
+        resourceBrowser.addListener("changeTab", e => {
           const activeTab = e.getData();
           const tabFound = this.getSelectables().find(s => s.id === activeTab);
           if (tabFound) {
             this.setSelection([tabFound]);
           }
         }, this);
-        viewLayout.addListener("showTab", e => {
-          const showTab = e.getData();
-          tabButton.setVisibility(showTab ? "visible" : "excluded");
-        })
+
         const scrollerMainView = new qx.ui.container.Scroll();
-        scrollerMainView.add(viewLayout);
+        scrollerMainView.add(resourceBrowser);
         tabPage.add(scrollerMainView);
+        tabPage.resourceBrowser = resourceBrowser;
 
         this.add(tabPage);
       }, this);
@@ -202,9 +201,22 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       preResourcePromises.push(osparc.store.Services.getServicesLatest(false));
       Promise.all(preResourcePromises)
         .then(() => {
-          this.__studyBrowser.initResources();
-          this.__serviceBrowser.initResources();
-          this.__dataBrowser.initResources();
+          if (this.__studyBrowser) {
+            this.__studyBrowser.initResources();
+          }
+          if (this.__serviceBrowser) {
+            this.__serviceBrowser.initResources();
+          }
+          if (this.__dataBrowser) {
+            this.__dataBrowser.initResources();
+          }
+
+          this.addListener("changeSelection", e => {
+            const selectedTab = e.getData()[0];
+            if (selectedTab && selectedTab.resourceBrowser) {
+              selectedTab.resourceBrowser.initResources();
+            }
+          }, this);
         })
         .catch(err => console.error(err));
     },

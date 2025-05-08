@@ -92,6 +92,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     // overridden
     initResources: function() {
+      if (this._resourcesInitialized) {
+        return;
+      }
+      this._resourcesInitialized = true;
+
       this._resourcesList = [];
       this.__getActiveStudy()
         .then(() => {
