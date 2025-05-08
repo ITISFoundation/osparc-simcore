@@ -23,7 +23,6 @@ from models_library.wallets import WalletID
 from pydantic import BaseModel
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.logging_utils import log_context
-from simcore_service_director_v2.core.settings import get_application_settings
 
 from ...utils.db import get_repository
 from ...utils.osparc_variables import (
@@ -180,6 +179,7 @@ async def resolve_and_substitute_session_variables_in_model(
     safe: bool = True,
     user_id: UserID,
     product_name: str,
+    product_api_base_url: str,
     project_id: ProjectID,
     node_id: NodeID,
     service_run_id: ServiceRunID,
@@ -194,7 +194,6 @@ async def resolve_and_substitute_session_variables_in_model(
             # if it raises an error vars need replacement
             raise_if_unresolved_osparc_variable_identifier_found(model)
     except UnresolvedOsparcVariableIdentifierError:
-        app_settings = get_application_settings(app)
         table = OsparcSessionVariablesTable.get_from_app_state(app)
         identifiers = await resolve_variables_from_context(
             table.copy(),
@@ -206,7 +205,7 @@ async def resolve_and_substitute_session_variables_in_model(
                 node_id=node_id,
                 run_id=service_run_id,
                 wallet_id=wallet_id,
-                api_server_base_url=app_settings.DIRECTOR_V2_PUBLIC_API_BASE_URL,
+                api_server_base_url=product_api_base_url,
             ),
         )
         _logger.debug("replacing with the identifiers=%s", identifiers)
@@ -225,6 +224,7 @@ async def resolve_and_substitute_session_variables_in_specs(
     safe: bool = True,
     user_id: UserID,
     product_name: str,
+    product_api_base_url: str,
     project_id: ProjectID,
     node_id: NodeID,
     service_run_id: ServiceRunID,
@@ -241,7 +241,6 @@ async def resolve_and_substitute_session_variables_in_specs(
             identifiers_to_replace,
         )
         if identifiers_to_replace:
-            app_settings = get_application_settings(app)
             environs = await resolve_variables_from_context(
                 table.copy(include=identifiers_to_replace),
                 context=ContextDict(
@@ -252,7 +251,7 @@ async def resolve_and_substitute_session_variables_in_specs(
                     node_id=node_id,
                     run_id=service_run_id,
                     wallet_id=wallet_id,
-                    api_server_base_url=app_settings.DIRECTOR_V2_PUBLIC_API_BASE_URL,
+                    api_server_base_url=product_api_base_url,
                 ),
             )
 
