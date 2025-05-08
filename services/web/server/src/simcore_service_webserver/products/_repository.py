@@ -227,6 +227,7 @@ class ProductRepository(BaseRepository):
             if row.base_url == products.c.base_url.server_default.arg:  # type: ignore[union-attr]
                 raise ProductBaseUrlNotSetError(product_name=product_name)
 
+            assert isinstance(row.base_url, str)  # nosec
             return row.base_url
 
     async def auto_create_products_groups(
