@@ -121,6 +121,7 @@ def local_cluster(app_environment: EnvVarsDict) -> Iterator[distributed.LocalClu
     ) as cluster:
         assert cluster
         assert isinstance(cluster, distributed.LocalCluster)
+        print(cluster.workers)
         yield cluster
 
 
@@ -129,6 +130,7 @@ def dask_client(
     local_cluster: distributed.LocalCluster,
 ) -> Iterator[distributed.Client]:
     with distributed.Client(local_cluster) as client:
+        client.wait_for_workers(1, timeout=10)
         yield client
 
 
