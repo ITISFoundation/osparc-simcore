@@ -1,3 +1,8 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=no-member
+
 import distributed
 
 # Selection of core and tool services started in this swarm fixture (integration)
