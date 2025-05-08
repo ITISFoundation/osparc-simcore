@@ -122,6 +122,7 @@ async def test_one_time_payment_workflow(
     )
 
     app_settings: ApplicationSettings = app.state.settings
+    assert isinstance(submission_link, URL)
     assert submission_link.host == URL(f"{app_settings.PAYMENTS_GATEWAY_URL}").host
 
     # cancel
@@ -161,6 +162,7 @@ async def test_payment_methods_workflow(
     )
 
     app_settings: ApplicationSettings = app.state.settings
+    assert isinstance(form_link, URL)
     assert form_link.host == URL(f"{app_settings.PAYMENTS_GATEWAY_URL}").host
 
     # CRUD
