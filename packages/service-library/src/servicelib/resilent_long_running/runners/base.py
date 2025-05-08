@@ -6,7 +6,7 @@ from .._models import JobUniqueId, RemoteHandlerName, StartParams
 
 
 class BaseServerJobInterface(ABC):
-    """allows the server side jobs to be implemented however the user pleases"""
+    """user can implment this to provide their own execution backend"""
 
     @abstractmethod
     async def start(
