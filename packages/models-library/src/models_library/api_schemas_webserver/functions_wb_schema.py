@@ -167,7 +167,7 @@ class FunctionJobCollectionStatus(BaseModel):
     status: list[str]
 
 
-class FunctionNotFoundError(Exception):
+class FunctionIDNotFoundError(Exception):
     """Exception raised when a function is not found"""
 
     def __init__(self, function_id: FunctionID):
@@ -175,7 +175,7 @@ class FunctionNotFoundError(Exception):
         super().__init__(f"Function {function_id} not found")
 
 
-class FunctionJobNotFoundError(Exception):
+class FunctionJobIDNotFoundError(Exception):
     """Exception raised when a function job is not found"""
 
     def __init__(self, function_job_id: FunctionJobID):
@@ -183,7 +183,7 @@ class FunctionJobNotFoundError(Exception):
         super().__init__(f"Function job {function_job_id} not found")
 
 
-class FunctionJobCollectionNotFoundError(Exception):
+class FunctionJobCollectionIDNotFoundError(Exception):
     """Exception raised when a function job collection is not found"""
 
     def __init__(self, function_job_collection_id: FunctionJobCollectionID):
@@ -193,11 +193,25 @@ class FunctionJobCollectionNotFoundError(Exception):
         )
 
 
-class RegisterFunctionWithUIDError(Exception):
+class RegisterFunctionWithIDError(Exception):
     """Exception raised when registering a function with a UID"""
 
     def __init__(self):
         super().__init__("Cannot register Function with a UID")
+
+
+class RegisterFunctionJobWithIDError(Exception):
+    """Exception raised when registering a function job with a UID"""
+
+    def __init__(self):
+        super().__init__("Cannot register FunctionJob with a UID")
+
+
+class RegisterFunctionJobCollectionWithIDError(Exception):
+    """Exception raised when registering a function job collection with a UID"""
+
+    def __init__(self):
+        super().__init__("Cannot register FunctionJobCollection with a UID")
 
 
 class UnsupportedFunctionClassError(Exception):
