@@ -94,6 +94,10 @@ class DynamicServiceCreate(ServiceDetails):
             }
         )
 
+    model_config = ConfigDict(
+        json_schema_extra=_update_json_schema_extra,
+    )
+
 
 DynamicServiceGet: TypeAlias = RunningDynamicServiceDetails
 
