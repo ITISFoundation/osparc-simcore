@@ -43,33 +43,6 @@ def _get_correlation_id(*, is_unique: bool) -> CorrelationID:
 
 
 class Client:
-    """Client for managing and interacting with long-running remote jobs.
-
-    This class provides a resilient interface to schedule, track, and retrieve results from
-    long-running jobs executing on remote servers. It implements fault tolerance through:
-
-    1. Automatic job tracking in Redis to preserve state across client restarts
-    2. Configurable retry mechanism for handling transient errors
-    3. Timeout management to prevent indefinite waiting
-    4. Correlation ID system to deduplicate or uniquely identify job requests
-
-    Internally, the client relies on two main components:
-    - RPC Interface: Handles communication with remote job handlers via RabbitMQ
-    - Store Interface: Manages job state persistence in Redis
-
-    The client workflow:
-    1. Generate a unique or reusable job ID based on parameters
-    2. Track the job in Redis with remaining retry attempts
-    3. Start the job on the remote server if not already running
-    4. Poll for job status until completion or failure
-    5. On failure, retry the job if attempts remain
-    6. On success, verify result type and return data
-    7. Clean up resources on both client and server side
-
-    This resilient approach ensures jobs can survive temporary network issues,
-    service restarts, and transient failures in the distributed system.
-    """
-
     def __init__(
         self,
         rabbit_settings: RabbitSettings,

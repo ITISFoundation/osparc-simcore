@@ -12,13 +12,13 @@ import pytest
 from pydantic import NonNegativeInt, ValidationError
 from servicelib.async_utils import cancel_wait_task
 from servicelib.resilent_long_running import (
+    AlreadyStartedError,
     Client,
     FinishedWithError,
     LongRunningNamespace,
     Server,
     TimedOutError,
 )
-from servicelib.resilent_long_running._client import AlreadyStartedError
 from servicelib.resilent_long_running._models import JobUniqueId
 from servicelib.resilent_long_running.runners.asyncio_tasks import (
     AsyncioTasksJobInterface,
