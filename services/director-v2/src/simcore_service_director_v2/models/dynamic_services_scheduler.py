@@ -475,6 +475,13 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         ),
     ] = None
 
+    product_api_base_url: Annotated[
+        AnyHttpUrl,
+        Field(
+            description="Base URL for the current product's API",
+        ),
+    ]
+
     @classmethod
     def from_http_request(
         # pylint: disable=too-many-arguments
