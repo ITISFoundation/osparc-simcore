@@ -1,5 +1,4 @@
 import logging
-from typing import get_origin
 
 from models_library.api_schemas_webserver import (
     WEBSERVER_RPC_NAMESPACE,
@@ -38,7 +37,7 @@ async def register_function(
         TypeAdapter(RPCMethodName).validate_python("register_function"),
         function=function,
     )
-    assert isinstance(result, get_origin(Function) or Function)  # nosec
+    TypeAdapter(Function).validate_python(result)  # Validates the result as a Function
     return result
 
 
@@ -53,7 +52,7 @@ async def get_function(
         TypeAdapter(RPCMethodName).validate_python("get_function"),
         function_id=function_id,
     )
-    assert isinstance(result, get_origin(Function) or Function)  # nosec
+    TypeAdapter(Function).validate_python(result)
     return result
 
 
@@ -68,7 +67,7 @@ async def get_function_input_schema(
         TypeAdapter(RPCMethodName).validate_python("get_function_input_schema"),
         function_id=function_id,
     )
-    assert isinstance(result, FunctionInputSchema)  # nosec
+    TypeAdapter(FunctionInputSchema).validate_python(result)
     return result
 
 
@@ -83,7 +82,7 @@ async def get_function_output_schema(
         TypeAdapter(RPCMethodName).validate_python("get_function_output_schema"),
         function_id=function_id,
     )
-    assert isinstance(result, FunctionOutputSchema)  # nosec
+    TypeAdapter(FunctionOutputSchema).validate_python(result)
     return result
 
 
@@ -118,7 +117,9 @@ async def list_functions(
         )
     )
     assert isinstance(result, tuple)
-    assert isinstance(result[0], list)  # nosec
+    TypeAdapter(list[Function]).validate_python(
+        result[0]
+    )  # Validates the result as a list of Functions
     assert isinstance(result[1], PageMetaInfoLimitOffset)  # nosec
     return result
 
@@ -139,7 +140,9 @@ async def list_function_jobs(
         )
     )
     assert isinstance(result, tuple)
-    assert isinstance(result[0], list)  # nosec
+    TypeAdapter(list[FunctionJob]).validate_python(
+        result[0]
+    )  # Validates the result as a list of FunctionJobs
     assert isinstance(result[1], PageMetaInfoLimitOffset)  # nosec
     return result
 
@@ -160,7 +163,9 @@ async def list_function_job_collections(
         )
     )
     assert isinstance(result, tuple)
-    assert isinstance(result[0], list)  # nosec
+    TypeAdapter(list[FunctionJobCollection]).validate_python(
+        result[0]
+    )  # Validates the result as a list of FunctionJobCollections
     assert isinstance(result[1], PageMetaInfoLimitOffset)  # nosec
     return result
 
@@ -178,7 +183,9 @@ async def run_function(
         function_id=function_id,
         inputs=inputs,
     )
-    assert isinstance(result, get_origin(FunctionJob) or FunctionJob)  # nosec
+    TypeAdapter(FunctionJob).validate_python(
+        result
+    )  # Validates the result as a FunctionJob
     return result
 
 
@@ -193,7 +200,9 @@ async def register_function_job(
         TypeAdapter(RPCMethodName).validate_python("register_function_job"),
         function_job=function_job,
     )
-    assert isinstance(result, get_origin(FunctionJob) or FunctionJob)  # nosec
+    TypeAdapter(FunctionJob).validate_python(
+        result
+    )  # Validates the result as a FunctionJob
     return result
 
 
@@ -208,7 +217,8 @@ async def get_function_job(
         TypeAdapter(RPCMethodName).validate_python("get_function_job"),
         function_job_id=function_job_id,
     )
-    assert isinstance(result, get_origin(FunctionJob) or FunctionJob)  # nosec
+
+    TypeAdapter(FunctionJob).validate_python(result)
     return result
 
 
@@ -242,7 +252,7 @@ async def find_cached_function_job(
     )
     if result is None:
         return None
-    assert isinstance(result, get_origin(FunctionJob) or FunctionJob)  # nosec
+    TypeAdapter(FunctionJob).validate_python(result)
     return result
 
 
@@ -257,7 +267,7 @@ async def register_function_job_collection(
         TypeAdapter(RPCMethodName).validate_python("register_function_job_collection"),
         function_job_collection=function_job_collection,
     )
-    assert isinstance(result, FunctionJobCollection)  # nosec
+    TypeAdapter(FunctionJobCollection).validate_python(result)
     return result
 
 
@@ -272,7 +282,7 @@ async def get_function_job_collection(
         TypeAdapter(RPCMethodName).validate_python("get_function_job_collection"),
         function_job_collection_id=function_job_collection_id,
     )
-    assert isinstance(result, FunctionJobCollection)  # nosec
+    TypeAdapter(FunctionJobCollection).validate_python(result)
     return result
 
 
