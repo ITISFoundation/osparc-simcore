@@ -284,5 +284,5 @@ class Client:
 
             # remove from remote executor
             await self._rpc_interface.remove(unique_id)
-            # remove distributed storage (redis)
+            # remove from distributed storage (redis)
             await self._store_interface.remove(unique_id)
