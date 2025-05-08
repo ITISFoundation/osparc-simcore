@@ -5,10 +5,10 @@ import pytest
 import simcore_service_webserver.functions._functions_controller_rpc as functions_rpc
 from models_library.api_schemas_webserver.functions_wb_schema import (
     Function,
+    FunctionIDNotFoundError,
     FunctionInputSchema,
     FunctionJobCollection,
-    FunctionJobNotFoundError,
-    FunctionNotFoundError,
+    FunctionJobIDNotFoundError,
     FunctionOutputSchema,
     ProjectFunction,
     ProjectFunctionJob,
@@ -90,7 +90,7 @@ async def test_get_function(client, mock_function):
 @pytest.mark.asyncio
 async def test_get_function_not_found(client):
     # Attempt to retrieve a function that does not exist
-    with pytest.raises(FunctionNotFoundError):
+    with pytest.raises(FunctionIDNotFoundError):
         await functions_rpc.get_function(app=client.app, function_id=uuid4())
 
 
@@ -226,7 +226,7 @@ async def test_delete_function(client, mock_function):
     )
 
     # Attempt to retrieve the deleted function
-    with pytest.raises(FunctionNotFoundError):
+    with pytest.raises(FunctionIDNotFoundError):
         await functions_rpc.get_function(
             app=client.app, function_id=registered_function.uid
         )
@@ -299,7 +299,7 @@ async def test_get_function_job(client, mock_function):
 @pytest.mark.asyncio
 async def test_get_function_job_not_found(client):
     # Attempt to retrieve a function job that does not exist
-    with pytest.raises(FunctionJobNotFoundError):
+    with pytest.raises(FunctionJobIDNotFoundError):
         await functions_rpc.get_function_job(app=client.app, function_job_id=uuid4())
 
 
@@ -366,7 +366,7 @@ async def test_delete_function_job(client, mock_function):
     )
 
     # Attempt to retrieve the deleted job
-    with pytest.raises(FunctionJobNotFoundError):
+    with pytest.raises(FunctionJobIDNotFoundError):
         await functions_rpc.get_function_job(
             app=client.app, function_job_id=registered_job.uid
         )
@@ -428,7 +428,7 @@ async def test_function_job_collection(client, mock_function):
         app=client.app, function_job_collection_id=registered_collection.uid
     )
     # Attempt to retrieve the deleted collection
-    with pytest.raises(FunctionJobNotFoundError):
+    with pytest.raises(FunctionJobIDNotFoundError):
         await functions_rpc.get_function_job(
             app=client.app, function_job_id=registered_collection.uid
         )
@@ -488,89 +488,3 @@ async def test_list_function_job_collections(client, mock_function):
     # Assert the list contains the registered collection
     assert len(collections) == 1
     assert collections[0].uid == registered_collections[1].uid
-
-
-# @pytest.mark.asyncio
-# async def test_find_cached_function_job_project_class(
-#     mock_app, mock_function_id, mock_function_inputs
-# ):
-#     mock_function_job = AsyncMock()
-#     mock_function_job.function_class = FunctionClass.project
-#     mock_function_job.uuid = "mock-uuid"
-#     mock_function_job.title = "mock-title"
-#     mock_function_job.function_uuid = "mock-function-uuid"
-#     mock_function_job.inputs = {"key": "value"}
-#     mock_function_job.class_specific_data = {"project_job_id": "mock-project-job-id"}
-
-#     with patch(
-#         "simcore_service_webserver.functions._functions_repository.find_cached_function_job",
-#         return_value=mock_function_job,
-#     ):
-#         result = await find_cached_function_job(
-#             app=mock_app, function_id=mock_function_id, inputs=mock_function_inputs
-#         )
-
-#     assert isinstance(result, ProjectFunctionJob)
-#     assert result.uid == "mock-uuid"
-#     assert result.title == "mock-title"
-#     assert result.function_uid == "mock-function-uuid"
-#     assert result.inputs == {"key": "value"}
-#     assert result.project_job_id == "mock-project-job-id"
-
-
-# @pytest.mark.asyncio
-# async def test_find_cached_function_job_solver_class(
-#     mock_app, mock_function_id, mock_function_inputs
-# ):
-#     mock_function_job = AsyncMock()
-#     mock_function_job.function_class = FunctionClass.solver
-#     mock_function_job.uuid = "mock-uuid"
-#     mock_function_job.title = "mock-title"
-#     mock_function_job.function_uuid = "mock-function-uuid"
-#     mock_function_job.inputs = {"key": "value"}
-#     mock_function_job.class_specific_data = {"solver_job_id": "mock-solver-job-id"}
-
-#     with patch(
-#         "simcore_service_webserver.functions._functions_repository.find_cached_function_job",
-#         return_value=mock_function_job,
-#     ):
-#         result = await find_cached_function_job(
-#             app=mock_app, function_id=mock_function_id, inputs=mock_function_inputs
-#         )
-
-#     assert isinstance(result, SolverFunctionJob)
-#     assert result.uid == "mock-uuid"
-#     assert result.title == "mock-title"
-#     assert result.function_uid == "mock-function-uuid"
-#     assert result.inputs == {"key": "value"}
-#     assert result.solver_job_id == "mock-solver-job-id"
-
-
-# @pytest.mark.asyncio
-# async def test_find_cached_function_job_none(mock_app, mock_function_id, mock_function_inputs):
-#     with patch(
-#         "simcore_service_webserver.functions._functions_repository.find_cached_function_job",
-#         return_value=None,
-#     ):
-#         result = await find_cached_function_job(
-#             app=mock_app, function_id=mock_function_id, inputs=mock_function_inputs
-#         )
-
-#     assert result is None
-
-
-# @pytest.mark.asyncio
-# async def test_find_cached_function_job_unsupported_class(
-#     mock_app, mock_function_id, mock_function_inputs
-# ):
-#     mock_function_job = AsyncMock()
-#     mock_function_job.function_class = "unsupported_class"
-
-#     with patch(
-#         "simcore_service_webserver.functions._functions_repository.find_cached_function_job",
-#         return_value=mock_function_job,
-#     ):
-#         with pytest.raises(TypeError, match="Unsupported function class:"):
-#             await find_cached_function_job(
-#                 app=mock_app, function_id=mock_function_id, inputs=mock_function_inputs
-#             )

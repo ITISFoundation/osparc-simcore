@@ -4,15 +4,15 @@ from aiohttp import web
 from models_library.api_schemas_webserver.functions_wb_schema import (
     FunctionDB,
     FunctionID,
+    FunctionIDNotFoundError,
     FunctionInputs,
     FunctionJobCollection,
     FunctionJobCollectionDB,
-    FunctionJobCollectionNotFoundError,
+    FunctionJobCollectionIDNotFoundError,
     FunctionJobDB,
     FunctionJobID,
-    FunctionJobNotFoundError,
-    FunctionNotFoundError,
-    RegisterFunctionWithUIDError,
+    FunctionJobIDNotFoundError,
+    RegisterFunctionWithIDError,
 )
 from models_library.rest_pagination import (
     PageMetaInfoLimitOffset,
@@ -56,7 +56,7 @@ async def register_function(
 ) -> FunctionDB:
 
     if function.uuid is not None:
-        raise RegisterFunctionWithUIDError
+        raise RegisterFunctionWithIDError
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(
@@ -104,7 +104,7 @@ async def get_function(
         row = await result.first()
 
         if row is None:
-            raise FunctionNotFoundError(function_id=function_id)
+            raise FunctionIDNotFoundError(function_id=function_id)
         return FunctionDB.model_validate(dict(row))
 
 
@@ -232,6 +232,16 @@ async def delete_function(
 ) -> None:
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        # Check if the function exists
+        result = await conn.stream(
+            functions_table.select().where(functions_table.c.uuid == function_id)
+        )
+        row = await result.first()
+
+        if row is None:
+            raise FunctionIDNotFoundError(function_id=function_id)
+
+        # Proceed with deletion
         await conn.execute(
             functions_table.delete().where(functions_table.c.uuid == function_id)
         )
@@ -284,7 +294,7 @@ async def get_function_job(
         row = await result.first()
 
         if row is None:
-            raise FunctionJobNotFoundError(function_job_id=function_job_id)
+            raise FunctionJobIDNotFoundError(function_job_id=function_job_id)
 
         return FunctionJobDB.model_validate(dict(row))
 
@@ -296,6 +306,17 @@ async def delete_function_job(
     function_job_id: FunctionID,
 ) -> None:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        # Check if the function job exists
+        result = await conn.stream(
+            function_jobs_table.select().where(
+                function_jobs_table.c.uuid == function_job_id
+            )
+        )
+        row = await result.first()
+        if row is None:
+            raise FunctionJobIDNotFoundError(function_job_id=function_job_id)
+
+        # Proceed with deletion
         await conn.execute(
             function_jobs_table.delete().where(
                 function_jobs_table.c.uuid == function_job_id
@@ -354,7 +375,7 @@ async def get_function_job_collection(
         row = await result.first()
 
         if row is None:
-            raise FunctionJobCollectionNotFoundError(
+            raise FunctionJobCollectionIDNotFoundError(
                 function_job_collection_id=function_job_collection_id
             )
 
@@ -417,6 +438,18 @@ async def delete_function_job_collection(
 ) -> None:
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        # Check if the function job collection exists
+        result = await conn.stream(
+            function_job_collections_table.select().where(
+                function_job_collections_table.c.uuid == function_job_collection_id
+            )
+        )
+        row = await result.first()
+        if row is None:
+            raise FunctionJobCollectionIDNotFoundError(
+                function_job_collection_id=function_job_collection_id
+            )
+        # Proceed with deletion
         await conn.execute(
             function_job_collections_table.delete().where(
                 function_job_collections_table.c.uuid == function_job_collection_id

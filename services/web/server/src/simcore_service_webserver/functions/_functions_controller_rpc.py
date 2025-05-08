@@ -6,16 +6,22 @@ from models_library.api_schemas_webserver.functions_wb_schema import (
     FunctionClassSpecificData,
     FunctionDB,
     FunctionID,
+    FunctionIDNotFoundError,
     FunctionInputs,
     FunctionInputSchema,
     FunctionJob,
     FunctionJobClassSpecificData,
     FunctionJobCollection,
+    FunctionJobCollectionIDNotFoundError,
     FunctionJobDB,
     FunctionJobID,
+    FunctionJobIDNotFoundError,
     FunctionOutputSchema,
     ProjectFunction,
     ProjectFunctionJob,
+    RegisterFunctionJobCollectionWithIDError,
+    RegisterFunctionJobWithIDError,
+    RegisterFunctionWithIDError,
     SolverFunction,
     SolverFunctionJob,
     UnsupportedFunctionClassError,
@@ -34,7 +40,9 @@ router = RPCRouter()
 # pylint: disable=no-else-return
 
 
-@router.expose()
+@router.expose(
+    reraise_if_error_type=(UnsupportedFunctionClassError, RegisterFunctionWithIDError)
+)
 async def register_function(app: web.Application, *, function: Function) -> Function:
     assert app
     saved_function = await _functions_repository.register_function(
@@ -43,64 +51,42 @@ async def register_function(app: web.Application, *, function: Function) -> Func
     return _decode_function(saved_function)
 
 
-def _decode_function(
-    function: FunctionDB,
-) -> Function:
-    if function.function_class == "project":
-        return ProjectFunction(
-            uid=function.uuid,
-            title=function.title,
-            description=function.description,
-            input_schema=function.input_schema,
-            output_schema=function.output_schema,
-            project_id=function.class_specific_data["project_id"],
-            default_inputs=function.default_inputs,
-        )
-    elif function.function_class == "solver":  # noqa: RET505
-        return SolverFunction(
-            uid=function.uuid,
-            title=function.title,
-            description=function.description,
-            input_schema=function.input_schema,
-            output_schema=function.output_schema,
-            solver_key=function.class_specific_data["solver_key"],
-            solver_version=function.class_specific_data["solver_version"],
-            default_inputs=function.default_inputs,
-        )
-    else:
-        raise UnsupportedFunctionClassError(function_class=function.function_class)
+@router.expose(
+    reraise_if_error_type=(
+        UnsupportedFunctionJobClassError,
+        RegisterFunctionJobWithIDError,
+    )
+)
+async def register_function_job(
+    app: web.Application, *, function_job: FunctionJob
+) -> FunctionJob:
+    assert app
+    created_function_job_db = await _functions_repository.register_function_job(
+        app=app, function_job=_encode_functionjob(function_job)
+    )
+    return _decode_functionjob(created_function_job_db)
 
 
-def _encode_function(
-    function: Function,
-) -> FunctionDB:
-    if function.function_class == FunctionClass.project:
-        class_specific_data = FunctionClassSpecificData(
-            {"project_id": str(function.project_id)}
+@router.expose(reraise_if_error_type=(RegisterFunctionJobCollectionWithIDError,))
+async def register_function_job_collection(
+    app: web.Application, *, function_job_collection: FunctionJobCollection
+) -> FunctionJobCollection:
+    assert app
+    registered_function_job_collection, registered_job_ids = (
+        await _functions_repository.register_function_job_collection(
+            app=app,
+            function_job_collection=function_job_collection,
         )
-    elif function.function_class == FunctionClass.solver:
-        class_specific_data = FunctionClassSpecificData(
-            {
-                "solver_key": str(function.solver_key),
-                "solver_version": str(function.solver_version),
-            }
-        )
-    else:
-        raise UnsupportedFunctionClassError(function_class=function.function_class)
-
-    return FunctionDB(
-        uuid=function.uid,
-        title=function.title,
-        description=function.description,
-        input_schema=function.input_schema,
-        output_schema=function.output_schema,
-        function_class=function.function_class,
-        default_inputs=function.default_inputs,
-        class_specific_data=class_specific_data,
+    )
+    return FunctionJobCollection(
+        uid=registered_function_job_collection.uuid,
+        title=registered_function_job_collection.title,
+        description=registered_function_job_collection.description,
+        job_ids=registered_job_ids,
     )
 
 
-@router.expose()
+@router.expose(reraise_if_error_type=(FunctionIDNotFoundError,))
 async def get_function(app: web.Application, *, function_id: FunctionID) -> Function:
     assert app
     returned_function = await _functions_repository.get_function(
@@ -112,73 +98,7 @@ async def get_function(app: web.Application, *, function_id: FunctionID) -> Func
     )
 
 
-def _decode_functionjob(
-    functionjob_db: FunctionJobDB,
-) -> FunctionJob:
-    if functionjob_db.function_class == FunctionClass.project:
-        return ProjectFunctionJob(
-            uid=functionjob_db.uuid,
-            title=functionjob_db.title,
-            description="",
-            function_uid=functionjob_db.function_uuid,
-            inputs=functionjob_db.inputs,
-            outputs=functionjob_db.outputs,
-            project_job_id=functionjob_db.class_specific_data["project_job_id"],
-        )
-    elif functionjob_db.function_class == FunctionClass.solver:  # noqa: RET505
-        return SolverFunctionJob(
-            uid=functionjob_db.uuid,
-            title=functionjob_db.title,
-            description="",
-            function_uid=functionjob_db.function_uuid,
-            inputs=functionjob_db.inputs,
-            outputs=functionjob_db.outputs,
-            solver_job_id=functionjob_db.class_specific_data["solver_job_id"],
-        )
-    else:
-        raise UnsupportedFunctionJobClassError(
-            function_job_class=functionjob_db.function_class
-        )
-
-
-def _encode_functionjob(
-    functionjob: FunctionJob,
-) -> FunctionJobDB:
-    if functionjob.function_class == FunctionClass.project:
-        return FunctionJobDB(
-            uuid=functionjob.uid,
-            title=functionjob.title,
-            function_uuid=functionjob.function_uid,
-            inputs=functionjob.inputs,
-            outputs=functionjob.outputs,
-            class_specific_data=FunctionJobClassSpecificData(
-                {
-                    "project_job_id": str(functionjob.project_job_id),
-                }
-            ),
-            function_class=functionjob.function_class,
-        )
-    elif functionjob.function_class == FunctionClass.solver:  # noqa: RET505
-        return FunctionJobDB(
-            uuid=functionjob.uid,
-            title=functionjob.title,
-            function_uuid=functionjob.function_uid,
-            inputs=functionjob.inputs,
-            outputs=functionjob.outputs,
-            class_specific_data=FunctionJobClassSpecificData(
-                {
-                    "solver_job_id": str(functionjob.solver_job_id),
-                }
-            ),
-            function_class=functionjob.function_class,
-        )
-    else:
-        raise UnsupportedFunctionJobClassError(
-            function_job_class=functionjob.function_class
-        )
-
-
-@router.expose()
+@router.expose(reraise_if_error_type=(FunctionJobIDNotFoundError,))
 async def get_function_job(
     app: web.Application, *, function_job_id: FunctionJobID
 ) -> FunctionJob:
@@ -192,39 +112,22 @@ async def get_function_job(
     return _decode_functionjob(returned_function_job)
 
 
-@router.expose()
-async def get_function_input_schema(
-    app: web.Application, *, function_id: FunctionID
-) -> FunctionInputSchema:
+@router.expose(reraise_if_error_type=(FunctionJobCollectionIDNotFoundError,))
+async def get_function_job_collection(
+    app: web.Application, *, function_job_collection_id: FunctionJobID
+) -> FunctionJobCollection:
     assert app
-    returned_function = await _functions_repository.get_function(
-        app=app,
-        function_id=function_id,
-    )
-    return FunctionInputSchema(
-        schema_dict=(
-            returned_function.input_schema.schema_dict
-            if returned_function.input_schema
-            else None
+    returned_function_job_collection, returned_job_ids = (
+        await _functions_repository.get_function_job_collection(
+            app=app,
+            function_job_collection_id=function_job_collection_id,
         )
     )
-
-
-@router.expose()
-async def get_function_output_schema(
-    app: web.Application, *, function_id: FunctionID
-) -> FunctionOutputSchema:
-    assert app
-    returned_function = await _functions_repository.get_function(
-        app=app,
-        function_id=function_id,
-    )
-    return FunctionOutputSchema(
-        schema_dict=(
-            returned_function.output_schema.schema_dict
-            if returned_function.output_schema
-            else None
-        )
+    return FunctionJobCollection(
+        uid=returned_function_job_collection.uuid,
+        title=returned_function_job_collection.title,
+        description=returned_function_job_collection.description,
+        job_ids=returned_job_ids,
     )
 
 
@@ -288,7 +191,7 @@ async def list_function_job_collections(
     ], page
 
 
-@router.expose()
+@router.expose(reraise_if_error_type=(FunctionIDNotFoundError,))
 async def delete_function(app: web.Application, *, function_id: FunctionID) -> None:
     assert app
     await _functions_repository.delete_function(
@@ -297,18 +200,7 @@ async def delete_function(app: web.Application, *, function_id: FunctionID) -> N
     )
 
 
-@router.expose()
-async def register_function_job(
-    app: web.Application, *, function_job: FunctionJob
-) -> FunctionJob:
-    assert app
-    created_function_job_db = await _functions_repository.register_function_job(
-        app=app, function_job=_encode_functionjob(function_job)
-    )
-    return _decode_functionjob(created_function_job_db)
-
-
-@router.expose()
+@router.expose(reraise_if_error_type=(FunctionJobIDNotFoundError,))
 async def delete_function_job(
     app: web.Application, *, function_job_id: FunctionJobID
 ) -> None:
@@ -316,6 +208,17 @@ async def delete_function_job(
     await _functions_repository.delete_function_job(
         app=app,
         function_job_id=function_job_id,
+    )
+
+
+@router.expose(reraise_if_error_type=(FunctionJobCollectionIDNotFoundError,))
+async def delete_function_job_collection(
+    app: web.Application, *, function_job_collection_id: FunctionJobID
+) -> None:
+    assert app
+    await _functions_repository.delete_function_job_collection(
+        app=app,
+        function_job_collection_id=function_job_collection_id,
     )
 
 
@@ -356,53 +259,163 @@ async def find_cached_function_job(
         )
 
 
-@router.expose()
-async def register_function_job_collection(
-    app: web.Application, *, function_job_collection: FunctionJobCollection
-) -> FunctionJobCollection:
+@router.expose(reraise_if_error_type=(FunctionIDNotFoundError,))
+async def get_function_input_schema(
+    app: web.Application, *, function_id: FunctionID
+) -> FunctionInputSchema:
     assert app
-    registered_function_job_collection, registered_job_ids = (
-        await _functions_repository.register_function_job_collection(
-            app=app,
-            function_job_collection=function_job_collection,
-        )
-    )
-    return FunctionJobCollection(
-        uid=registered_function_job_collection.uuid,
-        title=registered_function_job_collection.title,
-        description=registered_function_job_collection.description,
-        job_ids=registered_job_ids,
-    )
-
-
-@router.expose()
-async def get_function_job_collection(
-    app: web.Application, *, function_job_collection_id: FunctionJobID
-) -> FunctionJobCollection:
-    assert app
-    returned_function_job_collection, returned_job_ids = (
-        await _functions_repository.get_function_job_collection(
-            app=app,
-            function_job_collection_id=function_job_collection_id,
-        )
-    )
-    return FunctionJobCollection(
-        uid=returned_function_job_collection.uuid,
-        title=returned_function_job_collection.title,
-        description=returned_function_job_collection.description,
-        job_ids=returned_job_ids,
-    )
-
-
-@router.expose()
-async def delete_function_job_collection(
-    app: web.Application, *, function_job_collection_id: FunctionJobID
-) -> None:
-    assert app
-    await _functions_repository.delete_function_job_collection(
+    returned_function = await _functions_repository.get_function(
         app=app,
-        function_job_collection_id=function_job_collection_id,
+        function_id=function_id,
     )
+    return FunctionInputSchema(
+        schema_dict=(
+            returned_function.input_schema.schema_dict
+            if returned_function.input_schema
+            else None
+        )
+    )
+
+
+@router.expose(reraise_if_error_type=(FunctionIDNotFoundError,))
+async def get_function_output_schema(
+    app: web.Application, *, function_id: FunctionID
+) -> FunctionOutputSchema:
+    assert app
+    returned_function = await _functions_repository.get_function(
+        app=app,
+        function_id=function_id,
+    )
+    return FunctionOutputSchema(
+        schema_dict=(
+            returned_function.output_schema.schema_dict
+            if returned_function.output_schema
+            else None
+        )
+    )
+
+
+def _decode_function(
+    function: FunctionDB,
+) -> Function:
+    if function.function_class == "project":
+        return ProjectFunction(
+            uid=function.uuid,
+            title=function.title,
+            description=function.description,
+            input_schema=function.input_schema,
+            output_schema=function.output_schema,
+            project_id=function.class_specific_data["project_id"],
+            default_inputs=function.default_inputs,
+        )
+    elif function.function_class == "solver":  # noqa: RET505
+        return SolverFunction(
+            uid=function.uuid,
+            title=function.title,
+            description=function.description,
+            input_schema=function.input_schema,
+            output_schema=function.output_schema,
+            solver_key=function.class_specific_data["solver_key"],
+            solver_version=function.class_specific_data["solver_version"],
+            default_inputs=function.default_inputs,
+        )
+    else:
+        raise UnsupportedFunctionClassError(function_class=function.function_class)
+
+
+def _encode_function(
+    function: Function,
+) -> FunctionDB:
+    if function.function_class == FunctionClass.project:
+        class_specific_data = FunctionClassSpecificData(
+            {"project_id": str(function.project_id)}
+        )
+    elif function.function_class == FunctionClass.solver:
+        class_specific_data = FunctionClassSpecificData(
+            {
+                "solver_key": str(function.solver_key),
+                "solver_version": str(function.solver_version),
+            }
+        )
+    else:
+        raise UnsupportedFunctionClassError(function_class=function.function_class)
+
+    return FunctionDB(
+        uuid=function.uid,
+        title=function.title,
+        description=function.description,
+        input_schema=function.input_schema,
+        output_schema=function.output_schema,
+        function_class=function.function_class,
+        default_inputs=function.default_inputs,
+        class_specific_data=class_specific_data,
+    )
+
+
+def _encode_functionjob(
+    functionjob: FunctionJob,
+) -> FunctionJobDB:
+    if functionjob.function_class == FunctionClass.project:
+        return FunctionJobDB(
+            uuid=functionjob.uid,
+            title=functionjob.title,
+            function_uuid=functionjob.function_uid,
+            inputs=functionjob.inputs,
+            outputs=functionjob.outputs,
+            class_specific_data=FunctionJobClassSpecificData(
+                {
+                    "project_job_id": str(functionjob.project_job_id),
+                }
+            ),
+            function_class=functionjob.function_class,
+        )
+    elif functionjob.function_class == FunctionClass.solver:  # noqa: RET505
+        return FunctionJobDB(
+            uuid=functionjob.uid,
+            title=functionjob.title,
+            function_uuid=functionjob.function_uid,
+            inputs=functionjob.inputs,
+            outputs=functionjob.outputs,
+            class_specific_data=FunctionJobClassSpecificData(
+                {
+                    "solver_job_id": str(functionjob.solver_job_id),
+                }
+            ),
+            function_class=functionjob.function_class,
+        )
+    else:
+        raise UnsupportedFunctionJobClassError(
+            function_job_class=functionjob.function_class
+        )
+
+
+def _decode_functionjob(
+    functionjob_db: FunctionJobDB,
+) -> FunctionJob:
+    if functionjob_db.function_class == FunctionClass.project:
+        return ProjectFunctionJob(
+            uid=functionjob_db.uuid,
+            title=functionjob_db.title,
+            description="",
+            function_uid=functionjob_db.function_uuid,
+            inputs=functionjob_db.inputs,
+            outputs=functionjob_db.outputs,
+            project_job_id=functionjob_db.class_specific_data["project_job_id"],
+        )
+    elif functionjob_db.function_class == FunctionClass.solver:  # noqa: RET505
+        return SolverFunctionJob(
+            uid=functionjob_db.uuid,
+            title=functionjob_db.title,
+            description="",
+            function_uid=functionjob_db.function_uuid,
+            inputs=functionjob_db.inputs,
+            outputs=functionjob_db.outputs,
+            solver_job_id=functionjob_db.class_specific_data["solver_job_id"],
+        )
+    else:
+        raise UnsupportedFunctionJobClassError(
+            function_job_class=functionjob_db.function_class
+        )
 
 
 async def register_rpc_routes_on_startup(app: web.Application):
