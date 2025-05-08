@@ -15,7 +15,7 @@ class FinishedWithError(BaseLongRunningError):
     msg_template = "unique_id='{unique_id}' finished with error='{error}' message='{message}'\n{traceback}"
 
 
-class UnexpectedNoMoreRetryAttemptsError(FinishedWithError):
+class NoMoreRetryAttemptsError(FinishedWithError):
     msg_template = "attempt {remaining_attempts} of {retry_count} for unique_id='{unique_id}' with last_result='{last_result}'"
 
 

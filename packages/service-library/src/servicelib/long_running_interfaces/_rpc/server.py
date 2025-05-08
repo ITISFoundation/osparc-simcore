@@ -104,3 +104,5 @@ class ServerRPCInterface:
                     traceback=formatted_traceback,
                 )
             )
+        finally:
+            await self.remove(unique_id)

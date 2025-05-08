@@ -11,8 +11,8 @@ from settings_library.redis import RedisSettings
 from ._errors import (
     AlreadyStartedError,
     FinishedWithError,
+    NoMoreRetryAttemptsError,
     TimedOutError,
-    UnexpectedNoMoreRetryAttemptsError,
     UnexpectedResultTypeError,
     UnexpectedStatusError,
 )
@@ -145,8 +145,7 @@ class Client:
                     traceback=last_result.error.traceback,
                 )
 
-            # NOTE: this edge case should not happen
-            raise UnexpectedNoMoreRetryAttemptsError(
+            raise NoMoreRetryAttemptsError(
                 unique_id=unique_id,
                 retry_count=retry_count,
                 remaining_attempts=remaining_attempts,
