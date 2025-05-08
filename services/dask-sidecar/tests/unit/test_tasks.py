@@ -62,6 +62,12 @@ from simcore_service_dask_sidecar.utils.files import (
     _s3fs_settings_from_s3_settings,
 )
 from simcore_service_dask_sidecar.worker import run_computational_sidecar
+from tenacity import (
+    AsyncRetrying,
+    retry_if_exception_type,
+    stop_after_delay,
+    wait_fixed,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -674,22 +680,30 @@ async def test_run_computational_sidecar_dask(
     ), "ordering of progress values incorrectly sorted!"
     assert worker_progresses[0] == 0, "missing/incorrect initial progress value"
     assert worker_progresses[-1] == 1, "missing/incorrect final progress value"
-    await asyncio.sleep(5)
-    assert log_rabbit_client_parser.called
-    worker_logs = [
-        message
-        for msg in log_rabbit_client_parser.call_args_list
-        for message in LoggerRabbitMessage.model_validate_json(msg.args[0]).messages
-    ]
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(1),
+        stop=stop_after_delay(30),
+        reraise=True,
+        retry=retry_if_exception_type(AssertionError),
+    ):
+        with attempt:
+            assert log_rabbit_client_parser.called
+            worker_logs = [
+                message
+                for msg in log_rabbit_client_parser.call_args_list
+                for message in LoggerRabbitMessage.model_validate_json(
+                    msg.args[0]
+                ).messages
+            ]
 
-    print(f"<-- we got {len(worker_logs)} lines of logs")
+            print(f"<-- we got {len(worker_logs)} lines of logs")
 
-    for log in sleeper_task.expected_logs:
-        r = re.compile(rf"^({log}).*")
-        search_results = list(filter(r.search, worker_logs))
-        assert (
-            len(search_results) > 0
-        ), f"Could not find {log} in worker_logs:\n {pformat(worker_logs, width=240)}"
+            for log in sleeper_task.expected_logs:
+                r = re.compile(rf"^({log}).*")
+                search_results = list(filter(r.search, worker_logs))
+                assert (
+                    len(search_results) > 0
+                ), f"Could not find {log} in worker_logs:\n {pformat(worker_logs, width=240)}"
 
     # check that the task produce the expected data, not less not more
     assert isinstance(output_data, TaskOutputData)
@@ -755,17 +769,27 @@ async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub
     assert worker_progresses[0] == 0, "missing/incorrect initial progress value"
     assert worker_progresses[-1] == 1, "missing/incorrect final progress value"
 
-    await asyncio.sleep(5)
-    assert log_rabbit_client_parser.called
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(1),
+        stop=stop_after_delay(30),
+        reraise=True,
+        retry=retry_if_exception_type(AssertionError),
+    ):
+        with attempt:
+            assert log_rabbit_client_parser.called
 
-    worker_logs = [
-        message
-        for msg in log_rabbit_client_parser.call_args_list
-        for message in LoggerRabbitMessage.model_validate_json(msg.args[0]).messages
-    ]
-    # check all the awaited logs are in there
-    filtered_worker_logs = filter(lambda log: "This is iteration" in log, worker_logs)
-    assert len(list(filtered_worker_logs)) == NUMBER_OF_LOGS
+            worker_logs = [
+                message
+                for msg in log_rabbit_client_parser.call_args_list
+                for message in LoggerRabbitMessage.model_validate_json(
+                    msg.args[0]
+                ).messages
+            ]
+            # check all the awaited logs are in there
+            filtered_worker_logs = filter(
+                lambda log: "This is iteration" in log, worker_logs
+            )
+            assert len(list(filtered_worker_logs)) == NUMBER_OF_LOGS
     mocked_get_image_labels.assert_called()
 
 
