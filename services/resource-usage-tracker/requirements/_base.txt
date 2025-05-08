@@ -25,7 +25,9 @@ aiofiles==23.2.1
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   aioboto3
-aiohttp==3.9.3
+aiohappyeyeballs==2.6.1
+    # via aiohttp
+aiohttp==3.11.18
     # via
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -447,6 +449,10 @@ prometheus-client==0.20.0
     #   prometheus-fastapi-instrumentator
 prometheus-fastapi-instrumentator==6.1.0
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
+propcache==0.3.1
+    # via
+    #   aiohttp
+    #   yarl
 protobuf==4.25.4
     # via
     #   googleapis-common-protos
@@ -881,7 +887,7 @@ wrapt==1.16.0
     #   deprecated
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-redis
-yarl==1.9.4
+yarl==1.20.0
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
