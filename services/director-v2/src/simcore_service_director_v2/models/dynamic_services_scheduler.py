@@ -509,6 +509,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
             "version": service.version,
             "service_resources": service.service_resources,
             "product_name": service.product_name,
+            "product_api_base_url": service.product_api_base_url,
             "paths_mapping": simcore_service_labels.paths_mapping,
             "callbacks_mapping": simcore_service_labels.callbacks_mapping,
             "compose_spec": json_dumps(simcore_service_labels.compose_spec),
