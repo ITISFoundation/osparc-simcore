@@ -6,7 +6,6 @@ from dataclasses import dataclass, field
 
 import distributed
 from dask_task_models_library.container_tasks.events import (
-    TaskLogEvent,
     TaskProgressEvent,
 )
 from models_library.clusters import ClusterAuthentication, TLSAuthentication
@@ -19,7 +18,6 @@ from .dask import wrap_client_async_routine
 @dataclass
 class TaskHandlers:
     task_progress_handler: Callable[[str], Awaitable[None]]
-    task_log_handler: Callable[[str], Awaitable[None]]
 
 
 logger = logging.getLogger(__name__)
@@ -30,13 +28,11 @@ class DaskSubSystem:
     client: distributed.Client
     scheduler_id: str
     progress_sub: distributed.Sub = field(init=False)
-    logs_sub: distributed.Sub = field(init=False)
 
     def __post_init__(self) -> None:
         self.progress_sub = distributed.Sub(
             TaskProgressEvent.topic_name(), client=self.client
         )
-        self.logs_sub = distributed.Sub(TaskLogEvent.topic_name(), client=self.client)
 
     async def close(self) -> None:
         # NOTE: if the Sub are deleted before closing the connection,

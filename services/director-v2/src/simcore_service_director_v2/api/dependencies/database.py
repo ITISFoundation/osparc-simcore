@@ -30,7 +30,7 @@ def get_base_repository(engine: AsyncEngine, repo_type: type[RepoType]) -> RepoT
     checkedout = engine.pool.checkedout()  # type: ignore # connections in use
     total_size = engine.pool.size()  # type: ignore # current total connections
 
-    if checkedin <= 1:
+    if (checkedin < 2) and (total_size > 1):  # noqa: PLR2004
         logger.warning(
             "Database connection pool near limits: total=%d, in_use=%d, available=%d",
             total_size,
