@@ -54,7 +54,7 @@ class PrometheusMiddleware(BaseHTTPMiddleware):
                 status_code = response.status_code
         except Exception:  # pylint: disable=broad-except
             # NOTE: The prometheus metrics middleware should be "outside" exception handling
-            # middleware so at this point starlette should turn an exception into a 500
+            # middleware. See https://fastapi.tiangolo.com/advanced/middleware/#adding-asgi-middlewares
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
             raise
         finally:
