@@ -8,6 +8,7 @@ import httpx
 import pytest
 from faker import Faker
 from fastapi import FastAPI, status
+from httpx import URL as HttpxURL
 from httpx import ASGITransport
 from models_library.payments import UserInvoiceAddress
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
@@ -122,8 +123,11 @@ async def test_one_time_payment_workflow(
     )
 
     app_settings: ApplicationSettings = app.state.settings
-    assert isinstance(submission_link, URL)
-    assert submission_link.host == URL(f"{app_settings.PAYMENTS_GATEWAY_URL}").host
+    assert isinstance(submission_link, HttpxURL)
+    assert (
+        URL(f"{submission_link}").host
+        == URL(f"{app_settings.PAYMENTS_GATEWAY_URL}").host
+    )
 
     # cancel
     payment_canceled = await payment_gateway_api.cancel_payment(payment_initiated)
@@ -162,8 +166,8 @@ async def test_payment_methods_workflow(
     )
 
     app_settings: ApplicationSettings = app.state.settings
-    assert isinstance(form_link, URL)
-    assert form_link.host == URL(f"{app_settings.PAYMENTS_GATEWAY_URL}").host
+    assert isinstance(form_link, HttpxURL)
+    assert URL(f"{form_link}").host == URL(f"{app_settings.PAYMENTS_GATEWAY_URL}").host
 
     # CRUD
     payment_method_id = initiated.payment_method_id
