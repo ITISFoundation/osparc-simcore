@@ -27,13 +27,13 @@ qx.Class.define("osparc.study.CreateFunction", {
 
     this._setLayout(new qx.ui.layout.VBox(20));
 
-    this.__studyDataClone = osparc.data.model.Study.deepCloneStudyObject(studyData);
+    this.__studyData = studyData;
 
     this.__buildLayout();
   },
 
   members: {
-    __studyDataClone: null,
+    __studyData: null,
     __form: null,
     __createFunctionBtn: null,
 
@@ -43,7 +43,7 @@ qx.Class.define("osparc.study.CreateFunction", {
 
       const title = new qx.ui.form.TextField().set({
         required: true,
-        value: this.__studyDataClone.name,
+        value: this.__studyData.name,
       });
       this.addListener("appear", () => {
         title.focus();
@@ -56,22 +56,84 @@ qx.Class.define("osparc.study.CreateFunction", {
       });
       form.add(description, this.tr("Description"), null, "description");
 
-      const createFunctionBtn = this.__createFunctionBtn = new qx.ui.form.Button().set({
+      const createFunctionBtn = this.__createFunctionBtn = new qx.ui.form.FetchButton().set({
         appearance: "strong-button",
         label: this.tr("Create"),
         allowGrowX: false,
         alignX: "right"
       });
-      createFunctionBtn.addListener("execute", () => this.__createFunction(), this);
+      createFunctionBtn.addListener("execute", () => {
+        if (this.__form.validate()) {
+          this.__createFunction();
+        }
+      }, this);
       this._add(createFunctionBtn);
     },
 
     __createFunction: function() {
-      const name = this.__form.getItem("name");
-      const description = this.__form.getItem("description");
+      this.__createFunctionBtn.setFetching(true);
 
-      console.log("Creating function with name: ", name.getValue());
-      console.log("Creating function with description: ", description.getValue());
+      // first publish it as a template
+      const params = {
+        url: {
+          "study_id": this.__studyData["uuid"],
+          "copy_data": true,
+        },
+      };
+      const options = {
+        pollTask: true
+      };
+      const fetchPromise = osparc.data.Resources.fetch("studies", "postToTemplate", params, options);
+      const pollTasks = osparc.store.PollTasks.getInstance();
+      pollTasks.createPollingTask(fetchPromise)
+        .then(task => {
+          task.addListener("resultReceived", e => {
+            const templateData = e.getData();
+            this.__doCreateFunction(templateData);
+          });
+        })
+        .catch(err => {
+          this.__createFunctionBtn.setFetching(false);
+          osparc.FlashMessenger.logError(err);
+        });
+    },
+
+    __doCreateFunction: function(templateData) {
+      const nameField = this.__form.getItem("name");
+      const descriptionField = this.__form.getItem("description");
+
+      const functionData = {
+        "name": nameField.getValue(),
+        "description": descriptionField.getValue(),
+        "project_id": templateData["uuid"],
+        "function_class": "project",
+        "input_schema": {
+          "schema_dict": {
+            "type": "object",
+            "properties": {
+              "input1": {
+                "type": "integer" // InputTypes: TypeAlias = FileID | float | int | bool | str | list
+              }
+            }
+          }
+        },
+        "output_schema": {
+          "schema_dict": {
+            "type": "object",
+            "properties": {
+              "output1": {
+                "type": "integer" // OutputTypes: TypeAlias = FileID | float | int | bool | str | list
+              }
+            }
+          }
+        },
+        "default_inputs": {
+          "input1": 5
+        },
+      };
+      console.log("Creating function with data: ", functionData);
+
+      this.__createFunctionBtn.setFetching(false);
     },
 
     getCreateFunctionButton: function() {
