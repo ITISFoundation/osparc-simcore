@@ -67,7 +67,143 @@ qx.Class.define("osparc.study.CreateFunction", {
           this.__createFunction();
         }
       }, this);
-      this._add(createFunctionBtn);
+
+
+      // INPUTS
+      const inGrid = new qx.ui.layout.Grid(6, 6);
+      const inputsLayout = new qx.ui.container.Composite(inGrid).set({
+        allowGrowX: false,
+        alignX: "left",
+        alignY: "middle"
+      });
+      this._add(inputsLayout);
+
+      // header
+      let row = 0;
+      let column = 0;
+      const nameLabel = new qx.ui.basic.Label(this.tr("Input name"));
+      inputsLayout.add(nameLabel, {
+        row,
+        column,
+      });
+      column++;
+      const typeLabel = new qx.ui.basic.Label(this.tr("Type"));
+      inputsLayout.add(typeLabel, {
+        row,
+        column,
+      });
+      column++;
+      const exposedLabel = new qx.ui.basic.Label(this.tr("Exposed"));
+      inputsLayout.add(exposedLabel, {
+        row,
+        column,
+      });
+      column++;
+      const defaultValue = new qx.ui.basic.Label(this.tr("Default value"));
+      inputsLayout.add(defaultValue, {
+        row,
+        column,
+      });
+      column = 0;
+      row++;
+
+      const filePickers = osparc.study.Utils.extractFilePickers(this.__studyData["workbench"]);
+      filePickers.forEach(filePicker => {
+        const fpLabel = new qx.ui.basic.Label(filePicker["label"]);
+        inputsLayout.add(fpLabel, {
+          row,
+          column,
+        });
+        column++;
+
+        const fpType = new qx.ui.basic.Label("FileID");
+        inputsLayout.add(fpType, {
+          row,
+          column,
+        });
+        column++;
+
+        const fpExposed = new qx.ui.form.CheckBox().set({ value: true });
+        inputsLayout.add(fpExposed, {
+          row,
+          column,
+        });
+        column++;
+
+        const outputValue = osparc.file.FilePicker.getOutput(filePicker);
+        const fpDefaultValue = new qx.ui.basic.Label(outputValue && outputValue["path"] ? outputValue["path"] : null);
+        inputsLayout.add(fpDefaultValue, {
+          row,
+          column,
+        });
+        column++;
+
+        column = 0;
+        row++;
+      });
+
+      const parameters = osparc.study.Utils.extractParameters(this.__studyData["workbench"]);
+      parameters.forEach(parameter => {
+        const parameterLabel = new qx.ui.basic.Label(parameter["label"]);
+        inputsLayout.add(parameterLabel, {
+          row,
+          column,
+        });
+        column++;
+
+        const parameterMetadata = osparc.store.Services.getMetadata(parameter["key"], parameter["version"]);
+        if (parameterMetadata) {
+          const parameterType = new qx.ui.basic.Label(osparc.service.Utils.getParameterType(parameterMetadata));
+          inputsLayout.add(parameterType, {
+            row,
+            column,
+          });
+        }
+        column++;
+
+        const parameterExposed = new qx.ui.form.CheckBox().set({ value: true });
+        inputsLayout.add(parameterExposed, {
+          row,
+          column,
+        });
+        column++;
+
+        const parameterDefaultValue = new qx.ui.basic.Label(String(osparc.service.Utils.getParameterValue(parameter)));
+        inputsLayout.add(parameterDefaultValue, {
+          row,
+          column,
+        });
+        column++;
+
+        column = 0;
+        row++;
+      });
+
+      // OUTPUTS
+      const outGrid = new qx.ui.layout.Grid(6, 6);
+      const outputsLayout = new qx.ui.container.Composite(outGrid).set({
+        allowGrowX: false,
+        alignX: "left",
+        alignY: "middle"
+      });
+      this._add(outputsLayout);
+
+      // header
+      const nameLabel2 = new qx.ui.basic.Label(this.tr("Output name"));
+      outputsLayout.add(nameLabel2, {
+        row: 0,
+        column: 0,
+      });
+      const typeLabel2 = new qx.ui.basic.Label(this.tr("Type"));
+      outputsLayout.add(typeLabel2, {
+        row: 0,
+        column: 1,
+      });
+      const exposedLabel2 = new qx.ui.basic.Label(this.tr("Exposed"));
+      outputsLayout.add(exposedLabel2, {
+        row: 0,
+        column: 2,
+      });
     },
 
     __createFunction: function() {
