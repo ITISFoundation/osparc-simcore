@@ -250,6 +250,17 @@ qx.Class.define("osparc.service.Utils", {
       return type;
     },
 
+    getParameterValue: function(parameterData) {
+      if (
+        parameterData &&
+        parameterData["outputs"] &&
+        parameterData["outputs"]["out_1"]
+      ) {
+        return parameterData["outputs"]["out_1"];
+      }
+      return null;
+    },
+
     getProbeType: function(metadata) {
       let type = metadata["inputs"]["in_1"]["type"];
       if (type === "ref_contentSchema") {
