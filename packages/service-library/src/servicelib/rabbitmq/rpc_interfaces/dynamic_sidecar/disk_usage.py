@@ -1,5 +1,4 @@
 import logging
-from typing import Final
 
 from models_library.api_schemas_dynamic_sidecar.telemetry import DiskUsage
 from models_library.projects_nodes_io import NodeID
@@ -10,10 +9,6 @@ from ....logging_utils import log_decorator
 from ... import RabbitMQRPCClient
 
 _logger = logging.getLogger(__name__)
-
-_UPDATE_DISK_USAGE: Final[RPCMethodName] = TypeAdapter(RPCMethodName).validate_python(
-    "update_disk_usage"
-)
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -28,7 +23,7 @@ async def update_disk_usage(
     )
     result = await rabbitmq_rpc_client.request(
         rpc_namespace,
-        _UPDATE_DISK_USAGE,
+        TypeAdapter(RPCMethodName).validate_python("update_disk_usage"),
         usage=usage,
     )
     assert result is None  # nosec
