@@ -133,7 +133,7 @@ async def create_study_job(
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     product_name: Annotated[str, Depends(get_product_name)],
-    hidden: Annotated[bool, Query()] = True,
+    hidden: Annotated[bool, Query()] = True,  # noqa: FBT002
     x_simcore_parent_project_uuid: ProjectID | None = Header(default=None),
     x_simcore_parent_node_id: NodeID | None = Header(default=None),
 ) -> Job:
@@ -304,13 +304,12 @@ async def start_study_job(
             return JSONResponse(
                 content=jsonable_encoder(job_status), status_code=status.HTTP_200_OK
             )
-        job_status = await inspect_study_job(
+        return await inspect_study_job(
             study_id=study_id,
             job_id=job_id,
             user_id=user_id,
             director2_api=director2_api,
         )
-        return job_status
 
 
 @router.post(
@@ -387,10 +386,9 @@ async def get_study_job_output_logfile(
         level=logging.DEBUG,
         msg=f"get study job output logfile study_id={study_id!r} job_id={job_id!r}.",
     ):
-        log_link_map = await director2_api.get_computation_logs(
+        return await director2_api.get_computation_logs(
             user_id=user_id, project_id=job_id
         )
-        return log_link_map
 
 
 @router.get(

@@ -6,7 +6,7 @@ from ..core.settings import ApplicationSettings
 from .routes import credits as _credits
 from .routes import (
     files,
-    functions,
+    functions_routes,
     health,
     licensed_items,
     meta,
@@ -42,12 +42,27 @@ def create_router(settings: ApplicationSettings):
     )
     router.include_router(studies.router, tags=["studies"], prefix="/studies")
     router.include_router(studies_jobs.router, tags=["studies"], prefix="/studies")
+    router.include_router(
+        functions_routes.function_router, tags=["functions"], prefix="/functions"
+    )
+    router.include_router(
+        functions_routes.function_job_router,
+        tags=["function_jobs"],
+        prefix="/function_jobs",
+    )
+    router.include_router(
+        functions_routes.function_job_collections_router,
+        tags=["function_job_collections"],
+        prefix="/function_job_collections",
+    )
     router.include_router(wallets.router, tags=["wallets"], prefix="/wallets")
     router.include_router(_credits.router, tags=["credits"], prefix="/credits")
     router.include_router(
         licensed_items.router, tags=["licensed-items"], prefix="/licensed-items"
     )
-    router.include_router(functions.router, tags=["functions"], prefix="/functions")
+    router.include_router(
+        functions_routes.function_router, tags=["functions"], prefix="/functions"
+    )
 
     # NOTE: multiple-files upload is currently disabled
     # Web form to upload files at http://localhost:8000/v0/upload-form-view
