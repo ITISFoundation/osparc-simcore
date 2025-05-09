@@ -31,5 +31,5 @@ function_job_collections_table = sa.Table(
         sa.String,
         doc="Description of the function job collection",
     ),
-    sa.PrimaryKeyConstraint("uuid", name="function_job_collections_pk"),
+    sa.PrimaryKeyConstraint("uuid", name="funcapi_function_job_collections_pk"),
 )

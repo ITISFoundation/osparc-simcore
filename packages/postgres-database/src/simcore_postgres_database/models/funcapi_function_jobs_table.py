@@ -66,5 +66,5 @@ function_jobs_table = sa.Table(
         nullable=True,
         doc="Fields specific for a function class",
     ),
-    sa.PrimaryKeyConstraint("uuid", name="function_jobs_pk"),
+    sa.PrimaryKeyConstraint("uuid", name="funcapi_function_jobs_pk"),
 )

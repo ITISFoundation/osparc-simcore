@@ -70,5 +70,5 @@ functions_table = sa.Table(
         nullable=True,
         doc="Default inputs of the function",
     ),
-    sa.PrimaryKeyConstraint("uuid", name="functions_pk"),
+    sa.PrimaryKeyConstraint("uuid", name="funcapi_functions_pk"),
 )
