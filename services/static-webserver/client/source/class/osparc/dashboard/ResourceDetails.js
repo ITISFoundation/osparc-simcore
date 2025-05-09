@@ -817,6 +817,13 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       const iconSrc = "@MaterialIcons/functions/24";
       const title = this.tr("Create Function");
       const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
+      const createFunction = new osparc.study.CreateFunction(this.__resourceData);
+      const createFunctionButton = createFunction.getCreateFunctionButton();
+      osparc.dashboard.resources.pages.BasePage.decorateHeaderButton(createFunctionButton);
+      const toolbar = this.self().createToolbar();
+      toolbar.add(createFunctionButton);
+      page.addToHeader(toolbar);
+      page.addToContent(createFunction);
       return page;
     }
   }
