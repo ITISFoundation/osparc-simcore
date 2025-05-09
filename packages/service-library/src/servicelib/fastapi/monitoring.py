@@ -67,9 +67,6 @@ class PrometheusMiddleware(BaseHTTPMiddleware):
 
 
 def initialize_prometheus_instrumentation(app: FastAPI) -> None:
-    # NOTE: this cannot be ran once the application is started
-
-    # NOTE: use that registry to prevent having a global one
     metrics = get_prometheus_metrics()
     app.state.prometheus_metrics = metrics
     app.add_middleware(PrometheusMiddleware, metrics=metrics)
