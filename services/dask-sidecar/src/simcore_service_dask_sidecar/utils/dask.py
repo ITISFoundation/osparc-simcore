@@ -9,7 +9,6 @@ import distributed
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.events import (
     BaseTaskEvent,
-    TaskLogEvent,
     TaskProgressEvent,
 )
 from dask_task_models_library.container_tasks.io import TaskCancelEventName
@@ -17,7 +16,10 @@ from dask_task_models_library.container_tasks.protocol import TaskOwner
 from distributed.worker import get_worker
 from distributed.worker_state_machine import TaskState
 from models_library.progress_bar import ProgressReport
+from models_library.rabbitmq_messages import LoggerRabbitMessage
 from servicelib.logging_utils import LogLevelInt, LogMessageStr, log_catch
+
+from ..rabbitmq_plugin import get_rabbitmq_client
 
 _logger = logging.getLogger(__name__)
 
@@ -63,11 +65,9 @@ class TaskPublisher:
     task_owner: TaskOwner
     progress: distributed.Pub = field(init=False)
     _last_published_progress_value: float = -1
-    logs: distributed.Pub = field(init=False)
 
     def __post_init__(self) -> None:
         self.progress = distributed.Pub(TaskProgressEvent.topic_name())
-        self.logs = distributed.Pub(TaskLogEvent.topic_name())
 
     def publish_progress(self, report: ProgressReport) -> None:
         rounded_value = round(report.percent_value, ndigits=2)
@@ -82,19 +82,38 @@ class TaskPublisher:
                 self._last_published_progress_value = rounded_value
             _logger.debug("PROGRESS: %s", rounded_value)
 
-    def publish_logs(
+    async def publish_logs(
         self,
         *,
         message: LogMessageStr,
         log_level: LogLevelInt,
     ) -> None:
         with log_catch(logger=_logger, reraise=False):
-            publish_event(
-                self.logs,
-                TaskLogEvent.from_dask_worker(
-                    log=message, log_level=log_level, task_owner=self.task_owner
-                ),
+            rabbitmq_client = get_rabbitmq_client(get_worker())
+            base_message = LoggerRabbitMessage.model_construct(
+                user_id=self.task_owner.user_id,
+                project_id=self.task_owner.project_id,
+                node_id=self.task_owner.node_id,
+                messages=[message],
+                log_level=log_level,
             )
+            await rabbitmq_client.publish_message_from_any_thread(
+                base_message.channel_name, base_message
+            )
+            if self.task_owner.has_parent:
+                assert self.task_owner.parent_project_id  # nosec
+                assert self.task_owner.parent_node_id  # nosec
+                parent_message = LoggerRabbitMessage.model_construct(
+                    user_id=self.task_owner.user_id,
+                    project_id=self.task_owner.parent_project_id,
+                    node_id=self.task_owner.parent_node_id,
+                    messages=[message],
+                    log_level=log_level,
+                )
+                await rabbitmq_client.publish_message_from_any_thread(
+                    parent_message.channel_name, parent_message
+                )
+
         _logger.log(log_level, message)
 
 
@@ -114,7 +133,7 @@ async def monitor_task_abortion(
         if task := next(
             (t for t in asyncio.all_tasks() if t.get_name() == task_name), None
         ):
-            task_publishers.publish_logs(
+            await task_publishers.publish_logs(
                 message="[sidecar] cancelling task...", log_level=logging.INFO
             )
             task.cancel()
@@ -134,7 +153,7 @@ async def monitor_task_abortion(
 
         yield
     except asyncio.CancelledError as exc:
-        task_publishers.publish_logs(
+        await task_publishers.publish_logs(
             message="[sidecar] task run was aborted", log_level=logging.INFO
         )
 
