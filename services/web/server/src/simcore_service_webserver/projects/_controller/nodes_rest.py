@@ -121,6 +121,7 @@ async def create_node(request: web.Request) -> web.Response:
             project_data,
             req_ctx.user_id,
             req_ctx.product_name,
+            get_api_base_url(request),
             body.service_key,
             body.service_version,
             body.service_id,

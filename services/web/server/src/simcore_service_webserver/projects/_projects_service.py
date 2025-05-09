@@ -797,6 +797,7 @@ async def add_project_node(
     project: dict[str, Any],
     user_id: UserID,
     product_name: str,
+    product_api_base_url: str,
     service_key: ServiceKey,
     service_version: ServiceVersion,
     service_id: str | None,
@@ -861,6 +862,7 @@ async def add_project_node(
                 service_key=service_key,
                 service_version=service_version,
                 product_name=product_name,
+                product_api_base_url=product_api_base_url,
                 user_id=user_id,
                 project_uuid=ProjectID(project["uuid"]),
                 node_uuid=node_uuid,
@@ -888,6 +890,7 @@ async def start_project_node(
         service_key=node_details.key,
         service_version=node_details.version,
         product_name=product_name,
+        product_api_base_url=product_api_base_url,
         user_id=user_id,
         project_uuid=project_id,
         node_uuid=node_id,
@@ -1185,7 +1188,9 @@ async def update_project_node_outputs(
     # changed entries come in the form of {node_uuid: {outputs: {changed_key1: value1, changed_key2: value2}}}
     # we do want only the key names
     changed_keys = (
-        changed_entries.get(NodeIDStr(f"{node_id}"), {}).get("outputs", {}).keys()
+        changed_entries.get(TypeAdapter(NodeIDStr).validate_python(f"{node_id}"), {})
+        .get("outputs", {})
+        .keys()
     )
     return updated_project, changed_keys
 
@@ -1737,6 +1742,7 @@ async def run_project_dynamic_services(
     project: dict,
     user_id: UserID,
     product_name: str,
+    product_api_base_url: str,
 ) -> None:
     # first get the services if they already exist
     project_settings: ProjectsSettings = get_plugin_settings(request.app)
@@ -1785,6 +1791,7 @@ async def run_project_dynamic_services(
                 service_key=services_to_start_uuids[service_uuid]["key"],
                 service_version=services_to_start_uuids[service_uuid]["version"],
                 product_name=product_name,
+                product_api_base_url=product_api_base_url,
                 user_id=user_id,
                 project_uuid=project["uuid"],
                 node_uuid=NodeID(service_uuid),
