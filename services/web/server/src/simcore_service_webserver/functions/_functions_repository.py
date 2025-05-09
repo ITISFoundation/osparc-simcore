@@ -17,18 +17,16 @@ from models_library.api_schemas_webserver.functions_wb_schema import (
 from models_library.rest_pagination import (
     PageMetaInfoLimitOffset,
 )
-from simcore_postgres_database.models.functions_models_db import (
-    function_job_collections as function_job_collections_table,
+from simcore_postgres_database.models.funcapi_function_job_collections_table import (
+    function_job_collections_table,
 )
-from simcore_postgres_database.models.functions_models_db import (
-    function_job_collections_to_function_jobs as function_job_collections_to_function_jobs_table,
+from simcore_postgres_database.models.funcapi_function_job_collections_to_function_jobs_table import (
+    function_job_collections_to_function_jobs_table,
 )
-from simcore_postgres_database.models.functions_models_db import (
-    function_jobs as function_jobs_table,
+from simcore_postgres_database.models.funcapi_function_jobs_table import (
+    function_jobs_table,
 )
-from simcore_postgres_database.models.functions_models_db import (
-    functions as functions_table,
-)
+from simcore_postgres_database.models.funcapi_functions_table import functions_table
 from simcore_postgres_database.utils_repos import (
     get_columns_from_db_model,
     transaction_context,
