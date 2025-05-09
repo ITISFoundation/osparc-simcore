@@ -106,6 +106,7 @@ async def app(app: FastAPI) -> AsyncIterable[FastAPI]:
 
 @pytest.fixture
 async def httpx_async_client(
+    mock_ensure_read_permissions_on_user_service_data: None,
     app: FastAPI,
     backend_url: AnyHttpUrl,
     ensure_external_volumes: tuple[DockerVolume],
@@ -201,7 +202,6 @@ async def _wait_for_containers_to_be_running(app: FastAPI) -> None:
 
 
 async def test_service_starts_and_closes_as_expected(
-    mock_ensure_read_permissions_on_user_service_data: None,
     mock_core_rabbitmq: dict[str, AsyncMock],
     app: FastAPI,
     httpx_async_client: AsyncClient,
@@ -385,7 +385,6 @@ def mock_one_container_oom_killed(mocker: MockerFixture) -> Callable[[], None]:
 
 @pytest.mark.parametrize("expected_platform_state", SimcorePlatformStatus)
 async def test_user_services_crash_when_running(
-    mock_ensure_read_permissions_on_user_service_data: None,
     mock_core_rabbitmq: dict[str, AsyncMock],
     app: FastAPI,
     httpx_async_client: AsyncClient,
