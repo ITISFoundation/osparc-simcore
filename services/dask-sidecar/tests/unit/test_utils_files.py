@@ -135,8 +135,8 @@ async def test_push_file_to_remote(
 async def test_push_file_to_remote_s3_http_presigned_link(
     s3_presigned_link_remote_file_url: AnyUrl,
     s3_settings: S3Settings,
-    bucket: str,
     tmp_path: Path,
+    s3_bucket: str,
     faker: Faker,
     mocked_log_publishing_cb: mock.AsyncMock,
 ):
