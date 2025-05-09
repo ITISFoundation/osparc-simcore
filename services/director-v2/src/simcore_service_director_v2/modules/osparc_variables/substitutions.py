@@ -179,7 +179,7 @@ async def resolve_and_substitute_session_variables_in_model(
     safe: bool = True,
     user_id: UserID,
     product_name: str,
-    product_api_base_url: str,
+    product_api_base_url: str | None,
     project_id: ProjectID,
     node_id: NodeID,
     service_run_id: ServiceRunID,

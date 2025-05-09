@@ -277,7 +277,7 @@ async def assemble_spec(  # pylint: disable=too-many-arguments # noqa: PLR0913
     simcore_service_labels: SimcoreServiceLabels,
     allow_internet_access: bool,
     product_name: ProductName,
-    product_api_base_url: str,
+    product_api_base_url: str | None,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
