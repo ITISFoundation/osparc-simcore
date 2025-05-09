@@ -12,6 +12,7 @@ from aiodocker.volumes import DockerVolume
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI, status
 from httpx import ASGITransport, AsyncClient
+from models_library.api_schemas_dynamic_sidecar.containers import DcokerComposeYamlStr
 from models_library.callbacks_mapping import CallbacksMapping
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from pydantic import AnyHttpUrl, TypeAdapter
@@ -85,7 +86,7 @@ def client(
 
 
 @pytest.fixture
-def compose_spec() -> str:
+def compose_spec() -> DcokerComposeYamlStr:
     return json.dumps(
         {
             "version": "3",
@@ -101,7 +102,7 @@ def compose_spec() -> str:
 
 async def _get_task_id_create_service_containers(
     httpx_async_client: AsyncClient,
-    compose_spec: str,
+    compose_spec: DcokerComposeYamlStr,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
 ) -> TaskId:
     ctontainers_compose_spec = ContainersComposeSpec(
