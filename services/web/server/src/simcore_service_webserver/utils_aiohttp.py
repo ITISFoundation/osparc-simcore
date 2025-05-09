@@ -154,11 +154,8 @@ def iter_originating_hosts(request: web.Request) -> Iterator[str]:
             yield host
 
 
-def get_api_base_url(request: web.Request) -> str | None:
-    originating_host = next(iter_originating_hosts(request), None)
-    if not originating_host:
-        return None
-
+def get_api_base_url(request: web.Request) -> str:
+    originating_host = next(iter_originating_hosts(request))
     api_host = (
         f"api.{originating_host}"
         if not is_ip_address(originating_host)
