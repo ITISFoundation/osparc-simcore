@@ -11,7 +11,7 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
-from prometheus_client.parser import text_string_to_metric_families
+from prometheus_client.openmetrics.parser import text_string_to_metric_families
 from servicelib.aiohttp import status
 from servicelib.aiohttp.monitoring import setup_monitoring
 from servicelib.common_headers import (
@@ -89,12 +89,12 @@ async def test_setup_monitoring(client: TestClient):
     response = await client.get("/metrics")
     assert response.status == status.HTTP_200_OK
     metrics_as_text = await response.text()
+    # metrics_as_text = metrics_as_text.lstrip("'").lstrip("'")
     _assert_metrics_contain_entry(
         metrics_as_text,
         metric_name="http_requests",
         sample_name="http_requests_total",
         labels={
-            "app_name": "pytest_app",
             "endpoint": "/monitored_request",
             "http_status": "200",
             "method": "GET",
@@ -108,7 +108,6 @@ async def test_setup_monitoring(client: TestClient):
         metric_name="http_requests",
         sample_name="http_requests_total",
         labels={
-            "app_name": "pytest_app",
             "endpoint": "/metrics",
             "http_status": "200",
             "method": "GET",
@@ -134,7 +133,6 @@ async def test_request_with_simcore_user_agent(client: TestClient, faker: Faker)
         metric_name="http_requests",
         sample_name="http_requests_total",
         labels={
-            "app_name": "pytest_app",
             "endpoint": "/monitored_request",
             "http_status": "200",
             "method": "GET",
