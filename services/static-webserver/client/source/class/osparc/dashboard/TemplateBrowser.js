@@ -31,11 +31,19 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
 
     // overridden
     initResources: function() {
-      this._resourcesList = [];
-      this.getChildControl("resources-layout");
-      this.reloadResources();
-      this.__attachEventHandlers();
-      this._hideLoadingPage();
+      if (this._resourcesInitialized) {
+        return;
+      }
+      this._resourcesInitialized = true;
+
+      osparc.store.Templates.getTemplates()
+        .then(() => {
+          this._resourcesList = [];
+          this.getChildControl("resources-layout");
+          this.reloadResources();
+          this.__attachEventHandlers();
+          this._hideLoadingPage();
+        });
     },
 
     reloadResources: function(useCache = true) {
@@ -76,17 +84,13 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     __reloadTemplates: function(useCache) {
       this.__tasksToCards();
 
-      const templatesStore = osparc.store.Templates.getInstance();
       if (useCache) {
-        const templates = templatesStore.getTemplates();
-        this.__setResourcesToList(templates);
+        osparc.store.Templates.getTemplates()
+          .then(templates => this.__setResourcesToList(templates));
       } else {
-        templatesStore.fetchAllTemplates()
+        osparc.store.Templates.getTemplates(useCache)
           .then(templates => this.__setResourcesToList(templates))
-          .catch(err => {
-            console.error(err);
-            this.__setResourcesToList([]);
-          });
+          .catch(() => this.__setResourcesToList([]));
       }
     },
 
@@ -103,7 +107,6 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     __setResourcesToList: function(templatesList) {
       templatesList.forEach(template => template["resourceType"] = "template");
       this._resourcesList = templatesList.filter(template => osparc.study.Utils.extractTemplateType(template) === this.__templateType);
-      this.fireDataEvent("showTab", Boolean(this._resourcesList.length));
       this._reloadCards();
     },
 

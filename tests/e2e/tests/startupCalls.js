@@ -86,10 +86,13 @@ module.exports = {
         expect(Array.isArray(responseEnv.data)).toBeTruthy();
       }, ourTimeout);
 
+      /*
+      // templates are lazy loaded
       test('Templates', async () => {
         const responseEnv = await responses.templates;
         expect(Array.isArray(responseEnv.data)).toBeTruthy();
       }, ourTimeout);
+      */
 
       test('Services', async () => {
         const responseEnv = await responses.services;
