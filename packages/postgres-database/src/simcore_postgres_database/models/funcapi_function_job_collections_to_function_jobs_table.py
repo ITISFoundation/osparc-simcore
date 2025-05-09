@@ -33,9 +33,4 @@ function_job_collections_to_function_jobs_table = sa.Table(
         ),
         doc="Unique identifier of the function job",
     ),
-    sa.PrimaryKeyConstraint(
-        "function_job_collection_uuid",
-        "function_job_uuid",
-        name="funcapi_function_job_collections_to_function_jobs_pk",
-    ),
 )
