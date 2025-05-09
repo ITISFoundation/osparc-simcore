@@ -110,27 +110,51 @@ qx.Class.define("osparc.study.CreateFunction", {
         "input_schema": {
           "schema_dict": {
             "type": "object",
-            "properties": {
-              "input1": {
-                "type": "integer" // InputTypes: TypeAlias = FileID | float | int | bool | str | list
-              }
-            }
+            "properties": {}
           }
         },
         "output_schema": {
           "schema_dict": {
             "type": "object",
-            "properties": {
-              "output1": {
-                "type": "integer" // OutputTypes: TypeAlias = FileID | float | int | bool | str | list
-              }
-            }
+            "properties": {}
           }
         },
-        "default_inputs": {
-          "input1": 5
-        },
+        "default_inputs": {},
       };
+
+      const filePickers = osparc.study.Utils.extractFilePickers(templateData["workbench"]);
+      filePickers.forEach(filePicker => {
+        const fpName = filePicker["name"];
+        functionData["input_schema"]["schema_dict"]["properties"][fpName] = {
+          "type": "FileID",
+        };
+        functionData["default_inputs"][fpName] = "asdfasdf";
+      });
+
+      const parameters = osparc.study.Utils.extractParameters(templateData["workbench"]);
+      parameters.forEach(parameter => {
+        const parameterName = parameter["name"];
+        const parameterMetadata = osparc.store.Services.getMetadata(parameter["key"], parameter["version"]);
+        if (parameterMetadata) {
+          functionData["input_schema"]["schema_dict"]["properties"][parameterName] = {
+            "type": osparc.service.Utils.getParameterType(parameterMetadata),
+          };
+        }
+        functionData["default_inputs"][parameterName] = parameter["outputs"]["out_1"];
+      });
+
+      const probes = osparc.study.Utils.extractProbes(templateData["workbench"]);
+      probes.forEach(probe => {
+        const probeName = probe["name"];
+        const probeMetadata = osparc.store.Services.getMetadata(probe["key"], probe["version"]);
+        if (probeMetadata) {
+          functionData["output_schema"]["schema_dict"]["properties"][probeName] = {
+            "type": osparc.service.Utils.getProbeType(probeMetadata),
+          };
+        }
+      });
+
+      console.log("functionData", functionData);
 
       const params = {
         data: functionData,
