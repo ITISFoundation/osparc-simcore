@@ -4,6 +4,7 @@ import pytest
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from httpx import AsyncClient
+from prometheus_client.openmetrics.exposition import CONTENT_TYPE_LATEST
 from servicelib.fastapi.monitoring import setup_prometheus_instrumentation
 
 
@@ -23,5 +24,6 @@ async def test_metrics_endpoint(client: AsyncClient, app: FastAPI):
     """
     response = await client.get("/metrics")
     assert response.status_code == 200
+    assert response.headers["Content-Type"] == CONTENT_TYPE_LATEST
     assert "# HELP" in response.text
     assert "# TYPE" in response.text
