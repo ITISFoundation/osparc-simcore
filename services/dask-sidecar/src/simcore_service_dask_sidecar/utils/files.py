@@ -4,7 +4,7 @@ import logging
 import mimetypes
 import time
 import zipfile
-from collections.abc import Awaitable, Callable
+from collections.abc import Callable, Coroutine
 from io import IOBase
 from pathlib import Path
 from typing import Any, Final, TypedDict, cast
@@ -25,7 +25,7 @@ HTTP_FILE_SYSTEM_SCHEMES: Final = ["http", "https"]
 S3_FILE_SYSTEM_SCHEMES: Final = ["s3", "s3a"]
 
 
-LogPublishingCB = Callable[[LogMessageStr, LogLevelInt], Awaitable[None]]
+LogPublishingCB = Callable[[LogMessageStr, LogLevelInt], Coroutine[Any, Any, None]]
 
 
 def _file_progress_cb(

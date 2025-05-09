@@ -25,7 +25,7 @@ async def s3_client(s3_settings: S3Settings) -> typing.AsyncIterator[S3Client]:
     exit_stack = contextlib.AsyncExitStack()
     session_client = session.client(
         "s3",
-        endpoint_url=f"{s3_settings.S3_ENDPOINT}",
+        endpoint_url=f"{s3_settings.S3_ENDPOINT}" if s3_settings.S3_ENDPOINT else None,
         aws_access_key_id=s3_settings.S3_ACCESS_KEY,
         aws_secret_access_key=s3_settings.S3_SECRET_KEY,
         region_name=s3_settings.S3_REGION,

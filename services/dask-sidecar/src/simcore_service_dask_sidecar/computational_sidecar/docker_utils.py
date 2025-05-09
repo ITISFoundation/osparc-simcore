@@ -3,7 +3,13 @@ import contextlib
 import logging
 import re
 import socket
-from collections.abc import AsyncGenerator, AsyncIterator, Awaitable, Callable
+from collections.abc import (
+    AsyncGenerator,
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    Coroutine,
+)
 from pathlib import Path
 from pprint import pformat
 from typing import Any, Final, cast
@@ -51,7 +57,7 @@ from .models import (
 from .task_shared_volume import TaskSharedVolumes
 
 logger = logging.getLogger(__name__)
-LogPublishingCB = Callable[[LogMessageStr, LogLevelInt], Awaitable[None]]
+LogPublishingCB = Callable[[LogMessageStr, LogLevelInt], Coroutine[Any, Any, None]]
 
 
 async def create_container_config(
