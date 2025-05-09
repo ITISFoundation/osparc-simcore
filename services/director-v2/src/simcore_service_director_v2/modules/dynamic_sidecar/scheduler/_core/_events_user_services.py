@@ -73,6 +73,9 @@ async def submit_compose_sepc(app: FastAPI, scheduler_data: SchedulerData) -> No
     assert (
         scheduler_data.product_name is not None  # nosec
     ), "ONLY for legacy. This function should not be called with product_name==None"
+    assert (
+        scheduler_data.product_api_base_url is not None  # nosec
+    ), "ONLY for legacy. This function should not be called with product_api_base_url==None"
     allow_internet_access: bool = await groups_extra_properties.has_internet_access(
         user_id=scheduler_data.user_id, product_name=scheduler_data.product_name
     )
