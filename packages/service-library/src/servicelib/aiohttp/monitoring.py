@@ -12,19 +12,19 @@ from prometheus_client import (
     CONTENT_TYPE_LATEST,
 )
 from prometheus_client.registry import CollectorRegistry
-from servicelib.aiohttp.typing_extension import Handler
-from servicelib.prometheus_metrics import (
-    PrometheusMetrics,
-    get_prometheus_metrics,
-    record_request_metrics,
-    record_response_metrics,
-)
 
 from ..common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_SIMCORE_USER_AGENT,
 )
 from ..logging_utils import log_catch
+from ..prometheus_metrics import (
+    PrometheusMetrics,
+    get_prometheus_metrics,
+    record_request_metrics,
+    record_response_metrics,
+)
+from .typing_extension import Handler
 
 log = logging.getLogger(__name__)
 
