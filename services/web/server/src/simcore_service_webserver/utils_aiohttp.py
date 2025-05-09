@@ -131,34 +131,51 @@ class NextPage(BaseModel, Generic[PageParameters]):
     parameters: PageParameters | None = None
 
 
-def iter_originating_hosts(request: web.Request) -> Iterator[str]:
+def iter_origins(request: web.Request) -> Iterator[str]:
     #
     # SEE https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-Host
     # SEE https://doc.traefik.io/traefik/getting-started/faq/#what-are-the-forwarded-headers-when-proxying-http-requests
     seen = set()
 
-    forwarded = request.headers.get("X-Forwarded-Host")
-    if forwarded:
+    fwd_protos = [
+        p.strip()
+        for p in request.headers.get("X-Forwarded-Proto").split(",")
+        if p.strip()
+    ]
+    fwd_hosts = [
+        h.strip()
+        for h in request.headers.get("X-Forwarded-Host").split(",")
+        if h.strip()
+    ]
+    fwd_ports = [
+        pt.strip()
+        for pt in request.headers.get("X-Forwarded-Port").split(",")
+        if pt.strip()
+    ]
+
+    fwd_origins = [
+        f"{proto}://{host}:{port}"
+        for proto, host, port in zip(fwd_protos, fwd_hosts, fwd_ports, strict=False)
+    ]
+    if fwd_origins:
         # X-Forwarded-Host can contain a comma-separated list of hosts
         # (when the request passes through multiple proxies)
-        for host in forwarded.split(","):
-            stripped_host = host.strip().partition(":")[0]
-            if stripped_host and stripped_host not in seen:
-                seen.add(stripped_host)
-                yield host
+        for origin in fwd_origins:
+            if origin and origin not in seen:
+                seen.add(origin)
+                yield origin
 
     # Fallback to request.host
-    if request.host:
-        host = request.host.partition(":")[0]
-        if host not in seen:
-            yield host
+    if request.url:
+        origin = f"{request.url.scheme}://{request.url.host}"
+        if request.url.port:
+            origin += f":{request.url.port}"
+        yield origin
 
 
 def get_api_base_url(request: web.Request) -> str:
-    originating_host = next(iter_originating_hosts(request))
+    api_host = next(iter_origins(request))
     api_host = (
-        f"api.{originating_host}"
-        if not is_ip_address(originating_host)
-        else originating_host
+        f"api.{api_host}" if not is_ip_address(api_host) else api_host  # in tests
     )
     return f"{request.url.with_host(api_host).with_port(None).with_path('')}"
