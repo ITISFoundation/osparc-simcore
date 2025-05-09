@@ -48,9 +48,9 @@ assert issubclass(UniqueViolation, IntegrityError)  # nosec
 
 __all__: tuple[str, ...] = (
     "CheckViolation",
-    "DatabaseError",
-    "DataError",
     "DBAPIError",
+    "DataError",
+    "DatabaseError",
     "ForeignKeyViolation",
     "IntegrityError",
     "InterfaceError",

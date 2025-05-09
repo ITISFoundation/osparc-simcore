@@ -1,3 +1,13 @@
+"""Tags table
+
+- Represents tags that can be associated with various entities.
+
+Migration strategy:
+- The primary key is `id`, which is unique and sufficient for migration.
+- Ensure foreign key references (if any) are valid in the target database.
+- No additional changes are required; this table can be migrated as is.
+"""
+
 import sqlalchemy as sa
 
 from .base import metadata
