@@ -36,7 +36,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       }
       this._resourcesInitialized = true;
 
-      osparc.store.Templates.getInstance().fetchAllTemplates()
+      osparc.store.Templates.fetchAllTemplates()
         .then(() => {
           this._resourcesList = [];
           this.getChildControl("resources-layout");
@@ -84,17 +84,13 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     __reloadTemplates: function(useCache) {
       this.__tasksToCards();
 
-      const templatesStore = osparc.store.Templates.getInstance();
       if (useCache) {
-        const templates = templatesStore.getTemplates();
-        this.__setResourcesToList(templates);
+        osparc.store.Templates.getTemplates()
+          .then(templates => this.__setResourcesToList(templates));
       } else {
-        templatesStore.fetchAllTemplates()
+        osparc.store.Templates.fetchAllTemplates()
           .then(templates => this.__setResourcesToList(templates))
-          .catch(err => {
-            console.error(err);
-            this.__setResourcesToList([]);
-          });
+          .catch(() => this.__setResourcesToList([]));
       }
     },
 

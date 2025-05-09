@@ -16,40 +16,46 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.store.Templates", {
-  extend: qx.core.Object,
-  type: "singleton",
+  type: "static",
 
-  construct: function() {
-    this.base(arguments);
-
-    this.__templates = [];
-  },
-
-  members: {
-    __templates: null,
+  statics: {
+    __templatesCached: [],
+    __templatesPromisesCached: null,
 
     fetchAllTemplates: function() {
-      if (this.__templates.length) {
-        return new Promise(resolve => resolve(this.__templates));
-      }
-
-      return osparc.data.Resources.getInstance().getAllPages("templates")
+      return this.__templatesPromisesCached = osparc.data.Resources.getInstance().getAllPages("templates")
         .then(templates => {
           this.__templates = templates;
           return templates;
+        })
+        .catch(err => {
+          osparc.FlashMessenger.logError(err);
+        })
+        .finally(() => {
+          this.__templatesPromisesCached = null;
         });
     },
 
     getTemplates: function() {
-      return this.__templates;
+      if (this.__templatesPromisesCached) {
+        return this.__templatesPromisesCached;
+      }
+
+      return new Promise(resolve => resolve(this.__templates));
     },
 
-    getTemplatesByType: function(type) {
-      return this.__templates.filter(t => osparc.study.Utils.extractTemplateType(t) === type);
+    getTemplatesHypertools: function() {
+      return this.getTemplates()
+        .then(templates => {
+          return templates.filter(t => osparc.study.Utils.extractTemplateType(t) === osparc.data.model.StudyUI.HYPERTOOL_TYPE);
+        });
     },
 
     getTemplate: function(templateId) {
-      return this.__templates.find(t => t.uuid === templateId);
+      return this.getTemplates()
+        .then(templates => {
+          return templates.find(t => t.uuid === templateId);
+        });
     },
   }
 });

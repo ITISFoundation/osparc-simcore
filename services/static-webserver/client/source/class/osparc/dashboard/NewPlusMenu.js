@@ -190,28 +190,30 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
     },
 
     __addHypertools: function() {
-      const hypertools = osparc.store.Templates.getInstance().getTemplatesByType(osparc.data.model.StudyUI.HYPERTOOL_TYPE);
-      if (hypertools.length) {
-        const hypertoolsMenuButton = this.self().createMenuButton("@FontAwesome5Solid/star/16", this.tr("Hypertools"));
-        this.addAt(hypertoolsMenuButton, this.__itemIdx);
-        this.__itemIdx++;
+      osparc.store.Templates.getTemplatesHypertools()
+        .then(hypertools => {
+          if (hypertools.length) {
+            const hypertoolsMenuButton = this.self().createMenuButton("@FontAwesome5Solid/star/16", this.tr("Hypertools"));
+            this.addAt(hypertoolsMenuButton, this.__itemIdx);
+            this.__itemIdx++;
 
-        const hypertoolsMenu = new qx.ui.menu.Menu().set({
-          appearance: "menu-wider",
-        });
-        hypertoolsMenuButton.setMenu(hypertoolsMenu);
-
-        hypertools.forEach(templateData => {
-          const hypertoolButton = this.self().createMenuButton(templateData["icon"], templateData["name"]);
-          hypertoolButton.addListener("tap", () => {
-            this.fireDataEvent("newStudyFromTemplateClicked", {
-              templateData,
-              newStudyLabel: templateData["name"],
+            const hypertoolsMenu = new qx.ui.menu.Menu().set({
+              appearance: "menu-wider",
             });
-          });
-          hypertoolsMenu.add(hypertoolButton);
+            hypertoolsMenuButton.setMenu(hypertoolsMenu);
+
+            hypertools.forEach(templateData => {
+              const hypertoolButton = this.self().createMenuButton(templateData["icon"], templateData["name"]);
+              hypertoolButton.addListener("tap", () => {
+                this.fireDataEvent("newStudyFromTemplateClicked", {
+                  templateData,
+                  newStudyLabel: templateData["name"],
+                });
+              });
+              hypertoolsMenu.add(hypertoolButton);
+            });
+          }
         });
-      }
     },
 
     __addOtherTabsAccess: function() {
@@ -321,24 +323,26 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
     },
 
     __addFromTemplateButton: function(buttonConfig) {
-      const templates = osparc.store.Templates.getInstance().getTemplates();
-      const menuButton = this.self().createMenuButton(null, buttonConfig["title"]);
-      osparc.utils.Utils.setIdToWidget(menuButton, buttonConfig["idToWidget"]);
-      // disable it until found in templates store
-      menuButton.setEnabled(false);
+      osparc.store.Templates.getTemplates()
+        .then(templates => {
+          const menuButton = this.self().createMenuButton(null, buttonConfig["title"]);
+          osparc.utils.Utils.setIdToWidget(menuButton, buttonConfig["idToWidget"]);
+          // disable it until found in templates store
+          menuButton.setEnabled(false);
 
-      let templateMetadata = templates.find(t => t.name === buttonConfig["expectedTemplateLabel"]);
-      if (templateMetadata) {
-        menuButton.setEnabled(true);
-        menuButton.addListener("tap", () => {
-          this.fireDataEvent("newStudyFromTemplateClicked", {
-            templateData: templateMetadata,
-            newStudyLabel: buttonConfig["newStudyLabel"],
-          });
+          let templateMetadata = templates.find(t => t.name === buttonConfig["expectedTemplateLabel"]);
+          if (templateMetadata) {
+            menuButton.setEnabled(true);
+            menuButton.addListener("tap", () => {
+              this.fireDataEvent("newStudyFromTemplateClicked", {
+                templateData: templateMetadata,
+                newStudyLabel: buttonConfig["newStudyLabel"],
+              });
+            });
+            this.__addIcon(menuButton, buttonConfig["icon"], templateMetadata);
+            this.__addFromResourceButton(menuButton, buttonConfig["category"]);
+          }
         });
-        this.__addIcon(menuButton, buttonConfig["icon"], templateMetadata);
-        this.__addFromResourceButton(menuButton, buttonConfig["category"]);
-      }
     },
 
     __addFromServiceButton: function(buttonConfig) {
