@@ -100,7 +100,7 @@ qx.Class.define("osparc.task.ExportData", {
         }
       });
       task.addListener("taskAborted", () => {
-        osparc.FlashMessenger.logAs(qx.locale.Manager.tr("Download aborted"), "WARNING");
+        osparc.FlashMessenger.logAs(qx.locale.Manager.tr("Download cancelled"), "WARNING");
       });
       task.addListener("pollingError", e => {
         const err = e.getData();

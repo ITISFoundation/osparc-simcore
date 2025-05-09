@@ -38,9 +38,9 @@ from servicelib.logging_utils import (
 from servicelib.progress_bar import ProgressBarData
 from settings_library.s3 import S3Settings
 
-from ..dask_utils import TaskPublisher
-from ..file_utils import push_file_to_remote
-from ..settings import Settings
+from ..settings import ApplicationSettings
+from ..utils.dask import TaskPublisher
+from ..utils.files import push_file_to_remote
 from .constants import LEGACY_SERVICE_LOG_FILE_NAME
 from .models import (
     LEGACY_INTEGRATION_VERSION,
@@ -188,7 +188,7 @@ async def _parse_and_publish_logs(
     if progress_value is not None:
         await progress_bar.set_(round(progress_value * 100.0))
 
-    task_publishers.publish_logs(
+    await task_publishers.publish_logs(
         message=log_line, log_level=guess_message_log_level(log_line)
     )
 
@@ -474,7 +474,7 @@ async def get_image_labels(
 
 
 async def get_computational_shared_data_mount_point(docker_client: Docker) -> Path:
-    app_settings = Settings.create_from_envs()
+    app_settings = ApplicationSettings.create_from_envs()
     try:
         logger.debug(
             "getting computational shared data mount point for %s",

@@ -48,8 +48,8 @@ def _get_https_link_if_storage_secure(url: str) -> str:
     # DY-SIDECAR (simcore-sdk) -> STORAGE (httpS requests)
     # https://github.com/ITISFoundation/osparc-simcore/issues/5390
     parsed_url = URL(url)
-    if is_storage_secure() and parsed_url.scheme != "https":
-        return f'{parsed_url.with_scheme("https")}'
+    if bool(is_storage_secure()):
+        return f"{parsed_url.with_scheme('https')}"
 
     return url
 

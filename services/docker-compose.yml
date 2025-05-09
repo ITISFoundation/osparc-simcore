@@ -1164,6 +1164,11 @@ services:
       DASK_SIDECAR_LOGLEVEL: ${DASK_SIDECAR_LOGLEVEL}
       SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME: ${SWARM_STACK_NAME}_computational_shared_data
       SIDECAR_COMP_SERVICES_SHARED_FOLDER: ${SIDECAR_COMP_SERVICES_SHARED_FOLDER:-/home/scu/computational_shared_data}
+      RABBIT_HOST: ${RABBIT_HOST}
+      RABBIT_PASSWORD: ${RABBIT_PASSWORD}
+      RABBIT_PORT: ${RABBIT_PORT}
+      RABBIT_SECURE: ${RABBIT_SECURE}
+      RABBIT_USER: ${RABBIT_USER}
     networks:
       - computational_services_subnet
     secrets: *dask_tls_secrets
@@ -1266,6 +1271,7 @@ services:
       - rabbit_data:/var/lib/rabbitmq
     networks:
       - default
+      - computational_services_subnet
       - interactive_services_subnet
       - autoscaling_subnet
     healthcheck:

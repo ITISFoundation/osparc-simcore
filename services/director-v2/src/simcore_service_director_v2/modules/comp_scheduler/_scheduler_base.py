@@ -198,7 +198,7 @@ class BaseCompScheduler(ABC):
         iteration: Iteration,
         pipeline_tasks: dict[NodeIDStr, CompTaskAtDB],
     ) -> RunningState:
-        pipeline_state_from_tasks: RunningState = get_pipeline_state_from_task_states(
+        pipeline_state_from_tasks = get_pipeline_state_from_task_states(
             list(pipeline_tasks.values()),
         )
         _logger.debug(
@@ -342,6 +342,7 @@ class BaseCompScheduler(ABC):
         tasks: list[CompTaskAtDB],
         *,
         user_id: UserID,
+        project_id: ProjectID,
         iteration: Iteration,
         run_metadata: RunMetadataDict,
     ) -> None:
@@ -441,6 +442,12 @@ class BaseCompScheduler(ABC):
                 for t in tasks
             )
         )
+        await CompRunsRepository.instance(self.db_engine).mark_as_started(
+            user_id=user_id,
+            project_id=project_id,
+            iteration=iteration,
+            started_time=utc_now,
+        )
 
     async def _process_waiting_tasks(self, tasks: list[CompTaskAtDB]) -> None:
         comp_tasks_repo = CompTasksRepository(self.db_engine)
@@ -488,6 +495,7 @@ class BaseCompScheduler(ABC):
             await self._process_started_tasks(
                 sorted_tasks.started,
                 user_id=user_id,
+                project_id=project_id,
                 iteration=iteration,
                 run_metadata=comp_run.metadata,
             )

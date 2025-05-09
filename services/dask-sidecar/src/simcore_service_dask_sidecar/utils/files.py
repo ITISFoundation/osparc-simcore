@@ -106,8 +106,12 @@ async def _copy_file(
     src_storage_kwargs = src_storage_cfg or {}
     dst_storage_kwargs = dst_storage_cfg or {}
     with (
-        fsspec.open(f"{src_url}", mode="rb", **src_storage_kwargs) as src_fp,
-        fsspec.open(f"{dst_url}", mode="wb", **dst_storage_kwargs) as dst_fp,
+        fsspec.open(
+            f"{src_url}", mode="rb", expand=False, **src_storage_kwargs
+        ) as src_fp,
+        fsspec.open(
+            f"{dst_url}", mode="wb", expand=False, **dst_storage_kwargs
+        ) as dst_fp,
     ):
         assert isinstance(src_fp, IOBase)  # nosec
         assert isinstance(dst_fp, IOBase)  # nosec
