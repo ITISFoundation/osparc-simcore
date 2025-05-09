@@ -9,7 +9,7 @@ from prometheus_client import CollectorRegistry, Gauge
 from pydantic import PositiveInt
 from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task import create_periodic_task
-from servicelib.fastapi.prometheus_instrumentation import (
+from servicelib.fastapi.monitoring import (
     setup_prometheus_instrumentation as setup_rest_instrumentation,
 )
 from servicelib.logging_utils import log_catch
@@ -66,11 +66,11 @@ async def _collect_prometheus_metrics_task(app: FastAPI):
 
 
 def setup_prometheus_instrumentation(app: FastAPI):
-    instrumentator = setup_rest_instrumentation(app)
+    registry = setup_rest_instrumentation(app)
 
     async def on_startup() -> None:
         app.state.instrumentation = ApiServerPrometheusInstrumentation(
-            registry=instrumentator.registry
+            registry=registry
         )
         await wait_till_log_distributor_ready(app)
         app.state.instrumentation_task = create_periodic_task(

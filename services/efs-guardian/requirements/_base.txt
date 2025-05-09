@@ -155,7 +155,6 @@ fastapi==0.115.5
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
     #   fastapi-lifespan-manager
-    #   prometheus-fastapi-instrumentator
 fastapi-lifespan-manager==0.1.4
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 faststream==0.5.31
@@ -412,10 +411,6 @@ packaging==24.1
 pamqp==3.3.0
     # via aiormq
 prometheus-client==0.21.0
-    # via
-    #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
-    #   prometheus-fastapi-instrumentator
-prometheus-fastapi-instrumentator==6.1.0
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 propcache==0.3.1
     # via

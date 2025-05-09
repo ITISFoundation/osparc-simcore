@@ -50,6 +50,8 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     # PLUGINS SETUP
     setup_api_routes(app)
 
+    setup_instrumentation(app)
+
     if app.state.settings.DIRECTOR_TRACING:
         initialize_tracing(app, app.state.settings.DIRECTOR_TRACING, APP_NAME)
 
@@ -59,8 +61,6 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
         default_timeout=settings.DIRECTOR_REGISTRY_CLIENT_TIMEOUT,
     )
     setup_registry(app)
-
-    setup_instrumentation(app)
 
     # ERROR HANDLERS
 
