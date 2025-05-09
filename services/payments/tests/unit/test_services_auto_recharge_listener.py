@@ -5,7 +5,7 @@
 # pylint: disable=unused-variable
 
 from collections.abc import Awaitable, Callable, Iterator
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from unittest import mock
 
@@ -51,7 +51,8 @@ from simcore_service_payments.services.auto_recharge_process_message import (
     _check_autorecharge_conditions_not_met,
     _check_wallet_credits_above_threshold,
     _exceeds_monthly_limit,
-    _recently_topped_up,
+    _is_message_too_old,
+    _was_wallet_topped_up_recently,
 )
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -125,7 +126,7 @@ def populate_test_db(
 ) -> Iterator[None]:
     with postgres_db.connect() as con:
         _primary_payment_method_id = faker.uuid4()
-        _completed_at = datetime.now(tz=timezone.utc) + timedelta(minutes=1)
+        _completed_at = datetime.now(tz=UTC) + timedelta(minutes=1)
 
         con.execute(
             payments_methods.insert().values(
@@ -316,8 +317,8 @@ def populate_payment_transaction_db(
                     price_dollars=Decimal(9500),
                     wallet_id=wallet_id,
                     state=PaymentTransactionState.SUCCESS,
-                    completed_at=datetime.now(tz=timezone.utc),
-                    initiated_at=datetime.now(tz=timezone.utc) - timedelta(seconds=10),
+                    completed_at=datetime.now(tz=UTC),
+                    initiated_at=datetime.now(tz=UTC) - timedelta(seconds=10),
                 )
             )
         )
@@ -366,14 +367,17 @@ async def test_exceeds_monthly_limit(
     )
 
 
-async def test_recently_topped_up_true(
+async def test_was_wallet_topped_up_recently_true(
     app: FastAPI,
     wallet_id: int,
     populate_payment_transaction_db: None,
 ):
     _payments_transactions_repo = PaymentsTransactionsRepo(db_engine=app.state.engine)
 
-    assert await _recently_topped_up(_payments_transactions_repo, wallet_id) is True
+    assert (
+        await _was_wallet_topped_up_recently(_payments_transactions_repo, wallet_id)
+        is True
+    )
 
 
 @pytest.fixture()
@@ -381,7 +385,7 @@ def populate_payment_transaction_db_with_older_trans(
     postgres_db: sa.engine.Engine, wallet_id: int
 ) -> Iterator[None]:
     with postgres_db.connect() as con:
-        current_timestamp = datetime.now(tz=timezone.utc)
+        current_timestamp = datetime.now(tz=UTC)
         current_timestamp_minus_10_minutes = current_timestamp - timedelta(minutes=10)
 
         con.execute(
@@ -400,11 +404,26 @@ def populate_payment_transaction_db_with_older_trans(
         con.execute(payments_transactions.delete())
 
 
-async def test_recently_topped_up_false(
+async def test_was_wallet_topped_up_recently_false(
     app: FastAPI,
     wallet_id: int,
     populate_payment_transaction_db_with_older_trans: None,
 ):
     _payments_transactions_repo = PaymentsTransactionsRepo(db_engine=app.state.engine)
 
-    assert await _recently_topped_up(_payments_transactions_repo, wallet_id) is False
+    assert (
+        await _was_wallet_topped_up_recently(_payments_transactions_repo, wallet_id)
+        is False
+    )
+
+
+async def test__is_message_too_old_true():
+    _dummy_message_timestamp = datetime.now(tz=UTC) - timedelta(minutes=10)
+
+    assert await _is_message_too_old(_dummy_message_timestamp) is True
+
+
+async def test__is_message_too_old_false():
+    _dummy_message_timestamp = datetime.now(tz=UTC) - timedelta(minutes=3)
+
+    assert await _is_message_too_old(_dummy_message_timestamp) is False

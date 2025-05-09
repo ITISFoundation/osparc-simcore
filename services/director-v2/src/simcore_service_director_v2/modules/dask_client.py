@@ -187,7 +187,6 @@ class DaskClient:
     def register_handlers(self, task_handlers: TaskHandlers) -> None:
         _event_consumer_map = [
             (self.backend.progress_sub, task_handlers.task_progress_handler),
-            (self.backend.logs_sub, task_handlers.task_log_handler),
         ]
         self._subscribed_tasks = [
             asyncio.create_task(
@@ -223,7 +222,7 @@ class DaskClient:
         ) -> TaskOutputData:
             """This function is serialized by the Dask client and sent over to the Dask sidecar(s)
             Therefore, (screaming here) DO NOT MOVE THAT IMPORT ANYWHERE ELSE EVER!!"""
-            from simcore_service_dask_sidecar.tasks import (  # type: ignore[import-not-found]  # this runs inside the dask-sidecar
+            from simcore_service_dask_sidecar.worker import (  # type: ignore[import-not-found]  # this runs inside the dask-sidecar
                 run_computational_sidecar,
             )
 

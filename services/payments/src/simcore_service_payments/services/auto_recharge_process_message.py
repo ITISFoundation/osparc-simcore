@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from typing import cast
 
@@ -57,24 +57,30 @@ async def process_message(app: FastAPI, data: bytes) -> bool:
     assert wallet_auto_recharge is not None  # nosec
     assert wallet_auto_recharge.payment_method_id is not None  # nosec
 
-    # Step 3: Get Payment method
-    _payments_repo = PaymentsMethodsRepo(db_engine=app.state.engine)
-    payment_method_db = await _payments_repo.get_payment_method_by_id(
-        payment_method_id=wallet_auto_recharge.payment_method_id
-    )
-
-    # Step 4: Check spending limits
+    # Step 3: Check spending limits
     _payments_transactions_repo = PaymentsTransactionsRepo(db_engine=app.state.engine)
     if await _exceeds_monthly_limit(
         _payments_transactions_repo, rabbit_message.wallet_id, wallet_auto_recharge
     ):
         return True  # We do not auto recharge
 
-    # Step 5: Check last top-up time
-    if await _recently_topped_up(_payments_transactions_repo, rabbit_message.wallet_id):
+    # Step 4: Check last top-up time
+    if await _was_wallet_topped_up_recently(
+        _payments_transactions_repo, rabbit_message.wallet_id
+    ):
         return True  # We do not auto recharge
 
-    # Step 6: Perform auto-recharge
+    # Step 5: Check if timestamp when message was created is not too old
+    if await _is_message_too_old(rabbit_message.created_at):
+        return True  # We do not auto recharge
+
+    # Step 6: Get Payment method
+    _payments_repo = PaymentsMethodsRepo(db_engine=app.state.engine)
+    payment_method_db = await _payments_repo.get_payment_method_by_id(
+        payment_method_id=wallet_auto_recharge.payment_method_id
+    )
+
+    # Step 7: Perform auto-recharge
     if settings.PAYMENTS_AUTORECHARGE_ENABLED:
         await _perform_auto_recharge(
             app, rabbit_message, payment_method_db, wallet_auto_recharge
@@ -114,22 +120,39 @@ async def _exceeds_monthly_limit(
     )
 
 
-async def _recently_topped_up(
+async def _was_wallet_topped_up_recently(
     payments_transactions_repo: PaymentsTransactionsRepo, wallet_id: WalletID
 ):
+    """
+    As safety, we check if the last transaction was initiated within the last 5 minutes
+    in that case we do not auto recharge
+    """
     last_wallet_transaction = (
         await payments_transactions_repo.get_last_payment_transaction_for_wallet(
             wallet_id=wallet_id
         )
     )
 
-    current_timestamp = datetime.now(tz=timezone.utc)
+    current_timestamp = datetime.now(tz=UTC)
     current_timestamp_minus_5_minutes = current_timestamp - timedelta(minutes=5)
 
     return (
         last_wallet_transaction
         and last_wallet_transaction.initiated_at > current_timestamp_minus_5_minutes
     )
+
+
+async def _is_message_too_old(
+    message_timestamp: datetime,
+):
+    """
+    As safety, we check if the message was created within the last 5 minutes
+    if not we do not auto recharge
+    """
+    current_timestamp = datetime.now(tz=UTC)
+    current_timestamp_minus_5_minutes = current_timestamp - timedelta(minutes=5)
+
+    return message_timestamp < current_timestamp_minus_5_minutes
 
 
 async def _perform_auto_recharge(

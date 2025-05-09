@@ -18,8 +18,8 @@ MSG_PUBLIC_PROJECT_NOT_PUBLISHED: Final[str] = (
 )
 
 MSG_GUESTS_NOT_ALLOWED: Final[str] = (
-    "Access restricted to registered users.\n"
-    "If you don't have an account, please email to support and request one\n"
+    "Access restricted to registered users.<br/><br/>"
+    "If you don't have an account, please email to support and request one<br/><br/>"
 )
 
 MSG_TOO_MANY_GUESTS: Final[str] = (

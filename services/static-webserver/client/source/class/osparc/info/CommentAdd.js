@@ -21,11 +21,13 @@ qx.Class.define("osparc.info.CommentAdd", {
 
   /**
     * @param studyId {String} Study Id
+    * @param conversationId {String} Conversation Id
     */
-  construct: function(studyId) {
+  construct: function(studyId, conversationId = null) {
     this.base(arguments);
 
     this.__studyId = studyId;
+    this.__conversationId = conversationId;
 
     this._setLayout(new qx.ui.layout.VBox(5));
 
@@ -37,6 +39,9 @@ qx.Class.define("osparc.info.CommentAdd", {
   },
 
   members: {
+    __studyId: null,
+    __conversationId: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -91,13 +96,19 @@ qx.Class.define("osparc.info.CommentAdd", {
           });
           break;
         }
+        case "buttons-layout": {
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+            alignX: "right"
+          }));
+          this._add(control);
+          break;
+        }
         case "add-comment-button": {
-          control = new qx.ui.form.Button(this.tr("Add")).set({
+          control = new qx.ui.form.Button(this.tr("Add message")).set({
             appearance: "form-button",
             allowGrowX: false,
-            alignX: "right"
           });
-          this._add(control);
+          this.getChildControl("buttons-layout").add(control);
           break;
         }
       }
@@ -107,27 +118,32 @@ qx.Class.define("osparc.info.CommentAdd", {
 
     __buildLayout: function() {
       this.getChildControl("thumbnail");
-      const commentField = this.getChildControl("comment-field");
+      this.getChildControl("comment-field");
       const addButton = this.getChildControl("add-comment-button");
       addButton.addListener("execute", () => {
-        const commentText = commentField.getChildControl("text-area").getValue();
-        if (commentText) {
-          const params = {
-            url: {
-              studyId: this.__studyId
-            },
-            data: {
-              "contents": commentText
-            }
-          };
-          osparc.data.Resources.fetch("studyComments", "addComment", params)
-            .then(() => {
-              this.fireEvent("commentAdded");
-              commentField.getChildControl("text-area").setValue("");
+        if (this.__conversationId) {
+          this.__addComment();
+        } else {
+          // create new conversation first
+          osparc.study.Conversations.addConversation(this.__studyId)
+            .then(data => {
+              this.__conversationId = data["conversationId"];
+              this.__addComment();
             })
-            .catch(err => osparc.FlashMessenger.logError(err));
         }
       });
-    }
+    },
+
+    __addComment: function() {
+      const commentField = this.getChildControl("comment-field");
+      const comment = commentField.getChildControl("text-area").getValue();
+      if (comment) {
+        osparc.study.Conversations.addMessage(this.__studyId, this.__conversationId, comment)
+          .then(data => {
+            this.fireDataEvent("commentAdded", data);
+            commentField.getChildControl("text-area").setValue("");
+          });
+      }
+    },
   }
 });

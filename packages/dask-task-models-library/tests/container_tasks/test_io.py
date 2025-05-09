@@ -53,9 +53,9 @@ def _create_fake_outputs(
             a_file.write_text(faker.text(max_nb_chars=450))
             assert a_file.exists()
         else:
-            jsonable_data[
-                key
-            ] = "some value just for testing, does not represent any kind of type"
+            jsonable_data[key] = (
+                "some value just for testing, does not represent any kind of type"
+            )
     if jsonable_data:
         output_file = output_folder / faker.file_name()
         with output_file.open("wt") as fp:
@@ -69,10 +69,7 @@ def _create_fake_outputs(
 def test_create_task_output_from_task_with_optional_fields_as_required(
     tmp_path: Path, optional_fields_set: bool, faker: Faker
 ):
-    for schema_example in TaskOutputDataSchema.model_config["json_schema_extra"][
-        "examples"
-    ]:
-
+    for schema_example in TaskOutputDataSchema.model_json_schema()["examples"]:
         task_output_schema = TaskOutputDataSchema.model_validate(schema_example)
         outputs_file_name = _create_fake_outputs(
             task_output_schema, tmp_path, optional_fields_set, faker

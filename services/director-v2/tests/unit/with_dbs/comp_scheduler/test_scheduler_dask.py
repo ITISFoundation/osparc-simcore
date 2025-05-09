@@ -108,7 +108,6 @@ def _assert_dask_client_correctly_initialized(
             cast(  # noqa: SLF001
                 DaskScheduler, scheduler
             )._task_progress_change_handler,
-            cast(DaskScheduler, scheduler)._task_log_change_handler,  # noqa: SLF001
         )
     )
 

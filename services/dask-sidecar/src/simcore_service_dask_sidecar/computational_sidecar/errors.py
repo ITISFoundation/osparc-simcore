@@ -1,8 +1,4 @@
-from common_library.errors_classes import OsparcErrorMixin
-
-
-class ComputationalSidecarRuntimeError(OsparcErrorMixin, RuntimeError):
-    ...
+from ..errors import ComputationalSidecarRuntimeError
 
 
 class ServiceBadFormattedOutputError(ComputationalSidecarRuntimeError):
