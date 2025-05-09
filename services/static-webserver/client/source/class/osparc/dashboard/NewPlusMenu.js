@@ -172,7 +172,6 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
     __addUIConfigItems: function() {
       const plusButtonConfig = osparc.store.Products.getInstance().getPlusButtonUiConfig();
       if (plusButtonConfig) {
-        const templates = osparc.store.Templates.getInstance().getTemplates()
         if (plusButtonConfig["categories"]) {
           this.__addCategories(plusButtonConfig["categories"]);
         }
@@ -182,7 +181,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
           } else if (buttonConfig["resourceType"] === "study") {
             this.__addEmptyStudyButton(buttonConfig);
           } else if (buttonConfig["resourceType"] === "template") {
-            this.__addFromTemplateButton(buttonConfig, templates);
+            this.__addFromTemplateButton(buttonConfig);
           } else if (buttonConfig["resourceType"] === "service") {
             this.__addFromServiceButton(buttonConfig);
           }
@@ -321,7 +320,8 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       this.__addFromResourceButton(menuButton, buttonConfig["category"]);
     },
 
-    __addFromTemplateButton: function(buttonConfig, templates) {
+    __addFromTemplateButton: function(buttonConfig) {
+      const templates = osparc.store.Templates.getInstance().getTemplates();
       const menuButton = this.self().createMenuButton(null, buttonConfig["title"]);
       osparc.utils.Utils.setIdToWidget(menuButton, buttonConfig["idToWidget"]);
       // disable it until found in templates store

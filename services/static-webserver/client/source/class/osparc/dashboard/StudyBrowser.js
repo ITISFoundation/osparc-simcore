@@ -915,7 +915,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           const templates = osparc.store.Templates.getInstance().getTemplates();
           if (templates) {
             const newStudies = new osparc.dashboard.NewStudies(newStudiesConfig);
-            newStudies.setGroupBy("category");
             const winTitle = this.tr("New Plan");
             const win = osparc.ui.window.Window.popUpInWindow(newStudies, winTitle, osparc.dashboard.NewStudies.WIDTH+40, 300).set({
               clickAwayClose: false,

@@ -43,6 +43,8 @@ qx.Class.define("osparc.dashboard.NewStudies", {
       }
       return templates.find(t => t.name === newButtonInfo.expectedTemplateLabel);
     });
+
+    this.setGroupBy("category");
   },
 
   properties: {
