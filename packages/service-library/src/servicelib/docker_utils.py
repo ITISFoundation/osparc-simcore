@@ -124,7 +124,7 @@ def get_image_complete_url(
         # NOTE: entries like nginx:latest or ngingx:1.3 will raise an exception here
         url = URL(f"https://{image}")
         assert url.host  # nosec
-        if not url.port or "." not in url.host:
+        if not url.port or ("." not in f"{url.host}"):
             # this is Dockerhub + official images are in /library
             url = _create_docker_hub_complete_url(image)
     except ValueError:
