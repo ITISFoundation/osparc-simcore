@@ -19,10 +19,10 @@ qx.Class.define("osparc.store.Templates", {
   type: "static",
 
   statics: {
-    __templates: [],
+    __templates: null,
     __templatesPromisesCached: null,
 
-    fetchAllTemplates: function() {
+    __fetchAllTemplates: function() {
       return this.__templatesPromisesCached = osparc.data.Resources.getInstance().getAllPages("templates")
         .then(templates => {
           this.__templates = templates;
@@ -36,12 +36,23 @@ qx.Class.define("osparc.store.Templates", {
         });
     },
 
-    getTemplates: function() {
+    getTemplates: function(useCache = true) {
       if (this.__templatesPromisesCached) {
+        // fetching templates already in progress
         return this.__templatesPromisesCached;
       }
 
-      return new Promise(resolve => resolve(this.__templates));
+      if (this.__templates === null) {
+        // no templates cached, fetch them
+        return this.__fetchAllTemplates();
+      }
+
+      if (useCache) {
+        // templates already cached, return them
+        return new Promise(resolve => resolve(this.__templates));
+      }
+      // templates cached but force a refresh
+      return this.__fetchAllTemplates();
     },
 
     getTemplatesHypertools: function() {

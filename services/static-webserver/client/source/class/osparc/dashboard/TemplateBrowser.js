@@ -36,7 +36,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       }
       this._resourcesInitialized = true;
 
-      osparc.store.Templates.fetchAllTemplates()
+      osparc.store.Templates.getTemplates()
         .then(() => {
           this._resourcesList = [];
           this.getChildControl("resources-layout");
@@ -88,7 +88,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         osparc.store.Templates.getTemplates()
           .then(templates => this.__setResourcesToList(templates));
       } else {
-        osparc.store.Templates.fetchAllTemplates()
+        osparc.store.Templates.getTemplates(useCache)
           .then(templates => this.__setResourcesToList(templates))
           .catch(() => this.__setResourcesToList([]));
       }
