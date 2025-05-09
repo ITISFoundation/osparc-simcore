@@ -145,6 +145,7 @@ def test_disabled_plugins_settings_to_client_statics(
         assert settings.TEST_BAR is None
 
 
+@pytest.mark.filterwarnings("ignore::aiohttp.web_exceptions.NotAppKeyWarning")
 @pytest.mark.filterwarnings("error")
 def test_avoid_sensitive_info_in_public(app_settings: ApplicationSettings):
     # avoids display of sensitive info
