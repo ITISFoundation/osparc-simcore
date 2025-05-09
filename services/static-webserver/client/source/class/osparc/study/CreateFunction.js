@@ -70,7 +70,7 @@ qx.Class.define("osparc.study.CreateFunction", {
 
 
       // INPUTS
-      const inGrid = new qx.ui.layout.Grid(6, 6);
+      const inGrid = new qx.ui.layout.Grid(10, 6);
       const inputsLayout = new qx.ui.container.Composite(inGrid).set({
         allowGrowX: false,
         alignX: "left",
@@ -180,7 +180,7 @@ qx.Class.define("osparc.study.CreateFunction", {
       });
 
       // OUTPUTS
-      const outGrid = new qx.ui.layout.Grid(6, 6);
+      const outGrid = new qx.ui.layout.Grid(10, 6);
       const outputsLayout = new qx.ui.container.Composite(outGrid).set({
         allowGrowX: false,
         alignX: "left",
