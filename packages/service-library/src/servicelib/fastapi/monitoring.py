@@ -8,7 +8,10 @@ from typing import Final
 from fastapi import FastAPI, Request, Response, status
 from fastapi_lifespan_manager import State
 from prometheus_client import CollectorRegistry
-from prometheus_client.exposition import CONTENT_TYPE_LATEST, generate_latest
+from prometheus_client.openmetrics.exposition import (
+    CONTENT_TYPE_LATEST,
+    generate_latest,
+)
 from servicelib.prometheus_metrics import (
     PrometheusMetrics,
     get_prometheus_metrics,

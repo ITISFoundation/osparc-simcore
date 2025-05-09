@@ -87,6 +87,9 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
     setup_rabbitmq(app)
 
+    if app.state.settings.API_SERVER_PROMETHEUS_INSTRUMENTATION_ENABLED:
+        setup_prometheus_instrumentation(app)
+
     if settings.API_SERVER_TRACING:
         initialize_tracing(app, settings.API_SERVER_TRACING, APP_NAME)
 
@@ -117,9 +120,6 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
     if settings.API_SERVER_PROFILING:
         initialize_profiler(app)
-
-    if app.state.settings.API_SERVER_PROMETHEUS_INSTRUMENTATION_ENABLED:
-        setup_prometheus_instrumentation(app)
 
     exceptions.setup_exception_handlers(
         app, is_debug=settings.SC_BOOT_MODE == BootModeEnum.DEBUG
