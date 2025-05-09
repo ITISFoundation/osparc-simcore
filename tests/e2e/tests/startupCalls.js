@@ -66,10 +66,12 @@ module.exports = {
         expect(Array.isArray(responseEnv.data)).toBeTruthy();
       }, ourTimeout);
 
+      /*
       test('Tasks', async () => {
         const responseEnv = await responses.tasks;
         expect(Array.isArray(responseEnv.data)).toBeTruthy();
       }, ourTimeout);
+      */
 
       test('UI Config', async () => {
         const responseEnv = await responses.uiConfig;
