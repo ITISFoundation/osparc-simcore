@@ -1,3 +1,5 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
 from collections.abc import AsyncIterable
 
 import pytest

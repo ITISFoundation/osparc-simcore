@@ -1,4 +1,7 @@
 import pytest
+
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argumentimport pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
 from prometheus_client.openmetrics.exposition import (
