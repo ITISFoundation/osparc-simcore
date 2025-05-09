@@ -35,6 +35,7 @@ from models_library.wallets import WalletInfo
 from pydantic import (
     AnyHttpUrl,
     BaseModel,
+    BeforeValidator,
     ConfigDict,
     Field,
     StringConstraints,
@@ -476,7 +477,8 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     ] = None
 
     product_api_base_url: Annotated[
-        AnyHttpUrl | None,
+        str | None,
+        BeforeValidator(lambda v: f"{AnyHttpUrl(v)}"),
         Field(
             description="Base URL for the current product's API.",
         ),
