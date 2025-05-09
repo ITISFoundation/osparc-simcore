@@ -123,14 +123,16 @@ qx.Class.define("osparc.dashboard.Dashboard", {
           icon: "@FontAwesome5Solid/copy/"+tabIconSize,
           buildLayout: this.__createTemplateBrowser
         });
-        tabs.push({
-          id: "hypertoolsTab",
-          buttonId: "hypertoolsTabBtn",
-          label: this.tr("HYPERTOOLS"),
-          icon: "@FontAwesome5Solid/copy/"+tabIconSize,
-          // initVisibility: "excluded",
-          buildLayout: this.__createHypertoolsBrowser
-        });
+        if (osparc.product.Utils.isS4LProduct() && osparc.store.StaticInfo.getInstance().isDevFeaturesEnabled()) {
+          tabs.push({
+            id: "hypertoolsTab",
+            buttonId: "hypertoolsTabBtn",
+            label: this.tr("HYPERTOOLS"),
+            icon: "@FontAwesome5Solid/copy/"+tabIconSize,
+            // initVisibility: "excluded",
+            buildLayout: this.__createHypertoolsBrowser
+          });
+        }
       }
       if (permissions.canDo("dashboard.services.read")) {
         tabs.push({
