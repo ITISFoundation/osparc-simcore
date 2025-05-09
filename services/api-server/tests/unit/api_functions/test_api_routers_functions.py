@@ -12,9 +12,7 @@ from models_library.api_schemas_webserver.functions_wb_schema import (
     JSONFunctionInputSchema,
     JSONFunctionOutputSchema,
 )
-from models_library.rest_pagination import (
-    PageMetaInfoLimitOffset,
-)
+from models_library.rest_pagination import PageMetaInfoLimitOffset
 from pydantic import TypeAdapter
 from simcore_service_api_server.api.routes.functions_routes import (
     function_job_collections_router,

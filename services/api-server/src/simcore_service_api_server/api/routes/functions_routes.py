@@ -35,9 +35,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from ..._service_solvers import SolverService
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
-from ...models.schemas.jobs import (
-    JobInputs,
-)
+from ...models.schemas.jobs import JobInputs
 from ...services_http.director_v2 import DirectorV2Api
 from ...services_http.storage import StorageApi
 from ...services_http.webserver import AuthSession
@@ -46,9 +44,7 @@ from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.database import get_db_asyncpg_engine
 from ..dependencies.services import get_api_client, get_job_service, get_solver_service
 from ..dependencies.webserver_http import get_webserver_session
-from ..dependencies.webserver_rpc import (
-    get_wb_api_rpc_client,
-)
+from ..dependencies.webserver_rpc import get_wb_api_rpc_client
 from . import solvers_jobs, solvers_jobs_getters, studies_jobs
 
 # pylint: disable=too-many-arguments,no-else-return

@@ -27,9 +27,7 @@ from models_library.api_schemas_webserver.functions_wb_schema import (
     UnsupportedFunctionClassError,
     UnsupportedFunctionJobClassError,
 )
-from models_library.rest_pagination import (
-    PageMetaInfoLimitOffset,
-)
+from models_library.rest_pagination import PageMetaInfoLimitOffset
 from servicelib.rabbitmq import RPCRouter
 
 from ..rabbitmq import get_rabbitmq_rpc_server

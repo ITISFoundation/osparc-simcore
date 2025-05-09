@@ -1,8 +1,6 @@
 import logging
 
-from models_library.api_schemas_webserver import (
-    WEBSERVER_RPC_NAMESPACE,
-)
+from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.api_schemas_webserver.functions_wb_schema import (
     Function,
     FunctionID,
@@ -15,9 +13,7 @@ from models_library.api_schemas_webserver.functions_wb_schema import (
     FunctionOutputSchema,
 )
 from models_library.rabbitmq_basic_types import RPCMethodName
-from models_library.rest_pagination import (
-    PageMetaInfoLimitOffset,
-)
+from models_library.rest_pagination import PageMetaInfoLimitOffset
 from pydantic import TypeAdapter
 
 from .....logging_utils import log_decorator

@@ -14,9 +14,7 @@ from models_library.api_schemas_webserver.functions_wb_schema import (
     FunctionJobIDNotFoundError,
     RegisterFunctionWithIDError,
 )
-from models_library.rest_pagination import (
-    PageMetaInfoLimitOffset,
-)
+from models_library.rest_pagination import PageMetaInfoLimitOffset
 from simcore_postgres_database.models.funcapi_function_job_collections_table import (
     function_job_collections_table,
 )
