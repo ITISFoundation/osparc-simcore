@@ -81,7 +81,7 @@ qx.Class.define("osparc.study.CreateFunction", {
       // header
       let row = 0;
       let column = 0;
-      const nameLabel = new qx.ui.basic.Label(this.tr("Input name"));
+      const nameLabel = new qx.ui.basic.Label(this.tr("Input"));
       inputsLayout.add(nameLabel, {
         row,
         column,
@@ -189,7 +189,7 @@ qx.Class.define("osparc.study.CreateFunction", {
       this._add(outputsLayout);
 
       // header
-      const nameLabel2 = new qx.ui.basic.Label(this.tr("Output name"));
+      const nameLabel2 = new qx.ui.basic.Label(this.tr("Output"));
       outputsLayout.add(nameLabel2, {
         row: 0,
         column: 0,
