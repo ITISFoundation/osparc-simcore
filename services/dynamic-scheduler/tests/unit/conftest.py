@@ -13,9 +13,7 @@ from pydantic import TypeAdapter
 @pytest.fixture
 def get_dynamic_service_start() -> Callable[[NodeID], DynamicServiceStart]:
     def _(node_id: NodeID) -> DynamicServiceStart:
-        dict_data = deepcopy(
-            DynamicServiceStart.model_config["json_schema_extra"]["example"]
-        )
+        dict_data = deepcopy(DynamicServiceStart.model_json_schema()["example"])
         dict_data["service_uuid"] = f"{node_id}"
         return TypeAdapter(DynamicServiceStart).validate_python(dict_data)
 

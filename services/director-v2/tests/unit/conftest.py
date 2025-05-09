@@ -76,13 +76,13 @@ def simcore_service_labels() -> SimcoreServiceLabels:
 @pytest.fixture
 def dynamic_service_create() -> DynamicServiceCreate:
     return DynamicServiceCreate.model_validate(
-        DynamicServiceCreate.model_config["json_schema_extra"]["example"]
+        DynamicServiceCreate.model_json_schema()["example"]
     )
 
 
 @pytest.fixture
 def dynamic_sidecar_port() -> PortInt:
-    return PortInt(1222)
+    return 1222
 
 
 @pytest.fixture

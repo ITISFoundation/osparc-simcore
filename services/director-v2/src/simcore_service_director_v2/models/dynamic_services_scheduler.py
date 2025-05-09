@@ -35,6 +35,7 @@ from models_library.wallets import WalletInfo
 from pydantic import (
     AnyHttpUrl,
     BaseModel,
+    BeforeValidator,
     ConfigDict,
     Field,
     StringConstraints,
@@ -475,6 +476,14 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         ),
     ] = None
 
+    product_api_base_url: Annotated[
+        str | None,
+        BeforeValidator(lambda v: f"{AnyHttpUrl(v)}"),
+        Field(
+            description="Base URL for the current product's API.",
+        ),
+    ] = None
+
     @classmethod
     def from_http_request(
         # pylint: disable=too-many-arguments
@@ -502,6 +511,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
             "version": service.version,
             "service_resources": service.service_resources,
             "product_name": service.product_name,
+            "product_api_base_url": service.product_api_base_url,
             "paths_mapping": simcore_service_labels.paths_mapping,
             "callbacks_mapping": simcore_service_labels.callbacks_mapping,
             "compose_spec": json_dumps(simcore_service_labels.compose_spec),

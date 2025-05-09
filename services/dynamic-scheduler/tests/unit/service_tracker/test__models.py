@@ -53,7 +53,7 @@ def test_serialization(
     [
         None,
         TypeAdapter(DynamicServiceStart).validate_python(
-            DynamicServiceStart.model_config["json_schema_extra"]["example"]
+            DynamicServiceStart.model_json_schema()["example"]
         ),
     ],
 )

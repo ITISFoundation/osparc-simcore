@@ -6,6 +6,7 @@ from models_library.services_resources import ServiceResourcesDictHelpers
 from models_library.users import UserID
 from models_library.wallets import WalletInfo
 from pydantic import BaseModel, ConfigDict
+from pydantic.config import JsonDict
 
 
 class DynamicServiceStart(DynamicServiceCreate):
@@ -13,26 +14,31 @@ class DynamicServiceStart(DynamicServiceCreate):
     request_scheme: str
     simcore_user_agent: str
 
-    model_config = ConfigDict(
-        json_schema_extra={
-            "example": {
-                "product_name": "osparc",
-                "can_save": True,
-                "user_id": 234,
-                "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
-                "service_key": "simcore/services/dynamic/3dviewer",
-                "service_version": "2.4.5",
-                "service_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
-                "request_dns": "some.local",
-                "request_scheme": "http",
-                "simcore_user_agent": "",
-                "service_resources": ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
-                "wallet_info": WalletInfo.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
-                "pricing_info": PricingInfo.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
-                "hardware_info": HardwareInfo.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "example": {
+                    "product_name": "osparc",
+                    "product_api_base_url": "https://api.local",
+                    "can_save": True,
+                    "user_id": 234,
+                    "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
+                    "service_key": "simcore/services/dynamic/3dviewer",
+                    "service_version": "2.4.5",
+                    "service_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                    "request_dns": "some.local",
+                    "request_scheme": "http",
+                    "simcore_user_agent": "",
+                    "service_resources": ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
+                    "wallet_info": WalletInfo.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
+                    "pricing_info": PricingInfo.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
+                    "hardware_info": HardwareInfo.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
+                }
             }
-        }
-    )
+        )
+
+    model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
 
 
 class DynamicServiceStop(BaseModel):

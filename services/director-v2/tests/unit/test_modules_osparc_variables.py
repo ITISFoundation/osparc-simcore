@@ -187,6 +187,7 @@ async def test_resolve_and_substitute_session_variables_in_specs(
         specs=specs,
         user_id=1,
         product_name="a_product",
+        product_api_base_url=faker.url(),
         project_id=faker.uuid4(cast_to=None),
         node_id=faker.uuid4(cast_to=None),
         service_run_id=ServiceRunID("some_run_id"),
@@ -223,8 +224,10 @@ async def test_substitute_vendor_secrets_in_specs(
         fake_app,
         specs=specs,
         product_name="a_product",
-        service_key=ServiceKey("simcore/services/dynamic/fake"),
-        service_version=ServiceVersion("0.0.1"),
+        service_key=TypeAdapter(ServiceKey).validate_python(
+            "simcore/services/dynamic/fake"
+        ),
+        service_version=TypeAdapter(ServiceVersion).validate_python("0.0.1"),
     )
     print("REPLACED SPECS\n", replaced_specs)
 

@@ -1,12 +1,13 @@
 import io
 import logging
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from typing import Any, Generic, Literal, TypeAlias, TypeVar
 
 from aiohttp import web
 from aiohttp.web_exceptions import HTTPError, HTTPException
 from aiohttp.web_routedef import RouteDef, RouteTableDef
 from common_library.json_serialization import json_dumps
+from common_library.network import is_ip_address
 from models_library.generics import Envelope
 from pydantic import BaseModel, Field
 from servicelib.common_headers import X_FORWARDED_PROTO
@@ -128,3 +129,53 @@ class NextPage(BaseModel, Generic[PageParameters]):
         ..., description="Code name to the front-end page. Ideally a PageStr"
     )
     parameters: PageParameters | None = None
+
+
+def iter_origins(request: web.Request) -> Iterator[str]:
+    #
+    # SEE https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-Host
+    # SEE https://doc.traefik.io/traefik/getting-started/faq/#what-are-the-forwarded-headers-when-proxying-http-requests
+    seen = set()
+
+    fwd_protos = [
+        p.strip()
+        for p in request.headers.get("X-Forwarded-Proto").split(",")
+        if p.strip()
+    ]
+    fwd_hosts = [
+        h.strip()
+        for h in request.headers.get("X-Forwarded-Host").split(",")
+        if h.strip()
+    ]
+    fwd_ports = [
+        pt.strip()
+        for pt in request.headers.get("X-Forwarded-Port").split(",")
+        if pt.strip()
+    ]
+
+    fwd_origins = [
+        f"{proto}://{host}:{port}"
+        for proto, host, port in zip(fwd_protos, fwd_hosts, fwd_ports, strict=False)
+    ]
+    if fwd_origins:
+        # X-Forwarded-Host can contain a comma-separated list of hosts
+        # (when the request passes through multiple proxies)
+        for origin in fwd_origins:
+            if origin and origin not in seen:
+                seen.add(origin)
+                yield origin
+
+    # Fallback to request.host
+    if request.url:
+        origin = f"{request.url.scheme}://{request.url.host}"
+        if request.url.port:
+            origin += f":{request.url.port}"
+        yield origin
+
+
+def get_api_base_url(request: web.Request) -> str:
+    api_host = next(iter_origins(request))
+    api_host = (
+        f"api.{api_host}" if not is_ip_address(api_host) else api_host  # in tests
+    )
+    return f"{request.url.with_host(api_host).with_port(None).with_path('')}"

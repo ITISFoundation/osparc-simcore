@@ -39,7 +39,7 @@ from simcore_sdk.node_ports_v2 import FileLinkType, Port, links, port_utils
 from simcore_sdk.node_ports_v2.links import ItemValue as _NPItemValue
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from ..constants import UNDEFINED_DOCKER_LABEL
+from ..constants import UNDEFINED_API_BASE_URL, UNDEFINED_DOCKER_LABEL
 from ..core.errors import (
     ComputationalBackendNotConnectedError,
     ComputationalSchedulerChangedError,
@@ -316,6 +316,7 @@ async def compute_task_envs(
     wallet_id: WalletID | None,
 ) -> ContainerEnvsDict:
     product_name = metadata.get("product_name", UNDEFINED_DOCKER_LABEL)
+    product_api_base_url = metadata.get("product_api_base_url", UNDEFINED_API_BASE_URL)
     task_envs = node_image.envs
     if task_envs:
         vendor_substituted_envs = await substitute_vendor_secrets_in_specs(
@@ -330,6 +331,7 @@ async def compute_task_envs(
             vendor_substituted_envs,
             user_id=user_id,
             product_name=product_name,
+            product_api_base_url=product_api_base_url,
             project_id=project_id,
             node_id=node_id,
             service_run_id=resource_tracking_run_id,

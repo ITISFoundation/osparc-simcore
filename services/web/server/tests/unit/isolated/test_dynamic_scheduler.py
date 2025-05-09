@@ -48,7 +48,7 @@ def mock_rpc_client(
 @pytest.fixture
 def dynamic_service_start() -> DynamicServiceStart:
     return DynamicServiceStart.model_validate(
-        DynamicServiceStart.model_config["json_schema_extra"]["example"]
+        DynamicServiceStart.model_json_schema()["example"]
     )
 
 

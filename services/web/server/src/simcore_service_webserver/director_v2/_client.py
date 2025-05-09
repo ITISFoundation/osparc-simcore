@@ -16,6 +16,7 @@ from models_library.api_schemas_directorv2.computations import (
 )
 from models_library.projects import ProjectID
 from models_library.users import UserID
+from pydantic import AnyHttpUrl, TypeAdapter
 
 from ._client_base import request_director_v2
 from .settings import DirectorV2Settings, get_client_session, get_plugin_settings
@@ -62,7 +63,12 @@ class DirectorV2RestClient:
         return DirectorV2ComputationGet.model_validate(computation_task_out)
 
     async def start_computation(
-        self, project_id: ProjectID, user_id: UserID, product_name: str, **options
+        self,
+        project_id: ProjectID,
+        user_id: UserID,
+        product_name: str,
+        product_api_base_url: str,
+        **options,
     ) -> str:
         computation_task_out = await request_director_v2(
             self._app,
@@ -73,6 +79,9 @@ class DirectorV2RestClient:
                 user_id=user_id,
                 project_id=project_id,
                 product_name=product_name,
+                product_api_base_url=TypeAdapter(AnyHttpUrl).validate_python(
+                    product_api_base_url
+                ),
                 **options,
             ).model_dump(mode="json", exclude_unset=True),
         )

@@ -27,7 +27,7 @@ from ...products import products_web
 from ...products.models import Product
 from ...security.decorators import permission_required
 from ...users import api
-from ...utils_aiohttp import envelope_json_response
+from ...utils_aiohttp import envelope_json_response, get_api_base_url
 from .. import _projects_service, projects_wallets_service
 from ..exceptions import ProjectStartsTooManyDynamicNodesError
 from ._rest_exceptions import handle_plugin_requests_exceptions
@@ -118,7 +118,11 @@ async def open_project(request: web.Request) -> web.Response:
                 # services in the project is highter than the maximum allowed per project
                 # the project shall still open though.
                 await _projects_service.run_project_dynamic_services(
-                    request, project, req_ctx.user_id, req_ctx.product_name
+                    request,
+                    project,
+                    req_ctx.user_id,
+                    req_ctx.product_name,
+                    get_api_base_url(request),
                 )
 
         # and let's update the project last change timestamp

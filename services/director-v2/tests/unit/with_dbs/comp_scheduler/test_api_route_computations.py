@@ -368,10 +368,17 @@ def product_name(faker: Faker) -> str:
     return faker.name()
 
 
+@pytest.fixture
+def product_api_base_url(faker: Faker) -> AnyHttpUrl:
+    return TypeAdapter(AnyHttpUrl).validate_python(faker.url())
+
+
 async def test_computation_create_validators(
     registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., Awaitable[ProjectAtDB]],
     fake_workbench_without_outputs: dict[str, Any],
+    product_name: str,
+    product_api_base_url: AnyHttpUrl,
     faker: Faker,
 ):
     user = registered_user()
@@ -379,13 +386,15 @@ async def test_computation_create_validators(
     ComputationCreate(
         user_id=user["id"],
         project_id=proj.uuid,
-        product_name=faker.pystr(),
+        product_name=product_name,
+        product_api_base_url=product_api_base_url,
         use_on_demand_clusters=True,
     )
     ComputationCreate(
         user_id=user["id"],
         project_id=proj.uuid,
-        product_name=faker.pystr(),
+        product_name=product_name,
+        product_api_base_url=product_api_base_url,
         use_on_demand_clusters=False,
     )
 
@@ -395,6 +404,7 @@ async def test_create_computation(
     mocked_director_service_fcts: respx.MockRouter,
     mocked_catalog_service_fcts: respx.MockRouter,
     product_name: str,
+    product_api_base_url: AnyHttpUrl,
     fake_workbench_without_outputs: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., Awaitable[ProjectAtDB]],
@@ -407,7 +417,10 @@ async def test_create_computation(
         create_computation_url,
         json=jsonable_encoder(
             ComputationCreate(
-                user_id=user["id"], project_id=proj.uuid, product_name=product_name
+                user_id=user["id"],
+                project_id=proj.uuid,
+                product_name=product_name,
+                product_api_base_url=product_api_base_url,
             )
         ),
     )
@@ -492,6 +505,7 @@ async def test_create_computation_with_wallet(
     mocked_resource_usage_tracker_service_fcts: respx.MockRouter,
     mocked_clusters_keeper_service_get_instance_type_details: mock.Mock,
     product_name: str,
+    product_api_base_url: AnyHttpUrl,
     fake_workbench_without_outputs: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., Awaitable[ProjectAtDB]],
@@ -521,6 +535,7 @@ async def test_create_computation_with_wallet(
                 user_id=user["id"],
                 project_id=proj.uuid,
                 product_name=product_name,
+                product_api_base_url=product_api_base_url,
                 wallet_info=wallet_info,
             )
         ),
@@ -602,6 +617,7 @@ async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_rai
     mocked_resource_usage_tracker_service_fcts: respx.MockRouter,
     mocked_clusters_keeper_service_get_instance_type_details_with_invalid_name: mock.Mock,
     product_name: str,
+    product_api_base_url: AnyHttpUrl,
     fake_workbench_without_outputs: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., Awaitable[ProjectAtDB]],
@@ -621,6 +637,7 @@ async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_rai
                 user_id=user["id"],
                 project_id=proj.uuid,
                 product_name=product_name,
+                product_api_base_url=product_api_base_url,
                 wallet_info=wallet_info,
             )
         ),
@@ -643,6 +660,7 @@ async def test_create_computation_with_wallet_with_no_clusters_keeper_raises_503
     mocked_catalog_service_fcts: respx.MockRouter,
     mocked_resource_usage_tracker_service_fcts: respx.MockRouter,
     product_name: str,
+    product_api_base_url: AnyHttpUrl,
     fake_workbench_without_outputs: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., Awaitable[ProjectAtDB]],
@@ -659,6 +677,7 @@ async def test_create_computation_with_wallet_with_no_clusters_keeper_raises_503
                 user_id=user["id"],
                 project_id=proj.uuid,
                 product_name=product_name,
+                product_api_base_url=product_api_base_url,
                 wallet_info=wallet_info,
             )
         ),
@@ -695,6 +714,7 @@ async def test_start_computation(
     mocked_director_service_fcts: respx.MockRouter,
     mocked_catalog_service_fcts: respx.MockRouter,
     product_name: str,
+    product_api_base_url: AnyHttpUrl,
     fake_workbench_without_outputs: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., Awaitable[ProjectAtDB]],
@@ -711,6 +731,7 @@ async def test_start_computation(
                 project_id=proj.uuid,
                 start_pipeline=True,
                 product_name=product_name,
+                product_api_base_url=product_api_base_url,
             )
         ),
     )
@@ -727,6 +748,7 @@ async def test_start_computation_with_project_node_resources_defined(
     mocked_director_service_fcts: respx.MockRouter,
     mocked_catalog_service_fcts: respx.MockRouter,
     product_name: str,
+    product_api_base_url: AnyHttpUrl,
     fake_workbench_without_outputs: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., Awaitable[ProjectAtDB]],
@@ -758,6 +780,7 @@ async def test_start_computation_with_project_node_resources_defined(
                 project_id=proj.uuid,
                 start_pipeline=True,
                 product_name=product_name,
+                product_api_base_url=product_api_base_url,
             )
         ),
     )
@@ -772,6 +795,7 @@ async def test_start_computation_with_deprecated_services_raises_406(
     mocked_director_service_fcts: respx.MockRouter,
     mocked_catalog_service_fcts_deprecated: respx.MockRouter,
     product_name: str,
+    product_api_base_url: AnyHttpUrl,
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
@@ -789,6 +813,7 @@ async def test_start_computation_with_deprecated_services_raises_406(
                 project_id=proj.uuid,
                 start_pipeline=True,
                 product_name=product_name,
+                product_api_base_url=product_api_base_url,
             )
         ),
     )
