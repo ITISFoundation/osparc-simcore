@@ -29,17 +29,9 @@ qx.Class.define("osparc.node.ParameterEditor", {
   },
 
   statics: {
-    getParameterOutputTypeFromMD: function(metadata) {
-      let type = metadata["outputs"]["out_1"]["type"];
-      if (type === "ref_contentSchema") {
-        type = metadata["outputs"]["out_1"]["contentSchema"]["type"];
-      }
-      return type;
-    },
-
     getParameterOutputType: function(node) {
       const metadata = node.getMetaData();
-      return this.self().getParameterOutputTypeFromMD(metadata);
+      return osparc.service.Utils.getParameterType(metadata);
     },
 
     setParameterOutputValue: function(node, val) {
