@@ -6,10 +6,10 @@ import simcore_service_webserver.functions._functions_controller_rpc as function
 from models_library.api_schemas_webserver.functions_wb_schema import (
     Function,
     FunctionIDNotFoundError,
-    FunctionInputSchema,
     FunctionJobCollection,
     FunctionJobIDNotFoundError,
-    FunctionOutputSchema,
+    JSONFunctionInputSchema,
+    JSONFunctionOutputSchema,
     ProjectFunction,
     ProjectFunctionJob,
 )
@@ -21,11 +21,14 @@ def mock_function() -> Function:
         uid=None,
         title="Test Function",
         description="A test function",
-        input_schema=FunctionInputSchema(
-            schema_dict={"type": "object", "properties": {"input1": {"type": "string"}}}
+        input_schema=JSONFunctionInputSchema(
+            schema_content={
+                "type": "object",
+                "properties": {"input1": {"type": "string"}},
+            }
         ),
-        output_schema=FunctionOutputSchema(
-            schema_dict={
+        output_schema=JSONFunctionOutputSchema(
+            schema_content={
                 "type": "object",
                 "properties": {"output1": {"type": "string"}},
             }
@@ -101,8 +104,8 @@ async def test_list_functions(client):
         uid=None,
         title="Test Function",
         description="A test function",
-        input_schema=None,
-        output_schema=None,
+        input_schema=JSONFunctionInputSchema(),
+        output_schema=JSONFunctionOutputSchema(),
         project_id=uuid4(),
         default_inputs=None,
     )

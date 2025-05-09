@@ -268,13 +268,7 @@ async def get_function_input_schema(
         app=app,
         function_id=function_id,
     )
-    return FunctionInputSchema(
-        schema_dict=(
-            returned_function.input_schema.schema_dict
-            if returned_function.input_schema
-            else None
-        )
-    )
+    return _decode_function(returned_function).input_schema
 
 
 @router.expose(reraise_if_error_type=(FunctionIDNotFoundError,))
@@ -286,13 +280,7 @@ async def get_function_output_schema(
         app=app,
         function_id=function_id,
     )
-    return FunctionOutputSchema(
-        schema_dict=(
-            returned_function.output_schema.schema_dict
-            if returned_function.output_schema
-            else None
-        )
-    )
+    return _decode_function(returned_function).output_schema
 
 
 def _decode_function(

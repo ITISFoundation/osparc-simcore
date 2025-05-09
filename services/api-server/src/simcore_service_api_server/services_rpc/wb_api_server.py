@@ -299,16 +299,6 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         )
 
     async def register_function(self, *, function: Function) -> Function:
-        function.input_schema = (
-            FunctionInputSchema(**function.input_schema.model_dump())
-            if function.input_schema is not None
-            else None
-        )
-        function.output_schema = (
-            FunctionOutputSchema(**function.output_schema.model_dump())
-            if function.output_schema is not None
-            else None
-        )
         return await _register_function(
             self._client,
             function=function,

@@ -1,31 +1,58 @@
+from collections.abc import Mapping
 from enum import Enum
 from typing import Annotated, Any, Literal, TypeAlias
 from uuid import UUID
 
 from models_library import projects
-from models_library.basic_regex import SIMPLE_VERSION_RE
-from models_library.services_regex import COMPUTATIONAL_SERVICE_KEY_RE
-from pydantic import BaseModel, Field, StringConstraints
+from models_library.services_types import ServiceKey, ServiceVersion
+from pydantic import BaseModel, Field
 
 from ..projects import ProjectID
 
-FunctionID: TypeAlias = projects.ProjectID
-FunctionJobID: TypeAlias = projects.ProjectID
+FunctionID: TypeAlias = UUID
+FunctionJobID: TypeAlias = UUID
 FileID: TypeAlias = UUID
 
 InputTypes: TypeAlias = FileID | float | int | bool | str | list
 
 
-class FunctionSchema(BaseModel):
-    """Schema for function input/output"""
-
-    schema_dict: dict[str, Any] | None  # JSON Schema
+class FunctionSchemaClass(str, Enum):
+    json_schema = "application/schema+json"
 
 
-class FunctionInputSchema(FunctionSchema): ...
+class FunctionSchemaBase(BaseModel):
+    schema_content: Any = Field(default=None)
+    schema_class: FunctionSchemaClass
 
 
-class FunctionOutputSchema(FunctionSchema): ...
+class JSONFunctionSchema(FunctionSchemaBase):
+    schema_content: Mapping[str, Any] = Field(
+        default={}, description="JSON Schema", title="JSON Schema"
+    )  # json-schema library defines a schema as Mapping[str, Any]
+    schema_class: FunctionSchemaClass = FunctionSchemaClass.json_schema
+
+
+class JSONFunctionInputSchema(JSONFunctionSchema):
+    schema_class: Literal[FunctionSchemaClass.json_schema] = (
+        FunctionSchemaClass.json_schema
+    )
+
+
+class JSONFunctionOutputSchema(JSONFunctionSchema):
+    schema_class: Literal[FunctionSchemaClass.json_schema] = (
+        FunctionSchemaClass.json_schema
+    )
+
+
+FunctionInputSchema: TypeAlias = Annotated[
+    JSONFunctionInputSchema,
+    Field(discriminator="schema_class"),
+]
+
+FunctionOutputSchema: TypeAlias = Annotated[
+    JSONFunctionOutputSchema,
+    Field(discriminator="schema_class"),
+]
 
 
 class FunctionClass(str, Enum):
@@ -53,8 +80,8 @@ class FunctionBase(BaseModel):
     uid: FunctionID | None
     title: str = ""
     description: str = ""
-    input_schema: FunctionInputSchema | None
-    output_schema: FunctionOutputSchema | None
+    input_schema: FunctionInputSchema
+    output_schema: FunctionOutputSchema
     default_inputs: FunctionInputs
 
 
@@ -63,8 +90,8 @@ class FunctionDB(BaseModel):
     uuid: FunctionJobID | None
     title: str = ""
     description: str = ""
-    input_schema: FunctionInputSchema | None
-    output_schema: FunctionOutputSchema | None
+    input_schema: FunctionInputSchema
+    output_schema: FunctionOutputSchema
     default_inputs: FunctionInputs
     class_specific_data: FunctionClassSpecificData
 
@@ -84,19 +111,13 @@ class ProjectFunction(FunctionBase):
     project_id: ProjectID
 
 
-SolverKeyId = Annotated[
-    str, StringConstraints(strip_whitespace=True, pattern=COMPUTATIONAL_SERVICE_KEY_RE)
-]
-VersionStr: TypeAlias = Annotated[
-    str, StringConstraints(strip_whitespace=True, pattern=SIMPLE_VERSION_RE)
-]
 SolverJobID: TypeAlias = UUID
 
 
 class SolverFunction(FunctionBase):
     function_class: Literal[FunctionClass.solver] = FunctionClass.solver
-    solver_key: SolverKeyId
-    solver_version: str = ""
+    solver_key: ServiceKey
+    solver_version: ServiceVersion
 
 
 class PythonCodeFunction(FunctionBase):
@@ -228,3 +249,22 @@ class UnsupportedFunctionJobClassError(Exception):
     def __init__(self, function_job_class: str):
         self.function_job_class = function_job_class
         super().__init__(f"Function job class {function_job_class} is not supported")
+
+
+class UnsupportedFunctionFunctionJobClassCombinationError(Exception):
+    """Exception raised when a function / function job class combination is not supported"""
+
+    def __init__(self, function_class: str, function_job_class: str):
+        self.function_class = function_class
+        self.function_job_class = function_job_class
+        super().__init__(
+            f"Function class {function_class} and function job class {function_job_class} combination is not supported"
+        )
+
+
+class FunctionInputsValidationError(Exception):
+    """Exception raised when validating function inputs"""
+
+    def __init__(self, error: str):
+        self.errors = error
+        super().__init__(f"Function inputs validation failed: {error}")

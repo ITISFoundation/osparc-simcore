@@ -5570,7 +5570,18 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FunctionInputSchema"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/JSONFunctionInputSchema"
+                    }
+                  ],
+                  "discriminator": {
+                    "propertyName": "schema_class",
+                    "mapping": {
+                      "application/schema+json": "#/components/schemas/JSONFunctionInputSchema"
+                    }
+                  },
+                  "title": "Response Get Function Inputschema V0 Functions  Function Id  Input Schema Get"
                 }
               }
             }
@@ -5624,7 +5635,18 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FunctionInputSchema"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/JSONFunctionInputSchema"
+                    }
+                  ],
+                  "discriminator": {
+                    "propertyName": "schema_class",
+                    "mapping": {
+                      "application/schema+json": "#/components/schemas/JSONFunctionInputSchema"
+                    }
+                  },
+                  "title": "Response Get Function Outputschema V0 Functions  Function Id  Output Schema Get"
                 }
               }
             }
@@ -7603,26 +7625,6 @@
         ],
         "title": "FileUploadData"
       },
-      "FunctionInputSchema": {
-        "properties": {
-          "schema_dict": {
-            "anyOf": [
-              {
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Schema Dict"
-          }
-        },
-        "type": "object",
-        "required": [
-          "schema_dict"
-        ],
-        "title": "FunctionInputSchema"
-      },
       "FunctionJobCollection": {
         "properties": {
           "uid": {
@@ -7692,26 +7694,6 @@
           "status"
         ],
         "title": "FunctionJobStatus"
-      },
-      "FunctionOutputSchema": {
-        "properties": {
-          "schema_dict": {
-            "anyOf": [
-              {
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Schema Dict"
-          }
-        },
-        "type": "object",
-        "required": [
-          "schema_dict"
-        ],
-        "title": "FunctionOutputSchema"
       },
       "GetCreditPriceLegacy": {
         "properties": {
@@ -7797,6 +7779,42 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "JSONFunctionInputSchema": {
+        "properties": {
+          "schema_content": {
+            "type": "object",
+            "title": "JSON Schema",
+            "description": "JSON Schema",
+            "default": {}
+          },
+          "schema_class": {
+            "type": "string",
+            "const": "application/schema+json",
+            "title": "Schema Class",
+            "default": "application/schema+json"
+          }
+        },
+        "type": "object",
+        "title": "JSONFunctionInputSchema"
+      },
+      "JSONFunctionOutputSchema": {
+        "properties": {
+          "schema_content": {
+            "type": "object",
+            "title": "JSON Schema",
+            "description": "JSON Schema",
+            "default": {}
+          },
+          "schema_class": {
+            "type": "string",
+            "const": "application/schema+json",
+            "title": "Schema Class",
+            "default": "application/schema+json"
+          }
+        },
+        "type": "object",
+        "title": "JSONFunctionOutputSchema"
       },
       "Job": {
         "properties": {
@@ -9492,24 +9510,32 @@
             "default": ""
           },
           "input_schema": {
-            "anyOf": [
+            "oneOf": [
               {
-                "$ref": "#/components/schemas/FunctionInputSchema"
-              },
-              {
-                "type": "null"
+                "$ref": "#/components/schemas/JSONFunctionInputSchema"
               }
-            ]
+            ],
+            "title": "Input Schema",
+            "discriminator": {
+              "propertyName": "schema_class",
+              "mapping": {
+                "application/schema+json": "#/components/schemas/JSONFunctionInputSchema"
+              }
+            }
           },
           "output_schema": {
-            "anyOf": [
+            "oneOf": [
               {
-                "$ref": "#/components/schemas/FunctionOutputSchema"
-              },
-              {
-                "type": "null"
+                "$ref": "#/components/schemas/JSONFunctionOutputSchema"
               }
-            ]
+            ],
+            "title": "Output Schema",
+            "discriminator": {
+              "propertyName": "schema_class",
+              "mapping": {
+                "application/schema+json": "#/components/schemas/JSONFunctionOutputSchema"
+              }
+            }
           },
           "default_inputs": {
             "anyOf": [
@@ -9642,24 +9668,32 @@
             "default": ""
           },
           "input_schema": {
-            "anyOf": [
+            "oneOf": [
               {
-                "$ref": "#/components/schemas/FunctionInputSchema"
-              },
-              {
-                "type": "null"
+                "$ref": "#/components/schemas/JSONFunctionInputSchema"
               }
-            ]
+            ],
+            "title": "Input Schema",
+            "discriminator": {
+              "propertyName": "schema_class",
+              "mapping": {
+                "application/schema+json": "#/components/schemas/JSONFunctionInputSchema"
+              }
+            }
           },
           "output_schema": {
-            "anyOf": [
+            "oneOf": [
               {
-                "$ref": "#/components/schemas/FunctionOutputSchema"
-              },
-              {
-                "type": "null"
+                "$ref": "#/components/schemas/JSONFunctionOutputSchema"
               }
-            ]
+            ],
+            "title": "Output Schema",
+            "discriminator": {
+              "propertyName": "schema_class",
+              "mapping": {
+                "application/schema+json": "#/components/schemas/JSONFunctionOutputSchema"
+              }
+            }
           },
           "default_inputs": {
             "anyOf": [
@@ -9922,24 +9956,32 @@
             "default": ""
           },
           "input_schema": {
-            "anyOf": [
+            "oneOf": [
               {
-                "$ref": "#/components/schemas/FunctionInputSchema"
-              },
-              {
-                "type": "null"
+                "$ref": "#/components/schemas/JSONFunctionInputSchema"
               }
-            ]
+            ],
+            "title": "Input Schema",
+            "discriminator": {
+              "propertyName": "schema_class",
+              "mapping": {
+                "application/schema+json": "#/components/schemas/JSONFunctionInputSchema"
+              }
+            }
           },
           "output_schema": {
-            "anyOf": [
+            "oneOf": [
               {
-                "$ref": "#/components/schemas/FunctionOutputSchema"
-              },
-              {
-                "type": "null"
+                "$ref": "#/components/schemas/JSONFunctionOutputSchema"
               }
-            ]
+            ],
+            "title": "Output Schema",
+            "discriminator": {
+              "propertyName": "schema_class",
+              "mapping": {
+                "application/schema+json": "#/components/schemas/JSONFunctionOutputSchema"
+              }
+            }
           },
           "default_inputs": {
             "anyOf": [
@@ -9954,13 +9996,13 @@
           },
           "solver_key": {
             "type": "string",
-            "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+            "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
             "title": "Solver Key"
           },
           "solver_version": {
             "type": "string",
-            "title": "Solver Version",
-            "default": ""
+            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+            "title": "Solver Version"
           }
         },
         "type": "object",
@@ -9969,7 +10011,8 @@
           "input_schema",
           "output_schema",
           "default_inputs",
-          "solver_key"
+          "solver_key",
+          "solver_version"
         ],
         "title": "SolverFunction"
       },

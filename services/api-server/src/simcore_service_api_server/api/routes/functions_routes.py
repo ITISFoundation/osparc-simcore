@@ -13,6 +13,7 @@ from models_library.api_schemas_webserver.functions_wb_schema import (
     FunctionInputs,
     FunctionInputSchema,
     FunctionInputsList,
+    FunctionInputsValidationError,
     FunctionJob,
     FunctionJobCollection,
     FunctionJobCollectionID,
@@ -20,8 +21,11 @@ from models_library.api_schemas_webserver.functions_wb_schema import (
     FunctionJobID,
     FunctionJobStatus,
     FunctionOutputs,
+    FunctionSchemaClass,
     ProjectFunctionJob,
     SolverFunctionJob,
+    UnsupportedFunctionClassError,
+    UnsupportedFunctionFunctionJobClassCombinationError,
 )
 from pydantic import PositiveInt
 from servicelib.fastapi.dependencies import get_reverse_url_mapper
@@ -201,13 +205,22 @@ async def validate_function_inputs(
 ):
     function = await wb_api_rpc.get_function(function_id=function_id)
 
-    if function.input_schema is None or function.input_schema.schema_dict is None:
+    if function.input_schema is None or function.input_schema.schema_content is None:
         return True, "No input schema defined for this function"
-    try:
-        jsonschema.validate(instance=inputs, schema=function.input_schema.schema_dict)
-    except ValidationError as err:
-        return False, str(err)
-    return True, "Inputs are valid"
+
+    if function.input_schema.schema_class == FunctionSchemaClass.json_schema:
+        try:
+            jsonschema.validate(
+                instance=inputs, schema=function.input_schema.schema_content
+            )
+        except ValidationError as err:
+            return False, str(err)
+        return True, "Inputs are valid"
+
+    return (
+        False,
+        f"Unsupported function schema class {function.input_schema.schema_class}",
+    )
 
 
 @function_router.post(
@@ -246,10 +259,7 @@ async def run_function(  # noqa: PLR0913
             wb_api_rpc=wb_api_rpc,
         )
         if not is_valid:
-            msg = (
-                f"Function {to_run_function.uid} inputs are not valid: {validation_str}"
-            )
-            raise ValidationError(msg)
+            raise FunctionInputsValidationError(error=validation_str)
 
     if cached_function_job := await wb_api_rpc.find_cached_function_job(
         function_id=to_run_function.uid,
@@ -322,8 +332,9 @@ async def run_function(  # noqa: PLR0913
             ),
         )
     else:
-        msg = f"Function type {type(to_run_function)} not supported"
-        raise TypeError(msg)
+        raise UnsupportedFunctionClassError(
+            function_class=to_run_function.function_class,
+        )
 
 
 @function_router.delete(
@@ -438,8 +449,10 @@ async def function_job_status(
         )
         return FunctionJobStatus(status=job_status.state)
     else:
-        msg = f"Function type {function.function_class} / Function job type {function_job.function_class} not supported"
-        raise TypeError(msg)
+        raise UnsupportedFunctionFunctionJobClassCombinationError(
+            function_class=function.function_class,
+            function_job_class=function_job.function_class,
+        )
 
 
 @function_job_router.get(
@@ -487,8 +500,7 @@ async def function_job_outputs(
         )
         return job_outputs.results
     else:
-        msg = f"Function type {function.function_class} not supported"
-        raise TypeError(msg)
+        raise UnsupportedFunctionClassError(function_class=function.function_class)
 
 
 @function_router.post(

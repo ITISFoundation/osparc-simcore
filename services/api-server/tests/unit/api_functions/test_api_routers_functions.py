@@ -9,6 +9,8 @@ from models_library.api_schemas_webserver.functions_wb_schema import (
     Function,
     FunctionJob,
     FunctionJobCollection,
+    JSONFunctionInputSchema,
+    JSONFunctionOutputSchema,
 )
 from models_library.rest_pagination import (
     PageMetaInfoLimitOffset,
@@ -234,8 +236,8 @@ def test_register_function(api_app) -> None:
         "function_class": "project",
         "project_id": str(uuid4()),
         "description": "A test function",
-        "input_schema": {"schema_dict": {}},
-        "output_schema": {"schema_dict": {}},
+        "input_schema": JSONFunctionInputSchema().model_dump(),
+        "output_schema": JSONFunctionOutputSchema().model_dump(),
         "default_inputs": None,
     }
     response = client.post("/functions", json=sample_function)
@@ -275,8 +277,8 @@ def test_get_function(api_app: FastAPI) -> None:
         "function_class": "project",
         "project_id": project_id,
         "description": "An example function",
-        "input_schema": {"schema_dict": {}},
-        "output_schema": {"schema_dict": {}},
+        "input_schema": JSONFunctionInputSchema().model_dump(),
+        "output_schema": JSONFunctionOutputSchema().model_dump(),
         "default_inputs": None,
     }
     post_response = client.post("/functions", json=sample_function)
@@ -290,8 +292,8 @@ def test_get_function(api_app: FastAPI) -> None:
         "description": "An example function",
         "function_class": "project",
         "project_id": project_id,
-        "input_schema": {"schema_dict": {}},
-        "output_schema": {"schema_dict": {}},
+        "input_schema": JSONFunctionInputSchema().model_dump(),
+        "output_schema": JSONFunctionOutputSchema().model_dump(),
         "default_inputs": None,
     }
     response = client.get(f"/functions/{function_id}")
@@ -318,8 +320,8 @@ def test_list_functions(api_app: FastAPI) -> None:
         "function_class": "project",
         "project_id": str(uuid4()),
         "description": "An example function",
-        "input_schema": {"schema_dict": {}},
-        "output_schema": {"schema_dict": {}},
+        "input_schema": JSONFunctionInputSchema().model_dump(),
+        "output_schema": JSONFunctionOutputSchema().model_dump(),
         "default_inputs": None,
     }
     post_response = client.post("/functions", json=sample_function)
@@ -343,13 +345,18 @@ def test_get_function_input_schema(api_app: FastAPI) -> None:
         "function_class": "project",
         "project_id": project_id,
         "description": "An example function",
-        "input_schema": {
-            "schema_dict": {
+        "input_schema": JSONFunctionInputSchema(
+            schema_content={
                 "type": "object",
                 "properties": {"input1": {"type": "integer"}},
             }
-        },
-        "output_schema": {"schema_dict": {}},
+        ).model_dump(),
+        "output_schema": JSONFunctionOutputSchema(
+            schema_content={
+                "type": "object",
+                "properties": {"output1": {"type": "string"}},
+            }
+        ).model_dump(),
         "default_inputs": None,
     }
     post_response = client.post("/functions", json=sample_function)
@@ -362,7 +369,7 @@ def test_get_function_input_schema(api_app: FastAPI) -> None:
     response = client.get(f"/functions/{function_id}/input_schema")
     assert response.status_code == 200
     data = response.json()
-    assert data["schema_dict"] == sample_function["input_schema"]["schema_dict"]
+    assert data["schema_content"] == sample_function["input_schema"]["schema_content"]
 
 
 def test_get_function_output_schema(api_app: FastAPI) -> None:
@@ -375,13 +382,13 @@ def test_get_function_output_schema(api_app: FastAPI) -> None:
         "function_class": "project",
         "project_id": project_id,
         "description": "An example function",
-        "input_schema": {"schema_dict": {}},
-        "output_schema": {
-            "schema_dict": {
+        "input_schema": JSONFunctionInputSchema().model_dump(),
+        "output_schema": JSONFunctionOutputSchema(
+            schema_content={
                 "type": "object",
                 "properties": {"output1": {"type": "string"}},
             }
-        },
+        ).model_dump(),
         "default_inputs": None,
     }
     post_response = client.post("/functions", json=sample_function)
@@ -393,7 +400,7 @@ def test_get_function_output_schema(api_app: FastAPI) -> None:
     response = client.get(f"/functions/{function_id}/output_schema")
     assert response.status_code == 200
     data = response.json()
-    assert data["schema_dict"] == sample_function["output_schema"]["schema_dict"]
+    assert data["schema_content"] == sample_function["output_schema"]["schema_content"]
 
 
 def test_validate_function_inputs(api_app: FastAPI) -> None:
@@ -406,13 +413,18 @@ def test_validate_function_inputs(api_app: FastAPI) -> None:
         "function_class": "project",
         "project_id": project_id,
         "description": "An example function",
-        "input_schema": {
-            "schema_dict": {
+        "input_schema": JSONFunctionInputSchema(
+            schema_content={
                 "type": "object",
                 "properties": {"input1": {"type": "integer"}},
             }
-        },
-        "output_schema": {"schema_dict": {}},
+        ).model_dump(),
+        "output_schema": JSONFunctionOutputSchema(
+            schema_content={
+                "type": "object",
+                "properties": {"output1": {"type": "string"}},
+            }
+        ).model_dump(),
         "default_inputs": None,
     }
     post_response = client.post("/functions", json=sample_function)
@@ -440,8 +452,8 @@ def test_delete_function(api_app: FastAPI) -> None:
         "function_class": "project",
         "project_id": project_id,
         "description": "An example function",
-        "input_schema": {"schema_dict": {}},
-        "output_schema": {"schema_dict": {}},
+        "input_schema": JSONFunctionInputSchema().model_dump(),
+        "output_schema": JSONFunctionOutputSchema().model_dump(),
         "default_inputs": None,
     }
     post_response = client.post("/functions", json=sample_function)
