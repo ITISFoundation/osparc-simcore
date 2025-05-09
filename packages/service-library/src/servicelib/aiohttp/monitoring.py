@@ -7,7 +7,7 @@ from collections.abc import Awaitable, Callable
 from typing import Final
 
 from aiohttp import web
-from prometheus_client.exposition import (
+from prometheus_client.openmetrics.exposition import (
     CONTENT_TYPE_LATEST,
     generate_latest,
 )

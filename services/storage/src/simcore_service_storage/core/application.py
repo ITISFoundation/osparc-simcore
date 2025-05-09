@@ -111,10 +111,10 @@ def create_app(settings: ApplicationSettings) -> FastAPI:  # noqa: C901
 
     app.add_middleware(RequestCancellationMiddleware)
 
-    if settings.STORAGE_TRACING:
-        initialize_tracing(app, settings.STORAGE_TRACING, APP_NAME)
     if settings.STORAGE_MONITORING_ENABLED:
         setup_prometheus_instrumentation(app)
+    if settings.STORAGE_TRACING:
+        initialize_tracing(app, settings.STORAGE_TRACING, APP_NAME)
 
     async def _on_startup() -> None:
         if settings.STORAGE_WORKER_MODE:
