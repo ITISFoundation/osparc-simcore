@@ -49,31 +49,31 @@ idna==3.10
     #   httpx
 importlib-metadata==8.5.0
     # via opentelemetry-api
-opentelemetry-api==1.30.0
+opentelemetry-api==1.32.1
     # via
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-httpx
     #   opentelemetry-semantic-conventions
-opentelemetry-instrumentation==0.51b0
+opentelemetry-instrumentation==0.53b1
     # via
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-httpx
-opentelemetry-instrumentation-asgi==0.51b0
+opentelemetry-instrumentation-asgi==0.53b1
     # via opentelemetry-instrumentation-fastapi
-opentelemetry-instrumentation-fastapi==0.51b0
+opentelemetry-instrumentation-fastapi==0.53b1
     # via -r requirements/_fastapi.in
-opentelemetry-instrumentation-httpx==0.51b0
+opentelemetry-instrumentation-httpx==0.53b1
     # via -r requirements/_fastapi.in
-opentelemetry-semantic-conventions==0.51b0
+opentelemetry-semantic-conventions==0.53b1
     # via
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-httpx
-opentelemetry-util-http==0.51b0
+opentelemetry-util-http==0.53b1
     # via
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-fastapi
@@ -81,10 +81,6 @@ opentelemetry-util-http==0.51b0
 packaging==24.2
     # via opentelemetry-instrumentation
 prometheus-client==0.21.1
-    # via
-    #   -r requirements/_fastapi.in
-    #   prometheus-fastapi-instrumentator
-prometheus-fastapi-instrumentator==7.0.2
     # via -r requirements/_fastapi.in
 pydantic==2.10.6
     # via
@@ -108,7 +104,6 @@ starlette==0.46.0
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   fastapi
-    #   prometheus-fastapi-instrumentator
 typing-extensions==4.12.2
     # via
     #   anyio

@@ -324,10 +324,6 @@ packaging==24.2
 pamqp==3.3.0
     # via aiormq
 prometheus-client==0.21.1
-    # via
-    #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
-    #   prometheus-fastapi-instrumentator
-prometheus-fastapi-instrumentator==7.0.2
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 propcache==0.3.0
     # via
@@ -535,7 +531,6 @@ starlette==0.46.1
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   fastapi
-    #   prometheus-fastapi-instrumentator
 stream-zip==0.0.83
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 tenacity==9.0.0
