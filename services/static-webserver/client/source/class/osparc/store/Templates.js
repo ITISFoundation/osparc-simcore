@@ -19,7 +19,7 @@ qx.Class.define("osparc.store.Templates", {
   type: "static",
 
   statics: {
-    __templatesCached: [],
+    __templates: [],
     __templatesPromisesCached: null,
 
     fetchAllTemplates: function() {
