@@ -170,8 +170,7 @@ def setup_monitoring(
     #
 
     # ensures is first layer but cannot guarantee the order setup is applied
-    app.middlewares.insert(
-        0,
+    app.middlewares.append(
         middleware_factory(
             app_name,
             enter_middleware_cb=enter_middleware_cb,
