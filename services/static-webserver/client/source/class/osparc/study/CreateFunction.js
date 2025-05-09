@@ -56,7 +56,7 @@ qx.Class.define("osparc.study.CreateFunction", {
       });
       form.add(description, this.tr("Description"), null, "description");
 
-      const createFunctionBtn = this.__createFunctionBtn = new qx.ui.form.FetchButton().set({
+      const createFunctionBtn = this.__createFunctionBtn = new osparc.ui.form.FetchButton().set({
         appearance: "strong-button",
         label: this.tr("Create"),
         allowGrowX: false,
@@ -131,9 +131,14 @@ qx.Class.define("osparc.study.CreateFunction", {
           "input1": 5
         },
       };
-      console.log("Creating function with data: ", functionData);
 
-      this.__createFunctionBtn.setFetching(false);
+      const params = {
+        data: functionData,
+      };
+      osparc.data.Resources.fetch("functions", "create", params)
+        .then(() => osparc.FlashMessenger.logAs(this.tr("Function created"), "INFO"))
+        .catch(err => osparc.FlashMessenger.logError(err))
+        .finally(() => this.__createFunctionBtn.setFetching(false));
     },
 
     getCreateFunctionButton: function() {
