@@ -6,26 +6,10 @@
 import uuid
 
 import sqlalchemy as sa
-from models_library.api_schemas_webserver.functions_wb_schema import (
-    FunctionJobCollectionID,
-)
-from pydantic import BaseModel
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 
 from .base import metadata
-
-
-class FunctionJobCollectionDB(BaseModel):
-    """Model for a collection of function jobs"""
-
-    title: str = ""
-    description: str = ""
-
-
-class RegisteredFunctionJobCollectionDB(FunctionJobCollectionDB):
-    uuid: FunctionJobCollectionID
-
 
 function_job_collections_table = sa.Table(
     "funcapi_function_job_collections",

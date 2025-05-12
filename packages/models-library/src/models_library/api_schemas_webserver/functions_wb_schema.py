@@ -311,3 +311,12 @@ class FunctionDB(BaseModel):
 
 class RegisteredFunctionDB(FunctionDB):
     uuid: FunctionID
+
+
+class FunctionJobCollectionDB(BaseModel):
+    title: str = ""
+    description: str = ""
+
+
+class RegisteredFunctionJobCollectionDB(FunctionJobCollectionDB):
+    uuid: FunctionJobCollectionID

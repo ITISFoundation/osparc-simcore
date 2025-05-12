@@ -14,11 +14,11 @@ from models_library.api_schemas_webserver.functions_wb_schema import (
     FunctionOutputs,
     FunctionOutputSchema,
     RegisteredFunctionDB,
+    RegisteredFunctionJobCollectionDB,
     RegisteredFunctionJobDB,
 )
 from models_library.rest_pagination import PageMetaInfoLimitOffset
 from simcore_postgres_database.models.funcapi_function_job_collections_table import (
-    RegisteredFunctionJobCollectionDB,
     function_job_collections_table,
 )
 from simcore_postgres_database.models.funcapi_function_job_collections_to_function_jobs_table import (
