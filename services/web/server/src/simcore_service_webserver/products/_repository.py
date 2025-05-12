@@ -236,6 +236,6 @@ class ProductRepository(BaseRepository):
     async def is_product_billable(
         self, product_name: str, connection: AsyncConnection | None = None
     ) -> bool:
-        """This function returns False even if the product price is defined, but is"""
+        """This function returns False even if the product price is defined, but is 0"""
         async with pass_or_acquire_connection(self.engine, connection) as conn:
             return await is_payment_enabled(conn, product_name=product_name)
