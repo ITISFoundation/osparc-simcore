@@ -22,7 +22,7 @@ def _get_default_product_name(app: web.Application) -> str:
 def _discover_product_by_hostname(request: web.Request) -> str | None:
     products: OrderedDict[str, Product] = request.app[APP_PRODUCTS_KEY]
     for product in products.values():
-        for host in iter_origins(request):
+        for _, host in iter_origins(request):
             if product.host_regex.search(host):
                 product_name: str = product.name
                 return product_name

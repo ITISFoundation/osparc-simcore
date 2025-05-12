@@ -2,7 +2,6 @@ import io
 import logging
 from collections.abc import Callable, Iterator
 from typing import Any, Generic, Literal, TypeAlias, TypeVar
-from urllib.parse import urlparse
 
 from aiohttp import web
 from aiohttp.web_exceptions import HTTPError, HTTPException
@@ -132,7 +131,7 @@ class NextPage(BaseModel, Generic[PageParameters]):
     parameters: PageParameters | None = None
 
 
-def iter_origins(request: web.Request) -> Iterator[str]:
+def iter_origins(request: web.Request) -> Iterator[tuple[str, str]]:
     #
     # SEE https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-Host
     # SEE https://doc.traefik.io/traefik/getting-started/faq/#what-are-the-forwarded-headers-when-proxying-http-requests
@@ -152,21 +151,16 @@ def iter_origins(request: web.Request) -> Iterator[str]:
     ]
 
     if fwd_protos and fwd_hosts:
-        fwd_origins = [
-            f"{proto}://{host}"
-            for proto, host in zip(fwd_protos, fwd_hosts, strict=False)
-        ]
-        for origin in fwd_origins:
-            if origin and origin not in seen:
-                seen.add(origin)
-                yield origin
+        for proto, host in zip(fwd_protos, fwd_hosts, strict=False):
+            if (proto, host) not in seen:
+                seen.add((proto, host))
+                yield (proto, host)
 
     # Fallback to request.host
-    yield f"{request.url.scheme}://{request.url.host}"
+    yield request.url.scheme, f"{request.url.host}"
 
 
 def get_api_base_url(request: web.Request) -> str:
-    origin = next(iter_origins(request))
-    hostname = urlparse(origin).hostname or "localhost"
-    api_host = f"api.{hostname}" if not is_ip_address(hostname) else hostname
-    return f"{request.url.with_host(api_host).with_port(None).with_path('')}"
+    scheme, host = next(iter_origins(request))
+    api_host = f"api.{host}" if not is_ip_address(host) else host
+    return f"{scheme}://{api_host}"
