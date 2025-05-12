@@ -172,7 +172,6 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
     __addUIConfigItems: function() {
       const plusButtonConfig = osparc.store.Products.getInstance().getPlusButtonUiConfig();
       if (plusButtonConfig) {
-        const templates = osparc.store.Templates.getInstance().getTemplates()
         if (plusButtonConfig["categories"]) {
           this.__addCategories(plusButtonConfig["categories"]);
         }
@@ -182,7 +181,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
           } else if (buttonConfig["resourceType"] === "study") {
             this.__addEmptyStudyButton(buttonConfig);
           } else if (buttonConfig["resourceType"] === "template") {
-            this.__addFromTemplateButton(buttonConfig, templates);
+            this.__addFromTemplateButton(buttonConfig);
           } else if (buttonConfig["resourceType"] === "service") {
             this.__addFromServiceButton(buttonConfig);
           }
@@ -191,28 +190,30 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
     },
 
     __addHypertools: function() {
-      const hypertools = osparc.store.Templates.getInstance().getTemplatesByType(osparc.data.model.StudyUI.HYPERTOOL_TYPE);
-      if (hypertools.length) {
-        const hypertoolsMenuButton = this.self().createMenuButton("@FontAwesome5Solid/star/16", this.tr("Hypertools"));
-        this.addAt(hypertoolsMenuButton, this.__itemIdx);
-        this.__itemIdx++;
+      osparc.store.Templates.getTemplatesHypertools()
+        .then(hypertools => {
+          if (hypertools.length) {
+            const hypertoolsMenuButton = this.self().createMenuButton("@FontAwesome5Solid/star/16", this.tr("Hypertools"));
+            this.addAt(hypertoolsMenuButton, this.__itemIdx);
+            this.__itemIdx++;
 
-        const hypertoolsMenu = new qx.ui.menu.Menu().set({
-          appearance: "menu-wider",
-        });
-        hypertoolsMenuButton.setMenu(hypertoolsMenu);
-
-        hypertools.forEach(templateData => {
-          const hypertoolButton = this.self().createMenuButton(templateData["icon"], templateData["name"]);
-          hypertoolButton.addListener("tap", () => {
-            this.fireDataEvent("newStudyFromTemplateClicked", {
-              templateData,
-              newStudyLabel: templateData["name"],
+            const hypertoolsMenu = new qx.ui.menu.Menu().set({
+              appearance: "menu-wider",
             });
-          });
-          hypertoolsMenu.add(hypertoolButton);
+            hypertoolsMenuButton.setMenu(hypertoolsMenu);
+
+            hypertools.forEach(templateData => {
+              const hypertoolButton = this.self().createMenuButton(templateData["icon"], templateData["name"]);
+              hypertoolButton.addListener("tap", () => {
+                this.fireDataEvent("newStudyFromTemplateClicked", {
+                  templateData,
+                  newStudyLabel: templateData["name"],
+                });
+              });
+              hypertoolsMenu.add(hypertoolButton);
+            });
+          }
         });
-      }
     },
 
     __addOtherTabsAccess: function() {
@@ -321,24 +322,27 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       this.__addFromResourceButton(menuButton, buttonConfig["category"]);
     },
 
-    __addFromTemplateButton: function(buttonConfig, templates) {
-      const menuButton = this.self().createMenuButton(null, buttonConfig["title"]);
-      osparc.utils.Utils.setIdToWidget(menuButton, buttonConfig["idToWidget"]);
-      // disable it until found in templates store
-      menuButton.setEnabled(false);
+    __addFromTemplateButton: function(buttonConfig) {
+      osparc.store.Templates.getTemplates()
+        .then(templates => {
+          const menuButton = this.self().createMenuButton(null, buttonConfig["title"]);
+          osparc.utils.Utils.setIdToWidget(menuButton, buttonConfig["idToWidget"]);
+          // disable it until found in templates store
+          menuButton.setEnabled(false);
 
-      let templateMetadata = templates.find(t => t.name === buttonConfig["expectedTemplateLabel"]);
-      if (templateMetadata) {
-        menuButton.setEnabled(true);
-        menuButton.addListener("tap", () => {
-          this.fireDataEvent("newStudyFromTemplateClicked", {
-            templateData: templateMetadata,
-            newStudyLabel: buttonConfig["newStudyLabel"],
-          });
+          let templateMetadata = templates.find(t => t.name === buttonConfig["expectedTemplateLabel"]);
+          if (templateMetadata) {
+            menuButton.setEnabled(true);
+            menuButton.addListener("tap", () => {
+              this.fireDataEvent("newStudyFromTemplateClicked", {
+                templateData: templateMetadata,
+                newStudyLabel: buttonConfig["newStudyLabel"],
+              });
+            });
+            this.__addIcon(menuButton, buttonConfig["icon"], templateMetadata);
+            this.__addFromResourceButton(menuButton, buttonConfig["category"]);
+          }
         });
-        this.__addIcon(menuButton, buttonConfig["icon"], templateMetadata);
-        this.__addFromResourceButton(menuButton, buttonConfig["category"]);
-      }
     },
 
     __addFromServiceButton: function(buttonConfig) {
