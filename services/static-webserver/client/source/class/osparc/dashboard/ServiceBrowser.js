@@ -37,6 +37,11 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
 
     // overridden
     initResources: function() {
+      if (this._resourcesInitialized) {
+        return;
+      }
+      this._resourcesInitialized = true;
+
       this._resourcesList = [];
       osparc.store.Services.getServicesLatest()
         .then(services => {
