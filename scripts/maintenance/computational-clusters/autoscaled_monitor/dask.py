@@ -116,7 +116,7 @@ async def _list_all_tasks(
         list_of_tasks = await client.run_on_scheduler(_list_tasks)  # type: ignore
     except TypeError:
         rich.print(
-            f"ERROR while recoverring unrunnable tasks using {dask_client=}. Defaulting to empty list of tasks!!"
+            "ERROR while recoverring unrunnable tasks . Defaulting to empty list of tasks!!"
         )
     return list_of_tasks
 
@@ -126,12 +126,16 @@ async def get_scheduler_details(state: AppState, instance: Instance):
     datasets_on_cluster = ()
     processing_jobs = {}
     all_tasks = {}
-    with contextlib.suppress(TimeoutError, OSError):
+    try:
         async with dask_client(state, instance) as client:
             scheduler_info = client.scheduler_info()
             datasets_on_cluster = await _wrap_dask_async_call(client.list_datasets())
             processing_jobs = await _wrap_dask_async_call(client.processing())
             all_tasks = await _list_all_tasks(client)
+    except (TimeoutError, OSError, TypeError):
+        rich.print(
+            "ERROR while recoverring scheduler details !! no scheduler info found!!"
+        )
 
     return scheduler_info, datasets_on_cluster, processing_jobs, all_tasks
 
