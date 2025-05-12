@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from typing import Final
 
 import distributed
+from common_library.async_tools import maybe_await
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.events import (
     BaseTaskEvent,
@@ -169,7 +170,11 @@ async def monitor_task_abortion(
                 await periodically_checking_task
 
 
-def publish_event(dask_pub: distributed.Pub, event: BaseTaskEvent) -> None:
+async def publish_event(dask_client: distributed.Client, event: BaseTaskEvent) -> None:
     """never reraises, only CancellationError"""
     with log_catch(_logger, reraise=False):
-        dask_pub.put(event.model_dump_json())
+        await maybe_await(
+            dask_client.log_event(
+                TaskProgressEvent.topic_name(), event.model_dump_json()
+            )
+        )

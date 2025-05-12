@@ -24,6 +24,7 @@ from simcore_service_dask_sidecar.utils.dask import (
     monitor_task_abortion,
     publish_event,
 )
+from tenacity import Retrying
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -47,54 +48,60 @@ def test_publish_event(
         task_owner=task_owner,
     )
 
-    def handler_some_topic_event(event: tuple) -> None:
+    def handler(event: tuple) -> None:
         print("received event", event)
         assert isinstance(event, tuple)
         received_task_log_event = TaskProgressEvent.model_validate_json(event[1])
         assert received_task_log_event == event_to_publish
 
-    dask_client.subscribe_topic("some_topic", handler_some_topic_event)
-    time.sleep(1)
-    dask_client.log_event("some_topic", event_to_publish.model_dump_json())
-    time.sleep(1)
-    # publish_event(dask_pub=dask_pub, event=event_to_publish)
+    dask_client.subscribe_topic(TaskProgressEvent.topic_name(), handler)
 
-    # NOTE: this tests runs a sync dask client,
-    # and the CI seems to have sometimes difficulties having this run in a reasonable time
-    # hence the long time out
-    events = dask_client.get_events("some_topic")
-    assert events is not None
+    publish_event(dask_client, event=event_to_publish)
+    for attempt in Retrying(
+        wait=wait_fixed(0.2), stop=stop_after_delay(15), reraise=True
+    ):
+        with attempt:
+            events = dask_client.get_events(TaskProgressEvent.topic_name())
+            assert events is not None
+
     assert isinstance(events, tuple)
     assert len(events) == 1
     assert isinstance(events[0], tuple)
     received_task_log_event = TaskProgressEvent.model_validate_json(events[0][1])
     assert received_task_log_event == event_to_publish
 
-    # message = dask_sub.get(timeout=DASK_TESTING_TIMEOUT_S)
-    # assert message is not None
-    # assert isinstance(message, str)
-    # received_task_log_event = TaskProgressEvent.model_validate_json(message)
-    # assert received_task_log_event == event_to_publish
-
 
 async def test_publish_event_async(
     async_dask_client: distributed.Client, job_id: str, task_owner: TaskOwner
 ):
-    dask_pub = distributed.Pub("some_topic", client=async_dask_client)
-    dask_sub = distributed.Sub("some_topic", client=async_dask_client)
     event_to_publish = TaskProgressEvent(
-        job_id=job_id, msg="the log", progress=2, task_owner=task_owner
+        job_id=job_id,
+        msg="the log",
+        progress=2,
+        task_owner=task_owner,
     )
-    publish_event(dask_pub=dask_pub, event=event_to_publish)
 
-    # NOTE: this tests runs a sync dask client,
-    # and the CI seems to have sometimes difficulties having this run in a reasonable time
-    # hence the long time out
-    message = dask_sub.get(timeout=DASK_TESTING_TIMEOUT_S)
-    assert isinstance(message, Coroutine)
-    message = await message
-    assert message is not None
-    received_task_log_event = TaskProgressEvent.model_validate_json(message)
+    async def handler(event: tuple) -> None:
+        print("received event", event)
+        assert isinstance(event, tuple)
+        received_task_log_event = TaskProgressEvent.model_validate_json(event[1])
+        assert received_task_log_event == event_to_publish
+
+    async_dask_client.subscribe_topic(TaskProgressEvent.topic_name(), handler)
+
+    await publish_event(async_dask_client, event=event_to_publish)
+
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(0.2), stop=stop_after_delay(15), reraise=True
+    ):
+        with attempt:
+            events = await async_dask_client.get_events(TaskProgressEvent.topic_name())
+            assert events is not None
+
+    assert isinstance(events, tuple)
+    assert len(events) == 1
+    assert isinstance(events[0], tuple)
+    received_task_log_event = TaskProgressEvent.model_validate_json(events[0][1])
     assert received_task_log_event == event_to_publish
 
 
