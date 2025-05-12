@@ -1,4 +1,3 @@
-import asyncio
 from decimal import Decimal
 
 from aiohttp import web
@@ -15,6 +14,7 @@ from servicelib.rabbitmq.rpc_interfaces.director_v2 import computations
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import (
     credit_transactions,
 )
+from servicelib.utils import limited_gather
 
 from ..products.products_service import is_product_billable
 from ..projects.api import check_user_project_permission, get_project_dict_legacy
@@ -86,13 +86,14 @@ async def list_computations_latest_iteration_tasks(
     _service_run_osparc_credits: list[Decimal | None]
     if _is_product_billable:
         # NOTE: MD: can be improved with a single batch call
-        _service_run_osparc_credits = await asyncio.gather(
+        _service_run_osparc_credits = await limited_gather(
             *[
                 credit_transactions.get_transaction_current_credits_by_service_run_id(
                     rpc_client, service_run_id=_run_id
                 )
                 for _run_id in _service_run_ids
-            ]
+            ],
+            limit=20,
         )
     else:
         _service_run_osparc_credits = [None for _ in _service_run_ids]

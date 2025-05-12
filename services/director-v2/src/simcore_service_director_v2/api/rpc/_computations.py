@@ -1,5 +1,3 @@
-import asyncio
-
 # pylint: disable=too-many-arguments
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.comp_runs import (
@@ -14,6 +12,7 @@ from models_library.rest_ordering import OrderBy
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from servicelib.rabbitmq import RPCRouter
+from servicelib.utils import limited_gather
 from simcore_service_director_v2.models.comp_tasks import ComputationTaskForRpcDBGet
 
 from ...modules.db.repositories.comp_runs import CompRunsRepository
@@ -94,8 +93,9 @@ async def list_computations_latest_iteration_tasks_page(
     )
 
     # Run all log fetches concurrently
-    log_files = await asyncio.gather(
-        *(_fetch_task_log(user_id, project_id, task) for task in comp_tasks)
+    log_files = await limited_gather(
+        *[_fetch_task_log(user_id, project_id, task) for task in comp_tasks],
+        limit=20,
     )
 
     comp_tasks_output = [
