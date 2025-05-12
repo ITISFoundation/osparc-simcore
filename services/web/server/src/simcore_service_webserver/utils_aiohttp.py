@@ -137,40 +137,31 @@ def iter_origins(request: web.Request) -> Iterator[str]:
     # SEE https://doc.traefik.io/traefik/getting-started/faq/#what-are-the-forwarded-headers-when-proxying-http-requests
     seen = set()
 
+    # X-Forwarded-Proto and X-Forwarded-Host can contain a comma-separated list of protocols and hosts
+    # (when the request passes through multiple proxies)fwd_protos = [
     fwd_protos = [
         p.strip()
-        for p in request.headers.get("X-Forwarded-Proto").split(",")
+        for p in request.headers.get("X-Forwarded-Proto", "").split(",")
         if p.strip()
     ]
     fwd_hosts = [
         h.strip()
-        for h in request.headers.get("X-Forwarded-Host").split(",")
+        for h in request.headers.get("X-Forwarded-Host", "").split(",")
         if h.strip()
     ]
-    fwd_ports = [
-        pt.strip()
-        for pt in request.headers.get("X-Forwarded-Port").split(",")
-        if pt.strip()
-    ]
 
-    fwd_origins = [
-        f"{proto}://{host}:{port}"
-        for proto, host, port in zip(fwd_protos, fwd_hosts, fwd_ports, strict=False)
-    ]
-    if fwd_origins:
-        # X-Forwarded-Host can contain a comma-separated list of hosts
-        # (when the request passes through multiple proxies)
+    if fwd_protos and fwd_hosts:
+        fwd_origins = [
+            f"{proto}://{host}"
+            for proto, host in zip(fwd_protos, fwd_hosts, strict=False)
+        ]
         for origin in fwd_origins:
             if origin and origin not in seen:
                 seen.add(origin)
                 yield origin
 
     # Fallback to request.host
-    if request.url:
-        origin = f"{request.url.scheme}://{request.url.host}"
-        if request.url.port:
-            origin += f":{request.url.port}"
-        yield origin
+    yield f"{request.url.scheme}://{request.url.host}"
 
 
 def get_api_base_url(request: web.Request) -> str:
