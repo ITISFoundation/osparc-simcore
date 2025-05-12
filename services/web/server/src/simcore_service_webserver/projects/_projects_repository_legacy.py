@@ -786,10 +786,7 @@ class ProjectDBAPI(BaseProjectDB):
     async def get_project_db(self, project_uuid: ProjectID) -> ProjectDBGet:
         async with self.engine.acquire() as conn:
             result = await conn.execute(
-                sa.select(
-                    *PROJECT_DB_COLS,
-                    projects.c.workbench,
-                ).where(projects.c.uuid == f"{project_uuid}")
+                sa.select(*PROJECT_DB_COLS).where(projects.c.uuid == f"{project_uuid}")
             )
             row = await result.fetchone()
             if row is None:

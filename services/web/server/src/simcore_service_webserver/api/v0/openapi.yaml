@@ -9175,6 +9175,19 @@ components:
             format: date-time
           - type: 'null'
           title: Endedat
+        logDownloadLink:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Logdownloadlink
+        nodeName:
+          type: string
+          title: Nodename
+        osparcCredits:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Osparccredits
       type: object
       required:
       - projectUuid
@@ -9184,6 +9197,9 @@ components:
       - image
       - startedAt
       - endedAt
+      - logDownloadLink
+      - nodeName
+      - osparcCredits
       title: ComputationTaskRestGet
     ConnectServiceToPricingPlanBodyParams:
       properties:
