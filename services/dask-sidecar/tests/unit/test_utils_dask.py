@@ -46,7 +46,17 @@ def test_publish_event(
         progress=1,
         task_owner=task_owner,
     )
+
+    def handler_some_topic_event(event: tuple) -> None:
+        print("received event", event)
+        assert isinstance(event, tuple)
+        received_task_log_event = TaskProgressEvent.model_validate_json(event[1])
+        assert received_task_log_event == event_to_publish
+
+    dask_client.subscribe_topic("some_topic", handler_some_topic_event)
+    time.sleep(1)
     dask_client.log_event("some_topic", event_to_publish.model_dump_json())
+    time.sleep(1)
     # publish_event(dask_pub=dask_pub, event=event_to_publish)
 
     # NOTE: this tests runs a sync dask client,
