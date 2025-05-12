@@ -102,6 +102,21 @@ qx.Class.define("osparc.product.Utils", {
       return alias;
     },
 
+    getHypertoolAlias: function(options = {}) {
+      let alias = qx.locale.Manager.tr("hypertool");
+      if (options.plural) {
+        alias = qx.locale.Manager.tr("hypertools");
+      }
+
+      if (options.firstUpperCase) {
+        alias = osparc.utils.Utils.capitalize(alias);
+      } else if (options.allUpperCase) {
+        alias = alias.toUpperCase();
+      }
+
+      return alias;
+    },
+
     getAppAlias: function(options = {}) {
       let alias = qx.locale.Manager.tr("app");
       if (options.plural) {
@@ -125,6 +140,8 @@ qx.Class.define("osparc.product.Utils", {
           return this.getTemplateAlias(options);
         case "service":
           return this.getServiceAlias(options);
+        case "hypertool":
+          return this.getHypertoolAlias(options);
         case "app":
           return this.getAppAlias(options);
       }

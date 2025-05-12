@@ -160,10 +160,10 @@ qx.Class.define("osparc.dashboard.CardBase", {
       return false;
     },
 
-    filterAppType: function(resourceType, metadata, serviceType) {
-      if (serviceType && resourceType === "service") {
+    filterAppType: function(resourceType, metadata, appType) {
+      if (appType && ["service", "hypertool"].includes(resourceType)) {
         if (metadata && metadata.type) {
-          const matches = metadata.type === serviceType;
+          const matches = metadata.type === appType;
           return !matches;
         }
         return false;
@@ -511,11 +511,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
       let icon = null;
       switch (resourceData["resourceType"]) {
         case "study":
-          uuid = resourceData.uuid ? resourceData.uuid : null;
-          owner = resourceData.prjOwner ? resourceData.prjOwner : "";
-          workbench = resourceData.workbench ? resourceData.workbench : {};
-          break;
         case "template":
+        case "hypertool":
           uuid = resourceData.uuid ? resourceData.uuid : null;
           owner = resourceData.prjOwner ? resourceData.prjOwner : "";
           workbench = resourceData.workbench ? resourceData.workbench : {};
@@ -548,7 +545,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
         workbench
       });
 
-      if (resourceData["resourceType"] === "study" || resourceData["resourceType"] === "template") {
+      if (["study", "template", "hypertool"].includes(resourceData["resourceType"])) {
         osparc.store.Services.getStudyServices(resourceData.uuid)
           .then(resp => {
             const services = resp["services"];
@@ -1050,6 +1047,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
         toolTipText += osparc.product.Utils.getStudyAlias();
       } else if (this.isResourceType("template")) {
         toolTipText += osparc.product.Utils.getTemplateAlias();
+      } else if (this.isResourceType("hypertool")) {
+        toolTipText += osparc.product.Utils.getAppAlias();
       }
       const control = new qx.ui.basic.Image().set({
         source: "@FontAwesome5Solid/times-circle/14",

@@ -744,6 +744,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
             break;
           }
           case "template":
+          case "hypertool":
             this._createStudyFromTemplate(resourceData);
             break;
           case "service":
@@ -771,6 +772,11 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         this._startStudyById(studyId, openCB, null, isStudyCreation);
       });
       resourceDetails.addListener("openTemplate", e => {
+        win.close();
+        const templateData = e.getData();
+        this._createStudyFromTemplate(templateData);
+      });
+      resourceDetails.addListener("openHypertool", e => {
         win.close();
         const templateData = e.getData();
         this._createStudyFromTemplate(templateData);

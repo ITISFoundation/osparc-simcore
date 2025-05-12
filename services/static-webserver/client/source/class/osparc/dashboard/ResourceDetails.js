@@ -26,7 +26,8 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     let latestPromise = null;
     switch (resourceData["resourceType"]) {
       case "study":
-      case "template": {
+      case "template":
+      case "hypertool": {
         const params = {
           url: {
             "studyId": resourceData["uuid"]
@@ -47,7 +48,8 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         this.__resourceData["resourceType"] = resourceData["resourceType"];
         switch (resourceData["resourceType"]) {
           case "study":
-          case "template": {
+          case "template":
+          case "hypertool":
             osparc.store.Services.getStudyServicesMetadata(latestResourceData)
               .finally(() => {
                 this.__resourceModel = new osparc.data.model.Study(latestResourceData);
@@ -56,7 +58,6 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
                 this.__addPages();
               })
             break;
-          }
           case "service": {
             this.__resourceModel = new osparc.data.model.Service(latestResourceData);
             this.__resourceModel["resourceType"] = resourceData["resourceType"];
@@ -71,6 +72,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
   events: {
     "pagesAdded": "qx.event.type.Event",
     "openTemplate": "qx.event.type.Data",
+    "openHypertool": "qx.event.type.Data",
     "openService": "qx.event.type.Data",
     "updateStudy": "qx.event.type.Data",
     "updateTemplate": "qx.event.type.Data",
@@ -239,6 +241,9 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           break;
         case "template":
           this.fireDataEvent("openTemplate", this.__resourceData);
+          break;
+        case "hypertool":
+          this.fireDataEvent("openHypertool", this.__resourceData);
           break;
         case "service":
           this.fireDataEvent("openService", this.__resourceData);

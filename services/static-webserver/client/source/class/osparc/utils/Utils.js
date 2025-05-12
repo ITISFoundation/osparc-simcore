@@ -466,7 +466,10 @@ qx.Class.define("osparc.utils.Utils", {
           resourceType = osparc.product.Utils.getTemplateAlias({firstUpperCase: true});
           break;
         case "service":
-          resourceType = qx.locale.Manager.tr("Service");
+          resourceType = osparc.product.Utils.getServiceAlias({firstUpperCase: true});
+          break;
+        case "hypertool":
+          resourceType = osparc.product.Utils.getHypertoolAlias({firstUpperCase: true});
           break;
       }
       return resourceType;

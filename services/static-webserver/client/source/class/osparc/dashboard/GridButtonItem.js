@@ -185,7 +185,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
     // overridden
     _applyLastChangeDate: function(value, old) {
       if (value) {
-        if (this.isResourceType("study") || this.isResourceType("template")) {
+        if (["study", "template"].includes(this.getResourceType())) {
           const dateBy = this.getChildControl("date-by");
           dateBy.set({
             date: value,
@@ -198,7 +198,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
     // overridden
     _applyTrashedAt: function(value) {
       if (value && value.getTime() !== new Date(0).getTime()) {
-        if (this.isResourceType("study") || this.isResourceType("template")) {
+        if (["study", "template"].includes(this.getResourceType())) {
           const dateBy = this.getChildControl("date-by");
           dateBy.set({
             date: value,
@@ -211,7 +211,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
     // overridden
     _applyTrashedBy: function(gid) {
       if (gid) {
-        if (this.isResourceType("study") || this.isResourceType("template")) {
+        if (["study", "template"].includes(this.getResourceType())) {
           const dateBy = this.getChildControl("date-by");
           dateBy.setGroupId(gid);
         }
