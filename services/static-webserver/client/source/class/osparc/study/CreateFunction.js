@@ -98,44 +98,7 @@ qx.Class.define("osparc.study.CreateFunction", {
       column = 0;
       row++;
 
-      const filePickers = osparc.study.Utils.extractFilePickers(this.__studyData["workbench"]);
-      filePickers.forEach(filePicker => {
-        const fpLabel = new qx.ui.basic.Label(filePicker["label"]);
-        inputsLayout.add(fpLabel, {
-          row,
-          column,
-        });
-        column++;
-
-        const fpType = new qx.ui.basic.Label("FileID");
-        inputsLayout.add(fpType, {
-          row,
-          column,
-        });
-        column++;
-
-        const fpExposed = new qx.ui.form.CheckBox().set({ value: true });
-        inputsLayout.add(fpExposed, {
-          row,
-          column,
-        });
-        exposedInputs[filePicker["label"]] = true;
-        fpExposed.addListener("changeValue", e => exposedInputs[filePicker["label"]] = e.getData());
-        column++;
-
-        const outputValue = osparc.file.FilePicker.getOutput(filePicker);
-        const fpDefaultValue = new qx.ui.basic.Label(outputValue && outputValue["path"] ? outputValue["path"] : "");
-        inputsLayout.add(fpDefaultValue, {
-          row,
-          column,
-        });
-        column++;
-
-        column = 0;
-        row++;
-      });
-
-      const parameters = osparc.study.Utils.extractParameters(this.__studyData["workbench"]);
+      const parameters = osparc.study.Utils.extractFunctionableParameters(this.__studyData["workbench"]);
       parameters.forEach(parameter => {
         const parameterLabel = new qx.ui.basic.Label(parameter["label"]);
         inputsLayout.add(parameterLabel, {
@@ -208,7 +171,7 @@ qx.Class.define("osparc.study.CreateFunction", {
       column = 0;
       row++;
 
-      const probes = osparc.study.Utils.extractProbes(this.__studyData["workbench"]);
+      const probes = osparc.study.Utils.extractFunctionableProbes(this.__studyData["workbench"]);
       probes.forEach(probe => {
         const parameterLabel = new qx.ui.basic.Label(probe["label"]);
         outputsLayout.add(parameterLabel, {
@@ -305,19 +268,7 @@ qx.Class.define("osparc.study.CreateFunction", {
         "default_inputs": {},
       };
 
-      const filePickers = osparc.study.Utils.extractFilePickers(templateData["workbench"]);
-      filePickers.forEach(filePicker => {
-        const fpLabel = filePicker["label"];
-        if (exposedInputs[fpLabel]) {
-          functionData["input_schema"]["schema_dict"]["properties"][fpLabel] = {
-            "type": "FileID",
-          };
-          const outputValue = osparc.file.FilePicker.getOutput(filePicker);
-          functionData["default_inputs"][fpLabel] = outputValue && outputValue["path"] ? outputValue["path"] : null;
-        }
-      });
-
-      const parameters = osparc.study.Utils.extractParameters(templateData["workbench"]);
+      const parameters = osparc.study.Utils.extractFunctionableParameters(templateData["workbench"]);
       parameters.forEach(parameter => {
         const parameterLabel = parameter["label"];
         if (exposedInputs[parameterLabel]) {
@@ -331,7 +282,7 @@ qx.Class.define("osparc.study.CreateFunction", {
         }
       });
 
-      const probes = osparc.study.Utils.extractProbes(templateData["workbench"]);
+      const probes = osparc.study.Utils.extractFunctionableProbes(templateData["workbench"]);
       probes.forEach(probe => {
         const probeLabel = probe["label"];
         if (exposedOutputs[probeLabel]) {

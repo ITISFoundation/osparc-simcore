@@ -236,12 +236,24 @@ qx.Class.define("osparc.study.Utils", {
     },
 
     extractParameters: function(workbench) {
-      const parameters = Object.values(workbench).filter(srv => srv["key"].includes("simcore/services/frontend/parameter/"));
+      const parameters = Object.values(workbench).filter(srv => osparc.data.model.Node.isParameter(srv));
+      return parameters;
+    },
+
+    extractFunctionableParameters: function(workbench) {
+      // - for now, only float types are allowed
+      const parameters = Object.values(workbench).filter(srv => osparc.data.model.Node.isParameter(srv) && srv["key"].includes("parameter/float"));
       return parameters;
     },
 
     extractProbes: function(workbench) {
-      const parameters = Object.values(workbench).filter(srv => srv["key"].includes("simcore/services/frontend/iterator-consumer/probe/"));
+      const parameters = Object.values(workbench).filter(srv => osparc.data.model.Node.isProbe(srv));
+      return parameters;
+    },
+
+    extractFunctionableProbes: function(workbench) {
+      // - for now, only float types are allowed
+      const parameters = Object.values(workbench).filter(srv => osparc.data.model.Node.isProbe(srv) && srv["key"].includes("probe/float"));
       return parameters;
     },
 
@@ -253,10 +265,16 @@ qx.Class.define("osparc.study.Utils", {
       // in order to create a function, the pipeline needs:
       // - at least one parameter (or file-picker (file type parameter))
       // - at least one probe
-      const filePickers = osparc.study.Utils.extractFilePickers(workbench);
-      const parameters = osparc.study.Utils.extractParameters(workbench);
-      const probes = osparc.study.Utils.extractProbes(workbench);
-      return (filePickers.length + parameters.length) && probes.length;
+
+      // const filePickers = osparc.study.Utils.extractFilePickers(workbench);
+      // const parameters = osparc.study.Utils.extractParameters(workbench);
+      // const probes = osparc.study.Utils.extractProbes(workbench);
+      // return (filePickers.length + parameters.length) && probes.length;
+
+      // - for now, only float types are allowed
+      const parameters = osparc.study.Utils.extractFunctionableParameters(workbench);
+      const probes = osparc.study.Utils.extractFunctionableProbes(workbench);
+      return parameters.length && probes.length;
     },
 
     getCantExecuteServices: function(studyServices = []) {
