@@ -80,7 +80,7 @@ async def test_change_and_confirm(
     login_url = client.app.router["auth_login"].url_for()
     logout_url = client.app.router["auth_logout"].url_for()
 
-    assert index_url.path == URL(login_options.LOGIN_REDIRECT).path
+    assert URL(f"{index_url}").path == URL(login_options.LOGIN_REDIRECT).path
 
     async with LoggedUser(client) as user:
         # request change email

@@ -20,7 +20,6 @@ from dask.distributed import get_worker
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.events import (
-    TaskLogEvent,
     TaskProgressEvent,
 )
 from dask_task_models_library.container_tasks.io import (
@@ -1078,9 +1077,7 @@ async def test_get_tasks_status(
 
 @pytest.fixture
 async def fake_task_handlers(mocker: MockerFixture) -> TaskHandlers:
-    return TaskHandlers(
-        task_progress_handler=mocker.MagicMock(), task_log_handler=mocker.MagicMock()
-    )
+    return TaskHandlers(task_progress_handler=mocker.MagicMock())
 
 
 async def test_dask_sub_handlers(
@@ -1106,9 +1103,7 @@ async def test_dask_sub_handlers(
         s3_settings: S3Settings | None,
     ) -> TaskOutputData:
         progress_pub = distributed.Pub(TaskProgressEvent.topic_name())
-        logs_pub = distributed.Pub(TaskLogEvent.topic_name())
         progress_pub.put("my name is progress")
-        logs_pub.put("my name is logs")
         # tell the client we are done
         published_event = Event(name=_DASK_START_EVENT)
         published_event.set()
@@ -1154,7 +1149,6 @@ async def test_dask_sub_handlers(
             fake_task_handlers.task_progress_handler.assert_called_with(
                 "my name is progress"
             )
-            fake_task_handlers.task_log_handler.assert_called_with("my name is logs")
     await _assert_wait_for_cb_call(mocked_user_completed_cb)
 
 

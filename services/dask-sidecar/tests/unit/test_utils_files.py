@@ -19,7 +19,7 @@ from pydantic import AnyUrl, TypeAdapter
 from pytest_localftpserver.servers import ProcessFTPServer
 from pytest_mock.plugin import MockerFixture
 from settings_library.s3 import S3Settings
-from simcore_service_dask_sidecar.file_utils import (
+from simcore_service_dask_sidecar.utils.files import (
     _s3fs_settings_from_s3_settings,
     pull_file_from_remote,
     push_file_to_remote,
@@ -310,14 +310,17 @@ async def test_pull_compressed_zip_file_from_remote(
     if remote_parameters.s3_settings:
         storage_kwargs = _s3fs_settings_from_s3_settings(remote_parameters.s3_settings)
 
-    with cast(
-        fsspec.core.OpenFile,
-        fsspec.open(
-            f"{destination_url}",
-            mode="wb",
-            **storage_kwargs,
-        ),
-    ) as dest_fp, local_zip_file_path.open("rb") as src_fp:
+    with (
+        cast(
+            fsspec.core.OpenFile,
+            fsspec.open(
+                f"{destination_url}",
+                mode="wb",
+                **storage_kwargs,
+            ),
+        ) as dest_fp,
+        local_zip_file_path.open("rb") as src_fp,
+    ):
         dest_fp.write(src_fp.read())
 
     # now we want to download that file so it becomes the source

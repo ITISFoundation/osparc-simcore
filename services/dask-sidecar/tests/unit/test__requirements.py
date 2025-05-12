@@ -4,6 +4,7 @@
 
 import re
 from pathlib import Path
+from typing import TypeAlias
 
 import pytest
 
@@ -16,11 +17,13 @@ def requirements_folder(project_slug_dir: Path) -> Path:
     return reqs_dir
 
 
+NameVersionTuple: TypeAlias = tuple[str, str]
+
+
 def test_dask_requirements_in_sync(requirements_folder: Path):
     """If this test fails, do update requirements to re-sync all listings"""
 
     REQS_ENTRY_REGEX = re.compile(r"(\w+)==([\.\w]+)")
-    NameVersionTuple = tuple[str, str]
 
     def get_reqs(fname: str) -> set[NameVersionTuple]:
         return set(REQS_ENTRY_REGEX.findall((requirements_folder / fname).read_text()))

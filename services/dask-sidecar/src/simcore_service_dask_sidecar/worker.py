@@ -11,14 +11,19 @@ from dask_task_models_library.container_tasks.protocol import (
     ContainerTaskParameters,
     LogFileUploadURL,
 )
-from distributed.worker import logger
-from servicelib.logging_utils import config_all_loggers
+from servicelib.logging_utils import log_context
 from settings_library.s3 import S3Settings
 
 from ._meta import print_dask_sidecar_banner
 from .computational_sidecar.core import ComputationalSidecar
-from .dask_utils import TaskPublisher, get_current_task_resources, monitor_task_abortion
-from .settings import Settings
+from .rabbitmq_plugin import RabbitMQPlugin
+from .settings import ApplicationSettings
+from .utils.dask import (
+    TaskPublisher,
+    get_current_task_resources,
+    monitor_task_abortion,
+)
+from .utils.logs import setup_app_logging
 
 _logger = logging.getLogger(__name__)
 
@@ -40,7 +45,7 @@ class GracefulKiller:
 
     def exit_gracefully(self, *_args):
         tasks = asyncio.all_tasks()
-        logger.warning(
+        _logger.warning(
             "Application shutdown detected!\n %s",
             pformat([t.get_name() for t in tasks]),
         )
@@ -52,37 +57,34 @@ class GracefulKiller:
 
 
 async def dask_setup(worker: distributed.Worker) -> None:
-    """This is a special function recognized by the dask worker when starting with flag --preload"""
-    settings = Settings.create_from_envs()
-    # set up logging
-    logging.basicConfig(level=settings.LOG_LEVEL.value)
-    logging.root.setLevel(level=settings.LOG_LEVEL.value)
-    logger.setLevel(level=settings.LOG_LEVEL.value)
-    # NOTE: Dask attaches a StreamHandler to the logger in distributed
-    # removing them solves dual propagation of logs
-    for handler in logging.getLogger("distributed").handlers:
-        logging.getLogger("distributed").removeHandler(handler)
-    config_all_loggers(
-        log_format_local_dev_enabled=settings.DASK_LOG_FORMAT_LOCAL_DEV_ENABLED,
-        logger_filter_mapping=settings.DASK_LOG_FILTER_MAPPING,
-        tracing_settings=None,  # no tracing for dask sidecar
-    )
+    """This is a special function recognized by dask when starting with flag --preload"""
+    settings = ApplicationSettings.create_from_envs()
+    setup_app_logging(settings)
 
-    logger.info("Setting up worker...")
-    logger.info("Settings: %s", pformat(settings.model_dump()))
+    with log_context(_logger, logging.INFO, "Launch dask worker"):
+        _logger.info("app settings: %s", settings.model_dump_json(indent=1))
 
-    print_dask_sidecar_banner()
+        if threading.current_thread() is threading.main_thread():
+            GracefulKiller(worker)
 
-    if threading.current_thread() is threading.main_thread():
-        loop = asyncio.get_event_loop()
-        logger.info("We do have a running loop in the main thread: %s", f"{loop=}")
+            loop = asyncio.get_event_loop()
+            _logger.info("We do have a running loop in the main thread: %s", f"{loop=}")
 
-    if threading.current_thread() is threading.main_thread():
-        GracefulKiller(worker)
+        if settings.DASK_SIDECAR_RABBITMQ:
+            try:
+                await worker.plugin_add(
+                    RabbitMQPlugin(settings.DASK_SIDECAR_RABBITMQ), catch_errors=False
+                )
+            except Exception:
+                await worker.close()
+                raise
+
+        print_dask_sidecar_banner()
 
 
-async def dask_teardown(_worker: distributed.Worker) -> None:
-    logger.warning("Tearing down worker!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+async def dask_teardown(worker: distributed.Worker) -> None:
+    with log_context(_logger, logging.INFO, f"tear down dask {worker.address}"):
+        ...
 
 
 async def _run_computational_sidecar_async(
