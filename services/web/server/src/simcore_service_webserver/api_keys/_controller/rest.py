@@ -3,7 +3,6 @@ from dataclasses import asdict
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
-from common_library.network import is_ip_address
 from models_library.api_schemas_webserver.auth import (
     ApiKeyCreateRequest,
     ApiKeyCreateResponse,
@@ -22,7 +21,7 @@ from ..._meta import API_VTAG
 from ...login.decorators import login_required
 from ...models import RequestContext
 from ...security.decorators import permission_required
-from ...utils_aiohttp import envelope_json_response, iter_origins
+from ...utils_aiohttp import envelope_json_response, get_api_base_url
 from .. import _service
 from ..models import ApiKey
 from .rest_exceptions import handle_plugin_requests_exceptions
@@ -35,19 +34,6 @@ routes = RouteTableDef()
 
 class ApiKeysPathParams(StrictRequestParameters):
     api_key_id: IDStr
-
-
-def _get_api_base_url(request: web.Request) -> str | None:
-    originating_host = next(iter_origins(request), None)
-    if not originating_host:
-        return None
-
-    api_host = (
-        f"api.{originating_host}"
-        if not is_ip_address(originating_host)
-        else originating_host
-    )
-    return f"{request.url.with_host(api_host).with_port(None).with_path('')}"
 
 
 @routes.post(f"/{API_VTAG}/auth/api-keys", name="create_api_key")
@@ -69,7 +55,7 @@ async def create_api_key(request: web.Request):
     api_key = ApiKeyCreateResponse.model_validate(
         {
             **asdict(created_api_key),
-            "api_base_url": _get_api_base_url(request) or "",
+            "api_base_url": get_api_base_url(request) or "",
         }
     )
 
