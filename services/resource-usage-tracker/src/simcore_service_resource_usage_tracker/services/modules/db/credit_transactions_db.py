@@ -222,7 +222,7 @@ async def get_transaction_current_credits_by_service_run_id(
 ) -> Decimal:
     async with transaction_context(engine, connection) as conn:
         select_stmt = sa.select(
-            resource_tracker_credit_transactions.c.transaction_id
+            resource_tracker_credit_transactions.c.osparc_credits
         ).where(
             resource_tracker_credit_transactions.c.service_run_id == f"{service_run_id}"
         )
