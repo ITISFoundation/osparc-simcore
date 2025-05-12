@@ -283,3 +283,31 @@ class FunctionInputsValidationError(Exception):
     def __init__(self, error: str):
         self.errors = error
         super().__init__(f"Function inputs validation failed: {error}")
+
+
+class FunctionJobDB(BaseModel):
+    function_uuid: FunctionID
+    title: str = ""
+    description: str = ""
+    inputs: FunctionInputs
+    outputs: FunctionOutputs
+    class_specific_data: FunctionJobClassSpecificData
+    function_class: FunctionClass
+
+
+class RegisteredFunctionJobDB(FunctionJobDB):
+    uuid: FunctionJobID
+
+
+class FunctionDB(BaseModel):
+    function_class: FunctionClass
+    title: str = ""
+    description: str = ""
+    input_schema: FunctionInputSchema
+    output_schema: FunctionOutputSchema
+    default_inputs: FunctionInputs
+    class_specific_data: FunctionClassSpecificData
+
+
+class RegisteredFunctionDB(FunctionDB):
+    uuid: FunctionID

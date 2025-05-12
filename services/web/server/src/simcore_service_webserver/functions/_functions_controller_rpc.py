@@ -5,6 +5,7 @@ from models_library.api_schemas_webserver.functions_wb_schema import (
     Function,
     FunctionClass,
     FunctionClassSpecificData,
+    FunctionDB,
     FunctionID,
     FunctionIDNotFoundError,
     FunctionInputs,
@@ -12,6 +13,7 @@ from models_library.api_schemas_webserver.functions_wb_schema import (
     FunctionJob,
     FunctionJobClassSpecificData,
     FunctionJobCollectionIDNotFoundError,
+    FunctionJobDB,
     FunctionJobID,
     FunctionJobIDNotFoundError,
     FunctionOutputSchema,
@@ -30,8 +32,6 @@ from models_library.api_schemas_webserver.functions_wb_schema import (
 )
 from models_library.rest_pagination import PageMetaInfoLimitOffset
 from servicelib.rabbitmq import RPCRouter
-from simcore_postgres_database.models.funcapi_function_jobs_table import FunctionJobDB
-from simcore_postgres_database.models.funcapi_functions_table import FunctionDB
 
 from ..rabbitmq import get_rabbitmq_rpc_server
 from . import _functions_repository

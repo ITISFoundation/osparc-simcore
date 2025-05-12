@@ -6,33 +6,9 @@
 import uuid
 
 import sqlalchemy as sa
-from models_library.api_schemas_webserver.functions_wb_schema import (
-    FunctionClass,
-    FunctionClassSpecificData,
-    FunctionID,
-    FunctionInputs,
-    FunctionInputSchema,
-    FunctionOutputSchema,
-)
-from pydantic import BaseModel
 from sqlalchemy.dialects.postgresql import UUID
 
 from .base import metadata
-
-
-class FunctionDB(BaseModel):
-    function_class: FunctionClass
-    title: str = ""
-    description: str = ""
-    input_schema: FunctionInputSchema
-    output_schema: FunctionOutputSchema
-    default_inputs: FunctionInputs
-    class_specific_data: FunctionClassSpecificData
-
-
-class RegisteredFunctionDB(FunctionDB):
-    uuid: FunctionID
-
 
 functions_table = sa.Table(
     "funcapi_functions",
