@@ -27,7 +27,7 @@
  *   - Dashboard Stack
  *     - StudyBrowser
  *     - TemplateBrowser
- *     - ServiceBrowser
+ *     - AppBrowser
  *     - DataManager
  *   - StudyEditor
  *
@@ -251,7 +251,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       pollTasks.createPollingTask(fetchPromise)
         .then(task => {
           const templateBrowser = this.__dashboard.getTemplateBrowser();
-          const hypertoolBrowser = this.__dashboard.getHypertoolBrowser();
+          const appBrowser = this.__dashboard.getAppBrowser();
           if (templateBrowser) {
             templateBrowser.taskToTemplateReceived(task, studyName);
           }
@@ -267,8 +267,9 @@ qx.Class.define("osparc.desktop.MainPage", {
                   if (templateBrowser) {
                     templateBrowser.reloadResources();
                   }
-                  if (hypertoolBrowser) {
-                    hypertoolBrowser.reloadResources();
+                  if (appBrowser) {
+                    // OM: reload hypertools only
+                    appBrowser.reloadResources();
                   }
                 });
             }

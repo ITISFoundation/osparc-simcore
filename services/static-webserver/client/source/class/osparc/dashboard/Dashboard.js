@@ -19,7 +19,7 @@
  * Widget containing a TabView including:
  * - StudyBrowser
  * - TemplateBrowser
- * - ServiceBrowser
+ * - AppBrowser
  * - DataBrowser
  *
  * *Example*
@@ -80,7 +80,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
     __studyBrowser: null,
     __templateBrowser: null,
     __hypertoolBrowser: null,
-    __serviceBrowser: null,
+    __appBrowser: null,
     __dataBrowser: null,
 
     getStudyBrowser: function() {
@@ -91,12 +91,8 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       return this.__templateBrowser;
     },
 
-    getHypertoolBrowser: function() {
-      return this.__hypertoolBrowser;
-    },
-
-    getServiceBrowser: function() {
-      return this.__serviceBrowser;
+    getAppBrowser: function() {
+      return this.__appBrowser;
     },
 
     __createMainViewLayout: function() {
@@ -136,11 +132,11 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       }
       if (permissions.canDo("dashboard.services.read")) {
         tabs.push({
-          id: "servicesTab",
-          buttonId: "servicesTabBtn",
-          label: this.tr("SERVICES"),
+          id: "appsTab",
+          buttonId: "appsTabBtn",
+          label: this.tr("Apps"),
           icon: "@FontAwesome5Solid/cogs/"+tabIconSize,
-          buildLayout: this.__createServiceBrowser
+          buildLayout: this.__createAppBrowser
         });
       }
       if (permissions.canDo("dashboard.data.read")) {
@@ -206,8 +202,8 @@ qx.Class.define("osparc.dashboard.Dashboard", {
           if (this.__studyBrowser) {
             this.__studyBrowser.initResources();
           }
-          if (this.__serviceBrowser) {
-            this.__serviceBrowser.initResources();
+          if (this.__appBrowser) {
+            this.__appBrowser.initResources();
           }
           if (this.__dataBrowser) {
             this.__dataBrowser.initResources();
@@ -239,9 +235,9 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       return hypertoolsView;
     },
 
-    __createServiceBrowser: function() {
-      const servicesView = this.__serviceBrowser = new osparc.dashboard.ServiceBrowser();
-      return servicesView;
+    __createAppBrowser: function() {
+      const appsView = this.__appBrowser = new osparc.dashboard.AppBrowser();
+      return appsView;
     },
 
     __createDataBrowser: function() {

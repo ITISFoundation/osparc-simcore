@@ -298,10 +298,10 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
         icon: "@FontAwesome5Solid/cogs/16",
         paddingLeft: 10, // align it with the context
       });
-      osparc.utils.Utils.setIdToWidget(servicesButton, "servicesTabBtn");
+      osparc.utils.Utils.setIdToWidget(servicesButton, "appsTabBtn");
       servicesButton.addListener("tap", () => {
         servicesButton.setValue(this.__resourceType === "service");
-        this.fireDataEvent("changeTab", "servicesTab");
+        this.fireDataEvent("changeTab", "appsTab");
       });
       return servicesButton;
     },
