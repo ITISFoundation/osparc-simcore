@@ -24,14 +24,23 @@ def tracing_settings_in(request):
 def set_and_clean_settings_env_vars(
     monkeypatch: pytest.MonkeyPatch, tracing_settings_in
 ):
+    added_endpoint = False
     if tracing_settings_in[0]:
+        added_endpoint = True
         monkeypatch.setenv(
             "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT", f"{tracing_settings_in[0]}"
         )
+    added_port = False
     if tracing_settings_in[1]:
+        added_port = True
         monkeypatch.setenv(
             "TRACING_OPENTELEMETRY_COLLECTOR_PORT", f"{tracing_settings_in[1]}"
         )
+    yield
+    if added_endpoint:
+        monkeypatch.delenv("TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT")
+    if added_port:
+        monkeypatch.delenv("TRACING_OPENTELEMETRY_COLLECTOR_PORT")
 
 
 @pytest.mark.parametrize(
