@@ -1,4 +1,5 @@
 import asyncio
+from decimal import Decimal
 
 from aiohttp import web
 from models_library.api_schemas_directorv2.comp_runs import (
@@ -82,6 +83,7 @@ async def list_computations_latest_iteration_tasks(
 
     _service_run_ids = [item.service_run_id for item in _tasks_get.items]
     _is_product_billable = await is_product_billable(app, product_name=product_name)
+    _service_run_osparc_credits: list[Decimal | None]
     if _is_product_billable:
         # NOTE: MD: can be improved with a single batch call
         _service_run_osparc_credits = await asyncio.gather(

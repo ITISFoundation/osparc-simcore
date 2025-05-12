@@ -14,7 +14,6 @@ from models_library.rest_ordering import OrderBy
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from servicelib.rabbitmq import RPCRouter
-from simcore_postgres_database.models import comp_runs
 from simcore_service_director_v2.models.comp_tasks import ComputationTaskForRpcDBGet
 
 from ...modules.db.repositories.comp_runs import CompRunsRepository
@@ -37,15 +36,17 @@ async def list_computations_latest_iteration_page(
     order_by: OrderBy | None = None,
 ) -> ComputationRunRpcGetPage:
     comp_runs_repo = CompRunsRepository.instance(db_engine=app.state.engine)
-    total, comp_runs = await comp_runs_repo.list_for_user__only_latest_iterations(
-        product_name=product_name,
-        user_id=user_id,
-        offset=offset,
-        limit=limit,
-        order_by=order_by,
+    total, comp_runs_output = (
+        await comp_runs_repo.list_for_user__only_latest_iterations(
+            product_name=product_name,
+            user_id=user_id,
+            offset=offset,
+            limit=limit,
+            order_by=order_by,
+        )
     )
     return ComputationRunRpcGetPage(
-        items=comp_runs,
+        items=comp_runs_output,
         total=total,
     )
 
