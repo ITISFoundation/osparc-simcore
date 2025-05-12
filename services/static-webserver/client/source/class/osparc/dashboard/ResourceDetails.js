@@ -336,6 +336,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         this.__getConversationsPage,
         this.__getPermissionsPage,
         this.__getSaveAsTemplatePage,
+        this.__getCreateFunctionsPage,
         this.__getTagsPage,
         this.__getQualityPage,
         this.__getClassifiersPage,
@@ -688,7 +689,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
       const id = "ServicesUpdate";
       const title = this.tr("Services Updates");
-      const iconSrc = "@MaterialIcons/update/22";
+      const iconSrc = "@MaterialIcons/update/24";
       const page = this.__servicesUpdatePage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
       this.__addOpenButton(page);
 
@@ -801,6 +802,29 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         return page;
       }
       return null;
+    },
+
+    __getCreateFunctionsPage: function() {
+      if (!osparc.utils.Resources.isStudy(this.__resourceData)) {
+        return null;
+      }
+
+      if (!osparc.study.Utils.canCreateFunction(this.__resourceData["workbench"])) {
+        return null;
+      }
+
+      const id = "CreateFunction";
+      const iconSrc = "@MaterialIcons/functions/24";
+      const title = this.tr("Create Function");
+      const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
+      const createFunction = new osparc.study.CreateFunction(this.__resourceData);
+      const createFunctionButton = createFunction.getCreateFunctionButton();
+      osparc.dashboard.resources.pages.BasePage.decorateHeaderButton(createFunctionButton);
+      const toolbar = this.self().createToolbar();
+      toolbar.add(createFunctionButton);
+      page.addToHeader(toolbar);
+      page.addToContent(createFunction);
+      return page;
     }
   }
 });
