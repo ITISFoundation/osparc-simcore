@@ -34,7 +34,6 @@ qx.Class.define("osparc.dashboard.AppBrowser", {
 
   members: {
     __sortBy: null,
-    __hypertools: null,
 
     // overridden
     initResources: function() {
@@ -50,7 +49,6 @@ qx.Class.define("osparc.dashboard.AppBrowser", {
       ])
         .then(resps => {
           const services = resps[0];
-          const hypertools = resps[1];
           // Show "Contact Us" message if services.length === 0
           // Most probably is a product-stranger user (it can also be that the catalog is down)
           if (Object.keys(services).length === 0) {
@@ -63,8 +61,6 @@ qx.Class.define("osparc.dashboard.AppBrowser", {
             osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
           }
 
-          console.log("hypertools", hypertools);
-          this.__hypertools = hypertools;
           this.getChildControl("resources-layout");
           this.reloadResources();
           this._hideLoadingPage();
@@ -73,13 +69,32 @@ qx.Class.define("osparc.dashboard.AppBrowser", {
 
     reloadResources: function() {
       this.__loadServices();
+      this.__loadHypertools();
     },
 
     __loadServices: function() {
       const excludeFrontend = true;
       const excludeDeprecated = true
       osparc.store.Services.getServicesLatestList(excludeFrontend, excludeDeprecated)
-        .then(servicesList => this.__setServicesToList(servicesList.filter(service => service !== null)));
+        .then(servicesList => {
+          servicesList.forEach(service => service["resourceType"] = "service");
+          this._resourcesList.push(...servicesList.filter(service => service !== null));
+          this.__sortAndReload();
+        });
+    },
+
+    __loadHypertools: function() {
+      osparc.store.Templates.getTemplatesHypertools()
+        .then(hypertoolsList => {
+          hypertoolsList.forEach(hypertool => hypertool["resourceType"] = "hypertool");
+          this._resourcesList.push(...hypertoolsList.filter(hypertool => hypertool !== null));
+          this.__sortAndReload();
+        });
+    },
+
+    __sortAndReload: function() {
+      osparc.service.Utils.sortObjectsBasedOn(this._resourcesList, this.__sortBy);
+      this._reloadCards();
     },
 
     _updateServiceData: function(serviceData) {
@@ -90,13 +105,6 @@ qx.Class.define("osparc.dashboard.AppBrowser", {
         servicesList[index] = serviceData;
         this._reloadCards();
       }
-    },
-
-    __setServicesToList: function(servicesList) {
-      servicesList.forEach(service => service["resourceType"] = "service");
-      osparc.service.Utils.sortObjectsBasedOn(servicesList, this.__sortBy);
-      this._resourcesList = servicesList;
-      this._reloadCards();
     },
 
     _reloadCards: function() {
@@ -141,7 +149,7 @@ qx.Class.define("osparc.dashboard.AppBrowser", {
       });
       containerSortButtons.addListener("sortBy", e => {
         this.__sortBy = e.getData();
-        this.__setServicesToList(this._resourcesList);
+        this.__sortAndReload();
       }, this);
       this._toolbar.add(containerSortButtons);
     },

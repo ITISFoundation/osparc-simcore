@@ -315,7 +315,12 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     resourceType: {
-      check: ["study", "template", "service"],
+      check: [
+        "study",
+        "template",
+        "service",
+        "hypertool",
+      ],
       init: true,
       nullable: true,
       event: "changeResourceType"
