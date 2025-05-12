@@ -2,6 +2,7 @@ import io
 import logging
 from collections.abc import Callable, Iterator
 from typing import Any, Generic, Literal, TypeAlias, TypeVar
+from urllib.parse import urlparse
 
 from aiohttp import web
 from aiohttp.web_exceptions import HTTPError, HTTPException
@@ -165,8 +166,7 @@ def iter_origins(request: web.Request) -> Iterator[str]:
 
 
 def get_api_base_url(request: web.Request) -> str:
-    api_host = next(iter_origins(request))
-    api_host = (
-        f"api.{api_host}" if not is_ip_address(api_host) else api_host  # in tests
-    )
+    origin = next(iter_origins(request))
+    hostname = urlparse(origin).hostname or "localhost"
+    api_host = f"api.{hostname}" if not is_ip_address(hostname) else hostname
     return f"{request.url.with_host(api_host).with_port(None).with_path('')}"
