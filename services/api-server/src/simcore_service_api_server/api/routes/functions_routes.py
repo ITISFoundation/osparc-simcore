@@ -97,7 +97,7 @@ async def get_function(
 async def list_functions(
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     page_params: Annotated[PaginationParams, Depends()],
-) -> Page[RegisteredFunction]:
+):
     functions_list, meta = await wb_api_rpc.list_functions(
         pagination_offset=page_params.offset,
         pagination_limit=page_params.limit,
@@ -116,7 +116,7 @@ async def list_functions(
 async def list_function_jobs(
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     page_params: Annotated[PaginationParams, Depends()],
-) -> Page[RegisteredFunctionJob]:
+):
     function_jobs_list, meta = await wb_api_rpc.list_function_jobs(
         pagination_offset=page_params.offset,
         pagination_limit=page_params.limit,
@@ -137,7 +137,7 @@ async def list_function_jobs(
 async def list_function_job_collections(
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     page_params: Annotated[PaginationParams, Depends()],
-) -> Page[RegisteredFunctionJobCollection]:
+):
     function_job_collection_list, meta = await wb_api_rpc.list_function_job_collections(
         pagination_offset=page_params.offset,
         pagination_limit=page_params.limit,
@@ -149,7 +149,7 @@ async def list_function_job_collections(
     )
 
 
-def join_inputs(
+def _join_inputs(
     default_inputs: FunctionInputs | None,
     function_inputs: FunctionInputs | None,
 ) -> FunctionInputs:
@@ -247,7 +247,7 @@ async def run_function(  # noqa: PLR0913
 
     to_run_function = await wb_api_rpc.get_function(function_id=function_id)
 
-    joined_inputs = join_inputs(
+    joined_inputs = _join_inputs(
         to_run_function.default_inputs,
         function_inputs,
     )
