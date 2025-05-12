@@ -136,6 +136,7 @@ async def test_publish_event_async_using_task(
         received_messages.append(event)
 
     async_dask_client.subscribe_topic(TaskProgressEvent.topic_name(), _consumer)
+    await asyncio.sleep(0)
 
     async def _dask_publisher_task(async_dask_client: distributed.Client) -> None:
         print("--> starting publisher task")
