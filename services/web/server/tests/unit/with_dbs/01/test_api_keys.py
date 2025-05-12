@@ -112,7 +112,7 @@ async def test_create_api_key(
     resp = await client.post(
         "/v0/auth/api-keys",
         json={"displayName": display_name},
-        headers={"X-Forwarded-Host": "osparc.io"},
+        headers={"X-Forwarded-Proto": "https", "X-Forwarded-Host": "osparc.io"},
     )
 
     data, errors = await assert_status(resp, expected)
@@ -122,7 +122,7 @@ async def test_create_api_key(
         assert "apiKey" in data
         assert "apiSecret" in data
         assert "apiBaseUrl" in data
-        assert data["apiBaseUrl"] == "http://api.osparc.io/"
+        assert data["apiBaseUrl"] == "https://api.osparc.io/"
 
         resp = await client.get("/v0/auth/api-keys")
         data, _ = await assert_status(resp, expected)
