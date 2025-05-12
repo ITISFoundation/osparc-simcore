@@ -34,6 +34,7 @@ qx.Class.define("osparc.dashboard.AppBrowser", {
 
   members: {
     __sortBy: null,
+    __hypertools: null,
 
     // overridden
     initResources: function() {
@@ -43,8 +44,13 @@ qx.Class.define("osparc.dashboard.AppBrowser", {
       this._resourcesInitialized = true;
 
       this._resourcesList = [];
-      osparc.store.Services.getServicesLatest()
-        .then(services => {
+      Promise.all([
+        osparc.store.Services.getServicesLatest(),
+        osparc.store.Templates.getTemplatesHypertools(),
+      ])
+        .then(resps => {
+          const services = resps[0];
+          const hypertools = resps[1];
           // Show "Contact Us" message if services.length === 0
           // Most probably is a product-stranger user (it can also be that the catalog is down)
           if (Object.keys(services).length === 0) {
@@ -57,6 +63,8 @@ qx.Class.define("osparc.dashboard.AppBrowser", {
             osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
           }
 
+          console.log("hypertools", hypertools);
+          this.__hypertools = hypertools;
           this.getChildControl("resources-layout");
           this.reloadResources();
           this._hideLoadingPage();
