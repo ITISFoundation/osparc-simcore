@@ -1,5 +1,6 @@
 from collections.abc import Iterator
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 
 import pytest
 import sqlalchemy as sa
@@ -14,7 +15,10 @@ from models_library.resource_tracker import (
 from models_library.rest_ordering import OrderBy, OrderDirection
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq._errors import RPCServerError
-from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import service_runs
+from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import (
+    credit_transactions,
+    service_runs,
+)
 from simcore_postgres_database.models.resource_tracker_credit_transactions import (
     resource_tracker_credit_transactions,
 )
@@ -111,8 +115,20 @@ async def test_rpc_list_service_runs_which_was_billed(
 
     assert len(result.items) == 2
     assert result.total == 2
-    assert result.items[0].credit_cost < 0
+    _get_credit_cost = result.items[0].credit_cost
+    assert _get_credit_cost
+    assert _get_credit_cost < 0
     assert result.items[0].transaction_status in list(CreditTransactionStatus)
+    _get_service_run_id = result.items[0].service_run_id
+
+    result = (
+        await credit_transactions.get_transaction_current_credits_by_service_run_id(
+            rpc_client,
+            service_run_id=_get_service_run_id,
+        )
+    )
+    assert isinstance(result, Decimal)
+    assert result == _get_credit_cost
 
 
 @pytest.mark.rpc_test()

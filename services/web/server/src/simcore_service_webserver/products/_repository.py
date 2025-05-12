@@ -16,6 +16,7 @@ from simcore_postgres_database.utils_products_prices import (
     ProductPriceInfo,
     get_product_latest_price_info_or_none,
     get_product_latest_stripe_info_or_none,
+    is_payment_enabled,
 )
 from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
@@ -231,3 +232,10 @@ class ProductRepository(BaseRepository):
                 product_groups_map[product_name] = product_group_id
 
         return product_groups_map
+
+    async def is_product_billable(
+        self, product_name: str, connection: AsyncConnection | None = None
+    ) -> bool:
+        """This function returns False even if the product price is defined, but is 0"""
+        async with pass_or_acquire_connection(self.engine, connection) as conn:
+            return await is_payment_enabled(conn, product_name=product_name)

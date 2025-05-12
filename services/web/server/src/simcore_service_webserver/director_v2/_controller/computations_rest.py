@@ -100,25 +100,27 @@ async def list_computations_latest_iteration_tasks(
     )
     path_params = parse_request_path_parameters_as(ComputationTaskPathParams, request)
 
-    _get = await _computations_service.list_computations_latest_iteration_tasks(
-        request.app,
-        product_name=req_ctx.product_name,
-        user_id=req_ctx.user_id,
-        project_id=path_params.project_id,
-        # pagination
-        offset=query_params.offset,
-        limit=query_params.limit,
-        # ordering
-        order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
+    _total, _items = (
+        await _computations_service.list_computations_latest_iteration_tasks(
+            request.app,
+            product_name=req_ctx.product_name,
+            user_id=req_ctx.user_id,
+            project_id=path_params.project_id,
+            # pagination
+            offset=query_params.offset,
+            limit=query_params.limit,
+            # ordering
+            order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
+        )
     )
 
     page = Page[ComputationTaskRestGet].model_validate(
         paginate_data(
             chunk=[
                 ComputationTaskRestGet.model_validate(task, from_attributes=True)
-                for task in _get.items
+                for task in _items
             ],
-            total=_get.total,
+            total=_total,
             limit=query_params.limit,
             offset=query_params.offset,
             request_url=request.url,
