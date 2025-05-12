@@ -38,7 +38,7 @@ pytest_simcore_core_services_selection = [
 ]
 
 
-def test_publish_event(
+async def test_publish_event(
     dask_client: distributed.Client, job_id: str, task_owner: TaskOwner
 ):
     event_to_publish = TaskProgressEvent(
@@ -56,7 +56,7 @@ def test_publish_event(
 
     dask_client.subscribe_topic(TaskProgressEvent.topic_name(), handler)
 
-    publish_event(dask_client, event=event_to_publish)
+    await publish_event(dask_client, event=event_to_publish)
     for attempt in Retrying(
         wait=wait_fixed(0.2), stop=stop_after_delay(15), reraise=True
     ):
@@ -127,22 +127,17 @@ async def test_publish_event_async_using_task(
     job_id: str,
     task_owner: TaskOwner,
 ):
-    dask_pub = distributed.Pub("some_topic", client=async_dask_client)
-    dask_sub = distributed.Sub("some_topic", client=async_dask_client)
     NUMBER_OF_MESSAGES = 1000
     received_messages = []
 
-    async def _dask_sub_consumer_task(sub: distributed.Sub) -> None:
-        print("--> starting consumer task")
-        async for dask_event in sub:
-            print(f"received {dask_event}")
-            received_messages.append(dask_event)
-        print("<-- finished consumer task")
+    async def _consumer(event: tuple) -> None:
+        print("received event", event)
+        assert isinstance(event, tuple)
+        received_messages.append(event)
 
-    consumer_task = asyncio_task(_dask_sub_consumer_task(dask_sub))
-    assert consumer_task
+    async_dask_client.subscribe_topic(TaskProgressEvent.topic_name(), _consumer)
 
-    async def _dask_publisher_task(pub: distributed.Pub) -> None:
+    async def _dask_publisher_task(async_dask_client: distributed.Client) -> None:
         print("--> starting publisher task")
         for _ in range(NUMBER_OF_MESSAGES):
             event_to_publish = TaskProgressEvent(
@@ -150,10 +145,10 @@ async def test_publish_event_async_using_task(
                 progress=0.5,
                 task_owner=task_owner,
             )
-            publish_event(dask_pub=pub, event=event_to_publish)
+            await publish_event(async_dask_client, event=event_to_publish)
         print("<-- finished publisher task")
 
-    publisher_task = asyncio_task(_dask_publisher_task(dask_pub))
+    publisher_task = asyncio_task(_dask_publisher_task(async_dask_client))
     assert publisher_task
 
     async for attempt in AsyncRetrying(
