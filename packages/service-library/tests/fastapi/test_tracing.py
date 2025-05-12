@@ -4,8 +4,8 @@
 import importlib
 import random
 import string
-from collections.abc import Callable
-from typing import Any, Iterator
+from collections.abc import Callable, Iterator
+from typing import Any
 
 import pip
 import pytest
@@ -115,6 +115,9 @@ def manage_package(request):
     uninstall_package(package)
 
 
+@pytest.mark.skip(
+    reason="this test installs always the latest version of the package which creates conflicts."
+)
 @pytest.mark.parametrize(
     "tracing_settings_in, manage_package",
     [
