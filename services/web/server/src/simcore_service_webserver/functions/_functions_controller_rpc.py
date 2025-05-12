@@ -1,37 +1,41 @@
 from aiohttp import web
+from functions_rpc.test_functions_controller_rpc import FunctionJobCollection
 from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.api_schemas_webserver.functions_wb_schema import (
     Function,
     FunctionClass,
     FunctionClassSpecificData,
-    FunctionDB,
     FunctionID,
     FunctionIDNotFoundError,
     FunctionInputs,
     FunctionInputSchema,
     FunctionJob,
     FunctionJobClassSpecificData,
-    FunctionJobCollection,
     FunctionJobCollectionIDNotFoundError,
-    FunctionJobDB,
     FunctionJobID,
     FunctionJobIDNotFoundError,
     FunctionOutputSchema,
-    ProjectFunction,
-    ProjectFunctionJob,
+    RegisteredFunction,
+    RegisteredFunctionJob,
+    RegisteredFunctionJobCollection,
+    RegisteredProjectFunction,
+    RegisteredProjectFunctionJob,
+    RegisteredSolverFunction,
+    RegisteredSolverFunctionJob,
     RegisterFunctionJobCollectionWithIDError,
     RegisterFunctionJobWithIDError,
     RegisterFunctionWithIDError,
-    SolverFunction,
-    SolverFunctionJob,
     UnsupportedFunctionClassError,
     UnsupportedFunctionJobClassError,
 )
 from models_library.rest_pagination import PageMetaInfoLimitOffset
 from servicelib.rabbitmq import RPCRouter
+from simcore_postgres_database.models.funcapi_function_jobs_table import FunctionJobDB
+from simcore_postgres_database.models.funcapi_functions_table import FunctionDB
 
 from ..rabbitmq import get_rabbitmq_rpc_server
 from . import _functions_repository
+from ._functions_repository import RegisteredFunctionDB, RegisteredFunctionJobDB
 
 router = RPCRouter()
 
@@ -41,10 +45,21 @@ router = RPCRouter()
 @router.expose(
     reraise_if_error_type=(UnsupportedFunctionClassError, RegisterFunctionWithIDError)
 )
-async def register_function(app: web.Application, *, function: Function) -> Function:
+async def register_function(
+    app: web.Application, *, function: Function
+) -> RegisteredFunction:
     assert app
-    saved_function = await _functions_repository.register_function(
-        app=app, function=_encode_function(function)
+
+    encoded_function = _encode_function(function)
+    saved_function = await _functions_repository.create_function(
+        app=app,
+        title=encoded_function.title,
+        function_class=encoded_function.function_class,
+        description=encoded_function.description,
+        input_schema=encoded_function.input_schema,
+        output_schema=encoded_function.output_schema,
+        default_inputs=encoded_function.default_inputs,
+        class_specific_data=encoded_function.class_specific_data,
     )
     return _decode_function(saved_function)
 
@@ -57,10 +72,18 @@ async def register_function(app: web.Application, *, function: Function) -> Func
 )
 async def register_function_job(
     app: web.Application, *, function_job: FunctionJob
-) -> FunctionJob:
+) -> RegisteredFunctionJob:
     assert app
-    created_function_job_db = await _functions_repository.register_function_job(
-        app=app, function_job=_encode_functionjob(function_job)
+    encoded_function_job = _encode_functionjob(function_job)
+    created_function_job_db = await _functions_repository.create_function_job(
+        app=app,
+        function_class=encoded_function_job.function_class,
+        title=encoded_function_job.title,
+        description=encoded_function_job.description,
+        function_uid=encoded_function_job.function_uuid,
+        inputs=encoded_function_job.inputs,
+        outputs=encoded_function_job.outputs,
+        class_specific_data=encoded_function_job.class_specific_data,
     )
     return _decode_functionjob(created_function_job_db)
 
@@ -68,15 +91,17 @@ async def register_function_job(
 @router.expose(reraise_if_error_type=(RegisterFunctionJobCollectionWithIDError,))
 async def register_function_job_collection(
     app: web.Application, *, function_job_collection: FunctionJobCollection
-) -> FunctionJobCollection:
+) -> RegisteredFunctionJobCollection:
     assert app
     registered_function_job_collection, registered_job_ids = (
-        await _functions_repository.register_function_job_collection(
+        await _functions_repository.create_function_job_collection(
             app=app,
-            function_job_collection=function_job_collection,
+            title=function_job_collection.title,
+            description=function_job_collection.description,
+            job_ids=function_job_collection.job_ids,
         )
     )
-    return FunctionJobCollection(
+    return RegisteredFunctionJobCollection(
         uid=registered_function_job_collection.uuid,
         title=registered_function_job_collection.title,
         description=registered_function_job_collection.description,
@@ -85,7 +110,9 @@ async def register_function_job_collection(
 
 
 @router.expose(reraise_if_error_type=(FunctionIDNotFoundError,))
-async def get_function(app: web.Application, *, function_id: FunctionID) -> Function:
+async def get_function(
+    app: web.Application, *, function_id: FunctionID
+) -> RegisteredFunction:
     assert app
     returned_function = await _functions_repository.get_function(
         app=app,
@@ -99,7 +126,7 @@ async def get_function(app: web.Application, *, function_id: FunctionID) -> Func
 @router.expose(reraise_if_error_type=(FunctionJobIDNotFoundError,))
 async def get_function_job(
     app: web.Application, *, function_job_id: FunctionJobID
-) -> FunctionJob:
+) -> RegisteredFunctionJob:
     assert app
     returned_function_job = await _functions_repository.get_function_job(
         app=app,
@@ -113,7 +140,7 @@ async def get_function_job(
 @router.expose(reraise_if_error_type=(FunctionJobCollectionIDNotFoundError,))
 async def get_function_job_collection(
     app: web.Application, *, function_job_collection_id: FunctionJobID
-) -> FunctionJobCollection:
+) -> RegisteredFunctionJobCollection:
     assert app
     returned_function_job_collection, returned_job_ids = (
         await _functions_repository.get_function_job_collection(
@@ -121,7 +148,7 @@ async def get_function_job_collection(
             function_job_collection_id=function_job_collection_id,
         )
     )
-    return FunctionJobCollection(
+    return RegisteredFunctionJobCollection(
         uid=returned_function_job_collection.uuid,
         title=returned_function_job_collection.title,
         description=returned_function_job_collection.description,
@@ -134,7 +161,7 @@ async def list_functions(
     app: web.Application,
     pagination_limit: int,
     pagination_offset: int,
-) -> tuple[list[Function], PageMetaInfoLimitOffset]:
+) -> tuple[list[RegisteredFunction], PageMetaInfoLimitOffset]:
     assert app
     returned_functions, page = await _functions_repository.list_functions(
         app=app,
@@ -151,7 +178,7 @@ async def list_function_jobs(
     app: web.Application,
     pagination_limit: int,
     pagination_offset: int,
-) -> tuple[list[FunctionJob], PageMetaInfoLimitOffset]:
+) -> tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset]:
     assert app
     returned_function_jobs, page = await _functions_repository.list_function_jobs(
         app=app,
@@ -169,7 +196,7 @@ async def list_function_job_collections(
     app: web.Application,
     pagination_limit: int,
     pagination_offset: int,
-) -> tuple[list[FunctionJobCollection], PageMetaInfoLimitOffset]:
+) -> tuple[list[RegisteredFunctionJobCollection], PageMetaInfoLimitOffset]:
     assert app
     returned_function_job_collections, page = (
         await _functions_repository.list_function_job_collections(
@@ -179,7 +206,7 @@ async def list_function_job_collections(
         )
     )
     return [
-        FunctionJobCollection(
+        RegisteredFunctionJobCollection(
             uid=function_job_collection.uuid,
             title=function_job_collection.title,
             description=function_job_collection.description,
@@ -232,7 +259,7 @@ async def find_cached_function_job(
         return None
 
     if returned_function_job.function_class == FunctionClass.project:
-        return ProjectFunctionJob(
+        return RegisteredProjectFunctionJob(
             uid=returned_function_job.uuid,
             title=returned_function_job.title,
             description="",
@@ -242,7 +269,7 @@ async def find_cached_function_job(
             project_job_id=returned_function_job.class_specific_data["project_job_id"],
         )
     elif returned_function_job.function_class == FunctionClass.solver:  # noqa: RET505
-        return SolverFunctionJob(
+        return RegisteredSolverFunctionJob(
             uid=returned_function_job.uuid,
             title=returned_function_job.title,
             description="",
@@ -282,10 +309,10 @@ async def get_function_output_schema(
 
 
 def _decode_function(
-    function: FunctionDB,
-) -> Function:
+    function: RegisteredFunctionDB,
+) -> RegisteredFunction:
     if function.function_class == "project":
-        return ProjectFunction(
+        return RegisteredProjectFunction(
             uid=function.uuid,
             title=function.title,
             description=function.description,
@@ -295,7 +322,7 @@ def _decode_function(
             default_inputs=function.default_inputs,
         )
     elif function.function_class == "solver":  # noqa: RET505
-        return SolverFunction(
+        return RegisteredSolverFunction(
             uid=function.uuid,
             title=function.title,
             description=function.description,
@@ -327,23 +354,22 @@ def _encode_function(
         raise UnsupportedFunctionClassError(function_class=function.function_class)
 
     return FunctionDB(
-        uuid=function.uid,
         title=function.title,
         description=function.description,
         input_schema=function.input_schema,
         output_schema=function.output_schema,
-        function_class=function.function_class,
         default_inputs=function.default_inputs,
         class_specific_data=class_specific_data,
+        function_class=function.function_class,
     )
 
 
 def _encode_functionjob(
     functionjob: FunctionJob,
 ) -> FunctionJobDB:
+
     if functionjob.function_class == FunctionClass.project:
         return FunctionJobDB(
-            uuid=functionjob.uid,
             title=functionjob.title,
             function_uuid=functionjob.function_uid,
             inputs=functionjob.inputs,
@@ -357,7 +383,6 @@ def _encode_functionjob(
         )
     elif functionjob.function_class == FunctionClass.solver:  # noqa: RET505
         return FunctionJobDB(
-            uuid=functionjob.uid,
             title=functionjob.title,
             function_uuid=functionjob.function_uid,
             inputs=functionjob.inputs,
@@ -376,10 +401,10 @@ def _encode_functionjob(
 
 
 def _decode_functionjob(
-    functionjob_db: FunctionJobDB,
-) -> FunctionJob:
+    functionjob_db: RegisteredFunctionJobDB,
+) -> RegisteredFunctionJob:
     if functionjob_db.function_class == FunctionClass.project:
-        return ProjectFunctionJob(
+        return RegisteredProjectFunctionJob(
             uid=functionjob_db.uuid,
             title=functionjob_db.title,
             description="",
@@ -389,7 +414,7 @@ def _decode_functionjob(
             project_job_id=functionjob_db.class_specific_data["project_job_id"],
         )
     elif functionjob_db.function_class == FunctionClass.solver:  # noqa: RET505
-        return SolverFunctionJob(
+        return RegisteredSolverFunctionJob(
             uid=functionjob_db.uuid,
             title=functionjob_db.title,
             description="",

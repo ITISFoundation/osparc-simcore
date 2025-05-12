@@ -11,6 +11,9 @@ from models_library.api_schemas_webserver.functions_wb_schema import (
     FunctionJobCollectionID,
     FunctionJobID,
     FunctionOutputSchema,
+    RegisteredFunction,
+    RegisteredFunctionJob,
+    RegisteredFunctionJobCollection,
 )
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.rest_pagination import PageMetaInfoLimitOffset
@@ -27,8 +30,8 @@ async def register_function(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     function: Function,
-) -> Function:
-    result: Function = await rabbitmq_rpc_client.request(
+) -> RegisteredFunction:
+    result: RegisteredFunction = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("register_function"),
         function=function,
@@ -42,8 +45,8 @@ async def get_function(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     function_id: FunctionID,
-) -> Function:
-    result: Function = await rabbitmq_rpc_client.request(
+) -> RegisteredFunction:
+    result: RegisteredFunction = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("get_function"),
         function_id=function_id,
@@ -103,8 +106,8 @@ async def list_functions(
     *,
     pagination_limit: int,
     pagination_offset: int,
-) -> tuple[list[Function], PageMetaInfoLimitOffset]:
-    result: tuple[list[Function], PageMetaInfoLimitOffset] = (
+) -> tuple[list[RegisteredFunction], PageMetaInfoLimitOffset]:
+    result: tuple[list[RegisteredFunction], PageMetaInfoLimitOffset] = (
         await rabbitmq_rpc_client.request(
             WEBSERVER_RPC_NAMESPACE,
             TypeAdapter(RPCMethodName).validate_python("list_functions"),
@@ -113,9 +116,9 @@ async def list_functions(
         )
     )
     assert isinstance(result, tuple)
-    TypeAdapter(list[Function]).validate_python(
+    TypeAdapter(list[RegisteredFunction]).validate_python(
         result[0]
-    )  # Validates the result as a list of Functions
+    )  # Validates the result as a list of RegisteredFunctions
     assert isinstance(result[1], PageMetaInfoLimitOffset)  # nosec
     return result
 
@@ -126,8 +129,8 @@ async def list_function_jobs(
     *,
     pagination_limit: int,
     pagination_offset: int,
-) -> tuple[list[FunctionJob], PageMetaInfoLimitOffset]:
-    result: tuple[list[FunctionJob], PageMetaInfoLimitOffset] = (
+) -> tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset]:
+    result: tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset] = (
         await rabbitmq_rpc_client.request(
             WEBSERVER_RPC_NAMESPACE,
             TypeAdapter(RPCMethodName).validate_python("list_function_jobs"),
@@ -136,9 +139,9 @@ async def list_function_jobs(
         )
     )
     assert isinstance(result, tuple)
-    TypeAdapter(list[FunctionJob]).validate_python(
+    TypeAdapter(list[RegisteredFunctionJob]).validate_python(
         result[0]
-    )  # Validates the result as a list of FunctionJobs
+    )  # Validates the result as a list of RegisteredFunctionJobs
     assert isinstance(result[1], PageMetaInfoLimitOffset)  # nosec
     return result
 
@@ -149,8 +152,8 @@ async def list_function_job_collections(
     *,
     pagination_limit: int,
     pagination_offset: int,
-) -> tuple[list[FunctionJobCollection], PageMetaInfoLimitOffset]:
-    result: tuple[list[FunctionJobCollection], PageMetaInfoLimitOffset] = (
+) -> tuple[list[RegisteredFunctionJobCollection], PageMetaInfoLimitOffset]:
+    result: tuple[list[RegisteredFunctionJobCollection], PageMetaInfoLimitOffset] = (
         await rabbitmq_rpc_client.request(
             WEBSERVER_RPC_NAMESPACE,
             TypeAdapter(RPCMethodName).validate_python("list_function_job_collections"),
@@ -159,9 +162,9 @@ async def list_function_job_collections(
         )
     )
     assert isinstance(result, tuple)
-    TypeAdapter(list[FunctionJobCollection]).validate_python(
+    TypeAdapter(list[RegisteredFunctionJobCollection]).validate_python(
         result[0]
-    )  # Validates the result as a list of FunctionJobCollections
+    )  # Validates the result as a list of RegisteredFunctionJobCollections
     assert isinstance(result[1], PageMetaInfoLimitOffset)  # nosec
     return result
 
@@ -172,14 +175,14 @@ async def run_function(
     *,
     function_id: FunctionID,
     inputs: FunctionInputs,
-) -> FunctionJob:
-    result: FunctionJob = await rabbitmq_rpc_client.request(
+) -> RegisteredFunctionJob:
+    result: RegisteredFunctionJob = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("run_function"),
         function_id=function_id,
         inputs=inputs,
     )
-    TypeAdapter(FunctionJob).validate_python(
+    TypeAdapter(RegisteredFunctionJob).validate_python(
         result
     )  # Validates the result as a FunctionJob
     return result
@@ -190,15 +193,15 @@ async def register_function_job(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     function_job: FunctionJob,
-) -> FunctionJob:
-    result: FunctionJob = await rabbitmq_rpc_client.request(
+) -> RegisteredFunctionJob:
+    result: RegisteredFunctionJob = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("register_function_job"),
         function_job=function_job,
     )
-    TypeAdapter(FunctionJob).validate_python(
+    TypeAdapter(RegisteredFunctionJob).validate_python(
         result
-    )  # Validates the result as a FunctionJob
+    )  # Validates the result as a RegisteredFunctionJob
     return result
 
 
@@ -207,14 +210,14 @@ async def get_function_job(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     function_job_id: FunctionJobID,
-) -> FunctionJob:
-    result: FunctionJob = await rabbitmq_rpc_client.request(
+) -> RegisteredFunctionJob:
+    result: RegisteredFunctionJob = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("get_function_job"),
         function_job_id=function_job_id,
     )
 
-    TypeAdapter(FunctionJob).validate_python(result)
+    TypeAdapter(RegisteredFunctionJob).validate_python(result)
     return result
 
 
@@ -239,8 +242,8 @@ async def find_cached_function_job(
     *,
     function_id: FunctionID,
     inputs: FunctionInputs,
-) -> FunctionJob | None:
-    result: FunctionJob = await rabbitmq_rpc_client.request(
+) -> RegisteredFunctionJob | None:
+    result: RegisteredFunctionJob | None = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("find_cached_function_job"),
         function_id=function_id,
@@ -248,7 +251,7 @@ async def find_cached_function_job(
     )
     if result is None:
         return None
-    TypeAdapter(FunctionJob).validate_python(result)
+    TypeAdapter(RegisteredFunctionJob).validate_python(result)
     return result
 
 
@@ -257,13 +260,13 @@ async def register_function_job_collection(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     function_job_collection: FunctionJobCollection,
-) -> FunctionJobCollection:
-    result: FunctionJobCollection = await rabbitmq_rpc_client.request(
+) -> RegisteredFunctionJobCollection:
+    result: RegisteredFunctionJobCollection = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("register_function_job_collection"),
         function_job_collection=function_job_collection,
     )
-    TypeAdapter(FunctionJobCollection).validate_python(result)
+    TypeAdapter(RegisteredFunctionJobCollection).validate_python(result)
     return result
 
 
@@ -272,13 +275,13 @@ async def get_function_job_collection(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     function_job_collection_id: FunctionJobCollectionID,
-) -> FunctionJobCollection:
-    result: FunctionJobCollection = await rabbitmq_rpc_client.request(
+) -> RegisteredFunctionJobCollection:
+    result: RegisteredFunctionJobCollection = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("get_function_job_collection"),
         function_job_collection_id=function_job_collection_id,
     )
-    TypeAdapter(FunctionJobCollection).validate_python(result)
+    TypeAdapter(RegisteredFunctionJobCollection).validate_python(result)
     return result
 
 

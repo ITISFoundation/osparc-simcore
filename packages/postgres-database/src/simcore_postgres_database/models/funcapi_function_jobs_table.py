@@ -6,11 +6,36 @@
 import uuid
 
 import sqlalchemy as sa
+from models_library.api_schemas_webserver.functions_wb_schema import (
+    FunctionClass,
+    FunctionID,
+    FunctionInputs,
+    FunctionJobClassSpecificData,
+    FunctionJobID,
+    FunctionOutputs,
+)
+from pydantic import BaseModel
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.sql import func
 
 from ._common import RefActions
 from .base import metadata
 from .funcapi_functions_table import functions_table
+
+
+class FunctionJobDB(BaseModel):
+    function_uuid: FunctionID
+    title: str = ""
+    description: str = ""
+    inputs: FunctionInputs
+    outputs: FunctionOutputs
+    class_specific_data: FunctionJobClassSpecificData
+    function_class: FunctionClass
+
+
+class RegisteredFunctionJobDB(FunctionJobDB):
+    uuid: FunctionJobID
+
 
 function_jobs_table = sa.Table(
     "funcapi_function_jobs",
@@ -27,6 +52,11 @@ function_jobs_table = sa.Table(
         "title",
         sa.String,
         doc="Name of the function job",
+    ),
+    sa.Column(
+        "description",
+        sa.String,
+        doc="Description of the function job",
     ),
     sa.Column(
         "function_uuid",
@@ -65,6 +95,21 @@ function_jobs_table = sa.Table(
         sa.JSON,
         nullable=True,
         doc="Fields specific for a function class",
+    ),
+    sa.Column(
+        "created",
+        sa.DateTime(),
+        nullable=False,
+        server_default=func.now(),
+        doc="Timestamp auto-generated upon creation",
+    ),
+    sa.Column(
+        "modified",
+        sa.DateTime(),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+        doc="Automaticaly updates on modification of the row",
     ),
     sa.PrimaryKeyConstraint("uuid", name="funcapi_function_jobs_pk"),
 )

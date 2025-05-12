@@ -14,6 +14,9 @@ from models_library.api_schemas_webserver.functions_wb_schema import (
     FunctionJobCollectionID,
     FunctionJobID,
     FunctionOutputSchema,
+    RegisteredFunction,
+    RegisteredFunctionJob,
+    RegisteredFunctionJobCollection,
 )
 from models_library.api_schemas_webserver.licensed_items import LicensedItemRpcGetPage
 from models_library.licenses import LicensedItemID
@@ -304,7 +307,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             function=function,
         )
 
-    async def get_function(self, *, function_id: FunctionID) -> Function:
+    async def get_function(self, *, function_id: FunctionID) -> RegisteredFunction:
         return await _get_function(self._client, function_id=function_id)
 
     async def delete_function(self, *, function_id: FunctionID) -> None:
@@ -315,7 +318,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         *,
         pagination_offset: PageOffsetInt = 0,
         pagination_limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
-    ) -> tuple[list[Function], PageMetaInfoLimitOffset]:
+    ) -> tuple[list[RegisteredFunction], PageMetaInfoLimitOffset]:
 
         return await _list_functions(
             self._client,
@@ -328,7 +331,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         *,
         pagination_offset: PageOffsetInt = 0,
         pagination_limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
-    ) -> tuple[list[FunctionJob], PageMetaInfoLimitOffset]:
+    ) -> tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset]:
         return await _list_function_jobs(
             self._client,
             pagination_offset=pagination_offset,
@@ -340,7 +343,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         *,
         pagination_offset: PageOffsetInt = 0,
         pagination_limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
-    ) -> tuple[list[FunctionJobCollection], PageMetaInfoLimitOffset]:
+    ) -> tuple[list[RegisteredFunctionJobCollection], PageMetaInfoLimitOffset]:
         return await _list_function_job_collections(
             self._client,
             pagination_offset=pagination_offset,
@@ -349,16 +352,20 @@ class WbApiRpcClient(SingletonInAppStateMixin):
 
     async def run_function(
         self, *, function_id: FunctionID, inputs: FunctionInputs
-    ) -> FunctionJob:
+    ) -> RegisteredFunctionJob:
         return await _run_function(self._client, function_id=function_id, inputs=inputs)
 
-    async def get_function_job(self, *, function_job_id: FunctionJobID) -> FunctionJob:
+    async def get_function_job(
+        self, *, function_job_id: FunctionJobID
+    ) -> RegisteredFunctionJob:
         return await _get_function_job(self._client, function_job_id=function_job_id)
 
     async def delete_function_job(self, *, function_job_id: FunctionJobID) -> None:
         return await _delete_function_job(self._client, function_job_id=function_job_id)
 
-    async def register_function_job(self, *, function_job: FunctionJob) -> FunctionJob:
+    async def register_function_job(
+        self, *, function_job: FunctionJob
+    ) -> RegisteredFunctionJob:
         return await _register_function_job(self._client, function_job=function_job)
 
     async def get_function_input_schema(
@@ -373,14 +380,14 @@ class WbApiRpcClient(SingletonInAppStateMixin):
 
     async def find_cached_function_job(
         self, *, function_id: FunctionID, inputs: FunctionInputs
-    ) -> FunctionJob | None:
+    ) -> RegisteredFunctionJob | None:
         return await _find_cached_function_job(
             self._client, function_id=function_id, inputs=inputs
         )
 
     async def get_function_job_collection(
         self, *, function_job_collection_id: FunctionJobCollectionID
-    ) -> FunctionJobCollection:
+    ) -> RegisteredFunctionJobCollection:
         return await _get_function_job_collection(
             self._client, function_job_collection_id=function_job_collection_id
         )

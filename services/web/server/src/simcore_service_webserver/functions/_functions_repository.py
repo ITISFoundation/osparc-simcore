@@ -2,29 +2,34 @@ import json
 
 from aiohttp import web
 from models_library.api_schemas_webserver.functions_wb_schema import (
-    FunctionDB,
+    FunctionClass,
     FunctionID,
     FunctionIDNotFoundError,
     FunctionInputs,
-    FunctionJobCollection,
-    FunctionJobCollectionDB,
+    FunctionInputSchema,
+    FunctionJobClassSpecificData,
     FunctionJobCollectionIDNotFoundError,
-    FunctionJobDB,
     FunctionJobID,
     FunctionJobIDNotFoundError,
-    RegisterFunctionWithIDError,
+    FunctionOutputs,
+    FunctionOutputSchema,
 )
 from models_library.rest_pagination import PageMetaInfoLimitOffset
 from simcore_postgres_database.models.funcapi_function_job_collections_table import (
+    RegisteredFunctionJobCollectionDB,
     function_job_collections_table,
 )
 from simcore_postgres_database.models.funcapi_function_job_collections_to_function_jobs_table import (
     function_job_collections_to_function_jobs_table,
 )
 from simcore_postgres_database.models.funcapi_function_jobs_table import (
+    RegisteredFunctionJobDB,
     function_jobs_table,
 )
-from simcore_postgres_database.models.funcapi_functions_table import functions_table
+from simcore_postgres_database.models.funcapi_functions_table import (
+    RegisteredFunctionDB,
+    functions_table,
+)
 from simcore_postgres_database.utils_repos import (
     get_columns_from_db_model,
     transaction_context,
@@ -35,44 +40,39 @@ from sqlalchemy.sql import func
 
 from ..db.plugin import get_asyncpg_engine
 
-_FUNCTIONS_TABLE_COLS = get_columns_from_db_model(functions_table, FunctionDB)
+_FUNCTIONS_TABLE_COLS = get_columns_from_db_model(functions_table, RegisteredFunctionDB)
 _FUNCTION_JOBS_TABLE_COLS = get_columns_from_db_model(
-    function_jobs_table, FunctionJobDB
+    function_jobs_table, RegisteredFunctionJobDB
 )
 _FUNCTION_JOB_COLLECTIONS_TABLE_COLS = get_columns_from_db_model(
-    function_job_collections_table, FunctionJobCollectionDB
+    function_job_collections_table, RegisteredFunctionJobCollectionDB
 )
 
 
-async def register_function(
+async def create_function(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
-    function: FunctionDB,
-) -> FunctionDB:
-
-    if function.uuid is not None:
-        raise RegisterFunctionWithIDError
+    function_class: FunctionClass,
+    class_specific_data: dict,
+    title: str,
+    description: str,
+    input_schema: FunctionInputSchema,
+    output_schema: FunctionOutputSchema,
+    default_inputs: FunctionInputs,
+) -> RegisteredFunctionDB:
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(
             functions_table.insert()
             .values(
-                title=function.title,
-                description=function.description,
-                input_schema=(
-                    function.input_schema.model_dump()
-                    if function.input_schema is not None
-                    else None
-                ),
-                output_schema=(
-                    function.output_schema.model_dump()
-                    if function.output_schema is not None
-                    else None
-                ),
-                function_class=function.function_class,
-                class_specific_data=function.class_specific_data,
-                default_inputs=function.default_inputs,
+                title=title,
+                description=description,
+                input_schema=(input_schema.model_dump()),
+                output_schema=(output_schema.model_dump()),
+                function_class=function_class,
+                class_specific_data=class_specific_data,
+                default_inputs=default_inputs,
             )
             .returning(*_FUNCTIONS_TABLE_COLS)
         )
@@ -80,10 +80,100 @@ async def register_function(
 
         assert row is not None, (
             "No row was returned from the database after creating function."
-            f" Function: {function}"
+            f" Function: {title}"
         )  # nosec
 
-        return FunctionDB.model_validate(dict(row))
+        return RegisteredFunctionDB.model_validate(dict(row))
+
+
+async def create_function_job(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    function_class: FunctionClass,
+    function_uid: FunctionID,
+    title: str,
+    description: str,
+    inputs: FunctionInputs,
+    outputs: FunctionOutputs,
+    class_specific_data: FunctionJobClassSpecificData,
+) -> RegisteredFunctionJobDB:
+
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        result = await conn.stream(
+            function_jobs_table.insert()
+            .values(
+                function_uuid=function_uid,
+                inputs=inputs,
+                outputs=outputs,
+                function_class=function_class,
+                class_specific_data=class_specific_data,
+                title=title,
+                description=description,
+                status="created",
+            )
+            .returning(*_FUNCTION_JOBS_TABLE_COLS)
+        )
+        row = await result.first()
+
+        assert row is not None, (
+            "No row was returned from the database after creating function job."
+            f" Function job: {title}"
+        )  # nosec
+
+        return RegisteredFunctionJobDB.model_validate(dict(row))
+
+
+async def create_function_job_collection(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    title: str,
+    description: str,
+    job_ids: list[FunctionJobID],
+) -> tuple[RegisteredFunctionJobCollectionDB, list[FunctionJobID]]:
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        result = await conn.stream(
+            function_job_collections_table.insert()
+            .values(
+                title=title,
+                description=description,
+            )
+            .returning(*_FUNCTION_JOB_COLLECTIONS_TABLE_COLS)
+        )
+        row = await result.first()
+
+        assert row is not None, (
+            "No row was returned from the database after creating function job collection."
+            f" Function job collection: {title}"
+        )  # nosec
+
+        function_job_collection_db = RegisteredFunctionJobCollectionDB.model_validate(
+            dict(row)
+        )
+        job_collection_entries = []
+        for job_id in job_ids:
+            result = await conn.stream(
+                function_job_collections_to_function_jobs_table.insert()
+                .values(
+                    function_job_collection_uuid=function_job_collection_db.uuid,
+                    function_job_uuid=job_id,
+                )
+                .returning(
+                    function_job_collections_to_function_jobs_table.c.function_job_collection_uuid,
+                    function_job_collections_to_function_jobs_table.c.function_job_uuid,
+                )
+            )
+            entry = await result.first()
+            assert entry is not None, (
+                f"No row was returned from the database after creating function job collection entry {title}."
+                f" Job ID: {job_id}"
+            )  # nosec
+            job_collection_entries.append(dict(entry))
+
+        return function_job_collection_db, [
+            dict(entry)["function_job_uuid"] for entry in job_collection_entries
+        ]
 
 
 async def get_function(
@@ -91,7 +181,7 @@ async def get_function(
     connection: AsyncConnection | None = None,
     *,
     function_id: FunctionID,
-) -> FunctionDB:
+) -> RegisteredFunctionDB:
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(
@@ -101,7 +191,7 @@ async def get_function(
 
         if row is None:
             raise FunctionIDNotFoundError(function_id=function_id)
-        return FunctionDB.model_validate(dict(row))
+        return RegisteredFunctionDB.model_validate(dict(row))
 
 
 async def list_functions(
@@ -110,7 +200,7 @@ async def list_functions(
     *,
     pagination_limit: int,
     pagination_offset: int,
-) -> tuple[list[FunctionDB], PageMetaInfoLimitOffset]:
+) -> tuple[list[RegisteredFunctionDB], PageMetaInfoLimitOffset]:
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         total_count_result = await conn.scalar(
@@ -126,7 +216,7 @@ async def list_functions(
             )
 
         return [
-            FunctionDB.model_validate(dict(row)) for row in rows
+            RegisteredFunctionDB.model_validate(dict(row)) for row in rows
         ], PageMetaInfoLimitOffset(
             total=total_count_result,
             offset=pagination_offset,
@@ -141,7 +231,7 @@ async def list_function_jobs(
     *,
     pagination_limit: int,
     pagination_offset: int,
-) -> tuple[list[FunctionJobDB], PageMetaInfoLimitOffset]:
+) -> tuple[list[RegisteredFunctionJobDB], PageMetaInfoLimitOffset]:
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         total_count_result = await conn.scalar(
@@ -159,7 +249,7 @@ async def list_function_jobs(
             )
 
         return [
-            FunctionJobDB.model_validate(dict(row)) for row in rows
+            RegisteredFunctionJobDB.model_validate(dict(row)) for row in rows
         ], PageMetaInfoLimitOffset(
             total=total_count_result,
             offset=pagination_offset,
@@ -175,7 +265,7 @@ async def list_function_job_collections(
     pagination_limit: int,
     pagination_offset: int,
 ) -> tuple[
-    list[tuple[FunctionJobCollectionDB, list[FunctionJobID]]],
+    list[tuple[RegisteredFunctionJobCollectionDB, list[FunctionJobID]]],
     PageMetaInfoLimitOffset,
 ]:
     """
@@ -198,7 +288,7 @@ async def list_function_job_collections(
 
         collections = []
         for row in rows:
-            collection = FunctionJobCollectionDB.model_validate(dict(row))
+            collection = RegisteredFunctionJobCollectionDB.model_validate(dict(row))
             job_result = await conn.stream(
                 function_job_collections_to_function_jobs_table.select().where(
                     function_job_collections_to_function_jobs_table.c.function_job_collection_uuid
@@ -243,43 +333,12 @@ async def delete_function(
         )
 
 
-async def register_function_job(
-    app: web.Application,
-    connection: AsyncConnection | None = None,
-    *,
-    function_job: FunctionJobDB,
-) -> FunctionJobDB:
-
-    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(
-            function_jobs_table.insert()
-            .values(
-                function_uuid=function_job.function_uuid,
-                inputs=function_job.inputs,
-                outputs=function_job.outputs,
-                function_class=function_job.function_class,
-                class_specific_data=function_job.class_specific_data,
-                title=function_job.title,
-                status="created",
-            )
-            .returning(*_FUNCTION_JOBS_TABLE_COLS)
-        )
-        row = await result.first()
-
-        assert row is not None, (
-            "No row was returned from the database after creating function job."
-            f" Function job: {function_job}"
-        )  # nosec
-
-        return FunctionJobDB.model_validate(dict(row))
-
-
 async def get_function_job(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
     function_job_id: FunctionID,
-) -> FunctionJobDB:
+) -> RegisteredFunctionJobDB:
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(
@@ -292,7 +351,7 @@ async def get_function_job(
         if row is None:
             raise FunctionJobIDNotFoundError(function_job_id=function_job_id)
 
-        return FunctionJobDB.model_validate(dict(row))
+        return RegisteredFunctionJobDB.model_validate(dict(row))
 
 
 async def delete_function_job(
@@ -326,7 +385,7 @@ async def find_cached_function_job(
     *,
     function_id: FunctionID,
     inputs: FunctionInputs,
-) -> FunctionJobDB | None:
+) -> RegisteredFunctionJobDB | None:
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(
@@ -348,7 +407,7 @@ async def find_cached_function_job(
 
         row = rows[0]
 
-        job = FunctionJobDB.model_validate(dict(row))
+        job = RegisteredFunctionJobDB.model_validate(dict(row))
         if job.inputs == inputs:
             return job
 
@@ -360,7 +419,7 @@ async def get_function_job_collection(
     connection: AsyncConnection | None = None,
     *,
     function_job_collection_id: FunctionID,
-) -> tuple[FunctionJobCollectionDB, list[FunctionJobID]]:
+) -> tuple[RegisteredFunctionJobCollectionDB, list[FunctionJobID]]:
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(
@@ -388,42 +447,8 @@ async def get_function_job_collection(
             [job_row["function_job_uuid"] for job_row in job_rows] if job_rows else []
         )
 
-        job_collection = FunctionJobCollectionDB.model_validate(dict(row))
+        job_collection = RegisteredFunctionJobCollectionDB.model_validate(dict(row))
         return job_collection, job_ids
-
-
-async def register_function_job_collection(
-    app: web.Application,
-    connection: AsyncConnection | None = None,
-    *,
-    function_job_collection: FunctionJobCollection,
-) -> tuple[FunctionJobCollectionDB, list[FunctionJobID]]:
-    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(
-            function_job_collections_table.insert()
-            .values(
-                title=function_job_collection.title,
-                description=function_job_collection.description,
-            )
-            .returning(*_FUNCTION_JOB_COLLECTIONS_TABLE_COLS)
-        )
-        row = await result.first()
-
-        assert row is not None, (
-            "No row was returned from the database after creating function job collection."
-            f" Function job collection: {function_job_collection}"
-        )  # nosec
-
-        for job_id in function_job_collection.job_ids:
-            await conn.execute(
-                function_job_collections_to_function_jobs_table.insert().values(
-                    function_job_collection_uuid=row["uuid"],
-                    function_job_uuid=job_id,
-                )
-            )
-
-        job_collection = FunctionJobCollectionDB.model_validate(dict(row))
-        return job_collection, function_job_collection.job_ids
 
 
 async def delete_function_job_collection(

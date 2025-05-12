@@ -23,6 +23,9 @@ from models_library.api_schemas_webserver.functions_wb_schema import (
     FunctionOutputs,
     FunctionSchemaClass,
     ProjectFunctionJob,
+    RegisteredFunction,
+    RegisteredFunctionJob,
+    RegisteredFunctionJobCollection,
     SolverFunctionJob,
     UnsupportedFunctionClassError,
     UnsupportedFunctionFunctionJobClassCombinationError,
@@ -63,7 +66,7 @@ _COMMON_FUNCTION_ERROR_RESPONSES: Final[dict] = {
 
 @function_router.post(
     "",
-    response_model=Function,
+    response_model=RegisteredFunction,
     responses={**_COMMON_FUNCTION_ERROR_RESPONSES},
     description="Create function",
 )
@@ -76,7 +79,7 @@ async def register_function(
 
 @function_router.get(
     "/{function_id:uuid}",
-    response_model=Function,
+    response_model=RegisteredFunction,
     responses={**_COMMON_FUNCTION_ERROR_RESPONSES},
     description="Get function",
 )
@@ -87,7 +90,9 @@ async def get_function(
     return await wb_api_rpc.get_function(function_id=function_id)
 
 
-@function_router.get("", response_model=Page[Function], description="List functions")
+@function_router.get(
+    "", response_model=Page[RegisteredFunction], description="List functions"
+)
 async def list_functions(
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     page_params: Annotated[PaginationParams, Depends()],
@@ -105,7 +110,7 @@ async def list_functions(
 
 
 @function_job_router.get(
-    "", response_model=Page[FunctionJob], description="List function jobs"
+    "", response_model=Page[RegisteredFunctionJob], description="List function jobs"
 )
 async def list_function_jobs(
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
@@ -125,7 +130,7 @@ async def list_function_jobs(
 
 @function_job_collections_router.get(
     "",
-    response_model=Page[FunctionJobCollection],
+    response_model=Page[RegisteredFunctionJobCollection],
     description="List function job collections",
 )
 async def list_function_job_collections(
@@ -221,7 +226,7 @@ async def validate_function_inputs(
 
 @function_router.post(
     "/{function_id:uuid}:run",
-    response_model=FunctionJob,
+    response_model=RegisteredFunctionJob,
     responses={**_COMMON_FUNCTION_ERROR_RESPONSES},
     description="Run function",
 )
@@ -240,8 +245,6 @@ async def run_function(  # noqa: PLR0913
 ):
 
     to_run_function = await wb_api_rpc.get_function(function_id=function_id)
-
-    assert to_run_function.uid is not None
 
     joined_inputs = join_inputs(
         to_run_function.default_inputs,
@@ -286,7 +289,6 @@ async def run_function(  # noqa: PLR0913
         return await register_function_job(
             wb_api_rpc=wb_api_rpc,
             function_job=ProjectFunctionJob(
-                uid=None,
                 function_uid=to_run_function.uid,
                 title=f"Function job of function {to_run_function.uid}",
                 description=to_run_function.description,
@@ -318,7 +320,6 @@ async def run_function(  # noqa: PLR0913
         return await register_function_job(
             wb_api_rpc=wb_api_rpc,
             function_job=SolverFunctionJob(
-                uid=None,
                 function_uid=to_run_function.uid,
                 title=f"Function job of function {to_run_function.uid}",
                 description=to_run_function.description,
@@ -355,7 +356,7 @@ _COMMON_FUNCTION_JOB_ERROR_RESPONSES: Final[dict] = {
 
 
 @function_job_router.post(
-    "", response_model=FunctionJob, description="Create function job"
+    "", response_model=RegisteredFunctionJob, description="Create function job"
 )
 async def register_function_job(
     function_job: FunctionJob,
@@ -536,22 +537,13 @@ async def map_function(  # noqa: PLR0913
         for function_inputs in function_inputs_list
     ]
 
-    assert all(
-        function_job.uid is not None for function_job in function_jobs
-    ), "Function job uid should not be None"
-
     function_job_collection_description = f"Function job collection of map of function {function_id} with {len(function_inputs_list)} inputs"
     return await register_function_job_collection(
         wb_api_rpc=wb_api_rpc,
         function_job_collection=FunctionJobCollection(
-            uid=None,
             title="Function job collection of function map",
             description=function_job_collection_description,
-            job_ids=[
-                function_job.uid
-                for function_job in function_jobs
-                if function_job.uid is not None
-            ],
+            job_ids=[function_job.uid for function_job in function_jobs],
         ),
     )
 

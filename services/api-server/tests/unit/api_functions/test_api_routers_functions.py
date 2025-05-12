@@ -11,6 +11,8 @@ from models_library.api_schemas_webserver.functions_wb_schema import (
     FunctionJobCollection,
     JSONFunctionInputSchema,
     JSONFunctionOutputSchema,
+    RegisteredFunction,
+    RegisteredFunctionJobCollection,
 )
 from models_library.rest_pagination import PageMetaInfoLimitOffset
 from pydantic import TypeAdapter
@@ -64,10 +66,10 @@ class FakeWbApiRpc:
 
     async def register_function(self, function: Function) -> Function:
         # Mimic returning the same function that was passed and store it for later retrieval
-        function.uid = uuid4()
-        self._functions[function.uid] = TypeAdapter(Function).validate_python(
+        uid = uuid4()
+        self._functions[uid] = TypeAdapter(RegisteredFunction).validate_python(
             {
-                "uid": str(function.uid),
+                "uid": str(uid),
                 "title": function.title,
                 "function_class": function.function_class,
                 "project_id": getattr(function, "project_id", None),
@@ -77,7 +79,7 @@ class FakeWbApiRpc:
                 "default_inputs": None,
             }
         )
-        return self._functions[function.uid]
+        return self._functions[uid]
 
     async def get_function(self, function_id: str) -> dict:
         # Mimic retrieval of a function based on function_id and raise 404 if not found
@@ -121,12 +123,10 @@ class FakeWbApiRpc:
 
     async def register_function_job(self, function_job: FunctionJob) -> FunctionJob:
         # Mimic registering a function job
-        function_job.uid = uuid4()
-        self._function_jobs[function_job.uid] = TypeAdapter(
-            FunctionJob
-        ).validate_python(
+        uid = uuid4()
+        self._function_jobs[uid] = TypeAdapter(FunctionJob).validate_python(
             {
-                "uid": str(function_job.uid),
+                "uid": str(uid),
                 "function_uid": function_job.function_uid,
                 "title": function_job.title,
                 "description": function_job.description,
@@ -136,7 +136,7 @@ class FakeWbApiRpc:
                 "function_class": function_job.function_class,
             }
         )
-        return self._function_jobs[function_job.uid]
+        return self._function_jobs[uid]
 
     async def get_function_job(self, function_job_id: str) -> dict:
         # Mimic retrieval of a function job based on function_job_id and raise 404 if not found
@@ -171,20 +171,20 @@ class FakeWbApiRpc:
 
     async def register_function_job_collection(
         self, function_job_collection: FunctionJobCollection
-    ) -> FunctionJobCollection:
+    ) -> RegisteredFunctionJobCollection:
         # Mimic registering a function job collection
-        function_job_collection.uid = uuid4()
-        self._function_job_collections[function_job_collection.uid] = TypeAdapter(
-            FunctionJobCollection
+        uid = uuid4()
+        self._function_job_collections[uid] = TypeAdapter(
+            RegisteredFunctionJobCollection
         ).validate_python(
             {
-                "uid": str(function_job_collection.uid),
+                "uid": str(uid),
                 "title": function_job_collection.title,
                 "description": function_job_collection.description,
                 "job_ids": function_job_collection.job_ids,
             }
         )
-        return self._function_job_collections[function_job_collection.uid]
+        return self._function_job_collections[uid]
 
     async def get_function_job_collection(
         self, function_job_collection_id: str

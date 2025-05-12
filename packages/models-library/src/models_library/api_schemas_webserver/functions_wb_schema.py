@@ -77,7 +77,6 @@ FunctionOutputsLogfile: TypeAlias = Any
 
 class FunctionBase(BaseModel):
     function_class: FunctionClass
-    uid: FunctionID | None
     title: str = ""
     description: str = ""
     input_schema: FunctionInputSchema
@@ -85,30 +84,17 @@ class FunctionBase(BaseModel):
     default_inputs: FunctionInputs
 
 
-class FunctionDB(BaseModel):
-    function_class: FunctionClass
-    uuid: FunctionJobID | None
-    title: str = ""
-    description: str = ""
-    input_schema: FunctionInputSchema
-    output_schema: FunctionOutputSchema
-    default_inputs: FunctionInputs
-    class_specific_data: FunctionClassSpecificData
-
-
-class FunctionJobDB(BaseModel):
-    uuid: FunctionJobID | None
-    function_uuid: FunctionID
-    title: str = ""
-    inputs: FunctionInputs
-    outputs: FunctionOutputs
-    class_specific_data: FunctionJobClassSpecificData
-    function_class: FunctionClass
+class RegisteredFunctionBase(FunctionBase):
+    uid: FunctionID
 
 
 class ProjectFunction(FunctionBase):
     function_class: Literal[FunctionClass.project] = FunctionClass.project
     project_id: ProjectID
+
+
+class RegisteredProjectFunction(ProjectFunction, RegisteredFunctionBase):
+    pass
 
 
 SolverJobID: TypeAlias = UUID
@@ -120,13 +106,25 @@ class SolverFunction(FunctionBase):
     solver_version: ServiceVersion
 
 
+class RegisteredSolverFunction(SolverFunction, RegisteredFunctionBase):
+    pass
+
+
 class PythonCodeFunction(FunctionBase):
     function_class: Literal[FunctionClass.python_code] = FunctionClass.python_code
     code_url: str
 
 
+class RegisteredPythonCodeFunction(PythonCodeFunction, RegisteredFunctionBase):
+    pass
+
+
 Function: TypeAlias = Annotated[
     ProjectFunction | PythonCodeFunction | SolverFunction,
+    Field(discriminator="function_class"),
+]
+RegisteredFunction: TypeAlias = Annotated[
+    RegisteredProjectFunction | RegisteredPythonCodeFunction | RegisteredSolverFunction,
     Field(discriminator="function_class"),
 ]
 
@@ -134,7 +132,6 @@ FunctionJobCollectionID: TypeAlias = projects.ProjectID
 
 
 class FunctionJobBase(BaseModel):
-    uid: FunctionJobID | None
     title: str = ""
     description: str = ""
     function_uid: FunctionID
@@ -143,9 +140,17 @@ class FunctionJobBase(BaseModel):
     function_class: FunctionClass
 
 
+class RegisteredFunctionJobBase(FunctionJobBase):
+    uid: FunctionJobID
+
+
 class ProjectFunctionJob(FunctionJobBase):
     function_class: Literal[FunctionClass.project] = FunctionClass.project
     project_job_id: ProjectID
+
+
+class RegisteredProjectFunctionJob(ProjectFunctionJob, RegisteredFunctionJobBase):
+    pass
 
 
 class SolverFunctionJob(FunctionJobBase):
@@ -153,12 +158,27 @@ class SolverFunctionJob(FunctionJobBase):
     solver_job_id: ProjectID
 
 
+class RegisteredSolverFunctionJob(SolverFunctionJob, RegisteredFunctionJobBase):
+    pass
+
+
 class PythonCodeFunctionJob(FunctionJobBase):
     function_class: Literal[FunctionClass.python_code] = FunctionClass.python_code
 
 
+class RegisteredPythonCodeFunctionJob(PythonCodeFunctionJob, RegisteredFunctionJobBase):
+    pass
+
+
 FunctionJob: TypeAlias = Annotated[
     ProjectFunctionJob | PythonCodeFunctionJob | SolverFunctionJob,
+    Field(discriminator="function_class"),
+]
+
+RegisteredFunctionJob: TypeAlias = Annotated[
+    RegisteredProjectFunctionJob
+    | RegisteredPythonCodeFunctionJob
+    | RegisteredSolverFunctionJob,
     Field(discriminator="function_class"),
 ]
 
@@ -170,18 +190,13 @@ class FunctionJobStatus(BaseModel):
 class FunctionJobCollection(BaseModel):
     """Model for a collection of function jobs"""
 
-    uid: FunctionJobCollectionID | None
     title: str = ""
     description: str = ""
-    job_ids: list[FunctionJobID]
+    job_ids: list[FunctionJobID] = []
 
 
-class FunctionJobCollectionDB(BaseModel):
-    """Model for a collection of function jobs"""
-
-    uuid: FunctionJobCollectionID
-    title: str = ""
-    description: str = ""
+class RegisteredFunctionJobCollection(FunctionJobCollection):
+    uid: FunctionJobCollectionID
 
 
 class FunctionJobCollectionStatus(BaseModel):
