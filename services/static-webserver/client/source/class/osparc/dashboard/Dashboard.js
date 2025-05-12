@@ -79,7 +79,6 @@ qx.Class.define("osparc.dashboard.Dashboard", {
   members: {
     __studyBrowser: null,
     __templateBrowser: null,
-    __hypertoolBrowser: null,
     __appBrowser: null,
     __dataBrowser: null,
 
@@ -119,16 +118,6 @@ qx.Class.define("osparc.dashboard.Dashboard", {
           icon: "@FontAwesome5Solid/copy/"+tabIconSize,
           buildLayout: this.__createTemplateBrowser
         });
-        if (osparc.product.Utils.isS4LProduct() && osparc.store.StaticInfo.getInstance().isDevFeaturesEnabled()) {
-          tabs.push({
-            id: "hypertoolsTab",
-            buttonId: "hypertoolsTabBtn",
-            label: this.tr("HYPERTOOLS"),
-            icon: "@FontAwesome5Solid/copy/"+tabIconSize,
-            // initVisibility: "excluded",
-            buildLayout: this.__createHypertoolsBrowser
-          });
-        }
       }
       if (permissions.canDo("dashboard.services.read")) {
         tabs.push({
@@ -148,7 +137,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
           buildLayout: this.__createDataBrowser
         });
       }
-      tabs.forEach(({id, buttonId, label, icon, initVisibility, buildLayout}) => {
+      tabs.forEach(({id, buttonId, label, icon, buildLayout}) => {
         const tabPage = new qx.ui.tabview.Page(label, icon).set({
           appearance: "dashboard-page"
         });
@@ -157,7 +146,6 @@ qx.Class.define("osparc.dashboard.Dashboard", {
         tabButton.set({
           minWidth: 50,
           maxHeight: 36,
-          visibility: initVisibility ? initVisibility : "visible",
         });
         tabButton.ttt = label;
         tabButton.getChildControl("label").set({
@@ -227,12 +215,6 @@ qx.Class.define("osparc.dashboard.Dashboard", {
     __createTemplateBrowser: function() {
       const templatesView = this.__templateBrowser = new osparc.dashboard.TemplateBrowser();
       return templatesView;
-    },
-
-    __createHypertoolsBrowser: function() {
-      const templateType = osparc.data.model.StudyUI.HYPERTOOL_TYPE;
-      const hypertoolsView = this.__hypertoolBrowser = new osparc.dashboard.TemplateBrowser(templateType);
-      return hypertoolsView;
     },
 
     __createAppBrowser: function() {
