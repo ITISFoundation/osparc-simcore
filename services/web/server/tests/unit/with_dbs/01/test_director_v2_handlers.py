@@ -154,18 +154,17 @@ def mock_rpc_list_computations_latest_iteration_tasks(
 @pytest.fixture
 def mock_rpc_list_computations_latest_iteration_tasks_page(
     mocker: MockerFixture,
+    user_project: ProjectDict,
 ) -> ComputationTaskRpcGetPage:
+    workbench_ids = list(user_project["workbench"].keys())
+    example = ComputationTaskRpcGet.model_config["json_schema_extra"]["examples"][0]
+    example["node_id"] = workbench_ids[0]
+
     return mocker.patch(
         "simcore_service_webserver.director_v2._computations_service.computations.list_computations_latest_iteration_tasks_page",
         spec=True,
         return_value=ComputationTaskRpcGetPage(
-            items=[
-                ComputationTaskRpcGet.model_validate(
-                    ComputationTaskRpcGet.model_config["json_schema_extra"]["examples"][
-                        0
-                    ]
-                )
-            ],
+            items=[ComputationTaskRpcGet.model_validate(example)],
             total=1,
         ),
     )

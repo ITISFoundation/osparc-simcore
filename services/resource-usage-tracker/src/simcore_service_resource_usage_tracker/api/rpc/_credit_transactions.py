@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from fastapi import FastAPI
 from models_library.api_schemas_resource_usage_tracker.credit_transactions import (
     CreditTransactionCreateBody,
@@ -6,9 +8,11 @@ from models_library.api_schemas_resource_usage_tracker.credit_transactions impor
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.resource_tracker import CreditTransactionStatus
+from models_library.services_types import ServiceRunID
 from models_library.wallets import WalletID
 from servicelib.rabbitmq import RPCRouter
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
+    CreditTransactionNotFoundError,
     WalletTransactionError,
 )
 
@@ -28,6 +32,18 @@ async def get_wallet_total_credits(
         db_engine=app.state.engine,
         product_name=product_name,
         wallet_id=wallet_id,
+    )
+
+
+@router.expose(reraise_if_error_type=(CreditTransactionNotFoundError,))
+async def get_transaction_current_credits_by_service_run_id(
+    app: FastAPI,
+    *,
+    service_run_id: ServiceRunID,
+) -> Decimal:
+    return await credit_transactions.get_transaction_current_credits_by_service_run_id(
+        db_engine=app.state.engine,
+        service_run_id=service_run_id,
     )
 
 

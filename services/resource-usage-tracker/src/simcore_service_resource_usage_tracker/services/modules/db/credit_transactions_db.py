@@ -9,7 +9,11 @@ from models_library.api_schemas_resource_usage_tracker.credit_transactions impor
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.resource_tracker import CreditTransactionId, CreditTransactionStatus
+from models_library.services_types import ServiceRunID
 from models_library.wallets import WalletID
+from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
+    CreditTransactionNotFoundError,
+)
 from simcore_postgres_database.models.resource_tracker_credit_transactions import (
     resource_tracker_credit_transactions,
 )
@@ -208,3 +212,22 @@ async def sum_wallet_credits(
             wallet_id=wallet_id, available_osparc_credits=Decimal(0)
         )
     return WalletTotalCredits(wallet_id=wallet_id, available_osparc_credits=row[0])
+
+
+async def get_transaction_current_credits_by_service_run_id(
+    engine: AsyncEngine,
+    connection: AsyncConnection | None = None,
+    *,
+    service_run_id: ServiceRunID,
+) -> Decimal:
+    async with transaction_context(engine, connection) as conn:
+        select_stmt = sa.select(
+            resource_tracker_credit_transactions.c.osparc_credits
+        ).where(
+            resource_tracker_credit_transactions.c.service_run_id == f"{service_run_id}"
+        )
+        result = await conn.execute(select_stmt)
+    row = result.first()
+    if row is None:
+        raise CreditTransactionNotFoundError
+    return Decimal(row[0])

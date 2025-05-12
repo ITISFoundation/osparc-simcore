@@ -4,7 +4,6 @@ from typing import Any, cast
 
 import arrow
 import sqlalchemy as sa
-from models_library.api_schemas_directorv2.comp_runs import ComputationTaskRpcGet
 from models_library.basic_types import IDStr
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectAtDB, ProjectID
@@ -20,7 +19,7 @@ from sqlalchemy import literal_column
 from sqlalchemy.dialects.postgresql import insert
 
 from .....core.errors import ComputationalTaskNotFoundError
-from .....models.comp_tasks import CompTaskAtDB
+from .....models.comp_tasks import CompTaskAtDB, ComputationTaskForRpcDBGet
 from .....modules.resource_usage_tracker_client import ResourceUsageTrackerClient
 from .....utils.computations import to_node_class
 from .....utils.db import DB_TO_RUNNING_STATE, RUNNING_STATE_TO_DB
@@ -85,7 +84,7 @@ class CompTasksRepository(BaseRepository):
         limit: int = 20,
         # ordering
         order_by: OrderBy | None = None,
-    ) -> tuple[int, list[ComputationTaskRpcGet]]:
+    ) -> tuple[int, list[ComputationTaskForRpcDBGet]]:
         if order_by is None:
             order_by = OrderBy(field=IDStr("task_id"))  # default ordering
 
@@ -126,7 +125,7 @@ class CompTasksRepository(BaseRepository):
             total_count = await conn.scalar(count_query)
 
             items = [
-                ComputationTaskRpcGet.model_validate(
+                ComputationTaskForRpcDBGet.model_validate(
                     {
                         **row,
                         "state": DB_TO_RUNNING_STATE[row["state"]],  # Convert the state

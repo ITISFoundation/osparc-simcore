@@ -1,8 +1,10 @@
 from datetime import datetime
+from decimal import Decimal
 from typing import Annotated, Any
 
 from common_library.basic_types import DEFAULT_FACTORY
 from pydantic import (
+    AnyUrl,
     BaseModel,
     ConfigDict,
     Field,
@@ -123,3 +125,6 @@ class ComputationTaskRestGet(OutputSchema):
     image: dict[str, Any]
     started_at: datetime | None
     ended_at: datetime | None
+    log_download_link: AnyUrl | None
+    node_name: str
+    osparc_credits: Decimal | None
