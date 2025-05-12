@@ -1121,7 +1121,14 @@ qx.Class.define("osparc.dashboard.CardBase", {
     _shouldApplyFilter: function(data) {
       let filterId = "searchBarFilter";
       if (this.isPropertyInitialized("resourceType")) {
-        filterId += "-" + this.getResourceType();
+        switch (this.getResourceType()) {
+          case "hypertool":
+            filterId += "-service";
+            break;
+          default:
+            filterId += "-" + this.getResourceType();
+            break;
+        }
       }
       data = filterId in data ? data[filterId] : data;
       if (this._filterText(data.text)) {
@@ -1145,7 +1152,14 @@ qx.Class.define("osparc.dashboard.CardBase", {
     _shouldReactToFilter: function(data) {
       let filterId = "searchBarFilter";
       if (this.isPropertyInitialized("resourceType")) {
-        filterId += "-" + this.getResourceType();
+        switch (this.getResourceType()) {
+          case "hypertool":
+            filterId += "-service";
+            break;
+          default:
+            filterId += "-" + this.getResourceType();
+            break;
+        }
       }
       data = filterId in data ? data[filterId] : data;
       if (data.text && data.text.length > 1) {
