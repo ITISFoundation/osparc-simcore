@@ -448,33 +448,38 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       const radioGroup = new qx.ui.form.RadioGroup();
       radioGroup.setAllowEmptySelection(true);
 
+      const iconSize = 20;
       const serviceTypes = osparc.service.Utils.TYPES;
       Object.keys(serviceTypes).forEach(serviceId => {
         if (!["computational", "dynamic"].includes(serviceId)) {
           return;
         }
         const serviceType = serviceTypes[serviceId];
-        const iconSize = 20;
         const button = new qx.ui.toolbar.RadioButton(serviceType.label, serviceType.icon+iconSize);
-        button.id = serviceId;
+        button.appType = serviceId;
         osparc.utils.Utils.setIdToWidget(button, this.__resourceType + "-serviceTypeFilterItem");
-        button.set({
+        this.__serviceTypeButtons.push(button);
+      });
+
+      // hypertools filter
+      const button = new qx.ui.toolbar.RadioButton("Hypertools", "@FontAwesome5Solid/wrench/"+iconSize);
+      button.appType = "hypertool";
+      this.__serviceTypeButtons.push(button);
+
+      this.__serviceTypeButtons.forEach(btn => {
+        btn.set({
           appearance: "filter-toggle-button",
           value: false
         });
-
-        layout.add(button);
-        radioGroup.add(button);
-
-        button.addListener("execute", () => {
-          const checked = button.getValue();
+        layout.add(btn);
+        radioGroup.add(btn);
+        btn.addListener("execute", () => {
+          const checked = btn.getValue();
           this.fireDataEvent("changeServiceType", {
-            id: checked ? serviceId : null,
-            label: checked ? serviceType.label : null
+            appType: checked ? btn.appType : null,
+            label: checked ? btn.getLabel() : null
           });
         }, this);
-
-        this.__serviceTypeButtons.push(button);
       });
 
       return layout;

@@ -434,7 +434,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
       resourceFilter.addListener("changeServiceType", e => {
         const serviceType = e.getData();
-        this._searchBarFilter.setServiceTypeActiveFilter(serviceType.id, serviceType.label);
+        this._searchBarFilter.setServiceTypeActiveFilter(serviceType.appType, serviceType.label);
       }, this);
 
       this._searchBarFilter.addListener("filterChanged", e => {

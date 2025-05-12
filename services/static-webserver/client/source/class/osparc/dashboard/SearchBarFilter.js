@@ -300,10 +300,10 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       }
     },
 
-    setServiceTypeActiveFilter: function(optionId, optionLabel) {
+    setServiceTypeActiveFilter: function(appType, optionLabel) {
       this.__removeChips("service-type");
-      if (optionId && optionLabel) {
-        this.__addChip("service-type", optionId, optionLabel);
+      if (appType && optionLabel) {
+        this.__addChip("service-type", appType, optionLabel);
       } else {
         this.__filter();
       }
