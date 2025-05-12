@@ -55,6 +55,11 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
 
     // overridden
     initResources: function() {
+      if (this._resourcesInitialized) {
+        return;
+      }
+      this._resourcesInitialized = true;
+
       this._hideLoadingPage();
       this.__buildLayout();
 
