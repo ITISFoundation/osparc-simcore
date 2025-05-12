@@ -102,6 +102,21 @@ qx.Class.define("osparc.product.Utils", {
       return alias;
     },
 
+    getAppAlias: function(options = {}) {
+      let alias = qx.locale.Manager.tr("app");
+      if (options.plural) {
+        alias = qx.locale.Manager.tr("Apps");
+      }
+
+      if (options.firstUpperCase) {
+        alias = osparc.utils.Utils.capitalize(alias);
+      } else if (options.allUpperCase) {
+        alias = alias.toUpperCase();
+      }
+
+      return alias;
+    },
+
     resourceTypeToAlias: function(resourceType, options) {
       switch (resourceType) {
         case "study":
@@ -110,6 +125,8 @@ qx.Class.define("osparc.product.Utils", {
           return this.getTemplateAlias(options);
         case "service":
           return this.getServiceAlias(options);
+        case "app":
+          return this.getAppAlias(options);
       }
       return resourceType;
     },
