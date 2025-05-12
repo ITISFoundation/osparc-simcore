@@ -22,7 +22,7 @@
  * @ignore(fetch)
  */
 
-qx.Class.define("osparc.dashboard.ServiceBrowser", {
+qx.Class.define("osparc.dashboard.AppBrowser", {
   extend: osparc.dashboard.ResourceBrowserBase,
 
   construct: function() {

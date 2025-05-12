@@ -134,7 +134,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
         tabs.push({
           id: "appsTab",
           buttonId: "appsTabBtn",
-          label: this.tr("Apps"),
+          label: this.tr("APPS"),
           icon: "@FontAwesome5Solid/cogs/"+tabIconSize,
           buildLayout: this.__createAppBrowser
         });
