@@ -5321,21 +5321,21 @@
                 "schema": {
                   "oneOf": [
                     {
-                      "$ref": "#/components/schemas/ProjectFunction"
+                      "$ref": "#/components/schemas/RegisteredProjectFunction"
                     },
                     {
-                      "$ref": "#/components/schemas/PythonCodeFunction"
+                      "$ref": "#/components/schemas/RegisteredPythonCodeFunction"
                     },
                     {
-                      "$ref": "#/components/schemas/SolverFunction"
+                      "$ref": "#/components/schemas/RegisteredSolverFunction"
                     }
                   ],
                   "discriminator": {
                     "propertyName": "function_class",
                     "mapping": {
-                      "project": "#/components/schemas/ProjectFunction",
-                      "python_code": "#/components/schemas/PythonCodeFunction",
-                      "solver": "#/components/schemas/SolverFunction"
+                      "project": "#/components/schemas/RegisteredProjectFunction",
+                      "python_code": "#/components/schemas/RegisteredPythonCodeFunction",
+                      "solver": "#/components/schemas/RegisteredSolverFunction"
                     }
                   },
                   "title": "Response Register Function V0 Functions Post"
@@ -5403,7 +5403,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Page_Annotated_Union_ProjectFunction__PythonCodeFunction__SolverFunction___FieldInfo_annotation_NoneType__required_True__discriminator__function_class____"
+                  "$ref": "#/components/schemas/Page_Annotated_Union_RegisteredProjectFunction__RegisteredPythonCodeFunction__RegisteredSolverFunction___FieldInfo_annotation_NoneType__required_True__discriminator__function_class____"
                 }
               }
             }
@@ -5449,21 +5449,21 @@
                 "schema": {
                   "oneOf": [
                     {
-                      "$ref": "#/components/schemas/ProjectFunction"
+                      "$ref": "#/components/schemas/RegisteredProjectFunction"
                     },
                     {
-                      "$ref": "#/components/schemas/PythonCodeFunction"
+                      "$ref": "#/components/schemas/RegisteredPythonCodeFunction"
                     },
                     {
-                      "$ref": "#/components/schemas/SolverFunction"
+                      "$ref": "#/components/schemas/RegisteredSolverFunction"
                     }
                   ],
                   "discriminator": {
                     "propertyName": "function_class",
                     "mapping": {
-                      "project": "#/components/schemas/ProjectFunction",
-                      "python_code": "#/components/schemas/PythonCodeFunction",
-                      "solver": "#/components/schemas/SolverFunction"
+                      "project": "#/components/schemas/RegisteredProjectFunction",
+                      "python_code": "#/components/schemas/RegisteredPythonCodeFunction",
+                      "solver": "#/components/schemas/RegisteredSolverFunction"
                     }
                   },
                   "title": "Response Get Function V0 Functions  Function Id  Get"
@@ -5804,21 +5804,21 @@
                 "schema": {
                   "oneOf": [
                     {
-                      "$ref": "#/components/schemas/ProjectFunctionJob"
+                      "$ref": "#/components/schemas/RegisteredProjectFunctionJob"
                     },
                     {
-                      "$ref": "#/components/schemas/PythonCodeFunctionJob"
+                      "$ref": "#/components/schemas/RegisteredPythonCodeFunctionJob"
                     },
                     {
-                      "$ref": "#/components/schemas/SolverFunctionJob"
+                      "$ref": "#/components/schemas/RegisteredSolverFunctionJob"
                     }
                   ],
                   "discriminator": {
                     "propertyName": "function_class",
                     "mapping": {
-                      "project": "#/components/schemas/ProjectFunctionJob",
-                      "python_code": "#/components/schemas/PythonCodeFunctionJob",
-                      "solver": "#/components/schemas/SolverFunctionJob"
+                      "project": "#/components/schemas/RegisteredProjectFunctionJob",
+                      "python_code": "#/components/schemas/RegisteredPythonCodeFunctionJob",
+                      "solver": "#/components/schemas/RegisteredSolverFunctionJob"
                     }
                   },
                   "title": "Response Run Function V0 Functions  Function Id  Run Post"
@@ -5901,7 +5901,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FunctionJobCollection"
+                  "$ref": "#/components/schemas/RegisteredFunctionJobCollection"
                 }
               }
             }
@@ -5968,7 +5968,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Page_Annotated_Union_ProjectFunctionJob__PythonCodeFunctionJob__SolverFunctionJob___FieldInfo_annotation_NoneType__required_True__discriminator__function_class____"
+                  "$ref": "#/components/schemas/Page_Annotated_Union_RegisteredProjectFunctionJob__RegisteredPythonCodeFunctionJob__RegisteredSolverFunctionJob___FieldInfo_annotation_NoneType__required_True__discriminator__function_class____"
                 }
               }
             }
@@ -6029,21 +6029,21 @@
                 "schema": {
                   "oneOf": [
                     {
-                      "$ref": "#/components/schemas/ProjectFunctionJob"
+                      "$ref": "#/components/schemas/RegisteredProjectFunctionJob"
                     },
                     {
-                      "$ref": "#/components/schemas/PythonCodeFunctionJob"
+                      "$ref": "#/components/schemas/RegisteredPythonCodeFunctionJob"
                     },
                     {
-                      "$ref": "#/components/schemas/SolverFunctionJob"
+                      "$ref": "#/components/schemas/RegisteredSolverFunctionJob"
                     }
                   ],
                   "discriminator": {
                     "propertyName": "function_class",
                     "mapping": {
-                      "project": "#/components/schemas/ProjectFunctionJob",
-                      "python_code": "#/components/schemas/PythonCodeFunctionJob",
-                      "solver": "#/components/schemas/SolverFunctionJob"
+                      "project": "#/components/schemas/RegisteredProjectFunctionJob",
+                      "python_code": "#/components/schemas/RegisteredPythonCodeFunctionJob",
+                      "solver": "#/components/schemas/RegisteredSolverFunctionJob"
                     }
                   },
                   "title": "Response Register Function Job V0 Function Jobs Post"
@@ -6092,21 +6092,21 @@
                 "schema": {
                   "oneOf": [
                     {
-                      "$ref": "#/components/schemas/ProjectFunctionJob"
+                      "$ref": "#/components/schemas/RegisteredProjectFunctionJob"
                     },
                     {
-                      "$ref": "#/components/schemas/PythonCodeFunctionJob"
+                      "$ref": "#/components/schemas/RegisteredPythonCodeFunctionJob"
                     },
                     {
-                      "$ref": "#/components/schemas/SolverFunctionJob"
+                      "$ref": "#/components/schemas/RegisteredSolverFunctionJob"
                     }
                   ],
                   "discriminator": {
                     "propertyName": "function_class",
                     "mapping": {
-                      "project": "#/components/schemas/ProjectFunctionJob",
-                      "python_code": "#/components/schemas/PythonCodeFunctionJob",
-                      "solver": "#/components/schemas/SolverFunctionJob"
+                      "project": "#/components/schemas/RegisteredProjectFunctionJob",
+                      "python_code": "#/components/schemas/RegisteredPythonCodeFunctionJob",
+                      "solver": "#/components/schemas/RegisteredSolverFunctionJob"
                     }
                   },
                   "title": "Response Get Function Job V0 Function Jobs  Function Job Id  Get"
@@ -6352,7 +6352,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Page_FunctionJobCollection_"
+                  "$ref": "#/components/schemas/Page_RegisteredFunctionJobCollection_"
                 }
               }
             }
@@ -6392,7 +6392,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FunctionJobCollection"
+                  "$ref": "#/components/schemas/RegisteredFunctionJobCollection"
                 }
               }
             }
@@ -6436,7 +6436,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FunctionJobCollection"
+                  "$ref": "#/components/schemas/RegisteredFunctionJobCollection"
                 }
               }
             }
@@ -6544,21 +6544,21 @@
                   "items": {
                     "oneOf": [
                       {
-                        "$ref": "#/components/schemas/ProjectFunctionJob"
+                        "$ref": "#/components/schemas/RegisteredProjectFunctionJob"
                       },
                       {
-                        "$ref": "#/components/schemas/PythonCodeFunctionJob"
+                        "$ref": "#/components/schemas/RegisteredPythonCodeFunctionJob"
                       },
                       {
-                        "$ref": "#/components/schemas/SolverFunctionJob"
+                        "$ref": "#/components/schemas/RegisteredSolverFunctionJob"
                       }
                     ],
                     "discriminator": {
                       "propertyName": "function_class",
                       "mapping": {
-                        "project": "#/components/schemas/ProjectFunctionJob",
-                        "python_code": "#/components/schemas/PythonCodeFunctionJob",
-                        "solver": "#/components/schemas/SolverFunctionJob"
+                        "project": "#/components/schemas/RegisteredProjectFunctionJob",
+                        "python_code": "#/components/schemas/RegisteredPythonCodeFunctionJob",
+                        "solver": "#/components/schemas/RegisteredSolverFunctionJob"
                       }
                     }
                   },
@@ -7627,18 +7627,6 @@
       },
       "FunctionJobCollection": {
         "properties": {
-          "uid": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Uid"
-          },
           "title": {
             "type": "string",
             "title": "Title",
@@ -7655,14 +7643,11 @@
               "format": "uuid"
             },
             "type": "array",
-            "title": "Job Ids"
+            "title": "Job Ids",
+            "default": []
           }
         },
         "type": "object",
-        "required": [
-          "uid",
-          "job_ids"
-        ],
         "title": "FunctionJobCollection",
         "description": "Model for a collection of function jobs"
       },
@@ -8785,27 +8770,27 @@
         ],
         "title": "OnePage[StudyPort]"
       },
-      "Page_Annotated_Union_ProjectFunctionJob__PythonCodeFunctionJob__SolverFunctionJob___FieldInfo_annotation_NoneType__required_True__discriminator__function_class____": {
+      "Page_Annotated_Union_RegisteredProjectFunctionJob__RegisteredPythonCodeFunctionJob__RegisteredSolverFunctionJob___FieldInfo_annotation_NoneType__required_True__discriminator__function_class____": {
         "properties": {
           "items": {
             "items": {
               "oneOf": [
                 {
-                  "$ref": "#/components/schemas/ProjectFunctionJob"
+                  "$ref": "#/components/schemas/RegisteredProjectFunctionJob"
                 },
                 {
-                  "$ref": "#/components/schemas/PythonCodeFunctionJob"
+                  "$ref": "#/components/schemas/RegisteredPythonCodeFunctionJob"
                 },
                 {
-                  "$ref": "#/components/schemas/SolverFunctionJob"
+                  "$ref": "#/components/schemas/RegisteredSolverFunctionJob"
                 }
               ],
               "discriminator": {
                 "propertyName": "function_class",
                 "mapping": {
-                  "project": "#/components/schemas/ProjectFunctionJob",
-                  "python_code": "#/components/schemas/PythonCodeFunctionJob",
-                  "solver": "#/components/schemas/SolverFunctionJob"
+                  "project": "#/components/schemas/RegisteredProjectFunctionJob",
+                  "python_code": "#/components/schemas/RegisteredPythonCodeFunctionJob",
+                  "solver": "#/components/schemas/RegisteredSolverFunctionJob"
                 }
               }
             },
@@ -8860,29 +8845,29 @@
           "offset",
           "links"
         ],
-        "title": "Page[Annotated[Union[ProjectFunctionJob, PythonCodeFunctionJob, SolverFunctionJob], FieldInfo(annotation=NoneType, required=True, discriminator='function_class')]]"
+        "title": "Page[Annotated[Union[RegisteredProjectFunctionJob, RegisteredPythonCodeFunctionJob, RegisteredSolverFunctionJob], FieldInfo(annotation=NoneType, required=True, discriminator='function_class')]]"
       },
-      "Page_Annotated_Union_ProjectFunction__PythonCodeFunction__SolverFunction___FieldInfo_annotation_NoneType__required_True__discriminator__function_class____": {
+      "Page_Annotated_Union_RegisteredProjectFunction__RegisteredPythonCodeFunction__RegisteredSolverFunction___FieldInfo_annotation_NoneType__required_True__discriminator__function_class____": {
         "properties": {
           "items": {
             "items": {
               "oneOf": [
                 {
-                  "$ref": "#/components/schemas/ProjectFunction"
+                  "$ref": "#/components/schemas/RegisteredProjectFunction"
                 },
                 {
-                  "$ref": "#/components/schemas/PythonCodeFunction"
+                  "$ref": "#/components/schemas/RegisteredPythonCodeFunction"
                 },
                 {
-                  "$ref": "#/components/schemas/SolverFunction"
+                  "$ref": "#/components/schemas/RegisteredSolverFunction"
                 }
               ],
               "discriminator": {
                 "propertyName": "function_class",
                 "mapping": {
-                  "project": "#/components/schemas/ProjectFunction",
-                  "python_code": "#/components/schemas/PythonCodeFunction",
-                  "solver": "#/components/schemas/SolverFunction"
+                  "project": "#/components/schemas/RegisteredProjectFunction",
+                  "python_code": "#/components/schemas/RegisteredPythonCodeFunction",
+                  "solver": "#/components/schemas/RegisteredSolverFunction"
                 }
               }
             },
@@ -8937,7 +8922,7 @@
           "offset",
           "links"
         ],
-        "title": "Page[Annotated[Union[ProjectFunction, PythonCodeFunction, SolverFunction], FieldInfo(annotation=NoneType, required=True, discriminator='function_class')]]"
+        "title": "Page[Annotated[Union[RegisteredProjectFunction, RegisteredPythonCodeFunction, RegisteredSolverFunction], FieldInfo(annotation=NoneType, required=True, discriminator='function_class')]]"
       },
       "Page_File_": {
         "properties": {
@@ -8997,65 +8982,6 @@
           "links"
         ],
         "title": "Page[File]"
-      },
-      "Page_FunctionJobCollection_": {
-        "properties": {
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/FunctionJobCollection"
-            },
-            "type": "array",
-            "title": "Items"
-          },
-          "total": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Total"
-          },
-          "limit": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 1
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Limit"
-          },
-          "offset": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Offset"
-          },
-          "links": {
-            "$ref": "#/components/schemas/Links"
-          }
-        },
-        "type": "object",
-        "required": [
-          "items",
-          "total",
-          "limit",
-          "offset",
-          "links"
-        ],
-        "title": "Page[FunctionJobCollection]"
       },
       "Page_Job_": {
         "properties": {
@@ -9174,6 +9100,65 @@
           "links"
         ],
         "title": "Page[LicensedItemGet]"
+      },
+      "Page_RegisteredFunctionJobCollection_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RegisteredFunctionJobCollection"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Offset"
+          },
+          "links": {
+            "$ref": "#/components/schemas/Links"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset",
+          "links"
+        ],
+        "title": "Page[RegisteredFunctionJobCollection]"
       },
       "Page_Study_": {
         "properties": {
@@ -9487,18 +9472,6 @@
             "title": "Function Class",
             "default": "project"
           },
-          "uid": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Uid"
-          },
           "title": {
             "type": "string",
             "title": "Title",
@@ -9556,7 +9529,6 @@
         },
         "type": "object",
         "required": [
-          "uid",
           "input_schema",
           "output_schema",
           "default_inputs",
@@ -9566,18 +9538,6 @@
       },
       "ProjectFunctionJob": {
         "properties": {
-          "uid": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Uid"
-          },
           "title": {
             "type": "string",
             "title": "Title",
@@ -9629,7 +9589,6 @@
         },
         "type": "object",
         "required": [
-          "uid",
           "function_uid",
           "inputs",
           "outputs",
@@ -9644,18 +9603,6 @@
             "const": "python_code",
             "title": "Function Class",
             "default": "python_code"
-          },
-          "uid": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Uid"
           },
           "title": {
             "type": "string",
@@ -9713,7 +9660,6 @@
         },
         "type": "object",
         "required": [
-          "uid",
           "input_schema",
           "output_schema",
           "default_inputs",
@@ -9723,18 +9669,6 @@
       },
       "PythonCodeFunctionJob": {
         "properties": {
-          "uid": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Uid"
-          },
           "title": {
             "type": "string",
             "title": "Title",
@@ -9781,12 +9715,475 @@
         },
         "type": "object",
         "required": [
-          "uid",
           "function_uid",
           "inputs",
           "outputs"
         ],
         "title": "PythonCodeFunctionJob"
+      },
+      "RegisteredFunctionJobCollection": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "default": ""
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "job_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Job Ids",
+            "default": []
+          },
+          "uid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Uid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "uid"
+        ],
+        "title": "RegisteredFunctionJobCollection"
+      },
+      "RegisteredProjectFunction": {
+        "properties": {
+          "function_class": {
+            "type": "string",
+            "const": "project",
+            "title": "Function Class",
+            "default": "project"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "default": ""
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "input_schema": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/JSONFunctionInputSchema"
+              }
+            ],
+            "title": "Input Schema",
+            "discriminator": {
+              "propertyName": "schema_class",
+              "mapping": {
+                "application/schema+json": "#/components/schemas/JSONFunctionInputSchema"
+              }
+            }
+          },
+          "output_schema": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/JSONFunctionOutputSchema"
+              }
+            ],
+            "title": "Output Schema",
+            "discriminator": {
+              "propertyName": "schema_class",
+              "mapping": {
+                "application/schema+json": "#/components/schemas/JSONFunctionOutputSchema"
+              }
+            }
+          },
+          "default_inputs": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Inputs"
+          },
+          "uid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Uid"
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "input_schema",
+          "output_schema",
+          "default_inputs",
+          "uid",
+          "project_id"
+        ],
+        "title": "RegisteredProjectFunction"
+      },
+      "RegisteredProjectFunctionJob": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "default": ""
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "function_uid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Function Uid"
+          },
+          "inputs": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inputs"
+          },
+          "outputs": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outputs"
+          },
+          "function_class": {
+            "type": "string",
+            "const": "project",
+            "title": "Function Class",
+            "default": "project"
+          },
+          "uid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Uid"
+          },
+          "project_job_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Job Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "function_uid",
+          "inputs",
+          "outputs",
+          "uid",
+          "project_job_id"
+        ],
+        "title": "RegisteredProjectFunctionJob"
+      },
+      "RegisteredPythonCodeFunction": {
+        "properties": {
+          "function_class": {
+            "type": "string",
+            "const": "python_code",
+            "title": "Function Class",
+            "default": "python_code"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "default": ""
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "input_schema": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/JSONFunctionInputSchema"
+              }
+            ],
+            "title": "Input Schema",
+            "discriminator": {
+              "propertyName": "schema_class",
+              "mapping": {
+                "application/schema+json": "#/components/schemas/JSONFunctionInputSchema"
+              }
+            }
+          },
+          "output_schema": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/JSONFunctionOutputSchema"
+              }
+            ],
+            "title": "Output Schema",
+            "discriminator": {
+              "propertyName": "schema_class",
+              "mapping": {
+                "application/schema+json": "#/components/schemas/JSONFunctionOutputSchema"
+              }
+            }
+          },
+          "default_inputs": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Inputs"
+          },
+          "uid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Uid"
+          },
+          "code_url": {
+            "type": "string",
+            "title": "Code Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "input_schema",
+          "output_schema",
+          "default_inputs",
+          "uid",
+          "code_url"
+        ],
+        "title": "RegisteredPythonCodeFunction"
+      },
+      "RegisteredPythonCodeFunctionJob": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "default": ""
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "function_uid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Function Uid"
+          },
+          "inputs": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inputs"
+          },
+          "outputs": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outputs"
+          },
+          "function_class": {
+            "type": "string",
+            "const": "python_code",
+            "title": "Function Class",
+            "default": "python_code"
+          },
+          "uid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Uid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "function_uid",
+          "inputs",
+          "outputs",
+          "uid"
+        ],
+        "title": "RegisteredPythonCodeFunctionJob"
+      },
+      "RegisteredSolverFunction": {
+        "properties": {
+          "function_class": {
+            "type": "string",
+            "const": "solver",
+            "title": "Function Class",
+            "default": "solver"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "default": ""
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "input_schema": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/JSONFunctionInputSchema"
+              }
+            ],
+            "title": "Input Schema",
+            "discriminator": {
+              "propertyName": "schema_class",
+              "mapping": {
+                "application/schema+json": "#/components/schemas/JSONFunctionInputSchema"
+              }
+            }
+          },
+          "output_schema": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/JSONFunctionOutputSchema"
+              }
+            ],
+            "title": "Output Schema",
+            "discriminator": {
+              "propertyName": "schema_class",
+              "mapping": {
+                "application/schema+json": "#/components/schemas/JSONFunctionOutputSchema"
+              }
+            }
+          },
+          "default_inputs": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Inputs"
+          },
+          "uid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Uid"
+          },
+          "solver_key": {
+            "type": "string",
+            "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+            "title": "Solver Key"
+          },
+          "solver_version": {
+            "type": "string",
+            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+            "title": "Solver Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "input_schema",
+          "output_schema",
+          "default_inputs",
+          "uid",
+          "solver_key",
+          "solver_version"
+        ],
+        "title": "RegisteredSolverFunction"
+      },
+      "RegisteredSolverFunctionJob": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "default": ""
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "function_uid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Function Uid"
+          },
+          "inputs": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inputs"
+          },
+          "outputs": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outputs"
+          },
+          "function_class": {
+            "type": "string",
+            "const": "solver",
+            "title": "Function Class",
+            "default": "solver"
+          },
+          "uid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Uid"
+          },
+          "solver_job_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Solver Job Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "function_uid",
+          "inputs",
+          "outputs",
+          "uid",
+          "solver_job_id"
+        ],
+        "title": "RegisteredSolverFunctionJob"
       },
       "RunningState": {
         "type": "string",
@@ -9933,18 +10330,6 @@
             "title": "Function Class",
             "default": "solver"
           },
-          "uid": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Uid"
-          },
           "title": {
             "type": "string",
             "title": "Title",
@@ -10007,7 +10392,6 @@
         },
         "type": "object",
         "required": [
-          "uid",
           "input_schema",
           "output_schema",
           "default_inputs",
@@ -10018,18 +10402,6 @@
       },
       "SolverFunctionJob": {
         "properties": {
-          "uid": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Uid"
-          },
           "title": {
             "type": "string",
             "title": "Title",
@@ -10081,7 +10453,6 @@
         },
         "type": "object",
         "required": [
-          "uid",
           "function_uid",
           "inputs",
           "outputs",
