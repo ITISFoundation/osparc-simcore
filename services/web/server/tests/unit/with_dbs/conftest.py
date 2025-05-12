@@ -258,6 +258,11 @@ def osparc_product_name() -> str:
     return "osparc"
 
 
+@pytest.fixture(scope="session")
+def osparc_product_api_base_url() -> str:
+    return "http://127.0.0.1/"
+
+
 @pytest.fixture
 async def default_product_name(client: TestClient) -> ProductName:
     assert client.app
