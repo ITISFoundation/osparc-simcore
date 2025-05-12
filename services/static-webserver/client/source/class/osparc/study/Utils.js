@@ -242,7 +242,7 @@ qx.Class.define("osparc.study.Utils", {
 
     extractFunctionableParameters: function(workbench) {
       // - for now, only float types are allowed
-      const parameters = Object.values(workbench).filter(srv => osparc.data.model.Node.isParameter(srv) && srv["key"].includes("parameter/float"));
+      const parameters = Object.values(workbench).filter(srv => osparc.data.model.Node.isParameter(srv) && srv["key"].includes("parameter/number"));
       return parameters;
     },
 
@@ -253,7 +253,7 @@ qx.Class.define("osparc.study.Utils", {
 
     extractFunctionableProbes: function(workbench) {
       // - for now, only float types are allowed
-      const parameters = Object.values(workbench).filter(srv => osparc.data.model.Node.isProbe(srv) && srv["key"].includes("probe/float"));
+      const parameters = Object.values(workbench).filter(srv => osparc.data.model.Node.isProbe(srv) && srv["key"].includes("probe/number"));
       return parameters;
     },
 
