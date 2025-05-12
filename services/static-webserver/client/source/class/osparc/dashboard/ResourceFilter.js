@@ -27,7 +27,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     this.__resourceType = resourceType;
     this.__sharedWithButtons = [];
     this.__tagButtons = [];
-    this.__serviceTypeButtons = [];
+    this.__appTypeButtons = [];
 
     this._setLayout(new qx.ui.layout.VBox(15));
     this.__buildLayout();
@@ -40,7 +40,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     "trashFolderRequested": "qx.event.type.Data",
     "changeSharedWith": "qx.event.type.Data",
     "changeSelectedTags": "qx.event.type.Data",
-    "changeServiceType": "qx.event.type.Data"
+    "changeAppType": "qx.event.type.Data",
   },
 
   members: {
@@ -49,7 +49,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     __trashButton: null,
     __sharedWithButtons: null,
     __tagButtons: null,
-    __serviceTypeButtons: null,
+    __appTypeButtons: null,
 
     __buildLayout: function() {
       const filtersSpacer = new qx.ui.core.Spacer(10, 10);
@@ -81,7 +81,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
           // this._add(this.__createResourceTypeContextButtons());
           this._add(filtersSpacer);
           this._add(this.__createSharedWithFilterLayout());
-          this._add(this.__createServiceTypeFilterLayout());
+          this._add(this.__createAppTypeFilterLayout());
           break;
       }
     },
@@ -442,7 +442,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     /* /TAGS */
 
     /* SERVICE TYPE */
-    __createServiceTypeFilterLayout: function() {
+    __createAppTypeFilterLayout: function() {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(2));
 
       const radioGroup = new qx.ui.form.RadioGroup();
@@ -458,15 +458,15 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
         const button = new qx.ui.toolbar.RadioButton(serviceType.label, serviceType.icon+iconSize);
         button.appType = serviceId;
         osparc.utils.Utils.setIdToWidget(button, this.__resourceType + "-serviceTypeFilterItem");
-        this.__serviceTypeButtons.push(button);
+        this.__appTypeButtons.push(button);
       });
 
       // hypertools filter
       const button = new qx.ui.toolbar.RadioButton("Hypertools", "@FontAwesome5Solid/wrench/"+iconSize);
       button.appType = "hypertool";
-      this.__serviceTypeButtons.push(button);
+      this.__appTypeButtons.push(button);
 
-      this.__serviceTypeButtons.forEach(btn => {
+      this.__appTypeButtons.forEach(btn => {
         btn.set({
           appearance: "filter-toggle-button",
           value: false
@@ -475,7 +475,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
         radioGroup.add(btn);
         btn.addListener("execute", () => {
           const checked = btn.getValue();
-          this.fireDataEvent("changeServiceType", {
+          this.fireDataEvent("changeAppType", {
             appType: checked ? btn.appType : null,
             label: checked ? btn.getLabel() : null
           });
@@ -498,9 +498,9 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
           btn.setValue(filterData["tags"].includes(btn.id));
         });
       }
-      if ("serviceType" in filterData) {
-        this.__serviceTypeButtons.forEach(btn => {
-          btn.setValue(filterData["serviceType"] === btn.id);
+      if ("appType" in filterData) {
+        this.__appTypeButtons.forEach(btn => {
+          btn.setValue(filterData["appType"] === btn.appType);
         });
       }
     }

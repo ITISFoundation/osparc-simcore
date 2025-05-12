@@ -147,7 +147,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       this.__addSharedWith(sharedWithButton);
       menu.add(sharedWithButton);
 
-      if (this.__resourceType !== "service") {
+      if (["study", "template"].includes(this.__resourceType)) {
         const tagsButton = new qx.ui.menu.Button(this.tr("Tags"), "@FontAwesome5Solid/tags/12");
         osparc.utils.Utils.setIdToWidget(tagsButton, "searchBarFilter-tags-button");
         this.__addTags(tagsButton);
@@ -159,9 +159,9 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       }
 
       if (this.__resourceType === "service") {
-        const serviceTypeButton = new qx.ui.menu.Button(this.tr("Service Type"), "@FontAwesome5Solid/cogs/12");
-        this.__addServiceTypes(serviceTypeButton);
-        menu.add(serviceTypeButton);
+        const appTypeButton = new qx.ui.menu.Button(this.tr("App Type"), "@FontAwesome5Solid/cogs/12");
+        this.__addAppTypes(appTypeButton);
+        menu.add(appTypeButton);
       }
     },
 
@@ -258,20 +258,26 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       }
     },
 
-    __addServiceTypes: function(menuButton) {
+    __addAppTypes: function(menuButton) {
       const serviceTypeMenu = new qx.ui.menu.Menu();
       menuButton.setMenu(serviceTypeMenu);
+
+      const iconSize = 12;
       const serviceTypes = osparc.service.Utils.TYPES;
       Object.keys(serviceTypes).forEach(serviceId => {
         if (!["computational", "dynamic"].includes(serviceId)) {
           return;
         }
         const serviceType = serviceTypes[serviceId];
-        const iconSize = 12;
         const serviceTypeButton = new qx.ui.menu.Button(serviceType.label, serviceType.icon+iconSize);
         serviceTypeMenu.add(serviceTypeButton);
-        serviceTypeButton.addListener("execute", () => this.__addChip("service-type", serviceId, serviceType.label), this);
+        serviceTypeButton.addListener("execute", () => this.__addChip("app-type", serviceId, serviceType.label), this);
       });
+
+      // hypertools filter
+      const hypertoolTypeButton = new qx.ui.menu.Button("Hypertools", "@FontAwesome5Solid/wrench/"+iconSize);
+      serviceTypeMenu.add(hypertoolTypeButton);
+      hypertoolTypeButton.addListener("execute", () => this.__addChip("app-type", "hypertool", "Hypertools"), this);
     },
 
     addTagActiveFilter: function(tag) {
@@ -300,10 +306,10 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       }
     },
 
-    setServiceTypeActiveFilter: function(appType, optionLabel) {
-      this.__removeChips("service-type");
+    setAppTypeActiveFilter: function(appType, optionLabel) {
+      this.__removeChips("app-type");
       if (appType && optionLabel) {
-        this.__addChip("service-type", appType, optionLabel);
+        this.__addChip("app-type", appType, optionLabel);
       } else {
         this.__filter();
       }
@@ -369,7 +375,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
         tags: [],
         classifiers: [],
         sharedWith: null,
-        serviceType: null,
+        appType: null,
         text: ""
       };
       const textFilter = this.getTextFilterValue();
@@ -385,8 +391,8 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
           case "shared-with":
             filterData.sharedWith = chip.id === "show-all" ? null : chip.id;
             break;
-          case "service-type":
-            filterData.serviceType = chip.id;
+          case "app-type":
+            filterData.appType = chip.id;
             break;
         }
       });
