@@ -295,7 +295,6 @@ class CompRunsRepository(BaseRepository):
                         project_uuid=f"{project_id}",
                         iteration=iteration,
                         result=RUNNING_STATE_TO_DB[RunningState.PUBLISHED],
-                        started=datetime.datetime.now(tz=datetime.UTC),
                         metadata=jsonable_encoder(metadata),
                         use_on_demand_clusters=use_on_demand_clusters,
                     )
@@ -341,6 +340,21 @@ class CompRunsRepository(BaseRepository):
             project_id,
             iteration,
             **values,
+        )
+
+    async def mark_as_started(
+        self,
+        *,
+        user_id: UserID,
+        project_id: ProjectID,
+        iteration: PositiveInt,
+        started_time: datetime.datetime,
+    ) -> CompRunsAtDB | None:
+        return await self.update(
+            user_id,
+            project_id,
+            iteration,
+            started=started_time,
         )
 
     async def mark_for_cancellation(

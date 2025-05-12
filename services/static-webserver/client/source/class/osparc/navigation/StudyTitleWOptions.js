@@ -80,7 +80,7 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
             label: this.tr("Conversations"),
             icon: "@FontAwesome5Solid/comments/12",
           });
-          control.addListener("execute", () => osparc.info.Conversations.popUpInWindow(this.getStudy().serialize()), this);
+          control.addListener("execute", () => osparc.study.Conversations.popUpInWindow(this.getStudy().serialize()), this);
           break;
         case "study-menu-convert-to-pipeline":
           control = new qx.ui.menu.Button().set({

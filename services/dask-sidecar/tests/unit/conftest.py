@@ -14,7 +14,8 @@ import distributed
 import fsspec
 import pytest
 import simcore_service_dask_sidecar
-from aiobotocore.session import AioBaseClient, get_session
+from common_library.json_serialization import json_dumps
+from common_library.serialization import model_dump_with_secrets
 from dask_task_models_library.container_tasks.protocol import TaskOwner
 from faker import Faker
 from models_library.projects import ProjectID
@@ -25,18 +26,23 @@ from pytest_localftpserver.servers import ProcessFTPServer
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from settings_library.rabbit import RabbitSettings
 from settings_library.s3 import S3Settings
-from simcore_service_dask_sidecar.file_utils import _s3fs_settings_from_s3_settings
+from simcore_service_dask_sidecar.utils.files import (
+    _s3fs_settings_from_s3_settings,
+)
 from yarl import URL
 
 pytest_plugins = [
     "pytest_simcore.aws_server",
+    "pytest_simcore.aws_s3_service",
     "pytest_simcore.cli_runner",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
     "pytest_simcore.faker_users_data",
+    "pytest_simcore.rabbit_service",
     "pytest_simcore.repository_paths",
 ]
 
@@ -80,6 +86,7 @@ def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     env_devel_dict: EnvVarsDict,
     shared_data_folder: Path,
+    rabbit_service: RabbitSettings,
 ) -> EnvVarsDict:
     # configured as worker
     envs = setenvs_from_dict(
@@ -88,6 +95,9 @@ def app_environment(
             # .env-devel
             **env_devel_dict,
             # Variables directly define inside Dockerfile
+            "DASK_SIDECAR_RABBITMQ": json_dumps(
+                model_dump_with_secrets(rabbit_service, show_secrets=True)
+            ),
             "SC_BOOT_MODE": "debug",
             "SIDECAR_LOGLEVEL": "DEBUG",
             "SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME": "simcore_computational_shared_data",
@@ -107,10 +117,11 @@ def local_cluster(app_environment: EnvVarsDict) -> Iterator[distributed.LocalClu
     with distributed.LocalCluster(
         worker_class=distributed.Worker,
         resources={"CPU": 10, "GPU": 10},
-        preload="simcore_service_dask_sidecar.tasks",
+        preload="simcore_service_dask_sidecar.worker",
     ) as cluster:
         assert cluster
         assert isinstance(cluster, distributed.LocalCluster)
+        print(cluster.workers)
         yield cluster
 
 
@@ -119,6 +130,7 @@ def dask_client(
     local_cluster: distributed.LocalCluster,
 ) -> Iterator[distributed.Client]:
     with distributed.Client(local_cluster) as client:
+        client.wait_for_workers(1, timeout=10)
         yield client
 
 
@@ -130,7 +142,7 @@ async def async_local_cluster(
     async with distributed.LocalCluster(
         worker_class=distributed.Worker,
         resources={"CPU": 10, "GPU": 10},
-        preload="simcore_service_dask_sidecar.tasks",
+        preload="simcore_service_dask_sidecar.worker",
         asynchronous=True,
     ) as cluster:
         assert cluster
@@ -168,45 +180,6 @@ def s3_settings(mocked_s3_server_envs: None) -> S3Settings:
 
 
 @pytest.fixture
-def s3_endpoint_url(s3_settings: S3Settings) -> AnyUrl:
-    assert s3_settings.S3_ENDPOINT
-    return TypeAdapter(AnyUrl).validate_python(
-        f"{s3_settings.S3_ENDPOINT}",
-    )
-
-
-@pytest.fixture
-async def aiobotocore_s3_client(
-    s3_settings: S3Settings, s3_endpoint_url: AnyUrl
-) -> AsyncIterator[AioBaseClient]:
-    session = get_session()
-    async with session.create_client(
-        "s3",
-        endpoint_url=f"{s3_endpoint_url}",
-        aws_secret_access_key="xxx",  # noqa: S106
-        aws_access_key_id="xxx",
-    ) as client:
-        yield client
-
-
-@pytest.fixture
-async def bucket(
-    aiobotocore_s3_client: AioBaseClient, s3_settings: S3Settings
-) -> AsyncIterator[str]:
-    response = await aiobotocore_s3_client.create_bucket(
-        Bucket=s3_settings.S3_BUCKET_NAME
-    )
-    assert "ResponseMetadata" in response
-    assert "HTTPStatusCode" in response["ResponseMetadata"]
-    assert response["ResponseMetadata"]["HTTPStatusCode"] == 200
-
-    response = await aiobotocore_s3_client.list_buckets()
-    assert response["Buckets"]
-    assert len(response["Buckets"]) == 1
-    return response["Buckets"][0]["Name"]
-
-
-@pytest.fixture
 def s3_remote_file_url(s3_settings: S3Settings, faker: Faker) -> Callable[..., AnyUrl]:
     def creator(file_path: Path | None = None) -> AnyUrl:
         file_path_with_bucket = Path(s3_settings.S3_BUCKET_NAME) / (
@@ -231,7 +204,7 @@ def file_on_s3_server(
         open_file = fsspec.open(f"{new_remote_file}", mode="wt", **s3_storage_kwargs)
         with open_file as fp:
             fp.write(  # type: ignore
-                f"This is the file contents of file #'{(len(list_of_created_files)+1):03}'\n"
+                f"This is the file contents of file #'{(len(list_of_created_files) + 1):03}'\n"
             )
             for s in faker.sentences(5):
                 fp.write(f"{s}\n")  # type: ignore

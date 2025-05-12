@@ -139,7 +139,7 @@ async def get_available_disk_space(
 
             # Available disk space will be captured here
             available_space = stdout.read().decode("utf-8").strip()
-            return ByteSize(available_space)
+            return ByteSize(available_space if available_space else 0)
     except (
         paramiko.AuthenticationException,
         paramiko.SSHException,

@@ -19,11 +19,12 @@ from pydantic import AnyUrl, TypeAdapter
 from pytest_localftpserver.servers import ProcessFTPServer
 from pytest_mock.plugin import MockerFixture
 from settings_library.s3 import S3Settings
-from simcore_service_dask_sidecar.file_utils import (
+from simcore_service_dask_sidecar.utils.files import (
     _s3fs_settings_from_s3_settings,
     pull_file_from_remote,
     push_file_to_remote,
 )
+from types_aiobotocore_s3 import S3Client
 
 
 @pytest.fixture()
@@ -34,7 +35,7 @@ async def mocked_log_publishing_cb(
         yield mocked_callback
 
 
-pytest_simcore_core_services_selection = ["postgres"]
+pytest_simcore_core_services_selection = ["rabbit"]
 pytest_simcore_ops_services_selection = []
 
 
@@ -53,11 +54,11 @@ def ftp_remote_file_url(ftpserver: ProcessFTPServer, faker: Faker) -> AnyUrl:
 @pytest.fixture
 async def s3_presigned_link_remote_file_url(
     s3_settings: S3Settings,
-    aiobotocore_s3_client,
+    s3_client: S3Client,
     faker: Faker,
 ) -> AnyUrl:
     return TypeAdapter(AnyUrl).validate_python(
-        await aiobotocore_s3_client.generate_presigned_url(
+        await s3_client.generate_presigned_url(
             "put_object",
             Params={"Bucket": s3_settings.S3_BUCKET_NAME, "Key": faker.file_name()},
             ExpiresIn=30,
@@ -134,8 +135,8 @@ async def test_push_file_to_remote(
 async def test_push_file_to_remote_s3_http_presigned_link(
     s3_presigned_link_remote_file_url: AnyUrl,
     s3_settings: S3Settings,
-    bucket: str,
     tmp_path: Path,
+    s3_bucket: str,
     faker: Faker,
     mocked_log_publishing_cb: mock.AsyncMock,
 ):
@@ -239,8 +240,7 @@ async def test_pull_file_from_remote(
 async def test_pull_file_from_remote_s3_presigned_link(
     s3_settings: S3Settings,
     s3_remote_file_url: AnyUrl,
-    aiobotocore_s3_client,
-    bucket: str,
+    s3_client: S3Client,
     tmp_path: Path,
     faker: Faker,
     mocked_log_publishing_cb: mock.AsyncMock,
@@ -261,15 +261,17 @@ async def test_pull_file_from_remote_s3_presigned_link(
     # create a corresponding presigned get link
     assert s3_remote_file_url.path
     remote_file_url = TypeAdapter(AnyUrl).validate_python(
-        await aiobotocore_s3_client.generate_presigned_url(
+        await s3_client.generate_presigned_url(
             "get_object",
             Params={
                 "Bucket": s3_settings.S3_BUCKET_NAME,
-                "Key": s3_remote_file_url.path.removeprefix("/"),
+                "Key": f"{s3_remote_file_url.path.removeprefix('/')}",
             },
             ExpiresIn=30,
-        ),
+        )
     )
+    assert remote_file_url.scheme.startswith("http")
+    print(f"remote_file_url: {remote_file_url}")
     # now let's get the file through the util
     dst_path = tmp_path / faker.file_name()
     await pull_file_from_remote(
@@ -281,6 +283,59 @@ async def test_pull_file_from_remote_s3_presigned_link(
     )
     assert dst_path.exists()
     assert dst_path.read_text() == TEXT_IN_FILE
+    mocked_log_publishing_cb.assert_called()
+
+
+async def test_pull_file_from_remote_s3_presigned_link_invalid_file(
+    s3_settings: S3Settings,
+    s3_remote_file_url: AnyUrl,
+    s3_client: S3Client,
+    tmp_path: Path,
+    faker: Faker,
+    mocked_log_publishing_cb: mock.AsyncMock,
+):
+    storage_kwargs = _s3fs_settings_from_s3_settings(s3_settings)
+    # put some file on the remote
+    TEXT_IN_FILE = faker.text()
+    with cast(
+        fsspec.core.OpenFile,
+        fsspec.open(
+            f"{s3_remote_file_url}",
+            mode="wt",
+            **storage_kwargs,
+        ),
+    ) as fp:
+        fp.write(TEXT_IN_FILE)
+
+    # create a corresponding presigned get link
+    assert s3_remote_file_url.path
+    invalid_remote_file_url = TypeAdapter(AnyUrl).validate_python(
+        await s3_client.generate_presigned_url(
+            "get_object",
+            Params={
+                "Bucket": s3_settings.S3_BUCKET_NAME,
+                "Key": f"{s3_remote_file_url.path.removeprefix('/')}_invalid",
+            },
+            ExpiresIn=30,
+        )
+    )
+    assert invalid_remote_file_url.scheme.startswith("http")
+    print(f"remote_file_url: {invalid_remote_file_url}")
+    # now let's get the file through the util
+    dst_path = tmp_path / faker.file_name()
+    with pytest.raises(
+        FileNotFoundError,
+        match=rf"{s3_remote_file_url.path.removeprefix('/')}_invalid",
+    ):
+        await pull_file_from_remote(
+            src_url=invalid_remote_file_url,
+            target_mime_type=None,
+            dst_path=dst_path,
+            log_publishing_cb=mocked_log_publishing_cb,
+            s3_settings=None,
+        )
+
+    assert not dst_path.exists()
     mocked_log_publishing_cb.assert_called()
 
 
@@ -310,14 +365,17 @@ async def test_pull_compressed_zip_file_from_remote(
     if remote_parameters.s3_settings:
         storage_kwargs = _s3fs_settings_from_s3_settings(remote_parameters.s3_settings)
 
-    with cast(
-        fsspec.core.OpenFile,
-        fsspec.open(
-            f"{destination_url}",
-            mode="wb",
-            **storage_kwargs,
-        ),
-    ) as dest_fp, local_zip_file_path.open("rb") as src_fp:
+    with (
+        cast(
+            fsspec.core.OpenFile,
+            fsspec.open(
+                f"{destination_url}",
+                mode="wb",
+                **storage_kwargs,
+            ),
+        ) as dest_fp,
+        local_zip_file_path.open("rb") as src_fp,
+    ):
         dest_fp.write(src_fp.read())
 
     # now we want to download that file so it becomes the source

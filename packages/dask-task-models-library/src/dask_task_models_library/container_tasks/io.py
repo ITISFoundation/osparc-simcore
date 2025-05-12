@@ -17,6 +17,7 @@ from pydantic import (
     StrictInt,
     StrictStr,
 )
+from pydantic.config import JsonDict
 
 TaskCancelEventName = "cancel_event_{}"
 
@@ -24,18 +25,24 @@ TaskCancelEventName = "cancel_event_{}"
 class PortSchema(BaseModel):
     required: bool
 
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "required": True,
+                    },
+                    {
+                        "required": False,
+                    },
+                ]
+            }
+        )
+
     model_config = ConfigDict(
         extra="forbid",
-        json_schema_extra={
-            "examples": [
-                {
-                    "required": True,
-                },
-                {
-                    "required": False,
-                },
-            ]
-        },
+        json_schema_extra=_update_json_schema_extra,
     )
 
 
@@ -43,20 +50,26 @@ class FilePortSchema(PortSchema):
     mapping: str | None = None
     url: AnyUrl
 
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "mapping": "some_filename.txt",
+                        "url": "sftp://some_file_url",
+                        "required": True,
+                    },
+                    {
+                        "required": False,
+                        "url": "s3://another_file_url",
+                    },
+                ]
+            }
+        )
+
     model_config = ConfigDict(
-        json_schema_extra={
-            "examples": [
-                {
-                    "mapping": "some_filename.txt",
-                    "url": "sftp://some_file_url",
-                    "required": True,
-                },
-                {
-                    "required": False,
-                    "url": "s3://another_file_url",
-                },
-            ]
-        }
+        json_schema_extra=_update_json_schema_extra,
     )
 
 
@@ -70,18 +83,27 @@ class FileUrl(BaseModel):
         default=None, description="the file MIME type", pattern=MIME_TYPE_RE
     )
 
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "url": "https://some_file_url",
+                        "file_mime_type": "application/json",
+                    },
+                    {
+                        "url": "https://some_file_url",
+                        "file_mapping": "some_file_name.txt",
+                        "file_mime_type": "application/json",
+                    },
+                ]
+            }
+        )
+
     model_config = ConfigDict(
         extra="forbid",
-        json_schema_extra={
-            "examples": [
-                {"url": "https://some_file_url", "file_mime_type": "application/json"},
-                {
-                    "url": "https://some_file_url",
-                    "file_mapping": "some_file_name.txt",
-                    "file_mime_type": "application/json",
-                },
-            ]
-        },
+        json_schema_extra=_update_json_schema_extra,
     )
 
 
@@ -99,18 +121,24 @@ PortValue: TypeAlias = Annotated[
 
 
 class TaskInputData(DictModel[ServicePortKey, PortValue]):
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "boolean_input": False,
+                        "int_input": -45,
+                        "float_input": 4564.45,
+                        "string_input": "nobody thinks like a string",
+                        "file_input": {"url": "s3://thatis_file_url"},
+                    },
+                ]
+            }
+        )
+
     model_config = ConfigDict(
-        json_schema_extra={
-            "examples": [
-                {
-                    "boolean_input": False,
-                    "int_input": -45,
-                    "float_input": 4564.45,
-                    "string_input": "nobody thinks like a string",
-                    "file_input": {"url": "s3://thatis_file_url"},
-                },
-            ]
-        }
+        json_schema_extra=_update_json_schema_extra,
     )
 
 
@@ -126,26 +154,32 @@ class TaskOutputDataSchema(DictModel[ServicePortKey, PortSchemaValue]):
     # does not work well in that case. For that reason, the schema is
     # sent as a json-schema instead of with a dynamically-created model class
     #
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "boolean_output": {"required": False},
+                        "int_output": {"required": True},
+                        "float_output": {"required": True},
+                        "string_output": {"required": False},
+                        "file_output": {
+                            "required": True,
+                            "url": "https://some_file_url",
+                            "mapping": "the_output_filename",
+                        },
+                        "optional_file_output": {
+                            "required": False,
+                            "url": "s3://one_file_url",
+                        },
+                    },
+                ]
+            }
+        )
+
     model_config = ConfigDict(
-        json_schema_extra={
-            "examples": [
-                {
-                    "boolean_output": {"required": False},
-                    "int_output": {"required": True},
-                    "float_output": {"required": True},
-                    "string_output": {"required": False},
-                    "file_output": {
-                        "required": True,
-                        "url": "https://some_file_url",
-                        "mapping": "the_output_filename",
-                    },
-                    "optional_file_output": {
-                        "required": False,
-                        "url": "s3://one_file_url",
-                    },
-                },
-            ]
-        }
+        json_schema_extra=_update_json_schema_extra,
     )
 
 
@@ -181,16 +215,20 @@ class TaskOutputData(DictModel[ServicePortKey, PortValue]):
 
         return cls.model_validate(data)
 
-    model_config = ConfigDict(
-        json_schema_extra={
-            "examples": [
-                {
-                    "boolean_output": False,
-                    "int_output": -45,
-                    "float_output": 4564.45,
-                    "string_output": "nobody thinks like a string",
-                    "file_output": {"url": "s3://yet_another_file_url"},
-                },
-            ]
-        }
-    )
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "boolean_output": False,
+                        "int_output": -45,
+                        "float_output": 4564.45,
+                        "string_output": "nobody thinks like a string",
+                        "file_output": {"url": "s3://yet_another_file_url"},
+                    },
+                ]
+            }
+        )
+
+    model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)

@@ -4,7 +4,7 @@ import logging
 import mimetypes
 import time
 import zipfile
-from collections.abc import Awaitable, Callable
+from collections.abc import Callable, Coroutine
 from io import IOBase
 from pathlib import Path
 from typing import Any, Final, TypedDict, cast
@@ -25,7 +25,7 @@ HTTP_FILE_SYSTEM_SCHEMES: Final = ["http", "https"]
 S3_FILE_SYSTEM_SCHEMES: Final = ["s3", "s3a"]
 
 
-LogPublishingCB = Callable[[LogMessageStr, LogLevelInt], Awaitable[None]]
+LogPublishingCB = Callable[[LogMessageStr, LogLevelInt], Coroutine[Any, Any, None]]
 
 
 def _file_progress_cb(
@@ -106,8 +106,12 @@ async def _copy_file(
     src_storage_kwargs = src_storage_cfg or {}
     dst_storage_kwargs = dst_storage_cfg or {}
     with (
-        fsspec.open(f"{src_url}", mode="rb", **src_storage_kwargs) as src_fp,
-        fsspec.open(f"{dst_url}", mode="wb", **dst_storage_kwargs) as dst_fp,
+        fsspec.open(
+            f"{src_url}", mode="rb", expand=False, **src_storage_kwargs
+        ) as src_fp,
+        fsspec.open(
+            f"{dst_url}", mode="wb", expand=False, **dst_storage_kwargs
+        ) as dst_fp,
     ):
         assert isinstance(src_fp, IOBase)  # nosec
         assert isinstance(dst_fp, IOBase)  # nosec

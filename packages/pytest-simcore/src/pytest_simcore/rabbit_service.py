@@ -43,7 +43,7 @@ def rabbit_env_vars_dict(
     assert f"{prefix}_rabbit" in docker_stack["services"]
 
     port = get_service_published_port(
-        "rabbit", env_vars_for_docker_compose["RABBIT_PORT"]
+        "rabbit", int(env_vars_for_docker_compose["RABBIT_PORT"])
     )
 
     return {

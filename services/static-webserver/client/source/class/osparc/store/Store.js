@@ -93,7 +93,7 @@ qx.Class.define("osparc.store.Store", {
       check: "Array",
       init: []
     },
-    studyComments: {
+    conversations: {
       check: "Array",
       init: []
     },
