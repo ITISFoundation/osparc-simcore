@@ -24,11 +24,13 @@ qx.Class.define("osparc.data.SubJob", {
     this.set({
       projectUuid: subJobData["projectUuid"],
       nodeId: subJobData["nodeId"],
-      nodeName: subJobData["nodeId"],
+      nodeName: subJobData["nodeName"],
       state: subJobData["state"],
       progress: subJobData["progress"],
       startedAt: subJobData["startedAt"] ? new Date(subJobData["startedAt"]) : null,
       endedAt: subJobData["endedAt"] ? new Date(subJobData["endedAt"]) : null,
+      osparcCredits: subJobData["osparcCredits"] || null,
+      downloadLogsLink: subJobData["downloadLogsLink"] || null,
       image: subJobData["image"] || {},
     });
   },
@@ -74,6 +76,18 @@ qx.Class.define("osparc.data.SubJob", {
       check: "Date",
       init: null,
       nullable: true,
+    },
+
+    osparcCredits: {
+      check: "Number",
+      nullable: true,
+      init: null,
+    },
+
+    downloadLogsLink: {
+      check: "String",
+      nullable: true,
+      init: null,
     },
 
     image: {
