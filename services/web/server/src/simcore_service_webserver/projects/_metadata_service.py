@@ -15,11 +15,19 @@ from ._access_rights_service import validate_project_ownership
 _logger = logging.getLogger(__name__)
 
 
-async def get_project_custom_metadata(
+async def get_project_custom_metadata_for_user(
     app: web.Application, user_id: UserID, project_uuid: ProjectID
 ) -> MetadataDict:
     await validate_project_ownership(app, user_id=user_id, project_uuid=project_uuid)
 
+    return await _metadata_repository.get_project_custom_metadata(
+        engine=get_database_engine(app), project_uuid=project_uuid
+    )
+
+
+async def get_project_custom_metadata(
+    app: web.Application, project_uuid: ProjectID
+) -> MetadataDict:
     return await _metadata_repository.get_project_custom_metadata(
         engine=get_database_engine(app), project_uuid=project_uuid
     )

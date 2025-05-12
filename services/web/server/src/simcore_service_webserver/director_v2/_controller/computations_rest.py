@@ -53,10 +53,12 @@ async def list_computations_latest_iteration(request: web.Request) -> web.Respon
         ComputationRunListQueryParams, request
     )
 
-    _get = await _computations_service.list_computations_latest_iteration(
+    total, items = await _computations_service.list_computations_latest_iteration(
         request.app,
         product_name=req_ctx.product_name,
         user_id=req_ctx.user_id,
+        # filters
+        filter_only_running=query_params.filter_only_running,
         # pagination
         offset=query_params.offset,
         limit=query_params.limit,
@@ -67,10 +69,10 @@ async def list_computations_latest_iteration(request: web.Request) -> web.Respon
     page = Page[ComputationRunRestGet].model_validate(
         paginate_data(
             chunk=[
-                ComputationRunRestGet.model_validate(task, from_attributes=True)
-                for task in _get.items
+                ComputationRunRestGet.model_validate(run, from_attributes=True)
+                for run in items
             ],
-            total=_get.total,
+            total=total,
             limit=query_params.limit,
             offset=query_params.offset,
             request_url=request.url,
