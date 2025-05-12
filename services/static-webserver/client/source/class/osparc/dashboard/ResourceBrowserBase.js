@@ -31,6 +31,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
   construct: function() {
     this.base(arguments);
 
+    this._resourcesInitialized = false;
+
     this._showLoadingPage(this.tr("Starting") + " " + osparc.store.StaticInfo.getInstance().getDisplayName());
 
     const padding = osparc.dashboard.Dashboard.PADDING;
@@ -88,7 +90,6 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
   events: {
     "changeTab": "qx.event.type.Data",
-    "showTab": "qx.event.type.Data",
     "publishTemplate": "qx.event.type.Data",
   },
 
@@ -210,6 +211,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     __centerLayout: null,
     _resourceType: null,
     _resourcesList: null,
+    _resourcesInitialized: null,
     _toolbar: null,
     _searchBarFilter: null,
     __viewModeLayout: null,
