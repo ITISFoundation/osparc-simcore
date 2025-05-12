@@ -126,6 +126,28 @@ qx.Class.define("osparc.dashboard.AppBrowser", {
       return this._resourcesContainer;
     },
 
+    __addSortingButtons: function() {
+      const containerSortButtons = new osparc.service.SortServicesButtons();
+      containerSortButtons.set({
+        appearance: "form-button-outlined"
+      });
+      containerSortButtons.addListener("sortBy", e => {
+        this.__sortBy = e.getData();
+        this.__setServicesToList(this._resourcesList);
+      }, this);
+      this._toolbar.add(containerSortButtons);
+    },
+
+    _populateCardMenu: function(card) {
+      const menu = card.getMenu();
+      const serviceData = card.getResourceData();
+
+      const openButton = this._getOpenMenuButton(serviceData);
+      if (openButton) {
+        menu.add(openButton);
+      }
+    },
+
     __addNewServiceButtons: function() {
       const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
       const hasRights = osparc.data.Permissions.getInstance().canDo("studies.template.create.productAll");
@@ -147,28 +169,6 @@ qx.Class.define("osparc.dashboard.AppBrowser", {
       });
       addServiceButton.addListener("execute", () => this.__displayServiceSubmissionForm());
       this._toolbar.add(addServiceButton);
-    },
-
-    __addSortingButtons: function() {
-      const containerSortButtons = new osparc.service.SortServicesButtons();
-      containerSortButtons.set({
-        appearance: "form-button-outlined"
-      });
-      containerSortButtons.addListener("sortBy", e => {
-        this.__sortBy = e.getData();
-        this.__setServicesToList(this._resourcesList);
-      }, this);
-      this._toolbar.add(containerSortButtons);
-    },
-
-    _populateCardMenu: function(card) {
-      const menu = card.getMenu();
-      const serviceData = card.getResourceData();
-
-      const openButton = this._getOpenMenuButton(serviceData);
-      if (openButton) {
-        menu.add(openButton);
-      }
     },
 
     __displayServiceSubmissionForm: function(formData) {
