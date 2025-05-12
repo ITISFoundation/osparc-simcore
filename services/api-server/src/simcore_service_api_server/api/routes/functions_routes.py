@@ -21,6 +21,7 @@ from models_library.api_schemas_webserver.functions_wb_schema import (
     FunctionJobID,
     FunctionJobStatus,
     FunctionOutputs,
+    FunctionOutputSchema,
     FunctionSchemaClass,
     ProjectFunctionJob,
     RegisteredFunction,
@@ -73,7 +74,7 @@ _COMMON_FUNCTION_ERROR_RESPONSES: Final[dict] = {
 async def register_function(
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     function: Function,
-):
+) -> RegisteredFunction:
     return await wb_api_rpc.register_function(function=function)
 
 
@@ -86,7 +87,7 @@ async def register_function(
 async def get_function(
     function_id: FunctionID,
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
-):
+) -> RegisteredFunction:
     return await wb_api_rpc.get_function(function_id=function_id)
 
 
@@ -96,7 +97,7 @@ async def get_function(
 async def list_functions(
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     page_params: Annotated[PaginationParams, Depends()],
-):
+) -> Page[RegisteredFunction]:
     functions_list, meta = await wb_api_rpc.list_functions(
         pagination_offset=page_params.offset,
         pagination_limit=page_params.limit,
@@ -115,7 +116,7 @@ async def list_functions(
 async def list_function_jobs(
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     page_params: Annotated[PaginationParams, Depends()],
-):
+) -> Page[RegisteredFunctionJob]:
     function_jobs_list, meta = await wb_api_rpc.list_function_jobs(
         pagination_offset=page_params.offset,
         pagination_limit=page_params.limit,
@@ -136,7 +137,7 @@ async def list_function_jobs(
 async def list_function_job_collections(
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     page_params: Annotated[PaginationParams, Depends()],
-):
+) -> Page[RegisteredFunctionJobCollection]:
     function_job_collection_list, meta = await wb_api_rpc.list_function_job_collections(
         pagination_offset=page_params.offset,
         pagination_limit=page_params.limit,
@@ -171,7 +172,7 @@ def join_inputs(
 async def get_function_inputschema(
     function_id: FunctionID,
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
-):
+) -> FunctionInputSchema:
     function = await wb_api_rpc.get_function(function_id=function_id)
     return function.input_schema
 
@@ -185,7 +186,7 @@ async def get_function_inputschema(
 async def get_function_outputschema(
     function_id: FunctionID,
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
-):
+) -> FunctionOutputSchema:
     function = await wb_api_rpc.get_function(function_id=function_id)
     return function.output_schema
 
@@ -203,7 +204,7 @@ async def validate_function_inputs(
     function_id: FunctionID,
     inputs: FunctionInputs,
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
-):
+) -> tuple[bool, str]:
     function = await wb_api_rpc.get_function(function_id=function_id)
 
     if function.input_schema is None or function.input_schema.schema_content is None:
@@ -242,7 +243,7 @@ async def run_function(  # noqa: PLR0913
     product_name: Annotated[str, Depends(get_product_name)],
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
     job_service: Annotated[JobService, Depends(get_job_service)],
-):
+) -> RegisteredFunctionJob:
 
     to_run_function = await wb_api_rpc.get_function(function_id=function_id)
 
@@ -343,7 +344,7 @@ async def run_function(  # noqa: PLR0913
 async def delete_function(
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     function_id: FunctionID,
-):
+) -> None:
     return await wb_api_rpc.delete_function(function_id=function_id)
 
 
@@ -361,7 +362,7 @@ _COMMON_FUNCTION_JOB_ERROR_RESPONSES: Final[dict] = {
 async def register_function_job(
     function_job: FunctionJob,
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
-):
+) -> RegisteredFunctionJob:
     return await wb_api_rpc.register_function_job(function_job=function_job)
 
 
@@ -374,7 +375,7 @@ async def register_function_job(
 async def get_function_job(
     function_job_id: FunctionJobID,
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
-):
+) -> RegisteredFunctionJob:
     return await wb_api_rpc.get_function_job(function_job_id=function_job_id)
 
 
@@ -387,7 +388,7 @@ async def get_function_job(
 async def delete_function_job(
     function_job_id: FunctionJobID,
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
-):
+) -> None:
     return await wb_api_rpc.delete_function_job(function_job_id=function_job_id)
 
 
@@ -418,7 +419,7 @@ async def function_job_status(
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
-):
+) -> FunctionJobStatus:
     function, function_job = await get_function_from_functionjobid(
         wb_api_rpc=wb_api_rpc, function_job_id=function_job_id
     )
@@ -465,7 +466,7 @@ async def function_job_outputs(
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     async_pg_engine: Annotated[AsyncEngine, Depends(get_db_asyncpg_engine)],
-):
+) -> FunctionOutputs:
     function, function_job = await get_function_from_functionjobid(
         wb_api_rpc=wb_api_rpc, function_job_id=function_job_id
     )
@@ -474,30 +475,32 @@ async def function_job_outputs(
         function.function_class == FunctionClass.project
         and function_job.function_class == FunctionClass.project
     ):
-        job_outputs = await studies_jobs.get_study_job_outputs(
-            study_id=function.project_id,
-            job_id=function_job.project_job_id,
-            user_id=user_id,
-            webserver_api=webserver_api,
-            storage_client=storage_client,
-        )
+        return (
+            await studies_jobs.get_study_job_outputs(
+                study_id=function.project_id,
+                job_id=function_job.project_job_id,
+                user_id=user_id,
+                webserver_api=webserver_api,
+                storage_client=storage_client,
+            )
+        ).results
 
-        return job_outputs.results
-    elif (function.function_class == FunctionClass.solver) and (  # noqa: RET505
-        function_job.function_class == FunctionClass.solver
+    if (
+        function.function_class == FunctionClass.solver
+        and function_job.function_class == FunctionClass.solver
     ):
-        job_outputs = await solvers_jobs_getters.get_job_outputs(
-            solver_key=function.solver_key,
-            version=function.solver_version,
-            job_id=function_job.solver_job_id,
-            user_id=user_id,
-            webserver_api=webserver_api,
-            storage_client=storage_client,
-            async_pg_engine=async_pg_engine,
-        )
-        return job_outputs.results
-    else:
-        raise UnsupportedFunctionClassError(function_class=function.function_class)
+        return (
+            await solvers_jobs_getters.get_job_outputs(
+                solver_key=function.solver_key,
+                version=function.solver_version,
+                job_id=function_job.solver_job_id,
+                user_id=user_id,
+                webserver_api=webserver_api,
+                storage_client=storage_client,
+                async_pg_engine=async_pg_engine,
+            )
+        ).results
+    raise UnsupportedFunctionClassError(function_class=function.function_class)
 
 
 @function_router.post(
@@ -518,7 +521,7 @@ async def map_function(  # noqa: PLR0913
     product_name: Annotated[str, Depends(get_product_name)],
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
     job_service: Annotated[JobService, Depends(get_job_service)],
-):
+) -> RegisteredFunctionJobCollection:
     function_jobs = []
     function_jobs = [
         await run_function(
@@ -565,7 +568,7 @@ _COMMON_FUNCTION_JOB_COLLECTION_ERROR_RESPONSES: Final[dict] = {
 async def get_function_job_collection(
     function_job_collection_id: FunctionJobCollectionID,
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
-):
+) -> RegisteredFunctionJobCollection:
     return await wb_api_rpc.get_function_job_collection(
         function_job_collection_id=function_job_collection_id
     )
@@ -579,7 +582,7 @@ async def get_function_job_collection(
 async def register_function_job_collection(
     function_job_collection: FunctionJobCollection,
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
-):
+) -> RegisteredFunctionJobCollection:
     return await wb_api_rpc.register_function_job_collection(
         function_job_collection=function_job_collection
     )
@@ -594,7 +597,7 @@ async def register_function_job_collection(
 async def delete_function_job_collection(
     function_job_collection_id: FunctionJobCollectionID,
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
-):
+) -> None:
     return await wb_api_rpc.delete_function_job_collection(
         function_job_collection_id=function_job_collection_id
     )
@@ -609,7 +612,7 @@ async def delete_function_job_collection(
 async def function_job_collection_list_function_jobs(
     function_job_collection_id: FunctionJobCollectionID,
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
-):
+) -> list[RegisteredFunctionJob]:
     function_job_collection = await get_function_job_collection(
         function_job_collection_id=function_job_collection_id,
         wb_api_rpc=wb_api_rpc,
@@ -634,7 +637,7 @@ async def function_job_collection_status(
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
-):
+) -> FunctionJobCollectionStatus:
     function_job_collection = await get_function_job_collection(
         function_job_collection_id=function_job_collection_id,
         wb_api_rpc=wb_api_rpc,

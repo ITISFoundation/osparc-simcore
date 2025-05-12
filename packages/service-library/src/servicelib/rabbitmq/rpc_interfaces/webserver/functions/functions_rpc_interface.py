@@ -31,13 +31,14 @@ async def register_function(
     *,
     function: Function,
 ) -> RegisteredFunction:
-    result: RegisteredFunction = await rabbitmq_rpc_client.request(
+    result = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("register_function"),
         function=function,
     )
-    TypeAdapter(Function).validate_python(result)  # Validates the result as a Function
-    return result
+    return TypeAdapter(RegisteredFunction).validate_python(
+        result
+    )  # Validates the result as a RegisteredFunction
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -46,13 +47,12 @@ async def get_function(
     *,
     function_id: FunctionID,
 ) -> RegisteredFunction:
-    result: RegisteredFunction = await rabbitmq_rpc_client.request(
+    result = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("get_function"),
         function_id=function_id,
     )
-    TypeAdapter(Function).validate_python(result)
-    return result
+    return TypeAdapter(RegisteredFunction).validate_python(result)
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -61,13 +61,12 @@ async def get_function_input_schema(
     *,
     function_id: FunctionID,
 ) -> FunctionInputSchema:
-    result: FunctionInputSchema = await rabbitmq_rpc_client.request(
+    result = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("get_function_input_schema"),
         function_id=function_id,
     )
-    TypeAdapter(FunctionInputSchema).validate_python(result)
-    return result
+    return TypeAdapter(FunctionInputSchema).validate_python(result)
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -76,13 +75,12 @@ async def get_function_output_schema(
     *,
     function_id: FunctionID,
 ) -> FunctionOutputSchema:
-    result: FunctionOutputSchema = await rabbitmq_rpc_client.request(
+    result = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("get_function_output_schema"),
         function_id=function_id,
     )
-    TypeAdapter(FunctionOutputSchema).validate_python(result)
-    return result
+    return TypeAdapter(FunctionOutputSchema).validate_python(result)
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -91,7 +89,7 @@ async def delete_function(
     *,
     function_id: FunctionID,
 ) -> None:
-    result: None = await rabbitmq_rpc_client.request(
+    result = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("delete_function"),
         function_id=function_id,
@@ -138,12 +136,16 @@ async def list_function_jobs(
             pagination_limit=pagination_limit,
         )
     )
-    assert isinstance(result, tuple)
-    TypeAdapter(list[RegisteredFunctionJob]).validate_python(
-        result[0]
-    )  # Validates the result as a list of RegisteredFunctionJobs
+    assert isinstance(result, tuple)  # nosec
+    assert isinstance(result[0], list)  # nosec
+    assert all(
+        TypeAdapter(RegisteredFunctionJob).validate_python(item) for item in result[0]
+    )  # nosec
     assert isinstance(result[1], PageMetaInfoLimitOffset)  # nosec
-    return result
+    return (
+        TypeAdapter(list[RegisteredFunctionJob]).validate_python(result[0]),
+        TypeAdapter(PageMetaInfoLimitOffset).validate_python(result[1]),
+    )
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -153,20 +155,19 @@ async def list_function_job_collections(
     pagination_limit: int,
     pagination_offset: int,
 ) -> tuple[list[RegisteredFunctionJobCollection], PageMetaInfoLimitOffset]:
-    result: tuple[list[RegisteredFunctionJobCollection], PageMetaInfoLimitOffset] = (
-        await rabbitmq_rpc_client.request(
-            WEBSERVER_RPC_NAMESPACE,
-            TypeAdapter(RPCMethodName).validate_python("list_function_job_collections"),
-            pagination_offset=pagination_offset,
-            pagination_limit=pagination_limit,
-        )
+    result = await rabbitmq_rpc_client.request(
+        WEBSERVER_RPC_NAMESPACE,
+        TypeAdapter(RPCMethodName).validate_python("list_function_job_collections"),
+        pagination_offset=pagination_offset,
+        pagination_limit=pagination_limit,
     )
     assert isinstance(result, tuple)
-    TypeAdapter(list[RegisteredFunctionJobCollection]).validate_python(
-        result[0]
-    )  # Validates the result as a list of RegisteredFunctionJobCollections
-    assert isinstance(result[1], PageMetaInfoLimitOffset)  # nosec
-    return result
+    return (
+        TypeAdapter(list[RegisteredFunctionJobCollection]).validate_python(
+            result[0]
+        ),  # Validates the result as a list of RegisteredFunctionJobCollections
+        TypeAdapter(PageMetaInfoLimitOffset).validate_python(result[1]),  # nosec
+    )
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -176,16 +177,15 @@ async def run_function(
     function_id: FunctionID,
     inputs: FunctionInputs,
 ) -> RegisteredFunctionJob:
-    result: RegisteredFunctionJob = await rabbitmq_rpc_client.request(
+    result = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("run_function"),
         function_id=function_id,
         inputs=inputs,
     )
-    TypeAdapter(RegisteredFunctionJob).validate_python(
+    return TypeAdapter(RegisteredFunctionJob).validate_python(
         result
-    )  # Validates the result as a FunctionJob
-    return result
+    )  # Validates the result as a RegisteredFunctionJob
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -194,15 +194,14 @@ async def register_function_job(
     *,
     function_job: FunctionJob,
 ) -> RegisteredFunctionJob:
-    result: RegisteredFunctionJob = await rabbitmq_rpc_client.request(
+    result = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("register_function_job"),
         function_job=function_job,
     )
-    TypeAdapter(RegisteredFunctionJob).validate_python(
+    return TypeAdapter(RegisteredFunctionJob).validate_python(
         result
     )  # Validates the result as a RegisteredFunctionJob
-    return result
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -211,14 +210,13 @@ async def get_function_job(
     *,
     function_job_id: FunctionJobID,
 ) -> RegisteredFunctionJob:
-    result: RegisteredFunctionJob = await rabbitmq_rpc_client.request(
+    result = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("get_function_job"),
         function_job_id=function_job_id,
     )
 
-    TypeAdapter(RegisteredFunctionJob).validate_python(result)
-    return result
+    return TypeAdapter(RegisteredFunctionJob).validate_python(result)
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -233,7 +231,6 @@ async def delete_function_job(
         function_job_id=function_job_id,
     )
     assert result is None  # nosec
-    return result
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -243,7 +240,7 @@ async def find_cached_function_job(
     function_id: FunctionID,
     inputs: FunctionInputs,
 ) -> RegisteredFunctionJob | None:
-    result: RegisteredFunctionJob | None = await rabbitmq_rpc_client.request(
+    result = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("find_cached_function_job"),
         function_id=function_id,
@@ -251,8 +248,7 @@ async def find_cached_function_job(
     )
     if result is None:
         return None
-    TypeAdapter(RegisteredFunctionJob).validate_python(result)
-    return result
+    return TypeAdapter(RegisteredFunctionJob).validate_python(result)
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -261,13 +257,12 @@ async def register_function_job_collection(
     *,
     function_job_collection: FunctionJobCollection,
 ) -> RegisteredFunctionJobCollection:
-    result: RegisteredFunctionJobCollection = await rabbitmq_rpc_client.request(
+    result = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("register_function_job_collection"),
         function_job_collection=function_job_collection,
     )
-    TypeAdapter(RegisteredFunctionJobCollection).validate_python(result)
-    return result
+    return TypeAdapter(RegisteredFunctionJobCollection).validate_python(result)
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -276,13 +271,12 @@ async def get_function_job_collection(
     *,
     function_job_collection_id: FunctionJobCollectionID,
 ) -> RegisteredFunctionJobCollection:
-    result: RegisteredFunctionJobCollection = await rabbitmq_rpc_client.request(
+    result = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("get_function_job_collection"),
         function_job_collection_id=function_job_collection_id,
     )
-    TypeAdapter(RegisteredFunctionJobCollection).validate_python(result)
-    return result
+    return TypeAdapter(RegisteredFunctionJobCollection).validate_python(result)
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -291,10 +285,9 @@ async def delete_function_job_collection(
     *,
     function_job_collection_id: FunctionJobCollectionID,
 ) -> None:
-    result: None = await rabbitmq_rpc_client.request(
+    result = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("delete_function_job_collection"),
         function_job_collection_id=function_job_collection_id,
     )
-    assert result is None
-    return result
+    assert result is None  # nosec

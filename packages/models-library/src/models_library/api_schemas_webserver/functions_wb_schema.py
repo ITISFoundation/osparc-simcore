@@ -3,6 +3,7 @@ from enum import Enum
 from typing import Annotated, Any, Literal, TypeAlias
 from uuid import UUID
 
+from common_library.errors_classes import OsparcErrorMixin
 from models_library import projects
 from models_library.services_types import ServiceKey, ServiceVersion
 from pydantic import BaseModel, Field
@@ -66,6 +67,7 @@ FunctionJobClassSpecificData: TypeAlias = FunctionClassSpecificData
 
 
 # TODO, use InputTypes here, but api is throwing weird errors and asking for dict for elements  # noqa: FIX002
+# see here https://github.com/ITISFoundation/osparc-simcore/issues/7659
 FunctionInputs: TypeAlias = dict[str, Any] | None
 
 FunctionInputsList: TypeAlias = list[FunctionInputs]
@@ -203,86 +205,52 @@ class FunctionJobCollectionStatus(BaseModel):
     status: list[str]
 
 
-class FunctionIDNotFoundError(Exception):
+class FunctionBaseError(OsparcErrorMixin, Exception):
+    pass
+
+
+class FunctionIDNotFoundError(FunctionBaseError):
     """Exception raised when a function is not found"""
 
-    def __init__(self, function_id: FunctionID):
-        self.function_id = function_id
-        super().__init__(f"Function {function_id} not found")
+    msg_template: str = "Function {function_id} not found"
 
 
-class FunctionJobIDNotFoundError(Exception):
+class FunctionJobIDNotFoundError(FunctionBaseError):
     """Exception raised when a function job is not found"""
 
-    def __init__(self, function_job_id: FunctionJobID):
-        self.function_job_id = function_job_id
-        super().__init__(f"Function job {function_job_id} not found")
+    msg_template: str = "Function job {function_job_id} not found"
 
 
-class FunctionJobCollectionIDNotFoundError(Exception):
+class FunctionJobCollectionIDNotFoundError(FunctionBaseError):
     """Exception raised when a function job collection is not found"""
 
-    def __init__(self, function_job_collection_id: FunctionJobCollectionID):
-        self.function_job_collection_id = function_job_collection_id
-        super().__init__(
-            f"Function job collection {function_job_collection_id} not found"
-        )
+    msg_template: str = "Function job collection {function_job_collection_id} not found"
 
 
-class RegisterFunctionWithIDError(Exception):
-    """Exception raised when registering a function with a UID"""
-
-    def __init__(self):
-        super().__init__("Cannot register Function with a UID")
-
-
-class RegisterFunctionJobWithIDError(Exception):
-    """Exception raised when registering a function job with a UID"""
-
-    def __init__(self):
-        super().__init__("Cannot register FunctionJob with a UID")
-
-
-class RegisterFunctionJobCollectionWithIDError(Exception):
-    """Exception raised when registering a function job collection with a UID"""
-
-    def __init__(self):
-        super().__init__("Cannot register FunctionJobCollection with a UID")
-
-
-class UnsupportedFunctionClassError(Exception):
+class UnsupportedFunctionClassError(FunctionBaseError):
     """Exception raised when a function class is not supported"""
 
-    def __init__(self, function_class: str):
-        self.function_class = function_class
-        super().__init__(f"Function class {function_class} is not supported")
+    msg_template: str = "Function class {function_class} is not supported"
 
 
-class UnsupportedFunctionJobClassError(Exception):
+class UnsupportedFunctionJobClassError(FunctionBaseError):
     """Exception raised when a function job class is not supported"""
 
-    def __init__(self, function_job_class: str):
-        self.function_job_class = function_job_class
-        super().__init__(f"Function job class {function_job_class} is not supported")
+    msg_template: str = "Function job class {function_job_class} is not supported"
 
 
-class UnsupportedFunctionFunctionJobClassCombinationError(Exception):
+class UnsupportedFunctionFunctionJobClassCombinationError(FunctionBaseError):
     """Exception raised when a function / function job class combination is not supported"""
 
-    def __init__(self, function_class: str, function_job_class: str):
-        self.function_class = function_class
-        self.function_job_class = function_job_class
-        super().__init__(
-            f"Function class {function_class} and function job class {function_job_class} combination is not supported"
-        )
+    msg_template: str = (
+        "Function class {function_class} and function job class {function_job_class} combination is not supported"
+    )
 
 
-class FunctionInputsValidationError(Exception):
+class FunctionInputsValidationError(FunctionBaseError):
     """Exception raised when validating function inputs"""
 
-    def __init__(self, error: str):
-        self.errors = error
-        super().__init__(f"Function inputs validation failed: {error}")
+    msg_template: str = "Function inputs validation failed: {error}"
 
 
 class FunctionJobDB(BaseModel):

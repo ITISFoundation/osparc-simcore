@@ -37,8 +37,19 @@ def mock_function() -> Function:
     )
 
 
-@pytest.mark.asyncio
-async def test_register_function(client, mock_function):
+@pytest.fixture
+async def clean_functions(client):
+    # This function is a placeholder for the actual implementation
+    # that deletes all registered functions from the database.
+    functions, _ = await functions_rpc.list_functions(
+        app=client.app, pagination_limit=100, pagination_offset=0
+    )
+    for function in functions:
+        assert function.uid is not None
+        await functions_rpc.delete_function(app=client.app, function_id=function.uid)
+
+
+async def test_register_function(client, mock_function: ProjectFunction):
     # Register the function
     registered_function = await functions_rpc.register_function(
         app=client.app, function=mock_function
@@ -65,8 +76,7 @@ async def test_register_function(client, mock_function):
     assert registered_function.project_id == mock_function.project_id
 
 
-@pytest.mark.asyncio
-async def test_get_function(client, mock_function):
+async def test_get_function(client, mock_function: ProjectFunction):
     # Register the function first
     registered_function = await functions_rpc.register_function(
         app=client.app, function=mock_function
@@ -89,14 +99,12 @@ async def test_get_function(client, mock_function):
     assert retrieved_function.project_id == registered_function.project_id
 
 
-@pytest.mark.asyncio
 async def test_get_function_not_found(client):
     # Attempt to retrieve a function that does not exist
     with pytest.raises(FunctionIDNotFoundError):
         await functions_rpc.get_function(app=client.app, function_id=uuid4())
 
 
-@pytest.mark.asyncio
 async def test_list_functions(client):
     # Register a function first
     mock_function = ProjectFunction(
@@ -122,20 +130,8 @@ async def test_list_functions(client):
     assert any(f.uid == registered_function.uid for f in functions)
 
 
-async def delete_all_registered_functions(client):
-    # This function is a placeholder for the actual implementation
-    # that deletes all registered functions from the database.
-    functions, _ = await functions_rpc.list_functions(
-        app=client.app, pagination_limit=100, pagination_offset=0
-    )
-    for function in functions:
-        assert function.uid is not None
-        await functions_rpc.delete_function(app=client.app, function_id=function.uid)
-
-
-@pytest.mark.asyncio
+@pytest.mark.usefixtures("clean_functions")
 async def test_list_functions_empty(client):
-    await delete_all_registered_functions(client)
     # List functions when none are registered
     functions, _ = await functions_rpc.list_functions(
         app=client.app, pagination_limit=10, pagination_offset=0
@@ -145,10 +141,8 @@ async def test_list_functions_empty(client):
     assert len(functions) == 0
 
 
-@pytest.mark.asyncio
+@pytest.mark.usefixtures("clean_functions")
 async def test_list_functions_with_pagination(client, mock_function):
-    await delete_all_registered_functions(client)
-
     # Register multiple functions
     TOTAL_FUNCTIONS = 3
     for _ in range(TOTAL_FUNCTIONS):
@@ -179,8 +173,7 @@ async def test_list_functions_with_pagination(client, mock_function):
     assert page_info.total == TOTAL_FUNCTIONS
 
 
-@pytest.mark.asyncio
-async def test_get_function_input_schema(client, mock_function):
+async def test_get_function_input_schema(client, mock_function: ProjectFunction):
     # Register the function first
     registered_function = await functions_rpc.register_function(
         app=client.app, function=mock_function
@@ -196,8 +189,7 @@ async def test_get_function_input_schema(client, mock_function):
     assert input_schema == registered_function.input_schema
 
 
-@pytest.mark.asyncio
-async def test_get_function_output_schema(client, mock_function):
+async def test_get_function_output_schema(client, mock_function: ProjectFunction):
     # Register the function first
     registered_function = await functions_rpc.register_function(
         app=client.app, function=mock_function
@@ -213,8 +205,7 @@ async def test_get_function_output_schema(client, mock_function):
     assert output_schema == registered_function.output_schema
 
 
-@pytest.mark.asyncio
-async def test_delete_function(client, mock_function):
+async def test_delete_function(client, mock_function: ProjectFunction):
     # Register the function first
     registered_function = await functions_rpc.register_function(
         app=client.app, function=mock_function
@@ -233,8 +224,7 @@ async def test_delete_function(client, mock_function):
         )
 
 
-@pytest.mark.asyncio
-async def test_register_function_job(client, mock_function):
+async def test_register_function_job(client, mock_function: ProjectFunction):
     # Register the function first
     registered_function = await functions_rpc.register_function(
         app=client.app, function=mock_function
@@ -261,8 +251,7 @@ async def test_register_function_job(client, mock_function):
     assert registered_job.outputs == function_job.outputs
 
 
-@pytest.mark.asyncio
-async def test_get_function_job(client, mock_function):
+async def test_get_function_job(client, mock_function: ProjectFunction):
     # Register the function first
     registered_function = await functions_rpc.register_function(
         app=client.app, function=mock_function
@@ -295,15 +284,13 @@ async def test_get_function_job(client, mock_function):
     assert retrieved_job.outputs == registered_job.outputs
 
 
-@pytest.mark.asyncio
 async def test_get_function_job_not_found(client):
     # Attempt to retrieve a function job that does not exist
     with pytest.raises(FunctionJobIDNotFoundError):
         await functions_rpc.get_function_job(app=client.app, function_job_id=uuid4())
 
 
-@pytest.mark.asyncio
-async def test_list_function_jobs(client, mock_function):
+async def test_list_function_jobs(client, mock_function: ProjectFunction):
     # Register the function first
     registered_function = await functions_rpc.register_function(
         app=client.app, function=mock_function
@@ -334,8 +321,7 @@ async def test_list_function_jobs(client, mock_function):
     assert any(j.uid == registered_job.uid for j in jobs)
 
 
-@pytest.mark.asyncio
-async def test_delete_function_job(client, mock_function):
+async def test_delete_function_job(client, mock_function: ProjectFunction):
     # Register the function first
     registered_function = await functions_rpc.register_function(
         app=client.app, function=mock_function
@@ -369,8 +355,7 @@ async def test_delete_function_job(client, mock_function):
         )
 
 
-@pytest.mark.asyncio
-async def test_function_job_collection(client, mock_function):
+async def test_function_job_collection(client, mock_function: ProjectFunction):
     # Register the function first
     registered_function = await functions_rpc.register_function(
         app=client.app, function=mock_function
@@ -428,8 +413,7 @@ async def test_function_job_collection(client, mock_function):
         )
 
 
-@pytest.mark.asyncio
-async def test_list_function_job_collections(client, mock_function):
+async def test_list_function_job_collections(client, mock_function: ProjectFunction):
     # Register the function first
     registered_function = await functions_rpc.register_function(
         app=client.app, function=mock_function

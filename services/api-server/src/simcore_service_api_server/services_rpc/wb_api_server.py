@@ -49,53 +49,8 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     NotEnoughAvailableSeatsError,
 )
 from servicelib.rabbitmq.rpc_interfaces.webserver import projects as projects_rpc
-from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interface import (
-    delete_function as _delete_function,
-)
-from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interface import (
-    delete_function_job as _delete_function_job,
-)
-from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interface import (
-    delete_function_job_collection as _delete_function_job_collection,
-)
-from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interface import (
-    find_cached_function_job as _find_cached_function_job,
-)
-from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interface import (
-    get_function as _get_function,
-)
-from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interface import (
-    get_function_input_schema as _get_function_input_schema,
-)
-from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interface import (
-    get_function_job as _get_function_job,
-)
-from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interface import (
-    get_function_job_collection as _get_function_job_collection,
-)
-from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interface import (
-    get_function_output_schema as _get_function_output_schema,
-)
-from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interface import (
-    list_function_job_collections as _list_function_job_collections,
-)
-from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interface import (
-    list_function_jobs as _list_function_jobs,
-)
-from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interface import (
-    list_functions as _list_functions,
-)
-from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interface import (
-    register_function as _register_function,
-)
-from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interface import (
-    register_function_job as _register_function_job,
-)
-from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interface import (
-    register_function_job_collection as _register_function_job_collection,
-)
-from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions_rpc_interface import (
-    run_function as _run_function,
+from servicelib.rabbitmq.rpc_interfaces.webserver.functions import (
+    functions_rpc_interface,
 )
 from servicelib.rabbitmq.rpc_interfaces.webserver.licenses.licensed_items import (
     checkout_licensed_item_for_wallet as _checkout_licensed_item_for_wallet,
@@ -301,17 +256,23 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             job_parent_resource_name_prefix=job_parent_resource_name_prefix,
         )
 
-    async def register_function(self, *, function: Function) -> Function:
-        return await _register_function(
+    async def register_function(self, *, function: Function) -> RegisteredFunction:
+        return await functions_rpc_interface.register_function(
             self._client,
             function=function,
         )
 
     async def get_function(self, *, function_id: FunctionID) -> RegisteredFunction:
-        return await _get_function(self._client, function_id=function_id)
+        return await functions_rpc_interface.get_function(
+            self._client,
+            function_id=function_id,
+        )
 
     async def delete_function(self, *, function_id: FunctionID) -> None:
-        return await _delete_function(self._client, function_id=function_id)
+        return await functions_rpc_interface.delete_function(
+            self._client,
+            function_id=function_id,
+        )
 
     async def list_functions(
         self,
@@ -320,7 +281,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         pagination_limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     ) -> tuple[list[RegisteredFunction], PageMetaInfoLimitOffset]:
 
-        return await _list_functions(
+        return await functions_rpc_interface.list_functions(
             self._client,
             pagination_offset=pagination_offset,
             pagination_limit=pagination_limit,
@@ -332,7 +293,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         pagination_offset: PageOffsetInt = 0,
         pagination_limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     ) -> tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset]:
-        return await _list_function_jobs(
+        return await functions_rpc_interface.list_function_jobs(
             self._client,
             pagination_offset=pagination_offset,
             pagination_limit=pagination_limit,
@@ -344,7 +305,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         pagination_offset: PageOffsetInt = 0,
         pagination_limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     ) -> tuple[list[RegisteredFunctionJobCollection], PageMetaInfoLimitOffset]:
-        return await _list_function_job_collections(
+        return await functions_rpc_interface.list_function_job_collections(
             self._client,
             pagination_offset=pagination_offset,
             pagination_limit=pagination_limit,
@@ -353,56 +314,75 @@ class WbApiRpcClient(SingletonInAppStateMixin):
     async def run_function(
         self, *, function_id: FunctionID, inputs: FunctionInputs
     ) -> RegisteredFunctionJob:
-        return await _run_function(self._client, function_id=function_id, inputs=inputs)
+        return await functions_rpc_interface.run_function(
+            self._client,
+            function_id=function_id,
+            inputs=inputs,
+        )
 
     async def get_function_job(
         self, *, function_job_id: FunctionJobID
     ) -> RegisteredFunctionJob:
-        return await _get_function_job(self._client, function_job_id=function_job_id)
+        return await functions_rpc_interface.get_function_job(
+            self._client,
+            function_job_id=function_job_id,
+        )
 
     async def delete_function_job(self, *, function_job_id: FunctionJobID) -> None:
-        return await _delete_function_job(self._client, function_job_id=function_job_id)
+        return await functions_rpc_interface.delete_function_job(
+            self._client,
+            function_job_id=function_job_id,
+        )
 
     async def register_function_job(
         self, *, function_job: FunctionJob
     ) -> RegisteredFunctionJob:
-        return await _register_function_job(self._client, function_job=function_job)
+        return await functions_rpc_interface.register_function_job(
+            self._client,
+            function_job=function_job,
+        )
 
     async def get_function_input_schema(
         self, *, function_id: FunctionID
     ) -> FunctionInputSchema:
-        return await _get_function_input_schema(self._client, function_id=function_id)
+        return await functions_rpc_interface.get_function_input_schema(
+            self._client,
+            function_id=function_id,
+        )
 
     async def get_function_output_schema(
         self, *, function_id: FunctionID
     ) -> FunctionOutputSchema:
-        return await _get_function_output_schema(self._client, function_id=function_id)
+        return await functions_rpc_interface.get_function_output_schema(
+            self._client,
+            function_id=function_id,
+        )
 
     async def find_cached_function_job(
         self, *, function_id: FunctionID, inputs: FunctionInputs
     ) -> RegisteredFunctionJob | None:
-        return await _find_cached_function_job(
+        return await functions_rpc_interface.find_cached_function_job(
             self._client, function_id=function_id, inputs=inputs
         )
 
     async def get_function_job_collection(
         self, *, function_job_collection_id: FunctionJobCollectionID
     ) -> RegisteredFunctionJobCollection:
-        return await _get_function_job_collection(
+        return await functions_rpc_interface.get_function_job_collection(
             self._client, function_job_collection_id=function_job_collection_id
         )
 
     async def register_function_job_collection(
         self, *, function_job_collection: FunctionJobCollection
-    ) -> FunctionJobCollection:
-        return await _register_function_job_collection(
+    ) -> RegisteredFunctionJobCollection:
+        return await functions_rpc_interface.register_function_job_collection(
             self._client, function_job_collection=function_job_collection
         )
 
     async def delete_function_job_collection(
         self, *, function_job_collection_id: FunctionJobCollectionID
     ) -> None:
-        return await _delete_function_job_collection(
+        return await functions_rpc_interface.delete_function_job_collection(
             self._client, function_job_collection_id=function_job_collection_id
         )
 

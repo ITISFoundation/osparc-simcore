@@ -24,9 +24,6 @@ from models_library.api_schemas_webserver.functions_wb_schema import (
     RegisteredProjectFunctionJob,
     RegisteredSolverFunction,
     RegisteredSolverFunctionJob,
-    RegisterFunctionJobCollectionWithIDError,
-    RegisterFunctionJobWithIDError,
-    RegisterFunctionWithIDError,
     UnsupportedFunctionClassError,
     UnsupportedFunctionJobClassError,
 )
@@ -42,9 +39,7 @@ router = RPCRouter()
 # pylint: disable=no-else-return
 
 
-@router.expose(
-    reraise_if_error_type=(UnsupportedFunctionClassError, RegisterFunctionWithIDError)
-)
+@router.expose(reraise_if_error_type=(UnsupportedFunctionClassError,))
 async def register_function(
     app: web.Application, *, function: Function
 ) -> RegisteredFunction:
@@ -64,12 +59,7 @@ async def register_function(
     return _decode_function(saved_function)
 
 
-@router.expose(
-    reraise_if_error_type=(
-        UnsupportedFunctionJobClassError,
-        RegisterFunctionJobWithIDError,
-    )
-)
+@router.expose(reraise_if_error_type=(UnsupportedFunctionJobClassError,))
 async def register_function_job(
     app: web.Application, *, function_job: FunctionJob
 ) -> RegisteredFunctionJob:
@@ -88,7 +78,7 @@ async def register_function_job(
     return _decode_functionjob(created_function_job_db)
 
 
-@router.expose(reraise_if_error_type=(RegisterFunctionJobCollectionWithIDError,))
+@router.expose(reraise_if_error_type=())
 async def register_function_job_collection(
     app: web.Application, *, function_job_collection: FunctionJobCollection
 ) -> RegisteredFunctionJobCollection:
@@ -381,7 +371,8 @@ def _encode_functionjob(
             ),
             function_class=functionjob.function_class,
         )
-    elif functionjob.function_class == FunctionClass.solver:  # noqa: RET505
+
+    if functionjob.function_class == FunctionClass.solver:
         return FunctionJobDB(
             title=functionjob.title,
             function_uuid=functionjob.function_uid,
@@ -394,10 +385,10 @@ def _encode_functionjob(
             ),
             function_class=functionjob.function_class,
         )
-    else:
-        raise UnsupportedFunctionJobClassError(
-            function_job_class=functionjob.function_class
-        )
+
+    raise UnsupportedFunctionJobClassError(
+        function_job_class=functionjob.function_class
+    )
 
 
 def _decode_functionjob(
@@ -413,7 +404,8 @@ def _decode_functionjob(
             outputs=functionjob_db.outputs,
             project_job_id=functionjob_db.class_specific_data["project_job_id"],
         )
-    elif functionjob_db.function_class == FunctionClass.solver:  # noqa: RET505
+
+    if functionjob_db.function_class == FunctionClass.solver:
         return RegisteredSolverFunctionJob(
             uid=functionjob_db.uuid,
             title=functionjob_db.title,
@@ -423,10 +415,10 @@ def _decode_functionjob(
             outputs=functionjob_db.outputs,
             solver_job_id=functionjob_db.class_specific_data["solver_job_id"],
         )
-    else:
-        raise UnsupportedFunctionJobClassError(
-            function_job_class=functionjob_db.function_class
-        )
+
+    raise UnsupportedFunctionJobClassError(
+        function_job_class=functionjob_db.function_class
+    )
 
 
 async def register_rpc_routes_on_startup(app: web.Application):
