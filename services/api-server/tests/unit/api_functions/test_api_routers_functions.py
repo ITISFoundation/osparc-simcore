@@ -12,6 +12,7 @@ from models_library.api_schemas_webserver.functions_wb_schema import (
     JSONFunctionInputSchema,
     JSONFunctionOutputSchema,
     RegisteredFunction,
+    RegisteredFunctionJob,
     RegisteredFunctionJobCollection,
 )
 from models_library.rest_pagination import PageMetaInfoLimitOffset
@@ -64,7 +65,7 @@ class FakeWbApiRpc:
         self._function_jobs = {}
         self._function_job_collections = {}
 
-    async def register_function(self, function: Function) -> Function:
+    async def register_function(self, function: Function) -> RegisteredFunction:
         # Mimic returning the same function that was passed and store it for later retrieval
         uid = uuid4()
         self._functions[uid] = TypeAdapter(RegisteredFunction).validate_python(
@@ -81,7 +82,7 @@ class FakeWbApiRpc:
         )
         return self._functions[uid]
 
-    async def get_function(self, function_id: str) -> dict:
+    async def get_function(self, function_id: str) -> RegisteredFunction:
         # Mimic retrieval of a function based on function_id and raise 404 if not found
         if function_id not in self._functions:
             raise HTTPException(status_code=404, detail="Function not found")
@@ -100,7 +101,7 @@ class FakeWbApiRpc:
         self,
         pagination_offset: int,
         pagination_limit: int,
-    ) -> tuple[list[Function], PageMetaInfoLimitOffset]:
+    ) -> tuple[list[RegisteredFunction], PageMetaInfoLimitOffset]:
         # Mimic listing all functions
         functions_list = list(self._functions.values())[
             pagination_offset : pagination_offset + pagination_limit
@@ -121,10 +122,12 @@ class FakeWbApiRpc:
         else:
             raise HTTPException(status_code=404, detail="Function not found")
 
-    async def register_function_job(self, function_job: FunctionJob) -> FunctionJob:
+    async def register_function_job(
+        self, function_job: FunctionJob
+    ) -> RegisteredFunctionJob:
         # Mimic registering a function job
         uid = uuid4()
-        self._function_jobs[uid] = TypeAdapter(FunctionJob).validate_python(
+        self._function_jobs[uid] = TypeAdapter(RegisteredFunctionJob).validate_python(
             {
                 "uid": str(uid),
                 "function_uid": function_job.function_uid,
@@ -138,7 +141,7 @@ class FakeWbApiRpc:
         )
         return self._function_jobs[uid]
 
-    async def get_function_job(self, function_job_id: str) -> dict:
+    async def get_function_job(self, function_job_id: str) -> RegisteredFunctionJob:
         # Mimic retrieval of a function job based on function_job_id and raise 404 if not found
         if function_job_id not in self._function_jobs:
             raise HTTPException(status_code=404, detail="Function job not found")
@@ -148,7 +151,7 @@ class FakeWbApiRpc:
         self,
         pagination_offset: int,
         pagination_limit: int,
-    ) -> tuple[list[FunctionJob], PageMetaInfoLimitOffset]:
+    ) -> tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset]:
         # Mimic listing all function jobs
         function_jobs_list = list(self._function_jobs.values())[
             pagination_offset : pagination_offset + pagination_limit
@@ -188,7 +191,7 @@ class FakeWbApiRpc:
 
     async def get_function_job_collection(
         self, function_job_collection_id: str
-    ) -> dict:
+    ) -> RegisteredFunctionJobCollection:
         # Mimic retrieval of a function job collection based on collection_id and raise 404 if not found
         if function_job_collection_id not in self._function_job_collections:
             raise HTTPException(
@@ -200,7 +203,7 @@ class FakeWbApiRpc:
         self,
         pagination_offset: int,
         pagination_limit: int,
-    ) -> tuple[list[FunctionJobCollection], PageMetaInfoLimitOffset]:
+    ) -> tuple[list[RegisteredFunctionJobCollection], PageMetaInfoLimitOffset]:
         # Mimic listing all function job collections
         function_job_collections_list = list(self._function_job_collections.values())[
             pagination_offset : pagination_offset + pagination_limit
@@ -229,7 +232,6 @@ class FakeWbApiRpc:
 def test_register_function(api_app) -> None:
     client = TestClient(api_app)
     sample_function = {
-        "uid": None,
         "title": "test_function",
         "function_class": "project",
         "project_id": str(uuid4()),
@@ -469,7 +471,6 @@ def test_register_function_job(api_app: FastAPI) -> None:
 
     client = TestClient(api_app)
     mock_function_job = {
-        "uid": None,
         "function_uid": str(uuid4()),
         "title": "Test Function Job",
         "description": "A test function job",

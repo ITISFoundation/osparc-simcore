@@ -367,7 +367,7 @@ async def register_function_job(
 
 @function_job_router.get(
     "/{function_job_id:uuid}",
-    response_model=FunctionJob,
+    response_model=RegisteredFunctionJob,
     responses={**_COMMON_FUNCTION_JOB_ERROR_RESPONSES},
     description="Get function job",
 )
@@ -502,7 +502,7 @@ async def function_job_outputs(
 
 @function_router.post(
     "/{function_id:uuid}:map",
-    response_model=FunctionJobCollection,
+    response_model=RegisteredFunctionJobCollection,
     responses={**_COMMON_FUNCTION_ERROR_RESPONSES},
     description="Map function over input parameters",
 )
@@ -558,7 +558,7 @@ _COMMON_FUNCTION_JOB_COLLECTION_ERROR_RESPONSES: Final[dict] = {
 
 @function_job_collections_router.get(
     "/{function_job_collection_id:uuid}",
-    response_model=FunctionJobCollection,
+    response_model=RegisteredFunctionJobCollection,
     responses={**_COMMON_FUNCTION_JOB_COLLECTION_ERROR_RESPONSES},
     description="Get function job collection",
 )
@@ -573,7 +573,7 @@ async def get_function_job_collection(
 
 @function_job_collections_router.post(
     "",
-    response_model=FunctionJobCollection,
+    response_model=RegisteredFunctionJobCollection,
     description="Register function job collection",
 )
 async def register_function_job_collection(
@@ -602,7 +602,7 @@ async def delete_function_job_collection(
 
 @function_job_collections_router.get(
     "/{function_job_collection_id:uuid}/function_jobs",
-    response_model=list[FunctionJob],
+    response_model=list[RegisteredFunctionJob],
     responses={**_COMMON_FUNCTION_JOB_COLLECTION_ERROR_RESPONSES},
     description="Get the function jobs in function job collection",
 )
