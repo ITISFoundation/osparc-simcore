@@ -28,6 +28,7 @@ qx.Class.define("osparc.data.Job", {
       startedAt: jobData["startedAt"] ? new Date(jobData["startedAt"]) : null,
       endedAt: jobData["endedAt"] ? new Date(jobData["endedAt"]) : null,
       info: jobData["info"] || null,
+      customMetadata: jobData["customMetadata"] || null,
     });
 
     if (jobData["info"] && jobData["info"]["project_name"]) {
@@ -75,6 +76,12 @@ qx.Class.define("osparc.data.Job", {
     },
 
     info: {
+      check: "Object",
+      nullable: true,
+      init: null,
+    },
+
+    customMetadata: {
       check: "Object",
       nullable: true,
       init: null,
