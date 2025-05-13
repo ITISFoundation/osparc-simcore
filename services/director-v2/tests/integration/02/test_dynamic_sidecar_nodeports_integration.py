@@ -710,6 +710,7 @@ async def _fetch_data_via_aioboto(
 async def _start_and_wait_for_dynamic_services_ready(
     director_v2_client: httpx.AsyncClient,
     product_name: str,
+    product_api_base_url: str,
     user_id: UserID,
     workbench_dynamic_services: dict[str, Node],
     current_study: ProjectAtDB,
@@ -721,6 +722,7 @@ async def _start_and_wait_for_dynamic_services_ready(
             assert_start_service(
                 director_v2_client=director_v2_client,
                 product_name=product_name,
+                product_api_base_url=product_api_base_url,
                 user_id=user_id,
                 project_id=str(current_study.uuid),
                 service_key=node.key,
@@ -939,6 +941,7 @@ async def test_nodeports_integration(
         await _start_and_wait_for_dynamic_services_ready(
             director_v2_client=async_client,
             product_name=osparc_product_name,
+            product_api_base_url=osparc_product_api_url,
             user_id=current_user["id"],
             workbench_dynamic_services=workbench_dynamic_services,
             current_study=current_study,
@@ -1134,6 +1137,7 @@ async def test_nodeports_integration(
     await _start_and_wait_for_dynamic_services_ready(
         director_v2_client=async_client,
         product_name=osparc_product_name,
+        product_api_base_url=osparc_product_api_url,
         user_id=current_user["id"],
         workbench_dynamic_services=workbench_dynamic_services,
         current_study=current_study,
