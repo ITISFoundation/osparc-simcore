@@ -1081,6 +1081,7 @@ async def test_burst_create_computations(
     fake_workbench_computational_pipeline_details: PipelineDetails,
     fake_workbench_computational_pipeline_details_completed: PipelineDetails,
     osparc_product_name: str,
+    osparc_product_api_base_url: str,
     create_pipeline: Callable[..., Awaitable[ComputationGet]],
 ):
     user = registered_user()
@@ -1099,6 +1100,7 @@ async def test_burst_create_computations(
                     project=sleepers_project,
                     user_id=user["id"],
                     product_name=osparc_product_name,
+                    product_api_base_url=osparc_product_api_base_url,
                     start_pipeline=False,
                 )
                 for _ in range(NUMBER_OF_CALLS)
@@ -1109,6 +1111,7 @@ async def test_burst_create_computations(
                     project=sleepers_project2,
                     user_id=user["id"],
                     product_name=osparc_product_name,
+                    product_api_base_url=osparc_product_api_base_url,
                     start_pipeline=False,
                 )
             ]
@@ -1126,6 +1129,7 @@ async def test_burst_create_computations(
                     project=sleepers_project,
                     user_id=user["id"],
                     product_name=osparc_product_name,
+                    product_api_base_url=osparc_product_api_base_url,
                     start_pipeline=True,
                 )
                 for _ in range(NUMBER_OF_CALLS)
@@ -1136,6 +1140,7 @@ async def test_burst_create_computations(
                     project=sleepers_project2,
                     user_id=user["id"],
                     product_name=osparc_product_name,
+                    product_api_base_url=osparc_product_api_base_url,
                     start_pipeline=False,
                 )
             ]
