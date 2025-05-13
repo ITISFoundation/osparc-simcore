@@ -221,7 +221,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
 
     __createOwner: function(label) {
       if (label === osparc.auth.Data.getInstance().getEmail()) {
-        const resourceAlias = osparc.utils.Utils.resourceTypeToAlias(this.getResourceType());
+        const resourceAlias = osparc.product.Utils.resourceTypeToAlias(this.getResourceType(), {firstUpperCase: true});
         return qx.locale.Manager.tr(`My ${resourceAlias}`);
       }
       return osparc.utils.Utils.getNameFromEmail(label);
