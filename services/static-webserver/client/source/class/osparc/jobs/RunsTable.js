@@ -62,7 +62,7 @@ qx.Class.define("osparc.jobs.RunsTable", {
       PROJECT_NAME: {
         id: "projectName",
         column: 1,
-        label: qx.locale.Manager.tr("Project Name"),
+        label: qx.locale.Manager.tr("Project"),
         width: 170,
         sortable: true
       },

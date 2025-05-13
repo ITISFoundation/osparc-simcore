@@ -61,7 +61,7 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
       NODE_NAME: {
         id: "nodeName",
         column: 2,
-        label: qx.locale.Manager.tr("Node Name"),
+        label: qx.locale.Manager.tr("Node"),
         width: 170
       },
       SOLVER: {
