@@ -337,6 +337,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       [
         this.__getInfoPage,
         this.__getBillingPage,
+        this.__getActivityOverviewPage,
         this.__getServicesUpdatePage,
         this.__getServicesBootOptionsPage,
         this.__getConversationsPage,
@@ -492,6 +493,31 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         return page;
       }
       return null;
+    },
+
+    __getActivityOverviewPage: function() {
+      const resourceData = this.__resourceData;
+      if (
+        !osparc.desktop.credits.Utils.areWalletsEnabled() ||
+        !osparc.utils.Resources.isStudy(resourceData)
+      ) {
+        return null;
+      }
+
+      const id = "ActivityOverview";
+      const title = this.tr("Activity Overview");
+      const iconSrc = "@FontAwesome5Solid/tasks/22";
+      const page = this.__billingSettings = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
+      this.__addOpenButton(page);
+
+      const lazyLoadContent = () => {
+        const activityOverview = new osparc.jobs.ActivityOverview(resourceData);
+        const billingScroll = new qx.ui.container.Scroll(activityOverview);
+        page.addToContent(billingScroll);
+      }
+      page.addListenerOnce("appear", lazyLoadContent, this);
+
+      return page;
     },
 
     __getPreviewPage: function() {

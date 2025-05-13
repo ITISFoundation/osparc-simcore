@@ -20,12 +20,16 @@ qx.Class.define("osparc.store.Jobs", {
   type: "singleton",
 
   properties: {
-    jobsActive: {
+    jobs: {
       check: "Array",
       init: [],
       nullable: true,
-      event: "changeJobsActive"
-    }
+      event: "changeJobs"
+    },
+  },
+
+  events: {
+    "changeJobsActive": "qx.event.type.Data",
   },
 
   statics: {
@@ -54,10 +58,11 @@ qx.Class.define("osparc.store.Jobs", {
       };
       return osparc.data.Resources.fetch("jobsActive", "getPage", params, options)
         .then(jobsResp => {
+          this.fireDataEvent("changeJobsActive", jobsResp["_meta"]["total"]);
           const jobsActive = [];
           if ("data" in jobsResp) {
             jobsResp["data"].forEach(jobActiveData => {
-              jobsActive.push(this.__addJobActive(jobActiveData));
+              jobsActive.push(this.__addJob(jobActiveData));
             });
           }
           if (resolveWResponse) {
@@ -85,16 +90,15 @@ qx.Class.define("osparc.store.Jobs", {
         .catch(err => console.error(err));
     },
 
-    __addJobActive: function(jobData) {
-      const jobsActive = this.getJobsActive();
-      const jobFound = jobsActive.find(job => job.getProjectUuid() === jobData["projectUuid"]);
+    __addJob: function(jobData) {
+      const jobs = this.getJobs();
+      const jobFound = jobs.find(job => job.getProjectUuid() === jobData["projectUuid"]);
       if (jobFound) {
         jobFound.updateJob(jobData);
         return jobFound;
       }
       const job = new osparc.data.Job(jobData);
-      jobsActive.push(job);
-      this.fireDataEvent("changeJobsActive");
+      jobs.push(job);
       return job;
     },
 

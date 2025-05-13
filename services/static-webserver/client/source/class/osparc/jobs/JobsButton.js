@@ -33,8 +33,8 @@ qx.Class.define("osparc.jobs.JobsButton", {
     this.addListener("tap", () => osparc.jobs.ActivityCenterWindow.openWindow(), this);
 
     const jobsStore = osparc.store.Jobs.getInstance();
-    jobsStore.addListener("changeJobsActive", () => this.__updateJobsButton(), this);
-    this.__updateJobsButton();
+    jobsStore.addListener("changeJobsActive", e => this.__updateJobsButton(e.getData()), this);
+    jobsStore.fetchJobsActive();
   },
 
   members: {
@@ -71,12 +71,11 @@ qx.Class.define("osparc.jobs.JobsButton", {
       return control || this.base(arguments, id);
     },
 
-    __updateJobsButton: function() {
+    __updateJobsButton: function(nActiveJobs) {
       this.getChildControl("icon");
       const number = this.getChildControl("number");
 
-      const jobsStore = osparc.store.Jobs.getInstance();
-      const nJobs = jobsStore.getJobsActive().length > osparc.store.Jobs.SERVER_MAX_LIMIT ? (osparc.store.Jobs.SERVER_MAX_LIMIT + "+") : jobsStore.getJobsActive().length;
+      const nJobs = nActiveJobs > osparc.store.Jobs.SERVER_MAX_LIMIT ? (osparc.store.Jobs.SERVER_MAX_LIMIT + "+") : nActiveJobs;
       number.setValue(nJobs.toString());
     },
   }
