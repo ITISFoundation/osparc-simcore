@@ -91,7 +91,7 @@ async def list_computations_latest_iteration(request: web.Request) -> web.Respon
 
 @routes.get(
     f"/{VTAG}/computations/{{project_id}}/iterations",
-    name="list_computations_latest_iteration",
+    name="list_computation_iterations",
 )
 @login_required
 @permission_required("services.pipeline.*")
