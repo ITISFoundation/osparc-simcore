@@ -66,6 +66,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     "updateStudy": "qx.event.type.Data",
     "updateTemplate": "qx.event.type.Data",
     "updateService": "qx.event.type.Data",
+    "updateHypertool": "qx.event.type.Data",
     "publishTemplate": "qx.event.type.Data",
     "tagClicked": "qx.event.type.Data",
     "emptyStudyClicked": "qx.event.type.Data",
@@ -238,6 +239,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         "updateStudy",
         "updateTemplate",
         "updateService",
+        "updateHypertool",
         "publishTemplate",
         "tagClicked",
         "emptyStudyClicked"

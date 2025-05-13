@@ -58,7 +58,10 @@ qx.Class.define("osparc.store.Templates", {
     getTemplatesHypertools: function() {
       return this.getTemplates()
         .then(templates => {
-          return templates.filter(t => osparc.study.Utils.extractTemplateType(t) === osparc.data.model.StudyUI.HYPERTOOL_TYPE);
+          const hypertools = templates.filter(t => osparc.study.Utils.extractTemplateType(t) === osparc.data.model.StudyUI.HYPERTOOL_TYPE);
+          // required for filtering
+          hypertools.forEach(hypertool => hypertool.type = osparc.data.model.StudyUI.HYPERTOOL_TYPE);
+          return hypertools;
         });
     },
 

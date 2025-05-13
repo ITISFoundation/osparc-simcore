@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 
-qx.Class.define("osparc.dashboard.ResourceFilter", {
+qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
   extend: qx.ui.core.Widget,
 
   construct: function(resourceType) {
@@ -27,7 +27,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     this.__resourceType = resourceType;
     this.__sharedWithButtons = [];
     this.__tagButtons = [];
-    this.__serviceTypeButtons = [];
+    this.__appTypeButtons = [];
 
     this._setLayout(new qx.ui.layout.VBox(15));
     this.__buildLayout();
@@ -40,7 +40,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     "trashFolderRequested": "qx.event.type.Data",
     "changeSharedWith": "qx.event.type.Data",
     "changeSelectedTags": "qx.event.type.Data",
-    "changeServiceType": "qx.event.type.Data"
+    "changeAppType": "qx.event.type.Data",
   },
 
   members: {
@@ -49,7 +49,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     __trashButton: null,
     __sharedWithButtons: null,
     __tagButtons: null,
-    __serviceTypeButtons: null,
+    __appTypeButtons: null,
 
     __buildLayout: function() {
       const filtersSpacer = new qx.ui.core.Spacer(10, 10);
@@ -57,7 +57,6 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
         case "study": {
           this._add(this.__createWorkspacesAndFoldersTree());
           this._add(this.__createTrashBin());
-          // this._add(this.__createResourceTypeContextButtons());
           this._add(filtersSpacer);
           const scrollView = new qx.ui.container.Scroll();
           scrollView.add(this.__createTagsFilterLayout());
@@ -67,7 +66,6 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
           break;
         }
         case "template": {
-          // this._add(this.__createResourceTypeContextButtons());
           this._add(filtersSpacer);
           this._add(this.__createSharedWithFilterLayout());
           const scrollView = new qx.ui.container.Scroll();
@@ -78,10 +76,9 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
           break;
         }
         case "service":
-          // this._add(this.__createResourceTypeContextButtons());
           this._add(filtersSpacer);
           this._add(this.__createSharedWithFilterLayout());
-          this._add(this.__createServiceTypeFilterLayout());
+          this._add(this.__createAppTypeFilterLayout());
           break;
       }
     },
@@ -222,91 +219,6 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     },
     /* /TRASH BIN */
 
-    /* RESOURCE TYPE CONTEXT */
-    __createResourceTypeContextButtons: function() {
-      const resourceTypeContextButtons = new qx.ui.container.Composite(new qx.ui.layout.VBox(2));
-
-      const studiesButton = this.__createStudiesButton().set({
-        value: this.__resourceType === "study",
-        visibility: this.__resourceType === "study" ? "excluded" : "visible",
-      });
-      resourceTypeContextButtons.add(studiesButton);
-
-      const permissions = osparc.data.Permissions.getInstance();
-      const templatesButton = this.__createTemplatesButton().set({
-        value: this.__resourceType === "template",
-      });
-      if (permissions.canDo("dashboard.templates.read")) {
-        resourceTypeContextButtons.add(templatesButton);
-      }
-
-      const servicesButton = this.__createServicesButton().set({
-        value: this.__resourceType === "service",
-      });
-      if (permissions.canDo("dashboard.services.read")) {
-        resourceTypeContextButtons.add(servicesButton);
-      }
-
-      return resourceTypeContextButtons;
-    },
-
-    __createStudiesButton: function() {
-      const studyAlias = osparc.product.Utils.getStudyAlias({
-        firstUpperCase: true,
-        plural: true
-      });
-      const studiesButton = new qx.ui.toolbar.RadioButton().set({
-        value: false,
-        appearance: "filter-toggle-button",
-        label: studyAlias,
-        icon: "@FontAwesome5Solid/file/16",
-        paddingLeft: 10, // align it with the context
-      });
-      osparc.utils.Utils.setIdToWidget(studiesButton, "studiesTabBtn");
-      studiesButton.addListener("tap", () => {
-        studiesButton.setValue(this.__resourceType === "study");
-        this.fireDataEvent("changeTab", "studiesTab");
-      });
-      return studiesButton;
-    },
-
-    __createTemplatesButton: function() {
-      const templateAlias = osparc.product.Utils.getTemplateAlias({
-        firstUpperCase: true,
-        plural: true
-      });
-      const templatesButton = new qx.ui.toolbar.RadioButton().set({
-        value: false,
-        appearance: "filter-toggle-button",
-        label: templateAlias,
-        icon: "@FontAwesome5Solid/copy/16",
-        paddingLeft: 10, // align it with the context
-      });
-      osparc.utils.Utils.setIdToWidget(templatesButton, "templatesTabBtn");
-      templatesButton.addListener("tap", () => {
-        templatesButton.setValue(this.__resourceType === "template");
-        this.fireDataEvent("changeTab", "templatesTab");
-      });
-      return templatesButton;
-    },
-
-    __createServicesButton: function() {
-      const servicesButton = new qx.ui.toolbar.RadioButton().set({
-        value: false,
-        appearance: "filter-toggle-button",
-        label: this.tr("Services"),
-        icon: "@FontAwesome5Solid/cogs/16",
-        paddingLeft: 10, // align it with the context
-      });
-      osparc.utils.Utils.setIdToWidget(servicesButton, "servicesTabBtn");
-      servicesButton.addListener("tap", () => {
-        servicesButton.setValue(this.__resourceType === "service");
-        this.fireDataEvent("changeTab", "servicesTab");
-      });
-      return servicesButton;
-    },
-    /* /RESOURCE TYPE CONTEXT */
-
     /* SHARED WITH */
     __createSharedWithFilterLayout: function() {
       const sharedWithLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(2));
@@ -442,39 +354,44 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     /* /TAGS */
 
     /* SERVICE TYPE */
-    __createServiceTypeFilterLayout: function() {
+    __createAppTypeFilterLayout: function() {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(2));
 
       const radioGroup = new qx.ui.form.RadioGroup();
       radioGroup.setAllowEmptySelection(true);
 
+      const iconSize = 20;
       const serviceTypes = osparc.service.Utils.TYPES;
       Object.keys(serviceTypes).forEach(serviceId => {
         if (!["computational", "dynamic"].includes(serviceId)) {
           return;
         }
         const serviceType = serviceTypes[serviceId];
-        const iconSize = 20;
         const button = new qx.ui.toolbar.RadioButton(serviceType.label, serviceType.icon+iconSize);
-        button.id = serviceId;
+        button.appType = serviceId;
         osparc.utils.Utils.setIdToWidget(button, this.__resourceType + "-serviceTypeFilterItem");
-        button.set({
+        this.__appTypeButtons.push(button);
+      });
+
+      // hypertools filter
+      const button = new qx.ui.toolbar.RadioButton("Hypertools", "@FontAwesome5Solid/wrench/"+iconSize);
+      button.appType = "hypertool";
+      this.__appTypeButtons.push(button);
+
+      this.__appTypeButtons.forEach(btn => {
+        btn.set({
           appearance: "filter-toggle-button",
           value: false
         });
-
-        layout.add(button);
-        radioGroup.add(button);
-
-        button.addListener("execute", () => {
-          const checked = button.getValue();
-          this.fireDataEvent("changeServiceType", {
-            id: checked ? serviceId : null,
-            label: checked ? serviceType.label : null
+        layout.add(btn);
+        radioGroup.add(btn);
+        btn.addListener("execute", () => {
+          const checked = btn.getValue();
+          this.fireDataEvent("changeAppType", {
+            appType: checked ? btn.appType : null,
+            label: checked ? btn.getLabel() : null
           });
         }, this);
-
-        this.__serviceTypeButtons.push(button);
       });
 
       return layout;
@@ -493,9 +410,9 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
           btn.setValue(filterData["tags"].includes(btn.id));
         });
       }
-      if ("serviceType" in filterData) {
-        this.__serviceTypeButtons.forEach(btn => {
-          btn.setValue(filterData["serviceType"] === btn.id);
+      if ("appType" in filterData) {
+        this.__appTypeButtons.forEach(btn => {
+          btn.setValue(filterData["appType"] === btn.appType);
         });
       }
     }

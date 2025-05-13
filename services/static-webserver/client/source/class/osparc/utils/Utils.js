@@ -457,21 +457,6 @@ qx.Class.define("osparc.utils.Utils", {
       return (["dev", "master"].includes(platformName));
     },
 
-    resourceTypeToAlias: function(resourceType) {
-      switch (resourceType) {
-        case "study":
-          resourceType = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
-          break;
-        case "template":
-          resourceType = osparc.product.Utils.getTemplateAlias({firstUpperCase: true});
-          break;
-        case "service":
-          resourceType = qx.locale.Manager.tr("Service");
-          break;
-      }
-      return resourceType;
-    },
-
     getEditButton: function(isVisible = true) {
       return new qx.ui.form.Button(null, "@FontAwesome5Solid/pencil-alt/12").set({
         appearance: "form-button-outlined",

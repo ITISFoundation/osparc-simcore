@@ -76,7 +76,7 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
   members: {
     __getRoleInfo: function(id) {
       const resource = this.getResourceType();
-      if (resource === "study" || resource === "template") {
+      if (["study", "template", "hypertool"].includes(resource)) {
         return osparc.data.Roles.STUDY[id];
       } else if (resource === "service") {
         return osparc.data.Roles.SERVICES[id];
@@ -111,6 +111,24 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
       }
 
       return control || this.base(arguments, id);
+    },
+
+    // overridden
+    _applyTitle: function(value) {
+      if (value === null) {
+        return;
+      }
+      const groupsStore = osparc.store.Groups.getInstance();
+      const everyoneGroupIds = [
+        groupsStore.getEveryoneProductGroup().getGroupId(),
+        groupsStore.getEveryoneGroup().getGroupId(),
+      ];
+      const label = this.getChildControl("title");
+      if (everyoneGroupIds.includes(this.getModel())) {
+        label.setValue(this.tr("Public"));
+      } else {
+        label.setValue(value);
+      }
     },
 
     // overridden

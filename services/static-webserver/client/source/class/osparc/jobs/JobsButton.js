@@ -28,10 +28,10 @@ qx.Class.define("osparc.jobs.JobsButton", {
       alignX: "center",
       cursor: "pointer",
       visibility: "excluded",
-      toolTipText: this.tr("Runs and Clusters"),
+      toolTipText: this.tr("Activity Center"),
     });
 
-    this.addListener("tap", () => osparc.jobs.RunsWindow.openWindow(), this);
+    this.addListener("tap", () => osparc.jobs.ActivityCenterWindow.openWindow(), this);
 
     const jobsStore = osparc.store.Jobs.getInstance();
     jobsStore.addListener("changeJobs", e => this.__updateJobsButton(), this);

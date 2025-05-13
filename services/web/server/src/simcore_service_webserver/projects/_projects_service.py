@@ -263,6 +263,16 @@ async def get_project_dict_legacy(
     return project
 
 
+async def batch_get_project_name(
+    app: web.Application, projects_uuids: list[ProjectID]
+) -> list[str]:
+    get_project_names = await _projects_repository.batch_get_project_name(
+        app=app,
+        projects_uuids=projects_uuids,
+    )
+    return [name if name else "Unknown" for name in get_project_names]
+
+
 #
 # UPDATE project -----------------------------------------------------
 #

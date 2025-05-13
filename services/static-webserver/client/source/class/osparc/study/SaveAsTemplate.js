@@ -56,7 +56,7 @@ qx.Class.define("osparc.study.SaveAsTemplate", {
       });
       form.add(publishWithData, this.tr("Publish with data"), null, "publishWithData");
 
-      if (osparc.utils.DisabledPlugins.isHypertoolsEnabled()) {
+      if (osparc.product.Utils.isS4LProduct()) {
         const templateTypeSB = new qx.ui.form.SelectBox().set({
           allowGrowX: false,
         });
