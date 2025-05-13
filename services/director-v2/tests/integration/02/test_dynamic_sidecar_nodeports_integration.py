@@ -958,7 +958,7 @@ async def test_nodeports_integration(
         user_id=current_user["id"],
         start_pipeline=True,
         product_name=osparc_product_name,
-        product_api_url=osparc_product_api_url,
+        product_api_url=osparc_product_api_base_url,
     )
 
     # wait for the computation to finish (either by failing, success or abort)
@@ -1139,7 +1139,7 @@ async def test_nodeports_integration(
     await _start_and_wait_for_dynamic_services_ready(
         director_v2_client=async_client,
         product_name=osparc_product_name,
-        product_api_base_url=osparc_product_api_url,
+        product_api_base_url=osparc_product_api_base_url,
         user_id=current_user["id"],
         workbench_dynamic_services=workbench_dynamic_services,
         current_study=current_study,
