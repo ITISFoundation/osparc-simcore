@@ -243,6 +243,33 @@ qx.Class.define("osparc.service.Utils", {
         }
       });
       return services;
-    }
+    },
+
+    getParameterType: function(metadata) {
+      let type = metadata["outputs"]["out_1"]["type"];
+      if (type === "ref_contentSchema") {
+        type = metadata["outputs"]["out_1"]["contentSchema"]["type"];
+      }
+      return type;
+    },
+
+    getParameterValue: function(parameterData) {
+      if (
+        parameterData &&
+        parameterData["outputs"] &&
+        parameterData["outputs"]["out_1"]
+      ) {
+        return parameterData["outputs"]["out_1"];
+      }
+      return null;
+    },
+
+    getProbeType: function(metadata) {
+      let type = metadata["inputs"]["in_1"]["type"];
+      if (type === "ref_contentSchema") {
+        type = metadata["inputs"]["in_1"]["contentSchema"]["type"];
+      }
+      return type;
+    },
   }
 });

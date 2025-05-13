@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Annotated
 
 from fastapi import Depends
@@ -12,6 +13,7 @@ from models_library.resource_tracker import (
     CreditTransactionId,
     CreditTransactionStatus,
 )
+from models_library.services_types import ServiceRunID
 from models_library.wallets import WalletID
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
@@ -213,4 +215,17 @@ async def pay_project_debt(
         ),
         task_suffix_name=f"sum_and_publish_credits_wallet_id{current_wallet_transaction_create.wallet_id}",
         fire_and_forget_tasks_collection=rut_fire_and_forget_tasks,
+    )
+
+
+async def get_transaction_current_credits_by_service_run_id(
+    db_engine: AsyncEngine,
+    *,
+    service_run_id: ServiceRunID,
+) -> Decimal:
+    return (
+        await credit_transactions_db.get_transaction_current_credits_by_service_run_id(
+            db_engine,
+            service_run_id=service_run_id,
+        )
     )

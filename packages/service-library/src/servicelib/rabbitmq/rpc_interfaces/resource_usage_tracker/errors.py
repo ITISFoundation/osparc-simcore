@@ -1,8 +1,7 @@
 from common_library.errors_classes import OsparcErrorMixin
 
 
-class LicensesBaseError(OsparcErrorMixin, Exception):
-    ...
+class LicensesBaseError(OsparcErrorMixin, Exception): ...
 
 
 class NotEnoughAvailableSeatsError(LicensesBaseError):
@@ -36,11 +35,13 @@ class WalletTransactionError(OsparcErrorMixin, Exception):
     msg_template = "{msg}"
 
 
+class CreditTransactionNotFoundError(OsparcErrorMixin, Exception): ...
+
+
 ### Pricing Plans Error
 
 
-class PricingPlanBaseError(OsparcErrorMixin, Exception):
-    ...
+class PricingPlanBaseError(OsparcErrorMixin, Exception): ...
 
 
 class PricingUnitDuplicationError(PricingPlanBaseError):
