@@ -902,6 +902,7 @@ async def test_nodeports_integration(
     fake_dy_success: dict[str, Any],
     tmp_path: Path,
     osparc_product_name: str,
+    osparc_product_api_url: str,
     create_pipeline: Callable[..., Awaitable[ComputationGet]],
     mock_io_log_redirect_cb: LogRedirectCB,
     faker: Faker,
@@ -952,6 +953,7 @@ async def test_nodeports_integration(
         user_id=current_user["id"],
         start_pipeline=True,
         product_name=osparc_product_name,
+        product_api_url=osparc_product_api_url,
     )
 
     # wait for the computation to finish (either by failing, success or abort)

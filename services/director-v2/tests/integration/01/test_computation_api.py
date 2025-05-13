@@ -150,6 +150,7 @@ COMPUTATION_URL: str = "v2/computations"
                 "user_id": "some invalid id",
                 "project_id": "not a uuid",
                 "product_name": "not a product",
+                "product_api_base_url": "http://invalid",
             },
             status.HTTP_422_UNPROCESSABLE_ENTITY,
         ),
@@ -158,6 +159,7 @@ COMPUTATION_URL: str = "v2/computations"
                 "user_id": 2,
                 "project_id": "not a uuid",
                 "product_name": "not a product",
+                "product_api_base_url": "http://invalid",
             },
             status.HTTP_422_UNPROCESSABLE_ENTITY,
         ),
@@ -166,6 +168,7 @@ COMPUTATION_URL: str = "v2/computations"
                 "user_id": 3,
                 "project_id": "16e60a5d-834e-4267-b44d-3af49171bf21",
                 "product_name": "not a product",
+                "product_api_base_url": "http://invalid",
             },
             status.HTTP_404_NOT_FOUND,
         ),
@@ -191,6 +194,7 @@ async def test_start_empty_computation_is_refused(
     registered_user: Callable,
     project: Callable[..., Awaitable[ProjectAtDB]],
     osparc_product_name: str,
+    osparc_product_api_base_url: str,
     create_pipeline: Callable[..., Awaitable[ComputationGet]],
 ):
     user = registered_user()
@@ -204,6 +208,7 @@ async def test_start_empty_computation_is_refused(
             user_id=user["id"],
             start_pipeline=True,
             product_name=osparc_product_name,
+            product_api_base_url=osparc_product_api_base_url,
         )
 
 
@@ -397,6 +402,7 @@ async def test_run_partial_computation(
     fake_workbench_without_outputs: dict[str, Any],
     params: PartialComputationParams,
     osparc_product_name: str,
+    osparc_product_api_base_url: str,
     create_pipeline: Callable[..., Awaitable[ComputationGet]],
 ):
     user = registered_user()
@@ -449,6 +455,7 @@ async def test_run_partial_computation(
         user_id=user["id"],
         start_pipeline=True,
         product_name=osparc_product_name,
+        product_api_base_url=osparc_product_api_base_url,
         subgraph=[
             str(node_id)
             for index, node_id in enumerate(sleepers_project.workbench)
@@ -492,6 +499,7 @@ async def test_run_partial_computation(
             user_id=user["id"],
             start_pipeline=True,
             product_name=osparc_product_name,
+            product_api_base_url=osparc_product_api_base_url,
             expected_response_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             subgraph=[
                 str(node_id)
@@ -513,6 +521,7 @@ async def test_run_partial_computation(
         user_id=user["id"],
         start_pipeline=True,
         product_name=osparc_product_name,
+        product_api_base_url=osparc_product_api_base_url,
         expected_response_status_code=status.HTTP_201_CREATED,
         subgraph=[
             str(node_id)
@@ -546,6 +555,7 @@ async def test_run_computation(
     fake_workbench_computational_pipeline_details: PipelineDetails,
     fake_workbench_computational_pipeline_details_completed: PipelineDetails,
     osparc_product_name: str,
+    osparc_product_api_base_url: str,
     create_pipeline: Callable[..., Awaitable[ComputationGet]],
 ):
     user = registered_user()
@@ -558,6 +568,7 @@ async def test_run_computation(
         user_id=user["id"],
         start_pipeline=True,
         product_name=osparc_product_name,
+        product_api_base_url=osparc_product_api_base_url,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
 
@@ -604,6 +615,7 @@ async def test_run_computation(
             user_id=user["id"],
             start_pipeline=True,
             product_name=osparc_product_name,
+            product_api_base_url=osparc_product_api_base_url,
         )
 
     # now force run again
@@ -627,6 +639,7 @@ async def test_run_computation(
         user_id=user["id"],
         start_pipeline=True,
         product_name=osparc_product_name,
+        product_api_base_url=osparc_product_api_base_url,
         force_restart=True,
     )
     # check the contents is correct
@@ -658,6 +671,7 @@ async def test_abort_computation(
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_computational_pipeline_details: PipelineDetails,
     osparc_product_name: str,
+    osparc_product_api_base_url: str,
     create_pipeline: Callable[..., Awaitable[ComputationGet]],
 ):
     user = registered_user()
@@ -675,6 +689,7 @@ async def test_abort_computation(
         user_id=user["id"],
         start_pipeline=True,
         product_name=osparc_product_name,
+        product_api_base_url=osparc_product_api_base_url,
     )
 
     # check the contents is correctb
@@ -736,6 +751,7 @@ async def test_update_and_delete_computation(
     fake_workbench_computational_pipeline_details_not_started: PipelineDetails,
     fake_workbench_computational_pipeline_details: PipelineDetails,
     osparc_product_name: str,
+    osparc_product_api_base_url: str,
     create_pipeline: Callable[..., Awaitable[ComputationGet]],
 ):
     user = registered_user()
@@ -747,6 +763,7 @@ async def test_update_and_delete_computation(
         user_id=user["id"],
         start_pipeline=False,
         product_name=osparc_product_name,
+        product_api_base_url=osparc_product_api_base_url,
     )
 
     # check the contents is correctb
@@ -765,6 +782,7 @@ async def test_update_and_delete_computation(
         user_id=user["id"],
         start_pipeline=False,
         product_name=osparc_product_name,
+        product_api_base_url=osparc_product_api_base_url,
     )
 
     # check the contents is correctb
@@ -783,6 +801,7 @@ async def test_update_and_delete_computation(
         user_id=user["id"],
         start_pipeline=False,
         product_name=osparc_product_name,
+        product_api_base_url=osparc_product_api_base_url,
     )
 
     # check the contents is correctb
@@ -801,6 +820,7 @@ async def test_update_and_delete_computation(
         user_id=user["id"],
         start_pipeline=True,
         product_name=osparc_product_name,
+        product_api_base_url=osparc_product_api_base_url,
     )
     # check the contents is correctb
     await assert_computation_task_out_obj(
@@ -831,6 +851,7 @@ async def test_update_and_delete_computation(
             user_id=user["id"],
             start_pipeline=False,
             product_name=osparc_product_name,
+            product_api_base_url=osparc_product_api_base_url,
         )
 
     # try to delete the pipeline, is expected to be forbidden if force parameter is false (default)
@@ -856,6 +877,7 @@ async def test_pipeline_with_no_computational_services_still_create_correct_comp
     project: Callable[..., Awaitable[ProjectAtDB]],
     jupyter_service: dict[str, Any],
     osparc_product_name: str,
+    osparc_product_api_base_url: str,
     create_pipeline: Callable[..., Awaitable[ComputationGet]],
 ):
     user = registered_user()
@@ -881,6 +903,7 @@ async def test_pipeline_with_no_computational_services_still_create_correct_comp
             user_id=user["id"],
             start_pipeline=True,
             product_name=osparc_product_name,
+            product_api_base_url=osparc_product_api_base_url,
         )
 
     # still this pipeline shall be createable if we do not want to start it
@@ -890,6 +913,7 @@ async def test_pipeline_with_no_computational_services_still_create_correct_comp
         user_id=user["id"],
         start_pipeline=False,
         product_name=osparc_product_name,
+        product_api_base_url=osparc_product_api_base_url,
     )
 
 
@@ -899,6 +923,7 @@ async def test_pipeline_with_control_loop_made_of_dynamic_services_is_allowed(
     project: Callable[..., Awaitable[ProjectAtDB]],
     jupyter_service: dict[str, Any],
     osparc_product_name: str,
+    osparc_product_api_base_url: str,
 ):
     user = registered_user()
     # create a workbench with just 2 dynamic service in a cycle
@@ -940,6 +965,7 @@ async def test_pipeline_with_control_loop_made_of_dynamic_services_is_allowed(
             "project_id": str(project_with_dynamic_node.uuid),
             "start_pipeline": True,
             "product_name": osparc_product_name,
+            "product_api_base_url": osparc_product_api_base_url,
         },
     )
     assert (
@@ -954,6 +980,7 @@ async def test_pipeline_with_control_loop_made_of_dynamic_services_is_allowed(
             "project_id": str(project_with_dynamic_node.uuid),
             "start_pipeline": False,
             "product_name": osparc_product_name,
+            "product_api_base_url": osparc_product_api_base_url,
         },
     )
     assert (
@@ -968,6 +995,7 @@ async def test_pipeline_with_cycle_containing_a_computational_service_is_forbidd
     sleeper_service: dict[str, Any],
     jupyter_service: dict[str, Any],
     osparc_product_name: str,
+    osparc_product_api_base_url: str,
 ):
     user = registered_user()
     # create a workbench with just 2 dynamic service in a cycle
@@ -1021,6 +1049,7 @@ async def test_pipeline_with_cycle_containing_a_computational_service_is_forbidd
             "project_id": str(project_with_cycly_and_comp_service.uuid),
             "start_pipeline": True,
             "product_name": osparc_product_name,
+            "product_api_base_url": osparc_product_api_base_url,
         },
     )
     assert (
@@ -1035,6 +1064,7 @@ async def test_pipeline_with_cycle_containing_a_computational_service_is_forbidd
             "project_id": str(project_with_cycly_and_comp_service.uuid),
             "start_pipeline": False,
             "product_name": osparc_product_name,
+            "product_api_base_url": osparc_product_api_base_url,
         },
     )
     assert (
