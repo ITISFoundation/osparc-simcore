@@ -220,12 +220,14 @@ qx.Class.define("osparc.dashboard.CardBase", {
       const groupProductEveryone = groupsStore.getEveryoneProductGroup();
       const organizations = groupsStore.getOrganizations();
       const myGroupId = groupsStore.getMyGroupId();
+      const everyoneGid = groupEveryone.getGroupId();
+      const productEveryoneGid = groupProductEveryone.getGroupId();
 
-      const sharedGrps = [];
       const groups = [];
       groups.push(groupEveryone);
       groups.push(groupProductEveryone);
       groups.push(...Object.values(organizations));
+      const sharedGrps = [];
       groups.forEach(group => {
         const idx = gids.indexOf(group.getGroupId());
         if (idx > -1) {
@@ -260,7 +262,10 @@ qx.Class.define("osparc.dashboard.CardBase", {
               sharedGrpLabels.push("...");
               break;
             }
-            const sharedGrpLabel = sharedGrps[i].getLabel();
+            let sharedGrpLabel = sharedGrps[i].getLabel();
+            if ([everyoneGid, productEveryoneGid].includes(sharedGrps[i].getGroupId())) {
+              sharedGrpLabel = "Public";
+            }
             if (!sharedGrpLabels.includes(sharedGrpLabel)) {
               sharedGrpLabels.push(sharedGrpLabel);
             }
