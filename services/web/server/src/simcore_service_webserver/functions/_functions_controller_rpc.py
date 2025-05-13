@@ -18,8 +18,10 @@ from models_library.api_schemas_webserver.functions_wb_schema import (
     FunctionJobIDNotFoundError,
     FunctionOutputSchema,
     RegisteredFunction,
+    RegisteredFunctionDB,
     RegisteredFunctionJob,
     RegisteredFunctionJobCollection,
+    RegisteredFunctionJobDB,
     RegisteredProjectFunction,
     RegisteredProjectFunctionJob,
     RegisteredSolverFunction,
@@ -32,7 +34,6 @@ from servicelib.rabbitmq import RPCRouter
 
 from ..rabbitmq import get_rabbitmq_rpc_server
 from . import _functions_repository
-from ._functions_repository import RegisteredFunctionDB, RegisteredFunctionJobDB
 
 router = RPCRouter()
 
