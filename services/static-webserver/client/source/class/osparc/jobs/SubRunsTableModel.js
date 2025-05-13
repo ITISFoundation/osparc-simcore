@@ -73,8 +73,14 @@ qx.Class.define("osparc.jobs.SubRunsTableModel", {
             const data = [];
             const subJobsCols = osparc.jobs.SubRunsTable.COLS;
             subJobs.forEach(subJob => {
-              const nodeName = subJob.getImage()["name"].split("/").pop();
-              const version = osparc.store.Services.getVersionDisplay(subJob.getImage()["name"], subJob.getImage()["tag"]) || subJob.getImage()["tag"];
+              const serviceKey = subJob.getImage()["name"];
+              const serviceVersion = subJob.getImage()["tag"];
+              const serviceMetadata = osparc.store.Services.getLatest(serviceKey);
+              let appName = serviceKey.split("/").pop();
+              if (serviceMetadata) {
+                appName = serviceMetadata["name"];
+              }
+              const displayVersion = osparc.store.Services.getVersionDisplay(serviceKey, serviceVersion) || serviceVersion;
               const startedAt = subJob.getStartedAt();
               const endedAt = subJob.getEndedAt();
               let duration = "-";
@@ -89,7 +95,7 @@ qx.Class.define("osparc.jobs.SubRunsTableModel", {
                 [subJobsCols.PROJECT_UUID.id]: subJob.getProjectUuid(),
                 [subJobsCols.NODE_ID.id]: subJob.getNodeId(),
                 [subJobsCols.NODE_NAME.id]: subJob.getNodeName(),
-                [subJobsCols.SOLVER.id]: nodeName + ":" + version,
+                [subJobsCols.APP.id]: appName + ":" + displayVersion,
                 [subJobsCols.STATE.id]: subJob.getState(),
                 [subJobsCols.PROGRESS.id]: subJob.getProgress() * 100 + "%",
                 [subJobsCols.START.id]: startedAt ? osparc.utils.Utils.formatDateAndTime(startedAt) : "-",

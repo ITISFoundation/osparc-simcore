@@ -62,13 +62,13 @@ qx.Class.define("osparc.jobs.ActivityCenterWindow", {
       });
 
       subRunsBrowser.addListener("backToRuns", () => {
-        runsBrowser.getChildControl("runs-browser").reloadRuns();
+        runsBrowser.reloadRuns();
         this.getChildControl("title").setValue(this.tr("Activity Center"));
         stack.setSelection([runsBrowser]);
       });
 
       this.addListener("close", () => {
-        runsBrowser.getChildControl("runs-browser").stopInterval();
+        runsBrowser.stopInterval();
         subRunsBrowser.stopInterval();
       });
     },

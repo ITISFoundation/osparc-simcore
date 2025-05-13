@@ -71,7 +71,7 @@ qx.Class.define("osparc.jobs.RunsTable", {
       SUBMIT: {
         id: "submit",
         column: 3,
-        label: qx.locale.Manager.tr("Submitted"),
+        label: qx.locale.Manager.tr("Queued"),
         width: 130,
         sortable: true
       },
