@@ -15,11 +15,11 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.jobs.RunsWindow", {
+qx.Class.define("osparc.jobs.ActivityCenterWindow", {
   extend: osparc.ui.window.SingletonWindow,
 
   construct: function() {
-    this.base(arguments, "runs", this.tr("Runs and Clusters"));
+    this.base(arguments, "runs", this.tr("Activity Center"));
 
     this.set({
       layout: new qx.ui.layout.VBox(),
@@ -35,7 +35,7 @@ qx.Class.define("osparc.jobs.RunsWindow", {
 
   statics: {
     openWindow: function() {
-      const runsWindow = new osparc.jobs.RunsWindow();
+      const runsWindow = new osparc.jobs.ActivityCenterWindow();
       runsWindow.center();
       runsWindow.open();
       return runsWindow;
@@ -49,12 +49,12 @@ qx.Class.define("osparc.jobs.RunsWindow", {
         flex: 1
       });
 
-      const runsAndClusters = new osparc.jobs.RunsAndClusters();
+      const runsBrowser = new osparc.jobs.RunsBrowser();
       const subRunsBrowser = new osparc.jobs.SubRunsBrowser();
-      stack.add(runsAndClusters);
+      stack.add(runsBrowser);
       stack.add(subRunsBrowser);
 
-      runsAndClusters.addListener("runSelected", e => {
+      runsBrowser.addListener("runSelected", e => {
         const project = e.getData();
         subRunsBrowser.setProject(project);
         this.getChildControl("title").setValue(this.tr("Runs"));
@@ -62,13 +62,13 @@ qx.Class.define("osparc.jobs.RunsWindow", {
       });
 
       subRunsBrowser.addListener("backToRuns", () => {
-        runsAndClusters.getChildControl("runs-browser").reloadRuns();
-        this.getChildControl("title").setValue(this.tr("Runs and Clusters"));
-        stack.setSelection([runsAndClusters]);
+        runsBrowser.getChildControl("runs-browser").reloadRuns();
+        this.getChildControl("title").setValue(this.tr("Activity Center"));
+        stack.setSelection([runsBrowser]);
       });
 
       this.addListener("close", () => {
-        runsAndClusters.getChildControl("runs-browser").stopInterval();
+        runsBrowser.getChildControl("runs-browser").stopInterval();
         subRunsBrowser.stopInterval();
       });
     },
