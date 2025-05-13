@@ -54,19 +54,19 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
         id: "projectUuid",
         column: 0,
         label: qx.locale.Manager.tr("Project Id"),
-        width: 170
+        width: 200
       },
       NODE_ID: {
         id: "nodeId",
         column: 1,
         label: qx.locale.Manager.tr("Node Id"),
-        width: 170
+        width: 200
       },
       NODE_NAME: {
         id: "nodeName",
         column: 2,
         label: qx.locale.Manager.tr("Node"),
-        width: 170
+        width: 150
       },
       APP: {
         id: "app",

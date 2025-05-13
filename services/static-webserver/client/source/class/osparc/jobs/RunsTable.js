@@ -40,6 +40,10 @@ qx.Class.define("osparc.jobs.RunsTable", {
     const fontButtonRendererStop = new osparc.ui.table.cellrenderer.ImageButtonRenderer("cancel", iconPathStop);
     columnModel.setDataCellRenderer(this.self().COLS.ACTION_CANCEL.column, fontButtonRendererStop);
 
+    const iconPathInfo = "osparc/icons/circle-info-text.svg";
+    const fontButtonRendererInfo = new osparc.ui.table.cellrenderer.ImageButtonRenderer("info", iconPathInfo);
+    columnModel.setDataCellRenderer(this.self().COLS.ACTION_INFO.column, fontButtonRendererInfo);
+
     this.__attachHandlers();
   },
 
@@ -53,20 +57,20 @@ qx.Class.define("osparc.jobs.RunsTable", {
         id: "projectUuid",
         column: 0,
         label: qx.locale.Manager.tr("Project Id"),
-        width: 170
+        width: 200
       },
       PROJECT_NAME: {
         id: "projectName",
         column: 1,
         label: qx.locale.Manager.tr("Project"),
-        width: 170,
+        width: 150,
         sortable: true
       },
       STATE: {
         id: "state",
         column: 2,
         label: qx.locale.Manager.tr("Status"),
-        width: 170
+        width: 150
       },
       SUBMIT: {
         id: "submit",
@@ -92,8 +96,14 @@ qx.Class.define("osparc.jobs.RunsTable", {
       ACTION_CANCEL: {
         id: "action_cancel",
         column: 6,
-        label: "",
-        width: 40
+        label: qx.locale.Manager.tr("Cancel"),
+        width: 50
+      },
+      ACTION_INFO: {
+        id: "action_info",
+        column: 7,
+        label: qx.locale.Manager.tr("Info"),
+        width: 50
       },
     }
   },

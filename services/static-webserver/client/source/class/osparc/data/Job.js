@@ -81,6 +81,20 @@ qx.Class.define("osparc.data.Job", {
     },
   },
 
+  statics: {
+    STATUS_LABELS: {
+      "NOT_STARTED": "Not Started",
+      "PUBLISHED": "Published",
+      "PENDING": "Pending",
+      "RUNNING": "Running",
+      "SUCCESS": "Success",
+      "FAILED": "Failed",
+      "ABORTED": "Aborted",
+      "WAITING_FOR_RESOURCES": "Waiting for Resources",
+      "WAITING_FOR_CLUSTER": "Waiting for Cluster",
+    },
+  },
+
   members: {
     __subJobs: null,
 

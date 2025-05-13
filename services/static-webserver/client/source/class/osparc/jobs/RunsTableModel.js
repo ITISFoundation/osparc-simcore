@@ -84,7 +84,7 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
               data.push({
                 [jobsCols.PROJECT_UUID.id]: job.getProjectUuid(),
                 [jobsCols.PROJECT_NAME.id]: job.getProjectName(),
-                [jobsCols.STATE.id]: job.getState(),
+                [jobsCols.STATE.id]: osparc.data.Job.STATUS_LABELS[job.getState()] || job.getState(),
                 [jobsCols.SUBMIT.id]: job.getSubmittedAt() ? osparc.utils.Utils.formatDateAndTime(job.getSubmittedAt()) : "-",
                 [jobsCols.START.id]: job.getStartedAt() ? osparc.utils.Utils.formatDateAndTime(job.getStartedAt()) : "-",
                 [jobsCols.END.id]: job.getEndedAt() ? osparc.utils.Utils.formatDateAndTime(job.getEndedAt()) : "-",
