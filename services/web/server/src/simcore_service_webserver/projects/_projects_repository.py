@@ -115,6 +115,42 @@ async def get_project(
         return ProjectDBGet.model_validate(row)
 
 
+async def batch_get_project_name(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    projects_uuids: list[ProjectID],
+) -> list[str | None]:
+    if not projects_uuids:
+        return []
+
+    projects_uuids_str = [f"{uuid}" for uuid in projects_uuids]
+
+    query = (
+        sql.select(
+            projects.c.uuid,
+            projects.c.name,
+        )
+        .select_from(projects)
+        .where(projects.c.uuid.in_(projects_uuids_str))
+    ).order_by(
+        # Preserves the order of projects_uuids
+        # SEE https://docs.sqlalchemy.org/en/20/core/sqlelement.html#sqlalchemy.sql.expression.case
+        sql.case(
+            {
+                project_uuid: index
+                for index, project_uuid in enumerate(projects_uuids_str)
+            },
+            value=projects.c.uuid,
+        )
+    )
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        result = await conn.stream(query)
+        rows = {row.uuid: row.name async for row in result}
+
+    return [rows.get(project_uuid) for project_uuid in projects_uuids_str]
+
+
 def _select_trashed_by_primary_gid_query() -> sql.Select:
     return sql.select(
         projects.c.uuid,
@@ -159,7 +195,7 @@ async def batch_get_trashed_by_primary_gid(
             projects.c.uuid.in_(projects_uuids_str)
         )
     ).order_by(
-        # Preserves the order of folders_ids
+        # Preserves the order of project_uuids
         # SEE https://docs.sqlalchemy.org/en/20/core/sqlelement.html#sqlalchemy.sql.expression.case
         sql.case(
             {

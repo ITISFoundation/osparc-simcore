@@ -10,9 +10,14 @@ from ._groups_service import (
     create_project_group_without_checking_permissions,
     delete_project_group_without_checking_permissions,
 )
-from ._projects_service import delete_project_by_user, get_project_dict_legacy
+from ._projects_service import (
+    batch_get_project_name,
+    delete_project_by_user,
+    get_project_dict_legacy,
+)
 
 __all__: tuple[str, ...] = (
+    "batch_get_project_name",
     "check_user_project_permission",
     "create_project_group_without_checking_permissions",
     "delete_project_group_without_checking_permissions",
