@@ -83,13 +83,13 @@ qx.Class.define("osparc.widget.logger.LoggerModel", {
       let iconSource = "";
       switch (logLevel) {
         case logLevels.INFO:
-          iconSource = "osparc/circle-info-solid.svg";
+          iconSource = "osparc/icons/circle-info-solid.svg";
           break;
         case logLevels.WARNING:
-          iconSource = "osparc/circle-exclamation-solid.svg";
+          iconSource = "osparc/icons/circle-exclamation-solid.svg";
           break;
         case logLevels.ERROR:
-          iconSource = "osparc/circle-xmark-solid.svg";
+          iconSource = "osparc/icons/circle-xmark-solid.svg";
           break;
       }
       return iconSource;

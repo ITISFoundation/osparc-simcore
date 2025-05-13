@@ -36,7 +36,7 @@ qx.Class.define("osparc.jobs.RunsTable", {
 
     Object.values(this.self().COLS).forEach(col => columnModel.setColumnWidth(col.column, col.width));
 
-    const iconPathStop = "osparc/circle-xmark-text.svg";
+    const iconPathStop = "osparc/icons/circle-xmark-text.svg";
     const fontButtonRendererStop = new osparc.ui.table.cellrenderer.ImageButtonRenderer("cancel", iconPathStop);
     columnModel.setDataCellRenderer(this.self().COLS.ACTION_CANCEL.column, fontButtonRendererStop);
 
