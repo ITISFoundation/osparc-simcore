@@ -41,7 +41,7 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
     const fontButtonRendererInfo = new osparc.ui.table.cellrenderer.ImageButtonRenderer("info", iconPathInfo);
     columnModel.setDataCellRenderer(this.self().COLS.INFO.column, fontButtonRendererInfo);
 
-    const iconPathLogs = "osparc/circle-info-text.svg";
+    const iconPathLogs = "osparc/logs-text.svg";
     const fontButtonRendererLogs = new osparc.ui.table.cellrenderer.ImageButtonRenderer("logs", iconPathLogs);
     columnModel.setDataCellRenderer(this.self().COLS.LOGS.column, fontButtonRendererLogs);
 
