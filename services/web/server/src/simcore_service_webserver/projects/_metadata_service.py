@@ -19,6 +19,7 @@ _logger = logging.getLogger(__name__)
 async def get_project_custom_metadata_for_user(
     app: web.Application, user_id: UserID, project_uuid: ProjectID
 ) -> MetadataDict:
+    """raises: ProjectNotFoundError"""
     await validate_project_ownership(app, user_id=user_id, project_uuid=project_uuid)
 
     return await _metadata_repository.get_project_custom_metadata(

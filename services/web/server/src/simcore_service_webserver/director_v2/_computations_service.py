@@ -67,11 +67,11 @@ async def list_computations_latest_iteration(
     _projects_root_uuids: list[ProjectID] = []
     for item in _runs_get.items:
         if (
-            name := item.info.get("project_metadata", {}).get(
+            prj_root_id := item.info.get("project_metadata", {}).get(
                 "root_parent_project_id", None
             )
         ) is not None:
-            _projects_root_uuids.append(ProjectID(name))
+            _projects_root_uuids.append(ProjectID(prj_root_id))
         else:
             _projects_root_uuids.append(item.project_uuid)
 

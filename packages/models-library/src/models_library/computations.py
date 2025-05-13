@@ -2,7 +2,6 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
-from models_library.api_schemas_webserver.projects_metadata import MetadataDict
 from pydantic import AnyUrl, BaseModel
 
 from .projects import ProjectID
@@ -36,4 +35,4 @@ class ComputationRunWithAttributes(BaseModel):
 
     # Attributes added by the webserver
     root_project_name: str
-    project_custom_metadata: MetadataDict
+    project_custom_metadata: dict[str, Any]
