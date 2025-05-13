@@ -118,8 +118,13 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
       if (value === null) {
         return;
       }
+      const groupsStore = osparc.store.Groups.getInstance();
+      const everyoneGroupIds = [
+        groupsStore.getEveryoneProductGroup().getGroupId(),
+        groupsStore.getEveryoneGroup().getGroupId(),
+      ];
       const label = this.getChildControl("title");
-      if (this.isPropertyInitialized("collabType") && this.getCollabType() === 0) {
+      if (everyoneGroupIds.includes(this.getModel())) {
         label.setValue(this.tr("Public"));
       } else {
         label.setValue(value);
