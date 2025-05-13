@@ -569,63 +569,63 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         return;
       }
 
-      this.getStudy().setPipelineRunning(true);
       this.updateStudyDocument()
         .then(() => {
           this.__requestStartPipeline(this.getStudy().getUuid(), partialPipeline);
         })
         .catch(() => {
           this.getStudyLogger().error(null, "Run failed");
-          this.getStudy().setPipelineRunning(false);
         });
     },
 
     __requestStartPipeline: function(studyId, partialPipeline = [], forceRestart = false) {
-      const url = "/computations/" + encodeURIComponent(studyId) + ":start";
-      const req = new osparc.io.request.ApiRequest(url, "POST");
-      req.addListener("success", this.__onPipelineSubmitted, this);
-      req.addListener("error", () => {
-        this.getStudyLogger().error(null, "Error submitting pipeline");
-        this.getStudy().setPipelineRunning(false);
-      }, this);
-      req.addListener("fail", async e => {
-        if (e.getTarget().getStatus() == "409") {
-          this.getStudyLogger().error(null, "Pipeline is already running");
-        } else if (e.getTarget().getStatus() == "422") {
-          this.getStudyLogger().info(null, "The pipeline is up-to-date");
-          const msg = this.tr("The pipeline is up-to-date. Do you want to re-run it?");
-          const win = new osparc.ui.window.Confirmation(msg).set({
-            caption: this.tr("Re-run"),
-            confirmText: this.tr("Run"),
-            confirmAction: "create"
-          });
-          win.center();
-          win.open();
-          win.addListener("close", () => {
-            if (win.getConfirmed()) {
-              this.__requestStartPipeline(studyId, partialPipeline, true);
-            }
-          }, this);
-        } else if (e.getTarget().getStatus() == "402") {
-          const msg = await e.getTarget().getResponse().error.errors[0].message;
-          osparc.FlashMessenger.logAs(msg, "WARNING");
-        } else {
-          this.getStudyLogger().error(null, "Unsuccessful pipeline submission");
-        }
-        this.getStudy().setPipelineRunning(false);
-      }, this);
+      this.getStudy().setPipelineRunning(true);
 
-      const requestData = {
-        "subgraph": partialPipeline,
-        "force_restart": forceRestart
-      };
-      req.setRequestData(requestData);
-      req.send();
       if (partialPipeline.length) {
         this.getStudyLogger().info(null, "Starting partial pipeline");
       } else {
         this.getStudyLogger().info(null, "Starting pipeline");
       }
+
+      const params = {
+        url: {
+          "studyId": studyId
+        },
+        data: {
+          "subgraph": partialPipeline,
+          "force_restart": forceRestart,
+        }
+      };
+      osparc.data.Resources.fetch("runPipeline", "startPipeline", params)
+        .then(() => this.__onPipelineSubmitted)
+        .catch(err => {
+          let msg = err.message;
+          const errStatus = err.status;
+          if (errStatus == "409") {
+            this.getStudyLogger().error(null, "Pipeline is already running");
+          } else if (errStatus == "422") {
+            this.getStudyLogger().info(null, "The pipeline is up-to-date");
+            msg = this.tr("The pipeline is up-to-date. Do you want to re-run it?");
+            const win = new osparc.ui.window.Confirmation(msg).set({
+              caption: this.tr("Re-run"),
+              confirmText: this.tr("Run"),
+              confirmAction: "create"
+            });
+            win.center();
+            win.open();
+            win.addListener("close", () => {
+              if (win.getConfirmed()) {
+                this.__requestStartPipeline(studyId, partialPipeline, true);
+              }
+            }, this);
+          } else if (err.status == "402") {
+            osparc.FlashMessenger.logAs(msg, "WARNING");
+          } else {
+            osparc.FlashMessenger.logAs(msg, "WARNING");
+            this.getStudyLogger().error(null, "Unsuccessful pipeline submission");
+          }
+          this.getStudy().setPipelineRunning(false);
+        });
 
       return true;
     },

@@ -334,6 +334,15 @@ qx.Class.define("osparc.data.Resources", {
           },
         }
       },
+      "runPipeline": {
+        useCache: false,
+        endpoints: {
+          startPipeline: {
+            method: "POST",
+            url: statics.API + "/computations/{studyId}:start"
+          },
+        }
+      },
       "jobs": {
         useCache: false, // handled in osparc.store.Jobs
         endpoints: {
