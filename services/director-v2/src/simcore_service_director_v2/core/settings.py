@@ -239,6 +239,7 @@ class AppSettings(BaseApplicationSettings, MixinLoggingSettings):
         Field(
             ...,
             description="Base URL used to access the public api e.g. http://127.0.0.1:6000 for development or https://api.osparc.io",
+            deprecated=True,
         ),
     ]
     DIRECTOR_V2_TRACING: TracingSettings | None = Field(
