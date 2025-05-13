@@ -597,7 +597,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         }
       };
       osparc.data.Resources.fetch("runPipeline", "startPipeline", params)
-        .then(() => this.__onPipelineSubmitted)
+        .then(() => this.__onPipelineSubmitted())
         .catch(err => {
           let msg = err.message;
           const errStatus = err.status;
@@ -662,15 +662,15 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         return;
       }
 
-      this.__requestStopPipeline(this.getStudy().getUuid());
+      this.__requestStopPipeline();
     },
 
-    __requestStopPipeline: function(studyId) {
+    __requestStopPipeline: function() {
       this.getStudyLogger().info(null, "Stopping pipeline");
 
       const params = {
         url: {
-          "studyId": studyId
+          "studyId": this.getStudy().getUuid()
         },
       };
       osparc.data.Resources.fetch("runPipeline", "stopPipeline", params)
