@@ -130,7 +130,7 @@ class ProjectAtDB(BaseProjectModel):
         Field(description="Defines if a study is available publicly"),
     ] = False
 
-    @field_validator("project_type", mode="before")
+    @field_validator("project_type", "template_type", mode="before")
     @classmethod
     def _convert_sql_alchemy_enum(cls, v):
         if isinstance(v, Enum):
