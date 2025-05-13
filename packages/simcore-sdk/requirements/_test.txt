@@ -1,6 +1,6 @@
-aioboto3==14.1.0
+aioboto3==14.3.0
     # via -r requirements/_test.in
-aiobotocore==2.21.1
+aiobotocore==2.22.0
     # via aioboto3
 aiofiles==24.1.0
     # via
@@ -46,12 +46,12 @@ aws-xray-sdk==2.14.0
     # via moto
 blinker==1.9.0
     # via flask
-boto3==1.37.1
+boto3==1.37.3
     # via
     #   aiobotocore
     #   aws-sam-translator
     #   moto
-botocore==1.37.1
+botocore==1.37.3
     # via
     #   aiobotocore
     #   aws-xray-sdk
