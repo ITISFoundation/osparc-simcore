@@ -54,3 +54,4 @@ redis
 swagger-ui-py
 tenacity
 twilio
+uvloop

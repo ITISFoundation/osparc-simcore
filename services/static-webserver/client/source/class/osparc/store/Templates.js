@@ -16,40 +16,60 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.store.Templates", {
-  extend: qx.core.Object,
-  type: "singleton",
+  type: "static",
 
-  construct: function() {
-    this.base(arguments);
-
-    this.__templates = [];
-  },
-
-  members: {
+  statics: {
     __templates: null,
+    __templatesPromisesCached: null,
 
-    fetchAllTemplates: function() {
-      if (this.__templates.length) {
-        return new Promise(resolve => resolve(this.__templates));
-      }
-
-      return osparc.data.Resources.getInstance().getAllPages("templates")
+    __fetchAllTemplates: function() {
+      return this.__templatesPromisesCached = osparc.data.Resources.getInstance().getAllPages("templates")
         .then(templates => {
           this.__templates = templates;
           return templates;
+        })
+        .catch(err => {
+          osparc.FlashMessenger.logError(err);
+        })
+        .finally(() => {
+          this.__templatesPromisesCached = null;
         });
     },
 
-    getTemplates: function() {
-      return this.__templates;
+    getTemplates: function(useCache = true) {
+      if (this.__templatesPromisesCached) {
+        // fetching templates already in progress
+        return this.__templatesPromisesCached;
+      }
+
+      if (this.__templates === null) {
+        // no templates cached, fetch them
+        return this.__fetchAllTemplates();
+      }
+
+      if (useCache) {
+        // templates already cached, return them
+        return new Promise(resolve => resolve(this.__templates));
+      }
+      // templates cached but force a refresh
+      return this.__fetchAllTemplates();
     },
 
-    getTemplatesByType: function(type) {
-      return this.__templates.filter(t => osparc.study.Utils.extractTemplateType(t) === type);
+    getTemplatesHypertools: function() {
+      return this.getTemplates()
+        .then(templates => {
+          const hypertools = templates.filter(t => osparc.study.Utils.extractTemplateType(t) === osparc.data.model.StudyUI.HYPERTOOL_TYPE);
+          // required for filtering
+          hypertools.forEach(hypertool => hypertool.type = osparc.data.model.StudyUI.HYPERTOOL_TYPE);
+          return hypertools;
+        });
     },
 
     getTemplate: function(templateId) {
-      return this.__templates.find(t => t.uuid === templateId);
+      return this.getTemplates()
+        .then(templates => {
+          return templates.find(t => t.uuid === templateId);
+        });
     },
   }
 });

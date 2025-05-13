@@ -60,9 +60,9 @@
       "placement": "bottom"
     }, {
       "beforeClick": {
-        "selector": "osparc-test-id=servicesTabBtn"
+        "selector": "osparc-test-id=appsTabBtn"
       },
-      "anchorEl": "osparc-test-id=servicesTabBtn",
+      "anchorEl": "osparc-test-id=appsTabBtn",
       "text": "Every Project in Sim4Life is composed of at least one so-called Service.<br>Services are building blocks for Projects and can provide data/files, visualize results (2D, 3D), implement code in Jupyter notebooks or perform computations to execute simulations within a Project.",
       "placement": "bottom"
     }]

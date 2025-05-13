@@ -92,6 +92,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     // overridden
     initResources: function() {
+      if (this._resourcesInitialized) {
+        return;
+      }
+      this._resourcesInitialized = true;
+
       this._resourcesList = [];
       this.__getActiveStudy()
         .then(() => {
@@ -907,25 +912,26 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         newPlansBtn.setEnabled(true);
 
         newPlansBtn.addListener("tap", () => {
-          const templates = osparc.store.Templates.getInstance().getTemplates();
-          if (templates) {
-            const newStudies = new osparc.dashboard.NewStudies(newStudiesConfig);
-            newStudies.setGroupBy("category");
-            const winTitle = this.tr("New Plan");
-            const win = osparc.ui.window.Window.popUpInWindow(newStudies, winTitle, osparc.dashboard.NewStudies.WIDTH+40, 300).set({
-              clickAwayClose: false,
-              resizable: true
-            });
-            newStudies.addListener("newStudyClicked", e => {
-              win.close();
-              const templateInfo = e.getData();
-              const templateData = templates.find(t => t.name === templateInfo.expectedTemplateLabel);
-              if (templateData) {
-                this.__newPlanBtnClicked(templateData, templateInfo.newStudyLabel);
+          osparc.store.Templates.getTemplates()
+            .then(templates => {
+              if (templates) {
+                const newStudies = new osparc.dashboard.NewStudies(newStudiesConfig);
+                const winTitle = this.tr("New Plan");
+                const win = osparc.ui.window.Window.popUpInWindow(newStudies, winTitle, osparc.dashboard.NewStudies.WIDTH+40, 300).set({
+                  clickAwayClose: false,
+                  resizable: true
+                });
+                newStudies.addListener("newStudyClicked", e => {
+                  win.close();
+                  const templateInfo = e.getData();
+                  const templateData = templates.find(t => t.name === templateInfo.expectedTemplateLabel);
+                  if (templateData) {
+                    this.__newPlanBtnClicked(templateData, templateInfo.newStudyLabel);
+                  }
+                });
+                osparc.utils.Utils.setIdToWidget(win, "newStudiesWindow");
               }
             });
-            osparc.utils.Utils.setIdToWidget(win, "newStudiesWindow");
-          }
         });
       }
     },
@@ -1510,10 +1516,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const duplicateStudyButton = this.__getDuplicateMenuButton(studyData);
       menu.add(duplicateStudyButton);
 
-      if (osparc.product.Utils.hasConvertToPipelineEnabled()) {
-        const convertToPipelineButton = this.__getConvertToPipelineMenuButton(studyData);
-        menu.add(convertToPipelineButton);
-      }
+      const convertToPipelineButton = this.__getConvertToPipelineMenuButton(studyData);
+      menu.add(convertToPipelineButton);
 
       if (osparc.product.Utils.hasExportCMisEnabled()) {
         const exportStudyButton = this.__getExportCMisMenuButton(studyData);

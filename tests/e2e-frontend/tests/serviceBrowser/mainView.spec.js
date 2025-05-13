@@ -7,7 +7,7 @@ import { LoginPage } from '../fixtures/loginPage';
 import products from '../products.json';
 import users from '../users.json';
 
-const servicesTabExposed = {
+const appsTabExposed = {
   "osparc": {
     "areServicesExposed": true,
   },
@@ -29,8 +29,8 @@ const servicesTabExposed = {
 }
 
 for (const product in products) {
-  expect(servicesTabExposed[product]).toBeDefined();
-  if (!servicesTabExposed[product]["areServicesExposed"]) {
+  expect(appsTabExposed[product]).toBeDefined();
+  if (!appsTabExposed[product]["areServicesExposed"]) {
     continue;
   }
 
@@ -62,7 +62,7 @@ for (const product in products) {
           expect("data" in resp && "_meta" in resp["data"] && "total" in resp["data"]["_meta"]);
           console.log("N Services in Response:", resp["data"]["_meta"]["total"]);
 
-          await page.getByTestId("servicesTabBtn").click();
+          await page.getByTestId("appsTabBtn").click();
         });
 
         test.afterAll(async ({ browser }) => {

@@ -252,6 +252,17 @@ async def get_project_type(
     return await db.get_project_type(project_uuid)
 
 
+async def get_project_dict_legacy(
+    app: web.Application, project_uuid: ProjectID
+) -> ProjectDict:
+    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    assert db  # nosec
+    project, _ = await db.get_project_dict_and_type(
+        f"{project_uuid}",
+    )
+    return project
+
+
 #
 # UPDATE project -----------------------------------------------------
 #

@@ -1,9 +1,10 @@
 from datetime import datetime
-from typing import Annotated, Any, NamedTuple
+from typing import Any, NamedTuple
 
+from models_library.services_types import ServiceRunID
 from pydantic import (
+    AnyUrl,
     BaseModel,
-    BeforeValidator,
     ConfigDict,
     PositiveInt,
 )
@@ -62,20 +63,16 @@ class ComputationRunRpcGetPage(NamedTuple):
     total: PositiveInt
 
 
-def _none_to_zero_float_pre_validator(value: Any):
-    if value is None:
-        return 0.0
-    return value
-
-
 class ComputationTaskRpcGet(BaseModel):
     project_uuid: ProjectID
     node_id: NodeID
     state: RunningState
-    progress: Annotated[float, BeforeValidator(_none_to_zero_float_pre_validator)]
+    progress: float
     image: dict[str, Any]
     started_at: datetime | None
     ended_at: datetime | None
+    log_download_link: AnyUrl | None
+    service_run_id: ServiceRunID
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -92,6 +89,8 @@ class ComputationTaskRpcGet(BaseModel):
                     },
                     "started_at": "2023-01-11 13:11:47.293595",
                     "ended_at": "2023-01-11 13:11:47.293595",
+                    "log_download_link": "https://example.com/logs",
+                    "service_run_id": "comp_1_12e0c8b2-bad6-40fb-9948-8dec4f65d4d9_1",
                 }
             ]
         }
