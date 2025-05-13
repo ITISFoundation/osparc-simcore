@@ -475,31 +475,35 @@ async def function_job_outputs(
         function.function_class == FunctionClass.project
         and function_job.function_class == FunctionClass.project
     ):
-        return (
-            await studies_jobs.get_study_job_outputs(
-                study_id=function.project_id,
-                job_id=function_job.project_job_id,
-                user_id=user_id,
-                webserver_api=webserver_api,
-                storage_client=storage_client,
-            )
-        ).results
+        return dict(
+            (
+                await studies_jobs.get_study_job_outputs(
+                    study_id=function.project_id,
+                    job_id=function_job.project_job_id,
+                    user_id=user_id,
+                    webserver_api=webserver_api,
+                    storage_client=storage_client,
+                )
+            ).results
+        )
 
     if (
         function.function_class == FunctionClass.solver
         and function_job.function_class == FunctionClass.solver
     ):
-        return (
-            await solvers_jobs_getters.get_job_outputs(
-                solver_key=function.solver_key,
-                version=function.solver_version,
-                job_id=function_job.solver_job_id,
-                user_id=user_id,
-                webserver_api=webserver_api,
-                storage_client=storage_client,
-                async_pg_engine=async_pg_engine,
-            )
-        ).results
+        return dict(
+            (
+                await solvers_jobs_getters.get_job_outputs(
+                    solver_key=function.solver_key,
+                    version=function.solver_version,
+                    job_id=function_job.solver_job_id,
+                    user_id=user_id,
+                    webserver_api=webserver_api,
+                    storage_client=storage_client,
+                    async_pg_engine=async_pg_engine,
+                )
+            ).results
+        )
     raise UnsupportedFunctionClassError(function_class=function.function_class)
 
 
