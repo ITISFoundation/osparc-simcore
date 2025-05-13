@@ -96,7 +96,7 @@ qx.Class.define("osparc.jobs.SubRunsTableModel", {
                 [subJobsCols.NODE_ID.id]: subJob.getNodeId(),
                 [subJobsCols.NODE_NAME.id]: subJob.getNodeName(),
                 [subJobsCols.APP.id]: appName + ":" + displayVersion,
-                [subJobsCols.STATE.id]: subJob.getState(),
+                [subJobsCols.STATE.id]: osparc.data.Job.STATUS_LABELS[subJob.getState()] || subJob.getState(),
                 [subJobsCols.PROGRESS.id]: subJob.getProgress() * 100 + "%",
                 [subJobsCols.START.id]: startedAt ? osparc.utils.Utils.formatDateAndTime(startedAt) : "-",
                 [subJobsCols.END.id]: endedAt ? osparc.utils.Utils.formatDateAndTime(endedAt) : "-",
