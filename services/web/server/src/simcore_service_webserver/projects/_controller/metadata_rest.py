@@ -47,7 +47,7 @@ async def get_project_metadata(request: web.Request) -> web.Response:
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
-    custom_metadata = await _metadata_service.get_project_custom_metadata(
+    custom_metadata = await _metadata_service.get_project_custom_metadata_for_user(
         request.app, user_id=req_ctx.user_id, project_uuid=path_params.project_id
     )
 

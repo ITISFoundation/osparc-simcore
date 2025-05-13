@@ -26,15 +26,6 @@ async def get_project_custom_metadata_for_user(
     )
 
 
-async def get_project_custom_metadata(
-    app: web.Application, project_uuid: ProjectID
-) -> MetadataDict:
-    """Can Raise ProjectNotFoundError"""
-    return await _metadata_repository.get_project_custom_metadata(
-        engine=get_database_engine(app), project_uuid=project_uuid
-    )
-
-
 async def get_project_custom_metadata_or_empty_dict(
     app: web.Application, project_uuid: ProjectID
 ) -> MetadataDict:
