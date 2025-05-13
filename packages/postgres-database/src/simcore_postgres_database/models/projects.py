@@ -16,6 +16,12 @@ class ProjectType(enum.Enum):
     STANDARD = "STANDARD"
 
 
+class ProjectTemplateType(enum.Enum):
+    TEMPLATE = "TEMPLATE"
+    TUTORIAL = "TUTORIAL"
+    HYPERTOOL = "HYPERTOOL"
+
+
 projects = sa.Table(
     "projects",
     metadata,
@@ -28,6 +34,13 @@ projects = sa.Table(
         nullable=False,
         default=ProjectType.STANDARD,
         doc="Either standard or template types",
+    ),
+    sa.Column(
+        "template_type",
+        sa.Enum(ProjectTemplateType),
+        nullable=True,
+        default=None,
+        doc="None if type is STANDARD, otherwise it is one of the ProjectTemplateType",
     ),
     sa.Column(
         "uuid",
