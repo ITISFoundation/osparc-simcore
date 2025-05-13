@@ -132,17 +132,35 @@ qx.Class.define("osparc.jobs.RunsTable", {
     },
 
     __handleButtonClick: function(action, row) {
+      this.resetSelection();
       const rowData = this.getTableModel().getRowData(row);
       switch (action) {
         case "info": {
-          this.fireDataEvent("runSelected", rowData);
+          const job = osparc.store.Jobs.getInstance().getJob(rowData["projectUuid"]);
+          if (!job) {
+            return;
+          }
+          const allInfo = {
+            "image": job.getInfo() ? osparc.utils.Utils.deepCloneObject(job.getInfo()) : {},
+            "customMetadata": job.getCustomMetadata() ? osparc.utils.Utils.deepCloneObject(job.getCustomMetadata()) : {},
+          }
+          const runInfo = new osparc.jobs.Info(allInfo);
+          const win = osparc.jobs.Info.popUpInWindow(runInfo);
+          win.setCaption(rowData["projectName"]);
           break;
         }
-        case "run":
-        case "stop":
-        case "logs": {
-          const msg = `I wish I could ${action} the job ${rowData["projectUuid"]}`;
-          osparc.FlashMessenger.logAs(msg, "WARNING");
+        case "cancel": {
+          const params = {
+            url: {
+              "studyId": rowData["projectUuid"],
+            },
+          };
+          osparc.data.Resources.fetch("runPipeline", "stopPipeline", params)
+            .then(() => {
+              const msg = qx.locale.Manager.tr("Stopping pipeline {0}", rowData["projectName"]);
+              osparc.FlashMessenger.logAs(msg, "INFO");
+            })
+            .catch(err => osparc.FlashMessenger.logError(err));
           break;
         }
         default:
