@@ -52,6 +52,12 @@ class ProjectType(str, Enum):
     STANDARD = "STANDARD"
 
 
+class ProjectTemplateType(str, Enum):
+    TEMPLATE = "TEMPLATE"
+    TUTORIAL = "TUTORIAL"
+    HYPERTOOL = "HYPERTOOL"
+
+
 class BaseProjectModel(BaseModel):
     # Description of the project
     uuid: Annotated[

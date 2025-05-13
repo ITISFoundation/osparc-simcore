@@ -11,12 +11,14 @@ from typing import Annotated, Any, Literal, Self, TypeAlias
 
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.dict_tools import remap_keys
+from models_library.projects import ProjectTemplateType, ProjectType
 from pydantic import (
     BeforeValidator,
     ConfigDict,
     Field,
     HttpUrl,
     PlainSerializer,
+    ValidationInfo,
     field_validator,
 )
 from pydantic.config import JsonDict
@@ -101,6 +103,9 @@ class ProjectCopyOverride(InputSchema):
 class ProjectGet(OutputSchema):
     uuid: ProjectID
 
+    type: ProjectType
+    template_type: ProjectTemplateType | None
+
     # display
     name: str
     description: str
@@ -144,12 +149,28 @@ class ProjectGet(OutputSchema):
         none_to_empty_str_pre_validator
     )
 
+    @field_validator("template_type")
+    @classmethod
+    def validate_template_type(
+        cls, v: ProjectTemplateType | None, info: ValidationInfo
+    ) -> ProjectTemplateType | None:
+        type_value = info.data.get("type")
+        if type_value == ProjectType.STANDARD and v is not None:
+            msg = "template_type must be None when type is STANDARD"
+            raise ValueError(msg)
+        if type_value == ProjectType.TEMPLATE and v is None:
+            msg = "template_type must not be None when type is TEMPLATE"
+            raise ValueError(msg)
+        return v
+
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
         schema.update(
             examples=[
                 {
                     "uuid": "a8b0f384-bd08-4793-ab25-65d5a755f4b6",
+                    "type": "STANDARD",
+                    "template_type": None,
                     "name": "My Project",
                     "description": "This is a sample project",
                     "thumbnail": "https://example.com/thumbnail.png",

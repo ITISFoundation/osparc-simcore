@@ -60,6 +60,8 @@ NEW_PROJECT = HttpApiCallCapture(
     response_body={
         "data": {
             "uuid": "18f1938c-567d-11ec-b2f3-02420a000010",
+            "type": "STANDARD",
+            "template_type": None,
             "name": "New Study",
             "description": "",
             "accessRights": {"2": {"read": True, "write": True, "delete": True}},
@@ -94,6 +96,8 @@ GET_PROJECT = HttpApiCallCapture(
     response_body={
         "data": {
             "uuid": "18f1938c-567d-11ec-b2f3-02420a000010",
+            "type": "STANDARD",
+            "template_type": None,
             "name": "New Study",
             "description": "",
             "thumbnail": "",
@@ -225,6 +229,8 @@ REPLACE_PROJECT = HttpApiCallCapture(
     response_body={
         "data": {
             "uuid": "18f1938c-567d-11ec-b2f3-02420a000010",
+            "type": "STANDARD",
+            "template_type": None,
             "name": "New Study",
             "description": "",
             "thumbnail": "",
@@ -414,6 +420,8 @@ REPLACE_PROJECT_ON_MODIFIED = HttpApiCallCapture(
     response_body={
         "data": {
             "uuid": "18f1938c-567d-11ec-b2f3-02420a000010",
+            "type": "STANDARD",
+            "template_type": None,
             "name": "New Study",
             "description": "",
             "thumbnail": "",
@@ -599,6 +607,8 @@ LIST_PROJECTS = HttpApiCallCapture(
         "data": [
             {
                 "uuid": "18f1938c-567d-11ec-b2f3-02420a000010",
+                "type": "STANDARD",
+                "template_type": None,
                 "name": "New Study",
                 "description": "",
                 "thumbnail": "",
@@ -797,6 +807,8 @@ CREATE_FROM_TEMPLATE__TASK_RESULT = HttpApiCallCapture(
     response_body={
         "data": {
             "uuid": "4c58409a-d9e4-11ed-9c9e-02420a0b755a",
+            "type": "STANDARD",
+            "template_type": None,
             "name": "Sleepers",
             "description": "5 sleepers interconnected",
             "thumbnail": "https://raw.githubusercontent.com/ITISFoundation/osparc-assets/main/assets/TheSoftWatches.jpg",
