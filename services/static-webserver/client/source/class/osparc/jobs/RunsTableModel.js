@@ -60,7 +60,7 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
       const offset = 0;
       const limit = 1;
       const resolveWResponse = true;
-      osparc.store.Jobs.getInstance().fetchJobs(offset, limit, JSON.stringify(this.getOrderBy()), resolveWResponse)
+      osparc.store.Jobs.getInstance().fetchJobsActive(offset, limit, JSON.stringify(this.getOrderBy()), resolveWResponse)
         .then(resp => {
           this._onRowCountLoaded(resp["_meta"].total)
         })
@@ -76,7 +76,7 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
       const lastRow = Math.min(qxLastRow, this._rowCount - 1);
       // Returns a request promise with given offset and limit
       const getFetchPromise = (offset, limit) => {
-        return osparc.store.Jobs.getInstance().fetchJobs(offset, limit, JSON.stringify(this.getOrderBy()))
+        return osparc.store.Jobs.getInstance().fetchJobsActive(offset, limit, JSON.stringify(this.getOrderBy()))
           .then(jobs => {
             const data = [];
             const jobsCols = osparc.jobs.RunsTable.COLS;

@@ -34,7 +34,7 @@ qx.Class.define("osparc.jobs.JobsButton", {
     this.addListener("tap", () => osparc.jobs.ActivityCenterWindow.openWindow(), this);
 
     const jobsStore = osparc.store.Jobs.getInstance();
-    jobsStore.addListener("changeJobs", e => this.__updateJobsButton(), this);
+    jobsStore.addListener("changeJobs", () => this.__updateJobsButton(), this);
   },
 
   members: {

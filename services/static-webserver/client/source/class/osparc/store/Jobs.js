@@ -25,6 +25,13 @@ qx.Class.define("osparc.store.Jobs", {
       init: [],
       nullable: true,
       event: "changeJobs"
+    },
+
+    jobsActive: {
+      check: "Array",
+      init: [],
+      nullable: true,
+      event: "changeJobsActive"
     }
   },
 
@@ -33,7 +40,7 @@ qx.Class.define("osparc.store.Jobs", {
   },
 
   members: {
-    fetchJobs: function(
+    fetchJobsActive: function(
       offset = 0,
       limit = this.self().SERVER_MAX_LIMIT,
       orderBy = {
@@ -52,7 +59,7 @@ qx.Class.define("osparc.store.Jobs", {
       const options = {
         resolveWResponse: true
       };
-      return osparc.data.Resources.fetch("jobs", "getPage", params, options)
+      return osparc.data.Resources.fetch("jobsActive", "getPage", params, options)
         .then(jobsResp => {
           const jobs = [];
           if ("data" in jobsResp) {
