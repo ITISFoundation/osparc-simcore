@@ -30,10 +30,6 @@ qx.Class.define("osparc.jobs.ActivityOverview", {
     __buildLayout: function(projectData) {
       const subRunsTable = new osparc.jobs.SubRunsTable(projectData["uuid"]);
       this._add(subRunsTable);
-
-      this.addListener("close", () => {
-        subRunsTable.stopInterval();
-      });
     },
   }
 });
