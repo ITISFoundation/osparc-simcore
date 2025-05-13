@@ -36,10 +36,6 @@ qx.Class.define("osparc.jobs.RunsTable", {
 
     Object.values(this.self().COLS).forEach(col => columnModel.setColumnWidth(col.column, col.width));
 
-    const iconPathRun = "osparc/circle-play-text.svg";
-    const fontButtonRendererRun = new osparc.ui.table.cellrenderer.ImageButtonRenderer("run", iconPathRun);
-    columnModel.setDataCellRenderer(this.self().COLS.ACTION_RUN.column, fontButtonRendererRun);
-
     const iconPathStop = "osparc/circle-stop-text.svg";
     const fontButtonRendererStop = new osparc.ui.table.cellrenderer.ImageButtonRenderer("stop", iconPathStop);
     columnModel.setDataCellRenderer(this.self().COLS.ACTION_STOP.column, fontButtonRendererStop);
@@ -62,7 +58,7 @@ qx.Class.define("osparc.jobs.RunsTable", {
       PROJECT_NAME: {
         id: "projectName",
         column: 1,
-        label: qx.locale.Manager.tr("Project Name"),
+        label: qx.locale.Manager.tr("Project"),
         width: 170,
         sortable: true
       },
@@ -75,7 +71,7 @@ qx.Class.define("osparc.jobs.RunsTable", {
       SUBMIT: {
         id: "submit",
         column: 3,
-        label: qx.locale.Manager.tr("Submitted"),
+        label: qx.locale.Manager.tr("Queued"),
         width: 130,
         sortable: true
       },
@@ -93,15 +89,9 @@ qx.Class.define("osparc.jobs.RunsTable", {
         width: 130,
         sortable: true
       },
-      ACTION_RUN: {
-        id: "action_run",
-        column: 6,
-        label: "",
-        width: 40
-      },
       ACTION_STOP: {
         id: "action_stop",
-        column: 7,
+        column: 6,
         label: "",
         width: 40
       },

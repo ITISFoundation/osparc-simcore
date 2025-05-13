@@ -34,10 +34,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
     this.__potentialCollaborators = {};
     this.__reloadPotentialCollaborators();
 
-    this.__shareWithEmailEnabled = false;
-    if (this.__resourceData["resourceType"] === "study") {
-      this.__shareWithEmailEnabled = osparc.utils.DisabledPlugins.isShareWithEmailEnabled();
-    }
+    this.__shareWithEmailEnabled = this.__resourceData["resourceType"] === "study";
 
     if (preselectCollaboratorGids && preselectCollaboratorGids.length) {
       preselectCollaboratorGids.forEach(preselectCollaboratorGid => {
@@ -255,6 +252,9 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
         showProductEveryone = osparc.data.Permissions.getInstance().canDo("study.everyone.share");
       } else if (this.__resourceData && this.__resourceData["resourceType"] === "service") {
         // all users can share services with ProductEveryone
+        showProductEveryone = true;
+      } else if (this.__resourceData && this.__resourceData["resourceType"] === "hypertool") {
+        // all users can share hypertool with ProductEveryone
         showProductEveryone = true;
       }
       return showProductEveryone;

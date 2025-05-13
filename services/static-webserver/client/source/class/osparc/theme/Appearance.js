@@ -125,6 +125,16 @@ qx.Theme.define("osparc.theme.Appearance", {
       }
     },
 
+    "pb-hypertool": {
+      include: "pb-listitem",
+      style: function(states) {
+        const style = {
+          backgroundColor: "pb-template"
+        };
+        return style;
+      }
+    },
+
     "pb-dynamic":  {
       include: "pb-listitem",
       style: function(states) {
