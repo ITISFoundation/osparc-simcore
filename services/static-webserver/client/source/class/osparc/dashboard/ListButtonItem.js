@@ -186,7 +186,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
     // overridden
     _applyLastChangeDate: function(value, old) {
       if (value) {
-        if (this.isResourceType("study") || this.isResourceType("template")) {
+        if (["study", "template", "hypertool"].includes(this.getResourceType())) {
           const dateBy = this.getChildControl("date-by");
           dateBy.set({
             date: value,
@@ -199,7 +199,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
     // overridden
     _applyTrashedAt: function(value) {
       if (value && value.getTime() !== new Date(0).getTime()) {
-        if (this.isResourceType("study") || this.isResourceType("template")) {
+        if (["study", "template"].includes(this.getResourceType())) {
           const dateBy = this.getChildControl("date-by");
           dateBy.set({
             date: value,
@@ -212,7 +212,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
     // overridden
     _applyTrashedBy: function(gid) {
       if (gid) {
-        if (this.isResourceType("study") || this.isResourceType("template")) {
+        if (["study", "template"].includes(this.getResourceType())) {
           const dateBy = this.getChildControl("date-by");
           dateBy.setGroupId(gid);
         }
@@ -221,7 +221,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
 
     __createOwner: function(label) {
       if (label === osparc.auth.Data.getInstance().getEmail()) {
-        const resourceAlias = osparc.utils.Utils.resourceTypeToAlias(this.getResourceType());
+        const resourceAlias = osparc.product.Utils.resourceTypeToAlias(this.getResourceType(), {firstUpperCase: true});
         return qx.locale.Manager.tr(`My ${resourceAlias}`);
       }
       return osparc.utils.Utils.getNameFromEmail(label);

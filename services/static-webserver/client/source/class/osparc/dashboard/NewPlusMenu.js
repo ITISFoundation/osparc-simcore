@@ -160,12 +160,10 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
 
     __addItems: function() {
       this.__addUIConfigItems();
-      if (osparc.store.StaticInfo.getInstance().isDevFeaturesEnabled()) {
-        if (osparc.product.Utils.isS4LProduct()) {
-          this.__addHypertools();
-        }
-        this.__addOtherTabsAccess();
+      if (osparc.product.Utils.isS4LProduct()) {
+        this.__addHypertools();
       }
+      this.__addOtherTabsAccess();
       this.getChildControl("new-folder");
     },
 
@@ -235,7 +233,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
 
       if (permissions.canDo("dashboard.services.read")) {
         const servicesButton = this.self().createMenuButton("@FontAwesome5Solid/cog/16", this.tr("Services..."));
-        servicesButton.addListener("execute", () => this.fireDataEvent("changeTab", "servicesTab"), this);
+        servicesButton.addListener("execute", () => this.fireDataEvent("changeTab", "appsTab"), this);
         moreMenu.add(servicesButton);
       }
       moreMenuButton.setVisibility(moreMenu.getChildren().length ? "visible" : "excluded");

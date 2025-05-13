@@ -22,7 +22,7 @@
  * @ignore(fetch)
  */
 
-qx.Class.define("osparc.dashboard.ServiceBrowser", {
+qx.Class.define("osparc.dashboard.AppBrowser", {
   extend: osparc.dashboard.ResourceBrowserBase,
 
   construct: function() {
@@ -43,8 +43,12 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       this._resourcesInitialized = true;
 
       this._resourcesList = [];
-      osparc.store.Services.getServicesLatest()
-        .then(services => {
+      Promise.all([
+        osparc.store.Services.getServicesLatest(),
+        osparc.store.Templates.getTemplatesHypertools(),
+      ])
+        .then(resps => {
+          const services = resps[0];
           // Show "Contact Us" message if services.length === 0
           // Most probably is a product-stranger user (it can also be that the catalog is down)
           if (Object.keys(services).length === 0) {
@@ -65,30 +69,52 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
 
     reloadResources: function() {
       this.__loadServices();
+      this.__loadHypertools();
     },
 
     __loadServices: function() {
       const excludeFrontend = true;
       const excludeDeprecated = true
       osparc.store.Services.getServicesLatestList(excludeFrontend, excludeDeprecated)
-        .then(servicesList => this.__setServicesToList(servicesList.filter(service => service !== null)));
+        .then(servicesList => {
+          servicesList.forEach(service => service["resourceType"] = "service");
+          this._resourcesList.push(...servicesList.filter(service => service !== null));
+          this.__sortAndReload();
+        });
+    },
+
+    __loadHypertools: function() {
+      osparc.store.Templates.getTemplatesHypertools()
+        .then(hypertoolsList => {
+          hypertoolsList.forEach(hypertool => hypertool["resourceType"] = "hypertool");
+          this._resourcesList.push(...hypertoolsList.filter(hypertool => hypertool !== null));
+          this.__sortAndReload();
+        });
+    },
+
+    __sortAndReload: function() {
+      osparc.service.Utils.sortObjectsBasedOn(this._resourcesList, this.__sortBy);
+      this._reloadCards();
     },
 
     _updateServiceData: function(serviceData) {
       serviceData["resourceType"] = "service";
-      const servicesList = this._resourcesList;
-      const index = servicesList.findIndex(service => service["key"] === serviceData["key"] && service["version"] === serviceData["version"]);
+      const appsList = this._resourcesList;
+      const index = appsList.findIndex(service => service["key"] === serviceData["key"] && service["version"] === serviceData["version"]);
       if (index !== -1) {
-        servicesList[index] = serviceData;
+        appsList[index] = serviceData;
         this._reloadCards();
       }
     },
 
-    __setServicesToList: function(servicesList) {
-      servicesList.forEach(service => service["resourceType"] = "service");
-      osparc.service.Utils.sortObjectsBasedOn(servicesList, this.__sortBy);
-      this._resourcesList = servicesList;
-      this._reloadCards();
+    _updateHypertoolData: function(hypertoolData) {
+      hypertoolData["resourceType"] = "hypertool";
+      const appsList = this._resourcesList;
+      const index = appsList.findIndex(service => service["uuid"] === hypertoolData["uuid"]);
+      if (index !== -1) {
+        appsList[index] = hypertoolData;
+        this._reloadCards();
+      }
     },
 
     _reloadCards: function() {
@@ -103,8 +129,8 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     },
 
     __itemClicked: function(card) {
-      const serviceData = card.getResourceData();
-      this._openResourceDetails(serviceData);
+      const appData = card.getResourceData();
+      this._openResourceDetails(appData);
       this.resetSelection();
     },
 
@@ -126,6 +152,28 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       return this._resourcesContainer;
     },
 
+    __addSortingButtons: function() {
+      const containerSortButtons = new osparc.service.SortServicesButtons();
+      containerSortButtons.set({
+        appearance: "form-button-outlined"
+      });
+      containerSortButtons.addListener("sortBy", e => {
+        this.__sortBy = e.getData();
+        this.__sortAndReload();
+      }, this);
+      this._toolbar.add(containerSortButtons);
+    },
+
+    _populateCardMenu: function(card) {
+      const menu = card.getMenu();
+      const appData = card.getResourceData();
+
+      const openButton = this._getOpenMenuButton(appData);
+      if (openButton) {
+        menu.add(openButton);
+      }
+    },
+
     __addNewServiceButtons: function() {
       const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
       const hasRights = osparc.data.Permissions.getInstance().canDo("studies.template.create.productAll");
@@ -140,7 +188,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
         this._toolbar.add(testDataButton);
       }
 
-      const addServiceButton = new qx.ui.form.Button(this.tr("Submit new service"), "@FontAwesome5Solid/plus-circle/14");
+      const addServiceButton = new qx.ui.form.Button(this.tr("Submit new app"), "@FontAwesome5Solid/plus-circle/14");
       addServiceButton.set({
         appearance: "form-button-outlined",
         visibility: hasRights ? "visible" : "excluded"
@@ -149,30 +197,8 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       this._toolbar.add(addServiceButton);
     },
 
-    __addSortingButtons: function() {
-      const containerSortButtons = new osparc.service.SortServicesButtons();
-      containerSortButtons.set({
-        appearance: "form-button-outlined"
-      });
-      containerSortButtons.addListener("sortBy", e => {
-        this.__sortBy = e.getData();
-        this.__setServicesToList(this._resourcesList);
-      }, this);
-      this._toolbar.add(containerSortButtons);
-    },
-
-    _populateCardMenu: function(card) {
-      const menu = card.getMenu();
-      const serviceData = card.getResourceData();
-
-      const openButton = this._getOpenMenuButton(serviceData);
-      if (openButton) {
-        menu.add(openButton);
-      }
-    },
-
     __displayServiceSubmissionForm: function(formData) {
-      const addServiceWindow = new osparc.ui.window.Window(this.tr("Submit a new service")).set({
+      const addServiceWindow = new osparc.ui.window.Window(this.tr("Submit a new app")).set({
         modal: true,
         autoDestroy: true,
         showMinimize: false,

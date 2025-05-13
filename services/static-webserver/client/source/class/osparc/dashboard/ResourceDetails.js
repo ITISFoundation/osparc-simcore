@@ -26,7 +26,8 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     let latestPromise = null;
     switch (resourceData["resourceType"]) {
       case "study":
-      case "template": {
+      case "template":
+      case "hypertool": {
         const params = {
           url: {
             "studyId": resourceData["uuid"]
@@ -47,7 +48,8 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         this.__resourceData["resourceType"] = resourceData["resourceType"];
         switch (resourceData["resourceType"]) {
           case "study":
-          case "template": {
+          case "template":
+          case "hypertool":
             osparc.store.Services.getStudyServicesMetadata(latestResourceData)
               .finally(() => {
                 this.__resourceModel = new osparc.data.model.Study(latestResourceData);
@@ -56,7 +58,6 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
                 this.__addPages();
               })
             break;
-          }
           case "service": {
             this.__resourceModel = new osparc.data.model.Service(latestResourceData);
             this.__resourceModel["resourceType"] = resourceData["resourceType"];
@@ -71,10 +72,12 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
   events: {
     "pagesAdded": "qx.event.type.Event",
     "openTemplate": "qx.event.type.Data",
+    "openHypertool": "qx.event.type.Data",
     "openService": "qx.event.type.Data",
     "updateStudy": "qx.event.type.Data",
     "updateTemplate": "qx.event.type.Data",
     "updateService": "qx.event.type.Data",
+    "updateHypertool": "qx.event.type.Data",
     "publishTemplate": "qx.event.type.Data",
   },
 
@@ -85,7 +88,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
     popUpInWindow: function(resourceDetails) {
       // eslint-disable-next-line no-underscore-dangle
-      const resourceAlias = osparc.utils.Utils.resourceTypeToAlias(resourceDetails.__resourceData["resourceType"]);
+      const resourceAlias = osparc.product.Utils.resourceTypeToAlias(resourceDetails.__resourceData["resourceType"], {firstUpperCase: true});
       // eslint-disable-next-line no-underscore-dangle
       const title = `${resourceAlias} ${qx.locale.Manager.tr("Details")} - ${resourceDetails.__resourceData.name}`;
       const win = osparc.ui.window.Window.popUpInWindow(resourceDetails, title, this.WIDTH, this.HEIGHT).set({
@@ -240,6 +243,9 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         case "template":
           this.fireDataEvent("openTemplate", this.__resourceData);
           break;
+        case "hypertool":
+          this.fireDataEvent("openHypertool", this.__resourceData);
+          break;
         case "service":
           this.fireDataEvent("openService", this.__resourceData);
           break;
@@ -382,6 +388,23 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       this.fireEvent("pagesAdded");
     },
 
+    __fireUpdateEvent: function(resourceData, updatedData) {
+      switch (resourceData["resourceType"]) {
+        case "study":
+          this.fireDataEvent("updateStudy", updatedData);
+          break;
+        case "template":
+          this.fireDataEvent("updateTemplate", updatedData);
+          break;
+        case "hypertool":
+          this.fireDataEvent("updateHypertool", updatedData);
+          break;
+        case "service":
+          this.fireDataEvent("updateService", updatedData);
+          break;
+      }
+    },
+
     __getInfoPage: function() {
       const id = "Information";
       const title = this.tr("Overview");
@@ -397,19 +420,13 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           infoCard = new osparc.info.ServiceLarge(resourceData, null, false);
           infoCard.addListener("updateService", e => {
             const updatedData = e.getData();
-            if (osparc.utils.Resources.isService(resourceData)) {
-              this.fireDataEvent("updateService", updatedData);
-            }
+            this.__fireUpdateEvent(resourceData, updatedData);
           });
         } else {
           infoCard = new osparc.info.StudyLarge(resourceModel, false);
           infoCard.addListener("updateStudy", e => {
             const updatedData = e.getData();
-            if (osparc.utils.Resources.isStudy(resourceData)) {
-              this.fireDataEvent("updateStudy", updatedData);
-            } else if (osparc.utils.Resources.isTemplate(resourceData)) {
-              this.fireDataEvent("updateTemplate", updatedData);
-            }
+            this.__fireUpdateEvent(resourceData, updatedData);
           });
           infoCard.addListener("openTags", () => this.openTags());
         }
@@ -545,9 +562,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           collaboratorsView = new osparc.share.CollaboratorsService(resourceData);
           collaboratorsView.addListener("updateAccessRights", e => {
             const updatedData = e.getData();
-            if (osparc.utils.Resources.isService(resourceData)) {
-              this.fireDataEvent("updateService", updatedData);
-            }
+            this.__fireUpdateEvent(resourceData, updatedData);
           }, this);
         } else {
           collaboratorsView = new osparc.share.CollaboratorsStudy(resourceData);
@@ -558,11 +573,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           }
           collaboratorsView.addListener("updateAccessRights", e => {
             const updatedData = e.getData();
-            if (osparc.utils.Resources.isStudy(resourceData)) {
-              this.fireDataEvent("updateStudy", updatedData);
-            } else if (osparc.utils.Resources.isTemplate(resourceData)) {
-              this.fireDataEvent("updateTemplate", updatedData);
-            }
+            this.__fireUpdateEvent(resourceData, updatedData);
           }, this);
         }
         page.addToContent(collaboratorsView);
@@ -595,13 +606,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           classifiers = new osparc.metadata.ClassifiersEditor(resourceData);
           classifiers.addListener("updateClassifiers", e => {
             const updatedData = e.getData();
-            if (osparc.utils.Resources.isStudy(resourceData)) {
-              this.fireDataEvent("updateStudy", updatedData);
-            } else if (osparc.utils.Resources.isTemplate(resourceData)) {
-              this.fireDataEvent("updateTemplate", updatedData);
-            } else if (osparc.utils.Resources.isService(resourceData)) {
-              this.fireDataEvent("updateService", updatedData);
-            }
+            this.__fireUpdateEvent(resourceData, updatedData);
           }, this);
         } else {
           classifiers = new osparc.metadata.ClassifiersViewer(resourceData);
@@ -633,11 +638,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           const qualityEditor = new osparc.metadata.QualityEditor(resourceData);
           qualityEditor.addListener("updateQuality", e => {
             const updatedData = e.getData();
-            if (osparc.utils.Resources.isStudy(resourceData)) {
-              this.fireDataEvent("updateStudy", updatedData);
-            } else if (osparc.utils.Resources.isTemplate(resourceData)) {
-              this.fireDataEvent("updateTemplate", updatedData);
-            }
+            this.__fireUpdateEvent(updatedData);
           });
           page.addToContent(qualityEditor);
         }
@@ -668,11 +669,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         tagManager.addListener("updateTags", e => {
           const updatedData = e.getData();
           tagManager.setStudyData(updatedData);
-          if (osparc.utils.Resources.isStudy(resourceData)) {
-            this.fireDataEvent("updateStudy", updatedData);
-          } else if (osparc.utils.Resources.isTemplate(resourceData)) {
-            this.fireDataEvent("updateTemplate", updatedData);
-          }
+          this.__fireUpdateEvent(resourceData, updatedData);
         }, this);
         page.addToContent(tagManager);
       }
@@ -703,11 +700,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         const servicesUpdate = new osparc.metadata.ServicesInStudyUpdate(resourceData);
         servicesUpdate.addListener("updateService", e => {
           const updatedData = e.getData();
-          if (osparc.utils.Resources.isStudy(resourceData)) {
-            this.fireDataEvent("updateStudy", updatedData);
-          } else if (osparc.utils.Resources.isTemplate(resourceData)) {
-            this.fireDataEvent("updateTemplate", updatedData);
-          }
+          this.__fireUpdateEvent(resourceData, updatedData);
         });
         page.addToContent(servicesUpdate);
       }
@@ -741,11 +734,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         const servicesBootOpts = new osparc.metadata.ServicesInStudyBootOpts(resourceData);
         servicesBootOpts.addListener("updateService", e => {
           const updatedData = e.getData();
-          if (osparc.utils.Resources.isStudy(resourceData)) {
-            this.fireDataEvent("updateStudy", updatedData);
-          } else if (osparc.utils.Resources.isTemplate(resourceData)) {
-            this.fireDataEvent("updateTemplate", updatedData);
-          }
+          this.__fireUpdateEvent(resourceData, updatedData);
         });
         page.addToContent(servicesBootOpts);
 

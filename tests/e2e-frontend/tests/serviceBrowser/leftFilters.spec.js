@@ -28,7 +28,7 @@ test.describe.serial(`Left Filters:`, () => {
 
     await responsePromise;
 
-    await page.getByTestId("servicesTabBtn").click();
+    await page.getByTestId("appsTabBtn").click();
   });
 
   test.afterAll(async ({ browser }) => {
