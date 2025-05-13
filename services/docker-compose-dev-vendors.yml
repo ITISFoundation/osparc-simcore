@@ -13,7 +13,7 @@ services:
       labels:
         - io.simcore.zone=${TRAEFIK_SIMCORE_ZONE}
         - traefik.enable=true
-        - traefik.docker.network=${SWARM_STACK_NAME}_default
+        - traefik.swarm.network=${SWARM_STACK_NAME}_default
         # auth: https://doc.traefik.io/traefik/middlewares/http/forwardauth
         - traefik.http.middlewares.${SWARM_STACK_NAME}_manual-auth.forwardauth.address=http://${WEBSERVER_HOST}:${WEBSERVER_PORT}/v0/auth:check
         - traefik.http.middlewares.${SWARM_STACK_NAME}_manual-auth.forwardauth.trustForwardHeader=true

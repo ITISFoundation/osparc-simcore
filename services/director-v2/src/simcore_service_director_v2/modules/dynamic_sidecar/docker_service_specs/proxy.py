@@ -83,7 +83,7 @@ def get_dynamic_proxy_spec(
         "endpoint_spec": {"Ports": ports} if ports else {},
         "labels": {
             "io.simcore.zone": f"{dynamic_services_scheduler_settings.TRAEFIK_SIMCORE_ZONE}",
-            "traefik.docker.network": swarm_network_name,
+            "traefik.swarm.network": swarm_network_name,
             "traefik.enable": "true",
             # security
             f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.accesscontrolallowcredentials": "true",
