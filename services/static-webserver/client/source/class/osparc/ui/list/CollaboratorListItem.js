@@ -76,7 +76,7 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
   members: {
     __getRoleInfo: function(id) {
       const resource = this.getResourceType();
-      if (resource === "study" || resource === "template") {
+      if (["study", "template", "hypertool"].includes(resource)) {
         return osparc.data.Roles.STUDY[id];
       } else if (resource === "service") {
         return osparc.data.Roles.SERVICES[id];

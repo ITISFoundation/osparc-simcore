@@ -411,7 +411,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _addResourceFilter: function() {
-      const resourceFilter = this._resourceFilter = new osparc.dashboard.ResourceFilter(this._resourceType).set({
+      const resourceFilter = this._resourceFilter = new osparc.dashboard.ResourceBrowserFilter(this._resourceType).set({
         marginTop: 20,
         maxWidth: this.self().SIDE_SPACER_WIDTH,
         width: this.self().SIDE_SPACER_WIDTH

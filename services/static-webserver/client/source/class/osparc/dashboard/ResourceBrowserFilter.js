@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 
-qx.Class.define("osparc.dashboard.ResourceFilter", {
+qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
   extend: qx.ui.core.Widget,
 
   construct: function(resourceType) {
@@ -57,7 +57,6 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
         case "study": {
           this._add(this.__createWorkspacesAndFoldersTree());
           this._add(this.__createTrashBin());
-          // this._add(this.__createResourceTypeContextButtons());
           this._add(filtersSpacer);
           const scrollView = new qx.ui.container.Scroll();
           scrollView.add(this.__createTagsFilterLayout());
@@ -67,7 +66,6 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
           break;
         }
         case "template": {
-          // this._add(this.__createResourceTypeContextButtons());
           this._add(filtersSpacer);
           this._add(this.__createSharedWithFilterLayout());
           const scrollView = new qx.ui.container.Scroll();
@@ -78,7 +76,6 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
           break;
         }
         case "service":
-          // this._add(this.__createResourceTypeContextButtons());
           this._add(filtersSpacer);
           this._add(this.__createSharedWithFilterLayout());
           this._add(this.__createAppTypeFilterLayout());
@@ -221,91 +218,6 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       });
     },
     /* /TRASH BIN */
-
-    /* RESOURCE TYPE CONTEXT */
-    __createResourceTypeContextButtons: function() {
-      const resourceTypeContextButtons = new qx.ui.container.Composite(new qx.ui.layout.VBox(2));
-
-      const studiesButton = this.__createStudiesButton().set({
-        value: this.__resourceType === "study",
-        visibility: this.__resourceType === "study" ? "excluded" : "visible",
-      });
-      resourceTypeContextButtons.add(studiesButton);
-
-      const permissions = osparc.data.Permissions.getInstance();
-      const templatesButton = this.__createTemplatesButton().set({
-        value: this.__resourceType === "template",
-      });
-      if (permissions.canDo("dashboard.templates.read")) {
-        resourceTypeContextButtons.add(templatesButton);
-      }
-
-      const servicesButton = this.__createServicesButton().set({
-        value: this.__resourceType === "service",
-      });
-      if (permissions.canDo("dashboard.services.read")) {
-        resourceTypeContextButtons.add(servicesButton);
-      }
-
-      return resourceTypeContextButtons;
-    },
-
-    __createStudiesButton: function() {
-      const studyAlias = osparc.product.Utils.getStudyAlias({
-        firstUpperCase: true,
-        plural: true
-      });
-      const studiesButton = new qx.ui.toolbar.RadioButton().set({
-        value: false,
-        appearance: "filter-toggle-button",
-        label: studyAlias,
-        icon: "@FontAwesome5Solid/file/16",
-        paddingLeft: 10, // align it with the context
-      });
-      osparc.utils.Utils.setIdToWidget(studiesButton, "studiesTabBtn");
-      studiesButton.addListener("tap", () => {
-        studiesButton.setValue(this.__resourceType === "study");
-        this.fireDataEvent("changeTab", "studiesTab");
-      });
-      return studiesButton;
-    },
-
-    __createTemplatesButton: function() {
-      const templateAlias = osparc.product.Utils.getTemplateAlias({
-        firstUpperCase: true,
-        plural: true
-      });
-      const templatesButton = new qx.ui.toolbar.RadioButton().set({
-        value: false,
-        appearance: "filter-toggle-button",
-        label: templateAlias,
-        icon: "@FontAwesome5Solid/copy/16",
-        paddingLeft: 10, // align it with the context
-      });
-      osparc.utils.Utils.setIdToWidget(templatesButton, "templatesTabBtn");
-      templatesButton.addListener("tap", () => {
-        templatesButton.setValue(this.__resourceType === "template");
-        this.fireDataEvent("changeTab", "templatesTab");
-      });
-      return templatesButton;
-    },
-
-    __createServicesButton: function() {
-      const servicesButton = new qx.ui.toolbar.RadioButton().set({
-        value: false,
-        appearance: "filter-toggle-button",
-        label: this.tr("Services"),
-        icon: "@FontAwesome5Solid/cogs/16",
-        paddingLeft: 10, // align it with the context
-      });
-      osparc.utils.Utils.setIdToWidget(servicesButton, "appsTabBtn");
-      servicesButton.addListener("tap", () => {
-        servicesButton.setValue(this.__resourceType === "service");
-        this.fireDataEvent("changeTab", "appsTab");
-      });
-      return servicesButton;
-    },
-    /* /RESOURCE TYPE CONTEXT */
 
     /* SHARED WITH */
     __createSharedWithFilterLayout: function() {
