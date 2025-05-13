@@ -183,6 +183,7 @@ async def patch_project_node(request: web.Request) -> web.Response:
     await _projects_service.patch_project_node(
         request.app,
         product_name=req_ctx.product_name,
+        product_api_base_url=get_api_base_url(request),
         user_id=req_ctx.user_id,
         project_id=path_params.project_id,
         node_id=path_params.node_id,
@@ -212,6 +213,7 @@ async def delete_node(request: web.Request) -> web.Response:
         req_ctx.user_id,
         NodeIDStr(path_params.node_id),
         req_ctx.product_name,
+        product_api_base_url=get_api_base_url(request),
     )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
