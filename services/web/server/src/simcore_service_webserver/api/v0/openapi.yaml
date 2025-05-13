@@ -2581,6 +2581,51 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_ComputationRunRestGet__'
+  /v0/computations/{project_id}/iterations:
+    get:
+      tags:
+      - computations
+      - projects
+      summary: List Computation Iterations
+      operationId: list_computation_iterations
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Project Id
+      - name: order_by
+        in: query
+        required: false
+        schema:
+          type: string
+          contentMediaType: application/json
+          contentSchema: {}
+          default: '{"field":"created","direction":"asc"}'
+          title: Order By
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Offset
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_ComputationRunRestGet__'
   /v0/computations/{project_id}/iterations/latest/tasks:
     get:
       tags:
