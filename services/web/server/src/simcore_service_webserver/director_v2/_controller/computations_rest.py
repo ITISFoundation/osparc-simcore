@@ -3,7 +3,9 @@ import logging
 from aiohttp import web
 from models_library.api_schemas_webserver.computations import (
     ComputationRunListQueryParams,
+    ComputationRunPathParams,
     ComputationRunRestGet,
+    ComputationRunWithFiltersListQueryParams,
     ComputationTaskListQueryParams,
     ComputationTaskPathParams,
     ComputationTaskRestGet,
@@ -49,8 +51,10 @@ class ComputationsRequestContext(RequestParameters):
 async def list_computations_latest_iteration(request: web.Request) -> web.Response:
 
     req_ctx = ComputationsRequestContext.model_validate(request)
-    query_params: ComputationRunListQueryParams = parse_request_query_parameters_as(
-        ComputationRunListQueryParams, request
+    query_params: ComputationRunWithFiltersListQueryParams = (
+        parse_request_query_parameters_as(
+            ComputationRunWithFiltersListQueryParams, request
+        )
     )
 
     total, items = await _computations_service.list_computations_latest_iteration(
@@ -59,6 +63,52 @@ async def list_computations_latest_iteration(request: web.Request) -> web.Respon
         user_id=req_ctx.user_id,
         # filters
         filter_only_running=query_params.filter_only_running,
+        # pagination
+        offset=query_params.offset,
+        limit=query_params.limit,
+        # ordering
+        order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
+    )
+
+    page = Page[ComputationRunRestGet].model_validate(
+        paginate_data(
+            chunk=[
+                ComputationRunRestGet.model_validate(run, from_attributes=True)
+                for run in items
+            ],
+            total=total,
+            limit=query_params.limit,
+            offset=query_params.offset,
+            request_url=request.url,
+        )
+    )
+
+    return web.Response(
+        text=page.model_dump_json(**RESPONSE_MODEL_POLICY),
+        content_type=MIMETYPE_APPLICATION_JSON,
+    )
+
+
+@routes.get(
+    f"/{VTAG}/computations/{{project_id}}/iterations",
+    name="list_computations_latest_iteration",
+)
+@login_required
+@permission_required("services.pipeline.*")
+@permission_required("project.read")
+async def list_computation_iterations(request: web.Request) -> web.Response:
+
+    req_ctx = ComputationsRequestContext.model_validate(request)
+    query_params: ComputationRunListQueryParams = parse_request_query_parameters_as(
+        ComputationRunListQueryParams, request
+    )
+    path_params = parse_request_path_parameters_as(ComputationRunPathParams, request)
+
+    total, items = await _computations_service.list_computation_iterations(
+        request.app,
+        product_name=req_ctx.product_name,
+        user_id=req_ctx.user_id,
+        project_id=path_params.project_id,
         # pagination
         offset=query_params.offset,
         limit=query_params.limit,

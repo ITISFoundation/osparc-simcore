@@ -5,7 +5,9 @@ from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.computations import (
     ComputationGet,
     ComputationPathParams,
+    ComputationRunPathParams,
     ComputationRunRestGet,
+    ComputationRunWithFiltersListQueryParams,
     ComputationStart,
     ComputationStarted,
     ComputationTaskRestGet,
@@ -68,7 +70,17 @@ async def stop_computation(_path: Annotated[ComputationPathParams, Depends()]): 
     response_model=Envelope[list[ComputationRunRestGet]],
 )
 async def list_computations_latest_iteration(
+    _query: Annotated[as_query(ComputationRunWithFiltersListQueryParams), Depends()],
+): ...
+
+
+@router.get(
+    "/computations/{project_id}/iterations",
+    response_model=Envelope[list[ComputationRunRestGet]],
+)
+async def list_computation_iterations(
     _query: Annotated[as_query(ComputationRunListQueryParams), Depends()],
+    _path: Annotated[ComputationRunPathParams, Depends()],
 ): ...
 
 
