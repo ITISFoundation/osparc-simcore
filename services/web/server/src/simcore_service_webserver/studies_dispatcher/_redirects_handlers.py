@@ -320,6 +320,7 @@ async def get_redirection_to_viewer(request: web.Request):
                 app=request.app
             ).STUDIES_DEFAULT_FILE_THUMBNAIL,
             product_name=products_web.get_product_name(request),
+            product_api_base_url=get_api_base_url(request),
         )
         await dynamic_scheduler_service.update_projects_networks(
             request.app, project_id=project_id
