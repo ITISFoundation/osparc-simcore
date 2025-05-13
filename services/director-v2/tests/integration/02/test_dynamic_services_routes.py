@@ -77,13 +77,11 @@ def minimal_configuration(
     simcore_services_ready: None,
     rabbit_service: RabbitSettings,
     storage_service: URL,
-):
-    ...
+): ...
 
 
 @pytest.fixture
-def mock_env(mock_env: EnvVarsDict, minimal_configuration) -> None:
-    ...
+def mock_env(mock_env: EnvVarsDict, minimal_configuration) -> None: ...
 
 
 @pytest.fixture
@@ -119,11 +117,13 @@ def start_request_data(
     service_resources: ServiceResourcesDict,
     ensure_swarm_and_networks: None,
     osparc_product_name: str,
+    osparc_product_api_base_url: str,
 ) -> dict[str, Any]:
     return {
         "user_id": user_id,
         "project_id": project_id,
         "product_name": osparc_product_name,
+        "product_api_base_url": osparc_product_api_base_url,
         "service_uuid": node_uuid,
         "service_key": dy_static_file_server_dynamic_sidecar_service["image"]["name"],
         "service_version": dy_static_file_server_dynamic_sidecar_service["image"][
