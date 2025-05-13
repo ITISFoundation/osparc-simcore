@@ -108,7 +108,7 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
         id: "credits",
         column: 9,
         label: qx.locale.Manager.tr("Credits"),
-        width: 70
+        width: 50
       },
       INFO: {
         id: "info",
