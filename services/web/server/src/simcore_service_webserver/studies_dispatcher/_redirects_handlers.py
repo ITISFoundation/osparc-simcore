@@ -19,7 +19,7 @@ from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..products import products_web
 from ..utils import compose_support_error_msg
-from ..utils_aiohttp import create_redirect_to_page_response
+from ..utils_aiohttp import create_redirect_to_page_response, get_api_base_url
 from ._catalog import ValidService, validate_requested_service
 from ._constants import MSG_UNEXPECTED_DISPATCH_ERROR
 from ._core import validate_requested_file, validate_requested_viewer
@@ -249,6 +249,7 @@ async def get_redirection_to_viewer(request: web.Request):
             viewer,
             file_params.download_link,
             product_name=products_web.get_product_name(request),
+            product_api_base_url=get_api_base_url(request),
         )
         await dynamic_scheduler_service.update_projects_networks(
             request.app, project_id=project_id
@@ -280,6 +281,7 @@ async def get_redirection_to_viewer(request: web.Request):
             user,
             service_info=_create_service_info_from(valid_service),
             product_name=products_web.get_product_name(request),
+            product_api_base_url=get_api_base_url(request),
         )
         await dynamic_scheduler_service.update_projects_networks(
             request.app, project_id=project_id

@@ -869,7 +869,11 @@ async def add_project_node(
     # also ensure the project is updated by director-v2 since services
     # are due to access comp_tasks at some point see [https://github.com/ITISFoundation/osparc-simcore/issues/3216]
     await director_v2_service.create_or_update_pipeline(
-        request.app, user_id, project["uuid"], product_name
+        request.app,
+        user_id,
+        project["uuid"],
+        product_name,
+        product_api_base_url,
     )
     await dynamic_scheduler_service.update_projects_networks(
         request.app, project_id=ProjectID(project["uuid"])
@@ -952,6 +956,7 @@ async def delete_project_node(
     user_id: UserID,
     node_uuid: NodeIDStr,
     product_name: ProductName,
+    product_api_base_url: str,
 ) -> None:
     log.debug(
         "deleting node %s in project %s for user %s", node_uuid, project_uuid, user_id
@@ -997,7 +1002,7 @@ async def delete_project_node(
     # also ensure the project is updated by director-v2 since services
     product_name = products_web.get_product_name(request)
     await director_v2_service.create_or_update_pipeline(
-        request.app, user_id, project_uuid, product_name
+        request.app, user_id, project_uuid, product_name, product_api_base_url
     )
     await dynamic_scheduler_service.update_projects_networks(
         request.app, project_id=project_uuid
@@ -1069,6 +1074,7 @@ async def patch_project_node(
     app: web.Application,
     *,
     product_name: ProductName,
+    product_api_base_url: str,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
@@ -1127,7 +1133,11 @@ async def patch_project_node(
 
     # 4. Make calls to director-v2 to keep data in sync (ex. comp_tasks DB table)
     await director_v2_service.create_or_update_pipeline(
-        app, user_id, project_id, product_name=product_name
+        app,
+        user_id,
+        project_id,
+        product_name=product_name,
+        product_api_base_url=product_api_base_url,
     )
     if _node_patch_exclude_unset.get("label"):
         await dynamic_scheduler_service.update_projects_networks(
