@@ -114,6 +114,19 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
     },
 
     // overridden
+    _applyTitle: function(value) {
+      if (value === null) {
+        return;
+      }
+      const label = this.getChildControl("title");
+      if (this.isPropertyInitialized("collabType") && this.getCollabType() === 0) {
+        label.setValue(this.tr("Public"));
+      } else {
+        label.setValue(value);
+      }
+    },
+
+    // overridden
     _applyThumbnail: function(value) {
       if (value === null) {
         const collabType = this.getCollabType();

@@ -90,7 +90,7 @@ qx.Class.define("osparc.ui.list.ListItem", {
 
     title: {
       check : "String",
-      apply : "__applyTitle",
+      apply : "_applyTitle",
       nullable : true
     },
 
@@ -228,7 +228,7 @@ qx.Class.define("osparc.ui.list.ListItem", {
       thumbnail.setSource(value);
     },
 
-    __applyTitle: function(value) {
+    _applyTitle: function(value) {
       if (value === null) {
         return;
       }

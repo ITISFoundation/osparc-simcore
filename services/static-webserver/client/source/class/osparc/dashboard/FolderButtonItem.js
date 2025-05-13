@@ -230,7 +230,8 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       }
     },
 
-    __applyTitle: function(value) {
+    // overridden
+    _applyTitle: function(value) {
       const label = this.getChildControl("title");
       label.set({
         value,
