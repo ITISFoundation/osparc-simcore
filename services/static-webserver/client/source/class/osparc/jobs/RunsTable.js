@@ -36,9 +36,9 @@ qx.Class.define("osparc.jobs.RunsTable", {
 
     Object.values(this.self().COLS).forEach(col => columnModel.setColumnWidth(col.column, col.width));
 
-    const iconPathStop = "osparc/circle-stop-text.svg";
-    const fontButtonRendererStop = new osparc.ui.table.cellrenderer.ImageButtonRenderer("stop", iconPathStop);
-    columnModel.setDataCellRenderer(this.self().COLS.ACTION_STOP.column, fontButtonRendererStop);
+    const iconPathStop = "osparc/circle-xmark-text.svg";
+    const fontButtonRendererStop = new osparc.ui.table.cellrenderer.ImageButtonRenderer("cancel", iconPathStop);
+    columnModel.setDataCellRenderer(this.self().COLS.ACTION_CANCEL.column, fontButtonRendererStop);
 
     this.__attachHandlers();
   },
@@ -89,8 +89,8 @@ qx.Class.define("osparc.jobs.RunsTable", {
         width: 130,
         sortable: true
       },
-      ACTION_STOP: {
-        id: "action_stop",
+      ACTION_CANCEL: {
+        id: "action_cancel",
         column: 6,
         label: "",
         width: 40
