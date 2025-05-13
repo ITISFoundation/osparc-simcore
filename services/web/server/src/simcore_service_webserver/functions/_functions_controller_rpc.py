@@ -1,5 +1,4 @@
 from aiohttp import web
-from functions_rpc.test_functions_controller_rpc import FunctionJobCollection
 from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.api_schemas_webserver.functions_wb_schema import (
     Function,
@@ -12,6 +11,7 @@ from models_library.api_schemas_webserver.functions_wb_schema import (
     FunctionInputSchema,
     FunctionJob,
     FunctionJobClassSpecificData,
+    FunctionJobCollection,
     FunctionJobCollectionIDNotFoundError,
     FunctionJobDB,
     FunctionJobID,
