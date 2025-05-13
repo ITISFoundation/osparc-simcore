@@ -253,6 +253,9 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       } else if (this.__resourceData && this.__resourceData["resourceType"] === "service") {
         // all users can share services with ProductEveryone
         showProductEveryone = true;
+      } else if (this.__resourceData && this.__resourceData["resourceType"] === "hypertool") {
+        // all users can share hypertool with ProductEveryone
+        showProductEveryone = true;
       }
       return showProductEveryone;
     },
