@@ -129,8 +129,8 @@ qx.Class.define("osparc.dashboard.AppBrowser", {
     },
 
     __itemClicked: function(card) {
-      const serviceData = card.getResourceData();
-      this._openResourceDetails(serviceData);
+      const appData = card.getResourceData();
+      this._openResourceDetails(appData);
       this.resetSelection();
     },
 
@@ -166,9 +166,9 @@ qx.Class.define("osparc.dashboard.AppBrowser", {
 
     _populateCardMenu: function(card) {
       const menu = card.getMenu();
-      const serviceData = card.getResourceData();
+      const appData = card.getResourceData();
 
-      const openButton = this._getOpenMenuButton(serviceData);
+      const openButton = this._getOpenMenuButton(appData);
       if (openButton) {
         menu.add(openButton);
       }
@@ -188,7 +188,7 @@ qx.Class.define("osparc.dashboard.AppBrowser", {
         this._toolbar.add(testDataButton);
       }
 
-      const addServiceButton = new qx.ui.form.Button(this.tr("Submit new service"), "@FontAwesome5Solid/plus-circle/14");
+      const addServiceButton = new qx.ui.form.Button(this.tr("Submit new app"), "@FontAwesome5Solid/plus-circle/14");
       addServiceButton.set({
         appearance: "form-button-outlined",
         visibility: hasRights ? "visible" : "excluded"
@@ -198,7 +198,7 @@ qx.Class.define("osparc.dashboard.AppBrowser", {
     },
 
     __displayServiceSubmissionForm: function(formData) {
-      const addServiceWindow = new osparc.ui.window.Window(this.tr("Submit a new service")).set({
+      const addServiceWindow = new osparc.ui.window.Window(this.tr("Submit a new app")).set({
         modal: true,
         autoDestroy: true,
         showMinimize: false,
