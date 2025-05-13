@@ -39,7 +39,11 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
 
     const iconPathInfo = "osparc/circle-info-text.svg";
     const fontButtonRendererInfo = new osparc.ui.table.cellrenderer.ImageButtonRenderer("info", iconPathInfo);
-    columnModel.setDataCellRenderer(this.self().COLS.IMAGE.column, fontButtonRendererInfo);
+    columnModel.setDataCellRenderer(this.self().COLS.INFO.column, fontButtonRendererInfo);
+
+    const iconPathLogs = "osparc/circle-info-text.svg";
+    const fontButtonRendererLogs = new osparc.ui.table.cellrenderer.ImageButtonRenderer("logs", iconPathLogs);
+    columnModel.setDataCellRenderer(this.self().COLS.LOGS.column, fontButtonRendererLogs);
 
     this.__attachHandlers();
   },
@@ -100,10 +104,22 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
         label: qx.locale.Manager.tr("Duration"),
         width: 70
       },
-      IMAGE: {
-        id: "image",
+      CREDITS: {
+        id: "credits",
         column: 9,
+        label: qx.locale.Manager.tr("Credits"),
+        width: 70
+      },
+      INFO: {
+        id: "info",
+        column: 10,
         label: qx.locale.Manager.tr("Info"),
+        width: 40
+      },
+      LOGS: {
+        id: "logs",
+        column: 11,
+        label: qx.locale.Manager.tr("Logs"),
         width: 40
       },
     }
