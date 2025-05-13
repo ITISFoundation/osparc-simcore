@@ -106,10 +106,10 @@ qx.Class.define("osparc.store.Jobs", {
       let job = this.getJob(subJobData["projectUuid"]);
       if (!job) {
         const jobs = this.getJobs();
-        const unknownJob = new osparc.data.Job({
+        job = new osparc.data.Job({
           "projectUuid": subJobData["projectUuid"],
         });
-        jobs.push(unknownJob);
+        jobs.push(job);
       }
       const subJob = job.addSubJob(subJobData);
       return subJob;
