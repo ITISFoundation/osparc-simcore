@@ -154,10 +154,10 @@ def iter_origins(request: web.Request) -> Iterator[tuple[str, str]]:
         for proto, host in zip(fwd_protos, fwd_hosts, strict=False):
             if (proto, host) not in seen:
                 seen.add((proto, host))
-                yield (proto, host)
+                yield (proto, host.partition(":")[0])  # strip port
 
-    # Fallback to request.host
-    yield request.url.scheme, f"{request.url.host}"
+    # fallback to request scheme/host
+    yield request.scheme, f"{request.host.partition(':')[0]}"
 
 
 def get_api_base_url(request: web.Request) -> str:
