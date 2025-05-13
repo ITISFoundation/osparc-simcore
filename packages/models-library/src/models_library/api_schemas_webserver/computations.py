@@ -81,7 +81,11 @@ ComputationRunListOrderParams = create_ordering_query_model_class(
 class ComputationRunListQueryParams(
     PageQueryParameters,
     ComputationRunListOrderParams,  # type: ignore[misc, valid-type]
-): ...
+):
+    filter_only_running: bool = Field(
+        default=False,
+        description="If true, only running computations are returned",
+    )
 
 
 class ComputationRunRestGet(OutputSchema):
@@ -92,6 +96,8 @@ class ComputationRunRestGet(OutputSchema):
     submitted_at: datetime
     started_at: datetime | None
     ended_at: datetime | None
+    root_project_name: str
+    project_custom_metadata: dict[str, Any]
 
 
 ### Computation Task

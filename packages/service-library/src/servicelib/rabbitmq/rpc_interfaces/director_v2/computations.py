@@ -33,6 +33,8 @@ async def list_computations_latest_iteration_page(
     *,
     product_name: ProductName,
     user_id: UserID,
+    # filters
+    filter_only_running: bool = False,
     # pagination
     offset: int = 0,
     limit: int = 20,
@@ -46,6 +48,7 @@ async def list_computations_latest_iteration_page(
         ),
         product_name=product_name,
         user_id=user_id,
+        filter_only_running=filter_only_running,
         offset=offset,
         limit=limit,
         order_by=order_by,

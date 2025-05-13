@@ -1,10 +1,10 @@
 from decimal import Decimal
 
 from aiohttp import web
-from models_library.api_schemas_directorv2.comp_runs import (
-    ComputationRunRpcGetPage,
+from models_library.computations import (
+    ComputationRunWithAttributes,
+    ComputationTaskWithAttributes,
 )
-from models_library.computations import ComputationTaskWithAttributes
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy
@@ -17,7 +17,14 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import (
 from servicelib.utils import limited_gather
 
 from ..products.products_service import is_product_billable
-from ..projects.api import check_user_project_permission, get_project_dict_legacy
+from ..projects.api import (
+    batch_get_project_name,
+    check_user_project_permission,
+    get_project_dict_legacy,
+)
+from ..projects.projects_metadata_service import (
+    get_project_custom_metadata_or_empty_dict,
+)
 from ..rabbitmq import get_rabbitmq_rpc_client
 
 
@@ -25,28 +32,71 @@ async def list_computations_latest_iteration(
     app: web.Application,
     product_name: ProductName,
     user_id: UserID,
+    # filters
+    filter_only_running: bool,  # noqa: FBT001
     # pagination
     offset: int,
     limit: NonNegativeInt,
     # ordering
     order_by: OrderBy,
-) -> ComputationRunRpcGetPage:
+) -> tuple[int, list[ComputationRunWithAttributes]]:
     """Returns the list of computations (only latest iterations)"""
     rpc_client = get_rabbitmq_rpc_client(app)
     _runs_get = await computations.list_computations_latest_iteration_page(
         rpc_client,
         product_name=product_name,
         user_id=user_id,
+        filter_only_running=filter_only_running,
         offset=offset,
         limit=limit,
         order_by=order_by,
     )
 
-    # NOTE: MD: Get project metadata
-    # NOTE: MD: Get Root project name
-    assert _runs_get  # nosec
+    # Get projects metadata (NOTE: MD: can be improved with a single batch call)
+    _projects_metadata = await limited_gather(
+        *[
+            get_project_custom_metadata_or_empty_dict(
+                app, project_uuid=item.project_uuid
+            )
+            for item in _runs_get.items
+        ],
+        limit=20,
+    )
 
-    return _runs_get
+    # Get Root project names
+    _projects_root_uuids: list[ProjectID] = []
+    for item in _runs_get.items:
+        if (
+            prj_root_id := item.info.get("project_metadata", {}).get(
+                "root_parent_project_id", None
+            )
+        ) is not None:
+            _projects_root_uuids.append(ProjectID(prj_root_id))
+        else:
+            _projects_root_uuids.append(item.project_uuid)
+
+    _projects_root_names = await batch_get_project_name(
+        app, projects_uuids=_projects_root_uuids
+    )
+
+    _computational_runs_output = [
+        ComputationRunWithAttributes(
+            project_uuid=item.project_uuid,
+            iteration=item.iteration,
+            state=item.state,
+            info=item.info,
+            submitted_at=item.submitted_at,
+            started_at=item.started_at,
+            ended_at=item.ended_at,
+            root_project_name=project_name,
+            project_custom_metadata=project_metadata,
+        )
+        for item, project_metadata, project_name in zip(
+            _runs_get.items, _projects_metadata, _projects_root_names, strict=True
+        )
+    ]
+
+    return _runs_get.total, _computational_runs_output
 
 
 async def list_computations_latest_iteration_tasks(

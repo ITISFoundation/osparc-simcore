@@ -22,3 +22,17 @@ class ComputationTaskWithAttributes(BaseModel):
     # Attributes added by the webserver
     node_name: str
     osparc_credits: Decimal | None
+
+
+class ComputationRunWithAttributes(BaseModel):
+    project_uuid: ProjectID
+    iteration: int
+    state: RunningState
+    info: dict[str, Any]
+    submitted_at: datetime
+    started_at: datetime | None
+    ended_at: datetime | None
+
+    # Attributes added by the webserver
+    root_project_name: str
+    project_custom_metadata: dict[str, Any]
