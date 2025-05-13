@@ -345,7 +345,7 @@ qx.Class.define("osparc.share.Collaborators", {
           item.addListener("removeMember", e => {
             const orgMember = e.getData();
             if (
-              ["study", "template"].includes(this._resourceType) &&
+              ["study", "template", "hypertool"].includes(this._resourceType) &&
               !osparc.share.CollaboratorsStudy.canCollaboratorBeRemoved(this._serializedDataCopy, orgMember["gid"])
             ) {
               let msg = this.tr("Collaborator can't be removed:");
@@ -373,7 +373,7 @@ qx.Class.define("osparc.share.Collaborators", {
     __getLeaveStudyButton: function() {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       if (
-        ["study", "template"].includes(this._resourceType) &&
+        ["study", "template", "hypertool"].includes(this._resourceType) &&
         osparc.share.CollaboratorsStudy.canCollaboratorBeRemoved(this._serializedDataCopy, myGid)
       ) {
         const leaveText = this.tr("Leave") + " " + osparc.product.Utils.getStudyAlias({

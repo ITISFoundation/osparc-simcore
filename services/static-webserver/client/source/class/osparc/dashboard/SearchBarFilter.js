@@ -45,6 +45,9 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     HEIGHT: 36,
 
     getSharedWithOptions: function(resourceType) {
+      if (resourceType === "service") {
+        resourceType = "app";
+      }
       return [{
         id: "show-all",
         label: qx.locale.Manager.tr("All") + " " + osparc.product.Utils.resourceTypeToAlias(resourceType, {
