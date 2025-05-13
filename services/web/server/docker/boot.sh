@@ -57,7 +57,7 @@ if [ "${SC_BOOT_MODE}" = "debug" ]; then
   exec python -m debugpy --listen 0.0.0.0:"${WEBSERVER_REMOTE_DEBUGGING_PORT}" -m gunicorn simcore_service_webserver.cli:app_factory \
     --log-level="${SERVER_LOG_LEVEL}" \
     --bind 0.0.0.0:8080 \
-    --worker-class aiohttp.GunicornWebWorker \
+    --worker-class aiohttp.GunicornUVLoopWebWorker \
     --workers="${WEBSERVER_GUNICORN_WORKERS:-1}" \
     --name="webserver_$(hostname)_$(date +'%Y-%m-%d_%T')_$$" \
     --access-logfile='-' \
@@ -70,7 +70,7 @@ else
   exec gunicorn simcore_service_webserver.cli:app_factory \
     --log-level="${SERVER_LOG_LEVEL}" \
     --bind 0.0.0.0:8080 \
-    --worker-class aiohttp.GunicornWebWorker \
+    --worker-class aiohttp.GunicornUVLoopWebWorker \
     --workers="${WEBSERVER_GUNICORN_WORKERS:-1}" \
     --name="webserver_$(hostname)_$(date +'%Y-%m-%d_%T')_$$" \
     --access-logfile='-' \
