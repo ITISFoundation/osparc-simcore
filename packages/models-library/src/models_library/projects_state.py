@@ -35,14 +35,18 @@ class RunningState(str, Enum):
     ABORTED = "ABORTED"
     WAITING_FOR_CLUSTER = "WAITING_FOR_CLUSTER"
 
-    def is_running(self) -> bool:
-        return self in (
+    @staticmethod
+    def list_running_states() -> list["RunningState"]:
+        return [
             RunningState.PUBLISHED,
             RunningState.PENDING,
             RunningState.WAITING_FOR_RESOURCES,
             RunningState.STARTED,
             RunningState.WAITING_FOR_CLUSTER,
-        )
+        ]
+
+    def is_running(self) -> bool:
+        return self in self.list_running_states()
 
 
 @unique
