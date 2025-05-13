@@ -114,6 +114,14 @@ class ProjectAtDB(BaseProjectModel):
     project_type: Annotated[
         ProjectType, Field(alias="type", description="The project type")
     ]
+    template_type: Annotated[
+        ProjectTemplateType | None,
+        Field(
+            alias="templateType",
+            description="The project template type",
+            examples=["TEMPLATE", "TUTORIAL", "HYPERTOOL"],
+        ),
+    ]
 
     prj_owner: Annotated[int | None, Field(description="The project owner id")]
 
