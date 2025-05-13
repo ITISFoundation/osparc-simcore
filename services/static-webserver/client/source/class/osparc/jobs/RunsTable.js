@@ -157,7 +157,7 @@ qx.Class.define("osparc.jobs.RunsTable", {
           };
           osparc.data.Resources.fetch("runPipeline", "stopPipeline", params)
             .then(() => {
-              const msg = qx.locale.Manager.tr("Stopping pipeline {0}", rowData["projectName"]);
+              const msg = this.tr("Stopping pipeline");
               osparc.FlashMessenger.logAs(msg, "INFO");
             })
             .catch(err => osparc.FlashMessenger.logError(err));
