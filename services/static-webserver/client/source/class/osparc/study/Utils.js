@@ -258,10 +258,6 @@ qx.Class.define("osparc.study.Utils", {
     },
 
     canCreateFunction: function(workbench) {
-      if (!osparc.store.StaticInfo.getInstance().isDevFeaturesEnabled()) {
-        return false;
-      }
-
       // in order to create a function, the pipeline needs:
       // - at least one parameter (or file-picker (file type parameter))
       // - at least one probe
