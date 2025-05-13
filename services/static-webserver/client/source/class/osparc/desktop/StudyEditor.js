@@ -674,7 +674,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         },
       };
       osparc.data.Resources.fetch("runPipeline", "stopPipeline", params)
-        .then(() => this.getStudyLogger().debug(null, "Pipeline aborting"), this)
+        .then(() => this.getStudyLogger().debug(null, "Stopping pipeline"), this)
         .catch(() => this.getStudyLogger().error(null, "Error stopping pipeline"), this);
     },
     // ------------------ START/STOP PIPELINE ------------------
