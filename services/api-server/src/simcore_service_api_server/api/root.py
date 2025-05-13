@@ -21,6 +21,9 @@ from .routes import (
 )
 
 _SOLVERS_PREFIX: Final[str] = "/solvers"
+_FUNCTIONS_PREFIX: Final[str] = "/functions"
+_FUNCTION_JOBS_PREFIX: Final[str] = "/function_jobs"
+_FUNCTION_JOB_COLLECTIONS_PREFIX: Final[str] = "/function_job_collections"
 
 
 def create_router(settings: ApplicationSettings):
@@ -43,17 +46,14 @@ def create_router(settings: ApplicationSettings):
     router.include_router(studies.router, tags=["studies"], prefix="/studies")
     router.include_router(studies_jobs.router, tags=["studies"], prefix="/studies")
     router.include_router(
-        functions_routes.function_router, tags=["functions"], prefix="/functions"
-    )
-    router.include_router(
         functions_routes.function_job_router,
         tags=["function_jobs"],
-        prefix="/function_jobs",
+        prefix=_FUNCTION_JOBS_PREFIX,
     )
     router.include_router(
         functions_routes.function_job_collections_router,
         tags=["function_job_collections"],
-        prefix="/function_job_collections",
+        prefix=_FUNCTION_JOB_COLLECTIONS_PREFIX,
     )
     router.include_router(wallets.router, tags=["wallets"], prefix="/wallets")
     router.include_router(_credits.router, tags=["credits"], prefix="/credits")
@@ -61,7 +61,7 @@ def create_router(settings: ApplicationSettings):
         licensed_items.router, tags=["licensed-items"], prefix="/licensed-items"
     )
     router.include_router(
-        functions_routes.function_router, tags=["functions"], prefix="/functions"
+        functions_routes.function_router, tags=["functions"], prefix=_FUNCTIONS_PREFIX
     )
 
     # NOTE: multiple-files upload is currently disabled
