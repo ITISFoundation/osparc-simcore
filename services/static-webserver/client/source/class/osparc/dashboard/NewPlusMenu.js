@@ -160,12 +160,10 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
 
     __addItems: function() {
       this.__addUIConfigItems();
-      if (osparc.store.StaticInfo.getInstance().isDevFeaturesEnabled()) {
-        if (osparc.product.Utils.isS4LProduct()) {
-          this.__addHypertools();
-        }
-        this.__addOtherTabsAccess();
+      if (osparc.product.Utils.isS4LProduct()) {
+        this.__addHypertools();
       }
+      this.__addOtherTabsAccess();
       this.getChildControl("new-folder");
     },
 

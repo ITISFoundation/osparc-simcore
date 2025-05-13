@@ -1516,10 +1516,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const duplicateStudyButton = this.__getDuplicateMenuButton(studyData);
       menu.add(duplicateStudyButton);
 
-      if (osparc.product.Utils.hasConvertToPipelineEnabled()) {
-        const convertToPipelineButton = this.__getConvertToPipelineMenuButton(studyData);
-        menu.add(convertToPipelineButton);
-      }
+      const convertToPipelineButton = this.__getConvertToPipelineMenuButton(studyData);
+      menu.add(convertToPipelineButton);
 
       if (osparc.product.Utils.hasExportCMisEnabled()) {
         const exportStudyButton = this.__getExportCMisMenuButton(studyData);

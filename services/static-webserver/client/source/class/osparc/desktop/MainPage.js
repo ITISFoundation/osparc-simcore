@@ -69,9 +69,7 @@ qx.Class.define("osparc.desktop.MainPage", {
     preloadPromises.push(osparc.store.Tags.getInstance().fetchTags());
     preloadPromises.push(osparc.store.Products.getInstance().fetchUiConfig());
     preloadPromises.push(osparc.store.PollTasks.getInstance().fetchTasks());
-    if (osparc.utils.DisabledPlugins.isJobsEnabled()) {
-      preloadPromises.push(osparc.store.Jobs.getInstance().fetchJobs());
-    }
+    preloadPromises.push(osparc.store.Jobs.getInstance().fetchJobs());
     Promise.all(preloadPromises)
       .then(() => {
         const mainStack = this.__createMainStack();

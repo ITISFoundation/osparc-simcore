@@ -222,10 +222,6 @@ qx.Class.define("osparc.product.Utils", {
       return "REGISTER";
     },
 
-    hasConvertToPipelineEnabled: function() {
-      return osparc.store.StaticInfo.getInstance().isDevFeaturesEnabled();
-    },
-
     // oSPARC only
     hasExportCMisEnabled: function() {
       const product = this.getProductName();

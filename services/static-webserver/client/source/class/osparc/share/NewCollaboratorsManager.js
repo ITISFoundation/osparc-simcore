@@ -34,10 +34,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
     this.__potentialCollaborators = {};
     this.__reloadPotentialCollaborators();
 
-    this.__shareWithEmailEnabled = false;
-    if (this.__resourceData["resourceType"] === "study") {
-      this.__shareWithEmailEnabled = osparc.utils.DisabledPlugins.isShareWithEmailEnabled();
-    }
+    this.__shareWithEmailEnabled = this.__resourceData["resourceType"] === "study";
 
     if (preselectCollaboratorGids && preselectCollaboratorGids.length) {
       preselectCollaboratorGids.forEach(preselectCollaboratorGid => {
