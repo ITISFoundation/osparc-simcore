@@ -145,6 +145,7 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
     },
 
     __handleButtonClick: function(action, row) {
+      this.resetSelection();
       const rowData = this.getTableModel().getRowData(row);
       switch (action) {
         case "info": {
@@ -159,6 +160,23 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
           const jobInfo = new osparc.jobs.Info(subJob.getImage());
           const win = osparc.jobs.Info.popUpInWindow(jobInfo);
           win.setCaption(rowData["nodeName"]);
+          break;
+        }
+        case "logs": {
+          const job = osparc.store.Jobs.getInstance().getJob(rowData["projectUuid"]);
+          if (!job) {
+            return;
+          }
+          const subJob = job.getSubJob(rowData["nodeId"]);
+          if (!subJob) {
+            return;
+          }
+          const logDownloadLink = subJob.getLogDownloadLink()
+          if (logDownloadLink) {
+            osparc.utils.Utils.downloadLink(logDownloadLink, "GET", rowData["nodeName"] + ".logs");
+          } else {
+            osparc.component.message.FlashMessenger.getInstance().logAsWarning(this.tr("No logs available"));
+          }
           break;
         }
         default:
