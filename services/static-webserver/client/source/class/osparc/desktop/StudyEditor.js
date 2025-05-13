@@ -666,15 +666,16 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __requestStopPipeline: function(studyId) {
-      const url = "/computations/" + encodeURIComponent(studyId) + ":stop";
-      const req = new osparc.io.request.ApiRequest(url, "POST");
-      req.addListener("success", () => this.getStudyLogger().debug(null, "Pipeline aborting"), this);
-      req.addListener("error", () => this.getStudyLogger().error(null, "Error stopping pipeline"), this);
-      req.addListener("fail", () => this.getStudyLogger().error(null, "Failed stopping pipeline"), this);
-      req.send();
-
       this.getStudyLogger().info(null, "Stopping pipeline");
-      return true;
+
+      const params = {
+        url: {
+          "studyId": studyId
+        },
+      };
+      osparc.data.Resources.fetch("runPipeline", "stopPipeline", params)
+        .then(() => this.getStudyLogger().debug(null, "Pipeline aborting"), this)
+        .catch(() => this.getStudyLogger().error(null, "Error stopping pipeline"), this);
     },
     // ------------------ START/STOP PIPELINE ------------------
 

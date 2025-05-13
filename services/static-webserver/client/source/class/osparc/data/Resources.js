@@ -341,6 +341,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "POST",
             url: statics.API + "/computations/{studyId}:start"
           },
+          stopPipeline: {
+            method: "POST",
+            url: statics.API + "/computations/{studyId}:stop"
+          },
         }
       },
       "jobsActive": {
