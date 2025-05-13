@@ -17,8 +17,7 @@ def app_environment(
         monkeypatch,
         {
             **app_environment,  # WARNING: AFTER env_devel_dict because HOST are set to 127.0.0.1 in here
-            "WEBSERVER_DB_LISTENER": "0",
             "WEBSERVER_DEV_FEATURES_ENABLED": "1",
-            "WEBSERVER_GARBAGE_COLLECTOR": "null",
+            "WEBSERVER_FUNCTIONS": "1",
         },
     )
