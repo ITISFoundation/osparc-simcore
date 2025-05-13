@@ -14275,6 +14275,12 @@ components:
           type: string
           format: uuid
           title: Uuid
+        type:
+          $ref: '#/components/schemas/ProjectType'
+        templateType:
+          anyOf:
+          - $ref: '#/components/schemas/ProjectTemplateType'
+          - type: 'null'
         name:
           type: string
           title: Name
@@ -14375,6 +14381,8 @@ components:
       type: object
       required:
       - uuid
+      - type
+      - templateType
       - name
       - description
       - thumbnail
@@ -14465,6 +14473,12 @@ components:
           type: string
           format: uuid
           title: Uuid
+        type:
+          $ref: '#/components/schemas/ProjectType'
+        templateType:
+          anyOf:
+          - $ref: '#/components/schemas/ProjectTemplateType'
+          - type: 'null'
         name:
           type: string
           title: Name
@@ -14565,6 +14579,8 @@ components:
       type: object
       required:
       - uuid
+      - type
+      - templateType
       - name
       - description
       - thumbnail
@@ -14839,6 +14855,19 @@ components:
       - OPENED
       - MAINTAINING
       title: ProjectStatus
+    ProjectTemplateType:
+      type: string
+      enum:
+      - TEMPLATE
+      - TUTORIAL
+      - HYPERTOOL
+      title: ProjectTemplateType
+    ProjectType:
+      type: string
+      enum:
+      - TEMPLATE
+      - STANDARD
+      title: ProjectType
     ProjectTypeAPI:
       type: string
       enum:
