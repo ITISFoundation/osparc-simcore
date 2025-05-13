@@ -23,7 +23,7 @@ qx.Class.define("osparc.data.Job", {
 
     this.set({
       projectUuid: jobData["projectUuid"],
-      state: jobData["state"],
+      state: jobData["state"] || "UNKNOWN",
       submittedAt: jobData["submittedAt"] ? new Date(jobData["submittedAt"]) : null,
       startedAt: jobData["startedAt"] ? new Date(jobData["startedAt"]) : null,
       endedAt: jobData["endedAt"] ? new Date(jobData["endedAt"]) : null,
@@ -76,13 +76,14 @@ qx.Class.define("osparc.data.Job", {
 
     info: {
       check: "Object",
-      nullable: false,
+      nullable: true,
       init: null,
     },
   },
 
   statics: {
     STATUS_LABELS: {
+      "UNKNOWN": "Unknown",
       "NOT_STARTED": "Not Started",
       "PUBLISHED": "Published",
       "PENDING": "Pending",

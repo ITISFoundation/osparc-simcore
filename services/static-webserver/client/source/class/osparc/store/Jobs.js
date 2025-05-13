@@ -103,13 +103,16 @@ qx.Class.define("osparc.store.Jobs", {
     },
 
     addSubJob: function(subJobData) {
-      const jobs = this.getJobs();
-      const jobFound = jobs.find(job => job.getProjectUuid() === subJobData["projectUuid"]);
-      if (jobFound) {
-        const subJob = jobFound.addSubJob(subJobData);
-        return subJob;
+      let job = this.getJob(subJobData["projectUuid"]);
+      if (!job) {
+        const jobs = this.getJobs();
+        const unknownJob = new osparc.data.Job({
+          "projectUuid": subJobData["projectUuid"],
+        });
+        jobs.push(unknownJob);
       }
-      return null;
+      const subJob = job.addSubJob(subJobData);
+      return subJob;
     },
 
     getJob: function(projectUuid) {
