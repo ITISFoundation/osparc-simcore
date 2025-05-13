@@ -15,6 +15,7 @@ qx.Class.define("osparc.filter.CollaboratorToggleButton", {
 
   construct: function(collaborator) {
     this.base(arguments);
+
     this._setLayout(new qx.ui.layout.HBox(8).set({
       alignY: "middle"
     }));
@@ -23,11 +24,15 @@ qx.Class.define("osparc.filter.CollaboratorToggleButton", {
       appearance: "tagbutton"
     });
 
-    let label = collaborator.getLabel();
-    if ("getEmail" in collaborator && collaborator.getEmail()) {
-      label += ` (${collaborator.getEmail()})`;
+    if (collaborator["collabType"] === 0) {
+      this.setLabel(this.tr("Public"));
+    } else {
+      let label = collaborator.getLabel();
+      if ("getEmail" in collaborator && collaborator.getEmail()) {
+        label += ` (${collaborator.getEmail()})`;
+      }
+      this.setLabel(label);
     }
-    this.setLabel(label);
 
     if (collaborator.getDescription()) {
       const ttt = collaborator.getLabel() + "<br>" + collaborator.getDescription();
