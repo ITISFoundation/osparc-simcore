@@ -99,10 +99,20 @@ qx.Class.define("osparc.dashboard.AppBrowser", {
 
     _updateServiceData: function(serviceData) {
       serviceData["resourceType"] = "service";
-      const servicesList = this._resourcesList;
-      const index = servicesList.findIndex(service => service["key"] === serviceData["key"] && service["version"] === serviceData["version"]);
+      const appsList = this._resourcesList;
+      const index = appsList.findIndex(service => service["key"] === serviceData["key"] && service["version"] === serviceData["version"]);
       if (index !== -1) {
-        servicesList[index] = serviceData;
+        appsList[index] = serviceData;
+        this._reloadCards();
+      }
+    },
+
+    _updateHypertoolData: function(hypertoolData) {
+      hypertoolData["resourceType"] = "hypertool";
+      const appsList = this._resourcesList;
+      const index = appsList.findIndex(service => service["uuid"] === hypertoolData["uuid"]);
+      if (index !== -1) {
+        appsList[index] = hypertoolData;
         this._reloadCards();
       }
     },

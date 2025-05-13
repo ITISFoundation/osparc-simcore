@@ -288,6 +288,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       resourcesContainer.addListener("updateStudy", e => this._updateStudyData(e.getData()));
       resourcesContainer.addListener("updateTemplate", e => this._updateTemplateData(e.getData()));
       resourcesContainer.addListener("updateService", e => this._updateServiceData(e.getData()));
+      resourcesContainer.addListener("updateHypertool", e => this._updateHypertoolData(e.getData()));
       resourcesContainer.addListener("publishTemplate", e => this.fireDataEvent("publishTemplate", e.getData()));
       resourcesContainer.addListener("tagClicked", e => this._searchBarFilter.addTagActiveFilter(e.getData()));
       resourcesContainer.addListener("emptyStudyClicked", e => this._deleteResourceRequested(e.getData()));
@@ -529,6 +530,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       throw new Error("Abstract method called!");
     },
 
+    _updateHypertoolData: function(serviceData) {
+      throw new Error("Abstract method called!");
+    },
+
     _startStudyById: function(studyId, openCB, cancelCB, isStudyCreation = false) {
       if (isStudyCreation) {
         this.fireDataEvent("changeTab", "studiesTab");
@@ -761,6 +766,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       resourceDetails.addListener("updateStudy", e => this._updateStudyData(e.getData()));
       resourceDetails.addListener("updateTemplate", e => this._updateTemplateData(e.getData()));
       resourceDetails.addListener("updateService", e => this._updateServiceData(e.getData()));
+      resourceDetails.addListener("updateHypertool", e => this._updateHypertoolData(e.getData()));
       resourceDetails.addListener("publishTemplate", e => {
         win.close();
         this.fireDataEvent("publishTemplate", e.getData());
