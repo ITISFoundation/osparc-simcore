@@ -276,6 +276,7 @@ async def current_study(
         user_id=current_user["id"],
         start_pipeline=False,
         product_name=osparc_product_name,
+        product_api_base_url=osparc_product_name,
     )
 
     return project_at_db
