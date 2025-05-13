@@ -8,15 +8,20 @@ from models_library.api_schemas_webserver.projects import ProjectPatch
 from models_library.api_schemas_webserver.projects_ui import StudyUI
 from models_library.folders import FolderID
 from models_library.groups import GroupID
-from models_library.projects import ClassifierID, NodesDict, ProjectID
+from models_library.projects import (
+    ClassifierID,
+    NodesDict,
+    ProjectID,
+    ProjectTemplateType,
+    ProjectType,
+)
 from models_library.users import UserID
 from models_library.utils.common_validators import (
     empty_str_to_none_pre_validator,
     none_to_empty_str_pre_validator,
 )
 from models_library.workspaces import WorkspaceID
-from pydantic import BaseModel, ConfigDict, HttpUrl, field_validator
-from simcore_postgres_database.models.projects import ProjectType
+from pydantic import BaseModel, ConfigDict, HttpUrl, ValidationInfo, field_validator
 
 ProjectDict: TypeAlias = dict[str, Any]
 ProjectProxy: TypeAlias = RowProxy
@@ -40,6 +45,7 @@ class ProjectDBGet(BaseModel):
     # NOTE: model intented to read one-to-one columns of the `projects` table
     id: int
     type: ProjectType
+    template_type: ProjectTemplateType | None
     uuid: ProjectID
     name: str
     description: str
@@ -69,6 +75,20 @@ class ProjectDBGet(BaseModel):
     _none_description_is_empty = field_validator("description", mode="before")(
         none_to_empty_str_pre_validator
     )
+
+    @field_validator("template_type")
+    @classmethod
+    def validate_template_type(
+        cls, v: ProjectTemplateType | None, info: ValidationInfo
+    ) -> ProjectTemplateType | None:
+        type_value = info.data.get("type")
+        if type_value == ProjectType.STANDARD and v is not None:
+            msg = "template_type must be None when type is STANDARD"
+            raise ValueError(msg)
+        if type_value == ProjectType.TEMPLATE and v is None:
+            msg = "template_type must not be None when type is TEMPLATE"
+            raise ValueError(msg)
+        return v
 
 
 class ProjectJobDBGet(ProjectDBGet):
