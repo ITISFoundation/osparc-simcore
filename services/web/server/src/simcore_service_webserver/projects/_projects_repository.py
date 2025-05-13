@@ -128,6 +128,7 @@ async def batch_get_project_name(
 
     query = (
         sql.select(
+            projects.c.uuid,
             projects.c.name,
         )
         .select_from(projects)
@@ -145,7 +146,7 @@ async def batch_get_project_name(
     )
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(query)
-        rows = {row.uuid: row.trashed_by_primary_gid async for row in result}
+        rows = {row.uuid: row.name async for row in result}
 
     return [rows.get(project_uuid) for project_uuid in projects_uuids_str]
 

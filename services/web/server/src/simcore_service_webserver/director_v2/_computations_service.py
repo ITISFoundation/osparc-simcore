@@ -22,7 +22,9 @@ from ..projects.api import (
     check_user_project_permission,
     get_project_dict_legacy,
 )
-from ..projects.projects_metadata_service import get_project_custom_metadata
+from ..projects.projects_metadata_service import (
+    get_project_custom_metadata_or_empty_dict,
+)
 from ..rabbitmq import get_rabbitmq_rpc_client
 
 
@@ -50,10 +52,12 @@ async def list_computations_latest_iteration(
         order_by=order_by,
     )
 
-    # Get projects metadata
+    # Get projects metadata (NOTE: MD: can be improved with a single batch call)
     _projects_metadata = await limited_gather(
         *[
-            get_project_custom_metadata(app, project_uuid=item.project_uuid)
+            get_project_custom_metadata_or_empty_dict(
+                app, project_uuid=item.project_uuid
+            )
             for item in _runs_get.items
         ],
         limit=20,

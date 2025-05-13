@@ -11,6 +11,7 @@ from pydantic import TypeAdapter
 from ..db.plugin import get_database_engine
 from . import _metadata_repository
 from ._access_rights_service import validate_project_ownership
+from .exceptions import ProjectNotFoundError
 
 _logger = logging.getLogger(__name__)
 
@@ -28,9 +29,24 @@ async def get_project_custom_metadata_for_user(
 async def get_project_custom_metadata(
     app: web.Application, project_uuid: ProjectID
 ) -> MetadataDict:
+    """Can Raise ProjectNotFoundError"""
     return await _metadata_repository.get_project_custom_metadata(
         engine=get_database_engine(app), project_uuid=project_uuid
     )
+
+
+async def get_project_custom_metadata_or_empty_dict(
+    app: web.Application, project_uuid: ProjectID
+) -> MetadataDict:
+    try:
+        output = await _metadata_repository.get_project_custom_metadata(
+            engine=get_database_engine(app), project_uuid=project_uuid
+        )
+    except ProjectNotFoundError:
+        # This is a valid case when the project is not found
+        # but we still want to return an empty dict
+        output = {}
+    return output
 
 
 async def set_project_custom_metadata(
