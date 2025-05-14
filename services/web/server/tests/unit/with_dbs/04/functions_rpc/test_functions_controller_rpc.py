@@ -240,6 +240,56 @@ async def test_list_functions_with_pagination(
     assert page_info.total == TOTAL_FUNCTIONS
 
 
+async def test_update_function_title(
+    client: TestClient, rpc_client: RabbitMQRPCClient, mock_function: ProjectFunction
+):
+    assert client.app
+    # Register the function first
+    registered_function = await functions_rpc.register_function(
+        rabbitmq_rpc_client=rpc_client, function=mock_function
+    )
+    assert registered_function.uid is not None
+
+    # Update the function's title
+    updated_title = "Updated Function Title"
+    registered_function.title = updated_title
+    updated_function = await functions_rpc.update_function_title(
+        rabbitmq_rpc_client=rpc_client,
+        function_id=registered_function.uid,
+        title=updated_title,
+    )
+
+    assert isinstance(updated_function, ProjectFunction)
+    assert updated_function.uid == registered_function.uid
+    # Assert the updated function's title matches the new title
+    assert updated_function.title == updated_title
+
+
+async def test_update_function_description(
+    client: TestClient, rpc_client: RabbitMQRPCClient, mock_function: ProjectFunction
+):
+    assert client.app
+    # Register the function first
+    registered_function = await functions_rpc.register_function(
+        rabbitmq_rpc_client=rpc_client, function=mock_function
+    )
+    assert registered_function.uid is not None
+
+    # Update the function's description
+    updated_description = "Updated Function Description"
+    registered_function.description = updated_description
+    updated_function = await functions_rpc.update_function_description(
+        rabbitmq_rpc_client=rpc_client,
+        function_id=registered_function.uid,
+        description=updated_description,
+    )
+
+    assert isinstance(updated_function, ProjectFunction)
+    assert updated_function.uid == registered_function.uid
+    # Assert the updated function's description matches the new description
+    assert updated_function.description == updated_description
+
+
 async def test_get_function_input_schema(
     client: TestClient, rpc_client: RabbitMQRPCClient, mock_function: ProjectFunction
 ):

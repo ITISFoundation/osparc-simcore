@@ -149,6 +149,46 @@ async def list_function_job_collections(
     )
 
 
+@function_router.patch(
+    "/{function_id:uuid}/title",
+    response_model=RegisteredFunction,
+    responses={**_COMMON_FUNCTION_ERROR_RESPONSES},
+    description="Update function",
+)
+async def update_function_title(
+    function_id: FunctionID,
+    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
+    title: str,
+) -> RegisteredFunction:
+    returned_function = await wb_api_rpc.update_function_title(
+        function_id=function_id, title=title
+    )
+    assert (
+        returned_function.title == title
+    ), f"Function title was not updated. Expected {title} but got {returned_function.title}"  # nosec
+    return returned_function
+
+
+@function_router.patch(
+    "/{function_id:uuid}/description",
+    response_model=RegisteredFunction,
+    responses={**_COMMON_FUNCTION_ERROR_RESPONSES},
+    description="Update function",
+)
+async def update_function_description(
+    function_id: FunctionID,
+    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
+    description: str,
+) -> RegisteredFunction:
+    returned_function = await wb_api_rpc.update_function_description(
+        function_id=function_id, description=description
+    )
+    assert (
+        returned_function.description == description
+    ), f"Function description was not updated. Expected {description} but got {returned_function.description}"  # nosec
+    return returned_function
+
+
 def _join_inputs(
     default_inputs: FunctionInputs | None,
     function_inputs: FunctionInputs | None,

@@ -171,6 +171,38 @@ async def list_function_job_collections(
 
 
 @log_decorator(_logger, level=logging.DEBUG)
+async def update_function_title(
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    *,
+    function_id: FunctionID,
+    title: str,
+) -> RegisteredFunction:
+    result = await rabbitmq_rpc_client.request(
+        WEBSERVER_RPC_NAMESPACE,
+        TypeAdapter(RPCMethodName).validate_python("update_function_title"),
+        function_id=function_id,
+        title=title,
+    )
+    return TypeAdapter(RegisteredFunction).validate_python(result)
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+async def update_function_description(
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    *,
+    function_id: FunctionID,
+    description: str,
+) -> RegisteredFunction:
+    result = await rabbitmq_rpc_client.request(
+        WEBSERVER_RPC_NAMESPACE,
+        TypeAdapter(RPCMethodName).validate_python("update_function_description"),
+        function_id=function_id,
+        description=description,
+    )
+    return TypeAdapter(RegisteredFunction).validate_python(result)
+
+
+@log_decorator(_logger, level=logging.DEBUG)
 async def run_function(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,

@@ -228,6 +228,24 @@ class FakeWbApiRpc:
                 status_code=404, detail="Function job collection not found"
             )
 
+    async def update_function_title(
+        self, function_id: str, title: str
+    ) -> RegisteredFunction:
+        # Mimic updating the title of a function
+        if function_id not in self._functions:
+            raise HTTPException(status_code=404, detail="Function not found")
+        self._functions[function_id].title = title
+        return self._functions[function_id]
+
+    async def update_function_description(
+        self, function_id: str, description: str
+    ) -> RegisteredFunction:
+        # Mimic updating the description of a function
+        if function_id not in self._functions:
+            raise HTTPException(status_code=404, detail="Function not found")
+        self._functions[function_id].description = description
+        return self._functions[function_id]
+
 
 def test_register_function(api_app) -> None:
     client = TestClient(api_app)
@@ -333,6 +351,62 @@ def test_list_functions(api_app: FastAPI) -> None:
     data = response.json()["items"]
     assert len(data) > 0
     assert data[0]["title"] == sample_function["title"]
+
+
+def test_update_function_title(api_app: FastAPI) -> None:
+    client = TestClient(api_app)
+    project_id = str(uuid4())
+    # Register a sample function
+    sample_function = {
+        "uid": None,
+        "title": "example_function",
+        "function_class": "project",
+        "project_id": project_id,
+        "description": "An example function",
+        "input_schema": JSONFunctionInputSchema().model_dump(),
+        "output_schema": JSONFunctionOutputSchema().model_dump(),
+        "default_inputs": None,
+    }
+    post_response = client.post("/functions", json=sample_function)
+    assert post_response.status_code == 200
+    data = post_response.json()
+    function_id = data["uid"]
+
+    # Update the function title
+    updated_title = {"title": "updated_example_function"}
+    response = client.patch(f"/functions/{function_id}/title", params=updated_title)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["title"] == updated_title["title"]
+
+
+def test_update_function_description(api_app: FastAPI) -> None:
+    client = TestClient(api_app)
+    project_id = str(uuid4())
+    # Register a sample function
+    sample_function = {
+        "uid": None,
+        "title": "example_function",
+        "function_class": "project",
+        "project_id": project_id,
+        "description": "An example function",
+        "input_schema": JSONFunctionInputSchema().model_dump(),
+        "output_schema": JSONFunctionOutputSchema().model_dump(),
+        "default_inputs": None,
+    }
+    post_response = client.post("/functions", json=sample_function)
+    assert post_response.status_code == 200
+    data = post_response.json()
+    function_id = data["uid"]
+
+    # Update the function description
+    updated_description = {"description": "updated_example_function"}
+    response = client.patch(
+        f"/functions/{function_id}/description", params=updated_description
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["description"] == updated_description["description"]
 
 
 def test_get_function_input_schema(api_app: FastAPI) -> None:

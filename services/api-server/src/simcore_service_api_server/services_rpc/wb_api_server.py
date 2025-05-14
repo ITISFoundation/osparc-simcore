@@ -328,6 +328,24 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             function_job_id=function_job_id,
         )
 
+    async def update_function_title(
+        self, *, function_id: FunctionID, title: str
+    ) -> RegisteredFunction:
+        return await functions_rpc_interface.update_function_title(
+            self._client,
+            function_id=function_id,
+            title=title,
+        )
+
+    async def update_function_description(
+        self, *, function_id: FunctionID, description: str
+    ) -> RegisteredFunction:
+        return await functions_rpc_interface.update_function_description(
+            self._client,
+            function_id=function_id,
+            description=description,
+        )
+
     async def delete_function_job(self, *, function_job_id: FunctionJobID) -> None:
         return await functions_rpc_interface.delete_function_job(
             self._client,

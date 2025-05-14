@@ -239,6 +239,32 @@ async def delete_function_job_collection(
 
 
 @router.expose()
+async def update_function_title(
+    app: web.Application, *, function_id: FunctionID, title: str
+) -> RegisteredFunction:
+    assert app
+    updated_function = await _functions_repository.update_function_title(
+        app=app,
+        function_id=function_id,
+        title=title,
+    )
+    return _decode_function(updated_function)
+
+
+@router.expose(reraise_if_error_type=(FunctionIDNotFoundError,))
+async def update_function_description(
+    app: web.Application, *, function_id: FunctionID, description: str
+) -> RegisteredFunction:
+    assert app
+    updated_function = await _functions_repository.update_function_description(
+        app=app,
+        function_id=function_id,
+        description=description,
+    )
+    return _decode_function(updated_function)
+
+
+@router.expose()
 async def find_cached_function_job(
     app: web.Application, *, function_id: FunctionID, inputs: FunctionInputs
 ) -> FunctionJob | None:

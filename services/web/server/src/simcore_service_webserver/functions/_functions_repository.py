@@ -331,6 +331,42 @@ async def delete_function(
         )
 
 
+async def update_function_title(
+    app: web.Application, *, function_id: FunctionID, title: str
+) -> RegisteredFunctionDB:
+    async with transaction_context(get_asyncpg_engine(app)) as conn:
+        result = await conn.stream(
+            functions_table.update()
+            .where(functions_table.c.uuid == function_id)
+            .values(title=title)
+            .returning(*_FUNCTIONS_TABLE_COLS)
+        )
+        row = await result.first()
+
+        if row is None:
+            raise FunctionIDNotFoundError(function_id=function_id)
+
+        return RegisteredFunctionDB.model_validate(dict(row))
+
+
+async def update_function_description(
+    app: web.Application, *, function_id: FunctionID, description: str
+) -> RegisteredFunctionDB:
+    async with transaction_context(get_asyncpg_engine(app)) as conn:
+        result = await conn.stream(
+            functions_table.update()
+            .where(functions_table.c.uuid == function_id)
+            .values(description=description)
+            .returning(*_FUNCTIONS_TABLE_COLS)
+        )
+        row = await result.first()
+
+        if row is None:
+            raise FunctionIDNotFoundError(function_id=function_id)
+
+        return RegisteredFunctionDB.model_validate(dict(row))
+
+
 async def get_function_job(
     app: web.Application,
     connection: AsyncConnection | None = None,
