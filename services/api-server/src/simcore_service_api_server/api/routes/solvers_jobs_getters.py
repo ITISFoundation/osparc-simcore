@@ -18,6 +18,7 @@ from models_library.wallets import ZERO_CREDITS
 from pydantic import HttpUrl, NonNegativeInt
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_context
+from simcore_service_api_server.models.schemas.jobs_filters import JobMetadataFilter
 from sqlalchemy.ext.asyncio import AsyncEngine
 from starlette.background import BackgroundTask
 
@@ -38,6 +39,7 @@ from ...models.schemas.jobs import (
     JobMetadata,
     JobOutputs,
 )
+from ...models.schemas.jobs_filters import JobMetadataFilter
 from ...models.schemas.model_adapter import (
     PricingUnitGetLegacy,
     WalletGetWithAvailableCreditsLegacy,
@@ -55,6 +57,7 @@ from ...services_http.storage import StorageApi, to_file_api_model
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.database import get_db_asyncpg_engine
+from ..dependencies.models_schemas_job_filters import get_job_metadata_filter
 from ..dependencies.rabbitmq import get_log_check_timeout, get_log_distributor
 from ..dependencies.services import get_api_client, get_solver_service
 from ..dependencies.webserver_http import AuthSession, get_webserver_session
@@ -131,15 +134,26 @@ router = APIRouter()
             FMSG_CHANGELOG_NEW_IN_VERSION.format("0.8"),
         ],
     ),
-    include_in_schema=False,  # TO BE RELEASED in 0.8
+    include_in_schema=True,  # TO BE RELEASED in 0.8
 )
 async def list_all_solvers_jobs(
     page_params: Annotated[PaginationParams, Depends()],
+    filter_job_metadata_params: Annotated[
+        JobMetadataFilter | None, Depends(get_job_metadata_filter)
+    ],
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
 
     jobs, meta = await solver_service.list_jobs(
+        filter_by_job_custom_metadata=(
+            [
+                {filter_metadata.name: filter_metadata.pattern}
+                for filter_metadata in filter_job_metadata_params.any
+            ]
+            if filter_job_metadata_params
+            else None
+        ),
         pagination_offset=page_params.offset,
         pagination_limit=page_params.limit,
     )

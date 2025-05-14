@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Annotated, TypeAlias
 from uuid import uuid4
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints
+from pydantic import BaseModel, ConfigDict, Field
 from pydantic.config import JsonDict
 
 from ...projects import NodesDict, ProjectID
@@ -11,16 +11,8 @@ from ...rpc_pagination import PageRpc
 
 
 class MetadataFilterItem(BaseModel):
-    name: Annotated[
-        str,
-        StringConstraints(min_length=1, max_length=255),
-        Field(description="Name fo the custom metadata field"),
-    ]
-    pattern: Annotated[
-        str,
-        StringConstraints(min_length=1, max_length=255),
-        Field(description="Exact value or glob pattern"),
-    ]
+    name: str
+    pattern: str
 
 
 class ListProjectsMarkedAsJobRpcFilter(BaseModel):
