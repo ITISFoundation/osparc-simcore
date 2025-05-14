@@ -83,10 +83,10 @@ class ProjectDBGet(BaseModel):
     ) -> ProjectTemplateType | None:
         type_value = info.data.get("type")
         if type_value == ProjectType.STANDARD and v is not None:
-            msg = "template_type must be None when type is STANDARD"
+            msg = f"template_type must be {v} when type is {ProjectType.STANDARD}"
             raise ValueError(msg)
         if type_value == ProjectType.TEMPLATE and v is None:
-            msg = "template_type must not be None when type is TEMPLATE"
+            msg = f"template_type must not be {v} when type is {ProjectType.TEMPLATE}"
             raise ValueError(msg)
         return v
 

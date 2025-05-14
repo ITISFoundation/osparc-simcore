@@ -218,6 +218,8 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
         # Pre-defined fields imposed by required properties in schema
         project_data: ProjectDict = {}
         expected_data: ProjectDict = {
+            "type": "TEMPLATE" if as_template else "STANDARD",
+            "templateType": "TEMPLATE" if as_template else None,
             "classifiers": [],
             "accessRights": {},
             "tags": [],
@@ -316,6 +318,7 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
             parent_project_uuid=parent_project_uuid,
             parent_node_id=parent_node_id,
         )
+        print(f"{project_data=}, {expected_data=}")
         # Create project here:
         resp = await client.post(
             f"{url}", json=project_data, headers=headers

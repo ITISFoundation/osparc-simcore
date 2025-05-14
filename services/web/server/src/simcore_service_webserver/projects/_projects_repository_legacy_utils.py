@@ -36,7 +36,8 @@ from .utils import find_changed_node_keys, project_uses_available_services
 
 logger = logging.getLogger(__name__)
 
-DB_EXCLUSIVE_COLUMNS = ["type", "id", "published", "hidden"]
+DB_EXCLUSIVE_COLUMNS_GET = ["id", "published", "hidden"]
+DB_EXCLUSIVE_COLUMNS = [*DB_EXCLUSIVE_COLUMNS_GET, "type"]
 SCHEMA_NON_NULL_KEYS = ["thumbnail"]
 
 PermissionStr = Literal["read", "write", "delete"]
@@ -85,7 +86,7 @@ def convert_to_schema_names(
     # SEE https://github.com/ITISFoundation/osparc-simcore/issues/3516
     converted_args = {}
     for col_name, col_value in project_database_data.items():
-        if col_name in DB_EXCLUSIVE_COLUMNS:
+        if col_name in DB_EXCLUSIVE_COLUMNS_GET:
             continue
         converted_value = col_value
         if isinstance(col_value, datetime) and col_name not in {"trashed"}:

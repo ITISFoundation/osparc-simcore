@@ -71,6 +71,18 @@ class BaseProjectModel(BaseModel):
         ),
     ]
 
+    project_type: Annotated[
+        ProjectType, Field(alias="type", description="The project type")
+    ]
+    template_type: Annotated[
+        ProjectTemplateType | None,
+        Field(
+            alias="templateType",
+            description="The project template type",
+            examples=["TEMPLATE", "TUTORIAL", "HYPERTOOL"],
+        ),
+    ]
+
     name: Annotated[
         str,
         Field(description="project name", examples=["Temporal Distortion Simulator"]),
@@ -105,23 +117,18 @@ class BaseProjectModel(BaseModel):
         none_to_empty_str_pre_validator
     )
 
+    @field_validator("project_type", "template_type", mode="before")
+    @classmethod
+    def _convert_sql_alchemy_enum(cls, v):
+        if isinstance(v, Enum):
+            return v.value
+        return v
+
 
 class ProjectAtDB(BaseProjectModel):
     # Model used to READ from database
 
     id: Annotated[int, Field(description="The table primary index")]
-
-    project_type: Annotated[
-        ProjectType, Field(alias="type", description="The project type")
-    ]
-    template_type: Annotated[
-        ProjectTemplateType | None,
-        Field(
-            alias="templateType",
-            description="The project template type",
-            examples=["TEMPLATE", "TUTORIAL", "HYPERTOOL"],
-        ),
-    ]
 
     prj_owner: Annotated[int | None, Field(description="The project owner id")]
 
@@ -129,13 +136,6 @@ class ProjectAtDB(BaseProjectModel):
         bool | None,
         Field(description="Defines if a study is available publicly"),
     ] = False
-
-    @field_validator("project_type", "template_type", mode="before")
-    @classmethod
-    def _convert_sql_alchemy_enum(cls, v):
-        if isinstance(v, Enum):
-            return v.value
-        return v
 
     model_config = ConfigDict(
         from_attributes=True, use_enum_values=True, populate_by_name=True
