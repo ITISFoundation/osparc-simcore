@@ -36,9 +36,13 @@ qx.Class.define("osparc.jobs.RunsTable", {
 
     Object.values(this.self().COLS).forEach(col => columnModel.setColumnWidth(col.column, col.width));
 
-    const iconPathStop = "osparc/circle-stop-text.svg";
-    const fontButtonRendererStop = new osparc.ui.table.cellrenderer.ImageButtonRenderer("stop", iconPathStop);
-    columnModel.setDataCellRenderer(this.self().COLS.ACTION_STOP.column, fontButtonRendererStop);
+    const iconPathStop = "osparc/icons/circle-xmark-text.svg";
+    const fontButtonRendererStop = new osparc.ui.table.cellrenderer.ImageButtonRenderer("cancel", iconPathStop);
+    columnModel.setDataCellRenderer(this.self().COLS.ACTION_CANCEL.column, fontButtonRendererStop);
+
+    const iconPathInfo = "osparc/icons/circle-info-text.svg";
+    const fontButtonRendererInfo = new osparc.ui.table.cellrenderer.ImageButtonRenderer("info", iconPathInfo);
+    columnModel.setDataCellRenderer(this.self().COLS.ACTION_INFO.column, fontButtonRendererInfo);
 
     this.__attachHandlers();
   },
@@ -53,20 +57,20 @@ qx.Class.define("osparc.jobs.RunsTable", {
         id: "projectUuid",
         column: 0,
         label: qx.locale.Manager.tr("Project Id"),
-        width: 170
+        width: 200
       },
       PROJECT_NAME: {
         id: "projectName",
         column: 1,
         label: qx.locale.Manager.tr("Project"),
-        width: 170,
+        width: 150,
         sortable: true
       },
       STATE: {
         id: "state",
         column: 2,
         label: qx.locale.Manager.tr("Status"),
-        width: 170
+        width: 150
       },
       SUBMIT: {
         id: "submit",
@@ -89,11 +93,17 @@ qx.Class.define("osparc.jobs.RunsTable", {
         width: 130,
         sortable: true
       },
-      ACTION_STOP: {
-        id: "action_stop",
+      ACTION_CANCEL: {
+        id: "action_cancel",
         column: 6,
-        label: "",
-        width: 40
+        label: qx.locale.Manager.tr("Cancel"),
+        width: 50
+      },
+      ACTION_INFO: {
+        id: "action_info",
+        column: 7,
+        label: qx.locale.Manager.tr("Info"),
+        width: 50
       },
     }
   },
@@ -122,17 +132,35 @@ qx.Class.define("osparc.jobs.RunsTable", {
     },
 
     __handleButtonClick: function(action, row) {
+      this.resetSelection();
       const rowData = this.getTableModel().getRowData(row);
       switch (action) {
         case "info": {
-          this.fireDataEvent("runSelected", rowData);
+          const job = osparc.store.Jobs.getInstance().getJob(rowData["projectUuid"]);
+          if (!job) {
+            return;
+          }
+          const allInfo = {
+            "image": job.getInfo() ? osparc.utils.Utils.deepCloneObject(job.getInfo()) : {},
+            "customMetadata": job.getCustomMetadata() ? osparc.utils.Utils.deepCloneObject(job.getCustomMetadata()) : {},
+          }
+          const runInfo = new osparc.jobs.Info(allInfo);
+          const win = osparc.jobs.Info.popUpInWindow(runInfo);
+          win.setCaption(rowData["projectName"]);
           break;
         }
-        case "run":
-        case "stop":
-        case "logs": {
-          const msg = `I wish I could ${action} the job ${rowData["projectUuid"]}`;
-          osparc.FlashMessenger.logAs(msg, "WARNING");
+        case "cancel": {
+          const params = {
+            url: {
+              "studyId": rowData["projectUuid"],
+            },
+          };
+          osparc.data.Resources.fetch("runPipeline", "stopPipeline", params)
+            .then(() => {
+              const msg = this.tr("Stopping pipeline");
+              osparc.FlashMessenger.logAs(msg, "INFO");
+            })
+            .catch(err => osparc.FlashMessenger.logError(err));
           break;
         }
         default:
