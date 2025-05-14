@@ -139,7 +139,7 @@ qx.Class.define("osparc.study.SaveAsTemplate", {
       });
     },
 
-    getPublishTemplateButton: function() {
+    getCreateTemplateButton: function() {
       return this.__createTemplateBtn;
     }
   }

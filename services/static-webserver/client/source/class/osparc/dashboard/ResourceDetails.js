@@ -763,7 +763,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           const saveAsTemplate = new osparc.study.SaveAsTemplate(this.__resourceData, makeItPublic);
           saveAsTemplate.addListener("publishTemplate", e => this.fireDataEvent("publishTemplate", e.getData()));
 
-          const publishTemplateButton = saveAsTemplate.getPublishTemplateButton();
+          const publishTemplateButton = saveAsTemplate.getCreateTemplateButton();
           osparc.dashboard.resources.pages.BasePage.decorateHeaderButton(publishTemplateButton);
           const toolbar = this.self().createToolbar();
           toolbar.add(publishTemplateButton);
@@ -785,7 +785,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       const canIWrite = osparc.data.model.Study.canIWrite(this.__resourceData["accessRights"]);
       const canCreateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.create");
       if (canIWrite && canCreateTemplate) {
-        const id = "SaveAsTemplate";
+        const id = "Template";
         const iconSrc = "@FontAwesome5Solid/copy/22";
         const title = this.tr("Template");
         const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
@@ -801,10 +801,10 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           const saveAsTemplate = new osparc.study.SaveAsTemplate(this.__resourceData, makeItPublic);
           saveAsTemplate.addListener("publishTemplate", e => this.fireDataEvent("publishTemplate", e.getData()));
 
-          const publishTemplateButton = saveAsTemplate.getPublishTemplateButton();
-          osparc.dashboard.resources.pages.BasePage.decorateHeaderButton(publishTemplateButton);
+          const createTemplateButton = saveAsTemplate.getCreateTemplateButton();
+          osparc.dashboard.resources.pages.BasePage.decorateHeaderButton(createTemplateButton);
           const toolbar = this.self().createToolbar();
-          toolbar.add(publishTemplateButton);
+          toolbar.add(createTemplateButton);
           page.addToHeader(toolbar);
           page.addToContent(saveAsTemplate);
         }
