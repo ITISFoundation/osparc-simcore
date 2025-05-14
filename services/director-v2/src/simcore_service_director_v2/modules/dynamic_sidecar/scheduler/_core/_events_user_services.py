@@ -76,7 +76,7 @@ async def submit_compose_sepc(app: FastAPI, scheduler_data: SchedulerData) -> No
     allow_internet_access: bool = await groups_extra_properties.has_internet_access(
         user_id=scheduler_data.user_id, product_name=scheduler_data.product_name
     )
-
+    assert scheduler_data.product_api_base_url is not None, "ONLY for legacy."  # nosec
     dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings = (
         app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
     )
