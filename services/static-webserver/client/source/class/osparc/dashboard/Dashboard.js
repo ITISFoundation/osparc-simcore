@@ -69,11 +69,15 @@ qx.Class.define("osparc.dashboard.Dashboard", {
     appearance: {
       init: "dashboard",
       refine: true
-    }
+    },
   },
 
   statics: {
     PADDING: 15
+  },
+
+  events: {
+    "preResourcesLoaded": "qx.event.type.Event",
   },
 
   members: {
@@ -181,12 +185,15 @@ qx.Class.define("osparc.dashboard.Dashboard", {
         this.add(tabPage);
       }, this);
 
+      let preResourcesLoaded = false;
       const preResourcePromises = [];
       const groupsStore = osparc.store.Groups.getInstance();
       preResourcePromises.push(groupsStore.fetchGroupsAndMembers());
       preResourcePromises.push(osparc.store.Services.getServicesLatest(false));
       Promise.all(preResourcePromises)
         .then(() => {
+          preResourcesLoaded = true;
+          this.fireEvent("preResourcesLoaded");
           if (this.__studyBrowser) {
             this.__studyBrowser.initResources();
           }
@@ -196,15 +203,24 @@ qx.Class.define("osparc.dashboard.Dashboard", {
           if (this.__dataBrowser) {
             this.__dataBrowser.initResources();
           }
-
-          this.addListener("changeSelection", e => {
-            const selectedTab = e.getData()[0];
-            if (selectedTab && selectedTab.resourceBrowser) {
-              selectedTab.resourceBrowser.initResources();
-            }
-          }, this);
         })
         .catch(err => console.error(err));
+
+      this.addListener("changeSelection", e => {
+        const selectedTab = e.getData()[0];
+        if (selectedTab && selectedTab.resourceBrowser) {
+          // avoid changing the selection when the PreResources are not yet loaded
+          if (preResourcesLoaded) {
+            selectedTab.resourceBrowser.initResources();
+          } else {
+            const initTab = () => {
+              selectedTab.resourceBrowser.initResources()
+              this.removeListener("preResourcesLoaded", initTab);
+            };
+            this.addListener("preResourcesLoaded", initTab, this);
+          }
+        }
+      }, this);
     },
 
     __createStudyBrowser: function() {
