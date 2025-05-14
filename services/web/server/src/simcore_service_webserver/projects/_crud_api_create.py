@@ -316,7 +316,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
                 # Folder ID is not part of the project resource
                 predefined_project.pop("folderId")
 
-        if from_study:
+        if from_study:  # Either clone or creation of template out of study
             # 1.1 prepare copy
             (
                 new_project,

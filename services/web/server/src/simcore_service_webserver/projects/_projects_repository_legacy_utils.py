@@ -36,7 +36,7 @@ from .utils import find_changed_node_keys, project_uses_available_services
 
 logger = logging.getLogger(__name__)
 
-DB_EXCLUSIVE_COLUMNS = ["type", "id", "published", "hidden"]
+DB_EXCLUSIVE_COLUMNS = ["id", "published", "hidden"]
 SCHEMA_NON_NULL_KEYS = ["thumbnail"]
 
 PermissionStr = Literal["read", "write", "delete"]

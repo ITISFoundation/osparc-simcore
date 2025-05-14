@@ -40,6 +40,7 @@ from servicelib.logging_utils import get_log_record_extra, log_context
 from simcore_postgres_database.aiopg_errors import UniqueViolation
 from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.project_to_groups import project_to_groups
+from simcore_postgres_database.models.projects import ProjectTemplateType
 from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_postgres_database.models.projects_tags import projects_tags
 from simcore_postgres_database.models.projects_to_folders import projects_to_folders
@@ -282,6 +283,9 @@ class ProjectDBAPI(BaseProjectDB):
                     ProjectType.TEMPLATE.value
                     if (force_as_template or user_id is None)
                     else ProjectType.STANDARD.value
+                ),
+                "template_type": (
+                    ProjectTemplateType.TEMPLATE.value if force_as_template else None
                 ),
                 "prj_owner": user_id if user_id else None,
                 "hidden": hidden,
