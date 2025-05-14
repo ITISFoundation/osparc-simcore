@@ -24,12 +24,53 @@ class MetadataFilterItem(BaseModel):
 
 
 class ListProjectsMarkedAsJobRpcFilter(BaseModel):
-    # NOTE: add here any early validation of filters e.g. incompatible filters etc
+    """Filter model for the list_projects_marked_as_jobs RPC.
+
+    NOTE: Filter models are used to validate all possible filters in an API early on,
+    particularly to ensure compatibility and prevent conflicts between different filters.
+    """
+
     job_parent_resource_name_prefix: str | None = None
+
     any_of_metadata: Annotated[
         list[MetadataFilterItem] | None,
         Field(description="Searchs for matches of any of the custom metadata fields"),
     ] = None
+
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "job_parent_resource_name_prefix": "solvers/solver123",
+                        "any_of_metadata": [
+                            {
+                                "name": "solver_type",
+                                "pattern": "FEM",
+                            },
+                            {
+                                "name": "mesh_cells",
+                                "pattern": "1*",
+                            },
+                        ],
+                    },
+                    {
+                        "any_of_metadata": [
+                            {
+                                "name": "solver_type",
+                                "pattern": "*CFD*",
+                            }
+                        ],
+                    },
+                    {"job_parent_resource_name_prefix": "solvers/solver123"},
+                ]
+            }
+        )
+
+    model_config = ConfigDict(
+        json_schema_extra=_update_json_schema_extra,
+    )
 
 
 class ProjectJobRpcGet(BaseModel):
