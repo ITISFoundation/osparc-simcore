@@ -75,7 +75,7 @@ async def list_projects_marked_as_jobs(
         user_id=user_id,
         offset=offset,
         limit=limit,
-        job_parent_resource_name_prefix=job_parent_resource_name_prefix,
+        filter_by_job_parent_resource_name_prefix=job_parent_resource_name_prefix,
     )
 
     job_projects = [

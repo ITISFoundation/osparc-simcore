@@ -158,7 +158,7 @@ async def test_user_can_filter_marked_project(
         app=client.app,
         product_name=osparc_product_name,
         user_id=project_job_fixture.user_id,
-        job_parent_resource_name_prefix=project_job_fixture.job_parent_resource_name,
+        filter_by_job_parent_resource_name_prefix=project_job_fixture.job_parent_resource_name,
     )
     assert total_count == 1
     assert len(result) == 1
@@ -174,7 +174,7 @@ async def test_user_can_filter_marked_project(
         app=client.app,
         product_name=osparc_product_name,
         user_id=project_job_fixture.user_id,
-        job_parent_resource_name_prefix="test/%",
+        filter_by_job_parent_resource_name_prefix="test/%",
     )
     assert total_count == 1
     assert len(result) == 1
@@ -190,7 +190,7 @@ async def test_user_can_filter_marked_project(
         app=client.app,
         product_name=osparc_product_name,
         user_id=project_job_fixture.user_id,
-        job_parent_resource_name_prefix="other/%",
+        filter_by_job_parent_resource_name_prefix="other/%",
     )
     assert total_count == 0
     assert len(result) == 0
