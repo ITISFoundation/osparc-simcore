@@ -69,7 +69,13 @@ qx.Class.define("osparc.dashboard.Dashboard", {
     appearance: {
       init: "dashboard",
       refine: true
-    }
+    },
+
+    preResourcePromisesLoaded: {
+      check: "Boolean",
+      init: false,
+      event: "changePreResourcePromisesLoaded"
+    },
   },
 
   statics: {
@@ -187,6 +193,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       preResourcePromises.push(osparc.store.Services.getServicesLatest(false));
       Promise.all(preResourcePromises)
         .then(() => {
+          this.setPreResourcePromisesLoaded(true);
           if (this.__studyBrowser) {
             this.__studyBrowser.initResources();
           }
@@ -196,15 +203,28 @@ qx.Class.define("osparc.dashboard.Dashboard", {
           if (this.__dataBrowser) {
             this.__dataBrowser.initResources();
           }
-
-          this.addListener("changeSelection", e => {
-            const selectedTab = e.getData()[0];
-            if (selectedTab && selectedTab.resourceBrowser) {
-              selectedTab.resourceBrowser.initResources();
-            }
-          }, this);
         })
         .catch(err => console.error(err));
+
+      this.addListener("changeSelection", e => {
+        const selectedTab = e.getData()[0];
+        if (selectedTab && selectedTab.resourceBrowser) {
+          // avoid changing the selection when the PreResources are not yet loaded
+          if (this.getPreResourcePromisesLoaded()) {
+            selectedTab.resourceBrowser.initResources();
+          } else {
+            const initTab = event => {
+              if (event.getData()) {
+                selectedTab.resourceBrowser.initResources();
+              }
+            };
+            this.addListener("changePreResourcePromisesLoaded", ev => {
+              initTab(ev);
+              this.removeListener("changePreResourcePromisesLoaded", initTab);
+            });
+          }
+        }
+      }, this);
     },
 
     __createStudyBrowser: function() {
