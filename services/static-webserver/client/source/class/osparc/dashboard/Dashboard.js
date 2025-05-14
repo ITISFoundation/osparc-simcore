@@ -70,16 +70,14 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       init: "dashboard",
       refine: true
     },
-
-    preResourcePromisesLoaded: {
-      check: "Boolean",
-      init: false,
-      event: "changePreResourcePromisesLoaded"
-    },
   },
 
   statics: {
     PADDING: 15
+  },
+
+  events: {
+    "preResourcesLoaded": "qx.event.type.Event",
   },
 
   members: {
@@ -187,13 +185,15 @@ qx.Class.define("osparc.dashboard.Dashboard", {
         this.add(tabPage);
       }, this);
 
+      let preResourcesLoaded = false;
       const preResourcePromises = [];
       const groupsStore = osparc.store.Groups.getInstance();
       preResourcePromises.push(groupsStore.fetchGroupsAndMembers());
       preResourcePromises.push(osparc.store.Services.getServicesLatest(false));
       Promise.all(preResourcePromises)
         .then(() => {
-          this.setPreResourcePromisesLoaded(true);
+          preResourcesLoaded = true;
+          this.fireEvent("preResourcesLoaded");
           if (this.__studyBrowser) {
             this.__studyBrowser.initResources();
           }
@@ -210,18 +210,14 @@ qx.Class.define("osparc.dashboard.Dashboard", {
         const selectedTab = e.getData()[0];
         if (selectedTab && selectedTab.resourceBrowser) {
           // avoid changing the selection when the PreResources are not yet loaded
-          if (this.getPreResourcePromisesLoaded()) {
+          if (preResourcesLoaded) {
             selectedTab.resourceBrowser.initResources();
           } else {
-            const initTab = event => {
-              if (event.getData()) {
-                selectedTab.resourceBrowser.initResources();
-              }
+            const initTab = () => {
+              selectedTab.resourceBrowser.initResources()
+              this.removeListener("preResourcesLoaded", initTab);
             };
-            this.addListener("changePreResourcePromisesLoaded", ev => {
-              initTab(ev);
-              this.removeListener("changePreResourcePromisesLoaded", initTab);
-            });
+            this.addListener("preResourcesLoaded", initTab, this);
           }
         }
       }, this);
