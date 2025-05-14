@@ -115,6 +115,13 @@ class ProjectAtDB(BaseProjectModel):
     project_type: Annotated[
         ProjectType, Field(alias="type", description="The project type")
     ]
+    template_type: Annotated[
+        ProjectTemplateType | None,
+        Field(
+            # alias="template_type",
+            examples=["TEMPLATE", "TUTORIAL", "HYPERTOOL"],
+        ),
+    ]
 
     prj_owner: Annotated[int | None, Field(description="The project owner id")]
 
@@ -171,6 +178,22 @@ class Project(BaseProjectModel):
 
     # Project state (SEE projects_state.py)
     state: ProjectState | None = None
+
+    # Type of project
+    type: Annotated[
+        ProjectType,
+        Field(
+            description="The project type",
+            examples=["TEMPLATE", "STANDARD"],
+        ),
+    ]
+    template_type: Annotated[
+        ProjectTemplateType | None,
+        Field(
+            alias="templateType",
+            examples=["TEMPLATE", "TUTORIAL", "HYPERTOOL", None],
+        ),
+    ]
 
     # UI front-end fields (SEE projects_ui.py)
     ui: dict[str, Any] | None = None

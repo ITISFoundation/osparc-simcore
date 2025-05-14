@@ -84,5 +84,7 @@
         }
       }
     },
-    "workspaceId": null
+    "workspaceId": null,
+  "type": "TEMPLATE",
+  "templateType": "TEMPLATE"
   }
