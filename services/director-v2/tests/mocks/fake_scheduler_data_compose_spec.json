@@ -18,6 +18,7 @@
   "service_name": "dy-sidecar_dd2b8ceb-4408-4bfb-a953-46178836e12d",
   "hostname": "dy-sidecar_dd2b8ceb-4408-4bfb-a953-46178836e12d",
   "port": 8000,
+  "product_api_base_url": "http://api.local",
   "dynamic_sidecar": {
     "status": {
       "current": "ok",
