@@ -483,6 +483,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _addTaskCard: function(task, cardTitle, cardIcon) {
+      if (!this._resourcesContainer) {
+        return null;
+      }
+
       if (task) {
         const taskPlaceholders = this._resourcesContainer.getCards().filter(card => osparc.dashboard.ResourceBrowserBase.isCardTaskPlaceholder(card));
         if (taskPlaceholders.find(taskPlaceholder => taskPlaceholder.getTask() === task)) {
@@ -505,6 +509,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _removeTaskCard: function(task) {
+      if (!this._resourcesContainer) {
+        return;
+      }
+
       if (task) {
         const taskPlaceholders = this._resourcesContainer.getCards().filter(card => osparc.dashboard.ResourceBrowserBase.isCardTaskPlaceholder(card));
         const taskCard = taskPlaceholders.find(taskPlaceholder => taskPlaceholder.getTask() === task);

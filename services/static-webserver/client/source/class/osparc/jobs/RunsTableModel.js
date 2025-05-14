@@ -60,7 +60,7 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
       const offset = 0;
       const limit = 1;
       const resolveWResponse = true;
-      osparc.store.Jobs.getInstance().fetchJobs(offset, limit, JSON.stringify(this.getOrderBy()), resolveWResponse)
+      osparc.store.Jobs.getInstance().fetchJobsActive(offset, limit, JSON.stringify(this.getOrderBy()), resolveWResponse)
         .then(resp => {
           this._onRowCountLoaded(resp["_meta"].total)
         })
@@ -76,7 +76,7 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
       const lastRow = Math.min(qxLastRow, this._rowCount - 1);
       // Returns a request promise with given offset and limit
       const getFetchPromise = (offset, limit) => {
-        return osparc.store.Jobs.getInstance().fetchJobs(offset, limit, JSON.stringify(this.getOrderBy()))
+        return osparc.store.Jobs.getInstance().fetchJobsActive(offset, limit, JSON.stringify(this.getOrderBy()))
           .then(jobs => {
             const data = [];
             const jobsCols = osparc.jobs.RunsTable.COLS;
@@ -84,7 +84,7 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
               data.push({
                 [jobsCols.PROJECT_UUID.id]: job.getProjectUuid(),
                 [jobsCols.PROJECT_NAME.id]: job.getProjectName(),
-                [jobsCols.STATE.id]: job.getState(),
+                [jobsCols.STATE.id]: osparc.data.Job.STATUS_LABELS[job.getState()] || job.getState(),
                 [jobsCols.SUBMIT.id]: job.getSubmittedAt() ? osparc.utils.Utils.formatDateAndTime(job.getSubmittedAt()) : "-",
                 [jobsCols.START.id]: job.getStartedAt() ? osparc.utils.Utils.formatDateAndTime(job.getStartedAt()) : "-",
                 [jobsCols.END.id]: job.getEndedAt() ? osparc.utils.Utils.formatDateAndTime(job.getEndedAt()) : "-",
