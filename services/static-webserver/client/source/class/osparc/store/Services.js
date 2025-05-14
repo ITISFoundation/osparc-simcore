@@ -360,6 +360,7 @@ qx.Class.define("osparc.store.Services", {
     __addServiceToCache: function(service) {
       const key = service.key;
       const version = service.version;
+      service["resourceType"] = "service";
       this.__addToCache(key, version, service);
     },
 
