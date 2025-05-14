@@ -25,13 +25,11 @@ class MetadataFilterItem(BaseModel):
 
 class ListProjectsMarkedAsJobRpcFilter(BaseModel):
     # NOTE: add here any early validation of filters e.g. incompatible filters etc
-    job_parent_resource_name_prefix: str | None
+    job_parent_resource_name_prefix: str | None = None
     any_of_metadata: Annotated[
         list[MetadataFilterItem] | None,
         Field(description="Searchs for matches of any of the custom metadata fields"),
     ] = None
-
-    # TODO: update interface to list_projects_marked_as_jobs
 
 
 class ProjectJobRpcGet(BaseModel):

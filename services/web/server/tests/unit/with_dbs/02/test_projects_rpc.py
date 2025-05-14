@@ -13,6 +13,8 @@ from common_library.users_enums import UserRole
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.rpc.webserver.projects import (
+    ListProjectsMarkedAsJobRpcFilter,
+    MetadataFilterItem,
     PageRpcProjectJobRpcGet,
     ProjectJobRpcGet,
 )
@@ -114,7 +116,9 @@ async def test_rpc_client_list_my_projects_marked_as_jobs(
         rpc_client=rpc_client,
         product_name=product_name,
         user_id=user_id,
-        filters={"job_parent_resource_name_prefix": "solvers/solver123"},
+        filters=ListProjectsMarkedAsJobRpcFilter(
+            job_parent_resource_name_prefix="solvers/solver123"
+        ),
     )
 
     assert page.meta.total == 1
@@ -191,3 +195,115 @@ async def test_errors_on_rpc_client_mark_project_as_job(
     assert exc_info.value.error_count() == 1
     assert exc_info.value.errors()[0]["loc"] == ("job_parent_resource_name",)
     assert exc_info.value.errors()[0]["type"] == "value_error"
+
+
+async def test_rpc_client_list_projects_marked_as_jobs_with_metadata_filter(
+    rpc_client: RabbitMQRPCClient,
+    product_name: ProductName,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    client: TestClient,
+):
+    from simcore_service_webserver.projects import _metadata_service
+
+    project_uuid = ProjectID(user_project["uuid"])
+    user_id = logged_user["id"]
+
+    # Mark the project as a job
+    await projects_rpc.mark_project_as_job(
+        rpc_client=rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        project_uuid=project_uuid,
+        job_parent_resource_name="solvers/solver123/version/1.2.3",
+    )
+
+    # Set custom metadata on the project
+    custom_metadata = {
+        "solver_type": "FEM",
+        "mesh_cells": "10000",
+        "domain": "biomedical",
+    }
+
+    await _metadata_service.set_project_custom_metadata(
+        app=client.app,
+        user_id=user_id,
+        project_uuid=project_uuid,
+        value=custom_metadata,
+    )
+
+    # Test with exact match on metadata field
+    page: PageRpcProjectJobRpcGet = await projects_rpc.list_projects_marked_as_jobs(
+        rpc_client=rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        filters=ListProjectsMarkedAsJobRpcFilter(
+            job_parent_resource_name_prefix="solvers/solver123",
+            any_of_metadata=[MetadataFilterItem(name="solver_type", pattern="FEM")],
+        ),
+    )
+
+    assert page.meta.total == 1
+    assert len(page.data) == 1
+    assert page.data[0].uuid == project_uuid
+
+    # Test with pattern match on metadata field
+    page = await projects_rpc.list_projects_marked_as_jobs(
+        rpc_client=rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        filters=ListProjectsMarkedAsJobRpcFilter(
+            any_of_metadata=[MetadataFilterItem(name="mesh_cells", pattern="1*")],
+        ),
+    )
+
+    assert page.meta.total == 1
+    assert len(page.data) == 1
+    assert page.data[0].uuid == project_uuid
+
+    # Test with multiple metadata fields (any match should return the project)
+    page = await projects_rpc.list_projects_marked_as_jobs(
+        rpc_client=rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        filters=ListProjectsMarkedAsJobRpcFilter(
+            any_of_metadata=[
+                MetadataFilterItem(name="solver_type", pattern="FEM"),
+                MetadataFilterItem(name="non_existent", pattern="value"),
+            ],
+        ),
+    )
+
+    assert page.meta.total == 1
+    assert len(page.data) == 1
+
+    # Test with no matches
+    page = await projects_rpc.list_projects_marked_as_jobs(
+        rpc_client=rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        filters=ListProjectsMarkedAsJobRpcFilter(
+            any_of_metadata=[
+                MetadataFilterItem(name="solver_type", pattern="CFD"),  # No match
+            ],
+        ),
+    )
+
+    assert page.meta.total == 0
+    assert len(page.data) == 0
+
+    # Test with combination of resource prefix and metadata
+    page = await projects_rpc.list_projects_marked_as_jobs(
+        rpc_client=rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        filters=ListProjectsMarkedAsJobRpcFilter(
+            job_parent_resource_name_prefix="wrong/prefix",
+            any_of_metadata=[
+                MetadataFilterItem(name="solver_type", pattern="FEM"),
+            ],
+        ),
+    )
+
+    assert page.meta.total == 0
+    assert len(page.data) == 0
