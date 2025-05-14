@@ -131,8 +131,8 @@ def uuid_dynamic_sidecar_compose(faker: Faker) -> str:
 
 
 @pytest.fixture
-def user_dict(registered_user: Callable) -> dict[str, Any]:
-    return registered_user()
+def user_dict(create_registered_user: Callable) -> dict[str, Any]:
+    return create_registered_user()
 
 
 @pytest.fixture

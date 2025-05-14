@@ -2580,7 +2580,52 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_ComputationRunRestGet__'
+                $ref: '#/components/schemas/Page_ComputationRunRestGet_'
+  /v0/computations/{project_id}/iterations:
+    get:
+      tags:
+      - computations
+      - projects
+      summary: List Computation Iterations
+      operationId: list_computation_iterations
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Project Id
+      - name: order_by
+        in: query
+        required: false
+        schema:
+          type: string
+          contentMediaType: application/json
+          contentSchema: {}
+          default: '{"field":"created","direction":"asc"}'
+          title: Order By
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Offset
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page_ComputationRunRestGet_'
   /v0/computations/{project_id}/iterations/latest/tasks:
     get:
       tags:
@@ -2625,7 +2670,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_ComputationTaskRestGet__'
+                $ref: '#/components/schemas/Page_ComputationTaskRestGet_'
   /v0/projects/{project_id}:xport:
     post:
       tags:
@@ -10691,38 +10736,6 @@ components:
           title: Error
       type: object
       title: Envelope[list[ApiKeyGet]]
-    Envelope_list_ComputationRunRestGet__:
-      properties:
-        data:
-          anyOf:
-          - items:
-              $ref: '#/components/schemas/ComputationRunRestGet'
-            type: array
-          - type: 'null'
-          title: Data
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[list[ComputationRunRestGet]]
-    Envelope_list_ComputationTaskRestGet__:
-      properties:
-        data:
-          anyOf:
-          - items:
-              $ref: '#/components/schemas/ComputationTaskRestGet'
-            type: array
-          - type: 'null'
-          title: Data
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[list[ComputationTaskRestGet]]
     Envelope_list_DatasetMetaData__:
       properties:
         data:
@@ -13369,6 +13382,82 @@ components:
       - _links
       - data
       title: Page[CatalogLatestServiceGet]
+    Page_ComputationRunRestGet_:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/ComputationRunRestGet'
+          type: array
+          title: Items
+        total:
+          anyOf:
+          - type: integer
+            minimum: 0
+          - type: 'null'
+          title: Total
+        page:
+          anyOf:
+          - type: integer
+            minimum: 1
+          - type: 'null'
+          title: Page
+        size:
+          anyOf:
+          - type: integer
+            minimum: 1
+          - type: 'null'
+          title: Size
+        pages:
+          anyOf:
+          - type: integer
+            minimum: 0
+          - type: 'null'
+          title: Pages
+      type: object
+      required:
+      - items
+      - total
+      - page
+      - size
+      title: Page[ComputationRunRestGet]
+    Page_ComputationTaskRestGet_:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/ComputationTaskRestGet'
+          type: array
+          title: Items
+        total:
+          anyOf:
+          - type: integer
+            minimum: 0
+          - type: 'null'
+          title: Total
+        page:
+          anyOf:
+          - type: integer
+            minimum: 1
+          - type: 'null'
+          title: Page
+        size:
+          anyOf:
+          - type: integer
+            minimum: 1
+          - type: 'null'
+          title: Size
+        pages:
+          anyOf:
+          - type: integer
+            minimum: 0
+          - type: 'null'
+          title: Pages
+      type: object
+      required:
+      - items
+      - total
+      - page
+      - size
+      title: Page[ComputationTaskRestGet]
     Page_ConversationMessageRestGet_:
       properties:
         _meta:

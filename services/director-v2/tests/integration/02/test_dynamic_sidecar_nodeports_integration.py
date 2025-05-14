@@ -254,8 +254,8 @@ def services_node_uuids(
 
 
 @pytest.fixture
-def current_user(registered_user: Callable) -> dict[str, Any]:
-    return registered_user()
+def current_user(create_registered_user: Callable) -> dict[str, Any]:
+    return create_registered_user()
 
 
 @pytest.fixture

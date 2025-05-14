@@ -85,8 +85,8 @@ def mock_env(mock_env: EnvVarsDict, minimal_configuration) -> None: ...
 
 
 @pytest.fixture
-def user_db(registered_user: Callable[..., dict[str, Any]]) -> dict[str, Any]:
-    user = registered_user()
+def user_db(create_registered_user: Callable[..., dict[str, Any]]) -> dict[str, Any]:
+    user = create_registered_user()
     return user
 
 
