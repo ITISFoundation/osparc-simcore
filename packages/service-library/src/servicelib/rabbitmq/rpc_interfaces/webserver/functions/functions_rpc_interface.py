@@ -102,8 +102,8 @@ async def delete_function(
 async def list_functions(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
-    pagination_limit: int,
     pagination_offset: int,
+    pagination_limit: int,
 ) -> tuple[list[RegisteredFunction], PageMetaInfoLimitOffset]:
     result: tuple[list[RegisteredFunction], PageMetaInfoLimitOffset] = (
         await rabbitmq_rpc_client.request(
