@@ -34,6 +34,10 @@ from models_library.rest_pagination import (
     PageOffsetInt,
 )
 from models_library.rpc.webserver.projects import ListProjectsMarkedAsJobRpcFilter
+from models_library.rpc.webserver.projects import (
+    ListProjectsMarkedAsJobRpcFilter,
+    MetadataFilterItem,
+)
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -244,20 +248,29 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         *,
         product_name: ProductName,
         user_id: UserID,
-        offset: int = 0,
-        limit: int = 50,
-        job_parent_resource_name_prefix: str | None = None,
+        pagination_offset: int = 0,
+        pagination_limit: int = 50,
+        filter_by_job_parent_resource_name_prefix: str | None,
+        filter_by_any_custom_metadata: list[dict[str, str]] | None,
     ):
         filters = ListProjectsMarkedAsJobRpcFilter(
-            job_parent_resource_name_prefix=job_parent_resource_name_prefix
+            job_parent_resource_name_prefix=filter_by_job_parent_resource_name_prefix,
+            any_of_metadata=(
+                [
+                    MetadataFilterItem(name=key, pattern=value)
+                    for key, value in filter_by_any_custom_metadata
+                ]
+                if filter_by_any_custom_metadata
+                else None
+            ),
         )
 
         return await projects_rpc.list_projects_marked_as_jobs(
             rpc_client=self._client,
             product_name=product_name,
             user_id=user_id,
-            offset=offset,
-            limit=limit,
+            offset=pagination_offset,
+            limit=pagination_limit,
             filters=filters,
         )
 
