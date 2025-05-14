@@ -431,7 +431,7 @@ async def _create_docker_service_params(
     swarm_network_id = swarm_network["Id"]
     swarm_network_name = swarm_network["Name"]
     docker_params["networks"].append(swarm_network_id)
-    docker_params["labels"]["traefik.docker.network"] = swarm_network_name
+    docker_params["labels"]["traefik.swarm.network"] = swarm_network_name
 
     # set labels for CPU and Memory limits
     nano_cpus_limit = str(
