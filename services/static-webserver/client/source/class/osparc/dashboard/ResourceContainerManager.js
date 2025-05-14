@@ -38,6 +38,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       this._add(workspacesContainer);
 
       const foldersContainer = this.__foldersContainer = new osparc.dashboard.CardContainer();
+      this.__foldersContainer.exclude();
       this._add(foldersContainer);
     }
 
@@ -295,26 +296,6 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       this.__groupedContainersList = [];
     },
 
-    __addFoldersContainer: function() {
-      // add foldersContainer dynamically
-      [
-        "addChildWidget",
-        "removeChildWidget"
-      ].forEach(ev => {
-        this.__foldersContainer.addListener(ev, () => {
-          const children = this.__foldersContainer.getChildren();
-          if (children.length && !children.includes(this.__foldersContainer)) {
-            this._addAt(this.__foldersContainer, 0);
-            return;
-          }
-          if (children.length === 0 && children.includes(this.__foldersContainer)) {
-            this._remove(this.__foldersContainer);
-            return;
-          }
-        })
-      });
-    },
-
     __rebuildLayout: function(resourceType) {
       this.__cleanAll();
       if (this.getGroupBy()) {
@@ -427,6 +408,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     reloadFolders: function() {
       if (this.__foldersContainer) {
         this.__foldersContainer.removeAll();
+        this.__foldersContainer.exclude();
       }
       let folderCards = [];
       this.__foldersList.forEach(folderData => folderCards.push(this.__folderToCard(folderData)));
@@ -435,11 +417,13 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
     addNewFolderCard: function(newFolderCard) {
       this.__foldersContainer.addAt(newFolderCard, 0);
+      this.__foldersContainer.show();
     },
 
     __folderToCard: function(folderData) {
       const card = this.__createFolderCard(folderData);
       this.__foldersContainer.add(card);
+      this.__foldersContainer.show();
       return card;
     },
 
