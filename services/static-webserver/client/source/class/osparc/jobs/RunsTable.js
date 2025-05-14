@@ -150,22 +150,39 @@ qx.Class.define("osparc.jobs.RunsTable", {
           break;
         }
         case "cancel": {
+          this.__cancelRun(rowData);
+          break;
+        }
+        default:
+          console.warn(`Unknown action: ${action}`);
+      }
+    },
+
+    __cancelRun: function(rowData) {
+      const msg = this.tr("Are you sure you want to cancel") + " <b>" + rowData["projectName"] + "</b>?";
+      const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
+        caption: this.tr("Cancel Run"),
+        confirmText: this.tr("Cancel"),
+        confirmAction: "delete",
+      });
+      confirmationWin.getChildControl("cancel-button").set({
+        label: this.tr("Close"),
+      });
+      confirmationWin.center();
+      confirmationWin.open();
+      confirmationWin.addListener("close", () => {
+        if (confirmationWin.getConfirmed()) {
           const params = {
             url: {
               "studyId": rowData["projectUuid"],
             },
           };
           osparc.data.Resources.fetch("runPipeline", "stopPipeline", params)
-            .then(() => {
-              const msg = this.tr("Stopping pipeline");
-              osparc.FlashMessenger.logAs(msg, "INFO");
-            })
+            .then(() => osparc.FlashMessenger.logAs(this.tr("Stopping pipeline"), "INFO"))
             .catch(err => osparc.FlashMessenger.logError(err));
-          break;
         }
-        default:
-          console.warn(`Unknown action: ${action}`);
       }
+      , this);
     },
   }
 });
