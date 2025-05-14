@@ -19,7 +19,7 @@
  * Widget containing a TabView including:
  * - StudyBrowser
  * - TemplateBrowser
- * - ServiceBrowser
+ * - AppBrowser
  * - DataBrowser
  *
  * *Example*
@@ -79,8 +79,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
   members: {
     __studyBrowser: null,
     __templateBrowser: null,
-    __hypertoolBrowser: null,
-    __serviceBrowser: null,
+    __appBrowser: null,
     __dataBrowser: null,
 
     getStudyBrowser: function() {
@@ -91,12 +90,8 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       return this.__templateBrowser;
     },
 
-    getHypertoolBrowser: function() {
-      return this.__hypertoolBrowser;
-    },
-
-    getServiceBrowser: function() {
-      return this.__serviceBrowser;
+    getAppBrowser: function() {
+      return this.__appBrowser;
     },
 
     __createMainViewLayout: function() {
@@ -123,22 +118,14 @@ qx.Class.define("osparc.dashboard.Dashboard", {
           icon: "@FontAwesome5Solid/copy/"+tabIconSize,
           buildLayout: this.__createTemplateBrowser
         });
-        tabs.push({
-          id: "hypertoolsTab",
-          buttonId: "hypertoolsTabBtn",
-          label: this.tr("HYPERTOOLS"),
-          icon: "@FontAwesome5Solid/copy/"+tabIconSize,
-          initVisibility: "excluded",
-          buildLayout: this.__createHypertoolsBrowser
-        });
       }
       if (permissions.canDo("dashboard.services.read")) {
         tabs.push({
-          id: "servicesTab",
-          buttonId: "servicesTabBtn",
-          label: this.tr("SERVICES"),
+          id: "appsTab",
+          buttonId: "appsTabBtn",
+          label: this.tr("APPS"),
           icon: "@FontAwesome5Solid/cogs/"+tabIconSize,
-          buildLayout: this.__createServiceBrowser
+          buildLayout: this.__createAppBrowser
         });
       }
       if (permissions.canDo("dashboard.data.read")) {
@@ -150,7 +137,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
           buildLayout: this.__createDataBrowser
         });
       }
-      tabs.forEach(({id, buttonId, label, icon, initVisibility, buildLayout}) => {
+      tabs.forEach(({id, buttonId, label, icon, buildLayout}) => {
         const tabPage = new qx.ui.tabview.Page(label, icon).set({
           appearance: "dashboard-page"
         });
@@ -159,7 +146,6 @@ qx.Class.define("osparc.dashboard.Dashboard", {
         tabButton.set({
           minWidth: 50,
           maxHeight: 36,
-          visibility: initVisibility ? initVisibility : "visible",
         });
         tabButton.ttt = label;
         tabButton.getChildControl("label").set({
@@ -172,26 +158,25 @@ qx.Class.define("osparc.dashboard.Dashboard", {
         osparc.utils.Utils.setIdToWidget(tabButton, buttonId);
         tabPage.setLayout(new qx.ui.layout.Grow());
 
-        const viewLayout = buildLayout.call(this);
+        const resourceBrowser = buildLayout.call(this);
         tabButton.addListener("execute", () => {
-          if (viewLayout.resetSelection) {
-            viewLayout.resetSelection();
+          if (resourceBrowser.resetSelection) {
+            resourceBrowser.resetSelection();
           }
         }, this);
-        viewLayout.addListener("changeTab", e => {
+
+        resourceBrowser.addListener("changeTab", e => {
           const activeTab = e.getData();
           const tabFound = this.getSelectables().find(s => s.id === activeTab);
           if (tabFound) {
             this.setSelection([tabFound]);
           }
         }, this);
-        viewLayout.addListener("showTab", e => {
-          const showTab = e.getData();
-          tabButton.setVisibility(showTab ? "visible" : "excluded");
-        })
+
         const scrollerMainView = new qx.ui.container.Scroll();
-        scrollerMainView.add(viewLayout);
+        scrollerMainView.add(resourceBrowser);
         tabPage.add(scrollerMainView);
+        tabPage.resourceBrowser = resourceBrowser;
 
         this.add(tabPage);
       }, this);
@@ -200,20 +185,24 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       const groupsStore = osparc.store.Groups.getInstance();
       preResourcePromises.push(groupsStore.fetchGroupsAndMembers());
       preResourcePromises.push(osparc.store.Services.getServicesLatest(false));
-      preResourcePromises.push(osparc.store.Templates.getInstance().fetchAllTemplates());
       Promise.all(preResourcePromises)
         .then(() => {
-          [
-            this.__studyBrowser,
-            this.__templateBrowser,
-            this.__hypertoolBrowser,
-            this.__serviceBrowser,
-            this.__dataBrowser
-          ].forEach(resourceBrowser => {
-            if (resourceBrowser) {
-              resourceBrowser.initResources();
+          if (this.__studyBrowser) {
+            this.__studyBrowser.initResources();
+          }
+          if (this.__appBrowser) {
+            this.__appBrowser.initResources();
+          }
+          if (this.__dataBrowser) {
+            this.__dataBrowser.initResources();
+          }
+
+          this.addListener("changeSelection", e => {
+            const selectedTab = e.getData()[0];
+            if (selectedTab && selectedTab.resourceBrowser) {
+              selectedTab.resourceBrowser.initResources();
             }
-          });
+          }, this);
         })
         .catch(err => console.error(err));
     },
@@ -228,15 +217,9 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       return templatesView;
     },
 
-    __createHypertoolsBrowser: function() {
-      const templateType = osparc.data.model.StudyUI.HYPERTOOL_TYPE;
-      const hypertoolsView = this.__hypertoolBrowser = new osparc.dashboard.TemplateBrowser(templateType);
-      return hypertoolsView;
-    },
-
-    __createServiceBrowser: function() {
-      const servicesView = this.__serviceBrowser = new osparc.dashboard.ServiceBrowser();
-      return servicesView;
+    __createAppBrowser: function() {
+      const appsView = this.__appBrowser = new osparc.dashboard.AppBrowser();
+      return appsView;
     },
 
     __createDataBrowser: function() {

@@ -195,6 +195,8 @@ class CompRunsRepository(BaseRepository):
         *,
         product_name: str,
         user_id: UserID,
+        # filters
+        filter_only_running: bool,
         # pagination
         offset: int,
         limit: int,
@@ -229,6 +231,16 @@ class CompRunsRepository(BaseRepository):
                 & (
                     comp_runs.c.metadata["product_name"].astext == product_name
                 )  # <-- NOTE: We might create a separate column for this for fast retrieval
+                & (
+                    comp_runs.c.result.in_(
+                        [
+                            RUNNING_STATE_TO_DB[item]
+                            for item in RunningState.list_running_states()
+                        ]
+                    )
+                )
+                if filter_only_running
+                else True
             )
             .group_by(comp_runs.c.project_uuid)
             .subquery("latest_runs")

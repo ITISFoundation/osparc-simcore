@@ -2,9 +2,9 @@ aio-pika==9.4.3
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-aioboto3==14.1.0
+aioboto3==14.3.0
     # via -r requirements/../../../packages/aws-library/requirements/_base.in
-aiobotocore==2.21.1
+aiobotocore==2.22.0
     # via aioboto3
 aiocache==0.12.3
     # via
@@ -92,9 +92,9 @@ attrs==24.2.0
     #   aiohttp
     #   jsonschema
     #   referencing
-boto3==1.37.1
+boto3==1.37.3
     # via aiobotocore
-botocore==1.37.1
+botocore==1.37.3
     # via
     #   aiobotocore
     #   boto3

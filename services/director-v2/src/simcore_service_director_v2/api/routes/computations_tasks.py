@@ -20,15 +20,13 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from servicelib.utils import logged_gather
-from simcore_sdk.node_ports_common.exceptions import NodeportsException
-from simcore_sdk.node_ports_v2 import FileLinkType
 from starlette import status
 
 from ...models.comp_pipelines import CompPipelineAtDB
 from ...models.comp_tasks import CompTaskAtDB
 from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
 from ...modules.db.repositories.comp_tasks import CompTasksRepository
-from ...utils.dask import get_service_log_file_download_link
+from ...utils import dask as dask_utils
 from ..dependencies.database import get_repository
 
 log = logging.getLogger(__name__)
@@ -81,31 +79,6 @@ async def analyze_pipeline(
     return PipelineInfo(pipeline_dag, all_tasks, filtered_tasks)
 
 
-async def _get_task_log_file(
-    user_id: UserID, project_id: ProjectID, node_id: NodeID
-) -> TaskLogFileGet:
-    try:
-        log_file_url = await get_service_log_file_download_link(
-            user_id, project_id, node_id, file_link_type=FileLinkType.PRESIGNED
-        )
-
-    except NodeportsException as err:
-        # Unexpected error: Cannot determine the cause of failure
-        # to get donwload link and cannot handle it automatically.
-        # Will treat it as "not available" and log a warning
-        log_file_url = None
-        log.warning(
-            "Failed to get log-file of %s: %s.",
-            f"{user_id=}/{project_id=}/{node_id=}",
-            err,
-        )
-
-    return TaskLogFileGet(
-        task_id=node_id,
-        download_link=log_file_url,
-    )
-
-
 # ROUTES HANDLERS --------------------------------------------------------------
 
 
@@ -133,7 +106,7 @@ async def get_all_tasks_log_files(
 
     tasks_logs_files: list[TaskLogFileGet] = await logged_gather(
         *[
-            _get_task_log_file(user_id, project_id, node_id)
+            dask_utils.get_task_log_file(user_id, project_id, node_id)
             for node_id in iter_task_ids
         ],
         reraise=True,
@@ -165,7 +138,7 @@ async def get_task_log_file(
             detail=[f"No task_id={node_uuid} found under computation {project_id}"],
         )
 
-    return await _get_task_log_file(user_id, project_id, node_uuid)
+    return await dask_utils.get_task_log_file(user_id, project_id, node_uuid)
 
 
 @router.post(

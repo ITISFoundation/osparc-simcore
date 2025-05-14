@@ -252,6 +252,27 @@ async def get_project_type(
     return await db.get_project_type(project_uuid)
 
 
+async def get_project_dict_legacy(
+    app: web.Application, project_uuid: ProjectID
+) -> ProjectDict:
+    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    assert db  # nosec
+    project, _ = await db.get_project_dict_and_type(
+        f"{project_uuid}",
+    )
+    return project
+
+
+async def batch_get_project_name(
+    app: web.Application, projects_uuids: list[ProjectID]
+) -> list[str]:
+    get_project_names = await _projects_repository.batch_get_project_name(
+        app=app,
+        projects_uuids=projects_uuids,
+    )
+    return [name if name else "Unknown" for name in get_project_names]
+
+
 #
 # UPDATE project -----------------------------------------------------
 #

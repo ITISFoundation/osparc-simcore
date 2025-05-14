@@ -19,6 +19,7 @@ from dask_task_models_library.container_tasks.protocol import (
 )
 from dask_task_models_library.container_tasks.utils import parse_dask_job_id
 from fastapi import FastAPI
+from models_library.api_schemas_directorv2.computations import TaskLogFileGet
 from models_library.api_schemas_directorv2.services import NodeRequirements
 from models_library.docker import DockerLabelKey, StandardSimcoreDockerLabels
 from models_library.errors import ErrorDict
@@ -32,6 +33,7 @@ from pydantic import AnyUrl, ByteSize, TypeAdapter, ValidationError
 from servicelib.logging_utils import log_catch, log_context
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_common.exceptions import (
+    NodeportsException,
     S3InvalidPathError,
     StorageInvalidCall,
 )
@@ -342,7 +344,7 @@ async def compute_task_envs(
     return task_envs
 
 
-async def get_service_log_file_download_link(
+async def _get_service_log_file_download_link(
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
@@ -365,6 +367,31 @@ async def get_service_log_file_download_link(
     except (S3InvalidPathError, StorageInvalidCall) as err:
         _logger.debug("Log for task %s not found: %s", f"{project_id=}/{node_id=}", err)
         return None
+
+
+async def get_task_log_file(
+    user_id: UserID, project_id: ProjectID, node_id: NodeID
+) -> TaskLogFileGet:
+    try:
+        log_file_url = await _get_service_log_file_download_link(
+            user_id, project_id, node_id, file_link_type=FileLinkType.PRESIGNED
+        )
+
+    except NodeportsException as err:
+        # Unexpected error: Cannot determine the cause of failure
+        # to get donwload link and cannot handle it automatically.
+        # Will treat it as "not available" and log a warning
+        log_file_url = None
+        _logger.warning(
+            "Failed to get log-file of %s: %s.",
+            f"{user_id=}/{project_id=}/{node_id=}",
+            err,
+        )
+
+    return TaskLogFileGet(
+        task_id=node_id,
+        download_link=log_file_url,
+    )
 
 
 async def clean_task_output_and_log_files_if_invalid(

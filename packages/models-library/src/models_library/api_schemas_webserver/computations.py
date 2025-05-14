@@ -1,8 +1,10 @@
 from datetime import datetime
+from decimal import Decimal
 from typing import Annotated, Any
 
 from common_library.basic_types import DEFAULT_FACTORY
 from pydantic import (
+    AnyUrl,
     BaseModel,
     ConfigDict,
     Field,
@@ -79,7 +81,11 @@ ComputationRunListOrderParams = create_ordering_query_model_class(
 class ComputationRunListQueryParams(
     PageQueryParameters,
     ComputationRunListOrderParams,  # type: ignore[misc, valid-type]
-): ...
+):
+    filter_only_running: bool = Field(
+        default=False,
+        description="If true, only running computations are returned",
+    )
 
 
 class ComputationRunRestGet(OutputSchema):
@@ -90,6 +96,8 @@ class ComputationRunRestGet(OutputSchema):
     submitted_at: datetime
     started_at: datetime | None
     ended_at: datetime | None
+    root_project_name: str
+    project_custom_metadata: dict[str, Any]
 
 
 ### Computation Task
@@ -123,3 +131,6 @@ class ComputationTaskRestGet(OutputSchema):
     image: dict[str, Any]
     started_at: datetime | None
     ended_at: datetime | None
+    log_download_link: AnyUrl | None
+    node_name: str
+    osparc_credits: Decimal | None

@@ -60,9 +60,9 @@
       "placement": "bottom"
     }, {
       "beforeClick": {
-        "selector": "osparc-test-id=servicesTabBtn"
+        "selector": "osparc-test-id=appsTabBtn"
       },
-      "anchorEl": "osparc-test-id=servicesTabBtn",
+      "anchorEl": "osparc-test-id=appsTabBtn",
       "text": "Every Study in oSparc is composed of so-called Services.<br>These are building blocks for Studies and can provide data/files, visualize results (2D, 3D), implement code in Jupyter notebooks or perform computations to execute simulations within a Study.",
       "placement": "bottom"
     }, {
