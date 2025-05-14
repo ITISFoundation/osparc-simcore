@@ -151,7 +151,6 @@ async def fake_app(faker: Faker) -> AsyncIterable[FastAPI]:
     app.state.engine = AsyncMock()
 
     mock_settings = Mock()
-    mock_settings.DIRECTOR_V2_PUBLIC_API_BASE_URL = faker.url()
     app.state.settings = mock_settings
 
     substitutions.setup(app)
