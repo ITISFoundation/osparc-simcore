@@ -70,5 +70,20 @@ functions_table = sa.Table(
         nullable=True,
         doc="Default inputs of the function",
     ),
+    sa.Column(
+        "created",
+        sa.DateTime,
+        nullable=False,
+        server_default=sa.func.now(),
+        doc="Creation timestamp of the function",
+    ),
+    sa.Column(
+        "modified",
+        sa.DateTime,
+        nullable=False,
+        server_default=sa.func.now(),
+        onupdate=sa.func.now(),
+        doc="Last update timestamp of the function",
+    ),
     sa.PrimaryKeyConstraint("uuid", name="funcapi_functions_pk"),
 )
