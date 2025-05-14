@@ -1096,21 +1096,22 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._resourcesContainer.setResourcesToList(this._resourcesList);
       this._resourcesContainer.reloadCards("studies");
 
-      this._toolbar.show();
       switch (this.getCurrentContext()) {
         case "studiesAndFolders":
           this._searchBarFilter.resetFilters();
+          this._toolbar.show();
           this.__reloadFolders();
           this._loadingResourcesBtn.setFetching(false);
           this.invalidateStudies();
           this.__reloadStudies();
           break;
         case "workspaces":
-          this._toolbar.exclude();
           this._searchBarFilter.resetFilters();
+          this._toolbar.exclude();
           this.__reloadWorkspaces();
           break;
         case "search":
+          this._toolbar.show();
           this.__reloadWorkspaces();
           this.__reloadFolders();
           this._loadingResourcesBtn.setFetching(false);
@@ -1119,6 +1120,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           break;
         case "trash":
           this._searchBarFilter.resetFilters();
+          this._toolbar.show();
           this.__reloadWorkspaces();
           this.__reloadFolders();
           this._loadingResourcesBtn.setFetching(false);
