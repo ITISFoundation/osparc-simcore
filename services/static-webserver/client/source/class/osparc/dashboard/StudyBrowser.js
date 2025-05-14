@@ -1118,6 +1118,20 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this.invalidateStudies();
           this.__reloadStudies();
           break;
+        case "templates":
+          this._searchBarFilter.resetFilters();
+          this._toolbar.show();
+          this._loadingResourcesBtn.setFetching(false);
+          this.invalidateStudies();
+          this.__reloadStudies();
+          break;
+        case "public":
+          this._searchBarFilter.resetFilters();
+          this._toolbar.show();
+          this._loadingResourcesBtn.setFetching(false);
+          this.invalidateStudies();
+          this.__reloadStudies();
+          break;
         case "trash":
           this._searchBarFilter.resetFilters();
           this._toolbar.show();
