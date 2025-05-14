@@ -118,8 +118,7 @@ class ProjectAtDB(BaseProjectModel):
     template_type: Annotated[
         ProjectTemplateType | None,
         Field(
-            # alias="template_type",
-            examples=["TEMPLATE", "TUTORIAL", "HYPERTOOL"],
+            examples=["TEMPLATE", "TUTORIAL", "HYPERTOOL", None],
         ),
     ]
 
