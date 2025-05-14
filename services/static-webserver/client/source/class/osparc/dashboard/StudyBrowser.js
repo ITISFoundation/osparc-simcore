@@ -624,7 +624,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         card.addListener("tap", e => this.__studyCardClicked(card, e.getNativeEvent().shiftKey), this);
         this._populateCardMenu(card);
 
-        if (this.getCurrentContext() !== "trash") {
+        if (["studiesAndFolders", "search"].includes(this.getCurrentContext())) {
           this.__attachDragHandlers(card);
         }
       });
