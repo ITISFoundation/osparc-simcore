@@ -164,7 +164,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __reloadWorkspaces: function() {
       if (
         !osparc.auth.Manager.getInstance().isLoggedIn() ||
-        this.getCurrentContext() === "studiesAndFolders" ||
+        ["studiesAndFolders", "templates", "public"].includes(this.getCurrentContext()) ||
         this.__loadingWorkspaces
       ) {
         return;
@@ -208,7 +208,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __reloadFolders: function() {
       if (
         !osparc.auth.Manager.getInstance().isLoggedIn() ||
-        this.getCurrentContext() === "workspaces" ||
+        ["workspaces", "templates", "public"].includes(this.getCurrentContext()) ||
         this.__loadingFolders
       ) {
         return;
@@ -818,14 +818,20 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       let request = null;
       switch (this.getCurrentContext()) {
-        case "trash":
-          request = osparc.data.Resources.fetch("studies", "getPageTrashed", params, options);
+        case "studiesAndFolders":
+          request = osparc.data.Resources.fetch("studies", "getPage", params, options);
           break;
         case "search":
           request = osparc.data.Resources.fetch("studies", "getPageSearch", params, options);
           break;
-        case "studiesAndFolders":
-          request = osparc.data.Resources.fetch("studies", "getPage", params, options);
+        case "templates":
+          request = osparc.store.Templates.fetchTemplatesPaginated(params, options);
+          break;
+        case "public":
+          request = osparc.store.Templates.fetchTemplatesPaginated(params, options);
+          break;
+        case "trash":
+          request = osparc.data.Resources.fetch("studies", "getPageTrashed", params, options);
           break;
       }
       return request;
