@@ -18,7 +18,7 @@ from aiodocker.volumes import DockerVolume
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
-from models_library.api_schemas_dynamic_sidecar.containers import DcokerComposeYamlStr
+from models_library.api_schemas_dynamic_sidecar.containers import DockerComposeYamlStr
 from models_library.generated_models.docker_rest_api import ContainerState
 from models_library.generated_models.docker_rest_api import Status2 as ContainerStatus
 from models_library.rabbitmq_messages import (
@@ -74,7 +74,7 @@ def raw_compose_spec(container_names: list[str]) -> dict[str, Any]:
 
 
 @pytest.fixture
-def compose_spec(raw_compose_spec: dict[str, Any]) -> DcokerComposeYamlStr:
+def compose_spec(raw_compose_spec: dict[str, Any]) -> DockerComposeYamlStr:
     return json.dumps(raw_compose_spec)
 
 
@@ -147,7 +147,7 @@ def mock_user_services_fail_to_stop(mocker: MockerFixture) -> None:
 
 async def _get_task_id_create_service_containers(
     httpx_async_client: AsyncClient,
-    compose_spec: DcokerComposeYamlStr,
+    compose_spec: DockerComposeYamlStr,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
 ) -> TaskId:
     containers_compose_spec = ContainersComposeSpec(
