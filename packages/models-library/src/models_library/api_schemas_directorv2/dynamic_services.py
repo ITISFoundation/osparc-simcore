@@ -1,6 +1,7 @@
-from typing import TypeAlias
+from typing import Annotated, TypeAlias
 
-from pydantic import BaseModel, ByteSize, ConfigDict, Field
+from pydantic import AnyHttpUrl, BaseModel, BeforeValidator, ByteSize, ConfigDict, Field
+from pydantic.config import JsonDict
 
 from ..resource_tracker import HardwareInfo, PricingInfo
 from ..services import ServicePortKey
@@ -38,39 +39,61 @@ class RetrieveDataOutEnveloped(BaseModel):
 class DynamicServiceCreate(ServiceDetails):
     service_resources: ServiceResourcesDict
 
-    product_name: str = Field(..., description="Current product name")
-    can_save: bool = Field(
-        ..., description="the service data must be saved when closing"
-    )
-    wallet_info: WalletInfo | None = Field(
-        default=None,
-        description="contains information about the wallet used to bill the running service",
-    )
-    pricing_info: PricingInfo | None = Field(
-        default=None,
-        description="contains pricing information (ex. pricing plan and unit ids)",
-    )
-    hardware_info: HardwareInfo | None = Field(
-        default=None,
-        description="contains harware information (ex. aws_ec2_instances)",
-    )
-    model_config = ConfigDict(
-        json_schema_extra={
-            "example": {
-                "key": "simcore/services/dynamic/3dviewer",
-                "version": "2.4.5",
-                "user_id": 234,
-                "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
-                "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
-                "basepath": "/x/75c7f3f4-18f9-4678-8610-54a2ade78eaa",
-                "product_name": "osparc",
-                "can_save": True,
-                "service_resources": ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
-                "wallet_info": WalletInfo.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
-                "pricing_info": PricingInfo.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
-                "hardware_info": HardwareInfo.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
+    product_name: Annotated[str, Field(..., description="Current product name")]
+    product_api_base_url: Annotated[
+        str,
+        BeforeValidator(lambda v: f"{AnyHttpUrl(v)}"),
+        Field(..., description="Current product API base URL"),
+    ]
+    can_save: Annotated[
+        bool, Field(..., description="the service data must be saved when closing")
+    ]
+    wallet_info: Annotated[
+        WalletInfo | None,
+        Field(
+            default=None,
+            description="contains information about the wallet used to bill the running service",
+        ),
+    ]
+    pricing_info: Annotated[
+        PricingInfo | None,
+        Field(
+            default=None,
+            description="contains pricing information (ex. pricing plan and unit ids)",
+        ),
+    ]
+    hardware_info: Annotated[
+        HardwareInfo | None,
+        Field(
+            default=None,
+            description="contains hardware information (ex. aws_ec2_instances)",
+        ),
+    ]
+
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "example": {
+                    "key": "simcore/services/dynamic/3dviewer",
+                    "version": "2.4.5",
+                    "user_id": 234,
+                    "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
+                    "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                    "basepath": "/x/75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                    "product_name": "osparc",
+                    "product_api_base_url": "https://api.local/",
+                    "can_save": True,
+                    "service_resources": ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
+                    "wallet_info": WalletInfo.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
+                    "pricing_info": PricingInfo.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
+                    "hardware_info": HardwareInfo.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
+                }
             }
-        }
+        )
+
+    model_config = ConfigDict(
+        json_schema_extra=_update_json_schema_extra,
     )
 
 

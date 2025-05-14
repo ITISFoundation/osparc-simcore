@@ -183,7 +183,12 @@ def _create_project_with_filepicker_and_service(
 
 
 async def _add_new_project(
-    app: web.Application, project: Project, user: UserInfo, *, product_name: str
+    app: web.Application,
+    project: Project,
+    user: UserInfo,
+    *,
+    product_name: str,
+    product_api_base_url: str,
 ):
     # TODO: move this to projects_api
     # TODO: this piece was taken from the end of projects.projects_handlers.create_projects
@@ -212,7 +217,9 @@ async def _add_new_project(
     #
     # TODO: Ensure this user has access to these services!
     #
-    await create_or_update_pipeline(app, user.id, project.uuid, product_name)
+    await create_or_update_pipeline(
+        app, user.id, project.uuid, product_name, product_api_base_url
+    )
 
 
 async def _project_exists(
@@ -245,6 +252,7 @@ async def get_or_create_project_with_file_and_service(
     download_link: HttpUrl,
     *,
     product_name: str,
+    product_api_base_url: str,
 ) -> ProjectNodePair:
     #
     # Generate one project per user + download_link + viewer
@@ -292,7 +300,13 @@ async def get_or_create_project_with_file_and_service(
             viewer,
         )
 
-        await _add_new_project(app, project, user, product_name=product_name)
+        await _add_new_project(
+            app,
+            project,
+            user,
+            product_name=product_name,
+            product_api_base_url=product_api_base_url,
+        )
 
     return ProjectNodePair(project_uid=project_uid, node_uid=service_id)
 
@@ -304,6 +318,7 @@ async def get_or_create_project_with_service(
     service_info: ServiceInfo,
     *,
     product_name: str,
+    product_api_base_url: str,
 ) -> ProjectNodePair:
     project_uid: ProjectID = compose_uuid_from(user.id, service_info.footprint)
     _, service_id = _generate_nodeids(project_uid)
@@ -322,7 +337,13 @@ async def get_or_create_project_with_service(
             owner=user,
             service_info=service_info,
         )
-        await _add_new_project(app, project, user, product_name=product_name)
+        await _add_new_project(
+            app,
+            project,
+            user,
+            product_name=product_name,
+            product_api_base_url=product_api_base_url,
+        )
 
     return ProjectNodePair(project_uid=project_uid, node_uid=service_id)
 
@@ -335,6 +356,7 @@ async def get_or_create_project_with_file(
     *,
     project_thumbnail: HttpUrl,
     product_name: str,
+    product_api_base_url: str,
 ) -> ProjectNodePair:
     project_uid: ProjectID = compose_uuid_from(user.id, file_params.footprint)
     file_picker_id, _ = _generate_nodeids(project_uid)
@@ -364,6 +386,12 @@ async def get_or_create_project_with_file(
             },
         )
 
-        await _add_new_project(app, project, user, product_name=product_name)
+        await _add_new_project(
+            app,
+            project,
+            user,
+            product_name=product_name,
+            product_api_base_url=product_api_base_url,
+        )
 
     return ProjectNodePair(project_uid=project_uid, node_uid=file_picker_id)

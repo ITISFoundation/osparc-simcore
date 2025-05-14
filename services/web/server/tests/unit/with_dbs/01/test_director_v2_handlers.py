@@ -152,6 +152,31 @@ def mock_rpc_list_computations_latest_iteration_tasks(
 
 
 @pytest.fixture
+def mock_rpc_list_computation_iterations(
+    mocker: MockerFixture,
+    user_project: ProjectDict,
+) -> ComputationRunRpcGetPage:
+    project_uuid = user_project["uuid"]
+    example_1 = ComputationRunRpcGet.model_config["json_schema_extra"]["examples"][0]
+    example_1["project_uuid"] = project_uuid
+    example_2 = ComputationRunRpcGet.model_config["json_schema_extra"]["examples"][0]
+    example_2["project_uuid"] = project_uuid
+    example_2["iteration"] = 2
+
+    return mocker.patch(
+        "simcore_service_webserver.director_v2._computations_service.computations.list_computations_iterations_page",
+        spec=True,
+        return_value=ComputationRunRpcGetPage(
+            items=[
+                ComputationRunRpcGet.model_validate(example_1),
+                ComputationRunRpcGet.model_validate(example_2),
+            ],
+            total=2,
+        ),
+    )
+
+
+@pytest.fixture
 def mock_rpc_list_computations_latest_iteration_tasks_page(
     mocker: MockerFixture,
     user_project: ProjectDict,
@@ -180,6 +205,7 @@ async def test_list_computations_latest_iteration(
     expected: ExpectedResponse,
     mock_rpc_list_computations_latest_iteration_tasks: None,
     mock_rpc_list_computations_latest_iteration_tasks_page: None,
+    mock_rpc_list_computation_iterations: None,
 ):
     assert client.app
     url = client.app.router["list_computations_latest_iteration"].url_for()
@@ -190,6 +216,19 @@ async def test_list_computations_latest_iteration(
     if user_role != UserRole.ANONYMOUS:
         assert ComputationRunRestGet.model_validate(data[0])
         assert data[0]["rootProjectName"] == user_project["name"]
+
+    url = client.app.router["list_computation_iterations"].url_for(
+        project_id=f"{user_project['uuid']}"
+    )
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(
+        resp, status.HTTP_200_OK if user_role == UserRole.GUEST else expected.ok
+    )
+    if user_role != UserRole.ANONYMOUS:
+        assert ComputationRunRestGet.model_validate(data[0])
+        assert len(data) == 2
+        assert data[0]["rootProjectName"] == user_project["name"]
+        assert data[1]["rootProjectName"] == user_project["name"]
 
     url = client.app.router["list_computations_latest_iteration_tasks"].url_for(
         project_id=f"{user_project['uuid']}"

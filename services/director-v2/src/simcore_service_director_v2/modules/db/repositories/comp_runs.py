@@ -190,6 +190,16 @@ class CompRunsRepository(BaseRepository):
                 )
             ]
 
+    _COMPUTATION_RUNS_RPC_GET_COLUMNS = [  # noqa: RUF012
+        comp_runs.c.project_uuid,
+        comp_runs.c.iteration,
+        comp_runs.c.result.label("state"),
+        comp_runs.c.metadata.label("info"),
+        comp_runs.c.created.label("submitted_at"),
+        comp_runs.c.started.label("started_at"),
+        comp_runs.c.ended.label("ended_at"),
+    ]
+
     async def list_for_user__only_latest_iterations(
         self,
         *,
@@ -212,13 +222,7 @@ class CompRunsRepository(BaseRepository):
             order_by = OrderBy(field=IDStr("run_id"))  # default ordering
 
         base_select_query = sa.select(
-            comp_runs.c.project_uuid,
-            comp_runs.c.iteration,
-            comp_runs.c.result.label("state"),
-            comp_runs.c.metadata.label("info"),
-            comp_runs.c.created.label("submitted_at"),
-            comp_runs.c.started.label("started_at"),
-            comp_runs.c.ended.label("ended_at"),
+            *self._COMPUTATION_RUNS_RPC_GET_COLUMNS
         ).select_from(
             sa.select(
                 comp_runs.c.project_uuid,
@@ -253,6 +257,62 @@ class CompRunsRepository(BaseRepository):
                     == literal_column("latest_runs.latest_iteration"),
                 ),
             )
+        )
+
+        # Select total count from base_query
+        count_query = sa.select(sa.func.count()).select_from(
+            base_select_query.subquery()
+        )
+
+        # Ordering and pagination
+        if order_by.direction == OrderDirection.ASC:
+            list_query = base_select_query.order_by(
+                sa.asc(getattr(comp_runs.c, order_by.field)), comp_runs.c.run_id
+            )
+        else:
+            list_query = base_select_query.order_by(
+                desc(getattr(comp_runs.c, order_by.field)), comp_runs.c.run_id
+            )
+        list_query = list_query.offset(offset).limit(limit)
+
+        async with pass_or_acquire_connection(self.db_engine) as conn:
+            total_count = await conn.scalar(count_query)
+
+            items = [
+                ComputationRunRpcGet.model_validate(
+                    {
+                        **row,
+                        "state": DB_TO_RUNNING_STATE[row["state"]],
+                    }
+                )
+                async for row in await conn.stream(list_query)
+            ]
+
+            return cast(int, total_count), items
+
+    async def list_for_user_and_project_all_iterations(
+        self,
+        *,
+        product_name: str,
+        user_id: UserID,
+        project_id: ProjectID,
+        # pagination
+        offset: int,
+        limit: int,
+        # ordering
+        order_by: OrderBy | None = None,
+    ) -> tuple[int, list[ComputationRunRpcGet]]:
+        if order_by is None:
+            order_by = OrderBy(field=IDStr("run_id"))  # default ordering
+
+        base_select_query = sa.select(
+            *self._COMPUTATION_RUNS_RPC_GET_COLUMNS,
+        ).where(
+            (comp_runs.c.user_id == user_id)
+            & (comp_runs.c.project_uuid == f"{project_id}")
+            & (
+                comp_runs.c.metadata["product_name"].astext == product_name
+            )  # <-- NOTE: We might create a separate column for this for fast retrieval
         )
 
         # Select total count from base_query

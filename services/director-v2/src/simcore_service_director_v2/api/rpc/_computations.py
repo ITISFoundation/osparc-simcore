@@ -53,6 +53,36 @@ async def list_computations_latest_iteration_page(
     )
 
 
+@router.expose(reraise_if_error_type=())
+async def list_computations_iterations_page(
+    app: FastAPI,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    project_id: ProjectID,
+    # pagination
+    offset: int = 0,
+    limit: int = 20,
+    # ordering
+    order_by: OrderBy | None = None,
+) -> ComputationRunRpcGetPage:
+    comp_runs_repo = CompRunsRepository.instance(db_engine=app.state.engine)
+    total, comp_runs_output = (
+        await comp_runs_repo.list_for_user_and_project_all_iterations(
+            product_name=product_name,
+            user_id=user_id,
+            project_id=project_id,
+            offset=offset,
+            limit=limit,
+            order_by=order_by,
+        )
+    )
+    return ComputationRunRpcGetPage(
+        items=comp_runs_output,
+        total=total,
+    )
+
+
 async def _fetch_task_log(
     user_id: UserID, project_id: ProjectID, task: ComputationTaskForRpcDBGet
 ) -> TaskLogFileGet | None:
