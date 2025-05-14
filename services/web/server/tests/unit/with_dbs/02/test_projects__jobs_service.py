@@ -242,7 +242,7 @@ async def test_filter_projects_by_metadata(
         app=client.app,
         product_name=osparc_product_name,
         user_id=user_id,
-        filter_by_any_of_metadata=filter_exact,
+        filter_by_any_custom_metadata=filter_exact,
     )
     assert total_count == 1
     assert len(result) == 1
@@ -254,7 +254,7 @@ async def test_filter_projects_by_metadata(
         app=client.app,
         product_name=osparc_product_name,
         user_id=user_id,
-        filter_by_any_of_metadata=filter_multiple_keys,
+        filter_by_any_custom_metadata=filter_multiple_keys,
     )
     assert total_count == 1
     assert len(result) == 1
@@ -269,7 +269,7 @@ async def test_filter_projects_by_metadata(
         app=client.app,
         product_name=osparc_product_name,
         user_id=user_id,
-        filter_by_any_of_metadata=filter_alternative,
+        filter_by_any_custom_metadata=filter_alternative,
     )
     assert total_count == 1
     assert len(result) == 1
@@ -281,7 +281,7 @@ async def test_filter_projects_by_metadata(
         app=client.app,
         product_name=osparc_product_name,
         user_id=user_id,
-        filter_by_any_of_metadata=filter_non_matching,
+        filter_by_any_custom_metadata=filter_non_matching,
     )
     assert total_count == 0
     assert len(result) == 0
@@ -293,7 +293,7 @@ async def test_filter_projects_by_metadata(
         app=client.app,
         product_name=osparc_product_name,
         user_id=user_id,
-        filter_by_any_of_metadata=filter_wildcard,
+        filter_by_any_custom_metadata=filter_wildcard,
     )
     assert total_count == 1
     assert len(result) == 1
@@ -305,7 +305,7 @@ async def test_filter_projects_by_metadata(
         product_name=osparc_product_name,
         user_id=user_id,
         filter_by_job_parent_resource_name_prefix="test/resource",
-        filter_by_any_of_metadata=[{"category": "simulation"}],
+        filter_by_any_custom_metadata=[{"category": "simulation"}],
     )
     assert total_count == 1
     assert len(result) == 1
@@ -317,7 +317,7 @@ async def test_filter_projects_by_metadata(
         product_name=osparc_product_name,
         user_id=user_id,
         filter_by_job_parent_resource_name_prefix="non-matching",
-        filter_by_any_of_metadata=[{"category": "simulation"}],
+        filter_by_any_custom_metadata=[{"category": "simulation"}],
     )
     assert total_count == 0
     assert len(result) == 0
