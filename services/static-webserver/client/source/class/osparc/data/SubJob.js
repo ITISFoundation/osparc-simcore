@@ -29,7 +29,7 @@ qx.Class.define("osparc.data.SubJob", {
       progress: subJobData["progress"],
       startedAt: subJobData["startedAt"] ? new Date(subJobData["startedAt"]) : null,
       endedAt: subJobData["endedAt"] ? new Date(subJobData["endedAt"]) : null,
-      osparcCredits: subJobData["osparcCredits"] || null,
+      osparcCredits: subJobData["osparcCredits"] === null ? null : -1*parseFloat(subJobData["osparcCredits"]),
       image: subJobData["image"] || {},
       logDownloadLink: subJobData["logDownloadLink"] || null,
     });

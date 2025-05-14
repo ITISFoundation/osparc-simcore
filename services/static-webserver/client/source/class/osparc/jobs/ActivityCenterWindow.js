@@ -24,8 +24,8 @@ qx.Class.define("osparc.jobs.ActivityCenterWindow", {
     this.set({
       layout: new qx.ui.layout.VBox(),
       modal: true,
-      width: 1100,
-      height: 500,
+      width: this.self().WIDTH,
+      height: this.self().HEIGHT,
       showMaximize: false,
       showMinimize: false,
     });
@@ -34,6 +34,9 @@ qx.Class.define("osparc.jobs.ActivityCenterWindow", {
   },
 
   statics: {
+    WIDTH: 1000,
+    HEIGHT: 500,
+
     openWindow: function() {
       const runsWindow = new osparc.jobs.ActivityCenterWindow();
       runsWindow.center();
