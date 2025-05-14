@@ -29,7 +29,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
     this.__tagButtons = [];
     this.__appTypeButtons = [];
 
-    this._setLayout(new qx.ui.layout.VBox(15));
+    this._setLayout(new qx.ui.layout.VBox(10));
     this.__buildLayout();
   },
 
