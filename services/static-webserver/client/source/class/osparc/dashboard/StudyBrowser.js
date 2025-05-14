@@ -276,8 +276,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             return;
           }
 
-          const studies = resp["data"];
-          this.__addStudiesToList(studies);
+          if (["templates", "public"].includes(this.getCurrentContext())) {
+            const templates = resp["data"];
+            templates.forEach(template => template["resourceType"] = "template");
+            this.__addResourcesToList(templates);
+          } else {
+            const studies = resp["data"];
+            studies.forEach(study => study["resourceType"] = "study");
+            this.__addResourcesToList(studies);
+          }
           if (this._resourcesContainer.getFlatList()) {
             this._resourcesContainer.getFlatList().nextRequest = resp["_links"]["next"];
           }
@@ -333,9 +340,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._reloadCards();
     },
 
-    __addStudiesToList: function(studiesList) {
-      studiesList.forEach(study => study["resourceType"] = "study");
-      studiesList.forEach(study => {
+    __addResourcesToList: function(resourcesList) {
+      resourcesList.forEach(study => {
         const idx = this._resourcesList.findIndex(std => std["uuid"] === study["uuid"]);
         if (idx === -1) {
           this._resourcesList.push(study);
@@ -343,7 +349,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
       this.__reloadNewCards();
 
-      studiesList.forEach(study => {
+      resourcesList.forEach(study => {
         const state = study["state"];
         if (state && "locked" in state && state["locked"]["value"] && state["locked"]["status"] === "CLOSING") {
           // websocket might have already notified that the state was closed.

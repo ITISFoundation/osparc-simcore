@@ -24,7 +24,8 @@ qx.Class.define("osparc.store.Templates", {
 
     fetchTemplatesPaginated: function(params, options) {
       return osparc.data.Resources.fetch("templates", "getPage", params, options)
-        .then(templates => {
+        .then(resp => {
+          const templates = resp.data;
           // add them to the list
           if (this.__templates) {
             templates.forEach(template => {
@@ -36,7 +37,7 @@ qx.Class.define("osparc.store.Templates", {
               }
             });
           }
-          return templates;
+          return resp;
         })
         .catch(err => osparc.FlashMessenger.logError(err));
     },
