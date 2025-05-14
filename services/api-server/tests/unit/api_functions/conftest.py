@@ -2,6 +2,7 @@
 # pylint: disable=no-value-for-parameter
 # pylint: disable=super-init-not-called
 # pylint: disable=unused-argument
+# pylint: disable=no-self-use
 
 from uuid import uuid4
 
@@ -47,7 +48,7 @@ class DummyRpcClient(RabbitMQRPCClient):
 
     def __init__(self):
         self.client_name = "dummy_client"
-        self.settings = {}  # Add a settings attribute to avoid AttributeError
+        self.settings = {}  # type: ignore # Add a settings attribute to avoid AttributeError
 
     async def request(self, namespace: str, method_name: str, **kwargs):
         # Mock implementation of the request method
@@ -103,6 +104,7 @@ class MockFunctionRegister:
     async def run_function(
         self, rabbitmq_rpc_client: RabbitMQRPCClient, function_id: str, inputs: dict
     ) -> dict:
+        assert isinstance(rabbitmq_rpc_client, RabbitMQRPCClient)
         # Mimic running a function and returning a success status
         if function_id not in self._functions:
             raise FunctionIDNotFoundError(function_id=function_id)
@@ -114,6 +116,7 @@ class MockFunctionRegister:
         pagination_offset: int = 0,
         pagination_limit: int = 10,
     ) -> tuple[list[RegisteredFunction], PageMetaInfoLimitOffset]:
+        assert isinstance(rabbitmq_rpc_client, RabbitMQRPCClient)
         # Mimic listing all functions
         functions_list = list(self._functions.values())[
             pagination_offset : pagination_offset + pagination_limit
@@ -130,6 +133,7 @@ class MockFunctionRegister:
     async def delete_function(
         self, rabbitmq_rpc_client: RabbitMQRPCClient, function_id: str
     ) -> None:
+        assert isinstance(rabbitmq_rpc_client, RabbitMQRPCClient)
         # Mimic deleting a function
         if function_id in self._functions:
             del self._functions[function_id]
@@ -139,6 +143,7 @@ class MockFunctionRegister:
     async def register_function_job(
         self, rabbitmq_rpc_client: RabbitMQRPCClient, function_job: FunctionJob
     ) -> RegisteredFunctionJob:
+        assert isinstance(rabbitmq_rpc_client, RabbitMQRPCClient)
         # Mimic registering a function job
         uid = uuid4()
         self._function_jobs[uid] = TypeAdapter(RegisteredFunctionJob).validate_python(
@@ -158,6 +163,7 @@ class MockFunctionRegister:
     async def get_function_job(
         self, rabbitmq_rpc_client: RabbitMQRPCClient, function_job_id: str
     ) -> RegisteredFunctionJob:
+        assert isinstance(rabbitmq_rpc_client, RabbitMQRPCClient)
         # Mimic retrieval of a function job based on function_job_id and raise 404 if not found
         if function_job_id not in self._function_jobs:
             raise FunctionJobIDNotFoundError(function_id=function_job_id)
@@ -169,6 +175,9 @@ class MockFunctionRegister:
         pagination_offset: int,
         pagination_limit: int,
     ) -> tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset]:
+
+        assert isinstance(rabbitmq_rpc_client, RabbitMQRPCClient)
+
         # Mimic listing all function jobs
         function_jobs_list = list(self._function_jobs.values())[
             pagination_offset : pagination_offset + pagination_limit
@@ -185,6 +194,7 @@ class MockFunctionRegister:
     async def delete_function_job(
         self, rabbitmq_rpc_client: RabbitMQRPCClient, function_job_id: str
     ) -> None:
+        assert isinstance(rabbitmq_rpc_client, RabbitMQRPCClient)
         # Mimic deleting a function job
         if function_job_id in self._function_jobs:
             del self._function_jobs[function_job_id]
@@ -196,6 +206,7 @@ class MockFunctionRegister:
         rabbitmq_rpc_client: RabbitMQRPCClient,
         function_job_collection: FunctionJobCollection,
     ) -> RegisteredFunctionJobCollection:
+        assert isinstance(rabbitmq_rpc_client, RabbitMQRPCClient)
         # Mimic registering a function job collection
         uid = uuid4()
         self._function_job_collections[uid] = TypeAdapter(
@@ -213,6 +224,7 @@ class MockFunctionRegister:
     async def get_function_job_collection(
         self, rabbitmq_rpc_client: RabbitMQRPCClient, function_job_collection_id: str
     ) -> RegisteredFunctionJobCollection:
+        assert isinstance(rabbitmq_rpc_client, RabbitMQRPCClient)
         # Mimic retrieval of a function job collection based on collection_id and raise 404 if not found
         if function_job_collection_id not in self._function_job_collections:
             raise FunctionJobCollectionIDNotFoundError(
@@ -226,6 +238,7 @@ class MockFunctionRegister:
         pagination_offset: int,
         pagination_limit: int,
     ) -> tuple[list[RegisteredFunctionJobCollection], PageMetaInfoLimitOffset]:
+        assert isinstance(rabbitmq_rpc_client, RabbitMQRPCClient)
         # Mimic listing all function job collections
         function_job_collections_list = list(self._function_job_collections.values())[
             pagination_offset : pagination_offset + pagination_limit
@@ -242,6 +255,7 @@ class MockFunctionRegister:
     async def delete_function_job_collection(
         self, rabbitmq_rpc_client: RabbitMQRPCClient, function_job_collection_id: str
     ) -> None:
+        assert isinstance(rabbitmq_rpc_client, RabbitMQRPCClient)
         # Mimic deleting a function job collection
         if function_job_collection_id in self._function_job_collections:
             del self._function_job_collections[function_job_collection_id]
@@ -253,6 +267,7 @@ class MockFunctionRegister:
     async def update_function_title(
         self, rabbitmq_rpc_client: RabbitMQRPCClient, function_id: str, title: str
     ) -> RegisteredFunction:
+        assert isinstance(rabbitmq_rpc_client, RabbitMQRPCClient)
         # Mimic updating the title of a function
         if function_id not in self._functions:
             raise FunctionIDNotFoundError(function_id=function_id)
@@ -262,6 +277,7 @@ class MockFunctionRegister:
     async def update_function_description(
         self, rabbitmq_rpc_client: RabbitMQRPCClient, function_id: str, description: str
     ) -> RegisteredFunction:
+        assert isinstance(rabbitmq_rpc_client, RabbitMQRPCClient)
         # Mimic updating the description of a function
         if function_id not in self._functions:
             raise FunctionIDNotFoundError(function_id=function_id)
