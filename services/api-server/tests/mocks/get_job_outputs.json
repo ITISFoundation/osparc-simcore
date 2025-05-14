@@ -145,6 +145,8 @@
         "creationDate": "2024-07-16T12:56:51.922Z",
         "lastChangeDate": "2024-07-16T12:56:51.922Z",
         "workspaceId": 5,
+        "type": "STANDARD",
+        "templateType": null,
         "folderId": 2,
         "trashedAt": null,
         "trashedBy": null,
