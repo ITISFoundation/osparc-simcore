@@ -296,8 +296,6 @@ REPLACE_PROJECT = HttpApiCallCapture(
                 "state": {"value": "NOT_STARTED"},
             },
             "workspace_id": None,
-            "type": "STANDARD",
-            "templateType": None,
             "folder_id": None,
             "trashedAt": None,
             "trashedBy": None,

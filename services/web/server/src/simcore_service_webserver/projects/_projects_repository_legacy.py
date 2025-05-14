@@ -176,7 +176,7 @@ class ProjectDBAPI(BaseProjectDB):
                                     *[
                                         c
                                         for c in projects.columns
-                                        if c.name not in ["type", "hidden", "published"]
+                                        if c.name not in ["hidden", "published"]
                                     ]
                                 )
                             )
