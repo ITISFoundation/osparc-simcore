@@ -1,3 +1,5 @@
+# pylint: disable=too-many-public-methods
+
 from dataclasses import dataclass
 from functools import partial
 from typing import cast
