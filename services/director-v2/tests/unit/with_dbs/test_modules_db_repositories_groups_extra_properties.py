@@ -1,7 +1,8 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
-from typing import Any, Callable, Iterator, cast
+from collections.abc import Callable, Iterator
+from typing import Any, cast
 
 import pytest
 import sqlalchemy as sa
@@ -115,11 +116,11 @@ def with_internet_access(request: pytest.FixtureRequest) -> bool:
 @pytest.fixture()
 async def user(
     mock_env: EnvVarsDict,
-    registered_user: Callable[..., dict],
+    create_registered_user: Callable[..., dict],
     give_internet_to_group: Callable[..., dict],
     with_internet_access: bool,
 ) -> dict[str, Any]:
-    user = registered_user()
+    user = create_registered_user()
     group_info = give_internet_to_group(
         group_id=user["primary_gid"], has_internet_access=with_internet_access
     )

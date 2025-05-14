@@ -112,8 +112,7 @@ def minimal_configuration(
     dy_static_file_server_dynamic_sidecar_compose_spec_service: dict,
     simcore_services_ready: None,
     ensure_swarm_and_networks: None,
-):
-    ...
+): ...
 
 
 @pytest.fixture
@@ -132,8 +131,8 @@ def uuid_dynamic_sidecar_compose(faker: Faker) -> str:
 
 
 @pytest.fixture
-def user_dict(registered_user: Callable) -> dict[str, Any]:
-    return registered_user()
+def user_dict(create_registered_user: Callable) -> dict[str, Any]:
+    return create_registered_user()
 
 
 @pytest.fixture

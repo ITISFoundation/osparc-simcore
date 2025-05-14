@@ -219,14 +219,14 @@ async def create_comp_run(
 
 @pytest.fixture
 async def publish_project(
-    registered_user: Callable[..., dict[str, Any]],
+    create_registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., Awaitable[ProjectAtDB]],
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
     create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
 ) -> Callable[[], Awaitable[PublishedProject]]:
-    user = registered_user()
+    user = create_registered_user()
 
     async def _() -> PublishedProject:
         created_project = await project(user, workbench=fake_workbench_without_outputs)
@@ -254,7 +254,7 @@ async def published_project(
 
 @pytest.fixture
 async def running_project(
-    registered_user: Callable[..., dict[str, Any]],
+    create_registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., Awaitable[ProjectAtDB]],
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
     create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
@@ -262,7 +262,7 @@ async def running_project(
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
 ) -> RunningProject:
-    user = registered_user()
+    user = create_registered_user()
     created_project = await project(user, workbench=fake_workbench_without_outputs)
     now_time = arrow.utcnow().datetime
     return RunningProject(
@@ -291,7 +291,7 @@ async def running_project(
 
 @pytest.fixture
 async def running_project_mark_for_cancellation(
-    registered_user: Callable[..., dict[str, Any]],
+    create_registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., Awaitable[ProjectAtDB]],
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
     create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
@@ -299,7 +299,7 @@ async def running_project_mark_for_cancellation(
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
 ) -> RunningProject:
-    user = registered_user()
+    user = create_registered_user()
     created_project = await project(user, workbench=fake_workbench_without_outputs)
     now_time = arrow.utcnow().datetime
     return RunningProject(
