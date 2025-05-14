@@ -12,6 +12,9 @@ from models_library.rest_ordering import OrderBy
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from pydantic import NonNegativeInt
+from servicelib.rabbitmq import (
+    RabbitMQRPCClient,
+)
 from servicelib.rabbitmq.rpc_interfaces.director_v2 import computations
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import (
     credit_transactions,
@@ -30,7 +33,7 @@ from ..projects.api import (
 from ..projects.projects_metadata_service import (
     get_project_custom_metadata_or_empty_dict,
 )
-from ..rabbitmq import RabbitMQRPCClient, get_rabbitmq_rpc_client
+from ..rabbitmq import get_rabbitmq_rpc_client
 
 
 async def _get_projects_metadata(
