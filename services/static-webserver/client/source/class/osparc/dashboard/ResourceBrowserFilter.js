@@ -34,6 +34,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
   },
 
   events: {
+    "templatesContext": "qx.event.type.Event",
+    "publishedContext": "qx.event.type.Event",
     "trashContext": "qx.event.type.Event",
     "changeTab": "qx.event.type.Data",
     "trashStudyRequested": "qx.event.type.Data",
@@ -46,6 +48,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
   members: {
     __resourceType: null,
     __workspacesAndFoldersTree: null,
+    __templatesButton: null,
+    __publishedButton: null,
     __trashButton: null,
     __sharedWithButtons: null,
     __tagButtons: null,
@@ -56,6 +60,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
       switch (this.__resourceType) {
         case "study": {
           this._add(this.__createWorkspacesAndFoldersTree());
+          this._add(this.__createTemplates());
+          this._add(this.__createPublished());
           this._add(this.__createTrashBin());
           this._add(filtersSpacer);
           const scrollView = new qx.ui.container.Scroll();
@@ -115,6 +121,40 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
       return this.__workspacesAndFoldersTree;
     },
     /* /WORKSPACES AND FOLDERS */
+
+    __createTemplates: function() {
+      const templatesButton = this.__templatesButton = new qx.ui.toolbar.RadioButton().set({
+        value: false,
+        appearance: "filter-toggle-button",
+        label: this.tr("Templates"),
+        icon: "@FontAwesome5Solid/copy/16",
+        paddingLeft: 10, // align it with the context
+      });
+      templatesButton.addListener("changeValue", e => {
+        const templatesEnabled = e.getData();
+        if (templatesEnabled) {
+          this.fireEvent("templatesContext");
+        }
+      });
+      return templatesButton;
+    },
+
+    __createPublished: function() {
+      const publishedButton = this.__publishedButton = new qx.ui.toolbar.RadioButton().set({
+        value: false,
+        appearance: "filter-toggle-button",
+        label: this.tr("Public Projects"),
+        icon: "@FontAwesome5Solid/globe/16",
+        paddingLeft: 10, // align it with the context
+      });
+      publishedButton.addListener("changeValue", e => {
+        const templatesEnabled = e.getData();
+        if (templatesEnabled) {
+          this.fireEvent("publishedContext");
+        }
+      });
+      return publishedButton;
+    },
 
     /* TRASH BIN */
     __createTrashBin: function() {

@@ -1040,9 +1040,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }
       }, this);
 
-      this._resourceFilter.addListener("trashContext", () => {
-        this._changeContext("trash");
-      });
+      this._resourceFilter.addListener("templatesContext", () => this._changeContext("templates"));
+      this._resourceFilter.addListener("publishedContext", () => this._changeContext("published"));
+      this._resourceFilter.addListener("trashContext", () => this._changeContext("trash"));
 
       this._searchBarFilter.addListener("filterChanged", e => {
         const filterData = e.getData();
