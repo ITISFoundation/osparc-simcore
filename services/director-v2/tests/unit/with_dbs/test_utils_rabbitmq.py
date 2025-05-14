@@ -79,8 +79,8 @@ async def _assert_message_received(
 
 
 @pytest.fixture
-def user(registered_user: Callable[..., dict]) -> dict:
-    return registered_user()
+def user(create_registered_user: Callable[..., dict]) -> dict:
+    return create_registered_user()
 
 
 @pytest.fixture

@@ -1087,7 +1087,7 @@ async def test_broken_pipeline_configuration_is_not_scheduled_and_aborted(
     with_disabled_scheduler_publisher: mock.Mock,
     initialized_app: FastAPI,
     scheduler_api: BaseCompScheduler,
-    registered_user: Callable[..., dict[str, Any]],
+    create_registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., Awaitable[ProjectAtDB]],
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
     fake_workbench_without_outputs: dict[str, Any],
@@ -1097,7 +1097,7 @@ async def test_broken_pipeline_configuration_is_not_scheduled_and_aborted(
 ):
     """A pipeline which comp_tasks are missing should not be scheduled.
     It shall be aborted and shown as such in the comp_runs db"""
-    user = registered_user()
+    user = create_registered_user()
     sleepers_project = await project(user, workbench=fake_workbench_without_outputs)
     await create_pipeline(
         project_id=f"{sleepers_project.uuid}",

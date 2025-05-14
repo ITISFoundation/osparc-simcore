@@ -77,18 +77,16 @@ def minimal_configuration(
     simcore_services_ready: None,
     rabbit_service: RabbitSettings,
     storage_service: URL,
-):
-    ...
+): ...
 
 
 @pytest.fixture
-def mock_env(mock_env: EnvVarsDict, minimal_configuration) -> None:
-    ...
+def mock_env(mock_env: EnvVarsDict, minimal_configuration) -> None: ...
 
 
 @pytest.fixture
-def user_db(registered_user: Callable[..., dict[str, Any]]) -> dict[str, Any]:
-    user = registered_user()
+def user_db(create_registered_user: Callable[..., dict[str, Any]]) -> dict[str, Any]:
+    user = create_registered_user()
     return user
 
 

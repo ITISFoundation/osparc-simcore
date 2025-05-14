@@ -61,11 +61,11 @@ def cli_runner(minimal_configuration: None) -> CliRunner:
 
 @pytest.fixture
 async def project_at_db(
-    registered_user: Callable[..., dict[str, Any]],
+    create_registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., Awaitable[ProjectAtDB]],
     fake_workbench_without_outputs: dict[str, Any],
 ) -> ProjectAtDB:
-    user = registered_user()
+    user = create_registered_user()
     return await project(user, workbench=fake_workbench_without_outputs)
 
 
