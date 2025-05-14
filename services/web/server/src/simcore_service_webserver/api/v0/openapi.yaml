@@ -2567,6 +2567,13 @@ paths:
           type: integer
           default: 0
           title: Offset
+      - name: filter_only_running
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+          title: Filter Only Running
       responses:
         '200':
           description: Successful Response
@@ -9102,6 +9109,12 @@ components:
             format: date-time
           - type: 'null'
           title: Endedat
+        rootProjectName:
+          type: string
+          title: Rootprojectname
+        projectCustomMetadata:
+          type: object
+          title: Projectcustommetadata
       type: object
       required:
       - projectUuid
@@ -9111,6 +9124,8 @@ components:
       - submittedAt
       - startedAt
       - endedAt
+      - rootProjectName
+      - projectCustomMetadata
       title: ComputationRunRestGet
     ComputationStart:
       properties:

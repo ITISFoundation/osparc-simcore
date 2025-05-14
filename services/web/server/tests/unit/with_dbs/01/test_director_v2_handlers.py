@@ -134,18 +134,18 @@ async def test_stop_computation(
 @pytest.fixture
 def mock_rpc_list_computations_latest_iteration_tasks(
     mocker: MockerFixture,
+    user_project: ProjectDict,
 ) -> ComputationRunRpcGetPage:
+    project_uuid = user_project["uuid"]
+    example = ComputationRunRpcGet.model_config["json_schema_extra"]["examples"][0]
+    example["project_uuid"] = project_uuid
+    example["info"]["project_metadata"]["root_parent_project_id"] = project_uuid
+
     return mocker.patch(
         "simcore_service_webserver.director_v2._computations_service.computations.list_computations_latest_iteration_page",
         spec=True,
         return_value=ComputationRunRpcGetPage(
-            items=[
-                ComputationRunRpcGet.model_validate(
-                    ComputationRunRpcGet.model_config["json_schema_extra"]["examples"][
-                        0
-                    ]
-                )
-            ],
+            items=[ComputationRunRpcGet.model_validate(example)],
             total=1,
         ),
     )
@@ -189,6 +189,7 @@ async def test_list_computations_latest_iteration(
     )
     if user_role != UserRole.ANONYMOUS:
         assert ComputationRunRestGet.model_validate(data[0])
+        assert data[0]["rootProjectName"] == user_project["name"]
 
     url = client.app.router["list_computations_latest_iteration_tasks"].url_for(
         project_id=f"{user_project['uuid']}"
