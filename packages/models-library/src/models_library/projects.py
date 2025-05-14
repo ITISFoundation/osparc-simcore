@@ -3,7 +3,7 @@ Models a study's project document
 """
 
 from datetime import datetime
-from enum import Enum
+from enum import Enum, auto
 from typing import Annotated, Any, Final, TypeAlias
 from uuid import UUID
 
@@ -25,6 +25,7 @@ from .utils.common_validators import (
     empty_str_to_none_pre_validator,
     none_to_empty_str_pre_validator,
 )
+from .utils.enums import StrAutoEnum
 
 ProjectID: TypeAlias = UUID
 CommitID: TypeAlias = int
@@ -50,6 +51,12 @@ class DateTimeStr(ConstrainedStr):
 class ProjectType(str, Enum):
     TEMPLATE = "TEMPLATE"
     STANDARD = "STANDARD"
+
+
+class ProjectTemplateType(StrAutoEnum):
+    TEMPLATE = auto()
+    TUTORIAL = auto()
+    HYPERTOOL = auto()
 
 
 class BaseProjectModel(BaseModel):
