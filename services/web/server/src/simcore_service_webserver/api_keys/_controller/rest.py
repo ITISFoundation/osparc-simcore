@@ -55,7 +55,7 @@ async def create_api_key(request: web.Request):
     api_key = ApiKeyCreateResponse.model_validate(
         {
             **asdict(created_api_key),
-            "api_base_url": get_api_base_url(request) or "",
+            "api_base_url": get_api_base_url(request),
         }
     )
 

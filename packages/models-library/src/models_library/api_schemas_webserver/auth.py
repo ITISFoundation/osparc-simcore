@@ -55,10 +55,13 @@ class UnregisterCheck(InputSchema):
 
 class ApiKeyCreateRequest(InputSchema):
     display_name: Annotated[str, Field(..., min_length=3)]
-    expiration: timedelta | None = Field(
-        None,
-        description="Time delta from creation time to expiration. If None, then it does not expire.",
-    )
+    expiration: Annotated[
+        timedelta | None,
+        Field(
+            None,
+            description="Time delta from creation time to expiration. If None, then it does not expire.",
+        ),
+    ]
 
     model_config = ConfigDict(
         alias_generator=AliasGenerator(
@@ -86,11 +89,14 @@ class ApiKeyCreateRequest(InputSchema):
 class ApiKeyCreateResponse(OutputSchema):
     id: IDStr
     display_name: Annotated[str, Field(..., min_length=3)]
-    expiration: timedelta | None = Field(
-        None,
-        description="Time delta from creation time to expiration. If None, then it does not expire.",
-    )
-    api_base_url: HttpUrl
+    expiration: Annotated[
+        timedelta | None,
+        Field(
+            None,
+            description="Time delta from creation time to expiration. If None, then it does not expire.",
+        ),
+    ]
+    api_base_url: HttpUrl | None = None
     api_key: str
     api_secret: str
 
