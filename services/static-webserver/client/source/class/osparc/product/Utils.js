@@ -139,7 +139,9 @@ qx.Class.define("osparc.product.Utils", {
         case "template":
           return this.getTemplateAlias(options);
         case "service":
-          return this.getServiceAlias(options);
+          // return this.getServiceAlias(options);
+          // Do not use this alias anymore, use "app" instead
+          return this.getAppAlias(options);
         case "hypertool":
           return this.getHypertoolAlias(options);
         case "app":
