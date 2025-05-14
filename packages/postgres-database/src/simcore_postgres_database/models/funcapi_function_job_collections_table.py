@@ -1,8 +1,3 @@
-"""Functions table
-
-- List of functions served by the simcore platform
-"""
-
 import uuid
 
 import sqlalchemy as sa

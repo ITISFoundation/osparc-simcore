@@ -30,7 +30,7 @@ pytest_simcore_core_services_selection = ["rabbit"]
 
 
 @pytest.fixture
-async def clean_functions(client: TestClient, rpc_client: RabbitMQRPCClient):
+async def clean_functions(client: TestClient, rpc_client: RabbitMQRPCClient) -> None:
     assert client.app
     # This function is a placeholder for the actual implementation
     # that deletes all registered functions from the database.
@@ -49,7 +49,7 @@ def app_environment(
     rabbit_service: RabbitSettings,
     app_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
-):
+) -> EnvVarsDict:
     new_envs = setenvs_from_dict(
         monkeypatch,
         {
@@ -191,8 +191,10 @@ async def test_list_functions(client: TestClient, rpc_client: RabbitMQRPCClient)
     assert any(f.uid == registered_function.uid for f in functions)
 
 
-@pytest.mark.usefixtures("clean_functions")
-async def test_list_functions_empty(client: TestClient, rpc_client: RabbitMQRPCClient):
+async def test_list_functions_empty(
+    client: TestClient, rpc_client: RabbitMQRPCClient, clean_functions: None
+):
+    assert clean_functions is None
     assert client.app
     # List functions when none are registered
     functions, _ = await functions_rpc.list_functions(
@@ -203,10 +205,13 @@ async def test_list_functions_empty(client: TestClient, rpc_client: RabbitMQRPCC
     assert len(functions) == 0
 
 
-@pytest.mark.usefixtures("clean_functions")
 async def test_list_functions_with_pagination(
-    client: TestClient, rpc_client: RabbitMQRPCClient, mock_function: ProjectFunction
+    client: TestClient,
+    rpc_client: RabbitMQRPCClient,
+    mock_function: ProjectFunction,
+    clean_functions: None,
 ):
+    assert clean_functions is None
     assert client.app
     # Register multiple functions
     TOTAL_FUNCTIONS = 3

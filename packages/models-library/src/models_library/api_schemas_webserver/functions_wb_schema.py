@@ -210,46 +210,32 @@ class FunctionBaseError(OsparcErrorMixin, Exception):
 
 
 class FunctionIDNotFoundError(FunctionBaseError):
-    """Exception raised when a function is not found"""
-
     msg_template: str = "Function {function_id} not found"
 
 
 class FunctionJobIDNotFoundError(FunctionBaseError):
-    """Exception raised when a function job is not found"""
-
     msg_template: str = "Function job {function_job_id} not found"
 
 
 class FunctionJobCollectionIDNotFoundError(FunctionBaseError):
-    """Exception raised when a function job collection is not found"""
-
     msg_template: str = "Function job collection {function_job_collection_id} not found"
 
 
 class UnsupportedFunctionClassError(FunctionBaseError):
-    """Exception raised when a function class is not supported"""
-
     msg_template: str = "Function class {function_class} is not supported"
 
 
 class UnsupportedFunctionJobClassError(FunctionBaseError):
-    """Exception raised when a function job class is not supported"""
-
     msg_template: str = "Function job class {function_job_class} is not supported"
 
 
 class UnsupportedFunctionFunctionJobClassCombinationError(FunctionBaseError):
-    """Exception raised when a function / function job class combination is not supported"""
-
     msg_template: str = (
         "Function class {function_class} and function job class {function_job_class} combination is not supported"
     )
 
 
 class FunctionInputsValidationError(FunctionBaseError):
-    """Exception raised when validating function inputs"""
-
     msg_template: str = "Function inputs validation failed: {error}"
 
 

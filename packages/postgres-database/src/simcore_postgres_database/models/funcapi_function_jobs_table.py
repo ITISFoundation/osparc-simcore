@@ -1,6 +1,6 @@
-"""Functions table
+"""Function jobs table
 
-- List of functions served by the simcore platform
+- List of function jobs served by the simcore platform
 """
 
 import uuid

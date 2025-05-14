@@ -1,47 +1,50 @@
 # pylint: disable=unused-argument
 # pylint: disable=redefined-outer-name
 
+from collections.abc import Callable
+from typing import Any
 from uuid import uuid4
 
 import pytest
 from httpx import AsyncClient
 from models_library.api_schemas_webserver.functions_wb_schema import (
     FunctionIDNotFoundError,
-    JSONFunctionInputSchema,
-    JSONFunctionOutputSchema,
+    FunctionJobCollection,
+    ProjectFunction,
+    ProjectFunctionJob,
+    RegisteredFunctionJobCollection,
+    RegisteredProjectFunction,
+    RegisteredProjectFunctionJob,
 )
-from pytest_mock import MockerFixture
+from models_library.rest_pagination import PageMetaInfoLimitOffset
+from servicelib.aiohttp import status
 from simcore_service_api_server._meta import API_VTAG
 
 
 async def test_register_function(
     client: AsyncClient,
-    mock_function_register: MockerFixture,
+    mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
+    sample_function: ProjectFunction,
 ) -> None:
-    sample_function = {
-        "title": "test_function",
-        "function_class": "project",
-        "project_id": str(uuid4()),
-        "description": "A test function",
-        "input_schema": JSONFunctionInputSchema().model_dump(),
-        "output_schema": JSONFunctionOutputSchema().model_dump(),
-        "default_inputs": None,
-    }
+    registered_function = RegisteredProjectFunction(
+        **{**sample_function.model_dump(), "uid": str(uuid4())}
+    )
 
-    response = await client.post(f"{API_VTAG}/functions", json=sample_function)
-    assert response.status_code == 200
+    mock_handler_in_functions_rpc_interface("register_function", registered_function)
+    response = await client.post(
+        f"{API_VTAG}/functions",
+        json=sample_function.model_dump(mode="json"),
+    )
+    assert response.status_code == status.HTTP_200_OK
     data = response.json()
-    assert data["uid"] is not None
-    assert data["function_class"] == sample_function["function_class"]
-    assert data["project_id"] == sample_function["project_id"]
-    assert data["input_schema"] == sample_function["input_schema"]
-    assert data["output_schema"] == sample_function["output_schema"]
-    assert data["title"] == sample_function["title"]
-    assert data["description"] == sample_function["description"]
+    returned_function = RegisteredProjectFunction.model_validate(data)
+    assert returned_function.uid is not None
+    assert returned_function == registered_function
 
 
 async def test_register_function_invalid(
-    client: AsyncClient, mock_function_register: MockerFixture
+    client: AsyncClient,
+    mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
 ) -> None:
     invalid_function = {
         "title": "test_function",
@@ -49,7 +52,7 @@ async def test_register_function_invalid(
         "project_id": str(uuid4()),
     }
     response = await client.post(f"{API_VTAG}/functions", json=invalid_function)
-    assert response.status_code == 422  # Unprocessable Entity
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     assert (
         "Input tag 'invalid_class' found using 'function_class' does not"
         in response.json()["errors"][0]["msg"]
@@ -57,440 +60,330 @@ async def test_register_function_invalid(
 
 
 async def test_get_function(
-    client: AsyncClient, mock_function_register: MockerFixture
+    client: AsyncClient,
+    mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
+    sample_registered_function: RegisteredProjectFunction,
 ) -> None:
-    project_id = str(uuid4())
-    # First, register a sample function so that it exists
-    sample_function = {
-        "uid": None,
-        "title": "example_function",
-        "function_class": "project",
-        "project_id": project_id,
-        "description": "An example function",
-        "input_schema": JSONFunctionInputSchema().model_dump(),
-        "output_schema": JSONFunctionOutputSchema().model_dump(),
-        "default_inputs": None,
-    }
-    post_response = await client.post(f"{API_VTAG}/functions", json=sample_function)
-    assert post_response.status_code == 200
-    data = post_response.json()
-    function_id = data["uid"]
+    function_id = str(uuid4())
 
-    expected_function = {
-        "uid": function_id,
-        "title": "example_function",
-        "description": "An example function",
-        "function_class": "project",
-        "project_id": project_id,
-        "input_schema": JSONFunctionInputSchema().model_dump(),
-        "output_schema": JSONFunctionOutputSchema().model_dump(),
-        "default_inputs": None,
-    }
+    mock_handler_in_functions_rpc_interface("get_function", sample_registered_function)
     response = await client.get(f"{API_VTAG}/functions/{function_id}")
-    assert response.status_code == 200
-    data = response.json()
-    assert data == expected_function
+    assert response.status_code == status.HTTP_200_OK
+    returned_function = RegisteredProjectFunction.model_validate(response.json())
+    assert returned_function == sample_registered_function
 
 
 async def test_get_function_not_found(
-    client: AsyncClient, mock_function_register: MockerFixture
+    client: AsyncClient,
+    mock_handler_in_functions_rpc_interface: Callable[
+        [str, Any, Exception | None], None
+    ],
 ) -> None:
     non_existent_function_id = str(uuid4())
+
+    mock_handler_in_functions_rpc_interface(
+        "get_function",
+        None,
+        FunctionIDNotFoundError(function_id=non_existent_function_id),
+    )
     with pytest.raises(FunctionIDNotFoundError):
         await client.get(f"{API_VTAG}/functions/{non_existent_function_id}")
 
 
 async def test_list_functions(
-    client: AsyncClient, mock_function_register: MockerFixture
+    client: AsyncClient,
+    mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
+    sample_registered_function: RegisteredProjectFunction,
 ) -> None:
-    # Register a sample function
-    sample_function = {
-        "uid": None,
-        "title": "example_function",
-        "function_class": "project",
-        "project_id": str(uuid4()),
-        "description": "An example function",
-        "input_schema": JSONFunctionInputSchema().model_dump(),
-        "output_schema": JSONFunctionOutputSchema().model_dump(),
-        "default_inputs": None,
-    }
-    post_response = await client.post(f"{API_VTAG}/functions", json=sample_function)
-    assert post_response.status_code == 200
 
-    # List functions
+    mock_handler_in_functions_rpc_interface(
+        "list_functions",
+        (
+            [sample_registered_function for _ in range(5)],
+            PageMetaInfoLimitOffset(total=5, count=5, limit=10, offset=0),
+        ),
+    )
+
     response = await client.get(
         f"{API_VTAG}/functions", params={"limit": 10, "offset": 0}
     )
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     data = response.json()["items"]
-    assert len(data) > 0
-    assert data[0]["title"] == sample_function["title"]
+    assert len(data) == 5
+    assert data[0]["title"] == sample_registered_function.title
 
 
 async def test_update_function_title(
-    client: AsyncClient, mock_function_register: MockerFixture
+    client: AsyncClient,
+    mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
+    sample_registered_function: RegisteredProjectFunction,
 ) -> None:
-    project_id = str(uuid4())
-    # Register a sample function
-    sample_function = {
-        "uid": None,
-        "title": "example_function",
-        "function_class": "project",
-        "project_id": project_id,
-        "description": "An example function",
-        "input_schema": JSONFunctionInputSchema().model_dump(),
-        "output_schema": JSONFunctionOutputSchema().model_dump(),
-        "default_inputs": None,
-    }
-    post_response = await client.post(f"{API_VTAG}/functions", json=sample_function)
-    assert post_response.status_code == 200
-    data = post_response.json()
-    function_id = data["uid"]
+
+    mock_handler_in_functions_rpc_interface(
+        "update_function_title",
+        RegisteredProjectFunction(
+            **{
+                **sample_registered_function.model_dump(),
+                "title": "updated_example_function",
+            }
+        ),
+    )
 
     # Update the function title
     updated_title = {"title": "updated_example_function"}
     response = await client.patch(
-        f"{API_VTAG}/functions/{function_id}/title", params=updated_title
+        f"{API_VTAG}/functions/{sample_registered_function.uid}/title",
+        params=updated_title,
     )
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data["title"] == updated_title["title"]
 
 
 async def test_update_function_description(
-    client: AsyncClient, mock_function_register: MockerFixture
+    client: AsyncClient,
+    mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
+    sample_registered_function: RegisteredProjectFunction,
 ) -> None:
-    project_id = str(uuid4())
-    # Register a sample function
-    sample_function = {
-        "uid": None,
-        "title": "example_function",
-        "function_class": "project",
-        "project_id": project_id,
-        "description": "An example function",
-        "input_schema": JSONFunctionInputSchema().model_dump(),
-        "output_schema": JSONFunctionOutputSchema().model_dump(),
-        "default_inputs": None,
-    }
-    post_response = await client.post(f"{API_VTAG}/functions", json=sample_function)
-    assert post_response.status_code == 200
-    data = post_response.json()
-    function_id = data["uid"]
+    mock_handler_in_functions_rpc_interface(
+        "update_function_description",
+        RegisteredProjectFunction(
+            **{
+                **sample_registered_function.model_dump(),
+                "description": "updated_example_function",
+            }
+        ),
+    )
 
     # Update the function description
     updated_description = {"description": "updated_example_function"}
     response = await client.patch(
-        f"{API_VTAG}/functions/{function_id}/description", params=updated_description
+        f"{API_VTAG}/functions/{sample_registered_function.uid}/description",
+        params=updated_description,
     )
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data["description"] == updated_description["description"]
 
 
 async def test_get_function_input_schema(
-    client: AsyncClient, mock_function_register: MockerFixture
+    client: AsyncClient,
+    mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
+    sample_registered_function: RegisteredProjectFunction,
 ) -> None:
-    project_id = str(uuid4())
-    # Register a sample function
-    sample_function = {
-        "uid": None,
-        "title": "example_function",
-        "function_class": "project",
-        "project_id": project_id,
-        "description": "An example function",
-        "input_schema": JSONFunctionInputSchema(
-            schema_content={
-                "type": "object",
-                "properties": {"input1": {"type": "integer"}},
-            }
-        ).model_dump(),
-        "output_schema": JSONFunctionOutputSchema(
-            schema_content={
-                "type": "object",
-                "properties": {"output1": {"type": "string"}},
-            }
-        ).model_dump(),
-        "default_inputs": None,
-    }
-    post_response = await client.post(f"{API_VTAG}/functions", json=sample_function)
-    assert post_response.status_code == 200
-    data = post_response.json()
-    function_id = data["uid"]
 
-    # Get the input schema
-    # assert f"/functions/{function_id}/input-schema" is None
-    response = await client.get(f"{API_VTAG}/functions/{function_id}/input_schema")
-    assert response.status_code == 200
+    mock_handler_in_functions_rpc_interface("get_function", sample_registered_function)
+
+    response = await client.get(
+        f"{API_VTAG}/functions/{sample_registered_function.uid}/input_schema"
+    )
+    assert response.status_code == status.HTTP_200_OK
     data = response.json()
-    assert data["schema_content"] == sample_function["input_schema"]["schema_content"]
+
+    assert (
+        data["schema_content"] == sample_registered_function.input_schema.schema_content
+    )
 
 
 async def test_get_function_output_schema(
-    client: AsyncClient, mock_function_register: MockerFixture
+    client: AsyncClient,
+    mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
+    sample_registered_function: RegisteredProjectFunction,
 ) -> None:
-    project_id = str(uuid4())
-    # Register a sample function
-    sample_function = {
-        "uid": None,
-        "title": "example_function",
-        "function_class": "project",
-        "project_id": project_id,
-        "description": "An example function",
-        "input_schema": JSONFunctionInputSchema().model_dump(),
-        "output_schema": JSONFunctionOutputSchema(
-            schema_content={
-                "type": "object",
-                "properties": {"output1": {"type": "string"}},
-            }
-        ).model_dump(),
-        "default_inputs": None,
-    }
-    post_response = await client.post(f"{API_VTAG}/functions", json=sample_function)
-    assert post_response.status_code == 200
-    data = post_response.json()
-    function_id = data["uid"]
 
-    # Get the output schema
-    response = await client.get(f"{API_VTAG}/functions/{function_id}/output_schema")
-    assert response.status_code == 200
+    mock_handler_in_functions_rpc_interface("get_function", sample_registered_function)
+
+    response = await client.get(
+        f"{API_VTAG}/functions/{sample_registered_function.uid}/output_schema"
+    )
+    assert response.status_code == status.HTTP_200_OK
     data = response.json()
-    assert data["schema_content"] == sample_function["output_schema"]["schema_content"]
+
+    assert (
+        data["schema_content"]
+        == sample_registered_function.output_schema.schema_content
+    )
 
 
 async def test_validate_function_inputs(
-    client: AsyncClient, mock_function_register: MockerFixture
+    client: AsyncClient,
+    mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
+    sample_registered_function: RegisteredProjectFunction,
 ) -> None:
-    project_id = str(uuid4())
-    # Register a sample function
-    sample_function = {
-        "uid": None,
-        "title": "example_function",
-        "function_class": "project",
-        "project_id": project_id,
-        "description": "An example function",
-        "input_schema": JSONFunctionInputSchema(
-            schema_content={
-                "type": "object",
-                "properties": {"input1": {"type": "integer"}},
-            }
-        ).model_dump(),
-        "output_schema": JSONFunctionOutputSchema(
-            schema_content={
-                "type": "object",
-                "properties": {"output1": {"type": "string"}},
-            }
-        ).model_dump(),
-        "default_inputs": None,
-    }
-    post_response = await client.post(f"{API_VTAG}/functions", json=sample_function)
-    assert post_response.status_code == 200
-    data = post_response.json()
-    function_id = data["uid"]
+
+    mock_handler_in_functions_rpc_interface("get_function", sample_registered_function)
 
     # Validate inputs
     validate_payload = {"input1": 10}
     response = await client.post(
-        f"{API_VTAG}/functions/{function_id}:validate_inputs", json=validate_payload
+        f"{API_VTAG}/functions/{sample_registered_function.uid}:validate_inputs",
+        json=validate_payload,
     )
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data == [True, "Inputs are valid"]
 
 
 async def test_delete_function(
-    client: AsyncClient, mock_function_register: MockerFixture
+    client: AsyncClient,
+    mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
+    sample_registered_function: RegisteredProjectFunction,
 ) -> None:
-    project_id = str(uuid4())
-    # Register a sample function
-    sample_function = {
-        "uid": None,
-        "title": "example_function",
-        "function_class": "project",
-        "project_id": project_id,
-        "description": "An example function",
-        "input_schema": JSONFunctionInputSchema().model_dump(),
-        "output_schema": JSONFunctionOutputSchema().model_dump(),
-        "default_inputs": None,
-    }
-    post_response = await client.post(f"{API_VTAG}/functions", json=sample_function)
-    assert post_response.status_code == 200
-    data = post_response.json()
-    function_id = data["uid"]
+    mock_handler_in_functions_rpc_interface("delete_function", None)
 
     # Delete the function
-    response = await client.delete(f"{API_VTAG}/functions/{function_id}")
-    assert response.status_code == 200
+    response = await client.delete(
+        f"{API_VTAG}/functions/{sample_registered_function.uid}"
+    )
+    assert response.status_code == status.HTTP_200_OK
 
 
 async def test_register_function_job(
-    client: AsyncClient, mock_function_register: MockerFixture
+    client: AsyncClient,
+    mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
+    sample_function_job: ProjectFunctionJob,
+    sample_registered_function_job: RegisteredProjectFunctionJob,
 ) -> None:
     """Test the register_function_job endpoint."""
 
-    mock_function_job = {
-        "function_uid": str(uuid4()),
-        "title": "Test Function Job",
-        "description": "A test function job",
-        "inputs": {"key": "value"},
-        "outputs": None,
-        "project_job_id": str(uuid4()),
-        "function_class": "project",
-    }
+    mock_handler_in_functions_rpc_interface(
+        "register_function_job", sample_registered_function_job
+    )
 
-    # Act
-    response = await client.post(f"{API_VTAG}/function_jobs", json=mock_function_job)
+    response = await client.post(
+        f"{API_VTAG}/function_jobs", json=sample_function_job.model_dump(mode="json")
+    )
 
-    # Assert
-    assert response.status_code == 200
-    response_data = response.json()
-    assert response_data["uid"] is not None
-    response_data.pop("uid", None)  # Remove the uid field
-    mock_function_job.pop("uid", None)  # Remove the uid field
-    assert response_data == mock_function_job
+    assert response.status_code == status.HTTP_200_OK
+    assert (
+        RegisteredProjectFunctionJob.model_validate(response.json())
+        == sample_registered_function_job
+    )
 
 
 async def test_get_function_job(
-    client: AsyncClient, mock_function_register: MockerFixture
+    client: AsyncClient,
+    mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
+    sample_registered_function_job: RegisteredProjectFunctionJob,
 ) -> None:
-    """Test the get_function_job endpoint."""
-    mock_function_job = {
-        "uid": None,
-        "function_uid": str(uuid4()),
-        "title": "Test Function Job",
-        "description": "A test function job",
-        "inputs": {"key": "value"},
-        "outputs": None,
-        "project_job_id": str(uuid4()),
-        "function_class": "project",
-    }
 
-    # First, register a function job
-    post_response = await client.post(
-        f"{API_VTAG}/function_jobs", json=mock_function_job
+    mock_handler_in_functions_rpc_interface(
+        "get_function_job", sample_registered_function_job
     )
-    assert post_response.status_code == 200
-    data = post_response.json()
-    function_job_id = data["uid"]
 
     # Now, get the function job
-    response = await client.get(f"{API_VTAG}/function_jobs/{function_job_id}")
-    assert response.status_code == 200
-    data = response.json()
-    assert data["uid"] == function_job_id
-    assert data["title"] == mock_function_job["title"]
-    assert data["description"] == mock_function_job["description"]
-    assert data["inputs"] == mock_function_job["inputs"]
-    assert data["outputs"] == mock_function_job["outputs"]
+    response = await client.get(
+        f"{API_VTAG}/function_jobs/{sample_registered_function_job.uid}"
+    )
+    assert response.status_code == status.HTTP_200_OK
+    assert (
+        RegisteredProjectFunctionJob.model_validate(response.json())
+        == sample_registered_function_job
+    )
 
 
 async def test_list_function_jobs(
-    client: AsyncClient, mock_function_register: MockerFixture
+    client: AsyncClient,
+    mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
+    sample_registered_function_job: RegisteredProjectFunctionJob,
 ) -> None:
-    """Test the list_function_jobs endpoint."""
 
-    mock_function_job = {
-        "uid": None,
-        "function_uid": str(uuid4()),
-        "title": "Test Function Job",
-        "description": "A test function job",
-        "inputs": {"key": "value"},
-        "outputs": None,
-        "project_job_id": str(uuid4()),
-        "function_class": "project",
-    }
-
-    # First, register a function job
-    post_response = await client.post(
-        f"{API_VTAG}/function_jobs", json=mock_function_job
+    mock_handler_in_functions_rpc_interface(
+        "list_function_jobs",
+        (
+            [sample_registered_function_job for _ in range(5)],
+            PageMetaInfoLimitOffset(total=5, count=5, limit=10, offset=0),
+        ),
     )
-    assert post_response.status_code == 200
 
     # Now, list function jobs
     response = await client.get(f"{API_VTAG}/function_jobs")
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     data = response.json()["items"]
-    assert len(data) > 0
-    assert data[0]["title"] == mock_function_job["title"]
+    assert len(data) == 5
+    assert (
+        RegisteredProjectFunctionJob.model_validate(data[0])
+        == sample_registered_function_job
+    )
 
 
 async def test_delete_function_job(
-    client: AsyncClient, mock_function_register: MockerFixture
+    client: AsyncClient,
+    mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
+    sample_registered_function_job: RegisteredProjectFunctionJob,
 ) -> None:
-    """Test the delete_function_job endpoint."""
 
-    mock_function_job = {
-        "uid": None,
-        "function_uid": str(uuid4()),
-        "title": "Test Function Job",
-        "description": "A test function job",
-        "inputs": {"key": "value"},
-        "outputs": None,
-        "project_job_id": str(uuid4()),
-        "function_class": "project",
-    }
-
-    # First, register a function job
-    post_response = await client.post(
-        f"{API_VTAG}/function_jobs", json=mock_function_job
-    )
-    assert post_response.status_code == 200
-    data = post_response.json()
-    function_job_id = data["uid"]
+    mock_handler_in_functions_rpc_interface("delete_function_job", None)
 
     # Now, delete the function job
-    response = await client.delete(f"{API_VTAG}/function_jobs/{function_job_id}")
-    assert response.status_code == 200
+    response = await client.delete(
+        f"{API_VTAG}/function_jobs/{sample_registered_function_job.uid}"
+    )
+    assert response.status_code == status.HTTP_200_OK
 
 
 async def test_register_function_job_collection(
-    client: AsyncClient, mock_function_register: MockerFixture
+    client: AsyncClient,
+    mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
 ) -> None:
-    mock_function_job_collection = {
-        "uid": None,
-        "title": "Test Collection",
-        "description": "A test function job collection",
-        "job_ids": [str(uuid4()), str(uuid4())],
-    }
+    mock_function_job_collection = FunctionJobCollection.model_validate(
+        {
+            "title": "Test Collection",
+            "description": "A test function job collection",
+            "job_ids": [str(uuid4()), str(uuid4())],
+        }
+    )
+
+    mock_registered_function_job_collection = (
+        RegisteredFunctionJobCollection.model_validate(
+            {
+                **mock_function_job_collection.model_dump(),
+                "uid": str(uuid4()),
+            }
+        )
+    )
+
+    mock_handler_in_functions_rpc_interface(
+        "register_function_job_collection", mock_registered_function_job_collection
+    )
 
     response = await client.post(
-        f"{API_VTAG}/function_job_collections", json=mock_function_job_collection
+        f"{API_VTAG}/function_job_collections",
+        json=mock_function_job_collection.model_dump(mode="json"),
     )
 
     # Assert
-    assert response.status_code == 200
-    response_data = response.json()
-    assert response_data["uid"] is not None
-    response_data.pop("uid", None)  # Remove the uid field
-    mock_function_job_collection.pop("uid", None)  # Remove the uid field
-    assert response_data == mock_function_job_collection
+    assert response.status_code == status.HTTP_200_OK
+    assert (
+        RegisteredFunctionJobCollection.model_validate(response.json())
+        == mock_registered_function_job_collection
+    )
 
 
 async def test_get_function_job_collection(
-    client: AsyncClient, mock_function_register: MockerFixture
+    client: AsyncClient,
+    mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
 ) -> None:
-    # Arrange
-    mock_function_job_collection = {
-        "uid": None,
-        "title": "Test Collection",
-        "description": "A test function job collection",
-        "job_ids": [str(uuid4()), str(uuid4())],
-    }
-
-    # First, register a function job collection
-    post_response = await client.post(
-        f"{API_VTAG}/function_job_collections", json=mock_function_job_collection
+    mock_registered_function_job_collection = (
+        RegisteredFunctionJobCollection.model_validate(
+            {
+                "uid": str(uuid4()),
+                "title": "Test Collection",
+                "description": "A test function job collection",
+                "job_ids": [str(uuid4()), str(uuid4())],
+            }
+        )
     )
-    assert post_response.status_code == 200
-    data = post_response.json()
-    collection_id = data["uid"]
 
-    # Act
-    response = await client.get(f"{API_VTAG}/function_job_collections/{collection_id}")
+    mock_handler_in_functions_rpc_interface(
+        "get_function_job_collection", mock_registered_function_job_collection
+    )
 
-    # Assert
-    assert response.status_code == 200
-    data = response.json()
-    assert data["uid"] == collection_id
-    assert data["title"] == mock_function_job_collection["title"]
-    assert data["description"] == mock_function_job_collection["description"]
-    assert data["job_ids"] == mock_function_job_collection["job_ids"]
+    response = await client.get(
+        f"{API_VTAG}/function_job_collections/{mock_registered_function_job_collection.uid}"
+    )
+    assert response.status_code == status.HTTP_200_OK
+    assert (
+        RegisteredFunctionJobCollection.model_validate(response.json())
+        == mock_registered_function_job_collection
+    )
