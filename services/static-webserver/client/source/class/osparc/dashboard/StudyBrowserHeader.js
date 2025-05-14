@@ -82,7 +82,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
   },
 
   statics: {
-    HEIGHT: 36,
+    HEIGHT: 32,
     POS: {
       ICON: 0,
       TITLE: 1,
@@ -288,7 +288,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
             workspace.bind("accessRights", this, "accessRights");
             workspace.bind("myAccessRights", this, "myAccessRights");
           } else {
-            this.__setIcon("@FontAwesome5Solid/home/30");
+            this.__setIcon("@FontAwesome5Solid/home/24");
             title.setValue(this.tr("My Workspace"));
           }
           break;
@@ -302,17 +302,17 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
           title.setValue(this.tr("Search results"));
           break;
         case "templates": {
-          this.__setIcon("@FontAwesome5Solid/copy/20");
+          this.__setIcon("@FontAwesome5Solid/copy/24");
           title.setValue(this.tr("Templates"));
           break;
         }
         case "public": {
-          this.__setIcon("@FontAwesome5Solid/globe/20");
+          this.__setIcon("@FontAwesome5Solid/globe/24");
           title.setValue(this.tr("Public Projects"));
           break;
         }
         case "trash": {
-          this.__setIcon("@FontAwesome5Solid/trash/20");
+          this.__setIcon("@FontAwesome5Solid/trash/24");
           title.setValue(this.tr("Recently Deleted"));
           const trashDays = osparc.store.StaticInfo.getInstance().getTrashRetentionDays();
           description.set({
