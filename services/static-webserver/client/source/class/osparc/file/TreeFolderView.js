@@ -95,6 +95,26 @@ qx.Class.define("osparc.file.TreeFolderView", {
       return control || this.base(arguments, id);
     },
 
+    __openPath: function(selectedModel) {
+      const folderTree = this.getChildControl("folder-tree");
+      if (selectedModel.getPath() && !selectedModel.getLoaded()) {
+        selectedModel.setLoaded(true);
+        folderTree.requestPathItems(selectedModel.getLocation(), selectedModel.getPath())
+          .then(() => {
+            folderTree.openNodeAndParents(selectedModel);
+            folderTree.setSelection(new qx.data.Array([selectedModel]));
+          });
+      } else {
+        folderTree.openNodeAndParents(selectedModel);
+        folderTree.setSelection(new qx.data.Array([selectedModel]));
+      }
+
+      const folderViewer = this.getChildControl("folder-viewer");
+      if (osparc.file.FilesTree.isDir(selectedModel)) {
+        folderViewer.setFolder(selectedModel);
+      }
+    },
+
     __buildLayout: function() {
       const folderTree = this.getChildControl("folder-tree");
       const folderViewer = this.getChildControl("folder-viewer");
@@ -102,25 +122,14 @@ qx.Class.define("osparc.file.TreeFolderView", {
       folderTree.addListener("selectionChanged", () => {
         const selectedModel = folderTree.getSelectedItem();
         if (selectedModel) {
-          if (osparc.file.FilesTree.isDir(selectedModel)) {
-            folderViewer.setFolder(selectedModel);
-          }
-          if (selectedModel.getPath() && !selectedModel.getLoaded()) {
-            selectedModel.setLoaded(true);
-            folderTree.requestPathItems(selectedModel.getLocation(), selectedModel.getPath());
-          }
+          this.__openPath(selectedModel);
         }
       }, this);
 
       folderViewer.addListener("openItemSelected", e => {
         const selectedModel = e.getData();
         if (selectedModel) {
-          if (osparc.file.FilesTree.isDir(selectedModel)) {
-            folderViewer.setFolder(selectedModel);
-          }
-          // this will trigger the fetching of the content
-          folderTree.openNodeAndParents(selectedModel);
-          folderTree.setSelection(new qx.data.Array([selectedModel]));
+          this.__openPath(selectedModel);
         }
       }, this);
 
@@ -128,10 +137,7 @@ qx.Class.define("osparc.file.TreeFolderView", {
         const currentFolder = e.getData();
         const parent = folderTree.getParent(currentFolder);
         if (parent) {
-          folderTree.setSelection(new qx.data.Array([parent]));
-          if (osparc.file.FilesTree.isDir(parent)) {
-            folderViewer.setFolder(parent);
-          }
+          this.__openPath(parent);
         }
       }, this);
     },
