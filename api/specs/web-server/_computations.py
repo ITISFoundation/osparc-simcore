@@ -2,6 +2,7 @@ from typing import Annotated
 
 from _common import as_query
 from fastapi import APIRouter, Depends, status
+from fastapi_pagination import Page
 from models_library.api_schemas_webserver.computations import (
     ComputationGet,
     ComputationPathParams,
@@ -67,7 +68,7 @@ async def stop_computation(_path: Annotated[ComputationPathParams, Depends()]): 
 
 @router.get(
     "/computations/-/iterations/latest",
-    response_model=Envelope[list[ComputationRunRestGet]],
+    response_model=Page[ComputationRunRestGet],
 )
 async def list_computations_latest_iteration(
     _query: Annotated[as_query(ComputationRunWithFiltersListQueryParams), Depends()],
@@ -76,7 +77,7 @@ async def list_computations_latest_iteration(
 
 @router.get(
     "/computations/{project_id}/iterations",
-    response_model=Envelope[list[ComputationRunRestGet]],
+    response_model=Page[ComputationRunRestGet],
 )
 async def list_computation_iterations(
     _query: Annotated[as_query(ComputationRunListQueryParams), Depends()],
@@ -86,7 +87,7 @@ async def list_computation_iterations(
 
 @router.get(
     "/computations/{project_id}/iterations/latest/tasks",
-    response_model=Envelope[list[ComputationTaskRestGet]],
+    response_model=Page[ComputationTaskRestGet],
 )
 async def list_computations_latest_iteration_tasks(
     _query: Annotated[as_query(ComputationTaskListQueryParams), Depends()],
