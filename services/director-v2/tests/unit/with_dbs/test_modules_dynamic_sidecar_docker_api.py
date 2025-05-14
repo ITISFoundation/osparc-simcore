@@ -187,7 +187,7 @@ def dynamic_sidecar_service_spec(
         "name": dynamic_sidecar_service_name,
         "task_template": {"ContainerSpec": {"Image": "joseluisq/static-web-server"}},
         "labels": {
-            "traefik.docker.network": "",
+            "traefik.swarm.network": "",
             "io.simcore.zone": "",
             f"{to_simcore_runtime_docker_label_key('project_id')}": f"{uuid4()}",
             f"{to_simcore_runtime_docker_label_key('user_id')}": "123",
@@ -339,7 +339,7 @@ def labels_example(request: pytest.FixtureRequest) -> SimcoreServiceLabels:
     return request.param
 
 
-@pytest.fixture(params=[None, datetime.datetime.now(tz=datetime.timezone.utc)])
+@pytest.fixture(params=[None, datetime.datetime.now(tz=datetime.UTC)])
 def time_dy_sidecar_became_unreachable(
     request: pytest.FixtureRequest,
 ) -> datetime.datetime | None:

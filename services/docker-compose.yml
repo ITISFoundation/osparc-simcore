@@ -1363,7 +1363,7 @@ services:
       retries: 50
 
   traefik:
-    image: "traefik:v3.1.2@sha256:ec1a82940b8e00eaeef33fb4113aa1d1573b2ebb6440e10c023743fe96f08475"
+    image: "traefik:v3.4.0@sha256:4cf907247939b5d20bf4eff73abd21cb413c339600dde76dbc94a874b2578a27"
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     command:
@@ -1381,13 +1381,9 @@ services:
       - "--metrics.prometheus.entryPoint=metrics"
       - "--entryPoints.http.address=:80"
       - "--entryPoints.http.forwardedHeaders.insecure"
-      - "--entryPoints.http.transport.respondingTimeouts.idleTimeout=21600s" #6h, for https://github.com/traefik/traefik/issues/10805
-      - "--entryPoints.http.transport.respondingTimeouts.writeTimeout=21600s" #6h, for https://github.com/traefik/traefik/issues/10805
       - "--entryPoints.http.transport.respondingTimeouts.readTimeout=21600s" #6h, for https://github.com/traefik/traefik/issues/10805      - "--entryPoints.simcore_api.address=:10081"
       - "--entryPoints.simcore_api.address=:10081"
       - "--entryPoints.simcore_api.forwardedHeaders.insecure"
-      - "--entryPoints.simcore_api.transport.respondingTimeouts.idleTimeout=21600s" #6h, for https://github.com/traefik/traefik/issues/10805
-      - "--entryPoints.simcore_api.transport.respondingTimeouts.writeTimeout=21600s" #6h, for https://github.com/traefik/traefik/issues/10805
       - "--entryPoints.simcore_api.transport.respondingTimeouts.readTimeout=21600s" #6h, for https://github.com/traefik/traefik/issues/10805
       - "--entryPoints.traefik_monitor.address=:8080"
       - "--entryPoints.traefik_monitor.forwardedHeaders.insecure"
