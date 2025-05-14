@@ -49,7 +49,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
     __resourceType: null,
     __workspacesAndFoldersTree: null,
     __templatesButton: null,
-    __publishedButton: null,
+    __publicProjectsButton: null,
     __trashButton: null,
     __sharedWithButtons: null,
     __tagButtons: null,
@@ -61,7 +61,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
         case "study": {
           this._add(this.__createWorkspacesAndFoldersTree());
           this._add(this.__createTemplates());
-          this._add(this.__createPublished());
+          this._add(this.__createPublicProjects());
           this._add(this.__createTrashBin());
           this._add(filtersSpacer);
           const scrollView = new qx.ui.container.Scroll();
@@ -96,6 +96,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
       });
       this.__workspacesAndFoldersTree.contextChanged(context);
 
+      this.__templatesButton.setValue(context === "templates");
+      this.__publicProjectsButton.setValue(context === "public");
       this.__trashButton.setValue(context === "trash");
     },
 
@@ -139,21 +141,21 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
       return templatesButton;
     },
 
-    __createPublished: function() {
-      const publishedButton = this.__publishedButton = new qx.ui.toolbar.RadioButton().set({
+    __createPublicProjects: function() {
+      const publicProjectsButton = this.__publicProjectsButton = new qx.ui.toolbar.RadioButton().set({
         value: false,
         appearance: "filter-toggle-button",
         label: this.tr("Public Projects"),
         icon: "@FontAwesome5Solid/globe/16",
         paddingLeft: 10, // align it with the context
       });
-      publishedButton.addListener("changeValue", e => {
+      publicProjectsButton.addListener("changeValue", e => {
         const templatesEnabled = e.getData();
         if (templatesEnabled) {
           this.fireEvent("publicContext");
         }
       });
-      return publishedButton;
+      return publicProjectsButton;
     },
 
     /* TRASH BIN */
