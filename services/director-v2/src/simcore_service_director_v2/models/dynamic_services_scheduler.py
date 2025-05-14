@@ -477,12 +477,12 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     ] = None
 
     product_api_base_url: Annotated[
-        str,
+        str | None,
         BeforeValidator(lambda v: f"{AnyHttpUrl(v)}"),
         Field(
             description="Base URL for the current product's API.",
         ),
-    ]
+    ] = None
 
     @classmethod
     def from_http_request(
