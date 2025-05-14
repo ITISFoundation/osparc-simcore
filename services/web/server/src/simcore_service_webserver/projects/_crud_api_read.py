@@ -74,9 +74,16 @@ async def _aggregate_data_to_projects_from_other_sources(
         for prj, prj_type in zip(db_projects, db_project_types, strict=False)
     ]
 
-    updated_projects: list[ProjectDict] = await _paralell_update(
+    projects_with_state: list[ProjectDict] = await _paralell_update(
         *update_state_per_project,
     )
+
+    updated_projects = []
+    for project, project_type in zip(
+        projects_with_state, db_project_types, strict=True
+    ):
+        project["type"] = project_type
+        updated_projects.append(project)
 
     return updated_projects
 
