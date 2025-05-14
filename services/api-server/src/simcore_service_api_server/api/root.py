@@ -6,6 +6,8 @@ from ..core.settings import ApplicationSettings
 from .routes import credits as _credits
 from .routes import (
     files,
+    function_job_collections_routes,
+    function_jobs_routes,
     functions_routes,
     health,
     licensed_items,
@@ -46,12 +48,12 @@ def create_router(settings: ApplicationSettings):
     router.include_router(studies.router, tags=["studies"], prefix="/studies")
     router.include_router(studies_jobs.router, tags=["studies"], prefix="/studies")
     router.include_router(
-        functions_routes.function_job_router,
+        function_jobs_routes.function_job_router,
         tags=["function_jobs"],
         prefix=_FUNCTION_JOBS_PREFIX,
     )
     router.include_router(
-        functions_routes.function_job_collections_router,
+        function_job_collections_routes.function_job_collections_router,
         tags=["function_job_collections"],
         prefix=_FUNCTION_JOB_COLLECTIONS_PREFIX,
     )

@@ -7,9 +7,8 @@ import uuid
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.sql import func
 
-from ._common import RefActions
+from ._common import RefActions, column_created_datetime, column_modified_datetime
 from .base import metadata
 from .funcapi_functions_table import functions_table
 
@@ -72,20 +71,7 @@ function_jobs_table = sa.Table(
         nullable=True,
         doc="Fields specific for a function class",
     ),
-    sa.Column(
-        "created",
-        sa.DateTime(),
-        nullable=False,
-        server_default=func.now(),
-        doc="Timestamp auto-generated upon creation",
-    ),
-    sa.Column(
-        "modified",
-        sa.DateTime(),
-        nullable=False,
-        server_default=func.now(),
-        onupdate=func.now(),
-        doc="Automaticaly updates on modification of the row",
-    ),
+    column_created_datetime(),
+    column_modified_datetime(),
     sa.PrimaryKeyConstraint("uuid", name="funcapi_function_jobs_pk"),
 )

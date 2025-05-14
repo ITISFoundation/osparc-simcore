@@ -6,6 +6,10 @@
 import uuid
 
 import sqlalchemy as sa
+from simcore_postgres_database.models._common import (
+    column_created_datetime,
+    column_modified_datetime,
+)
 from sqlalchemy.dialects.postgresql import UUID
 
 from .base import metadata
@@ -70,20 +74,7 @@ functions_table = sa.Table(
         nullable=True,
         doc="Default inputs of the function",
     ),
-    sa.Column(
-        "created",
-        sa.DateTime,
-        nullable=False,
-        server_default=sa.func.now(),
-        doc="Creation timestamp of the function",
-    ),
-    sa.Column(
-        "modified",
-        sa.DateTime,
-        nullable=False,
-        server_default=sa.func.now(),
-        onupdate=sa.func.now(),
-        doc="Last update timestamp of the function",
-    ),
+    column_created_datetime(),
+    column_modified_datetime(),
     sa.PrimaryKeyConstraint("uuid", name="funcapi_functions_pk"),
 )

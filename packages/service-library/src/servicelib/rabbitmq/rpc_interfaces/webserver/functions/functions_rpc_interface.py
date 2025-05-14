@@ -113,12 +113,9 @@ async def list_functions(
             pagination_limit=pagination_limit,
         )
     )
-    assert isinstance(result, tuple)
-    TypeAdapter(list[RegisteredFunction]).validate_python(
-        result[0]
-    )  # Validates the result as a list of RegisteredFunctions
-    assert isinstance(result[1], PageMetaInfoLimitOffset)  # nosec
-    return result
+    return TypeAdapter(
+        tuple[list[RegisteredFunction], PageMetaInfoLimitOffset]
+    ).validate_python(result)
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -136,16 +133,9 @@ async def list_function_jobs(
             pagination_limit=pagination_limit,
         )
     )
-    assert isinstance(result, tuple)  # nosec
-    assert isinstance(result[0], list)  # nosec
-    assert all(
-        TypeAdapter(RegisteredFunctionJob).validate_python(item) for item in result[0]
-    )  # nosec
-    assert isinstance(result[1], PageMetaInfoLimitOffset)  # nosec
-    return (
-        TypeAdapter(list[RegisteredFunctionJob]).validate_python(result[0]),
-        TypeAdapter(PageMetaInfoLimitOffset).validate_python(result[1]),
-    )
+    return TypeAdapter(
+        tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset]
+    ).validate_python(result)
 
 
 @log_decorator(_logger, level=logging.DEBUG)

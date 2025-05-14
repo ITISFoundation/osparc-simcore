@@ -44,8 +44,6 @@ router = RPCRouter()
 async def register_function(
     app: web.Application, *, function: Function
 ) -> RegisteredFunction:
-    assert app
-
     encoded_function = _encode_function(function)
     saved_function = await _functions_repository.create_function(
         app=app,
@@ -64,7 +62,6 @@ async def register_function(
 async def register_function_job(
     app: web.Application, *, function_job: FunctionJob
 ) -> RegisteredFunctionJob:
-    assert app
     encoded_function_job = _encode_functionjob(function_job)
     created_function_job_db = await _functions_repository.create_function_job(
         app=app,
@@ -83,7 +80,6 @@ async def register_function_job(
 async def register_function_job_collection(
     app: web.Application, *, function_job_collection: FunctionJobCollection
 ) -> RegisteredFunctionJobCollection:
-    assert app
     registered_function_job_collection, registered_job_ids = (
         await _functions_repository.create_function_job_collection(
             app=app,
@@ -104,7 +100,6 @@ async def register_function_job_collection(
 async def get_function(
     app: web.Application, *, function_id: FunctionID
 ) -> RegisteredFunction:
-    assert app
     returned_function = await _functions_repository.get_function(
         app=app,
         function_id=function_id,
@@ -118,7 +113,6 @@ async def get_function(
 async def get_function_job(
     app: web.Application, *, function_job_id: FunctionJobID
 ) -> RegisteredFunctionJob:
-    assert app
     returned_function_job = await _functions_repository.get_function_job(
         app=app,
         function_job_id=function_job_id,
@@ -132,7 +126,6 @@ async def get_function_job(
 async def get_function_job_collection(
     app: web.Application, *, function_job_collection_id: FunctionJobID
 ) -> RegisteredFunctionJobCollection:
-    assert app
     returned_function_job_collection, returned_job_ids = (
         await _functions_repository.get_function_job_collection(
             app=app,
@@ -153,7 +146,6 @@ async def list_functions(
     pagination_limit: int,
     pagination_offset: int,
 ) -> tuple[list[RegisteredFunction], PageMetaInfoLimitOffset]:
-    assert app
     returned_functions, page = await _functions_repository.list_functions(
         app=app,
         pagination_limit=pagination_limit,
@@ -170,7 +162,6 @@ async def list_function_jobs(
     pagination_limit: int,
     pagination_offset: int,
 ) -> tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset]:
-    assert app
     returned_function_jobs, page = await _functions_repository.list_function_jobs(
         app=app,
         pagination_limit=pagination_limit,
@@ -188,7 +179,6 @@ async def list_function_job_collections(
     pagination_limit: int,
     pagination_offset: int,
 ) -> tuple[list[RegisteredFunctionJobCollection], PageMetaInfoLimitOffset]:
-    assert app
     returned_function_job_collections, page = (
         await _functions_repository.list_function_job_collections(
             app=app,
@@ -209,7 +199,6 @@ async def list_function_job_collections(
 
 @router.expose(reraise_if_error_type=(FunctionIDNotFoundError,))
 async def delete_function(app: web.Application, *, function_id: FunctionID) -> None:
-    assert app
     await _functions_repository.delete_function(
         app=app,
         function_id=function_id,
@@ -220,7 +209,6 @@ async def delete_function(app: web.Application, *, function_id: FunctionID) -> N
 async def delete_function_job(
     app: web.Application, *, function_job_id: FunctionJobID
 ) -> None:
-    assert app
     await _functions_repository.delete_function_job(
         app=app,
         function_job_id=function_job_id,
@@ -231,7 +219,6 @@ async def delete_function_job(
 async def delete_function_job_collection(
     app: web.Application, *, function_job_collection_id: FunctionJobID
 ) -> None:
-    assert app
     await _functions_repository.delete_function_job_collection(
         app=app,
         function_job_collection_id=function_job_collection_id,
@@ -242,7 +229,6 @@ async def delete_function_job_collection(
 async def update_function_title(
     app: web.Application, *, function_id: FunctionID, title: str
 ) -> RegisteredFunction:
-    assert app
     updated_function = await _functions_repository.update_function_title(
         app=app,
         function_id=function_id,
@@ -255,7 +241,6 @@ async def update_function_title(
 async def update_function_description(
     app: web.Application, *, function_id: FunctionID, description: str
 ) -> RegisteredFunction:
-    assert app
     updated_function = await _functions_repository.update_function_description(
         app=app,
         function_id=function_id,
@@ -268,7 +253,6 @@ async def update_function_description(
 async def find_cached_function_job(
     app: web.Application, *, function_id: FunctionID, inputs: FunctionInputs
 ) -> FunctionJob | None:
-    assert app
     returned_function_job = await _functions_repository.find_cached_function_job(
         app=app, function_id=function_id, inputs=inputs
     )
@@ -305,7 +289,6 @@ async def find_cached_function_job(
 async def get_function_input_schema(
     app: web.Application, *, function_id: FunctionID
 ) -> FunctionInputSchema:
-    assert app
     returned_function = await _functions_repository.get_function(
         app=app,
         function_id=function_id,
@@ -317,7 +300,6 @@ async def get_function_input_schema(
 async def get_function_output_schema(
     app: web.Application, *, function_id: FunctionID
 ) -> FunctionOutputSchema:
-    assert app
     returned_function = await _functions_repository.get_function(
         app=app,
         function_id=function_id,
