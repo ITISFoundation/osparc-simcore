@@ -50,10 +50,10 @@ qx.Class.define("osparc.share.ShareTemplateWith", {
       this.__potentialTemplateData["resourceType"] = "template";
       const addCollaborators = new osparc.share.AddCollaborators(this.__potentialTemplateData, true);
       addCollaborators.getChildControl("intro-text").set({
-        value: this.tr("Make the ") + osparc.product.Utils.getTemplateAlias() + this.tr(" also accessible to:"),
-        font: "text-14"
+        value: this.tr("Make the template accessible to:"),
+        font: "text-14",
       });
-      addCollaborators.getChildControl("share-with").setLabel(this.tr("Publish for..."));
+      addCollaborators.getChildControl("share-with").setLabel(this.tr("Share with..."));
       this._add(addCollaborators);
 
       this._add(this.__selectedCollabs);
