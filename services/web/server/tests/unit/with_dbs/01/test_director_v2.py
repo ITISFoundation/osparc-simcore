@@ -32,11 +32,16 @@ async def test_create_pipeline(
     user_id: UserID,
     project_id: ProjectID,
     osparc_product_name: str,
+    osparc_product_api_base_url: str,
 ):
     assert client.app
 
     task_out = await director_v2_service.create_or_update_pipeline(
-        client.app, user_id, project_id, osparc_product_name
+        client.app,
+        user_id,
+        project_id,
+        osparc_product_name,
+        osparc_product_api_base_url,
     )
     assert task_out
     assert isinstance(task_out, dict)

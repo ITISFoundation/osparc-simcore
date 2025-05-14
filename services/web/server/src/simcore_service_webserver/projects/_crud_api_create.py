@@ -258,6 +258,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
     copy_data: bool,
     user_id: UserID,
     product_name: str,
+    product_api_base_url: str,
     predefined_project: ProjectDict | None,
     simcore_user_agent: str,
     parent_project_uuid: ProjectID | None,
@@ -411,7 +412,11 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
 
         # This is a new project and every new graph needs to be reflected in the pipeline tables
         await director_v2_service.create_or_update_pipeline(
-            request.app, user_id, new_project["uuid"], product_name
+            request.app,
+            user_id,
+            new_project["uuid"],
+            product_name,
+            product_api_base_url,
         )
         # get the latest state of the project (lastChangeDate for instance)
         new_project, _ = await _projects_repository.get_project_dict_and_type(

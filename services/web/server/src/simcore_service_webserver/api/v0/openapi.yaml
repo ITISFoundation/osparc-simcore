@@ -8368,7 +8368,9 @@ components:
           description: Time delta from creation time to expiration. If None, then
             it does not expire.
         apiBaseUrl:
-          type: string
+          anyOf:
+          - type: string
+          - type: 'null'
           title: Apibaseurl
         apiKey:
           type: string
@@ -8380,7 +8382,6 @@ components:
       required:
       - id
       - displayName
-      - apiBaseUrl
       - apiKey
       - apiSecret
       title: ApiKeyCreateResponse

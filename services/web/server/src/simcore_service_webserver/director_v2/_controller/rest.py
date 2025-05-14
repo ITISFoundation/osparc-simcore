@@ -26,7 +26,7 @@ from ...login.decorators import login_required
 from ...models import RequestContext
 from ...products import products_web
 from ...security.decorators import permission_required
-from ...utils_aiohttp import envelope_json_response
+from ...utils_aiohttp import envelope_json_response, get_api_base_url
 from .. import _director_v2_service
 from .._client import DirectorV2RestClient
 from .._director_v2_abc_service import get_project_run_policy
@@ -111,7 +111,11 @@ async def start_computation(request: web.Request) -> web.Response:
     _started_pipelines_ids = await asyncio.gather(
         *[
             computations.start_computation(
-                pid, req_ctx.user_id, req_ctx.product_name, **options
+                pid,
+                req_ctx.user_id,
+                req_ctx.product_name,
+                get_api_base_url(request),
+                **options,
             )
             for pid in running_project_ids
         ]

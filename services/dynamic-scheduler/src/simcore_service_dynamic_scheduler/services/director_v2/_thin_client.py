@@ -58,6 +58,7 @@ class DirectorV2ThinClient(BaseThinClient):
     ) -> Response:
         post_data = {
             "product_name": dynamic_service_start.product_name,
+            "product_api_base_url": dynamic_service_start.product_api_base_url,
             "can_save": dynamic_service_start.can_save,
             "user_id": dynamic_service_start.user_id,
             "project_id": dynamic_service_start.project_id,

@@ -24,3 +24,4 @@ REGEX_DY_SERVICE_PROXY = rf"^{DYNAMIC_PROXY_SERVICE_PREFIX}_[a-zA-Z0-9-_]*"
 
 UNDEFINED_STR_METADATA = "undefined-metadata"
 UNDEFINED_DOCKER_LABEL = "undefined-label"
+UNDEFINED_API_BASE_URL = "https://api.local"
