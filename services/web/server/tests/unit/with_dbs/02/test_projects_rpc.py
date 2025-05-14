@@ -114,7 +114,7 @@ async def test_rpc_client_list_my_projects_marked_as_jobs(
         rpc_client=rpc_client,
         product_name=product_name,
         user_id=user_id,
-        job_parent_resource_name_prefix="solvers/solver123",
+        filters={"job_parent_resource_name_prefix": "solvers/solver123"},
     )
 
     assert page.meta.total == 1

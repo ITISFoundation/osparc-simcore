@@ -33,6 +33,7 @@ from models_library.rest_pagination import (
     PageMetaInfoLimitOffset,
     PageOffsetInt,
 )
+from models_library.rpc.webserver.projects import ListProjectsMarkedAsJobRpcFilter
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -247,13 +248,17 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         limit: int = 50,
         job_parent_resource_name_prefix: str | None = None,
     ):
+        filters = ListProjectsMarkedAsJobRpcFilter(
+            job_parent_resource_name_prefix=job_parent_resource_name_prefix
+        )
+
         return await projects_rpc.list_projects_marked_as_jobs(
             rpc_client=self._client,
             product_name=product_name,
             user_id=user_id,
             offset=offset,
             limit=limit,
-            job_parent_resource_name_prefix=job_parent_resource_name_prefix,
+            filters=filters,
         )
 
     async def register_function(self, *, function: Function) -> RegisteredFunction:

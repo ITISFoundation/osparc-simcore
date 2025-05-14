@@ -2,16 +2,36 @@ from datetime import datetime
 from typing import Annotated, TypeAlias
 from uuid import uuid4
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 from pydantic.config import JsonDict
 
 from ...projects import NodesDict, ProjectID
-from ...projects_filters import ListProjectsMarkedAsJobFilter
 from ...projects_nodes import Node
 from ...rpc_pagination import PageRpc
 
-# NOTE: for now these interfaces are identical
-ListProjectsMarkedAsJobRpcFilter: TypeAlias = ListProjectsMarkedAsJobFilter
+
+class MetadataFilterItem(BaseModel):
+    name: Annotated[
+        str,
+        StringConstraints(min_length=1, max_length=255),
+        Field(description="Name fo the custom metadata field"),
+    ]
+    pattern: Annotated[
+        str,
+        StringConstraints(min_length=1, max_length=255),
+        Field(description="Exact value or glob pattern"),
+    ]
+
+
+class ListProjectsMarkedAsJobRpcFilter(BaseModel):
+    # NOTE: add here any early validation of filters e.g. incompatible filters etc
+    job_parent_resource_name_prefix: str | None
+    any_of_metadata: Annotated[
+        list[MetadataFilterItem] | None,
+        Field(description="Searchs for matches of any of the custom metadata fields"),
+    ] = None
+
+    # TODO: update interface to list_projects_marked_as_jobs
 
 
 class ProjectJobRpcGet(BaseModel):

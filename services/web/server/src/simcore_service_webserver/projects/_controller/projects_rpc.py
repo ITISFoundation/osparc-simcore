@@ -66,9 +66,6 @@ async def list_projects_marked_as_jobs(
     # pagination
     offset: PageOffsetInt,
     limit: PageLimitInt,
-    # filters
-    # TODO: replace by ListProjectsMarkedAsJobsFilter
-    job_parent_resource_name_prefix: str | None,
     filters: ListProjectsMarkedAsJobRpcFilter | None = None,
 ) -> PageRpcProjectJobRpcGet:
 
@@ -78,8 +75,17 @@ async def list_projects_marked_as_jobs(
         user_id=user_id,
         offset=offset,
         limit=limit,
-        filter_by_job_parent_resource_name_prefix=job_parent_resource_name_prefix,
-        filter_by_metadata_any_of=filters.any_of_metadata if filters else None,
+        filter_by_job_parent_resource_name_prefix=(
+            filters.job_parent_resource_name_prefix if filters else None
+        ),
+        filter_by_any_custom_metadata=(
+            [
+                {custom_metadata.name: custom_metadata.pattern}
+                for custom_metadata in filters.any_of_metadata
+            ]
+            if filters and filters.any_of_metadata
+            else None
+        ),
     )
 
     job_projects = [
