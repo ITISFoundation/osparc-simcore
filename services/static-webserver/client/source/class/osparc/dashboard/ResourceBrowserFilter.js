@@ -35,7 +35,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
 
   events: {
     "templatesContext": "qx.event.type.Event",
-    "publishedContext": "qx.event.type.Event",
+    "publicContext": "qx.event.type.Event",
     "trashContext": "qx.event.type.Event",
     "changeTab": "qx.event.type.Data",
     "trashStudyRequested": "qx.event.type.Data",
@@ -150,7 +150,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
       publishedButton.addListener("changeValue", e => {
         const templatesEnabled = e.getData();
         if (templatesEnabled) {
-          this.fireEvent("publishedContext");
+          this.fireEvent("publicContext");
         }
       });
       return publishedButton;
