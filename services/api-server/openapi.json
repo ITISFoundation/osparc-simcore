@@ -5276,659 +5276,6 @@
         }
       }
     },
-    "/v0/functions": {
-      "post": {
-        "tags": [
-          "functions"
-        ],
-        "summary": "Register Function",
-        "description": "Create function",
-        "operationId": "register_function",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "oneOf": [
-                  {
-                    "$ref": "#/components/schemas/ProjectFunction"
-                  },
-                  {
-                    "$ref": "#/components/schemas/PythonCodeFunction"
-                  },
-                  {
-                    "$ref": "#/components/schemas/SolverFunction"
-                  }
-                ],
-                "discriminator": {
-                  "propertyName": "function_class",
-                  "mapping": {
-                    "project": "#/components/schemas/ProjectFunction",
-                    "python_code": "#/components/schemas/PythonCodeFunction",
-                    "solver": "#/components/schemas/SolverFunction"
-                  }
-                },
-                "title": "Function"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/RegisteredProjectFunction"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RegisteredPythonCodeFunction"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RegisteredSolverFunction"
-                    }
-                  ],
-                  "discriminator": {
-                    "propertyName": "function_class",
-                    "mapping": {
-                      "project": "#/components/schemas/RegisteredProjectFunction",
-                      "python_code": "#/components/schemas/RegisteredPythonCodeFunction",
-                      "solver": "#/components/schemas/RegisteredSolverFunction"
-                    }
-                  },
-                  "title": "Response Register Function V0 Functions Post"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Function not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorGet"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "get": {
-        "tags": [
-          "functions"
-        ],
-        "summary": "List Functions",
-        "description": "List functions",
-        "operationId": "list_functions",
-        "parameters": [
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 50,
-              "minimum": 1,
-              "default": 20,
-              "title": "Limit"
-            }
-          },
-          {
-            "name": "offset",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "minimum": 0,
-              "default": 0,
-              "title": "Offset"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Page_Annotated_Union_RegisteredProjectFunction__RegisteredPythonCodeFunction__RegisteredSolverFunction___FieldInfo_annotation_NoneType__required_True__discriminator__function_class____"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v0/functions/{function_id}": {
-      "get": {
-        "tags": [
-          "functions"
-        ],
-        "summary": "Get Function",
-        "description": "Get function",
-        "operationId": "get_function",
-        "parameters": [
-          {
-            "name": "function_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Function Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/RegisteredProjectFunction"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RegisteredPythonCodeFunction"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RegisteredSolverFunction"
-                    }
-                  ],
-                  "discriminator": {
-                    "propertyName": "function_class",
-                    "mapping": {
-                      "project": "#/components/schemas/RegisteredProjectFunction",
-                      "python_code": "#/components/schemas/RegisteredPythonCodeFunction",
-                      "solver": "#/components/schemas/RegisteredSolverFunction"
-                    }
-                  },
-                  "title": "Response Get Function V0 Functions  Function Id  Get"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Function not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorGet"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "functions"
-        ],
-        "summary": "Delete Function",
-        "description": "Delete function",
-        "operationId": "delete_function",
-        "parameters": [
-          {
-            "name": "function_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Function Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "404": {
-            "description": "Function not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorGet"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v0/functions/{function_id}/input_schema": {
-      "get": {
-        "tags": [
-          "functions"
-        ],
-        "summary": "Get Function Inputschema",
-        "description": "Get function input schema",
-        "operationId": "get_function_inputschema",
-        "parameters": [
-          {
-            "name": "function_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Function Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/JSONFunctionInputSchema"
-                    }
-                  ],
-                  "discriminator": {
-                    "propertyName": "schema_class",
-                    "mapping": {
-                      "application/schema+json": "#/components/schemas/JSONFunctionInputSchema"
-                    }
-                  },
-                  "title": "Response Get Function Inputschema V0 Functions  Function Id  Input Schema Get"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Function not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorGet"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v0/functions/{function_id}/output_schema": {
-      "get": {
-        "tags": [
-          "functions"
-        ],
-        "summary": "Get Function Outputschema",
-        "description": "Get function input schema",
-        "operationId": "get_function_outputschema",
-        "parameters": [
-          {
-            "name": "function_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Function Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/JSONFunctionInputSchema"
-                    }
-                  ],
-                  "discriminator": {
-                    "propertyName": "schema_class",
-                    "mapping": {
-                      "application/schema+json": "#/components/schemas/JSONFunctionInputSchema"
-                    }
-                  },
-                  "title": "Response Get Function Outputschema V0 Functions  Function Id  Output Schema Get"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Function not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorGet"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v0/functions/{function_id}:validate_inputs": {
-      "post": {
-        "tags": [
-          "functions"
-        ],
-        "summary": "Validate Function Inputs",
-        "description": "Validate inputs against the function's input schema",
-        "operationId": "validate_function_inputs",
-        "parameters": [
-          {
-            "name": "function_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Function Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "anyOf": [
-                  {
-                    "type": "object"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "title": "Inputs"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "prefixItems": [
-                    {
-                      "type": "boolean"
-                    },
-                    {
-                      "type": "string"
-                    }
-                  ],
-                  "minItems": 2,
-                  "maxItems": 2,
-                  "title": "Response Validate Function Inputs V0 Functions  Function Id  Validate Inputs Post"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid inputs"
-          },
-          "404": {
-            "description": "Function not found"
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v0/functions/{function_id}:run": {
-      "post": {
-        "tags": [
-          "functions"
-        ],
-        "summary": "Run Function",
-        "description": "Run function",
-        "operationId": "run_function",
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "function_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Function Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "anyOf": [
-                  {
-                    "type": "object"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "title": "Function Inputs"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/RegisteredProjectFunctionJob"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RegisteredPythonCodeFunctionJob"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RegisteredSolverFunctionJob"
-                    }
-                  ],
-                  "discriminator": {
-                    "propertyName": "function_class",
-                    "mapping": {
-                      "project": "#/components/schemas/RegisteredProjectFunctionJob",
-                      "python_code": "#/components/schemas/RegisteredPythonCodeFunctionJob",
-                      "solver": "#/components/schemas/RegisteredSolverFunctionJob"
-                    }
-                  },
-                  "title": "Response Run Function V0 Functions  Function Id  Run Post"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Function not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorGet"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v0/functions/{function_id}:map": {
-      "post": {
-        "tags": [
-          "functions"
-        ],
-        "summary": "Map Function",
-        "description": "Map function over input parameters",
-        "operationId": "map_function",
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "function_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Function Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "array",
-                "items": {
-                  "anyOf": [
-                    {
-                      "type": "object"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
-                },
-                "title": "Function Inputs List"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RegisteredFunctionJobCollection"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Function not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorGet"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/v0/function_jobs": {
       "get": {
         "tags": [
@@ -7370,6 +6717,823 @@
           },
           "504": {
             "description": "Request to a backend service timed out.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/functions": {
+      "post": {
+        "tags": [
+          "functions"
+        ],
+        "summary": "Register Function",
+        "description": "Create function",
+        "operationId": "register_function",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/ProjectFunction"
+                  },
+                  {
+                    "$ref": "#/components/schemas/PythonCodeFunction"
+                  },
+                  {
+                    "$ref": "#/components/schemas/SolverFunction"
+                  }
+                ],
+                "discriminator": {
+                  "propertyName": "function_class",
+                  "mapping": {
+                    "project": "#/components/schemas/ProjectFunction",
+                    "python_code": "#/components/schemas/PythonCodeFunction",
+                    "solver": "#/components/schemas/SolverFunction"
+                  }
+                },
+                "title": "Function"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/RegisteredProjectFunction"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RegisteredPythonCodeFunction"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RegisteredSolverFunction"
+                    }
+                  ],
+                  "discriminator": {
+                    "propertyName": "function_class",
+                    "mapping": {
+                      "project": "#/components/schemas/RegisteredProjectFunction",
+                      "python_code": "#/components/schemas/RegisteredPythonCodeFunction",
+                      "solver": "#/components/schemas/RegisteredSolverFunction"
+                    }
+                  },
+                  "title": "Response Register Function V0 Functions Post"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Function not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "functions"
+        ],
+        "summary": "List Functions",
+        "description": "List functions",
+        "operationId": "list_functions",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_Annotated_Union_RegisteredProjectFunction__RegisteredPythonCodeFunction__RegisteredSolverFunction___FieldInfo_annotation_NoneType__required_True__discriminator__function_class____"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/functions/{function_id}": {
+      "get": {
+        "tags": [
+          "functions"
+        ],
+        "summary": "Get Function",
+        "description": "Get function",
+        "operationId": "get_function",
+        "parameters": [
+          {
+            "name": "function_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Function Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/RegisteredProjectFunction"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RegisteredPythonCodeFunction"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RegisteredSolverFunction"
+                    }
+                  ],
+                  "discriminator": {
+                    "propertyName": "function_class",
+                    "mapping": {
+                      "project": "#/components/schemas/RegisteredProjectFunction",
+                      "python_code": "#/components/schemas/RegisteredPythonCodeFunction",
+                      "solver": "#/components/schemas/RegisteredSolverFunction"
+                    }
+                  },
+                  "title": "Response Get Function V0 Functions  Function Id  Get"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Function not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "functions"
+        ],
+        "summary": "Delete Function",
+        "description": "Delete function",
+        "operationId": "delete_function",
+        "parameters": [
+          {
+            "name": "function_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Function Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "404": {
+            "description": "Function not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/functions/{function_id}/title": {
+      "patch": {
+        "tags": [
+          "functions"
+        ],
+        "summary": "Update Function Title",
+        "description": "Update function",
+        "operationId": "update_function_title",
+        "parameters": [
+          {
+            "name": "function_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Function Id"
+            }
+          },
+          {
+            "name": "title",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Title"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/RegisteredProjectFunction"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RegisteredPythonCodeFunction"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RegisteredSolverFunction"
+                    }
+                  ],
+                  "discriminator": {
+                    "propertyName": "function_class",
+                    "mapping": {
+                      "project": "#/components/schemas/RegisteredProjectFunction",
+                      "python_code": "#/components/schemas/RegisteredPythonCodeFunction",
+                      "solver": "#/components/schemas/RegisteredSolverFunction"
+                    }
+                  },
+                  "title": "Response Update Function Title V0 Functions  Function Id  Title Patch"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Function not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/functions/{function_id}/description": {
+      "patch": {
+        "tags": [
+          "functions"
+        ],
+        "summary": "Update Function Description",
+        "description": "Update function",
+        "operationId": "update_function_description",
+        "parameters": [
+          {
+            "name": "function_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Function Id"
+            }
+          },
+          {
+            "name": "description",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Description"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/RegisteredProjectFunction"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RegisteredPythonCodeFunction"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RegisteredSolverFunction"
+                    }
+                  ],
+                  "discriminator": {
+                    "propertyName": "function_class",
+                    "mapping": {
+                      "project": "#/components/schemas/RegisteredProjectFunction",
+                      "python_code": "#/components/schemas/RegisteredPythonCodeFunction",
+                      "solver": "#/components/schemas/RegisteredSolverFunction"
+                    }
+                  },
+                  "title": "Response Update Function Description V0 Functions  Function Id  Description Patch"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Function not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/functions/{function_id}/input_schema": {
+      "get": {
+        "tags": [
+          "functions"
+        ],
+        "summary": "Get Function Inputschema",
+        "description": "Get function input schema",
+        "operationId": "get_function_inputschema",
+        "parameters": [
+          {
+            "name": "function_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Function Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/JSONFunctionInputSchema"
+                    }
+                  ],
+                  "discriminator": {
+                    "propertyName": "schema_class",
+                    "mapping": {
+                      "application/schema+json": "#/components/schemas/JSONFunctionInputSchema"
+                    }
+                  },
+                  "title": "Response Get Function Inputschema V0 Functions  Function Id  Input Schema Get"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Function not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/functions/{function_id}/output_schema": {
+      "get": {
+        "tags": [
+          "functions"
+        ],
+        "summary": "Get Function Outputschema",
+        "description": "Get function input schema",
+        "operationId": "get_function_outputschema",
+        "parameters": [
+          {
+            "name": "function_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Function Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/JSONFunctionInputSchema"
+                    }
+                  ],
+                  "discriminator": {
+                    "propertyName": "schema_class",
+                    "mapping": {
+                      "application/schema+json": "#/components/schemas/JSONFunctionInputSchema"
+                    }
+                  },
+                  "title": "Response Get Function Outputschema V0 Functions  Function Id  Output Schema Get"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Function not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/functions/{function_id}:validate_inputs": {
+      "post": {
+        "tags": [
+          "functions"
+        ],
+        "summary": "Validate Function Inputs",
+        "description": "Validate inputs against the function's input schema",
+        "operationId": "validate_function_inputs",
+        "parameters": [
+          {
+            "name": "function_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Function Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Inputs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "prefixItems": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "string"
+                    }
+                  ],
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "title": "Response Validate Function Inputs V0 Functions  Function Id  Validate Inputs Post"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid inputs"
+          },
+          "404": {
+            "description": "Function not found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/functions/{function_id}:run": {
+      "post": {
+        "tags": [
+          "functions"
+        ],
+        "summary": "Run Function",
+        "description": "Run function",
+        "operationId": "run_function",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "function_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Function Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Function Inputs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/RegisteredProjectFunctionJob"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RegisteredPythonCodeFunctionJob"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RegisteredSolverFunctionJob"
+                    }
+                  ],
+                  "discriminator": {
+                    "propertyName": "function_class",
+                    "mapping": {
+                      "project": "#/components/schemas/RegisteredProjectFunctionJob",
+                      "python_code": "#/components/schemas/RegisteredPythonCodeFunctionJob",
+                      "solver": "#/components/schemas/RegisteredSolverFunctionJob"
+                    }
+                  },
+                  "title": "Response Run Function V0 Functions  Function Id  Run Post"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Function not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/functions/{function_id}:map": {
+      "post": {
+        "tags": [
+          "functions"
+        ],
+        "summary": "Map Function",
+        "description": "Map function over input parameters",
+        "operationId": "map_function",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "function_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Function Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "anyOf": [
+                    {
+                      "type": "object"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "title": "Function Inputs List"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegisteredFunctionJobCollection"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Function not found",
             "content": {
               "application/json": {
                 "schema": {
