@@ -138,7 +138,7 @@ def iter_origins(request: web.Request) -> Iterator[tuple[str, str]]:
     seen = set()
 
     # X-Forwarded-Proto and X-Forwarded-Host can contain a comma-separated list of protocols and hosts
-    # (when the request passes through multiple proxies)fwd_protos = [
+    # (when the request passes through multiple proxies)
     fwd_protos = [
         p.strip()
         for p in request.headers.get("X-Forwarded-Proto", "").split(",")
@@ -162,5 +162,5 @@ def iter_origins(request: web.Request) -> Iterator[tuple[str, str]]:
 
 def get_api_base_url(request: web.Request) -> str:
     scheme, host = next(iter_origins(request))
-    api_host = f"api.{host}" if not is_ip_address(host) else host
+    api_host = api_host = host if is_ip_address(host) else f"api.{host}"
     return f"{scheme}://{api_host}"
