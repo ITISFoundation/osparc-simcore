@@ -34,6 +34,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
     if (resourceType === "study") {
       const workspacesContainer = this.__workspacesContainer = new osparc.dashboard.CardContainer();
+      this.__workspacesContainer.exclude();
       this._add(workspacesContainer);
 
       const foldersContainer = this.__foldersContainer = new osparc.dashboard.CardContainer();
@@ -386,6 +387,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     reloadWorkspaces: function() {
       if (this.__workspacesContainer) {
         this.__workspacesContainer.removeAll();
+        this.__workspacesContainer.exclude();
       }
       let workspacesCards = [];
       this.__workspacesList.forEach(workspaceData => workspacesCards.push(this.__workspaceToCard(workspaceData)));
@@ -394,11 +396,13 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
     addNewWorkspaceCard: function(newWorkspaceCard) {
       this.__workspacesContainer.addAt(newWorkspaceCard, 0);
+      this.__workspacesContainer.show();
     },
 
     __workspaceToCard: function(workspaceData) {
       const card = this.__createWorkspaceCard(workspaceData);
       this.__workspacesContainer.add(card);
+      this.__workspacesContainer.show();
       return card;
     },
 
