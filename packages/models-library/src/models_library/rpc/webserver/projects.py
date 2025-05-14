@@ -2,11 +2,16 @@ from datetime import datetime
 from typing import Annotated, TypeAlias
 from uuid import uuid4
 
-from models_library.projects import NodesDict, ProjectID
-from models_library.projects_nodes import Node
-from models_library.rpc_pagination import PageRpc
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.config import JsonDict
+
+from ...projects import NodesDict, ProjectID
+from ...projects_filters import ListProjectsMarkedAsJobFilter
+from ...projects_nodes import Node
+from ...rpc_pagination import PageRpc
+
+# NOTE: for now these interfaces are identical
+ListProjectsMarkedAsJobRpcFilter: TypeAlias = ListProjectsMarkedAsJobFilter
 
 
 class ProjectJobRpcGet(BaseModel):

@@ -8,6 +8,7 @@ from pydantic import TypeAdapter
 from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects import projects
+from simcore_postgres_database.models.projects_metadata import projects_metadata
 from simcore_postgres_database.models.projects_to_jobs import projects_to_jobs
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.utils_repos import (
@@ -28,6 +29,30 @@ _PROJECT_DB_COLS = get_columns_from_db_model(
     projects,
     ProjectDBGet,
 )
+
+
+def _apply_job_parent_resource_name_filter(
+    query: sa.sql.Select, prefix: str
+) -> sa.sql.Select:
+    return query.where(projects_to_jobs.c.job_parent_resource_name.like(f"{prefix}%"))
+
+
+def _apply_metadata_filter(
+    query: sa.sql.Select, any_of_metadata_fields: list[dict[str, str]]
+) -> sa.sql.Select:
+
+    assert any_of_metadata_fields  # nosec
+
+    expressions = [
+        projects_metadata.c.custom[key].ilike(
+            # NOTE: we use ilike to be case insensitive
+            # NOTE: supports glob wildcards
+            pattern.replace("*", "%")
+        )
+        for field in any_of_metadata_fields
+        for key, pattern in field.items()
+    ]
+    return query.where(sa.or_(*expressions))
 
 
 class ProjectJobsRepository(BaseRepository):
@@ -60,9 +85,10 @@ class ProjectJobsRepository(BaseRepository):
         *,
         product_name: ProductName,
         user_id: UserID,
-        offset: int = 0,
-        limit: int = 10,
-        job_parent_resource_name_prefix: str | None = None,
+        pagination_offset: int = 0,
+        pagination_limit: int = 10,
+        filter_by_job_parent_resource_name_prefix: str | None = None,
+        filter_by_any_of_metadata_fields: list[dict[str, str]] | None = None,
     ) -> tuple[int, list[ProjectJobDBGet]]:
         """Lists projects marked as jobs for a specific user and product
 
@@ -96,9 +122,14 @@ class ProjectJobsRepository(BaseRepository):
                     projects_to_products,
                     projects_to_jobs.c.project_uuid
                     == projects_to_products.c.project_uuid,
-                ).join(
+                )
+                .join(
                     project_to_groups,
                     projects_to_jobs.c.project_uuid == project_to_groups.c.project_uuid,
+                )
+                .outerjoin(
+                    projects_metadata,
+                    projects_to_jobs.c.project_uuid == projects_metadata.c.project_uuid,
                 )
             )
             .where(
@@ -112,21 +143,24 @@ class ProjectJobsRepository(BaseRepository):
             )
         )
 
-        # Apply job_parent_resource_name_filter if provided
-        if job_parent_resource_name_prefix:
-            access_query = access_query.where(
-                projects_to_jobs.c.job_parent_resource_name.like(
-                    f"{job_parent_resource_name_prefix}%"
-                )
+        # Step 3: Apply filters
+        if filter_by_job_parent_resource_name_prefix:
+            access_query = _apply_job_parent_resource_name_filter(
+                access_query, filter_by_job_parent_resource_name_prefix
             )
 
-        # Convert access_query to a subquery
+        if filter_by_any_of_metadata_fields:
+            access_query = _apply_metadata_filter(
+                access_query, filter_by_any_of_metadata_fields
+            )
+
+        # Step 4. Convert access_query to a subquery
         base_query = access_query.subquery()
 
-        # Step 3: Query to get the total count
+        # Step 5: Query to get the total count
         total_query = sa.select(sa.func.count()).select_from(base_query)
 
-        # Step 4: Query to get the paginated list with full selection
+        # Step 6: Query to get the paginated list with full selection
         list_query = (
             sa.select(
                 *_PROJECT_DB_COLS,
@@ -143,8 +177,8 @@ class ProjectJobsRepository(BaseRepository):
                 projects.c.creation_date.desc(),  # latests first
                 projects.c.id.desc(),
             )
-            .limit(limit)
-            .offset(offset)
+            .limit(pagination_limit)
+            .offset(pagination_offset)
         )
 
         # Step 5: Execute queries
