@@ -724,7 +724,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __didContextChange: function(reqParams) {
       // not needed for the comparison
-      delete reqParams["type"];
+      // delete reqParams["type"];
       delete reqParams["limit"];
       delete reqParams["offset"];
       delete reqParams["filters"];
@@ -785,6 +785,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         case "studiesAndFolders":
           requestParams.workspaceId = this.getCurrentWorkspaceId();
           requestParams.folderId = this.getCurrentFolderId();
+          requestParams.type = "user";
+          break;
+        case "templates":
+          requestParams.type = "template";
+          break;
+        case "public":
+          requestParams.type = "template";
           break;
         case "search": {
           // Use the ``search`` functionality only if the user types some text

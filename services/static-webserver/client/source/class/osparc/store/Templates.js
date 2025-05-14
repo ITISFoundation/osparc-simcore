@@ -23,7 +23,7 @@ qx.Class.define("osparc.store.Templates", {
     __templatesPromisesCached: null,
 
     fetchTemplatesPaginated: function(params, options) {
-      return osparc.data.Resources.fetch("templates", "getPage", params, options)
+      return osparc.data.Resources.fetch("templates", "getPageSorted", params, options)
         .then(resp => {
           const templates = resp.data;
           // add them to the list
