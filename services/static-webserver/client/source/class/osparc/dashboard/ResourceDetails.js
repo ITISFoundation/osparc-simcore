@@ -356,27 +356,9 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         }
       });
 
-      const resourceData = this.__resourceData;
-      if (!osparc.utils.Resources.isService(resourceData)) {
-        const title = osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + this.tr(" Files...");
-        const iconSrc = "@FontAwesome5Solid/file/22";
-        const dataAccess = new qx.ui.basic.Atom().set({
-          label: title,
-          icon: iconSrc,
-          font: "text-14",
-          padding: 8,
-          paddingLeft: 12,
-          gap: 14,
-          cursor: "pointer",
-        });
-        dataAccess.addListener("tap", () => osparc.widget.StudyDataManager.popUpInWindow(resourceData["uuid"]));
-        this.addWidgetToTabs(dataAccess);
 
-        if (resourceData["resourceType"] === "study") {
-          const canShowData = osparc.study.Utils.canShowStudyData(resourceData);
-          dataAccess.setEnabled(canShowData);
-        }
-      }
+      this.__getActivityOverviewPopUp();
+      this.__getProjectFilesPopUp();
 
       if (selectedTabId) {
         const pageFound = tabsView.getChildren().find(page => page.tabId === selectedTabId);
@@ -814,6 +796,52 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       page.addToHeader(toolbar);
       page.addToContent(createFunction);
       return page;
-    }
+    },
+
+    __getProjectFilesPopUp: function() {
+      const resourceData = this.__resourceData;
+      if (!osparc.utils.Resources.isService(resourceData)) {
+        const title = osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + this.tr(" Files...");
+        const iconSrc = "@FontAwesome5Solid/file/22";
+        const dataAccess = new qx.ui.basic.Atom().set({
+          label: title,
+          icon: iconSrc,
+          font: "text-14",
+          padding: 8,
+          paddingLeft: 12,
+          gap: 14,
+          cursor: "pointer",
+        });
+        dataAccess.addListener("tap", () => osparc.widget.StudyDataManager.popUpInWindow(resourceData["uuid"]));
+        this.addWidgetToTabs(dataAccess);
+
+        if (resourceData["resourceType"] === "study") {
+          const canShowData = osparc.study.Utils.canShowStudyData(resourceData);
+          dataAccess.setEnabled(canShowData);
+        }
+      }
+    },
+
+    __getActivityOverviewPopUp: function() {
+      const resourceData = this.__resourceData;
+      if (
+        osparc.desktop.credits.Utils.areWalletsEnabled() &&
+        osparc.utils.Resources.isStudy(resourceData)
+      ) {
+        const title = this.tr("Activity Overview...");
+        const iconSrc = "@FontAwesome5Solid/tasks/22";
+        const dataAccess = new qx.ui.basic.Atom().set({
+          label: title,
+          icon: iconSrc,
+          font: "text-14",
+          padding: 8,
+          paddingLeft: 10,
+          gap: 12, // align with the rest of the tabs
+          cursor: "pointer",
+        });
+        dataAccess.addListener("tap", () => osparc.jobs.ActivityOverview.popUpInWindow(resourceData));
+        this.addWidgetToTabs(dataAccess);
+      }
+    },
   }
 });
