@@ -103,6 +103,10 @@ qx.Class.define("osparc.file.TreeFolderView", {
           .then(() => {
             folderTree.openNodeAndParents(selectedModel);
             folderTree.setSelection(new qx.data.Array([selectedModel]));
+          })
+          .catch(err => {
+            console.error(err);
+            selectedModel.setLoaded(false);
           });
       } else {
         folderTree.openNodeAndParents(selectedModel);
