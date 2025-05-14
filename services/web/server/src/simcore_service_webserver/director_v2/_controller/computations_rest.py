@@ -115,7 +115,6 @@ async def list_computation_iterations(request: web.Request) -> web.Response:
         # ordering
         order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
     )
-
     page = Page[ComputationRunRestGet].model_validate(
         paginate_data(
             chunk=[
