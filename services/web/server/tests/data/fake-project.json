@@ -71,5 +71,7 @@
   "ui": {},
   "quality": {},
   "dev": {},
-  "workspaceId": null
+  "workspaceId": null,
+  "type": "STANDARD",
+  "templateType": null
 }

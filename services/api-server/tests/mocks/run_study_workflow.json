@@ -302,6 +302,8 @@
         "creationDate": "2024-04-15T15:50:28.196Z",
         "lastChangeDate": "2024-04-15T15:50:28.196Z",
         "workspaceId": 3,
+        "type": "STANDARD",
+        "templateType": null,
         "folderId": 3,
         "trashedAt": null,
         "trashedBy": null,

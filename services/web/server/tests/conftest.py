@@ -237,6 +237,8 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
             "folderId": None,
             "trashedAt": None,
             "trashedBy": None,
+            "type": None,
+            "templateType": None,
         }
         if from_study:
 
@@ -445,6 +447,8 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
                 "state",
                 "permalink",
                 "folderId",
+                "type",
+                "templateType",
             ]
 
             for key in expected_data:

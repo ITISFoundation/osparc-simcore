@@ -26,7 +26,14 @@ from ..basic_types import LongTruncatedStr, ShortTruncatedStr
 from ..emails import LowerCaseEmailStr
 from ..folders import FolderID
 from ..groups import GroupID
-from ..projects import ClassifierID, DateTimeStr, NodesDict, ProjectID
+from ..projects import (
+    ClassifierID,
+    DateTimeStr,
+    NodesDict,
+    ProjectID,
+    ProjectTemplateType,
+    ProjectType,
+)
 from ..projects_access import AccessRights, GroupIDStr
 from ..projects_state import ProjectState
 from ..utils._original_fastapi_encoders import jsonable_encoder
@@ -106,6 +113,9 @@ class ProjectGet(OutputSchema):
     description: str
     thumbnail: HttpUrl | Literal[""]
 
+    type: ProjectType
+    template_type: ProjectTemplateType | None
+
     workbench: NodesDict
 
     prj_owner: LowerCaseEmailStr
@@ -153,6 +163,8 @@ class ProjectGet(OutputSchema):
                     "name": "My Project",
                     "description": "This is a sample project",
                     "thumbnail": "https://example.com/thumbnail.png",
+                    "type": "STANDARD",
+                    "template_type": None,
                     "workbench": {},
                     "prj_owner": "user@email.com",
                     "access_rights": {},
