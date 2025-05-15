@@ -281,9 +281,7 @@ class ProjectDBAPI(BaseProjectDB):
             {
                 "type": (
                     ProjectType.TEMPLATE.value
-                    if (
-                        force_as_template or user_id is None
-                    )  #  or user_id is None (MD: Check consequences)
+                    if (force_as_template or user_id is None)
                     else ProjectType.STANDARD.value
                 ),
                 "template_type": (
