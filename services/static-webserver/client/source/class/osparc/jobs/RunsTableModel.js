@@ -91,7 +91,7 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
         } else {
           promise = osparc.store.Jobs.getInstance().fetchJobsHistory(this.__projectUuid, offset, limit, JSON.stringify(this.getOrderBy()));
         }
-        promise
+        return promise
           .then(jobs => {
             const data = [];
             const jobsCols = osparc.jobs.RunsTable.COLS;
