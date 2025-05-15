@@ -281,11 +281,15 @@ class ProjectDBAPI(BaseProjectDB):
             {
                 "type": (
                     ProjectType.TEMPLATE.value
-                    if (force_as_template or user_id is None)
+                    if (
+                        force_as_template or user_id is None
+                    )  #  or user_id is None (MD: Check consequences)
                     else ProjectType.STANDARD.value
                 ),
                 "template_type": (
-                    ProjectTemplateType.TEMPLATE.value if force_as_template else None
+                    ProjectTemplateType.TEMPLATE.value
+                    if (force_as_template or user_id is None)
+                    else None
                 ),
                 "prj_owner": user_id if user_id else None,
                 "hidden": hidden,

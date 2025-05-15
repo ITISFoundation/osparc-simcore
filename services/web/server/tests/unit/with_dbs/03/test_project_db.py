@@ -18,7 +18,7 @@ import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from common_library.dict_tools import copy_from_dict_ex, remap_keys
 from faker import Faker
-from models_library.projects import ProjectID
+from models_library.projects import ProjectID, ProjectTemplateType
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from psycopg2.errors import UniqueViolation
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -252,7 +252,11 @@ async def test_insert_project_to_db(
     _assert_added_project(
         expected_project,
         new_project,
-        exp_overrides={"prjOwner": "not_a_user@unknown.com"},
+        exp_overrides={
+            "prjOwner": "not_a_user@unknown.com",
+            "type": ProjectType.TEMPLATE.value,
+            "templateType": ProjectTemplateType.TEMPLATE.value,
+        },
     )
     _assert_project_db_row(postgres_db, new_project, type=ProjectType.TEMPLATE)
     _assert_projects_to_product_db_row(postgres_db, new_project, osparc_product_name)
@@ -305,6 +309,8 @@ async def test_insert_project_to_db(
         exp_overrides={
             "uuid": new_project["uuid"],
             "prjOwner": logged_user["email"],
+            "type": ProjectType.TEMPLATE.value,
+            "templateType": ProjectTemplateType.TEMPLATE.value,
         },
     )
     _assert_project_db_row(

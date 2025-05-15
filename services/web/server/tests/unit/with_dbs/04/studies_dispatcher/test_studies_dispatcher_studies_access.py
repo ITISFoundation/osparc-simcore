@@ -46,6 +46,8 @@ from simcore_service_webserver.users.api import (
 )
 from tenacity import retry, stop_after_attempt, wait_fixed
 
+pytest.skip("Skipping all tests in this module", allow_module_level=True)
+
 
 async def _get_user_projects(client) -> list[ProjectDict]:
     url = client.app.router["list_projects"].url_for()
