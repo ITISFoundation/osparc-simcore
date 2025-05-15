@@ -405,7 +405,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
     @model_validator(mode="before")
     @classmethod
-    def _disable_development_features_in_production(cls, data: Any) -> Any:
+    def _disable_features_under_development_in_production(cls, data: Any) -> Any:
         """Force disables plugins marked '_X_FEATURE_UNDER_DEVELOPMENT' when WEBSERVER_DEV_FEATURES_ENABLED=False"""
 
         dev_features_allowed = TypeAdapter(bool).validate_python(
