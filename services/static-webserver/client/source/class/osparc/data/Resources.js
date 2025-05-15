@@ -356,7 +356,7 @@ qx.Class.define("osparc.data.Resources", {
           },
           getPageHistory: {
             method: "GET",
-            url: statics.API + "/computations/{studyId}/iterations?offset={offset}&limit={limit}"
+            url: statics.API + "/computations/{studyId}/iterations?offset={offset}&limit={limit}&order_by=%7B%22field%22:%22submitted_at%22,%22direction%22:%22desc%22%7D"
           },
         }
       },

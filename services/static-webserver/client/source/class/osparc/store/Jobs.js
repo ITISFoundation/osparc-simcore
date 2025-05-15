@@ -73,6 +73,44 @@ qx.Class.define("osparc.store.Jobs", {
         .catch(err => console.error(err));
     },
 
+    fetchJobsHistory: function(
+      studyId,
+      offset = 0,
+      limit = this.self().SERVER_MAX_LIMIT,
+      orderBy = {
+        field: "submitted_at",
+        direction: "desc"
+      },
+      resolveWResponse = false
+    ) {
+      const params = {
+        url: {
+          studyId,
+          offset,
+          limit,
+          orderBy: JSON.stringify(orderBy),
+        }
+      };
+      const options = {
+        resolveWResponse: true
+      };
+      return osparc.data.Resources.fetch("jobs", "getPageHistory", params, options)
+        .then(jobsResp => {
+          if (resolveWResponse) {
+            return jobsResp;
+          }
+          const jobs = [];
+          if ("data" in jobsResp) {
+            jobsResp["data"].forEach(jobData => {
+              const job = new osparc.data.Job(jobData);
+              jobs.push(job);
+            });
+          }
+          return jobs;
+        })
+        .catch(err => console.error(err));
+    },
+
     fetchSubJobs: function(projectUuid) {
       const params = {
         url: {

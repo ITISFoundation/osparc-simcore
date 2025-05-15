@@ -22,7 +22,7 @@ qx.Class.define("osparc.jobs.RunsTable", {
   construct: function(latestOnly = true, projectUuid = null) {
     this.base(arguments);
 
-    const model = new osparc.jobs.RunsTableModel();
+    const model = new osparc.jobs.RunsTableModel(latestOnly, projectUuid);
     this.setTableModel(model);
 
     this.set({
