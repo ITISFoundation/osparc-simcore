@@ -7,6 +7,7 @@ import logging
 import re
 from collections.abc import AsyncIterable, Awaitable, Callable
 from copy import deepcopy
+from enum import Enum
 from pathlib import Path
 from typing import Any, NamedTuple
 from unittest import mock
@@ -437,12 +438,16 @@ async def assert_user_not_in_db(
     assert user_db is None
 
 
+def enum_to_value(d):
+    return {k: (v.value if isinstance(v, Enum) else v) for k, v in d.items()}
+
+
 async def assert_project_in_db(
     aiopg_engine: aiopg.sa.Engine, user_project: dict
 ) -> None:
     project = await fetch_project_from_db(aiopg_engine, user_project)
     assert project
-    project_as_dict = dict(project)
+    project_as_dict = enum_to_value(dict(project))
 
     assert_dicts_match_by_common_keys(project_as_dict, user_project)
 

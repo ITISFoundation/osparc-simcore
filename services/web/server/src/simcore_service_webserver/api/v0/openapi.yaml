@@ -14391,6 +14391,12 @@ components:
           - type: string
             const: ''
           title: Thumbnail
+        type:
+          $ref: '#/components/schemas/ProjectType'
+        templateType:
+          anyOf:
+          - $ref: '#/components/schemas/ProjectTemplateType'
+          - type: 'null'
         workbench:
           type: object
           title: Workbench
@@ -14482,6 +14488,8 @@ components:
       - name
       - description
       - thumbnail
+      - type
+      - templateType
       - workbench
       - prjOwner
       - accessRights
@@ -14581,6 +14589,12 @@ components:
           - type: string
             const: ''
           title: Thumbnail
+        type:
+          $ref: '#/components/schemas/ProjectType'
+        templateType:
+          anyOf:
+          - $ref: '#/components/schemas/ProjectTemplateType'
+          - type: 'null'
         workbench:
           type: object
           title: Workbench
@@ -14672,6 +14686,8 @@ components:
       - name
       - description
       - thumbnail
+      - type
+      - templateType
       - workbench
       - prjOwner
       - accessRights
@@ -14943,6 +14959,19 @@ components:
       - OPENED
       - MAINTAINING
       title: ProjectStatus
+    ProjectTemplateType:
+      type: string
+      enum:
+      - TEMPLATE
+      - TUTORIAL
+      - HYPERTOOL
+      title: ProjectTemplateType
+    ProjectType:
+      type: string
+      enum:
+      - TEMPLATE
+      - STANDARD
+      title: ProjectType
     ProjectTypeAPI:
       type: string
       enum:
