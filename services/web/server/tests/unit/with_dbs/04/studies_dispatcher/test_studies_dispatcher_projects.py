@@ -29,9 +29,6 @@ from simcore_service_webserver.studies_dispatcher._projects import (
 )
 from simcore_service_webserver.users.api import get_user
 
-pytest.skip("Skipping all tests in this module", allow_module_level=True)
-
-
 FAKE_FILE_VIEWS = list_fake_file_consumers()
 
 
