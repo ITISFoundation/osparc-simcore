@@ -44,6 +44,10 @@ class ComputationCreate(BaseModel):
         Field(description="if True the computation pipeline will start right away"),
     ] = False
     product_name: Annotated[str, Field()]
+    product_api_base_url: Annotated[
+        AnyHttpUrl,
+        Field(description="Base url of the product"),
+    ]
     subgraph: Annotated[
         list[NodeID] | None,
         Field(

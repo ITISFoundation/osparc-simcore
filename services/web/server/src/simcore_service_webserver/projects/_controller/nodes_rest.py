@@ -62,7 +62,7 @@ from ...groups.exceptions import GroupNotFoundError
 from ...login.decorators import login_required
 from ...security.decorators import permission_required
 from ...users.api import get_user_id_from_gid, get_user_role
-from ...utils_aiohttp import envelope_json_response
+from ...utils_aiohttp import envelope_json_response, get_api_base_url
 from .. import _access_rights_service as access_rights_service
 from .. import _nodes_service, _projects_service, nodes_utils
 from .._nodes_service import NodeScreenshot, get_node_screenshots
@@ -121,6 +121,7 @@ async def create_node(request: web.Request) -> web.Response:
             project_data,
             req_ctx.user_id,
             req_ctx.product_name,
+            get_api_base_url(request),
             body.service_key,
             body.service_version,
             body.service_id,
@@ -182,6 +183,7 @@ async def patch_project_node(request: web.Request) -> web.Response:
     await _projects_service.patch_project_node(
         request.app,
         product_name=req_ctx.product_name,
+        product_api_base_url=get_api_base_url(request),
         user_id=req_ctx.user_id,
         project_id=path_params.project_id,
         node_id=path_params.node_id,
@@ -211,6 +213,7 @@ async def delete_node(request: web.Request) -> web.Response:
         req_ctx.user_id,
         NodeIDStr(path_params.node_id),
         req_ctx.product_name,
+        product_api_base_url=get_api_base_url(request),
     )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
@@ -278,6 +281,7 @@ async def start_node(request: web.Request) -> web.Response:
     await _projects_service.start_project_node(
         request,
         product_name=req_ctx.product_name,
+        product_api_base_url=get_api_base_url(request),
         user_id=req_ctx.user_id,
         project_id=path_params.project_id,
         node_id=path_params.node_id,
