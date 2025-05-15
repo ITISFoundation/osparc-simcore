@@ -2,7 +2,7 @@ import asyncio
 import contextlib
 import logging
 from collections.abc import AsyncIterator
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Final
 
 import distributed
@@ -63,23 +63,23 @@ def get_current_task_resources() -> dict[str, float]:
 @dataclass(slots=True, kw_only=True)
 class TaskPublisher:
     task_owner: TaskOwner
-    progress: distributed.Pub = field(init=False)
     _last_published_progress_value: float = -1
-
-    def __post_init__(self) -> None:
-        self.progress = distributed.Pub(TaskProgressEvent.topic_name())
 
     def publish_progress(self, report: ProgressReport) -> None:
         rounded_value = round(report.percent_value, ndigits=2)
         if rounded_value > self._last_published_progress_value:
-            with log_catch(logger=_logger, reraise=False):
+            with (
+                log_catch(logger=_logger, reraise=False),
+                log_context(
+                    _logger, logging.DEBUG, msg=f"publish progress {rounded_value=}"
+                ),
+            ):
                 publish_event(
                     TaskProgressEvent.from_dask_worker(
                         progress=rounded_value, task_owner=self.task_owner
                     ),
                 )
                 self._last_published_progress_value = rounded_value
-            _logger.debug("PROGRESS: %s", rounded_value)
 
     async def publish_logs(
         self,
