@@ -42,6 +42,10 @@ qx.Class.define("osparc.store.Templates", {
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
+    fetchTemplatesPublicPaginated: function(params, options) {
+      return this.fetchTemplatesPaginated(params, options);
+    },
+
     __fetchAllTemplates: function() {
       return this.__templatesPromisesCached = osparc.data.Resources.getInstance().getAllPages("templates")
         .then(templates => {
