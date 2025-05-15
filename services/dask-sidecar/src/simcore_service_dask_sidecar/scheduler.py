@@ -22,6 +22,6 @@ async def dask_setup(scheduler: distributed.Scheduler) -> None:
         print_dask_scheduler_banner()
 
 
-async def dask_teardown(_worker: distributed.Worker) -> None:
-    with log_context(_logger, logging.INFO, "Tear down dask scheduler"):
+async def dask_teardown(scheduler: distributed.Scheduler) -> None:
+    with log_context(_logger, logging.INFO, f"Tear down dask {scheduler.address}"):
         ...
