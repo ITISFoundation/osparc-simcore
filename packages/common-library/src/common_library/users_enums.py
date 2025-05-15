@@ -60,8 +60,8 @@ class UserStatus(str, Enum):
 
 
 class AccountRequestStatus(str, Enum):
-    """Status of an account request"""
+    """Status of the request for an account"""
 
-    PENDING = "PENDING"
-    APPROVED = "APPROVED"
-    REJECTED = "REJECTED"
+    PENDING = "PENDING"  # Pending PO review to approve/reject the request
+    APPROVED = "APPROVED"  # PO approved the request
+    REJECTED = "REJECTED"  # PO rejected the request

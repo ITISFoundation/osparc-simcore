@@ -241,12 +241,13 @@ class UserGet(OutputSchema):
 
 
 class UsersForAdminListFilter(Filters):
-    approved: Annotated[
-        bool | None,
-        Field(
-            description="Filter users by approval status: True for approved, False for pending/rejected, None for all"
-        ),
-    ] = None
+    # TODO: create a filter for two views that OM needs
+    #
+    # 1. States of an Account Resquest: PENDING, REJECTED, APPROVED
+    # 2. If APPROVED AND user uses the invitation link, then it can be in any of these states:
+    #    CONFIRMATION_PENDING, ACTIVE, EXPIRED, BANNED, DELETED
+    #
+    approved: bool | None = None
 
 
 class UsersForAdminListQueryParams(PageQueryParameters, UsersForAdminListFilter): ...

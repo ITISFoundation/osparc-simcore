@@ -60,7 +60,6 @@ users_pre_registration_details = sa.Table(
         sa.Enum(AccountRequestStatus),
         nullable=False,
         server_default=sa.text("'PENDING'::account_request_status"),
-        doc="Status of the account request: PENDING, APPROVED, REJECTED",
     ),
     # Billable address columns:
     sa.Column("institution", sa.String(), doc="the name of a company or university"),
