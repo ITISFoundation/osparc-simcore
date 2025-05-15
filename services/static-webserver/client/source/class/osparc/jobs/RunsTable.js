@@ -181,8 +181,7 @@ qx.Class.define("osparc.jobs.RunsTable", {
             .then(() => osparc.FlashMessenger.logAs(this.tr("Stopping pipeline"), "INFO"))
             .catch(err => osparc.FlashMessenger.logError(err));
         }
-      }
-      , this);
+      }, this);
     },
   }
 });
