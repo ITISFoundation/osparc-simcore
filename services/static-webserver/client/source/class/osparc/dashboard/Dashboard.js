@@ -18,7 +18,7 @@
 /**
  * Widget containing a TabView including:
  * - StudyBrowser
- * - TemplateBrowser
+ * - TutorialBrowser
  * - AppBrowser
  * - DataBrowser
  *
@@ -82,7 +82,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
 
   members: {
     __studyBrowser: null,
-    __templateBrowser: null,
+    __tutorialBrowser: null,
     __appBrowser: null,
     __dataBrowser: null,
 
@@ -90,8 +90,8 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       return this.__studyBrowser;
     },
 
-    getTemplateBrowser: function() {
-      return this.__templateBrowser;
+    getTutorialBrowser: function() {
+      return this.__tutorialBrowser;
     },
 
     getAppBrowser: function() {
@@ -104,10 +104,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       const tabs = [{
         id: "studiesTab",
         buttonId: "studiesTabBtn",
-        label: osparc.product.Utils.getStudyAlias({
-          plural: true,
-          allUpperCase: true
-        }),
+        label: this.tr("PROJECTS"),
         icon: "@FontAwesome5Solid/file/"+tabIconSize,
         buildLayout: this.__createStudyBrowser
       }];
@@ -115,12 +112,9 @@ qx.Class.define("osparc.dashboard.Dashboard", {
         tabs.push({
           id: "templatesTab",
           buttonId: "templatesTabBtn",
-          label: osparc.product.Utils.getTemplateAlias({
-            plural: true,
-            allUpperCase: true
-          }),
+          label: this.tr("TUTORIALS"),
           icon: "@FontAwesome5Solid/copy/"+tabIconSize,
-          buildLayout: this.__createTemplateBrowser
+          buildLayout: this.__createTutorialBrowser
         });
       }
       if (permissions.canDo("dashboard.services.read")) {
@@ -228,8 +222,8 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       return studiesView;
     },
 
-    __createTemplateBrowser: function() {
-      const templatesView = this.__templateBrowser = new osparc.dashboard.TemplateBrowser();
+    __createTutorialBrowser: function() {
+      const templatesView = this.__tutorialBrowser = new osparc.dashboard.TutorialBrowser();
       return templatesView;
     },
 

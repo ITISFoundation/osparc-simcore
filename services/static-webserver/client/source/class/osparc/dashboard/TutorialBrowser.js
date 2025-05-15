@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.dashboard.TemplateBrowser", {
+qx.Class.define("osparc.dashboard.TutorialBrowser", {
   extend: osparc.dashboard.ResourceBrowserBase,
 
   construct: function(templateType = null) {
