@@ -99,7 +99,7 @@ def app_environment(
                 model_dump_with_secrets(rabbit_service, show_secrets=True)
             ),
             "SC_BOOT_MODE": "debug",
-            "SIDECAR_LOGLEVEL": "DEBUG",
+            "DASK_SIDECAR_LOGLEVEL": "DEBUG",
             "SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME": "simcore_computational_shared_data",
             "SIDECAR_COMP_SERVICES_SHARED_FOLDER": f"{shared_data_folder}",
         },
