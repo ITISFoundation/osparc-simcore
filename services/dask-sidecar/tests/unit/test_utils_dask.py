@@ -6,9 +6,11 @@
 
 import asyncio
 import concurrent.futures
+import logging
 import time
 from collections.abc import AsyncIterator, Callable, Coroutine
 from typing import Any
+from unittest import mock
 
 import distributed
 import pytest
@@ -16,6 +18,7 @@ from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.events import TaskProgressEvent
 from dask_task_models_library.container_tasks.io import TaskCancelEventName
 from dask_task_models_library.container_tasks.protocol import TaskOwner
+from pytest_simcore.helpers.logging_tools import log_context
 from simcore_service_dask_sidecar.utils.dask import (
     _DEFAULT_MAX_RESOURCES,
     TaskPublisher,
@@ -38,9 +41,15 @@ pytest_simcore_core_services_selection = [
 ]
 
 
+@pytest.mark.parametrize("handler", [mock.Mock(), mock.AsyncMock()])
 async def test_publish_event(
-    dask_client: distributed.Client, job_id: str, task_owner: TaskOwner
+    dask_client: distributed.Client,
+    job_id: str,
+    task_owner: TaskOwner,
+    monkeypatch: pytest.MonkeyPatch,
+    handler: mock.Mock | mock.AsyncMock,
 ):
+    monkeypatch.setenv("DASK_SIDECAR_LOGLEVEL", "DEBUG")
     event_to_publish = TaskProgressEvent(
         job_id=job_id,
         msg="the log",
@@ -48,21 +57,34 @@ async def test_publish_event(
         task_owner=task_owner,
     )
 
-    def handler(event: tuple) -> None:
-        print("received event", event)
-        assert isinstance(event, tuple)
-        received_task_log_event = TaskProgressEvent.model_validate_json(event[1])
-        assert received_task_log_event == event_to_publish
-
+    # NOTE: only 1 handler per topic is allowed
     dask_client.subscribe_topic(TaskProgressEvent.topic_name(), handler)
 
-    await publish_event(dask_client, event=event_to_publish)
+    def _worker_task() -> int:
+        with log_context(logging.INFO, "_worker_task"):
+
+            async def _() -> int:
+                with log_context(logging.INFO, "_worker_task_async"):
+                    await publish_event(event_to_publish)
+                    return 2
+
+            return asyncio.run(_())
+
+    future = dask_client.submit(_worker_task)
+    assert future.result(timeout=DASK_TESTING_TIMEOUT_S) == 2
+
     for attempt in Retrying(
-        wait=wait_fixed(0.2), stop=stop_after_delay(15), reraise=True
+        wait=wait_fixed(0.2),
+        stop=stop_after_delay(15),
+        reraise=True,
+        retry=retry_if_exception_type(AssertionError),
     ):
         with attempt:
             events = dask_client.get_events(TaskProgressEvent.topic_name())
-            assert events is not None
+            assert events is not None, "No events received"
+            assert isinstance(events, tuple)
+
+            handler.assert_called_with(events[-1])
 
     assert isinstance(events, tuple)
     assert len(events) == 1

@@ -18,7 +18,7 @@ from distributed.worker import get_worker
 from distributed.worker_state_machine import TaskState
 from models_library.progress_bar import ProgressReport
 from models_library.rabbitmq_messages import LoggerRabbitMessage
-from servicelib.logging_utils import LogLevelInt, LogMessageStr, log_catch
+from servicelib.logging_utils import LogLevelInt, LogMessageStr, log_catch, log_context
 
 from ..rabbitmq_plugin import get_rabbitmq_client
 
@@ -170,11 +170,16 @@ async def monitor_task_abortion(
                 await periodically_checking_task
 
 
-async def publish_event(dask_client: distributed.Client, event: BaseTaskEvent) -> None:
+async def publish_event(
+    event: BaseTaskEvent,
+) -> None:
     """never reraises, only CancellationError"""
-    with log_catch(_logger, reraise=False):
+    worker = get_worker()
+    _logger.debug("current worker %s", f"{worker=}")
+    with (
+        log_catch(_logger, reraise=False),
+        log_context(_logger, logging.DEBUG, msg=f"publishing {event=}"),
+    ):
         await maybe_await(
-            dask_client.log_event(
-                TaskProgressEvent.topic_name(), event.model_dump_json()
-            )
+            worker.log_event(TaskProgressEvent.topic_name(), event.model_dump_json())
         )
