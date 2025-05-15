@@ -56,7 +56,7 @@ qx.Class.define("osparc.store.Jobs", {
       const options = {
         resolveWResponse: true
       };
-      return osparc.data.Resources.fetch("jobsActive", "getPage", params, options)
+      return osparc.data.Resources.fetch("jobsActive", "getPageLatest", params, options)
         .then(jobsResp => {
           this.fireDataEvent("changeJobsActive", jobsResp["_meta"]["total"]);
           const jobsActive = [];
@@ -79,7 +79,7 @@ qx.Class.define("osparc.store.Jobs", {
           studyId: projectUuid,
         }
       };
-      return osparc.data.Resources.getInstance().getAllPages("subJobs", params)
+      return osparc.data.Resources.getInstance().getAllPages("subJobs", params, "getPageLatest")
         .then(subJobsData => {
           const subJobs = [];
           subJobsData.forEach(subJobData => {
