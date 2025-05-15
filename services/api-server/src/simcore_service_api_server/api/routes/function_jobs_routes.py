@@ -30,6 +30,8 @@ from ..dependencies.webserver_rpc import get_wb_api_rpc_client
 from . import solvers_jobs, solvers_jobs_getters, studies_jobs
 
 # pylint: disable=too-many-arguments
+# pylint: disable=cyclic-import
+
 
 function_job_router = APIRouter()
 
@@ -96,23 +98,6 @@ async def delete_function_job(
     return await wb_api_rpc.delete_function_job(function_job_id=function_job_id)
 
 
-async def get_function_from_functionjobid(
-    wb_api_rpc: WbApiRpcClient,
-    function_job_id: FunctionJobID,
-) -> tuple[Function, FunctionJob]:
-    function_job = await get_function_job(
-        wb_api_rpc=wb_api_rpc, function_job_id=function_job_id
-    )
-    from .functions_routes import get_function
-
-    return (
-        await get_function(
-            wb_api_rpc=wb_api_rpc, function_id=function_job.function_uid
-        ),
-        function_job,
-    )
-
-
 @function_job_router.get(
     "/{function_job_id:uuid}/status",
     response_model=FunctionJobStatus,
@@ -125,6 +110,7 @@ async def function_job_status(
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
 ) -> FunctionJobStatus:
+
     function, function_job = await get_function_from_functionjobid(
         wb_api_rpc=wb_api_rpc, function_job_id=function_job_id
     )
@@ -140,7 +126,8 @@ async def function_job_status(
             director2_api=director2_api,
         )
         return FunctionJobStatus(status=job_status.state)
-    elif (function.function_class == FunctionClass.solver) and (  # noqa: RET505
+
+    if (function.function_class == FunctionClass.solver) and (
         function_job.function_class == FunctionClass.solver
     ):
         job_status = await solvers_jobs.inspect_job(
@@ -151,11 +138,29 @@ async def function_job_status(
             director2_api=director2_api,
         )
         return FunctionJobStatus(status=job_status.state)
-    else:
-        raise UnsupportedFunctionFunctionJobClassCombinationError(
-            function_class=function.function_class,
-            function_job_class=function_job.function_class,
-        )
+
+    raise UnsupportedFunctionFunctionJobClassCombinationError(
+        function_class=function.function_class,
+        function_job_class=function_job.function_class,
+    )
+
+
+async def get_function_from_functionjobid(
+    wb_api_rpc: WbApiRpcClient,
+    function_job_id: FunctionJobID,
+) -> tuple[Function, FunctionJob]:
+    function_job = await get_function_job(
+        wb_api_rpc=wb_api_rpc, function_job_id=function_job_id
+    )
+
+    from .functions_routes import get_function
+
+    return (
+        await get_function(
+            wb_api_rpc=wb_api_rpc, function_id=function_job.function_uid
+        ),
+        function_job,
+    )
 
 
 @function_job_router.get(

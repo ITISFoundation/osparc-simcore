@@ -3,6 +3,7 @@
 # pylint: disable=super-init-not-called
 # pylint: disable=unused-argument
 # pylint: disable=no-self-use
+# pylint: disable=cyclic-import
 
 from collections.abc import Callable
 from typing import Any
@@ -40,7 +41,7 @@ def app_environment(
     return setenvs_from_dict(
         monkeypatch,
         {
-            **app_environment,  # WARNING: AFTER env_devel_dict because HOST are set to 127.0.0.1 in here
+            **app_environment,
             "WEBSERVER_DEV_FEATURES_ENABLED": "1",
             "WEBSERVER_FUNCTIONS": "1",
         },

@@ -13,9 +13,7 @@ from models_library.api_schemas_webserver.functions_wb_schema import (
     FunctionInputSchema,
     FunctionInputsList,
     FunctionInputsValidationError,
-    FunctionJob,
     FunctionJobCollection,
-    FunctionJobID,
     FunctionOutputSchema,
     FunctionSchemaClass,
     ProjectFunctionJob,
@@ -41,9 +39,10 @@ from ..dependencies.services import get_api_client, get_job_service, get_solver_
 from ..dependencies.webserver_http import get_webserver_session
 from ..dependencies.webserver_rpc import get_wb_api_rpc_client
 from . import solvers_jobs, studies_jobs
-from .function_jobs_routes import get_function_job, register_function_job
+from .function_jobs_routes import register_function_job
 
 # pylint: disable=too-many-arguments
+# pylint: disable=cyclic-import
 
 function_router = APIRouter()
 
@@ -289,7 +288,8 @@ async def run_function(  # noqa: PLR0913
                 project_job_id=study_job.id,
             ),
         )
-    elif to_run_function.function_class == FunctionClass.solver:  # noqa: RET505
+
+    if to_run_function.function_class == FunctionClass.solver:
         solver_job = await solvers_jobs.create_solver_job(
             solver_key=to_run_function.solver_key,
             version=to_run_function.solver_version,
@@ -320,10 +320,10 @@ async def run_function(  # noqa: PLR0913
                 solver_job_id=solver_job.id,
             ),
         )
-    else:
-        raise UnsupportedFunctionClassError(
-            function_class=to_run_function.function_class,
-        )
+
+    raise UnsupportedFunctionClassError(
+        function_class=to_run_function.function_class,
+    )
 
 
 @function_router.delete(
@@ -345,22 +345,6 @@ _COMMON_FUNCTION_JOB_ERROR_RESPONSES: Final[dict] = {
         "model": ErrorGet,
     },
 }
-
-
-async def get_function_from_functionjobid(
-    wb_api_rpc: WbApiRpcClient,
-    function_job_id: FunctionJobID,
-) -> tuple[Function, FunctionJob]:
-    function_job = await get_function_job(
-        wb_api_rpc=wb_api_rpc, function_job_id=function_job_id
-    )
-
-    return (
-        await get_function(
-            wb_api_rpc=wb_api_rpc, function_id=function_job.function_uid
-        ),
-        function_job,
-    )
 
 
 @function_router.post(
