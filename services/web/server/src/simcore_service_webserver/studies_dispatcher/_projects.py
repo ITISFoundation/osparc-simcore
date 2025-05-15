@@ -201,7 +201,12 @@ async def _add_new_project(
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 
     # validated project is transform in dict via json to use only primitive types
-    project_in: dict = json_loads(project.model_dump_json(by_alias=True))
+    project_in: dict = json_loads(
+        project.model_dump_json(exclude_none=True, by_alias=True)
+    )
+    # NOTE: Because of legacy reasons I do not want to remove the exclude_none=True from line above
+    #       so I need to set the templateType here if it was removed.
+    project_in["templateType"] = project_in.get("templateType")
 
     # update metadata (uuid, timestamps, ownership) and save
     _project_db: dict = await db.insert_project(
