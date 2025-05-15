@@ -36,6 +36,11 @@ qx.Class.define("osparc.jobs.ActivityOverview", {
 
   members: {
     __buildLayout: function(projectData) {
+      const latestOnly = false;
+      const projectUuid = projectData["uuid"];
+      const runsTable = new osparc.jobs.RunsTable(latestOnly, projectUuid);
+      this._add(runsTable);
+
       const subRunsTable = new osparc.jobs.SubRunsTable(projectData["uuid"]);
       this._add(subRunsTable);
     },
