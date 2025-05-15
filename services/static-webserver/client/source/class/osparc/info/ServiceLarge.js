@@ -392,10 +392,10 @@ qx.Class.define("osparc.info.ServiceLarge", {
 
     __createThumbnail: function(maxWidth, maxHeight = 160) {
       // make sure maxs are not larger than the mins
-      const enforcedMinWidth = Math.max(120, maxWidth);
-      const enforcedMinHeight = Math.max(139, maxHeight);
-      maxWidth = Math.max(enforcedMinWidth, maxWidth);
-      maxHeight = Math.max(enforcedMinHeight, maxHeight);
+      const minWidth = Math.max(120, maxWidth);
+      const minHeight = Math.max(139, maxHeight);
+      maxWidth = Math.max(minWidth, maxWidth);
+      maxHeight = Math.max(minHeight, maxHeight);
 
       const serviceData = this.getService();
       const thumbnail = osparc.info.Utils.createThumbnail(maxWidth, maxHeight);
