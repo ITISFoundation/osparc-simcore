@@ -32,11 +32,11 @@ class JobMetadataFilter(BaseModel):
                     {
                         "any": [
                             {
-                                "key": "solver_type",
+                                "name": "solver_type",
                                 "pattern": "FEM",
                             },
                             {
-                                "key": "mesh_cells",
+                                "name": "mesh_cells",
                                 "pattern": "1*",
                             },
                         ]
@@ -44,7 +44,7 @@ class JobMetadataFilter(BaseModel):
                     {
                         "any": [
                             {
-                                "key": "solver_type",
+                                "name": "solver_type",
                                 "pattern": "*CFD*",
                             }
                         ]

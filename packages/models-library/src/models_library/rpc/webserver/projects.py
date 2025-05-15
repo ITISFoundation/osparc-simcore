@@ -36,7 +36,7 @@ class ListProjectsMarkedAsJobRpcFilters(BaseModel):
                 "examples": [
                     {
                         "job_parent_resource_name_prefix": "solvers/solver123",
-                        "any_of_metadata": [
+                        "any_custom_metadata": [
                             {
                                 "name": "solver_type",
                                 "pattern": "FEM",
@@ -48,7 +48,7 @@ class ListProjectsMarkedAsJobRpcFilters(BaseModel):
                         ],
                     },
                     {
-                        "any_of_metadata": [
+                        "any_custom_metadata": [
                             {
                                 "name": "solver_type",
                                 "pattern": "*CFD*",
