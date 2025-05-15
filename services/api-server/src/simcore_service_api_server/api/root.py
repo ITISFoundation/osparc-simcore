@@ -6,7 +6,9 @@ from ..core.settings import ApplicationSettings
 from .routes import credits as _credits
 from .routes import (
     files,
-    functions,
+    function_job_collections_routes,
+    function_jobs_routes,
+    functions_routes,
     health,
     licensed_items,
     meta,
@@ -21,6 +23,9 @@ from .routes import (
 )
 
 _SOLVERS_PREFIX: Final[str] = "/solvers"
+_FUNCTIONS_PREFIX: Final[str] = "/functions"
+_FUNCTION_JOBS_PREFIX: Final[str] = "/function_jobs"
+_FUNCTION_JOB_COLLECTIONS_PREFIX: Final[str] = "/function_job_collections"
 
 
 def create_router(settings: ApplicationSettings):
@@ -42,12 +47,24 @@ def create_router(settings: ApplicationSettings):
     )
     router.include_router(studies.router, tags=["studies"], prefix="/studies")
     router.include_router(studies_jobs.router, tags=["studies"], prefix="/studies")
+    router.include_router(
+        function_jobs_routes.function_job_router,
+        tags=["function_jobs"],
+        prefix=_FUNCTION_JOBS_PREFIX,
+    )
+    router.include_router(
+        function_job_collections_routes.function_job_collections_router,
+        tags=["function_job_collections"],
+        prefix=_FUNCTION_JOB_COLLECTIONS_PREFIX,
+    )
     router.include_router(wallets.router, tags=["wallets"], prefix="/wallets")
     router.include_router(_credits.router, tags=["credits"], prefix="/credits")
     router.include_router(
         licensed_items.router, tags=["licensed-items"], prefix="/licensed-items"
     )
-    router.include_router(functions.router, tags=["functions"], prefix="/functions")
+    router.include_router(
+        functions_routes.function_router, tags=["functions"], prefix=_FUNCTIONS_PREFIX
+    )
 
     # NOTE: multiple-files upload is currently disabled
     # Web form to upload files at http://localhost:8000/v0/upload-form-view
