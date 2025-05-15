@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from typing import Any, cast
 from unittest import mock
 
+import arrow
 import pytest
 from _helpers import (
     PublishedProject,
@@ -401,11 +402,10 @@ async def _trigger_progress_event(
         ),
     )
     await cast(DaskScheduler, scheduler)._task_progress_change_handler(  # noqa: SLF001
-        event.model_dump_json()
+        (arrow.utcnow().timestamp(), event.model_dump_json())
     )
 
 
-@pytest.mark.acceptance_test()
 async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     with_disabled_auto_scheduling: mock.Mock,
     with_disabled_scheduler_publisher: mock.Mock,
@@ -1191,7 +1191,9 @@ async def test_task_progress_triggers(
         )
         await cast(  # noqa: SLF001
             DaskScheduler, scheduler_api
-        )._task_progress_change_handler(progress_event.model_dump_json())
+        )._task_progress_change_handler(
+            (arrow.utcnow().timestamp(), progress_event.model_dump_json())
+        )
         # NOTE: not sure whether it should switch to STARTED.. it would make sense
         await assert_comp_tasks(
             sqlalchemy_async_engine,
