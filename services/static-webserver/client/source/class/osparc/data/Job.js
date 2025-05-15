@@ -91,15 +91,16 @@ qx.Class.define("osparc.data.Job", {
   statics: {
     STATUS_LABELS: {
       "UNKNOWN": "Unknown",
-      "NOT_STARTED": "Not Started",
-      "PUBLISHED": "Published",
-      "PENDING": "Pending",
+      "NOT_STARTED": "Unknown",
+      "PUBLISHED": "Queued",
+      "PENDING": "Queued",
       "RUNNING": "Running",
-      "SUCCESS": "Success",
+      "STARTED": "Running",
+      "SUCCESS": "Finished",
       "FAILED": "Failed",
       "ABORTED": "Aborted",
-      "WAITING_FOR_RESOURCES": "Waiting for Resources",
-      "WAITING_FOR_CLUSTER": "Waiting for Cluster",
+      "WAITING_FOR_RESOURCES": "Hardware is ready, installing Sim4Life solvers",
+      "WAITING_FOR_CLUSTER": "Creating your personal computing hardware",
     },
   },
 
