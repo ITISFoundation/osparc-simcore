@@ -56,7 +56,7 @@ qx.Class.define("osparc.store.Jobs", {
       const options = {
         resolveWResponse: true
       };
-      return osparc.data.Resources.fetch("jobsActive", "getPageLatest", params, options)
+      return osparc.data.Resources.fetch("jobs", "getPageLatestActive", params, options)
         .then(jobsResp => {
           this.fireDataEvent("changeJobsActive", jobsResp["_meta"]["total"]);
           const jobsActive = [];
