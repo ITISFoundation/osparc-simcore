@@ -938,9 +938,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         newPlansBtn.setEnabled(true);
 
         newPlansBtn.addListener("tap", () => {
-          osparc.store.Templates.getTemplates()
-            .then(templates => {
-              if (templates) {
+          osparc.store.Templates.getTutorials()
+            .then(tutorials => {
+              if (tutorials) {
                 const newStudies = new osparc.dashboard.NewStudies(newStudiesConfig);
                 const winTitle = this.tr("New Plan");
                 const win = osparc.ui.window.Window.popUpInWindow(newStudies, winTitle, osparc.dashboard.NewStudies.WIDTH+40, 300).set({
@@ -950,7 +950,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
                 newStudies.addListener("newStudyClicked", e => {
                   win.close();
                   const templateInfo = e.getData();
-                  const templateData = templates.find(t => t.name === templateInfo.expectedTemplateLabel);
+                  const templateData = tutorials.find(t => t.name === templateInfo.expectedTemplateLabel);
                   if (templateData) {
                     this.__newPlanBtnClicked(templateData, templateInfo.newStudyLabel);
                   }

@@ -36,7 +36,7 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
       }
       this._resourcesInitialized = true;
 
-      osparc.store.Templates.getTemplates()
+      osparc.store.Templates.getTutorials()
         .then(() => {
           this._resourcesList = [];
           this.getChildControl("resources-layout");
@@ -48,7 +48,7 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
 
     reloadResources: function(useCache = true) {
       if (osparc.data.Permissions.getInstance().canDo("studies.templates.read")) {
-        this.__reloadTemplates(useCache);
+        this.__reloadTutorials(useCache);
       } else {
         this.__setResourcesToList([]);
       }
@@ -81,14 +81,14 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
       }
     },
 
-    __reloadTemplates: function(useCache) {
+    __reloadTutorials: function(useCache) {
       this.__tasksToCards();
 
       if (useCache) {
-        osparc.store.Templates.getTemplates()
+        osparc.store.Templates.getTutorials()
           .then(templates => this.__setResourcesToList(templates));
       } else {
-        osparc.store.Templates.getTemplates(useCache)
+        osparc.store.Templates.getTutorials(useCache)
           .then(templates => this.__setResourcesToList(templates))
           .catch(() => this.__setResourcesToList([]));
       }
