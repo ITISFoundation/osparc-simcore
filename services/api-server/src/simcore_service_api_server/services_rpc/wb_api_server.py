@@ -256,8 +256,9 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             job_parent_resource_name_prefix=filter_by_job_parent_resource_name_prefix,
             any_custom_metadata=(
                 [
-                    MetadataFilterItem(name=key, pattern=value)
-                    for key, value in filter_any_custom_metadata
+                    MetadataFilterItem(name=name, pattern=pattern)
+                    for field_match in filter_any_custom_metadata
+                    for name, pattern in field_match.items()
                 ]
                 if filter_any_custom_metadata
                 else None
