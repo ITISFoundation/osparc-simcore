@@ -75,7 +75,7 @@ async def test_publish_event(
 
             async def _() -> int:
                 with log_context(logging.INFO, "_worker_task_async"):
-                    await publish_event(event_to_publish)
+                    publish_event(event_to_publish)
                     return 2
 
             return asyncio.run(_())
