@@ -1,8 +1,7 @@
-import asyncio
 import collections
 import logging
-from collections.abc import Awaitable, Callable, Coroutine, Generator
-from typing import Any, Final, NoReturn, ParamSpec, TypeVar, cast
+from collections.abc import Coroutine, Generator
+from typing import Any, ParamSpec, TypeVar, cast
 
 import distributed
 from common_library.json_serialization import json_dumps
@@ -30,7 +29,6 @@ from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import AnyUrl, ByteSize, TypeAdapter, ValidationError
-from servicelib.logging_utils import log_catch, log_context
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_common.exceptions import (
     NodeportsException,
@@ -436,40 +434,6 @@ async def clean_task_output_and_log_files_if_invalid(
         await port_utils.delete_target_link(
             user_id, f"{project_id}", f"{node_id}", _LOGS_FILE_NAME
         )
-
-
-async def _dask_sub_consumer(
-    dask_sub: distributed.Sub,
-    handler: Callable[[str], Awaitable[None]],
-) -> None:
-    async for dask_event in dask_sub:
-        _logger.debug(
-            "received dask event '%s' of topic %s",
-            dask_event,
-            dask_sub.name,
-        )
-        await handler(dask_event)
-
-
-_REST_TIMEOUT_S: Final[int] = 1
-
-
-async def dask_sub_consumer_task(
-    dask_sub: distributed.Sub,
-    handler: Callable[[str], Awaitable[None]],
-) -> NoReturn:
-    while True:
-        with (
-            log_catch(_logger, reraise=False),
-            log_context(
-                _logger,
-                level=logging.DEBUG,
-                msg=f"dask sub task for topic {dask_sub.name}",
-            ),
-        ):
-            await _dask_sub_consumer(dask_sub, handler)
-        # we sleep a bit before restarting
-        await asyncio.sleep(_REST_TIMEOUT_S)
 
 
 def from_node_reqs_to_dask_resources(

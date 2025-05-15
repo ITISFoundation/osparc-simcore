@@ -4,6 +4,7 @@ import logging
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
+from typing import Any
 
 import arrow
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
@@ -35,7 +36,7 @@ from ...utils.dask import (
     clean_task_output_and_log_files_if_invalid,
     parse_output_data,
 )
-from ...utils.dask_client_utils import TaskHandlers
+from ...utils.dask_client_utils import TaskHandlers, UnixTimestamp
 from ...utils.rabbitmq import (
     publish_service_progress,
     publish_service_resource_tracking_stopped,
@@ -344,9 +345,11 @@ class DaskScheduler(BaseCompScheduler):
             optional_stopped=arrow.utcnow().datetime,
         )
 
-    async def _task_progress_change_handler(self, event: str) -> None:
+    async def _task_progress_change_handler(
+        self, event: tuple[UnixTimestamp, Any]
+    ) -> None:
         with log_catch(_logger, reraise=False):
-            task_progress_event = TaskProgressEvent.model_validate_json(event)
+            task_progress_event = TaskProgressEvent.model_validate_json(event[1])
             _logger.debug("received task progress update: %s", task_progress_event)
             user_id = task_progress_event.task_owner.user_id
             project_id = task_progress_event.task_owner.project_id

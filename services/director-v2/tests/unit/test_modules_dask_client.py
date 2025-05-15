@@ -163,7 +163,6 @@ async def create_dask_client_from_scheduler(
             client.settings
             == minimal_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND
         )
-        assert not client._subscribed_tasks  # noqa: SLF001
 
         assert client.backend.client
         scheduler_infos = client.backend.client.scheduler_info()  # type: ignore
@@ -181,7 +180,7 @@ async def create_dask_client_from_scheduler(
 @pytest.fixture(params=["create_dask_client_from_scheduler"])
 async def dask_client(
     create_dask_client_from_scheduler: Callable[[], Awaitable[DaskClient]],
-    request,
+    request: pytest.FixtureRequest,
 ) -> DaskClient:
     client: DaskClient = await {
         "create_dask_client_from_scheduler": create_dask_client_from_scheduler,
@@ -402,7 +401,7 @@ def comp_run_metadata(faker: Faker) -> RunMetadataDict:
     return RunMetadataDict(
         product_name=faker.pystr(),
         simcore_user_agent=faker.pystr(),
-    ) | cast(dict[str, str], faker.pydict(allowed_types=(str,)))
+    ) | cast(RunMetadataDict, faker.pydict(allowed_types=(str,)))
 
 
 @pytest.fixture
@@ -1102,8 +1101,7 @@ async def test_dask_sub_handlers(
         log_file_url: LogFileUploadURL,
         s3_settings: S3Settings | None,
     ) -> TaskOutputData:
-        progress_pub = distributed.Pub(TaskProgressEvent.topic_name())
-        progress_pub.put("my name is progress")
+        get_worker().log_event(TaskProgressEvent.topic_name(), "my name is progress")
         # tell the client we are done
         published_event = Event(name=_DASK_START_EVENT)
         published_event.set()
@@ -1147,7 +1145,7 @@ async def test_dask_sub_handlers(
             )
             # we should have received data in our TaskHandlers
             fake_task_handlers.task_progress_handler.assert_called_with(
-                "my name is progress"
+                (mock.ANY, "my name is progress")
             )
     await _assert_wait_for_cb_call(mocked_user_completed_cb)
 
