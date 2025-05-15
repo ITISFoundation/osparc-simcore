@@ -1,35 +1,54 @@
+import logging
 from typing import Any
 
 from dask.typing import Key
-from distributed import SchedulerPlugin
+from distributed import Scheduler, SchedulerPlugin
 from distributed.scheduler import TaskStateState
+from servicelib.logging_utils import log_context
+
+_logger = logging.getLogger(__name__)
 
 
-class SchedulerLifecyclePlugin(SchedulerPlugin):
+class TaskLifecycleSchedulerPlugin(SchedulerPlugin):
     def __init__(self) -> None:
-        self.scheduler = None
+        with log_context(
+            _logger,
+            logging.INFO,
+            "TaskLifecycleSchedulerPlugin init",
+        ):
+            self.scheduler = None
 
-    def add_task(self, key, **kwargs):
-        """Task published to cluster"""
-        self.scheduler.log_event(
-            "task-published",
-            {"key": key, "timestamp": time.time(), "client": kwargs.get("client")},
-        )
+    async def start(self, scheduler: Scheduler) -> None:
+        with log_context(
+            _logger,
+            logging.INFO,
+            "TaskLifecycleSchedulerPlugin start",
+        ):
+            self.scheduler = scheduler
 
     def transition(
         self,
         key: Key,
         start: TaskStateState,
         finish: TaskStateState,
+        *args: Any,
+        stimulus_id: str,
         **kwargs: Any,
     ):
-        """State transitions"""
-        if finish in ("waiting", "processing", "memory", "erred"):
+        # Start state: one of released, waiting, processing, memory, error
+        with log_context(
+            _logger,
+            logging.INFO,
+            f"Task {key} transition from {start} to {finish} due to {stimulus_id=}",
+        ):
+            assert self.scheduler  # nosec
             self.scheduler.log_event(
-                f"task-{finish}",
+                f"task-lifecycle-{key}",
                 {
                     "key": key,
                     "worker": kwargs.get("worker"),
-                    "duration": time.time() - self.scheduler.tasks[key].start_time,
+                    "start": start,
+                    "finish": finish,
+                    "stimulus_id": stimulus_id,
                 },
             )
