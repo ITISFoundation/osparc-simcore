@@ -15,6 +15,7 @@ from models_library.rpc_pagination import PageLimitInt
 from models_library.users import UserID
 from pydantic import HttpUrl
 from servicelib.logging_utils import log_context
+from simcore_service_api_server.models.basic_types import NameValueTuple
 
 from .models.schemas.jobs import Job, JobInputs
 from .models.schemas.programs import Program
@@ -41,7 +42,7 @@ class JobService:
         self,
         job_parent_resource_name: str,
         *,
-        filter_any_custom_metadata: list[dict[str, str]] | None = None,
+        filter_any_custom_metadata: list[NameValueTuple] | None = None,
         pagination_offset: PageOffsetInt = 0,
         pagination_limit: PageLimitInt = MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE - 1,
     ) -> tuple[list[Job], PageMetaInfoLimitOffset]:

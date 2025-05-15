@@ -80,7 +80,7 @@ async def list_projects_marked_as_jobs(
         ),
         filter_any_custom_metadata=(
             [
-                {custom_metadata.name: custom_metadata.pattern}
+                (custom_metadata.name, custom_metadata.pattern)
                 for custom_metadata in filters.any_custom_metadata
             ]
             if filters and filters.any_custom_metadata

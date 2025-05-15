@@ -70,6 +70,7 @@ from servicelib.rabbitmq.rpc_interfaces.webserver.licenses.licensed_items import
 from servicelib.rabbitmq.rpc_interfaces.webserver.licenses.licensed_items import (
     release_licensed_item_for_wallet as _release_licensed_item_for_wallet,
 )
+from simcore_service_api_server.models.basic_types import NameValueTuple
 
 from ..exceptions.backend_errors import (
     CanNotCheckoutServiceIsNotRunningError,
@@ -250,15 +251,14 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         pagination_offset: int = 0,
         pagination_limit: int = 50,
         filter_by_job_parent_resource_name_prefix: str | None,
-        filter_any_custom_metadata: list[dict[str, str]] | None,
+        filter_any_custom_metadata: list[NameValueTuple] | None,
     ):
         filters = ListProjectsMarkedAsJobRpcFilters(
             job_parent_resource_name_prefix=filter_by_job_parent_resource_name_prefix,
             any_custom_metadata=(
                 [
                     MetadataFilterItem(name=name, pattern=pattern)
-                    for field_match in filter_any_custom_metadata
-                    for name, pattern in field_match.items()
+                    for name, pattern in filter_any_custom_metadata
                 ]
                 if filter_any_custom_metadata
                 else None

@@ -237,7 +237,7 @@ async def test_filter_projects_by_metadata(
     )
 
     # 3. Filter by exact metadata
-    filter_exact = [{"test_key": "test_value"}]
+    filter_exact = [("test_key", "test_value")]
     total_count, result = await list_my_projects_marked_as_jobs(
         app=client.app,
         product_name=osparc_product_name,
@@ -249,7 +249,10 @@ async def test_filter_projects_by_metadata(
     assert result[0].uuid == project_uuid
 
     # 4. Filter by multiple metadata keys in one dict (AND condition)
-    filter_multiple_keys = [{"category": "simulation", "status": "completed"}]
+    filter_multiple_keys = [
+        ("category", "simulation"),
+        ("status", "completed"),
+    ]
     total_count, result = await list_my_projects_marked_as_jobs(
         app=client.app,
         product_name=osparc_product_name,
@@ -262,8 +265,8 @@ async def test_filter_projects_by_metadata(
 
     # 5. Filter by alternative metadata (OR condition)
     filter_alternative = [
-        {"status": "completed"},
-        {"status": "pending"},
+        ("status", "completed"),
+        ("status", "pending"),
     ]
     total_count, result = await list_my_projects_marked_as_jobs(
         app=client.app,
@@ -276,7 +279,7 @@ async def test_filter_projects_by_metadata(
     assert result[0].uuid == project_uuid
 
     # 6. Filter by non-matching metadata
-    filter_non_matching = [{"status": "failed"}]
+    filter_non_matching = [("status", "failed")]
     total_count, result = await list_my_projects_marked_as_jobs(
         app=client.app,
         product_name=osparc_product_name,
@@ -288,7 +291,7 @@ async def test_filter_projects_by_metadata(
 
     # 7. Filter by wildcard pattern (requires SQL LIKE syntax)
     # This assumes the implementation supports wildcards in metadata values
-    filter_wildcard = [{"test_key": "test_*"}]
+    filter_wildcard = [("test_key", "test_*")]
     total_count, result = await list_my_projects_marked_as_jobs(
         app=client.app,
         product_name=osparc_product_name,
@@ -305,7 +308,7 @@ async def test_filter_projects_by_metadata(
         product_name=osparc_product_name,
         user_id=user_id,
         filter_by_job_parent_resource_name_prefix="test/resource",
-        filter_any_custom_metadata=[{"category": "simulation"}],
+        filter_any_custom_metadata=[("category", "simulation")],
     )
     assert total_count == 1
     assert len(result) == 1
@@ -317,7 +320,7 @@ async def test_filter_projects_by_metadata(
         product_name=osparc_product_name,
         user_id=user_id,
         filter_by_job_parent_resource_name_prefix="non-matching",
-        filter_any_custom_metadata=[{"category": "simulation"}],
+        filter_any_custom_metadata=[("category", "simulation")],
     )
     assert total_count == 0
     assert len(result) == 0

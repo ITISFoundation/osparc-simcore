@@ -38,7 +38,7 @@ def _apply_job_parent_resource_name_filter(
 
 
 def _apply_custom_metadata_filter(
-    query: sa.sql.Select, any_metadata_fields: list[dict[str, str]]
+    query: sa.sql.Select, any_metadata_fields: list[tuple[str, str]]
 ) -> sa.sql.Select:
     """Apply metadata filters to query.
 
@@ -48,16 +48,13 @@ def _apply_custom_metadata_filter(
     assert any_metadata_fields  # nosec
 
     metadata_fields_ilike = []
-    for field in any_metadata_fields:
-        for key, pattern in field.items():
-            # Use ->> operator to extract the text value from JSONB
-            # Then apply ILIKE for case-insensitive pattern matching
-            sql_pattern = pattern.replace(
-                "*", "%"
-            )  # Convert glob-like pattern to SQL LIKE
-            metadata_fields_ilike.append(
-                projects_metadata.c.custom[key].astext.ilike(sql_pattern)
-            )
+    for key, pattern in any_metadata_fields:
+        # Use ->> operator to extract the text value from JSONB
+        # Then apply ILIKE for case-insensitive pattern matching
+        sql_pattern = pattern.replace("*", "%")  # Convert glob-like pattern to SQL LIKE
+        metadata_fields_ilike.append(
+            projects_metadata.c.custom[key].astext.ilike(sql_pattern)
+        )
 
     return query.where(sa.or_(*metadata_fields_ilike))
 
@@ -95,7 +92,7 @@ class ProjectJobsRepository(BaseRepository):
         pagination_offset: int,
         pagination_limit: int,
         filter_by_job_parent_resource_name_prefix: str | None = None,
-        filter_any_custom_metadata: list[dict[str, str]] | None = None,
+        filter_any_custom_metadata: list[tuple[str, str]] | None = None,
     ) -> tuple[int, list[ProjectJobDBGet]]:
         """Lists projects marked as jobs for a specific user and product
 

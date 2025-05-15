@@ -25,7 +25,7 @@ from ..._service_solvers import SolverService
 from ...exceptions.custom_errors import InsufficientCreditsError, MissingWalletError
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.api_resources import parse_resources_ids
-from ...models.basic_types import LogStreamingResponse, VersionStr
+from ...models.basic_types import LogStreamingResponse, NameValueTuple, VersionStr
 from ...models.domain.files import File as DomainFile
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
@@ -147,7 +147,7 @@ async def list_all_solvers_jobs(
     jobs, meta = await solver_service.list_jobs(
         filter_any_custom_metadata=(
             [
-                {filter_metadata.name: filter_metadata.pattern}
+                NameValueTuple(filter_metadata.name, filter_metadata.pattern)
                 for filter_metadata in filter_job_metadata_params.any
             ]
             if filter_job_metadata_params

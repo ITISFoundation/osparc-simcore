@@ -57,7 +57,7 @@ async def list_my_projects_marked_as_jobs(
     pagination_offset: int = 0,
     pagination_limit: int = 10,
     filter_by_job_parent_resource_name_prefix: str | None = None,
-    filter_any_custom_metadata: list[dict[str, str]] | None = None,
+    filter_any_custom_metadata: list[tuple[str, str]] | None = None,
 ) -> tuple[int, list[ProjectJobDBGet]]:
     """
     Lists paginated projects marked as jobs for the given user and product.
