@@ -608,7 +608,7 @@ qx.Class.define("osparc.data.Resources", {
       "functions": {
         useCache: false,
         endpoints: {
-          getPage: {
+          create: {
             method: "POST",
             url: statics.API + "/functions"
           }
