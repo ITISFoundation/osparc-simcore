@@ -1,10 +1,10 @@
 from enum import Enum
 from typing import Annotated, Any, Literal, TypeAlias
 
-from models_library import projects
+from models_library.projects import ProjectID
 from pydantic import BaseModel, Field
 
-FunctionID: TypeAlias = projects.ProjectID
+FunctionID: TypeAlias = ProjectID
 
 
 class FunctionSchema(BaseModel):
@@ -53,8 +53,8 @@ FunctionUnion: TypeAlias = Annotated[
     Field(discriminator="function_type"),
 ]
 
-FunctionJobID: TypeAlias = projects.ProjectID
-FunctionJobCollectionID: TypeAlias = projects.ProjectID
+FunctionJobID: TypeAlias = ProjectID
+FunctionJobCollectionID: TypeAlias = ProjectID
 
 
 class FunctionJob(BaseModel):

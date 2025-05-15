@@ -5358,9 +5358,9 @@
                 "discriminator": {
                   "propertyName": "function_class",
                   "mapping": {
-                    "project": "#/components/schemas/ProjectFunctionJob",
-                    "python_code": "#/components/schemas/PythonCodeFunctionJob",
-                    "solver": "#/components/schemas/SolverFunctionJob"
+                    "PROJECT": "#/components/schemas/ProjectFunctionJob",
+                    "PYTHON_CODE": "#/components/schemas/PythonCodeFunctionJob",
+                    "SOLVER": "#/components/schemas/SolverFunctionJob"
                   }
                 },
                 "title": "Function Job"
@@ -5388,9 +5388,9 @@
                   "discriminator": {
                     "propertyName": "function_class",
                     "mapping": {
-                      "project": "#/components/schemas/RegisteredProjectFunctionJob",
-                      "python_code": "#/components/schemas/RegisteredPythonCodeFunctionJob",
-                      "solver": "#/components/schemas/RegisteredSolverFunctionJob"
+                      "PROJECT": "#/components/schemas/RegisteredProjectFunctionJob",
+                      "PYTHON_CODE": "#/components/schemas/RegisteredPythonCodeFunctionJob",
+                      "SOLVER": "#/components/schemas/RegisteredSolverFunctionJob"
                     }
                   },
                   "title": "Response Register Function Job V0 Function Jobs Post"
@@ -5451,9 +5451,9 @@
                   "discriminator": {
                     "propertyName": "function_class",
                     "mapping": {
-                      "project": "#/components/schemas/RegisteredProjectFunctionJob",
-                      "python_code": "#/components/schemas/RegisteredPythonCodeFunctionJob",
-                      "solver": "#/components/schemas/RegisteredSolverFunctionJob"
+                      "PROJECT": "#/components/schemas/RegisteredProjectFunctionJob",
+                      "PYTHON_CODE": "#/components/schemas/RegisteredPythonCodeFunctionJob",
+                      "SOLVER": "#/components/schemas/RegisteredSolverFunctionJob"
                     }
                   },
                   "title": "Response Get Function Job V0 Function Jobs  Function Job Id  Get"
@@ -5903,9 +5903,9 @@
                     "discriminator": {
                       "propertyName": "function_class",
                       "mapping": {
-                        "project": "#/components/schemas/RegisteredProjectFunctionJob",
-                        "python_code": "#/components/schemas/RegisteredPythonCodeFunctionJob",
-                        "solver": "#/components/schemas/RegisteredSolverFunctionJob"
+                        "PROJECT": "#/components/schemas/RegisteredProjectFunctionJob",
+                        "PYTHON_CODE": "#/components/schemas/RegisteredPythonCodeFunctionJob",
+                        "SOLVER": "#/components/schemas/RegisteredSolverFunctionJob"
                       }
                     }
                   },
@@ -6765,9 +6765,9 @@
                 "discriminator": {
                   "propertyName": "function_class",
                   "mapping": {
-                    "project": "#/components/schemas/ProjectFunction",
-                    "python_code": "#/components/schemas/PythonCodeFunction",
-                    "solver": "#/components/schemas/SolverFunction"
+                    "PROJECT": "#/components/schemas/ProjectFunction",
+                    "PYTHON_CODE": "#/components/schemas/PythonCodeFunction",
+                    "SOLVER": "#/components/schemas/SolverFunction"
                   }
                 },
                 "title": "Function"
@@ -6795,9 +6795,9 @@
                   "discriminator": {
                     "propertyName": "function_class",
                     "mapping": {
-                      "project": "#/components/schemas/RegisteredProjectFunction",
-                      "python_code": "#/components/schemas/RegisteredPythonCodeFunction",
-                      "solver": "#/components/schemas/RegisteredSolverFunction"
+                      "PROJECT": "#/components/schemas/RegisteredProjectFunction",
+                      "PYTHON_CODE": "#/components/schemas/RegisteredPythonCodeFunction",
+                      "SOLVER": "#/components/schemas/RegisteredSolverFunction"
                     }
                   },
                   "title": "Response Register Function V0 Functions Post"
@@ -6923,9 +6923,9 @@
                   "discriminator": {
                     "propertyName": "function_class",
                     "mapping": {
-                      "project": "#/components/schemas/RegisteredProjectFunction",
-                      "python_code": "#/components/schemas/RegisteredPythonCodeFunction",
-                      "solver": "#/components/schemas/RegisteredSolverFunction"
+                      "PROJECT": "#/components/schemas/RegisteredProjectFunction",
+                      "PYTHON_CODE": "#/components/schemas/RegisteredPythonCodeFunction",
+                      "SOLVER": "#/components/schemas/RegisteredSolverFunction"
                     }
                   },
                   "title": "Response Get Function V0 Functions  Function Id  Get"
@@ -7055,9 +7055,9 @@
                   "discriminator": {
                     "propertyName": "function_class",
                     "mapping": {
-                      "project": "#/components/schemas/RegisteredProjectFunction",
-                      "python_code": "#/components/schemas/RegisteredPythonCodeFunction",
-                      "solver": "#/components/schemas/RegisteredSolverFunction"
+                      "PROJECT": "#/components/schemas/RegisteredProjectFunction",
+                      "PYTHON_CODE": "#/components/schemas/RegisteredPythonCodeFunction",
+                      "SOLVER": "#/components/schemas/RegisteredSolverFunction"
                     }
                   },
                   "title": "Response Update Function Title V0 Functions  Function Id  Title Patch"
@@ -7137,9 +7137,9 @@
                   "discriminator": {
                     "propertyName": "function_class",
                     "mapping": {
-                      "project": "#/components/schemas/RegisteredProjectFunction",
-                      "python_code": "#/components/schemas/RegisteredPythonCodeFunction",
-                      "solver": "#/components/schemas/RegisteredSolverFunction"
+                      "PROJECT": "#/components/schemas/RegisteredProjectFunction",
+                      "PYTHON_CODE": "#/components/schemas/RegisteredPythonCodeFunction",
+                      "SOLVER": "#/components/schemas/RegisteredSolverFunction"
                     }
                   },
                   "title": "Response Update Function Description V0 Functions  Function Id  Description Patch"
@@ -7442,9 +7442,9 @@
                   "discriminator": {
                     "propertyName": "function_class",
                     "mapping": {
-                      "project": "#/components/schemas/RegisteredProjectFunctionJob",
-                      "python_code": "#/components/schemas/RegisteredPythonCodeFunctionJob",
-                      "solver": "#/components/schemas/RegisteredSolverFunctionJob"
+                      "PROJECT": "#/components/schemas/RegisteredProjectFunctionJob",
+                      "PYTHON_CODE": "#/components/schemas/RegisteredPythonCodeFunctionJob",
+                      "SOLVER": "#/components/schemas/RegisteredSolverFunctionJob"
                     }
                   },
                   "title": "Response Run Function V0 Functions  Function Id  Run Post"
@@ -8952,9 +8952,9 @@
               "discriminator": {
                 "propertyName": "function_class",
                 "mapping": {
-                  "project": "#/components/schemas/RegisteredProjectFunctionJob",
-                  "python_code": "#/components/schemas/RegisteredPythonCodeFunctionJob",
-                  "solver": "#/components/schemas/RegisteredSolverFunctionJob"
+                  "PROJECT": "#/components/schemas/RegisteredProjectFunctionJob",
+                  "PYTHON_CODE": "#/components/schemas/RegisteredPythonCodeFunctionJob",
+                  "SOLVER": "#/components/schemas/RegisteredSolverFunctionJob"
                 }
               }
             },
@@ -9029,9 +9029,9 @@
               "discriminator": {
                 "propertyName": "function_class",
                 "mapping": {
-                  "project": "#/components/schemas/RegisteredProjectFunction",
-                  "python_code": "#/components/schemas/RegisteredPythonCodeFunction",
-                  "solver": "#/components/schemas/RegisteredSolverFunction"
+                  "PROJECT": "#/components/schemas/RegisteredProjectFunction",
+                  "PYTHON_CODE": "#/components/schemas/RegisteredPythonCodeFunction",
+                  "SOLVER": "#/components/schemas/RegisteredSolverFunction"
                 }
               }
             },
@@ -9632,9 +9632,9 @@
         "properties": {
           "function_class": {
             "type": "string",
-            "const": "project",
+            "const": "PROJECT",
             "title": "Function Class",
-            "default": "project"
+            "default": "PROJECT"
           },
           "title": {
             "type": "string",
@@ -9741,9 +9741,9 @@
           },
           "function_class": {
             "type": "string",
-            "const": "project",
+            "const": "PROJECT",
             "title": "Function Class",
-            "default": "project"
+            "default": "PROJECT"
           },
           "project_job_id": {
             "type": "string",
@@ -9764,9 +9764,9 @@
         "properties": {
           "function_class": {
             "type": "string",
-            "const": "python_code",
+            "const": "PYTHON_CODE",
             "title": "Function Class",
-            "default": "python_code"
+            "default": "PYTHON_CODE"
           },
           "title": {
             "type": "string",
@@ -9872,9 +9872,9 @@
           },
           "function_class": {
             "type": "string",
-            "const": "python_code",
+            "const": "PYTHON_CODE",
             "title": "Function Class",
-            "default": "python_code"
+            "default": "PYTHON_CODE"
           }
         },
         "type": "object",
@@ -9922,9 +9922,9 @@
         "properties": {
           "function_class": {
             "type": "string",
-            "const": "project",
+            "const": "PROJECT",
             "title": "Function Class",
-            "default": "project"
+            "default": "PROJECT"
           },
           "title": {
             "type": "string",
@@ -10037,9 +10037,9 @@
           },
           "function_class": {
             "type": "string",
-            "const": "project",
+            "const": "PROJECT",
             "title": "Function Class",
-            "default": "project"
+            "default": "PROJECT"
           },
           "uid": {
             "type": "string",
@@ -10066,9 +10066,9 @@
         "properties": {
           "function_class": {
             "type": "string",
-            "const": "python_code",
+            "const": "PYTHON_CODE",
             "title": "Function Class",
-            "default": "python_code"
+            "default": "PYTHON_CODE"
           },
           "title": {
             "type": "string",
@@ -10180,9 +10180,9 @@
           },
           "function_class": {
             "type": "string",
-            "const": "python_code",
+            "const": "PYTHON_CODE",
             "title": "Function Class",
-            "default": "python_code"
+            "default": "PYTHON_CODE"
           },
           "uid": {
             "type": "string",
@@ -10203,9 +10203,9 @@
         "properties": {
           "function_class": {
             "type": "string",
-            "const": "solver",
+            "const": "SOLVER",
             "title": "Function Class",
-            "default": "solver"
+            "default": "SOLVER"
           },
           "title": {
             "type": "string",
@@ -10324,9 +10324,9 @@
           },
           "function_class": {
             "type": "string",
-            "const": "solver",
+            "const": "SOLVER",
             "title": "Function Class",
-            "default": "solver"
+            "default": "SOLVER"
           },
           "uid": {
             "type": "string",
@@ -10490,9 +10490,9 @@
         "properties": {
           "function_class": {
             "type": "string",
-            "const": "solver",
+            "const": "SOLVER",
             "title": "Function Class",
-            "default": "solver"
+            "default": "SOLVER"
           },
           "title": {
             "type": "string",
@@ -10605,9 +10605,9 @@
           },
           "function_class": {
             "type": "string",
-            "const": "solver",
+            "const": "SOLVER",
             "title": "Function Class",
-            "default": "solver"
+            "default": "SOLVER"
           },
           "solver_job_id": {
             "type": "string",

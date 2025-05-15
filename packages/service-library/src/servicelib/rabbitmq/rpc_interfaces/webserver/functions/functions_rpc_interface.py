@@ -151,13 +151,9 @@ async def list_function_job_collections(
         pagination_offset=pagination_offset,
         pagination_limit=pagination_limit,
     )
-    assert isinstance(result, tuple)
-    return (
-        TypeAdapter(list[RegisteredFunctionJobCollection]).validate_python(
-            result[0]
-        ),  # Validates the result as a list of RegisteredFunctionJobCollections
-        TypeAdapter(PageMetaInfoLimitOffset).validate_python(result[1]),  # nosec
-    )
+    return TypeAdapter(
+        tuple[list[RegisteredFunctionJobCollection], PageMetaInfoLimitOffset]
+    ).validate_python(result)
 
 
 @log_decorator(_logger, level=logging.DEBUG)

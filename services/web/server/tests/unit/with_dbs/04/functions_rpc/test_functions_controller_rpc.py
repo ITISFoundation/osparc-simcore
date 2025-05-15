@@ -1,6 +1,7 @@
-from collections.abc import Awaitable, Callable
-
 # pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+
+from collections.abc import Awaitable, Callable
 from uuid import uuid4
 
 import pytest
@@ -100,9 +101,7 @@ def mock_function() -> Function:
 async def test_register_function(
     client: TestClient, rpc_client: RabbitMQRPCClient, mock_function: ProjectFunction
 ):
-    assert client.app
-
-    # # Register the function
+    # Register the function
     registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client, function=mock_function
     )
@@ -131,7 +130,6 @@ async def test_register_function(
 async def test_get_function(
     client: TestClient, rpc_client: RabbitMQRPCClient, mock_function: ProjectFunction
 ):
-    assert client.app
     # Register the function first
     registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client, function=mock_function
@@ -157,7 +155,6 @@ async def test_get_function(
 async def test_get_function_not_found(
     client: TestClient, rpc_client: RabbitMQRPCClient
 ):
-    assert client.app
     # Attempt to retrieve a function that does not exist
     with pytest.raises(FunctionIDNotFoundError):
         await functions_rpc.get_function(
@@ -166,7 +163,6 @@ async def test_get_function_not_found(
 
 
 async def test_list_functions(client: TestClient, rpc_client: RabbitMQRPCClient):
-    assert client.app
     # Register a function first
     mock_function = ProjectFunction(
         title="Test Function",
@@ -194,8 +190,6 @@ async def test_list_functions(client: TestClient, rpc_client: RabbitMQRPCClient)
 async def test_list_functions_empty(
     client: TestClient, rpc_client: RabbitMQRPCClient, clean_functions: None
 ):
-    assert clean_functions is None
-    assert client.app
     # List functions when none are registered
     functions, _ = await functions_rpc.list_functions(
         rabbitmq_rpc_client=rpc_client, pagination_limit=10, pagination_offset=0
@@ -211,8 +205,6 @@ async def test_list_functions_with_pagination(
     mock_function: ProjectFunction,
     clean_functions: None,
 ):
-    assert clean_functions is None
-    assert client.app
     # Register multiple functions
     TOTAL_FUNCTIONS = 3
     for _ in range(TOTAL_FUNCTIONS):
@@ -248,7 +240,6 @@ async def test_list_functions_with_pagination(
 async def test_update_function_title(
     client: TestClient, rpc_client: RabbitMQRPCClient, mock_function: ProjectFunction
 ):
-    assert client.app
     # Register the function first
     registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client, function=mock_function
@@ -273,7 +264,6 @@ async def test_update_function_title(
 async def test_update_function_description(
     client: TestClient, rpc_client: RabbitMQRPCClient, mock_function: ProjectFunction
 ):
-    assert client.app
     # Register the function first
     registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client, function=mock_function
@@ -298,7 +288,6 @@ async def test_update_function_description(
 async def test_get_function_input_schema(
     client: TestClient, rpc_client: RabbitMQRPCClient, mock_function: ProjectFunction
 ):
-    assert client.app
     # Register the function first
     registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client, function=mock_function
@@ -317,7 +306,6 @@ async def test_get_function_input_schema(
 async def test_get_function_output_schema(
     client: TestClient, rpc_client: RabbitMQRPCClient, mock_function: ProjectFunction
 ):
-    assert client.app
     # Register the function first
     registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client, function=mock_function
@@ -336,7 +324,6 @@ async def test_get_function_output_schema(
 async def test_delete_function(
     client: TestClient, rpc_client: RabbitMQRPCClient, mock_function: ProjectFunction
 ):
-    assert client.app
     # Register the function first
     registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client, function=mock_function
@@ -358,7 +345,6 @@ async def test_delete_function(
 async def test_register_function_job(
     client: TestClient, rpc_client: RabbitMQRPCClient, mock_function: ProjectFunction
 ):
-    assert client.app
     # Register the function first
     registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client, function=mock_function
@@ -388,7 +374,6 @@ async def test_register_function_job(
 async def test_get_function_job(
     client: TestClient, rpc_client: RabbitMQRPCClient, mock_function: ProjectFunction
 ):
-    assert client.app
     # Register the function first
     registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client, function=mock_function
@@ -424,7 +409,6 @@ async def test_get_function_job(
 async def test_get_function_job_not_found(
     client: TestClient, rpc_client: RabbitMQRPCClient
 ):
-    assert client.app
     # Attempt to retrieve a function job that does not exist
     with pytest.raises(FunctionJobIDNotFoundError):
         await functions_rpc.get_function_job(
@@ -435,7 +419,6 @@ async def test_get_function_job_not_found(
 async def test_list_function_jobs(
     client: TestClient, rpc_client: RabbitMQRPCClient, mock_function: ProjectFunction
 ):
-    assert client.app
     # Register the function first
     registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client, function=mock_function
@@ -469,7 +452,6 @@ async def test_list_function_jobs(
 async def test_delete_function_job(
     client: TestClient, mock_function: ProjectFunction, rpc_client: RabbitMQRPCClient
 ):
-    assert client.app
     # Register the function first
     registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client, function=mock_function
@@ -506,7 +488,6 @@ async def test_delete_function_job(
 async def test_function_job_collection(
     client: TestClient, mock_function: ProjectFunction, rpc_client: RabbitMQRPCClient
 ):
-    assert client.app
     # Register the function first
     registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client, function=mock_function
