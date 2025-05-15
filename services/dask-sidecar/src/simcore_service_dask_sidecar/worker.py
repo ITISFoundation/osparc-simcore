@@ -18,6 +18,9 @@ from ._meta import print_dask_sidecar_banner
 from .computational_sidecar.core import ComputationalSidecar
 from .rabbitmq_plugin import RabbitMQPlugin
 from .settings import ApplicationSettings
+from .task_life_cycle_worker_plugin import (
+    TaskLifecycleWorkerPlugin,
+)
 from .utils.dask import (
     TaskPublisher,
     get_current_task_resources,
@@ -78,6 +81,11 @@ async def dask_setup(worker: distributed.Worker) -> None:
             except Exception:
                 await worker.close(reason="failed to add RabbitMQ plugin")
                 raise
+        try:
+            await worker.plugin_add(TaskLifecycleWorkerPlugin(), catch_errors=False)
+        except Exception:
+            await worker.close(reason="failed to add TaskLifecycleWorkerPlugin")
+            raise
 
         print_dask_sidecar_banner()
 
