@@ -49,7 +49,6 @@ async def test_publish_event(
     monkeypatch: pytest.MonkeyPatch,
     handler: mock.Mock | mock.AsyncMock,
 ):
-    monkeypatch.setenv("DASK_SIDECAR_LOGLEVEL", "DEBUG")
     event_to_publish = TaskProgressEvent(
         job_id=job_id,
         msg="the log",
