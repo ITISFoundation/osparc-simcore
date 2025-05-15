@@ -1,7 +1,7 @@
 """add templateType to projects
 
 Revision ID: b39f2dc87ccd
-Revises: 0d52976dc616
+Revises: fc1701bb7e93
 Create Date: 2025-05-14 11:59:27.033449+00:00
 
 """
@@ -11,7 +11,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "b39f2dc87ccd"
-down_revision = "0d52976dc616"
+down_revision = "fc1701bb7e93"
 branch_labels = None
 depends_on = None
 
