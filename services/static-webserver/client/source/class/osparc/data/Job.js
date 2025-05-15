@@ -99,7 +99,7 @@ qx.Class.define("osparc.data.Job", {
       "SUCCESS": "Finished",
       "FAILED": "Failed",
       "ABORTED": "Aborted",
-      "WAITING_FOR_RESOURCES": "Hardware is ready, installing Sim4Life solvers",
+      "WAITING_FOR_RESOURCES": "Hardware is ready, installing solvers",
       "WAITING_FOR_CLUSTER": "Creating your personal computing hardware",
     },
   },
