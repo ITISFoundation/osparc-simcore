@@ -133,15 +133,16 @@ qx.Class.define("osparc.store.Services", {
             this.__addServiceToCache(service);
             // Resolve the promise locally before deleting it
             resolve(service);
-            // Remove the promise from the cache
-            delete this.__servicesPromisesCached[key][version];
           })
           .catch(err => {
-            // store it in cache to avoid asking again
+            // Store null in cache to avoid repeated failed requests
             this.__addToCache(key, version, null);
-            delete this.__servicesPromisesCached[key][version];
             console.error(err);
             reject(err);
+          })
+          .finally(() => {
+            // Remove the promise from the cache
+            delete this.__servicesPromisesCached[key][version];
           });
       });
     },
