@@ -57,3 +57,11 @@ class UserStatus(str, Enum):
     BANNED = "BANNED"
     # This user is inactive because it was marked for deletion
     DELETED = "DELETED"
+
+
+class AccountRequestStatus(str, Enum):
+    """Status of an account request"""
+
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
