@@ -104,7 +104,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       const tabs = [{
         id: "studiesTab",
         buttonId: "studiesTabBtn",
-        label: this.tr("PROJeCTS"),
+        label: this.tr("PROJECTS"),
         icon: "@FontAwesome5Solid/file/"+tabIconSize,
         buildLayout: this.__createStudyBrowser
       }];
