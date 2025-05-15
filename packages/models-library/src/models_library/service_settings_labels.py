@@ -167,6 +167,11 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
 SimcoreServiceSettingsLabel = ListModel[SimcoreServiceSettingLabelEntry]
 
 
+class LegacyState(BaseModel):
+    s3_archive: str
+    new_state_path: Path
+
+
 class PathMappingsLabel(BaseModel):
     """Content of "simcore.service.paths-mapping" label"""
 
@@ -194,6 +199,29 @@ class PathMappingsLabel(BaseModel):
             "and `state_paths`. Limits must be parsable by Pydantic's ByteSize."
         ),
     )
+
+    legacy_state: LegacyState | None = Field(
+        None,
+        description=(
+            "if present, the service needs to first try todownload the legacy state "
+            "from the s3_ardhive and copy it over to the new_state_path."
+        ),
+    )
+
+    @field_validator("legacy_state")
+    @classmethod
+    def validate_legacy_state(
+        cls, v: LegacyState | None, info: ValidationInfo
+    ) -> LegacyState | None:
+        if v is None:
+            return v
+
+        state_paths: list[Path] = info.data.get("state_paths", [])
+        if v.new_state_path not in state_paths:
+            msg = f"legacy_state={v} not found in state_paths={state_paths}"
+            raise ValueError(msg)
+
+        return v
 
     @field_validator("volume_size_limits")
     @classmethod
@@ -250,6 +278,16 @@ class PathMappingsLabel(BaseModel):
                         "/s3": "1G",
                         "/t_out": "12",
                         "/t_inp": "1EIB",
+                    },
+                },
+                {
+                    "outputs_path": "/tmp/outputs",  # noqa: S108 nosec
+                    "inputs_path": "/tmp/inputs",  # noqa: S108 nosec
+                    "state_paths": ["/tmp/save_1", "/tmp_save_2"],  # noqa: S108 nosec
+                    "state_exclude": ["/tmp/strip_me/*"],  # noqa: S108 nosec
+                    "legacy_state": {
+                        "s3_archive": "work.zip",
+                        "new_state_path": "/tmp/save_1",  # noqa: S108 nosec
                     },
                 },
             ]
