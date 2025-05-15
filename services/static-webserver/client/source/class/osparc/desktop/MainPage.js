@@ -26,7 +26,7 @@
  * - Main Stack
  *   - Dashboard Stack
  *     - StudyBrowser
- *     - TemplateBrowser
+ *     - TutorialBrowser
  *     - AppBrowser
  *     - DataManager
  *   - StudyEditor
@@ -248,7 +248,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       const pollTasks = osparc.store.PollTasks.getInstance();
       pollTasks.createPollingTask(fetchPromise)
         .then(task => {
-          const templateBrowser = this.__dashboard.getTemplateBrowser();
+          const templateBrowser = this.__dashboard.getTutorialBrowser();
           const appBrowser = this.__dashboard.getAppBrowser();
           if (templateBrowser) {
             templateBrowser.taskToTemplateReceived(task, studyName);

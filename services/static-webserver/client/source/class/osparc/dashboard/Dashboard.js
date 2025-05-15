@@ -18,7 +18,7 @@
 /**
  * Widget containing a TabView including:
  * - StudyBrowser
- * - TemplateBrowser
+ * - TutorialBrowser
  * - AppBrowser
  * - DataBrowser
  *
@@ -90,7 +90,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       return this.__studyBrowser;
     },
 
-    getTemplateBrowser: function() {
+    getTutorialBrowser: function() {
       return this.__templateBrowser;
     },
 
@@ -120,7 +120,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
             allUpperCase: true
           }),
           icon: "@FontAwesome5Solid/copy/"+tabIconSize,
-          buildLayout: this.__createTemplateBrowser
+          buildLayout: this.__createTutorialBrowser
         });
       }
       if (permissions.canDo("dashboard.services.read")) {
@@ -228,8 +228,8 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       return studiesView;
     },
 
-    __createTemplateBrowser: function() {
-      const templatesView = this.__templateBrowser = new osparc.dashboard.TemplateBrowser();
+    __createTutorialBrowser: function() {
+      const templatesView = this.__templateBrowser = new osparc.dashboard.TutorialBrowser();
       return templatesView;
     },
 
