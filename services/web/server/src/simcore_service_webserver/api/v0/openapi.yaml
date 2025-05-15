@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.64.0
+  version: 0.65.0
 servers:
 - url: ''
   description: webserver
@@ -14392,6 +14392,12 @@ components:
           - type: string
             const: ''
           title: Thumbnail
+        type:
+          $ref: '#/components/schemas/ProjectType'
+        templateType:
+          anyOf:
+          - $ref: '#/components/schemas/ProjectTemplateType'
+          - type: 'null'
         workbench:
           type: object
           title: Workbench
@@ -14483,6 +14489,8 @@ components:
       - name
       - description
       - thumbnail
+      - type
+      - templateType
       - workbench
       - prjOwner
       - accessRights
@@ -14582,6 +14590,12 @@ components:
           - type: string
             const: ''
           title: Thumbnail
+        type:
+          $ref: '#/components/schemas/ProjectType'
+        templateType:
+          anyOf:
+          - $ref: '#/components/schemas/ProjectTemplateType'
+          - type: 'null'
         workbench:
           type: object
           title: Workbench
@@ -14673,6 +14687,8 @@ components:
       - name
       - description
       - thumbnail
+      - type
+      - templateType
       - workbench
       - prjOwner
       - accessRights
@@ -14944,6 +14960,19 @@ components:
       - OPENED
       - MAINTAINING
       title: ProjectStatus
+    ProjectTemplateType:
+      type: string
+      enum:
+      - TEMPLATE
+      - TUTORIAL
+      - HYPERTOOL
+      title: ProjectTemplateType
+    ProjectType:
+      type: string
+      enum:
+      - TEMPLATE
+      - STANDARD
+      title: ProjectType
     ProjectTypeAPI:
       type: string
       enum:
