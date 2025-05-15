@@ -33,7 +33,6 @@ from models_library.rest_pagination import (
     PageMetaInfoLimitOffset,
     PageOffsetInt,
 )
-from models_library.rpc.webserver.projects import ListProjectsMarkedAsJobRpcFilter
 from models_library.rpc.webserver.projects import (
     ListProjectsMarkedAsJobRpcFilters,
     MetadataFilterItem,
