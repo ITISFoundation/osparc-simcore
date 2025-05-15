@@ -438,7 +438,7 @@ async def assert_user_not_in_db(
     assert user_db is None
 
 
-def enum_to_value(d):
+def _enum_to_value(d):
     return {k: (v.value if isinstance(v, Enum) else v) for k, v in d.items()}
 
 
@@ -447,7 +447,7 @@ async def assert_project_in_db(
 ) -> None:
     project = await fetch_project_from_db(aiopg_engine, user_project)
     assert project
-    project_as_dict = enum_to_value(dict(project))
+    project_as_dict = _enum_to_value(dict(project))
 
     assert_dicts_match_by_common_keys(project_as_dict, user_project)
 
