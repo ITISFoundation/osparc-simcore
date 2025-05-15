@@ -1618,7 +1618,7 @@ msgstr ""
 msgid "Update all"
 msgstr ""
 
-#: osparc/dashboard/TemplateBrowser.js
+#: osparc/dashboard/TutorialBrowser.js
 msgid "Are you sure you want to update all "
 msgstr ""
 
@@ -1630,15 +1630,15 @@ msgstr ""
 msgid "Are you sure you want to delete "
 msgstr ""
 
-#: osparc/dashboard/TemplateBrowser.js
+#: osparc/dashboard/TutorialBrowser.js
 msgid "Study to Template cancelled"
 msgstr ""
 
-#: osparc/dashboard/TemplateBrowser.js
+#: osparc/dashboard/TutorialBrowser.js
 msgid "Something went wrong while publishing the study<br>"
 msgstr ""
 
-#: osparc/dashboard/TemplateBrowser.js
+#: osparc/dashboard/TutorialBrowser.js
 msgid "Publishing "
 msgstr ""
 
