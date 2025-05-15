@@ -26,7 +26,7 @@
  * - Main Stack
  *   - Dashboard Stack
  *     - StudyBrowser
- *     - TemplateBrowser
+ *     - TutorialBrowser
  *     - AppBrowser
  *     - DataManager
  *   - StudyEditor
@@ -248,10 +248,10 @@ qx.Class.define("osparc.desktop.MainPage", {
       const pollTasks = osparc.store.PollTasks.getInstance();
       pollTasks.createPollingTask(fetchPromise)
         .then(task => {
-          const templateBrowser = this.__dashboard.getTemplateBrowser();
+          const tutorialBrowser = this.__dashboard.getTutorialBrowser();
           const appBrowser = this.__dashboard.getAppBrowser();
-          if (templateBrowser) {
-            templateBrowser.taskToTemplateReceived(task, studyName);
+          if (tutorialBrowser) {
+            tutorialBrowser.taskToTemplateReceived(task, studyName);
           }
           task.addListener("resultReceived", e => {
             const templateData = e.getData();
@@ -262,8 +262,8 @@ qx.Class.define("osparc.desktop.MainPage", {
               studyUI["templateType"] = templateType;
               osparc.store.Study.patchStudyData(templateData, "ui", studyUI)
                 .then(() => {
-                  if (templateBrowser) {
-                    templateBrowser.reloadResources();
+                  if (tutorialBrowser) {
+                    tutorialBrowser.reloadResources();
                   }
                   if (appBrowser) {
                     // OM: reload hypertools only

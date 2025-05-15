@@ -43,16 +43,10 @@ qx.Class.define("osparc.product.Utils", {
 
     getStudyAlias: function(options = {}) {
       let alias = null;
-      if (this.getProductName().includes("s4l")) {
-        if (options.plural) {
-          alias = qx.locale.Manager.tr("projects");
-        } else {
-          alias = qx.locale.Manager.tr("project");
-        }
-      } else if (options.plural) {
-        alias = qx.locale.Manager.tr("studies");
+      if (options.plural) {
+        alias = qx.locale.Manager.tr("projects");
       } else {
-        alias = qx.locale.Manager.tr("study");
+        alias = qx.locale.Manager.tr("project");
       }
 
       if (options.firstUpperCase) {

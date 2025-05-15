@@ -22,6 +22,30 @@ qx.Class.define("osparc.store.Templates", {
     __templates: null,
     __templatesPromisesCached: null,
 
+    fetchTemplatesPaginated: function(params, options) {
+      return osparc.data.Resources.fetch("templates", "getPageSorted", params, options)
+        .then(resp => {
+          const templates = resp.data;
+          // add them to the list
+          if (this.__templates) {
+            templates.forEach(template => {
+              const index = this.__templates.findIndex(t => t.uuid === template.uuid);
+              if (index === -1) {
+                this.__templates.push(template);
+              } else {
+                this.__templates[index] = template;
+              }
+            });
+          }
+          return resp;
+        })
+        .catch(err => osparc.FlashMessenger.logError(err));
+    },
+
+    fetchTemplatesPublicPaginated: function(params, options) {
+      return this.fetchTemplatesPaginated(params, options);
+    },
+
     __fetchAllTemplates: function() {
       return this.__templatesPromisesCached = osparc.data.Resources.getInstance().getAllPages("templates")
         .then(templates => {
