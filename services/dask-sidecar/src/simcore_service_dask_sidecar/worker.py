@@ -76,7 +76,7 @@ async def dask_setup(worker: distributed.Worker) -> None:
                     RabbitMQPlugin(settings.DASK_SIDECAR_RABBITMQ), catch_errors=False
                 )
             except Exception:
-                await worker.close()
+                await worker.close(reason="failed to add RabbitMQ plugin")
                 raise
 
         print_dask_sidecar_banner()
