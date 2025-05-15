@@ -13,6 +13,7 @@ import pytest
 from fastapi import FastAPI
 from models_library.api_schemas_webserver.functions_wb_schema import (
     Function,
+    FunctionClass,
     FunctionIDNotFoundError,
     FunctionJob,
     JSONFunctionInputSchema,
@@ -104,7 +105,7 @@ def sample_function(
 ) -> Function:
     sample_fields = {
         "title": "test_function",
-        "function_class": "project",
+        "function_class": FunctionClass.PROJECT,
         "project_id": str(project_id),
         "description": "A test function",
         "input_schema": sample_input_schema,
@@ -128,7 +129,7 @@ def sample_function_job(sample_registered_function: RegisteredFunction) -> Funct
         "inputs": {"key": "value"},
         "outputs": None,
         "project_job_id": str(uuid4()),
-        "function_class": "project",
+        "function_class": FunctionClass.PROJECT,
     }
     return ProjectFunctionJob(**mock_function_job)
 

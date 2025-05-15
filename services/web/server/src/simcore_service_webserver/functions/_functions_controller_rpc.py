@@ -259,30 +259,30 @@ async def find_cached_function_job(
     if returned_function_job is None:
         return None
 
-    if returned_function_job.function_class == FunctionClass.project:
+    if returned_function_job.function_class == FunctionClass.PROJECT:
         return RegisteredProjectFunctionJob(
             uid=returned_function_job.uuid,
             title=returned_function_job.title,
-            description="",
+            description=returned_function_job.description,
             function_uid=returned_function_job.function_uuid,
             inputs=returned_function_job.inputs,
             outputs=None,
             project_job_id=returned_function_job.class_specific_data["project_job_id"],
         )
-    elif returned_function_job.function_class == FunctionClass.solver:  # noqa: RET505
+    if returned_function_job.function_class == FunctionClass.SOLVER:
         return RegisteredSolverFunctionJob(
             uid=returned_function_job.uuid,
             title=returned_function_job.title,
-            description="",
+            description=returned_function_job.description,
             function_uid=returned_function_job.function_uuid,
             inputs=returned_function_job.inputs,
             outputs=None,
             solver_job_id=returned_function_job.class_specific_data["solver_job_id"],
         )
-    else:
-        raise UnsupportedFunctionJobClassError(
-            function_job_class=returned_function_job.function_class
-        )
+
+    raise UnsupportedFunctionJobClassError(
+        function_job_class=returned_function_job.function_class
+    )
 
 
 @router.expose(reraise_if_error_type=(FunctionIDNotFoundError,))
@@ -310,7 +310,7 @@ async def get_function_output_schema(
 def _decode_function(
     function: RegisteredFunctionDB,
 ) -> RegisteredFunction:
-    if function.function_class == "project":
+    if function.function_class == FunctionClass.PROJECT:
         return RegisteredProjectFunction(
             uid=function.uuid,
             title=function.title,
@@ -320,7 +320,8 @@ def _decode_function(
             project_id=function.class_specific_data["project_id"],
             default_inputs=function.default_inputs,
         )
-    elif function.function_class == "solver":  # noqa: RET505
+
+    if function.function_class == FunctionClass.SOLVER:
         return RegisteredSolverFunction(
             uid=function.uuid,
             title=function.title,
@@ -331,18 +332,18 @@ def _decode_function(
             solver_version=function.class_specific_data["solver_version"],
             default_inputs=function.default_inputs,
         )
-    else:
-        raise UnsupportedFunctionClassError(function_class=function.function_class)
+
+    raise UnsupportedFunctionClassError(function_class=function.function_class)
 
 
 def _encode_function(
     function: Function,
 ) -> FunctionDB:
-    if function.function_class == FunctionClass.project:
+    if function.function_class == FunctionClass.PROJECT:
         class_specific_data = FunctionClassSpecificData(
             {"project_id": str(function.project_id)}
         )
-    elif function.function_class == FunctionClass.solver:
+    elif function.function_class == FunctionClass.SOLVER:
         class_specific_data = FunctionClassSpecificData(
             {
                 "solver_key": str(function.solver_key),
@@ -367,43 +368,37 @@ def _encode_functionjob(
     functionjob: FunctionJob,
 ) -> FunctionJobDB:
 
-    if functionjob.function_class == FunctionClass.project:
-        return FunctionJobDB(
-            title=functionjob.title,
-            function_uuid=functionjob.function_uid,
-            inputs=functionjob.inputs,
-            outputs=functionjob.outputs,
-            class_specific_data=FunctionJobClassSpecificData(
-                {
-                    "project_job_id": str(functionjob.project_job_id),
-                }
-            ),
-            function_class=functionjob.function_class,
+    if functionjob.function_class == FunctionClass.PROJECT:
+        class_specific_data = FunctionJobClassSpecificData(
+            {
+                "project_job_id": str(functionjob.project_job_id),
+            }
+        )
+    elif functionjob.function_class == FunctionClass.SOLVER:
+        class_specific_data = FunctionJobClassSpecificData(
+            {
+                "solver_job_id": str(functionjob.solver_job_id),
+            }
+        )
+    else:
+        raise UnsupportedFunctionJobClassError(
+            function_job_class=functionjob.function_class
         )
 
-    if functionjob.function_class == FunctionClass.solver:
-        return FunctionJobDB(
-            title=functionjob.title,
-            function_uuid=functionjob.function_uid,
-            inputs=functionjob.inputs,
-            outputs=functionjob.outputs,
-            class_specific_data=FunctionJobClassSpecificData(
-                {
-                    "solver_job_id": str(functionjob.solver_job_id),
-                }
-            ),
-            function_class=functionjob.function_class,
-        )
-
-    raise UnsupportedFunctionJobClassError(
-        function_job_class=functionjob.function_class
+    return FunctionJobDB(
+        title=functionjob.title,
+        function_uuid=functionjob.function_uid,
+        inputs=functionjob.inputs,
+        outputs=functionjob.outputs,
+        class_specific_data=class_specific_data,
+        function_class=functionjob.function_class,
     )
 
 
 def _decode_functionjob(
     functionjob_db: RegisteredFunctionJobDB,
 ) -> RegisteredFunctionJob:
-    if functionjob_db.function_class == FunctionClass.project:
+    if functionjob_db.function_class == FunctionClass.PROJECT:
         return RegisteredProjectFunctionJob(
             uid=functionjob_db.uuid,
             title=functionjob_db.title,
@@ -414,7 +409,7 @@ def _decode_functionjob(
             project_job_id=functionjob_db.class_specific_data["project_job_id"],
         )
 
-    if functionjob_db.function_class == FunctionClass.solver:
+    if functionjob_db.function_class == FunctionClass.SOLVER:
         return RegisteredSolverFunctionJob(
             uid=functionjob_db.uuid,
             title=functionjob_db.title,

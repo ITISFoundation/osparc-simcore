@@ -116,8 +116,8 @@ async def function_job_status(
     )
 
     if (
-        function.function_class == FunctionClass.project
-        and function_job.function_class == FunctionClass.project
+        function.function_class == FunctionClass.PROJECT
+        and function_job.function_class == FunctionClass.PROJECT
     ):
         job_status = await studies_jobs.inspect_study_job(
             study_id=function.project_id,
@@ -127,8 +127,8 @@ async def function_job_status(
         )
         return FunctionJobStatus(status=job_status.state)
 
-    if (function.function_class == FunctionClass.solver) and (
-        function_job.function_class == FunctionClass.solver
+    if (function.function_class == FunctionClass.SOLVER) and (
+        function_job.function_class == FunctionClass.SOLVER
     ):
         job_status = await solvers_jobs.inspect_job(
             solver_key=function.solver_key,
@@ -182,8 +182,8 @@ async def function_job_outputs(
     )
 
     if (
-        function.function_class == FunctionClass.project
-        and function_job.function_class == FunctionClass.project
+        function.function_class == FunctionClass.PROJECT
+        and function_job.function_class == FunctionClass.PROJECT
     ):
         return dict(
             (
@@ -198,8 +198,8 @@ async def function_job_outputs(
         )
 
     if (
-        function.function_class == FunctionClass.solver
-        and function_job.function_class == FunctionClass.solver
+        function.function_class == FunctionClass.SOLVER
+        and function_job.function_class == FunctionClass.SOLVER
     ):
         return dict(
             (

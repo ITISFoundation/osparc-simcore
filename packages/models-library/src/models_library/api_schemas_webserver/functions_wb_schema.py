@@ -22,7 +22,7 @@ class FunctionSchemaClass(str, Enum):
 
 
 class FunctionSchemaBase(BaseModel):
-    schema_content: Any = Field(default=None)
+    schema_content: Any | None = Field(default=None)
     schema_class: FunctionSchemaClass
 
 
@@ -57,16 +57,16 @@ FunctionOutputSchema: TypeAlias = Annotated[
 
 
 class FunctionClass(str, Enum):
-    project = "project"
-    solver = "solver"
-    python_code = "python_code"
+    PROJECT = "PROJECT"
+    SOLVER = "SOLVER"
+    PYTHON_CODE = "PYTHON_CODE"
 
 
 FunctionClassSpecificData: TypeAlias = dict[str, Any]
 FunctionJobClassSpecificData: TypeAlias = FunctionClassSpecificData
 
 
-# TODO, use InputTypes here, but api is throwing weird errors and asking for dict for elements  # noqa: FIX002
+# NOTE, use InputTypes here, but api is throwing weird errors and asking for dict for elements
 # see here https://github.com/ITISFoundation/osparc-simcore/issues/7659
 FunctionInputs: TypeAlias = dict[str, Any] | None
 
@@ -91,7 +91,7 @@ class RegisteredFunctionBase(FunctionBase):
 
 
 class ProjectFunction(FunctionBase):
-    function_class: Literal[FunctionClass.project] = FunctionClass.project
+    function_class: Literal[FunctionClass.PROJECT] = FunctionClass.PROJECT
     project_id: ProjectID
 
 
@@ -103,7 +103,7 @@ SolverJobID: TypeAlias = UUID
 
 
 class SolverFunction(FunctionBase):
-    function_class: Literal[FunctionClass.solver] = FunctionClass.solver
+    function_class: Literal[FunctionClass.SOLVER] = FunctionClass.SOLVER
     solver_key: ServiceKey
     solver_version: ServiceVersion
 
@@ -113,7 +113,7 @@ class RegisteredSolverFunction(SolverFunction, RegisteredFunctionBase):
 
 
 class PythonCodeFunction(FunctionBase):
-    function_class: Literal[FunctionClass.python_code] = FunctionClass.python_code
+    function_class: Literal[FunctionClass.PYTHON_CODE] = FunctionClass.PYTHON_CODE
     code_url: str
 
 
@@ -147,7 +147,7 @@ class RegisteredFunctionJobBase(FunctionJobBase):
 
 
 class ProjectFunctionJob(FunctionJobBase):
-    function_class: Literal[FunctionClass.project] = FunctionClass.project
+    function_class: Literal[FunctionClass.PROJECT] = FunctionClass.PROJECT
     project_job_id: ProjectID
 
 
@@ -156,7 +156,7 @@ class RegisteredProjectFunctionJob(ProjectFunctionJob, RegisteredFunctionJobBase
 
 
 class SolverFunctionJob(FunctionJobBase):
-    function_class: Literal[FunctionClass.solver] = FunctionClass.solver
+    function_class: Literal[FunctionClass.SOLVER] = FunctionClass.SOLVER
     solver_job_id: ProjectID
 
 
@@ -165,7 +165,7 @@ class RegisteredSolverFunctionJob(SolverFunctionJob, RegisteredFunctionJobBase):
 
 
 class PythonCodeFunctionJob(FunctionJobBase):
-    function_class: Literal[FunctionClass.python_code] = FunctionClass.python_code
+    function_class: Literal[FunctionClass.PYTHON_CODE] = FunctionClass.PYTHON_CODE
 
 
 class RegisteredPythonCodeFunctionJob(PythonCodeFunctionJob, RegisteredFunctionJobBase):

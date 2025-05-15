@@ -257,7 +257,7 @@ async def run_function(  # noqa: PLR0913
     ):
         return cached_function_job
 
-    if to_run_function.function_class == FunctionClass.project:
+    if to_run_function.function_class == FunctionClass.PROJECT:
         study_job = await studies_jobs.create_study_job(
             study_id=to_run_function.project_id,
             job_inputs=JobInputs(values=joined_inputs or {}),
@@ -289,7 +289,7 @@ async def run_function(  # noqa: PLR0913
             ),
         )
 
-    if to_run_function.function_class == FunctionClass.solver:
+    if to_run_function.function_class == FunctionClass.SOLVER:
         solver_job = await solvers_jobs.create_solver_job(
             solver_key=to_run_function.solver_key,
             version=to_run_function.solver_version,

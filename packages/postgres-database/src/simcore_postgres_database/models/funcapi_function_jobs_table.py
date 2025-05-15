@@ -6,7 +6,7 @@
 import uuid
 
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from ._common import RefActions, column_created_datetime, column_modified_datetime
 from .base import metadata
@@ -57,17 +57,17 @@ function_jobs_table = sa.Table(
     ),
     sa.Column(
         "inputs",
-        sa.JSON,
+        JSONB,
         doc="Inputs of the function job",
     ),
     sa.Column(
         "outputs",
-        sa.JSON,
+        JSONB,
         doc="Outputs of the function job",
     ),
     sa.Column(
         "class_specific_data",
-        sa.JSON,
+        JSONB,
         nullable=True,
         doc="Fields specific for a function class",
     ),

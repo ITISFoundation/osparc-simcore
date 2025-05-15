@@ -10,7 +10,7 @@ from simcore_postgres_database.models._common import (
     column_created_datetime,
     column_modified_datetime,
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from .base import metadata
 
@@ -42,35 +42,35 @@ functions_table = sa.Table(
     ),
     sa.Column(
         "input_schema",
-        sa.JSON,
+        JSONB,
         doc="Input schema of the function",
     ),
     sa.Column(
         "output_schema",
-        sa.JSON,
+        JSONB,
         doc="Output schema of the function",
     ),
     sa.Column(
         "system_tags",
-        sa.JSON,
+        JSONB,
         nullable=True,
         doc="System-level tags of the function",
     ),
     sa.Column(
         "user_tags",
-        sa.JSON,
+        JSONB,
         nullable=True,
         doc="User-level tags of the function",
     ),
     sa.Column(
         "class_specific_data",
-        sa.JSON,
+        JSONB,
         nullable=True,
         doc="Fields specific for a function class",
     ),
     sa.Column(
         "default_inputs",
-        sa.JSON,
+        JSONB,
         nullable=True,
         doc="Default inputs of the function",
     ),
