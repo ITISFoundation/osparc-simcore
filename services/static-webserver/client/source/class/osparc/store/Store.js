@@ -76,7 +76,14 @@ qx.Class.define("osparc.store.Store", {
       nullable: true
     },
     studyBrowserContext: {
-      check: ["studiesAndFolders", "workspaces", "search", "trash"],
+      check: [
+        "studiesAndFolders",
+        "workspaces",
+        "search",
+        "templates",
+        "public",
+        "trash",
+      ],
       init: "studiesAndFolders",
       nullable: false,
       event: "changeStudyBrowserContext",
