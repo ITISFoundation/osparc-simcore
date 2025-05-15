@@ -42,7 +42,7 @@ from ..projects.models import ProjectDict
 from ..security.api import is_anonymous, remember_identity
 from ..storage.api import copy_data_folders_from_project
 from ..utils import compose_support_error_msg
-from ..utils_aiohttp import create_redirect_to_page_response
+from ..utils_aiohttp import create_redirect_to_page_response, get_api_base_url
 from ._constants import (
     MSG_PROJECT_NOT_FOUND,
     MSG_PROJECT_NOT_PUBLISHED,
@@ -211,7 +211,11 @@ async def copy_study_to_account(
             if lr_task.done:
                 await lr_task.result()
         await director_v2_service.create_or_update_pipeline(
-            request.app, user["id"], project["uuid"], product_name
+            request.app,
+            user["id"],
+            project["uuid"],
+            product_name,
+            get_api_base_url(request),
         )
         await dynamic_scheduler_service.update_projects_networks(
             request.app, project_id=ProjectID(project["uuid"])

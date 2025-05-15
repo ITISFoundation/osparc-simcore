@@ -48,6 +48,7 @@ async def create_or_update_pipeline(
     user_id: UserID,
     project_id: ProjectID,
     product_name: ProductName,
+    product_api_base_url: str,
 ) -> DataType | None:
     # NOTE https://github.com/ITISFoundation/osparc-simcore/issues/7527
     settings: DirectorV2Settings = get_plugin_settings(app)
@@ -57,6 +58,7 @@ async def create_or_update_pipeline(
         "user_id": user_id,
         "project_id": f"{project_id}",
         "product_name": product_name,
+        "product_api_base_url": product_api_base_url,
         "wallet_info": await get_wallet_info(
             app,
             product=products_service.get_product(app, product_name),

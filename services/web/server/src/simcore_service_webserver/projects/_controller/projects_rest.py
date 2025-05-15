@@ -35,7 +35,7 @@ from ...resource_manager.user_sessions import PROJECT_ID_KEY, managed_resource
 from ...security.api import check_user_permission
 from ...security.decorators import permission_required
 from ...users.api import get_user_fullname
-from ...utils_aiohttp import envelope_json_response
+from ...utils_aiohttp import envelope_json_response, get_api_base_url
 from .. import _crud_api_create, _crud_api_read, _projects_service
 from .._permalink_service import update_or_pop_permalink_in_project
 from ..models import ProjectDict
@@ -116,6 +116,7 @@ async def create_project(request: web.Request):
         copy_data=query_params.copy_data,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
+        product_api_base_url=get_api_base_url(request),
         simcore_user_agent=header_params.simcore_user_agent,
         predefined_project=predefined_project,
         parent_project_uuid=header_params.parent_project_uuid,
@@ -452,6 +453,7 @@ async def clone_project(request: web.Request):
         copy_data=True,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
+        product_api_base_url=get_api_base_url(request),
         simcore_user_agent=request.headers.get(
             X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
         ),
