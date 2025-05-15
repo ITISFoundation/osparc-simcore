@@ -83,7 +83,9 @@ async def dask_setup(worker: distributed.Worker) -> None:
 
 
 async def dask_teardown(worker: distributed.Worker) -> None:
-    with log_context(_logger, logging.INFO, f"tear down dask {worker.address}"):
+    with log_context(
+        _logger, logging.INFO, f"tear down dask worker at {worker.address}"
+    ):
         ...
 
 
