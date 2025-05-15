@@ -7,7 +7,7 @@ from models_library.projects import ProjectID
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.rest_pagination import PageOffsetInt
 from models_library.rpc.webserver.projects import (
-    ListProjectsMarkedAsJobRpcFilter,
+    ListProjectsMarkedAsJobRpcFilters,
     PageRpcProjectJobRpcGet,
 )
 from models_library.rpc_pagination import (
@@ -54,7 +54,7 @@ async def list_projects_marked_as_jobs(
     # pagination
     offset: PageOffsetInt = 0,
     limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
-    filters: ListProjectsMarkedAsJobRpcFilter | None = None,
+    filters: ListProjectsMarkedAsJobRpcFilters | None = None,
 ) -> PageRpcProjectJobRpcGet:
     result = await rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,

@@ -15,16 +15,16 @@ class MetadataFilterItem(BaseModel):
     pattern: str
 
 
-class ListProjectsMarkedAsJobRpcFilter(BaseModel):
-    """Filter model for the list_projects_marked_as_jobs RPC.
+class ListProjectsMarkedAsJobRpcFilters(BaseModel):
+    """Filters model for the list_projects_marked_as_jobs RPC.
 
-    NOTE: Filter models are used to validate all possible filters in an API early on,
+    NOTE: Filters models are used to validate all possible filters in an API early on,
     particularly to ensure compatibility and prevent conflicts between different filters.
     """
 
     job_parent_resource_name_prefix: str | None = None
 
-    any_of_metadata: Annotated[
+    any_custom_metadata: Annotated[
         list[MetadataFilterItem] | None,
         Field(description="Searchs for matches of any of the custom metadata fields"),
     ] = None

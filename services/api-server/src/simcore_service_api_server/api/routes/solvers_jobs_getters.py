@@ -134,7 +134,7 @@ router = APIRouter()
             FMSG_CHANGELOG_NEW_IN_VERSION.format("0.8"),
         ],
     ),
-    include_in_schema=True,  # TO BE RELEASED in 0.8
+    include_in_schema=False,  # TO BE RELEASED in 0.8
 )
 async def list_all_solvers_jobs(
     page_params: Annotated[PaginationParams, Depends()],
@@ -146,7 +146,7 @@ async def list_all_solvers_jobs(
 ):
 
     jobs, meta = await solver_service.list_jobs(
-        filter_by_job_custom_metadata=(
+        filter_any_custom_metadata=(
             [
                 {filter_metadata.name: filter_metadata.pattern}
                 for filter_metadata in filter_job_metadata_params.any

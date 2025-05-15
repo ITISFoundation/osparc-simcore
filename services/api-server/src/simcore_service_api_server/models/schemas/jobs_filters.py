@@ -22,6 +22,7 @@ class JobMetadataFilter(BaseModel):
         list[MetadataFilterItem],
         Field(description="Matches any custom metadata field (OR logic)"),
     ]
+    # NOTE: AND logic shall be implemented as `all: list[MetadataFilterItem] | None = None`
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:

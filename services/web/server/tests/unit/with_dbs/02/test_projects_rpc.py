@@ -13,7 +13,7 @@ from common_library.users_enums import UserRole
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.rpc.webserver.projects import (
-    ListProjectsMarkedAsJobRpcFilter,
+    ListProjectsMarkedAsJobRpcFilters,
     MetadataFilterItem,
     PageRpcProjectJobRpcGet,
     ProjectJobRpcGet,
@@ -116,7 +116,7 @@ async def test_rpc_client_list_my_projects_marked_as_jobs(
         rpc_client=rpc_client,
         product_name=product_name,
         user_id=user_id,
-        filters=ListProjectsMarkedAsJobRpcFilter(
+        filters=ListProjectsMarkedAsJobRpcFilters(
             job_parent_resource_name_prefix="solvers/solver123"
         ),
     )
@@ -237,9 +237,9 @@ async def test_rpc_client_list_projects_marked_as_jobs_with_metadata_filter(
         rpc_client=rpc_client,
         product_name=product_name,
         user_id=user_id,
-        filters=ListProjectsMarkedAsJobRpcFilter(
+        filters=ListProjectsMarkedAsJobRpcFilters(
             job_parent_resource_name_prefix="solvers/solver123",
-            any_of_metadata=[MetadataFilterItem(name="solver_type", pattern="FEM")],
+            any_custom_metadata=[MetadataFilterItem(name="solver_type", pattern="FEM")],
         ),
     )
 
@@ -252,8 +252,8 @@ async def test_rpc_client_list_projects_marked_as_jobs_with_metadata_filter(
         rpc_client=rpc_client,
         product_name=product_name,
         user_id=user_id,
-        filters=ListProjectsMarkedAsJobRpcFilter(
-            any_of_metadata=[MetadataFilterItem(name="mesh_cells", pattern="1*")],
+        filters=ListProjectsMarkedAsJobRpcFilters(
+            any_custom_metadata=[MetadataFilterItem(name="mesh_cells", pattern="1*")],
         ),
     )
 
@@ -266,8 +266,8 @@ async def test_rpc_client_list_projects_marked_as_jobs_with_metadata_filter(
         rpc_client=rpc_client,
         product_name=product_name,
         user_id=user_id,
-        filters=ListProjectsMarkedAsJobRpcFilter(
-            any_of_metadata=[
+        filters=ListProjectsMarkedAsJobRpcFilters(
+            any_custom_metadata=[
                 MetadataFilterItem(name="solver_type", pattern="FEM"),
                 MetadataFilterItem(name="non_existent", pattern="value"),
             ],
@@ -282,8 +282,8 @@ async def test_rpc_client_list_projects_marked_as_jobs_with_metadata_filter(
         rpc_client=rpc_client,
         product_name=product_name,
         user_id=user_id,
-        filters=ListProjectsMarkedAsJobRpcFilter(
-            any_of_metadata=[
+        filters=ListProjectsMarkedAsJobRpcFilters(
+            any_custom_metadata=[
                 MetadataFilterItem(name="solver_type", pattern="CFD"),  # No match
             ],
         ),
@@ -297,9 +297,9 @@ async def test_rpc_client_list_projects_marked_as_jobs_with_metadata_filter(
         rpc_client=rpc_client,
         product_name=product_name,
         user_id=user_id,
-        filters=ListProjectsMarkedAsJobRpcFilter(
+        filters=ListProjectsMarkedAsJobRpcFilters(
             job_parent_resource_name_prefix="wrong/prefix",
-            any_of_metadata=[
+            any_custom_metadata=[
                 MetadataFilterItem(name="solver_type", pattern="FEM"),
             ],
         ),

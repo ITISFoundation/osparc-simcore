@@ -41,7 +41,7 @@ class JobService:
         self,
         job_parent_resource_name: str,
         *,
-        filter_by_job_custom_metadata: list[dict[str, str]] | None = None,
+        filter_any_custom_metadata: list[dict[str, str]] | None = None,
         pagination_offset: PageOffsetInt = 0,
         pagination_limit: PageLimitInt = MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE - 1,
     ) -> tuple[list[Job], PageMetaInfoLimitOffset]:
@@ -54,7 +54,7 @@ class JobService:
             pagination_offset=pagination_offset,
             pagination_limit=pagination_limit,
             filter_by_job_parent_resource_name_prefix=job_parent_resource_name,
-            filter_by_any_custom_metadata=filter_by_job_custom_metadata,
+            filter_any_custom_metadata=filter_any_custom_metadata,
         )
 
         # 2. Convert projects to jobs

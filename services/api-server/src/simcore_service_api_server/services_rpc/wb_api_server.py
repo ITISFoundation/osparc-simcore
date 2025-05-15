@@ -35,7 +35,7 @@ from models_library.rest_pagination import (
 )
 from models_library.rpc.webserver.projects import ListProjectsMarkedAsJobRpcFilter
 from models_library.rpc.webserver.projects import (
-    ListProjectsMarkedAsJobRpcFilter,
+    ListProjectsMarkedAsJobRpcFilters,
     MetadataFilterItem,
 )
 from models_library.services_types import ServiceRunID
@@ -251,16 +251,16 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         pagination_offset: int = 0,
         pagination_limit: int = 50,
         filter_by_job_parent_resource_name_prefix: str | None,
-        filter_by_any_custom_metadata: list[dict[str, str]] | None,
+        filter_any_custom_metadata: list[dict[str, str]] | None,
     ):
-        filters = ListProjectsMarkedAsJobRpcFilter(
+        filters = ListProjectsMarkedAsJobRpcFilters(
             job_parent_resource_name_prefix=filter_by_job_parent_resource_name_prefix,
-            any_of_metadata=(
+            any_custom_metadata=(
                 [
                     MetadataFilterItem(name=key, pattern=value)
-                    for key, value in filter_by_any_custom_metadata
+                    for key, value in filter_any_custom_metadata
                 ]
-                if filter_by_any_custom_metadata
+                if filter_any_custom_metadata
                 else None
             ),
         )

@@ -4,7 +4,7 @@ from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.rest_pagination import PageLimitInt, PageOffsetInt
 from models_library.rpc.webserver.projects import (
-    ListProjectsMarkedAsJobRpcFilter,
+    ListProjectsMarkedAsJobRpcFilters,
     PageRpcProjectJobRpcGet,
     ProjectJobRpcGet,
 )
@@ -66,24 +66,24 @@ async def list_projects_marked_as_jobs(
     # pagination
     offset: PageOffsetInt,
     limit: PageLimitInt,
-    filters: ListProjectsMarkedAsJobRpcFilter | None = None,
+    filters: ListProjectsMarkedAsJobRpcFilters | None = None,
 ) -> PageRpcProjectJobRpcGet:
 
     total, projects = await _jobs_service.list_my_projects_marked_as_jobs(
         app,
         product_name=product_name,
         user_id=user_id,
-        offset=offset,
-        limit=limit,
+        pagination_offset=offset,
+        pagination_limit=limit,
         filter_by_job_parent_resource_name_prefix=(
             filters.job_parent_resource_name_prefix if filters else None
         ),
-        filter_by_any_custom_metadata=(
+        filter_any_custom_metadata=(
             [
                 {custom_metadata.name: custom_metadata.pattern}
-                for custom_metadata in filters.any_of_metadata
+                for custom_metadata in filters.any_custom_metadata
             ]
-            if filters and filters.any_of_metadata
+            if filters and filters.any_custom_metadata
             else None
         ),
     )

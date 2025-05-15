@@ -37,18 +37,18 @@ def _apply_job_parent_resource_name_filter(
     return query.where(projects_to_jobs.c.job_parent_resource_name.like(f"{prefix}%"))
 
 
-def _apply_metadata_filter(
-    query: sa.sql.Select, any_of_metadata_fields: list[dict[str, str]]
+def _apply_custom_metadata_filter(
+    query: sa.sql.Select, any_metadata_fields: list[dict[str, str]]
 ) -> sa.sql.Select:
     """Apply metadata filters to query.
 
     For PostgreSQL JSONB fields, we need to extract the text value using ->> operator
     before applying string comparison operators like ILIKE.
     """
-    assert any_of_metadata_fields  # nosec
+    assert any_metadata_fields  # nosec
 
     expressions = []
-    for field in any_of_metadata_fields:
+    for field in any_metadata_fields:
         for key, pattern in field.items():
             # Use ->> operator to extract the text value from JSONB
             # Then apply ILIKE for case-insensitive pattern matching
@@ -92,10 +92,10 @@ class ProjectJobsRepository(BaseRepository):
         *,
         product_name: ProductName,
         user_id: UserID,
-        pagination_offset: int = 0,
-        pagination_limit: int = 10,
+        pagination_offset: int,
+        pagination_limit: int,
         filter_by_job_parent_resource_name_prefix: str | None = None,
-        filter_by_any_custom_metadata: list[dict[str, str]] | None = None,
+        filter_any_custom_metadata: list[dict[str, str]] | None = None,
     ) -> tuple[int, list[ProjectJobDBGet]]:
         """Lists projects marked as jobs for a specific user and product
 
@@ -161,9 +161,9 @@ class ProjectJobsRepository(BaseRepository):
                 access_query, filter_by_job_parent_resource_name_prefix
             )
 
-        if filter_by_any_custom_metadata:
-            access_query = _apply_metadata_filter(
-                access_query, filter_by_any_custom_metadata
+        if filter_any_custom_metadata:
+            access_query = _apply_custom_metadata_filter(
+                access_query, filter_any_custom_metadata
             )
 
         # Step 4. Convert access_query to a subquery

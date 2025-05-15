@@ -92,7 +92,7 @@ class SolverService:
         *,
         filter_by_solver_key: SolverKeyId | None = None,
         filter_by_solver_version: VersionStr | None = None,
-        filter_by_job_custom_metadata: list[dict[str, str]] | None = None,
+        filter_any_custom_metadata: list[dict[str, str]] | None = None,
         pagination_offset: PageOffsetInt = 0,
         pagination_limit: PageLimitInt = DEFAULT_PAGINATION_LIMIT,
     ) -> tuple[list[Job], PageMetaInfoLimitOffset]:
@@ -115,7 +115,7 @@ class SolverService:
         # 2. list jobs under job_parent_resource_name
         return await self.job_service.list_jobs(
             job_parent_resource_name=job_parent_resource_name,
-            filter_by_job_custom_metadata=filter_by_job_custom_metadata,
+            filter_any_custom_metadata=filter_any_custom_metadata,
             pagination_offset=pagination_offset,
             pagination_limit=pagination_limit,
         )

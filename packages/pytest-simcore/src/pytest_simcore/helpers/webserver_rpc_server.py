@@ -9,7 +9,7 @@ from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.rest_pagination import PageOffsetInt
 from models_library.rpc.webserver.projects import (
-    ListProjectsMarkedAsJobRpcFilter,
+    ListProjectsMarkedAsJobRpcFilters,
     PageRpcProjectJobRpcGet,
     ProjectJobRpcGet,
 )
@@ -57,7 +57,7 @@ class WebserverRpcSideEffects:
         # pagination
         offset: PageOffsetInt = 0,
         limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
-        filters: ListProjectsMarkedAsJobRpcFilter | None = None,
+        filters: ListProjectsMarkedAsJobRpcFilters | None = None,
     ) -> PageRpcProjectJobRpcGet:
         assert rpc_client
         assert product_name
