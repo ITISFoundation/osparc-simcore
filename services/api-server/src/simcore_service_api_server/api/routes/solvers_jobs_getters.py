@@ -18,7 +18,6 @@ from models_library.wallets import ZERO_CREDITS
 from pydantic import HttpUrl, NonNegativeInt
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_context
-from simcore_service_api_server.models.schemas.jobs_filters import JobMetadataFilter
 from sqlalchemy.ext.asyncio import AsyncEngine
 from starlette.background import BackgroundTask
 
