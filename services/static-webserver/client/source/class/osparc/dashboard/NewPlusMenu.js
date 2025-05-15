@@ -321,14 +321,14 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
     },
 
     __addFromTemplateButton: function(buttonConfig) {
-      osparc.store.Templates.getTemplates()
-        .then(templates => {
+      osparc.store.Templates.getTutorials()
+        .then(tutorials => {
           const menuButton = this.self().createMenuButton(null, buttonConfig["title"]);
           osparc.utils.Utils.setIdToWidget(menuButton, buttonConfig["idToWidget"]);
           // disable it until found in templates store
           menuButton.setEnabled(false);
 
-          let templateMetadata = templates.find(t => t.name === buttonConfig["expectedTemplateLabel"]);
+          let templateMetadata = tutorials.find(t => t.name === buttonConfig["expectedTemplateLabel"]);
           if (templateMetadata) {
             menuButton.setEnabled(true);
             menuButton.addListener("tap", () => {

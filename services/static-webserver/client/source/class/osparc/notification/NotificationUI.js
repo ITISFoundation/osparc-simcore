@@ -169,7 +169,7 @@ qx.Class.define("osparc.notification.NotificationUI", {
         case "TEMPLATE_SHARED":
           icon.setSource("@FontAwesome5Solid/copy/14");
           if (resourceId) {
-            const template = osparc.store.Store.getInstance().getTemplate(resourceId);
+            const template = osparc.store.Templates.getTemplate(resourceId);
             if (template) {
               const templateAlias = osparc.product.Utils.getTemplateAlias({
                 firstUpperCase: true
