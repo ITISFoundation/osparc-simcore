@@ -168,7 +168,7 @@ SimcoreServiceSettingsLabel = ListModel[SimcoreServiceSettingLabelEntry]
 
 
 class LegacyState(BaseModel):
-    s3_archive: str
+    old_state_path: Path
     new_state_path: Path
 
 
