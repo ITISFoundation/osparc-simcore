@@ -363,6 +363,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/computations/{studyId}/iterations/latest/tasks?offset={offset}&limit={limit}"
           },
+          getPageHistory: {
+            method: "GET",
+            url: statics.API + "/computations/{studyId}/iterations?offset={offset}&limit={limit}"
+          },
         }
       },
       "folders": {
