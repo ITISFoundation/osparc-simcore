@@ -47,7 +47,7 @@ def _apply_custom_metadata_filter(
     """
     assert any_metadata_fields  # nosec
 
-    expressions = []
+    metadata_fields_ilike = []
     for field in any_metadata_fields:
         for key, pattern in field.items():
             # Use ->> operator to extract the text value from JSONB
@@ -55,11 +55,11 @@ def _apply_custom_metadata_filter(
             sql_pattern = pattern.replace(
                 "*", "%"
             )  # Convert glob-like pattern to SQL LIKE
-            expressions.append(
+            metadata_fields_ilike.append(
                 projects_metadata.c.custom[key].astext.ilike(sql_pattern)
             )
 
-    return query.where(sa.or_(*expressions))
+    return query.where(sa.or_(*metadata_fields_ilike))
 
 
 class ProjectJobsRepository(BaseRepository):
