@@ -779,7 +779,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             urlParams.accessRights = "non-public";
             break;
           case "public":
-            requestParams.accessRights = "public";
+            urlParams.accessRights = "public";
             break;
         }
 
