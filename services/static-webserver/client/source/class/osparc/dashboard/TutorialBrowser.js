@@ -389,12 +389,12 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
       task.addListener("resultReceived", e => {
         finished();
         this.reloadResources();
-        const msg = this.tr("Template created");
+        const msg = this.tr("Tutorial created");
         osparc.FlashMessenger.logAs(msg, "INFO");
       });
       task.addListener("taskAborted", () => {
         finished();
-        const msg = this.tr("Study to Template cancelled");
+        const msg = this.tr("Study to Tutorial cancelled");
         osparc.FlashMessenger.logAs(msg, "WARNING");
       });
       task.addListener("pollingError", e => {
