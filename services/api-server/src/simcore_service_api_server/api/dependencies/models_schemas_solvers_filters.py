@@ -10,14 +10,14 @@ def get_solvers_filters(
         str | None,
         Query(
             description="Filter by solver ID pattern",
-            example=["simcore/services/comp/itis/sleeper", "simcore/services/comp/*"],
+            example="simcore/services/comp/*",
         ),
     ] = None,
     version_display: Annotated[
         str | None,
         Query(
             description="Filter by version display pattern",
-            example=["2.1.1-2023-10-01", "*2023*"],
+            example=["*2023-*"],
         ),
     ] = None,
 ) -> SolversListFilters:
