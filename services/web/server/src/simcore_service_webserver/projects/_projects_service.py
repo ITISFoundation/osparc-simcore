@@ -617,6 +617,7 @@ async def _start_dynamic_service(  # noqa: C901
     service_key: ServiceKey,
     service_version: ServiceVersion,
     product_name: str,
+    product_api_base_url: str,
     user_id: UserID,
     project_uuid: ProjectID,
     node_uuid: NodeID,
@@ -788,6 +789,7 @@ async def _start_dynamic_service(  # noqa: C901
             app=request.app,
             dynamic_service_start=DynamicServiceStart(
                 product_name=product_name,
+                product_api_base_url=product_api_base_url,
                 can_save=save_state,
                 project_id=project_uuid,
                 user_id=user_id,
@@ -816,6 +818,7 @@ async def add_project_node(
     project: dict[str, Any],
     user_id: UserID,
     product_name: str,
+    product_api_base_url: str,
     service_key: ServiceKey,
     service_version: ServiceVersion,
     service_id: str | None,
@@ -866,7 +869,11 @@ async def add_project_node(
     # also ensure the project is updated by director-v2 since services
     # are due to access comp_tasks at some point see [https://github.com/ITISFoundation/osparc-simcore/issues/3216]
     await director_v2_service.create_or_update_pipeline(
-        request.app, user_id, project["uuid"], product_name
+        request.app,
+        user_id,
+        project["uuid"],
+        product_name,
+        product_api_base_url,
     )
     await dynamic_scheduler_service.update_projects_networks(
         request.app, project_id=ProjectID(project["uuid"])
@@ -880,6 +887,7 @@ async def add_project_node(
                 service_key=service_key,
                 service_version=service_version,
                 product_name=product_name,
+                product_api_base_url=product_api_base_url,
                 user_id=user_id,
                 project_uuid=ProjectID(project["uuid"]),
                 node_uuid=node_uuid,
@@ -890,7 +898,8 @@ async def add_project_node(
 
 async def start_project_node(
     request: web.Request,
-    product_name: str,
+    product_name: ProductName,
+    product_api_base_url: str,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
@@ -906,6 +915,7 @@ async def start_project_node(
         service_key=node_details.key,
         service_version=node_details.version,
         product_name=product_name,
+        product_api_base_url=product_api_base_url,
         user_id=user_id,
         project_uuid=project_id,
         node_uuid=node_id,
@@ -946,6 +956,7 @@ async def delete_project_node(
     user_id: UserID,
     node_uuid: NodeIDStr,
     product_name: ProductName,
+    product_api_base_url: str,
 ) -> None:
     log.debug(
         "deleting node %s in project %s for user %s", node_uuid, project_uuid, user_id
@@ -991,7 +1002,7 @@ async def delete_project_node(
     # also ensure the project is updated by director-v2 since services
     product_name = products_web.get_product_name(request)
     await director_v2_service.create_or_update_pipeline(
-        request.app, user_id, project_uuid, product_name
+        request.app, user_id, project_uuid, product_name, product_api_base_url
     )
     await dynamic_scheduler_service.update_projects_networks(
         request.app, project_id=project_uuid
@@ -1063,6 +1074,7 @@ async def patch_project_node(
     app: web.Application,
     *,
     product_name: ProductName,
+    product_api_base_url: str,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
@@ -1121,7 +1133,11 @@ async def patch_project_node(
 
     # 4. Make calls to director-v2 to keep data in sync (ex. comp_tasks DB table)
     await director_v2_service.create_or_update_pipeline(
-        app, user_id, project_id, product_name=product_name
+        app,
+        user_id,
+        project_id,
+        product_name=product_name,
+        product_api_base_url=product_api_base_url,
     )
     if _node_patch_exclude_unset.get("label"):
         await dynamic_scheduler_service.update_projects_networks(
@@ -1203,7 +1219,9 @@ async def update_project_node_outputs(
     # changed entries come in the form of {node_uuid: {outputs: {changed_key1: value1, changed_key2: value2}}}
     # we do want only the key names
     changed_keys = (
-        changed_entries.get(NodeIDStr(f"{node_id}"), {}).get("outputs", {}).keys()
+        changed_entries.get(TypeAdapter(NodeIDStr).validate_python(f"{node_id}"), {})
+        .get("outputs", {})
+        .keys()
     )
     return updated_project, changed_keys
 
@@ -1755,6 +1773,7 @@ async def run_project_dynamic_services(
     project: dict,
     user_id: UserID,
     product_name: str,
+    product_api_base_url: str,
 ) -> None:
     # first get the services if they already exist
     project_settings: ProjectsSettings = get_plugin_settings(request.app)
@@ -1803,6 +1822,7 @@ async def run_project_dynamic_services(
                 service_key=services_to_start_uuids[service_uuid]["key"],
                 service_version=services_to_start_uuids[service_uuid]["version"],
                 product_name=product_name,
+                product_api_base_url=product_api_base_url,
                 user_id=user_id,
                 project_uuid=project["uuid"],
                 node_uuid=NodeID(service_uuid),

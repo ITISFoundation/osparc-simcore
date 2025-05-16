@@ -67,6 +67,11 @@ def osparc_product_name() -> str:
     return "osparc"
 
 
+@pytest.fixture(scope="session")
+def osparc_product_api_base_url() -> str:
+    return "https://api.osparc.io"
+
+
 COMPUTATION_URL: str = "v2/computations"
 
 
@@ -82,6 +87,7 @@ async def create_pipeline(
         project: ProjectAtDB,
         user_id: UserID,
         product_name: str,
+        product_api_base_url: str,
         start_pipeline: bool,
         **kwargs,
     ) -> ComputationGet:
@@ -92,6 +98,7 @@ async def create_pipeline(
                 "project_id": str(project.uuid),
                 "start_pipeline": start_pipeline,
                 "product_name": product_name,
+                "product_api_base_url": product_api_base_url,
                 **kwargs,
             },
         )

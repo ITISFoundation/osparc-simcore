@@ -46,7 +46,7 @@ async def test_create_project_with_viewer(view: dict[str, Any]):
     assert list(project.workbench.keys())
 
     # converts into equivalent Dict
-    project_in: dict = json.loads(project.model_dump_json(exclude_none=True, by_alias=True))
+    project_in: dict = json.loads(project.model_dump_json(by_alias=True))
     print(json.dumps(project_in, indent=2))
 
     # This operation is done exactly before adding to the database in projects_handlers.create_projects

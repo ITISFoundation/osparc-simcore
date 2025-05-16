@@ -16,7 +16,7 @@ from models_library.utils.common_validators import (
 )
 from models_library.workspaces import WorkspaceID
 from pydantic import BaseModel, ConfigDict, HttpUrl, field_validator
-from simcore_postgres_database.models.projects import ProjectType
+from simcore_postgres_database.models.projects import ProjectTemplateType, ProjectType
 
 ProjectDict: TypeAlias = dict[str, Any]
 ProjectProxy: TypeAlias = RowProxy
@@ -40,6 +40,7 @@ class ProjectDBGet(BaseModel):
     # NOTE: model intented to read one-to-one columns of the `projects` table
     id: int
     type: ProjectType
+    template_type: ProjectTemplateType | None
     uuid: ProjectID
     name: str
     description: str

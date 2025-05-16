@@ -81,7 +81,10 @@ ComputationRunListOrderParams = create_ordering_query_model_class(
 class ComputationRunListQueryParams(
     PageQueryParameters,
     ComputationRunListOrderParams,  # type: ignore[misc, valid-type]
-):
+): ...
+
+
+class ComputationRunWithFiltersListQueryParams(ComputationRunListQueryParams):
     filter_only_running: bool = Field(
         default=False,
         description="If true, only running computations are returned",
@@ -98,6 +101,11 @@ class ComputationRunRestGet(OutputSchema):
     ended_at: datetime | None
     root_project_name: str
     project_custom_metadata: dict[str, Any]
+
+
+class ComputationRunPathParams(BaseModel):
+    project_id: ProjectID
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
 
 ### Computation Task

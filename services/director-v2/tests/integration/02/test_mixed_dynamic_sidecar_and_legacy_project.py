@@ -112,8 +112,7 @@ def minimal_configuration(
     dy_static_file_server_dynamic_sidecar_compose_spec_service: dict,
     simcore_services_ready: None,
     ensure_swarm_and_networks: None,
-):
-    ...
+): ...
 
 
 @pytest.fixture
@@ -132,8 +131,8 @@ def uuid_dynamic_sidecar_compose(faker: Faker) -> str:
 
 
 @pytest.fixture
-def user_dict(registered_user: Callable) -> dict[str, Any]:
-    return registered_user()
+def user_dict(create_registered_user: Callable) -> dict[str, Any]:
+    return create_registered_user()
 
 
 @pytest.fixture
@@ -241,6 +240,7 @@ async def test_legacy_and_dynamic_sidecar_run(
     services_endpoint: dict[str, URL],
     async_client: httpx.AsyncClient,
     osparc_product_name: str,
+    osparc_product_api_base_url: str,
     ensure_services_stopped: None,
     mock_projects_networks_repository: None,
     mock_sidecars_client: mock.Mock,
@@ -265,6 +265,7 @@ async def test_legacy_and_dynamic_sidecar_run(
                 director_v2_client=async_client,
                 # context
                 product_name=osparc_product_name,
+                product_api_base_url=osparc_product_api_base_url,
                 user_id=user_dict["id"],
                 project_id=str(dy_static_file_server_project.uuid),
                 # service

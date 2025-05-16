@@ -18,7 +18,7 @@
 /**
  * Widget containing a TabView including:
  * - StudyBrowser
- * - TemplateBrowser
+ * - TutorialBrowser
  * - AppBrowser
  * - DataBrowser
  *
@@ -69,16 +69,20 @@ qx.Class.define("osparc.dashboard.Dashboard", {
     appearance: {
       init: "dashboard",
       refine: true
-    }
+    },
   },
 
   statics: {
     PADDING: 15
   },
 
+  events: {
+    "preResourcesLoaded": "qx.event.type.Event",
+  },
+
   members: {
     __studyBrowser: null,
-    __templateBrowser: null,
+    __tutorialBrowser: null,
     __appBrowser: null,
     __dataBrowser: null,
 
@@ -86,8 +90,8 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       return this.__studyBrowser;
     },
 
-    getTemplateBrowser: function() {
-      return this.__templateBrowser;
+    getTutorialBrowser: function() {
+      return this.__tutorialBrowser;
     },
 
     getAppBrowser: function() {
@@ -100,10 +104,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       const tabs = [{
         id: "studiesTab",
         buttonId: "studiesTabBtn",
-        label: osparc.product.Utils.getStudyAlias({
-          plural: true,
-          allUpperCase: true
-        }),
+        label: this.tr("PROJECTS"),
         icon: "@FontAwesome5Solid/file/"+tabIconSize,
         buildLayout: this.__createStudyBrowser
       }];
@@ -111,12 +112,9 @@ qx.Class.define("osparc.dashboard.Dashboard", {
         tabs.push({
           id: "templatesTab",
           buttonId: "templatesTabBtn",
-          label: osparc.product.Utils.getTemplateAlias({
-            plural: true,
-            allUpperCase: true
-          }),
+          label: this.tr("TUTORIALS"),
           icon: "@FontAwesome5Solid/copy/"+tabIconSize,
-          buildLayout: this.__createTemplateBrowser
+          buildLayout: this.__createTutorialBrowser
         });
       }
       if (permissions.canDo("dashboard.services.read")) {
@@ -181,12 +179,15 @@ qx.Class.define("osparc.dashboard.Dashboard", {
         this.add(tabPage);
       }, this);
 
+      let preResourcesLoaded = false;
       const preResourcePromises = [];
       const groupsStore = osparc.store.Groups.getInstance();
       preResourcePromises.push(groupsStore.fetchGroupsAndMembers());
       preResourcePromises.push(osparc.store.Services.getServicesLatest(false));
       Promise.all(preResourcePromises)
         .then(() => {
+          preResourcesLoaded = true;
+          this.fireEvent("preResourcesLoaded");
           if (this.__studyBrowser) {
             this.__studyBrowser.initResources();
           }
@@ -196,15 +197,24 @@ qx.Class.define("osparc.dashboard.Dashboard", {
           if (this.__dataBrowser) {
             this.__dataBrowser.initResources();
           }
-
-          this.addListener("changeSelection", e => {
-            const selectedTab = e.getData()[0];
-            if (selectedTab && selectedTab.resourceBrowser) {
-              selectedTab.resourceBrowser.initResources();
-            }
-          }, this);
         })
         .catch(err => console.error(err));
+
+      this.addListener("changeSelection", e => {
+        const selectedTab = e.getData()[0];
+        if (selectedTab && selectedTab.resourceBrowser) {
+          // avoid changing the selection when the PreResources are not yet loaded
+          if (preResourcesLoaded) {
+            selectedTab.resourceBrowser.initResources();
+          } else {
+            const initTab = () => {
+              selectedTab.resourceBrowser.initResources()
+              this.removeListener("preResourcesLoaded", initTab);
+            };
+            this.addListener("preResourcesLoaded", initTab, this);
+          }
+        }
+      }, this);
     },
 
     __createStudyBrowser: function() {
@@ -212,8 +222,8 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       return studiesView;
     },
 
-    __createTemplateBrowser: function() {
-      const templatesView = this.__templateBrowser = new osparc.dashboard.TemplateBrowser();
+    __createTutorialBrowser: function() {
+      const templatesView = this.__tutorialBrowser = new osparc.dashboard.TutorialBrowser();
       return templatesView;
     },
 

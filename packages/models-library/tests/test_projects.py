@@ -24,6 +24,8 @@ def minimal_project(faker: Faker) -> dict[str, Any]:
         "creationDate": "2019-05-24T10:36:57.813Z",
         "lastChangeDate": "2019-05-24T10:36:57.813Z",
         "workbench": {},
+        "type": "STANDARD",
+        "templateType": None,
     }
 
 

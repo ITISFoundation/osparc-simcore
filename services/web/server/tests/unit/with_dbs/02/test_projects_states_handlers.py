@@ -360,6 +360,7 @@ async def test_open_project(
     mock_orphaned_services: mock.Mock,
     mock_catalog_api: dict[str, mock.Mock],
     osparc_product_name: str,
+    osparc_product_api_base_url: str,
     mocked_notifications_plugin: dict[str, mock.Mock],
 ):
     # POST /v0/projects/{project_id}:open
@@ -399,6 +400,7 @@ async def test_open_project(
                         request_dns=request_dns,
                         can_save=save_state,
                         product_name=osparc_product_name,
+                        product_api_base_url=osparc_product_api_base_url,
                         service_resources=ServiceResourcesDictHelpers.create_jsonable(
                             mock_service_resources
                         ),
@@ -499,6 +501,7 @@ async def test_open_template_project_for_edition(
     mock_orphaned_services: mock.Mock,
     mock_catalog_api: dict[str, mock.Mock],
     osparc_product_name: str,
+    osparc_product_api_base_url: str,
     mocked_notifications_plugin: dict[str, mock.Mock],
 ):
     # POST /v0/projects/{project_id}:open
@@ -544,6 +547,7 @@ async def test_open_template_project_for_edition(
                             mock_service_resources
                         ),
                         product_name=osparc_product_name,
+                        product_api_base_url=osparc_product_api_base_url,
                         wallet_info=None,
                         pricing_info=None,
                         hardware_info=None,

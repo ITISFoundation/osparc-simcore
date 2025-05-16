@@ -597,7 +597,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         }
       };
       osparc.data.Resources.fetch("runPipeline", "startPipeline", params)
-        .then(() => this.__onPipelineSubmitted())
+        .then(resp => this.__onPipelineSubmitted(resp))
         .catch(err => {
           let msg = err.message;
           const errStatus = err.status;
@@ -630,10 +630,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       return true;
     },
 
-    __onPipelineSubmitted: function(e) {
-      const resp = e.getTarget().getResponse();
-      const pipelineId = resp.data["pipeline_id"];
-      const iterationRefIds = resp.data["ref_ids"];
+    __onPipelineSubmitted: function(response) {
+      const pipelineId = response["pipeline_id"];
+      const iterationRefIds = response["ref_ids"];
       this.getStudyLogger().debug(null, "Pipeline ID " + pipelineId);
       const notGood = [null, undefined, -1];
       if (notGood.includes(pipelineId)) {

@@ -21,7 +21,7 @@ from ..._meta import API_VTAG
 from ...login.decorators import login_required
 from ...models import RequestContext
 from ...security.decorators import permission_required
-from ...utils_aiohttp import envelope_json_response
+from ...utils_aiohttp import envelope_json_response, get_api_base_url
 from .. import _service
 from ..models import ApiKey
 from .rest_exceptions import handle_plugin_requests_exceptions
@@ -55,8 +55,8 @@ async def create_api_key(request: web.Request):
     api_key = ApiKeyCreateResponse.model_validate(
         {
             **asdict(created_api_key),
-            "api_base_url": "http://localhost:8000",
-        }  # TODO: https://github.com/ITISFoundation/osparc-simcore/issues/6340 # @pcrespov
+            "api_base_url": get_api_base_url(request),
+        }
     )
 
     return envelope_json_response(api_key)

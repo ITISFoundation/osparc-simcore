@@ -43,16 +43,10 @@ qx.Class.define("osparc.product.Utils", {
 
     getStudyAlias: function(options = {}) {
       let alias = null;
-      if (this.getProductName().includes("s4l")) {
-        if (options.plural) {
-          alias = qx.locale.Manager.tr("projects");
-        } else {
-          alias = qx.locale.Manager.tr("project");
-        }
-      } else if (options.plural) {
-        alias = qx.locale.Manager.tr("studies");
+      if (options.plural) {
+        alias = qx.locale.Manager.tr("projects");
       } else {
-        alias = qx.locale.Manager.tr("study");
+        alias = qx.locale.Manager.tr("project");
       }
 
       if (options.firstUpperCase) {
@@ -139,7 +133,9 @@ qx.Class.define("osparc.product.Utils", {
         case "template":
           return this.getTemplateAlias(options);
         case "service":
-          return this.getServiceAlias(options);
+          // return this.getServiceAlias(options);
+          // Do not use this alias anymore, use "app" instead
+          return this.getAppAlias(options);
         case "hypertool":
           return this.getHypertoolAlias(options);
         case "app":

@@ -71,11 +71,11 @@ def workbench() -> dict[str, Any]:
 @pytest.fixture()
 async def project(
     mock_env: EnvVarsDict,
-    registered_user: Callable[..., dict],
+    create_registered_user: Callable[..., dict],
     project: Callable[..., Awaitable[ProjectAtDB]],
     workbench: dict[str, Any],
 ) -> ProjectAtDB:
-    return await project(registered_user(), workbench=workbench)
+    return await project(create_registered_user(), workbench=workbench)
 
 
 async def test_is_node_present_in_workbench(
