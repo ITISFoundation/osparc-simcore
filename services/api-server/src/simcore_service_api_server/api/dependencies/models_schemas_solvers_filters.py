@@ -21,7 +21,6 @@ def get_solvers_filters(
         ),
     ] = None,
 ) -> SolversListFilters:
-    """FastAPI dependency to extract solver filters from query parameters"""
     return SolversListFilters(
         solver_id=solver_id,
         version_display=version_display,
