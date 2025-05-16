@@ -86,7 +86,7 @@ qx.Class.define("osparc.desktop.organizations.TutorialsList", {
           item.subscribeToFilterGroup("organizationTutorialsList");
           item.addListener("openMoreInfo", e => {
             const templateId = e.getData()["key"];
-            osparc.store.Templates.getTemplate(templateId)
+            osparc.store.Templates.getTutorial(templateId)
               .then(templateData => {
                 if (templateData) {
                   templateData["resourceType"] = "template";

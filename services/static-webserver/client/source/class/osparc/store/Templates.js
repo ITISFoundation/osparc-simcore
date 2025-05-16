@@ -19,107 +19,107 @@ qx.Class.define("osparc.store.Templates", {
   type: "static",
 
   statics: {
-    __templates: null,
-    __templatesPromisesCached: null,
     __tutorials: null,
-    __tutorialsPromisesCached: null,
+    __tutorialsPromiseCached: null,
     __hypertools: null,
-    __hypertoolsPromisesCached: null,
+    __hypertoolsPromiseCached: null,
 
     __fetchTemplatesPaginated: function(params, options) {
+      params["url"]["templateType"] = osparc.data.model.StudyUI.TEMPLATE_TYPE;
       return osparc.data.Resources.fetch("templates", "getPageFilteredSorted", params, options)
-        .then(resp => {
-          const templates = resp.data;
-          // add them to the list
-          if (this.__templates) {
-            templates.forEach(template => {
-              const index = this.__templates.findIndex(t => t.uuid === template.uuid);
-              if (index === -1) {
-                this.__templates.push(template);
-              } else {
-                this.__templates[index] = template;
-              }
-            });
-          }
-          return resp;
-        })
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
     fetchTemplatesNonPublicPaginated: function(params, options) {
-      params["url"]["templateType"] = osparc.data.model.StudyUI.TEMPLATE_TYPE;
       return this.__fetchTemplatesPaginated(params, options);
     },
 
     fetchTemplatesPublicPaginated: function(params, options) {
-      params["url"]["templateType"] = osparc.data.model.StudyUI.TEMPLATE_TYPE;
       return this.__fetchTemplatesPaginated(params, options);
     },
 
-    __fetchAllTemplates: function() {
-      return this.__templatesPromisesCached = osparc.data.Resources.getInstance().getAllPages("templates")
-        .then(templates => {
-          this.__templates = templates;
-          return templates;
+    __fetchAllTutorials: function(params) {
+      params["url"]["templateType"] = osparc.data.model.StudyUI.TUTORIAL_TYPE;
+      return this.__tutorialsPromiseCached = osparc.data.Resources.getInstance().getAllPages("templates", params, "getPageFilteredSorted")
+        .then(tutorials => {
+          this.__tutorials = tutorials;
+          return tutorials;
         })
         .catch(err => {
           osparc.FlashMessenger.logError(err);
         })
         .finally(() => {
-          this.__templatesPromisesCached = null;
+          this.__tutorialsPromiseCached = null;
         });
     },
 
-    getTemplates: function(useCache = true) {
-      if (this.__templatesPromisesCached) {
-        // fetching templates already in progress
-        return this.__templatesPromisesCached;
+    __fetchAllHypertools: function(params) {
+      params["url"]["templateType"] = osparc.data.model.StudyUI.HYPERTOOL_TYPE;
+      return this.__hypertoolsPromiseCached = osparc.data.Resources.getInstance().getAllPages("templates", params, "getPageFilteredSorted")
+        .then(hypertools => {
+          this.__hypertools = hypertools;
+          return hypertools;
+        })
+        .catch(err => {
+          osparc.FlashMessenger.logError(err);
+        })
+        .finally(() => {
+          this.__hypertoolsPromiseCached = null;
+        });
+    },
+
+    getTutorials: function(useCache = true) {
+      const params = {
+        url: {
+          "orderBy": JSON.stringify({
+            field: "last_change_date",
+            direction: "desc"
+          }),
+        }
+      };
+
+      if (this.__tutorialsPromiseCached) {
+        return this.__tutorialsPromiseCached;
       }
 
-      if (this.__templates === null) {
-        // no templates cached, fetch them
-        return this.__fetchAllTemplates();
+      if (this.__tutorials === null) {
+        // no tutorials cached, fetch them
+        return this.__fetchAllTutorials(params);
       }
 
       if (useCache) {
-        // templates already cached, return them
-        return new Promise(resolve => resolve(this.__templates));
+        // tutorials already cached, return them
+        return new Promise(resolve => resolve(this.__tutorials));
       }
-      // templates cached but force a refresh
-      return this.__fetchAllTemplates();
+
+      return this.__fetchAllTutorials(params);
     },
 
-    getTutorials: function() {
+    getHypertools: function(useCache = true) {
       const params = {
         url: {
-          "templateType": osparc.data.model.StudyUI.TUTORIAL_TYPE,
           "orderBy": JSON.stringify({
             field: "last_change_date",
             direction: "desc"
           }),
         }
       };
-      return osparc.data.Resources.getInstance().getAllPages("templates", params, "getPageFilteredSorted");
-    },
 
-    getHypertools: function() {
-      const params = {
-        url: {
-          "templateType": osparc.data.model.StudyUI.HYPERTOOL_TYPE,
-          "orderBy": JSON.stringify({
-            field: "last_change_date",
-            direction: "desc"
-          }),
-        }
-      };
-      return osparc.data.Resources.getInstance().getAllPages("templates", params, "getPageFilteredSorted");
-    },
+      if (this.__hypertoolsPromiseCached) {
+        return this.__hypertoolsPromiseCached;
+      }
 
-    getTemplate: function(templateId) {
-      return this.getTemplates()
-        .then(templates => {
-          return templates.find(t => t.uuid === templateId);
-        });
+      if (this.__hypertools === null) {
+        // no hypertools cached, fetch them
+        return this.__fetchAllHypertools(params);
+      }
+
+      if (useCache) {
+        // hypertools already cached, return them
+        return new Promise(resolve => resolve(this.__hypertools));
+      }
+
+      return this.__fetchAllHypertools(params);
     },
   }
 });
