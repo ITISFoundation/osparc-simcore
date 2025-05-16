@@ -286,7 +286,7 @@ class PathMappingsLabel(BaseModel):
                     "state_paths": ["/tmp/save_1", "/tmp_save_2"],  # noqa: S108 nosec
                     "state_exclude": ["/tmp/strip_me/*"],  # noqa: S108 nosec
                     "legacy_state": {
-                        "s3_archive": "work.zip",
+                        "old_state_path": "/tmp/save_1_legacy",  # noqa: S108 nosec
                         "new_state_path": "/tmp/save_1",  # noqa: S108 nosec
                     },
                 },
