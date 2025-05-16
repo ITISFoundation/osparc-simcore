@@ -279,7 +279,18 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           if (["templates", "public"].includes(this.getCurrentContext())) {
             const templates = resp["data"];
             templates.forEach(template => template["resourceType"] = "template");
-            this.__addResourcesToList(templates);
+            // For now, filtered in the frontend
+            const groupsStore = osparc.store.Groups.getInstance();
+            const everyoneGid = groupsStore.getEveryoneGroup().getGroupId();
+            const productEveryoneGid = groupsStore.getEveryoneProductGroup().getGroupId();
+            const filteredTemplates = templates.filter(template => {
+              const publicAccess = everyoneGid in template["accessRights"] || productEveryoneGid in template["accessRights"];
+              if (this.getCurrentContext() === "public") {
+                return publicAccess;
+              }
+              return !publicAccess;
+            });
+            this.__addResourcesToList(filteredTemplates);
           } else {
             const studies = resp["data"];
             studies.forEach(study => study["resourceType"] = "study");
@@ -1506,6 +1517,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
       // it will render the studies in the right order
       this._reloadCards();
+    },
+
+    _updateTemplateData: function(templateData) {
+      templateData["resourceType"] = "template";
+      this.base(arguments, templateData);
     },
 
     __removeFromStudyList: function(studyId) {
