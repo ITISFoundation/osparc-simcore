@@ -1,35 +1,13 @@
 import logging
-from dataclasses import asdict, dataclass
-from typing import Any, Final
+from typing import Any
 
 from dask.typing import Key
+from dask_task_models_library.models import TASK_LIFE_CYCLE_EVENT, TaskLifeCycleState
 from distributed import Scheduler, SchedulerPlugin
 from distributed.scheduler import TaskStateState
-from models_library.projects_state import RunningState
 from servicelib.logging_utils import log_context
 
 _logger = logging.getLogger(__name__)
-
-
-_TASK_LIFE_CYCLE_EVENT: Final[str] = "task-lifecycle-{key}"
-_SCHEDULER_TASK_STATE_TO_RUNNING_STATE: Final[dict[TaskStateState, RunningState]] = {}
-
-
-@dataclass
-class TaskLifeCycleState:
-    key: Key
-    worker: str | None
-    state: RunningState
-
-    @classmethod
-    def from_scheduler_task_state(
-        cls, key: Key, worker: str | None, task_state: TaskStateState
-    ) -> "TaskLifeCycleState":
-        return cls(
-            key=key,
-            worker=worker,
-            state=_SCHEDULER_TASK_STATE_TO_RUNNING_STATE[task_state],
-        )
 
 
 class TaskLifecycleSchedulerPlugin(SchedulerPlugin):
@@ -66,10 +44,8 @@ class TaskLifecycleSchedulerPlugin(SchedulerPlugin):
         ):
             assert self.scheduler  # nosec
             self.scheduler.log_event(
-                _TASK_LIFE_CYCLE_EVENT.format(key=key),
-                asdict(
-                    TaskLifeCycleState.from_scheduler_task_state(
-                        key, kwargs.get("worker"), finish
-                    )
-                ),
+                TASK_LIFE_CYCLE_EVENT.format(key=key),
+                TaskLifeCycleState.from_scheduler_task_state(
+                    key, kwargs.get("worker"), finish
+                ).model_dump(),
             )
