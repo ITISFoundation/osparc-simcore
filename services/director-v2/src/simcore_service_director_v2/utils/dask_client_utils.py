@@ -2,22 +2,22 @@ import logging
 import os
 import socket
 from collections.abc import Awaitable, Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from typing import Any, TypeAlias
 
 import distributed
-from dask_task_models_library.container_tasks.events import (
-    TaskProgressEvent,
-)
 from models_library.clusters import ClusterAuthentication, TLSAuthentication
 from pydantic import AnyUrl
 
 from ..core.errors import ConfigurationError
 from .dask import wrap_client_async_routine
 
+UnixTimestamp: TypeAlias = float
+
 
 @dataclass
 class TaskHandlers:
-    task_progress_handler: Callable[[str], Awaitable[None]]
+    task_progress_handler: Callable[[tuple[UnixTimestamp, Any]], Awaitable[None]]
 
 
 logger = logging.getLogger(__name__)
@@ -27,12 +27,6 @@ logger = logging.getLogger(__name__)
 class DaskSubSystem:
     client: distributed.Client
     scheduler_id: str
-    progress_sub: distributed.Sub = field(init=False)
-
-    def __post_init__(self) -> None:
-        self.progress_sub = distributed.Sub(
-            TaskProgressEvent.topic_name(), client=self.client
-        )
 
     async def close(self) -> None:
         # NOTE: if the Sub are deleted before closing the connection,

@@ -8,6 +8,7 @@ from pydantic import TypeAdapter
 from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects import projects
+from simcore_postgres_database.models.projects_metadata import projects_metadata
 from simcore_postgres_database.models.projects_to_jobs import projects_to_jobs
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.utils_repos import (
@@ -28,6 +29,34 @@ _PROJECT_DB_COLS = get_columns_from_db_model(
     projects,
     ProjectDBGet,
 )
+
+
+def _apply_job_parent_resource_name_filter(
+    query: sa.sql.Select, prefix: str
+) -> sa.sql.Select:
+    return query.where(projects_to_jobs.c.job_parent_resource_name.like(f"{prefix}%"))
+
+
+def _apply_custom_metadata_filter(
+    query: sa.sql.Select, any_metadata_fields: list[tuple[str, str]]
+) -> sa.sql.Select:
+    """Apply metadata filters to query.
+
+    For PostgreSQL JSONB fields, we need to extract the text value using ->> operator
+    before applying string comparison operators like ILIKE.
+    """
+    assert any_metadata_fields  # nosec
+
+    metadata_fields_ilike = []
+    for key, pattern in any_metadata_fields:
+        # Use ->> operator to extract the text value from JSONB
+        # Then apply ILIKE for case-insensitive pattern matching
+        sql_pattern = pattern.replace("*", "%")  # Convert glob-like pattern to SQL LIKE
+        metadata_fields_ilike.append(
+            projects_metadata.c.custom[key].astext.ilike(sql_pattern)
+        )
+
+    return query.where(sa.or_(*metadata_fields_ilike))
 
 
 class ProjectJobsRepository(BaseRepository):
@@ -60,9 +89,10 @@ class ProjectJobsRepository(BaseRepository):
         *,
         product_name: ProductName,
         user_id: UserID,
-        offset: int = 0,
-        limit: int = 10,
-        job_parent_resource_name_prefix: str | None = None,
+        pagination_offset: int,
+        pagination_limit: int,
+        filter_by_job_parent_resource_name_prefix: str | None = None,
+        filter_any_custom_metadata: list[tuple[str, str]] | None = None,
     ) -> tuple[int, list[ProjectJobDBGet]]:
         """Lists projects marked as jobs for a specific user and product
 
@@ -96,9 +126,19 @@ class ProjectJobsRepository(BaseRepository):
                     projects_to_products,
                     projects_to_jobs.c.project_uuid
                     == projects_to_products.c.project_uuid,
-                ).join(
+                )
+                .join(
                     project_to_groups,
                     projects_to_jobs.c.project_uuid == project_to_groups.c.project_uuid,
+                )
+                .join(
+                    # NOTE: avoids `SAWarning: SELECT statement has a cartesian product ...`
+                    projects,
+                    projects_to_jobs.c.project_uuid == projects.c.uuid,
+                )
+                .outerjoin(
+                    projects_metadata,
+                    projects_to_jobs.c.project_uuid == projects_metadata.c.project_uuid,
                 )
             )
             .where(
@@ -112,21 +152,24 @@ class ProjectJobsRepository(BaseRepository):
             )
         )
 
-        # Apply job_parent_resource_name_filter if provided
-        if job_parent_resource_name_prefix:
-            access_query = access_query.where(
-                projects_to_jobs.c.job_parent_resource_name.like(
-                    f"{job_parent_resource_name_prefix}%"
-                )
+        # Step 3: Apply filters
+        if filter_by_job_parent_resource_name_prefix:
+            access_query = _apply_job_parent_resource_name_filter(
+                access_query, filter_by_job_parent_resource_name_prefix
             )
 
-        # Convert access_query to a subquery
+        if filter_any_custom_metadata:
+            access_query = _apply_custom_metadata_filter(
+                access_query, filter_any_custom_metadata
+            )
+
+        # Step 4. Convert access_query to a subquery
         base_query = access_query.subquery()
 
-        # Step 3: Query to get the total count
+        # Step 5: Query to get the total count
         total_query = sa.select(sa.func.count()).select_from(base_query)
 
-        # Step 4: Query to get the paginated list with full selection
+        # Step 6: Query to get the paginated list with full selection
         list_query = (
             sa.select(
                 *_PROJECT_DB_COLS,
@@ -143,8 +186,8 @@ class ProjectJobsRepository(BaseRepository):
                 projects.c.creation_date.desc(),  # latests first
                 projects.c.id.desc(),
             )
-            .limit(limit)
-            .offset(offset)
+            .limit(pagination_limit)
+            .offset(pagination_offset)
         )
 
         # Step 5: Execute queries

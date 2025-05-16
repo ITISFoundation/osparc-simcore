@@ -37,6 +37,8 @@
         "creationDate": "2023-10-26T14:13:08.013Z",
         "lastChangeDate": "2023-10-26T14:13:08.013Z",
         "workspaceId": 3,
+        "type": "STANDARD",
+        "templateType": null,
         "folderId": 2,
         "trashedAt": null,
         "trashedBy": null,

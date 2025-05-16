@@ -3,7 +3,7 @@ Models a study's project document
 """
 
 from datetime import datetime
-from enum import Enum
+from enum import Enum, auto
 from typing import Annotated, Any, Final, TypeAlias
 from uuid import UUID
 
@@ -25,6 +25,7 @@ from .utils.common_validators import (
     empty_str_to_none_pre_validator,
     none_to_empty_str_pre_validator,
 )
+from .utils.enums import StrAutoEnum
 
 ProjectID: TypeAlias = UUID
 CommitID: TypeAlias = int
@@ -50,6 +51,12 @@ class DateTimeStr(ConstrainedStr):
 class ProjectType(str, Enum):
     TEMPLATE = "TEMPLATE"
     STANDARD = "STANDARD"
+
+
+class ProjectTemplateType(StrAutoEnum):
+    TEMPLATE = auto()
+    TUTORIAL = auto()
+    HYPERTOOL = auto()
 
 
 class BaseProjectModel(BaseModel):
@@ -108,6 +115,12 @@ class ProjectAtDB(BaseProjectModel):
     project_type: Annotated[
         ProjectType, Field(alias="type", description="The project type")
     ]
+    template_type: Annotated[
+        ProjectTemplateType | None,
+        Field(
+            examples=["TEMPLATE", "TUTORIAL", "HYPERTOOL", None],
+        ),
+    ]
 
     prj_owner: Annotated[int | None, Field(description="The project owner id")]
 
@@ -164,6 +177,22 @@ class Project(BaseProjectModel):
 
     # Project state (SEE projects_state.py)
     state: ProjectState | None = None
+
+    # Type of project
+    type: Annotated[
+        ProjectType,
+        Field(
+            description="The project type",
+            examples=["TEMPLATE", "STANDARD"],
+        ),
+    ]
+    template_type: Annotated[
+        ProjectTemplateType | None,
+        Field(
+            alias="templateType",
+            examples=["TEMPLATE", "TUTORIAL", "HYPERTOOL", None],
+        ),
+    ]
 
     # UI front-end fields (SEE projects_ui.py)
     ui: dict[str, Any] | None = None

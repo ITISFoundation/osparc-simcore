@@ -44,7 +44,12 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
     latestPromise
       .then(latestResourceData => {
-        this.__resourceData = latestResourceData;
+        if (!latestResourceData) {
+          const msg = this.tr("Data not found, please try again");
+          osparc.FlashMessenger.logAs(msg, "WARNING");
+          return;
+        }
+        this.__resourceData = osparc.utils.Utils.deepCloneObject(latestResourceData);
         this.__resourceData["resourceType"] = resourceData["resourceType"];
         switch (resourceData["resourceType"]) {
           case "study":

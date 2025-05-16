@@ -19,8 +19,11 @@
 qx.Class.define("osparc.jobs.RunsTableModel", {
   extend: qx.ui.table.model.Remote,
 
-  construct: function() {
+  construct: function(latestOnly = true, projectUuid = null) {
     this.base(arguments);
+
+    this.__latestOnly = latestOnly;
+    this.__projectUuid = projectUuid;
 
     const jobsCols = osparc.jobs.RunsTable.COLS;
     const colLabels = Object.values(jobsCols).map(col => col.label);
@@ -60,7 +63,13 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
       const offset = 0;
       const limit = 1;
       const resolveWResponse = true;
-      osparc.store.Jobs.getInstance().fetchJobsActive(offset, limit, JSON.stringify(this.getOrderBy()), resolveWResponse)
+      let promise;
+      if (this.__latestOnly && this.__projectUuid === null) {
+        promise = osparc.store.Jobs.getInstance().fetchJobsActive(offset, limit, JSON.stringify(this.getOrderBy()), resolveWResponse);
+      } else {
+        promise = osparc.store.Jobs.getInstance().fetchJobsHistory(this.__projectUuid, offset, limit, JSON.stringify(this.getOrderBy()), resolveWResponse);
+      }
+      promise
         .then(resp => {
           this._onRowCountLoaded(resp["_meta"].total)
         })
@@ -76,7 +85,13 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
       const lastRow = Math.min(qxLastRow, this._rowCount - 1);
       // Returns a request promise with given offset and limit
       const getFetchPromise = (offset, limit) => {
-        return osparc.store.Jobs.getInstance().fetchJobsActive(offset, limit, JSON.stringify(this.getOrderBy()))
+        let promise;
+        if (this.__latestOnly && this.__projectUuid === null) {
+          promise = osparc.store.Jobs.getInstance().fetchJobsActive(offset, limit, JSON.stringify(this.getOrderBy()));
+        } else {
+          promise = osparc.store.Jobs.getInstance().fetchJobsHistory(this.__projectUuid, offset, limit, JSON.stringify(this.getOrderBy()));
+        }
+        return promise
           .then(jobs => {
             const data = [];
             const jobsCols = osparc.jobs.RunsTable.COLS;

@@ -13,7 +13,7 @@ from typing import NamedTuple
 from aiohttp import web
 from common_library.json_serialization import json_loads
 from models_library.api_schemas_webserver.projects_ui import StudyUI
-from models_library.projects import DateTimeStr, Project, ProjectID
+from models_library.projects import DateTimeStr, Project, ProjectID, ProjectType
 from models_library.projects_access import AccessRights, GroupIDStr
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import DownloadLink, NodeID, PortLink
@@ -95,6 +95,8 @@ def _create_project(
     return Project(
         uuid=project_id,
         name=name,
+        type=ProjectType.STANDARD,
+        template_type=None,
         description=description,
         thumbnail=thumbnail,
         prj_owner=owner.email,
@@ -202,6 +204,9 @@ async def _add_new_project(
     project_in: dict = json_loads(
         project.model_dump_json(exclude_none=True, by_alias=True)
     )
+    # NOTE: Because of legacy reasons I do not want to remove the exclude_none=True from line above
+    #       so I need to set the templateType here if it was removed.
+    project_in["templateType"] = project_in.get("templateType")
 
     # update metadata (uuid, timestamps, ownership) and save
     _project_db: dict = await db.insert_project(
