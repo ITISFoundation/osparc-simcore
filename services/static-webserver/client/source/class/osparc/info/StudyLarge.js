@@ -57,6 +57,47 @@ qx.Class.define("osparc.info.StudyLarge", {
 
       const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
 
+      if (this.getStudy().getTemplateType() && osparc.data.Permissions.getInstance().isTester()) {
+        // let testers change the template type
+        const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+          alignY: "middle",
+        }));
+        hBox.add(new qx.ui.basic.Label(this.tr("Template Type:")));
+        const templateTypeSB = osparc.study.Utils.createTemplateTypeSB();
+        hBox.add(templateTypeSB);
+        const saveBtn = new osparc.ui.form.FetchButton(this.tr("Save")).set({
+          enabled: false,
+          allowGrowX: false,
+        });
+        hBox.add(saveBtn);
+        vBox.add(hBox);
+
+        templateTypeSB.addListener("changeSelection", e => {
+          const selected = e.getData()[0];
+          if (selected) {
+            const templateType = selected.getModel();
+            saveBtn.setEnabled(this.getStudy().getTemplateType() !== templateType);
+          }
+        }, this);
+
+        templateTypeSB.getSelectables().forEach(selectable => {
+          if (selectable.getModel() === this.getStudy().getTemplateType()) {
+            templateTypeSB.setSelection([selectable]);
+          }
+        });
+
+        saveBtn.addListener("execute", () => {
+          const selected = templateTypeSB.getSelection()[0];
+          if (selected) {
+            saveBtn.setFetching(true);
+            const templateType = selected.getModel();
+            osparc.store.Study.patchTemplateType(this.getStudy().getUuid(), templateType)
+              .then(() => osparc.FlashMessenger.logAs(this.tr("Template type updated, please reload"), "INFO"))
+              .finally(() => saveBtn.setFetching(false));
+          }
+        }, this);
+      }
+
       const infoElements = this.__infoElements();
       const infoLayout = osparc.info.StudyUtils.infoElementsToLayout(infoElements);
       vBox.add(infoLayout);
