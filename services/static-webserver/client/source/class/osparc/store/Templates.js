@@ -83,6 +83,10 @@ qx.Class.define("osparc.store.Templates", {
       const params = {
         url: {
           "templateType": osparc.data.model.StudyUI.TUTORIAL_TYPE,
+          "orderBy": JSON.stringify({
+            field: "last_change_date",
+            direction: "desc"
+          }),
         }
       };
       return osparc.data.Resources.getInstance().getAllPages("templates", params, "getPageFilteredSorted");
@@ -92,6 +96,10 @@ qx.Class.define("osparc.store.Templates", {
       const params = {
         url: {
           "templateType": osparc.data.model.StudyUI.HYPERTOOL_TYPE,
+          "orderBy": JSON.stringify({
+            field: "last_change_date",
+            direction: "desc"
+          }),
         }
       };
       return osparc.data.Resources.getInstance().getAllPages("templates", params, "getPageFilteredSorted");
