@@ -1,0 +1,288 @@
+import asyncio
+import logging
+from datetime import timedelta
+from typing import Annotated, Any, Final, TypeVar
+from uuid import uuid4
+
+from pydantic import ConfigDict, Field, NonNegativeInt, validate_call
+from settings_library.rabbit import RabbitSettings
+from settings_library.redis import RedisSettings
+
+from ._errors import (
+    FinishedWithError,
+    NoMoreRetryAttemptsError,
+    TimedOutError,
+    UnexpectedResultTypeError,
+    UnexpectedStatusError,
+)
+from ._models import (
+    CorrelationID,
+    JobStatus,
+    JobUniqueId,
+    LongRunningNamespace,
+    RemoteHandlerName,
+    ResultModel,
+    ScheduleModel,
+    StartParams,
+    UniqueIdModel,
+)
+from ._redis import ClientStoreInterface
+from ._rpc.client import ClientRPCInterface
+
+_logger = logging.getLogger(__name__)
+
+_UNIQUE_CORRELATION_ID: Final[CorrelationID] = "UNIQUE"
+_SLEEP_BEFORE_RETRY: Final[timedelta] = timedelta(seconds=1)
+_STATUS_POLL_RATE: Final[timedelta] = timedelta(seconds=1)
+
+ResultType = TypeVar("ResultType")
+
+
+def _get_correlation_id(*, is_unique: bool) -> CorrelationID:
+    return _UNIQUE_CORRELATION_ID if is_unique else f"{uuid4()}"
+
+
+class Client:
+    def __init__(
+        self,
+        rabbit_settings: RabbitSettings,
+        redis_settings: RedisSettings,
+        long_running_namespace: LongRunningNamespace,
+    ) -> None:
+        self._rpc_interface = ClientRPCInterface(
+            rabbit_settings, long_running_namespace
+        )
+        self._store_interface = ClientStoreInterface(
+            redis_settings, long_running_namespace
+        )
+
+    async def setup(self) -> None:
+        await self._store_interface.setup()
+        await self._rpc_interface.setup()
+
+    async def teardown(self) -> None:
+        await self._rpc_interface.teardown()
+        await self._store_interface.teardown()
+
+    async def _track_job_if_not_tracked(
+        self,
+        name: RemoteHandlerName,
+        unique_id: JobUniqueId,
+        correlation_id: CorrelationID,
+        params: StartParams,
+        retry_count: NonNegativeInt,
+        timeout: timedelta,  # noqa: ASYNC109
+    ) -> None:
+        # keep track of the job clinet side
+        schedule_data = await self._store_interface.get(unique_id)
+        if schedule_data is None:
+            await self._store_interface.set(
+                unique_id,
+                ScheduleModel(
+                    name=name,
+                    correlation_id=correlation_id,
+                    params=params,
+                    remaining_attempts=retry_count,
+                ),
+                expire=timeout,
+            )
+
+    async def _decrease_remaining_attempts_or_raise(
+        self,
+        unique_id: JobUniqueId,
+        retry_count: NonNegativeInt,
+        last_result: ResultModel | None,
+    ) -> None:
+        async with self._store_interface.auto_save_get(unique_id) as schedule_data:
+            schedule_data.remaining_attempts -= 1
+
+        # are there any attempts left?
+        if (await self._store_interface.get_existing(unique_id)).remaining_attempts < 0:
+            remaining_attempts = await self._format_remaining_attempts(
+                unique_id, retry_count
+            )
+            # report remote error if there is one
+            if last_result and last_result.error is not None:
+                _logger.warning(
+                    "unique_id='%s', finished with error from remote: %s='%s'\n%s",
+                    unique_id,
+                    last_result.error.error_type,
+                    last_result.error.error_message,
+                    last_result.error.traceback,
+                )
+                raise FinishedWithError(
+                    unique_id=unique_id,
+                    error=last_result.error.error_type,
+                    message=last_result.error.error_message,
+                    traceback=last_result.error.traceback,
+                )
+
+            raise NoMoreRetryAttemptsError(
+                unique_id=unique_id,
+                retry_count=retry_count,
+                remaining_attempts=remaining_attempts,
+                last_result=last_result,
+            )
+
+    async def _start_job_if_missing(
+        self,
+        name: RemoteHandlerName,
+        unique_id: JobUniqueId,
+        params: StartParams,
+        timeout: timedelta,  # noqa: ASYNC109
+    ) -> None:
+        # if job is missing on server side start it
+        if await self._rpc_interface.get_status(unique_id) == JobStatus.NOT_FOUND:
+            await self._rpc_interface.start(name, unique_id, timeout=timeout, **params)
+            await self._store_interface.update_entry_expiry(unique_id, expire=timeout)
+
+    async def _format_remaining_attempts(
+        self, unique_id: JobUniqueId, retry_count: NonNegativeInt
+    ) -> str:
+        """returns a string in the follwoing format `[{remaining}/{total}]`"""
+        schedule_data = await self._store_interface.get(unique_id)
+        attempt = (
+            "unknown"
+            if schedule_data is None
+            else retry_count - schedule_data.remaining_attempts
+        )
+        return f"[{attempt}/{retry_count}]"
+
+    async def _poll_for_result(
+        self,
+        *,
+        name: RemoteHandlerName,
+        correlation_id: CorrelationID,
+        unique_id: JobUniqueId,
+        retry_count: NonNegativeInt,
+        timeout: timedelta,  # noqa: ASYNC109
+        params: StartParams,
+    ) -> ResultModel:
+        not_completed: bool = True
+
+        last_result: ResultModel | None = None
+        while not_completed:
+            await self._track_job_if_not_tracked(
+                name, unique_id, correlation_id, params, retry_count, timeout
+            )
+
+            await self._decrease_remaining_attempts_or_raise(
+                unique_id, retry_count, last_result
+            )
+
+            await self._start_job_if_missing(name, unique_id, params, timeout)
+
+            # check if job is present on server side, if not wait a bit before retrying
+            status = await self._rpc_interface.get_status(unique_id)
+            if status == JobStatus.NOT_FOUND:
+                _logger.debug(
+                    "'%s' could not be found on remote, waiting %s before retrying",
+                    unique_id,
+                    _SLEEP_BEFORE_RETRY,
+                )
+                await asyncio.sleep(_SLEEP_BEFORE_RETRY.total_seconds())
+                continue  # tries again if there any attempts left
+
+            # wait until it's done
+            sleep_for = _STATUS_POLL_RATE.total_seconds()
+            while status == JobStatus.RUNNING:
+                await asyncio.sleep(sleep_for)
+                status = await self._rpc_interface.get_status(unique_id)
+
+            if status == JobStatus.NOT_FOUND:
+                raise UnexpectedStatusError(status=status, unique_id=unique_id)
+
+            if status == JobStatus.FINISHED:
+                result: ResultModel = await self._rpc_interface.get_result(unique_id)
+                last_result = result
+
+                if result.error is not None:
+                    _logger.debug(
+                        "'%s' '%s' ended with error='%s'", name, unique_id, result.error
+                    )
+                    await asyncio.sleep(_SLEEP_BEFORE_RETRY.total_seconds())
+                    continue  # tries again if there any attempts left
+
+                break  # successful resul found
+        assert result is not None  # nosec
+        return result
+
+    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
+    async def ensure_result(
+        self,
+        name: RemoteHandlerName,
+        *,
+        expected_type: type[ResultType],
+        timeout: timedelta,  # noqa: ASYNC109
+        is_unique: bool = False,
+        retry_count: Annotated[NonNegativeInt, Field(gt=0)] = 3,
+        **params: Any,
+    ) -> ResultType:
+        """Involes a remote handler and waits for the result.
+
+        Arguments:
+            name -- handler to invoke on remote
+            expected_type -- expected type of the result
+            timeout -- maximum time to wait for the result
+
+        Keyword Arguments:
+            is_unique -- only one instance of the remote handler can exsist at any given time (default: {False})
+            retry_count -- how many times to retry execution before giving up (default: {3})
+
+        Raises:
+            UnexpectedResultTypeError: wrong result type
+            TimedOutError: did not finish in time
+            AlreadyStartedError: a handler marked as unique with the same params is already running
+            NoMoreRetryAttemptsError: no more retry attempts left and still raised an error
+            FinishedWithError: handler on remove finised with an error
+
+        Returns:
+            the resturn value of the handler invoked remotley
+        """
+
+        correlation_id = _get_correlation_id(is_unique=is_unique)
+        unique_id = UniqueIdModel(
+            name=name, correlation_id=correlation_id, params=params
+        ).unique_id
+
+        try:
+            result = await asyncio.wait_for(
+                self._poll_for_result(
+                    name=name,
+                    correlation_id=correlation_id,
+                    unique_id=unique_id,
+                    retry_count=retry_count,
+                    timeout=timeout,
+                    params=params,
+                ),
+                timeout=timeout.total_seconds(),
+            )
+
+            result_type = type(result.data)
+            if result_type is not expected_type:
+                raise UnexpectedResultTypeError(
+                    result=result, result_type=result_type, expected_type=expected_type
+                )
+
+            assert type(result.data) is expected_type  # nosec
+            return result.data
+        except TimeoutError as e:
+            remaining_attempts = await self._format_remaining_attempts(
+                unique_id, retry_count
+            )
+            raise TimedOutError(
+                unique_id=unique_id,
+                timeout=timeout,
+                remaining_attempts=remaining_attempts,
+            ) from e
+        finally:
+            # NOTE this is also ran when this function is cancelled
+
+            # when completed remove the task form memory both on the server and the client
+            # NOTE: unsure if these should be caught and ignored. In the case we decide to
+            # catch them there should be some automatic cleanup in case they are forgotten
+
+            # remove from remote executor
+            await self._rpc_interface.remove(unique_id)
+            # remove from distributed storage (redis)
+            await self._store_interface.remove(unique_id)
