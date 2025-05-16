@@ -58,15 +58,6 @@ class SolverFunctionToRegister(SolverFunction, InputSchema): ...
 class ProjectFunctionToRegister(ProjectFunction, InputSchema): ...
 
 
-# class ProjectFunctionToRegister(InputSchema):
-#     title: str = ""
-#     description: str = ""
-#     input_schema: FunctionInputSchema
-#     output_schema: FunctionOutputSchema
-#     default_inputs: FunctionInputs
-#     function_class: Literal[FunctionClass.PROJECT] = FunctionClass.PROJECT
-#     project_id: ProjectID
-
 FunctionToRegister: TypeAlias = Annotated[
     ProjectFunctionToRegister | SolverFunctionToRegister,
     Field(discriminator="function_class"),
