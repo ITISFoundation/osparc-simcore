@@ -32,7 +32,9 @@ from pytest_mock import MockType
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 
 assert ServiceListFilters.model_json_schema()["properties"].keys() == {
-    "service_type"
+    "service_type",
+    "service_key_pattern",
+    "version_display_pattern",
 }, (
     "ServiceListFilters is expected to only have the key 'service_type'. "
     "Please update the mock if the schema changes."
