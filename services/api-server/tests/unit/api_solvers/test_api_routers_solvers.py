@@ -6,64 +6,84 @@
 
 
 import httpx
-import pytest
-import simcore_service_api_server.api.routes.solvers
+from api_solvers.conftest import solver_version
 from pydantic import TypeAdapter
-from pytest_mock import MockFixture
+from pytest_mock import MockType
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.pagination import OnePage
 from simcore_service_api_server.models.schemas.solvers import Solver, SolverPort
 from starlette import status
 
 
-@pytest.mark.skip(reason="Still under development. Currently using fake implementation")
-async def test_list_solvers(
+async def test_list_all_solvers(
+    mocked_catalog_rpc_api: dict[str, MockType],
     client: httpx.AsyncClient,
-    mocker: MockFixture,
+    auth: httpx.BasicAuth,
 ):
-    warn = mocker.patch.object(
-        simcore_service_api_server.api.routes.solvers._logger, "warning"
+    response = await client.get(f"/{API_VTAG}/solvers", auth=auth)
+    assert response.status_code == status.HTTP_200_OK
+
+
+async def test_list_all_solvers_paginated(
+    mocked_catalog_rpc_api: dict[str, MockType],
+    client: httpx.AsyncClient,
+    auth: httpx.BasicAuth,
+):
+    response = await client.get(f"/{API_VTAG}/solvers/page", auth=auth)
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.json()["items"]) == response.json()["total"]
+
+
+async def test_list_all_solvers_releases(
+    mocked_catalog_rpc_api: dict[str, MockType],
+    client: httpx.AsyncClient,
+    auth: httpx.BasicAuth,
+):
+    response = await client.get(f"/{API_VTAG}/solvers/releases", auth=auth)
+    assert response.status_code == status.HTTP_200_OK
+
+
+async def test_list_all_solvers_releases_paginated(
+    mocked_catalog_rpc_api: dict[str, MockType],
+    client: httpx.AsyncClient,
+    auth: httpx.BasicAuth,
+):
+    solver_key = "simcore/services/comp/itis/sleeper"
+    response = await client.get(
+        f"/{API_VTAG}/solvers/{solver_key}/releases/page", auth=auth
     )
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.json()["items"]) == response.json()["total"]
 
-    # list solvers latest releases
-    resp = await client.get("/v0/solvers")
-    assert resp.status_code == status.HTTP_200_OK
 
-    # No warnings for ValidationError with the fixture
-    assert (
-        not warn.called
-    ), f"No warnings expected in this fixture, got {warn.call_args!s}"
+async def test_list_solver_releases(
+    mocked_catalog_rpc_api: dict[str, MockType],
+    client: httpx.AsyncClient,
+    auth: httpx.BasicAuth,
+):
+    solver_key = "simcore/services/comp/itis/sleeper"
+    response = await client.get(f"/{API_VTAG}/solvers/{solver_key}/releases", auth=auth)
+    assert response.status_code == status.HTTP_200_OK
 
-    data = resp.json()
-    assert len(data) == 2
 
-    for item in data:
-        solver = Solver(**item)
-        print(solver.model_dump_json(indent=1, exclude_unset=True))
+async def test_get_solver_release(
+    mocked_catalog_rpc_api: dict[str, MockType],
+    client: httpx.AsyncClient,
+    auth: httpx.BasicAuth,
+):
+    solver_key = "simcore/services/comp/itis/sleeper"
+    solver_version = "2.2.1"
+    response = await client.get(
+        f"/{API_VTAG}/solvers/{solver_key}/releases/{solver_version}", auth=auth
+    )
+    assert response.status_code == status.HTTP_200_OK
 
-        # use link to get the same solver
-        assert solver.url
-        assert solver.url.host == "api.testserver.io"  # cli.base_url
-        assert solver.url.path
-
-        # get_solver_latest_version_by_name
-        resp0 = await client.get(solver.url.path)
-        assert resp0.status_code == status.HTTP_501_NOT_IMPLEMENTED
-        assert f"GET solver {solver.id}" in resp0.json()["errors"][0]
-        # get_solver
-        resp1 = await client.get(f"/v0/solvers/{solver.id}")
-        assert resp1.status_code == status.HTTP_501_NOT_IMPLEMENTED
-        assert f"GET solver {solver.id}" in resp1.json()["errors"][0]
-
-        # get_solver_latest_version_by_name
-        resp2 = await client.get(f"/v0/solvers/{solver.id}/latest")
-
-        assert resp2.status_code == status.HTTP_501_NOT_IMPLEMENTED
-        assert f"GET latest {solver.id}" in resp2.json()["errors"][0]
+    solver = Solver.model_validate(response.json())
+    assert solver.version_display == "2 Xtreme"
 
 
 async def test_list_solver_ports(
-    mocked_catalog_rpc_api: dict,
+    mocked_catalog_rpc_api: dict[str, MockType],
     client: httpx.AsyncClient,
     auth: httpx.BasicAuth,
 ):
@@ -100,60 +120,9 @@ async def test_list_solver_ports(
     }
 
 
-async def test_list_solvers_with_mocked_catalog(
+async def test_list_solver_ports_again(
+    mocked_catalog_rpc_api: dict[str, MockType],
     client: httpx.AsyncClient,
-    mocked_catalog_rpc_api: dict,
-    auth: httpx.BasicAuth,
-):
-    response = await client.get(f"/{API_VTAG}/solvers", auth=auth)
-    assert response.status_code == status.HTTP_200_OK
-
-
-async def test_list_releases_with_mocked_catalog(
-    client: httpx.AsyncClient,
-    mocked_catalog_rpc_api: dict,
-    auth: httpx.BasicAuth,
-):
-    response = await client.get(f"/{API_VTAG}/solvers/releases", auth=auth)
-    assert response.status_code == status.HTTP_200_OK
-
-
-async def test_list_solver_page_with_mocked_catalog(
-    client: httpx.AsyncClient,
-    mocked_catalog_rpc_api: dict,
-    auth: httpx.BasicAuth,
-):
-    response = await client.get(f"/{API_VTAG}/solvers/page", auth=auth)
-    assert response.status_code == status.HTTP_200_OK
-    assert len(response.json()["items"]) == response.json()["total"]
-
-
-async def test_list_solver_releases_page_with_mocked_catalog(
-    client: httpx.AsyncClient,
-    mocked_catalog_rpc_api: dict,
-    auth: httpx.BasicAuth,
-):
-    solver_key = "simcore/services/comp/itis/sleeper"
-    response = await client.get(
-        f"/{API_VTAG}/solvers/{solver_key}/releases/page", auth=auth
-    )
-    assert response.status_code == status.HTTP_200_OK
-    assert len(response.json()["items"]) == response.json()["total"]
-
-
-async def test_list_solver_releases_with_mocked_catalog(
-    client: httpx.AsyncClient,
-    mocked_catalog_rpc_api: dict,
-    auth: httpx.BasicAuth,
-):
-    solver_key = "simcore/services/comp/itis/sleeper"
-    response = await client.get(f"/{API_VTAG}/solvers/{solver_key}/releases", auth=auth)
-    assert response.status_code == status.HTTP_200_OK
-
-
-async def test_list_solver_ports_with_mocked_catalog(
-    client: httpx.AsyncClient,
-    mocked_catalog_rpc_api: dict,
     auth: httpx.BasicAuth,
 ):
     solver_key = "simcore/services/comp/itis/sleeper"
