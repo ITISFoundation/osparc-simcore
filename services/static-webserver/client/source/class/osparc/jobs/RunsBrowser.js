@@ -60,11 +60,14 @@ qx.Class.define("osparc.jobs.RunsBrowser", {
             flex: 1
           });
           break;
-        case "runs-table":
-          control = new osparc.jobs.RunsTable();
+        case "runs-table": {
+          const latestOnly = true;
+          const projectUuid = null;
+          control = new osparc.jobs.RunsTable(latestOnly, projectUuid);
           control.addListener("runSelected", e => this.fireDataEvent("runSelected", e.getData()));
           this._add(control);
           break;
+        }
       }
 
       return control || this.base(arguments, id);
