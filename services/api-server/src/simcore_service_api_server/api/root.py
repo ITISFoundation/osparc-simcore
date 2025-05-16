@@ -15,7 +15,7 @@ from .routes import (
     programs,
     solvers,
     solvers_jobs,
-    solvers_jobs_getters,
+    solvers_jobs_read,
     studies,
     studies_jobs,
     users,
@@ -43,7 +43,7 @@ def create_router(settings: ApplicationSettings):
     router.include_router(solvers.router, tags=["solvers"], prefix=_SOLVERS_PREFIX)
     router.include_router(solvers_jobs.router, tags=["solvers"], prefix=_SOLVERS_PREFIX)
     router.include_router(
-        solvers_jobs_getters.router, tags=["solvers"], prefix=_SOLVERS_PREFIX
+        solvers_jobs_read.router, tags=["solvers"], prefix=_SOLVERS_PREFIX
     )
     router.include_router(studies.router, tags=["studies"], prefix="/studies")
     router.include_router(studies_jobs.router, tags=["studies"], prefix="/studies")
