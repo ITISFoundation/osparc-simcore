@@ -15,7 +15,7 @@ pytest_simcore_core_services_selection = [
 ]
 
 
-def test_scheduler(dask_client: distributed.Client) -> None:
+def test_task_state_lifecycle(dask_client: distributed.Client) -> None:
     def _some_task() -> int:
         time.sleep(1)
         return 2

@@ -506,7 +506,7 @@ async def log_rabbit_client_parser(
             ready_event.set()
 
             # Wait until the test is done
-            while not shutdown_event.is_set():
+            while not shutdown_event.is_set():  # noqa: ASYNC110
                 await asyncio.sleep(0.1)
 
             # Cleanup
