@@ -19,9 +19,11 @@ from ...models.pagination import OnePage, Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.model_adapter import ServicePricingPlanGetLegacy
 from ...models.schemas.solvers import Solver, SolverKeyId, SolverPort
+from ...models.schemas.solvers_filters import SolversListFilters
 from ...services_rpc.catalog import CatalogService
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
+from ..dependencies.models_schemas_solvers_filters import get_solvers_filters
 from ..dependencies.services import get_catalog_service, get_solver_service
 from ..dependencies.webserver_http import AuthSession, get_webserver_session
 from ._constants import (
@@ -90,11 +92,14 @@ async def list_solvers(
 async def get_solvers_page(
     page_params: Annotated[PaginationParams, Depends()],
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
+    filters: Annotated[SolversListFilters, Depends(get_solvers_filters)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
     solvers, page_meta = await solver_service.latest_solvers(
-        offset=page_params.offset,
-        limit=page_params.limit,
+        pagination_offset=page_params.offset,
+        pagination_limit=page_params.limit,
+        filter_by_solver_id=filters.solver_id,
+        filter_by_version_display=filters.version_display,
     )
 
     for solver in solvers:
@@ -129,8 +134,8 @@ async def list_solvers_releases(
     latest_solvers: list[Solver] = []
     for page_params in iter_pagination_params(limit=DEFAULT_PAGINATION_LIMIT):
         solvers, page_meta = await solver_service.latest_solvers(
-            offset=page_params.offset,
-            limit=page_params.limit,
+            pagination_offset=page_params.offset,
+            pagination_limit=page_params.limit,
         )
         page_params.total_number_of_items = page_meta.total
         latest_solvers.extend(solvers)
