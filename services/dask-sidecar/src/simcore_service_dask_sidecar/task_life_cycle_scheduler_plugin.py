@@ -36,16 +36,16 @@ class TaskLifecycleSchedulerPlugin(SchedulerPlugin):
         stimulus_id: str,
         **kwargs: Any,
     ):
-        # Start state: one of released, waiting, processing, memory, error
         with log_context(
             _logger,
             logging.INFO,
-            f"Task {key} transition from {start} to {finish} due to {stimulus_id=}",
+            f"Task {key!r} transition from {start} to {finish} due to {stimulus_id=}",
         ):
             assert self.scheduler  # nosec
+
             self.scheduler.log_event(
                 TASK_LIFE_CYCLE_EVENT.format(key=key),
                 TaskLifeCycleState.from_scheduler_task_state(
                     key, kwargs.get("worker"), finish
-                ).model_dump(),
+                ).model_dump(mode="json"),
             )
