@@ -17,6 +17,9 @@ from models_library.workspaces import WorkspaceID, WorkspaceQuery, WorkspaceScop
 from pydantic import NonNegativeInt
 from servicelib.utils import logged_gather
 from simcore_postgres_database.models.projects import ProjectType
+from simcore_postgres_database.webserver_models import (
+    ProjectTemplateType as ProjectTemplateTypeDB,
+)
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
 from ..catalog import catalog_service
@@ -149,7 +152,7 @@ async def list_projects(  # pylint: disable=too-many-arguments
         ),
         # attrs
         filter_by_project_type=ProjectTypeAPI.to_project_type_db(project_type),
-        filter_by_template_type=template_type,
+        filter_by_template_type=ProjectTemplateTypeDB(template_type),
         filter_by_services=user_available_services,
         filter_trashed=trashed,
         filter_hidden=show_hidden,

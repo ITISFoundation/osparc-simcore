@@ -104,6 +104,7 @@ async def _list_root_child_projects(
             show_hidden=False,
             workspace_id=workspace_id,
             project_type=ProjectTypeAPI.all,
+            template_type=None,
             folder_id=None,
             trashed=None,
             offset=page_params.offset,

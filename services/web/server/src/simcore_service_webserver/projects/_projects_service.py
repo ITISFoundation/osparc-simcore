@@ -333,7 +333,7 @@ async def patch_project(
     if new_template_type := patch_project_data.get("template_type"):
         # 4.1 Check if user is a tester
         current_user: dict = await get_user(app, user_id)
-        if not UserRole(current_user["role"]) >= UserRole.TESTER:
+        if UserRole(current_user["role"]) < UserRole.TESTER:
             raise InsufficientRoleForProjectTemplateTypeUpdateError
         # 4.2 Check the compatibility of the template type with the project
         if project_db.type == ProjectType.STANDARD and new_template_type is not None:

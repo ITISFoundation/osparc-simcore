@@ -27,6 +27,7 @@ from ...workspaces.errors import WorkspaceAccessForbiddenError, WorkspaceNotFoun
 from ..exceptions import (
     ClustersKeeperNotAvailableError,
     DefaultPricingUnitNotFoundError,
+    InsufficientRoleForProjectTemplateTypeUpdateError,
     NodeNotFoundError,
     ParentNodeNotFoundError,
     ProjectDeleteError,
@@ -40,6 +41,7 @@ from ..exceptions import (
     ProjectOwnerNotFoundInTheProjectAccessRightsError,
     ProjectStartsTooManyDynamicNodesError,
     ProjectTooManyProjectOpenedError,
+    ProjectTypeAndTemplateIncompatibilityError,
     ProjectWalletPendingTransactionError,
     WrongTagIdsInQueryError,
 )
@@ -88,6 +90,10 @@ _PROJECT_ERRORS: ExceptionToHttpErrorMap = {
         status.HTTP_403_FORBIDDEN,
         "Do not have sufficient access rights on project {project_uuid} for this action",
     ),
+    InsufficientRoleForProjectTemplateTypeUpdateError: HttpErrorInfo(
+        status.HTTP_403_FORBIDDEN,
+        "Do not have sufficient access rights on updating project template type",
+    ),
     ProjectInvalidUsageError: HttpErrorInfo(
         status.HTTP_422_UNPROCESSABLE_ENTITY,
         "Invalid usage for project",
@@ -123,6 +129,10 @@ _PROJECT_ERRORS: ExceptionToHttpErrorMap = {
     WrongTagIdsInQueryError: HttpErrorInfo(
         status.HTTP_400_BAD_REQUEST,
         "Wrong tag IDs in query",
+    ),
+    ProjectTypeAndTemplateIncompatibilityError: HttpErrorInfo(
+        status.HTTP_400_BAD_REQUEST,
+        "Wrong project type and template type combination: {reason}",
     ),
 }
 
