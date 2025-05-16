@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 from aiohttp import web
+from models_library.api_schemas_directorv2.comp_runs import ComputationRunRpcGet
 from models_library.computations import (
     ComputationRunWithAttributes,
     ComputationTaskWithAttributes,
@@ -8,11 +9,18 @@ from models_library.computations import (
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy
+from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from pydantic import NonNegativeInt
+from servicelib.rabbitmq import (
+    RabbitMQRPCClient,
+)
 from servicelib.rabbitmq.rpc_interfaces.director_v2 import computations
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import (
     credit_transactions,
+)
+from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
+    CreditTransactionNotFoundError,
 )
 from servicelib.utils import limited_gather
 
@@ -26,6 +34,37 @@ from ..projects.projects_metadata_service import (
     get_project_custom_metadata_or_empty_dict,
 )
 from ..rabbitmq import get_rabbitmq_rpc_client
+
+
+async def _get_projects_metadata(
+    app: web.Application,
+    project_uuids: list[ProjectID],
+) -> list[dict]:
+    """Batch fetch project metadata with concurrency control"""
+    # NOTE: MD: can be improved with a single batch call
+    return await limited_gather(
+        *[
+            get_project_custom_metadata_or_empty_dict(app, project_uuid=uuid)
+            for uuid in project_uuids
+        ],
+        limit=20,
+    )
+
+
+async def _get_root_project_names(
+    app: web.Application, items: list[ComputationRunRpcGet]
+) -> list[str]:
+    """Resolve root project names from computation items"""
+    root_uuids: list[ProjectID] = []
+    for item in items:
+        if root_id := item.info.get("project_metadata", {}).get(
+            "root_parent_project_id"
+        ):
+            root_uuids.append(ProjectID(root_id))
+        else:
+            root_uuids.append(item.project_uuid)
+
+    return await batch_get_project_name(app, projects_uuids=root_uuids)
 
 
 async def list_computations_latest_iteration(
@@ -52,32 +91,12 @@ async def list_computations_latest_iteration(
         order_by=order_by,
     )
 
-    # Get projects metadata (NOTE: MD: can be improved with a single batch call)
-    _projects_metadata = await limited_gather(
-        *[
-            get_project_custom_metadata_or_empty_dict(
-                app, project_uuid=item.project_uuid
-            )
-            for item in _runs_get.items
-        ],
-        limit=20,
+    # Get projects metadata
+    _projects_metadata = await _get_projects_metadata(
+        app, project_uuids=[item.project_uuid for item in _runs_get.items]
     )
-
     # Get Root project names
-    _projects_root_uuids: list[ProjectID] = []
-    for item in _runs_get.items:
-        if (
-            prj_root_id := item.info.get("project_metadata", {}).get(
-                "root_parent_project_id", None
-            )
-        ) is not None:
-            _projects_root_uuids.append(ProjectID(prj_root_id))
-        else:
-            _projects_root_uuids.append(item.project_uuid)
-
-    _projects_root_names = await batch_get_project_name(
-        app, projects_uuids=_projects_root_uuids
-    )
+    _projects_root_names = await _get_root_project_names(app, _runs_get.items)
 
     _computational_runs_output = [
         ComputationRunWithAttributes(
@@ -97,6 +116,67 @@ async def list_computations_latest_iteration(
     ]
 
     return _runs_get.total, _computational_runs_output
+
+
+async def list_computation_iterations(
+    app: web.Application,
+    product_name: ProductName,
+    user_id: UserID,
+    project_id: ProjectID,
+    # pagination
+    offset: int,
+    limit: NonNegativeInt,
+    # ordering
+    order_by: OrderBy,
+) -> tuple[int, list[ComputationRunWithAttributes]]:
+    """Returns the list of computations for a specific project (all iterations)"""
+    rpc_client = get_rabbitmq_rpc_client(app)
+    _runs_get = await computations.list_computations_iterations_page(
+        rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        project_id=project_id,
+        offset=offset,
+        limit=limit,
+        order_by=order_by,
+    )
+
+    # Get projects metadata
+    _projects_metadata = await _get_projects_metadata(app, project_uuids=[project_id])
+    assert len(_projects_metadata) == 1  # nosec
+    # Get Root project names
+    _projects_root_names = await _get_root_project_names(app, [_runs_get.items[0]])
+    assert len(_projects_root_names) == 1  # nosec
+
+    _computational_runs_output = [
+        ComputationRunWithAttributes(
+            project_uuid=item.project_uuid,
+            iteration=item.iteration,
+            state=item.state,
+            info=item.info,
+            submitted_at=item.submitted_at,
+            started_at=item.started_at,
+            ended_at=item.ended_at,
+            root_project_name=_projects_root_names[0],
+            project_custom_metadata=_projects_metadata[0],
+        )
+        for item in _runs_get.items
+    ]
+
+    return _runs_get.total, _computational_runs_output
+
+
+async def _get_credits_or_zero_by_service_run_id(
+    rpc_client: RabbitMQRPCClient, service_run_id: ServiceRunID
+) -> Decimal:
+    try:
+        return (
+            await credit_transactions.get_transaction_current_credits_by_service_run_id(
+                rpc_client, service_run_id=service_run_id
+            )
+        )
+    except CreditTransactionNotFoundError:
+        return Decimal(0)
 
 
 async def list_computations_latest_iteration_tasks(
@@ -138,7 +218,7 @@ async def list_computations_latest_iteration_tasks(
         # NOTE: MD: can be improved with a single batch call
         _service_run_osparc_credits = await limited_gather(
             *[
-                credit_transactions.get_transaction_current_credits_by_service_run_id(
+                _get_credits_or_zero_by_service_run_id(
                     rpc_client, service_run_id=_run_id
                 )
                 for _run_id in _service_run_ids

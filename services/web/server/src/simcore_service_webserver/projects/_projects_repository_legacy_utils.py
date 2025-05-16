@@ -9,7 +9,7 @@ from typing import Any, Literal, cast
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
-from models_library.projects import ProjectAtDB, ProjectID
+from models_library.projects import ProjectAtDB, ProjectID, ProjectTemplateType
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.users import UserID
@@ -36,7 +36,7 @@ from .utils import find_changed_node_keys, project_uses_available_services
 
 logger = logging.getLogger(__name__)
 
-DB_EXCLUSIVE_COLUMNS = ["type", "id", "published", "hidden"]
+DB_EXCLUSIVE_COLUMNS = ["id", "published", "hidden"]
 SCHEMA_NON_NULL_KEYS = ["thumbnail"]
 
 PermissionStr = Literal["read", "write", "delete"]
@@ -90,9 +90,13 @@ def convert_to_schema_names(
         converted_value = col_value
         if isinstance(col_value, datetime) and col_name not in {"trashed"}:
             converted_value = format_datetime(col_value)
-        elif col_name == "prj_owner":
+        if col_name == "prj_owner":
             # this entry has to be converted to the owner e-mail address
             converted_value = user_email
+        if col_name == "type" and isinstance(col_value, ProjectType):
+            converted_value = col_value.value
+        if col_name == "template_type" and isinstance(col_value, ProjectTemplateType):
+            converted_value = col_value.value
 
         if col_name in SCHEMA_NON_NULL_KEYS and col_value is None:
             converted_value = ""

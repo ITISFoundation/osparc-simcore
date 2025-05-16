@@ -86,7 +86,7 @@ JOBS_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     status_code=status.HTTP_201_CREATED,
     responses=JOBS_STATUS_CODES,
 )
-async def create_solver_job(
+async def create_solver_job(  # noqa: PLR0913
     solver_key: SolverKeyId,
     version: VersionStr,
     inputs: JobInputs,

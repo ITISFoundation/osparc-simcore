@@ -1,196 +1,200 @@
 [
- {
-  "name": "POST /projects",
-  "description": "<Request('POST', 'http://webserver:8080/v0/projects?hidden=false')>",
-  "method": "POST",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/projects",
-   "path_parameters": []
-  },
-  "query": "hidden=false",
-  "request_payload": {
-   "uuid": "a6677890-356b-4113-b26e-b77a748427f4",
-   "name": "programs/simcore%2Fservices%2Fdynamic%2Felectrode-selector/releases/2.1.3/jobs/a6677890-356b-4113-b26e-b77a748427f4",
-   "description": "Study associated to solver job:\n{\n  \"id\": \"a6677890-356b-4113-b26e-b77a748427f4\",\n  \"name\": \"programs/simcore%2Fservices%2Fdynamic%2Felectrode-selector/releases/2.1.3/jobs/a6677890-356b-4113-b26e-b77a748427f4\",\n  \"inputs_checksum\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\n  \"created_at\": \"2025-04-15T13:14:44.594564Z\"\n}",
-   "thumbnail": "https://via.placeholder.com/170x120.png",
-   "workbench": {
-    "f298a7d7-900d-533d-9385-89b39ea023fe": {
-     "key": "simcore/services/dynamic/electrode-selector",
-     "version": "2.1.3",
-     "label": "sleeper",
-     "progress": null,
-     "thumbnail": null,
-     "runHash": null,
-     "inputs": {},
-     "inputsRequired": [],
-     "inputsUnits": {},
-     "inputAccess": null,
-     "inputNodes": [],
-     "outputs": {},
-     "outputNode": null,
-     "outputNodes": null,
-     "parent": null,
-     "position": null,
-     "state": {
-      "modified": true,
-      "dependencies": [],
-      "currentStatus": "NOT_STARTED",
-      "progress": 0.0
-     },
-     "bootOptions": null
-    }
-   },
-   "accessRights": {},
-   "tags": [],
-   "classifiers": [],
-   "ui": {
-    "icon": null,
-    "workbench": {
-     "f298a7d7-900d-533d-9385-89b39ea023fe": {
-      "position": {
-       "x": 633,
-       "y": 229
+  {
+    "name": "POST /projects",
+    "description": "<Request('POST', 'http://webserver:8080/v0/projects?hidden=false')>",
+    "method": "POST",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/projects",
+      "path_parameters": []
+    },
+    "query": "hidden=false",
+    "request_payload": {
+      "uuid": "a6677890-356b-4113-b26e-b77a748427f4",
+      "name": "programs/simcore%2Fservices%2Fdynamic%2Felectrode-selector/releases/2.1.3/jobs/a6677890-356b-4113-b26e-b77a748427f4",
+      "description": "Study associated to solver job:\n{\n  \"id\": \"a6677890-356b-4113-b26e-b77a748427f4\",\n  \"name\": \"programs/simcore%2Fservices%2Fdynamic%2Felectrode-selector/releases/2.1.3/jobs/a6677890-356b-4113-b26e-b77a748427f4\",\n  \"inputs_checksum\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\n  \"created_at\": \"2025-04-15T13:14:44.594564Z\"\n}",
+      "thumbnail": "https://via.placeholder.com/170x120.png",
+      "workbench": {
+        "f298a7d7-900d-533d-9385-89b39ea023fe": {
+          "key": "simcore/services/dynamic/electrode-selector",
+          "version": "2.1.3",
+          "label": "sleeper",
+          "progress": null,
+          "thumbnail": null,
+          "runHash": null,
+          "inputs": {},
+          "inputsRequired": [],
+          "inputsUnits": {},
+          "inputAccess": null,
+          "inputNodes": [],
+          "outputs": {},
+          "outputNode": null,
+          "outputNodes": null,
+          "parent": null,
+          "position": null,
+          "state": {
+            "modified": true,
+            "dependencies": [],
+            "currentStatus": "NOT_STARTED",
+            "progress": 0.0
+          },
+          "bootOptions": null
+        }
       },
-      "marker": null
-     }
+      "accessRights": {},
+      "tags": [],
+      "classifiers": [],
+      "ui": {
+        "icon": null,
+        "workbench": {
+          "f298a7d7-900d-533d-9385-89b39ea023fe": {
+            "position": {
+              "x": 633,
+              "y": 229
+            },
+            "marker": null
+          }
+        },
+        "slideshow": {},
+        "currentNodeId": "f298a7d7-900d-533d-9385-89b39ea023fe",
+        "annotations": {}
+      },
+      "workspaceId": null,
+      "type": "STANDARD",
+      "templateType": null,
+      "folderId": null
     },
-    "slideshow": {},
-    "currentNodeId": "f298a7d7-900d-533d-9385-89b39ea023fe",
-    "annotations": {}
-   },
-   "workspaceId": null,
-   "folderId": null
+    "response_body": {
+      "data": {
+        "task_id": "POST%20%2Fv0%2Fprojects%3Fhidden%3Dfalse.24ca757c-9edb-4017-b0e2-e6f7dcc447c8",
+        "task_name": "POST /v0/projects?hidden=false",
+        "status_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Fhidden%253Dfalse.24ca757c-9edb-4017-b0e2-e6f7dcc447c8",
+        "result_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Fhidden%253Dfalse.24ca757c-9edb-4017-b0e2-e6f7dcc447c8/result",
+        "abort_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Fhidden%253Dfalse.24ca757c-9edb-4017-b0e2-e6f7dcc447c8"
+      }
+    },
+    "status_code": 202
   },
-  "response_body": {
-   "data": {
-    "task_id": "POST%20%2Fv0%2Fprojects%3Fhidden%3Dfalse.24ca757c-9edb-4017-b0e2-e6f7dcc447c8",
-    "task_name": "POST /v0/projects?hidden=false",
-    "status_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Fhidden%253Dfalse.24ca757c-9edb-4017-b0e2-e6f7dcc447c8",
-    "result_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Fhidden%253Dfalse.24ca757c-9edb-4017-b0e2-e6f7dcc447c8/result",
-    "abort_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Fhidden%253Dfalse.24ca757c-9edb-4017-b0e2-e6f7dcc447c8"
-   }
-  },
-  "status_code": 202
- },
- {
-  "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Fhidden%253Dfalse.24ca757c-9edb-4017-b0e2-e6f7dcc447c8",
-  "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Fhidden%253Dfalse.24ca757c-9edb-4017-b0e2-e6f7dcc447c8')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/tasks-legacy/{task_id}",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "task_id",
-     "required": true,
-     "schema": {
-      "title": "Task Id",
-      "type": "str"
-     },
-     "response_value": "tasks-legacy"
+  {
+    "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Fhidden%253Dfalse.24ca757c-9edb-4017-b0e2-e6f7dcc447c8",
+    "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Fhidden%253Dfalse.24ca757c-9edb-4017-b0e2-e6f7dcc447c8')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/tasks-legacy/{task_id}",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "task_id",
+          "required": true,
+          "schema": {
+            "title": "Task Id",
+            "type": "str"
+          },
+          "response_value": "tasks-legacy"
+        }
+      ]
+    },
+    "response_body": {
+      "data": {
+        "task_progress": {
+          "task_id": "POST%20%2Fv0%2Fprojects%3Fhidden%3Dfalse.24ca757c-9edb-4017-b0e2-e6f7dcc447c8",
+          "message": "finished",
+          "percent": 1.0
+        },
+        "done": true,
+        "started": "2025-04-15T13:14:44.617066"
+      }
     }
-   ]
   },
-  "response_body": {
-   "data": {
-    "task_progress": {
-     "task_id": "POST%20%2Fv0%2Fprojects%3Fhidden%3Dfalse.24ca757c-9edb-4017-b0e2-e6f7dcc447c8",
-     "message": "finished",
-     "percent": 1.0
+  {
+    "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Fhidden%253Dfalse.24ca757c-9edb-4017-b0e2-e6f7dcc447c8/result",
+    "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Fhidden%253Dfalse.24ca757c-9edb-4017-b0e2-e6f7dcc447c8/result')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/tasks-legacy/{task_id}/result",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "task_id",
+          "required": true,
+          "schema": {
+            "title": "Task Id",
+            "type": "str"
+          },
+          "response_value": "tasks-legacy"
+        }
+      ]
     },
-    "done": true,
-    "started": "2025-04-15T13:14:44.617066"
-   }
+    "response_body": {
+      "data": {
+        "uuid": "a6677890-356b-4113-b26e-b77a748427f4",
+        "name": "programs/simcore%2Fservices%2Fdynamic%2Felectrode-selector/releases/2.1.3/jobs/a6677890-356b-4113-b26e-b77a748427f4",
+        "description": "Study associated to solver job:\n{\n  \"id\": \"a6677890-356b-4113-b26e-b77a748427f4\",\n  \"name\": \"programs/simcore%2Fservices%2Fdynamic%2Felectrode-selector/releases/2.1.3/jobs/a6677890-356b-4113-b26e-b77a748427f4\",\n  \"inputs_checksum\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\n  \"created_at\": \"2025-04-15T13:14:44.594564Z\"\n}",
+        "thumbnail": "https://via.placeholder.com/170x120.png",
+        "workbench": {
+          "f298a7d7-900d-533d-9385-89b39ea023fe": {
+            "key": "simcore/services/dynamic/electrode-selector",
+            "version": "2.1.3",
+            "label": "sleeper",
+            "inputs": {},
+            "inputsRequired": [],
+            "inputsUnits": {},
+            "inputNodes": [],
+            "outputs": {},
+            "state": {
+              "modified": true,
+              "dependencies": [],
+              "currentStatus": "NOT_STARTED",
+              "progress": 0.0
+            }
+          }
+        },
+        "prjOwner": "bisgaard@itis.swiss",
+        "accessRights": {
+          "4": {
+            "read": true,
+            "write": true,
+            "delete": true
+          }
+        },
+        "creationDate": "2025-04-15T13:14:44.636Z",
+        "lastChangeDate": "2025-04-15T13:14:46.704Z",
+        "state": {
+          "locked": {
+            "value": false,
+            "status": "CLOSED"
+          },
+          "state": {
+            "value": "UNKNOWN"
+          }
+        },
+        "trashedAt": null,
+        "trashedBy": null,
+        "tags": [],
+        "classifiers": [],
+        "quality": {},
+        "ui": {
+          "workbench": {
+            "f298a7d7-900d-533d-9385-89b39ea023fe": {
+              "position": {
+                "x": 633,
+                "y": 229
+              }
+            }
+          },
+          "slideshow": {},
+          "currentNodeId": "f298a7d7-900d-533d-9385-89b39ea023fe",
+          "annotations": {}
+        },
+        "dev": {},
+        "workspaceId": null,
+        "type": "STANDARD",
+        "templateType": null,
+        "folderId": null
+      }
+    },
+    "status_code": 201
   }
- },
- {
-  "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Fhidden%253Dfalse.24ca757c-9edb-4017-b0e2-e6f7dcc447c8/result",
-  "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Fhidden%253Dfalse.24ca757c-9edb-4017-b0e2-e6f7dcc447c8/result')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/tasks-legacy/{task_id}/result",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "task_id",
-     "required": true,
-     "schema": {
-      "title": "Task Id",
-      "type": "str"
-     },
-     "response_value": "tasks-legacy"
-    }
-   ]
-  },
-  "response_body": {
-   "data": {
-    "uuid": "a6677890-356b-4113-b26e-b77a748427f4",
-    "name": "programs/simcore%2Fservices%2Fdynamic%2Felectrode-selector/releases/2.1.3/jobs/a6677890-356b-4113-b26e-b77a748427f4",
-    "description": "Study associated to solver job:\n{\n  \"id\": \"a6677890-356b-4113-b26e-b77a748427f4\",\n  \"name\": \"programs/simcore%2Fservices%2Fdynamic%2Felectrode-selector/releases/2.1.3/jobs/a6677890-356b-4113-b26e-b77a748427f4\",\n  \"inputs_checksum\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\n  \"created_at\": \"2025-04-15T13:14:44.594564Z\"\n}",
-    "thumbnail": "https://via.placeholder.com/170x120.png",
-    "workbench": {
-     "f298a7d7-900d-533d-9385-89b39ea023fe": {
-      "key": "simcore/services/dynamic/electrode-selector",
-      "version": "2.1.3",
-      "label": "sleeper",
-      "inputs": {},
-      "inputsRequired": [],
-      "inputsUnits": {},
-      "inputNodes": [],
-      "outputs": {},
-      "state": {
-       "modified": true,
-       "dependencies": [],
-       "currentStatus": "NOT_STARTED",
-       "progress": 0.0
-      }
-     }
-    },
-    "prjOwner": "bisgaard@itis.swiss",
-    "accessRights": {
-     "4": {
-      "read": true,
-      "write": true,
-      "delete": true
-     }
-    },
-    "creationDate": "2025-04-15T13:14:44.636Z",
-    "lastChangeDate": "2025-04-15T13:14:46.704Z",
-    "state": {
-     "locked": {
-      "value": false,
-      "status": "CLOSED"
-     },
-     "state": {
-      "value": "UNKNOWN"
-     }
-    },
-    "trashedAt": null,
-    "trashedBy": null,
-    "tags": [],
-    "classifiers": [],
-    "quality": {},
-    "ui": {
-     "workbench": {
-      "f298a7d7-900d-533d-9385-89b39ea023fe": {
-       "position": {
-        "x": 633,
-        "y": 229
-       }
-      }
-     },
-     "slideshow": {},
-     "currentNodeId": "f298a7d7-900d-533d-9385-89b39ea023fe",
-     "annotations": {}
-    },
-    "dev": {},
-    "workspaceId": null,
-    "folderId": null
-   }
-  },
-  "status_code": 201
- }
 ]

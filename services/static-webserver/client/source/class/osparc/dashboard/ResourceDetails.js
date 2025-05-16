@@ -44,7 +44,12 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
     latestPromise
       .then(latestResourceData => {
-        this.__resourceData = latestResourceData;
+        if (!latestResourceData) {
+          const msg = this.tr("Data not found, please try again");
+          osparc.FlashMessenger.logAs(msg, "WARNING");
+          return;
+        }
+        this.__resourceData = osparc.utils.Utils.deepCloneObject(latestResourceData);
         this.__resourceData["resourceType"] = resourceData["resourceType"];
         switch (resourceData["resourceType"]) {
           case "study":
@@ -341,7 +346,8 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         this.__getServicesBootOptionsPage,
         this.__getConversationsPage,
         this.__getPermissionsPage,
-        this.__getSaveAsTemplatePage,
+        this.__getPublishPage,
+        this.__getCreateTemplatePage,
         this.__getCreateFunctionsPage,
         this.__getTagsPage,
         this.__getQualityPage,
@@ -738,7 +744,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       return page;
     },
 
-    __getSaveAsTemplatePage: function() {
+    __getPublishPage: function() {
       if (!osparc.utils.Resources.isStudy(this.__resourceData)) {
         return null;
       }
@@ -746,9 +752,9 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       const canIWrite = osparc.data.model.Study.canIWrite(this.__resourceData["accessRights"]);
       const canCreateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.create");
       if (canIWrite && canCreateTemplate) {
-        const id = "SaveAsTemplate";
-        const iconSrc = "@FontAwesome5Solid/copy/22";
-        const title = this.tr("Publish ") + osparc.product.Utils.getTemplateAlias({firstUpperCase: true});
+        const id = "Publish";
+        const iconSrc = "@FontAwesome5Solid/globe/22";
+        const title = this.tr("Publish");
         const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
 
         if (this.__resourceData["resourceType"] === "study") {
@@ -758,13 +764,52 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         }
 
         const lazyLoadContent = () => {
-          const saveAsTemplate = new osparc.study.SaveAsTemplate(this.__resourceData);
+          const makeItPublic = true;
+          const saveAsTemplate = new osparc.study.SaveAsTemplate(this.__resourceData, makeItPublic);
           saveAsTemplate.addListener("publishTemplate", e => this.fireDataEvent("publishTemplate", e.getData()));
 
-          const publishTemplateButton = saveAsTemplate.getPublishTemplateButton();
+          const publishTemplateButton = saveAsTemplate.getCreateTemplateButton();
           osparc.dashboard.resources.pages.BasePage.decorateHeaderButton(publishTemplateButton);
           const toolbar = this.self().createToolbar();
           toolbar.add(publishTemplateButton);
+          page.addToHeader(toolbar);
+          page.addToContent(saveAsTemplate);
+        }
+        page.addListenerOnce("appear", lazyLoadContent, this);
+
+        return page;
+      }
+      return null;
+    },
+
+    __getCreateTemplatePage: function() {
+      if (!osparc.utils.Resources.isStudy(this.__resourceData)) {
+        return null;
+      }
+
+      const canIWrite = osparc.data.model.Study.canIWrite(this.__resourceData["accessRights"]);
+      const canCreateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.create");
+      if (canIWrite && canCreateTemplate) {
+        const id = "Template";
+        const iconSrc = "@FontAwesome5Solid/copy/22";
+        const title = this.tr("Template");
+        const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
+
+        if (this.__resourceData["resourceType"] === "study") {
+          const studyData = this.__resourceData;
+          const canBeOpened = osparc.study.Utils.canBeDuplicated(studyData);
+          page.setEnabled(canBeOpened);
+        }
+
+        const lazyLoadContent = () => {
+          const makeItPublic = false;
+          const saveAsTemplate = new osparc.study.SaveAsTemplate(this.__resourceData, makeItPublic);
+          saveAsTemplate.addListener("publishTemplate", e => this.fireDataEvent("publishTemplate", e.getData()));
+
+          const createTemplateButton = saveAsTemplate.getCreateTemplateButton();
+          osparc.dashboard.resources.pages.BasePage.decorateHeaderButton(createTemplateButton);
+          const toolbar = this.self().createToolbar();
+          toolbar.add(createTemplateButton);
           page.addToHeader(toolbar);
           page.addToContent(saveAsTemplate);
         }

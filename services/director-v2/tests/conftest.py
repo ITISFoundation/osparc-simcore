@@ -171,7 +171,6 @@ def mock_env(
             "COMPUTATIONAL_BACKEND_ENABLED": "false",
             "DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED": "false",
             "DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED": "0",
-            "DIRECTOR_V2_PUBLIC_API_BASE_URL": "http://127.0.0.1:8006",
             "DYNAMIC_SIDECAR_IMAGE": f"{dynamic_sidecar_docker_image_name}",
             "DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS": "{}",
             "POSTGRES_DB": "test",

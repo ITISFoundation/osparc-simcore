@@ -86,6 +86,7 @@ async def test_add_new_project_from_model_instance(
     client: TestClient,
     mocker: MockerFixture,
     osparc_product_name: str,
+    osparc_product_api_base_url: str,
     user: UserInfo,
     project_id: ProjectID,
     file_picker_id: NodeID,
@@ -117,7 +118,13 @@ async def test_add_new_project_from_model_instance(
             viewer_info=viewer_info,
         )
 
-    await _add_new_project(client.app, project, user, product_name=osparc_product_name)
+    await _add_new_project(
+        client.app,
+        project,
+        user,
+        product_name=osparc_product_name,
+        product_api_base_url=osparc_product_api_base_url,
+    )
 
     assert mock_directorv2_api.called
 

@@ -232,7 +232,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       }
 
       if (permissions.canDo("dashboard.services.read")) {
-        const servicesButton = this.self().createMenuButton("@FontAwesome5Solid/cog/16", this.tr("Services..."));
+        const servicesButton = this.self().createMenuButton("@FontAwesome5Solid/cog/16", this.tr("Apps..."));
         servicesButton.addListener("execute", () => this.fireDataEvent("changeTab", "appsTab"), this);
         moreMenu.add(servicesButton);
       }

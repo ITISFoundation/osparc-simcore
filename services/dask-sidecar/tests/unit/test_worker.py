@@ -106,14 +106,6 @@ def dask_subsystem_mock(
         "pytest_jobid"
     )
     # mock dask event publishing
-    dask_utils_publish_event_mock = mocker.patch(
-        "simcore_service_dask_sidecar.utils.dask.distributed.Pub",
-        autospec=True,
-    )
-    mocker.patch(
-        "simcore_service_dask_sidecar.utils.dask.distributed.Sub",
-        autospec=True,
-    )
     mocker.patch(
         "simcore_service_dask_sidecar.utils.dask.is_current_task_aborted",
         autospec=True,
@@ -138,7 +130,6 @@ def dask_subsystem_mock(
     return {
         "dask_client": dask_client_mock,
         "dask_task_state": dask_task_mock,
-        "dask_event_publish": dask_utils_publish_event_mock,
     }
 
 
@@ -562,10 +553,6 @@ def test_run_computational_sidecar_real_fct(
         sleeper_task.service_key,
         sleeper_task.service_version,
     )
-    for event in [TaskProgressEvent]:
-        dask_subsystem_mock["dask_event_publish"].assert_any_call(
-            name=event.topic_name()
-        )
     assert log_rabbit_client_parser.called
 
     # check that the task produces expected logs
@@ -641,8 +628,26 @@ def test_run_multiple_computational_sidecar_dask(
 
 
 @pytest.fixture
-def progress_sub(dask_client: distributed.Client) -> distributed.Sub:
-    return distributed.Sub(TaskProgressEvent.topic_name(), client=dask_client)
+def progress_event_handler(dask_client: distributed.Client) -> mock.Mock:
+    mocked_parser = mock.Mock()
+    dask_client.subscribe_topic(TaskProgressEvent.topic_name(), mocked_parser)
+    return mocked_parser
+
+
+def _assert_parse_progresses_from_progress_event_handler(
+    progress_event_handler: mock.Mock,
+) -> list[float]:
+    assert progress_event_handler.called
+    worker_progresses = [
+        TaskProgressEvent.model_validate_json(msg.args[0][1]).progress
+        for msg in progress_event_handler.call_args_list
+    ]
+    assert worker_progresses == sorted(
+        set(worker_progresses)
+    ), "ordering of progress values incorrectly sorted!"
+    assert worker_progresses[0] == 0, "missing/incorrect initial progress value"
+    assert worker_progresses[-1] == 1, "missing/incorrect final progress value"
+    return worker_progresses
 
 
 @pytest.mark.parametrize(
@@ -651,7 +656,7 @@ def progress_sub(dask_client: distributed.Client) -> distributed.Sub:
 async def test_run_computational_sidecar_dask(
     app_environment: EnvVarsDict,
     sleeper_task: ServiceExampleParam,
-    progress_sub: distributed.Sub,
+    progress_event_handler: mock.Mock,
     mocked_get_image_labels: mock.Mock,
     s3_settings: S3Settings,
     log_rabbit_client_parser: mock.AsyncMock,
@@ -670,16 +675,8 @@ async def test_run_computational_sidecar_dask(
     assert isinstance(output_data, TaskOutputData)
 
     # check that the task produces expected logs
-    worker_progresses = [
-        TaskProgressEvent.model_validate_json(msg).progress
-        for msg in progress_sub.buffer
-    ]
-    # check ordering
-    assert worker_progresses == sorted(
-        set(worker_progresses)
-    ), "ordering of progress values incorrectly sorted!"
-    assert worker_progresses[0] == 0, "missing/incorrect initial progress value"
-    assert worker_progresses[-1] == 1, "missing/incorrect final progress value"
+    _assert_parse_progresses_from_progress_event_handler(progress_event_handler)
+
     async for attempt in AsyncRetrying(
         wait=wait_fixed(1),
         stop=stop_after_delay(30),
@@ -731,7 +728,7 @@ async def test_run_computational_sidecar_dask(
 async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub(
     dask_client: distributed.Client,
     sidecar_task: Callable[..., ServiceExampleParam],
-    progress_sub: distributed.Sub,
+    progress_event_handler: mock.Mock,
     mocked_get_image_labels: mock.Mock,
     log_rabbit_client_parser: mock.AsyncMock,
 ):
@@ -757,17 +754,7 @@ async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub
     assert isinstance(output_data, TaskOutputData)
 
     # check that the task produces expected logs
-    worker_progresses = [
-        TaskProgressEvent.model_validate_json(msg).progress
-        for msg in progress_sub.buffer
-    ]
-    # check length
-    assert len(worker_progresses) == len(
-        set(worker_progresses)
-    ), "there are duplicate progresses!"
-    assert sorted(worker_progresses) == worker_progresses, "ordering issue"
-    assert worker_progresses[0] == 0, "missing/incorrect initial progress value"
-    assert worker_progresses[-1] == 1, "missing/incorrect final progress value"
+    _assert_parse_progresses_from_progress_event_handler(progress_event_handler)
 
     async for attempt in AsyncRetrying(
         wait=wait_fixed(1),

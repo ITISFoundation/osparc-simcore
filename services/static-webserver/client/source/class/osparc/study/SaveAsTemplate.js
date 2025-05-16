@@ -27,12 +27,13 @@ qx.Class.define("osparc.study.SaveAsTemplate", {
   /**
    * @param studyData {Object} Object containing part or the entire serialized Study Data
    */
-  construct: function(studyData) {
+  construct: function(studyData, makeItPublic = false) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(20));
 
     this.__studyDataClone = osparc.data.model.Study.deepCloneStudyObject(studyData);
+    this.__makeItPublic = makeItPublic;
 
     this.__buildLayout();
   },
@@ -43,10 +44,26 @@ qx.Class.define("osparc.study.SaveAsTemplate", {
 
   members: {
     __studyDataClone: null,
+    __makeItPublic: null,
     __form: null,
-    __publishTemplateBtn: null,
+    __createTemplateBtn: null,
 
     __buildLayout: function() {
+      let introText = "";
+      if (this.__makeItPublic) {
+        introText += this.tr("This project will be published and accessible to everyone.");
+        introText += "<br>";
+        introText += this.tr("All users will see it and can copy it.");
+      } else {
+        introText += this.tr("This project will be saved as a template.");
+        introText += "<br>";
+        introText += this.tr("The users you select will be able to see it and copy it.");
+      }
+      this._add(new qx.ui.basic.Label(introText).set({
+        font: "text-14",
+        rich: true,
+      }));
+
       const form = this.__form = new qx.ui.form.Form();
       this._add(new qx.ui.form.renderer.Single(form));
 
@@ -56,11 +73,14 @@ qx.Class.define("osparc.study.SaveAsTemplate", {
       });
       form.add(publishWithData, this.tr("Publish with data"), null, "publishWithData");
 
-      if (osparc.product.Utils.isS4LProduct()) {
+      if (osparc.data.Permissions.getInstance().isTester()) {
         const templateTypeSB = new qx.ui.form.SelectBox().set({
           allowGrowX: false,
         });
         const templateTypes = [{
+          label: "Template",
+          id: null,
+        }, {
           label: "Tutorial",
           id: null,
         }, {
@@ -74,33 +94,42 @@ qx.Class.define("osparc.study.SaveAsTemplate", {
         form.add(templateTypeSB, this.tr("Template Type"), null, "templateType");
       }
 
-      const shareWith = this.__shareWith = new osparc.share.ShareTemplateWith(this.__studyDataClone);
-      this._add(shareWith);
+      if (!this.__makeItPublic) {
+        const shareWith = this.__shareWith = new osparc.share.ShareTemplateWith(this.__studyDataClone);
+        this._add(shareWith);
+      }
 
-      const publishTemplateBtn = this.__publishTemplateBtn = new qx.ui.form.Button().set({
+      const createTemplateBtn = this.__createTemplateBtn = new qx.ui.form.Button().set({
         appearance: "strong-button",
-        label: this.tr("Publish"),
+        label: this.__makeItPublic ? this.tr("Publish") : this.tr("Create Template"),
         allowGrowX: false,
         alignX: "right"
       });
-      publishTemplateBtn.addListener("execute", () => this.__publishTemplate(), this);
-      this._add(publishTemplateBtn);
+      createTemplateBtn.addListener("execute", () => this.__createTemplate(), this);
+      this._add(createTemplateBtn);
     },
 
-    __publishTemplate: function() {
+    __createTemplate: function() {
       const publishWithDataCB = this.__form.getItem("publishWithData");
       const templateTypeSB = this.__form.getItem("templateType");
       const templateType = templateTypeSB ? templateTypeSB.getSelection()[0].getModel() : null;
 
-      const readAccessRole = osparc.data.Roles.STUDY["read"];
       // AccessRights will be POSTed after the template is created.
       // No need to add myself, backend will automatically do it
       const accessRights = {};
       this.__studyDataClone["accessRights"] = {};
-      const selectedGroupIDs = this.__shareWith.getSelectedGroups();
-      selectedGroupIDs.forEach(gid => {
-        accessRights[gid] = readAccessRole.accessRights;
-      });
+      if (this.__makeItPublic) {
+        // share the template with the everyone group
+        const groupsStore = osparc.store.Groups.getInstance();
+        const groupProductEveryone = groupsStore.getEveryoneProductGroup();
+        accessRights[groupProductEveryone.getGroupId()] = osparc.data.Roles.STUDY["read"].accessRights;
+      } else {
+        const selectedGroupIDs = this.__shareWith.getSelectedGroups();
+        const readAccessRole = osparc.data.Roles.STUDY["read"];
+        selectedGroupIDs.forEach(gid => {
+          accessRights[gid] = readAccessRole.accessRights;
+        });
+      }
 
       this.fireDataEvent("publishTemplate", {
         "studyData": this.__studyDataClone,
@@ -110,8 +139,8 @@ qx.Class.define("osparc.study.SaveAsTemplate", {
       });
     },
 
-    getPublishTemplateButton: function() {
-      return this.__publishTemplateBtn;
+    getCreateTemplateButton: function() {
+      return this.__createTemplateBtn;
     }
   }
 });

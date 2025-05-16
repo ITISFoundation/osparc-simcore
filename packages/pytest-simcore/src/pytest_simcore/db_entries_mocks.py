@@ -23,7 +23,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 
 @pytest.fixture()
-def registered_user(
+def create_registered_user(
     postgres_db: sa.engine.Engine, faker: Faker
 ) -> Iterator[Callable[..., dict]]:
     created_user_ids = []

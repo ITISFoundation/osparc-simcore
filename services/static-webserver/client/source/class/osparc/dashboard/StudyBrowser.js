@@ -49,7 +49,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
   properties: {
     currentContext: {
-      check: ["studiesAndFolders", "workspaces", "search", "trash"],
+      check: [
+        "studiesAndFolders",
+        "workspaces",
+        "search",
+        "templates",
+        "public",
+        "trash",
+      ],
       nullable: false,
       init: "studiesAndFolders",
       event: "changeCurrentContext"
@@ -157,7 +164,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __reloadWorkspaces: function() {
       if (
         !osparc.auth.Manager.getInstance().isLoggedIn() ||
-        this.getCurrentContext() === "studiesAndFolders" ||
+        ["studiesAndFolders", "templates", "public"].includes(this.getCurrentContext()) ||
         this.__loadingWorkspaces
       ) {
         return;
@@ -201,7 +208,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __reloadFolders: function() {
       if (
         !osparc.auth.Manager.getInstance().isLoggedIn() ||
-        this.getCurrentContext() === "workspaces" ||
+        ["workspaces", "templates", "public"].includes(this.getCurrentContext()) ||
         this.__loadingFolders
       ) {
         return;
@@ -269,8 +276,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             return;
           }
 
-          const studies = resp["data"];
-          this.__addStudiesToList(studies);
+          if (["templates", "public"].includes(this.getCurrentContext())) {
+            const templates = resp["data"];
+            templates.forEach(template => template["resourceType"] = "template");
+            this.__addResourcesToList(templates);
+          } else {
+            const studies = resp["data"];
+            studies.forEach(study => study["resourceType"] = "study");
+            this.__addResourcesToList(studies);
+          }
           if (this._resourcesContainer.getFlatList()) {
             this._resourcesContainer.getFlatList().nextRequest = resp["_links"]["next"];
           }
@@ -326,9 +340,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._reloadCards();
     },
 
-    __addStudiesToList: function(studiesList) {
-      studiesList.forEach(study => study["resourceType"] = "study");
-      studiesList.forEach(study => {
+    __addResourcesToList: function(resourcesList) {
+      resourcesList.forEach(study => {
         const idx = this._resourcesList.findIndex(std => std["uuid"] === study["uuid"]);
         if (idx === -1) {
           this._resourcesList.push(study);
@@ -336,7 +349,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
       this.__reloadNewCards();
 
-      studiesList.forEach(study => {
+      resourcesList.forEach(study => {
         const state = study["state"];
         if (state && "locked" in state && state["locked"]["value"] && state["locked"]["status"] === "CLOSING") {
           // websocket might have already notified that the state was closed.
@@ -617,7 +630,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         card.addListener("tap", e => this.__studyCardClicked(card, e.getNativeEvent().shiftKey), this);
         this._populateCardMenu(card);
 
-        if (this.getCurrentContext() !== "trash") {
+        if (["studiesAndFolders", "search"].includes(this.getCurrentContext())) {
           this.__attachDragHandlers(card);
         }
       });
@@ -711,7 +724,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __didContextChange: function(reqParams) {
       // not needed for the comparison
-      delete reqParams["type"];
+      // delete reqParams["type"];
       delete reqParams["limit"];
       delete reqParams["offset"];
       delete reqParams["filters"];
@@ -772,6 +785,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         case "studiesAndFolders":
           requestParams.workspaceId = this.getCurrentWorkspaceId();
           requestParams.folderId = this.getCurrentFolderId();
+          requestParams.type = "user";
+          break;
+        case "templates":
+          requestParams.type = "template";
+          break;
+        case "public":
+          requestParams.type = "template";
           break;
         case "search": {
           // Use the ``search`` functionality only if the user types some text
@@ -811,14 +831,20 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       let request = null;
       switch (this.getCurrentContext()) {
-        case "trash":
-          request = osparc.data.Resources.fetch("studies", "getPageTrashed", params, options);
+        case "studiesAndFolders":
+          request = osparc.data.Resources.fetch("studies", "getPage", params, options);
           break;
         case "search":
           request = osparc.data.Resources.fetch("studies", "getPageSearch", params, options);
           break;
-        case "studiesAndFolders":
-          request = osparc.data.Resources.fetch("studies", "getPage", params, options);
+        case "templates":
+          request = osparc.store.Templates.fetchTemplatesPaginated(params, options);
+          break;
+        case "public":
+          request = osparc.store.Templates.fetchTemplatesPublicPaginated(params, options);
+          break;
+        case "trash":
+          request = osparc.data.Resources.fetch("studies", "getPageTrashed", params, options);
           break;
       }
       return request;
@@ -1040,9 +1066,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }
       }, this);
 
-      this._resourceFilter.addListener("trashContext", () => {
-        this._changeContext("trash");
-      });
+      this._resourceFilter.addListener("templatesContext", () => this._changeContext("templates"));
+      this._resourceFilter.addListener("publicContext", () => this._changeContext("public"));
+      this._resourceFilter.addListener("trashContext", () => this._changeContext("trash"));
 
       this._searchBarFilter.addListener("filterChanged", e => {
         const filterData = e.getData();
@@ -1083,29 +1109,45 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._resourcesContainer.setResourcesToList(this._resourcesList);
       this._resourcesContainer.reloadCards("studies");
 
-      this._toolbar.show();
       switch (this.getCurrentContext()) {
         case "studiesAndFolders":
           this._searchBarFilter.resetFilters();
+          this._toolbar.show();
           this.__reloadFolders();
           this._loadingResourcesBtn.setFetching(false);
           this.invalidateStudies();
           this.__reloadStudies();
           break;
         case "workspaces":
-          this._toolbar.exclude();
           this._searchBarFilter.resetFilters();
+          this._toolbar.exclude();
           this.__reloadWorkspaces();
           break;
         case "search":
+          this._toolbar.show();
           this.__reloadWorkspaces();
           this.__reloadFolders();
           this._loadingResourcesBtn.setFetching(false);
           this.invalidateStudies();
           this.__reloadStudies();
           break;
+        case "templates":
+          this._searchBarFilter.resetFilters();
+          this._toolbar.show();
+          this._loadingResourcesBtn.setFetching(false);
+          this.invalidateStudies();
+          this.__reloadStudies();
+          break;
+        case "public":
+          this._searchBarFilter.resetFilters();
+          this._toolbar.show();
+          this._loadingResourcesBtn.setFetching(false);
+          this.invalidateStudies();
+          this.__reloadStudies();
+          break;
         case "trash":
           this._searchBarFilter.resetFilters();
+          this._toolbar.show();
           this.__reloadWorkspaces();
           this.__reloadFolders();
           this._loadingResourcesBtn.setFetching(false);
