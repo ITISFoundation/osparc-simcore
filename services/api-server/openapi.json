@@ -10465,6 +10465,18 @@
             "type": "string",
             "title": "Maintainer",
             "description": "Maintainer of the solver"
+          },
+          "version_display": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version Display",
+            "description": "A user-friendly or marketing name for the release."
           }
         },
         "type": "object",
@@ -10483,7 +10495,8 @@
           "maintainer": "info@itis.swiss",
           "title": "iSolve",
           "url": "https://api.osparc.io/v0/solvers/simcore%2Fservices%2Fcomp%2Fisolve/releases/2.1.1",
-          "version": "2.1.1"
+          "version": "2.1.1",
+          "version_display": "2.1.1-2023-10-01"
         }
       },
       "SolverFunction": {
