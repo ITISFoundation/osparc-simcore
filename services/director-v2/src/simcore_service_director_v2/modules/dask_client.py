@@ -8,9 +8,10 @@ loads(dumps(my_object))
 
 """
 
+import asyncio
 import logging
 import traceback
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from copy import deepcopy
 from dataclasses import dataclass
 from http.client import HTTPException
@@ -38,7 +39,12 @@ from dask_task_models_library.container_tasks.protocol import (
     TaskOwner,
 )
 from dask_task_models_library.container_tasks.utils import generate_dask_job_id
-from dask_task_models_library.models import DaskJobID, DaskResources
+from dask_task_models_library.models import (
+    TASK_LIFE_CYCLE_EVENT,
+    DaskJobID,
+    DaskResources,
+    TaskLifeCycleState,
+)
 from dask_task_models_library.resource_constraints import (
     create_ec2_resource_constraint_key,
 )
@@ -48,6 +54,7 @@ from models_library.api_schemas_directorv2.clusters import ClusterDetails, Sched
 from models_library.clusters import ClusterAuthentication, ClusterTypeInModel
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.projects_state import RunningState
 from models_library.resource_tracker import HardwareInfo
 from models_library.services import ServiceRunID
 from models_library.users import UserID
@@ -77,6 +84,7 @@ from ..utils import dask as dask_utils
 from ..utils.dask_client_utils import (
     DaskSubSystem,
     TaskHandlers,
+    UnixTimestamp,
     connect_to_dask_scheduler,
 )
 from .db import get_db_engine
@@ -418,6 +426,57 @@ class DaskClient:
                 ) from exc
 
         return list_of_node_id_to_job_id
+
+    async def get_tasks_status2(self, job_ids: Iterable[str]) -> list[RunningState]:
+        dask_utils.check_scheduler_is_still_the_same(
+            self.backend.scheduler_id, self.backend.client
+        )
+        dask_utils.check_communication_with_scheduler_is_open(self.backend.client)
+        dask_utils.check_scheduler_status(self.backend.client)
+
+        async def _get_job_id_status(job_id: str) -> RunningState:
+            # TODO: maybe we should define an event just for that, instead of multiple calls
+            dask_events: tuple[tuple[UnixTimestamp, str], ...] = (
+                await self.backend.client.get_events(
+                    TASK_LIFE_CYCLE_EVENT.format(key=job_id)
+                )
+            )
+            if not dask_events:
+                return RunningState.UNKNOWN
+            # we are interested in the last event
+            parsed_event = TaskLifeCycleState.model_validate(dask_events[-1][1])
+
+            if parsed_event.state == RunningState.FAILED:
+                try:
+                    # find out if this was a cancellation
+                    var = distributed.Variable(job_id, client=self.backend.client)
+                    future: distributed.Future = await var.get(
+                        timeout=_DASK_DEFAULT_TIMEOUT_S
+                    )
+                    exception = await future.exception(timeout=_DASK_DEFAULT_TIMEOUT_S)
+                    assert isinstance(exception, Exception)  # nosec
+
+                    if isinstance(exception, TaskCancelledError):
+                        return RunningState.ABORTED
+                    assert exception  # nosec
+                    _logger.warning(
+                        "Task  %s completed in error:\n%s\nTrace:\n%s",
+                        job_id,
+                        exception,
+                        "".join(traceback.format_exception(exception)),
+                    )
+                    return RunningState.FAILED
+                except TimeoutError:
+                    _logger.warning(
+                        "Task  %s could not be retrieved from dask-scheduler, it is lost\n"
+                        "TIP:If the task was unpublished this can happen, or if the dask-scheduler was restarted.",
+                        job_id,
+                    )
+                    return RunningState.UNKNOWN
+
+            return parsed_event.state
+
+        return await asyncio.gather(*(_get_job_id_status(job_id) for job_id in job_ids))
 
     async def get_tasks_status(self, job_ids: list[str]) -> list[DaskClientTaskState]:
         dask_utils.check_scheduler_is_still_the_same(
