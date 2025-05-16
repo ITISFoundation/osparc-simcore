@@ -203,8 +203,8 @@ class PathMappingsLabel(BaseModel):
     legacy_state: LegacyState | None = Field(
         None,
         description=(
-            "if present, the service needs to first try todownload the legacy state "
-            "from the s3_ardhive and copy it over to the new_state_path."
+            "if present, the service needs to first try to download the legacy state"
+            "coming from a different path."
         ),
     )
 
