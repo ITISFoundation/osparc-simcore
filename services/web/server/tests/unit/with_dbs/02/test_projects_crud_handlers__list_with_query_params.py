@@ -16,16 +16,18 @@ import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from models_library.folders import FolderID
-from models_library.projects import ProjectID
+from models_library.projects import ProjectID, ProjectTemplateType
 from models_library.users import UserID
 from pydantic import BaseModel, PositiveInt
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
     standard_role_response,
 )
 from pytest_simcore.helpers.webserver_projects import create_project
+from servicelib.aiohttp import status
 from simcore_postgres_database.models.folders_v2 import folders_v2
 from simcore_postgres_database.models.projects_to_folders import projects_to_folders
 from simcore_service_webserver._meta import api_version_prefix
@@ -37,6 +39,18 @@ def standard_user_role() -> tuple[str, tuple[UserRole, ExpectedResponse]]:
     all_roles = standard_role_response()
 
     return (all_roles[0], [pytest.param(*all_roles[1][2], id="standard user role")])
+
+
+def standard_and_tester_user_roles() -> tuple[str, tuple[UserRole, ExpectedResponse]]:
+    all_roles = standard_role_response()
+
+    return (
+        all_roles[0],
+        [
+            pytest.param(*all_roles[1][2], id="standard user role"),
+            pytest.param(*all_roles[1][3], id="tester_user_role"),
+        ],
+    )
 
 
 @pytest.fixture
@@ -509,7 +523,7 @@ async def test_list_projects_for_specific_folder_id(
     )
 
 
-@pytest.mark.parametrize(*standard_user_role())
+@pytest.mark.parametrize(*standard_and_tester_user_roles())
 async def test_list_and_patch_projects_with_template_type(
     client: TestClient,
     logged_user: UserDict,
@@ -527,9 +541,10 @@ async def test_list_and_patch_projects_with_template_type(
         "TEMPLATE",
         "TEMPLATE",
     ]
+    generated_projects = []
     for _type in projects_type:
         project_data = deepcopy(fake_project)
-        await _new_project(
+        prj = await _new_project(
             client,
             logged_user["id"],
             osparc_product_name,
@@ -537,6 +552,7 @@ async def test_list_and_patch_projects_with_template_type(
             project_data,
             as_template=_type == "TEMPLATE",
         )
+        generated_projects.append(prj)
 
     base_url = client.app.router["list_projects"].url_for()
     # Now we will test listing with type=user
@@ -589,3 +605,103 @@ async def test_list_and_patch_projects_with_template_type(
     resp = await client.get(f"{url}")
     data = await resp.json()
     assert resp.status == 422
+
+    # Now we will test listing with type=template and template_type=TEMPLATE
+    query_parameters = {"type": "template", "template_type": "TEMPLATE"}
+    url = base_url.with_query(**query_parameters)
+
+    resp = await client.get(f"{url}")
+    data = await resp.json()
+
+    assert resp.status == 200
+    _assert_response_data(
+        data,
+        2,
+        0,
+        2,
+        "/v0/projects?type=template&template_type=TEMPLATE&offset=0&limit=20",
+        2,
+    )
+
+    # Lets now PATCH the template project (Currently user is not tester so it should fail)
+    patch_url = client.app.router["patch_project"].url_for(
+        project_id=generated_projects[-1]["uuid"]  # <-- Patching template project
+    )
+    resp = await client.patch(
+        f"{patch_url}",
+        data=json.dumps(
+            {
+                "templateType": ProjectTemplateType.HYPERTOOL.value,
+            }
+        ),
+    )
+    if UserRole(logged_user["role"]) >= UserRole.TESTER:
+        await assert_status(resp, status.HTTP_204_NO_CONTENT)
+    else:
+        await assert_status(resp, status.HTTP_403_FORBIDDEN)
+
+    if UserRole(logged_user["role"]) >= UserRole.TESTER:
+        # Now we will test listing with type=user and template_type=null
+        query_parameters = {"type": "user", "template_type": "null"}
+        url = base_url.with_query(**query_parameters)
+
+        resp = await client.get(f"{url}")
+        data = await resp.json()
+
+        assert resp.status == 200
+        _assert_response_data(
+            data,
+            3,
+            0,
+            3,
+            "/v0/projects?type=user&template_type=null&offset=0&limit=20",
+            3,
+        )
+
+        # Now we will test listing with type=user and template_type=HYPERTOOL
+        query_parameters = {"type": "template", "template_type": "HYPERTOOL"}
+        url = base_url.with_query(**query_parameters)
+
+        resp = await client.get(f"{url}")
+        data = await resp.json()
+
+        assert resp.status == 200
+        _assert_response_data(
+            data,
+            1,
+            0,
+            1,
+            "/v0/projects?type=template&template_type=HYPERTOOL&offset=0&limit=20",
+            1,
+        )
+
+        # Now we will test listing with type=template and template_type=TEMPLATE
+        query_parameters = {"type": "template", "template_type": "TEMPLATE"}
+        url = base_url.with_query(**query_parameters)
+
+        resp = await client.get(f"{url}")
+        data = await resp.json()
+
+        assert resp.status == 200
+        _assert_response_data(
+            data,
+            1,
+            0,
+            1,
+            "/v0/projects?type=template&template_type=TEMPLATE&offset=0&limit=20",
+            1,
+        )
+
+        # Lets now PATCH the standard project
+        patch_url = client.app.router["patch_project"].url_for(
+            project_id=generated_projects[0]["uuid"]  # <-- Patching standard project
+        )
+        resp = await client.patch(
+            f"{patch_url}",
+            data=json.dumps(
+                {
+                    "templateType": ProjectTemplateType.HYPERTOOL.value,
+                }
+            ),
+        )
+        await assert_status(resp, status.HTTP_400_BAD_REQUEST)
