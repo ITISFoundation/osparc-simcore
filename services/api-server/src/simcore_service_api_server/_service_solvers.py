@@ -156,14 +156,36 @@ class SolverService:
     async def latest_solvers(
         self,
         *,
-        offset: NonNegativeInt,
-        limit: PositiveInt,
+        pagination_offset: NonNegativeInt,
+        pagination_limit: PositiveInt,
+        filter_by_solver_id: str | None = None,
+        filter_by_version_display: str | None = None,
     ) -> tuple[list[Solver], PageMetaInfoLimitOffset]:
-        """Lists the latest solvers with pagination."""
+        """Lists the latest solvers with pagination and filtering.
+
+        Args:
+            offset: Pagination offset
+            limit: Pagination limit
+            solver_id_pattern: Optional pattern to filter solvers by ID
+            version_display_pattern: Optional pattern to filter by version display
+
+        Returns:
+            A tuple with the list of filtered solvers and pagination metadata
+        """
+        filters = ServiceListFilters(service_type=ServiceType.COMPUTATIONAL)
+
+        # Add key_pattern filter for solver ID if provided
+        if filter_by_solver_id:
+            filters.service_key_pattern = filter_by_solver_id
+
+        # Add version_display_pattern filter if provided
+        if filter_by_version_display:
+            filters.version_display_pattern = filter_by_version_display
+
         services, page_meta = await self.catalog_service.list_latest_releases(
-            pagination_offset=offset,
-            pagination_limit=limit,
-            filters=ServiceListFilters(service_type=ServiceType.COMPUTATIONAL),
+            pagination_offset=pagination_offset,
+            pagination_limit=pagination_limit,
+            filters=filters,
         )
 
         solvers = [Solver.create_from_service(service) for service in services]
