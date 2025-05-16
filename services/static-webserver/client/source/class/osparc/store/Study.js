@@ -41,10 +41,10 @@ qx.Class.define("osparc.store.Study", {
         });
     },
 
-    patchTemplateType: function(templateData, templateType) {
+    patchTemplateType: function(templateId, templateType) {
       const params = {
         url: {
-          "studyId": templateData["uuid"]
+          "studyId": templateId
         },
         data: {
           "templateType": templateType,
