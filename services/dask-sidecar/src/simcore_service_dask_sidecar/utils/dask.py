@@ -19,7 +19,7 @@ from models_library.progress_bar import ProgressReport
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from servicelib.logging_utils import LogLevelInt, LogMessageStr, log_catch, log_context
 
-from ..rabbitmq_plugin import get_rabbitmq_client
+from ..rabbitmq_worker_plugin import get_rabbitmq_client
 
 _logger = logging.getLogger(__name__)
 
