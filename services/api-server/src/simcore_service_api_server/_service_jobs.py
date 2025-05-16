@@ -15,6 +15,7 @@ from models_library.rpc_pagination import PageLimitInt
 from models_library.users import UserID
 from pydantic import HttpUrl
 from servicelib.logging_utils import log_context
+from simcore_service_api_server.models.basic_types import NameValueTuple
 
 from .models.schemas.jobs import Job, JobInputs
 from .models.schemas.programs import Program
@@ -39,8 +40,9 @@ class JobService:
 
     async def list_jobs(
         self,
+        job_parent_resource_name: str,
         *,
-        filter_by_job_parent_resource_name_prefix: str,
+        filter_any_custom_metadata: list[NameValueTuple] | None = None,
         pagination_offset: PageOffsetInt = 0,
         pagination_limit: PageLimitInt = MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE - 1,
     ) -> tuple[list[Job], PageMetaInfoLimitOffset]:
@@ -50,9 +52,10 @@ class JobService:
         projects_page = await self._web_rpc_client.list_projects_marked_as_jobs(
             product_name=self.product_name,
             user_id=self.user_id,
-            offset=pagination_offset,
-            limit=pagination_limit,
-            job_parent_resource_name_prefix=filter_by_job_parent_resource_name_prefix,
+            pagination_offset=pagination_offset,
+            pagination_limit=pagination_limit,
+            filter_by_job_parent_resource_name_prefix=job_parent_resource_name,
+            filter_any_custom_metadata=filter_any_custom_metadata,
         )
 
         # 2. Convert projects to jobs

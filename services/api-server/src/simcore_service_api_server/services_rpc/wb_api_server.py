@@ -33,6 +33,10 @@ from models_library.rest_pagination import (
     PageMetaInfoLimitOffset,
     PageOffsetInt,
 )
+from models_library.rpc.webserver.projects import (
+    ListProjectsMarkedAsJobRpcFilters,
+    MetadataFilterItem,
+)
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -66,6 +70,7 @@ from servicelib.rabbitmq.rpc_interfaces.webserver.licenses.licensed_items import
 from servicelib.rabbitmq.rpc_interfaces.webserver.licenses.licensed_items import (
     release_licensed_item_for_wallet as _release_licensed_item_for_wallet,
 )
+from simcore_service_api_server.models.basic_types import NameValueTuple
 
 from ..exceptions.backend_errors import (
     CanNotCheckoutServiceIsNotRunningError,
@@ -243,17 +248,30 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         *,
         product_name: ProductName,
         user_id: UserID,
-        offset: int = 0,
-        limit: int = 50,
-        job_parent_resource_name_prefix: str | None = None,
+        pagination_offset: int = 0,
+        pagination_limit: int = 50,
+        filter_by_job_parent_resource_name_prefix: str | None,
+        filter_any_custom_metadata: list[NameValueTuple] | None,
     ):
+        filters = ListProjectsMarkedAsJobRpcFilters(
+            job_parent_resource_name_prefix=filter_by_job_parent_resource_name_prefix,
+            any_custom_metadata=(
+                [
+                    MetadataFilterItem(name=name, pattern=pattern)
+                    for name, pattern in filter_any_custom_metadata
+                ]
+                if filter_any_custom_metadata
+                else None
+            ),
+        )
+
         return await projects_rpc.list_projects_marked_as_jobs(
             rpc_client=self._client,
             product_name=product_name,
             user_id=user_id,
-            offset=offset,
-            limit=limit,
-            job_parent_resource_name_prefix=job_parent_resource_name_prefix,
+            offset=pagination_offset,
+            limit=pagination_limit,
+            filters=filters,
         )
 
     async def register_function(self, *, function: Function) -> RegisteredFunction:
