@@ -773,6 +773,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           const key = osparc.utils.Utils.snakeToCamel(snakeKey);
           urlParams[key] = value === "null" ? null : value;
         }
+
+        // keep this until the backend implements it
+        switch (this.getCurrentContext()) {
+          case "templates":
+            urlParams.accessRights = "non-public";
+            break;
+          case "public":
+            requestParams.accessRights = "public";
+            break;
+        }
+
         const contextChanged = this.__didContextChange(urlParams);
         if (
           !contextChanged &&
