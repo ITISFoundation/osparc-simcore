@@ -256,7 +256,7 @@ class ServiceFiltersDB(Filters):
         schema.update(
             {
                 "example": {
-                    "by_service_type": "computational",
+                    "service_type": "computational",
                 }
             }
         )
