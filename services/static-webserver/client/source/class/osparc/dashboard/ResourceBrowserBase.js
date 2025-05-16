@@ -482,6 +482,54 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       }
     },
 
+    taskToTemplateReceived: function(task, studyName, templateType) {
+      const toTemplateTaskUI = new osparc.task.ToTemplate(studyName);
+      toTemplateTaskUI.setTask(task);
+
+      osparc.task.TasksContainer.getInstance().addTaskUI(toTemplateTaskUI);
+
+      const cardTitle = this.tr("Publishing ") + studyName;
+      const toTemplateCard = this._addTaskCard(task, cardTitle, osparc.task.ToTemplate.ICON);
+      if (toTemplateCard) {
+        this.__attachToTemplateEventHandler(task, toTemplateCard, templateType);
+      }
+    },
+
+    __attachToTemplateEventHandler: function(task, toTemplateCard, templateType) {
+      const finished = () => {
+        this._resourcesContainer.removeNonResourceCard(toTemplateCard);
+      };
+
+      task.addListener("updateReceived", e => {
+        const updateData = e.getData();
+        if ("task_progress" in updateData && toTemplateCard) {
+          const taskProgress = updateData["task_progress"];
+          toTemplateCard.getChildControl("progress-bar").set({
+            value: osparc.data.PollTask.extractProgress(updateData) * 100
+          });
+          toTemplateCard.getChildControl("state-label").set({
+            value: taskProgress["message"]
+          });
+        }
+      }, this);
+      task.addListener("resultReceived", e => {
+        finished();
+        this.reloadResources();
+        const msg = templateType + this.tr(" created");
+        osparc.FlashMessenger.logAs(msg, "INFO");
+      });
+      task.addListener("taskAborted", () => {
+        finished();
+        const msg = this.tr("Study to Template cancelled");
+        osparc.FlashMessenger.logAs(msg, "WARNING");
+      });
+      task.addListener("pollingError", e => {
+        finished();
+        const err = e.getData();
+        osparc.FlashMessenger.logError(err);
+      });
+    },
+
     _addTaskCard: function(task, cardTitle, cardIcon) {
       if (!this._resourcesContainer) {
         return null;

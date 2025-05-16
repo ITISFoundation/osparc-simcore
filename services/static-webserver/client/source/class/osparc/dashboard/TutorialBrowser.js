@@ -355,54 +355,6 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
         this.taskToTemplateReceived(task, studyName);
       });
     },
-
-    taskToTemplateReceived: function(task, studyName) {
-      const toTemplateTaskUI = new osparc.task.ToTemplate(studyName);
-      toTemplateTaskUI.setTask(task);
-
-      osparc.task.TasksContainer.getInstance().addTaskUI(toTemplateTaskUI);
-
-      const cardTitle = this.tr("Publishing ") + studyName;
-      const toTemplateCard = this._addTaskCard(task, cardTitle, osparc.task.ToTemplate.ICON);
-      if (toTemplateCard) {
-        this.__attachToTemplateEventHandler(task, toTemplateCard);
-      }
-    },
-
-    __attachToTemplateEventHandler: function(task, toTemplateCard) {
-      const finished = () => {
-        this._resourcesContainer.removeNonResourceCard(toTemplateCard);
-      };
-
-      task.addListener("updateReceived", e => {
-        const updateData = e.getData();
-        if ("task_progress" in updateData && toTemplateCard) {
-          const taskProgress = updateData["task_progress"];
-          toTemplateCard.getChildControl("progress-bar").set({
-            value: osparc.data.PollTask.extractProgress(updateData) * 100
-          });
-          toTemplateCard.getChildControl("state-label").set({
-            value: taskProgress["message"]
-          });
-        }
-      }, this);
-      task.addListener("resultReceived", e => {
-        finished();
-        this.reloadResources();
-        const msg = this.tr("Tutorial created");
-        osparc.FlashMessenger.logAs(msg, "INFO");
-      });
-      task.addListener("taskAborted", () => {
-        finished();
-        const msg = this.tr("Study to Tutorial cancelled");
-        osparc.FlashMessenger.logAs(msg, "WARNING");
-      });
-      task.addListener("pollingError", e => {
-        finished();
-        const err = e.getData();
-        osparc.FlashMessenger.logError(err);
-      });
-    },
     // TASKS //
   }
 });

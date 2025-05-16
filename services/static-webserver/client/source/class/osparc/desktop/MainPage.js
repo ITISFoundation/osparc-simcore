@@ -249,9 +249,12 @@ qx.Class.define("osparc.desktop.MainPage", {
       pollTasks.createPollingTask(fetchPromise)
         .then(task => {
           const tutorialBrowser = this.__dashboard.getTutorialBrowser();
+          if (tutorialBrowser && templateType === osparc.data.model.StudyUI.TUTORIAL_TYPE) {
+            tutorialBrowser.taskToTemplateReceived(task, studyName, templateType);
+          }
           const appBrowser = this.__dashboard.getAppBrowser();
-          if (tutorialBrowser) {
-            tutorialBrowser.taskToTemplateReceived(task, studyName);
+          if (appBrowser && templateType === osparc.data.model.StudyUI.HYPERTOOL_TYPE) {
+            appBrowser.taskToTemplateReceived(task, studyName, templateType);
           }
           task.addListener("resultReceived", e => {
             const templateData = e.getData();
