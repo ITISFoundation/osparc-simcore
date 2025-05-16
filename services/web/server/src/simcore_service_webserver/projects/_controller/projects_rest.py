@@ -153,6 +153,7 @@ async def list_projects(request: web.Request):
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
         project_type=query_params.project_type,
+        template_type=query_params.template_type,
         show_hidden=query_params.show_hidden,
         trashed=query_params.filters.trashed,
         folder_id=query_params.folder_id,

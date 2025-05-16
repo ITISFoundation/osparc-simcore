@@ -23,8 +23,7 @@ class BaseProjectError(WebServerBaseError):
         return f"{self.code}: {self}"
 
 
-class ProjectInvalidUsageError(BaseProjectError):
-    ...
+class ProjectInvalidUsageError(BaseProjectError): ...
 
 
 class ProjectOwnerNotFoundInTheProjectAccessRightsError(BaseProjectError):
@@ -83,8 +82,17 @@ class ProjectsBatchDeleteError(BaseProjectError):
     msg_template = "One or more projects could not be deleted in the batch: {errors}"
 
 
-class ProjectTrashError(BaseProjectError):
-    ...
+class ProjectsPatchError(BaseProjectError): ...
+
+
+class ProjectTypeAndTemplateIncompatibilityError(ProjectsPatchError):
+    msg_template = "Patching project '{project_uuid}' type {project_type} and template {project_template} is not allowed"
+
+
+class InsufficientRoleForProjectTemplateTypeUpdateError(ProjectsPatchError): ...
+
+
+class ProjectTrashError(BaseProjectError): ...
 
 
 class ProjectStoppingError(ProjectTrashError):
@@ -146,12 +154,10 @@ class ProjectTooManyProjectOpenedError(BaseProjectError):
         self.max_num_projects = max_num_projects
 
 
-class PermalinkNotAllowedError(BaseProjectError):
-    ...
+class PermalinkNotAllowedError(BaseProjectError): ...
 
 
-class PermalinkFactoryError(BaseProjectError):
-    ...
+class PermalinkFactoryError(BaseProjectError): ...
 
 
 class ProjectNodeResourcesInvalidError(BaseProjectError):
@@ -178,12 +184,10 @@ class InvalidEC2TypeInResourcesSpecsError(ProjectNodeResourcesInvalidError):
     )
 
 
-class ProjectNodeResourcesInsufficientRightsError(BaseProjectError):
-    ...
+class ProjectNodeResourcesInsufficientRightsError(BaseProjectError): ...
 
 
-class ProjectNodeRequiredInputsNotSetError(BaseProjectError):
-    ...
+class ProjectNodeRequiredInputsNotSetError(BaseProjectError): ...
 
 
 class ProjectNodeConnectionsMissingError(ProjectNodeRequiredInputsNotSetError):
