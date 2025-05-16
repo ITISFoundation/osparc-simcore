@@ -27,7 +27,7 @@ from ..dependencies.database import get_db_asyncpg_engine
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver_http import get_webserver_session
 from ..dependencies.webserver_rpc import get_wb_api_rpc_client
-from . import solvers_jobs, solvers_jobs_getters, studies_jobs
+from . import solvers_jobs, solvers_jobs_read, studies_jobs
 
 # pylint: disable=too-many-arguments
 # pylint: disable=cyclic-import
@@ -203,7 +203,7 @@ async def function_job_outputs(
     ):
         return dict(
             (
-                await solvers_jobs_getters.get_job_outputs(
+                await solvers_jobs_read.get_job_outputs(
                     solver_key=function.solver_key,
                     version=function.solver_version,
                     job_id=function_job.solver_job_id,
