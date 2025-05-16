@@ -2,11 +2,67 @@ from datetime import datetime
 from typing import Annotated, TypeAlias
 from uuid import uuid4
 
-from models_library.projects import NodesDict, ProjectID
-from models_library.projects_nodes import Node
-from models_library.rpc_pagination import PageRpc
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.config import JsonDict
+
+from ...projects import NodesDict, ProjectID
+from ...projects_nodes import Node
+from ...rpc_pagination import PageRpc
+
+
+class MetadataFilterItem(BaseModel):
+    name: str
+    pattern: str
+
+
+class ListProjectsMarkedAsJobRpcFilters(BaseModel):
+    """Filters model for the list_projects_marked_as_jobs RPC.
+
+    NOTE: Filters models are used to validate all possible filters in an API early on,
+    particularly to ensure compatibility and prevent conflicts between different filters.
+    """
+
+    job_parent_resource_name_prefix: str | None = None
+
+    any_custom_metadata: Annotated[
+        list[MetadataFilterItem] | None,
+        Field(description="Searchs for matches of any of the custom metadata fields"),
+    ] = None
+
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "job_parent_resource_name_prefix": "solvers/solver123",
+                        "any_custom_metadata": [
+                            {
+                                "name": "solver_type",
+                                "pattern": "FEM",
+                            },
+                            {
+                                "name": "mesh_cells",
+                                "pattern": "1*",
+                            },
+                        ],
+                    },
+                    {
+                        "any_custom_metadata": [
+                            {
+                                "name": "solver_type",
+                                "pattern": "*CFD*",
+                            }
+                        ],
+                    },
+                    {"job_parent_resource_name_prefix": "solvers/solver123"},
+                ]
+            }
+        )
+
+    model_config = ConfigDict(
+        json_schema_extra=_update_json_schema_extra,
+    )
 
 
 class ProjectJobRpcGet(BaseModel):
