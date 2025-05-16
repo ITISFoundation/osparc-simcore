@@ -667,9 +667,6 @@ class ProjectDBAPI(BaseProjectDB):
         # order
         order_by: OrderBy = DEFAULT_ORDER_BY,
     ) -> tuple[list[ProjectDict], list[ProjectType], int]:
-
-        # Check compatibility of project type and template type
-
         async with self.engine.acquire() as conn:
             user_groups_proxy: list[RowProxy] = await self._list_user_groups(
                 conn, user_id

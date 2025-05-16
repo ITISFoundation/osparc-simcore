@@ -14876,6 +14876,10 @@ components:
           - type: object
           - type: 'null'
           title: Quality
+        templateType:
+          anyOf:
+          - $ref: '#/components/schemas/ProjectTemplateType'
+          - type: 'null'
       type: object
       title: ProjectPatch
     ProjectPermalink:
