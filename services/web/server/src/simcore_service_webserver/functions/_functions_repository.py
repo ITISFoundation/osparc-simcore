@@ -1,7 +1,7 @@
 import json
 
 from aiohttp import web
-from models_library.api_schemas_webserver.functions_wb_schema import (
+from models_library.functions import (
     FunctionClass,
     FunctionID,
     FunctionIDNotFoundError,

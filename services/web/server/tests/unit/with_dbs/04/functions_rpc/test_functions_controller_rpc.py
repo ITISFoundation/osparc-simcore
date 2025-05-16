@@ -8,9 +8,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 # import simcore_service_webserver.functions._functions_controller_rpc as functions_rpc
-from models_library.api_schemas_webserver.functions_wb_schema import (
+from models_library.api_schemas_webserver.functions import (
     Function,
-    FunctionIDNotFoundError,
     FunctionJobCollection,
     FunctionJobIDNotFoundError,
     JSONFunctionInputSchema,
@@ -18,6 +17,7 @@ from models_library.api_schemas_webserver.functions_wb_schema import (
     ProjectFunction,
     ProjectFunctionJob,
 )
+from models_library.functions import FunctionIDNotFoundError
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient

@@ -5,7 +5,7 @@ import jsonschema
 from fastapi import APIRouter, Depends, Request, status
 from fastapi_pagination.api import create_page
 from jsonschema import ValidationError
-from models_library.api_schemas_webserver.functions_wb_schema import (
+from models_library.api_schemas_api_server.functions import (
     Function,
     FunctionClass,
     FunctionID,
