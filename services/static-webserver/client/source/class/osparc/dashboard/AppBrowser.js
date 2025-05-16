@@ -67,9 +67,9 @@ qx.Class.define("osparc.dashboard.AppBrowser", {
         });
     },
 
-    reloadResources: function() {
+    reloadResources: function(useCache = true) {
       this.__loadServices();
-      this.__loadHypertools();
+      this.__loadHypertools(useCache);
     },
 
     __loadServices: function() {
@@ -83,8 +83,8 @@ qx.Class.define("osparc.dashboard.AppBrowser", {
         });
     },
 
-    __loadHypertools: function() {
-      osparc.store.Templates.getHypertools()
+    __loadHypertools: function(useCache = true) {
+      osparc.store.Templates.getHypertools(useCache)
         .then(hypertoolsList => {
           hypertoolsList.forEach(hypertool => hypertool["resourceType"] = "hypertool");
           this._resourcesList.push(...hypertoolsList.filter(hypertool => hypertool !== null));

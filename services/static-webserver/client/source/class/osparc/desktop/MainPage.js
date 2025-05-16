@@ -261,11 +261,10 @@ qx.Class.define("osparc.desktop.MainPage", {
               osparc.store.Study.patchTemplateType(templateData, templateType)
                 .then(() => {
                   if (tutorialBrowser && templateType === osparc.data.model.StudyUI.TUTORIAL_TYPE) {
-                    tutorialBrowser.reloadResources();
+                    tutorialBrowser.reloadResources(false);
                   }
                   if (appBrowser && templateType === osparc.data.model.StudyUI.HYPERTOOL_TYPE) {
-                    // OM: reload hypertools only
-                    appBrowser.reloadResources();
+                    appBrowser.reloadResources(false);
                   }
                 });
             }
