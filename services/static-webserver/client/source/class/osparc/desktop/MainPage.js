@@ -258,14 +258,12 @@ qx.Class.define("osparc.desktop.MainPage", {
             // these operations need to be done after template creation
             osparc.store.Study.addCollaborators(templateData, templateAccessRights);
             if (templateType) {
-              const studyUI = osparc.utils.Utils.deepCloneObject(templateData["ui"]);
-              studyUI["templateType"] = templateType;
-              osparc.store.Study.patchStudyData(templateData, "ui", studyUI)
+              osparc.store.Study.patchTemplateType(templateData, templateType)
                 .then(() => {
-                  if (tutorialBrowser) {
+                  if (tutorialBrowser && templateType === osparc.data.model.StudyUI.TUTORIAL_TYPE) {
                     tutorialBrowser.reloadResources();
                   }
-                  if (appBrowser) {
+                  if (appBrowser && templateType === osparc.data.model.StudyUI.HYPERTOOL_TYPE) {
                     // OM: reload hypertools only
                     appBrowser.reloadResources();
                   }

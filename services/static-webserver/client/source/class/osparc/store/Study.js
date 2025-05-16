@@ -41,6 +41,19 @@ qx.Class.define("osparc.store.Study", {
         });
     },
 
+    patchTemplateType: function(templateData, templateType) {
+      const params = {
+        url: {
+          "studyId": templateData["uuid"]
+        },
+        data: {
+          "templateType": templateType,
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "patch", params)
+        .catch(err => osparc.FlashMessenger.logError(err));
+    },
+
     patchNodeData: function(studyData, nodeId, patchData) {
       const params = {
         url: {
