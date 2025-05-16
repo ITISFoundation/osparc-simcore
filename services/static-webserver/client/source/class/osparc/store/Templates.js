@@ -43,7 +43,15 @@ qx.Class.define("osparc.store.Templates", {
       return this.__fetchTemplatesPaginated(params, options);
     },
 
-    __fetchAllTutorials: function(params) {
+    __fetchAllTutorials: function() {
+      const params = {
+        url: {
+          "orderBy": JSON.stringify({
+            field: "last_change_date",
+            direction: "desc"
+          }),
+        }
+      };
       params["url"]["templateType"] = osparc.data.model.StudyUI.TUTORIAL_TYPE;
       return this.__tutorialsPromiseCached = osparc.data.Resources.getInstance().getAllPages("templates", params, "getPageFilteredSorted")
         .then(tutorials => {
@@ -59,7 +67,15 @@ qx.Class.define("osparc.store.Templates", {
         });
     },
 
-    __fetchAllHypertools: function(params) {
+    __fetchAllHypertools: function() {
+      const params = {
+        url: {
+          "orderBy": JSON.stringify({
+            field: "last_change_date",
+            direction: "desc"
+          }),
+        }
+      };
       params["url"]["templateType"] = osparc.data.model.StudyUI.HYPERTOOL_TYPE;
       return this.__hypertoolsPromiseCached = osparc.data.Resources.getInstance().getAllPages("templates", params, "getPageFilteredSorted")
         .then(hypertools => {
@@ -76,22 +92,13 @@ qx.Class.define("osparc.store.Templates", {
     },
 
     getTutorials: function(useCache = true) {
-      const params = {
-        url: {
-          "orderBy": JSON.stringify({
-            field: "last_change_date",
-            direction: "desc"
-          }),
-        }
-      };
-
       if (this.__tutorialsPromiseCached) {
         return this.__tutorialsPromiseCached;
       }
 
       if (this.__tutorials === null) {
         // no tutorials cached, fetch them
-        return this.__fetchAllTutorials(params);
+        return this.__fetchAllTutorials();
       }
 
       if (useCache) {
@@ -99,26 +106,17 @@ qx.Class.define("osparc.store.Templates", {
         return new Promise(resolve => resolve(this.__tutorials));
       }
 
-      return this.__fetchAllTutorials(params);
+      return this.__fetchAllTutorials();
     },
 
     getHypertools: function(useCache = true) {
-      const params = {
-        url: {
-          "orderBy": JSON.stringify({
-            field: "last_change_date",
-            direction: "desc"
-          }),
-        }
-      };
-
       if (this.__hypertoolsPromiseCached) {
         return this.__hypertoolsPromiseCached;
       }
 
       if (this.__hypertools === null) {
         // no hypertools cached, fetch them
-        return this.__fetchAllHypertools(params);
+        return this.__fetchAllHypertools();
       }
 
       if (useCache) {
@@ -126,7 +124,7 @@ qx.Class.define("osparc.store.Templates", {
         return new Promise(resolve => resolve(this.__hypertools));
       }
 
-      return this.__fetchAllHypertools(params);
+      return this.__fetchAllHypertools();
     },
   }
 });
