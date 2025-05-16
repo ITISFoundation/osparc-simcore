@@ -5,6 +5,7 @@ from functools import cached_property
 from pathlib import Path
 from typing import Annotated, Any, Literal, TypeAlias
 
+from common_library.basic_types import DEFAULT_FACTORY
 from common_library.json_serialization import json_dumps
 from pydantic import (
     BaseModel,
@@ -38,23 +39,30 @@ class ContainerSpec(BaseModel):
     request body: TaskTemplate -> ContainerSpec
     """
 
-    command: list[str] = Field(
-        alias="Command",
-        description="Used to override the container's command",
-        # NOTE: currently constraint to our use cases. Might mitigate some security issues.
-        min_length=1,
-        max_length=2,
-    )
+    command: Annotated[
+        list[str],
+        Field(
+            alias="Command",
+            description="Used to override the container's command",
+            # NOTE: currently constraint to our use cases. Might mitigate some security issues.
+            min_length=1,
+            max_length=2,
+        ),
+    ]
 
-    model_config = _BaseConfig | ConfigDict(
-        json_schema_extra={
-            "examples": [
-                {"Command": ["executable"]},
-                {"Command": ["executable", "subcommand"]},
-                {"Command": ["ofs", "linear-regression"]},
-            ]
-        },
-    )
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {"Command": ["executable"]},
+                    {"Command": ["executable", "subcommand"]},
+                    {"Command": ["ofs", "linear-regression"]},
+                ]
+            }
+        )
+
+    model_config = _BaseConfig | ConfigDict(json_schema_extra=_update_json_schema_extra)
 
 
 class SimcoreServiceSettingLabelEntry(BaseModel):
@@ -65,24 +73,30 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
     """
 
     _destination_containers: list[str] = PrivateAttr()
-    name: str = Field(..., description="The name of the service setting")
-    setting_type: Literal[
-        "string",
-        "int",
-        "integer",
-        "number",
-        "object",
-        "ContainerSpec",
-        "Resources",
-    ] = Field(
-        ...,
-        description="The type of the service setting (follows Docker REST API naming scheme)",
-        alias="type",
-    )
-    value: Any = Field(
-        ...,
-        description="The value of the service setting (shall follow Docker REST API scheme for services",
-    )
+    name: Annotated[str, Field(description="The name of the service setting")]
+
+    setting_type: Annotated[
+        Literal[
+            "string",
+            "int",
+            "integer",
+            "number",
+            "object",
+            "ContainerSpec",
+            "Resources",
+        ],
+        Field(
+            description="The type of the service setting (follows Docker REST API naming scheme)",
+            alias="type",
+        ),
+    ]
+
+    value: Annotated[
+        Any,
+        Field(
+            description="The value of the service setting (shall follow Docker REST API scheme for services",
+        ),
+    ]
 
     def set_destination_containers(self, value: list[str]) -> None:
         # NOTE: private attributes cannot be transformed into properties
@@ -98,69 +112,85 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
 
     @field_validator("setting_type", mode="before")
     @classmethod
-    def ensure_backwards_compatible_setting_type(cls, v):
+    def _ensure_backwards_compatible_setting_type(cls, v):
         if v == "resources":
             # renamed in the latest version as
             return "Resources"
         return v
 
-    model_config = _BaseConfig | ConfigDict(
-        populate_by_name=True,
-        json_schema_extra={
-            "examples": [
-                # constraints
-                {
-                    "name": "constraints",
-                    "type": "string",
-                    "value": ["node.platform.os == linux"],
-                },
-                # SEE service_settings_labels.py::ContainerSpec
-                {
-                    "name": "ContainerSpec",
-                    "type": "ContainerSpec",
-                    "value": {"Command": ["run"]},
-                },
-                # SEE services_resources.py::ResourceValue
-                {
-                    "name": "Resources",
-                    "type": "Resources",
-                    "value": {
-                        "Limits": {"NanoCPUs": 4000000000, "MemoryBytes": 17179869184},
-                        "Reservations": {
-                            "NanoCPUs": 100000000,
-                            "MemoryBytes": 536870912,
-                            "GenericResources": [
-                                {"DiscreteResourceSpec": {"Kind": "VRAM", "Value": 1}}
-                            ],
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    # constraints
+                    {
+                        "name": "constraints",
+                        "type": "string",
+                        "value": ["node.platform.os == linux"],
+                    },
+                    # SEE service_settings_labels.py::ContainerSpec
+                    {
+                        "name": "ContainerSpec",
+                        "type": "ContainerSpec",
+                        "value": {"Command": ["run"]},
+                    },
+                    # SEE services_resources.py::ResourceValue
+                    {
+                        "name": "Resources",
+                        "type": "Resources",
+                        "value": {
+                            "Limits": {
+                                "NanoCPUs": 4000000000,
+                                "MemoryBytes": 17179869184,
+                            },
+                            "Reservations": {
+                                "NanoCPUs": 100000000,
+                                "MemoryBytes": 536870912,
+                                "GenericResources": [
+                                    {
+                                        "DiscreteResourceSpec": {
+                                            "Kind": "VRAM",
+                                            "Value": 1,
+                                        }
+                                    }
+                                ],
+                            },
                         },
                     },
-                },
-                # mounts
-                {
-                    "name": "mount",
-                    "type": "object",
-                    "value": [
-                        {
-                            "ReadOnly": True,
-                            "Source": "/tmp/.X11-unix",  # nosec  # noqa: S108
-                            "Target": "/tmp/.X11-unix",  # nosec  # noqa: S108
-                            "Type": "bind",
-                        }
-                    ],
-                },
-                # environments
-                {"name": "env", "type": "string", "value": ["DISPLAY=:0"]},
-                # SEE 'simcore.service.settings' label annotations for simcore/services/dynamic/jupyter-octave-python-math:1.6.5
-                {"name": "ports", "type": "int", "value": 8888},
-                {
-                    "name": "resources",
-                    "type": "resources",
-                    "value": {
-                        "Limits": {"NanoCPUs": 4000000000, "MemoryBytes": 8589934592}
+                    # mounts
+                    {
+                        "name": "mount",
+                        "type": "object",
+                        "value": [
+                            {
+                                "ReadOnly": True,
+                                "Source": "/tmp/.X11-unix",  # nosec  # noqa: S108
+                                "Target": "/tmp/.X11-unix",  # nosec  # noqa: S108
+                                "Type": "bind",
+                            }
+                        ],
                     },
-                },
-            ]
-        },
+                    # environments
+                    {"name": "env", "type": "string", "value": ["DISPLAY=:0"]},
+                    # SEE 'simcore.service.settings' label annotations for simcore/services/dynamic/jupyter-octave-python-math:1.6.5
+                    {"name": "ports", "type": "int", "value": 8888},
+                    {
+                        "name": "resources",
+                        "type": "resources",
+                        "value": {
+                            "Limits": {
+                                "NanoCPUs": 4000000000,
+                                "MemoryBytes": 8589934592,
+                            }
+                        },
+                    },
+                ]
+            }
+        )
+
+    model_config = _BaseConfig | ConfigDict(
+        populate_by_name=True, json_schema_extra=_update_json_schema_extra
     )
 
 
@@ -175,42 +205,55 @@ class LegacyState(BaseModel):
 class PathMappingsLabel(BaseModel):
     """Content of "simcore.service.paths-mapping" label"""
 
-    inputs_path: Path = Field(
-        ..., description="folder path where the service expects all the inputs"
-    )
-    outputs_path: Path = Field(
-        ...,
-        description="folder path where the service is expected to provide all its outputs",
-    )
-    state_paths: list[Path] = Field(
-        default_factory=list,
-        description="optional list of paths which contents need to be persisted",
-    )
+    inputs_path: Annotated[
+        Path, Field(description="folder path where the service expects all the inputs")
+    ]
 
-    state_exclude: set[str] | None = Field(
-        None,
-        description="optional list unix shell rules used to exclude files from the state",
-    )
-
-    volume_size_limits: dict[str, str] | None = Field(
-        None,
-        description=(
-            "Apply volume size limits to entries in: `inputs_path`, `outputs_path` "
-            "and `state_paths`. Limits must be parsable by Pydantic's ByteSize."
+    outputs_path: Annotated[
+        Path,
+        Field(
+            description="folder path where the service is expected to provide all its outputs",
         ),
-    )
+    ]
 
-    legacy_state: LegacyState | None = Field(
-        None,
-        description=(
-            "if present, the service needs to first try to download the legacy state"
-            "coming from a different path."
+    state_paths: Annotated[
+        list[Path],
+        Field(
+            description="optional list of paths which contents need to be persisted",
+            default_factory=list,
         ),
-    )
+    ] = DEFAULT_FACTORY
+
+    state_exclude: Annotated[
+        set[str] | None,
+        Field(
+            description="optional list unix shell rules used to exclude files from the state",
+        ),
+    ] = None
+
+    volume_size_limits: Annotated[
+        dict[str, str] | None,
+        Field(
+            description=(
+                "Apply volume size limits to entries in: `inputs_path`, `outputs_path` "
+                "and `state_paths`. Limits must be parsable by Pydantic's ByteSize."
+            ),
+        ),
+    ] = None
+
+    legacy_state: Annotated[
+        LegacyState | None,
+        Field(
+            description=(
+                "if present, the service needs to first try to download the legacy state"
+                "coming from a different path."
+            ),
+        ),
+    ] = None
 
     @field_validator("legacy_state")
     @classmethod
-    def validate_legacy_state(
+    def _validate_legacy_state(
         cls, v: LegacyState | None, info: ValidationInfo
     ) -> LegacyState | None:
         if v is None:
@@ -225,7 +268,7 @@ class PathMappingsLabel(BaseModel):
 
     @field_validator("volume_size_limits")
     @classmethod
-    def validate_volume_limits(cls, v, info: ValidationInfo) -> str | None:
+    def _validate_volume_limits(cls, v, info: ValidationInfo) -> str | None:
         if v is None:
             return v
 
@@ -250,49 +293,59 @@ class PathMappingsLabel(BaseModel):
         output: str | None = v
         return output
 
-    model_config = _BaseConfig | ConfigDict(
-        json_schema_extra={
-            "examples": [
-                {
-                    "outputs_path": "/tmp/outputs",  # noqa: S108 nosec
-                    "inputs_path": "/tmp/inputs",  # noqa: S108 nosec
-                    "state_paths": ["/tmp/save_1", "/tmp_save_2"],  # noqa: S108 nosec
-                    "state_exclude": ["/tmp/strip_me/*"],  # noqa: S108 nosec
-                },
-                {
-                    "outputs_path": "/t_out",
-                    "inputs_path": "/t_inp",
-                    "state_paths": [
-                        "/s",
-                        "/s0",
-                        "/s1",
-                        "/s2",
-                        "/s3",
-                        "/i_have_no_limit",
-                    ],
-                    "volume_size_limits": {
-                        "/s": "1",
-                        "/s0": "1m",
-                        "/s1": "1kib",
-                        "/s2": "1TIB",
-                        "/s3": "1G",
-                        "/t_out": "12",
-                        "/t_inp": "1EIB",
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "outputs_path": "/tmp/outputs",  # noqa: S108 nosec
+                        "inputs_path": "/tmp/inputs",  # noqa: S108 nosec
+                        "state_paths": [
+                            "/tmp/save_1",  # noqa: S108 nosec
+                            "/tmp_save_2",  # noqa: S108 nosec
+                        ],
+                        "state_exclude": ["/tmp/strip_me/*"],  # noqa: S108 nosec
                     },
-                },
-                {
-                    "outputs_path": "/tmp/outputs",  # noqa: S108 nosec
-                    "inputs_path": "/tmp/inputs",  # noqa: S108 nosec
-                    "state_paths": ["/tmp/save_1", "/tmp_save_2"],  # noqa: S108 nosec
-                    "state_exclude": ["/tmp/strip_me/*"],  # noqa: S108 nosec
-                    "legacy_state": {
-                        "old_state_path": "/tmp/save_1_legacy",  # noqa: S108 nosec
-                        "new_state_path": "/tmp/save_1",  # noqa: S108 nosec
+                    {
+                        "outputs_path": "/t_out",
+                        "inputs_path": "/t_inp",
+                        "state_paths": [
+                            "/s",
+                            "/s0",
+                            "/s1",
+                            "/s2",
+                            "/s3",
+                            "/i_have_no_limit",
+                        ],
+                        "volume_size_limits": {
+                            "/s": "1",
+                            "/s0": "1m",
+                            "/s1": "1kib",
+                            "/s2": "1TIB",
+                            "/s3": "1G",
+                            "/t_out": "12",
+                            "/t_inp": "1EIB",
+                        },
                     },
-                },
-            ]
-        },
-    )
+                    {
+                        "outputs_path": "/tmp/outputs",  # noqa: S108 nosec
+                        "inputs_path": "/tmp/inputs",  # noqa: S108 nosec
+                        "state_paths": [
+                            "/tmp/save_1",  # noqa: S108 nosec
+                            "/tmp_save_2",  # noqa: S108 nosec
+                        ],
+                        "state_exclude": ["/tmp/strip_me/*"],  # noqa: S108 nosec
+                        "legacy_state": {
+                            "old_state_path": "/tmp/save_1_legacy",  # noqa: S108 nosec
+                            "new_state_path": "/tmp/save_1",  # noqa: S108 nosec
+                        },
+                    },
+                ]
+            }
+        )
+
+    model_config = _BaseConfig | ConfigDict(json_schema_extra=_update_json_schema_extra)
 
 
 ComposeSpecLabelDict: TypeAlias = dict[str, Any]
@@ -308,79 +361,91 @@ class RestartPolicy(str, Enum):
 class DynamicSidecarServiceLabels(BaseModel):
     """All "simcore.service.*" labels including keys"""
 
-    paths_mapping: Json[PathMappingsLabel] | None = Field(
-        None,
-        alias="simcore.service.paths-mapping",
-        description=(
-            "json encoded, determines how the folders are mapped in "
-            "the service. Required by dynamic-sidecar."
+    paths_mapping: Annotated[
+        Json[PathMappingsLabel] | None,
+        Field(
+            alias="simcore.service.paths-mapping",
+            description=(
+                "json encoded, determines how the folders are mapped in "
+                "the service. Required by dynamic-sidecar."
+            ),
         ),
-    )
+    ] = None
 
-    compose_spec: Json[ComposeSpecLabelDict | None] | None = Field(
-        None,
-        alias="simcore.service.compose-spec",
-        description=(
-            "json encoded docker-compose specifications. see "
-            "https://docs.docker.com/compose/compose-file/, "
-            "only used by dynamic-sidecar."
+    compose_spec: Annotated[
+        Json[ComposeSpecLabelDict | None] | None,
+        Field(
+            alias="simcore.service.compose-spec",
+            description=(
+                "json encoded docker-compose specifications. see "
+                "https://docs.docker.com/compose/compose-file/, "
+                "only used by dynamic-sidecar."
+            ),
         ),
-    )
-    container_http_entry: str | None = Field(
-        None,
-        alias="simcore.service.container-http-entrypoint",
-        description=(
-            "When a docker-compose specifications is provided, "
-            "the container where the traffic must flow has to be "
-            "specified. Required by dynamic-sidecar when "
-            "compose_spec is set."
-        ),
-        validate_default=True,
-    )
+    ] = None
 
-    user_preferences_path: Path | None = Field(
-        None,
-        alias="simcore.service.user-preferences-path",
-        description=(
-            "path where the user user preferences folder "
-            "will be mounted in the user services"
+    container_http_entry: Annotated[
+        str | None,
+        Field(
+            alias="simcore.service.container-http-entrypoint",
+            description=(
+                "When a docker-compose specifications is provided, "
+                "the container where the traffic must flow has to be "
+                "specified. Required by dynamic-sidecar when "
+                "compose_spec is set."
+            ),
+            validate_default=True,
         ),
-    )
+    ] = None
 
-    restart_policy: RestartPolicy = Field(
-        RestartPolicy.NO_RESTART,
-        alias="simcore.service.restart-policy",
-        description=(
-            "the dynamic-sidecar can restart all running containers "
-            "on certain events. Supported events:\n"
-            "- `no-restart` default\n"
-            "- `on-inputs-downloaded` after inputs are downloaded\n"
+    user_preferences_path: Annotated[
+        Path | None,
+        Field(
+            alias="simcore.service.user-preferences-path",
+            description=(
+                "path where the user user preferences folder "
+                "will be mounted in the user services"
+            ),
         ),
-    )
+    ] = None
+
+    restart_policy: Annotated[
+        RestartPolicy,
+        Field(
+            alias="simcore.service.restart-policy",
+            description=(
+                "the dynamic-sidecar can restart all running containers "
+                "on certain events. Supported events:\n"
+                "- `no-restart` default\n"
+                "- `on-inputs-downloaded` after inputs are downloaded\n"
+            ),
+        ),
+    ] = RestartPolicy.NO_RESTART
 
     containers_allowed_outgoing_permit_list: Annotated[
         None | (Json[dict[str, list[NATRule]]]),
         Field(
-            None,
             alias="simcore.service.containers-allowed-outgoing-permit-list",
             description="allow internet access to certain domain names and ports per container",
         ),
-    ]
+    ] = None
 
-    containers_allowed_outgoing_internet: Json[set[str]] | None = Field(
-        None,
-        alias="simcore.service.containers-allowed-outgoing-internet",
-        description="allow complete internet access to containers in here",
-    )
+    containers_allowed_outgoing_internet: Annotated[
+        Json[set[str]] | None,
+        Field(
+            alias="simcore.service.containers-allowed-outgoing-internet",
+            description="allow complete internet access to containers in here",
+        ),
+    ] = None
 
     callbacks_mapping: Annotated[
         Json[CallbacksMapping] | None,
         Field(
-            default_factory=CallbacksMapping,  # NOTE: PC->ANE I still think this could be an issue
             alias="simcore.service.callbacks-mapping",
             description="exposes callbacks from user services to the sidecar",
+            default_factory=CallbacksMapping,
         ),
-    ]
+    ] = DEFAULT_FACTORY
 
     @cached_property
     def needs_dynamic_sidecar(self) -> bool:
@@ -389,7 +454,7 @@ class DynamicSidecarServiceLabels(BaseModel):
 
     @field_validator("container_http_entry")
     @classmethod
-    def compose_spec_requires_container_http_entry(
+    def _compose_spec_requires_container_http_entry(
         cls, v, info: ValidationInfo
     ) -> str | None:
         v = None if v == "" else v
@@ -531,85 +596,6 @@ class DynamicSidecarServiceLabels(BaseModel):
     model_config = _BaseConfig
 
 
-def _update_json_schema_extra(schema: JsonDict) -> None:
-    #
-    # NOTE: this will be automatically called with SimcoreServiceLabels.model_json_schema
-    #
-
-    schema.update(
-        {
-            "examples": [
-                # WARNING: do not change order. Used in tests!
-                # legacy service
-                {
-                    "simcore.service.settings": json_dumps(
-                        SimcoreServiceSettingLabelEntry.model_json_schema()["examples"]
-                    )
-                },
-                # dynamic-service
-                {
-                    "simcore.service.settings": json_dumps(
-                        SimcoreServiceSettingLabelEntry.model_json_schema()["examples"]
-                    ),
-                    "simcore.service.paths-mapping": json_dumps(
-                        PathMappingsLabel.model_json_schema()["examples"][0]
-                    ),
-                    "simcore.service.restart-policy": RestartPolicy.NO_RESTART.value,
-                    "simcore.service.callbacks-mapping": json_dumps(
-                        {
-                            "metrics": {
-                                "service": DEFAULT_SINGLE_SERVICE_NAME,
-                                "command": "ls",
-                                "timeout": 1,
-                            }
-                        }
-                    ),
-                    "simcore.service.user-preferences-path": json_dumps(
-                        "/tmp/path_to_preferences"  # noqa: S108
-                    ),
-                },
-                # dynamic-service with compose spec
-                {
-                    "simcore.service.settings": json_dumps(
-                        SimcoreServiceSettingLabelEntry.model_json_schema()["examples"]
-                    ),
-                    "simcore.service.paths-mapping": json_dumps(
-                        PathMappingsLabel.model_json_schema()["examples"][0],
-                    ),
-                    "simcore.service.compose-spec": json_dumps(
-                        {
-                            "version": "2.3",
-                            "services": {
-                                "rt-web": {
-                                    "image": "${SIMCORE_REGISTRY}/simcore/services/dynamic/sim4life:${SERVICE_VERSION}",
-                                    "init": True,
-                                    "depends_on": ["s4l-core"],
-                                    "storage_opt": {"size": "10M"},
-                                },
-                                "s4l-core": {
-                                    "image": "${SIMCORE_REGISTRY}/simcore/services/dynamic/s4l-core:${SERVICE_VERSION}",
-                                    "runtime": "nvidia",
-                                    "storage_opt": {"size": "5G"},
-                                    "init": True,
-                                    "environment": ["DISPLAY=${DISPLAY}"],
-                                    "volumes": [
-                                        "/tmp/.X11-unix:/tmp/.X11-unix"  # nosec  # noqa: S108
-                                    ],
-                                },
-                            },
-                        }
-                    ),
-                    "simcore.service.container-http-entrypoint": "rt-web",
-                    "simcore.service.restart-policy": RestartPolicy.ON_INPUTS_DOWNLOADED.value,
-                    "simcore.service.callbacks-mapping": json_dumps(
-                        CallbacksMapping.model_json_schema()["examples"][3]
-                    ),
-                },
-            ]
-        },
-    )
-
-
 class SimcoreServiceLabels(DynamicSidecarServiceLabels):
     """
     Validate all the simcores.services.* labels on a service.
@@ -629,15 +615,96 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
     settings: Annotated[
         Json[SimcoreServiceSettingsLabel],
         Field(
-            default_factory=lambda: SimcoreServiceSettingsLabel.model_validate([]),
             alias="simcore.service.settings",
             description=(
                 "Json encoded. Contains setting like environment variables and "
                 "resource constraints which are required by the service. "
                 "Should be compatible with Docker REST API."
             ),
+            default_factory=lambda: SimcoreServiceSettingsLabel.model_validate([]),
         ),
-    ]
+    ] = DEFAULT_FACTORY
+
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    # WARNING: do not change order. Used in tests!
+                    # legacy service
+                    {
+                        "simcore.service.settings": json_dumps(
+                            SimcoreServiceSettingLabelEntry.model_json_schema()[
+                                "examples"
+                            ]
+                        )
+                    },
+                    # dynamic-service
+                    {
+                        "simcore.service.settings": json_dumps(
+                            SimcoreServiceSettingLabelEntry.model_json_schema()[
+                                "examples"
+                            ]
+                        ),
+                        "simcore.service.paths-mapping": json_dumps(
+                            PathMappingsLabel.model_json_schema()["examples"][0]
+                        ),
+                        "simcore.service.restart-policy": RestartPolicy.NO_RESTART.value,
+                        "simcore.service.callbacks-mapping": json_dumps(
+                            {
+                                "metrics": {
+                                    "service": DEFAULT_SINGLE_SERVICE_NAME,
+                                    "command": "ls",
+                                    "timeout": 1,
+                                }
+                            }
+                        ),
+                        "simcore.service.user-preferences-path": json_dumps(
+                            "/tmp/path_to_preferences"  # noqa: S108
+                        ),
+                    },
+                    # dynamic-service with compose spec
+                    {
+                        "simcore.service.settings": json_dumps(
+                            SimcoreServiceSettingLabelEntry.model_json_schema()[
+                                "examples"
+                            ]
+                        ),
+                        "simcore.service.paths-mapping": json_dumps(
+                            PathMappingsLabel.model_json_schema()["examples"][0],
+                        ),
+                        "simcore.service.compose-spec": json_dumps(
+                            {
+                                "version": "2.3",
+                                "services": {
+                                    "rt-web": {
+                                        "image": "${SIMCORE_REGISTRY}/simcore/services/dynamic/sim4life:${SERVICE_VERSION}",
+                                        "init": True,
+                                        "depends_on": ["s4l-core"],
+                                        "storage_opt": {"size": "10M"},
+                                    },
+                                    "s4l-core": {
+                                        "image": "${SIMCORE_REGISTRY}/simcore/services/dynamic/s4l-core:${SERVICE_VERSION}",
+                                        "runtime": "nvidia",
+                                        "storage_opt": {"size": "5G"},
+                                        "init": True,
+                                        "environment": ["DISPLAY=${DISPLAY}"],
+                                        "volumes": [
+                                            "/tmp/.X11-unix:/tmp/.X11-unix"  # nosec  # noqa: S108
+                                        ],
+                                    },
+                                },
+                            }
+                        ),
+                        "simcore.service.container-http-entrypoint": "rt-web",
+                        "simcore.service.restart-policy": RestartPolicy.ON_INPUTS_DOWNLOADED.value,
+                        "simcore.service.callbacks-mapping": json_dumps(
+                            CallbacksMapping.model_json_schema()["examples"][3]
+                        ),
+                    },
+                ]
+            },
+        )
 
     model_config = _BaseConfig | ConfigDict(
         extra="allow",
