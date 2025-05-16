@@ -1,4 +1,4 @@
-from typing import Annotated, Self
+from typing import Annotated, Literal, Self
 
 from models_library.basic_types import IDStr
 from models_library.folders import FolderID
@@ -114,6 +114,12 @@ class ProjectFilters(Filters):
     ] = None
     job_parent_resource_name: Annotated[
         str | None,
+        Field(
+            description="A search query to filter projects with associated job_parent_resource_name",
+        ),
+    ] = None
+    template_type: Annotated[
+        Literal["TEMPLATE", "HYPERTOOL", "TUTORIAL"] | None,
         Field(
             description="A search query to filter projects with associated job_parent_resource_name",
         ),
