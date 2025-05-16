@@ -134,17 +134,11 @@ def get_image_complete_url(
 
 
 def get_image_name_and_tag(image_complete_url: URL) -> tuple[str, str]:
-    parent = f"{image_complete_url.parent}"
-    no_parent_image_url = f"{image_complete_url}".strip(parent)
-    if "sha256" in no_parent_image_url:
-        parts = no_parent_image_url.split("@")
-        to_split = parts[0]
+    if "sha256" in f"{image_complete_url}":
+        parts = image_complete_url.path.split("@")
     else:
-        to_split = no_parent_image_url
-
-    parts = to_split.split(":")
-    image_name = parts[0].strip("/")
-    return f"{parent}/{image_name}".lstrip("/"), parts[1]
+        parts = image_complete_url.path.split(":")
+    return parts[0].strip("/"), parts[1]
 
 
 @dataclass

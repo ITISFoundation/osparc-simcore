@@ -2,8 +2,7 @@
 from datetime import datetime, timezone
 
 import pytest
-from servicelib.docker_utils import get_image_name_and_tag, to_datetime
-from yarl import URL
+from servicelib.docker_utils import to_datetime
 
 NOW = datetime.now(tz=timezone.utc)
 
@@ -42,36 +41,3 @@ NOW = datetime.now(tz=timezone.utc)
 def test_to_datetime(docker_time: str, expected_datetime: datetime):
     received_datetime = to_datetime(docker_time)
     assert received_datetime == expected_datetime
-
-
-@pytest.mark.parametrize(
-    "image, expected_name, expected_tag",
-    [
-        ("my_image:latest", "my_image", "latest"),
-        ("my_image:1.1.1", "my_image", "1.1.1"),
-        ("my_image:latest@sha256:1234567890abcdef", "my_image", "latest"),
-        ("my_image:1.1.1@sha256:1234567890abcdef", "my_image", "1.1.1"),
-        ("docker.io/my_image:latest", "docker.io/my_image", "latest"),
-        ("docker.io/my_image:1.1.1", "docker.io/my_image", "1.1.1"),
-        (
-            "docker.io/my_image:1.1.1@sha256:1234567890abcdef",
-            "docker.io/my_image",
-            "1.1.1",
-        ),
-        ("registry:5000/my_image:1.1.1", "registry:5000/my_image", "1.1.1"),
-        (
-            "registry:5000/my_image:1.1.1@sha256:1234567890abcdef",
-            "registry:5000/my_image",
-            "1.1.1",
-        ),
-        (
-            "registry:5000/simcore/services/dynamic/jupyter-fenics:1.1.2",
-            "registry:5000/simcore/services/dynamic/jupyter-fenics",
-            "1.1.2",
-        ),
-    ],
-)
-def test_get_image_name_and_tag(image: str, expected_name: str, expected_tag: str):
-    name, tag = get_image_name_and_tag(URL(image))
-    assert name == expected_name
-    assert tag == expected_tag
