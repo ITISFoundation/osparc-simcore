@@ -6,6 +6,7 @@
 # pylint: disable=unused-variable
 
 
+import fnmatch
 from dataclasses import dataclass
 
 from models_library.api_schemas_catalog.services import (
@@ -55,18 +56,40 @@ class CatalogRpcSideEffects:
         assert product_name
         assert user_id
 
-        items = TypeAdapter(list[LatestServiceGet]).validate_python(
+        services_list = TypeAdapter(list[LatestServiceGet]).validate_python(
             LatestServiceGet.model_json_schema()["examples"],
         )
         if filters:
-            items = [
-                item for item in items if item.service_type == filters.service_type
-            ]
 
-        total_count = len(items)
+            filtered_services = []
+            for src in services_list:
+                # Match service type if specified
+                if filters.service_type and src.service_type != filters.service_type:
+                    continue
+
+                # Match service key pattern if specified
+                if filters.service_key_pattern and not fnmatch.fnmatch(
+                    src.key, filters.service_key_pattern
+                ):
+                    continue
+
+                # Match version display pattern if specified
+                if filters.version_display_pattern and (
+                    src.version_display is None
+                    or not fnmatch.fnmatch(
+                        src.version_display, filters.version_display_pattern
+                    )
+                ):
+                    continue
+
+                filtered_services.append(src)
+
+            services_list = filtered_services
+
+        total_count = len(services_list)
 
         return PageRpc[LatestServiceGet].create(
-            items[offset : offset + limit],
+            services_list[offset : offset + limit],
             total=total_count,
             limit=limit,
             offset=offset,
