@@ -24,7 +24,7 @@ def test_rabbitmq_plugin_initializes(dask_client: distributed.Client): ...
 @pytest.fixture
 def erroring_rabbitmq_plugin(mocker: MockerFixture) -> mock.Mock:
     return mocker.patch(
-        "simcore_service_dask_sidecar.rabbitmq_plugin.RabbitMQPlugin",
+        "simcore_service_dask_sidecar.rabbitmq_worker_plugin.RabbitMQPlugin",
         autospec=True,
         side_effect=RuntimeError("Pytest: RabbitMQ plugin initialization failed"),
     )

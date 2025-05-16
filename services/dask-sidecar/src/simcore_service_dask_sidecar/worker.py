@@ -16,7 +16,7 @@ from settings_library.s3 import S3Settings
 
 from ._meta import print_dask_sidecar_banner
 from .computational_sidecar.core import ComputationalSidecar
-from .rabbitmq_plugin import RabbitMQPlugin
+from .rabbitmq_worker_plugin import RabbitMQPlugin
 from .settings import ApplicationSettings
 from .task_life_cycle_worker_plugin import (
     TaskLifecycleWorkerPlugin,
