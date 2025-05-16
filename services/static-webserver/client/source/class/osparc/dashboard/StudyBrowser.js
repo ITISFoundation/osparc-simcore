@@ -789,9 +789,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           break;
         case "templates":
           requestParams.type = "template";
+          requestParams.accessRights = "non-public";
           break;
         case "public":
           requestParams.type = "template";
+          requestParams.accessRights = "public";
           break;
         case "search": {
           // Use the ``search`` functionality only if the user types some text

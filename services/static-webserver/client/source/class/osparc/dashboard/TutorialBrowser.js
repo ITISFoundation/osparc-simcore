@@ -66,7 +66,7 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
 
     __tutorialStateReceived: function(templateId, state, errors) {
       osparc.store.Templates.getTutorials()
-      // OM
+      // OM follow here
       const idx = this._resourcesList.findIndex(study => study["uuid"] === templateId);
       if (idx > -1) {
         this._resourcesList[idx]["state"] = state;
@@ -85,7 +85,7 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
 
       if (useCache) {
         osparc.store.Templates.getTutorials()
-          .then(templates => this.__setResourcesToList(templates));
+          .then(tutorials => this.__setResourcesToList(tutorials));
       } else {
         osparc.store.Templates.getTutorials(useCache)
           .then(templates => this.__setResourcesToList(templates))
@@ -103,8 +103,9 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
       }
     },
 
-    __setResourcesToList: function(templatesList) {
-      templatesList.forEach(template => template["resourceType"] = "template");
+    __setResourcesToList: function(tutorialsList) {
+      tutorialsList.forEach(tutorial => tutorial["resourceType"] = "template");
+      this._resourcesList = tutorialsList;
       this._reloadCards();
     },
 
