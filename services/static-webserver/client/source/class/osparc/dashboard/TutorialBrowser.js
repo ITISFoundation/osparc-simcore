@@ -94,13 +94,8 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
     },
 
     _updateTemplateData: function(templateData) {
-      templateData["resourceType"] = "template";
-      const templatesList = this._resourcesList;
-      const index = templatesList.findIndex(template => template["uuid"] === templateData["uuid"]);
-      if (index !== -1) {
-        templatesList[index] = templateData;
-        this._reloadCards();
-      }
+      templateData["resourceType"] = "tutorial";
+      this.base(arguments, templateData);
     },
 
     __setResourcesToList: function(tutorialsList) {

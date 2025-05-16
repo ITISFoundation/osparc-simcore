@@ -531,7 +531,12 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _updateTemplateData: function(templateData) {
-      throw new Error("Abstract method called!");
+      const templatesList = this._resourcesList;
+      const index = templatesList.findIndex(template => template["uuid"] === templateData["uuid"]);
+      if (index !== -1) {
+        templatesList[index] = templateData;
+        this._reloadCards();
+      }
     },
 
     _updateServiceData: function(serviceData) {
