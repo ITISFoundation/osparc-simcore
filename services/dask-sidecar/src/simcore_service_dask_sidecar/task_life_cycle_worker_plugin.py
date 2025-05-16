@@ -28,8 +28,7 @@ class TaskLifecycleWorkerPlugin(WorkerPlugin):
                 logging.INFO,
                 "TaskLifecycleWorkerPlugin start",
             ):
-                assert worker  # nosec
-                self._worker = worker
+                self._worker = worker  # type: ignore[assignment]
 
         return _()
 

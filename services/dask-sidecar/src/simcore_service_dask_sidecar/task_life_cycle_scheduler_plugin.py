@@ -25,7 +25,7 @@ class TaskLifecycleSchedulerPlugin(SchedulerPlugin):
             logging.INFO,
             "TaskLifecycleSchedulerPlugin start",
         ):
-            self.scheduler = scheduler
+            self.scheduler = scheduler  # type: ignore[assignment]
 
     def transition(
         self,
