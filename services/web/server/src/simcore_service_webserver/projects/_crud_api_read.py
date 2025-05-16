@@ -10,7 +10,7 @@ from typing import Any
 
 from aiohttp import web
 from models_library.folders import FolderID, FolderQuery, FolderScope
-from models_library.projects import ProjectID
+from models_library.projects import ProjectID, ProjectTemplateType
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.workspaces import WorkspaceID, WorkspaceQuery, WorkspaceScope
@@ -91,6 +91,7 @@ async def list_projects(  # pylint: disable=too-many-arguments
     folder_id: FolderID | None,
     # attrs filter
     project_type: ProjectTypeAPI,
+    template_type: ProjectTemplateType | None,
     show_hidden: bool,  # NOTE: Be careful, this filters only hidden projects
     trashed: bool | None,
     # search
@@ -148,7 +149,7 @@ async def list_projects(  # pylint: disable=too-many-arguments
         ),
         # attrs
         filter_by_project_type=ProjectTypeAPI.to_project_type_db(project_type),
-        filter_by_template_type=None,
+        filter_by_template_type=template_type,
         filter_by_services=user_available_services,
         filter_trashed=trashed,
         filter_hidden=show_hidden,

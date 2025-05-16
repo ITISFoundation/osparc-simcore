@@ -1,8 +1,8 @@
-from typing import Annotated, Literal, Self
+from typing import Annotated, Self
 
 from models_library.basic_types import IDStr
 from models_library.folders import FolderID
-from models_library.projects import ProjectID
+from models_library.projects import ProjectID, ProjectTemplateType
 from models_library.projects_nodes_io import NodeID
 from models_library.rest_base import RequestParameters
 from models_library.rest_filters import Filters, FiltersQueryParameters
@@ -118,12 +118,6 @@ class ProjectFilters(Filters):
             description="A search query to filter projects with associated job_parent_resource_name",
         ),
     ] = None
-    template_type: Annotated[
-        Literal["TEMPLATE", "HYPERTOOL", "TUTORIAL"] | None,
-        Field(
-            description="A search query to filter projects with associated job_parent_resource_name",
-        ),
-    ] = None
 
 
 ProjectsListOrderParams = create_ordering_query_model_class(
@@ -142,6 +136,7 @@ ProjectsListOrderParams = create_ordering_query_model_class(
 
 class ProjectsListExtraQueryParams(RequestParameters):
     project_type: Annotated[ProjectTypeAPI, Field(alias="type")] = ProjectTypeAPI.all
+    template_type: Annotated[ProjectTemplateType | None, Field(...)] = None
     show_hidden: Annotated[
         bool, Field(description="includes projects marked as hidden in the listing")
     ] = False
@@ -172,6 +167,22 @@ class ProjectsListExtraQueryParams(RequestParameters):
         if not v:
             return None
         return v
+
+    _template_type_null_or_none_str_to_none_validator = field_validator(
+        "template_type", mode="before"
+    )(null_or_none_str_to_none_validator)
+
+    @model_validator(mode="after")
+    def check_template_type_compatibility(self):
+        if (
+            self.project_type in [ProjectTypeAPI.all, ProjectTypeAPI.user]
+            and self.template_type is not None
+        ):
+            msg = (
+                "When project type is `all` or `user` the template_type should be None"
+            )
+            raise ValueError(msg)
+        return self
 
     _null_or_none_str_to_none_validator = field_validator("folder_id", mode="before")(
         null_or_none_str_to_none_validator
