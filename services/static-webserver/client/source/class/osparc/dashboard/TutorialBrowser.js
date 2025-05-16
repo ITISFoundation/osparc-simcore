@@ -59,13 +59,12 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
           const templateId = data["project_uuid"];
           const state = ("data" in data) ? data.data : {};
           const errors = ("errors" in data) ? data.errors : [];
-          this.__templateStateReceived(templateId, state, errors);
+          this.__tutorialStateReceived(templateId, state, errors);
         }
       }, this);
     },
 
-    __templateStateReceived: function(templateId, state, errors) {
-      osparc.store.Store.getInstance().setTemplateState(templateId, state);
+    __tutorialStateReceived: function(templateId, state, errors) {
       const idx = this._resourcesList.findIndex(study => study["uuid"] === templateId);
       if (idx > -1) {
         this._resourcesList[idx]["state"] = state;

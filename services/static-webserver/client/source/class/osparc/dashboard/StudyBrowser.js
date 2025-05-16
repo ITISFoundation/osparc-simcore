@@ -838,7 +838,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           request = osparc.data.Resources.fetch("studies", "getPageSearch", params, options);
           break;
         case "templates":
-          request = osparc.store.Templates.fetchTemplatesPaginated(params, options);
+          request = osparc.store.Templates.fetchTemplatesNonPublicPaginated(params, options);
           break;
         case "public":
           request = osparc.store.Templates.fetchTemplatesPublicPaginated(params, options);

@@ -21,9 +21,13 @@ qx.Class.define("osparc.store.Templates", {
   statics: {
     __templates: null,
     __templatesPromisesCached: null,
+    __tutorials: null,
+    __tutorialsPromisesCached: null,
+    __hypertools: null,
+    __hypertoolsPromisesCached: null,
 
-    fetchTemplatesPaginated: function(params, options) {
-      return osparc.data.Resources.fetch("templates", "getPageSorted", params, options)
+    __fetchTemplatesPaginated: function(params, options) {
+      return osparc.data.Resources.fetch("templates", "getPageFilteredSorted", params, options)
         .then(resp => {
           const templates = resp.data;
           // add them to the list
@@ -42,8 +46,14 @@ qx.Class.define("osparc.store.Templates", {
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
+    fetchTemplatesNonPublicPaginated: function(params, options) {
+      params["url"]["templateType"] = osparc.data.model.StudyUI.TEMPLATE_TYPE;
+      return this.__fetchTemplatesPaginated(params, options);
+    },
+
     fetchTemplatesPublicPaginated: function(params, options) {
-      return this.fetchTemplatesPaginated(params, options);
+      params["url"]["templateType"] = osparc.data.model.StudyUI.TEMPLATE_TYPE;
+      return this.__fetchTemplatesPaginated(params, options);
     },
 
     __fetchAllTemplates: function() {
