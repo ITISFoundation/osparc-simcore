@@ -164,7 +164,7 @@ lazy-object-proxy==1.10.0
     # via openapi-spec-validator
 lupa==2.4
     # via fakeredis
-markupsafe==3.0.1
+markupsafe==3.0.2
     # via
     #   -c requirements/_base.txt
     #   jinja2
