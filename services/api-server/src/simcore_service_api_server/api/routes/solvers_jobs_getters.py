@@ -25,7 +25,7 @@ from ..._service_solvers import SolverService
 from ...exceptions.custom_errors import InsufficientCreditsError, MissingWalletError
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.api_resources import parse_resources_ids
-from ...models.basic_types import LogStreamingResponse, VersionStr
+from ...models.basic_types import LogStreamingResponse, NameValueTuple, VersionStr
 from ...models.domain.files import File as DomainFile
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
@@ -38,6 +38,7 @@ from ...models.schemas.jobs import (
     JobMetadata,
     JobOutputs,
 )
+from ...models.schemas.jobs_filters import JobMetadataFilter
 from ...models.schemas.model_adapter import (
     PricingUnitGetLegacy,
     WalletGetWithAvailableCreditsLegacy,
@@ -55,6 +56,7 @@ from ...services_http.storage import StorageApi, to_file_api_model
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.database import get_db_asyncpg_engine
+from ..dependencies.models_schemas_job_filters import get_job_metadata_filter
 from ..dependencies.rabbitmq import get_log_check_timeout, get_log_distributor
 from ..dependencies.services import get_api_client, get_solver_service
 from ..dependencies.webserver_http import AuthSession, get_webserver_session
@@ -135,11 +137,22 @@ router = APIRouter()
 )
 async def list_all_solvers_jobs(
     page_params: Annotated[PaginationParams, Depends()],
+    filter_job_metadata_params: Annotated[
+        JobMetadataFilter | None, Depends(get_job_metadata_filter)
+    ],
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
 
     jobs, meta = await solver_service.list_jobs(
+        filter_any_custom_metadata=(
+            [
+                NameValueTuple(filter_metadata.name, filter_metadata.pattern)
+                for filter_metadata in filter_job_metadata_params.any
+            ]
+            if filter_job_metadata_params
+            else None
+        ),
         pagination_offset=page_params.offset,
         pagination_limit=page_params.limit,
     )
