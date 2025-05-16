@@ -3,7 +3,7 @@ Models a study's project document
 """
 
 from datetime import datetime
-from enum import Enum, auto
+from enum import Enum
 from typing import Annotated, Any, Final, TypeAlias
 from uuid import UUID
 
@@ -54,9 +54,9 @@ class ProjectType(str, Enum):
 
 
 class ProjectTemplateType(StrAutoEnum):
-    TEMPLATE = auto()
-    TUTORIAL = auto()
-    HYPERTOOL = auto()
+    TEMPLATE = "TEMPLATE"
+    TUTORIAL = "TUTORIAL"
+    HYPERTOOL = "HYPERTOOL"
 
 
 class BaseProjectModel(BaseModel):
