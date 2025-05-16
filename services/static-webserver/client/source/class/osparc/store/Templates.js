@@ -27,6 +27,11 @@ qx.Class.define("osparc.store.Templates", {
     __fetchTemplatesPaginated: function(params, options) {
       params["url"]["templateType"] = osparc.data.model.StudyUI.TEMPLATE_TYPE;
       return osparc.data.Resources.fetch("templates", "getPageFilteredSorted", params, options)
+        .then(response => {
+          const templates = response["data"];
+          templates.forEach(template => template["resourceType"] = "template");
+          return response;
+        })
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
@@ -42,6 +47,7 @@ qx.Class.define("osparc.store.Templates", {
       params["url"]["templateType"] = osparc.data.model.StudyUI.TUTORIAL_TYPE;
       return this.__tutorialsPromiseCached = osparc.data.Resources.getInstance().getAllPages("templates", params, "getPageFilteredSorted")
         .then(tutorials => {
+          tutorials.forEach(tutorial => tutorial["resourceType"] = "tutorial");
           this.__tutorials = tutorials;
           return tutorials;
         })
@@ -57,6 +63,7 @@ qx.Class.define("osparc.store.Templates", {
       params["url"]["templateType"] = osparc.data.model.StudyUI.HYPERTOOL_TYPE;
       return this.__hypertoolsPromiseCached = osparc.data.Resources.getInstance().getAllPages("templates", params, "getPageFilteredSorted")
         .then(hypertools => {
+          hypertools.forEach(hypertool => hypertool["resourceType"] = "hypertool");
           this.__hypertools = hypertools;
           return hypertools;
         })
