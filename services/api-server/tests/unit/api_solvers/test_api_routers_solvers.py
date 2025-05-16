@@ -6,7 +6,6 @@
 
 
 import httpx
-from api_solvers.conftest import solver_version
 from pydantic import TypeAdapter
 from pytest_mock import MockType
 from simcore_service_api_server._meta import API_VTAG
