@@ -515,8 +515,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       task.addListener("resultReceived", e => {
         finished();
         this.reloadResources();
-        const userFriendlyTYpe = templateType.charAt(0).toUpperCase() + templateType.slice(1).toLowerCase();
-        const msg = userFriendlyTYpe + this.tr(" created");
+        const userFriendlyType = templateType.charAt(0).toUpperCase() + templateType.slice(1).toLowerCase();
+        const msg = userFriendlyType + this.tr(" created");
         osparc.FlashMessenger.logAs(msg, "INFO");
       });
       task.addListener("taskAborted", () => {
