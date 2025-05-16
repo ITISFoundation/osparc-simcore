@@ -80,17 +80,21 @@ qx.Class.define("osparc.store.Templates", {
     },
 
     getTutorials: function() {
-      return this.getTemplates();
+      const params = {
+        url: {
+          "templateType": osparc.data.model.StudyUI.TUTORIAL_TYPE,
+        }
+      };
+      return osparc.data.Resources.getInstance().getAllPages("templates", params, "getPageFilteredSorted");
     },
 
-    getTemplatesHypertools: function() {
-      return this.getTemplates()
-        .then(templates => {
-          const hypertools = templates.filter(t => osparc.study.Utils.extractTemplateType(t) === osparc.data.model.StudyUI.HYPERTOOL_TYPE);
-          // required for filtering
-          hypertools.forEach(hypertool => hypertool.type = osparc.data.model.StudyUI.HYPERTOOL_TYPE);
-          return hypertools;
-        });
+    getHypertools: function() {
+      const params = {
+        url: {
+          "templateType": osparc.data.model.StudyUI.HYPERTOOL_TYPE,
+        }
+      };
+      return osparc.data.Resources.getInstance().getAllPages("templates", params, "getPageFilteredSorted");
     },
 
     getTemplate: function(templateId) {

@@ -91,6 +91,8 @@ qx.Class.define("osparc.data.model.StudyUI", {
   },
 
   statics: {
+    TEMPLATE_TYPE: "template",
+    TUTORIAL_TYPE: "tuorial",
     HYPERTOOL_TYPE: "hypertool",
   },
 

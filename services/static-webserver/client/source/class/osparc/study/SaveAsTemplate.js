@@ -79,10 +79,10 @@ qx.Class.define("osparc.study.SaveAsTemplate", {
         });
         const templateTypes = [{
           label: "Template",
-          id: null,
+          id: osparc.data.model.StudyUI.TEMPLATE_TYPE,
         }, {
           label: "Tutorial",
-          id: null,
+          id: osparc.data.model.StudyUI.TUTORIAL_TYPE,
         }, {
           label: "Hypertool",
           id: osparc.data.model.StudyUI.HYPERTOOL_TYPE,
