@@ -735,7 +735,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __didContextChange: function(reqParams) {
       // not needed for the comparison
-      // delete reqParams["type"];
       delete reqParams["limit"];
       delete reqParams["offset"];
       delete reqParams["filters"];
