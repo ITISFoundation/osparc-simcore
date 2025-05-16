@@ -40,7 +40,6 @@ from servicelib.logging_utils import get_log_record_extra, log_context
 from simcore_postgres_database.aiopg_errors import UniqueViolation
 from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.project_to_groups import project_to_groups
-from simcore_postgres_database.models.projects import ProjectTemplateType
 from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_postgres_database.models.projects_tags import projects_tags
 from simcore_postgres_database.models.projects_to_folders import projects_to_folders
@@ -58,7 +57,12 @@ from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodeCreate,
     ProjectNodesRepo,
 )
-from simcore_postgres_database.webserver_models import ProjectType, projects, users
+from simcore_postgres_database.webserver_models import (
+    ProjectTemplateType,
+    ProjectType,
+    projects,
+    users,
+)
 from sqlalchemy import func, literal_column, sql
 from sqlalchemy.dialects.postgresql import BOOLEAN, INTEGER
 from sqlalchemy.dialects.postgresql import insert as pg_insert
