@@ -224,7 +224,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       const tags = resourceData.tags ? osparc.store.Tags.getInstance().getTags().filter(tag => resourceData.tags.includes(tag.getTagId())) : [];
       const card = this.getMode() === "grid" ? new osparc.dashboard.GridButtonItem() : new osparc.dashboard.ListButtonItem();
       card.set({
-        appearance: resourceData.type ? `pb-${resourceData.type}` : `pb-${resourceData.resourceType}`,
+        appearance: resourceData.type ? `pb-${resourceData.type.toLowerCase()}` : `pb-${resourceData.resourceType}`,
         resourceData: resourceData,
         tags
       });

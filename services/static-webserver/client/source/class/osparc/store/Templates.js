@@ -79,6 +79,10 @@ qx.Class.define("osparc.store.Templates", {
       return this.__fetchAllTemplates();
     },
 
+    getTutorials: function() {
+      return this.getTemplates();
+    },
+
     getTemplatesHypertools: function() {
       return this.getTemplates()
         .then(templates => {

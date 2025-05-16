@@ -36,13 +36,13 @@ qx.Class.define("osparc.dashboard.NewStudies", {
     });
     this._add(this.__flatList);
 
-    osparc.store.Templates.getTemplates()
-      .then(templates => {
+    osparc.store.Templates.getTutorials()
+      .then(tutorials => {
         this.__newStudies = newButtonsInfo.filter(newButtonInfo => {
           if (newButtonInfo.showDisabled) {
             return true;
           }
-          return templates.find(t => t.name === newButtonInfo.expectedTemplateLabel);
+          return tutorials.find(t => t.name === newButtonInfo.expectedTemplateLabel);
         });
 
         this.setGroupBy("category");

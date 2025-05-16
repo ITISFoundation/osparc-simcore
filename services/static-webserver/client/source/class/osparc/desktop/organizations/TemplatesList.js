@@ -24,26 +24,26 @@ qx.Class.define("osparc.desktop.organizations.TemplatesList", {
     this._setLayout(new qx.ui.layout.VBox(10));
 
     this._add(this.__createIntroText());
-    this._add(this.__getTemplatesFilter());
-    this._add(this.__getTemplatesList(), {
+    this._add(this.__getTutorialsFilter());
+    this._add(this.__getTutorialsList(), {
       flex: 1
     });
   },
 
   members: {
     __currentOrg: null,
-    __templatesModel: null,
+    __tutorialsModel: null,
 
     setCurrentOrg: function(orgModel) {
       if (orgModel === null) {
         return;
       }
       this.__currentOrg = orgModel;
-      this.__reloadOrgTemplates();
+      this.__reloadOrgTutorials();
     },
 
     __createIntroText: function() {
-      const msg = this.tr("This is the list of ") + osparc.product.Utils.getTemplateAlias({plural: true}) + this.tr(" shared with this Organization");
+      const msg = this.tr("This is the list of Tutorials shared with this Organization");
       const intro = new qx.ui.basic.Label().set({
         value: msg,
         alignX: "left",
@@ -53,21 +53,21 @@ qx.Class.define("osparc.desktop.organizations.TemplatesList", {
       return intro;
     },
 
-    __getTemplatesFilter: function() {
-      const filter = new osparc.filter.TextFilter("text", "organizationTemplatesList").set({
+    __getTutorialsFilter: function() {
+      const filter = new osparc.filter.TextFilter("text", "organizationTutorialsList").set({
         allowStretchX: true,
         margin: [0, 10, 5, 10]
       });
       return filter;
     },
 
-    __getTemplatesList: function() {
+    __getTutorialsList: function() {
       const templatesUIList = new qx.ui.form.List().set({
         decorator: "no-border",
         spacing: 3
       });
 
-      const templatesModel = this.__templatesModel = new qx.data.Array();
+      const templatesModel = this.__tutorialsModel = new qx.data.Array();
       const templatesCtrl = new qx.data.controller.List(templatesModel, templatesUIList, "name");
       templatesCtrl.setDelegate({
         createItem: () => new osparc.desktop.organizations.SharedResourceListItem("template"),
@@ -83,7 +83,7 @@ qx.Class.define("osparc.desktop.organizations.TemplatesList", {
           }, item, id);
         },
         configureItem: item => {
-          item.subscribeToFilterGroup("organizationTemplatesList");
+          item.subscribeToFilterGroup("organizationTutorialsList");
           item.addListener("openMoreInfo", e => {
             const templateId = e.getData()["key"];
             osparc.store.Templates.getTemplate(templateId)
@@ -103,8 +103,8 @@ qx.Class.define("osparc.desktop.organizations.TemplatesList", {
       return templatesUIList;
     },
 
-    __reloadOrgTemplates: function() {
-      const templatesModel = this.__templatesModel;
+    __reloadOrgTutorials: function() {
+      const templatesModel = this.__tutorialsModel;
       templatesModel.removeAll();
 
       const orgModel = this.__currentOrg;
@@ -112,10 +112,10 @@ qx.Class.define("osparc.desktop.organizations.TemplatesList", {
         return;
       }
 
-      osparc.store.Templates.getTemplates()
-        .then(templates => {
+      osparc.store.Templates.getTutorials()
+        .then(tutorials => {
           const groupId = orgModel.getGroupId();
-          const orgTemplates = templates.filter(template => groupId in template["accessRights"]);
+          const orgTemplates = tutorials.filter(template => groupId in template["accessRights"]);
           orgTemplates.forEach(orgTemplate => {
             const orgTemplateCopy = osparc.utils.Utils.deepCloneObject(orgTemplate);
             orgTemplateCopy["orgId"] = groupId;
