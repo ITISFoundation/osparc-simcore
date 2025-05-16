@@ -15,6 +15,7 @@ from models_library.api_schemas_webserver.functions import (
     JSONFunctionOutputSchema,
     RegisteredProjectFunctionGet,
 )
+from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import status
 from simcore_service_webserver._meta import API_VTAG
 
@@ -50,9 +51,9 @@ async def test_register_function(
         f"/{API_VTAG}/functions",
         json=mock_function,
     )
-    assert response.status == status.HTTP_200_OK
-    data = await response.json()
-    returned_function = RegisteredProjectFunctionGet.model_validate(data.get("data"))
+    data, error = await assert_status(response, status.HTTP_200_OK)
+    assert not error
+    returned_function = RegisteredProjectFunctionGet.model_validate(data)
     assert returned_function.uid is not None
 
 
@@ -64,17 +65,17 @@ async def test_get_function(
         f"/{API_VTAG}/functions",
         json=mock_function,
     )
-    assert response.status == status.HTTP_200_OK
-    data = await response.json()
-    returned_function = RegisteredProjectFunctionGet.model_validate(data.get("data"))
+    data, error = await assert_status(response, status.HTTP_200_OK)
+    assert not error
+    returned_function = RegisteredProjectFunctionGet.model_validate(data)
     assert returned_function.uid is not None
 
     response = await client.get(
         f"/{API_VTAG}/functions/{returned_function.uid}",
     )
-    assert response.status == status.HTTP_200_OK
-    data = await response.json()
-    retrieved_function = RegisteredProjectFunctionGet.model_validate(data.get("data"))
+    data, error = await assert_status(response, status.HTTP_200_OK)
+    assert not error
+    retrieved_function = RegisteredProjectFunctionGet.model_validate(data)
     assert retrieved_function.uid == returned_function.uid
 
 
@@ -86,9 +87,9 @@ async def test_delete_function(
         f"/{API_VTAG}/functions",
         json=mock_function,
     )
-    assert response.status == status.HTTP_200_OK
-    data = await response.json()
-    returned_function = RegisteredProjectFunctionGet.model_validate(data.get("data"))
+    data, error = await assert_status(response, status.HTTP_200_OK)
+    assert not error
+    returned_function = RegisteredProjectFunctionGet.model_validate(data)
     assert returned_function.uid is not None
 
     response = await client.delete(

@@ -45,7 +45,7 @@ async def get_function(
 
 
 @router.delete(
-    "/projects/{function_id}",
+    "/functions/{function_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_function(

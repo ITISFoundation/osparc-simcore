@@ -7,15 +7,12 @@ from models_library.api_schemas_webserver.functions import (
 )
 from pydantic import TypeAdapter
 from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
-from servicelib.rabbitmq import RPCRouter
 from simcore_service_webserver.utils_aiohttp import envelope_json_response
 
 from ..._meta import API_VTAG as VTAG
 from .. import _functions_service
 from ._functions_rest_exceptions import handle_rest_requests_exceptions
 from ._functions_rest_schemas import FunctionPathParams
-
-router = RPCRouter()
 
 routes = web.RouteTableDef()
 
