@@ -6,10 +6,10 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi_pagination import add_pagination
 from servicelib.fastapi import timing_middleware
 from servicelib.fastapi.http_error import set_app_default_http_error_handlers
-from servicelib.fastapi.openapi import override_fastapi_openapi_method
-from servicelib.fastapi.prometheus_instrumentation import (
+from servicelib.fastapi.monitoring import (
     setup_prometheus_instrumentation,
 )
+from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.tracing import initialize_tracing
 from starlette.middleware.base import BaseHTTPMiddleware
 

@@ -437,10 +437,6 @@ partd==1.4.2
     #   -c requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask
 prometheus-client==0.21.1
-    # via
-    #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
-    #   prometheus-fastapi-instrumentator
-prometheus-fastapi-instrumentator==7.0.0
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 propcache==0.2.1
     # via
@@ -719,7 +715,6 @@ starlette==0.41.3
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   fastapi
-    #   prometheus-fastapi-instrumentator
 stream-zip==0.0.83
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in

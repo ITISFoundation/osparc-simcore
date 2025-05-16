@@ -3,7 +3,7 @@
 #
 #
 
---constraint ./_base.in
+--constraint ./_base.txt
 
 
 fastapi
@@ -12,5 +12,4 @@ httpx
 opentelemetry-instrumentation-fastapi
 opentelemetry-instrumentation-httpx
 prometheus-client
-prometheus-fastapi-instrumentator
 uvicorn

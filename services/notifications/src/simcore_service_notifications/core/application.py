@@ -1,12 +1,12 @@
 import logging
 
 from fastapi import FastAPI
+from servicelib.fastapi.monitoring import (
+    initialize_prometheus_instrumentation,
+)
 from servicelib.fastapi.openapi import (
     get_common_oas_options,
     override_fastapi_openapi_method,
-)
-from servicelib.fastapi.prometheus_instrumentation import (
-    initialize_prometheus_instrumentation,
 )
 from servicelib.fastapi.tracing import initialize_tracing
 from servicelib.logging_utils import config_all_loggers
