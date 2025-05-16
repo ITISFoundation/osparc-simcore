@@ -426,7 +426,7 @@ def _assemble_env_vars_for_boot_options(
     return SimcoreServiceSettingsLabel(
         root=[
             SimcoreServiceSettingLabelEntry(
-                name="env", type="string", value=list(env_vars)
+                name="env", setting_type="string", value=list(env_vars)
             )
         ]
     )
