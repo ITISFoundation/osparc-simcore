@@ -136,7 +136,7 @@ ProjectsListOrderParams = create_ordering_query_model_class(
 
 class ProjectsListExtraQueryParams(RequestParameters):
     project_type: Annotated[ProjectTypeAPI, Field(alias="type")] = ProjectTypeAPI.all
-    template_type: Annotated[ProjectTemplateType | None, Field(...)] = None
+    template_type: ProjectTemplateType | None = None
     show_hidden: Annotated[
         bool, Field(description="includes projects marked as hidden in the listing")
     ] = False
@@ -173,14 +173,12 @@ class ProjectsListExtraQueryParams(RequestParameters):
     )(null_or_none_str_to_none_validator)
 
     @model_validator(mode="after")
-    def check_template_type_compatibility(self):
+    def _check_template_type_compatibility(self):
         if (
             self.project_type in [ProjectTypeAPI.all, ProjectTypeAPI.user]
             and self.template_type is not None
         ):
-            msg = (
-                "When project type is `all` or `user` the template_type should be None"
-            )
+            msg = f"When {self.project_type=} is `all` or `user` the {self.template_type=} should be None"
             raise ValueError(msg)
         return self
 

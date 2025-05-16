@@ -38,7 +38,7 @@ from simcore_service_webserver.projects.models import ProjectDict
 def standard_user_role() -> tuple[str, tuple[UserRole, ExpectedResponse]]:
     all_roles = standard_role_response()
 
-    return (all_roles[0], [pytest.param(*all_roles[1][2], id="standard user role")])
+    return (all_roles[0], [pytest.param(*all_roles[1][2], id="standard_user_role")])
 
 
 def standard_and_tester_user_roles() -> tuple[str, tuple[UserRole, ExpectedResponse]]:
@@ -47,7 +47,7 @@ def standard_and_tester_user_roles() -> tuple[str, tuple[UserRole, ExpectedRespo
     return (
         all_roles[0],
         [
-            pytest.param(*all_roles[1][2], id="standard user role"),
+            pytest.param(*all_roles[1][2], id="standard_user_role"),
             pytest.param(*all_roles[1][3], id="tester_user_role"),
         ],
     )
@@ -118,7 +118,7 @@ async def test_list_projects_with_search_parameter(
     fake_project: ProjectDict,
     tests_data_dir: Path,
     osparc_product_name: str,
-    project_db_cleaner,
+    project_db_cleaner: None,
     mock_catalog_api_get_services_for_user_in_product,
 ):
     projects_info = [
@@ -173,7 +173,7 @@ async def test_list_projects_with_search_parameter(
     resp = await client.get(f"{base_url}")
     data = await resp.json()
 
-    assert resp.status == 200
+    assert resp.status == status.HTTP_200_OK
     _assert_response_data(data, 5, 0, 5, "/v0/projects?offset=0&limit=20", 5)
 
     # Now we will test with empty search parameter
@@ -184,7 +184,7 @@ async def test_list_projects_with_search_parameter(
     resp = await client.get(f"{url}")
     data = await resp.json()
 
-    assert resp.status == 200
+    assert resp.status == status.HTTP_200_OK
     _assert_response_data(data, 5, 0, 5, "/v0/projects?search=&offset=0&limit=20", 5)
 
     # Now we will test upper/lower case search
@@ -195,7 +195,7 @@ async def test_list_projects_with_search_parameter(
     resp = await client.get(f"{url}")
     data = await resp.json()
 
-    assert resp.status == 200
+    assert resp.status == status.HTTP_200_OK
     _assert_response_data(
         data, 1, 0, 1, "/v0/projects?search=nAmE+5&offset=0&limit=20", 1
     )
@@ -211,7 +211,7 @@ async def test_list_projects_with_search_parameter(
     resp = await client.get(f"{url}")
     data = await resp.json()
 
-    assert resp.status == 200
+    assert resp.status == status.HTTP_200_OK
     _assert_response_data(
         data,
         1,
@@ -229,7 +229,7 @@ async def test_list_projects_with_search_parameter(
     resp = await client.get(f"{url}")
     data = await resp.json()
 
-    assert resp.status == 200
+    assert resp.status == status.HTTP_200_OK
     _assert_response_data(
         data, 1, 0, 1, "/v0/projects?search=2-fe1b-11ed-b038-cdb1&offset=0&limit=20", 1
     )
@@ -248,7 +248,7 @@ async def test_list_projects_with_search_parameter(
     resp = await client.get(f"{url}")
     data = await resp.json()
 
-    assert resp.status == 200
+    assert resp.status == status.HTTP_200_OK
     _assert_response_data(
         data,
         5,
@@ -266,7 +266,7 @@ async def test_list_projects_with_search_parameter(
     resp = await client.get(f"{url}")
     data = await resp.json()
 
-    assert resp.status == 200
+    assert resp.status == status.HTTP_200_OK
     _assert_response_data(data, 2, 0, 2, "/v0/projects?search=oda&offset=0&limit=20", 2)
 
     # Now we will test search that returns nothing
@@ -277,7 +277,7 @@ async def test_list_projects_with_search_parameter(
     resp = await client.get(f"{url}")
     data = await resp.json()
 
-    assert resp.status == 200
+    assert resp.status == status.HTTP_200_OK
     _assert_response_data(
         data, 0, 0, 0, "/v0/projects?search=does+not+exists&offset=0&limit=20", 0
     )
@@ -290,7 +290,7 @@ async def test_list_projects_with_search_parameter(
     resp = await client.get(f"{url}")
     data = await resp.json()
 
-    assert resp.status == 200
+    assert resp.status == status.HTTP_200_OK
     _assert_response_data(data, 2, 0, 1, "/v0/projects?search=oda&offset=0&limit=1", 1)
     assert data["_meta"]["limit"] == 1
     assert data["_links"]["next"].endswith("/v0/projects?search=oda&offset=1&limit=1")
@@ -308,8 +308,8 @@ async def test_list_projects_with_order_by_parameter(
     fake_project: ProjectDict,
     tests_data_dir: Path,
     osparc_product_name: str,
-    project_db_cleaner,
-    mock_catalog_api_get_services_for_user_in_product,
+    project_db_cleaner: None,
+    mock_catalog_api_get_services_for_user_in_product: None,
 ):
     projects_info = [
         _ProjectInfo(
@@ -367,7 +367,7 @@ async def test_list_projects_with_order_by_parameter(
     )
     resp = await client.get(f"{url}")
     data = await resp.json()
-    assert resp.status == 200
+    assert resp.status == status.HTTP_200_OK
     assert [item["uuid"][0] for item in data["data"]] == _alphabetically_ordered_list
 
     # Order by uuid descending
@@ -377,7 +377,7 @@ async def test_list_projects_with_order_by_parameter(
     )
     resp = await client.get(f"{url}")
     data = await resp.json()
-    assert resp.status == 200
+    assert resp.status == status.HTTP_200_OK
     assert [item["uuid"][0] for item in data["data"]] == _alphabetically_ordered_list[
         ::-1
     ]
@@ -389,7 +389,7 @@ async def test_list_projects_with_order_by_parameter(
     )
     resp = await client.get(f"{url}")
     data = await resp.json()
-    assert resp.status == 200
+    assert resp.status == status.HTTP_200_OK
     assert [item["name"][0] for item in data["data"]] == _alphabetically_ordered_list
 
     # Order by description ascending
@@ -399,7 +399,7 @@ async def test_list_projects_with_order_by_parameter(
     )
     resp = await client.get(f"{url}")
     data = await resp.json()
-    assert resp.status == 200
+    assert resp.status == status.HTTP_200_OK
     assert [
         item["description"][0] for item in data["data"]
     ] == _alphabetically_ordered_list
@@ -448,9 +448,9 @@ async def test_list_projects_for_specific_folder_id(
     fake_project: ProjectDict,
     tests_data_dir: Path,
     osparc_product_name: str,
-    project_db_cleaner,
-    mock_catalog_api_get_services_for_user_in_product,
-    setup_folders_db,
+    project_db_cleaner: None,
+    mock_catalog_api_get_services_for_user_in_product: None,
+    setup_folders_db: FolderID,
 ):
     projects_info = [
         _ProjectInfo(
@@ -494,7 +494,7 @@ async def test_list_projects_for_specific_folder_id(
     resp = await client.get(f"{base_url}")
     data = await resp.json()
 
-    assert resp.status == 200
+    assert resp.status == status.HTTP_200_OK
     _assert_response_data(data, 3, 0, 3, "/v0/projects?offset=0&limit=20", 3)
 
     # Now we will test listing of the root directory with provided folder id query
@@ -504,7 +504,7 @@ async def test_list_projects_for_specific_folder_id(
     resp = await client.get(f"{url}")
     data = await resp.json()
 
-    assert resp.status == 200
+    assert resp.status == status.HTTP_200_OK
     _assert_response_data(
         data, 3, 0, 3, "/v0/projects?folder_id=null&offset=0&limit=20", 3
     )
@@ -517,7 +517,7 @@ async def test_list_projects_for_specific_folder_id(
     resp = await client.get(f"{url}")
     data = await resp.json()
 
-    assert resp.status == 200
+    assert resp.status == status.HTTP_200_OK
     _assert_response_data(
         data, 1, 0, 1, f"/v0/projects?folder_id={setup_folders_db}&offset=0&limit=20", 1
     )
@@ -531,7 +531,7 @@ async def test_list_and_patch_projects_with_template_type(
     fake_project: ProjectDict,
     tests_data_dir: Path,
     osparc_product_name: str,
-    project_db_cleaner,
+    project_db_cleaner: None,
     mock_catalog_api_get_services_for_user_in_product,
 ):
     projects_type = [
@@ -562,7 +562,7 @@ async def test_list_and_patch_projects_with_template_type(
     resp = await client.get(f"{url}")
     data = await resp.json()
 
-    assert resp.status == 200
+    assert resp.status == status.HTTP_200_OK
     _assert_response_data(data, 3, 0, 3, "/v0/projects?type=user&offset=0&limit=20", 3)
 
     # Now we will test listing with type=all
@@ -572,7 +572,7 @@ async def test_list_and_patch_projects_with_template_type(
     resp = await client.get(f"{url}")
     data = await resp.json()
 
-    assert resp.status == 200
+    assert resp.status == status.HTTP_200_OK
     _assert_response_data(data, 5, 0, 5, "/v0/projects?type=all&offset=0&limit=20", 5)
 
     # Now we will test listing with type=template
@@ -582,7 +582,7 @@ async def test_list_and_patch_projects_with_template_type(
     resp = await client.get(f"{url}")
     data = await resp.json()
 
-    assert resp.status == 200
+    assert resp.status == status.HTTP_200_OK
     _assert_response_data(
         data, 2, 0, 2, "/v0/projects?type=template&offset=0&limit=20", 2
     )
@@ -594,7 +594,7 @@ async def test_list_and_patch_projects_with_template_type(
     resp = await client.get(f"{url}")
     data = await resp.json()
 
-    assert resp.status == 200
+    assert resp.status == status.HTTP_200_OK
     _assert_response_data(
         data, 3, 0, 3, "/v0/projects?type=user&template_type=null&offset=0&limit=20", 3
     )
@@ -613,7 +613,7 @@ async def test_list_and_patch_projects_with_template_type(
     resp = await client.get(f"{url}")
     data = await resp.json()
 
-    assert resp.status == 200
+    assert resp.status == status.HTTP_200_OK
     _assert_response_data(
         data,
         2,
@@ -648,7 +648,7 @@ async def test_list_and_patch_projects_with_template_type(
         resp = await client.get(f"{url}")
         data = await resp.json()
 
-        assert resp.status == 200
+        assert resp.status == status.HTTP_200_OK
         _assert_response_data(
             data,
             3,
@@ -665,7 +665,7 @@ async def test_list_and_patch_projects_with_template_type(
         resp = await client.get(f"{url}")
         data = await resp.json()
 
-        assert resp.status == 200
+        assert resp.status == status.HTTP_200_OK
         _assert_response_data(
             data,
             1,
@@ -682,7 +682,7 @@ async def test_list_and_patch_projects_with_template_type(
         resp = await client.get(f"{url}")
         data = await resp.json()
 
-        assert resp.status == 200
+        assert resp.status == status.HTTP_200_OK
         _assert_response_data(
             data,
             1,
