@@ -54,6 +54,7 @@ async def _new_project(
     product_name: str,
     tests_data_dir: Path,
     project_data: dict[str, Any],
+    as_template: bool = False,
 ):
     """returns a project for the given user"""
     assert client.app
@@ -63,6 +64,7 @@ async def _new_project(
         user_id,
         product_name=product_name,
         default_project_json=tests_data_dir / "fake-template-projects.isan.2dplot.json",
+        as_template=as_template,
     )
 
 
@@ -505,3 +507,85 @@ async def test_list_projects_for_specific_folder_id(
     _assert_response_data(
         data, 1, 0, 1, f"/v0/projects?folder_id={setup_folders_db}&offset=0&limit=20", 1
     )
+
+
+@pytest.mark.parametrize(*standard_user_role())
+async def test_list_and_patch_projects_with_template_type(
+    client: TestClient,
+    logged_user: UserDict,
+    expected: ExpectedResponse,
+    fake_project: ProjectDict,
+    tests_data_dir: Path,
+    osparc_product_name: str,
+    project_db_cleaner,
+    mock_catalog_api_get_services_for_user_in_product,
+):
+    projects_type = [
+        "STANDARD",
+        "STANDARD",
+        "STANDARD",
+        "TEMPLATE",
+        "TEMPLATE",
+    ]
+    for _type in projects_type:
+        project_data = deepcopy(fake_project)
+        await _new_project(
+            client,
+            logged_user["id"],
+            osparc_product_name,
+            tests_data_dir,
+            project_data,
+            as_template=_type == "TEMPLATE",
+        )
+
+    base_url = client.app.router["list_projects"].url_for()
+    # Now we will test listing with type=user
+    query_parameters = {"type": "user"}
+    url = base_url.with_query(**query_parameters)
+
+    resp = await client.get(f"{url}")
+    data = await resp.json()
+
+    assert resp.status == 200
+    _assert_response_data(data, 3, 0, 3, "/v0/projects?type=user&offset=0&limit=20", 3)
+
+    # Now we will test listing with type=all
+    query_parameters = {"type": "all"}
+    url = base_url.with_query(**query_parameters)
+
+    resp = await client.get(f"{url}")
+    data = await resp.json()
+
+    assert resp.status == 200
+    _assert_response_data(data, 5, 0, 5, "/v0/projects?type=all&offset=0&limit=20", 5)
+
+    # Now we will test listing with type=template
+    query_parameters = {"type": "template"}
+    url = base_url.with_query(**query_parameters)
+
+    resp = await client.get(f"{url}")
+    data = await resp.json()
+
+    assert resp.status == 200
+    _assert_response_data(
+        data, 2, 0, 2, "/v0/projects?type=template&offset=0&limit=20", 2
+    )
+
+    # Now we will test listing with type=user and template_type=null
+    query_parameters = {"type": "user", "template_type": "null"}
+    url = base_url.with_query(**query_parameters)
+
+    resp = await client.get(f"{url}")
+    data = await resp.json()
+
+    assert resp.status == 200
+    _assert_response_data(
+        data, 3, 0, 3, "/v0/projects?type=user&template_type=null&offset=0&limit=20", 3
+    )
+
+    # Now we will test listing with incompatible type and template_type
+    query_parameters = {"type": "user", "template_type": "TEMPLATE"}
+    url = base_url.with_query(**query_parameters)
+    resp = await client.get(f"{url}")
+    data = await resp.json()
+    assert resp.status == 422
