@@ -1,9 +1,10 @@
-""" Facade for webserver service
+"""Facade for webserver service
 
-    Facade to direct access to models in the database by
-    the  webserver service
+Facade to direct access to models in the database by
+the  webserver service
 
 """
+
 from .models.api_keys import api_keys
 from .models.classifiers import group_classifiers
 from .models.comp_pipeline import StateType, comp_pipeline
@@ -21,29 +22,29 @@ from .models.tokens import tokens
 from .models.users import UserRole, UserStatus, users
 
 __all__ = (
+    "DB_CHANNEL_NAME",
+    "ConfirmationAction",
+    "GroupType",
+    "NodeClass",
+    "ProjectType",
+    "StateType",
+    "UserRole",
+    "UserStatus",
     "api_keys",
     "comp_pipeline",
     "comp_tasks",
-    "ConfirmationAction",
     "confirmations",
-    "DB_CHANNEL_NAME",
     "group_classifiers",
     "groups",
-    "GroupType",
-    "NodeClass",
     "products",
     "projects",
     "projects_nodes",
-    "ProjectType",
-    "scicrunch_resources",
-    "StateType",
     "projects_tags",
+    "projects_to_wallet",
+    "scicrunch_resources",
     "tags",
     "tokens",
     "user_to_groups",
-    "UserRole",
     "users",
-    "UserStatus",
-    "projects_to_wallet",
 )
 # nopycln: file

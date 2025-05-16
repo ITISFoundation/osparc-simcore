@@ -1,3 +1,13 @@
+"""Products to templates table
+
+- Links products to Jinja2 templates.
+
+Migration strategy:
+- Composite primary key (`product_id`, `template_id`) is unique and sufficient for migration.
+- Ensure foreign key references to `products` and `jinja2_templates` are valid in the target database.
+- No additional changes are required; this table can be migrated as is.
+"""
+
 import sqlalchemy as sa
 
 from ._common import (

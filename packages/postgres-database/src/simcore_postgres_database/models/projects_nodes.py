@@ -1,7 +1,13 @@
-""" Groups table
+"""Projects nodes table
 
-    - List of groups in the framework
-    - Groups have a ID, name and a list of users that belong to the group
+- Represents nodes within projects.
+- List of groups in the framework
+- Groups have a ID, name and a list of users that belong to the group
+
+Migration strategy:
+- The primary key is `node_id`, which is unique and sufficient for migration.
+- Ensure foreign key references to `projects` are valid in the target database.
+- No additional changes are required; this table can be migrated as is.
 """
 
 import sqlalchemy as sa

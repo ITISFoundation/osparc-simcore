@@ -57,17 +57,13 @@ def get_service_published_port(service_name: str) -> int:
         s for s in client.services.list() if service_name in getattr(s, "name", "")
     ]
     if not services:
-        raise RuntimeError(
-            "Cannot find published port for service '%s'. Probably services still not up"
-            % service_name
-        )
+        msg = f"Cannot find published port for service '{service_name}'. Probably services still not up"
+        raise RuntimeError(msg)
     service_endpoint = services[0].attrs["Endpoint"]
 
     if "Ports" not in service_endpoint or not service_endpoint["Ports"]:
-        raise RuntimeError(
-            "Cannot find published port for service '%s' in endpoint. Probably services still not up"
-            % service_name
-        )
+        msg = f"Cannot find published port for service '{service_name}' in endpoint. Probably services still not up"
+        raise RuntimeError(msg)
 
     published_port = service_endpoint["Ports"][0]["PublishedPort"]
     return int(published_port)
@@ -87,7 +83,7 @@ def load_cache(*, raise_if_error=False) -> dict:
 def reset_cache():
     if os.path.exists(DISCOVERED_CACHE):
         os.remove(DISCOVERED_CACHE)
-        click.echo("Removed %s" % DISCOVERED_CACHE)
+        click.echo(f"Removed {DISCOVERED_CACHE}")
 
 
 def get_alembic_config_from_cache(

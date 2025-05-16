@@ -7,4 +7,4 @@ target_metadatas = [
 ]
 
 
-__all__ = ["target_metadatas", "build_url"]
+__all__ = ["build_url", "target_metadatas"]

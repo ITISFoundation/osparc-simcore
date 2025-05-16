@@ -122,9 +122,7 @@ async def _project_has_any_child(
     get_stmt = sa.select(projects_metadata.c.project_uuid).where(
         projects_metadata.c.parent_project_uuid == f"{project_uuid}"
     )
-    if await connection.scalar(get_stmt) is not None:
-        return True
-    return False
+    return await connection.scalar(get_stmt) is not None
 
 
 async def _compute_root_parent_from_parent(

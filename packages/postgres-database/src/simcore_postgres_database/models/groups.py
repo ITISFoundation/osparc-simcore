@@ -1,9 +1,12 @@
-""" Groups table
+"""Groups table
 
-    - List of groups in the framework
-    - Groups have a ID, name and a list of users that belong to the group
+- Represents user groups in the system.
+
+Migration strategy:
+- The primary key is `id`, which is unique and sufficient for migration.
+- Ensure foreign key references (if any) are valid in the target database.
+- No additional changes are required; this table can be migrated as is.
 """
-
 
 import sqlalchemy as sa
 from common_library.groups_enums import GroupType
