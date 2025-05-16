@@ -423,6 +423,8 @@ down: ## Stops and removes stack
 ifneq ($(wildcard .stack-*), )
 	-@rm $(wildcard .stack-*)
 endif
+	# Removing local registry if any
+	-@docker ps --all --quiet --filter "name=$(LOCAL_REGISTRY_HOSTNAME)" | xargs --no-run-if-empty docker rm --force
 
 leave: ## Forces to stop all services, networks, etc by the node leaving the swarm
 	-docker swarm leave -f
