@@ -74,23 +74,7 @@ qx.Class.define("osparc.study.SaveAsTemplate", {
       form.add(publishWithData, this.tr("Publish with data"), null, "publishWithData");
 
       if (osparc.data.Permissions.getInstance().isTester()) {
-        const templateTypeSB = new qx.ui.form.SelectBox().set({
-          allowGrowX: false,
-        });
-        const templateTypes = [{
-          label: "Template",
-          id: osparc.data.model.StudyUI.TEMPLATE_TYPE,
-        }, {
-          label: "Tutorial",
-          id: osparc.data.model.StudyUI.TUTORIAL_TYPE,
-        }, {
-          label: "Hypertool",
-          id: osparc.data.model.StudyUI.HYPERTOOL_TYPE,
-        }]
-        templateTypes.forEach(tempType => {
-          const tItem = new qx.ui.form.ListItem(tempType.label, null, tempType.id);
-          templateTypeSB.add(tItem);
-        });
+        const templateTypeSB = osparc.study.Utils.createTemplateTypeSB();
         form.add(templateTypeSB, this.tr("Template Type"), null, "templateType");
       }
 
