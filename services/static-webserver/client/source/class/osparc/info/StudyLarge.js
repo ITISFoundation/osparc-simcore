@@ -27,9 +27,6 @@ qx.Class.define("osparc.info.StudyLarge", {
     this.base(arguments);
 
     this.setStudy(study);
-    if ("resourceType" in study) {
-      this.__isTemplate = study["resourceType"] === "template";
-    }
 
     if (openOptions !== undefined) {
       this.setOpenOptions(openOptions);
@@ -51,8 +48,6 @@ qx.Class.define("osparc.info.StudyLarge", {
   },
 
   members: {
-    __isTemplate: null,
-
     __canIWrite: function() {
       return osparc.data.model.Study.canIWrite(this.getStudy().getAccessRights());
     },
@@ -67,7 +62,7 @@ qx.Class.define("osparc.info.StudyLarge", {
       vBox.add(infoLayout);
 
       let text = osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + " Id";
-      if (this.__isTemplate) {
+      if (this.getStudy().getTemplateType()) {
         text = osparc.product.Utils.getTemplateAlias({firstUpperCase: true}) + " Id";
       }
       const copyIdButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/copy/12").set({
@@ -179,7 +174,8 @@ qx.Class.define("osparc.info.StudyLarge", {
         };
       }
 
-      if (!this.__isTemplate) {
+      if (this.getStudy().getTemplateType() === null) {
+        // studies only
         const pathLabel = new qx.ui.basic.Label();
         pathLabel.setValue(this.getStudy().getLocationString());
         infoLayout["LOCATION"] = {
@@ -225,7 +221,7 @@ qx.Class.define("osparc.info.StudyLarge", {
 
     __openAccessRights: function() {
       const studyData = this.getStudy().serialize();
-      studyData["resourceType"] = this.__isTemplate ? "template" : "study";
+      studyData["resourceType"] = this.getStudy().getTemplateType() ? "template" : "study";
       const collaboratorsView = osparc.info.StudyUtils.openAccessRights(studyData);
       collaboratorsView.addListener("updateAccessRights", e => {
         const updatedData = e.getData();
@@ -307,7 +303,7 @@ qx.Class.define("osparc.info.StudyLarge", {
     __patchStudy: function(fieldKey, value) {
       this.getStudy().patchStudy({[fieldKey]: value})
         .then(studyData => {
-          studyData["resourceType"] = this.__isTemplate ? "template" : "study";
+          studyData["resourceType"] = this.getStudy().getTemplateType() ? "template" : "study";
           this.fireDataEvent("updateStudy", studyData);
           qx.event.message.Bus.getInstance().dispatchByName("updateStudy", studyData);
         })
