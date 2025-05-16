@@ -12,7 +12,7 @@ from pydantic import Field, HttpUrl, TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_webserver.application_settings import (
-    _X_DEV_FEATURE_FLAG,
+    _X_FEATURE_UNDER_DEVELOPMENT,
     APP_SETTINGS_KEY,
     ApplicationSettings,
     setup_settings,
@@ -130,17 +130,25 @@ def test_disabled_plugins_settings_to_client_statics(
     )
 
     class DevSettings(ApplicationSettings):
-        TEST_FOO: Annotated[bool, Field(json_schema_extra={_X_DEV_FEATURE_FLAG: True})]
+        TEST_FOO: Annotated[
+            bool, Field(json_schema_extra={_X_FEATURE_UNDER_DEVELOPMENT: True})
+        ]
         TEST_BAR: Annotated[
-            int | None, Field(json_schema_extra={_X_DEV_FEATURE_FLAG: True})
+            int | None, Field(json_schema_extra={_X_FEATURE_UNDER_DEVELOPMENT: True})
         ]
 
     settings = DevSettings.create_from_envs()
 
     if is_dev_feature_enabled:
+        assert settings.WEBSERVER_DEV_FEATURES_ENABLED is True
+        assert settings.WEBSERVER_FUNCTIONS is True
+
         assert settings.TEST_FOO is True
         assert settings.TEST_BAR == 42
     else:
+        assert settings.WEBSERVER_DEV_FEATURES_ENABLED is False
+        assert settings.WEBSERVER_FUNCTIONS is False
+
         assert settings.TEST_FOO is False
         assert settings.TEST_BAR is None
 

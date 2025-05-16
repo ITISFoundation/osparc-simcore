@@ -402,7 +402,7 @@ mako==1.2.2
     #   alembic
 markdown-it-py==3.0.0
     # via rich
-markupsafe==2.1.1
+markupsafe==3.0.2
     # via
     #   jinja2
     #   mako

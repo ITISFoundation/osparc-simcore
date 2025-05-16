@@ -56,7 +56,7 @@ _logger = logging.getLogger(__name__)
 # NOTE: to mark a plugin as a DEV-FEATURE annotated it with
 #    `Field(json_schema_extra={_X_DEV_FEATURE_FLAG: True})`
 # This will force it to be disabled when WEBSERVER_DEV_FEATURES_ENABLED=False
-_X_DEV_FEATURE_FLAG: Final[str] = "x-dev-feature"
+_X_FEATURE_UNDER_DEVELOPMENT: Final[str] = "x-dev-feature"
 
 
 class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
@@ -108,10 +108,9 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     WEBSERVER_FUNCTIONS: Annotated[
         bool,
         Field(
-            validation_alias=AliasChoices("WEBSERVER_FUNCTIONS"),
-            json_schema_extra={_X_DEV_FEATURE_FLAG: True},
+            json_schema_extra={_X_FEATURE_UNDER_DEVELOPMENT: True},
         ),
-    ] = False
+    ] = True
 
     WEBSERVER_LOGLEVEL: Annotated[
         LogLevel,
@@ -406,8 +405,8 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
     @model_validator(mode="before")
     @classmethod
-    def _enable_only_if_dev_features_allowed(cls, data: Any) -> Any:
-        """Force disables plugins marked 'under development' when WEBSERVER_DEV_FEATURES_ENABLED=False"""
+    def _disable_features_under_development_in_production(cls, data: Any) -> Any:
+        """Force disables plugins marked '_X_FEATURE_UNDER_DEVELOPMENT' when WEBSERVER_DEV_FEATURES_ENABLED=False"""
 
         dev_features_allowed = TypeAdapter(bool).validate_python(
             data.get("WEBSERVER_DEV_FEATURES_ENABLED", False)
@@ -423,7 +422,8 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
                 field.json_schema_extra(json_schema)
 
             assert isinstance(json_schema, dict)  # nosec
-            if json_schema.get(_X_DEV_FEATURE_FLAG):
+            if json_schema.get(_X_FEATURE_UNDER_DEVELOPMENT):
+                assert not dev_features_allowed  # nosec
                 _logger.warning(
                     "'%s' is still under development and will be forcibly disabled [WEBSERVER_DEV_FEATURES_ENABLED=%s].",
                     field_name,
