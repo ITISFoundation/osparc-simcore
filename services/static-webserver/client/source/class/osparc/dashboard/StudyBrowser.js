@@ -789,10 +789,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           break;
         case "templates":
           requestParams.type = "template";
+          requestParams.templateType = osparc.data.model.StudyUI.TEMPLATE_TYPE;
           requestParams.accessRights = "non-public";
           break;
         case "public":
           requestParams.type = "template";
+          requestParams.templateType = osparc.data.model.StudyUI.TEMPLATE_TYPE;
           requestParams.accessRights = "public";
           break;
         case "search": {
