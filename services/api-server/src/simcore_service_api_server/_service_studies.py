@@ -52,7 +52,7 @@ class StudyService:
 
         # 2. list jobs under job_parent_resource_name
         return await self.job_service.list_jobs(
+            job_parent_resource_name=job_parent_resource_name,
             pagination_offset=pagination_offset,
             pagination_limit=pagination_limit,
-            filter_by_job_parent_resource_name_prefix=job_parent_resource_name,
         )

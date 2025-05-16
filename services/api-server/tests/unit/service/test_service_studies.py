@@ -28,7 +28,9 @@ async def test_list_jobs_no_study_id(
 
     # Verify proper prefix was used
     assert (
-        mocked_rpc_client.request.call_args.kwargs["job_parent_resource_name_prefix"]
+        mocked_rpc_client.request.call_args.kwargs[
+            "filters"
+        ].job_parent_resource_name_prefix
         == "study"
     )
 
@@ -49,7 +51,9 @@ async def test_list_jobs_with_study_id(
 
     # Verify proper prefix was used with study ID
     assert (
-        mocked_rpc_client.request.call_args.kwargs["job_parent_resource_name_prefix"]
+        mocked_rpc_client.request.call_args.kwargs[
+            "filters"
+        ].job_parent_resource_name_prefix
         == f"study/{study_id}"
     )
 
