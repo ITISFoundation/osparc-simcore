@@ -27,7 +27,6 @@ from ..dependencies.webserver_http import AuthSession, get_webserver_session
 from ._constants import (
     FMSG_CHANGELOG_ADDED_IN_VERSION,
     FMSG_CHANGELOG_NEW_IN_VERSION,
-    FMSG_CHANGELOG_REMOVED_IN_VERSION_FORMAT,
     create_route_description,
 )
 
@@ -57,10 +56,6 @@ router = APIRouter()
         alternative="GET /v0/solvers/page",
         changelog=[
             FMSG_CHANGELOG_NEW_IN_VERSION.format("0.5.0", ""),
-            FMSG_CHANGELOG_REMOVED_IN_VERSION_FORMAT.format(
-                "0.7",
-                "This endpoint is deprecated and will be removed in a future version",
-            ),
         ],
     ),
 )
@@ -123,10 +118,6 @@ async def get_solvers_page(
         alternative="GET /v0/solvers/{solver_key}/releases/page",
         changelog=[
             FMSG_CHANGELOG_NEW_IN_VERSION.format("0.5.0", ""),
-            FMSG_CHANGELOG_REMOVED_IN_VERSION_FORMAT.format(
-                "0.7",
-                "This endpoint is deprecated and will be removed in a future version",
-            ),
         ],
     ),
 )

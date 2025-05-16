@@ -1423,7 +1423,7 @@
           "solvers"
         ],
         "summary": "List Solvers",
-        "description": "\ud83d\udea8 **Deprecated**: This endpoint is deprecated and will be removed in a future release.\nPlease use `GET /v0/solvers/page` instead.\n\n\n\nLists all available solvers (latest version)\n\nNew in *version 0.5.0*\n\nRemoved in *version 0.7*: This endpoint is deprecated and will be removed in a future version",
+        "description": "\ud83d\udea8 **Deprecated**: This endpoint is deprecated and will be removed in a future release.\nPlease use `GET /v0/solvers/page` instead.\n\n\n\nLists all available solvers (latest version)\n\nNew in *version 0.5.0*",
         "operationId": "list_solvers",
         "responses": {
           "200": {
@@ -1514,7 +1514,7 @@
           "solvers"
         ],
         "summary": "Lists All Releases",
-        "description": "\ud83d\udea8 **Deprecated**: This endpoint is deprecated and will be removed in a future release.\nPlease use `GET /v0/solvers/{solver_key}/releases/page` instead.\n\n\n\nLists all released solvers (not just latest version)\n\nNew in *version 0.5.0*\n\nRemoved in *version 0.7*: This endpoint is deprecated and will be removed in a future version",
+        "description": "\ud83d\udea8 **Deprecated**: This endpoint is deprecated and will be removed in a future release.\nPlease use `GET /v0/solvers/{solver_key}/releases/page` instead.\n\n\n\nLists all released solvers (not just latest version)\n\nNew in *version 0.5.0*",
         "operationId": "list_solvers_releases",
         "responses": {
           "200": {
@@ -1604,8 +1604,8 @@
         "tags": [
           "solvers"
         ],
-        "summary": "Get Latest Release of a Solver",
-        "description": "Gets latest release of a solver",
+        "summary": "Get Solver",
+        "description": "Gets latest release of a solver\n\nAdded in *version 0.7.1*: `version_display` field in the response",
         "operationId": "get_solver",
         "security": [
           {
@@ -1714,7 +1714,7 @@
           "solvers"
         ],
         "summary": "List Solver Releases",
-        "description": "Lists all releases of a given (one) solver\n\nSEE get_solver_releases_page for a paginated version of this function",
+        "description": "Lists all releases of a given (one) solver\n\nAdded in *version 0.7.1*: `version_display` field in the response",
         "operationId": "list_solver_releases",
         "security": [
           {
@@ -1827,7 +1827,7 @@
           "solvers"
         ],
         "summary": "Get Solver Release",
-        "description": "Gets a specific release of a solver",
+        "description": "Gets a specific release of a solver\n\nAdded in *version 0.7.1*: `version_display` field in the response",
         "operationId": "get_solver_release",
         "security": [
           {
@@ -1946,7 +1946,7 @@
           "solvers"
         ],
         "summary": "List Solver Ports",
-        "description": "Lists inputs and outputs of a given solver\n\nNew in *version 0.5.0*",
+        "description": "Lists inputs and outputs of a given solver\n\nNew in *version 0.5.0*\n\nAdded in *version 0.7.1*: `version_display` field in the response",
         "operationId": "list_solver_ports",
         "security": [
           {
@@ -2065,7 +2065,7 @@
           "solvers"
         ],
         "summary": "Get Solver Pricing Plan",
-        "description": "Gets solver pricing plan\n\nNew in *version 0.7*",
+        "description": "Gets solver pricing plan\n\nNew in *version 0.7*\n\nAdded in *version 0.7.1*: `version_display` field in the response",
         "operationId": "get_solver_pricing_plan",
         "security": [
           {
