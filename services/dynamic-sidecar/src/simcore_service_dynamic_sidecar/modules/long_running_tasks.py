@@ -12,6 +12,7 @@ from models_library.api_schemas_long_running_tasks.base import (
 )
 from models_library.generated_models.docker_rest_api import ContainerState
 from models_library.rabbitmq_messages import ProgressType, SimcorePlatformStatus
+from models_library.service_settings_labels import LegacyState
 from pydantic import PositiveInt
 from servicelib.file_utils import log_directory_changes
 from servicelib.logging_utils import log_context
@@ -43,7 +44,7 @@ from ..core.rabbitmq import (
     post_progress_message,
     post_sidecar_log_message,
 )
-from ..core.settings import ApplicationSettings, LegacyState
+from ..core.settings import ApplicationSettings
 from ..core.utils import CommandResult
 from ..core.validation import parse_compose_spec
 from ..models.schemas.application_health import ApplicationHealth
