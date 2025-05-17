@@ -35,7 +35,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from ..models.services_db import (
     ReleaseDBGet,
-    ServiceAccessRightsAtDB,
+    ServiceAccessRightsDB,
     ServiceDBFilters,
     ServiceMetaDataDBCreate,
     ServiceMetaDataDBGet,
@@ -223,7 +223,7 @@ class ServicesRepository(BaseRepository):
     async def create_or_update_service(
         self,
         new_service: ServiceMetaDataDBCreate,
-        new_service_access_rights: list[ServiceAccessRightsAtDB],
+        new_service_access_rights: list[ServiceAccessRightsDB],
     ) -> ServiceMetaDataDBGet:
         for access_rights in new_service_access_rights:
             if (
@@ -562,7 +562,7 @@ class ServicesRepository(BaseRepository):
         key: str,
         version: str,
         product_name: str | None = None,
-    ) -> list[ServiceAccessRightsAtDB]:
+    ) -> list[ServiceAccessRightsDB]:
         """
         - If product_name is not specificed, then all are considered in the query
         """
@@ -576,7 +576,7 @@ class ServicesRepository(BaseRepository):
 
         async with self.db_engine.connect() as conn:
             return [
-                ServiceAccessRightsAtDB.model_validate(row)
+                ServiceAccessRightsDB.model_validate(row)
                 async for row in await conn.stream(query)
             ]
 
@@ -584,7 +584,7 @@ class ServicesRepository(BaseRepository):
         self,
         key_versions: Iterable[tuple[str, str]],
         product_name: str | None = None,
-    ) -> dict[tuple[str, str], list[ServiceAccessRightsAtDB]]:
+    ) -> dict[tuple[str, str], list[ServiceAccessRightsDB]]:
         """Batch version of get_service_access_rights"""
         service_to_access_rights = defaultdict(list)
         query = (
@@ -602,12 +602,12 @@ class ServicesRepository(BaseRepository):
         async with self.db_engine.connect() as conn:
             async for row in await conn.stream(query):
                 service_to_access_rights[(row.key, row.version)].append(
-                    ServiceAccessRightsAtDB.model_validate(row)
+                    ServiceAccessRightsDB.model_validate(row)
                 )
         return service_to_access_rights
 
     async def upsert_service_access_rights(
-        self, new_access_rights: list[ServiceAccessRightsAtDB]
+        self, new_access_rights: list[ServiceAccessRightsDB]
     ) -> None:
         # update the services_access_rights table (some might be added/removed/modified)
         for rights in new_access_rights:
@@ -639,7 +639,7 @@ class ServicesRepository(BaseRepository):
                 )
 
     async def delete_service_access_rights(
-        self, delete_access_rights: list[ServiceAccessRightsAtDB]
+        self, delete_access_rights: list[ServiceAccessRightsDB]
     ) -> None:
         async with self.db_engine.begin() as conn:
             for rights in delete_access_rights:

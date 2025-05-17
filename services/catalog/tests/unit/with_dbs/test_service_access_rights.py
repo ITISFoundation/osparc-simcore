@@ -10,7 +10,7 @@ from models_library.groups import GroupAtDB
 from models_library.products import ProductName
 from models_library.services import ServiceMetaDataPublished, ServiceVersion
 from pydantic import TypeAdapter
-from simcore_service_catalog.models.services_db import ServiceAccessRightsAtDB
+from simcore_service_catalog.models.services_db import ServiceAccessRightsDB
 from simcore_service_catalog.repository.services import ServicesRepository
 from simcore_service_catalog.service.access_rights import (
     evaluate_auto_upgrade_policy,
@@ -28,7 +28,7 @@ pytest_simcore_ops_services_selection = [
 
 
 def test_reduce_access_rights():
-    sample = ServiceAccessRightsAtDB.model_validate(
+    sample = ServiceAccessRightsDB.model_validate(
         {
             "key": "simcore/services/dynamic/sim4life",
             "version": "1.0.9",

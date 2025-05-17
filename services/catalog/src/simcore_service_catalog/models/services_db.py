@@ -222,7 +222,7 @@ assert (  # nosec
 )
 
 
-class ServiceAccessRightsAtDB(ServiceKeyVersion, ServiceGroupAccessRights):
+class ServiceAccessRightsDB(ServiceKeyVersion, ServiceGroupAccessRights):
     gid: GroupID
     product_name: ProductName
 
@@ -259,7 +259,17 @@ class ServiceDBFilters(Filters):
             {
                 "example": {
                     "service_type": "computational",
-                }
+                },
+                "examples": [
+                    {
+                        "service_key_pattern": "simcore/services/dynamic/*",
+                        "version_display_pattern": "S4L X",
+                    },
+                    {
+                        "service_type": "computational",
+                        "version_display_pattern": "S4L X",
+                    },
+                ],
             }
         )
 
