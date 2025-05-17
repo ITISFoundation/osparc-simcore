@@ -159,7 +159,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
         firstUpperCase: true
       });
       const templatesListPage = this.__createTabPage(templatesText, "@FontAwesome5Solid/copy/14");
-      const templatesList = this.__templatesList = new osparc.desktop.organizations.TemplatesList();
+      const templatesList = this.__templatesList = new osparc.desktop.organizations.TutorialsList();
       templatesListPage.add(templatesList, {
         flex: 1
       });
