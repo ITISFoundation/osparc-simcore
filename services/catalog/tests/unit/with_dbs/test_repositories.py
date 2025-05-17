@@ -22,6 +22,7 @@ from models_library.services_regex import (
 from models_library.users import UserID
 from packaging import version
 from pydantic import EmailStr, HttpUrl, TypeAdapter
+from pytest_simcore.helpers.catalog_services import CreateFakeServiceDataCallable
 from pytest_simcore.helpers.faker_factories import random_project
 from pytest_simcore.helpers.postgres_tools import insert_and_get_row_lifespan
 from simcore_postgres_database.models.projects import ProjectType, projects
@@ -463,6 +464,95 @@ async def test_list_latest_services_with_filters(
         service.key.startswith(COMPUTATIONAL_SERVICE_KEY_PREFIX)
         for service in services_items
     )
+
+
+async def test_list_latest_services_with_pattern_filters(
+    target_product: ProductName,
+    create_fake_service_data: CreateFakeServiceDataCallable,
+    services_db_tables_injector: Callable,
+    services_repo: ServicesRepository,
+    user_id: UserID,
+):
+    # Setup: Inject services with different patterns
+    await services_db_tables_injector(
+        [
+            create_fake_service_data(
+                "simcore/services/dynamic/jupyter-lab",
+                "1.0.0",
+                team_access=None,
+                everyone_access=None,
+                product=target_product,
+                version_display="2023 Release",
+            ),
+            create_fake_service_data(
+                "simcore/services/dynamic/jupyter-r",
+                "1.0.0",
+                team_access=None,
+                everyone_access=None,
+                product=target_product,
+                version_display="2024 Beta",
+            ),
+            create_fake_service_data(
+                "simcore/services/dynamic/jupyter-python",
+                "1.0.0",
+                team_access=None,
+                everyone_access=None,
+                product=target_product,
+            ),
+        ]
+    )
+
+    # Test: Filter by service key pattern
+    filters = ServiceFiltersDB(service_key_pattern="*/jupyter-*")
+    total_count, services_items = await services_repo.list_latest_services(
+        product_name=target_product, user_id=user_id, filters=filters
+    )
+    assert total_count == 3
+    assert len(services_items) == 3
+    assert all(
+        service.key.endswith("jupyter-lab")
+        or service.key.endswith("jupyter-r")
+        or service.key.endswith("jupyter-python")
+        for service in services_items
+    )
+
+    # Test: More specific pattern
+    filters = ServiceFiltersDB(service_key_pattern="*/jupyter-l*")
+    total_count, services_items = await services_repo.list_latest_services(
+        product_name=target_product, user_id=user_id, filters=filters
+    )
+    assert total_count == 1
+    assert len(services_items) == 1
+    assert services_items[0].key.endswith("jupyter-lab")
+
+    # Test: Filter by version display pattern
+    filters = ServiceFiltersDB(version_display_pattern="*2023*")
+    total_count, services_items = await services_repo.list_latest_services(
+        product_name=target_product, user_id=user_id, filters=filters
+    )
+    assert total_count == 1
+    assert len(services_items) == 1
+    assert services_items[0].version_display == "2023 Release"
+
+    # Test: Filter by version display pattern with NULL handling
+    filters = ServiceFiltersDB(version_display_pattern="*")
+    total_count, services_items = await services_repo.list_latest_services(
+        product_name=target_product, user_id=user_id, filters=filters
+    )
+    assert total_count == 3  # Should match all, including NULL version_display
+    assert len(services_items) == 3
+
+    # Test: Combined filters
+    filters = ServiceFiltersDB(
+        service_key_pattern="*/jupyter-*", version_display_pattern="*2024*"
+    )
+    total_count, services_items = await services_repo.list_latest_services(
+        product_name=target_product, user_id=user_id, filters=filters
+    )
+    assert total_count == 1
+    assert len(services_items) == 1
+    assert services_items[0].version_display == "2024 Beta"
+    assert services_items[0].key.endswith("jupyter-r")
 
 
 async def test_get_and_update_service_meta_data(
