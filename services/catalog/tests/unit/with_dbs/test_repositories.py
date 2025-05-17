@@ -68,7 +68,7 @@ class FakeCatalogInfo:
 @pytest.fixture
 async def fake_catalog_with_jupyterlab(
     target_product: ProductName,
-    create_fake_service_data: Callable,
+    create_fake_service_data: CreateFakeServiceDataCallable,
     services_db_tables_injector: Callable,
 ) -> FakeCatalogInfo:
 
@@ -122,7 +122,8 @@ async def fake_catalog_with_jupyterlab(
 
 
 async def test_create_services(
-    services_repo: ServicesRepository, create_fake_service_data: Callable
+    services_repo: ServicesRepository,
+    create_fake_service_data: CreateFakeServiceDataCallable,
 ):
     # creates fake data
     fake_service, *fake_access_rights = create_fake_service_data(
@@ -159,7 +160,8 @@ async def test_create_services(
     ],
 )
 async def test_regression_service_meta_data_db_create(
-    create_fake_service_data: Callable, url_object: str | HttpUrl | None
+    create_fake_service_data: CreateFakeServiceDataCallable,
+    url_object: str | HttpUrl | None,
 ):
     fake_service, *_ = create_fake_service_data(
         "simcore/services/dynamic/jupyterlab",
@@ -176,7 +178,7 @@ async def test_read_services(
     services_repo: ServicesRepository,
     user_groups_ids: list[int],
     target_product: ProductName,
-    create_fake_service_data: Callable,
+    create_fake_service_data: CreateFakeServiceDataCallable,
     services_db_tables_injector: Callable,
 ):
 
@@ -354,7 +356,7 @@ async def test_list_latest_services_with_no_services(
 
 async def test_list_latest_services_with_pagination(
     target_product: ProductName,
-    create_fake_service_data: Callable,
+    create_fake_service_data: CreateFakeServiceDataCallable,
     services_db_tables_injector: Callable,
     services_repo: ServicesRepository,
     user_id: UserID,
@@ -413,7 +415,7 @@ async def test_list_latest_services_with_pagination(
 
 async def test_list_latest_services_with_filters(
     target_product: ProductName,
-    create_fake_service_data: Callable,
+    create_fake_service_data: CreateFakeServiceDataCallable,
     services_db_tables_injector: Callable,
     services_repo: ServicesRepository,
     user_id: UserID,
@@ -557,7 +559,7 @@ async def test_list_latest_services_with_pattern_filters(
 
 async def test_get_and_update_service_meta_data(
     target_product: ProductName,
-    create_fake_service_data: Callable,
+    create_fake_service_data: CreateFakeServiceDataCallable,
     services_db_tables_injector: Callable,
     services_repo: ServicesRepository,
     user_id: UserID,
@@ -597,7 +599,7 @@ async def test_get_and_update_service_meta_data(
 
 async def test_can_get_service(
     target_product: ProductName,
-    create_fake_service_data: Callable,
+    create_fake_service_data: CreateFakeServiceDataCallable,
     services_db_tables_injector: Callable,
     services_repo: ServicesRepository,
     user_id: UserID,
@@ -654,7 +656,7 @@ def _create_fake_release_versions(num_versions: int) -> set[str]:
 
 async def test_get_service_history_page(
     target_product: ProductName,
-    create_fake_service_data: Callable,
+    create_fake_service_data: CreateFakeServiceDataCallable,
     services_db_tables_injector: Callable,
     services_repo: ServicesRepository,
     user_id: UserID,
@@ -727,7 +729,7 @@ async def test_get_service_history_page(
 )
 async def test_get_service_history_page_with_filters(
     target_product: ProductName,
-    create_fake_service_data: Callable,
+    create_fake_service_data: CreateFakeServiceDataCallable,
     services_db_tables_injector: Callable,
     services_repo: ServicesRepository,
     user_id: UserID,
