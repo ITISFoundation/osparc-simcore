@@ -2,7 +2,7 @@ from typing import Annotated, Final
 
 from fastapi import APIRouter, Depends, status
 from fastapi_pagination.api import create_page
-from models_library.api_schemas_webserver.functions_wb_schema import (
+from models_library.api_schemas_webserver.functions import (
     Function,
     FunctionClass,
     FunctionJob,

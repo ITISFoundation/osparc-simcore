@@ -8,7 +8,7 @@ from models_library import projects
 from models_library.services_types import ServiceKey, ServiceVersion
 from pydantic import BaseModel, Field
 
-from ..projects import ProjectID
+from .projects import ProjectID
 
 FunctionID: TypeAlias = UUID
 FunctionJobID: TypeAlias = UUID

@@ -1,7 +1,7 @@
 import logging
 
 from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
-from models_library.api_schemas_webserver.functions_wb_schema import (
+from models_library.api_schemas_webserver.functions import (
     Function,
     FunctionID,
     FunctionInputs,

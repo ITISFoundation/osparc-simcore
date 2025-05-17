@@ -7,7 +7,7 @@ from uuid import uuid4
 
 import pytest
 from httpx import AsyncClient
-from models_library.api_schemas_webserver.functions_wb_schema import (
+from models_library.api_schemas_webserver.functions import (
     FunctionIDNotFoundError,
     FunctionJobCollection,
     ProjectFunction,

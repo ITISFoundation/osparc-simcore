@@ -6,7 +6,7 @@ from typing import cast
 
 from fastapi import FastAPI
 from fastapi_pagination import create_page
-from models_library.api_schemas_webserver.functions_wb_schema import (
+from models_library.api_schemas_api_server.functions import (
     Function,
     FunctionID,
     FunctionInputs,
