@@ -250,6 +250,8 @@ class ServiceAccessRightsAtDB(ServiceKeyVersion, ServiceGroupAccessRights):
 
 class ServiceFiltersDB(Filters):
     service_type: ServiceType | None = None
+    service_key_pattern: str | None = None
+    version_display_pattern: str | None = None
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:

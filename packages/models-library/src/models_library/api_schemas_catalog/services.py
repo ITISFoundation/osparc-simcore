@@ -388,7 +388,6 @@ class ServiceListFilters(Filters):
     service_key_pattern: Annotated[
         str | None,
         Field(
-            None,
             description="Filter services by key pattern (e.g. 'simcore/services/comp/itis/*')",
         ),
     ] = None
@@ -396,7 +395,6 @@ class ServiceListFilters(Filters):
     version_display_pattern: Annotated[
         str | None,
         Field(
-            None,
             description="Filter services by version display pattern (e.g. '*2023*')",
         ),
     ] = None
