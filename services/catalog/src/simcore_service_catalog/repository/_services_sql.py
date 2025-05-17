@@ -139,15 +139,20 @@ def apply_services_filters(
     if filters.version_display_pattern:
         # Convert glob pattern to SQL LIKE pattern and handle NULL values
         sql_pattern = filters.version_display_pattern.replace("*", "%")
-        conditions.append(
-            sa.or_(
-                services_meta_data.c.version_display.like(sql_pattern),
-                # If pattern==*, also match NULL when rest is empty
-                sa.and_(
-                    services_meta_data.c.version_display.is_(None), sql_pattern == "%"
-                ),
-            )
+        version_display_condition = services_meta_data.c.version_display.like(
+            sql_pattern
         )
+
+        if sql_pattern == "%":
+            conditions.append(
+                sa.or_(
+                    version_display_condition,
+                    # If pattern==*, also match NULL when rest is empty
+                    services_meta_data.c.version_display.is_(None),
+                )
+            )
+        else:
+            conditions.append(version_display_condition)
 
     if conditions:
         stmt = stmt.where(sa.and_(*conditions))
