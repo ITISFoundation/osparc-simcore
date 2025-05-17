@@ -113,7 +113,8 @@ def dask_subsystem_mock(
     )
     # mock dask rabbitmq plugin
     mock_dask_rabbitmq_plugin = mocker.patch(
-        "simcore_service_dask_sidecar.rabbitmq_plugin.RabbitMQPlugin", autospec=True
+        "simcore_service_dask_sidecar.rabbitmq_worker_plugin.RabbitMQPlugin",
+        autospec=True,
     )
     mock_rabbitmq_client = create_rabbitmq_client("pytest_dask_sidecar_logs_publisher")
     mock_dask_rabbitmq_plugin.get_client.return_value = mock_rabbitmq_client
@@ -505,7 +506,7 @@ async def log_rabbit_client_parser(
             ready_event.set()
 
             # Wait until the test is done
-            while not shutdown_event.is_set():
+            while not shutdown_event.is_set():  # noqa: ASYNC110
                 await asyncio.sleep(0.1)
 
             # Cleanup

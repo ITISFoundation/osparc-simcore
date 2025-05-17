@@ -24,7 +24,7 @@ _RABBITMQ_CONFIGURATION_ERROR: Final[str] = (
 class RabbitMQPlugin(distributed.WorkerPlugin):
     """Dask Worker Plugin for RabbitMQ integration"""
 
-    name = "rabbitmq_plugin"
+    name = "rabbitmq_worker_plugin"
     _main_thread_loop: AbstractEventLoop | None = None
     _client: RabbitMQClient | None = None
     _settings: RabbitSettings | None = None
@@ -98,7 +98,7 @@ class RabbitMQPlugin(distributed.WorkerPlugin):
                     )
                 else:
                     _logger.warning(
-                        "RabbitMQ client plugin setup is not the main thread!"
+                        "RabbitMQ client plugin setup is not the main thread! Beware! if in pytest it's ok."
                     )
 
                 # Cancel the message processor task

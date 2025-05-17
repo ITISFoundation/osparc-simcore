@@ -117,6 +117,7 @@ def local_cluster(app_environment: EnvVarsDict) -> Iterator[distributed.LocalClu
     with distributed.LocalCluster(
         worker_class=distributed.Worker,
         resources={"CPU": 10, "GPU": 10},
+        scheduler_kwargs={"preload": "simcore_service_dask_sidecar.scheduler"},
         preload="simcore_service_dask_sidecar.worker",
     ) as cluster:
         assert cluster
