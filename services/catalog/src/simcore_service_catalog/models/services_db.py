@@ -248,7 +248,7 @@ class ServiceAccessRightsAtDB(ServiceKeyVersion, ServiceGroupAccessRights):
     )
 
 
-class ServiceFiltersDB(Filters):
+class ServiceDBFilters(Filters):
     service_type: ServiceType | None = None
     service_key_pattern: str | None = None
     version_display_pattern: str | None = None

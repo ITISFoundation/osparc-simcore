@@ -33,7 +33,7 @@ from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
 from ..clients.director import DirectorClient
 from ..models.services_db import (
     ServiceAccessRightsAtDB,
-    ServiceFiltersDB,
+    ServiceDBFilters,
     ServiceMetaDataDBPatch,
     ServiceWithHistoryDBGet,
 )
@@ -137,7 +137,7 @@ async def list_latest_catalog_services(
     user_id: UserID,
     limit: PageLimitInt | None,
     offset: NonNegativeInt = 0,
-    filters: ServiceFiltersDB | None = None,
+    filters: ServiceDBFilters | None = None,
 ) -> tuple[PageTotalCount, list[LatestServiceGet]]:
 
     # defines the order
@@ -520,7 +520,7 @@ async def list_user_service_release_history(
     limit: PageLimitInt | None = None,
     offset: NonNegativeInt | None = None,
     # filters
-    filters: ServiceFiltersDB | None = None,
+    filters: ServiceDBFilters | None = None,
     # options
     include_compatibility: bool = False,
 ) -> tuple[PageTotalCount, list[ServiceRelease]]:
