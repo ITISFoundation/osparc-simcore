@@ -25,8 +25,8 @@ from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.services import get_catalog_service, get_solver_service
 from ..dependencies.webserver_http import AuthSession, get_webserver_session
 from ._constants import (
+    FMSG_CHANGELOG_ADDED_IN_VERSION,
     FMSG_CHANGELOG_NEW_IN_VERSION,
-    FMSG_CHANGELOG_REMOVED_IN_VERSION_FORMAT,
     create_route_description,
 )
 
@@ -56,10 +56,6 @@ router = APIRouter()
         alternative="GET /v0/solvers/page",
         changelog=[
             FMSG_CHANGELOG_NEW_IN_VERSION.format("0.5.0", ""),
-            FMSG_CHANGELOG_REMOVED_IN_VERSION_FORMAT.format(
-                "0.7",
-                "This endpoint is deprecated and will be removed in a future version",
-            ),
         ],
     ),
 )
@@ -67,8 +63,6 @@ async def list_solvers(
     catalog_service: Annotated[CatalogService, Depends(get_catalog_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
-    """Lists all available solvers (latest version)"""
-
     services, _ = await catalog_service.list_latest_releases(
         filters=ServiceListFilters(service_type=ServiceType.COMPUTATIONAL),
     )
@@ -124,10 +118,6 @@ async def get_solvers_page(
         alternative="GET /v0/solvers/{solver_key}/releases/page",
         changelog=[
             FMSG_CHANGELOG_NEW_IN_VERSION.format("0.5.0", ""),
-            FMSG_CHANGELOG_REMOVED_IN_VERSION_FORMAT.format(
-                "0.7",
-                "This endpoint is deprecated and will be removed in a future version",
-            ),
         ],
     ),
 )
@@ -167,21 +157,25 @@ async def list_solvers_releases(
 @router.get(
     "/{solver_key:path}/latest",
     response_model=Solver,
-    summary="Get Latest Release of a Solver",
     responses=_SOLVER_STATUS_CODES,
+    description=create_route_description(
+        base="Gets latest release of a solver",
+        changelog=[
+            FMSG_CHANGELOG_ADDED_IN_VERSION.format(
+                "0.7.1", "`version_display` field in the response"
+            ),
+        ],
+    ),
 )
 async def get_solver(
     solver_key: SolverKeyId,
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
-    """Gets latest release of a solver"""
     # IMPORTANT: by adding /latest, we avoid changing the order of this entry in the router list
     # otherwise, {solver_key:path} will override and consume any of the paths that follow.
     try:
-        solver = await solver_service.get_latest_release(
-            solver_key=solver_key,
-        )
+        solver = await solver_service.get_latest_release(solver_key=solver_key)
         solver.url = url_for(
             "get_solver_release", solver_key=solver.id, version=solver.version
         )
@@ -199,16 +193,20 @@ async def get_solver(
     "/{solver_key:path}/releases",
     response_model=list[Solver],
     responses=_SOLVER_STATUS_CODES,
+    description=create_route_description(
+        base="Lists all releases of a given (one) solver",
+        changelog=[
+            FMSG_CHANGELOG_ADDED_IN_VERSION.format(
+                "0.7.1", "`version_display` field in the response"
+            ),
+        ],
+    ),
 )
 async def list_solver_releases(
     solver_key: SolverKeyId,
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
-    """Lists all releases of a given (one) solver
-
-    SEE get_solver_releases_page for a paginated version of this function
-    """
     all_releases: list[Solver] = []
     for page_params in iter_pagination_params(limit=DEFAULT_PAGINATION_LIMIT):
         solvers, page_meta = await solver_service.solver_release_history(
@@ -267,6 +265,14 @@ async def get_solver_releases_page(
     "/{solver_key:path}/releases/{version}",
     response_model=Solver,
     responses=_SOLVER_STATUS_CODES,
+    description=create_route_description(
+        base="Gets a specific release of a solver",
+        changelog=[
+            FMSG_CHANGELOG_ADDED_IN_VERSION.format(
+                "0.7.1", "`version_display` field in the response"
+            ),
+        ],
+    ),
 )
 async def get_solver_release(
     solver_key: SolverKeyId,
@@ -274,7 +280,6 @@ async def get_solver_release(
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
-    """Gets a specific release of a solver"""
     try:
         solver: Solver = await solver_service.get_solver(
             solver_key=solver_key,
@@ -302,8 +307,15 @@ async def get_solver_release(
     "/{solver_key:path}/releases/{version}/ports",
     response_model=OnePage[SolverPort],
     responses=_SOLVER_STATUS_CODES,
-    description="Lists inputs and outputs of a given solver\n\n"
-    + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.5.0"),
+    description=create_route_description(
+        base="Lists inputs and outputs of a given solver",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.5.0"),
+            FMSG_CHANGELOG_ADDED_IN_VERSION.format(
+                "0.7.1", "`version_display` field in the response"
+            ),
+        ],
+    ),
 )
 async def list_solver_ports(
     solver_key: SolverKeyId,
@@ -322,9 +334,16 @@ async def list_solver_ports(
 @router.get(
     "/{solver_key:path}/releases/{version}/pricing_plan",
     response_model=ServicePricingPlanGetLegacy,
-    description="Gets solver pricing plan\n\n"
-    + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7"),
     responses=_SOLVER_STATUS_CODES,
+    description=create_route_description(
+        base="Gets solver pricing plan",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7"),
+            FMSG_CHANGELOG_ADDED_IN_VERSION.format(
+                "0.7.1", "`version_display` field in the response"
+            ),
+        ],
+    ),
 )
 async def get_solver_pricing_plan(
     solver_key: SolverKeyId,
