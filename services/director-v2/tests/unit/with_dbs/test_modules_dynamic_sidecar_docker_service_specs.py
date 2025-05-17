@@ -267,6 +267,7 @@ def expected_dynamic_sidecar_spec(
                     "DY_SIDECAR_SERVICE_VERSION": "2.4.5",
                     "DY_SIDECAR_PRODUCT_NAME": osparc_product_name,
                     "DY_SIDECAR_USER_PREFERENCES_PATH": "None",
+                    "DY_SIDECAR_LEGACY_STATE": "null",
                     "DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED": "True",
                     "POSTGRES_DB": "test",
                     "POSTGRES_HOST": "localhost",

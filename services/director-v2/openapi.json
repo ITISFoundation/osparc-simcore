@@ -2291,6 +2291,26 @@
           }
         }
       },
+      "LegacyState": {
+        "properties": {
+          "old_state_path": {
+            "type": "string",
+            "format": "path",
+            "title": "Old State Path"
+          },
+          "new_state_path": {
+            "type": "string",
+            "format": "path",
+            "title": "New State Path"
+          }
+        },
+        "type": "object",
+        "required": [
+          "old_state_path",
+          "new_state_path"
+        ],
+        "title": "LegacyState"
+      },
       "NATRule": {
         "properties": {
           "hostname": {
@@ -2449,6 +2469,17 @@
             ],
             "title": "Volume Size Limits",
             "description": "Apply volume size limits to entries in: `inputs_path`, `outputs_path` and `state_paths`. Limits must be parsable by Pydantic's ByteSize."
+          },
+          "legacy_state": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LegacyState"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "if present, the service needs to first try to download the legacy statecoming from a different path."
           }
         },
         "additionalProperties": false,

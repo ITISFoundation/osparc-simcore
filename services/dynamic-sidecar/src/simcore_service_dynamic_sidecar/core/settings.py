@@ -10,6 +10,7 @@ from models_library.callbacks_mapping import CallbacksMapping
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.service_settings_labels import LegacyState
 from models_library.services import DynamicServiceKey, ServiceRunID, ServiceVersion
 from models_library.users import UserID
 from pydantic import (
@@ -141,6 +142,10 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     DY_SIDECAR_STATE_EXCLUDE: set[str] = Field(
         ..., description="list of patterns to exclude files when saving states"
     )
+    DY_SIDECAR_LEGACY_STATE: LegacyState | None = Field(
+        default=None, description="used to recover state when upgrading service"
+    )
+
     DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         default=False,
         validation_alias=AliasChoices(

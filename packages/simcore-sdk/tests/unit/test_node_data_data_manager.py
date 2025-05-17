@@ -172,6 +172,7 @@ async def test_push_file(
     mock_filemanager.reset_mock()
 
 
+@pytest.mark.parametrize("create_legacy_archive", [False, True])
 async def test_pull_legacy_archive(
     user_id: int,
     project_id: ProjectID,
@@ -181,6 +182,7 @@ async def test_pull_legacy_archive(
     create_files: Callable[..., list[Path]],
     mock_io_log_redirect_cb: LogRedirectCB,
     faker: Faker,
+    create_legacy_archive: bool,
 ):
     assert tmpdir.exists()
     # create a folder to compress from
@@ -200,7 +202,13 @@ async def test_pull_legacy_archive(
     create_files(files_number, test_control_folder)
     compressed_file_name = test_compression_folder / test_folder.stem
     archive_file = make_archive(
-        f"{compressed_file_name}", "zip", root_dir=test_control_folder
+        (
+            f"{compressed_file_name}_legacy"
+            if create_legacy_archive
+            else f"{compressed_file_name}"
+        ),
+        "zip",
+        root_dir=test_control_folder,
     )
     assert Path(archive_file).exists()
     # create mock downloaded folder
@@ -229,13 +237,16 @@ async def test_pull_legacy_archive(
             test_folder,
             io_log_redirect_cb=mock_io_log_redirect_cb,
             progress_bar=progress_bar,
+            legacy_destination_path=(
+                Path(f"{test_folder}_legacy") if create_legacy_archive else None
+            ),
         )
     assert progress_bar._current_steps == pytest.approx(1)  # noqa: SLF001
     mock_temporary_directory.assert_called_once()
     mock_filemanager.download_path_from_s3.assert_called_once_with(
         user_id=user_id,
         local_path=test_compression_folder,
-        s3_object=f"{project_id}/{node_uuid}/{test_folder.stem}.zip",
+        s3_object=f"{project_id}/{node_uuid}/{f'{test_folder.stem}_legacy' if create_legacy_archive else test_folder.stem}.zip",
         store_id=SIMCORE_LOCATION,
         store_name=None,
         io_log_redirect_cb=mock_io_log_redirect_cb,

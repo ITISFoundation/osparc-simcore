@@ -78,11 +78,11 @@ def test_simcore_service_labels(example: dict, items: int, uses_dynamic_sidecar:
 
 def test_service_settings():
     simcore_settings_settings_label = SimcoreServiceSettingsLabel.model_validate(
-        SimcoreServiceSettingLabelEntry.model_config["json_schema_extra"]["examples"]
+        SimcoreServiceSettingLabelEntry.model_json_schema()["examples"]
     )
     assert simcore_settings_settings_label
     assert len(simcore_settings_settings_label) == len(
-        SimcoreServiceSettingLabelEntry.model_config["json_schema_extra"]["examples"]
+        SimcoreServiceSettingLabelEntry.model_json_schema()["examples"]
     )
     assert simcore_settings_settings_label[0]
 
@@ -122,16 +122,14 @@ def test_raises_error_if_http_entrypoint_is_missing():
 
 
 def test_path_mappings_none_state_paths():
-    sample_data = deepcopy(
-        PathMappingsLabel.model_config["json_schema_extra"]["examples"][0]
-    )
+    sample_data = deepcopy(PathMappingsLabel.model_json_schema()["examples"][0])
     sample_data["state_paths"] = None
     with pytest.raises(ValidationError):
         PathMappingsLabel(**sample_data)
 
 
 def test_path_mappings_json_encoding():
-    for example in PathMappingsLabel.model_config["json_schema_extra"]["examples"]:
+    for example in PathMappingsLabel.model_json_schema()["examples"]:
         path_mappings = PathMappingsLabel.model_validate(example)
         print(path_mappings)
         assert (
@@ -607,7 +605,7 @@ def test_resolving_some_service_labels_at_load_time(
 def test_user_preferences_path_is_part_of_exiting_volume():
     labels_data = {
         "simcore.service.paths-mapping": json.dumps(
-            PathMappingsLabel.model_config["json_schema_extra"]["examples"][0]
+            PathMappingsLabel.model_json_schema()["examples"][0]
         ),
         "simcore.service.user-preferences-path": json.dumps(
             "/tmp/outputs"  # noqa: S108
