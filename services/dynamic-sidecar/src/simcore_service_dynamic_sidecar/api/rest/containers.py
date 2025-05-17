@@ -24,8 +24,8 @@ from ...core.errors import (
 from ...core.settings import ApplicationSettings
 from ...core.validation import (
     ComposeSpecValidation,
+    get_and_validate_compose_spec,
     parse_compose_spec,
-    validate_compose_spec,
 )
 from ...models.schemas.containers import ContainersComposeSpec
 from ...models.shared_store import SharedStore
@@ -76,10 +76,12 @@ async def store_compose_spec(
     _ = request
 
     async with shared_store:
-        compose_spec_validation: ComposeSpecValidation = await validate_compose_spec(
-            settings=settings,
-            compose_file_content=containers_compose_spec.docker_compose_yaml,
-            mounted_volumes=mounted_volumes,
+        compose_spec_validation: ComposeSpecValidation = (
+            await get_and_validate_compose_spec(
+                settings=settings,
+                compose_file_content=containers_compose_spec.docker_compose_yaml,
+                mounted_volumes=mounted_volumes,
+            )
         )
         shared_store.compose_spec = compose_spec_validation.compose_spec
         shared_store.container_names = compose_spec_validation.current_container_names

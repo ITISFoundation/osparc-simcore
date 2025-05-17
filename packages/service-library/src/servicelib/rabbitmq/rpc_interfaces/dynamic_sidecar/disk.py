@@ -1,6 +1,5 @@
 import logging
 
-from models_library.api_schemas_dynamic_sidecar.telemetry import DiskUsage
 from models_library.projects_nodes_io import NodeID
 from models_library.rabbitmq_basic_types import RPCMethodName
 from pydantic import TypeAdapter
@@ -13,16 +12,14 @@ _logger = logging.getLogger(__name__)
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def update_disk_usage(
+async def free_reserved_disk_space(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     node_id: NodeID,
-    usage: dict[str, DiskUsage],
 ) -> None:
     rpc_namespace = get_rpc_namespace(node_id)
     result = await rabbitmq_rpc_client.request(
         rpc_namespace,
-        TypeAdapter(RPCMethodName).validate_python("update_disk_usage"),
-        usage=usage,
+        TypeAdapter(RPCMethodName).validate_python("free_reserved_disk_space"),
     )
     assert result is None  # nosec

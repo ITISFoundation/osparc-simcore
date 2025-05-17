@@ -185,7 +185,7 @@ class ComposeSpecValidation(NamedTuple):
     original_to_current_container_names: dict[str, str]
 
 
-async def validate_compose_spec(  # pylint: disable=too-many-statements
+async def get_and_validate_compose_spec(  # pylint: disable=too-many-statements
     settings: ApplicationSettings,
     compose_file_content: str,
     mounted_volumes: MountedVolumes,

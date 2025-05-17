@@ -18,6 +18,7 @@ from aiodocker.volumes import DockerVolume
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
+from models_library.api_schemas_dynamic_sidecar.containers import DockerComposeYamlStr
 from models_library.generated_models.docker_rest_api import ContainerState
 from models_library.generated_models.docker_rest_api import Status2 as ContainerStatus
 from models_library.rabbitmq_messages import (
@@ -73,7 +74,7 @@ def raw_compose_spec(container_names: list[str]) -> dict[str, Any]:
 
 
 @pytest.fixture
-def compose_spec(raw_compose_spec: dict[str, Any]) -> str:
+def compose_spec(raw_compose_spec: dict[str, Any]) -> DockerComposeYamlStr:
     return json.dumps(raw_compose_spec)
 
 
@@ -105,6 +106,7 @@ async def app(app: FastAPI) -> AsyncIterable[FastAPI]:
 
 @pytest.fixture
 async def httpx_async_client(
+    mock_ensure_read_permissions_on_user_service_data: None,
     app: FastAPI,
     backend_url: AnyHttpUrl,
     ensure_external_volumes: tuple[DockerVolume],
@@ -145,7 +147,7 @@ def mock_user_services_fail_to_stop(mocker: MockerFixture) -> None:
 
 async def _get_task_id_create_service_containers(
     httpx_async_client: AsyncClient,
-    compose_spec: str,
+    compose_spec: DockerComposeYamlStr,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
 ) -> TaskId:
     containers_compose_spec = ContainersComposeSpec(
@@ -200,7 +202,6 @@ async def _wait_for_containers_to_be_running(app: FastAPI) -> None:
 
 
 async def test_service_starts_and_closes_as_expected(
-    mock_ensure_read_permissions_on_user_service_data: None,
     mock_core_rabbitmq: dict[str, AsyncMock],
     app: FastAPI,
     httpx_async_client: AsyncClient,
@@ -384,7 +385,6 @@ def mock_one_container_oom_killed(mocker: MockerFixture) -> Callable[[], None]:
 
 @pytest.mark.parametrize("expected_platform_state", SimcorePlatformStatus)
 async def test_user_services_crash_when_running(
-    mock_ensure_read_permissions_on_user_service_data: None,
     mock_core_rabbitmq: dict[str, AsyncMock],
     app: FastAPI,
     httpx_async_client: AsyncClient,
