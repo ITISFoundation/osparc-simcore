@@ -120,6 +120,8 @@ def _apply_services_filters(
     stmt: sa.sql.Select,
     filters: ServiceFiltersDB,
 ) -> sa.sql.Select:
+    conditions = []
+
     if filters.service_type:
         prefix = SERVICE_TYPE_TO_PREFIX_MAP.get(filters.service_type)
         if prefix is None:
@@ -127,7 +129,29 @@ def _apply_services_filters(
             raise ValueError(msg)
 
         assert not prefix.endswith("/")  # nosec
-        return stmt.where(services_meta_data.c.key.like(f"{prefix}/%"))
+        conditions.append(services_meta_data.c.key.like(f"{prefix}/%"))
+
+    if filters.service_key_pattern:
+        # Convert glob pattern to SQL LIKE pattern
+        sql_pattern = filters.service_key_pattern.replace("*", "%")
+        conditions.append(services_meta_data.c.key.like(sql_pattern))
+
+    if filters.version_display_pattern:
+        # Convert glob pattern to SQL LIKE pattern and handle NULL values
+        sql_pattern = filters.version_display_pattern.replace("*", "%")
+        conditions.append(
+            sa.or_(
+                services_meta_data.c.version_display.like(sql_pattern),
+                # If pattern==*, also match NULL when rest is empty
+                sa.and_(
+                    services_meta_data.c.version_display.is_(None), sql_pattern == "%"
+                ),
+            )
+        )
+
+    if conditions:
+        stmt = stmt.where(sa.and_(*conditions))
+
     return stmt
 
 
