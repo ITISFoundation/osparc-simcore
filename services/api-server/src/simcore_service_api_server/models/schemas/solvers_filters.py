@@ -9,7 +9,7 @@ class SolversListFilters(BaseModel):
     solver_id: Annotated[
         str | None,
         Field(
-            description="Filter by solver ID pattern (e.g. 'simcore/services/comp/itis/*')",
+            description="Filter by solver ID pattern",
             examples=["simcore/services/comp/itis/sleeper", "simcore/services/comp/*"],
         ),
     ] = None
@@ -17,7 +17,7 @@ class SolversListFilters(BaseModel):
     version_display: Annotated[
         str | None,
         Field(
-            description="Filter by version display pattern (e.g. '*2023*')",
+            description="Filter by version display pattern",
             examples=["2.1.1-2023-10-01", "*2023*"],
         ),
     ] = None
