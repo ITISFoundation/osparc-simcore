@@ -27,7 +27,7 @@ from pytest_simcore.helpers.faker_factories import random_project
 from pytest_simcore.helpers.postgres_tools import insert_and_get_row_lifespan
 from simcore_postgres_database.models.projects import ProjectType, projects
 from simcore_service_catalog.models.services_db import (
-    ServiceAccessRightsAtDB,
+    ServiceAccessRightsDB,
     ServiceDBFilters,
     ServiceMetaDataDBCreate,
     ServiceMetaDataDBGet,
@@ -136,7 +136,7 @@ async def test_create_services(
     # validation
     service_db_create = ServiceMetaDataDBCreate.model_validate(fake_service)
     service_access_rights = [
-        ServiceAccessRightsAtDB.model_validate(a) for a in fake_access_rights
+        ServiceAccessRightsDB.model_validate(a) for a in fake_access_rights
     ]
 
     new_service = await services_repo.create_or_update_service(
