@@ -15,7 +15,7 @@ from pydantic.types import PositiveInt
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..api._dependencies.director import get_director_client
-from ..models.services_db import ServiceAccessRightsAtDB
+from ..models.services_db import ServiceAccessRightsDB
 from ..repository.groups import GroupsRepository
 from ..repository.services import ServicesRepository
 from ..utils.versioning import as_version, is_patch_release
@@ -43,7 +43,7 @@ async def _is_old_service(app: FastAPI, service: ServiceMetaDataPublished) -> bo
 
 async def evaluate_default_policy(
     app: FastAPI, service: ServiceMetaDataPublished
-) -> tuple[PositiveInt | None, list[ServiceAccessRightsAtDB]]:
+) -> tuple[PositiveInt | None, list[ServiceAccessRightsDB]]:
     """Given a service, it returns the owner's group-id (gid) and a list of access rights following
     default access-rights policies
 
@@ -86,7 +86,7 @@ async def evaluate_default_policy(
 
     # we add the owner with full rights, unless it's everyone
     default_access_rights = [
-        ServiceAccessRightsAtDB(
+        ServiceAccessRightsDB(
             key=service.key,
             version=service.version,
             gid=gid,
@@ -102,7 +102,7 @@ async def evaluate_default_policy(
 
 async def evaluate_auto_upgrade_policy(
     service_metadata: ServiceMetaDataPublished, services_repo: ServicesRepository
-) -> list[ServiceAccessRightsAtDB]:
+) -> list[ServiceAccessRightsDB]:
     # AUTO-UPGRADE PATCH policy:
     #
     #  - Any new patch released, inherits the access rights from previous compatible version
@@ -146,9 +146,9 @@ async def evaluate_auto_upgrade_policy(
 
 
 def reduce_access_rights(
-    access_rights: list[ServiceAccessRightsAtDB],
+    access_rights: list[ServiceAccessRightsDB],
     reduce_operation: Callable = operator.ior,
-) -> list[ServiceAccessRightsAtDB]:
+) -> list[ServiceAccessRightsDB]:
     """
     Reduces a list of access-rights per target
     By default, the reduction is OR (i.e. preserves True flags)
@@ -156,11 +156,11 @@ def reduce_access_rights(
     # TODO: probably a lot of room to optimize
     # helper functions to simplify operation of access rights
 
-    def _get_target(access: ServiceAccessRightsAtDB) -> tuple[str | int, ...]:
+    def _get_target(access: ServiceAccessRightsDB) -> tuple[str | int, ...]:
         """Hashable identifier of the resource the access rights apply to"""
         return (access.key, access.version, access.gid, access.product_name)
 
-    def _get_flags(access: ServiceAccessRightsAtDB) -> dict[str, bool]:
+    def _get_flags(access: ServiceAccessRightsDB) -> dict[str, bool]:
         """Extracts only"""
         flags = access.model_dump(include={"execute_access", "write_access"})
         return cast(dict[str, bool], flags)
@@ -179,8 +179,8 @@ def reduce_access_rights(
         else:
             access_flags_map[target] = _get_flags(access)
 
-    reduced_access_rights: list[ServiceAccessRightsAtDB] = [
-        ServiceAccessRightsAtDB(
+    reduced_access_rights: list[ServiceAccessRightsDB] = [
+        ServiceAccessRightsDB(
             key=ServiceKey(f"{target[0]}"),
             version=ServiceVersion(f"{target[1]}"),
             gid=int(target[2]),

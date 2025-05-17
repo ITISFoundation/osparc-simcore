@@ -84,7 +84,7 @@ def fake_project_for_streaming(
     )
 
     mocker.patch(
-        "simcore_service_api_server.api.routes.solvers_jobs_getters.raise_if_job_not_associated_with_solver"
+        "simcore_service_api_server.api.routes.solvers_jobs_read.raise_if_job_not_associated_with_solver"
     )
     return fake_project
 

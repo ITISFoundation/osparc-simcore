@@ -561,7 +561,7 @@ def mocked_solver_job_outputs(mocker) -> None:
         eTag=None,
     )
     mocker.patch(
-        "simcore_service_api_server.api.routes.solvers_jobs_getters.get_solver_output_results",
+        "simcore_service_api_server.api.routes.solvers_jobs_read.get_solver_output_results",
         autospec=True,
         return_value=result,
     )
