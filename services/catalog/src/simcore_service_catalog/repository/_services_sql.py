@@ -22,7 +22,7 @@ from sqlalchemy.sql import and_, or_
 from sqlalchemy.sql.expression import func
 from sqlalchemy.sql.selectable import Select
 
-from ..models.services_db import ServiceFiltersDB, ServiceMetaDataDBGet
+from ..models.services_db import ServiceDBFilters, ServiceMetaDataDBGet
 
 SERVICES_META_DATA_COLS = get_columns_from_db_model(
     services_meta_data, ServiceMetaDataDBGet
@@ -118,7 +118,7 @@ def _has_access_rights(
 
 def apply_services_filters(
     stmt: sa.sql.Select,
-    filters: ServiceFiltersDB,
+    filters: ServiceDBFilters,
 ) -> sa.sql.Select:
     conditions = []
 
@@ -160,7 +160,7 @@ def latest_services_total_count_stmt(
     product_name: ProductName,
     user_id: UserID,
     access_rights: sa.sql.ClauseElement,
-    filters: ServiceFiltersDB | None = None,
+    filters: ServiceDBFilters | None = None,
 ):
     stmt = (
         sa.select(func.count(sa.distinct(services_meta_data.c.key)))
@@ -192,7 +192,7 @@ def list_latest_services_stmt(
     access_rights: sa.sql.ClauseElement,
     limit: int | None,
     offset: int | None,
-    filters: ServiceFiltersDB | None = None,
+    filters: ServiceDBFilters | None = None,
 ):
     # get all distinct services key fitting a page
     # and its corresponding latest version

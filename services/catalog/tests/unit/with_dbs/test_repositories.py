@@ -28,7 +28,7 @@ from pytest_simcore.helpers.postgres_tools import insert_and_get_row_lifespan
 from simcore_postgres_database.models.projects import ProjectType, projects
 from simcore_service_catalog.models.services_db import (
     ServiceAccessRightsAtDB,
-    ServiceFiltersDB,
+    ServiceDBFilters,
     ServiceMetaDataDBCreate,
     ServiceMetaDataDBGet,
     ServiceMetaDataDBPatch,
@@ -445,7 +445,7 @@ async def test_list_latest_services_with_filters(
     )
 
     # Test: Apply filter for ServiceType.DYNAMIC
-    filters = ServiceFiltersDB(service_type=ServiceType.DYNAMIC)
+    filters = ServiceDBFilters(service_type=ServiceType.DYNAMIC)
     total_count, services_items = await services_repo.list_latest_services(
         product_name=target_product, user_id=user_id, filters=filters
     )
@@ -456,7 +456,7 @@ async def test_list_latest_services_with_filters(
     )
 
     # Test: Apply filter for ServiceType.COMPUTATIONAL
-    filters = ServiceFiltersDB(service_type=ServiceType.COMPUTATIONAL)
+    filters = ServiceDBFilters(service_type=ServiceType.COMPUTATIONAL)
     total_count, services_items = await services_repo.list_latest_services(
         product_name=target_product, user_id=user_id, filters=filters
     )
@@ -505,7 +505,7 @@ async def test_list_latest_services_with_pattern_filters(
     )
 
     # Test: Filter by service key pattern
-    filters = ServiceFiltersDB(service_key_pattern="*/jupyter-*")
+    filters = ServiceDBFilters(service_key_pattern="*/jupyter-*")
     total_count, services_items = await services_repo.list_latest_services(
         product_name=target_product, user_id=user_id, filters=filters
     )
@@ -519,7 +519,7 @@ async def test_list_latest_services_with_pattern_filters(
     )
 
     # Test: More specific pattern
-    filters = ServiceFiltersDB(service_key_pattern="*/jupyter-l*")
+    filters = ServiceDBFilters(service_key_pattern="*/jupyter-l*")
     total_count, services_items = await services_repo.list_latest_services(
         product_name=target_product, user_id=user_id, filters=filters
     )
@@ -528,7 +528,7 @@ async def test_list_latest_services_with_pattern_filters(
     assert services_items[0].key.endswith("jupyter-lab")
 
     # Test: Filter by version display pattern
-    filters = ServiceFiltersDB(version_display_pattern="*2023*")
+    filters = ServiceDBFilters(version_display_pattern="*2023*")
     total_count, services_items = await services_repo.list_latest_services(
         product_name=target_product, user_id=user_id, filters=filters
     )
@@ -537,7 +537,7 @@ async def test_list_latest_services_with_pattern_filters(
     assert services_items[0].version_display == "2023 Release"
 
     # Test: Filter by version display pattern with NULL handling
-    filters = ServiceFiltersDB(version_display_pattern="*")
+    filters = ServiceDBFilters(version_display_pattern="*")
     total_count, services_items = await services_repo.list_latest_services(
         product_name=target_product, user_id=user_id, filters=filters
     )
@@ -545,7 +545,7 @@ async def test_list_latest_services_with_pattern_filters(
     assert len(services_items) == 3
 
     # Test: Combined filters
-    filters = ServiceFiltersDB(
+    filters = ServiceDBFilters(
         service_key_pattern="*/jupyter-*", version_display_pattern="*2024*"
     )
     total_count, services_items = await services_repo.list_latest_services(
@@ -768,7 +768,7 @@ async def test_get_service_history_page_with_filters(
     assert [release.version for release in history] == release_versions
 
     # Test: Apply filter for
-    filters = ServiceFiltersDB(service_type=expected_service_type)
+    filters = ServiceDBFilters(service_type=expected_service_type)
     total_count, filtered_history = await services_repo.get_service_history_page(
         product_name=target_product,
         user_id=user_id,
@@ -785,7 +785,7 @@ async def test_get_service_history_page_with_filters(
         if expected_service_type != ServiceType.COMPUTATIONAL
         else ServiceType.DYNAMIC
     )
-    filters = ServiceFiltersDB(service_type=different_service_type)
+    filters = ServiceDBFilters(service_type=different_service_type)
     total_count, no_history = await services_repo.get_service_history_page(
         product_name=target_product,
         user_id=user_id,

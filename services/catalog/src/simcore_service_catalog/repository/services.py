@@ -36,7 +36,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from ..models.services_db import (
     ReleaseDBGet,
     ServiceAccessRightsAtDB,
-    ServiceFiltersDB,
+    ServiceDBFilters,
     ServiceMetaDataDBCreate,
     ServiceMetaDataDBGet,
     ServiceMetaDataDBPatch,
@@ -385,7 +385,7 @@ class ServicesRepository(BaseRepository):
         # list args: pagination
         limit: int | None = None,
         offset: int | None = None,
-        filters: ServiceFiltersDB | None = None,
+        filters: ServiceDBFilters | None = None,
     ) -> tuple[PositiveInt, list[ServiceWithHistoryDBGet]]:
 
         # get page
@@ -477,7 +477,7 @@ class ServicesRepository(BaseRepository):
         # list args: pagination
         limit: int | None = None,
         offset: int | None = None,
-        filters: ServiceFiltersDB | None = None,
+        filters: ServiceDBFilters | None = None,
     ) -> tuple[PositiveInt, list[ReleaseDBGet]]:
 
         base_stmt = (
