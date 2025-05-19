@@ -67,6 +67,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
   events: {
     "updateStudy": "qx.event.type.Data",
     "updateTemplate": "qx.event.type.Data",
+    "updateTutorial": "qx.event.type.Data",
     "updateService": "qx.event.type.Data",
     "updateHypertool": "qx.event.type.Data",
     "publishTemplate": "qx.event.type.Data",
@@ -240,6 +241,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       [
         "updateStudy",
         "updateTemplate",
+        "updateTutorial",
         "updateService",
         "updateHypertool",
         "publishTemplate",

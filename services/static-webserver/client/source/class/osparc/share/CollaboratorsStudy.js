@@ -88,9 +88,7 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
       if (!newAccessRights) {
         newAccessRights = this._resourceType === "study" ? writeAccessRole.accessRights : readAccessRole.accessRights;
       }
-      const resourceAlias = this._resourceType === "template" ?
-        osparc.product.Utils.getTemplateAlias({firstUpperCase: true}) :
-        osparc.product.Utils.getStudyAlias({firstUpperCase: true});
+      const resourceAlias = osparc.product.Utils.resourceTypeToAlias(this._resourceType, {firstUpperCase: true});
       const newCollaborators = {};
       gids.forEach(gid => {
         newCollaborators[gid] = newAccessRights;
@@ -217,13 +215,17 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
         if (gid in potentialCollaborators && "getUserId" in potentialCollaborators[gid]) {
           // it's a user, not an organization
           const uid = potentialCollaborators[gid].getUserId();
-          if (this._resourceType === "study") {
-            osparc.notification.Notifications.postNewStudy(uid, this._serializedDataCopy["uuid"]);
-          } else if (this._resourceType === "template") {
-            // do not push TEMPLATE_SHARED notification if users are not supposed to see the templates
-            if (osparc.data.Permissions.getInstance().canRoleDo("user", "dashboard.templates.read")) {
-              osparc.notification.Notifications.postNewTemplate(uid, this._serializedDataCopy["uuid"]);
-            }
+          switch (this._resourceType) {
+            case "study":
+              osparc.notification.Notifications.postNewStudy(uid, this._serializedDataCopy["uuid"]);
+              break;
+            case "template":
+            case "tutorial":
+              // do not push TEMPLATE_SHARED notification if users are not supposed to see the templates
+              if (osparc.data.Permissions.getInstance().canRoleDo("user", "dashboard.templates.read")) {
+                osparc.notification.Notifications.postNewTemplate(uid, this._serializedDataCopy["uuid"]);
+              }
+              break;
           }
         }
       });
