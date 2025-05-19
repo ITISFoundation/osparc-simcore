@@ -1,9 +1,9 @@
 from fastapi import FastAPI
-from servicelib.fastapi.openapi import override_fastapi_openapi_method
-from servicelib.fastapi.profiler import initialize_profiler
-from servicelib.fastapi.prometheus_instrumentation import (
+from servicelib.fastapi.monitoring import (
     initialize_prometheus_instrumentation,
 )
+from servicelib.fastapi.openapi import override_fastapi_openapi_method
+from servicelib.fastapi.profiler import initialize_profiler
 from servicelib.fastapi.tracing import initialize_tracing
 
 from .._meta import API_VERSION, API_VTAG, APP_NAME, PROJECT_NAME, SUMMARY
