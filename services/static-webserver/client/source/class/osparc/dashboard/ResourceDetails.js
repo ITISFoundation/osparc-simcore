@@ -864,10 +864,10 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     __getProjectFilesPopUp: function() {
       const resourceData = this.__resourceData;
       if (!osparc.utils.Resources.isService(resourceData)) {
-        const title = osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + this.tr(" Files...");
+        const title = osparc.product.Utils.resourceTypeToAlias(resourceData["resourceType"], {firstUpperCase: true}) + this.tr(" Files");
         const iconSrc = "@FontAwesome5Solid/file/22";
         const dataAccess = new qx.ui.basic.Atom().set({
-          label: title,
+          label: title + "...",
           icon: iconSrc,
           font: "text-14",
           padding: 8,
@@ -875,7 +875,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           gap: 14,
           cursor: "pointer",
         });
-        dataAccess.addListener("tap", () => osparc.widget.StudyDataManager.popUpInWindow(resourceData["uuid"]));
+        dataAccess.addListener("tap", () => osparc.widget.StudyDataManager.popUpInWindow(resourceData["uuid"], null, title));
         this.addWidgetToTabs(dataAccess);
 
         if (resourceData["resourceType"] === "study") {
