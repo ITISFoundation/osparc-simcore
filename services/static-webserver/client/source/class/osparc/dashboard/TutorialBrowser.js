@@ -18,15 +18,13 @@
 qx.Class.define("osparc.dashboard.TutorialBrowser", {
   extend: osparc.dashboard.ResourceBrowserBase,
 
-  construct: function(templateType = null) {
+  construct: function() {
     this._resourceType = "template";
-    this.__templateType = templateType;
 
     this.base(arguments);
   },
 
   members: {
-    __templateType: null,
     __updateAllButton: null,
 
     // overridden
@@ -36,7 +34,7 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
       }
       this._resourcesInitialized = true;
 
-      osparc.store.Templates.getTemplates()
+      osparc.store.Templates.getTutorials()
         .then(() => {
           this._resourcesList = [];
           this.getChildControl("resources-layout");
@@ -48,7 +46,7 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
 
     reloadResources: function(useCache = true) {
       if (osparc.data.Permissions.getInstance().canDo("studies.templates.read")) {
-        this.__reloadTemplates(useCache);
+        this.__reloadTutorials(useCache);
       } else {
         this.__setResourcesToList([]);
       }
@@ -61,13 +59,14 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
           const templateId = data["project_uuid"];
           const state = ("data" in data) ? data.data : {};
           const errors = ("errors" in data) ? data.errors : [];
-          this.__templateStateReceived(templateId, state, errors);
+          this.__tutorialStateReceived(templateId, state, errors);
         }
       }, this);
     },
 
-    __templateStateReceived: function(templateId, state, errors) {
-      osparc.store.Store.getInstance().setTemplateState(templateId, state);
+    __tutorialStateReceived: function(templateId, state, errors) {
+      osparc.store.Templates.getTutorials()
+      // OM follow here
       const idx = this._resourcesList.findIndex(study => study["uuid"] === templateId);
       if (idx > -1) {
         this._resourcesList[idx]["state"] = state;
@@ -81,36 +80,31 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
       }
     },
 
-    __reloadTemplates: function(useCache) {
+    __reloadTutorials: function(useCache) {
       this.__tasksToCards();
 
-      if (useCache) {
-        osparc.store.Templates.getTemplates()
-          .then(templates => this.__setResourcesToList(templates));
-      } else {
-        osparc.store.Templates.getTemplates(useCache)
-          .then(templates => this.__setResourcesToList(templates))
+        osparc.store.Templates.getTutorials(useCache)
+          .then(tutorials => this.__setResourcesToList(tutorials))
           .catch(() => this.__setResourcesToList([]));
-      }
     },
 
-    _updateTemplateData: function(templateData) {
-      templateData["resourceType"] = "template";
-      const templatesList = this._resourcesList;
-      const index = templatesList.findIndex(template => template["uuid"] === templateData["uuid"]);
-      if (index !== -1) {
-        templatesList[index] = templateData;
-        this._reloadCards();
-      }
+    _updateTutorialData: function(templateData) {
+      templateData["resourceType"] = "tutorial";
+
+      this._updateTemplateData(templateData);
     },
 
-    __setResourcesToList: function(templatesList) {
-      templatesList.forEach(template => template["resourceType"] = "template");
-      this._resourcesList = templatesList.filter(template => osparc.study.Utils.extractTemplateType(template) === this.__templateType);
+    __setResourcesToList: function(tutorialsList) {
+      tutorialsList.forEach(tutorial => tutorial["resourceType"] = "tutorial");
+      this._resourcesList = tutorialsList;
       this._reloadCards();
     },
 
     _reloadCards: function() {
+      if (this._resourcesContainer === null) {
+        return;
+      }
+
       this._resourcesContainer.setResourcesToList(this._resourcesList);
       const cards = this._resourcesContainer.reloadCards("templates");
       cards.forEach(card => {
@@ -228,7 +222,7 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
           }
         }
         Promise.all(templatePromises)
-          .then(() => this._updateTemplateData(uniqueTemplateData))
+          .then(() => this._updateTutorialData(uniqueTemplateData))
           .catch(err => {
             osparc.FlashMessenger.logError(err);
           });
@@ -238,46 +232,7 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
 
     // MENU //
     _populateCardMenu: function(card) {
-      const menu = card.getMenu();
-      const templateData = card.getResourceData();
-
-      const editButton = this.__getEditTemplateMenuButton(templateData);
-      if (editButton) {
-        menu.add(editButton);
-        menu.addSeparator();
-      }
-
-      const openButton = this._getOpenMenuButton(templateData);
-      if (openButton) {
-        menu.add(openButton);
-      }
-
-      const shareButton = this._getShareMenuButton(card);
-      if (shareButton) {
-        menu.add(shareButton);
-      }
-
-      const tagsButton = this._getTagsMenuButton(card);
-      if (tagsButton) {
-        menu.add(tagsButton);
-      }
-
-      const deleteButton = this.__getDeleteTemplateMenuButton(templateData);
-      if (deleteButton && editButton) {
-        menu.addSeparator();
-        menu.add(deleteButton);
-      }
-    },
-
-    __getEditTemplateMenuButton: function(templateData) {
-      const isCurrentUserOwner = osparc.data.model.Study.canIWrite(templateData["accessRights"]);
-      if (!isCurrentUserOwner) {
-        return null;
-      }
-
-      const editButton = new qx.ui.menu.Button(this.tr("Open"));
-      editButton.addListener("execute", () => this.__editTemplate(templateData), this);
-      return editButton;
+      this._populateTemplateCardMenu(card);
     },
 
     __getTemplateData: function(id) {
@@ -285,72 +240,7 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
     },
 
     _deleteResourceRequested: function(templateId) {
-      this.__deleteTemplateRequested(this.__getTemplateData(templateId));
-    },
-
-    __deleteTemplateRequested: function(templateData) {
-      const rUSure = this.tr("Are you sure you want to delete ");
-      const msg = rUSure + "<b>" + templateData.name + "</b>?";
-      const win = new osparc.ui.window.Confirmation(msg).set({
-        caption: this.tr("Delete"),
-        confirmText: this.tr("Delete"),
-        confirmAction: "delete"
-      });
-      win.center();
-      win.open();
-      win.addListener("close", () => {
-        if (win.getConfirmed()) {
-          this.__doDeleteTemplate(templateData);
-        }
-      }, this);
-    },
-
-    __getDeleteTemplateMenuButton: function(templateData) {
-      const isCurrentUserOwner = osparc.data.model.Study.canIDelete(templateData["accessRights"]);
-      if (!isCurrentUserOwner) {
-        return null;
-      }
-
-      const deleteButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12");
-      deleteButton.set({
-        appearance: "menu-button"
-      });
-      osparc.utils.Utils.setIdToWidget(deleteButton, "studyItemMenuDelete");
-      deleteButton.addListener("execute", () => this.__deleteTemplateRequested(templateData), this);
-      return deleteButton;
-    },
-
-    __editTemplate: function(studyData) {
-      const isStudyCreation = false;
-      this._startStudyById(studyData.uuid, null, null, isStudyCreation);
-    },
-
-    __doDeleteTemplate: function(studyData) {
-      const myGid = osparc.auth.Data.getInstance().getGroupId();
-      const collabGids = Object.keys(studyData["accessRights"]);
-      const amICollaborator = collabGids.indexOf(myGid) > -1;
-
-      let operationPromise = null;
-      if (collabGids.length > 1 && amICollaborator) {
-        const arCopy = osparc.utils.Utils.deepCloneObject(studyData["accessRights"]);
-        // remove collaborator
-        delete arCopy[myGid];
-        operationPromise = osparc.store.Study.patchStudyData(studyData, "accessRights", arCopy);
-      } else {
-        // delete study
-        operationPromise = osparc.store.Store.getInstance().deleteStudy(studyData.uuid);
-      }
-      operationPromise
-        .then(() => this.__removeFromTemplateList(studyData.uuid))
-        .catch(err => osparc.FlashMessenger.logError(err));
-    },
-
-    __removeFromTemplateList: function(templateId) {
-      const idx = this._resourcesList.findIndex(study => study["uuid"] === templateId);
-      if (idx > -1) {
-        this._resourcesList.splice(idx, 1);
-      }
-      this._resourcesContainer.removeCard(templateId);
+      this._deleteTemplateRequested(this.__getTemplateData(templateId));
     },
     // MENU //
 
@@ -360,54 +250,6 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
       tasks.forEach(task => {
         const studyName = "";
         this.taskToTemplateReceived(task, studyName);
-      });
-    },
-
-    taskToTemplateReceived: function(task, studyName) {
-      const toTemplateTaskUI = new osparc.task.ToTemplate(studyName);
-      toTemplateTaskUI.setTask(task);
-
-      osparc.task.TasksContainer.getInstance().addTaskUI(toTemplateTaskUI);
-
-      const cardTitle = this.tr("Publishing ") + studyName;
-      const toTemplateCard = this._addTaskCard(task, cardTitle, osparc.task.ToTemplate.ICON);
-      if (toTemplateCard) {
-        this.__attachToTemplateEventHandler(task, toTemplateCard);
-      }
-    },
-
-    __attachToTemplateEventHandler: function(task, toTemplateCard) {
-      const finished = () => {
-        this._resourcesContainer.removeNonResourceCard(toTemplateCard);
-      };
-
-      task.addListener("updateReceived", e => {
-        const updateData = e.getData();
-        if ("task_progress" in updateData && toTemplateCard) {
-          const taskProgress = updateData["task_progress"];
-          toTemplateCard.getChildControl("progress-bar").set({
-            value: osparc.data.PollTask.extractProgress(updateData) * 100
-          });
-          toTemplateCard.getChildControl("state-label").set({
-            value: taskProgress["message"]
-          });
-        }
-      }, this);
-      task.addListener("resultReceived", e => {
-        finished();
-        this.reloadResources();
-        const msg = this.tr("Template created");
-        osparc.FlashMessenger.logAs(msg, "INFO");
-      });
-      task.addListener("taskAborted", () => {
-        finished();
-        const msg = this.tr("Study to Template cancelled");
-        osparc.FlashMessenger.logAs(msg, "WARNING");
-      });
-      task.addListener("pollingError", e => {
-        finished();
-        const err = e.getData();
-        osparc.FlashMessenger.logError(err);
       });
     },
     // TASKS //

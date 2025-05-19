@@ -466,14 +466,6 @@ qx.Class.define("osparc.store.Store", {
       });
     },
 
-    setTemplateState: function(templateId, state) {
-      const templatesWStateCache = this.getTemplates();
-      const idx = templatesWStateCache.findIndex(templateWStateCache => templateWStateCache["uuid"] === templateId);
-      if (idx !== -1) {
-        templatesWStateCache[idx]["state"] = state;
-      }
-    },
-
     trashStudy: function(studyId) {
       const params = {
         url: {
@@ -509,11 +501,6 @@ qx.Class.define("osparc.store.Store", {
             reject(err);
           });
       });
-    },
-
-    getTemplate: function(templateId) {
-      const templates = this.getTemplates();
-      return templates.find(template => template["uuid"] === templateId);
     },
 
     deleteStudy: function(studyId) {

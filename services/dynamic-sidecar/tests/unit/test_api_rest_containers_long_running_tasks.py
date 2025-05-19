@@ -19,6 +19,7 @@ from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
 from httpx import ASGITransport, AsyncClient
+from models_library.api_schemas_dynamic_sidecar.containers import DockerComposeYamlStr
 from models_library.api_schemas_long_running_tasks.base import (
     ProgressMessage,
     ProgressPercent,
@@ -150,7 +151,7 @@ def dynamic_sidecar_network_name() -> str:
         },
     ]
 )
-def compose_spec(request: pytest.FixtureRequest) -> str:
+def compose_spec(request: pytest.FixtureRequest) -> DockerComposeYamlStr:
     spec_dict: dict[str, Any] = request.param  # type: ignore
     return json.dumps(spec_dict)
 
@@ -282,7 +283,7 @@ async def _get_task_id_pull_user_servcices_docker_images(
 
 async def _get_task_id_create_service_containers(
     httpx_async_client: AsyncClient,
-    compose_spec: str,
+    compose_spec: DockerComposeYamlStr,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
     *args,
     **kwargs,
@@ -389,11 +390,9 @@ async def test_create_containers_task(
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
     shared_store: SharedStore,
 ) -> None:
-    last_progress_message: tuple[str, ProgressPercent | None] | None = None
+    last_progress_message: tuple[str, float] | None = None
 
-    async def create_progress(
-        message: str, percent: ProgressPercent | None, _: TaskId
-    ) -> None:
+    async def create_progress(message: str, percent: float, _: TaskId) -> None:
         nonlocal last_progress_message
         last_progress_message = (message, percent)
         print(message, percent)

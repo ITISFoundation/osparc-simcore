@@ -188,7 +188,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
     },
 
     __addHypertools: function() {
-      osparc.store.Templates.getTemplatesHypertools()
+      osparc.store.Templates.getHypertools()
         .then(hypertools => {
           if (hypertools.length) {
             const hypertoolsMenuButton = this.self().createMenuButton("@FontAwesome5Solid/star/16", this.tr("Hypertools"));
@@ -321,14 +321,14 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
     },
 
     __addFromTemplateButton: function(buttonConfig) {
-      osparc.store.Templates.getTemplates()
-        .then(templates => {
+      osparc.store.Templates.getHypertools()
+        .then(hypertools => {
           const menuButton = this.self().createMenuButton(null, buttonConfig["title"]);
           osparc.utils.Utils.setIdToWidget(menuButton, buttonConfig["idToWidget"]);
           // disable it until found in templates store
           menuButton.setEnabled(false);
 
-          let templateMetadata = templates.find(t => t.name === buttonConfig["expectedTemplateLabel"]);
+          let templateMetadata = hypertools.find(t => t.name === buttonConfig["expectedTemplateLabel"]);
           if (templateMetadata) {
             menuButton.setEnabled(true);
             menuButton.addListener("tap", () => {
