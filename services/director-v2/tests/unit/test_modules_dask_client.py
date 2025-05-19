@@ -43,6 +43,7 @@ from models_library.clusters import ClusterTypeInModel, NoAuthentication
 from models_library.docker import to_simcore_runtime_docker_label_key
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.projects_state import RunningState
 from models_library.resource_tracker import HardwareInfo
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
@@ -60,7 +61,6 @@ from simcore_service_director_v2.core.errors import (
 )
 from simcore_service_director_v2.models.comp_runs import RunMetadataDict
 from simcore_service_director_v2.models.comp_tasks import Image
-from simcore_service_director_v2.models.dask_subsystem import DaskClientTaskState
 from simcore_service_director_v2.modules.dask_client import DaskClient, TaskHandlers
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -90,7 +90,7 @@ async def _assert_wait_for_cb_call(mocked_fct, timeout: int | None = None):
 async def _assert_wait_for_task_status(
     job_id: str,
     dask_client: DaskClient,
-    expected_status: DaskClientTaskState,
+    expected_status: RunningState,
     timeout: int | None = None,  # noqa: ASYNC109
 ):
     async for attempt in AsyncRetrying(
@@ -105,11 +105,11 @@ async def _assert_wait_for_task_status(
                 f"Attempt={attempt.retry_state.attempt_number}"
             )
             got = (await dask_client.get_tasks_status([job_id]))[0]
-            assert isinstance(got, DaskClientTaskState)
+            assert isinstance(got, RunningState)
             print(f"{got=} vs {expected_status=}")
-            if got is DaskClientTaskState.ERRED and expected_status not in [
-                DaskClientTaskState.ERRED,
-                DaskClientTaskState.LOST,
+            if got is RunningState.FAILED and expected_status not in [
+                RunningState.FAILED,
+                RunningState.UNKNOWN,
             ]:
                 try:
                     # we can fail fast here
@@ -516,7 +516,7 @@ async def test_send_computation_task(
     await _assert_wait_for_task_status(
         published_computation_task.job_id,
         dask_client,
-        expected_status=DaskClientTaskState.PENDING_OR_STARTED,
+        expected_status=RunningState.STARTED,
     )
 
     # using the event we let the remote fct continue
@@ -530,7 +530,7 @@ async def test_send_computation_task(
     await _assert_wait_for_task_status(
         published_computation_task.job_id,
         dask_client,
-        expected_status=DaskClientTaskState.SUCCESS,
+        expected_status=RunningState.SUCCESS,
     )
 
     # check the results
@@ -544,7 +544,7 @@ async def test_send_computation_task(
     await _assert_wait_for_task_status(
         published_computation_task.job_id,
         dask_client,
-        expected_status=DaskClientTaskState.LOST,
+        expected_status=RunningState.UNKNOWN,
         timeout=60,
     )
 
@@ -609,7 +609,7 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
     await _assert_wait_for_task_status(
         published_computation_task[0].job_id,
         dask_client,
-        expected_status=DaskClientTaskState.SUCCESS,
+        expected_status=RunningState.SUCCESS,
     )
     assert published_computation_task[0].node_id in image_params.fake_tasks
     # creating a new future shows that it is not done????
@@ -704,7 +704,7 @@ async def test_abort_computation_tasks(
     await _assert_wait_for_task_status(
         published_computation_task[0].job_id,
         dask_client,
-        DaskClientTaskState.PENDING_OR_STARTED,
+        RunningState.STARTED,
     )
 
     # we wait to be sure the remote fct is started
@@ -721,7 +721,7 @@ async def test_abort_computation_tasks(
 
     await _assert_wait_for_cb_call(mocked_user_completed_cb)
     await _assert_wait_for_task_status(
-        published_computation_task[0].job_id, dask_client, DaskClientTaskState.ABORTED
+        published_computation_task[0].job_id, dask_client, RunningState.ABORTED
     )
 
     # getting the results should throw the cancellation error
@@ -732,9 +732,12 @@ async def test_abort_computation_tasks(
     await dask_client.release_task_result(published_computation_task[0].job_id)
     # NOTE: this change of status takes a very long time to happen and is not relied upon so we skip it since it
     # makes the test fail a lot for no gain (it's kept here in case it ever becomes an issue)
-    # await _assert_wait_for_task_status(
-    #     job_id, dask_client, RunningState.UNKNOWN, timeout=120
-    # )
+    await _assert_wait_for_task_status(
+        published_computation_task[0].job_id,
+        dask_client,
+        RunningState.UNKNOWN,
+        timeout=120,
+    )
 
 
 async def test_failed_task_returns_exceptions(
@@ -784,7 +787,7 @@ async def test_failed_task_returns_exceptions(
     await _assert_wait_for_task_status(
         published_computation_task[0].job_id,
         dask_client,
-        expected_status=DaskClientTaskState.ERRED,
+        expected_status=RunningState.FAILED,
     )
     with pytest.raises(
         ValueError,
@@ -1047,7 +1050,7 @@ async def test_get_tasks_status(
     await _assert_wait_for_task_status(
         published_computation_task[0].job_id,
         dask_client,
-        DaskClientTaskState.PENDING_OR_STARTED,
+        RunningState.STARTED,
     )
 
     # let the remote fct run through now
@@ -1057,7 +1060,7 @@ async def test_get_tasks_status(
     await _assert_wait_for_task_status(
         published_computation_task[0].job_id,
         dask_client,
-        DaskClientTaskState.ERRED if fail_remote_fct else DaskClientTaskState.SUCCESS,
+        RunningState.FAILED if fail_remote_fct else RunningState.SUCCESS,
     )
     # release the task results
     await dask_client.release_task_result(published_computation_task[0].job_id)
@@ -1069,7 +1072,7 @@ async def test_get_tasks_status(
     await _assert_wait_for_task_status(
         published_computation_task[0].job_id,
         dask_client,
-        DaskClientTaskState.LOST,
+        RunningState.UNKNOWN,
         timeout=60,
     )
 
@@ -1209,7 +1212,7 @@ async def test_get_cluster_details(
     await _assert_wait_for_task_status(
         published_computation_task[0].job_id,
         dask_client,
-        expected_status=DaskClientTaskState.PENDING_OR_STARTED,
+        expected_status=RunningState.STARTED,
     )
 
     # check we have one worker using the resources
@@ -1240,7 +1243,7 @@ async def test_get_cluster_details(
     await _assert_wait_for_task_status(
         published_computation_task[0].job_id,
         dask_client,
-        expected_status=DaskClientTaskState.SUCCESS,
+        expected_status=RunningState.SUCCESS,
     )
 
     # check the resources are released

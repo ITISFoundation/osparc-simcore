@@ -17,7 +17,6 @@ from dataclasses import dataclass
 from http.client import HTTPException
 from typing import Any, Final, cast
 
-import dask.typing
 import distributed
 from aiohttp import ClientResponseError
 from common_library.json_serialization import json_dumps
@@ -427,7 +426,7 @@ class DaskClient:
 
         return list_of_node_id_to_job_id
 
-    async def get_tasks_status2(self, job_ids: Iterable[str]) -> list[RunningState]:
+    async def get_tasks_status(self, job_ids: Iterable[str]) -> list[RunningState]:
         dask_utils.check_scheduler_is_still_the_same(
             self.backend.scheduler_id, self.backend.client
         )
@@ -436,6 +435,7 @@ class DaskClient:
 
         async def _get_job_id_status(job_id: str) -> RunningState:
             # TODO: maybe we should define an event just for that, instead of multiple calls
+            # but the max length by default is 1000. We should test it
             dask_events: tuple[tuple[UnixTimestamp, str], ...] = (
                 await self.backend.client.get_events(
                     TASK_LIFE_CYCLE_EVENT.format(key=job_id)
@@ -477,74 +477,6 @@ class DaskClient:
             return parsed_event.state
 
         return await asyncio.gather(*(_get_job_id_status(job_id) for job_id in job_ids))
-
-    async def get_tasks_status(self, job_ids: list[str]) -> list[DaskClientTaskState]:
-        dask_utils.check_scheduler_is_still_the_same(
-            self.backend.scheduler_id, self.backend.client
-        )
-        dask_utils.check_communication_with_scheduler_is_open(self.backend.client)
-        dask_utils.check_scheduler_status(self.backend.client)
-
-        # try to get the task from the scheduler
-        def _get_pipeline_statuses(
-            dask_scheduler: distributed.Scheduler,
-        ) -> dict[dask.typing.Key, DaskSchedulerTaskState | None]:
-            statuses: dict[dask.typing.Key, DaskSchedulerTaskState | None] = (
-                dask_scheduler.get_task_status(keys=job_ids)
-            )
-            return statuses
-
-        task_statuses: dict[dask.typing.Key, DaskSchedulerTaskState | None] = (
-            await self.backend.client.run_on_scheduler(_get_pipeline_statuses)
-        )
-        assert isinstance(task_statuses, dict)  # nosec
-
-        _logger.debug("found dask task statuses: %s", f"{task_statuses=}")
-
-        running_states: list[DaskClientTaskState] = []
-        for job_id in job_ids:
-            dask_status = cast(
-                DaskSchedulerTaskState | None, task_statuses.get(job_id, "lost")
-            )
-            if dask_status == "erred":
-                try:
-                    # find out if this was a cancellation
-                    var = distributed.Variable(job_id, client=self.backend.client)
-                    future: distributed.Future = await var.get(
-                        timeout=_DASK_DEFAULT_TIMEOUT_S
-                    )
-                    exception = await future.exception(timeout=_DASK_DEFAULT_TIMEOUT_S)
-                    assert isinstance(exception, Exception)  # nosec
-
-                    if isinstance(exception, TaskCancelledError):
-                        running_states.append(DaskClientTaskState.ABORTED)
-                    else:
-                        assert exception  # nosec
-                        _logger.warning(
-                            "Task  %s completed in error:\n%s\nTrace:\n%s",
-                            job_id,
-                            exception,
-                            "".join(traceback.format_exception(exception)),
-                        )
-                        running_states.append(DaskClientTaskState.ERRED)
-                except TimeoutError:
-                    _logger.warning(
-                        "Task  %s could not be retrieved from dask-scheduler, it is lost\n"
-                        "TIP:If the task was unpublished this can happen, or if the dask-scheduler was restarted.",
-                        job_id,
-                    )
-                    running_states.append(DaskClientTaskState.LOST)
-
-            elif dask_status is None:
-                running_states.append(DaskClientTaskState.LOST)
-            else:
-                running_states.append(
-                    _DASK_TASK_STATUS_DASK_CLIENT_TASK_STATE_MAP.get(
-                        dask_status, DaskClientTaskState.LOST
-                    )
-                )
-
-        return running_states
 
     async def abort_computation_task(self, job_id: str) -> None:
         # Dask future may be cancelled, but only a future that was not already taken by

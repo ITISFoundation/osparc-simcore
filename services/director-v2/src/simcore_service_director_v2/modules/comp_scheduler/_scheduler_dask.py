@@ -157,7 +157,7 @@ class DaskScheduler(BaseCompScheduler):
                 use_on_demand_clusters=comp_run.use_on_demand_clusters,
                 run_metadata=comp_run.metadata,
             ) as client:
-                return await client.get_tasks_status2([f"{t.job_id}" for t in tasks])
+                return await client.get_tasks_status([f"{t.job_id}" for t in tasks])
             #     tasks_statuses = await client.get_tasks_status(
             #         [f"{t.job_id}" for t in tasks]
             #     )
