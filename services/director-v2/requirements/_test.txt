@@ -232,7 +232,7 @@ pytest==8.3.5
     #   pytest-icdiff
     #   pytest-mock
     #   pytest-xdist
-pytest-asyncio==0.21.2
+pytest-asyncio==0.23.8
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
