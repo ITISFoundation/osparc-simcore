@@ -26,7 +26,10 @@ qx.Class.define("osparc.po.POCenter", {
     });
     this.addWidgetToTabs(miniProfile);
 
-    this.__addUsersPage();
+    this.__addActiveUsersPage();
+    if (osparc.utils.Utils.isDevelopmentPlatform()) {
+      this.__addPendingUsersPage();
+    }
     this.__addPreRegistrationPage();
     this.__addInvitationsPage();
     this.__addProductPage();
@@ -34,11 +37,18 @@ qx.Class.define("osparc.po.POCenter", {
   },
 
   members: {
-    __addUsersPage: function() {
-      const title = this.tr("Users");
+    __addActiveUsersPage: function() {
+      const title = this.tr("Active Users");
       const iconSrc = "@FontAwesome5Solid/user/22";
       const users = new osparc.po.Users();
       this.addTab(title, iconSrc, users);
+    },
+
+    __addPendingUsersPage: function() {
+      const title = this.tr("Pending Users");
+      const iconSrc = "@FontAwesome5Solid/user-plus/22";
+      const usersPending = new osparc.po.UsersPending();
+      this.addTab(title, iconSrc, usersPending);
     },
 
     __addPreRegistrationPage: function() {
