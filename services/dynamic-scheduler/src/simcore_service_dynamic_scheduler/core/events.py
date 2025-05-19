@@ -6,12 +6,12 @@ from servicelib.fastapi.docker import (
     create_remote_docker_client_input_state,
     remote_docker_client_lifespan,
 )
-from servicelib.fastapi.postgres_lifespan import (
-    create_postgres_database_input_state,
-)
-from servicelib.fastapi.prometheus_instrumentation import (
+from servicelib.fastapi.monitoring import (
     create_prometheus_instrumentationmain_input_state,
     prometheus_instrumentation_lifespan,
+)
+from servicelib.fastapi.postgres_lifespan import (
+    create_postgres_database_input_state,
 )
 
 from .._meta import APP_FINISHED_BANNER_MSG, APP_STARTED_BANNER_MSG

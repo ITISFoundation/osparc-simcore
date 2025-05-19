@@ -3,7 +3,7 @@ from typing import cast
 
 from fastapi import FastAPI
 from prometheus_client import CollectorRegistry, Counter
-from servicelib.fastapi.prometheus_instrumentation import (
+from servicelib.fastapi.monitoring import (
     setup_prometheus_instrumentation,
 )
 from servicelib.instrumentation import MetricsBase, get_metrics_namespace
@@ -59,16 +59,15 @@ def setup(app: FastAPI) -> None:
         return
 
     # NOTE: this must be setup before application startup
-    instrumentator = setup_prometheus_instrumentation(app)
+    registry = setup_prometheus_instrumentation(app)
 
     async def on_startup() -> None:
         metrics_subsystem = ""
         app.state.instrumentation = DirectorV0Instrumentation(
-            registry=instrumentator.registry, subsystem=metrics_subsystem
+            registry=registry, subsystem=metrics_subsystem
         )
 
-    async def on_shutdown() -> None:
-        ...
+    async def on_shutdown() -> None: ...
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
