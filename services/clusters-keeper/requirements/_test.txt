@@ -2,7 +2,7 @@ aiodocker==0.24.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-aiohappyeyeballs==2.4.4
+aiohappyeyeballs==2.4.6
     # via
     #   -c requirements/_base.txt
     #   aiohttp
@@ -11,7 +11,7 @@ aiohttp==3.11.18
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   aiodocker
-aiosignal==1.3.1
+aiosignal==1.3.2
     # via
     #   -c requirements/_base.txt
     #   aiohttp
@@ -21,13 +21,13 @@ annotated-types==0.7.0
     #   pydantic
 antlr4-python3-runtime==4.13.2
     # via moto
-anyio==4.7.0
+anyio==4.8.0
     # via
     #   -c requirements/_base.txt
     #   httpx
 asgi-lifespan==2.1.0
     # via -r requirements/_test.in
-attrs==24.2.0
+attrs==25.1.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
@@ -51,7 +51,7 @@ botocore==1.37.3
     #   boto3
     #   moto
     #   s3transfer
-certifi==2024.8.30
+certifi==2025.1.31
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -62,11 +62,11 @@ cffi==1.17.1
     # via cryptography
 cfn-lint==1.27.0
     # via moto
-charset-normalizer==3.4.0
+charset-normalizer==3.4.1
     # via
     #   -c requirements/_base.txt
     #   requests
-click==8.1.7
+click==8.1.8
     # via
     #   -c requirements/_base.txt
     #   flask
@@ -129,7 +129,7 @@ iniconfig==2.0.0
     # via pytest
 itsdangerous==2.2.0
     # via flask
-jinja2==3.1.4
+jinja2==3.1.6
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -199,12 +199,12 @@ pluggy==1.5.0
     # via pytest
 ply==3.11
     # via jsonpath-ng
-propcache==0.2.1
+propcache==0.3.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-psutil==6.1.0
+psutil==7.0.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -212,12 +212,12 @@ py-partiql-parser==0.6.1
     # via moto
 pycparser==2.22
     # via cffi
-pydantic==2.10.3
+pydantic==2.10.6
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   aws-sam-translator
-pydantic-core==2.27.1
+pydantic-core==2.27.2
     # via
     #   -c requirements/_base.txt
     #   pydantic
@@ -283,7 +283,7 @@ respx==0.22.0
     # via -r requirements/_test.in
 rfc3339-validator==0.1.4
     # via openapi-schema-validator
-rpds-py==0.22.3
+rpds-py==0.23.1
     # via
     #   -c requirements/_base.txt
     #   jsonschema
@@ -322,7 +322,7 @@ typing-extensions==4.12.2
     #   pydantic-core
 tzdata==2025.1
     # via faker
-urllib3==2.2.3
+urllib3==2.3.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -335,7 +335,7 @@ werkzeug==3.1.3
     #   flask
     #   flask-cors
     #   moto
-wrapt==1.17.0
+wrapt==1.17.2
     # via
     #   -c requirements/_base.txt
     #   aws-xray-sdk
