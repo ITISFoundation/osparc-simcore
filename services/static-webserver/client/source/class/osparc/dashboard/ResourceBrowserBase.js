@@ -579,6 +579,111 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       throw new Error("Abstract method called!");
     },
 
+    _populateTemplateCardMenu: function(card) {
+      const menu = card.getMenu();
+      const templateData = card.getResourceData();
+
+      const editButton = this.__getEditTemplateMenuButton(templateData);
+      if (editButton) {
+        menu.add(editButton);
+        menu.addSeparator();
+      }
+
+      const openButton = this._getOpenMenuButton(templateData);
+      if (openButton) {
+        menu.add(openButton);
+      }
+
+      const shareButton = this._getShareMenuButton(card);
+      if (shareButton) {
+        menu.add(shareButton);
+      }
+
+      const tagsButton = this._getTagsMenuButton(card);
+      if (tagsButton) {
+        menu.add(tagsButton);
+      }
+
+      const deleteButton = this.__getDeleteTemplateMenuButton(templateData);
+      if (deleteButton && editButton) {
+        menu.addSeparator();
+        menu.add(deleteButton);
+      }
+    },
+
+    __getEditTemplateMenuButton: function(templateData) {
+      const isCurrentUserOwner = osparc.data.model.Study.canIWrite(templateData["accessRights"]);
+      if (!isCurrentUserOwner) {
+        return null;
+      }
+
+      const editButton = new qx.ui.menu.Button(this.tr("Open"));
+      editButton.addListener("execute", () => {
+        const isStudyCreation = false;
+        this._startStudyById(templateData["uuid"], null, null, isStudyCreation);
+      }, this);
+      return editButton;
+    },
+
+    __getDeleteTemplateMenuButton: function(templateData) {
+      const isCurrentUserOwner = osparc.data.model.Study.canIDelete(templateData["accessRights"]);
+      if (!isCurrentUserOwner) {
+        return null;
+      }
+
+      const deleteButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12");
+      deleteButton.set({
+        appearance: "menu-button"
+      });
+      deleteButton.addListener("execute", () => this._deleteTemplateRequested(templateData), this);
+      return deleteButton;
+    },
+
+    _deleteTemplateRequested: function(templateData) {
+      const rUSure = this.tr("Are you sure you want to delete ");
+      const msg = rUSure + "<b>" + templateData.name + "</b>?";
+      const win = new osparc.ui.window.Confirmation(msg).set({
+        caption: this.tr("Delete"),
+        confirmText: this.tr("Delete"),
+        confirmAction: "delete"
+      });
+      win.center();
+      win.open();
+      win.addListener("close", () => {
+        if (win.getConfirmed()) {
+          this.__doDeleteTemplate(templateData);
+        }
+      }, this);
+    },
+
+    __doDeleteTemplate: function(templateData) {
+      const myGid = osparc.auth.Data.getInstance().getGroupId();
+      const collabGids = Object.keys(templateData["accessRights"]);
+      const amICollaborator = collabGids.indexOf(myGid) > -1;
+
+      let operationPromise = null;
+      if (collabGids.length > 1 && amICollaborator) {
+        const arCopy = osparc.utils.Utils.deepCloneObject(templateData["accessRights"]);
+        // remove collaborator
+        delete arCopy[myGid];
+        operationPromise = osparc.store.Study.patchStudyData(templateData, "accessRights", arCopy);
+      } else {
+        // delete study
+        operationPromise = osparc.store.Store.getInstance().deleteStudy(templateData.uuid);
+      }
+      operationPromise
+        .then(() => this.__removeFromTemplateList(templateData.uuid))
+        .catch(err => osparc.FlashMessenger.logError(err));
+    },
+
+    __removeFromTemplateList: function(templateId) {
+      const idx = this._resourcesList.findIndex(study => study["uuid"] === templateId);
+      if (idx > -1) {
+        this._resourcesList.splice(idx, 1);
+      }
+      this._resourcesContainer.removeCard(templateId);
+    },
+
     _updateTemplateData: function(templateData) {
       const templatesList = this._resourcesList;
       const index = templatesList.findIndex(template => template["uuid"] === templateData["uuid"]);
