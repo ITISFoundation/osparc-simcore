@@ -945,15 +945,16 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         const isStudyCreation = false;
         this._startStudyById(studyId, openCB, null, isStudyCreation);
       });
-      resourceDetails.addListener("openTemplate", e => {
-        win.close();
-        const templateData = e.getData();
-        this._createStudyFromTemplate(templateData);
-      });
-      resourceDetails.addListener("openHypertool", e => {
-        win.close();
-        const templateData = e.getData();
-        this._createStudyFromTemplate(templateData);
+      [
+        "openTemplate",
+        "openTutorial",
+        "openHypertool",
+      ].forEach(eventName => {
+        resourceDetails.addListener(eventName, e => {
+          win.close();
+          const templateData = e.getData();
+          this._createStudyFromTemplate(templateData);
+        });
       });
       resourceDetails.addListener("openService", e => {
         win.close();

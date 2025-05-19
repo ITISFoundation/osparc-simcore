@@ -79,6 +79,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
   events: {
     "pagesAdded": "qx.event.type.Event",
     "openTemplate": "qx.event.type.Data",
+    "openTutorial": "qx.event.type.Data",
     "openHypertool": "qx.event.type.Data",
     "openService": "qx.event.type.Data",
     "updateStudy": "qx.event.type.Data",
@@ -249,6 +250,9 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           break;
         case "template":
           this.fireDataEvent("openTemplate", this.__resourceData);
+          break;
+        case "tutorial":
+          this.fireDataEvent("openTutorial", this.__resourceData);
           break;
         case "hypertool":
           this.fireDataEvent("openHypertool", this.__resourceData);
