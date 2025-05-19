@@ -390,6 +390,9 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         case "template":
           this.fireDataEvent("updateTemplate", updatedData);
           break;
+        case "tutorial":
+          this.fireDataEvent("updateTutorial", updatedData);
+          break;
         case "hypertool":
           this.fireDataEvent("updateHypertool", updatedData);
           break;

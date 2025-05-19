@@ -88,9 +88,7 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
       if (!newAccessRights) {
         newAccessRights = this._resourceType === "study" ? writeAccessRole.accessRights : readAccessRole.accessRights;
       }
-      const resourceAlias = this._resourceType === "template" ?
-        osparc.product.Utils.getTemplateAlias({firstUpperCase: true}) :
-        osparc.product.Utils.getStudyAlias({firstUpperCase: true});
+      const resourceAlias = osparc.product.Utils.resourceTypeToAlias(this._resourceType, {firstUpperCase: true});
       const newCollaborators = {};
       gids.forEach(gid => {
         newCollaborators[gid] = newAccessRights;

@@ -147,6 +147,8 @@ qx.Class.define("osparc.product.Utils", {
           return this.getStudyAlias(options);
         case "template":
           return this.getTemplateAlias(options);
+        case "tutorial":
+          return this.getTutorialAlias(options);
         case "service":
           // return this.getServiceAlias(options);
           // Do not use this alias anymore, use "app" instead

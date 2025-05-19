@@ -88,7 +88,7 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
           .catch(() => this.__setResourcesToList([]));
     },
 
-    _updateTemplateData: function(templateData) {
+    _updateTutorialData: function(templateData) {
       templateData["resourceType"] = "tutorial";
       this.base(arguments, templateData);
     },
@@ -221,7 +221,7 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
           }
         }
         Promise.all(templatePromises)
-          .then(() => this._updateTemplateData(uniqueTemplateData))
+          .then(() => this._updateTutorialData(uniqueTemplateData))
           .catch(err => {
             osparc.FlashMessenger.logError(err);
           });
