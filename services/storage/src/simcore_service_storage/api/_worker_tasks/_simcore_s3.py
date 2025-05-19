@@ -4,6 +4,8 @@ from typing import Any
 
 from aws_library.s3._models import S3ObjectKey
 from celery import Task  # type: ignore[import-untyped]
+from celery_library.models import TaskID, TaskId
+from celery_library.utils import get_celery_worker, get_fastapi_app
 from models_library.api_schemas_storage.storage_schemas import FoldersBody
 from models_library.api_schemas_webserver.storage import PathToExport
 from models_library.progress_bar import ProgressReport
@@ -14,8 +16,6 @@ from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
 
 from ...dsm import get_dsm_provider
-from ...modules.celery.models import TaskID, TaskId
-from ...modules.celery.utils import get_celery_worker, get_fastapi_app
 from ...simcore_s3_dsm import SimcoreS3DataManager
 
 _logger = logging.getLogger(__name__)

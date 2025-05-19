@@ -10,7 +10,6 @@ from fastapi import FastAPI
 from servicelib.logging_utils import log_context
 from servicelib.redis._client import RedisClientSDK
 from settings_library.redis import RedisDatabase
-from simcore_service_storage._meta import APP_NAME
 
 from ...core.application import create_app
 from ...core.settings import ApplicationSettings
@@ -48,7 +47,7 @@ def on_worker_init(sender, **_kwargs) -> None:
                 celery_settings.CELERY_REDIS_RESULT_BACKEND.build_redis_dsn(
                     RedisDatabase.CELERY_TASKS
                 ),
-                client_name=f"{APP_NAME}.celery_tasks",
+                client_name=f"{fastapi_app.title}.celery_tasks",
             )
 
             set_celery_worker(

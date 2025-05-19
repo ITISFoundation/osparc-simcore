@@ -24,6 +24,9 @@ from aws_library.s3 import SimcoreS3API
 from celery import Celery
 from celery.contrib.testing.worker import TestWorkController, start_worker
 from celery.signals import worker_init, worker_shutdown
+from celery_library.signals import on_worker_init, on_worker_shutdown
+from celery_library.utils import get_celery_worker
+from celery_library.worker import CeleryTaskWorker
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
@@ -71,12 +74,6 @@ from simcore_service_storage.core.settings import ApplicationSettings
 from simcore_service_storage.datcore_dsm import DatCoreDataManager
 from simcore_service_storage.dsm import get_dsm_provider
 from simcore_service_storage.models import FileMetaData, FileMetaDataAtDB, S3BucketName
-from simcore_service_storage.modules.celery.signals import (
-    on_worker_init,
-    on_worker_shutdown,
-)
-from simcore_service_storage.modules.celery.utils import get_celery_worker
-from simcore_service_storage.modules.celery.worker import CeleryTaskWorker
 from simcore_service_storage.modules.s3 import get_s3_client
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy import literal_column

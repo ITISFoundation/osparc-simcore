@@ -3,6 +3,12 @@
 import logging
 
 from celery.exceptions import CeleryError  # type: ignore[import-untyped]
+from celery_library import get_celery_client
+from celery_library.errors import (
+    TransferrableCeleryError,
+    decode_celery_transferrable_error,
+)
+from celery_library.models import TaskState
 from fastapi import FastAPI
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobGet,
@@ -19,13 +25,6 @@ from models_library.api_schemas_rpc_async_jobs.exceptions import (
 )
 from servicelib.logging_utils import log_catch
 from servicelib.rabbitmq import RPCRouter
-
-from ...modules.celery import get_celery_client
-from ...modules.celery.errors import (
-    TransferrableCeleryError,
-    decode_celery_transferrable_error,
-)
-from ...modules.celery.models import TaskState
 
 _logger = logging.getLogger(__name__)
 router = RPCRouter()

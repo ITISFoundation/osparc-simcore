@@ -1,3 +1,5 @@
+from celery_library import get_celery_client
+from celery_library.models import TaskMetadata, TasksQueue
 from fastapi import FastAPI
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobGet,
@@ -7,8 +9,6 @@ from models_library.api_schemas_storage.storage_schemas import FoldersBody
 from models_library.api_schemas_webserver.storage import PathToExport
 from servicelib.rabbitmq import RPCRouter
 
-from ...modules.celery import get_celery_client
-from ...modules.celery.models import TaskMetadata, TasksQueue
 from .._worker_tasks._simcore_s3 import deep_copy_files_from_project, export_data
 
 router = RPCRouter()

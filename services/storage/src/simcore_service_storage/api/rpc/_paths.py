@@ -1,6 +1,8 @@
 import logging
 from pathlib import Path
 
+from celery_library import get_celery_client
+from celery_library.models import TaskMetadata
 from fastapi import FastAPI
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobGet,
@@ -9,8 +11,6 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import (
 from models_library.projects_nodes_io import LocationID
 from servicelib.rabbitmq import RPCRouter
 
-from ...modules.celery import get_celery_client
-from ...modules.celery.models import TaskMetadata
 from .._worker_tasks._paths import compute_path_size as remote_compute_path_size
 from .._worker_tasks._paths import delete_paths as remote_delete_paths
 

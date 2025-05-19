@@ -2,6 +2,8 @@ import logging
 from typing import Annotated, Final, cast
 from urllib.parse import quote
 
+from celery_library.client import CeleryTaskClient
+from celery_library.models import TaskMetadata, TaskUUID
 from fastapi import APIRouter, Depends, Header, Request
 from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobNameData
 from models_library.api_schemas_storage.storage_schemas import (
@@ -34,8 +36,6 @@ from ...models import (
     StorageQueryParamsBase,
     UploadLinks,
 )
-from ...modules.celery.client import CeleryTaskClient
-from ...modules.celery.models import TaskMetadata, TaskUUID
 from ...simcore_s3_dsm import SimcoreS3DataManager
 from .._worker_tasks._files import complete_upload_file as remote_complete_upload_file
 from .dependencies.celery import get_celery_client
