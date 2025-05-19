@@ -1065,6 +1065,18 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/admin/users?status=PENDING"
           },
+          approveUser: {
+            method: "POST",
+            url: statics.API + "/admin/users/{userEmail}:approve"
+          },
+          denyUser: {
+            method: "POST",
+            url: statics.API + "/admin/users/{userEmail}:deny"
+          },
+          resendConfirmationEmail: {
+            method: "POST",
+            url: statics.API + "/admin/users/{userEmail}:resendConfirmationEmail"
+          },
           preRegister: {
             method: "POST",
             url: statics.API + "/admin/users:pre-register"
