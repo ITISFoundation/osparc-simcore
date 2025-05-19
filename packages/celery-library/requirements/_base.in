@@ -7,4 +7,4 @@
 --requirement ../../../packages/service-library/requirements/_base.in
 --requirement ../../../packages/settings-library/requirements/_base.in
 
-celery
+celery[redis]
