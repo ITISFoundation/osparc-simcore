@@ -25,7 +25,7 @@ class TaskLifecycleSchedulerPlugin(SchedulerPlugin):
         key: Key,
         start: TaskStateState,
         finish: TaskStateState,
-        *args: Any,  # noqa: ARG002
+        *args: Any,  # noqa: ARG002 #pylint: disable=unused-argument
         stimulus_id: str,
         **kwargs: Any,
     ):
