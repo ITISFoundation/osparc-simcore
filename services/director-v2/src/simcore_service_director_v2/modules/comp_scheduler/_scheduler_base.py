@@ -504,9 +504,10 @@ class BaseCompScheduler(ABC):
         # now process the tasks
         if sorted_tasks.started:
             # NOTE: the dask-scheduler cannot differentiate between tasks that are effectively computing and
-            # tasks that are only queued and accepted by a dask-worker.
+            # tasks that are only queued and accepted by a dask-worker. We use dask plugins to report on tasks states
+            # states are published to log_event, and we directly publish into RabbitMQ the sidecar and services logs.
             # tasks_started should therefore be mostly empty but for cases where
-            # - dask Pub/Sub mechanism failed, the tasks goes from PENDING -> SUCCESS/FAILED/ABORTED without STARTED
+            # - dask log_event/subscribe_topic mechanism failed, the tasks goes from PENDING -> SUCCESS/FAILED/ABORTED without STARTED
             # - the task finished so fast that the STARTED state was skipped between 2 runs of the dv-2 comp scheduler
             await self._process_started_tasks(
                 sorted_tasks.started,
