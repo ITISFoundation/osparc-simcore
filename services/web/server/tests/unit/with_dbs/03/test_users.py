@@ -27,6 +27,7 @@ from models_library.api_schemas_webserver.users import (
     UserForAdminGet,
     UserGet,
 )
+from models_library.products import ProductName
 from psycopg2 import OperationalError
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status
@@ -41,7 +42,7 @@ from pytest_simcore.helpers.webserver_login import (
     switch_client_session_to,
 )
 from servicelib.aiohttp import status
-from servicelib.rest_constants import RESPONSE_MODEL_POLICY
+from servicelib.rest_constants import RESPONSE_MODEL_POLICY, X_PRODUCT_NAME_HEADER
 from simcore_service_webserver.users._common.schemas import (
     MAX_BYTES_SIZE_EXTRAS,
     PreRegisteredUserGet,
@@ -919,3 +920,124 @@ def test_preuserprofile_pre_given_names(
     print(pre_user_profile.model_dump_json(indent=1))
     assert pre_user_profile.first_name in ["Pedro-Luis", "Pedro Luis"]
     assert pre_user_profile.first_name == pre_user_profile.last_name
+
+
+@pytest.mark.parametrize("user_role", [UserRole.PRODUCT_OWNER])
+async def test_pending_users_management(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    account_request_form: dict[str, Any],
+    faker: Faker,
+    product_name: ProductName,
+):
+    """Test the management of pending users:
+    - list pending users
+    - approve user account
+    - reject user account
+    - resend confirmation email
+    """
+    assert client.app
+
+    # Create some pre-registered users
+    pre_registered_users = []
+    for _ in range(3):
+        form_data = account_request_form.copy()
+        form_data["firstName"] = faker.first_name()
+        form_data["lastName"] = faker.last_name()
+        form_data["email"] = faker.email()
+
+        resp = await client.post(
+            "/v0/admin/users:pre-register",
+            json=form_data,
+            headers={X_PRODUCT_NAME_HEADER: product_name},
+        )
+        pre_registered_data, _ = await assert_status(resp, status.HTTP_200_OK)
+        pre_registered_users.append(pre_registered_data)
+
+    # 1. List pending users (not yet approved)
+    url = client.app.router["list_users_for_admin"].url_for()
+    resp = await client.get(
+        f"{url}?status=PENDING", headers={X_PRODUCT_NAME_HEADER: product_name}
+    )
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    # Verify response structure and content
+    assert "items" in data
+    assert "pagination" in data
+    assert len(data["items"]) >= 3  # At least our 3 pre-registered users
+
+    # Verify each pre-registered user is in the list
+    for pre_user in pre_registered_users:
+        found = next(
+            (item for item in data["items"] if item["email"] == pre_user["email"]),
+            None,
+        )
+        assert found is not None
+        assert found["registered"] is False
+
+    # 2. Approve one of the pre-registered users
+    approval_data = {"email": pre_registered_users[0]["email"]}
+    resp = await client.post(
+        "/v0/admin/users:approve",
+        json=approval_data,
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+    )
+    approved_data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    # Verify response structure
+    assert "invitationLink" in approved_data
+    assert approved_data.get("email") == pre_registered_users[0]["email"]
+
+    # Verify the user is no longer in the pending list
+    resp = await client.get(
+        f"{url}?status=PENDING", headers={X_PRODUCT_NAME_HEADER: product_name}
+    )
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    # The approved user should no longer be in the pending list
+    assert all(
+        item["email"] != pre_registered_users[0]["email"] for item in data["items"]
+    )
+
+    # 3. Reject another pre-registered user
+    rejection_data = {"email": pre_registered_users[1]["email"]}
+    resp = await client.post(
+        "/v0/admin/users:reject",
+        json=rejection_data,
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+    )
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # Verify the rejected user is no longer in the pending list
+    resp = await client.get(
+        f"{url}?status=PENDING", headers={X_PRODUCT_NAME_HEADER: product_name}
+    )
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert all(
+        item["email"] != pre_registered_users[1]["email"] for item in data["items"]
+    )
+
+    # 4. Resend confirmation email to the approved user
+    resend_data = {"email": pre_registered_users[0]["email"]}
+    resp = await client.post(
+        "/v0/admin/users:resendConfirmationEmail",
+        json=resend_data,
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+    )
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # Search for the approved user to confirm their status
+    resp = await client.get(
+        "/v0/admin/users:search",
+        params={"email": pre_registered_users[0]["email"]},
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+    )
+    found_users, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    # Should find exactly one user
+    assert len(found_users) == 1
+    found_user = UserForAdminGet(**found_users[0])
+
+    # User should be registered but in CONFIRMATION_PENDING status
+    assert found_user.registered is True
+    assert found_user.status == UserStatus.CONFIRMATION_PENDING
