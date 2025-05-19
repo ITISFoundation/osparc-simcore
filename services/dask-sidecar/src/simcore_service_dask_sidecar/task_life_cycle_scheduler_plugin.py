@@ -1,6 +1,7 @@
 import logging
 from typing import Any
 
+import click
 from dask.typing import Key
 from dask_task_models_library.models import TASK_LIFE_CYCLE_EVENT, TaskLifeCycleState
 from distributed import Scheduler, SchedulerPlugin
@@ -49,3 +50,9 @@ class TaskLifecycleSchedulerPlugin(SchedulerPlugin):
                     key, kwargs.get("worker"), finish
                 ).model_dump(mode="json"),
             )
+
+
+@click.command()
+def dask_setup(scheduler):
+    plugin = TaskLifecycleSchedulerPlugin()
+    scheduler.add_plugin(plugin)

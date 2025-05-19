@@ -2,6 +2,7 @@ import logging
 from collections.abc import Awaitable
 from typing import Any
 
+import click
 from dask.typing import Key
 from dask_task_models_library.models import TASK_LIFE_CYCLE_EVENT, TaskLifeCycleState
 from distributed import WorkerPlugin
@@ -51,3 +52,9 @@ class TaskLifecycleWorkerPlugin(WorkerPlugin):
                     key, kwargs.get("worker"), finish
                 ).model_dump(mode="json"),
             )
+
+
+@click.command()
+async def dask_setup(worker: Worker) -> None:
+    plugin = TaskLifecycleWorkerPlugin()
+    await worker.plugin_add(plugin)
