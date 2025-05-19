@@ -6,6 +6,7 @@
 # pylint: disable=reimported
 import asyncio
 import functools
+import logging
 import traceback
 from collections.abc import AsyncIterator, Awaitable, Callable, Coroutine
 from dataclasses import dataclass
@@ -49,6 +50,7 @@ from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.s3 import S3Settings
 from simcore_sdk.node_ports_v2 import FileLinkType
@@ -140,41 +142,48 @@ def _minimal_dask_config(
 @pytest.fixture
 async def create_dask_client_from_scheduler(
     _minimal_dask_config: None,
-    dask_spec_local_cluster: SpecCluster,
+    dask_spec_local_cluster: distributed.SpecCluster,
     minimal_app: FastAPI,
     tasks_file_link_type: FileLinkType,
 ) -> AsyncIterator[Callable[[], Awaitable[DaskClient]]]:
     created_clients = []
 
     async def factory() -> DaskClient:
-        client = await DaskClient.create(
-            app=minimal_app,
-            settings=minimal_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND,
-            endpoint=TypeAdapter(AnyUrl).validate_python(
-                dask_spec_local_cluster.scheduler_address
-            ),
-            authentication=NoAuthentication(),
-            tasks_file_link_type=tasks_file_link_type,
-            cluster_type=ClusterTypeInModel.ON_PREMISE,
-        )
-        assert client
-        assert client.app == minimal_app
-        assert (
-            client.settings
-            == minimal_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND
-        )
+        with log_context(
+            logging.INFO,
+            f"Create director-v2 DaskClient to {dask_spec_local_cluster.scheduler_address}",
+        ) as ctx:
+            client = await DaskClient.create(
+                app=minimal_app,
+                settings=minimal_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND,
+                endpoint=TypeAdapter(AnyUrl).validate_python(
+                    dask_spec_local_cluster.scheduler_address
+                ),
+                authentication=NoAuthentication(),
+                tasks_file_link_type=tasks_file_link_type,
+                cluster_type=ClusterTypeInModel.ON_PREMISE,
+            )
+            assert client
+            assert client.app == minimal_app
+            assert (
+                client.settings
+                == minimal_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND
+            )
 
-        assert client.backend.client
-        scheduler_infos = client.backend.client.scheduler_info()  # type: ignore
-        print(
-            f"--> Connected to scheduler via client {client=} to scheduler {scheduler_infos=}"
-        )
+            assert client.backend.client
+            scheduler_infos = client.backend.client.scheduler_info()  # type: ignore
+            ctx.logger.info(
+                "%s",
+                f"--> Connected to scheduler via client {client=} to scheduler {scheduler_infos=}",
+            )
+
         created_clients.append(client)
         return client
 
     yield factory
-    await asyncio.gather(*[client.delete() for client in created_clients])
-    print(f"<-- Disconnected scheduler clients {created_clients=}")
+
+    with log_context(logging.INFO, "Disconnect scheduler clients"):
+        await asyncio.gather(*[client.delete() for client in created_clients])
 
 
 @pytest.fixture(params=["create_dask_client_from_scheduler"])
@@ -728,15 +737,17 @@ async def test_abort_computation_tasks(
     with pytest.raises(TaskCancelledError):
         await dask_client.get_task_result(published_computation_task[0].job_id)
 
-    # after releasing the results, the task shall be UNKNOWN
+    await asyncio.sleep(5)
     await dask_client.release_task_result(published_computation_task[0].job_id)
+    # after releasing the results, the task shall be UNKNOWN
+
     # NOTE: this change of status takes a very long time to happen and is not relied upon so we skip it since it
     # makes the test fail a lot for no gain (it's kept here in case it ever becomes an issue)
     await _assert_wait_for_task_status(
         published_computation_task[0].job_id,
         dask_client,
         RunningState.UNKNOWN,
-        timeout=120,
+        timeout=10,
     )
 
 
