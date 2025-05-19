@@ -10,7 +10,11 @@ from typing import Any
 import httpx
 from fastapi import status
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
-from models_library.api_schemas_long_running_tasks.tasks import TaskGet, TaskStatus
+from models_library.api_schemas_long_running_tasks.tasks import (
+    TaskGet,
+    TaskResult,
+    TaskStatus,
+)
 from tenacity import (
     AsyncRetrying,
     TryAgain,
@@ -32,7 +36,7 @@ from ...long_running_tasks._models import (
     ProgressPercent,
     RequestBody,
 )
-from ...long_running_tasks._task import TaskId, TaskResult
+from ...long_running_tasks._task import TaskId
 from ...rest_responses import unwrap_envelope_if_required
 from ._client import DEFAULT_HTTP_REQUESTS_TIMEOUT, Client, setup
 from ._context_manager import periodic_task_result
