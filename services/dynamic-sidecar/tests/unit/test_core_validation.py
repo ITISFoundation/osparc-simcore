@@ -12,8 +12,8 @@ from pytest_mock import MockerFixture
 from servicelib.docker_constants import DEFAULT_USER_SERVICES_NETWORK_NAME
 from simcore_service_dynamic_sidecar.core.validation import (
     _connect_user_services,
+    get_and_validate_compose_spec,
     parse_compose_spec,
-    validate_compose_spec,
 )
 from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
 
@@ -174,6 +174,6 @@ async def test_regression_validate_compose_spec(
     no_internet_spec: str,
     fake_mounted_volumes: MountedVolumes,
 ):
-    await validate_compose_spec(
+    await get_and_validate_compose_spec(
         app.state.settings, no_internet_spec, fake_mounted_volumes
     )
