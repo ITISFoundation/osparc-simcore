@@ -1,3 +1,4 @@
+# pylint: disable=unused-argument
 import logging
 from typing import Any
 
@@ -25,7 +26,7 @@ class TaskLifecycleSchedulerPlugin(SchedulerPlugin):
         key: Key,
         start: TaskStateState,
         finish: TaskStateState,
-        *args: Any,  # pylint: disable=unused-argument # noqa: ARG002
+        *args: Any,  # noqa: ARG002
         stimulus_id: str,
         **kwargs: Any,
     ):
