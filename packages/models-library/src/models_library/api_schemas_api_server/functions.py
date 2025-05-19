@@ -1,6 +1,6 @@
 # pylint: disable=unused-import
 
-from ..functions import (  # noqa: F401
+from ..functions import (
     Function,
     FunctionClass,
     FunctionClassSpecificData,
@@ -70,4 +70,6 @@ __all__ = [
     "RegisteredProjectFunctionJob",
     "SolverFunction",
     "SolverFunctionJob",
+    "UnsupportedFunctionClassError",
+    "UnsupportedFunctionFunctionJobClassCombinationError",
 ]
