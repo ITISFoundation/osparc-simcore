@@ -36,7 +36,7 @@ qx.Class.define("osparc.pricing.PlanEditor", {
     manager.add(name);
 
     if (pricingPlan) {
-      this.__pricingPlan = osparc.utils.Utils.deepCloneObject(pricingPlan);
+      this.__pricingPlan = pricingPlan;
       this.set({
         ppKey: pricingPlan.getPricingPlanKey(),
         name: pricingPlan.getName(),
@@ -235,7 +235,7 @@ qx.Class.define("osparc.pricing.PlanEditor", {
         "classification": this.getClassification(),
         "isActive": this.getIsActive(),
       };
-      osparc.store.Pricing.getInstance().putPricingPlan(this.__pricingPlan["pricingPlanId"], updateData)
+      osparc.store.Pricing.getInstance().putPricingPlan(this.__pricingPlan.getPricingPlanId(), updateData)
         .then(() => {
           osparc.FlashMessenger.logAs(this.tr("Successfully updated"));
           this.fireEvent("done");

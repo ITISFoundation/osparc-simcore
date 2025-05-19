@@ -125,17 +125,17 @@ qx.Class.define("osparc.pricing.Plans", {
     },
 
     __openUpdatePricingPlan: function(pricingPlanId) {
-      osparc.store.Pricing.getInstance().fetchPricingUnits(pricingPlanId)
-        .then(pricingPlan => {
-          const ppEditor = new osparc.pricing.PlanEditor(pricingPlan);
-          const title = this.tr("Pricing Plan Editor");
-          const win = osparc.ui.window.Window.popUpInWindow(ppEditor, title, 400, 250);
-          ppEditor.addListener("done", () => {
-            win.close();
-            this.fetchPlans();
-          });
-          ppEditor.addListener("cancel", () => win.close());
+      const pricingPlan = osparc.store.Pricing.getInstance().getPricingPlan(pricingPlanId);
+      if (pricingPlan) {
+        const ppEditor = new osparc.pricing.PlanEditor(pricingPlan);
+        const title = this.tr("Pricing Plan Editor");
+        const win = osparc.ui.window.Window.popUpInWindow(ppEditor, title, 400, 250);
+        ppEditor.addListener("done", () => {
+          win.close();
+          this.fetchPlans();
         });
+        ppEditor.addListener("cancel", () => win.close());
+      }
     }
   }
 });
