@@ -9,6 +9,8 @@
 #
 --constraint _base.txt
 
+--requirement ../../../services/dask-sidecar/requirements/_base.in # getting access to plugins
+
 aio_pika
 aioboto3
 alembic # migration due to pytest_simcore.postgres_service2
