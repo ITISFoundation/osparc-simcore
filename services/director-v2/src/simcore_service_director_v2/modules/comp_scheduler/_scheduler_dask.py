@@ -23,6 +23,9 @@ from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.logging_utils import log_catch
+from simcore_service_director_v2.modules.comp_scheduler._utils import (
+    WAITING_FOR_START_STATES,
+)
 
 from ...core.errors import (
     ComputationalBackendNotConnectedError,
@@ -381,7 +384,7 @@ class DaskScheduler(BaseCompScheduler):
             node_id = task_progress_event.task_owner.node_id
             comp_tasks_repo = CompTasksRepository(self.db_engine)
             task = await comp_tasks_repo.get_task(project_id, node_id)
-            if task.progress is None:
+            if task.state in WAITING_FOR_START_STATES:
                 task.state = RunningState.STARTED
                 task.progress = task_progress_event.progress
                 run = await CompRunsRepository(self.db_engine).get(user_id, project_id)
