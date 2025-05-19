@@ -643,11 +643,11 @@ def find_and_click_template_in_dashboard(
 ) -> Callable[[str], None]:
     def _(template_id: str) -> None:
         with log_context(logging.INFO, f"Finding {template_id=} in dashboard"):
-            page.get_by_test_id("templatesTabBtn").click()
+            page.get_by_test_id("tutorialsTabBtn").click()
             _textbox = page.get_by_test_id("searchBarFilter-textField-template")
             _textbox.fill(template_id)
             _textbox.press("Enter")
-            test_id = "templateBrowserListItem_" + template_id
+            test_id = "tutorialBrowserListItem_" + template_id
             page.get_by_test_id(test_id).click()
 
     return _

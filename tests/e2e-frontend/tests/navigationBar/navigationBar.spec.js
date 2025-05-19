@@ -174,7 +174,7 @@ for (const product in products) {
             }
           };
 
-          await checkButton("templatesTabBtn", isTemplatesVisible, templatesLabel);
+          await checkButton("tutorialsTabBtn", isTemplatesVisible, templatesLabel);
           await checkButton("appsTabBtn", isServicesVisible, servicesLabel);
           await checkButton("dataTabBtn", isDataVisible, dataLabel);
         });

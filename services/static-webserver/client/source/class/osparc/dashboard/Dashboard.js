@@ -110,8 +110,8 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       }];
       if (permissions.canDo("dashboard.templates.read")) {
         tabs.push({
-          id: "templatesTab",
-          buttonId: "templatesTabBtn",
+          id: "tutorialsTab",
+          buttonId: "tutorialsTabBtn",
           label: this.tr("TUTORIALS"),
           icon: "@FontAwesome5Solid/copy/"+tabIconSize,
           buildLayout: this.__createTutorialBrowser
