@@ -4,11 +4,12 @@ from typing import Any
 
 import click
 from dask.typing import Key
-from dask_task_models_library.models import TASK_LIFE_CYCLE_EVENT, TaskLifeCycleState
 from distributed import WorkerPlugin
 from distributed.worker import Worker
 from distributed.worker_state_machine import TaskStateState
 from servicelib.logging_utils import log_context
+
+from ..models import TASK_LIFE_CYCLE_EVENT, TaskLifeCycleState
 
 _logger = logging.getLogger(__name__)
 
