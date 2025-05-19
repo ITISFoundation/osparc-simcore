@@ -104,7 +104,7 @@ async def list_functions(
     response_model=Page[RegisteredFunctionJob],
     description="List function jobs for a function",
 )
-async def list_function_jobs(
+async def list_function_jobs_for_functionid(
     function_id: FunctionID,
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     page_params: Annotated[PaginationParams, Depends()],

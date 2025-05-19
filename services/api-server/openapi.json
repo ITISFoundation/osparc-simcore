@@ -7006,6 +7006,73 @@
         }
       }
     },
+    "/v0/functions/{function_id}/jobs": {
+      "get": {
+        "tags": [
+          "functions"
+        ],
+        "summary": "List Function Jobs For Functionid",
+        "description": "List function jobs for a function",
+        "operationId": "list_function_jobs_for_functionid",
+        "parameters": [
+          {
+            "name": "function_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Function Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_Annotated_Union_RegisteredProjectFunctionJob__RegisteredPythonCodeFunctionJob__RegisteredSolverFunctionJob___FieldInfo_annotation_NoneType__required_True__discriminator__function_class____"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v0/functions/{function_id}/title": {
       "patch": {
         "tags": [
