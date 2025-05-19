@@ -76,7 +76,7 @@ qx.Class.define("osparc.pricing.PlanEditor", {
 
     classification: {
       check: ["TIER", "LICENSE"],
-      init: "",
+      init: "TIER",
       nullable: false,
       event: "changeClassification"
     },
