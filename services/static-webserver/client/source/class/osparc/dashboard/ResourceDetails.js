@@ -78,6 +78,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
   events: {
     "pagesAdded": "qx.event.type.Event",
+    "openStudy": "qx.event.type.Data",
     "openTemplate": "qx.event.type.Data",
     "openTutorial": "qx.event.type.Data",
     "openHypertool": "qx.event.type.Data",
