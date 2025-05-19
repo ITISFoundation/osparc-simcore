@@ -1,8 +1,8 @@
 """preparation for osparc.io migration
 
-Revision ID: 43d7e61eedf4
+Revision ID: 1a791d837399
 Revises: b39f2dc87ccd
-Create Date: 2025-05-19 12:27:17.367971+00:00
+Create Date: 2025-05-19 13:09:24.279828+00:00
 
 """
 
@@ -11,7 +11,7 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = "43d7e61eedf4"
+revision = "1a791d837399"
 down_revision = "b39f2dc87ccd"
 branch_labels = None
 depends_on = None
@@ -108,16 +108,8 @@ def upgrade():
     op.drop_index("ix_projects_comments_project_uuid", table_name="projects_comments")
     op.drop_table("projects_comments")
     op.drop_column("file_meta_data", "node_id")
-    op.drop_constraint("fk_new_folders_to_folders_id", "folders_v2", type_="foreignkey")
     op.drop_constraint("fk_new_folders_to_groups_gid", "folders_v2", type_="foreignkey")
-    op.create_foreign_key(
-        "fk_new_folders_to_folders_id",
-        "folders_v2",
-        "folders_v2",
-        ["parent_folder_id"],
-        ["folder_id"],
-        onupdate="CASCADE",
-    )
+    op.drop_constraint("fk_new_folders_to_folders_id", "folders_v2", type_="foreignkey")
     op.create_foreign_key(
         "fk_new_folders_to_groups_gid",
         "folders_v2",
@@ -126,6 +118,14 @@ def upgrade():
         ["gid"],
         onupdate="CASCADE",
         ondelete="SET NULL",
+    )
+    op.create_foreign_key(
+        "fk_new_folders_to_folders_id",
+        "folders_v2",
+        "folders_v2",
+        ["parent_folder_id"],
+        ["folder_id"],
+        onupdate="CASCADE",
     )
     op.create_foreign_key(
         "fk_payments_autorecharge_id_wallets",
@@ -155,11 +155,11 @@ def upgrade():
         ondelete="CASCADE",
     )
     op.create_foreign_key(
-        "fk_payments_transactions_to_wallet_id",
+        "fk_payments_transactions_to_products_name",
         "payments_transactions",
-        "wallets",
-        ["wallet_id"],
-        ["wallet_id"],
+        "products",
+        ["product_name"],
+        ["name"],
         onupdate="CASCADE",
         ondelete="CASCADE",
     )
@@ -173,20 +173,11 @@ def upgrade():
         ondelete="CASCADE",
     )
     op.create_foreign_key(
-        "fk_payments_transactions_to_products_name",
+        "fk_payments_transactions_to_wallet_id",
         "payments_transactions",
-        "products",
-        ["product_name"],
-        ["name"],
-        onupdate="CASCADE",
-        ondelete="CASCADE",
-    )
-    op.create_foreign_key(
-        "fk_service_runs_to_user_id",
-        "resource_tracker_service_runs",
-        "users",
-        ["user_id"],
-        ["id"],
+        "wallets",
+        ["wallet_id"],
+        ["wallet_id"],
         onupdate="CASCADE",
         ondelete="CASCADE",
     )
@@ -222,12 +213,7 @@ def downgrade():
         type_="foreignkey",
     )
     op.drop_constraint(
-        "fk_service_runs_to_user_id",
-        "resource_tracker_service_runs",
-        type_="foreignkey",
-    )
-    op.drop_constraint(
-        "fk_payments_transactions_to_products_name",
+        "fk_payments_transactions_to_wallet_id",
         "payments_transactions",
         type_="foreignkey",
     )
@@ -237,7 +223,7 @@ def downgrade():
         type_="foreignkey",
     )
     op.drop_constraint(
-        "fk_payments_transactions_to_wallet_id",
+        "fk_payments_transactions_to_products_name",
         "payments_transactions",
         type_="foreignkey",
     )
@@ -252,8 +238,15 @@ def downgrade():
         "payments_autorecharge",
         type_="foreignkey",
     )
-    op.drop_constraint("fk_new_folders_to_groups_gid", "folders_v2", type_="foreignkey")
     op.drop_constraint("fk_new_folders_to_folders_id", "folders_v2", type_="foreignkey")
+    op.drop_constraint("fk_new_folders_to_groups_gid", "folders_v2", type_="foreignkey")
+    op.create_foreign_key(
+        "fk_new_folders_to_folders_id",
+        "folders_v2",
+        "folders_v2",
+        ["parent_folder_id"],
+        ["folder_id"],
+    )
     op.create_foreign_key(
         "fk_new_folders_to_groups_gid",
         "folders_v2",
@@ -261,13 +254,6 @@ def downgrade():
         ["created_by_gid"],
         ["gid"],
         ondelete="SET NULL",
-    )
-    op.create_foreign_key(
-        "fk_new_folders_to_folders_id",
-        "folders_v2",
-        "folders_v2",
-        ["parent_folder_id"],
-        ["folder_id"],
     )
     op.add_column(
         "file_meta_data",
