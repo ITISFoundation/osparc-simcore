@@ -7,7 +7,10 @@ from models_library.api_schemas_webserver.functions import (
     RegisteredFunctionGet,
 )
 from pydantic import TypeAdapter
-from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
+from servicelib.aiohttp.requests_validation import (
+    handle_validation_as_http_error,
+    parse_request_path_parameters_as,
+)
 from simcore_service_webserver.utils_aiohttp import envelope_json_response
 
 from ..._meta import API_VTAG as VTAG
@@ -21,9 +24,14 @@ routes = web.RouteTableDef()
 @routes.post(f"/{VTAG}/functions", name="register_function")
 @handle_rest_requests_exceptions
 async def register_function(request: web.Request) -> web.Response:
-    function_to_register: FunctionToRegister = TypeAdapter(
-        FunctionToRegister
-    ).validate_python(await request.json())
+    with handle_validation_as_http_error(
+        error_msg_template="Invalid parameter/s '{failed}' in request path",
+        resource_name=request.rel_url.path,
+        use_error_v1=True,
+    ):
+        function_to_register: FunctionToRegister = TypeAdapter(
+            FunctionToRegister
+        ).validate_python(await request.json())
 
     registered_function: RegisteredFunction = (
         await _functions_service.register_function(
