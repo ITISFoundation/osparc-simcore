@@ -15,7 +15,10 @@ tokens = sa.Table(
         "user_id",
         sa.BigInteger,
         sa.ForeignKey(
-            users.c.id, onupdate=RefActions.CASCADE, ondelete=RefActions.CASCADE
+            users.c.id,
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
+            name="fk_tokens_to_user_id",
         ),
         nullable=False,
     ),
