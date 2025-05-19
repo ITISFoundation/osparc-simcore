@@ -22,7 +22,7 @@ qx.Class.define("osparc.study.CreateFunction", {
   /**
    * @param studyData {Object} Object containing part or the entire serialized Study Data
    */
-  construct: function (studyData) {
+  construct: function(studyData) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(20));
@@ -33,7 +33,7 @@ qx.Class.define("osparc.study.CreateFunction", {
   },
 
   statics: {
-    typeToFunctionType: function (type) {
+    typeToFunctionType: function(type) {
       switch (type) {
         case "number":
           return "float"
@@ -43,7 +43,7 @@ qx.Class.define("osparc.study.CreateFunction", {
       return type;
     },
 
-    createFunctionData: function (projectData, name, description, exposedInputs, exposedOutputs) {
+    createFunctionData: function(projectData, name, description, exposedInputs, exposedOutputs) {
       const functionData = {
         "projectId": projectData["uuid"],
         "name": name,
@@ -104,7 +104,7 @@ qx.Class.define("osparc.study.CreateFunction", {
     __form: null,
     __createFunctionBtn: null,
 
-    __buildLayout: function () {
+    __buildLayout: function() {
       const form = this.__form = new qx.ui.form.Form();
       this._add(new qx.ui.form.renderer.Single(form));
 
@@ -283,7 +283,7 @@ qx.Class.define("osparc.study.CreateFunction", {
       }, this);
     },
 
-    __createFunction: function (exposedInputs, exposedOutputs) {
+    __createFunction: function(exposedInputs, exposedOutputs) {
       this.__createFunctionBtn.setFetching(true);
 
       // first publish it as a template
@@ -311,7 +311,7 @@ qx.Class.define("osparc.study.CreateFunction", {
         });
     },
 
-    __doCreateFunction: function (templateData, exposedInputs, exposedOutputs) {
+    __doCreateFunction: function(templateData, exposedInputs, exposedOutputs) {
       const nameField = this.__form.getItem("name");
       const descriptionField = this.__form.getItem("description");
 
@@ -327,7 +327,7 @@ qx.Class.define("osparc.study.CreateFunction", {
         .finally(() => this.__createFunctionBtn.setFetching(false));
     },
 
-    getCreateFunctionButton: function () {
+    getCreateFunctionButton: function() {
       return this.__createFunctionBtn;
     }
   }
