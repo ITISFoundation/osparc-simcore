@@ -175,7 +175,7 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
           if (logDownloadLink) {
             osparc.utils.Utils.downloadLink(logDownloadLink, "GET", rowData["nodeName"] + ".logs");
           } else {
-            osparc.component.message.FlashMessenger.getInstance().logAsWarning(this.tr("No logs available"));
+            osparc.FlashMessenger.logAs(this.tr("No logs available"), "WARNING");
           }
           break;
         }
