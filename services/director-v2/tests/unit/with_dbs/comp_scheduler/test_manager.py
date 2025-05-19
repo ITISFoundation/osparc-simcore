@@ -320,7 +320,7 @@ async def test_empty_pipeline_is_not_scheduled(
     with_disabled_auto_scheduling: mock.Mock,
     with_disabled_scheduler_worker: mock.Mock,
     initialized_app: FastAPI,
-    registered_user: Callable[..., dict[str, Any]],
+    create_registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., Awaitable[ProjectAtDB]],
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
     run_metadata: RunMetadataDict,
@@ -329,7 +329,7 @@ async def test_empty_pipeline_is_not_scheduled(
     caplog: pytest.LogCaptureFixture,
 ):
     await assert_comp_runs_empty(sqlalchemy_async_engine)
-    user = registered_user()
+    user = create_registered_user()
     empty_project = await project(user)
 
     # the project is not in the comp_pipeline, therefore scheduling it should fail

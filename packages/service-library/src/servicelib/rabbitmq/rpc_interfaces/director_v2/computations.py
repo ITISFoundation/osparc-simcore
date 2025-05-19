@@ -33,6 +33,8 @@ async def list_computations_latest_iteration_page(
     *,
     product_name: ProductName,
     user_id: UserID,
+    # filters
+    filter_only_running: bool = False,
     # pagination
     offset: int = 0,
     limit: int = 20,
@@ -46,6 +48,35 @@ async def list_computations_latest_iteration_page(
         ),
         product_name=product_name,
         user_id=user_id,
+        filter_only_running=filter_only_running,
+        offset=offset,
+        limit=limit,
+        order_by=order_by,
+        timeout_s=_DEFAULT_TIMEOUT_S,
+    )
+    assert isinstance(result, ComputationRunRpcGetPage)  # nosec
+    return result
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+async def list_computations_iterations_page(
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    project_id: ProjectID,
+    # pagination
+    offset: int = 0,
+    limit: int = 20,
+    # ordering
+    order_by: OrderBy | None = None,
+) -> ComputationRunRpcGetPage:
+    result = await rabbitmq_rpc_client.request(
+        DIRECTOR_V2_RPC_NAMESPACE,
+        _RPC_METHOD_NAME_ADAPTER.validate_python("list_computations_iterations_page"),
+        product_name=product_name,
+        user_id=user_id,
+        project_id=project_id,
         offset=offset,
         limit=limit,
         order_by=order_by,

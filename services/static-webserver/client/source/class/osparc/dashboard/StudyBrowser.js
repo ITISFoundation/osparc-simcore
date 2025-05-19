@@ -49,7 +49,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
   properties: {
     currentContext: {
-      check: ["studiesAndFolders", "workspaces", "search", "trash"],
+      check: [
+        "studiesAndFolders",
+        "workspaces",
+        "search",
+        "templates",
+        "public",
+        "trash",
+      ],
       nullable: false,
       init: "studiesAndFolders",
       event: "changeCurrentContext"
@@ -157,7 +164,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __reloadWorkspaces: function() {
       if (
         !osparc.auth.Manager.getInstance().isLoggedIn() ||
-        this.getCurrentContext() === "studiesAndFolders" ||
+        ["studiesAndFolders", "templates", "public"].includes(this.getCurrentContext()) ||
         this.__loadingWorkspaces
       ) {
         return;
@@ -201,7 +208,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __reloadFolders: function() {
       if (
         !osparc.auth.Manager.getInstance().isLoggedIn() ||
-        this.getCurrentContext() === "workspaces" ||
+        ["workspaces", "templates", "public"].includes(this.getCurrentContext()) ||
         this.__loadingFolders
       ) {
         return;
@@ -269,8 +276,26 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             return;
           }
 
-          const studies = resp["data"];
-          this.__addStudiesToList(studies);
+          if (["templates", "public"].includes(this.getCurrentContext())) {
+            const templates = resp["data"];
+            templates.forEach(template => template["resourceType"] = "template");
+            // For now, filtered in the frontend
+            const groupsStore = osparc.store.Groups.getInstance();
+            const everyoneGid = groupsStore.getEveryoneGroup().getGroupId();
+            const productEveryoneGid = groupsStore.getEveryoneProductGroup().getGroupId();
+            const filteredTemplates = templates.filter(template => {
+              const publicAccess = everyoneGid in template["accessRights"] || productEveryoneGid in template["accessRights"];
+              if (this.getCurrentContext() === "public") {
+                return publicAccess;
+              }
+              return !publicAccess;
+            });
+            this.__addResourcesToList(filteredTemplates);
+          } else {
+            const studies = resp["data"];
+            studies.forEach(study => study["resourceType"] = "study");
+            this.__addResourcesToList(studies);
+          }
           if (this._resourcesContainer.getFlatList()) {
             this._resourcesContainer.getFlatList().nextRequest = resp["_links"]["next"];
           }
@@ -326,9 +351,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._reloadCards();
     },
 
-    __addStudiesToList: function(studiesList) {
-      studiesList.forEach(study => study["resourceType"] = "study");
-      studiesList.forEach(study => {
+    __addResourcesToList: function(resourcesList) {
+      resourcesList.forEach(study => {
         const idx = this._resourcesList.findIndex(std => std["uuid"] === study["uuid"]);
         if (idx === -1) {
           this._resourcesList.push(study);
@@ -336,7 +360,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
       this.__reloadNewCards();
 
-      studiesList.forEach(study => {
+      resourcesList.forEach(study => {
         const state = study["state"];
         if (state && "locked" in state && state["locked"]["value"] && state["locked"]["status"] === "CLOSING") {
           // websocket might have already notified that the state was closed.
@@ -617,7 +641,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         card.addListener("tap", e => this.__studyCardClicked(card, e.getNativeEvent().shiftKey), this);
         this._populateCardMenu(card);
 
-        if (this.getCurrentContext() !== "trash") {
+        if (["studiesAndFolders", "search"].includes(this.getCurrentContext())) {
           this.__attachDragHandlers(card);
         }
       });
@@ -711,7 +735,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __didContextChange: function(reqParams) {
       // not needed for the comparison
-      delete reqParams["type"];
       delete reqParams["limit"];
       delete reqParams["offset"];
       delete reqParams["filters"];
@@ -749,6 +772,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           const key = osparc.utils.Utils.snakeToCamel(snakeKey);
           urlParams[key] = value === "null" ? null : value;
         }
+
+        // keep this until the backend implements it
+        switch (this.getCurrentContext()) {
+          case "templates":
+            urlParams.accessRights = "non-public";
+            break;
+          case "public":
+            urlParams.accessRights = "public";
+            break;
+        }
+
         const contextChanged = this.__didContextChange(urlParams);
         if (
           !contextChanged &&
@@ -772,6 +806,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         case "studiesAndFolders":
           requestParams.workspaceId = this.getCurrentWorkspaceId();
           requestParams.folderId = this.getCurrentFolderId();
+          requestParams.type = "user";
+          break;
+        case "templates":
+          requestParams.type = "template";
+          requestParams.templateType = osparc.data.model.StudyUI.TEMPLATE_TYPE;
+          requestParams.accessRights = "non-public";
+          break;
+        case "public":
+          requestParams.type = "template";
+          requestParams.templateType = osparc.data.model.StudyUI.TEMPLATE_TYPE;
+          requestParams.accessRights = "public";
           break;
         case "search": {
           // Use the ``search`` functionality only if the user types some text
@@ -811,14 +856,20 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       let request = null;
       switch (this.getCurrentContext()) {
-        case "trash":
-          request = osparc.data.Resources.fetch("studies", "getPageTrashed", params, options);
+        case "studiesAndFolders":
+          request = osparc.data.Resources.fetch("studies", "getPage", params, options);
           break;
         case "search":
           request = osparc.data.Resources.fetch("studies", "getPageSearch", params, options);
           break;
-        case "studiesAndFolders":
-          request = osparc.data.Resources.fetch("studies", "getPage", params, options);
+        case "templates":
+          request = osparc.store.Templates.fetchTemplatesNonPublicPaginated(params, options);
+          break;
+        case "public":
+          request = osparc.store.Templates.fetchTemplatesPublicPaginated(params, options);
+          break;
+        case "trash":
+          request = osparc.data.Resources.fetch("studies", "getPageTrashed", params, options);
           break;
       }
       return request;
@@ -912,9 +963,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         newPlansBtn.setEnabled(true);
 
         newPlansBtn.addListener("tap", () => {
-          osparc.store.Templates.getTemplates()
-            .then(templates => {
-              if (templates) {
+          osparc.store.Templates.getHypertools()
+            .then(hypertools => {
+              if (hypertools) {
                 const newStudies = new osparc.dashboard.NewStudies(newStudiesConfig);
                 const winTitle = this.tr("New Plan");
                 const win = osparc.ui.window.Window.popUpInWindow(newStudies, winTitle, osparc.dashboard.NewStudies.WIDTH+40, 300).set({
@@ -924,7 +975,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
                 newStudies.addListener("newStudyClicked", e => {
                   win.close();
                   const templateInfo = e.getData();
-                  const templateData = templates.find(t => t.name === templateInfo.expectedTemplateLabel);
+                  const templateData = hypertools.find(t => t.name === templateInfo.expectedTemplateLabel);
                   if (templateData) {
                     this.__newPlanBtnClicked(templateData, templateInfo.newStudyLabel);
                   }
@@ -1040,9 +1091,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }
       }, this);
 
-      this._resourceFilter.addListener("trashContext", () => {
-        this._changeContext("trash");
-      });
+      this._resourceFilter.addListener("templatesContext", () => this._changeContext("templates"));
+      this._resourceFilter.addListener("publicContext", () => this._changeContext("public"));
+      this._resourceFilter.addListener("trashContext", () => this._changeContext("trash"));
 
       this._searchBarFilter.addListener("filterChanged", e => {
         const filterData = e.getData();
@@ -1083,29 +1134,45 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._resourcesContainer.setResourcesToList(this._resourcesList);
       this._resourcesContainer.reloadCards("studies");
 
-      this._toolbar.show();
       switch (this.getCurrentContext()) {
         case "studiesAndFolders":
           this._searchBarFilter.resetFilters();
+          this._toolbar.show();
           this.__reloadFolders();
           this._loadingResourcesBtn.setFetching(false);
           this.invalidateStudies();
           this.__reloadStudies();
           break;
         case "workspaces":
-          this._toolbar.exclude();
           this._searchBarFilter.resetFilters();
+          this._toolbar.exclude();
           this.__reloadWorkspaces();
           break;
         case "search":
+          this._toolbar.show();
           this.__reloadWorkspaces();
           this.__reloadFolders();
           this._loadingResourcesBtn.setFetching(false);
           this.invalidateStudies();
           this.__reloadStudies();
           break;
+        case "templates":
+          this._searchBarFilter.resetFilters();
+          this._toolbar.show();
+          this._loadingResourcesBtn.setFetching(false);
+          this.invalidateStudies();
+          this.__reloadStudies();
+          break;
+        case "public":
+          this._searchBarFilter.resetFilters();
+          this._toolbar.show();
+          this._loadingResourcesBtn.setFetching(false);
+          this.invalidateStudies();
+          this.__reloadStudies();
+          break;
         case "trash":
           this._searchBarFilter.resetFilters();
+          this._toolbar.show();
           this.__reloadWorkspaces();
           this.__reloadFolders();
           this._loadingResourcesBtn.setFetching(false);
@@ -1462,6 +1529,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._reloadCards();
     },
 
+    _updateTemplateData: function(templateData) {
+      templateData["resourceType"] = "template";
+      this.base(arguments, templateData);
+    },
+
     __removeFromStudyList: function(studyId) {
       const idx = this._resourcesList.findIndex(study => study["uuid"] === studyId);
       if (idx > -1) {
@@ -1471,14 +1543,24 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     _populateCardMenu: function(card) {
+      const studyData = card.getResourceData();
+      if (studyData["resourceType"] === "template") {
+        // The Study Browser can also list templates
+        this._populateTemplateCardMenu(card);
+      } else {
+        this.__populateStudyCardMenu(card);
+      }
+    },
+
+    __populateStudyCardMenu: function(card) {
       const menu = card.getMenu();
       const studyData = card.getResourceData();
 
-      const trashed = Boolean(studyData["trashedAt"]);
       const writeAccess = osparc.data.model.Study.canIWrite(studyData["accessRights"]);
       const deleteAccess = osparc.data.model.Study.canIDelete(studyData["accessRights"]);
 
       if (this.getCurrentContext() === "trash") {
+        const trashed = Boolean(studyData["trashedAt"]);
         if (trashed) {
           if (writeAccess) {
             const untrashButton = this.__getUntrashStudyMenuButton(studyData);
@@ -1516,10 +1598,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const duplicateStudyButton = this.__getDuplicateMenuButton(studyData);
       menu.add(duplicateStudyButton);
 
-      if (osparc.product.Utils.hasConvertToPipelineEnabled()) {
-        const convertToPipelineButton = this.__getConvertToPipelineMenuButton(studyData);
-        menu.add(convertToPipelineButton);
-      }
+      const convertToPipelineButton = this.__getConvertToPipelineMenuButton(studyData);
+      menu.add(convertToPipelineButton);
 
       if (osparc.product.Utils.hasExportCMisEnabled()) {
         const exportStudyButton = this.__getExportCMisMenuButton(studyData);

@@ -106,7 +106,8 @@ qx.Class.define("osparc.store.Services", {
         return this.__servicesPromisesCached[key][version];
       }
 
-      return new Promise((resolve, reject) => {
+      // Create a new promise
+      const promise = new Promise((resolve, reject) => {
         if (
           useCache &&
           this.__isInCache(key, version) &&
@@ -133,17 +134,26 @@ qx.Class.define("osparc.store.Services", {
             this.__addServiceToCache(service);
             // Resolve the promise locally before deleting it
             resolve(service);
-            // Remove the promise from the cache
-            delete this.__servicesPromisesCached[key][version];
           })
           .catch(err => {
-            // store it in cache to avoid asking again
+            // Store null in cache to avoid repeated failed requests
             this.__addToCache(key, version, null);
-            delete this.__servicesPromisesCached[key][version];
             console.error(err);
             reject(err);
+          })
+          .finally(() => {
+            // Remove the promise from the cache
+            delete this.__servicesPromisesCached[key][version];
           });
       });
+
+      //  Store the promise in the cache
+      //  The point of keeping this assignment outside of the main Promise block is to
+      // ensure that the promise is immediately stored in the cache before any asynchronous
+      // operations (like fetch) are executed. This prevents duplicate requests for the
+      // same key and version when multiple consumers call getService concurrently.
+      this.__servicesPromisesCached[key][version] = promise;
+      return promise;
     },
 
     getStudyServices: function(studyId) {
@@ -360,6 +370,7 @@ qx.Class.define("osparc.store.Services", {
     __addServiceToCache: function(service) {
       const key = service.key;
       const version = service.version;
+      service["resourceType"] = "service";
       this.__addToCache(key, version, service);
     },
 

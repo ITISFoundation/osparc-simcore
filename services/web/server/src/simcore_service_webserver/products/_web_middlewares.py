@@ -8,6 +8,7 @@ from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 
 from .._meta import API_VTAG
 from ..constants import APP_PRODUCTS_KEY, RQ_PRODUCT_KEY
+from ..utils_aiohttp import iter_origins
 from .models import Product
 
 _logger = logging.getLogger(__name__)
@@ -20,16 +21,9 @@ def _get_default_product_name(app: web.Application) -> str:
 
 def _discover_product_by_hostname(request: web.Request) -> str | None:
     products: OrderedDict[str, Product] = request.app[APP_PRODUCTS_KEY]
-    #
-    # SEE https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-Host
-    # SEE https://doc.traefik.io/traefik/getting-started/faq/#what-are-the-forwarded-headers-when-proxying-http-requests
-    originating_hosts = [
-        request.headers.get("X-Forwarded-Host"),
-        request.host,
-    ]
     for product in products.values():
-        for host in originating_hosts:
-            if host and product.host_regex.search(host):
+        for _, host in iter_origins(request):
+            if product.host_regex.search(host):
                 product_name: str = product.name
                 return product_name
     return None

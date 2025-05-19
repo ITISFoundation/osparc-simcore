@@ -287,7 +287,9 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       }
       resourcesContainer.addListener("updateStudy", e => this._updateStudyData(e.getData()));
       resourcesContainer.addListener("updateTemplate", e => this._updateTemplateData(e.getData()));
+      resourcesContainer.addListener("updateTutorial", e => this._updateTutorialData(e.getData()));
       resourcesContainer.addListener("updateService", e => this._updateServiceData(e.getData()));
+      resourcesContainer.addListener("updateHypertool", e => this._updateHypertoolData(e.getData()));
       resourcesContainer.addListener("publishTemplate", e => this.fireDataEvent("publishTemplate", e.getData()));
       resourcesContainer.addListener("tagClicked", e => this._searchBarFilter.addTagActiveFilter(e.getData()));
       resourcesContainer.addListener("emptyStudyClicked", e => this._deleteResourceRequested(e.getData()));
@@ -411,7 +413,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _addResourceFilter: function() {
-      const resourceFilter = this._resourceFilter = new osparc.dashboard.ResourceFilter(this._resourceType).set({
+      const resourceFilter = this._resourceFilter = new osparc.dashboard.ResourceBrowserFilter(this._resourceType).set({
         marginTop: 20,
         maxWidth: this.self().SIDE_SPACER_WIDTH,
         width: this.self().SIDE_SPACER_WIDTH
@@ -432,9 +434,9 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         this._searchBarFilter.setTagsActiveFilter(selectedTagIds);
       }, this);
 
-      resourceFilter.addListener("changeServiceType", e => {
-        const serviceType = e.getData();
-        this._searchBarFilter.setServiceTypeActiveFilter(serviceType.id, serviceType.label);
+      resourceFilter.addListener("changeAppType", e => {
+        const appType = e.getData();
+        this._searchBarFilter.setAppTypeActiveFilter(appType.appType, appType.label);
       }, this);
 
       this._searchBarFilter.addListener("filterChanged", e => {
@@ -481,7 +483,60 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       }
     },
 
+    taskToTemplateReceived: function(task, studyName, templateType) {
+      const toTemplateTaskUI = new osparc.task.ToTemplate(studyName);
+      toTemplateTaskUI.setTask(task);
+
+      osparc.task.TasksContainer.getInstance().addTaskUI(toTemplateTaskUI);
+
+      const cardTitle = this.tr("Publishing ") + studyName;
+      const toTemplateCard = this._addTaskCard(task, cardTitle, osparc.task.ToTemplate.ICON);
+      if (toTemplateCard) {
+        this.__attachToTemplateEventHandler(task, toTemplateCard, templateType);
+      }
+    },
+
+    __attachToTemplateEventHandler: function(task, toTemplateCard, templateType) {
+      const finished = () => {
+        this._resourcesContainer.removeNonResourceCard(toTemplateCard);
+      };
+
+      task.addListener("updateReceived", e => {
+        const updateData = e.getData();
+        if ("task_progress" in updateData && toTemplateCard) {
+          const taskProgress = updateData["task_progress"];
+          toTemplateCard.getChildControl("progress-bar").set({
+            value: osparc.data.PollTask.extractProgress(updateData) * 100
+          });
+          toTemplateCard.getChildControl("state-label").set({
+            value: taskProgress["message"]
+          });
+        }
+      }, this);
+      task.addListener("resultReceived", e => {
+        finished();
+        this.reloadResources();
+        const userFriendlyType = templateType.charAt(0).toUpperCase() + templateType.slice(1).toLowerCase();
+        const msg = userFriendlyType + this.tr(" created");
+        osparc.FlashMessenger.logAs(msg, "INFO");
+      });
+      task.addListener("taskAborted", () => {
+        finished();
+        const msg = this.tr("Study to Template cancelled");
+        osparc.FlashMessenger.logAs(msg, "WARNING");
+      });
+      task.addListener("pollingError", e => {
+        finished();
+        const err = e.getData();
+        osparc.FlashMessenger.logError(err);
+      });
+    },
+
     _addTaskCard: function(task, cardTitle, cardIcon) {
+      if (!this._resourcesContainer) {
+        return null;
+      }
+
       if (task) {
         const taskPlaceholders = this._resourcesContainer.getCards().filter(card => osparc.dashboard.ResourceBrowserBase.isCardTaskPlaceholder(card));
         if (taskPlaceholders.find(taskPlaceholder => taskPlaceholder.getTask() === task)) {
@@ -504,6 +559,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _removeTaskCard: function(task) {
+      if (!this._resourcesContainer) {
+        return;
+      }
+
       if (task) {
         const taskPlaceholders = this._resourcesContainer.getCards().filter(card => osparc.dashboard.ResourceBrowserBase.isCardTaskPlaceholder(card));
         const taskCard = taskPlaceholders.find(taskPlaceholder => taskPlaceholder.getTask() === task);
@@ -521,11 +580,129 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       throw new Error("Abstract method called!");
     },
 
+    _populateTemplateCardMenu: function(card) {
+      const menu = card.getMenu();
+      const templateData = card.getResourceData();
+
+      const editButton = this.__getEditTemplateMenuButton(templateData);
+      if (editButton) {
+        menu.add(editButton);
+        menu.addSeparator();
+      }
+
+      const openButton = this._getOpenMenuButton(templateData);
+      if (openButton) {
+        menu.add(openButton);
+      }
+
+      const shareButton = this._getShareMenuButton(card);
+      if (shareButton) {
+        menu.add(shareButton);
+      }
+
+      const tagsButton = this._getTagsMenuButton(card);
+      if (tagsButton) {
+        menu.add(tagsButton);
+      }
+
+      const deleteButton = this.__getDeleteTemplateMenuButton(templateData);
+      if (deleteButton && editButton) {
+        menu.addSeparator();
+        menu.add(deleteButton);
+      }
+    },
+
+    __getEditTemplateMenuButton: function(templateData) {
+      const isCurrentUserOwner = osparc.data.model.Study.canIWrite(templateData["accessRights"]);
+      if (!isCurrentUserOwner) {
+        return null;
+      }
+
+      const editButton = new qx.ui.menu.Button(this.tr("Open"));
+      editButton.addListener("execute", () => {
+        const isStudyCreation = false;
+        this._startStudyById(templateData["uuid"], null, null, isStudyCreation);
+      }, this);
+      return editButton;
+    },
+
+    __getDeleteTemplateMenuButton: function(templateData) {
+      const isCurrentUserOwner = osparc.data.model.Study.canIDelete(templateData["accessRights"]);
+      if (!isCurrentUserOwner) {
+        return null;
+      }
+
+      const deleteButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12");
+      deleteButton.set({
+        appearance: "menu-button"
+      });
+      deleteButton.addListener("execute", () => this._deleteTemplateRequested(templateData), this);
+      return deleteButton;
+    },
+
+    _deleteTemplateRequested: function(templateData) {
+      const rUSure = this.tr("Are you sure you want to delete ");
+      const msg = rUSure + "<b>" + templateData.name + "</b>?";
+      const win = new osparc.ui.window.Confirmation(msg).set({
+        caption: this.tr("Delete"),
+        confirmText: this.tr("Delete"),
+        confirmAction: "delete"
+      });
+      win.center();
+      win.open();
+      win.addListener("close", () => {
+        if (win.getConfirmed()) {
+          this.__doDeleteTemplate(templateData);
+        }
+      }, this);
+    },
+
+    __doDeleteTemplate: function(templateData) {
+      const myGid = osparc.auth.Data.getInstance().getGroupId();
+      const collabGids = Object.keys(templateData["accessRights"]);
+      const amICollaborator = collabGids.indexOf(myGid) > -1;
+
+      let operationPromise = null;
+      if (collabGids.length > 1 && amICollaborator) {
+        const arCopy = osparc.utils.Utils.deepCloneObject(templateData["accessRights"]);
+        // remove collaborator
+        delete arCopy[myGid];
+        operationPromise = osparc.store.Study.patchStudyData(templateData, "accessRights", arCopy);
+      } else {
+        // delete study
+        operationPromise = osparc.store.Store.getInstance().deleteStudy(templateData.uuid);
+      }
+      operationPromise
+        .then(() => this.__removeFromTemplateList(templateData.uuid))
+        .catch(err => osparc.FlashMessenger.logError(err));
+    },
+
+    __removeFromTemplateList: function(templateId) {
+      const idx = this._resourcesList.findIndex(study => study["uuid"] === templateId);
+      if (idx > -1) {
+        this._resourcesList.splice(idx, 1);
+      }
+      this._resourcesContainer.removeCard(templateId);
+    },
+
     _updateTemplateData: function(templateData) {
+      const templatesList = this._resourcesList;
+      const index = templatesList.findIndex(template => template["uuid"] === templateData["uuid"]);
+      if (index !== -1) {
+        templatesList[index] = templateData;
+        this._reloadCards();
+      }
+    },
+
+    updateTutorialData: function(tutorialData) {
       throw new Error("Abstract method called!");
     },
 
     _updateServiceData: function(serviceData) {
+      throw new Error("Abstract method called!");
+    },
+
+    _updateHypertoolData: function(serviceData) {
       throw new Error("Abstract method called!");
     },
 
@@ -744,6 +921,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
             break;
           }
           case "template":
+          case "tutorial":
+          case "hypertool":
             this._createStudyFromTemplate(resourceData);
             break;
           case "service":
@@ -759,7 +938,9 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       const win = osparc.dashboard.ResourceDetails.popUpInWindow(resourceDetails);
       resourceDetails.addListener("updateStudy", e => this._updateStudyData(e.getData()));
       resourceDetails.addListener("updateTemplate", e => this._updateTemplateData(e.getData()));
+      resourceDetails.addListener("updateTutorial", e => this._updateTutorialData(e.getData()));
       resourceDetails.addListener("updateService", e => this._updateServiceData(e.getData()));
+      resourceDetails.addListener("updateHypertool", e => this._updateHypertoolData(e.getData()));
       resourceDetails.addListener("publishTemplate", e => {
         win.close();
         this.fireDataEvent("publishTemplate", e.getData());
@@ -770,10 +951,16 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         const isStudyCreation = false;
         this._startStudyById(studyId, openCB, null, isStudyCreation);
       });
-      resourceDetails.addListener("openTemplate", e => {
-        win.close();
-        const templateData = e.getData();
-        this._createStudyFromTemplate(templateData);
+      [
+        "openTemplate",
+        "openTutorial",
+        "openHypertool",
+      ].forEach(eventName => {
+        resourceDetails.addListener(eventName, e => {
+          win.close();
+          const templateData = e.getData();
+          this._createStudyFromTemplate(templateData);
+        });
       });
       resourceDetails.addListener("openService", e => {
         win.close();

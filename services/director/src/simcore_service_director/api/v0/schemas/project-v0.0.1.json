@@ -766,6 +766,30 @@
     },
     "workspaceId": {
       "type": ["integer", "null"]
+    },
+    "type": {
+      "type": "string",
+      "description": "project type",
+      "enum": [
+        "STANDARD",
+        "TEMPLATE"
+      ]
+    },
+    "templateType": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "description": "project template type",
+          "enum": [
+            "TEMPLATE",
+            "HYPERTOOL",
+            "TUTORIAL"
+          ]
+        }
+      ]
     }
   }
 }

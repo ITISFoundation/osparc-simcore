@@ -16,6 +16,7 @@ from models_library.services_regex import SERVICE_KEY_RE
 from models_library.services_resources import BootMode
 from pydantic import (
     BaseModel,
+    BeforeValidator,
     ByteSize,
     ConfigDict,
     Field,
@@ -257,3 +258,19 @@ class CompTaskAtDB(BaseModel):
             ]
         },
     )
+
+
+def _none_to_zero_float_pre_validator(value: Any):
+    if value is None:
+        return 0.0
+    return value
+
+
+class ComputationTaskForRpcDBGet(BaseModel):
+    project_uuid: ProjectID
+    node_id: NodeID
+    state: RunningState
+    progress: Annotated[float, BeforeValidator(_none_to_zero_float_pre_validator)]
+    image: dict[str, Any]
+    started_at: dt.datetime | None
+    ended_at: dt.datetime | None

@@ -205,6 +205,27 @@ qx.Class.define("osparc.study.Utils", {
       return pollTasks.createPollingTask(fetchPromise)
     },
 
+    createTemplateTypeSB: function() {
+      const templateTypeSB = new qx.ui.form.SelectBox().set({
+        allowGrowX: false,
+      });
+      const templateTypes = [{
+        label: "Template",
+        id: osparc.data.model.StudyUI.TEMPLATE_TYPE,
+      }, {
+        label: "Tutorial",
+        id: osparc.data.model.StudyUI.TUTORIAL_TYPE,
+      }, {
+        label: "Hypertool",
+        id: osparc.data.model.StudyUI.HYPERTOOL_TYPE,
+      }]
+      templateTypes.forEach(tempType => {
+        const tItem = new qx.ui.form.ListItem(tempType.label, null, tempType.id);
+        templateTypeSB.add(tItem);
+      });
+      return templateTypeSB;
+    },
+
     extractTemplateType: function(templateData) {
       if (templateData && templateData["ui"] && templateData["ui"]["templateType"]) {
         return templateData["ui"]["templateType"];
@@ -258,10 +279,6 @@ qx.Class.define("osparc.study.Utils", {
     },
 
     canCreateFunction: function(workbench) {
-      if (!osparc.store.StaticInfo.getInstance().isDevFeaturesEnabled()) {
-        return false;
-      }
-
       // in order to create a function, the pipeline needs:
       // - at least one parameter (or file-picker (file type parameter))
       // - at least one probe

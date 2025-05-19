@@ -423,10 +423,6 @@ pint==0.24.4
 platformdirs==4.3.6
     # via pint
 prometheus-client==0.21.1
-    # via
-    #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
-    #   prometheus-fastapi-instrumentator
-prometheus-fastapi-instrumentator==7.0.2
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 propcache==0.3.0
     # via
@@ -766,7 +762,6 @@ starlette==0.46.0
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   fastapi
-    #   prometheus-fastapi-instrumentator
 stream-zip==0.0.83
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in

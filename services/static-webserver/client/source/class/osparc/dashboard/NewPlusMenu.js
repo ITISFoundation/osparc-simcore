@@ -160,12 +160,10 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
 
     __addItems: function() {
       this.__addUIConfigItems();
-      if (osparc.store.StaticInfo.getInstance().isDevFeaturesEnabled()) {
-        if (osparc.product.Utils.isS4LProduct()) {
-          this.__addHypertools();
-        }
-        this.__addOtherTabsAccess();
+      if (osparc.product.Utils.isS4LProduct()) {
+        this.__addHypertools();
       }
+      this.__addOtherTabsAccess();
       this.getChildControl("new-folder");
     },
 
@@ -190,7 +188,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
     },
 
     __addHypertools: function() {
-      osparc.store.Templates.getTemplatesHypertools()
+      osparc.store.Templates.getHypertools()
         .then(hypertools => {
           if (hypertools.length) {
             const hypertoolsMenuButton = this.self().createMenuButton("@FontAwesome5Solid/star/16", this.tr("Hypertools"));
@@ -234,8 +232,8 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       }
 
       if (permissions.canDo("dashboard.services.read")) {
-        const servicesButton = this.self().createMenuButton("@FontAwesome5Solid/cog/16", this.tr("Services..."));
-        servicesButton.addListener("execute", () => this.fireDataEvent("changeTab", "servicesTab"), this);
+        const servicesButton = this.self().createMenuButton("@FontAwesome5Solid/cog/16", this.tr("Apps..."));
+        servicesButton.addListener("execute", () => this.fireDataEvent("changeTab", "appsTab"), this);
         moreMenu.add(servicesButton);
       }
       moreMenuButton.setVisibility(moreMenu.getChildren().length ? "visible" : "excluded");
@@ -323,14 +321,14 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
     },
 
     __addFromTemplateButton: function(buttonConfig) {
-      osparc.store.Templates.getTemplates()
-        .then(templates => {
+      osparc.store.Templates.getHypertools()
+        .then(hypertools => {
           const menuButton = this.self().createMenuButton(null, buttonConfig["title"]);
           osparc.utils.Utils.setIdToWidget(menuButton, buttonConfig["idToWidget"]);
           // disable it until found in templates store
           menuButton.setEnabled(false);
 
-          let templateMetadata = templates.find(t => t.name === buttonConfig["expectedTemplateLabel"]);
+          let templateMetadata = hypertools.find(t => t.name === buttonConfig["expectedTemplateLabel"]);
           if (templateMetadata) {
             menuButton.setEnabled(true);
             menuButton.addListener("tap", () => {

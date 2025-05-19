@@ -663,7 +663,7 @@ def find_and_start_service_in_dashboard(
         service_key_prefix: str | None,
     ) -> None:
         with log_context(logging.INFO, f"Finding {service_name=} in dashboard"):
-            page.get_by_test_id("servicesTabBtn").click()
+            page.get_by_test_id("appsTabBtn").click()
             _textbox = page.get_by_test_id("searchBarFilter-textField-service")
             _textbox.fill(service_name)
             _textbox.press("Enter")

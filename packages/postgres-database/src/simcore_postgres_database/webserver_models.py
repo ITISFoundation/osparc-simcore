@@ -1,9 +1,10 @@
-""" Facade for webserver service
+"""Facade for webserver service
 
-    Facade to direct access to models in the database by
-    the  webserver service
+Facade to direct access to models in the database by
+the  webserver service
 
 """
+
 from .models.api_keys import api_keys
 from .models.classifiers import group_classifiers
 from .models.comp_pipeline import StateType, comp_pipeline
@@ -11,7 +12,7 @@ from .models.comp_tasks import DB_CHANNEL_NAME, NodeClass, comp_tasks
 from .models.confirmations import ConfirmationAction, confirmations
 from .models.groups import GroupType, groups, user_to_groups
 from .models.products import products
-from .models.projects import ProjectType, projects
+from .models.projects import ProjectTemplateType, ProjectType, projects
 from .models.projects_nodes import projects_nodes
 from .models.projects_tags import projects_tags
 from .models.projects_to_wallet import projects_to_wallet
@@ -35,6 +36,7 @@ __all__ = (
     "projects",
     "projects_nodes",
     "ProjectType",
+    "ProjectTemplateType",
     "scicrunch_resources",
     "StateType",
     "projects_tags",

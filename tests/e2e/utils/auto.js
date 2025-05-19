@@ -101,7 +101,7 @@ async function __dashboardTemplatesBrowser(page) {
 
 async function __dashboardServicesBrowser(page) {
   console.log("Navigating through Services");
-  await utils.waitAndClick(page, '[osparc-test-id="servicesTabBtn"]');
+  await utils.waitAndClick(page, '[osparc-test-id="appsTabBtn"]');
 }
 
 async function dashboardNewTIPlan(page) {

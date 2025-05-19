@@ -110,6 +110,7 @@ async def delete_workspace_with_all_content(
             show_hidden=False,
             workspace_id=workspace_id,
             project_type=ProjectTypeAPI.all,
+            template_type=None,
             folder_id=None,
             trashed=None,
             offset=page_params.offset,

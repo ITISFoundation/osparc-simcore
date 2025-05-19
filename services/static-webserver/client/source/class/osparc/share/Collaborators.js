@@ -194,6 +194,8 @@ qx.Class.define("osparc.share.Collaborators", {
       switch (this._resourceType) {
         case "study":
         case "template":
+        case "tutorial":
+        case "hypertool":
           canIShare = osparc.data.model.Study.canIWrite(this._serializedDataCopy["accessRights"]);
           break;
         case "service":
@@ -218,6 +220,8 @@ qx.Class.define("osparc.share.Collaborators", {
       switch (this._resourceType) {
         case "study":
         case "template":
+        case "tutorial":
+        case "hypertool":
           fullOptions = osparc.data.model.Study.canIDelete(this._serializedDataCopy["accessRights"]);
           break;
         case "service":
@@ -238,6 +242,8 @@ qx.Class.define("osparc.share.Collaborators", {
       switch (this._resourceType) {
         case "study":
         case "template":
+        case "tutorial":
+        case "hypertool":
           rolesLayout = osparc.data.Roles.createRolesStudyInfo();
           break;
         case "service":
@@ -342,7 +348,7 @@ qx.Class.define("osparc.share.Collaborators", {
           item.addListener("removeMember", e => {
             const orgMember = e.getData();
             if (
-              ["study", "template"].includes(this._resourceType) &&
+              ["study", "template", "tutorial", "hypertool"].includes(this._resourceType) &&
               !osparc.share.CollaboratorsStudy.canCollaboratorBeRemoved(this._serializedDataCopy, orgMember["gid"])
             ) {
               let msg = this.tr("Collaborator can't be removed:");
@@ -370,7 +376,7 @@ qx.Class.define("osparc.share.Collaborators", {
     __getLeaveStudyButton: function() {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       if (
-        ["study", "template"].includes(this._resourceType) &&
+        ["study", "template", "tutorial", "hypertool"].includes(this._resourceType) &&
         osparc.share.CollaboratorsStudy.canCollaboratorBeRemoved(this._serializedDataCopy, myGid)
       ) {
         const leaveText = this.tr("Leave") + " " + osparc.product.Utils.getStudyAlias({

@@ -1,8 +1,7 @@
-import asyncio
 import collections
 import logging
-from collections.abc import Awaitable, Callable, Coroutine, Generator
-from typing import Any, Final, NoReturn, ParamSpec, TypeVar, cast
+from collections.abc import Coroutine, Generator
+from typing import Any, ParamSpec, TypeVar, cast
 
 import distributed
 from common_library.json_serialization import json_dumps
@@ -19,6 +18,7 @@ from dask_task_models_library.container_tasks.protocol import (
 )
 from dask_task_models_library.container_tasks.utils import parse_dask_job_id
 from fastapi import FastAPI
+from models_library.api_schemas_directorv2.computations import TaskLogFileGet
 from models_library.api_schemas_directorv2.services import NodeRequirements
 from models_library.docker import DockerLabelKey, StandardSimcoreDockerLabels
 from models_library.errors import ErrorDict
@@ -29,9 +29,9 @@ from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import AnyUrl, ByteSize, TypeAdapter, ValidationError
-from servicelib.logging_utils import log_catch, log_context
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_common.exceptions import (
+    NodeportsException,
     S3InvalidPathError,
     StorageInvalidCall,
 )
@@ -39,7 +39,7 @@ from simcore_sdk.node_ports_v2 import FileLinkType, Port, links, port_utils
 from simcore_sdk.node_ports_v2.links import ItemValue as _NPItemValue
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from ..constants import UNDEFINED_DOCKER_LABEL
+from ..constants import UNDEFINED_API_BASE_URL, UNDEFINED_DOCKER_LABEL
 from ..core.errors import (
     ComputationalBackendNotConnectedError,
     ComputationalSchedulerChangedError,
@@ -316,6 +316,7 @@ async def compute_task_envs(
     wallet_id: WalletID | None,
 ) -> ContainerEnvsDict:
     product_name = metadata.get("product_name", UNDEFINED_DOCKER_LABEL)
+    product_api_base_url = metadata.get("product_api_base_url", UNDEFINED_API_BASE_URL)
     task_envs = node_image.envs
     if task_envs:
         vendor_substituted_envs = await substitute_vendor_secrets_in_specs(
@@ -330,6 +331,7 @@ async def compute_task_envs(
             vendor_substituted_envs,
             user_id=user_id,
             product_name=product_name,
+            product_api_base_url=product_api_base_url,
             project_id=project_id,
             node_id=node_id,
             service_run_id=resource_tracking_run_id,
@@ -342,7 +344,7 @@ async def compute_task_envs(
     return task_envs
 
 
-async def get_service_log_file_download_link(
+async def _get_service_log_file_download_link(
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
@@ -365,6 +367,31 @@ async def get_service_log_file_download_link(
     except (S3InvalidPathError, StorageInvalidCall) as err:
         _logger.debug("Log for task %s not found: %s", f"{project_id=}/{node_id=}", err)
         return None
+
+
+async def get_task_log_file(
+    user_id: UserID, project_id: ProjectID, node_id: NodeID
+) -> TaskLogFileGet:
+    try:
+        log_file_url = await _get_service_log_file_download_link(
+            user_id, project_id, node_id, file_link_type=FileLinkType.PRESIGNED
+        )
+
+    except NodeportsException as err:
+        # Unexpected error: Cannot determine the cause of failure
+        # to get donwload link and cannot handle it automatically.
+        # Will treat it as "not available" and log a warning
+        log_file_url = None
+        _logger.warning(
+            "Failed to get log-file of %s: %s.",
+            f"{user_id=}/{project_id=}/{node_id=}",
+            err,
+        )
+
+    return TaskLogFileGet(
+        task_id=node_id,
+        download_link=log_file_url,
+    )
 
 
 async def clean_task_output_and_log_files_if_invalid(
@@ -407,40 +434,6 @@ async def clean_task_output_and_log_files_if_invalid(
         await port_utils.delete_target_link(
             user_id, f"{project_id}", f"{node_id}", _LOGS_FILE_NAME
         )
-
-
-async def _dask_sub_consumer(
-    dask_sub: distributed.Sub,
-    handler: Callable[[str], Awaitable[None]],
-) -> None:
-    async for dask_event in dask_sub:
-        _logger.debug(
-            "received dask event '%s' of topic %s",
-            dask_event,
-            dask_sub.name,
-        )
-        await handler(dask_event)
-
-
-_REST_TIMEOUT_S: Final[int] = 1
-
-
-async def dask_sub_consumer_task(
-    dask_sub: distributed.Sub,
-    handler: Callable[[str], Awaitable[None]],
-) -> NoReturn:
-    while True:
-        with (
-            log_catch(_logger, reraise=False),
-            log_context(
-                _logger,
-                level=logging.DEBUG,
-                msg=f"dask sub task for topic {dask_sub.name}",
-            ),
-        ):
-            await _dask_sub_consumer(dask_sub, handler)
-        # we sleep a bit before restarting
-        await asyncio.sleep(_REST_TIMEOUT_S)
 
 
 def from_node_reqs_to_dask_resources(

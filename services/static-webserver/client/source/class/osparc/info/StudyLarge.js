@@ -27,9 +27,6 @@ qx.Class.define("osparc.info.StudyLarge", {
     this.base(arguments);
 
     this.setStudy(study);
-    if ("resourceType" in study) {
-      this.__isTemplate = study["resourceType"] === "template";
-    }
 
     if (openOptions !== undefined) {
       this.setOpenOptions(openOptions);
@@ -51,8 +48,6 @@ qx.Class.define("osparc.info.StudyLarge", {
   },
 
   members: {
-    __isTemplate: null,
-
     __canIWrite: function() {
       return osparc.data.model.Study.canIWrite(this.getStudy().getAccessRights());
     },
@@ -62,12 +57,53 @@ qx.Class.define("osparc.info.StudyLarge", {
 
       const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
 
+      if (this.getStudy().getTemplateType() && osparc.data.Permissions.getInstance().isTester()) {
+        // let testers change the template type
+        const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+          alignY: "middle",
+        }));
+        hBox.add(new qx.ui.basic.Label(this.tr("Template Type:")));
+        const templateTypeSB = osparc.study.Utils.createTemplateTypeSB();
+        hBox.add(templateTypeSB);
+        const saveBtn = new osparc.ui.form.FetchButton(this.tr("Save")).set({
+          enabled: false,
+          allowGrowX: false,
+        });
+        hBox.add(saveBtn);
+        vBox.add(hBox);
+
+        templateTypeSB.addListener("changeSelection", e => {
+          const selected = e.getData()[0];
+          if (selected) {
+            const templateType = selected.getModel();
+            saveBtn.setEnabled(this.getStudy().getTemplateType() !== templateType);
+          }
+        }, this);
+
+        templateTypeSB.getSelectables().forEach(selectable => {
+          if (selectable.getModel() === this.getStudy().getTemplateType()) {
+            templateTypeSB.setSelection([selectable]);
+          }
+        });
+
+        saveBtn.addListener("execute", () => {
+          const selected = templateTypeSB.getSelection()[0];
+          if (selected) {
+            saveBtn.setFetching(true);
+            const templateType = selected.getModel();
+            osparc.store.Study.patchTemplateType(this.getStudy().getUuid(), templateType)
+              .then(() => osparc.FlashMessenger.logAs(this.tr("Template type updated, please reload"), "INFO"))
+              .finally(() => saveBtn.setFetching(false));
+          }
+        }, this);
+      }
+
       const infoElements = this.__infoElements();
       const infoLayout = osparc.info.StudyUtils.infoElementsToLayout(infoElements);
       vBox.add(infoLayout);
 
       let text = osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + " Id";
-      if (this.__isTemplate) {
+      if (this.getStudy().getTemplateType()) {
         text = osparc.product.Utils.getTemplateAlias({firstUpperCase: true}) + " Id";
       }
       const copyIdButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/copy/12").set({
@@ -179,7 +215,8 @@ qx.Class.define("osparc.info.StudyLarge", {
         };
       }
 
-      if (!this.__isTemplate) {
+      if (this.getStudy().getTemplateType() === null) {
+        // studies only
         const pathLabel = new qx.ui.basic.Label();
         pathLabel.setValue(this.getStudy().getLocationString());
         infoLayout["LOCATION"] = {
@@ -225,7 +262,7 @@ qx.Class.define("osparc.info.StudyLarge", {
 
     __openAccessRights: function() {
       const studyData = this.getStudy().serialize();
-      studyData["resourceType"] = this.__isTemplate ? "template" : "study";
+      studyData["resourceType"] = this.getStudy().getTemplateType() ? "template" : "study";
       const collaboratorsView = osparc.info.StudyUtils.openAccessRights(studyData);
       collaboratorsView.addListener("updateAccessRights", e => {
         const updatedData = e.getData();
@@ -307,7 +344,7 @@ qx.Class.define("osparc.info.StudyLarge", {
     __patchStudy: function(fieldKey, value) {
       this.getStudy().patchStudy({[fieldKey]: value})
         .then(studyData => {
-          studyData["resourceType"] = this.__isTemplate ? "template" : "study";
+          studyData["resourceType"] = this.getStudy().getTemplateType() ? "template" : "study";
           this.fireDataEvent("updateStudy", studyData);
           qx.event.message.Bus.getInstance().dispatchByName("updateStudy", studyData);
         })

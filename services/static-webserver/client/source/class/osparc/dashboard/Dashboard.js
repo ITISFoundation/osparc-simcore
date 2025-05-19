@@ -18,8 +18,8 @@
 /**
  * Widget containing a TabView including:
  * - StudyBrowser
- * - TemplateBrowser
- * - ServiceBrowser
+ * - TutorialBrowser
+ * - AppBrowser
  * - DataBrowser
  *
  * *Example*
@@ -69,34 +69,33 @@ qx.Class.define("osparc.dashboard.Dashboard", {
     appearance: {
       init: "dashboard",
       refine: true
-    }
+    },
   },
 
   statics: {
     PADDING: 15
   },
 
+  events: {
+    "preResourcesLoaded": "qx.event.type.Event",
+  },
+
   members: {
     __studyBrowser: null,
-    __templateBrowser: null,
-    __hypertoolBrowser: null,
-    __serviceBrowser: null,
+    __tutorialBrowser: null,
+    __appBrowser: null,
     __dataBrowser: null,
 
     getStudyBrowser: function() {
       return this.__studyBrowser;
     },
 
-    getTemplateBrowser: function() {
-      return this.__templateBrowser;
+    getTutorialBrowser: function() {
+      return this.__tutorialBrowser;
     },
 
-    getHypertoolBrowser: function() {
-      return this.__hypertoolBrowser;
-    },
-
-    getServiceBrowser: function() {
-      return this.__serviceBrowser;
+    getAppBrowser: function() {
+      return this.__appBrowser;
     },
 
     __createMainViewLayout: function() {
@@ -105,10 +104,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       const tabs = [{
         id: "studiesTab",
         buttonId: "studiesTabBtn",
-        label: osparc.product.Utils.getStudyAlias({
-          plural: true,
-          allUpperCase: true
-        }),
+        label: this.tr("PROJECTS"),
         icon: "@FontAwesome5Solid/file/"+tabIconSize,
         buildLayout: this.__createStudyBrowser
       }];
@@ -116,31 +112,18 @@ qx.Class.define("osparc.dashboard.Dashboard", {
         tabs.push({
           id: "templatesTab",
           buttonId: "templatesTabBtn",
-          label: osparc.product.Utils.getTemplateAlias({
-            plural: true,
-            allUpperCase: true
-          }),
+          label: this.tr("TUTORIALS"),
           icon: "@FontAwesome5Solid/copy/"+tabIconSize,
-          buildLayout: this.__createTemplateBrowser
+          buildLayout: this.__createTutorialBrowser
         });
-        if (osparc.product.Utils.isS4LProduct() && osparc.store.StaticInfo.getInstance().isDevFeaturesEnabled()) {
-          tabs.push({
-            id: "hypertoolsTab",
-            buttonId: "hypertoolsTabBtn",
-            label: this.tr("HYPERTOOLS"),
-            icon: "@FontAwesome5Solid/copy/"+tabIconSize,
-            // initVisibility: "excluded",
-            buildLayout: this.__createHypertoolsBrowser
-          });
-        }
       }
       if (permissions.canDo("dashboard.services.read")) {
         tabs.push({
-          id: "servicesTab",
-          buttonId: "servicesTabBtn",
-          label: this.tr("SERVICES"),
+          id: "appsTab",
+          buttonId: "appsTabBtn",
+          label: this.tr("APPS"),
           icon: "@FontAwesome5Solid/cogs/"+tabIconSize,
-          buildLayout: this.__createServiceBrowser
+          buildLayout: this.__createAppBrowser
         });
       }
       if (permissions.canDo("dashboard.data.read")) {
@@ -152,7 +135,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
           buildLayout: this.__createDataBrowser
         });
       }
-      tabs.forEach(({id, buttonId, label, icon, initVisibility, buildLayout}) => {
+      tabs.forEach(({id, buttonId, label, icon, buildLayout}) => {
         const tabPage = new qx.ui.tabview.Page(label, icon).set({
           appearance: "dashboard-page"
         });
@@ -161,7 +144,6 @@ qx.Class.define("osparc.dashboard.Dashboard", {
         tabButton.set({
           minWidth: 50,
           maxHeight: 36,
-          visibility: initVisibility ? initVisibility : "visible",
         });
         tabButton.ttt = label;
         tabButton.getChildControl("label").set({
@@ -197,30 +179,42 @@ qx.Class.define("osparc.dashboard.Dashboard", {
         this.add(tabPage);
       }, this);
 
+      let preResourcesLoaded = false;
       const preResourcePromises = [];
       const groupsStore = osparc.store.Groups.getInstance();
       preResourcePromises.push(groupsStore.fetchGroupsAndMembers());
       preResourcePromises.push(osparc.store.Services.getServicesLatest(false));
       Promise.all(preResourcePromises)
         .then(() => {
+          preResourcesLoaded = true;
+          this.fireEvent("preResourcesLoaded");
           if (this.__studyBrowser) {
             this.__studyBrowser.initResources();
           }
-          if (this.__serviceBrowser) {
-            this.__serviceBrowser.initResources();
+          if (this.__appBrowser) {
+            this.__appBrowser.initResources();
           }
           if (this.__dataBrowser) {
             this.__dataBrowser.initResources();
           }
-
-          this.addListener("changeSelection", e => {
-            const selectedTab = e.getData()[0];
-            if (selectedTab && selectedTab.resourceBrowser) {
-              selectedTab.resourceBrowser.initResources();
-            }
-          }, this);
         })
         .catch(err => console.error(err));
+
+      this.addListener("changeSelection", e => {
+        const selectedTab = e.getData()[0];
+        if (selectedTab && selectedTab.resourceBrowser) {
+          // avoid changing the selection when the PreResources are not yet loaded
+          if (preResourcesLoaded) {
+            selectedTab.resourceBrowser.initResources();
+          } else {
+            const initTab = () => {
+              selectedTab.resourceBrowser.initResources()
+              this.removeListener("preResourcesLoaded", initTab);
+            };
+            this.addListener("preResourcesLoaded", initTab, this);
+          }
+        }
+      }, this);
     },
 
     __createStudyBrowser: function() {
@@ -228,20 +222,14 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       return studiesView;
     },
 
-    __createTemplateBrowser: function() {
-      const templatesView = this.__templateBrowser = new osparc.dashboard.TemplateBrowser();
+    __createTutorialBrowser: function() {
+      const templatesView = this.__tutorialBrowser = new osparc.dashboard.TutorialBrowser();
       return templatesView;
     },
 
-    __createHypertoolsBrowser: function() {
-      const templateType = osparc.data.model.StudyUI.HYPERTOOL_TYPE;
-      const hypertoolsView = this.__hypertoolBrowser = new osparc.dashboard.TemplateBrowser(templateType);
-      return hypertoolsView;
-    },
-
-    __createServiceBrowser: function() {
-      const servicesView = this.__serviceBrowser = new osparc.dashboard.ServiceBrowser();
-      return servicesView;
+    __createAppBrowser: function() {
+      const appsView = this.__appBrowser = new osparc.dashboard.AppBrowser();
+      return appsView;
     },
 
     __createDataBrowser: function() {

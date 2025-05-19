@@ -1291,6 +1291,13 @@
             "type": "string",
             "title": "Product Name"
           },
+          "product_api_base_url": {
+            "type": "string",
+            "minLength": 1,
+            "format": "uri",
+            "title": "Product Api Base Url",
+            "description": "Base url of the product"
+          },
           "subgraph": {
             "anyOf": [
               {
@@ -1347,7 +1354,8 @@
         "required": [
           "user_id",
           "project_id",
-          "product_name"
+          "product_name",
+          "product_api_base_url"
         ],
         "title": "ComputationCreate"
       },
@@ -1789,6 +1797,11 @@
             "title": "Product Name",
             "description": "Current product name"
           },
+          "product_api_base_url": {
+            "type": "string",
+            "title": "Product Api Base Url",
+            "description": "Current product API base URL"
+          },
           "can_save": {
             "type": "boolean",
             "title": "Can Save",
@@ -1825,7 +1838,7 @@
                 "type": "null"
               }
             ],
-            "description": "contains harware information (ex. aws_ec2_instances)"
+            "description": "contains hardware information (ex. aws_ec2_instances)"
           }
         },
         "type": "object",
@@ -1837,6 +1850,7 @@
           "service_uuid",
           "service_resources",
           "product_name",
+          "product_api_base_url",
           "can_save"
         ],
         "title": "DynamicServiceCreate",
@@ -1855,6 +1869,7 @@
             "pricing_unit_cost_id": 1,
             "pricing_unit_id": 1
           },
+          "product_api_base_url": "https://api.local/",
           "product_name": "osparc",
           "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
           "service_resources": {
@@ -2276,6 +2291,26 @@
           }
         }
       },
+      "LegacyState": {
+        "properties": {
+          "old_state_path": {
+            "type": "string",
+            "format": "path",
+            "title": "Old State Path"
+          },
+          "new_state_path": {
+            "type": "string",
+            "format": "path",
+            "title": "New State Path"
+          }
+        },
+        "type": "object",
+        "required": [
+          "old_state_path",
+          "new_state_path"
+        ],
+        "title": "LegacyState"
+      },
       "NATRule": {
         "properties": {
           "hostname": {
@@ -2434,6 +2469,17 @@
             ],
             "title": "Volume Size Limits",
             "description": "Apply volume size limits to entries in: `inputs_path`, `outputs_path` and `state_paths`. Limits must be parsable by Pydantic's ByteSize."
+          },
+          "legacy_state": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LegacyState"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "if present, the service needs to first try to download the legacy statecoming from a different path."
           }
         },
         "additionalProperties": false,
@@ -3002,6 +3048,18 @@
             ],
             "title": "Product Name",
             "description": "Current product upon which this service is scheduledIf set to None, the current product is undefined. Mostly for backwards compatibility"
+          },
+          "product_api_base_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Api Base Url",
+            "description": "Base URL for the current product's API."
           }
         },
         "additionalProperties": true,

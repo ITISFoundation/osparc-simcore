@@ -37,9 +37,13 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
 
     Object.values(this.self().COLS).forEach(col => columnModel.setColumnWidth(col.column, col.width));
 
-    const iconPathInfo = "osparc/circle-info-text.svg";
+    const iconPathInfo = "osparc/icons/circle-info-text.svg";
     const fontButtonRendererInfo = new osparc.ui.table.cellrenderer.ImageButtonRenderer("info", iconPathInfo);
-    columnModel.setDataCellRenderer(this.self().COLS.IMAGE.column, fontButtonRendererInfo);
+    columnModel.setDataCellRenderer(this.self().COLS.INFO.column, fontButtonRendererInfo);
+
+    const iconPathLogs = "osparc/icons/logs-text.svg";
+    const fontButtonRendererLogs = new osparc.ui.table.cellrenderer.ImageButtonRenderer("logs", iconPathLogs);
+    columnModel.setDataCellRenderer(this.self().COLS.LOGS.column, fontButtonRendererLogs);
 
     this.__attachHandlers();
   },
@@ -50,25 +54,25 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
         id: "projectUuid",
         column: 0,
         label: qx.locale.Manager.tr("Project Id"),
-        width: 170
+        width: 200
       },
       NODE_ID: {
         id: "nodeId",
         column: 1,
         label: qx.locale.Manager.tr("Node Id"),
-        width: 170
+        width: 200
       },
       NODE_NAME: {
         id: "nodeName",
         column: 2,
-        label: qx.locale.Manager.tr("Node Name"),
-        width: 170
+        label: qx.locale.Manager.tr("Node"),
+        width: 100
       },
-      SOLVER: {
-        id: "solver",
+      APP: {
+        id: "app",
         column: 3,
-        label: qx.locale.Manager.tr("Solver"),
-        width: 150
+        label: qx.locale.Manager.tr("App"),
+        width: 100
       },
       STATE: {
         id: "state",
@@ -100,10 +104,22 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
         label: qx.locale.Manager.tr("Duration"),
         width: 70
       },
-      IMAGE: {
-        id: "image",
+      CREDITS: {
+        id: "credits",
         column: 9,
+        label: qx.locale.Manager.tr("Credits"),
+        width: 50
+      },
+      INFO: {
+        id: "info",
+        column: 10,
         label: qx.locale.Manager.tr("Info"),
+        width: 40
+      },
+      LOGS: {
+        id: "logs",
+        column: 11,
+        label: qx.locale.Manager.tr("Logs"),
         width: 40
       },
     }
@@ -129,6 +145,7 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
     },
 
     __handleButtonClick: function(action, row) {
+      this.resetSelection();
       const rowData = this.getTableModel().getRowData(row);
       switch (action) {
         case "info": {
@@ -143,6 +160,23 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
           const jobInfo = new osparc.jobs.Info(subJob.getImage());
           const win = osparc.jobs.Info.popUpInWindow(jobInfo);
           win.setCaption(rowData["nodeName"]);
+          break;
+        }
+        case "logs": {
+          const job = osparc.store.Jobs.getInstance().getJob(rowData["projectUuid"]);
+          if (!job) {
+            return;
+          }
+          const subJob = job.getSubJob(rowData["nodeId"]);
+          if (!subJob) {
+            return;
+          }
+          const logDownloadLink = subJob.getLogDownloadLink()
+          if (logDownloadLink) {
+            osparc.utils.Utils.downloadLink(logDownloadLink, "GET", rowData["nodeName"] + ".logs");
+          } else {
+            osparc.component.message.FlashMessenger.getInstance().logAsWarning(this.tr("No logs available"));
+          }
           break;
         }
         default:

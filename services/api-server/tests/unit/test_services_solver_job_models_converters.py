@@ -124,6 +124,8 @@ def test_create_job_from_project(faker: Faker):
             "description": 'Study associated to solver job:\n{\n  "id": "f925e30f-19de-42dc-acab-3ce93ea0a0a7",\n  "name": "simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/2.0.2/jobs/f925e30f-19de-42dc-acab-3ce93ea0a0a7",\n  "inputs_checksum": "aac0bb28285d6e5918121630fa8c368130c6b05f80fd9622760078608fc44e96",\n  "created_at": "2021-03-26T10:43:27.828975"\n}',
             "thumbnail": "https://2xx2gy2ovf3r21jclkjio3x8-wpengine.netdna-ssl.com/wp-content/uploads/2018/12/API-Examples.jpg",
             "prjOwner": "foo@itis.swiss",
+            "type": "STANDARD",
+            "templateType": None,
             "creationDate": "2021-03-26T10:43:27.867Z",
             "lastChangeDate": "2021-03-26T10:43:33.595Z",
             "workbench": {

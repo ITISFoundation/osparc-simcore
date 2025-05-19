@@ -2,7 +2,7 @@ import asyncio
 import contextlib
 import logging
 from collections.abc import AsyncIterator
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Final
 
 import distributed
@@ -17,7 +17,7 @@ from distributed.worker import get_worker
 from distributed.worker_state_machine import TaskState
 from models_library.progress_bar import ProgressReport
 from models_library.rabbitmq_messages import LoggerRabbitMessage
-from servicelib.logging_utils import LogLevelInt, LogMessageStr, log_catch
+from servicelib.logging_utils import LogLevelInt, LogMessageStr, log_catch, log_context
 
 from ..rabbitmq_plugin import get_rabbitmq_client
 
@@ -63,24 +63,23 @@ def get_current_task_resources() -> dict[str, float]:
 @dataclass(slots=True, kw_only=True)
 class TaskPublisher:
     task_owner: TaskOwner
-    progress: distributed.Pub = field(init=False)
     _last_published_progress_value: float = -1
-
-    def __post_init__(self) -> None:
-        self.progress = distributed.Pub(TaskProgressEvent.topic_name())
 
     def publish_progress(self, report: ProgressReport) -> None:
         rounded_value = round(report.percent_value, ndigits=2)
         if rounded_value > self._last_published_progress_value:
-            with log_catch(logger=_logger, reraise=False):
+            with (
+                log_catch(logger=_logger, reraise=False),
+                log_context(
+                    _logger, logging.DEBUG, msg=f"publish progress {rounded_value=}"
+                ),
+            ):
                 publish_event(
-                    self.progress,
                     TaskProgressEvent.from_dask_worker(
                         progress=rounded_value, task_owner=self.task_owner
                     ),
                 )
                 self._last_published_progress_value = rounded_value
-            _logger.debug("PROGRESS: %s", rounded_value)
 
     async def publish_logs(
         self,
@@ -169,7 +168,14 @@ async def monitor_task_abortion(
                 await periodically_checking_task
 
 
-def publish_event(dask_pub: distributed.Pub, event: BaseTaskEvent) -> None:
+def publish_event(
+    event: BaseTaskEvent,
+) -> None:
     """never reraises, only CancellationError"""
-    with log_catch(_logger, reraise=False):
-        dask_pub.put(event.model_dump_json())
+    worker = get_worker()
+    _logger.debug("current worker %s", f"{worker=}")
+    with (
+        log_catch(_logger, reraise=False),
+        log_context(_logger, logging.DEBUG, msg=f"publishing {event=}"),
+    ):
+        worker.log_event(TaskProgressEvent.topic_name(), event.model_dump_json())

@@ -34,9 +34,11 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
     if (resourceType === "study") {
       const workspacesContainer = this.__workspacesContainer = new osparc.dashboard.CardContainer();
+      this.__workspacesContainer.exclude();
       this._add(workspacesContainer);
 
       const foldersContainer = this.__foldersContainer = new osparc.dashboard.CardContainer();
+      this.__foldersContainer.exclude();
       this._add(foldersContainer);
     }
 
@@ -65,7 +67,9 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
   events: {
     "updateStudy": "qx.event.type.Data",
     "updateTemplate": "qx.event.type.Data",
+    "updateTutorial": "qx.event.type.Data",
     "updateService": "qx.event.type.Data",
+    "updateHypertool": "qx.event.type.Data",
     "publishTemplate": "qx.event.type.Data",
     "tagClicked": "qx.event.type.Data",
     "emptyStudyClicked": "qx.event.type.Data",
@@ -221,7 +225,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       const tags = resourceData.tags ? osparc.store.Tags.getInstance().getTags().filter(tag => resourceData.tags.includes(tag.getTagId())) : [];
       const card = this.getMode() === "grid" ? new osparc.dashboard.GridButtonItem() : new osparc.dashboard.ListButtonItem();
       card.set({
-        appearance: resourceData.type ? `pb-${resourceData.type}` : `pb-${resourceData.resourceType}`,
+        appearance: resourceData.type ? `pb-${resourceData.type.toLowerCase()}` : `pb-${resourceData.resourceType}`,
         resourceData: resourceData,
         tags
       });
@@ -237,7 +241,9 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       [
         "updateStudy",
         "updateTemplate",
+        "updateTutorial",
         "updateService",
+        "updateHypertool",
         "publishTemplate",
         "tagClicked",
         "emptyStudyClicked"
@@ -290,26 +296,6 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         groupedContainer.getContentContainer().removeAll();
       });
       this.__groupedContainersList = [];
-    },
-
-    __addFoldersContainer: function() {
-      // add foldersContainer dynamically
-      [
-        "addChildWidget",
-        "removeChildWidget"
-      ].forEach(ev => {
-        this.__foldersContainer.addListener(ev, () => {
-          const children = this.__foldersContainer.getChildren();
-          if (children.length && !children.includes(this.__foldersContainer)) {
-            this._addAt(this.__foldersContainer, 0);
-            return;
-          }
-          if (children.length === 0 && children.includes(this.__foldersContainer)) {
-            this._remove(this.__foldersContainer);
-            return;
-          }
-        })
-      });
     },
 
     __rebuildLayout: function(resourceType) {
@@ -384,6 +370,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     reloadWorkspaces: function() {
       if (this.__workspacesContainer) {
         this.__workspacesContainer.removeAll();
+        this.__workspacesContainer.exclude();
       }
       let workspacesCards = [];
       this.__workspacesList.forEach(workspaceData => workspacesCards.push(this.__workspaceToCard(workspaceData)));
@@ -392,11 +379,13 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
     addNewWorkspaceCard: function(newWorkspaceCard) {
       this.__workspacesContainer.addAt(newWorkspaceCard, 0);
+      this.__workspacesContainer.show();
     },
 
     __workspaceToCard: function(workspaceData) {
       const card = this.__createWorkspaceCard(workspaceData);
       this.__workspacesContainer.add(card);
+      this.__workspacesContainer.show();
       return card;
     },
 
@@ -421,6 +410,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     reloadFolders: function() {
       if (this.__foldersContainer) {
         this.__foldersContainer.removeAll();
+        this.__foldersContainer.exclude();
       }
       let folderCards = [];
       this.__foldersList.forEach(folderData => folderCards.push(this.__folderToCard(folderData)));
@@ -429,11 +419,13 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
     addNewFolderCard: function(newFolderCard) {
       this.__foldersContainer.addAt(newFolderCard, 0);
+      this.__foldersContainer.show();
     },
 
     __folderToCard: function(folderData) {
       const card = this.__createFolderCard(folderData);
       this.__foldersContainer.add(card);
+      this.__foldersContainer.show();
       return card;
     },
 

@@ -254,8 +254,8 @@ def services_node_uuids(
 
 
 @pytest.fixture
-def current_user(registered_user: Callable) -> dict[str, Any]:
-    return registered_user()
+def current_user(create_registered_user: Callable) -> dict[str, Any]:
+    return create_registered_user()
 
 
 @pytest.fixture
@@ -265,6 +265,7 @@ async def current_study(
     fake_dy_workbench: dict[str, Any],
     async_client: httpx.AsyncClient,
     osparc_product_name: str,
+    osparc_product_api_base_url: str,
     create_pipeline: Callable[..., Awaitable[ComputationGet]],
 ) -> ProjectAtDB:
     project_at_db = await project(current_user, workbench=fake_dy_workbench)
@@ -276,6 +277,7 @@ async def current_study(
         user_id=current_user["id"],
         start_pipeline=False,
         product_name=osparc_product_name,
+        product_api_base_url=osparc_product_api_base_url,
     )
 
     return project_at_db
@@ -710,6 +712,7 @@ async def _fetch_data_via_aioboto(
 async def _start_and_wait_for_dynamic_services_ready(
     director_v2_client: httpx.AsyncClient,
     product_name: str,
+    product_api_base_url: str,
     user_id: UserID,
     workbench_dynamic_services: dict[str, Node],
     current_study: ProjectAtDB,
@@ -721,6 +724,7 @@ async def _start_and_wait_for_dynamic_services_ready(
             assert_start_service(
                 director_v2_client=director_v2_client,
                 product_name=product_name,
+                product_api_base_url=product_api_base_url,
                 user_id=user_id,
                 project_id=str(current_study.uuid),
                 service_key=node.key,
@@ -902,6 +906,7 @@ async def test_nodeports_integration(
     fake_dy_success: dict[str, Any],
     tmp_path: Path,
     osparc_product_name: str,
+    osparc_product_api_base_url: str,
     create_pipeline: Callable[..., Awaitable[ComputationGet]],
     mock_io_log_redirect_cb: LogRedirectCB,
     faker: Faker,
@@ -938,6 +943,7 @@ async def test_nodeports_integration(
         await _start_and_wait_for_dynamic_services_ready(
             director_v2_client=async_client,
             product_name=osparc_product_name,
+            product_api_base_url=osparc_product_api_base_url,
             user_id=current_user["id"],
             workbench_dynamic_services=workbench_dynamic_services,
             current_study=current_study,
@@ -952,6 +958,7 @@ async def test_nodeports_integration(
         user_id=current_user["id"],
         start_pipeline=True,
         product_name=osparc_product_name,
+        product_api_base_url=osparc_product_api_base_url,
     )
 
     # wait for the computation to finish (either by failing, success or abort)
@@ -1132,6 +1139,7 @@ async def test_nodeports_integration(
     await _start_and_wait_for_dynamic_services_ready(
         director_v2_client=async_client,
         product_name=osparc_product_name,
+        product_api_base_url=osparc_product_api_base_url,
         user_id=current_user["id"],
         workbench_dynamic_services=workbench_dynamic_services,
         current_study=current_study,

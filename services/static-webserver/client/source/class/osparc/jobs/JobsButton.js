@@ -27,14 +27,14 @@ qx.Class.define("osparc.jobs.JobsButton", {
       width: 30,
       alignX: "center",
       cursor: "pointer",
-      visibility: "excluded",
-      toolTipText: this.tr("Runs and Clusters"),
+      toolTipText: this.tr("Activity Center"),
     });
 
-    this.addListener("tap", () => osparc.jobs.RunsWindow.openWindow(), this);
+    this.addListener("tap", () => osparc.jobs.ActivityCenterWindow.openWindow(), this);
 
     const jobsStore = osparc.store.Jobs.getInstance();
-    jobsStore.addListener("changeJobs", e => this.__updateJobsButton(), this);
+    jobsStore.addListener("changeJobsActive", e => this.__updateJobsButton(e.getData()), this);
+    jobsStore.fetchJobsActive();
   },
 
   members: {
@@ -71,14 +71,12 @@ qx.Class.define("osparc.jobs.JobsButton", {
       return control || this.base(arguments, id);
     },
 
-    __updateJobsButton: function() {
+    __updateJobsButton: function(nActiveJobs) {
       this.getChildControl("icon");
       const number = this.getChildControl("number");
 
-      const jobsStore = osparc.store.Jobs.getInstance();
-      const nJobs = jobsStore.getJobs().length > 20 ? "20+" : jobsStore.getJobs().length;
+      const nJobs = nActiveJobs > osparc.store.Jobs.SERVER_MAX_LIMIT ? (osparc.store.Jobs.SERVER_MAX_LIMIT + "+") : nActiveJobs;
       number.setValue(nJobs.toString());
-      nJobs ? this.show() : this.exclude();
     },
   }
 });

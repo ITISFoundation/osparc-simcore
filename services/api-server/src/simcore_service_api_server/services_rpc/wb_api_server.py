@@ -1,15 +1,41 @@
+# pylint: disable=too-many-public-methods
+
 from dataclasses import dataclass
 from functools import partial
 from typing import cast
 
 from fastapi import FastAPI
 from fastapi_pagination import create_page
+from models_library.api_schemas_webserver.functions_wb_schema import (
+    Function,
+    FunctionID,
+    FunctionInputs,
+    FunctionInputSchema,
+    FunctionJob,
+    FunctionJobCollection,
+    FunctionJobCollectionID,
+    FunctionJobID,
+    FunctionOutputSchema,
+    RegisteredFunction,
+    RegisteredFunctionJob,
+    RegisteredFunctionJobCollection,
+)
 from models_library.api_schemas_webserver.licensed_items import LicensedItemRpcGetPage
 from models_library.licenses import LicensedItemID
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.resource_tracker_licensed_items_checkouts import (
     LicensedItemCheckoutID,
+)
+from models_library.rest_pagination import (
+    DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+    PageLimitInt,
+    PageMetaInfoLimitOffset,
+    PageOffsetInt,
+)
+from models_library.rpc.webserver.projects import (
+    ListProjectsMarkedAsJobRpcFilters,
+    MetadataFilterItem,
 )
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
@@ -29,8 +55,8 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     NotEnoughAvailableSeatsError,
 )
 from servicelib.rabbitmq.rpc_interfaces.webserver import projects as projects_rpc
-from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions import (
-    ping as _ping,
+from servicelib.rabbitmq.rpc_interfaces.webserver.functions import (
+    functions_rpc_interface,
 )
 from servicelib.rabbitmq.rpc_interfaces.webserver.licenses.licensed_items import (
     checkout_licensed_item_for_wallet as _checkout_licensed_item_for_wallet,
@@ -44,6 +70,7 @@ from servicelib.rabbitmq.rpc_interfaces.webserver.licenses.licensed_items import
 from servicelib.rabbitmq.rpc_interfaces.webserver.licenses.licensed_items import (
     release_licensed_item_for_wallet as _release_licensed_item_for_wallet,
 )
+from simcore_service_api_server.models.basic_types import NameValueTuple
 
 from ..exceptions.backend_errors import (
     CanNotCheckoutServiceIsNotRunningError,
@@ -201,9 +228,6 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             num_of_seats=licensed_item_checkout_get.num_of_seats,
         )
 
-    async def ping(self) -> str:
-        return await _ping(self._client)
-
     async def mark_project_as_job(
         self,
         product_name: ProductName,
@@ -224,17 +248,178 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         *,
         product_name: ProductName,
         user_id: UserID,
-        offset: int = 0,
-        limit: int = 50,
-        job_parent_resource_name_prefix: str | None = None,
+        pagination_offset: int = 0,
+        pagination_limit: int = 50,
+        filter_by_job_parent_resource_name_prefix: str | None,
+        filter_any_custom_metadata: list[NameValueTuple] | None,
     ):
+        filters = ListProjectsMarkedAsJobRpcFilters(
+            job_parent_resource_name_prefix=filter_by_job_parent_resource_name_prefix,
+            any_custom_metadata=(
+                [
+                    MetadataFilterItem(name=name, pattern=pattern)
+                    for name, pattern in filter_any_custom_metadata
+                ]
+                if filter_any_custom_metadata
+                else None
+            ),
+        )
+
         return await projects_rpc.list_projects_marked_as_jobs(
             rpc_client=self._client,
             product_name=product_name,
             user_id=user_id,
-            offset=offset,
-            limit=limit,
-            job_parent_resource_name_prefix=job_parent_resource_name_prefix,
+            offset=pagination_offset,
+            limit=pagination_limit,
+            filters=filters,
+        )
+
+    async def register_function(self, *, function: Function) -> RegisteredFunction:
+        return await functions_rpc_interface.register_function(
+            self._client,
+            function=function,
+        )
+
+    async def get_function(self, *, function_id: FunctionID) -> RegisteredFunction:
+        return await functions_rpc_interface.get_function(
+            self._client,
+            function_id=function_id,
+        )
+
+    async def delete_function(self, *, function_id: FunctionID) -> None:
+        return await functions_rpc_interface.delete_function(
+            self._client,
+            function_id=function_id,
+        )
+
+    async def list_functions(
+        self,
+        *,
+        pagination_offset: PageOffsetInt = 0,
+        pagination_limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+    ) -> tuple[list[RegisteredFunction], PageMetaInfoLimitOffset]:
+
+        return await functions_rpc_interface.list_functions(
+            self._client,
+            pagination_offset=pagination_offset,
+            pagination_limit=pagination_limit,
+        )
+
+    async def list_function_jobs(
+        self,
+        *,
+        pagination_offset: PageOffsetInt = 0,
+        pagination_limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+    ) -> tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset]:
+        return await functions_rpc_interface.list_function_jobs(
+            self._client,
+            pagination_offset=pagination_offset,
+            pagination_limit=pagination_limit,
+        )
+
+    async def list_function_job_collections(
+        self,
+        *,
+        pagination_offset: PageOffsetInt = 0,
+        pagination_limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+    ) -> tuple[list[RegisteredFunctionJobCollection], PageMetaInfoLimitOffset]:
+        return await functions_rpc_interface.list_function_job_collections(
+            self._client,
+            pagination_offset=pagination_offset,
+            pagination_limit=pagination_limit,
+        )
+
+    async def run_function(
+        self, *, function_id: FunctionID, inputs: FunctionInputs
+    ) -> RegisteredFunctionJob:
+        return await functions_rpc_interface.run_function(
+            self._client,
+            function_id=function_id,
+            inputs=inputs,
+        )
+
+    async def get_function_job(
+        self, *, function_job_id: FunctionJobID
+    ) -> RegisteredFunctionJob:
+        return await functions_rpc_interface.get_function_job(
+            self._client,
+            function_job_id=function_job_id,
+        )
+
+    async def update_function_title(
+        self, *, function_id: FunctionID, title: str
+    ) -> RegisteredFunction:
+        return await functions_rpc_interface.update_function_title(
+            self._client,
+            function_id=function_id,
+            title=title,
+        )
+
+    async def update_function_description(
+        self, *, function_id: FunctionID, description: str
+    ) -> RegisteredFunction:
+        return await functions_rpc_interface.update_function_description(
+            self._client,
+            function_id=function_id,
+            description=description,
+        )
+
+    async def delete_function_job(self, *, function_job_id: FunctionJobID) -> None:
+        return await functions_rpc_interface.delete_function_job(
+            self._client,
+            function_job_id=function_job_id,
+        )
+
+    async def register_function_job(
+        self, *, function_job: FunctionJob
+    ) -> RegisteredFunctionJob:
+        return await functions_rpc_interface.register_function_job(
+            self._client,
+            function_job=function_job,
+        )
+
+    async def get_function_input_schema(
+        self, *, function_id: FunctionID
+    ) -> FunctionInputSchema:
+        return await functions_rpc_interface.get_function_input_schema(
+            self._client,
+            function_id=function_id,
+        )
+
+    async def get_function_output_schema(
+        self, *, function_id: FunctionID
+    ) -> FunctionOutputSchema:
+        return await functions_rpc_interface.get_function_output_schema(
+            self._client,
+            function_id=function_id,
+        )
+
+    async def find_cached_function_job(
+        self, *, function_id: FunctionID, inputs: FunctionInputs
+    ) -> RegisteredFunctionJob | None:
+        return await functions_rpc_interface.find_cached_function_job(
+            self._client, function_id=function_id, inputs=inputs
+        )
+
+    async def get_function_job_collection(
+        self, *, function_job_collection_id: FunctionJobCollectionID
+    ) -> RegisteredFunctionJobCollection:
+        return await functions_rpc_interface.get_function_job_collection(
+            self._client, function_job_collection_id=function_job_collection_id
+        )
+
+    async def register_function_job_collection(
+        self, *, function_job_collection: FunctionJobCollection
+    ) -> RegisteredFunctionJobCollection:
+        return await functions_rpc_interface.register_function_job_collection(
+            self._client, function_job_collection=function_job_collection
+        )
+
+    async def delete_function_job_collection(
+        self, *, function_job_collection_id: FunctionJobCollectionID
+    ) -> None:
+        return await functions_rpc_interface.delete_function_job_collection(
+            self._client, function_job_collection_id=function_job_collection_id
         )
 
 

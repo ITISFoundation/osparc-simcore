@@ -2,11 +2,11 @@ aio-pika==9.5.4
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-aioboto3==14.1.0
+aioboto3==14.3.0
     # via
     #   -r requirements/../../../packages/aws-library/requirements/_base.in
     #   -r requirements/_base.in
-aiobotocore==2.21.1
+aiobotocore==2.22.0
     # via aioboto3
 aiocache==0.12.3
     # via
@@ -102,9 +102,9 @@ attrs==25.1.0
     #   referencing
 billiard==4.2.1
     # via celery
-boto3==1.37.1
+boto3==1.37.3
     # via aiobotocore
-botocore==1.37.1
+botocore==1.37.3
     # via
     #   aiobotocore
     #   boto3
@@ -499,10 +499,6 @@ packaging==24.2
 pamqp==3.3.0
     # via aiormq
 prometheus-client==0.21.1
-    # via
-    #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
-    #   prometheus-fastapi-instrumentator
-prometheus-fastapi-instrumentator==7.0.2
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 prompt-toolkit==3.0.50
     # via click-repl
@@ -838,7 +834,6 @@ starlette==0.45.3
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   fastapi
-    #   prometheus-fastapi-instrumentator
 stream-zip==0.0.83
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in

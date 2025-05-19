@@ -25,7 +25,6 @@ qx.Class.define("osparc.jobs.RunsBrowser", {
     this._setLayout(new qx.ui.layout.VBox(10));
 
     const jobsFilter = this.getChildControl("jobs-filter");
-    this.getChildControl("jobs-ongoing");
     const jobsTable = this.getChildControl("runs-table");
 
     jobsFilter.getChildControl("textfield").addListener("input", e => {
@@ -61,19 +60,14 @@ qx.Class.define("osparc.jobs.RunsBrowser", {
             flex: 1
           });
           break;
-        case "jobs-ongoing":
-          control = new qx.ui.form.CheckBox().set({
-            label: "Hide finished jobs",
-            value: true,
-            enabled: false,
-          });
-          this.getChildControl("header-filter").add(control);
-          break;
-        case "runs-table":
-          control = new osparc.jobs.RunsTable();
+        case "runs-table": {
+          const latestOnly = true;
+          const projectUuid = null;
+          control = new osparc.jobs.RunsTable(latestOnly, projectUuid);
           control.addListener("runSelected", e => this.fireDataEvent("runSelected", e.getData()));
           this._add(control);
           break;
+        }
       }
 
       return control || this.base(arguments, id);

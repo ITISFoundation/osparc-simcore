@@ -98,11 +98,14 @@ qx.Class.define("osparc.service.Utils", {
       }
       servicesArray.sort((a, b) => {
         if (basedOn.sort === "hits") {
-          if (a[basedOn.sort] !== b[basedOn.sort]) {
+          const aHits = a["hits"] === undefined ? -1 : a["hits"]; // Treat undefined hits as -1
+          const bHits = b["hits"] === undefined ? -1 : b["hits"]; // Treat undefined hits as -1
+
+          if (aHits !== bHits) {
             if (basedOn.order === "down") {
-              return b[basedOn.sort] - a[basedOn.sort];
+              return bHits - aHits;
             }
-            return a[basedOn.sort] - b[basedOn.sort];
+            return aHits - bHits;
           }
           return a["name"].localeCompare(b["name"]);
         } else if (basedOn.sort === "name") {

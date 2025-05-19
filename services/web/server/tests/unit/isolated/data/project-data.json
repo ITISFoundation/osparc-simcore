@@ -60,5 +60,7 @@
     "annotations": {}
   },
   "quality": {},
-  "dev": {}
+  "dev": {},
+  "type": "STANDARD",
+  "templateType": null
 }
