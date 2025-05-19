@@ -737,10 +737,10 @@ async def test_abort_computation_tasks(
     with pytest.raises(TaskCancelledError):
         await dask_client.get_task_result(published_computation_task[0].job_id)
 
-    await asyncio.sleep(5)
     await dask_client.release_task_result(published_computation_task[0].job_id)
     # after releasing the results, the task shall be UNKNOWN
-
+    _ALLOW_TIME_FOR_LOCAL_DASK_SCHEDULER_TO_UPDATE_TIMEOUT_S = 5
+    await asyncio.sleep(_ALLOW_TIME_FOR_LOCAL_DASK_SCHEDULER_TO_UPDATE_TIMEOUT_S)
     # NOTE: this change of status takes a very long time to happen and is not relied upon so we skip it since it
     # makes the test fail a lot for no gain (it's kept here in case it ever becomes an issue)
     await _assert_wait_for_task_status(
