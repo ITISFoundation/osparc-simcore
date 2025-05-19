@@ -200,6 +200,8 @@ async def list_latest_catalog_services(
                 tip="This might be due to malfunction of the background-task or that this call was done while the sync was taking place",
             )
         )
+        # NOTE: tests should fail if this happens but it is not a critical error so it is ignored in production
+        assert len(missing_services) == 0, msg  # nosec
 
     # Aggregate the services manifest and access-rights
     items = [
