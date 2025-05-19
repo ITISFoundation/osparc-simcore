@@ -1546,11 +1546,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const menu = card.getMenu();
       const studyData = card.getResourceData();
 
-      const trashed = Boolean(studyData["trashedAt"]);
       const writeAccess = osparc.data.model.Study.canIWrite(studyData["accessRights"]);
       const deleteAccess = osparc.data.model.Study.canIDelete(studyData["accessRights"]);
 
       if (this.getCurrentContext() === "trash") {
+        const trashed = Boolean(studyData["trashedAt"]);
         if (trashed) {
           if (writeAccess) {
             const untrashButton = this.__getUntrashStudyMenuButton(studyData);
