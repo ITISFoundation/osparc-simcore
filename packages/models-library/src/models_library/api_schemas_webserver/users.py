@@ -247,10 +247,18 @@ class UsersForAdminListFilter(Filters):
     # 2. If APPROVED AND user uses the invitation link, then it can be in any of these states:
     #    CONFIRMATION_PENDING, ACTIVE, EXPIRED, BANNED, DELETED
     #
-    approved: bool | None = None
+    status: Literal["PENDING"] | None = None
 
 
 class UsersForAdminListQueryParams(PageQueryParameters, UsersForAdminListFilter): ...
+
+
+class UserApprove(InputSchema):
+    email: EmailStr
+
+
+class UserReject(InputSchema):
+    email: EmailStr
 
 
 class UsersForAdminSearchQueryParams(RequestParameters):

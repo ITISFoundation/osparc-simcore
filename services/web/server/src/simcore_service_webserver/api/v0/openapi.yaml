@@ -1373,14 +1373,15 @@ paths:
       summary: List Users For Admin
       operationId: list_users_for_admin
       parameters:
-      - name: approved
+      - name: status
         in: query
         required: false
         schema:
           anyOf:
-          - type: boolean
+          - const: PENDING
+            type: string
           - type: 'null'
-          title: Approved
+          title: Status
       - name: limit
         in: query
         required: false
@@ -1402,6 +1403,58 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_Page_UserForAdminGet__'
+  /v0/admin/users:approve:
+    post:
+      tags:
+      - users
+      - admin
+      summary: Approve User Account
+      operationId: approve_user_account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserApprove'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_Page_UserForAdminGet__'
+  /v0/admin/users:reject:
+    post:
+      tags:
+      - users
+      - admin
+      summary: Reject User Account
+      operationId: reject_user_account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserReject'
+        required: true
+      responses:
+        '204':
+          description: Successful Response
+  /v0/admin/users:resendConfirmationEmail:
+    post:
+      tags:
+      - users
+      - admin
+      summary: Resend User Confirmation Email
+      operationId: resend_user_confirmation_email
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserApprove'
+        required: true
+      responses:
+        '204':
+          description: Successful Response
   /v0/admin/users:search:
     get:
       tags:
@@ -16952,6 +17005,16 @@ components:
       - number
       - e_tag
       title: UploadedPart
+    UserApprove:
+      properties:
+        email:
+          type: string
+          format: email
+          title: Email
+      type: object
+      required:
+      - email
+      title: UserApprove
     UserForAdminGet:
       properties:
         firstName:
@@ -17205,6 +17268,16 @@ components:
       required:
       - read
       title: UserNotificationPatch
+    UserReject:
+      properties:
+        email:
+          type: string
+          format: email
+          title: Email
+      type: object
+      required:
+      - email
+      title: UserReject
     UserStatus:
       type: string
       enum:
