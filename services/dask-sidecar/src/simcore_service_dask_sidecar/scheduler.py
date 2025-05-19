@@ -1,13 +1,13 @@
 import logging
 
 import distributed
+from dask_task_models_library.plugins.task_life_cycle_scheduler_plugin import (
+    TaskLifecycleSchedulerPlugin,
+)
 from servicelib.logging_utils import log_context
 
 from ._meta import print_dask_scheduler_banner
 from .settings import ApplicationSettings
-from .task_life_cycle_scheduler_plugin import (
-    TaskLifecycleSchedulerPlugin,
-)
 from .utils.logs import setup_app_logging
 
 _logger = logging.getLogger(__name__)
