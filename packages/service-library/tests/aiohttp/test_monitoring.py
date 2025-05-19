@@ -89,7 +89,6 @@ async def test_setup_monitoring(client: TestClient):
     response = await client.get("/metrics")
     assert response.status == status.HTTP_200_OK
     metrics_as_text = await response.text()
-    # metrics_as_text = metrics_as_text.lstrip("'").lstrip("'")
     _assert_metrics_contain_entry(
         metrics_as_text,
         metric_name="http_requests",
