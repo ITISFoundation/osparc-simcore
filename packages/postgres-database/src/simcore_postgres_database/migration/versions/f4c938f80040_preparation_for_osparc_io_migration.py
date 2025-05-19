@@ -1,8 +1,8 @@
 """preparation for osparc.io migration
 
-Revision ID: 1a791d837399
+Revision ID: f4c938f80040
 Revises: b39f2dc87ccd
-Create Date: 2025-05-19 13:09:24.279828+00:00
+Create Date: 2025-05-19 14:30:09.366828+00:00
 
 """
 
@@ -11,7 +11,7 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = "1a791d837399"
+revision = "f4c938f80040"
 down_revision = "b39f2dc87ccd"
 branch_labels = None
 depends_on = None
@@ -107,6 +107,26 @@ def upgrade():
     )
     op.drop_index("ix_projects_comments_project_uuid", table_name="projects_comments")
     op.drop_table("projects_comments")
+    op.drop_constraint("api_keys_user_id_fkey", "api_keys", type_="foreignkey")
+    op.create_foreign_key(
+        None,
+        "api_keys",
+        "users",
+        ["user_id"],
+        ["id"],
+        onupdate="CASCADE",
+        ondelete="CASCADE",
+    )
+    op.drop_constraint("user_confirmation_fkey", "confirmations", type_="foreignkey")
+    op.create_foreign_key(
+        "user_confirmation_fkey",
+        "confirmations",
+        "users",
+        ["user_id"],
+        ["id"],
+        onupdate="CASCADE",
+        ondelete="CASCADE",
+    )
     op.drop_column("file_meta_data", "node_id")
     op.drop_constraint("fk_new_folders_to_groups_gid", "folders_v2", type_="foreignkey")
     op.drop_constraint("fk_new_folders_to_folders_id", "folders_v2", type_="foreignkey")
@@ -155,6 +175,15 @@ def upgrade():
         ondelete="CASCADE",
     )
     op.create_foreign_key(
+        "fk_payments_transactions_to_wallet_id",
+        "payments_transactions",
+        "wallets",
+        ["wallet_id"],
+        ["wallet_id"],
+        onupdate="CASCADE",
+        ondelete="CASCADE",
+    )
+    op.create_foreign_key(
         "fk_payments_transactions_to_products_name",
         "payments_transactions",
         "products",
@@ -169,15 +198,6 @@ def upgrade():
         "users",
         ["user_id"],
         ["id"],
-        onupdate="CASCADE",
-        ondelete="CASCADE",
-    )
-    op.create_foreign_key(
-        "fk_payments_transactions_to_wallet_id",
-        "payments_transactions",
-        "wallets",
-        ["wallet_id"],
-        ["wallet_id"],
         onupdate="CASCADE",
         ondelete="CASCADE",
     )
@@ -213,17 +233,17 @@ def downgrade():
         type_="foreignkey",
     )
     op.drop_constraint(
-        "fk_payments_transactions_to_wallet_id",
-        "payments_transactions",
-        type_="foreignkey",
-    )
-    op.drop_constraint(
         "fk_payments_transactions_to_user_id",
         "payments_transactions",
         type_="foreignkey",
     )
     op.drop_constraint(
         "fk_payments_transactions_to_products_name",
+        "payments_transactions",
+        type_="foreignkey",
+    )
+    op.drop_constraint(
+        "fk_payments_transactions_to_wallet_id",
         "payments_transactions",
         type_="foreignkey",
     )
@@ -258,6 +278,24 @@ def downgrade():
     op.add_column(
         "file_meta_data",
         sa.Column("node_id", sa.VARCHAR(), autoincrement=False, nullable=True),
+    )
+    op.drop_constraint("user_confirmation_fkey", "confirmations", type_="foreignkey")
+    op.create_foreign_key(
+        "user_confirmation_fkey",
+        "confirmations",
+        "users",
+        ["user_id"],
+        ["id"],
+        ondelete="CASCADE",
+    )
+    op.drop_constraint(None, "api_keys", type_="foreignkey")
+    op.create_foreign_key(
+        "api_keys_user_id_fkey",
+        "api_keys",
+        "users",
+        ["user_id"],
+        ["id"],
+        ondelete="CASCADE",
     )
     op.create_table(
         "projects_comments",

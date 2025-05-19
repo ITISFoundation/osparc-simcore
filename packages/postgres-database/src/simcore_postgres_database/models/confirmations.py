@@ -1,10 +1,11 @@
-""" User's confirmations table
+"""User's confirmations table
 
-    - Keeps a list of tokens to identify an action (registration, invitation, reset, etc) authorized
-    by link to a a user in the framework
-    - These tokens have an expiration date defined by configuration
+- Keeps a list of tokens to identify an action (registration, invitation, reset, etc) authorized
+by link to a a user in the framework
+- These tokens have an expiration date defined by configuration
 
 """
+
 import enum
 
 import sqlalchemy as sa
@@ -61,6 +62,7 @@ confirmations = sa.Table(
         ["user_id"],
         [users.c.id],
         name="user_confirmation_fkey",
+        onupdate=RefActions.CASCADE,
         ondelete=RefActions.CASCADE,
     ),
 )
