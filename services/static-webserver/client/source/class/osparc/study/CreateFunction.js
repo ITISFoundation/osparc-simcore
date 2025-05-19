@@ -120,6 +120,7 @@ qx.Class.define("osparc.study.CreateFunction", {
 
       const description = new qx.ui.form.TextField().set({
         required: false,
+        value: this.__studyData.description || ""
       });
       form.add(description, this.tr("Description"), null, "description");
 
