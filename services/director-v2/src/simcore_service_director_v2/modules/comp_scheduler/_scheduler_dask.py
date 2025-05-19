@@ -44,6 +44,9 @@ from ...utils.rabbitmq import (
 from ..clusters_keeper import get_or_create_on_demand_cluster
 from ..dask_client import DaskClient, PublishedComputationTask
 from ..dask_clients_pool import DaskClientsPool
+from ..db.repositories.comp_runs import (
+    CompRunsRepository,
+)
 from ..db.repositories.comp_tasks import CompTasksRepository
 from ._scheduler_base import BaseCompScheduler
 
@@ -373,30 +376,30 @@ class DaskScheduler(BaseCompScheduler):
         with log_catch(_logger, reraise=False):
             task_progress_event = TaskProgressEvent.model_validate_json(event[1])
             _logger.debug("received task progress update: %s", task_progress_event)
-            # user_id = task_progress_event.task_owner.user_id
-            # project_id = task_progress_event.task_owner.project_id
-            # node_id = task_progress_event.task_owner.node_id
-            # comp_tasks_repo = CompTasksRepository(self.db_engine)
-            # task = await comp_tasks_repo.get_task(project_id, node_id)
-            # if task.progress is None:
-            #     task.state = RunningState.STARTED
-            #     task.progress = task_progress_event.progress
-            #     run = await CompRunsRepository(self.db_engine).get(user_id, project_id)
-            #     await self._process_started_tasks(
-            #         [task],
-            #         user_id=user_id,
-            #         project_id=project_id,
-            #         iteration=run.iteration,
-            #         run_metadata=run.metadata,
-            #     )
-            # else:
-            #     await comp_tasks_repo.update_project_task_progress(
-            #         project_id, node_id, task_progress_event.progress
-            #     )
-            # await publish_service_progress(
-            #     self.rabbitmq_client,
-            #     user_id=user_id,
-            #     project_id=project_id,
-            #     node_id=node_id,
-            #     progress=task_progress_event.progress,
-            # )
+            user_id = task_progress_event.task_owner.user_id
+            project_id = task_progress_event.task_owner.project_id
+            node_id = task_progress_event.task_owner.node_id
+            comp_tasks_repo = CompTasksRepository(self.db_engine)
+            task = await comp_tasks_repo.get_task(project_id, node_id)
+            if task.progress is None:
+                task.state = RunningState.STARTED
+                task.progress = task_progress_event.progress
+                run = await CompRunsRepository(self.db_engine).get(user_id, project_id)
+                await self._process_started_tasks(
+                    [task],
+                    user_id=user_id,
+                    project_id=project_id,
+                    iteration=run.iteration,
+                    run_metadata=run.metadata,
+                )
+            else:
+                await comp_tasks_repo.update_project_task_progress(
+                    project_id, node_id, task_progress_event.progress
+                )
+            await publish_service_progress(
+                self.rabbitmq_client,
+                user_id=user_id,
+                project_id=project_id,
+                node_id=node_id,
+                progress=task_progress_event.progress,
+            )
