@@ -13,6 +13,7 @@ from dask_task_models_library.container_tasks.events import (
 )
 from dask_task_models_library.container_tasks.io import TaskCancelEventName
 from dask_task_models_library.container_tasks.protocol import TaskOwner
+from dask_task_models_library.models import TASK_RUNNING_PROGRESS_EVENT
 from distributed.worker import get_worker
 from distributed.worker_state_machine import TaskState
 from models_library.progress_bar import ProgressReport
@@ -178,4 +179,10 @@ def publish_event(
         log_catch(_logger, reraise=False),
         log_context(_logger, logging.DEBUG, msg=f"publishing {event=}"),
     ):
-        worker.log_event(TaskProgressEvent.topic_name(), event.model_dump_json())
+        worker.log_event(
+            [
+                TaskProgressEvent.topic_name(),
+                TASK_RUNNING_PROGRESS_EVENT.format(key=event.job_id),
+            ],
+            event.model_dump_json(),
+        )

@@ -10,6 +10,7 @@ DaskJobID: TypeAlias = str
 DaskResources: TypeAlias = dict[str, int | float]
 
 TASK_LIFE_CYCLE_EVENT: Final[str] = "task-lifecycle-{key}"
+TASK_RUNNING_PROGRESS_EVENT: Final[str] = "task-progress-{key}"
 _SCHEDULER_TASK_STATE_TO_RUNNING_STATE: Final[
     dict[SchedulerTaskState, RunningState]
 ] = {

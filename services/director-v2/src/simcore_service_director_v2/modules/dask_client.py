@@ -40,6 +40,7 @@ from dask_task_models_library.container_tasks.protocol import (
 from dask_task_models_library.container_tasks.utils import generate_dask_job_id
 from dask_task_models_library.models import (
     TASK_LIFE_CYCLE_EVENT,
+    TASK_RUNNING_PROGRESS_EVENT,
     DaskJobID,
     DaskResources,
     TaskLifeCycleState,
@@ -407,30 +408,25 @@ class DaskClient:
 
     async def get_tasks_progress(
         self, job_ids: list[str]
-    ) -> tuple[TaskProgressEvent | None, ...]:
+    ) -> list[TaskProgressEvent | None]:
         dask_utils.check_scheduler_is_still_the_same(
             self.backend.scheduler_id, self.backend.client
         )
         dask_utils.check_communication_with_scheduler_is_open(self.backend.client)
         dask_utils.check_scheduler_status(self.backend.client)
 
-        dask_events = await self.backend.client.get_events(
-            TaskProgressEvent.topic_name()
-        )
+        async def _get_task_progress(job_id: str) -> TaskProgressEvent | None:
+            dask_events: tuple[tuple[UnixTimestamp, str], ...] = (
+                await self.backend.client.get_events(
+                    TASK_RUNNING_PROGRESS_EVENT.format(key=job_id)
+                )
+            )
+            if not dask_events:
+                return None
+            # we are interested in the last event
+            return TaskProgressEvent.model_validate_json(dask_events[-1][1])
 
-        if not dask_events:
-            return tuple([None] * len(job_ids))
-        last_task_progress = []
-        for job_id in job_ids:
-            progress_event = None
-            for dask_event in reversed(dask_events):
-                parsed_event = TaskProgressEvent.model_validate_json(dask_event[1])
-                if parsed_event.job_id == job_id:
-                    progress_event = parsed_event
-                    break
-            last_task_progress.append(progress_event)
-
-        return tuple(last_task_progress)
+        return await asyncio.gather(*(_get_task_progress(job_id) for job_id in job_ids))
 
     async def get_tasks_status(self, job_ids: Iterable[str]) -> list[RunningState]:
         dask_utils.check_scheduler_is_still_the_same(
@@ -439,7 +435,7 @@ class DaskClient:
         dask_utils.check_communication_with_scheduler_is_open(self.backend.client)
         dask_utils.check_scheduler_status(self.backend.client)
 
-        async def _get_job_id_status(job_id: str) -> RunningState:
+        async def _get_task_state(job_id: str) -> RunningState:
             dask_events: tuple[tuple[UnixTimestamp, str], ...] = (
                 await self.backend.client.get_events(
                     TASK_LIFE_CYCLE_EVENT.format(key=job_id)
@@ -480,7 +476,7 @@ class DaskClient:
 
             return parsed_event.state
 
-        return await asyncio.gather(*(_get_job_id_status(job_id) for job_id in job_ids))
+        return await asyncio.gather(*(_get_task_state(job_id) for job_id in job_ids))
 
     async def abort_computation_task(self, job_id: str) -> None:
         # Dask future may be cancelled, but only a future that was not already taken by
