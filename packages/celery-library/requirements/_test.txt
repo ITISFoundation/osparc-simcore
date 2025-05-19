@@ -1,0 +1,134 @@
+annotated-types==0.7.0
+    # via
+    #   -c requirements/_base.txt
+    #   pydantic
+anyio==4.9.0
+    # via
+    #   -c requirements/_base.txt
+    #   httpx
+    #   starlette
+certifi==2025.4.26
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   httpcore
+    #   httpx
+coverage==7.8.0
+    # via
+    #   -r requirements/_test.in
+    #   pytest-cov
+faker==37.3.0
+    # via -r requirements/_test.in
+fastapi==0.115.12
+    # via -r requirements/_test.in
+flexcache==0.3
+    # via pint
+flexparser==0.4
+    # via pint
+h11==0.16.0
+    # via httpcore
+httpcore==1.0.9
+    # via httpx
+httpx==0.28.1
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/_test.in
+icdiff==2.0.7
+    # via pytest-icdiff
+idna==3.10
+    # via
+    #   -c requirements/_base.txt
+    #   anyio
+    #   httpx
+iniconfig==2.1.0
+    # via pytest
+packaging==25.0
+    # via
+    #   -c requirements/_base.txt
+    #   pytest
+    #   pytest-sugar
+pint==0.24.4
+    # via -r requirements/_test.in
+platformdirs==4.3.8
+    # via pint
+pluggy==1.6.0
+    # via pytest
+pprintpp==0.4.0
+    # via pytest-icdiff
+py-cpuinfo==9.0.0
+    # via pytest-benchmark
+pydantic==2.11.4
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   fastapi
+pydantic-core==2.33.2
+    # via
+    #   -c requirements/_base.txt
+    #   pydantic
+pytest==8.3.5
+    # via
+    #   -r requirements/_test.in
+    #   pytest-asyncio
+    #   pytest-benchmark
+    #   pytest-cov
+    #   pytest-icdiff
+    #   pytest-instafail
+    #   pytest-mock
+    #   pytest-sugar
+pytest-asyncio==0.23.8
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/_test.in
+pytest-benchmark==5.1.0
+    # via -r requirements/_test.in
+pytest-cov==6.1.1
+    # via -r requirements/_test.in
+pytest-icdiff==0.9
+    # via -r requirements/_test.in
+pytest-instafail==0.5.0
+    # via -r requirements/_test.in
+pytest-mock==3.14.0
+    # via -r requirements/_test.in
+pytest-runner==6.0.1
+    # via -r requirements/_test.in
+pytest-sugar==1.0.0
+    # via -r requirements/_test.in
+python-dotenv==1.1.0
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
+pyyaml==6.0.2
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
+sniffio==1.3.1
+    # via
+    #   -c requirements/_base.txt
+    #   anyio
+starlette==0.46.2
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   fastapi
+termcolor==3.1.0
+    # via pytest-sugar
+typing-extensions==4.13.2
+    # via
+    #   -c requirements/_base.txt
+    #   anyio
+    #   fastapi
+    #   flexcache
+    #   flexparser
+    #   pint
+    #   pydantic
+    #   pydantic-core
+    #   typing-inspection
+typing-inspection==0.4.0
+    # via
+    #   -c requirements/_base.txt
+    #   pydantic
+tzdata==2025.2
+    # via
+    #   -c requirements/_base.txt
+    #   faker
