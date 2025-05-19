@@ -69,8 +69,8 @@ qx.Class.define("osparc.po.UsersPending", {
       button.addListener("execute", () => {
         button.setFetching(true);
         const params = {
-          url: {
-            userEmail: email,
+          data: {
+            email,
           },
         };
         osparc.data.Resources.fetch("poUsers", "approveUser", params)
@@ -88,8 +88,8 @@ qx.Class.define("osparc.po.UsersPending", {
       button.addListener("execute", () => {
         button.setFetching(true);
         const params = {
-          url: {
-            userEmail: email,
+          data: {
+            email,
           },
         };
         osparc.data.Resources.fetch("poUsers", "rejectUser", params)
@@ -107,8 +107,8 @@ qx.Class.define("osparc.po.UsersPending", {
       button.addListener("execute", () => {
         button.setFetching(true);
         const params = {
-          url: {
-            userEmail: email,
+          data: {
+            email,
           },
         };
         osparc.data.Resources.fetch("poUsers", "resendConfirmationEmail", params)
