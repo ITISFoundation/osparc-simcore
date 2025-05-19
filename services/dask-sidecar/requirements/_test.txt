@@ -174,7 +174,7 @@ openapi-schema-validator==0.6.3
     # via openapi-spec-validator
 openapi-spec-validator==0.7.1
     # via moto
-packaging==25.0
+packaging==24.2
     # via
     #   -c requirements/_base.txt
     #   pytest

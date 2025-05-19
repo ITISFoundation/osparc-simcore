@@ -148,7 +148,7 @@ idna==3.10
     #   email-validator
     #   requests
     #   yarl
-importlib-metadata==8.6.1
+importlib-metadata==8.5.0
     # via
     #   dask
     #   opentelemetry-api
@@ -294,7 +294,7 @@ orjson==3.10.18
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
-packaging==25.0
+packaging==24.2
     # via
     #   bokeh
     #   dask
