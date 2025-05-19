@@ -402,7 +402,7 @@ mako==1.2.2
     #   alembic
 markdown-it-py==3.0.0
     # via rich
-markupsafe==2.1.1
+markupsafe==3.0.2
     # via
     #   jinja2
     #   mako
@@ -1021,6 +1021,8 @@ urllib3==2.2.3
     #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../requirements/constraints.txt
     #   requests
+uvloop==0.21.0
+    # via -r requirements/_base.in
 werkzeug==2.1.2
     # via -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
 wrapt==1.16.0

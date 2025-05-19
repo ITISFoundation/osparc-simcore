@@ -72,6 +72,8 @@ def _assert_same_projects(got: dict, expected: dict):
         "ui",
         "uuid",
         "workbench",
+        "type",
+        "templateType",
     }
     for key in expected:
         if key not in exclude:

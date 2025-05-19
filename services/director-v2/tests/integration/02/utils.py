@@ -328,6 +328,7 @@ async def _handle_redirection(
 async def assert_start_service(
     director_v2_client: httpx.AsyncClient,
     product_name: str,
+    product_api_base_url: str,
     user_id: UserID,
     project_id: str,
     service_key: str,
@@ -353,6 +354,7 @@ async def assert_start_service(
             service_resources
         ),
         "product_name": product_name,
+        "product_api_base_url": product_api_base_url,
     }
     headers = {
         X_DYNAMIC_SIDECAR_REQUEST_DNS: director_v2_client.base_url.host,

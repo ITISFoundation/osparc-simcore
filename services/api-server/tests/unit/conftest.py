@@ -645,6 +645,8 @@ def patch_webserver_long_running_project_tasks(
                     "creationDate": "2018-07-01T11:13:43Z",
                     "lastChangeDate": "2018-07-01T11:13:43Z",
                     "prjOwner": "owner@email.com",
+                    "type": "STANDARD",
+                    "templateType": None,
                     "dev": None,
                     "trashed_at": None,
                     "trashed_by": None,

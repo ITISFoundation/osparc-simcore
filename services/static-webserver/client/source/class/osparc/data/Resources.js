@@ -334,20 +334,36 @@ qx.Class.define("osparc.data.Resources", {
           },
         }
       },
+      "runPipeline": {
+        useCache: false,
+        endpoints: {
+          startPipeline: {
+            method: "POST",
+            url: statics.API + "/computations/{studyId}:start"
+          },
+          stopPipeline: {
+            method: "POST",
+            url: statics.API + "/computations/{studyId}:stop"
+          },
+        }
+      },
       "jobs": {
         useCache: false, // handled in osparc.store.Jobs
         endpoints: {
-          getPage: {
+          getPageLatestActive: {
             method: "GET",
-            // url: statics.API + "/computations/-/iterations/latest?offset={offset}&limit={limit}&order_by={orderBy}"
-            url: statics.API + "/computations/-/iterations/latest?offset={offset}&limit={limit}&order_by=%7B%22field%22:%22submitted_at%22,%22direction%22:%22desc%22%7D"
+            url: statics.API + "/computations/-/iterations/latest?offset={offset}&limit={limit}&order_by=%7B%22field%22:%22submitted_at%22,%22direction%22:%22desc%22%7D&filter_only_running=true"
+          },
+          getPageHistory: {
+            method: "GET",
+            url: statics.API + "/computations/{studyId}/iterations?offset={offset}&limit={limit}&order_by=%7B%22field%22:%22submitted_at%22,%22direction%22:%22desc%22%7D"
           },
         }
       },
       "subJobs": {
         useCache: false, // handled in osparc.store.Jobs
         endpoints: {
-          getPage: {
+          getPageLatest: {
             method: "GET",
             url: statics.API + "/computations/{studyId}/iterations/latest/tasks?offset={offset}&limit={limit}"
           },
@@ -576,13 +592,25 @@ qx.Class.define("osparc.data.Resources", {
         useCache: true,
         idField: "uuid",
         endpoints: {
-          get: {
-            method: "GET",
-            url: statics.API + "/projects?type=template"
-          },
           getPage: {
             method: "GET",
             url: statics.API + "/projects?type=template&offset={offset}&limit={limit}"
+          },
+          getPageFilteredSorted: {
+            method: "GET",
+            url: statics.API + "/projects?type=template&template_type={templateType}&offset={offset}&limit={limit}&order_by={orderBy}"
+          },
+        }
+      },
+      /*
+       * FUNCTIONS
+       */
+      "functions": {
+        useCache: false,
+        endpoints: {
+          create: {
+            method: "POST",
+            url: statics.API + "/functions"
           }
         }
       },

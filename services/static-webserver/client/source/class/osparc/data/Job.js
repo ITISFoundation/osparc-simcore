@@ -23,11 +23,12 @@ qx.Class.define("osparc.data.Job", {
 
     this.set({
       projectUuid: jobData["projectUuid"],
-      state: jobData["state"],
+      state: jobData["state"] || "UNKNOWN",
       submittedAt: jobData["submittedAt"] ? new Date(jobData["submittedAt"]) : null,
       startedAt: jobData["startedAt"] ? new Date(jobData["startedAt"]) : null,
       endedAt: jobData["endedAt"] ? new Date(jobData["endedAt"]) : null,
       info: jobData["info"] || null,
+      customMetadata: jobData["customMetadata"] || null,
     });
 
     if (jobData["info"] && jobData["info"]["project_name"]) {
@@ -76,8 +77,30 @@ qx.Class.define("osparc.data.Job", {
 
     info: {
       check: "Object",
-      nullable: false,
+      nullable: true,
       init: null,
+    },
+
+    customMetadata: {
+      check: "Object",
+      nullable: true,
+      init: null,
+    },
+  },
+
+  statics: {
+    STATUS_LABELS: {
+      "UNKNOWN": "Unknown",
+      "NOT_STARTED": "Unknown",
+      "PUBLISHED": "Queued",
+      "PENDING": "Queued",
+      "RUNNING": "Running",
+      "STARTED": "Running",
+      "SUCCESS": "Finished",
+      "FAILED": "Failed",
+      "ABORTED": "Aborted",
+      "WAITING_FOR_RESOURCES": "Hardware is ready, installing solvers",
+      "WAITING_FOR_CLUSTER": "Creating your personal computing hardware",
     },
   },
 

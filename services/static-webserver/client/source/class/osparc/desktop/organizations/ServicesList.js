@@ -84,7 +84,7 @@ qx.Class.define("osparc.desktop.organizations.ServicesList", {
           }, item, id);
         },
         configureItem: item => {
-          item.subscribeToFilterGroup("organizationTemplatesList");
+          item.subscribeToFilterGroup("organizationServicesList");
           item.addListener("openMoreInfo", e => {
             const serviceKey = e.getData()["key"];
             const serviceVersion = e.getData()["version"];

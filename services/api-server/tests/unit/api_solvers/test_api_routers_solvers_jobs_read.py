@@ -7,6 +7,7 @@ from typing import NamedTuple
 
 import httpx
 import pytest
+from models_library.users import UserID
 from pydantic import TypeAdapter
 from pytest_mock import MockType
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
@@ -124,3 +125,62 @@ async def test_list_all_solvers_jobs(
         assert job.outputs_url is not None
 
     assert mocked_backend.webserver_rpc["list_projects_marked_as_jobs"].called
+
+
+async def test_list_all_solvers_jobs_with_metadata_filter(
+    auth: httpx.BasicAuth,
+    client: httpx.AsyncClient,
+    mocked_backend: MockBackendRouters,
+    user_id: UserID,
+):
+    """Tests the endpoint that lists all jobs across all solvers with metadata filtering."""
+
+    # Test with metadata filters
+    metadata_filters = ["key1:val*", "key2:exactval"]
+
+    # Construct query parameters with metadata.any filters
+    params = {
+        "limit": 10,
+        "offset": 0,
+        "metadata.any": metadata_filters,
+    }
+
+    # Call the endpoint with metadata filters
+    resp = await client.get(
+        f"/{API_VTAG}/solvers/-/releases/-/jobs",
+        auth=auth,
+        params=params,
+    )
+
+    # Verify the response
+    assert resp.status_code == status.HTTP_200_OK
+
+    # Parse and validate the response
+    jobs_page = TypeAdapter(Page[Job]).validate_python(resp.json())
+
+    # Basic assertions on the response structure
+    assert isinstance(jobs_page.items, list)
+    assert jobs_page.limit == 10
+    assert jobs_page.offset == 0
+
+    # Check that the backend was called with the correct filter parameters
+    assert mocked_backend.webserver_rpc["list_projects_marked_as_jobs"].called
+
+    # Get the call args to verify filter parameters were passed correctly
+    call_args = mocked_backend.webserver_rpc["list_projects_marked_as_jobs"].call_args
+
+    # The filter_any_custom_metadata parameter should contain our filters
+    # The exact structure will depend on how your mocked function is called
+    assert call_args is not None
+
+    assert call_args.kwargs["product_name"] == "osparc"
+    assert call_args.kwargs["user_id"] == user_id
+    assert call_args.kwargs["offset"] == 0
+    assert call_args.kwargs["limit"] == 10
+    assert call_args.kwargs["filters"]
+
+    # Verify the metadata filters were correctly transformed and passed
+    assert call_args.kwargs["filters"].any_custom_metadata[0].name == "key1"
+    assert call_args.kwargs["filters"].any_custom_metadata[0].pattern == "val*"
+    assert call_args.kwargs["filters"].any_custom_metadata[1].name == "key2"
+    assert call_args.kwargs["filters"].any_custom_metadata[1].pattern == "exactval"

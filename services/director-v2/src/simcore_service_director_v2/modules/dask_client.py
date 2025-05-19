@@ -8,12 +8,11 @@ loads(dumps(my_object))
 
 """
 
-import asyncio
 import logging
 import traceback
 from collections.abc import Callable
 from copy import deepcopy
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from http.client import HTTPException
 from typing import Any, Final, cast
 
@@ -23,6 +22,7 @@ from aiohttp import ClientResponseError
 from common_library.json_serialization import json_dumps
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
+from dask_task_models_library.container_tasks.events import TaskProgressEvent
 from dask_task_models_library.container_tasks.io import (
     TaskCancelEventName,
     TaskInputData,
@@ -53,7 +53,7 @@ from models_library.services import ServiceRunID
 from models_library.users import UserID
 from pydantic import TypeAdapter, ValidationError
 from pydantic.networks import AnyUrl
-from servicelib.logging_utils import log_catch
+from servicelib.logging_utils import log_catch, log_context
 from settings_library.s3 import S3Settings
 from simcore_sdk.node_ports_common.exceptions import NodeportsException
 from simcore_sdk.node_ports_v2 import FileLinkType
@@ -123,8 +123,6 @@ class DaskClient:
     tasks_file_link_type: FileLinkType
     cluster_type: ClusterTypeInModel
 
-    _subscribed_tasks: list[asyncio.Task] = field(default_factory=list)
-
     @classmethod
     async def create(
         cls,
@@ -177,24 +175,15 @@ class DaskClient:
         raise ValueError(err_msg)
 
     async def delete(self) -> None:
-        _logger.debug("closing dask client...")
-        for task in self._subscribed_tasks:
-            task.cancel()
-        await asyncio.gather(*self._subscribed_tasks, return_exceptions=True)
-        await self.backend.close()
-        _logger.info("dask client properly closed")
+        with log_context(_logger, logging.INFO, msg="close dask client"):
+            await self.backend.close()
 
     def register_handlers(self, task_handlers: TaskHandlers) -> None:
         _event_consumer_map = [
-            (self.backend.progress_sub, task_handlers.task_progress_handler),
+            (TaskProgressEvent.topic_name(), task_handlers.task_progress_handler),
         ]
-        self._subscribed_tasks = [
-            asyncio.create_task(
-                dask_utils.dask_sub_consumer_task(dask_sub, handler),
-                name=f"{dask_sub.name}_dask_sub_consumer_task",
-            )
-            for dask_sub, handler in _event_consumer_map
-        ]
+        for topic_name, handler in _event_consumer_map:
+            self.backend.client.subscribe_topic(topic_name, handler)
 
     async def _publish_in_dask(  # noqa: PLR0913 # pylint: disable=too-many-arguments
         self,

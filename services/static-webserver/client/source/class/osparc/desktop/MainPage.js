@@ -26,8 +26,8 @@
  * - Main Stack
  *   - Dashboard Stack
  *     - StudyBrowser
- *     - TemplateBrowser
- *     - ServiceBrowser
+ *     - TutorialBrowser
+ *     - AppBrowser
  *     - DataManager
  *   - StudyEditor
  *
@@ -69,9 +69,7 @@ qx.Class.define("osparc.desktop.MainPage", {
     preloadPromises.push(osparc.store.Tags.getInstance().fetchTags());
     preloadPromises.push(osparc.store.Products.getInstance().fetchUiConfig());
     preloadPromises.push(osparc.store.PollTasks.getInstance().fetchTasks());
-    if (osparc.utils.DisabledPlugins.isJobsEnabled()) {
-      preloadPromises.push(osparc.store.Jobs.getInstance().fetchJobs());
-    }
+    preloadPromises.push(osparc.store.Jobs.getInstance().fetchJobsActive());
     Promise.all(preloadPromises)
       .then(() => {
         const mainStack = this.__createMainStack();
@@ -250,25 +248,26 @@ qx.Class.define("osparc.desktop.MainPage", {
       const pollTasks = osparc.store.PollTasks.getInstance();
       pollTasks.createPollingTask(fetchPromise)
         .then(task => {
-          const templateBrowser = this.__dashboard.getTemplateBrowser();
-          const hypertoolBrowser = this.__dashboard.getHypertoolBrowser();
-          if (templateBrowser) {
-            templateBrowser.taskToTemplateReceived(task, studyName);
+          const tutorialBrowser = this.__dashboard.getTutorialBrowser();
+          if (tutorialBrowser && templateType === osparc.data.model.StudyUI.TUTORIAL_TYPE) {
+            tutorialBrowser.taskToTemplateReceived(task, studyName, templateType);
+          }
+          const appBrowser = this.__dashboard.getAppBrowser();
+          if (appBrowser && templateType === osparc.data.model.StudyUI.HYPERTOOL_TYPE) {
+            appBrowser.taskToTemplateReceived(task, studyName, templateType);
           }
           task.addListener("resultReceived", e => {
             const templateData = e.getData();
             // these operations need to be done after template creation
             osparc.store.Study.addCollaborators(templateData, templateAccessRights);
             if (templateType) {
-              const studyUI = osparc.utils.Utils.deepCloneObject(templateData["ui"]);
-              studyUI["templateType"] = templateType;
-              osparc.store.Study.patchStudyData(templateData, "ui", studyUI)
+              osparc.store.Study.patchTemplateType(templateData["uuid"], templateType)
                 .then(() => {
-                  if (templateBrowser) {
-                    templateBrowser.reloadResources();
+                  if (tutorialBrowser && templateType === osparc.data.model.StudyUI.TUTORIAL_TYPE) {
+                    tutorialBrowser.reloadResources(false);
                   }
-                  if (hypertoolBrowser) {
-                    hypertoolBrowser.reloadResources();
+                  if (appBrowser && templateType === osparc.data.model.StudyUI.HYPERTOOL_TYPE) {
+                    appBrowser.reloadResources(false);
                   }
                 });
             }

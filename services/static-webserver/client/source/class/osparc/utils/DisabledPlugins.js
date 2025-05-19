@@ -52,25 +52,6 @@ qx.Class.define("osparc.utils.DisabledPlugins", {
       return this.__isPluginDisabled(this.LICENSES);
     },
 
-    isShareWithEmailEnabled: function() {
-      return osparc.store.StaticInfo.getInstance().isDevFeaturesEnabled();
-    },
-
-    isJobsEnabled: function() {
-      return osparc.store.StaticInfo.getInstance().isDevFeaturesEnabled();
-    },
-
-    isHypertoolsEnabled: function() {
-      if (osparc.store.StaticInfo.getInstance().isDevFeaturesEnabled() && osparc.product.Utils.isS4LProduct()) {
-        return true;
-      }
-      return false;
-    },
-
-    isConversationEnabled: function() {
-      return osparc.store.StaticInfo.getInstance().isDevFeaturesEnabled();
-    },
-
     __isPluginDisabled: function(key) {
       const statics = osparc.store.Store.getInstance().get("statics");
       if (statics) {

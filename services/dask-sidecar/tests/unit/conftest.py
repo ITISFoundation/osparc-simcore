@@ -14,7 +14,6 @@ import distributed
 import fsspec
 import pytest
 import simcore_service_dask_sidecar
-from aiobotocore.session import AioBaseClient, get_session
 from common_library.json_serialization import json_dumps
 from common_library.serialization import model_dump_with_secrets
 from dask_task_models_library.container_tasks.protocol import TaskOwner
@@ -36,6 +35,7 @@ from yarl import URL
 
 pytest_plugins = [
     "pytest_simcore.aws_server",
+    "pytest_simcore.aws_s3_service",
     "pytest_simcore.cli_runner",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
@@ -99,7 +99,7 @@ def app_environment(
                 model_dump_with_secrets(rabbit_service, show_secrets=True)
             ),
             "SC_BOOT_MODE": "debug",
-            "SIDECAR_LOGLEVEL": "DEBUG",
+            "DASK_SIDECAR_LOGLEVEL": "DEBUG",
             "SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME": "simcore_computational_shared_data",
             "SIDECAR_COMP_SERVICES_SHARED_FOLDER": f"{shared_data_folder}",
         },
@@ -177,45 +177,6 @@ def ftp_server(ftpserver: ProcessFTPServer) -> list[URL]:
 @pytest.fixture
 def s3_settings(mocked_s3_server_envs: None) -> S3Settings:
     return S3Settings.create_from_envs()
-
-
-@pytest.fixture
-def s3_endpoint_url(s3_settings: S3Settings) -> AnyUrl:
-    assert s3_settings.S3_ENDPOINT
-    return TypeAdapter(AnyUrl).validate_python(
-        f"{s3_settings.S3_ENDPOINT}",
-    )
-
-
-@pytest.fixture
-async def aiobotocore_s3_client(
-    s3_settings: S3Settings, s3_endpoint_url: AnyUrl
-) -> AsyncIterator[AioBaseClient]:
-    session = get_session()
-    async with session.create_client(
-        "s3",
-        endpoint_url=f"{s3_endpoint_url}",
-        aws_secret_access_key="xxx",  # noqa: S106
-        aws_access_key_id="xxx",
-    ) as client:
-        yield client
-
-
-@pytest.fixture
-async def bucket(
-    aiobotocore_s3_client: AioBaseClient, s3_settings: S3Settings
-) -> AsyncIterator[str]:
-    response = await aiobotocore_s3_client.create_bucket(
-        Bucket=s3_settings.S3_BUCKET_NAME
-    )
-    assert "ResponseMetadata" in response
-    assert "HTTPStatusCode" in response["ResponseMetadata"]
-    assert response["ResponseMetadata"]["HTTPStatusCode"] == 200
-
-    response = await aiobotocore_s3_client.list_buckets()
-    assert response["Buckets"]
-    assert len(response["Buckets"]) == 1
-    return response["Buckets"][0]["Name"]
 
 
 @pytest.fixture

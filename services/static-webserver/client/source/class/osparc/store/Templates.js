@@ -16,40 +16,115 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.store.Templates", {
-  extend: qx.core.Object,
-  type: "singleton",
+  type: "static",
 
-  construct: function() {
-    this.base(arguments);
+  statics: {
+    __tutorials: null,
+    __tutorialsPromiseCached: null,
+    __hypertools: null,
+    __hypertoolsPromiseCached: null,
 
-    this.__templates = [];
-  },
+    __fetchTemplatesPaginated: function(params, options) {
+      params["url"]["templateType"] = osparc.data.model.StudyUI.TEMPLATE_TYPE;
+      return osparc.data.Resources.fetch("templates", "getPageFilteredSorted", params, options)
+        .then(response => {
+          const templates = response["data"];
+          templates.forEach(template => template["resourceType"] = "template");
+          return response;
+        })
+        .catch(err => osparc.FlashMessenger.logError(err));
+    },
 
-  members: {
-    __templates: null,
+    fetchTemplatesNonPublicPaginated: function(params, options) {
+      return this.__fetchTemplatesPaginated(params, options);
+    },
 
-    fetchAllTemplates: function() {
-      if (this.__templates.length) {
-        return new Promise(resolve => resolve(this.__templates));
-      }
+    fetchTemplatesPublicPaginated: function(params, options) {
+      return this.__fetchTemplatesPaginated(params, options);
+    },
 
-      return osparc.data.Resources.getInstance().getAllPages("templates")
-        .then(templates => {
-          this.__templates = templates;
-          return templates;
+    __fetchAllTutorials: function() {
+      const params = {
+        url: {
+          "orderBy": JSON.stringify({
+            field: "last_change_date",
+            direction: "desc"
+          }),
+        }
+      };
+      params["url"]["templateType"] = osparc.data.model.StudyUI.TUTORIAL_TYPE;
+      return this.__tutorialsPromiseCached = osparc.data.Resources.getInstance().getAllPages("templates", params, "getPageFilteredSorted")
+        .then(tutorials => {
+          tutorials.forEach(tutorial => tutorial["resourceType"] = "tutorial");
+          this.__tutorials = tutorials;
+          return tutorials;
+        })
+        .catch(err => {
+          osparc.FlashMessenger.logError(err);
+        })
+        .finally(() => {
+          this.__tutorialsPromiseCached = null;
         });
     },
 
-    getTemplates: function() {
-      return this.__templates;
+    __fetchAllHypertools: function() {
+      const params = {
+        url: {
+          "orderBy": JSON.stringify({
+            field: "last_change_date",
+            direction: "desc"
+          }),
+        }
+      };
+      params["url"]["templateType"] = osparc.data.model.StudyUI.HYPERTOOL_TYPE;
+      return this.__hypertoolsPromiseCached = osparc.data.Resources.getInstance().getAllPages("templates", params, "getPageFilteredSorted")
+        .then(hypertools => {
+          hypertools.forEach(hypertool => hypertool["resourceType"] = "hypertool");
+          this.__hypertools = hypertools;
+          return hypertools;
+        })
+        .catch(err => {
+          osparc.FlashMessenger.logError(err);
+        })
+        .finally(() => {
+          this.__hypertoolsPromiseCached = null;
+        });
     },
 
-    getTemplatesByType: function(type) {
-      return this.__templates.filter(t => osparc.study.Utils.extractTemplateType(t) === type);
+    getTutorials: function(useCache = true) {
+      if (this.__tutorialsPromiseCached) {
+        return this.__tutorialsPromiseCached;
+      }
+
+      if (this.__tutorials === null) {
+        // no tutorials cached, fetch them
+        return this.__fetchAllTutorials();
+      }
+
+      if (useCache) {
+        // tutorials already cached, return them
+        return new Promise(resolve => resolve(this.__tutorials));
+      }
+
+      return this.__fetchAllTutorials();
     },
 
-    getTemplate: function(templateId) {
-      return this.__templates.find(t => t.uuid === templateId);
+    getHypertools: function(useCache = true) {
+      if (this.__hypertoolsPromiseCached) {
+        return this.__hypertoolsPromiseCached;
+      }
+
+      if (this.__hypertools === null) {
+        // no hypertools cached, fetch them
+        return this.__fetchAllHypertools();
+      }
+
+      if (useCache) {
+        // hypertools already cached, return them
+        return new Promise(resolve => resolve(this.__hypertools));
+      }
+
+      return this.__fetchAllHypertools();
     },
   }
 });

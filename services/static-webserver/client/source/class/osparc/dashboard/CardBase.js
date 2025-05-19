@@ -41,6 +41,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     "updateStudy": "qx.event.type.Data",
     "updateTemplate": "qx.event.type.Data",
     "updateService": "qx.event.type.Data",
+    "updateHypertool": "qx.event.type.Data",
     "publishTemplate": "qx.event.type.Data",
     "tagClicked": "qx.event.type.Data",
     "emptyStudyClicked": "qx.event.type.Data"
@@ -160,10 +161,13 @@ qx.Class.define("osparc.dashboard.CardBase", {
       return false;
     },
 
-    filterServiceType: function(resourceType, metadata, serviceType) {
-      if (serviceType && resourceType === "service") {
-        if (metadata && metadata.type) {
-          const matches = metadata.type === serviceType;
+    filterAppType: function(resourceType, metadata, appType) {
+      if (appType) {
+        if (resourceType === "service" && metadata && metadata.type) {
+          const matches = (metadata.type === appType);
+          return !matches;
+        } else if (resourceType === "hypertool") {
+          const matches = (resourceType === appType);
           return !matches;
         }
         return false;
@@ -221,11 +225,11 @@ qx.Class.define("osparc.dashboard.CardBase", {
       const organizations = groupsStore.getOrganizations();
       const myGroupId = groupsStore.getMyGroupId();
 
-      const sharedGrps = [];
       const groups = [];
       groups.push(groupEveryone);
       groups.push(groupProductEveryone);
       groups.push(...Object.values(organizations));
+      const sharedGrps = [];
       groups.forEach(group => {
         const idx = gids.indexOf(group.getGroupId());
         if (idx > -1) {
@@ -260,7 +264,10 @@ qx.Class.define("osparc.dashboard.CardBase", {
               sharedGrpLabels.push("...");
               break;
             }
-            const sharedGrpLabel = sharedGrps[i].getLabel();
+            let sharedGrpLabel = sharedGrps[i].getLabel();
+            if ([groupEveryone, groupProductEveryone].includes(sharedGrps[i])) {
+              sharedGrpLabel = "Public";
+            }
             if (!sharedGrpLabels.includes(sharedGrpLabel)) {
               sharedGrpLabels.push(sharedGrpLabel);
             }
@@ -315,7 +322,12 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     resourceType: {
-      check: ["study", "template", "service"],
+      check: [
+        "study",
+        "template",
+        "service",
+        "hypertool",
+      ],
       init: true,
       nullable: true,
       event: "changeResourceType"
@@ -506,11 +518,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
       let icon = null;
       switch (resourceData["resourceType"]) {
         case "study":
-          uuid = resourceData.uuid ? resourceData.uuid : null;
-          owner = resourceData.prjOwner ? resourceData.prjOwner : "";
-          workbench = resourceData.workbench ? resourceData.workbench : {};
-          break;
         case "template":
+        case "hypertool":
           uuid = resourceData.uuid ? resourceData.uuid : null;
           owner = resourceData.prjOwner ? resourceData.prjOwner : "";
           workbench = resourceData.workbench ? resourceData.workbench : {};
@@ -543,7 +552,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
         workbench
       });
 
-      if (resourceData["resourceType"] === "study" || resourceData["resourceType"] === "template") {
+      if (["study", "template", "hypertool"].includes(resourceData["resourceType"])) {
         osparc.store.Services.getStudyServices(resourceData.uuid)
           .then(resp => {
             const services = resp["services"];
@@ -993,7 +1002,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
       [
         "updateStudy",
         "updateTemplate",
-        "updateService"
+        "updateService",
+        "updateHypertool",
       ].forEach(ev => {
         resourceDetails.addListener(ev, e => this.fireDataEvent(ev, e.getData()));
       });
@@ -1045,6 +1055,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
         toolTipText += osparc.product.Utils.getStudyAlias();
       } else if (this.isResourceType("template")) {
         toolTipText += osparc.product.Utils.getTemplateAlias();
+      } else if (this.isResourceType("hypertool")) {
+        toolTipText += osparc.product.Utils.getAppAlias();
       }
       const control = new qx.ui.basic.Image().set({
         source: "@FontAwesome5Solid/times-circle/14",
@@ -1103,10 +1115,10 @@ qx.Class.define("osparc.dashboard.CardBase", {
       return this.self().filterSharedWith(checks, sharedWith);
     },
 
-    _filterServiceType: function(serviceType) {
+    __filterAppType: function(appType) {
       const resourceType = this.getResourceType();
       const resourceData = this.getResourceData();
-      return this.self().filterServiceType(resourceType, resourceData, serviceType);
+      return this.self().filterAppType(resourceType, resourceData, appType);
     },
 
     _filterClassifiers: function(classifiers) {
@@ -1117,7 +1129,14 @@ qx.Class.define("osparc.dashboard.CardBase", {
     _shouldApplyFilter: function(data) {
       let filterId = "searchBarFilter";
       if (this.isPropertyInitialized("resourceType")) {
-        filterId += "-" + this.getResourceType();
+        switch (this.getResourceType()) {
+          case "hypertool":
+            filterId += "-service";
+            break;
+          default:
+            filterId += "-" + this.getResourceType();
+            break;
+        }
       }
       data = filterId in data ? data[filterId] : data;
       if (this._filterText(data.text)) {
@@ -1129,7 +1148,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       if (this._filterSharedWith(data.sharedWith)) {
         return true;
       }
-      if (this._filterServiceType(data.serviceType)) {
+      if (this.__filterAppType(data.appType)) {
         return true;
       }
       if (this._filterClassifiers(data.classifiers)) {
@@ -1141,7 +1160,14 @@ qx.Class.define("osparc.dashboard.CardBase", {
     _shouldReactToFilter: function(data) {
       let filterId = "searchBarFilter";
       if (this.isPropertyInitialized("resourceType")) {
-        filterId += "-" + this.getResourceType();
+        switch (this.getResourceType()) {
+          case "hypertool":
+            filterId += "-service";
+            break;
+          default:
+            filterId += "-" + this.getResourceType();
+            break;
+        }
       }
       data = filterId in data ? data[filterId] : data;
       if (data.text && data.text.length > 1) {
@@ -1153,7 +1179,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       if (data.sharedWith) {
         return true;
       }
-      if ("serviceType" in data) {
+      if ("appType" in data) {
         return true;
       }
       if (data.classifiers && data.classifiers.length) {

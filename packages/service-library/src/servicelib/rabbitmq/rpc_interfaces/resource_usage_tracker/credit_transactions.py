@@ -1,4 +1,5 @@
 import logging
+from decimal import Decimal
 from typing import Final
 
 from models_library.api_schemas_resource_usage_tracker import (
@@ -12,6 +13,7 @@ from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.resource_tracker import CreditTransactionStatus
+from models_library.services_types import ServiceRunID
 from models_library.wallets import WalletID
 from pydantic import NonNegativeInt, TypeAdapter
 
@@ -82,3 +84,21 @@ async def pay_project_debt(
         new_wallet_transaction=new_wallet_transaction,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+async def get_transaction_current_credits_by_service_run_id(
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    *,
+    service_run_id: ServiceRunID,
+) -> Decimal:
+    result = await rabbitmq_rpc_client.request(
+        RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
+        _RPC_METHOD_NAME_ADAPTER.validate_python(
+            "get_transaction_current_credits_by_service_run_id"
+        ),
+        service_run_id=service_run_id,
+        timeout_s=_DEFAULT_TIMEOUT_S,
+    )
+    assert isinstance(result, Decimal)  # nosec
+    return result

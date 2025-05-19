@@ -25,7 +25,11 @@ qx.Class.define("osparc.store.Jobs", {
       init: [],
       nullable: true,
       event: "changeJobs"
-    }
+    },
+  },
+
+  events: {
+    "changeJobsActive": "qx.event.type.Data",
   },
 
   statics: {
@@ -33,7 +37,7 @@ qx.Class.define("osparc.store.Jobs", {
   },
 
   members: {
-    fetchJobs: function(
+    fetchJobsActive: function(
       offset = 0,
       limit = this.self().SERVER_MAX_LIMIT,
       orderBy = {
@@ -52,16 +56,55 @@ qx.Class.define("osparc.store.Jobs", {
       const options = {
         resolveWResponse: true
       };
-      return osparc.data.Resources.fetch("jobs", "getPage", params, options)
+      return osparc.data.Resources.fetch("jobs", "getPageLatestActive", params, options)
         .then(jobsResp => {
-          const jobs = [];
+          this.fireDataEvent("changeJobsActive", jobsResp["_meta"]["total"]);
+          const jobsActive = [];
           if ("data" in jobsResp) {
-            jobsResp["data"].forEach(jobData => {
-              jobs.push(this.addJob(jobData));
+            jobsResp["data"].forEach(jobActiveData => {
+              jobsActive.push(this.__addJob(jobActiveData));
             });
           }
           if (resolveWResponse) {
             return jobsResp;
+          }
+          return jobsActive;
+        })
+        .catch(err => console.error(err));
+    },
+
+    fetchJobsHistory: function(
+      studyId,
+      offset = 0,
+      limit = this.self().SERVER_MAX_LIMIT,
+      orderBy = {
+        field: "submitted_at",
+        direction: "desc"
+      },
+      resolveWResponse = false
+    ) {
+      const params = {
+        url: {
+          studyId,
+          offset,
+          limit,
+          orderBy: JSON.stringify(orderBy),
+        }
+      };
+      const options = {
+        resolveWResponse: true
+      };
+      return osparc.data.Resources.fetch("jobs", "getPageHistory", params, options)
+        .then(jobsResp => {
+          if (resolveWResponse) {
+            return jobsResp;
+          }
+          const jobs = [];
+          if ("data" in jobsResp) {
+            jobsResp["data"].forEach(jobData => {
+              const job = new osparc.data.Job(jobData);
+              jobs.push(job);
+            });
           }
           return jobs;
         })
@@ -74,7 +117,7 @@ qx.Class.define("osparc.store.Jobs", {
           studyId: projectUuid,
         }
       };
-      return osparc.data.Resources.getInstance().getAllPages("subJobs", params)
+      return osparc.data.Resources.getInstance().getAllPages("subJobs", params, "getPageLatest")
         .then(subJobsData => {
           const subJobs = [];
           subJobsData.forEach(subJobData => {
@@ -85,7 +128,7 @@ qx.Class.define("osparc.store.Jobs", {
         .catch(err => console.error(err));
     },
 
-    addJob: function(jobData) {
+    __addJob: function(jobData) {
       const jobs = this.getJobs();
       const jobFound = jobs.find(job => job.getProjectUuid() === jobData["projectUuid"]);
       if (jobFound) {
@@ -94,18 +137,20 @@ qx.Class.define("osparc.store.Jobs", {
       }
       const job = new osparc.data.Job(jobData);
       jobs.push(job);
-      this.fireDataEvent("changeJobs");
       return job;
     },
 
     addSubJob: function(subJobData) {
-      const jobs = this.getJobs();
-      const jobFound = jobs.find(job => job.getProjectUuid() === subJobData["projectUuid"]);
-      if (jobFound) {
-        const subJob = jobFound.addSubJob(subJobData);
-        return subJob;
+      let job = this.getJob(subJobData["projectUuid"]);
+      if (!job) {
+        const jobs = this.getJobs();
+        job = new osparc.data.Job({
+          "projectUuid": subJobData["projectUuid"],
+        });
+        jobs.push(job);
       }
-      return null;
+      const subJob = job.addSubJob(subJobData);
+      return subJob;
     },
 
     getJob: function(projectUuid) {

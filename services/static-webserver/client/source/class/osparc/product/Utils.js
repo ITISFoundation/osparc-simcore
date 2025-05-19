@@ -43,16 +43,10 @@ qx.Class.define("osparc.product.Utils", {
 
     getStudyAlias: function(options = {}) {
       let alias = null;
-      if (this.getProductName().includes("s4l")) {
-        if (options.plural) {
-          alias = qx.locale.Manager.tr("projects");
-        } else {
-          alias = qx.locale.Manager.tr("project");
-        }
-      } else if (options.plural) {
-        alias = qx.locale.Manager.tr("studies");
+      if (options.plural) {
+        alias = qx.locale.Manager.tr("projects");
       } else {
-        alias = qx.locale.Manager.tr("study");
+        alias = qx.locale.Manager.tr("project");
       }
 
       if (options.firstUpperCase) {
@@ -102,6 +96,36 @@ qx.Class.define("osparc.product.Utils", {
       return alias;
     },
 
+    getHypertoolAlias: function(options = {}) {
+      let alias = qx.locale.Manager.tr("hypertool");
+      if (options.plural) {
+        alias = qx.locale.Manager.tr("hypertools");
+      }
+
+      if (options.firstUpperCase) {
+        alias = osparc.utils.Utils.capitalize(alias);
+      } else if (options.allUpperCase) {
+        alias = alias.toUpperCase();
+      }
+
+      return alias;
+    },
+
+    getAppAlias: function(options = {}) {
+      let alias = qx.locale.Manager.tr("app");
+      if (options.plural) {
+        alias = qx.locale.Manager.tr("Apps");
+      }
+
+      if (options.firstUpperCase) {
+        alias = osparc.utils.Utils.capitalize(alias);
+      } else if (options.allUpperCase) {
+        alias = alias.toUpperCase();
+      }
+
+      return alias;
+    },
+
     resourceTypeToAlias: function(resourceType, options) {
       switch (resourceType) {
         case "study":
@@ -109,7 +133,13 @@ qx.Class.define("osparc.product.Utils", {
         case "template":
           return this.getTemplateAlias(options);
         case "service":
-          return this.getServiceAlias(options);
+          // return this.getServiceAlias(options);
+          // Do not use this alias anymore, use "app" instead
+          return this.getAppAlias(options);
+        case "hypertool":
+          return this.getHypertoolAlias(options);
+        case "app":
+          return this.getAppAlias(options);
       }
       return resourceType;
     },
@@ -186,10 +216,6 @@ qx.Class.define("osparc.product.Utils", {
         return "REQUEST_ACCOUNT_INSTRUCTIONS";
       }
       return "REGISTER";
-    },
-
-    hasConvertToPipelineEnabled: function() {
-      return osparc.store.StaticInfo.getInstance().isDevFeaturesEnabled();
     },
 
     // oSPARC only
