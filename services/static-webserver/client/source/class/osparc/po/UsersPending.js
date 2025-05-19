@@ -28,16 +28,37 @@ qx.Class.define("osparc.po.UsersPending", {
             email: "john.doe@email.com",
             date: "2025-01-01 00:00:00.702394",
             status: "APPROVAL_PENDING",
+            info: {
+              "institution": "ETH Zurich",
+              "department": "Department of Physics",
+              "position": "PhD Student",
+              "country": "Switzerland",
+              "city": "Zurich",
+            },
           }, {
             name: "Jane Doe",
             email: "jane.doe@email.com",
             date: "2025-01-01 00:01:00.702394",
             status: "APPROVAL_DENIED",
+            info: {
+              "institution": "ETH Zurich",
+              "department": "Department of Physics",
+              "position": "PhD Student",
+              "country": "Switzerland",
+              "city": "Zurich",
+            },
           }, {
             name: "Alice Smith",
             email: "alice.smith@email.com",
             date: "2025-01-01 00:02:00.702394",
             status: "CONFIRMATION_PENDING",
+            info: {
+              "institution": "ETH Zurich",
+              "department": "Department of Physics",
+              "position": "PhD Student",
+              "country": "Switzerland",
+              "city": "Zurich",
+            },
           }]
         });
       });
@@ -158,11 +179,18 @@ qx.Class.define("osparc.po.UsersPending", {
         column: 3,
       });
 
-      pendingUsersLayout.add(new qx.ui.basic.Label(this.tr("Action")).set({
+      pendingUsersLayout.add(new qx.ui.basic.Label(this.tr("Info")).set({
         font: "text-14"
       }), {
         row: 0,
         column: 4,
+      });
+
+      pendingUsersLayout.add(new qx.ui.basic.Label(this.tr("Action")).set({
+        font: "text-14"
+      }), {
+        row: 0,
+        column: 5,
       });
     },
 
@@ -187,12 +215,22 @@ qx.Class.define("osparc.po.UsersPending", {
           row,
           column: 3,
         });
-
-        const buttonsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-        pendingUsersLayout.add(buttonsLayout, {
+        const infoButton = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/16");
+        infoButton.addListener("execute", () => {
+          const container = new qx.ui.container.Scroll();
+          container.add(new osparc.ui.basic.JsonTreeWidget(pendingUser.info, "pendingUserInfo"));
+          osparc.ui.window.Window.popUpInWindow(container, this.tr("User Info"));
+        });
+        pendingUsersLayout.add(infoButton, {
           row,
           column: 4,
         });
+        const buttonsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+        pendingUsersLayout.add(buttonsLayout, {
+          row,
+          column: 5,
+        });
+
         switch (pendingUser.status) {
           case "APPROVAL_PENDING": {
             const approveButton = this.self().createApproveButton(pendingUser.email);

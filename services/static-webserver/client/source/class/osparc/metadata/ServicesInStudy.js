@@ -132,7 +132,7 @@ qx.Class.define("osparc.metadata.ServicesInStudy", {
         i++;
         const node = workbench[nodeId];
 
-        const infoButton = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/14");
+        const infoButton = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/16");
         infoButton.addListener("execute", () => {
           const metadata = osparc.store.Services.getMetadata(node["key"], node["version"]);
           if (metadata === null) {
