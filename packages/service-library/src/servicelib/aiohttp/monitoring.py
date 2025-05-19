@@ -95,17 +95,20 @@ def middleware_factory(
         except web.HTTPServerError as exc:
             resp = exc
             log_exception = exc
+            raise resp
         except web.HTTPException as exc:
             resp = exc
             log_exception = None
+            raise resp
         except asyncio.CancelledError as exc:
             resp = web.HTTPInternalServerError(reason=f"{exc}")
             log_exception = exc
-            raise
+            raise resp
         except Exception as exc:  # pylint: disable=broad-except
             resp = web.HTTPInternalServerError(reason=f"{exc}")
             resp.__cause__ = exc
             log_exception = exc
+            raise resp
 
         finally:
             resp_time_secs: float = time.time() - start_time
