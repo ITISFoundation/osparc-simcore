@@ -4,6 +4,7 @@ from tempfile import TemporaryDirectory
 
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, StorageFileID
+from models_library.service_settings_labels import LegacyState
 from models_library.users import UserID
 from pydantic import TypeAdapter
 from servicelib.archiving_utils import unarchive_dir
@@ -101,14 +102,16 @@ async def _pull_legacy_archive(
     *,
     io_log_redirect_cb: LogRedirectCB,
     progress_bar: ProgressBarData,
+    legacy_destination_path: Path | None = None,
 ) -> None:
     # NOTE: the legacy way of storing states was as zip archives
+    archive_path = legacy_destination_path or destination_path
     async with progress_bar.sub_progress(
-        steps=2, description=f"pulling {destination_path.name}"
+        steps=2, description=f"pulling {archive_path.name}"
     ) as sub_prog:
         with TemporaryDirectory() as tmp_dir_name:
             archive_file = Path(tmp_dir_name) / __get_s3_name(
-                destination_path, is_archive=True
+                archive_path, is_archive=True
             )
 
             s3_object = __create_s3_object_key(project_id, node_uuid, archive_file)
@@ -124,7 +127,7 @@ async def _pull_legacy_archive(
                 progress_bar=sub_prog,
                 aws_s3_cli_settings=None,
             )
-            _logger.info("completed pull of %s.", destination_path)
+            _logger.info("completed pull of %s.", archive_path)
 
             if io_log_redirect_cb:
                 await io_log_redirect_cb(
@@ -194,6 +197,7 @@ async def push(
     exclude_patterns: set[str] | None = None,
     progress_bar: ProgressBarData,
     aws_s3_cli_settings: AwsS3CliSettings | None,
+    legacy_state: LegacyState | None,
 ) -> None:
     """pushes and removes the legacy archive if present"""
 
@@ -208,6 +212,7 @@ async def push(
         progress_bar=progress_bar,
         aws_s3_cli_settings=aws_s3_cli_settings,
     )
+
     archive_exists = await _state_metadata_entry_exists(
         user_id=user_id,
         project_id=project_id,
@@ -215,16 +220,31 @@ async def push(
         path=source_path,
         is_archive=True,
     )
+    if archive_exists:
+        with log_context(_logger, logging.INFO, "removing legacy archive"):
+            await _delete_legacy_archive(
+                project_id=project_id,
+                node_uuid=node_uuid,
+                path=source_path,
+            )
 
-    if not archive_exists:
-        return
-
-    with log_context(_logger, logging.INFO, "removing legacy data archive"):
-        await _delete_legacy_archive(
+    if legacy_state:
+        legacy_archive_exists = await _state_metadata_entry_exists(
+            user_id=user_id,
             project_id=project_id,
             node_uuid=node_uuid,
-            path=source_path,
+            path=legacy_state.old_state_path,
+            is_archive=True,
         )
+        if legacy_archive_exists:
+            with log_context(
+                _logger, logging.INFO, f"removing legacy archive in {legacy_state}"
+            ):
+                await _delete_legacy_archive(
+                    project_id=project_id,
+                    node_uuid=node_uuid,
+                    path=legacy_state.old_state_path,
+                )
 
 
 async def pull(
@@ -237,8 +257,40 @@ async def pull(
     r_clone_settings: RCloneSettings,
     progress_bar: ProgressBarData,
     aws_s3_cli_settings: AwsS3CliSettings | None,
+    legacy_state: LegacyState | None,
 ) -> None:
     """restores the state folder"""
+
+    if legacy_state and legacy_state.new_state_path == destination_path:
+        _logger.info(
+            "trying to restore from legacy_state=%s, destination_path=%s",
+            legacy_state,
+            destination_path,
+        )
+        legacy_state_exists = await _state_metadata_entry_exists(
+            user_id=user_id,
+            project_id=project_id,
+            node_uuid=node_uuid,
+            path=legacy_state.old_state_path,
+            is_archive=True,
+        )
+        _logger.info("legacy_state_exists=%s", legacy_state_exists)
+        if legacy_state_exists:
+            with log_context(
+                _logger,
+                logging.INFO,
+                f"restoring data from legacy archive in {legacy_state}",
+            ):
+                await _pull_legacy_archive(
+                    user_id=user_id,
+                    project_id=project_id,
+                    node_uuid=node_uuid,
+                    destination_path=legacy_state.new_state_path,
+                    io_log_redirect_cb=io_log_redirect_cb,
+                    progress_bar=progress_bar,
+                    legacy_destination_path=legacy_state.old_state_path,
+                )
+            return
 
     state_archive_exists = await _state_metadata_entry_exists(
         user_id=user_id,
@@ -248,7 +300,7 @@ async def pull(
         is_archive=True,
     )
     if state_archive_exists:
-        with log_context(_logger, logging.INFO, "restoring legacy data archive"):
+        with log_context(_logger, logging.INFO, "restoring data from legacy archive"):
             await _pull_legacy_archive(
                 user_id=user_id,
                 project_id=project_id,
