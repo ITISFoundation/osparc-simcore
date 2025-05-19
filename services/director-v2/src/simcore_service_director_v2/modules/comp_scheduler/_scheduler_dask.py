@@ -31,7 +31,6 @@ from ...core.errors import (
 )
 from ...models.comp_runs import CompRunsAtDB, Iteration, RunMetadataDict
 from ...models.comp_tasks import CompTaskAtDB
-from ...models.dask_subsystem import DaskClientTaskState
 from ...utils.dask import (
     clean_task_output_and_log_files_if_invalid,
     parse_output_data,
@@ -48,18 +47,6 @@ from ..db.repositories.comp_tasks import CompTasksRepository
 from ._scheduler_base import BaseCompScheduler
 
 _logger = logging.getLogger(__name__)
-
-
-_DASK_CLIENT_TASK_STATE_TO_RUNNING_STATE_MAP: dict[
-    DaskClientTaskState, RunningState
-] = {
-    DaskClientTaskState.PENDING: RunningState.PENDING,
-    DaskClientTaskState.NO_WORKER: RunningState.WAITING_FOR_RESOURCES,
-    DaskClientTaskState.LOST: RunningState.UNKNOWN,
-    DaskClientTaskState.ERRED: RunningState.FAILED,
-    DaskClientTaskState.ABORTED: RunningState.ABORTED,
-    DaskClientTaskState.SUCCESS: RunningState.SUCCESS,
-}
 
 
 @asynccontextmanager
@@ -158,27 +145,6 @@ class DaskScheduler(BaseCompScheduler):
                 run_metadata=comp_run.metadata,
             ) as client:
                 return await client.get_tasks_status([f"{t.job_id}" for t in tasks])
-            #     tasks_statuses = await client.get_tasks_status(
-            #         [f"{t.job_id}" for t in tasks]
-            #     )
-            #     # process dask states
-            # running_states: list[RunningState] = []
-            # for dask_task_state, task in zip(tasks_statuses, tasks, strict=True):
-            #     if dask_task_state is DaskClientTaskState.PENDING_OR_STARTED:
-            #         running_states += [
-            #             (
-            #                 RunningState.STARTED
-            #                 if task.progress is not None
-            #                 else RunningState.PENDING
-            #             )
-            #         ]
-            #     else:
-            #         running_states += [
-            #             _DASK_CLIENT_TASK_STATE_TO_RUNNING_STATE_MAP.get(
-            #                 dask_task_state, RunningState.UNKNOWN
-            #             )
-            #         ]
-            # return running_states
 
         except ComputationalBackendOnDemandNotReadyError:
             _logger.info("The on demand computational backend is not ready yet...")

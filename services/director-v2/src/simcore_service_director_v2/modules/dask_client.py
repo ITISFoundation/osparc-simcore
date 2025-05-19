@@ -47,7 +47,6 @@ from dask_task_models_library.models import (
 from dask_task_models_library.resource_constraints import (
     create_ec2_resource_constraint_key,
 )
-from distributed.scheduler import TaskStateState as DaskSchedulerTaskState
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.clusters import ClusterDetails, Scheduler
 from models_library.clusters import ClusterAuthentication, ClusterTypeInModel
@@ -77,7 +76,6 @@ from ..core.errors import (
 from ..core.settings import AppSettings, ComputationalBackendSettings
 from ..models.comp_runs import RunMetadataDict
 from ..models.comp_tasks import Image
-from ..models.dask_subsystem import DaskClientTaskState
 from ..modules.storage import StorageClient
 from ..utils import dask as dask_utils
 from ..utils.dask_client_utils import (
@@ -89,25 +87,6 @@ from ..utils.dask_client_utils import (
 from .db import get_db_engine
 
 _logger = logging.getLogger(__name__)
-
-
-# NOTE: processing does not mean the task is currently being computed, it means
-# the task was accepted by a worker, but might still be queud in it
-# see https://distributed.dask.org/en/stable/scheduling-state.html#task-state
-
-
-_DASK_TASK_STATUS_DASK_CLIENT_TASK_STATE_MAP: dict[
-    DaskSchedulerTaskState, DaskClientTaskState
-] = {
-    "queued": DaskClientTaskState.PENDING,
-    "released": DaskClientTaskState.PENDING,
-    "waiting": DaskClientTaskState.PENDING,
-    "no-worker": DaskClientTaskState.NO_WORKER,
-    "processing": DaskClientTaskState.PENDING_OR_STARTED,
-    "memory": DaskClientTaskState.SUCCESS,
-    "erred": DaskClientTaskState.ERRED,
-    "forgotten": DaskClientTaskState.LOST,
-}
 
 
 _DASK_DEFAULT_TIMEOUT_S: Final[int] = 5
