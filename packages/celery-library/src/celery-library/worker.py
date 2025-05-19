@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 from models_library.progress_bar import ProgressReport
 
-from ..celery.models import TaskID, TaskInfoStore
+from .models import TaskID, TaskInfoStore
 
 _logger = logging.getLogger(__name__)
 
