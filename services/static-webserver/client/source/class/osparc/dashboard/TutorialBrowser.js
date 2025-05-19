@@ -94,7 +94,7 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
     },
 
     __setResourcesToList: function(tutorialsList) {
-      tutorialsList.forEach(tutorial => tutorial["resourceType"] = "template");
+      tutorialsList.forEach(tutorial => tutorial["resourceType"] = "tutorial");
       this._resourcesList = tutorialsList;
       this._reloadCards();
     },

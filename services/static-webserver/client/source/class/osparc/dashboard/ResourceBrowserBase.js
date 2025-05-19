@@ -916,6 +916,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
             break;
           }
           case "template":
+          case "tutorial":
           case "hypertool":
             this._createStudyFromTemplate(resourceData);
             break;

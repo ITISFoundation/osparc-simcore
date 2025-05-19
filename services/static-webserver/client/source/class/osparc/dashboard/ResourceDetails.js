@@ -27,6 +27,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     switch (resourceData["resourceType"]) {
       case "study":
       case "template":
+      case "tutorial":
       case "hypertool": {
         const params = {
           url: {
@@ -54,6 +55,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         switch (resourceData["resourceType"]) {
           case "study":
           case "template":
+          case "tutorial":
           case "hypertool":
             osparc.store.Services.getStudyServicesMetadata(latestResourceData)
               .finally(() => {

@@ -166,7 +166,7 @@ qx.Class.define("osparc.dashboard.AppBrowser", {
 
     _populateCardMenu: function(card) {
       const studyData = card.getResourceData();
-      if (studyData["resourceType"] === "template") {
+      if (studyData["resourceType"] === "hypertool") {
         // The App Browser can also list templates (hypertools)
         this._populateTemplateCardMenu(card);
       } else {
