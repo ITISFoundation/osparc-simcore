@@ -1001,9 +1001,13 @@ async def with_storage_celery_worker_controller(
     monkeypatch.setenv("STORAGE_WORKER_MODE", "true")
     app_settings = ApplicationSettings.create_from_envs()
     app_factory = partial(create_app, app_settings)
-    worker_init.connect(
-        partial(on_worker_init, app_factory, app_settings.STORAGE_CELERY)
-    )
+
+    def _on_worker_init_wrapper(sender: Celery, **_kwargs) -> None:
+        return partial(on_worker_init, app_factory, app_settings.STORAGE_CELERY)(
+            sender, **_kwargs
+        )
+
+    worker_init.connect(_on_worker_init_wrapper)
     worker_shutdown.connect(on_worker_shutdown)
 
     setup_worker_tasks(celery_app)

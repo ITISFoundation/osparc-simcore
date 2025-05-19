@@ -26,10 +26,18 @@ config_all_loggers(
 )
 
 
-assert _settings.STORAGE_CELERY
+assert _settings.STORAGE_CELERY  # nosec
 app = create_celery_app(_settings.STORAGE_CELERY)
-app_factory = partial(create_app(_settings))
-worker_init.connect(partial(on_worker_init, app_factory, _settings.STORAGE_CELERY))
+app_factory = partial(create_app, _settings)
+
+
+def worker_init_wrapper(sender, **_kwargs):
+    return partial(on_worker_init, app_factory, _settings.STORAGE_CELERY)(
+        sender, **_kwargs
+    )
+
+
+worker_init.connect(worker_init_wrapper)
 worker_shutdown.connect(on_worker_shutdown)
 
 

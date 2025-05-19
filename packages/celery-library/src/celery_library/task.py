@@ -205,4 +205,5 @@ def register_task(  # type: ignore[misc]
         bind=True,
         base=AbortableTask,
         time_limit=None if timeout is None else timeout.total_seconds(),
+        pydantic=True,
     )(wrapped_fn)

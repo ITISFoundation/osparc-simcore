@@ -40,6 +40,7 @@ def on_worker_init(
         shutdown_event = asyncio.Event()
 
         fastapi_app = app_factory()
+        assert isinstance(fastapi_app, FastAPI)  # nosec
 
         async def setup_task_worker():
             redis_client_sdk = RedisClientSDK(
