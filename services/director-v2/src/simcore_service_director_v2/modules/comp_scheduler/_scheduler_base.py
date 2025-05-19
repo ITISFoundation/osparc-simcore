@@ -116,11 +116,11 @@ class SortedTasks:
 
 
 async def _triage_changed_tasks(
-    changed_tasks: list[tuple[_Previous, _Current]],
+    changed_tasks_or_executing: list[tuple[_Previous, _Current]],
 ) -> SortedTasks:
     started_tasks = [
         current
-        for previous, current in changed_tasks
+        for previous, current in changed_tasks_or_executing
         if current.state in RUNNING_STATES
         or (
             previous.state in WAITING_FOR_START_STATES
@@ -130,17 +130,21 @@ async def _triage_changed_tasks(
 
     # NOTE: some tasks can be both started and completed since we might have the time they were running
     completed_tasks = [
-        current for _, current in changed_tasks if current.state in COMPLETED_STATES
+        current
+        for _, current in changed_tasks_or_executing
+        if current.state in COMPLETED_STATES
     ]
 
     waiting_for_resources_tasks = [
         current
-        for previous, current in changed_tasks
+        for previous, current in changed_tasks_or_executing
         if current.state in WAITING_FOR_START_STATES
     ]
 
     lost_or_momentarily_lost_tasks = [
-        current for _, current in changed_tasks if current.state is RunningState.UNKNOWN
+        current
+        for _, current in changed_tasks_or_executing
+        if current.state is RunningState.UNKNOWN
     ]
     if lost_or_momentarily_lost_tasks:
         _logger.warning(
@@ -321,21 +325,30 @@ class BaseCompScheduler(ABC):
         user_id: UserID,
         processing_tasks: list[CompTaskAtDB],
         comp_run: CompRunsAtDB,
-    ) -> list[tuple[_Previous, _Current]]:
+    ) -> tuple[list[tuple[_Previous, _Current]], list[CompTaskAtDB]]:
         tasks_backend_status = await self._get_tasks_status(
             user_id, processing_tasks, comp_run
         )
 
-        return [
-            (
-                task,
-                task.model_copy(update={"state": backend_state}),
-            )
-            for task, backend_state in zip(
-                processing_tasks, tasks_backend_status, strict=True
-            )
-            if task.state is not backend_state
-        ]
+        return (
+            [
+                (
+                    task,
+                    task.model_copy(update={"state": backend_state}),
+                )
+                for task, backend_state in zip(
+                    processing_tasks, tasks_backend_status, strict=True
+                )
+                if task.state is not backend_state
+            ],
+            [
+                task
+                for task, backend_state in zip(
+                    processing_tasks, tasks_backend_status, strict=True
+                )
+                if task.state is backend_state is RunningState.STARTED
+            ],
+        )
 
     async def _process_started_tasks(
         self,
@@ -476,7 +489,10 @@ class BaseCompScheduler(ABC):
             return
 
         # get the tasks which state actually changed since last check
-        tasks_with_changed_states = await self._get_changed_tasks_from_backend(
+        (
+            tasks_with_changed_states,
+            executing_tasks,
+        ) = await self._get_changed_tasks_from_backend(
             user_id, tasks_inprocess, comp_run
         )
         # NOTE: typical states a task goes through
@@ -511,6 +527,9 @@ class BaseCompScheduler(ABC):
         if sorted_tasks.waiting:
             await self._process_waiting_tasks(sorted_tasks.waiting)
 
+        if executing_tasks:
+            await self._process_executing_tasks(user_id, executing_tasks, comp_run)
+
     @abstractmethod
     async def _start_tasks(
         self,
@@ -544,6 +563,15 @@ class BaseCompScheduler(ABC):
         comp_run: CompRunsAtDB,
     ) -> None:
         """process tasks from the 3rd party backend"""
+
+    @abstractmethod
+    async def _process_executing_tasks(
+        self,
+        user_id: UserID,
+        tasks: list[CompTaskAtDB],
+        comp_run: CompRunsAtDB,
+    ) -> None:
+        """process executing tasks from the 3rd party backend"""
 
     async def apply(
         self,

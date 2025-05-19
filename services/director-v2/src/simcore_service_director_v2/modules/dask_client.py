@@ -405,6 +405,33 @@ class DaskClient:
 
         return list_of_node_id_to_job_id
 
+    async def get_tasks_progress(
+        self, job_ids: list[str]
+    ) -> tuple[TaskProgressEvent | None, ...]:
+        dask_utils.check_scheduler_is_still_the_same(
+            self.backend.scheduler_id, self.backend.client
+        )
+        dask_utils.check_communication_with_scheduler_is_open(self.backend.client)
+        dask_utils.check_scheduler_status(self.backend.client)
+
+        dask_events = await self.backend.client.get_events(
+            TaskProgressEvent.topic_name()
+        )
+
+        if not dask_events:
+            return tuple([None] * len(job_ids))
+        last_task_progress = []
+        for job_id in job_ids:
+            progress_event = None
+            for dask_event in reversed(dask_events):
+                parsed_event = TaskProgressEvent.model_validate_json(dask_event[1])
+                if parsed_event.job_id == job_id:
+                    progress_event = parsed_event
+                    break
+            last_task_progress.append(progress_event)
+
+        return tuple(last_task_progress)
+
     async def get_tasks_status(self, job_ids: Iterable[str]) -> list[RunningState]:
         dask_utils.check_scheduler_is_still_the_same(
             self.backend.scheduler_id, self.backend.client
@@ -413,8 +440,6 @@ class DaskClient:
         dask_utils.check_scheduler_status(self.backend.client)
 
         async def _get_job_id_status(job_id: str) -> RunningState:
-            # TODO: maybe we should define an event just for that, instead of multiple calls
-            # but the max length by default is 1000. We should test it
             dask_events: tuple[tuple[UnixTimestamp, str], ...] = (
                 await self.backend.client.get_events(
                     TASK_LIFE_CYCLE_EVENT.format(key=job_id)

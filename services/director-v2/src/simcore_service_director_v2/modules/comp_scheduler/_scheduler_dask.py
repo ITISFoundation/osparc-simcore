@@ -37,6 +37,7 @@ from ...utils.dask import (
 )
 from ...utils.dask_client_utils import TaskHandlers, UnixTimestamp
 from ...utils.rabbitmq import (
+    publish_service_progress,
     publish_service_resource_tracking_stopped,
     publish_service_stopped_metrics,
 )
@@ -149,6 +150,62 @@ class DaskScheduler(BaseCompScheduler):
         except ComputationalBackendOnDemandNotReadyError:
             _logger.info("The on demand computational backend is not ready yet...")
             return [RunningState.WAITING_FOR_CLUSTER] * len(tasks)
+
+    async def _process_executing_tasks(
+        self,
+        user_id: UserID,
+        tasks: list[CompTaskAtDB],
+        comp_run: CompRunsAtDB,
+    ) -> None:
+        task_progresses = []
+        try:
+            async with _cluster_dask_client(
+                user_id,
+                self,
+                use_on_demand_clusters=comp_run.use_on_demand_clusters,
+                run_metadata=comp_run.metadata,
+            ) as client:
+                task_progresses = await client.get_tasks_progress(
+                    [f"{t.job_id}" for t in tasks],
+                )
+            for task_progress_event in task_progresses:
+                if task_progress_event:
+                    await CompTasksRepository(
+                        self.db_engine
+                    ).update_project_task_progress(
+                        task_progress_event.task_owner.project_id,
+                        task_progress_event.task_owner.node_id,
+                        task_progress_event.progress,
+                    )
+
+        except ComputationalBackendOnDemandNotReadyError:
+            _logger.info("The on demand computational backend is not ready yet...")
+
+        comp_tasks_repo = CompTasksRepository(self.db_engine)
+        await asyncio.gather(
+            *(
+                comp_tasks_repo.update_project_task_progress(
+                    t.task_owner.project_id,
+                    t.task_owner.node_id,
+                    t.progress,
+                )
+                for t in task_progresses
+                if t
+            )
+        )
+        await asyncio.gather(
+            *(
+                publish_service_progress(
+                    self.rabbitmq_client,
+                    user_id=t.task_owner.user_id,
+                    project_id=t.task_owner.project_id,
+                    node_id=t.task_owner.node_id,
+                    progress=t.progress,
+                )
+                for t in task_progresses
+                if t
+            )
+        )
 
     async def _stop_tasks(
         self, user_id: UserID, tasks: list[CompTaskAtDB], comp_run: CompRunsAtDB
