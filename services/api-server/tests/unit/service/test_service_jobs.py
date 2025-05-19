@@ -16,7 +16,7 @@ async def test_list_jobs_by_resource_prefix(
 ):
     # Test with default pagination parameters
     jobs, page_meta = await job_service.list_jobs(
-        filter_by_job_parent_resource_name_prefix="solvers/some-solver"
+        job_parent_resource_name="solvers/some-solver"
     )
 
     assert isinstance(jobs, list)

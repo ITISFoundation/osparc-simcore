@@ -3962,6 +3962,14 @@ paths:
         schema:
           $ref: '#/components/schemas/ProjectTypeAPI'
           default: all
+      - name: template_type
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - $ref: '#/components/schemas/ProjectTemplateType'
+          - type: 'null'
+          title: Template Type
       - name: show_hidden
         in: query
         required: false
@@ -14868,6 +14876,10 @@ components:
           - type: object
           - type: 'null'
           title: Quality
+        templateType:
+          anyOf:
+          - $ref: '#/components/schemas/ProjectTemplateType'
+          - type: 'null'
       type: object
       title: ProjectPatch
     ProjectPermalink:
