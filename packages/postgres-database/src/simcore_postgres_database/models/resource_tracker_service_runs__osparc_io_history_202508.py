@@ -20,8 +20,8 @@ class ResourceTrackerServiceRunStatusOsparcIoHistory(str, enum.Enum):
     ERROR = "ERROR"
 
 
-resource_tracker_service_runs__osparc_io_history_202508 = sa.Table(
-    "resource_tracker_service_runs__osparc_io_history_202508",
+zzz_resource_tracker_service_runs__osparc_io_archive_202508 = sa.Table(
+    "zzz_resource_tracker_service_runs__osparc_io_archive_202508",
     metadata,
     # Primary keys
     sa.Column(

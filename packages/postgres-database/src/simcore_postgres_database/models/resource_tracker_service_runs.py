@@ -1,12 +1,13 @@
-""" resource_tracker_service_runs table
-"""
+"""resource_tracker_service_runs table"""
+
 import enum
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
 
-from ._common import NUMERIC_KWARGS, column_modified_datetime
+from ._common import NUMERIC_KWARGS, RefActions, column_modified_datetime
 from .base import metadata
+from .users import users
 
 
 class ResourceTrackerServiceType(str, enum.Enum):
@@ -25,7 +26,17 @@ resource_tracker_service_runs = sa.Table(
     metadata,
     # Primary keys
     sa.Column(
-        "product_name", sa.String, nullable=False, doc="Product name", primary_key=True
+        "product_name",
+        sa.String,
+        sa.ForeignKey(
+            "products.name",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
+            name="fk_service_runs_to_product_name",
+        ),
+        nullable=False,
+        doc="Product name",
+        primary_key=True,
     ),
     sa.Column(
         "service_run_id",
@@ -84,6 +95,12 @@ resource_tracker_service_runs = sa.Table(
     sa.Column(
         "user_id",
         sa.BigInteger,
+        sa.ForeignKey(
+            users.c.id,
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
+            name="fk_service_runs_to_user_id",
+        ),
         nullable=False,
         doc="We want to store the user id for tracking/billing purposes and be sure it stays there even when the user is deleted (that's also reason why we do not introduce foreign key)",
         index=True,
