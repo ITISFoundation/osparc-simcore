@@ -40,6 +40,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
   events: {
     "updateStudy": "qx.event.type.Data",
     "updateTemplate": "qx.event.type.Data",
+    "updateTutorial": "qx.event.type.Data",
     "updateService": "qx.event.type.Data",
     "updateHypertool": "qx.event.type.Data",
     "publishTemplate": "qx.event.type.Data",
@@ -325,8 +326,9 @@ qx.Class.define("osparc.dashboard.CardBase", {
       check: [
         "study",
         "template",
-        "service",
+        "tutorial",
         "hypertool",
+        "service",
       ],
       init: true,
       nullable: true,
@@ -519,6 +521,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       switch (resourceData["resourceType"]) {
         case "study":
         case "template":
+        case "tutorial":
         case "hypertool":
           uuid = resourceData.uuid ? resourceData.uuid : null;
           owner = resourceData.prjOwner ? resourceData.prjOwner : "";
@@ -552,7 +555,12 @@ qx.Class.define("osparc.dashboard.CardBase", {
         workbench
       });
 
-      if (["study", "template", "hypertool"].includes(resourceData["resourceType"])) {
+      if ([
+        "study",
+        "template",
+        "tutorial",
+        "hypertool"
+      ].includes(resourceData["resourceType"])) {
         osparc.store.Services.getStudyServices(resourceData.uuid)
           .then(resp => {
             const services = resp["services"];
@@ -1002,6 +1010,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       [
         "updateStudy",
         "updateTemplate",
+        "updateTutorial",
         "updateService",
         "updateHypertool",
       ].forEach(ev => {
@@ -1055,6 +1064,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
         toolTipText += osparc.product.Utils.getStudyAlias();
       } else if (this.isResourceType("template")) {
         toolTipText += osparc.product.Utils.getTemplateAlias();
+      } else if (this.isResourceType("tutorial")) {
+        toolTipText += osparc.product.Utils.getTutorialAlias();
       } else if (this.isResourceType("hypertool")) {
         toolTipText += osparc.product.Utils.getAppAlias();
       }

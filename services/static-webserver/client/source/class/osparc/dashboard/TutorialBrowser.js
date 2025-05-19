@@ -88,13 +88,14 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
           .catch(() => this.__setResourcesToList([]));
     },
 
-    _updateTemplateData: function(templateData) {
+    _updateTutorialData: function(templateData) {
       templateData["resourceType"] = "tutorial";
-      this.base(arguments, templateData);
+
+      this._updateTemplateData(templateData);
     },
 
     __setResourcesToList: function(tutorialsList) {
-      tutorialsList.forEach(tutorial => tutorial["resourceType"] = "template");
+      tutorialsList.forEach(tutorial => tutorial["resourceType"] = "tutorial");
       this._resourcesList = tutorialsList;
       this._reloadCards();
     },
@@ -221,7 +222,7 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
           }
         }
         Promise.all(templatePromises)
-          .then(() => this._updateTemplateData(uniqueTemplateData))
+          .then(() => this._updateTutorialData(uniqueTemplateData))
           .catch(err => {
             osparc.FlashMessenger.logError(err);
           });
@@ -231,46 +232,7 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
 
     // MENU //
     _populateCardMenu: function(card) {
-      const menu = card.getMenu();
-      const templateData = card.getResourceData();
-
-      const editButton = this.__getEditTemplateMenuButton(templateData);
-      if (editButton) {
-        menu.add(editButton);
-        menu.addSeparator();
-      }
-
-      const openButton = this._getOpenMenuButton(templateData);
-      if (openButton) {
-        menu.add(openButton);
-      }
-
-      const shareButton = this._getShareMenuButton(card);
-      if (shareButton) {
-        menu.add(shareButton);
-      }
-
-      const tagsButton = this._getTagsMenuButton(card);
-      if (tagsButton) {
-        menu.add(tagsButton);
-      }
-
-      const deleteButton = this.__getDeleteTemplateMenuButton(templateData);
-      if (deleteButton && editButton) {
-        menu.addSeparator();
-        menu.add(deleteButton);
-      }
-    },
-
-    __getEditTemplateMenuButton: function(templateData) {
-      const isCurrentUserOwner = osparc.data.model.Study.canIWrite(templateData["accessRights"]);
-      if (!isCurrentUserOwner) {
-        return null;
-      }
-
-      const editButton = new qx.ui.menu.Button(this.tr("Open"));
-      editButton.addListener("execute", () => this.__editTemplate(templateData), this);
-      return editButton;
+      this._populateTemplateCardMenu(card);
     },
 
     __getTemplateData: function(id) {
@@ -278,72 +240,7 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
     },
 
     _deleteResourceRequested: function(templateId) {
-      this.__deleteTemplateRequested(this.__getTemplateData(templateId));
-    },
-
-    __deleteTemplateRequested: function(templateData) {
-      const rUSure = this.tr("Are you sure you want to delete ");
-      const msg = rUSure + "<b>" + templateData.name + "</b>?";
-      const win = new osparc.ui.window.Confirmation(msg).set({
-        caption: this.tr("Delete"),
-        confirmText: this.tr("Delete"),
-        confirmAction: "delete"
-      });
-      win.center();
-      win.open();
-      win.addListener("close", () => {
-        if (win.getConfirmed()) {
-          this.__doDeleteTemplate(templateData);
-        }
-      }, this);
-    },
-
-    __getDeleteTemplateMenuButton: function(templateData) {
-      const isCurrentUserOwner = osparc.data.model.Study.canIDelete(templateData["accessRights"]);
-      if (!isCurrentUserOwner) {
-        return null;
-      }
-
-      const deleteButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12");
-      deleteButton.set({
-        appearance: "menu-button"
-      });
-      osparc.utils.Utils.setIdToWidget(deleteButton, "studyItemMenuDelete");
-      deleteButton.addListener("execute", () => this.__deleteTemplateRequested(templateData), this);
-      return deleteButton;
-    },
-
-    __editTemplate: function(studyData) {
-      const isStudyCreation = false;
-      this._startStudyById(studyData.uuid, null, null, isStudyCreation);
-    },
-
-    __doDeleteTemplate: function(studyData) {
-      const myGid = osparc.auth.Data.getInstance().getGroupId();
-      const collabGids = Object.keys(studyData["accessRights"]);
-      const amICollaborator = collabGids.indexOf(myGid) > -1;
-
-      let operationPromise = null;
-      if (collabGids.length > 1 && amICollaborator) {
-        const arCopy = osparc.utils.Utils.deepCloneObject(studyData["accessRights"]);
-        // remove collaborator
-        delete arCopy[myGid];
-        operationPromise = osparc.store.Study.patchStudyData(studyData, "accessRights", arCopy);
-      } else {
-        // delete study
-        operationPromise = osparc.store.Store.getInstance().deleteStudy(studyData.uuid);
-      }
-      operationPromise
-        .then(() => this.__removeFromTemplateList(studyData.uuid))
-        .catch(err => osparc.FlashMessenger.logError(err));
-    },
-
-    __removeFromTemplateList: function(templateId) {
-      const idx = this._resourcesList.findIndex(study => study["uuid"] === templateId);
-      if (idx > -1) {
-        this._resourcesList.splice(idx, 1);
-      }
-      this._resourcesContainer.removeCard(templateId);
+      this._deleteTemplateRequested(this.__getTemplateData(templateId));
     },
     // MENU //
 

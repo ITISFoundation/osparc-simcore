@@ -1543,14 +1543,24 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     _populateCardMenu: function(card) {
+      const studyData = card.getResourceData();
+      if (studyData["resourceType"] === "template") {
+        // The Study Browser can also list templates
+        this._populateTemplateCardMenu(card);
+      } else {
+        this.__populateStudyCardMenu(card);
+      }
+    },
+
+    __populateStudyCardMenu: function(card) {
       const menu = card.getMenu();
       const studyData = card.getResourceData();
 
-      const trashed = Boolean(studyData["trashedAt"]);
       const writeAccess = osparc.data.model.Study.canIWrite(studyData["accessRights"]);
       const deleteAccess = osparc.data.model.Study.canIDelete(studyData["accessRights"]);
 
       if (this.getCurrentContext() === "trash") {
+        const trashed = Boolean(studyData["trashedAt"]);
         if (trashed) {
           if (writeAccess) {
             const untrashButton = this.__getUntrashStudyMenuButton(studyData);

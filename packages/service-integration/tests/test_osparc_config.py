@@ -62,7 +62,9 @@ def test_load_from_labels(
         )
         with open(config_path, "w") as fh:
             data = json.loads(
-                model.model_dump_json(exclude_unset=True, by_alias=True, exclude_none=True)
+                model.model_dump_json(
+                    exclude_unset=True, by_alias=True, exclude_none=True
+                )
             )
             yaml.safe_dump(data, fh, sort_keys=False)
 
@@ -73,10 +75,10 @@ def test_load_from_labels(
 
 @pytest.mark.parametrize(
     "example_data",
-    SimcoreServiceSettingLabelEntry.model_config["json_schema_extra"]["examples"],
+    SimcoreServiceSettingLabelEntry.model_json_schema()["examples"],
 )
 def test_settings_item_in_sync_with_service_settings_label(
-    example_data: dict[str, Any]
+    example_data: dict[str, Any],
 ):
     print(pformat(example_data))
 
