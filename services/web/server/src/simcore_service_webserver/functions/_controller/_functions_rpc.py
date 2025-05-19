@@ -100,11 +100,13 @@ async def list_function_jobs(
     app: web.Application,
     pagination_limit: int,
     pagination_offset: int,
+    filter_by_function_id: FunctionID | None = None,
 ) -> tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset]:
     return await _functions_service.list_function_jobs(
         app=app,
         pagination_limit=pagination_limit,
         pagination_offset=pagination_offset,
+        filter_by_function_id=filter_by_function_id,
     )
 
 

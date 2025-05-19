@@ -229,16 +229,33 @@ async def list_function_jobs(
     *,
     pagination_limit: int,
     pagination_offset: int,
+    filter_by_function_id: FunctionID | None = None,
 ) -> tuple[list[RegisteredFunctionJobDB], PageMetaInfoLimitOffset]:
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         total_count_result = await conn.scalar(
-            func.count().select().select_from(function_jobs_table)
+            func.count()
+            .select()
+            .select_from(function_jobs_table)
+            .where(
+                (
+                    function_jobs_table.c.function_uuid == filter_by_function_id
+                    if filter_by_function_id
+                    else True
+                ),
+            )
         )
         result = await conn.stream(
             function_jobs_table.select()
             .offset(pagination_offset)
             .limit(pagination_limit)
+            .where(
+                (
+                    function_jobs_table.c.function_uuid == filter_by_function_id
+                    if filter_by_function_id
+                    else True
+                ),
+            )
         )
         rows = await result.all()
         if rows is None:

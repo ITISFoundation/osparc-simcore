@@ -449,6 +449,65 @@ async def test_list_function_jobs(
     assert any(j.uid == registered_job.uid for j in jobs)
 
 
+async def test_list_function_jobs_for_functionid(
+    client: TestClient, rpc_client: RabbitMQRPCClient, mock_function: ProjectFunction
+):
+    # Register the function first
+    first_registered_function = await functions_rpc.register_function(
+        rabbitmq_rpc_client=rpc_client, function=mock_function
+    )
+    second_registered_function = await functions_rpc.register_function(
+        rabbitmq_rpc_client=rpc_client, function=mock_function
+    )
+
+    first_registered_function_jobs = []
+    second_registered_function_jobs = []
+    for i_job in range(6):
+        if i_job < 3:
+            function_job = ProjectFunctionJob(
+                function_uid=first_registered_function.uid,
+                title="Test Function Job",
+                description="A test function job",
+                project_job_id=uuid4(),
+                inputs={"input1": "value1"},
+                outputs={"output1": "result1"},
+            )
+            # Register the function job
+            first_registered_function_jobs.append(
+                await functions_rpc.register_function_job(
+                    rabbitmq_rpc_client=rpc_client, function_job=function_job
+                )
+            )
+        else:
+            function_job = ProjectFunctionJob(
+                function_uid=second_registered_function.uid,
+                title="Test Function Job",
+                description="A test function job",
+                project_job_id=uuid4(),
+                inputs={"input1": "value1"},
+                outputs={"output1": "result1"},
+            )
+            # Register the function job
+            second_registered_function_jobs.append(
+                await functions_rpc.register_function_job(
+                    rabbitmq_rpc_client=rpc_client, function_job=function_job
+                )
+            )
+
+    # List function jobs for a specific function ID
+    jobs, _ = await functions_rpc.list_function_jobs(
+        rabbitmq_rpc_client=rpc_client,
+        pagination_limit=10,
+        pagination_offset=0,
+        filter_by_function_id=first_registered_function.uid,
+    )
+
+    # Assert the list contains the registered job
+    assert len(jobs) > 0
+    assert len(jobs) == 3
+    assert all(j.function_uid == first_registered_function.uid for j in jobs)
+
+
 async def test_delete_function_job(
     client: TestClient, mock_function: ProjectFunction, rpc_client: RabbitMQRPCClient
 ):

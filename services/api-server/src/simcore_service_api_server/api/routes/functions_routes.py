@@ -99,6 +99,29 @@ async def list_functions(
     )
 
 
+@function_router.get(
+    "/{function_id:uuid}/jobs",
+    response_model=Page[RegisteredFunctionJob],
+    description="List function jobs for a function",
+)
+async def list_function_jobs(
+    function_id: FunctionID,
+    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
+    page_params: Annotated[PaginationParams, Depends()],
+):
+    function_jobs_list, meta = await wb_api_rpc.list_function_jobs(
+        pagination_offset=page_params.offset,
+        pagination_limit=page_params.limit,
+        filter_by_function_id=function_id,
+    )
+
+    return create_page(
+        function_jobs_list,
+        total=meta.total,
+        params=page_params,
+    )
+
+
 @function_router.patch(
     "/{function_id:uuid}/title",
     response_model=RegisteredFunction,
