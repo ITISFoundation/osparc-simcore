@@ -115,6 +115,10 @@ qx.Theme.define("osparc.theme.Appearance", {
       }
     },
 
+    "pb-standard": {
+      include: "pb-study",
+    },
+
     "pb-template":  {
       include: "pb-listitem",
       style: function(states) {
@@ -126,13 +130,11 @@ qx.Theme.define("osparc.theme.Appearance", {
     },
 
     "pb-hypertool": {
-      include: "pb-listitem",
-      style: function(states) {
-        const style = {
-          backgroundColor: "pb-template"
-        };
-        return style;
-      }
+      include: "pb-template",
+    },
+
+    "pb-tutorial": {
+      include: "pb-template",
     },
 
     "pb-dynamic":  {
@@ -171,6 +173,10 @@ qx.Theme.define("osparc.theme.Appearance", {
           cursor: "disabled"
         };
       }
+    },
+
+    "pb-standard/lock-status":  {
+      include: "pb-study/lock-status",
     },
 
     "pb-template/lock-status":  {

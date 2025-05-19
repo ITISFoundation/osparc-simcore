@@ -61,6 +61,8 @@ qx.Class.define("osparc.data.model.Study", {
       dev: studyData.dev || this.getDev(),
       trashedAt: studyData.trashedAt ? new Date(studyData.trashedAt) : this.getTrashedAt(),
       trashedBy: studyData.trashedBy || null,
+      type: studyData.type,
+      templateType: studyData.templateType,
     });
 
     const wbData = studyData.workbench || this.getWorkbench();
@@ -189,6 +191,28 @@ qx.Class.define("osparc.data.model.Study", {
       check: "Object",
       nullable: true,
       init: {}
+    },
+
+    type: {
+      check: [
+        "STANDARD",
+        "TEMPLATE",
+      ],
+      init: null,
+      nullable: false,
+      event: "changeType"
+    },
+
+    templateType: {
+      check: [
+        null,
+        "TEMPLATE",
+        "TUTORIAL",
+        "HYPERTOOL",
+      ],
+      init: null,
+      nullable: true,
+      event: "changeTemplateType"
     },
 
     // ------ ignore for serializing ------

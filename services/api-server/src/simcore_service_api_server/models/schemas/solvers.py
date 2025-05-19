@@ -1,4 +1,4 @@
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Literal, Self
 
 from models_library.api_schemas_catalog.services import LatestServiceGet, ServiceGetV2
 from models_library.basic_regex import PUBLIC_VARIABLE_NAME_RE
@@ -39,7 +39,12 @@ SolverKeyId = Annotated[
 class Solver(BaseService):
     """A released solver with a specific version"""
 
-    maintainer: str = Field(..., description="Maintainer of the solver")
+    maintainer: Annotated[str, Field(description="Maintainer of the solver")]
+
+    version_display: Annotated[
+        str | None,
+        Field(description="A user-friendly or marketing name for the release."),
+    ] = None
 
     model_config = ConfigDict(
         extra="ignore",
@@ -47,6 +52,7 @@ class Solver(BaseService):
             "example": {
                 "id": "simcore/services/comp/isolve",
                 "version": "2.1.1",
+                "version_display": "2.1.1-2023-10-01",
                 "title": "iSolve",
                 "description": "EM solver",
                 "maintainer": "info@itis.swiss",
@@ -56,31 +62,27 @@ class Solver(BaseService):
     )
 
     @classmethod
-    def create_from_image(cls, image_meta: ServiceMetaDataPublished) -> "Solver":
-        data = image_meta.model_dump(
-            include={"name", "key", "version", "description", "contact"},
-        )
+    def create_from_image(cls, image_meta: ServiceMetaDataPublished) -> Self:
         return cls(
-            id=data.pop("key"),
-            version=data.pop("version"),
-            title=data.pop("name"),
-            maintainer=data.pop("contact"),
+            id=image_meta.key,
+            version=image_meta.version,
+            title=image_meta.name,
+            description=image_meta.description,
+            maintainer=image_meta.contact,
+            version_display=image_meta.version_display,
             url=None,
-            **data,
         )
 
     @classmethod
-    def create_from_service(cls, service: ServiceGetV2 | LatestServiceGet) -> "Solver":
-        data = service.model_dump(
-            include={"name", "key", "version", "description", "contact"},
-        )
+    def create_from_service(cls, service: ServiceGetV2 | LatestServiceGet) -> Self:
         return cls(
-            id=data.pop("key"),
-            version=data.pop("version"),
-            title=data.pop("name"),
+            id=service.key,
+            version=service.version,
+            title=service.name,
+            description=service.description,
+            maintainer=service.contact or "UNDEFINED",
+            version_display=service.version_display,
             url=None,
-            maintainer=data.pop("contact"),
-            **data,
         )
 
     @classmethod

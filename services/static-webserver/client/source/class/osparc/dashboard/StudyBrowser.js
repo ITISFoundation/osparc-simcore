@@ -279,7 +279,18 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           if (["templates", "public"].includes(this.getCurrentContext())) {
             const templates = resp["data"];
             templates.forEach(template => template["resourceType"] = "template");
-            this.__addResourcesToList(templates);
+            // For now, filtered in the frontend
+            const groupsStore = osparc.store.Groups.getInstance();
+            const everyoneGid = groupsStore.getEveryoneGroup().getGroupId();
+            const productEveryoneGid = groupsStore.getEveryoneProductGroup().getGroupId();
+            const filteredTemplates = templates.filter(template => {
+              const publicAccess = everyoneGid in template["accessRights"] || productEveryoneGid in template["accessRights"];
+              if (this.getCurrentContext() === "public") {
+                return publicAccess;
+              }
+              return !publicAccess;
+            });
+            this.__addResourcesToList(filteredTemplates);
           } else {
             const studies = resp["data"];
             studies.forEach(study => study["resourceType"] = "study");
@@ -724,7 +735,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __didContextChange: function(reqParams) {
       // not needed for the comparison
-      // delete reqParams["type"];
       delete reqParams["limit"];
       delete reqParams["offset"];
       delete reqParams["filters"];
@@ -762,6 +772,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           const key = osparc.utils.Utils.snakeToCamel(snakeKey);
           urlParams[key] = value === "null" ? null : value;
         }
+
+        // keep this until the backend implements it
+        switch (this.getCurrentContext()) {
+          case "templates":
+            urlParams.accessRights = "non-public";
+            break;
+          case "public":
+            urlParams.accessRights = "public";
+            break;
+        }
+
         const contextChanged = this.__didContextChange(urlParams);
         if (
           !contextChanged &&
@@ -789,9 +810,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           break;
         case "templates":
           requestParams.type = "template";
+          requestParams.templateType = osparc.data.model.StudyUI.TEMPLATE_TYPE;
+          requestParams.accessRights = "non-public";
           break;
         case "public":
           requestParams.type = "template";
+          requestParams.templateType = osparc.data.model.StudyUI.TEMPLATE_TYPE;
+          requestParams.accessRights = "public";
           break;
         case "search": {
           // Use the ``search`` functionality only if the user types some text
@@ -838,7 +863,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           request = osparc.data.Resources.fetch("studies", "getPageSearch", params, options);
           break;
         case "templates":
-          request = osparc.store.Templates.fetchTemplatesPaginated(params, options);
+          request = osparc.store.Templates.fetchTemplatesNonPublicPaginated(params, options);
           break;
         case "public":
           request = osparc.store.Templates.fetchTemplatesPublicPaginated(params, options);
@@ -938,9 +963,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         newPlansBtn.setEnabled(true);
 
         newPlansBtn.addListener("tap", () => {
-          osparc.store.Templates.getTemplates()
-            .then(templates => {
-              if (templates) {
+          osparc.store.Templates.getHypertools()
+            .then(hypertools => {
+              if (hypertools) {
                 const newStudies = new osparc.dashboard.NewStudies(newStudiesConfig);
                 const winTitle = this.tr("New Plan");
                 const win = osparc.ui.window.Window.popUpInWindow(newStudies, winTitle, osparc.dashboard.NewStudies.WIDTH+40, 300).set({
@@ -950,7 +975,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
                 newStudies.addListener("newStudyClicked", e => {
                   win.close();
                   const templateInfo = e.getData();
-                  const templateData = templates.find(t => t.name === templateInfo.expectedTemplateLabel);
+                  const templateData = hypertools.find(t => t.name === templateInfo.expectedTemplateLabel);
                   if (templateData) {
                     this.__newPlanBtnClicked(templateData, templateInfo.newStudyLabel);
                   }
@@ -1502,6 +1527,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
       // it will render the studies in the right order
       this._reloadCards();
+    },
+
+    _updateTemplateData: function(templateData) {
+      templateData["resourceType"] = "template";
+      this.base(arguments, templateData);
     },
 
     __removeFromStudyList: function(studyId) {

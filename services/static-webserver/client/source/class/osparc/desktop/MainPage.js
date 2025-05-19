@@ -249,25 +249,25 @@ qx.Class.define("osparc.desktop.MainPage", {
       pollTasks.createPollingTask(fetchPromise)
         .then(task => {
           const tutorialBrowser = this.__dashboard.getTutorialBrowser();
+          if (tutorialBrowser && templateType === osparc.data.model.StudyUI.TUTORIAL_TYPE) {
+            tutorialBrowser.taskToTemplateReceived(task, studyName, templateType);
+          }
           const appBrowser = this.__dashboard.getAppBrowser();
-          if (tutorialBrowser) {
-            tutorialBrowser.taskToTemplateReceived(task, studyName);
+          if (appBrowser && templateType === osparc.data.model.StudyUI.HYPERTOOL_TYPE) {
+            appBrowser.taskToTemplateReceived(task, studyName, templateType);
           }
           task.addListener("resultReceived", e => {
             const templateData = e.getData();
             // these operations need to be done after template creation
             osparc.store.Study.addCollaborators(templateData, templateAccessRights);
             if (templateType) {
-              const studyUI = osparc.utils.Utils.deepCloneObject(templateData["ui"]);
-              studyUI["templateType"] = templateType;
-              osparc.store.Study.patchStudyData(templateData, "ui", studyUI)
+              osparc.store.Study.patchTemplateType(templateData["uuid"], templateType)
                 .then(() => {
-                  if (tutorialBrowser) {
-                    tutorialBrowser.reloadResources();
+                  if (tutorialBrowser && templateType === osparc.data.model.StudyUI.TUTORIAL_TYPE) {
+                    tutorialBrowser.reloadResources(false);
                   }
-                  if (appBrowser) {
-                    // OM: reload hypertools only
-                    appBrowser.reloadResources();
+                  if (appBrowser && templateType === osparc.data.model.StudyUI.HYPERTOOL_TYPE) {
+                    appBrowser.reloadResources(false);
                   }
                 });
             }

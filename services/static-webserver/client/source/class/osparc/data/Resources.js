@@ -592,17 +592,13 @@ qx.Class.define("osparc.data.Resources", {
         useCache: true,
         idField: "uuid",
         endpoints: {
-          get: {
-            method: "GET",
-            url: statics.API + "/projects?type=template"
-          },
           getPage: {
             method: "GET",
             url: statics.API + "/projects?type=template&offset={offset}&limit={limit}"
           },
-          getPageSorted: {
+          getPageFilteredSorted: {
             method: "GET",
-            url: statics.API + "/projects?type=template&offset={offset}&limit={limit}&order_by={orderBy}"
+            url: statics.API + "/projects?type=template&template_type={templateType}&offset={offset}&limit={limit}&order_by={orderBy}"
           },
         }
       },
