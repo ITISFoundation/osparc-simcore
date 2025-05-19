@@ -85,8 +85,10 @@ def random_user(
 def random_pre_registration_details(
     fake: Faker = DEFAULT_FAKER,
     *,
+    # foreign keys
     user_id: int | None = None,
     created_by: int | None = None,
+    product_name: str | None = None,
     **overrides,
 ):
     from simcore_postgres_database.models.users_details import (
@@ -117,6 +119,7 @@ def random_pre_registration_details(
             "eula": True,
             "ipinfo": {"x-real-ip": "127.0.0.1"},
         },
+        "product_name": product_name,
         "created_by": created_by,  # user id
     }
 
