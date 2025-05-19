@@ -27,7 +27,9 @@ qx.Class.define("osparc.po.POCenter", {
     this.addWidgetToTabs(miniProfile);
 
     this.__addActiveUsersPage();
-    this.__addPendingUsersPage();
+    if (osparc.utils.Utils.isDevelopmentPlatform()) {
+      this.__addPendingUsersPage();
+    }
     this.__addPreRegistrationPage();
     this.__addInvitationsPage();
     this.__addProductPage();
