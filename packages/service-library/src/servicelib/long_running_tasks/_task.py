@@ -419,7 +419,5 @@ __all__: tuple[str, ...] = (
     "TaskProgress",
     "TaskProtocol",
     "TaskStatus",
-    "TaskResult",
     "TrackedTask",
-    "TaskResult",
 )
