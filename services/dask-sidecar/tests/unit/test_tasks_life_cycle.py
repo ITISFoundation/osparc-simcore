@@ -4,6 +4,7 @@
 # pylint: disable=no-member
 
 import time
+from collections.abc import Iterable
 
 import distributed
 import pytest
@@ -70,6 +71,7 @@ def test_task_state_lifecycle(local_cluster: distributed.LocalCluster) -> None:
         with pytest.raises(RuntimeError):
             future.result(timeout=10)
         events = dask_client.get_events(TASK_LIFE_CYCLE_EVENT.format(key=future.key))
+        assert isinstance(events, Iterable)
         parsed_events = [
             TaskLifeCycleState.model_validate(event[1]) for event in events
         ]
