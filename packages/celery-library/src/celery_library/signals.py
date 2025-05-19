@@ -11,8 +11,6 @@ from servicelib.logging_utils import log_context
 from servicelib.redis._client import RedisClientSDK
 from settings_library.redis import RedisDatabase
 
-from ...core.application import create_app
-from ...core.settings import ApplicationSettings
 from . import set_event_loop
 from .backends._redis import RedisTaskInfoStore
 from .utils import (
@@ -36,7 +34,6 @@ def on_worker_init(sender, **_kwargs) -> None:
         asyncio.set_event_loop(loop)
         shutdown_event = asyncio.Event()
 
-        app_settings = ApplicationSettings.create_from_envs()
         fastapi_app = create_app(app_settings)
 
         assert app_settings.STORAGE_CELERY
@@ -51,7 +48,10 @@ def on_worker_init(sender, **_kwargs) -> None:
             )
 
             set_celery_worker(
-                sender.app, CeleryTaskWorker(RedisTaskInfoStore(redis_client_sdk))
+                sender.app,
+                CeleryTaskWorker(
+                    RedisTaskInfoStore(redis_client_sdk),
+                ),
             )
 
         async def fastapi_lifespan(

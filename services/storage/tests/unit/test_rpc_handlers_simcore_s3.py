@@ -20,6 +20,7 @@ import httpx
 import pytest
 import sqlalchemy as sa
 from celery.contrib.testing.worker import TestWorkController
+from celery_library.worker import CeleryTaskWorker
 from faker import Faker
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
@@ -57,7 +58,6 @@ from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import (
     start_export_data,
 )
 from simcore_postgres_database.storage_models import file_meta_data
-from simcore_service_storage.modules.celery.worker import CeleryTaskWorker
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy.ext.asyncio import AsyncEngine
 from yarl import URL

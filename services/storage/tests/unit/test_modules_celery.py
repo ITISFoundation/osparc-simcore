@@ -13,28 +13,25 @@ from random import randint
 import pytest
 from celery import Celery, Task
 from celery.contrib.abortable import AbortableTask
-from common_library.errors_classes import OsparcErrorMixin
-from fastapi import FastAPI
-from models_library.progress_bar import ProgressReport
-from servicelib.logging_utils import log_context
-from simcore_service_storage.modules.celery import get_celery_client, get_event_loop
-from simcore_service_storage.modules.celery._task import (
-    AbortableAsyncResult,
-    register_task,
-)
-from simcore_service_storage.modules.celery.client import CeleryTaskClient
-from simcore_service_storage.modules.celery.errors import TransferrableCeleryError
-from simcore_service_storage.modules.celery.models import (
+from celery_library import get_celery_client, get_event_loop
+from celery_library.client import CeleryTaskClient
+from celery_library.errors import TransferrableCeleryError
+from celery_library.models import (
     TaskContext,
     TaskID,
     TaskMetadata,
     TaskState,
 )
-from simcore_service_storage.modules.celery.utils import (
-    get_celery_worker,
-    get_fastapi_app,
+from celery_library.task import (
+    AbortableAsyncResult,
+    register_task,
 )
-from simcore_service_storage.modules.celery.worker import CeleryTaskWorker
+from celery_library.utils import get_celery_worker, get_fastapi_app
+from celery_library.worker import CeleryTaskWorker
+from common_library.errors_classes import OsparcErrorMixin
+from fastapi import FastAPI
+from models_library.progress_bar import ProgressReport
+from servicelib.logging_utils import log_context
 from tenacity import Retrying, retry_if_exception_type, stop_after_delay, wait_fixed
 
 _logger = logging.getLogger(__name__)

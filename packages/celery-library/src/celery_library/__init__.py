@@ -6,9 +6,9 @@ from servicelib.redis._client import RedisClientSDK
 from settings_library.celery import CelerySettings
 from settings_library.redis import RedisDatabase
 
-from ._common import create_app
 from .backends._redis import RedisTaskInfoStore
 from .client import CeleryTaskClient
+from .common import create_app
 from .types import register_celery_types
 
 _logger = logging.getLogger(__name__)

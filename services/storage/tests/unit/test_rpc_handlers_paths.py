@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, TypeAlias
 
 import pytest
+from celery_library.worker import CeleryTaskWorker
 from faker import Faker
 from fastapi import FastAPI
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
@@ -34,7 +35,6 @@ from servicelib.rabbitmq.rpc_interfaces.storage.paths import (
     compute_path_size,
     delete_paths,
 )
-from simcore_service_storage.modules.celery.worker import CeleryTaskWorker
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit"]

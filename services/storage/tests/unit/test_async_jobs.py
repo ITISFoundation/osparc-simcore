@@ -10,6 +10,11 @@ from typing import Any
 
 import pytest
 from celery import Celery, Task
+from celery_library import get_celery_client
+from celery_library.client import TaskMetadata
+from celery_library.models import TaskID
+from celery_library.task import register_task
+from celery_library.worker import CeleryTaskWorker
 from fastapi import FastAPI
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobGet,
@@ -27,11 +32,6 @@ from models_library.users import UserID
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCRouter
 from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
 from simcore_service_storage.api.rpc.routes import get_rabbitmq_rpc_server
-from simcore_service_storage.modules.celery import get_celery_client
-from simcore_service_storage.modules.celery._task import register_task
-from simcore_service_storage.modules.celery.client import TaskMetadata
-from simcore_service_storage.modules.celery.models import TaskID
-from simcore_service_storage.modules.celery.worker import CeleryTaskWorker
 from tenacity import (
     AsyncRetrying,
     retry_if_exception_type,
