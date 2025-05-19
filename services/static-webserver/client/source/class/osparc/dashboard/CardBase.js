@@ -1010,6 +1010,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       [
         "updateStudy",
         "updateTemplate",
+        "updateTutorial",
         "updateService",
         "updateHypertool",
       ].forEach(ev => {

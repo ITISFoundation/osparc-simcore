@@ -85,6 +85,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     "openService": "qx.event.type.Data",
     "updateStudy": "qx.event.type.Data",
     "updateTemplate": "qx.event.type.Data",
+    "updateTutorial": "qx.event.type.Data",
     "updateService": "qx.event.type.Data",
     "updateHypertool": "qx.event.type.Data",
     "publishTemplate": "qx.event.type.Data",
