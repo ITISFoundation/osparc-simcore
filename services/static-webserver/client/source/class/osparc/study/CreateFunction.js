@@ -22,7 +22,7 @@ qx.Class.define("osparc.study.CreateFunction", {
   /**
    * @param studyData {Object} Object containing part or the entire serialized Study Data
    */
-  construct: function(studyData) {
+  construct: function (studyData) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(20));
@@ -33,7 +33,7 @@ qx.Class.define("osparc.study.CreateFunction", {
   },
 
   statics: {
-    typeToFunctionType: function(type) {
+    typeToFunctionType: function (type) {
       switch (type) {
         case "number":
           return "float"
@@ -43,25 +43,27 @@ qx.Class.define("osparc.study.CreateFunction", {
       return type;
     },
 
-    createFunctionData: function(projectData, name, description, exposedInputs, exposedOutputs) {
+    createFunctionData: function (projectData, name, description, exposedInputs, exposedOutputs) {
       const functionData = {
-        "project_id": projectData["uuid"],
+        "projectId": projectData["uuid"],
         "name": name,
         "description": description,
-        "function_class": "project",
-        "input_schema": {
+        "function_class": "PROJECT",
+        "inputSchema": {
+          "schema_class": "application/schema+json",
           "schema_dict": {
             "type": "object",
             "properties": {}
           }
         },
-        "output_schema": {
+        "outputSchema": {
+          "schema_class": "application/schema+json",
           "schema_dict": {
             "type": "object",
             "properties": {}
           }
         },
-        "default_inputs": {},
+        "defaultInputs": {},
       };
 
       const parameters = osparc.study.Utils.extractFunctionableParameters(projectData["workbench"]);
@@ -71,11 +73,11 @@ qx.Class.define("osparc.study.CreateFunction", {
           const parameterMetadata = osparc.store.Services.getMetadata(parameter["key"], parameter["version"]);
           if (parameterMetadata) {
             const type = osparc.service.Utils.getParameterType(parameterMetadata);
-            functionData["input_schema"]["schema_dict"]["properties"][parameterLabel] = {
+            functionData["inputSchema"]["schema_dict"]["properties"][parameterLabel] = {
               "type": this.self().typeToFunctionType(type),
             };
           }
-          functionData["default_inputs"][parameterLabel] = osparc.service.Utils.getParameterValue(parameter);
+          functionData["defaultInputs"][parameterLabel] = osparc.service.Utils.getParameterValue(parameter);
         }
       });
 
@@ -86,7 +88,7 @@ qx.Class.define("osparc.study.CreateFunction", {
           const probeMetadata = osparc.store.Services.getMetadata(probe["key"], probe["version"]);
           if (probeMetadata) {
             const type = osparc.service.Utils.getProbeType(probeMetadata);
-            functionData["output_schema"]["schema_dict"]["properties"][probeLabel] = {
+            functionData["outputSchema"]["schema_dict"]["properties"][probeLabel] = {
               "type": this.self().typeToFunctionType(type),
             };
           }
@@ -102,7 +104,7 @@ qx.Class.define("osparc.study.CreateFunction", {
     __form: null,
     __createFunctionBtn: null,
 
-    __buildLayout: function() {
+    __buildLayout: function () {
       const form = this.__form = new qx.ui.form.Form();
       this._add(new qx.ui.form.renderer.Single(form));
 
@@ -281,7 +283,7 @@ qx.Class.define("osparc.study.CreateFunction", {
       }, this);
     },
 
-    __createFunction: function(exposedInputs, exposedOutputs) {
+    __createFunction: function (exposedInputs, exposedOutputs) {
       this.__createFunctionBtn.setFetching(true);
 
       // first publish it as a template
@@ -309,7 +311,7 @@ qx.Class.define("osparc.study.CreateFunction", {
         });
     },
 
-    __doCreateFunction: function(templateData, exposedInputs, exposedOutputs) {
+    __doCreateFunction: function (templateData, exposedInputs, exposedOutputs) {
       const nameField = this.__form.getItem("name");
       const descriptionField = this.__form.getItem("description");
 
@@ -325,7 +327,7 @@ qx.Class.define("osparc.study.CreateFunction", {
         .finally(() => this.__createFunctionBtn.setFetching(false));
     },
 
-    getCreateFunctionButton: function() {
+    getCreateFunctionButton: function () {
       return this.__createFunctionBtn;
     }
   }
