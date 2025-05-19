@@ -139,6 +139,7 @@ from ._projects_repository_legacy_utils import PermissionStr
 from .exceptions import (
     ClustersKeeperNotAvailableError,
     DefaultPricingUnitNotFoundError,
+    InsufficientRoleForProjectTemplateTypeUpdateError,
     InvalidEC2TypeInResourcesSpecsError,
     InvalidKeysInResourcesSpecsError,
     NodeNotFoundError,
@@ -150,6 +151,7 @@ from .exceptions import (
     ProjectOwnerNotFoundInTheProjectAccessRightsError,
     ProjectStartsTooManyDynamicNodesError,
     ProjectTooManyProjectOpenedError,
+    ProjectTypeAndTemplateIncompatibilityError,
 )
 from .models import ProjectDict, ProjectPatchInternalExtended
 from .settings import ProjectsSettings, get_plugin_settings
@@ -327,7 +329,27 @@ async def patch_project(
         if new_prj_access_rights[_prj_owner_primary_group] != _prj_required_permissions:
             raise ProjectOwnerNotFoundInTheProjectAccessRightsError
 
-    # 4. Patch the project
+    # 4. If patching template type
+    if new_template_type := patch_project_data.get("template_type"):
+        # 4.1 Check if user is a tester
+        current_user: dict = await get_user(app, user_id)
+        if UserRole(current_user["role"]) < UserRole.TESTER:
+            raise InsufficientRoleForProjectTemplateTypeUpdateError
+        # 4.2 Check the compatibility of the template type with the project
+        if project_db.type == ProjectType.STANDARD and new_template_type is not None:
+            raise ProjectTypeAndTemplateIncompatibilityError(
+                project_uuid=project_uuid,
+                project_type=project_db.type,
+                project_template=new_template_type,
+            )
+        if project_db.type == ProjectType.TEMPLATE and new_template_type is None:
+            raise ProjectTypeAndTemplateIncompatibilityError(
+                project_uuid=project_uuid,
+                project_type=project_db.type,
+                project_template=new_template_type,
+            )
+
+    # 5. Patch the project
     await _projects_repository.patch_project(
         app=app,
         project_uuid=project_uuid,

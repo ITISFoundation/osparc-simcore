@@ -40,7 +40,6 @@ from servicelib.logging_utils import get_log_record_extra, log_context
 from simcore_postgres_database.aiopg_errors import UniqueViolation
 from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.project_to_groups import project_to_groups
-from simcore_postgres_database.models.projects import ProjectTemplateType
 from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_postgres_database.models.projects_tags import projects_tags
 from simcore_postgres_database.models.projects_to_folders import projects_to_folders
@@ -58,7 +57,12 @@ from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodeCreate,
     ProjectNodesRepo,
 )
-from simcore_postgres_database.webserver_models import ProjectType, projects, users
+from simcore_postgres_database.webserver_models import (
+    ProjectTemplateType,
+    ProjectType,
+    projects,
+    users,
+)
 from sqlalchemy import func, literal_column, sql
 from sqlalchemy.dialects.postgresql import BOOLEAN, INTEGER
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -583,6 +587,7 @@ class ProjectDBAPI(BaseProjectDB):
     def _create_attributes_filters(
         *,
         filter_by_project_type: ProjectType | None,
+        filter_by_template_type: ProjectTemplateType | None,
         filter_hidden: bool | None,
         filter_published: bool | None,
         filter_trashed: bool | None,
@@ -594,6 +599,11 @@ class ProjectDBAPI(BaseProjectDB):
 
         if filter_by_project_type is not None:
             attributes_filters.append(projects.c.type == filter_by_project_type.value)
+
+        if filter_by_template_type is not None:
+            attributes_filters.append(
+                projects.c.template_type == filter_by_template_type.value
+            )
 
         if filter_hidden is not None:
             attributes_filters.append(projects.c.hidden.is_(filter_hidden))
@@ -647,6 +657,7 @@ class ProjectDBAPI(BaseProjectDB):
         folder_query: FolderQuery,
         # attribute filters
         filter_by_project_type: ProjectType | None = None,
+        filter_by_template_type: ProjectTemplateType | None = None,
         filter_by_services: list[dict] | None = None,
         filter_published: bool | None = None,
         filter_hidden: bool | None = False,
@@ -694,6 +705,7 @@ class ProjectDBAPI(BaseProjectDB):
 
             attributes_filters = self._create_attributes_filters(
                 filter_by_project_type=filter_by_project_type,
+                filter_by_template_type=filter_by_template_type,
                 filter_hidden=filter_hidden,
                 filter_published=filter_published,
                 filter_trashed=filter_trashed,
