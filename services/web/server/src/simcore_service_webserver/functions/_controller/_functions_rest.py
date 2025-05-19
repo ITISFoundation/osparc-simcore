@@ -3,6 +3,7 @@ from fastapi import status
 from models_library.api_schemas_webserver.functions import (
     Function,
     FunctionToRegister,
+    RegisteredFunction,
     RegisteredFunctionGet,
 )
 from pydantic import TypeAdapter
@@ -20,13 +21,15 @@ routes = web.RouteTableDef()
 @routes.post(f"/{VTAG}/functions", name="register_function")
 @handle_rest_requests_exceptions
 async def register_function(request: web.Request) -> web.Response:
-    function_to_register = TypeAdapter(FunctionToRegister).validate_python(
-        await request.json()
-    )
+    function_to_register: FunctionToRegister = TypeAdapter(
+        FunctionToRegister
+    ).validate_python(await request.json())
 
-    registered_function = await _functions_service.register_function(
-        app=request.app,
-        function=TypeAdapter(Function).validate_python(function_to_register),
+    registered_function: RegisteredFunction = (
+        await _functions_service.register_function(
+            app=request.app,
+            function=TypeAdapter(Function).validate_python(function_to_register),
+        )
     )
 
     return envelope_json_response(
@@ -45,7 +48,7 @@ async def get_function(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(FunctionPathParams, request)
     function_id = path_params.function_id
 
-    registered_function = await _functions_service.get_function(
+    registered_function: RegisteredFunction = await _functions_service.get_function(
         app=request.app,
         function_id=function_id,
     )
