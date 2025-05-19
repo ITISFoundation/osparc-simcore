@@ -3,75 +3,104 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
+from collections.abc import AsyncIterable
 from dataclasses import dataclass
+from typing import Any
 
 import pytest
 import sqlalchemy as sa
-from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from faker import Faker
 from pytest_simcore.helpers.faker_factories import (
     random_pre_registration_details,
+    random_product,
     random_user,
 )
+from pytest_simcore.helpers.postgres_tools import (
+    insert_and_get_row_lifespan,
+)
+from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import UserRole, UserStatus, users
 from simcore_postgres_database.models.users_details import (
     users_pre_registration_details,
 )
+from simcore_postgres_database.utils_repos import (
+    pass_or_acquire_connection,
+    transaction_context,
+)
 from simcore_postgres_database.utils_users import UsersRepo
+from sqlalchemy.ext.asyncio import AsyncEngine
+
+
+@pytest.fixture
+async def product_name(
+    faker: Faker,
+    asyncpg_engine: AsyncEngine,
+) -> AsyncIterable[str]:
+    async with insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
+        asyncpg_engine,
+        table=products,
+        values=random_product(fake=faker, name="s4l"),
+        pk_col=products.c.name,
+    ) as row:
+        yield row["name"]
 
 
 @pytest.fixture
 async def po_user(
     faker: Faker,
-    connection: SAConnection,
-):
-    user_id = await connection.scalar(
-        users.insert()
-        .values(**random_user(faker, role=UserRole.PRODUCT_OWNER))
-        .returning(users.c.id)
-    )
-    assert user_id
-
-    result = await connection.execute(sa.select(users).where(users.c.id == user_id))
-    yield await result.first()
-
-    users.delete().where(users.c.id == user_id)
+    asyncpg_engine: AsyncEngine,
+) -> AsyncIterable[dict[str, Any]]:
+    async with insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
+        asyncpg_engine,
+        table=users,
+        values=random_user(faker, role=UserRole.PRODUCT_OWNER),
+        pk_col=users.c.id,
+    ) as row:
+        yield row
 
 
 @pytest.mark.acceptance_test(
     "pre-registration in https://github.com/ITISFoundation/osparc-simcore/issues/5138"
 )
 async def test_user_creation_workflow(
-    connection: SAConnection, faker: Faker, po_user: RowProxy
+    asyncpg_engine: AsyncEngine,
+    faker: Faker,
+    po_user: dict[str, Any],
+    product_name: str,
 ):
     # a PO creates an invitation
     fake_pre_registration_data = random_pre_registration_details(
-        faker, created_by=po_user.id
+        faker, created_by=po_user["id"], product_name=product_name
     )
 
-    pre_email = await connection.scalar(
-        sa.insert(users_pre_registration_details)
-        .values(**fake_pre_registration_data)
-        .returning(users_pre_registration_details.c.pre_email)
-    )
+    async with transaction_context(asyncpg_engine) as connection:
+        pre_email = await connection.scalar(
+            sa.insert(users_pre_registration_details)
+            .values(**fake_pre_registration_data)
+            .returning(users_pre_registration_details.c.pre_email)
+        )
     assert pre_email is not None
     assert pre_email == fake_pre_registration_data["pre_email"]
 
-    # user gets created
-    new_user = await UsersRepo.new_user(
-        connection,
-        email=pre_email,
-        password_hash="123456",  # noqa: S106
-        status=UserStatus.ACTIVE,
-        expires_at=None,
-    )
-    await UsersRepo.join_and_update_from_pre_registration_details(
-        connection, new_user.id, new_user.email
-    )
+    async with transaction_context(asyncpg_engine) as connection:
+        # user gets created
+        new_user = await UsersRepo.new_user(
+            connection,
+            email=pre_email,
+            password_hash="123456",  # noqa: S106
+            status=UserStatus.ACTIVE,
+            expires_at=None,
+        )
+        await UsersRepo.link_and_update_user_from_pre_registration(
+            connection, new_user_id=new_user.id, new_user_email=new_user.email
+        )
 
-    invoice_data = await UsersRepo.get_billing_details(connection, user_id=new_user.id)
-    assert invoice_data is not None
+    async with pass_or_acquire_connection(asyncpg_engine) as connection:
+        invoice_data = await UsersRepo.get_billing_details(
+            connection, user_id=new_user.id
+        )
+        assert invoice_data is not None
 
     # drafts converting data models from https://github.com/ITISFoundation/osparc-simcore/pull/5402
     @dataclass
@@ -84,7 +113,11 @@ async def test_user_creation_workflow(
 
         @classmethod
         def create_from_db(cls, row: RowProxy):
-            parts = (row[c] for c in ("institution", "address") if row[c])
+            parts = (
+                getattr(row, col_name)
+                for col_name in ("institution", "address")
+                if getattr(row, col_name)
+            )
             return cls(
                 line1=". ".join(parts),
                 state=row.state,
@@ -110,28 +143,30 @@ async def test_user_creation_workflow(
     assert user_address.country == fake_pre_registration_data["country"]
 
     # now let's update the user
-    result = await connection.execute(
-        users.update()
-        .values(first_name="My New Name")
-        .where(users.c.id == new_user.id)
-        .returning("*")
-    )
-    updated_user = await result.fetchone()
+    async with transaction_context(asyncpg_engine) as connection:
+        result = await connection.execute(
+            users.update()
+            .values(first_name="My New Name")
+            .where(users.c.id == new_user.id)
+            .returning("*")
+        )
+        updated_user = result.one()
 
     assert updated_user
     assert updated_user.first_name == "My New Name"
     assert updated_user.id == new_user.id
 
     for _ in range(2):
-        await UsersRepo.join_and_update_from_pre_registration_details(
-            connection, new_user.id, new_user.email
-        )
+        async with transaction_context(asyncpg_engine) as connection:
+            await UsersRepo.link_and_update_user_from_pre_registration(
+                connection, new_user_id=new_user.id, new_user_email=new_user.email
+            )
 
-        result = await connection.execute(
-            users.select().where(users.c.id == new_user.id)
-        )
-        current_user = await result.fetchone()
-        assert current_user
+            result = await connection.execute(
+                users.select().where(users.c.id == new_user.id)
+            )
+            current_user = result.one()
+            assert current_user
 
-        # overriden!
-        assert current_user.first_name != updated_user.first_name
+            # overriden!
+            assert current_user.first_name != updated_user.first_name

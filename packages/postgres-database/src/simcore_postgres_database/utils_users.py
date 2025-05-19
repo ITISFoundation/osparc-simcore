@@ -88,15 +88,15 @@ class UsersRepo:
                 users.c.status,
             ).where(users.c.id == user_id)
         )
-        row = await maybe_await(result.first())
-        from aiopg.sa.result import RowProxy
-
-        assert isinstance(row, RowProxy)  # nosec
-        return row
+        return await maybe_await(result.first())
 
     @staticmethod
-    async def join_and_update_from_pre_registration_details(
-        conn: DBConnection, new_user_id: int, new_user_email: str
+    async def link_and_update_user_from_pre_registration(
+        conn: DBConnection,
+        *,
+        new_user_id: int,
+        new_user_email: str,
+        update_user: bool = True,
     ) -> None:
         """After a user is created, it can be associated with information provided during invitation
 
@@ -113,11 +113,8 @@ class UsersRepo:
             .values(user_id=new_user_id)
         )
 
-        from aiopg.sa.result import ResultProxy
-
-        assert isinstance(result, ResultProxy)  # nosec
-
-        if result.rowcount:
+        if update_user:
+            # COPIES some pre-registration details to the users table
             pre_columns = (
                 users_pre_registration_details.c.pre_first_name,
                 users_pre_registration_details.c.pre_last_name,
@@ -141,7 +138,7 @@ class UsersRepo:
                     users_pre_registration_details.c.pre_email == new_user_email
                 )
             )
-            if details := await maybe_await(result.fetchone()):
+            if details := result.first():
                 await conn.execute(
                     users.update()
                     .where(users.c.id == new_user_id)

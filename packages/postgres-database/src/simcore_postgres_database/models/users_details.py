@@ -44,7 +44,6 @@ users_pre_registration_details = sa.Table(
         "pre_email",
         sa.String(),
         nullable=False,
-        unique=False,  # Same email could be used for different products
         doc="Email of the user on pre-registration (copied to users.email upon registration)",
     ),
     sa.Column(
@@ -68,7 +67,8 @@ users_pre_registration_details = sa.Table(
         "account_request_status",
         sa.Enum(AccountRequestStatus),
         nullable=False,
-        server_default=sa.text("'PENDING'::account_request_status"),
+        server_default=AccountRequestStatus.PENDING.value,
+        doc="Status of approval of the account request",
     ),
     # Product the user is requesting access to
     sa.Column(
@@ -100,6 +100,13 @@ users_pre_registration_details = sa.Table(
     column_created_by_user(users_table=users, required=False),
     column_created_datetime(timezone=False),
     column_modified_datetime(timezone=False),
+    # CONSTRAINTS:
+    # Composite unique constraint to ensure a user can only have one pre-registration per product
+    sa.UniqueConstraint(
+        "pre_email",
+        "product_name",
+        name="users_pre_registration_details_pre_email_product_name_key",
+    ),
 )
 
 register_modified_datetime_auto_update_trigger(users_pre_registration_details)

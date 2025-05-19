@@ -4,9 +4,10 @@ from typing import Any
 from aiohttp import web
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserStatus
+from simcore_postgres_database.utils_repos import transaction_context
 from simcore_postgres_database.utils_users import UsersRepo
+from simcore_service_api_server.api.dependencies.database import get_db_asyncpg_engine
 
-from ..db.plugin import get_database_engine
 from ..groups.api import is_user_by_email_in_group
 from ..products.models import Product
 from ..security.api import check_password, encrypt_password
@@ -30,7 +31,7 @@ async def create_user(
     expires_at: datetime | None,
 ) -> dict[str, Any]:
 
-    async with get_database_engine(app).acquire() as conn:
+    async with transaction_context(get_db_asyncpg_engine(app)) as conn:
         user = await UsersRepo.new_user(
             conn,
             email=email,
@@ -38,8 +39,8 @@ async def create_user(
             status=status_upon_creation,
             expires_at=expires_at,
         )
-        await UsersRepo.join_and_update_from_pre_registration_details(
-            conn, user.id, user.email
+        await UsersRepo.link_and_update_user_from_pre_registration(
+            conn, new_user_id=user.id, new_user_email=user.email
         )
     return dict(user.items())
 
