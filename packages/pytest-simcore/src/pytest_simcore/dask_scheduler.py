@@ -20,7 +20,7 @@ def dask_workers_config() -> dict[str, Any]:
                 "nthreads": 2,
                 "resources": {"CPU": 2, "RAM": 48e9},
                 "preload": (
-                    "simcore_service_dask_sidecar.task_life_cycle_worker_plugin",
+                    "dask_task_models_library.plugins.task_life_cycle_worker_plugin",
                 ),
             },
         },
@@ -34,7 +34,7 @@ def dask_workers_config() -> dict[str, Any]:
                     "RAM": 48e9,
                 },
                 "preload": (
-                    "simcore_service_dask_sidecar.task_life_cycle_worker_plugin",
+                    "dask_task_models_library.plugins.task_life_cycle_worker_plugin",
                 ),
             },
         },
@@ -47,7 +47,7 @@ def dask_workers_config() -> dict[str, Any]:
                     "RAM": 768e9,
                 },
                 "preload": (
-                    "simcore_service_dask_sidecar.task_life_cycle_worker_plugin",
+                    "dask_task_models_library.plugins.task_life_cycle_worker_plugin",
                 ),
             },
         },
@@ -64,7 +64,7 @@ def dask_scheduler_config(
             "port": unused_tcp_port_factory(),
             "dashboard_address": f":{unused_tcp_port_factory()}",
             "preload": (
-                "simcore_service_dask_sidecar.task_life_cycle_scheduler_plugin",
+                "dask_task_models_library.plugins.task_life_cycle_scheduler_plugin",
             ),
         },
     }
