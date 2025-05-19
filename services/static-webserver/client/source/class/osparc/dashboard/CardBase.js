@@ -162,9 +162,12 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     filterAppType: function(resourceType, metadata, appType) {
-      if (appType && ["service", "hypertool"].includes(resourceType)) {
-        if (metadata && metadata.type) {
-          const matches = metadata.type === appType;
+      if (appType) {
+        if (resourceType === "service" && metadata && metadata.type) {
+          const matches = (metadata.type === appType);
+          return !matches;
+        } else if (resourceType === "hypertool") {
+          const matches = (resourceType === appType);
           return !matches;
         }
         return false;
