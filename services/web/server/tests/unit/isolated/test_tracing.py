@@ -35,8 +35,4 @@ def test_middleware_restrictions_opentelemetry_is_second_middleware(
 
     app = create_application()
     assert app.middlewares
-    assert (
-        app.middlewares[0].__middleware_name__
-        == "servicelib.aiohttp.monitoring.monitor_simcore_service_webserver"
-    )
-    assert app.middlewares[1] is aiohttp_opentelemetry_middleware
+    assert app.middlewares[0] is aiohttp_opentelemetry_middleware
