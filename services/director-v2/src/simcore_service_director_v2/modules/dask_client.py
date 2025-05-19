@@ -506,7 +506,7 @@ class DaskClient:
             # the variable was effectively deleted.
             # This is annoying as one can re-create the variable without error.
             var = distributed.Variable(job_id, client=self.backend.client)
-            var.delete()
+            await asyncio.get_event_loop().run_in_executor(None, var.delete)
             # first check if the key exists
             await dask_utils.wrap_client_async_routine(
                 self.backend.client.get_dataset(name=job_id)
