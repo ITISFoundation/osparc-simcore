@@ -4,13 +4,14 @@
 
 
 from asyncio import AbstractEventLoop
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
-from prometheus_client.parser import text_string_to_metric_families
+from prometheus_client.openmetrics.parser import text_string_to_metric_families
 from servicelib.aiohttp import status
 from servicelib.aiohttp.monitoring import setup_monitoring
 from servicelib.common_headers import (
@@ -37,7 +38,7 @@ def client(
     for resource in app.router.resources():
         print(resource)
 
-    setup_monitoring(app, app_name="pytest_app", version="0.0.1")
+    setup_monitoring(app, app_name="pytest_app")
 
     return event_loop.run_until_complete(
         aiohttp_client(app, server_kwargs={"port": ports[0]})
@@ -93,7 +94,6 @@ async def test_setup_monitoring(client: TestClient):
         metric_name="http_requests",
         sample_name="http_requests_total",
         labels={
-            "app_name": "pytest_app",
             "endpoint": "/monitored_request",
             "http_status": "200",
             "method": "GET",
@@ -107,7 +107,6 @@ async def test_setup_monitoring(client: TestClient):
         metric_name="http_requests",
         sample_name="http_requests_total",
         labels={
-            "app_name": "pytest_app",
             "endpoint": "/metrics",
             "http_status": "200",
             "method": "GET",
@@ -133,7 +132,6 @@ async def test_request_with_simcore_user_agent(client: TestClient, faker: Faker)
         metric_name="http_requests",
         sample_name="http_requests_total",
         labels={
-            "app_name": "pytest_app",
             "endpoint": "/monitored_request",
             "http_status": "200",
             "method": "GET",
