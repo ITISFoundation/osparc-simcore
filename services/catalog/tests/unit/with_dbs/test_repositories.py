@@ -22,12 +22,13 @@ from models_library.services_regex import (
 from models_library.users import UserID
 from packaging import version
 from pydantic import EmailStr, HttpUrl, TypeAdapter
+from pytest_simcore.helpers.catalog_services import CreateFakeServiceDataCallable
 from pytest_simcore.helpers.faker_factories import random_project
 from pytest_simcore.helpers.postgres_tools import insert_and_get_row_lifespan
 from simcore_postgres_database.models.projects import ProjectType, projects
 from simcore_service_catalog.models.services_db import (
-    ServiceAccessRightsAtDB,
-    ServiceFiltersDB,
+    ServiceAccessRightsDB,
+    ServiceDBFilters,
     ServiceMetaDataDBCreate,
     ServiceMetaDataDBGet,
     ServiceMetaDataDBPatch,
@@ -67,7 +68,7 @@ class FakeCatalogInfo:
 @pytest.fixture
 async def fake_catalog_with_jupyterlab(
     target_product: ProductName,
-    create_fake_service_data: Callable,
+    create_fake_service_data: CreateFakeServiceDataCallable,
     services_db_tables_injector: Callable,
 ) -> FakeCatalogInfo:
 
@@ -121,7 +122,8 @@ async def fake_catalog_with_jupyterlab(
 
 
 async def test_create_services(
-    services_repo: ServicesRepository, create_fake_service_data: Callable
+    services_repo: ServicesRepository,
+    create_fake_service_data: CreateFakeServiceDataCallable,
 ):
     # creates fake data
     fake_service, *fake_access_rights = create_fake_service_data(
@@ -134,7 +136,7 @@ async def test_create_services(
     # validation
     service_db_create = ServiceMetaDataDBCreate.model_validate(fake_service)
     service_access_rights = [
-        ServiceAccessRightsAtDB.model_validate(a) for a in fake_access_rights
+        ServiceAccessRightsDB.model_validate(a) for a in fake_access_rights
     ]
 
     new_service = await services_repo.create_or_update_service(
@@ -158,7 +160,8 @@ async def test_create_services(
     ],
 )
 async def test_regression_service_meta_data_db_create(
-    create_fake_service_data: Callable, url_object: str | HttpUrl | None
+    create_fake_service_data: CreateFakeServiceDataCallable,
+    url_object: str | HttpUrl | None,
 ):
     fake_service, *_ = create_fake_service_data(
         "simcore/services/dynamic/jupyterlab",
@@ -175,7 +178,7 @@ async def test_read_services(
     services_repo: ServicesRepository,
     user_groups_ids: list[int],
     target_product: ProductName,
-    create_fake_service_data: Callable,
+    create_fake_service_data: CreateFakeServiceDataCallable,
     services_db_tables_injector: Callable,
 ):
 
@@ -353,7 +356,7 @@ async def test_list_latest_services_with_no_services(
 
 async def test_list_latest_services_with_pagination(
     target_product: ProductName,
-    create_fake_service_data: Callable,
+    create_fake_service_data: CreateFakeServiceDataCallable,
     services_db_tables_injector: Callable,
     services_repo: ServicesRepository,
     user_id: UserID,
@@ -412,7 +415,7 @@ async def test_list_latest_services_with_pagination(
 
 async def test_list_latest_services_with_filters(
     target_product: ProductName,
-    create_fake_service_data: Callable,
+    create_fake_service_data: CreateFakeServiceDataCallable,
     services_db_tables_injector: Callable,
     services_repo: ServicesRepository,
     user_id: UserID,
@@ -442,7 +445,7 @@ async def test_list_latest_services_with_filters(
     )
 
     # Test: Apply filter for ServiceType.DYNAMIC
-    filters = ServiceFiltersDB(service_type=ServiceType.DYNAMIC)
+    filters = ServiceDBFilters(service_type=ServiceType.DYNAMIC)
     total_count, services_items = await services_repo.list_latest_services(
         product_name=target_product, user_id=user_id, filters=filters
     )
@@ -453,7 +456,7 @@ async def test_list_latest_services_with_filters(
     )
 
     # Test: Apply filter for ServiceType.COMPUTATIONAL
-    filters = ServiceFiltersDB(service_type=ServiceType.COMPUTATIONAL)
+    filters = ServiceDBFilters(service_type=ServiceType.COMPUTATIONAL)
     total_count, services_items = await services_repo.list_latest_services(
         product_name=target_product, user_id=user_id, filters=filters
     )
@@ -465,9 +468,98 @@ async def test_list_latest_services_with_filters(
     )
 
 
+async def test_list_latest_services_with_pattern_filters(
+    target_product: ProductName,
+    create_fake_service_data: CreateFakeServiceDataCallable,
+    services_db_tables_injector: Callable,
+    services_repo: ServicesRepository,
+    user_id: UserID,
+):
+    # Setup: Inject services with different patterns
+    await services_db_tables_injector(
+        [
+            create_fake_service_data(
+                "simcore/services/dynamic/jupyter-lab",
+                "1.0.0",
+                team_access=None,
+                everyone_access=None,
+                product=target_product,
+                version_display="2023 Release",
+            ),
+            create_fake_service_data(
+                "simcore/services/dynamic/jupyter-r",
+                "1.0.0",
+                team_access=None,
+                everyone_access=None,
+                product=target_product,
+                version_display="2024 Beta",
+            ),
+            create_fake_service_data(
+                "simcore/services/dynamic/jupyter-python",
+                "1.0.0",
+                team_access=None,
+                everyone_access=None,
+                product=target_product,
+            ),
+        ]
+    )
+
+    # Test: Filter by service key pattern
+    filters = ServiceDBFilters(service_key_pattern="*/jupyter-*")
+    total_count, services_items = await services_repo.list_latest_services(
+        product_name=target_product, user_id=user_id, filters=filters
+    )
+    assert total_count == 3
+    assert len(services_items) == 3
+    assert all(
+        service.key.endswith("jupyter-lab")
+        or service.key.endswith("jupyter-r")
+        or service.key.endswith("jupyter-python")
+        for service in services_items
+    )
+
+    # Test: More specific pattern
+    filters = ServiceDBFilters(service_key_pattern="*/jupyter-l*")
+    total_count, services_items = await services_repo.list_latest_services(
+        product_name=target_product, user_id=user_id, filters=filters
+    )
+    assert total_count == 1
+    assert len(services_items) == 1
+    assert services_items[0].key.endswith("jupyter-lab")
+
+    # Test: Filter by version display pattern
+    filters = ServiceDBFilters(version_display_pattern="*2023*")
+    total_count, services_items = await services_repo.list_latest_services(
+        product_name=target_product, user_id=user_id, filters=filters
+    )
+    assert total_count == 1
+    assert len(services_items) == 1
+    assert services_items[0].version_display == "2023 Release"
+
+    # Test: Filter by version display pattern with NULL handling
+    filters = ServiceDBFilters(version_display_pattern="*")
+    total_count, services_items = await services_repo.list_latest_services(
+        product_name=target_product, user_id=user_id, filters=filters
+    )
+    assert total_count == 3  # Should match all, including NULL version_display
+    assert len(services_items) == 3
+
+    # Test: Combined filters
+    filters = ServiceDBFilters(
+        service_key_pattern="*/jupyter-*", version_display_pattern="*2024*"
+    )
+    total_count, services_items = await services_repo.list_latest_services(
+        product_name=target_product, user_id=user_id, filters=filters
+    )
+    assert total_count == 1
+    assert len(services_items) == 1
+    assert services_items[0].version_display == "2024 Beta"
+    assert services_items[0].key.endswith("jupyter-r")
+
+
 async def test_get_and_update_service_meta_data(
     target_product: ProductName,
-    create_fake_service_data: Callable,
+    create_fake_service_data: CreateFakeServiceDataCallable,
     services_db_tables_injector: Callable,
     services_repo: ServicesRepository,
     user_id: UserID,
@@ -507,7 +599,7 @@ async def test_get_and_update_service_meta_data(
 
 async def test_can_get_service(
     target_product: ProductName,
-    create_fake_service_data: Callable,
+    create_fake_service_data: CreateFakeServiceDataCallable,
     services_db_tables_injector: Callable,
     services_repo: ServicesRepository,
     user_id: UserID,
@@ -564,7 +656,7 @@ def _create_fake_release_versions(num_versions: int) -> set[str]:
 
 async def test_get_service_history_page(
     target_product: ProductName,
-    create_fake_service_data: Callable,
+    create_fake_service_data: CreateFakeServiceDataCallable,
     services_db_tables_injector: Callable,
     services_repo: ServicesRepository,
     user_id: UserID,
@@ -637,7 +729,7 @@ async def test_get_service_history_page(
 )
 async def test_get_service_history_page_with_filters(
     target_product: ProductName,
-    create_fake_service_data: Callable,
+    create_fake_service_data: CreateFakeServiceDataCallable,
     services_db_tables_injector: Callable,
     services_repo: ServicesRepository,
     user_id: UserID,
@@ -676,7 +768,7 @@ async def test_get_service_history_page_with_filters(
     assert [release.version for release in history] == release_versions
 
     # Test: Apply filter for
-    filters = ServiceFiltersDB(service_type=expected_service_type)
+    filters = ServiceDBFilters(service_type=expected_service_type)
     total_count, filtered_history = await services_repo.get_service_history_page(
         product_name=target_product,
         user_id=user_id,
@@ -693,7 +785,7 @@ async def test_get_service_history_page_with_filters(
         if expected_service_type != ServiceType.COMPUTATIONAL
         else ServiceType.DYNAMIC
     )
-    filters = ServiceFiltersDB(service_type=different_service_type)
+    filters = ServiceDBFilters(service_type=different_service_type)
     total_count, no_history = await services_repo.get_service_history_page(
         product_name=target_product,
         user_id=user_id,

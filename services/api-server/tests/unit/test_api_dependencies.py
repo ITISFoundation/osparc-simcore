@@ -4,7 +4,7 @@ import pytest
 from fastapi import Depends, FastAPI, status
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
-from simcore_service_api_server.api.dependencies.models_schemas_job_filters import (
+from simcore_service_api_server.api.dependencies.models_schemas_jobs_filters import (
     get_job_metadata_filter,
 )
 from simcore_service_api_server.models.schemas.jobs_filters import (

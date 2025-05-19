@@ -56,7 +56,7 @@ from ...services_http.storage import StorageApi, to_file_api_model
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.database import get_db_asyncpg_engine
-from ..dependencies.models_schemas_job_filters import get_job_metadata_filter
+from ..dependencies.models_schemas_jobs_filters import get_job_metadata_filter
 from ..dependencies.rabbitmq import get_log_check_timeout, get_log_distributor
 from ..dependencies.services import get_api_client, get_solver_service
 from ..dependencies.webserver_http import AuthSession, get_webserver_session

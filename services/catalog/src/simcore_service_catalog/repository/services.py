@@ -35,26 +35,19 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from ..models.services_db import (
     ReleaseDBGet,
-    ServiceAccessRightsAtDB,
-    ServiceFiltersDB,
+    ServiceAccessRightsDB,
+    ServiceDBFilters,
     ServiceMetaDataDBCreate,
     ServiceMetaDataDBGet,
     ServiceMetaDataDBPatch,
     ServiceWithHistoryDBGet,
 )
 from ..models.services_specifications import ServiceSpecificationsAtDB
+from . import _services_sql
 from ._base import BaseRepository
 from ._services_sql import (
     SERVICES_META_DATA_COLS,
     AccessRightsClauses,
-    _apply_services_filters,
-    by_version,
-    can_get_service_stmt,
-    get_service_history_stmt,
-    get_service_stmt,
-    latest_services_total_count_stmt,
-    list_latest_services_stmt,
-    list_services_stmt,
 )
 
 _logger = logging.getLogger(__name__)
@@ -101,7 +94,7 @@ class ServicesRepository(BaseRepository):
             return [
                 ServiceMetaDataDBGet.model_validate(row)
                 async for row in await conn.stream(
-                    list_services_stmt(
+                    _services_sql.list_services_stmt(
                         gids=gids,
                         execute_access=execute_access,
                         write_access=write_access,
@@ -230,7 +223,7 @@ class ServicesRepository(BaseRepository):
     async def create_or_update_service(
         self,
         new_service: ServiceMetaDataDBCreate,
-        new_service_access_rights: list[ServiceAccessRightsAtDB],
+        new_service_access_rights: list[ServiceAccessRightsDB],
     ) -> ServiceMetaDataDBGet:
         for access_rights in new_service_access_rights:
             if (
@@ -295,7 +288,7 @@ class ServicesRepository(BaseRepository):
         """Returns False if it cannot get the service i.e. not found or does not have access"""
         async with self.db_engine.begin() as conn:
             result = await conn.execute(
-                can_get_service_stmt(
+                _services_sql.can_get_service_stmt(
                     product_name=product_name,
                     user_id=user_id,
                     access_rights=AccessRightsClauses.can_read,
@@ -316,7 +309,7 @@ class ServicesRepository(BaseRepository):
     ) -> bool:
         async with self.db_engine.begin() as conn:
             result = await conn.execute(
-                can_get_service_stmt(
+                _services_sql.can_get_service_stmt(
                     product_name=product_name,
                     user_id=user_id,
                     access_rights=AccessRightsClauses.can_edit,
@@ -336,7 +329,7 @@ class ServicesRepository(BaseRepository):
         version: ServiceVersion,
     ) -> ServiceWithHistoryDBGet | None:
 
-        stmt_get = get_service_stmt(
+        stmt_get = _services_sql.get_service_stmt(
             product_name=product_name,
             user_id=user_id,
             access_rights=AccessRightsClauses.can_read,
@@ -349,7 +342,7 @@ class ServicesRepository(BaseRepository):
             row = result.one_or_none()
 
         if row:
-            stmt_history = get_service_history_stmt(
+            stmt_history = _services_sql.get_service_history_stmt(
                 product_name=product_name,
                 user_id=user_id,
                 access_rights=AccessRightsClauses.can_read,
@@ -392,17 +385,17 @@ class ServicesRepository(BaseRepository):
         # list args: pagination
         limit: int | None = None,
         offset: int | None = None,
-        filters: ServiceFiltersDB | None = None,
+        filters: ServiceDBFilters | None = None,
     ) -> tuple[PositiveInt, list[ServiceWithHistoryDBGet]]:
 
         # get page
-        stmt_total = latest_services_total_count_stmt(
+        stmt_total = _services_sql.latest_services_total_count_stmt(
             product_name=product_name,
             user_id=user_id,
             access_rights=AccessRightsClauses.can_read,
             filters=filters,
         )
-        stmt_page = list_latest_services_stmt(
+        stmt_page = _services_sql.list_latest_services_stmt(
             product_name=product_name,
             user_id=user_id,
             access_rights=AccessRightsClauses.can_read,
@@ -459,7 +452,7 @@ class ServicesRepository(BaseRepository):
         """
         DEPRECATED: use get_service_history_page instead!
         """
-        stmt_history = get_service_history_stmt(
+        stmt_history = _services_sql.get_service_history_stmt(
             product_name=product_name,
             user_id=user_id,
             access_rights=AccessRightsClauses.can_read,
@@ -484,7 +477,7 @@ class ServicesRepository(BaseRepository):
         # list args: pagination
         limit: int | None = None,
         offset: int | None = None,
-        filters: ServiceFiltersDB | None = None,
+        filters: ServiceDBFilters | None = None,
     ) -> tuple[PositiveInt, list[ReleaseDBGet]]:
 
         base_stmt = (
@@ -514,7 +507,7 @@ class ServicesRepository(BaseRepository):
         )
 
         if filters:
-            base_stmt = _apply_services_filters(base_stmt, filters)
+            base_stmt = _services_sql.apply_services_filters(base_stmt, filters)
 
         base_subquery = base_stmt.subquery()
 
@@ -546,7 +539,7 @@ class ServicesRepository(BaseRepository):
                     ),
                 )
             )
-            .order_by(sql.desc(by_version(services_meta_data.c.version)))
+            .order_by(sql.desc(_services_sql.by_version(services_meta_data.c.version)))
             .offset(offset)
             .limit(limit)
         )
@@ -569,7 +562,7 @@ class ServicesRepository(BaseRepository):
         key: str,
         version: str,
         product_name: str | None = None,
-    ) -> list[ServiceAccessRightsAtDB]:
+    ) -> list[ServiceAccessRightsDB]:
         """
         - If product_name is not specificed, then all are considered in the query
         """
@@ -583,7 +576,7 @@ class ServicesRepository(BaseRepository):
 
         async with self.db_engine.connect() as conn:
             return [
-                ServiceAccessRightsAtDB.model_validate(row)
+                ServiceAccessRightsDB.model_validate(row)
                 async for row in await conn.stream(query)
             ]
 
@@ -591,7 +584,7 @@ class ServicesRepository(BaseRepository):
         self,
         key_versions: Iterable[tuple[str, str]],
         product_name: str | None = None,
-    ) -> dict[tuple[str, str], list[ServiceAccessRightsAtDB]]:
+    ) -> dict[tuple[str, str], list[ServiceAccessRightsDB]]:
         """Batch version of get_service_access_rights"""
         service_to_access_rights = defaultdict(list)
         query = (
@@ -609,12 +602,12 @@ class ServicesRepository(BaseRepository):
         async with self.db_engine.connect() as conn:
             async for row in await conn.stream(query):
                 service_to_access_rights[(row.key, row.version)].append(
-                    ServiceAccessRightsAtDB.model_validate(row)
+                    ServiceAccessRightsDB.model_validate(row)
                 )
         return service_to_access_rights
 
     async def upsert_service_access_rights(
-        self, new_access_rights: list[ServiceAccessRightsAtDB]
+        self, new_access_rights: list[ServiceAccessRightsDB]
     ) -> None:
         # update the services_access_rights table (some might be added/removed/modified)
         for rights in new_access_rights:
@@ -646,7 +639,7 @@ class ServicesRepository(BaseRepository):
                 )
 
     async def delete_service_access_rights(
-        self, delete_access_rights: list[ServiceAccessRightsAtDB]
+        self, delete_access_rights: list[ServiceAccessRightsDB]
     ) -> None:
         async with self.db_engine.begin() as conn:
             for rights in delete_access_rights:
