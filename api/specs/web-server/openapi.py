@@ -44,7 +44,6 @@ openapi_modules = [
         "_nih_sparc_redirections",
         "_projects",
         "_projects_access_rights",
-        "_projects_comments",
         "_projects_conversations",
         "_projects_folders",
         "_projects_metadata",
