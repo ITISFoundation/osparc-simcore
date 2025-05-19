@@ -26,7 +26,12 @@ _SHUTDOWN_TIMEOUT: Final[float] = datetime.timedelta(seconds=10).total_seconds()
 _STARTUP_TIMEOUT: Final[float] = datetime.timedelta(minutes=1).total_seconds()
 
 
-def on_worker_init(sender, **_kwargs) -> None:
+def on_worker_init(
+    app_factory,
+    celery_settings,
+    sender,
+    **_kwargs,
+) -> None:
     startup_complete_event = threading.Event()
 
     def _init(startup_complete_event: threading.Event) -> None:
@@ -34,10 +39,7 @@ def on_worker_init(sender, **_kwargs) -> None:
         asyncio.set_event_loop(loop)
         shutdown_event = asyncio.Event()
 
-        fastapi_app = create_app(app_settings)
-
-        assert app_settings.STORAGE_CELERY
-        celery_settings = app_settings.STORAGE_CELERY
+        fastapi_app = app_factory()
 
         async def setup_task_worker():
             redis_client_sdk = RedisClientSDK(

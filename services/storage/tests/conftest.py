@@ -12,6 +12,7 @@ import logging
 import random
 import sys
 from collections.abc import AsyncIterator, Awaitable, Callable
+from functools import partial
 from pathlib import Path
 from typing import Any, Final, cast
 
@@ -974,10 +975,7 @@ def celery_config() -> dict[str, Any]:
 def mock_celery_app(mocker: MockerFixture, celery_config: dict[str, Any]) -> Celery:
     celery_app = Celery(**celery_config)
 
-    for module in (
-        "simcore_service_storage.modules.celery._common.create_app",
-        "simcore_service_storage.modules.celery.create_app",
-    ):
+    for module in ("celery_library.create_app",):
         mocker.patch(module, return_value=celery_app)
 
     return celery_app
@@ -1000,13 +998,17 @@ async def with_storage_celery_worker_controller(
     register_celery_tasks: Callable[[Celery], None],
 ) -> AsyncIterator[TestWorkController]:
     # Signals must be explicitily connected
-    worker_init.connect(on_worker_init)
+    monkeypatch.setenv("STORAGE_WORKER_MODE", "true")
+    app_settings = ApplicationSettings.create_from_envs()
+    app_factory = partial(create_app, app_settings)
+    worker_init.connect(
+        partial(on_worker_init, app_factory, app_settings.STORAGE_CELERY)
+    )
     worker_shutdown.connect(on_worker_shutdown)
 
     setup_worker_tasks(celery_app)
     register_celery_tasks(celery_app)
 
-    monkeypatch.setenv("STORAGE_WORKER_MODE", "true")
     with start_worker(
         celery_app,
         pool="threads",
