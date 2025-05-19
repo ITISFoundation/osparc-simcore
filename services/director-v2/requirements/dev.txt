@@ -21,7 +21,5 @@
 --editable ../../packages/settings-library/
 --editable ../../packages/simcore-sdk/
 
---editable ../../services/dask-sidecar/
-
 # installs current package
 --editable .
