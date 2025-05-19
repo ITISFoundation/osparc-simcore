@@ -12,6 +12,7 @@ from models_library.api_schemas_long_running_tasks.base import (
 )
 from models_library.generated_models.docker_rest_api import ContainerState
 from models_library.rabbitmq_messages import ProgressType, SimcorePlatformStatus
+from models_library.service_settings_labels import LegacyState
 from pydantic import PositiveInt
 from servicelib.file_utils import log_directory_changes
 from servicelib.logging_utils import log_context
@@ -337,6 +338,19 @@ def _get_satate_folders_size(paths: list[Path]) -> int:
     return total_size
 
 
+def _get_legacy_state_with_dy_volumes_path(
+    settings: ApplicationSettings,
+) -> LegacyState | None:
+    legacy_state = settings.DY_SIDECAR_LEGACY_STATE
+    if legacy_state is None:
+        return None
+    dy_volumes = settings.DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR
+    return LegacyState(
+        old_state_path=dy_volumes / legacy_state.old_state_path.relative_to("/"),
+        new_state_path=dy_volumes / legacy_state.new_state_path.relative_to("/"),
+    )
+
+
 async def _restore_state_folder(
     app: FastAPI,
     *,
@@ -348,13 +362,14 @@ async def _restore_state_folder(
         user_id=settings.DY_SIDECAR_USER_ID,
         project_id=settings.DY_SIDECAR_PROJECT_ID,
         node_uuid=settings.DY_SIDECAR_NODE_ID,
-        destination_path=state_path,
+        destination_path=Path(state_path),
         io_log_redirect_cb=functools.partial(
             post_sidecar_log_message, app, log_level=logging.INFO
         ),
         r_clone_settings=settings.DY_SIDECAR_R_CLONE_SETTINGS,
         progress_bar=progress_bar,
         aws_s3_cli_settings=settings.DY_SIDECAR_AWS_S3_CLI_SETTINGS,
+        legacy_state=_get_legacy_state_with_dy_volumes_path(settings),
     )
 
 
@@ -429,6 +444,7 @@ async def _save_state_folder(
         ),
         progress_bar=progress_bar,
         aws_s3_cli_settings=settings.DY_SIDECAR_AWS_S3_CLI_SETTINGS,
+        legacy_state=_get_legacy_state_with_dy_volumes_path(settings),
     )
 
 
