@@ -27,7 +27,6 @@ from tenacity import (
 from yarl import URL
 
 from ...long_running_tasks._constants import DEFAULT_POLL_INTERVAL_S, HOUR
-from ...long_running_tasks._errors import TaskClientResultError
 from ...long_running_tasks._models import (
     ClientConfiguration,
     LRTask,
@@ -159,7 +158,6 @@ __all__: tuple[str, ...] = (
     "ProgressCallback",
     "ProgressMessage",
     "ProgressPercent",
-    "TaskClientResultError",
     "TaskId",
     "TaskResult",
     "periodic_task_result",
