@@ -97,7 +97,7 @@ async def _wait_for_completion(
 
 @retry(**_DEFAULT_FASTAPI_RETRY_POLICY)
 async def _task_result(session: httpx.AsyncClient, result_url: URL) -> Any:
-    response = await session.get(f"{result_url}", params={"return_exception": True})
+    response = await session.get(f"{result_url}")
     response.raise_for_status()
     if response.status_code != status.HTTP_204_NO_CONTENT:
         return unwrap_envelope_if_required(response.json())

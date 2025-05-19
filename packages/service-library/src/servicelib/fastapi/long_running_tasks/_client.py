@@ -2,7 +2,8 @@ import asyncio
 import functools
 import logging
 import warnings
-from typing import Any, Awaitable, Callable, Final
+from collections.abc import Awaitable, Callable
+from typing import Any, Final
 
 from fastapi import FastAPI, status
 from httpx import AsyncClient, HTTPError
@@ -13,13 +14,8 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_exponential
 
-from ...long_running_tasks._errors import GenericClientError, TaskClientResultError
-from ...long_running_tasks._models import (
-    ClientConfiguration,
-    TaskId,
-    TaskResult,
-    TaskStatus,
-)
+from ...long_running_tasks._errors import GenericClientError
+from ...long_running_tasks._models import ClientConfiguration, TaskId, TaskStatus
 
 DEFAULT_HTTP_REQUESTS_TIMEOUT: Final[PositiveFloat] = 15
 
@@ -85,7 +81,7 @@ def _after_log(
 
 
 def retry_on_http_errors(
-    request_func: Callable[..., Awaitable[Any]]
+    request_func: Callable[..., Awaitable[Any]],
 ) -> Callable[..., Awaitable[Any]]:
     """
     Will retry the request on `httpx.HTTPError`.
@@ -173,10 +169,7 @@ class Client:
                 body=result.text,
             )
 
-        task_result = TaskResult.model_validate(result.json())
-        if task_result.error is not None:
-            raise TaskClientResultError(message=task_result.error)
-        return task_result.result
+        return result.json()
 
     @retry_on_http_errors
     async def cancel_and_delete_task(
