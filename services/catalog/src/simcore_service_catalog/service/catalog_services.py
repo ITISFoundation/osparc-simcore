@@ -32,8 +32,8 @@ from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
 
 from ..clients.director import DirectorClient
 from ..models.services_db import (
-    ServiceAccessRightsAtDB,
-    ServiceFiltersDB,
+    ServiceAccessRightsDB,
+    ServiceDBFilters,
     ServiceMetaDataDBPatch,
     ServiceWithHistoryDBGet,
 )
@@ -49,7 +49,7 @@ _logger = logging.getLogger(__name__)
 
 def _aggregate(
     service_db: ServiceWithHistoryDBGet,
-    access_rights_db: list[ServiceAccessRightsAtDB],
+    access_rights_db: list[ServiceAccessRightsDB],
     service_manifest: ServiceMetaDataPublished,
 ) -> dict:
     return {
@@ -84,7 +84,7 @@ def _aggregate(
 
 def _to_latest_get_schema(
     service_db: ServiceWithHistoryDBGet,
-    access_rights_db: list[ServiceAccessRightsAtDB],
+    access_rights_db: list[ServiceAccessRightsDB],
     service_manifest: ServiceMetaDataPublished,
 ) -> LatestServiceGet:
 
@@ -106,7 +106,7 @@ def _to_latest_get_schema(
 
 def _to_get_schema(
     service_db: ServiceWithHistoryDBGet,
-    access_rights_db: list[ServiceAccessRightsAtDB],
+    access_rights_db: list[ServiceAccessRightsDB],
     service_manifest: ServiceMetaDataPublished,
     compatibility_map: dict[ServiceVersion, Compatibility | None] | None = None,
 ) -> ServiceGetV2:
@@ -137,7 +137,7 @@ async def list_latest_catalog_services(
     user_id: UserID,
     limit: PageLimitInt | None,
     offset: NonNegativeInt = 0,
-    filters: ServiceFiltersDB | None = None,
+    filters: ServiceDBFilters | None = None,
 ) -> tuple[PageTotalCount, list[LatestServiceGet]]:
 
     # defines the order
@@ -151,7 +151,7 @@ async def list_latest_catalog_services(
 
     if services:
         # injects access-rights
-        access_rights: dict[tuple[str, str], list[ServiceAccessRightsAtDB]] = (
+        access_rights: dict[tuple[str, str], list[ServiceAccessRightsDB]] = (
             await repo.batch_get_services_access_rights(
                 ((sc.key, sc.version) for sc in services), product_name=product_name
             )
@@ -200,6 +200,8 @@ async def list_latest_catalog_services(
                 tip="This might be due to malfunction of the background-task or that this call was done while the sync was taking place",
             )
         )
+        # NOTE: tests should fail if this happens but it is not a critical error so it is ignored in production
+        assert len(missing_services) == 0, msg  # nosec
 
     # Aggregate the services manifest and access-rights
     items = [
@@ -317,7 +319,7 @@ async def update_catalog_service(
 
         # new
         new_access_rights = [
-            ServiceAccessRightsAtDB(
+            ServiceAccessRightsDB(
                 key=service_key,
                 version=service_version,
                 gid=gid,
@@ -331,7 +333,7 @@ async def update_catalog_service(
 
         # then delete the ones that were removed
         removed_access_rights = [
-            ServiceAccessRightsAtDB(
+            ServiceAccessRightsDB(
                 key=service_key,
                 version=service_version,
                 gid=gid,
@@ -360,7 +362,7 @@ async def check_catalog_service_permissions(
     service_key: ServiceKey,
     service_version: ServiceVersion,
     permission: Literal["read", "write"],
-) -> list[ServiceAccessRightsAtDB]:
+) -> list[ServiceAccessRightsDB]:
     """Raises if the service cannot be accessed with the specified permission level
 
     Args:
@@ -520,7 +522,7 @@ async def list_user_service_release_history(
     limit: PageLimitInt | None = None,
     offset: NonNegativeInt | None = None,
     # filters
-    filters: ServiceFiltersDB | None = None,
+    filters: ServiceDBFilters | None = None,
     # options
     include_compatibility: bool = False,
 ) -> tuple[PageTotalCount, list[ServiceRelease]]:

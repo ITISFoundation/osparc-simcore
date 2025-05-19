@@ -21,7 +21,7 @@ from ..._constants import (
     RESPONSE_MODEL_POLICY,
 )
 from ...clients.director import DirectorClient
-from ...models.services_db import ServiceAccessRightsAtDB, ServiceMetaDataDBGet
+from ...models.services_db import ServiceAccessRightsDB, ServiceMetaDataDBGet
 from ...repository.groups import GroupsRepository
 from ...repository.services import ServicesRepository
 from .._dependencies.director import get_director_client
@@ -36,7 +36,7 @@ ServicesSelection: TypeAlias = set[tuple[str, str]]
 def _compose_service_details(
     service_in_registry: dict[str, Any],  # published part
     service_in_db: ServiceMetaDataDBGet,  # editable part
-    service_access_rights_in_db: list[ServiceAccessRightsAtDB],
+    service_access_rights_in_db: list[ServiceAccessRightsDB],
     service_owner: str | None,
 ) -> ServiceGet | None:
     # compose service from registry and DB
@@ -230,7 +230,7 @@ async def get_service(
     )
     if service_in_db:
         # we have full access, let's add the access to the output
-        service_access_rights: list[ServiceAccessRightsAtDB] = (
+        service_access_rights: list[ServiceAccessRightsDB] = (
             await services_repo.get_service_access_rights(
                 service_in_manifest.key,
                 service_in_manifest.version,

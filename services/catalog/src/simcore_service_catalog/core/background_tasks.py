@@ -26,7 +26,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..api._dependencies.director import get_director_client
-from ..models.services_db import ServiceAccessRightsAtDB, ServiceMetaDataDBCreate
+from ..models.services_db import ServiceAccessRightsDB, ServiceMetaDataDBCreate
 from ..repository.groups import GroupsRepository
 from ..repository.projects import ProjectsRepository
 from ..repository.services import ServicesRepository
@@ -158,7 +158,7 @@ async def _ensure_published_templates_accessible(
 
     missing_services = published_services - available_services
     missing_services_access_rights = [
-        ServiceAccessRightsAtDB(
+        ServiceAccessRightsDB(
             key=ServiceKey(service[0]),
             version=ServiceVersion(service[1]),
             gid=everyone_gid,
