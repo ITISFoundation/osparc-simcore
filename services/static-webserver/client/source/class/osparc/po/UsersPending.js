@@ -120,6 +120,16 @@ qx.Class.define("osparc.po.UsersPending", {
       });
       return button;
     },
+
+    createInfoButton: function(infoMetadata) {
+      const infoButton = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/16");
+      infoButton.addListener("execute", () => {
+        const container = new qx.ui.container.Scroll();
+        container.add(new osparc.ui.basic.JsonTreeWidget(infoMetadata, "pendingUserInfo"));
+        osparc.ui.window.Window.popUpInWindow(container, qx.locale.Manager.tr("User Info"));
+      });
+      return infoButton;
+    },
   },
 
   members: {
@@ -172,14 +182,14 @@ qx.Class.define("osparc.po.UsersPending", {
         column: 2,
       });
 
-      pendingUsersLayout.add(new qx.ui.basic.Label(this.tr("Status")).set({
+      pendingUsersLayout.add(new qx.ui.basic.Label(this.tr("Info")).set({
         font: "text-14"
       }), {
         row: 0,
         column: 3,
       });
 
-      pendingUsersLayout.add(new qx.ui.basic.Label(this.tr("Info")).set({
+      pendingUsersLayout.add(new qx.ui.basic.Label(this.tr("Status")).set({
         font: "text-14"
       }), {
         row: 0,
@@ -211,17 +221,12 @@ qx.Class.define("osparc.po.UsersPending", {
           row,
           column: 2,
         });
-        pendingUsersLayout.add(new qx.ui.basic.Label(pendingUser.status.toLowerCase()), {
+        const infoButton = this.self().createInfoButton(pendingUser.info);
+        pendingUsersLayout.add(infoButton, {
           row,
           column: 3,
         });
-        const infoButton = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/16");
-        infoButton.addListener("execute", () => {
-          const container = new qx.ui.container.Scroll();
-          container.add(new osparc.ui.basic.JsonTreeWidget(pendingUser.info, "pendingUserInfo"));
-          osparc.ui.window.Window.popUpInWindow(container, this.tr("User Info"));
-        });
-        pendingUsersLayout.add(infoButton, {
+        pendingUsersLayout.add(new qx.ui.basic.Label(pendingUser.status.toLowerCase()), {
           row,
           column: 4,
         });
