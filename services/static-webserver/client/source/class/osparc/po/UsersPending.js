@@ -27,7 +27,7 @@ qx.Class.define("osparc.po.UsersPending", {
             name: "John Doe",
             email: "john.doe@email.com",
             date: "2025-01-01 00:00:00.702394",
-            status: "APPROVAL_PENDING",
+            status: "PENDING",
             info: {
               "institution": "ETH Zurich",
               "department": "Department of Physics",
@@ -39,7 +39,7 @@ qx.Class.define("osparc.po.UsersPending", {
             name: "Jane Doe",
             email: "jane.doe@email.com",
             date: "2025-01-01 00:01:00.702394",
-            status: "APPROVAL_DENIED",
+            status: "REJECTED",
             info: {
               "institution": "ETH Zurich",
               "department": "Department of Physics",
@@ -51,7 +51,7 @@ qx.Class.define("osparc.po.UsersPending", {
             name: "Alice Smith",
             email: "alice.smith@email.com",
             date: "2025-01-01 00:02:00.702394",
-            status: "CONFIRMATION_PENDING",
+            status: "APPROVED",
             info: {
               "institution": "ETH Zurich",
               "department": "Department of Physics",
@@ -83,8 +83,8 @@ qx.Class.define("osparc.po.UsersPending", {
       return button;
     },
 
-    createDenyButton: function(email) {
-      const button = new osparc.ui.form.FetchButton(qx.locale.Manager.tr("Deny"));
+    createRejectButton: function(email) {
+      const button = new osparc.ui.form.FetchButton(qx.locale.Manager.tr("Reject"));
       button.addListener("execute", () => {
         button.setFetching(true);
         const params = {
@@ -92,7 +92,7 @@ qx.Class.define("osparc.po.UsersPending", {
             userEmail: email,
           },
         };
-        osparc.data.Resources.fetch("poUsers", "denyUser", params)
+        osparc.data.Resources.fetch("poUsers", "rejectUser", params)
           .then(() => {
             osparc.FlashMessenger.logAs(qx.locale.Manager.tr("User denied"), "INFO");
           })
@@ -237,19 +237,19 @@ qx.Class.define("osparc.po.UsersPending", {
         });
 
         switch (pendingUser.status) {
-          case "APPROVAL_PENDING": {
+          case "PENDING": {
             const approveButton = this.self().createApproveButton(pendingUser.email);
             buttonsLayout.add(approveButton);
-            const denyButton = this.self().createDenyButton(pendingUser.email);
-            buttonsLayout.add(denyButton);
+            const rejectButton = this.self().createRejectButton(pendingUser.email);
+            buttonsLayout.add(rejectButton);
             break;
           }
-          case "APPROVAL_DENIED": {
+          case "REJECTED": {
             const approveButton = this.self().createApproveButton(pendingUser.email);
             buttonsLayout.add(approveButton);
             break;
           }
-          case "CONFIRMATION_PENDING": {
+          case "APPROVED": {
             const resendEmailButton = this.self().createResendEmailButton(pendingUser.email);
             buttonsLayout.add(resendEmailButton);
             break;

@@ -1069,9 +1069,9 @@ qx.Class.define("osparc.data.Resources", {
             method: "POST",
             url: statics.API + "/admin/users/{userEmail}:approve"
           },
-          denyUser: {
+          rejectUser: {
             method: "POST",
-            url: statics.API + "/admin/users/{userEmail}:deny"
+            url: statics.API + "/admin/users/{userEmail}:reject"
           },
           resendConfirmationEmail: {
             method: "POST",
