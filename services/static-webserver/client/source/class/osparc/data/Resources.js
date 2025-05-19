@@ -1061,6 +1061,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/admin/users:search?email={email}"
           },
+          getPendingUsers: {
+            method: "GET",
+            url: statics.API + "/admin/users?status=PENDING"
+          },
           preRegister: {
             method: "POST",
             url: statics.API + "/admin/users:pre-register"
