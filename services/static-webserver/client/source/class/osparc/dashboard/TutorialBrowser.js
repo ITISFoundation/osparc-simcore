@@ -90,7 +90,8 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
 
     _updateTutorialData: function(templateData) {
       templateData["resourceType"] = "tutorial";
-      this.base(arguments, templateData);
+
+      this._updateTemplateData(templateData);
     },
 
     __setResourcesToList: function(tutorialsList) {
