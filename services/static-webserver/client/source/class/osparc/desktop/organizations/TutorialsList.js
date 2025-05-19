@@ -89,7 +89,7 @@ qx.Class.define("osparc.desktop.organizations.TutorialsList", {
             osparc.store.Templates.getTutorial(templateId)
               .then(templateData => {
                 if (templateData) {
-                  templateData["resourceType"] = "template";
+                  templateData["resourceType"] = "tutorial";
                   const resourceDetails = new osparc.dashboard.ResourceDetails(templateData).set({
                     showOpenButton: false
                   });

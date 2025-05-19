@@ -185,7 +185,12 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
     // overridden
     _applyLastChangeDate: function(value, old) {
       if (value) {
-        if (["study", "template", "hypertool"].includes(this.getResourceType())) {
+        if ([
+          "study",
+          "template",
+          "tutorial",
+          "hypertool",
+        ].includes(this.getResourceType())) {
           const dateBy = this.getChildControl("date-by");
           dateBy.set({
             date: value,

@@ -244,18 +244,26 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       let showProductEveryone = false;
       if (this.__showOrganizations === false) {
         showProductEveryone = false;
-      } else if (this.__resourceData && this.__resourceData["resourceType"] === "study") {
-        // studies can't be shared with ProductEveryone
-        showProductEveryone = false;
-      } else if (this.__resourceData && this.__resourceData["resourceType"] === "template") {
-        // only users with permissions can share templates with ProductEveryone
-        showProductEveryone = osparc.data.Permissions.getInstance().canDo("study.everyone.share");
-      } else if (this.__resourceData && this.__resourceData["resourceType"] === "service") {
-        // all users can share services with ProductEveryone
-        showProductEveryone = true;
-      } else if (this.__resourceData && this.__resourceData["resourceType"] === "hypertool") {
-        // all users can share hypertool with ProductEveryone
-        showProductEveryone = true;
+      } else if (this.__resourceData) {
+        switch (this.__resourceData["resourceType"]) {
+          case "study":
+            // studies can't be shared with ProductEveryone
+            showProductEveryone = false;
+            break;
+          case "template":
+          case "tutorial":
+            // only users with permissions can share templates with ProductEveryone
+            showProductEveryone = osparc.data.Permissions.getInstance().canDo("study.everyone.share");
+            break;
+          case "service":
+            // all users can share services with ProductEveryone
+            showProductEveryone = true;
+            break;
+          case "hypertool":
+            // all users can share hypertool with ProductEveryone
+            showProductEveryone = true;
+            break;
+        }
       }
       return showProductEveryone;
     },

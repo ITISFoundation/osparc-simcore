@@ -27,6 +27,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     switch (resourceData["resourceType"]) {
       case "study":
       case "template":
+      case "tutorial":
       case "hypertool": {
         const params = {
           url: {
@@ -54,6 +55,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         switch (resourceData["resourceType"]) {
           case "study":
           case "template":
+          case "tutorial":
           case "hypertool":
             osparc.store.Services.getStudyServicesMetadata(latestResourceData)
               .finally(() => {
@@ -76,11 +78,14 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
   events: {
     "pagesAdded": "qx.event.type.Event",
+    "openStudy": "qx.event.type.Data",
     "openTemplate": "qx.event.type.Data",
+    "openTutorial": "qx.event.type.Data",
     "openHypertool": "qx.event.type.Data",
     "openService": "qx.event.type.Data",
     "updateStudy": "qx.event.type.Data",
     "updateTemplate": "qx.event.type.Data",
+    "updateTutorial": "qx.event.type.Data",
     "updateService": "qx.event.type.Data",
     "updateHypertool": "qx.event.type.Data",
     "publishTemplate": "qx.event.type.Data",
@@ -248,6 +253,9 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         case "template":
           this.fireDataEvent("openTemplate", this.__resourceData);
           break;
+        case "tutorial":
+          this.fireDataEvent("openTutorial", this.__resourceData);
+          break;
         case "hypertool":
           this.fireDataEvent("openHypertool", this.__resourceData);
           break;
@@ -383,6 +391,9 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           break;
         case "template":
           this.fireDataEvent("updateTemplate", updatedData);
+          break;
+        case "tutorial":
+          this.fireDataEvent("updateTutorial", updatedData);
           break;
         case "hypertool":
           this.fireDataEvent("updateHypertool", updatedData);
@@ -558,6 +569,8 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
             collaboratorsView.getChildControl("study-link").show();
           } else if (osparc.utils.Resources.isTemplate(resourceData)) {
             collaboratorsView.getChildControl("template-link").show();
+          } else if (osparc.utils.Resources.isTutorial(resourceData)) {
+            collaboratorsView.getChildControl("template-link").show();
           }
           collaboratorsView.addListener("updateAccessRights", e => {
             const updatedData = e.getData();
@@ -726,7 +739,12 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         });
         page.addToContent(servicesBootOpts);
 
-        if (osparc.utils.Resources.isStudy(resourceData) || osparc.utils.Resources.isTemplate(resourceData)) {
+        if (
+          osparc.utils.Resources.isStudy(resourceData) ||
+          osparc.utils.Resources.isTemplate(resourceData) ||
+          osparc.utils.Resources.isTutorial(resourceData) ||
+          osparc.utils.Resources.isHypertool(resourceData)
+        ) {
           if (osparc.product.Utils.showDisableServiceAutoStart()) {
             const study = new osparc.data.model.Study(resourceData);
             const autoStartButton = osparc.info.StudyUtils.createDisableServiceAutoStart(study).set({
@@ -846,10 +864,10 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     __getProjectFilesPopUp: function() {
       const resourceData = this.__resourceData;
       if (!osparc.utils.Resources.isService(resourceData)) {
-        const title = osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + this.tr(" Files...");
+        const title = osparc.product.Utils.resourceTypeToAlias(resourceData["resourceType"], {firstUpperCase: true}) + this.tr(" Files");
         const iconSrc = "@FontAwesome5Solid/file/22";
         const dataAccess = new qx.ui.basic.Atom().set({
-          label: title,
+          label: title + "...",
           icon: iconSrc,
           font: "text-14",
           padding: 8,
@@ -857,7 +875,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           gap: 14,
           cursor: "pointer",
         });
-        dataAccess.addListener("tap", () => osparc.widget.StudyDataManager.popUpInWindow(resourceData["uuid"]));
+        dataAccess.addListener("tap", () => osparc.widget.StudyDataManager.popUpInWindow(resourceData["uuid"], null, title));
         this.addWidgetToTabs(dataAccess);
 
         if (resourceData["resourceType"] === "study") {

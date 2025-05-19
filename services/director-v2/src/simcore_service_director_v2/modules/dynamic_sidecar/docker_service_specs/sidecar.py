@@ -134,6 +134,11 @@ def _get_environment_variables(
         "DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS": f"{allow_internet_access}",
         "DY_SIDECAR_SYSTEM_MONITOR_TELEMETRY_ENABLE": f"{telemetry_enabled}",
         "DY_SIDECAR_STATE_EXCLUDE": json_dumps(f"{x}" for x in state_exclude),
+        "DY_SIDECAR_LEGACY_STATE": (
+            "null"
+            if scheduler_data.paths_mapping.legacy_state is None
+            else scheduler_data.paths_mapping.legacy_state.model_dump_json()
+        ),
         "DY_SIDECAR_CALLBACKS_MAPPING": callbacks_mapping.model_dump_json(),
         "DY_SIDECAR_STATE_PATHS": json_dumps(
             f"{x}" for x in scheduler_data.paths_mapping.state_paths
@@ -451,18 +456,18 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
         scheduler_data.product_name is not None
     ), "ONLY for legacy. This function should not be called with product_name==None"  # nosec
 
-    standard_simcore_docker_labels: dict[
-        DockerLabelKey, str
-    ] = StandardSimcoreDockerLabels(
-        user_id=scheduler_data.user_id,
-        project_id=scheduler_data.project_id,
-        node_id=scheduler_data.node_uuid,
-        product_name=scheduler_data.product_name,
-        simcore_user_agent=scheduler_data.request_simcore_user_agent,
-        swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
-        memory_limit=ByteSize(0),  # this should get overwritten
-        cpu_limit=0,  # this should get overwritten
-    ).to_simcore_runtime_docker_labels()
+    standard_simcore_docker_labels: dict[DockerLabelKey, str] = (
+        StandardSimcoreDockerLabels(
+            user_id=scheduler_data.user_id,
+            project_id=scheduler_data.project_id,
+            node_id=scheduler_data.node_uuid,
+            product_name=scheduler_data.product_name,
+            simcore_user_agent=scheduler_data.request_simcore_user_agent,
+            swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
+            memory_limit=ByteSize(0),  # this should get overwritten
+            cpu_limit=0,  # this should get overwritten
+        ).to_simcore_runtime_docker_labels()
+    )
 
     service_labels: dict[str, str] = (
         {
@@ -494,9 +499,7 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
             )
         )
 
-    placement_substitutions: dict[
-        str, DockerPlacementConstraint
-    ] = (
+    placement_substitutions: dict[str, DockerPlacementConstraint] = (
         placement_settings.DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS
     )
     for image_resources in scheduler_data.service_resources.values():
