@@ -79,7 +79,9 @@ async def list_services_paginated(
         user_id=user_id,
         limit=limit,
         offset=offset,
-        filters=TypeAdapter(ServiceDBFilters | None).validate_python(filters),
+        filters=TypeAdapter(ServiceDBFilters | None).validate_python(
+            filters, from_attributes=True
+        ),
     )
 
     assert len(items) <= total_count  # nosec
@@ -252,7 +254,9 @@ async def list_my_service_history_latest_first(
         service_key=service_key,
         limit=limit,
         offset=offset,
-        filters=TypeAdapter(ServiceDBFilters | None).validate_python(filters),
+        filters=TypeAdapter(ServiceDBFilters | None).validate_python(
+            filters, from_attributes=True
+        ),
     )
 
     assert len(items) <= total_count  # nosec
