@@ -60,7 +60,7 @@ class RabbitMQPlugin(distributed.WorkerPlugin):
 
             if threading.current_thread() is not threading.main_thread():
                 _logger.warning(
-                    "RabbitMQ client plugin setup is not in the main thread! Beware! if in pytest it's ok."
+                    "RabbitMQ client plugin setup is not in the main thread! TIP: if in pytest it's ok."
                 )
 
             with log_context(
@@ -98,7 +98,7 @@ class RabbitMQPlugin(distributed.WorkerPlugin):
                     )
                 else:
                     _logger.warning(
-                        "RabbitMQ client plugin setup is not the main thread! Beware! if in pytest it's ok."
+                        "RabbitMQ client plugin setup is not the main thread! TIP: if in pytest it's ok."
                     )
 
                 # Cancel the message processor task
