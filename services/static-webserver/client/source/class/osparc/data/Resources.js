@@ -1067,15 +1067,15 @@ qx.Class.define("osparc.data.Resources", {
           },
           approveUser: {
             method: "POST",
-            url: statics.API + "/admin/users/{userEmail}:approve"
+            url: statics.API + "/admin/users:approve"
           },
           rejectUser: {
             method: "POST",
-            url: statics.API + "/admin/users/{userEmail}:reject"
+            url: statics.API + "/admin/users:reject"
           },
           resendConfirmationEmail: {
             method: "POST",
-            url: statics.API + "/admin/users/{userEmail}:resendConfirmationEmail"
+            url: statics.API + "/admin/users:resendConfirmationEmail"
           },
           preRegister: {
             method: "POST",
