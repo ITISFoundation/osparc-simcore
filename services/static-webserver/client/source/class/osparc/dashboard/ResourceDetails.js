@@ -567,6 +567,8 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
             collaboratorsView.getChildControl("study-link").show();
           } else if (osparc.utils.Resources.isTemplate(resourceData)) {
             collaboratorsView.getChildControl("template-link").show();
+          } else if (osparc.utils.Resources.isTutorial(resourceData)) {
+            collaboratorsView.getChildControl("template-link").show();
           }
           collaboratorsView.addListener("updateAccessRights", e => {
             const updatedData = e.getData();
@@ -735,7 +737,12 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         });
         page.addToContent(servicesBootOpts);
 
-        if (osparc.utils.Resources.isStudy(resourceData) || osparc.utils.Resources.isTemplate(resourceData)) {
+        if (
+          osparc.utils.Resources.isStudy(resourceData) ||
+          osparc.utils.Resources.isTemplate(resourceData) ||
+          osparc.utils.Resources.isTutorial(resourceData) ||
+          osparc.utils.Resources.isHypertool(resourceData)
+        ) {
           if (osparc.product.Utils.showDisableServiceAutoStart()) {
             const study = new osparc.data.model.Study(resourceData);
             const autoStartButton = osparc.info.StudyUtils.createDisableServiceAutoStart(study).set({
