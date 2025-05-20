@@ -56,6 +56,7 @@ class PrometheusMiddleware(BaseHTTPMiddleware):
                 response = await call_next(request)
                 status_code = response.status_code
 
+                # path_params are not available before calling call_next
                 # https://github.com/encode/starlette/issues/685#issuecomment-550240999
                 for k, v in request.path_params.items():
                     key = "{" + k + "}"
