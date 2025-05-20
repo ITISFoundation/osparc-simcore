@@ -2,13 +2,16 @@ import asyncio
 import datetime
 import logging
 import threading
+from collections.abc import Callable
 from typing import Final
 
 from asgi_lifespan import LifespanManager
 from celery import Celery  # type: ignore[import-untyped]
+from celery.worker.worker import WorkController
 from fastapi import FastAPI
 from servicelib.logging_utils import log_context
 from servicelib.redis._client import RedisClientSDK
+from settings_library.celery import CelerySettings
 from settings_library.redis import RedisDatabase
 
 from . import set_event_loop
@@ -27,9 +30,9 @@ _STARTUP_TIMEOUT: Final[float] = datetime.timedelta(minutes=1).total_seconds()
 
 
 def on_worker_init(
-    app_factory,
-    celery_settings,
-    sender,
+    app_factory: Callable[[], FastAPI],
+    celery_settings: CelerySettings,
+    sender: WorkController,
     **_kwargs,
 ) -> None:
     startup_complete_event = threading.Event()
@@ -50,6 +53,8 @@ def on_worker_init(
                 client_name=f"{fastapi_app.title}.celery_tasks",
             )
 
+            assert sender.app  # nosec
+            assert isinstance(sender.app, Celery)  # nosec
             set_celery_worker(
                 sender.app,
                 CeleryTaskWorker(
