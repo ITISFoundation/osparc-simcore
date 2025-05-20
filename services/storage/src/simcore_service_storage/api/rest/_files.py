@@ -345,12 +345,12 @@ async def is_completed_upload_file(
     )
     # first check if the task is in the app
     if task_status.is_done:
-        task_result = await celery_client.get_task_result(
-            task_context=async_job_name_data.model_dump(), task_uuid=TaskUUID(future_id)
+        task_result = TypeAdapter(FileMetaData).validate_python(
+            await celery_client.get_task_result(
+                task_context=async_job_name_data.model_dump(),
+                task_uuid=TaskUUID(future_id),
+            )
         )
-        assert TypeAdapter(FileMetaData).validate_python(
-            task_result
-        ), f"{task_result=}"  # nosec
         new_fmd = task_result
         assert new_fmd.location_id == location_id  # nosec
         assert new_fmd.file_id == file_id  # nosec
