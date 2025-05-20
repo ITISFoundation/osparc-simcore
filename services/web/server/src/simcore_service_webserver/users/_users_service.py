@@ -3,6 +3,7 @@ from typing import Any
 
 import pycountry
 from aiohttp import web
+from common_library.users_enums import AccountRequestStatus
 from models_library.api_schemas_webserver.users import MyProfilePatch, UserForAdminGet
 from models_library.basic_types import IDStr
 from models_library.emails import LowerCaseEmailStr
@@ -208,9 +209,10 @@ async def is_user_in_product(
 async def list_users_as_admin(
     app: web.Application,
     *,
-    filter_approved: bool | None = None,
-    limit: int = 50,
-    offset: int = 0,
+    product_name: ProductName,
+    filter_account_request_status: AccountRequestStatus | None = None,
+    pagination_limit: int = 50,
+    pagination_offset: int = 0,
 ) -> tuple[list[dict[str, Any]], int]:
     """
     Get a paginated list of users for admin view with filtering options.
@@ -228,7 +230,11 @@ async def list_users_as_admin(
 
     # Get user data with pagination
     users_data, total_count = await _users_repository.list_users_for_admin(
-        engine, filter_approved=filter_approved, limit=limit, offset=offset
+        engine,
+        product_name=product_name,
+        filter_account_request_status=filter_account_request_status,
+        pagination_limit=pagination_limit,
+        pagination_offset=pagination_offset,
     )
 
     # For each user, append additional information if needed

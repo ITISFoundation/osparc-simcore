@@ -1,6 +1,3 @@
-import logging
-from contextlib import suppress
-
 from aiohttp import web
 from models_library.api_schemas_webserver.users import (
     MyProfileGet,
@@ -178,9 +175,11 @@ async def list_users_for_admin(request: web.Request) -> web.Response:
 
     users, total_count = await _users_service.list_users_as_admin(
         request.app,
-        filter_approved=query_params.approved,
-        limit=query_params.limit,
-        offset=query_params.offset,
+        filter_account_request_status={"PENDING": AccountRequestStatus.PENDING}.get(
+            query_params.status or ""
+        ),
+        pagination_limit=query_params.limit,
+        pagination_offset=query_params.offset,
     )
 
     page = Page[UserForAdminGet].model_validate(
@@ -236,6 +235,7 @@ async def pre_register_user_for_admin(request: web.Request) -> web.Response:
         creator_user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
     )
+
     return envelope_json_response(
         user_profile.model_dump(**_RESPONSE_MODEL_MINIMAL_POLICY)
     )

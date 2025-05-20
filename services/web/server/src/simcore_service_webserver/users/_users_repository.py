@@ -1,4 +1,5 @@
 import contextlib
+import logging
 from typing import Any
 
 import sqlalchemy as sa
@@ -47,6 +48,8 @@ from .exceptions import (
     UserNameDuplicateError,
     UserNotFoundError,
 )
+
+_logger = logging.getLogger(__name__)
 
 
 def _parse_as_user(user_id: Any) -> UserID:
@@ -381,45 +384,33 @@ async def list_users_for_admin(
     engine: AsyncEngine,
     connection: AsyncConnection | None = None,
     *,
-    filter_approved: bool | None = None,
-    limit: int = 50,
-    offset: int = 0,
-    include_deleted: bool = False,
+    product_name: ProductName,
+    filter_account_request_status: AccountRequestStatus | None = None,
+    filter_include_deleted: bool = False,
+    pagination_limit: int = 50,
+    pagination_offset: int = 0,
 ) -> tuple[list[dict[str, Any]], int]:
     """
     Gets users data for admin with pagination support using SQLAlchemy expressions
-
-    Args:
-        engine: The database engine
-        connection: Optional existing connection to reuse
-        filter_approved: If set, filters users by their approval status
-        limit: Maximum number of users to return
-        offset: Number of users to skip for pagination
-        include_deleted: Whether to include users marked as deleted
 
     Returns:
         Tuple of (list of user data, total count)
     """
     joined_user_tables = users.outerjoin(
         users_pre_registration_details,
-        users.c.id == users_pre_registration_details.c.user_id,
+        (users.c.id == users_pre_registration_details.c.user_id)
+        & (users_pre_registration_details.c.product_name == product_name),
     )
 
     where_conditions = []
-    if not include_deleted:
+    if not filter_include_deleted:
         where_conditions.append(users.c.status != UserStatus.DELETED)
 
-    if filter_approved is not None:
-        if filter_approved:
-            where_conditions.append(
-                users_pre_registration_details.c.account_request_status
-                == AccountRequestStatus.APPROVED
-            )
-        else:
-            where_conditions.append(
-                users_pre_registration_details.c.account_request_status
-                != AccountRequestStatus.APPROVED
-            )
+    if filter_account_request_status is not None:
+        where_conditions.append(
+            users_pre_registration_details.c.account_request_status
+            == filter_account_request_status
+        )
 
     where_clause = sa.and_(*where_conditions) if where_conditions else sa.true()
 
@@ -478,18 +469,17 @@ async def list_users_for_admin(
             users_pre_registration_details.c.created.desc(),  # newest pre-registered first
             users_pre_registration_details.c.pre_email,
         )
-        .limit(limit)
-        .offset(offset)
+        .limit(pagination_limit)
+        .offset(pagination_offset)
     )
 
-    print(
+    _logger.debug(
+        "%s\n%s\n%s\n%s",
         "-" * 100,
-        "\n",
         as_postgres_sql_query_str(main_query),
         "-" * 100,
-        "\n",
         as_postgres_sql_query_str(count_query),
-    )  # DEBUG
+    )
 
     async with pass_or_acquire_connection(engine, connection) as conn:
         # Get total count
