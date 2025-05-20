@@ -7,7 +7,7 @@ from typing import Final
 
 from asgi_lifespan import LifespanManager
 from celery import Celery  # type: ignore[import-untyped]
-from celery.worker.worker import WorkController
+from celery.worker.worker import WorkController  # type: ignore[import-untyped]
 from fastapi import FastAPI
 from servicelib.logging_utils import log_context
 from servicelib.redis._client import RedisClientSDK
