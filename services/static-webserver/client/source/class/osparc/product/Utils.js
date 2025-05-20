@@ -60,13 +60,7 @@ qx.Class.define("osparc.product.Utils", {
 
     getTemplateAlias: function(options = {}) {
       let alias = null;
-      if (this.getProductName().includes("s4l")) {
-        if (options.plural) {
-          alias = qx.locale.Manager.tr("tutorials");
-        } else {
-          alias = qx.locale.Manager.tr("tutorial");
-        }
-      } else if (options.plural) {
+      if (options.plural) {
         alias = qx.locale.Manager.tr("templates");
       } else {
         alias = qx.locale.Manager.tr("template");

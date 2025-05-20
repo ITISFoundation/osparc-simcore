@@ -126,5 +126,20 @@ qx.Class.define("osparc.store.Templates", {
 
       return this.__fetchAllHypertools();
     },
+
+    getTemplate: function(templateId) {
+      if (this.__tutorials) {
+        const template = this.__tutorials.find(t => t["templateId"] === templateId);
+        if (template) {
+          return new osparc.data.model.Template(template);
+        }
+      } else if (this.__hypertools) {
+        const template = this.__hypertools.find(t => t["templateId"] === templateId);
+        if (template) {
+          return new osparc.data.model.Template(template);
+        }
+      }
+      return null;
+    },
   }
 });
