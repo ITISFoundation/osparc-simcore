@@ -1,5 +1,5 @@
 #
-# Specifies third-party dependencies for 'aws-library'
+# Specifies third-party dependencies for 'celery-library'
 #
 --constraint ../../../requirements/constraints.txt
 --requirement ../../../packages/common-library/requirements/_base.in
@@ -7,4 +7,5 @@
 --requirement ../../../packages/service-library/requirements/_base.in
 --requirement ../../../packages/settings-library/requirements/_base.in
 
+asgi_lifespan
 celery[redis]

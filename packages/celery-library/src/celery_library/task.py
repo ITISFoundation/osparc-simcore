@@ -40,7 +40,7 @@ class TaskAbortedError(Exception): ...
 def _async_task_wrapper(
     app: Celery,
 ) -> Callable[
-    [Callable[Concatenate[AbortableTask, TaskId, P], Coroutine[Any, Any, R]]],
+    [Callable[Concatenate[AbortableTask, P], Coroutine[Any, Any, R]]],
     Callable[Concatenate[AbortableTask, P], R],
 ]:
     def decorator(

@@ -1,4 +1,4 @@
-# Shortcut to install all packages for the contigous integration (CI) of 'models-library'
+# Shortcut to install all packages for the contigous integration (CI) of 'celery-library'
 #
 # - As ci.txt but w/ tests
 #
