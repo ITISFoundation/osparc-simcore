@@ -3,7 +3,6 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-import asyncio
 import random
 import sys
 import textwrap
@@ -204,12 +203,6 @@ def mocked_send_email(monkeypatch: pytest.MonkeyPatch) -> None:
         "_send_email",
         _print_mail_to_stdout,
     )
-
-
-@pytest_asyncio.fixture(loop_scope="function")
-async def loop() -> asyncio.AbstractEventLoop:
-    # NOTE: This is a hack to ensure the loop is set in the aiohttp_server
-    return asyncio.get_running_loop()
 
 
 @pytest_asyncio.fixture(loop_scope="function")
