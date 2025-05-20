@@ -29,7 +29,7 @@ qx.Class.define("osparc.jobs.ActivityOverview", {
   statics: {
     popUpInWindow: function(projectData) {
       const activityOverview = new osparc.jobs.ActivityOverview(projectData);
-      const title = qx.locale.Manager.tr("Activity Overview");
+      const title = qx.locale.Manager.tr("Activity Overview") + " - " + projectData["name"];
       const win = osparc.ui.window.Window.popUpInWindow(activityOverview, title, osparc.jobs.ActivityCenterWindow.WIDTH, osparc.jobs.ActivityCenterWindow.HEIGHT);
       win.set({
         maxHeight: 700,
