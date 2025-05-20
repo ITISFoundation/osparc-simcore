@@ -80,6 +80,7 @@ qx.Class.define("osparc.study.SaveAsTemplate", {
 
       if (!this.__makeItPublic) {
         const shareWith = this.__shareWith = new osparc.share.ShareTemplateWith(this.__studyDataClone);
+        shareWith.exclude(); // for now, hide the shareWith widget
         this._add(shareWith);
       }
 
