@@ -1,7 +1,6 @@
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
-from time import perf_counter
 
 from opentelemetry import trace
 from prometheus_client import (
@@ -132,19 +131,7 @@ def record_request_metrics(
     with metrics.in_flight_requests.labels(
         method, endpoint, user_agent
     ).track_inprogress():
-
-        start = perf_counter()
-
         yield
-
-        amount = perf_counter() - start
-        exemplar = _get_exemplar()
-        metrics.response_latency_with_labels.labels(
-            method, endpoint, user_agent
-        ).observe(amount=amount, exemplar=exemplar)
-        metrics.response_latency_detailed_buckets.observe(
-            amount=amount, exemplar=exemplar
-        )
 
 
 def record_response_metrics(
@@ -154,8 +141,15 @@ def record_response_metrics(
     endpoint: str,
     user_agent: str,
     http_status: int,
+    response_latency_seconds: float,
 ) -> None:
     exemplar = _get_exemplar()
     metrics.request_count.labels(method, endpoint, http_status, user_agent).inc(
         exemplar=exemplar
+    )
+    metrics.response_latency_with_labels.labels(method, endpoint, user_agent).observe(
+        amount=response_latency_seconds, exemplar=exemplar
+    )
+    metrics.response_latency_detailed_buckets.observe(
+        amount=response_latency_seconds, exemplar=exemplar
     )
