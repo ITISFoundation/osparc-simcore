@@ -13,6 +13,7 @@ NOTE: services/web/server/tests/conftest.py is pre-loaded
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import asyncio
 import json
 import logging
 import sys
@@ -178,3 +179,11 @@ def mock_orphaned_services(mocker: MockerFixture) -> mock.Mock:
 @pytest.fixture(scope="session")
 def osparc_product_name() -> str:
     return "osparc"
+
+
+@pytest.fixture
+async def loop(
+    event_loop: asyncio.AbstractEventLoop,
+) -> asyncio.AbstractEventLoop:
+    """Override the event loop inside pytest-aiohttp with the one from pytest-asyncio."""
+    return event_loop

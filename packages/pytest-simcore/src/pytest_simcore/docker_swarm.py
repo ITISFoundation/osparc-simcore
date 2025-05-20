@@ -15,6 +15,7 @@ from typing import Any
 import aiodocker
 import docker
 import pytest
+import pytest_asyncio
 import yaml
 from common_library.dict_tools import copy_from_dict
 from docker.errors import APIError
@@ -245,7 +246,7 @@ def _make_dask_sidecar_certificates(simcore_service_folder: Path) -> None:
     )
 
 
-@pytest.fixture(scope="module")
+@pytest_asyncio.fixture(scope="module", loop_scope="module")
 async def docker_stack(
     osparc_simcore_services_dir: Path,
     docker_swarm: None,
