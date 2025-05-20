@@ -41,7 +41,7 @@ def create_route_description(
 
     Args:
         base (str): Main route/query description.
-        deprecated (tuple): (retirement_date, alternative_route) if deprecated.
+        deprecated (tuple): alternative_route if deprecated.
         changelog (List[str]): List of formatted changelog strings.
 
     Returns:
