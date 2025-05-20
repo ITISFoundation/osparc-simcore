@@ -90,9 +90,10 @@ async def wait_till_service_healthy(service_name: str, endpoint: URL):
         reraise=True,
     ):
         with attempt:
-            async with aiohttp.ClientSession(
-                timeout=_ONE_SEC_TIMEOUT
-            ) as session, session.get(endpoint) as response:
+            async with (
+                aiohttp.ClientSession(timeout=_ONE_SEC_TIMEOUT) as session,
+                session.get(endpoint) as response,
+            ):
                 # NOTE: Health-check endpoint require only a status code 200
                 # (see e.g. services/web/server/docker/healthcheck.py)
                 # regardless of the payload content
@@ -164,7 +165,7 @@ def services_endpoint(
     return services_endpoint
 
 
-def _wait_for_services_ready(services_endpoint: dict[str, URL]) -> None:
+async def _wait_for_services_ready(services_endpoint: dict[str, URL]) -> None:
     # Compose and log healthcheck url entpoints
 
     health_endpoints = [
@@ -188,14 +189,14 @@ def _wait_for_services_ready(services_endpoint: dict[str, URL]) -> None:
         )
 
     # check ready
-    asyncio.run(_check_all_services_are_healthy())
+    await _check_all_services_are_healthy()
 
 
 @pytest.fixture
-def simcore_services_ready(
+async def simcore_services_ready(
     services_endpoint: dict[str, URL], monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    _wait_for_services_ready(services_endpoint)
+    await _wait_for_services_ready(services_endpoint)
     # patches environment variables with right host/port per service
     for service, endpoint in services_endpoint.items():
         env_prefix = service.upper().replace("-", "_")
@@ -225,16 +226,15 @@ def _monkeypatch_module(request: pytest.FixtureRequest) -> Iterator[pytest.Monke
 
 
 @pytest.fixture(scope="module")
-def simcore_services_ready_module(
+async def simcore_services_ready_module(
     services_endpoint: dict[str, URL], _monkeypatch_module: pytest.MonkeyPatch
 ) -> None:
     warnings.warn(
-        "This fixture uses deprecated monkeypatch_module fixture"
-        "Please do NOT use it!",
+        "This fixture uses deprecated monkeypatch_module fixturePlease do NOT use it!",
         DeprecationWarning,
         stacklevel=1,
     )
-    _wait_for_services_ready(services_endpoint)
+    await _wait_for_services_ready(services_endpoint)
     # patches environment variables with right host/port per service
     for service, endpoint in services_endpoint.items():
         env_prefix = service.upper().replace("-", "_")
