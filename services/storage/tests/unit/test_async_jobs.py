@@ -94,9 +94,8 @@ async def _process_action(action: str, payload: Any) -> Any:
     return None
 
 
-def sync_job(task: Task, task_id: TaskID, action: Action, payload: Any) -> Any:
+def sync_job(task: Task, action: Action, payload: Any) -> Any:
     _ = task
-    _ = task_id
     return asyncio.run(_process_action(action, payload))
 
 
