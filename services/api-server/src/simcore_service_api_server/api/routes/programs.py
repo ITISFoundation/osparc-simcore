@@ -6,9 +6,7 @@ from typing import Annotated
 from fastapi import APIRouter, Body, Depends, Header, HTTPException, status
 from fastapi_pagination import create_page
 from httpx import HTTPStatusError
-from models_library.api_schemas_storage.storage_schemas import (
-    LinkType,
-)
+from models_library.api_schemas_storage.storage_schemas import LinkType
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from pydantic import ByteSize, PositiveInt, StringConstraints, ValidationError
@@ -44,10 +42,10 @@ router = APIRouter()
     description=create_route_description(
         base="Lists the latest of all available programs",
         changelog=[
-            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.8"),
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.9"),
         ],
     ),
-    include_in_schema=False,  # TO BE RELEASED in 0.8
+    include_in_schema=False,  # TO BE RELEASED in 0.9
 )
 async def list_programs(
     program_service: Annotated[ProgramService, Depends(get_program_service)],
@@ -79,10 +77,10 @@ async def list_programs(
     description=create_route_description(
         base="Lists the latest of all available programs",
         changelog=[
-            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.8"),
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.9"),
         ],
     ),
-    include_in_schema=False,  # TO BE RELEASED in 0.8
+    include_in_schema=False,  # TO BE RELEASED in 0.9
 )
 async def list_program_history(
     program_key: ProgramKeyId,

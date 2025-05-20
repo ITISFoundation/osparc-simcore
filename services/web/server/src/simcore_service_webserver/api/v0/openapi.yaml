@@ -3093,6 +3093,70 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Service Unavailable
+  /v0/functions:
+    post:
+      tags:
+      - functions
+      summary: Register Function
+      operationId: register_function
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+              - $ref: '#/components/schemas/ProjectFunctionToRegister'
+              - $ref: '#/components/schemas/SolverFunctionToRegister'
+              title: ' Body'
+              discriminator:
+                propertyName: functionClass
+                mapping:
+                  PROJECT: '#/components/schemas/ProjectFunctionToRegister'
+                  SOLVER: '#/components/schemas/SolverFunctionToRegister'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_Annotated_Union_RegisteredProjectFunctionGet__RegisteredSolverFunctionGet___FieldInfo_annotation_NoneType__required_True__discriminator__function_class____'
+  /v0/functions/{function_id}:
+    get:
+      tags:
+      - functions
+      summary: Get Function
+      operationId: get_function
+      parameters:
+      - name: function_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Function Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_Annotated_Union_RegisteredProjectFunctionGet__RegisteredSolverFunctionGet___FieldInfo_annotation_NoneType__required_True__discriminator__function_class____'
+    delete:
+      tags:
+      - functions
+      summary: Delete Function
+      operationId: delete_function
+      parameters:
+      - name: function_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Function Id
+      responses:
+        '204':
+          description: Successful Response
   /v0/tasks:
     get:
       tags:
@@ -9688,6 +9752,28 @@ components:
       additionalProperties: false
       type: object
       title: EmptyModel
+    ? Envelope_Annotated_Union_RegisteredProjectFunctionGet__RegisteredSolverFunctionGet___FieldInfo_annotation_NoneType__required_True__discriminator__function_class____
+    : properties:
+        data:
+          anyOf:
+          - oneOf:
+            - $ref: '#/components/schemas/RegisteredProjectFunctionGet'
+            - $ref: '#/components/schemas/RegisteredSolverFunctionGet'
+            discriminator:
+              propertyName: functionClass
+              mapping:
+                PROJECT: '#/components/schemas/RegisteredProjectFunctionGet'
+                SOLVER: '#/components/schemas/RegisteredSolverFunctionGet'
+          - type: 'null'
+          title: Data
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[Annotated[Union[RegisteredProjectFunctionGet, RegisteredSolverFunctionGet],
+        FieldInfo(annotation=NoneType, required=True, discriminator='function_class')]]
     Envelope_AnyUrl_:
       properties:
         data:
@@ -12100,6 +12186,34 @@ components:
       additionalProperties: false
       type: object
       title: InvitationInfo
+    JSONFunctionInputSchema:
+      properties:
+        schema_content:
+          type: object
+          title: JSON Schema
+          description: JSON Schema
+          default: {}
+        schema_class:
+          type: string
+          const: application/schema+json
+          title: Schema Class
+          default: application/schema+json
+      type: object
+      title: JSONFunctionInputSchema
+    JSONFunctionOutputSchema:
+      properties:
+        schema_content:
+          type: object
+          title: JSON Schema
+          description: JSON Schema
+          default: {}
+        schema_class:
+          type: string
+          const: application/schema+json
+          title: Schema Class
+          default: application/schema+json
+      type: object
+      title: JSONFunctionOutputSchema
     LicensedItemPurchaseGet:
       properties:
         licensedItemPurchaseId:
@@ -14382,6 +14496,53 @@ components:
       - workbench
       - accessRights
       title: ProjectCreateNew
+    ProjectFunctionToRegister:
+      properties:
+        functionClass:
+          type: string
+          const: PROJECT
+          title: Functionclass
+          default: PROJECT
+        title:
+          type: string
+          title: Title
+          default: ''
+        description:
+          type: string
+          title: Description
+          default: ''
+        inputSchema:
+          oneOf:
+          - $ref: '#/components/schemas/JSONFunctionInputSchema'
+          title: Inputschema
+          discriminator:
+            propertyName: schema_class
+            mapping:
+              application/schema+json: '#/components/schemas/JSONFunctionInputSchema'
+        outputSchema:
+          oneOf:
+          - $ref: '#/components/schemas/JSONFunctionOutputSchema'
+          title: Outputschema
+          discriminator:
+            propertyName: schema_class
+            mapping:
+              application/schema+json: '#/components/schemas/JSONFunctionOutputSchema'
+        defaultInputs:
+          anyOf:
+          - type: object
+          - type: 'null'
+          title: Defaultinputs
+        projectId:
+          type: string
+          format: uuid
+          title: Projectid
+      type: object
+      required:
+      - inputSchema
+      - outputSchema
+      - defaultInputs
+      - projectId
+      title: ProjectFunctionToRegister
     ProjectGet:
       properties:
         uuid:
@@ -15154,6 +15315,115 @@ components:
       - name
       - message
       title: RegisterPhoneNextPage
+    RegisteredProjectFunctionGet:
+      properties:
+        functionClass:
+          type: string
+          const: PROJECT
+          title: Functionclass
+          default: PROJECT
+        title:
+          type: string
+          title: Title
+          default: ''
+        description:
+          type: string
+          title: Description
+          default: ''
+        inputSchema:
+          oneOf:
+          - $ref: '#/components/schemas/JSONFunctionInputSchema'
+          title: Inputschema
+          discriminator:
+            propertyName: schema_class
+            mapping:
+              application/schema+json: '#/components/schemas/JSONFunctionInputSchema'
+        outputSchema:
+          oneOf:
+          - $ref: '#/components/schemas/JSONFunctionOutputSchema'
+          title: Outputschema
+          discriminator:
+            propertyName: schema_class
+            mapping:
+              application/schema+json: '#/components/schemas/JSONFunctionOutputSchema'
+        defaultInputs:
+          anyOf:
+          - type: object
+          - type: 'null'
+          title: Defaultinputs
+        uid:
+          type: string
+          format: uuid
+          title: Uid
+        projectId:
+          type: string
+          format: uuid
+          title: Projectid
+      type: object
+      required:
+      - inputSchema
+      - outputSchema
+      - defaultInputs
+      - uid
+      - projectId
+      title: RegisteredProjectFunctionGet
+    RegisteredSolverFunctionGet:
+      properties:
+        functionClass:
+          type: string
+          const: SOLVER
+          title: Functionclass
+          default: SOLVER
+        title:
+          type: string
+          title: Title
+          default: ''
+        description:
+          type: string
+          title: Description
+          default: ''
+        inputSchema:
+          oneOf:
+          - $ref: '#/components/schemas/JSONFunctionInputSchema'
+          title: Inputschema
+          discriminator:
+            propertyName: schema_class
+            mapping:
+              application/schema+json: '#/components/schemas/JSONFunctionInputSchema'
+        outputSchema:
+          oneOf:
+          - $ref: '#/components/schemas/JSONFunctionOutputSchema'
+          title: Outputschema
+          discriminator:
+            propertyName: schema_class
+            mapping:
+              application/schema+json: '#/components/schemas/JSONFunctionOutputSchema'
+        defaultInputs:
+          anyOf:
+          - type: object
+          - type: 'null'
+          title: Defaultinputs
+        uid:
+          type: string
+          format: uuid
+          title: Uid
+        solverKey:
+          type: string
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+          title: Solverkey
+        solverVersion:
+          type: string
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          title: Solverversion
+      type: object
+      required:
+      - inputSchema
+      - outputSchema
+      - defaultInputs
+      - uid
+      - solverKey
+      - solverVersion
+      title: RegisteredSolverFunctionGet
     ReplaceWalletAutoRecharge:
       properties:
         enabled:
@@ -15945,6 +16215,58 @@ components:
       required:
       - position
       title: SlideshowUI
+    SolverFunctionToRegister:
+      properties:
+        functionClass:
+          type: string
+          const: SOLVER
+          title: Functionclass
+          default: SOLVER
+        title:
+          type: string
+          title: Title
+          default: ''
+        description:
+          type: string
+          title: Description
+          default: ''
+        inputSchema:
+          oneOf:
+          - $ref: '#/components/schemas/JSONFunctionInputSchema'
+          title: Inputschema
+          discriminator:
+            propertyName: schema_class
+            mapping:
+              application/schema+json: '#/components/schemas/JSONFunctionInputSchema'
+        outputSchema:
+          oneOf:
+          - $ref: '#/components/schemas/JSONFunctionOutputSchema'
+          title: Outputschema
+          discriminator:
+            propertyName: schema_class
+            mapping:
+              application/schema+json: '#/components/schemas/JSONFunctionOutputSchema'
+        defaultInputs:
+          anyOf:
+          - type: object
+          - type: 'null'
+          title: Defaultinputs
+        solverKey:
+          type: string
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+          title: Solverkey
+        solverVersion:
+          type: string
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          title: Solverversion
+      type: object
+      required:
+      - inputSchema
+      - outputSchema
+      - defaultInputs
+      - solverKey
+      - solverVersion
+      title: SolverFunctionToRegister
     SpecificInfo:
       properties:
         aws_ec2_instances:
