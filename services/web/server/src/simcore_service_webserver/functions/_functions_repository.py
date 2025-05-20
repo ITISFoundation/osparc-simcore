@@ -1,7 +1,7 @@
 import json
 
 from aiohttp import web
-from models_library.api_schemas_webserver.functions_wb_schema import (
+from models_library.functions import (
     FunctionClass,
     FunctionID,
     FunctionIDNotFoundError,
@@ -74,7 +74,7 @@ async def create_function(
             )
             .returning(*_FUNCTIONS_TABLE_COLS)
         )
-        row = await result.first()
+        row = await result.one_or_none()
 
         assert row is not None, (
             "No row was returned from the database after creating function."
@@ -112,7 +112,7 @@ async def create_function_job(
             )
             .returning(*_FUNCTION_JOBS_TABLE_COLS)
         )
-        row = await result.first()
+        row = await result.one_or_none()
 
         assert row is not None, (
             "No row was returned from the database after creating function job."
@@ -139,7 +139,7 @@ async def create_function_job_collection(
             )
             .returning(*_FUNCTION_JOB_COLLECTIONS_TABLE_COLS)
         )
-        row = await result.first()
+        row = await result.one_or_none()
 
         assert row is not None, (
             "No row was returned from the database after creating function job collection."
@@ -162,7 +162,7 @@ async def create_function_job_collection(
                     function_job_collections_to_function_jobs_table.c.function_job_uuid,
                 )
             )
-            entry = await result.first()
+            entry = await result.one_or_none()
             assert entry is not None, (
                 f"No row was returned from the database after creating function job collection entry {title}."
                 f" Job ID: {job_id}"
@@ -185,7 +185,7 @@ async def get_function(
         result = await conn.stream(
             functions_table.select().where(functions_table.c.uuid == function_id)
         )
-        row = await result.first()
+        row = await result.one_or_none()
 
         if row is None:
             raise FunctionIDNotFoundError(function_id=function_id)
@@ -229,16 +229,33 @@ async def list_function_jobs(
     *,
     pagination_limit: int,
     pagination_offset: int,
+    filter_by_function_id: FunctionID | None = None,
 ) -> tuple[list[RegisteredFunctionJobDB], PageMetaInfoLimitOffset]:
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         total_count_result = await conn.scalar(
-            func.count().select().select_from(function_jobs_table)
+            func.count()
+            .select()
+            .select_from(function_jobs_table)
+            .where(
+                (
+                    function_jobs_table.c.function_uuid == filter_by_function_id
+                    if filter_by_function_id
+                    else True
+                ),
+            )
         )
         result = await conn.stream(
             function_jobs_table.select()
             .offset(pagination_offset)
             .limit(pagination_limit)
+            .where(
+                (
+                    function_jobs_table.c.function_uuid == filter_by_function_id
+                    if filter_by_function_id
+                    else True
+                ),
+            )
         )
         rows = await result.all()
         if rows is None:
@@ -320,7 +337,7 @@ async def delete_function(
         result = await conn.stream(
             functions_table.select().where(functions_table.c.uuid == function_id)
         )
-        row = await result.first()
+        row = await result.one_or_none()
 
         if row is None:
             raise FunctionIDNotFoundError(function_id=function_id)
@@ -341,7 +358,7 @@ async def update_function_title(
             .values(title=title)
             .returning(*_FUNCTIONS_TABLE_COLS)
         )
-        row = await result.first()
+        row = await result.one_or_none()
 
         if row is None:
             raise FunctionIDNotFoundError(function_id=function_id)
@@ -359,7 +376,7 @@ async def update_function_description(
             .values(description=description)
             .returning(*_FUNCTIONS_TABLE_COLS)
         )
-        row = await result.first()
+        row = await result.one_or_none()
 
         if row is None:
             raise FunctionIDNotFoundError(function_id=function_id)
@@ -380,7 +397,7 @@ async def get_function_job(
                 function_jobs_table.c.uuid == function_job_id
             )
         )
-        row = await result.first()
+        row = await result.one_or_none()
 
         if row is None:
             raise FunctionJobIDNotFoundError(function_job_id=function_job_id)
@@ -401,7 +418,7 @@ async def delete_function_job(
                 function_jobs_table.c.uuid == function_job_id
             )
         )
-        row = await result.first()
+        row = await result.one_or_none()
         if row is None:
             raise FunctionJobIDNotFoundError(function_job_id=function_job_id)
 
@@ -461,7 +478,7 @@ async def get_function_job_collection(
                 function_job_collections_table.c.uuid == function_job_collection_id
             )
         )
-        row = await result.first()
+        row = await result.one_or_none()
 
         if row is None:
             raise FunctionJobCollectionIDNotFoundError(
@@ -499,7 +516,7 @@ async def delete_function_job_collection(
                 function_job_collections_table.c.uuid == function_job_collection_id
             )
         )
-        row = await result.first()
+        row = await result.one_or_none()
         if row is None:
             raise FunctionJobCollectionIDNotFoundError(
                 function_job_collection_id=function_job_collection_id
