@@ -1,4 +1,4 @@
-from typing import Annotated, Any, Literal, Self
+from typing import Annotated, Any, Literal, Self, TypeAlias
 
 from models_library.api_schemas_catalog.services import LatestServiceGet, ServiceGetV2
 from models_library.basic_regex import PUBLIC_VARIABLE_NAME_RE
@@ -26,8 +26,6 @@ SOLVER_ALIAS_REGEX = r"^([^\s:]+)+:?([^\s:/]*)$"
 LATEST_VERSION = "latest"
 
 
-# SOLVER ----------
-#
 SOLVER_RESOURCE_NAME_RE = r"^solvers/([^\s/]+)/releases/([\d\.]+)$"
 
 
@@ -109,7 +107,7 @@ class Solver(BaseService):
         return compose_resource_name("solvers", key, "releases", version)
 
 
-PortKindStr = Literal["input", "output"]
+PortKindStr: TypeAlias = Literal["input", "output"]
 
 
 class SolverPort(BaseModel):

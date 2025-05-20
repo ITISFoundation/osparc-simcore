@@ -457,12 +457,6 @@ qx.Class.define("osparc.info.ServiceLarge", {
       return resourcesLayout;
     },
 
-    __createRawMetadata: function() {
-      const container = new qx.ui.container.Scroll();
-      container.add(new osparc.ui.basic.JsonTreeWidget(this.getService(), "serviceDescriptionSettings"));
-      return container;
-    },
-
     __openIconEditor: function() {
       const iconEditor = new osparc.widget.Renamer(this.getService()["icon"], null, this.tr("Edit Icon"));
       iconEditor.addListener("labelChanged", e => {

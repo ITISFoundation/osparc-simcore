@@ -222,7 +222,7 @@ assert (  # nosec
 )
 
 
-class ServiceAccessRightsAtDB(ServiceKeyVersion, ServiceGroupAccessRights):
+class ServiceAccessRightsDB(ServiceKeyVersion, ServiceGroupAccessRights):
     gid: GroupID
     product_name: ProductName
 
@@ -248,16 +248,28 @@ class ServiceAccessRightsAtDB(ServiceKeyVersion, ServiceGroupAccessRights):
     )
 
 
-class ServiceFiltersDB(Filters):
+class ServiceDBFilters(Filters):
     service_type: ServiceType | None = None
+    service_key_pattern: str | None = None
+    version_display_pattern: str | None = None
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
         schema.update(
             {
                 "example": {
-                    "by_service_type": "computational",
-                }
+                    "service_type": "computational",
+                },
+                "examples": [
+                    {
+                        "service_key_pattern": "simcore/services/dynamic/*",
+                        "version_display_pattern": "S4L X",
+                    },
+                    {
+                        "service_type": "computational",
+                        "version_display_pattern": "S4L X",
+                    },
+                ],
             }
         )
 

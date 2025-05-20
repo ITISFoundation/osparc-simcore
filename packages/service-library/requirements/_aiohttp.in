@@ -3,7 +3,7 @@
 #
 #
 
---constraint ./_base.in
+--constraint ./_base.txt
 
 aiohttp
 aiopg[sa]

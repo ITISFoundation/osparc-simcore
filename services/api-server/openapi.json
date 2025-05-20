@@ -3,7 +3,7 @@
   "info": {
     "title": "osparc.io public API",
     "description": "osparc-simcore public API specifications",
-    "version": "0.7.1"
+    "version": "0.8.0"
   },
   "paths": {
     "/v0/meta": {
@@ -5282,7 +5282,7 @@
           "function_jobs"
         ],
         "summary": "List Function Jobs",
-        "description": "List function jobs",
+        "description": "List function jobs\n\nNew in *version 0.8.0*",
         "operationId": "list_function_jobs",
         "parameters": [
           {
@@ -5337,7 +5337,7 @@
           "function_jobs"
         ],
         "summary": "Register Function Job",
-        "description": "Create function job",
+        "description": "Create function job\n\nNew in *version 0.8.0*",
         "operationId": "register_function_job",
         "requestBody": {
           "required": true,
@@ -5417,7 +5417,7 @@
           "function_jobs"
         ],
         "summary": "Get Function Job",
-        "description": "Get function job",
+        "description": "Get function job\n\nNew in *version 0.8.0*",
         "operationId": "get_function_job",
         "parameters": [
           {
@@ -5488,7 +5488,7 @@
           "function_jobs"
         ],
         "summary": "Delete Function Job",
-        "description": "Delete function job",
+        "description": "Delete function job\n\nNew in *version 0.8.0*",
         "operationId": "delete_function_job",
         "parameters": [
           {
@@ -5540,7 +5540,7 @@
           "function_jobs"
         ],
         "summary": "Function Job Status",
-        "description": "Get function job status",
+        "description": "Get function job status\n\nNew in *version 0.8.0*",
         "operationId": "function_job_status",
         "security": [
           {
@@ -5599,7 +5599,7 @@
           "function_jobs"
         ],
         "summary": "Function Job Outputs",
-        "description": "Get function job outputs",
+        "description": "Get function job outputs\n\nNew in *version 0.8.0*",
         "operationId": "function_job_outputs",
         "security": [
           {
@@ -5666,7 +5666,7 @@
           "function_job_collections"
         ],
         "summary": "List Function Job Collections",
-        "description": "List function job collections",
+        "description": "List function job collections\n\nNew in *version 0.8.0*",
         "operationId": "list_function_job_collections",
         "parameters": [
           {
@@ -5721,7 +5721,7 @@
           "function_job_collections"
         ],
         "summary": "Register Function Job Collection",
-        "description": "Register function job collection",
+        "description": "Register function job collection\n\nNew in *version 0.8.0*",
         "operationId": "register_function_job_collection",
         "requestBody": {
           "required": true,
@@ -5763,7 +5763,7 @@
           "function_job_collections"
         ],
         "summary": "Get Function Job Collection",
-        "description": "Get function job collection",
+        "description": "Get function job collection\n\nNew in *version 0.8.0*",
         "operationId": "get_function_job_collection",
         "parameters": [
           {
@@ -5815,7 +5815,7 @@
           "function_job_collections"
         ],
         "summary": "Delete Function Job Collection",
-        "description": "Delete function job collection",
+        "description": "Delete function job collection\n\nNew in *version 0.8.0*",
         "operationId": "delete_function_job_collection",
         "parameters": [
           {
@@ -6744,7 +6744,7 @@
           "functions"
         ],
         "summary": "Register Function",
-        "description": "Create function",
+        "description": "Create function\n\nNew in *version 0.8.0*",
         "operationId": "register_function",
         "requestBody": {
           "required": true,
@@ -6832,7 +6832,7 @@
           "functions"
         ],
         "summary": "List Functions",
-        "description": "List functions",
+        "description": "List functions\n\nNew in *version 0.8.0*",
         "operationId": "list_functions",
         "parameters": [
           {
@@ -6889,7 +6889,7 @@
           "functions"
         ],
         "summary": "Get Function",
-        "description": "Get function",
+        "description": "Get function\n\nNew in *version 0.8.0*",
         "operationId": "get_function",
         "parameters": [
           {
@@ -6960,7 +6960,7 @@
           "functions"
         ],
         "summary": "Delete Function",
-        "description": "Delete function",
+        "description": "Delete function\n\nNew in *version 0.8.0*",
         "operationId": "delete_function",
         "parameters": [
           {
@@ -7006,13 +7006,80 @@
         }
       }
     },
+    "/v0/functions/{function_id}/jobs": {
+      "get": {
+        "tags": [
+          "functions"
+        ],
+        "summary": "List Function Jobs For Functionid",
+        "description": "List function jobs for a function\n\nNew in *version 0.8.0*",
+        "operationId": "list_function_jobs_for_functionid",
+        "parameters": [
+          {
+            "name": "function_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Function Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_Annotated_Union_RegisteredProjectFunctionJob__RegisteredPythonCodeFunctionJob__RegisteredSolverFunctionJob___FieldInfo_annotation_NoneType__required_True__discriminator__function_class____"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v0/functions/{function_id}/title": {
       "patch": {
         "tags": [
           "functions"
         ],
         "summary": "Update Function Title",
-        "description": "Update function",
+        "description": "Update function\n\nNew in *version 0.8.0*",
         "operationId": "update_function_title",
         "parameters": [
           {
@@ -7094,7 +7161,7 @@
           "functions"
         ],
         "summary": "Update Function Description",
-        "description": "Update function",
+        "description": "Update function\n\nNew in *version 0.8.0*",
         "operationId": "update_function_description",
         "parameters": [
           {
@@ -7176,7 +7243,7 @@
           "functions"
         ],
         "summary": "Get Function Inputschema",
-        "description": "Get function input schema",
+        "description": "Get function input schema\n\nNew in *version 0.8.0*",
         "operationId": "get_function_inputschema",
         "parameters": [
           {
@@ -7241,7 +7308,7 @@
           "functions"
         ],
         "summary": "Get Function Outputschema",
-        "description": "Get function input schema",
+        "description": "Get function output schema\n\nNew in *version 0.8.0*",
         "operationId": "get_function_outputschema",
         "parameters": [
           {
@@ -7306,7 +7373,7 @@
           "functions"
         ],
         "summary": "Validate Function Inputs",
-        "description": "Validate inputs against the function's input schema",
+        "description": "Validate inputs against the function's input schema\n\nNew in *version 0.8.0*",
         "operationId": "validate_function_inputs",
         "parameters": [
           {
@@ -7385,7 +7452,7 @@
           "functions"
         ],
         "summary": "Run Function",
-        "description": "Run function",
+        "description": "Run function\n\nNew in *version 0.8.0*",
         "operationId": "run_function",
         "security": [
           {
@@ -7481,7 +7548,7 @@
           "functions"
         ],
         "summary": "Map Function",
-        "description": "Map function over input parameters",
+        "description": "Map function over input parameters\n\nNew in *version 0.8.0*",
         "operationId": "map_function",
         "security": [
           {

@@ -17,7 +17,7 @@ from models_library.rest_pagination import PageOffsetInt
 from models_library.rpc_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, PageLimitInt
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pydantic import ValidationError, validate_call
+from pydantic import TypeAdapter, ValidationError, validate_call
 from pyinstrument import Profiler
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RPCRouter
@@ -26,7 +26,7 @@ from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogItemNotFoundError,
 )
 
-from ...models.services_db import ServiceFiltersDB
+from ...models.services_db import ServiceDBFilters
 from ...repository.groups import GroupsRepository
 from ...repository.services import ServicesRepository
 from ...service import catalog_services
@@ -58,16 +58,6 @@ def _profile_rpc_call(coro):
     return _wrapper
 
 
-def _type_adapter_to_domain(
-    filters: ServiceListFilters | None,
-) -> ServiceFiltersDB | None:
-    return (
-        ServiceFiltersDB.model_validate(filters, from_attributes=True)
-        if filters
-        else None
-    )
-
-
 @router.expose(reraise_if_error_type=(CatalogForbiddenError, ValidationError))
 @_profile_rpc_call
 @validate_call(config={"arbitrary_types_allowed": True})
@@ -89,7 +79,9 @@ async def list_services_paginated(
         user_id=user_id,
         limit=limit,
         offset=offset,
-        filters=_type_adapter_to_domain(filters),
+        filters=TypeAdapter(ServiceDBFilters | None).validate_python(
+            filters, from_attributes=True
+        ),
     )
 
     assert len(items) <= total_count  # nosec
@@ -262,7 +254,9 @@ async def list_my_service_history_latest_first(
         service_key=service_key,
         limit=limit,
         offset=offset,
-        filters=_type_adapter_to_domain(filters),
+        filters=TypeAdapter(ServiceDBFilters | None).validate_python(
+            filters, from_attributes=True
+        ),
     )
 
     assert len(items) <= total_count  # nosec

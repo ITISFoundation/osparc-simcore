@@ -2,13 +2,13 @@ from collections.abc import AsyncIterator
 
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager, State
+from servicelib.fastapi.monitoring import (
+    create_prometheus_instrumentationmain_input_state,
+    prometheus_instrumentation_lifespan,
+)
 from servicelib.fastapi.postgres_lifespan import (
     create_postgres_database_input_state,
     postgres_database_lifespan,
-)
-from servicelib.fastapi.prometheus_instrumentation import (
-    create_prometheus_instrumentationmain_input_state,
-    prometheus_instrumentation_lifespan,
 )
 
 from .._meta import APP_FINISHED_BANNER_MSG, APP_STARTED_BANNER_MSG
