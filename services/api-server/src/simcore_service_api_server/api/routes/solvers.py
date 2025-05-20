@@ -160,7 +160,7 @@ async def list_solvers_releases(
 
 
 @router.get(
-    "/{solver_key:path}/releases/latest",
+    "/{solver_key:path}/latest",
     response_model=Solver,
     responses=_SOLVER_STATUS_CODES,
     description=create_route_description(
