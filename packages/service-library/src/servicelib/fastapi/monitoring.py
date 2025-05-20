@@ -56,7 +56,6 @@ class PrometheusMiddleware(BaseHTTPMiddleware):
                 response = await call_next(request)
                 status_code = response.status_code
 
-                # manually cleanup path because routing is not yet available
                 # https://github.com/encode/starlette/issues/685#issuecomment-550240999
                 for k, v in request.path_params.items():
                     key = "{" + k + "}"
