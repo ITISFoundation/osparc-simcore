@@ -265,7 +265,11 @@ async def list_running_dyn_services(
                     user_id=containers[0].user_id,
                     project_id=containers[0].project_id,
                     created_at=containers[0].created_at,
-                    needs_manual_intervention=_needs_manual_intervention(containers),
+                    needs_manual_intervention=_needs_manual_intervention(containers)
+                    and (
+                        (arrow.utcnow().datetime - containers[0].created_at)
+                        > datetime.timedelta(minutes=2)
+                    ),
                     containers=[c.name for c in containers],
                     service_name=containers[0].service_name,
                     service_version=containers[0].service_version,
