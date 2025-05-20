@@ -43,14 +43,14 @@ async def product(
     async with insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup  # noqa: SIM117
         asyncpg_engine,
         table=groups,
-        values=random_group(faker=faker, type=GroupType.STANDARD.name),
-        pk_col=products.c.name,
+        values=random_group(fake=faker, type=GroupType.STANDARD.name),
+        pk_col=groups.c.gid,
     ) as product_group:
         async with insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
             asyncpg_engine,
             table=products,
             values=random_product(
-                fake=faker, name="s4l", group_id=product_group["gid"]
+                fake=faker, name="s4l", group_id=int(product_group["gid"])
             ),
             pk_col=products.c.name,
         ) as row:
@@ -65,7 +65,12 @@ async def po_user(
     async with insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
         asyncpg_engine,
         table=users,
-        values=random_user(faker, role=UserRole.PRODUCT_OWNER),
+        values=random_user(
+            faker,
+            email="po-user@email.com",
+            name="po-user-fixture",
+            role=UserRole.PRODUCT_OWNER,
+        ),
         pk_col=users.c.id,
     ) as row:
         yield row
