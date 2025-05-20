@@ -1,5 +1,4 @@
 from aiohttp import web
-from fastapi import status
 from models_library.api_schemas_webserver.functions import (
     Function,
     FunctionToRegister,
@@ -7,6 +6,7 @@ from models_library.api_schemas_webserver.functions import (
     RegisteredFunctionGet,
 )
 from pydantic import TypeAdapter
+from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     handle_validation_as_http_error,
     parse_request_path_parameters_as,
