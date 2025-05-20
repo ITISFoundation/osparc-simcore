@@ -40,11 +40,11 @@ class TaskAbortedError(Exception): ...
 def _async_task_wrapper(
     app: Celery,
 ) -> Callable[
-    [Callable[Concatenate[AbortableTask, TaskId, P], Coroutine[Any, Any, R]]],
+    [Callable[Concatenate[AbortableTask, P], Coroutine[Any, Any, R]]],
     Callable[Concatenate[AbortableTask, P], R],
 ]:
     def decorator(
-        coro: Callable[Concatenate[AbortableTask, TaskId, P], Coroutine[Any, Any, R]],
+        coro: Callable[Concatenate[AbortableTask, P], Coroutine[Any, Any, R]],
     ) -> Callable[Concatenate[AbortableTask, P], R]:
         @wraps(coro)
         def wrapper(task: AbortableTask, *args: P.args, **kwargs: P.kwargs) -> R:
@@ -56,7 +56,7 @@ def _async_task_wrapper(
                 try:
                     async with asyncio.TaskGroup() as tg:
                         main_task = tg.create_task(
-                            coro(task, task_id, *args, **kwargs),
+                            coro(task, *args, **kwargs),
                         )
 
                         async def abort_monitor():
@@ -205,4 +205,5 @@ def register_task(  # type: ignore[misc]
         bind=True,
         base=AbortableTask,
         time_limit=None if timeout is None else timeout.total_seconds(),
+        pydantic=True,
     )(wrapped_fn)
