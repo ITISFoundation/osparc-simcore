@@ -234,7 +234,7 @@ pytest==8.3.5
     #   pytest-icdiff
     #   pytest-mock
     #   pytest-xdist
-pytest-asyncio==0.21.2
+pytest-asyncio==0.26.0
     # via -r requirements/_test.in
 pytest-cov==6.1.1
     # via -r requirements/_test.in
