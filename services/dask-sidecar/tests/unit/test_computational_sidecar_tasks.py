@@ -535,7 +535,7 @@ async def log_rabbit_client_parser(
             _logger.warning("RabbitMQ worker thread did not terminate properly")
 
 
-async def test_run_computational_sidecar_real_fct(
+def test_run_computational_sidecar_real_fct(
     caplog_info_level: pytest.LogCaptureFixture,
     app_environment: EnvVarsDict,
     dask_subsystem_mock: dict[str, mock.Mock],
