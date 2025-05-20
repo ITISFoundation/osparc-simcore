@@ -241,7 +241,7 @@ async def list_solver_releases(
     ),
     include_in_schema=False,  # TO BE RELEASED in 0.9
 )
-async def list_solver_releases_page(
+async def list_solver_releases_paginated(
     solver_key: SolverKeyId,
     page_params: Annotated[PaginationParams, Depends()],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],

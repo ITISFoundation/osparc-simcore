@@ -225,8 +225,9 @@ async def list_jobs(
             FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7"),
         ],
     ),
+    operation_id="get_jobs_page",
 )
-async def get_jobs_page(
+async def list_jobs_paginated(
     solver_key: SolverKeyId,
     version: VersionStr,
     page_params: Annotated[PaginationParams, Depends()],

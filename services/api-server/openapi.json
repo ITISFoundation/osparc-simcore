@@ -1599,7 +1599,7 @@
         ]
       }
     },
-    "/v0/solvers/{solver_key}/releases/latest": {
+    "/v0/solvers/{solver_key}/latest": {
       "get": {
         "tags": [
           "solvers"
@@ -3488,9 +3488,9 @@
         "tags": [
           "solvers"
         ],
-        "summary": "Get Jobs Page",
+        "summary": "List Jobs Paginated",
         "description": "List of jobs on a specific released solver (includes pagination)\n\nNew in *version 0.7*",
-        "operationId": "get_jobs_page",
+        "operationId": "list_jobs_paginated",
         "security": [
           {
             "HTTPBasic": []
