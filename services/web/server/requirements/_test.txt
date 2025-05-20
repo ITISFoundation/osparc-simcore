@@ -224,7 +224,6 @@ pytest-aiohttp==1.0.5
     # via -r requirements/_test.in
 pytest-asyncio==0.21.2
     # via
-    #   -c requirements/../../../../requirements/constraints.txt
     #   -r requirements/_test.in
     #   pytest-aiohttp
 pytest-benchmark==5.1.0
