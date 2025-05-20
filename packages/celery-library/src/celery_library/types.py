@@ -2,8 +2,8 @@ from functools import partial
 from pathlib import Path
 from typing import Any
 
-from kombu.utils.json import register_type
-from pydantic import BaseModel  # type: ignore[import-untyped]
+from kombu.utils.json import register_type  # type: ignore[import-untyped]
+from pydantic import BaseModel
 
 
 def _path_encoder(obj):
