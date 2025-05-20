@@ -13,7 +13,6 @@ from ..constants import APP_SETTINGS_KEY
 from ..rabbitmq import setup_rabbitmq
 from ._controller import (
     access_rights_rest,
-    comments_rest,
     conversations_rest,
     folders_rest,
     metadata_rest,
@@ -62,7 +61,6 @@ def setup_projects(app: web.Application) -> bool:
     # setup REST-controllers
     app.router.add_routes(projects_states_rest.routes)
     app.router.add_routes(projects_rest.routes)
-    app.router.add_routes(comments_rest.routes)
     app.router.add_routes(conversations_rest.routes)
     app.router.add_routes(access_rights_rest.routes)
     app.router.add_routes(metadata_rest.routes)
