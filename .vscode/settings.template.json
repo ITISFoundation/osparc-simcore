@@ -34,6 +34,7 @@
   "python.analysis.typeCheckingMode": "basic",
   "python.analysis.extraPaths": [
     "./packages/aws-library/src",
+    "./packages/celery-library/src",
     "./packages/models-library/src",
     "./packages/postgres-database/src",
     "./packages/postgres-database/tests",

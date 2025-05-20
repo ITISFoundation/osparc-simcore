@@ -31,6 +31,9 @@ component_management:
     - component_id: pkg_aws_library
       paths:
         - packages/aws-library/**
+    - component_id: pkg_celery_library
+      paths:
+        - packages/celery-library/**
     - component_id: pkg_dask_task_models_library
       paths:
         - packages/dask-task-models-library/**
