@@ -67,7 +67,8 @@ async def _fake_file_processor(
     return "archive.zip"
 
 
-def fake_file_processor(task: Task, files: list[str]) -> str:
+def fake_file_processor(task: Task, task_id: TaskID, files: list[str]) -> str:
+    _ = task_id
     assert task.name
     _logger.info("Calling _fake_file_processor")
     return asyncio.run_coroutine_threadsafe(
@@ -80,7 +81,8 @@ class MyError(OsparcErrorMixin, Exception):
     msg_template = "Something strange happened: {msg}"
 
 
-def failure_task(task: Task):
+def failure_task(task: Task, task_id: TaskID) -> None:
+    _ = task_id
     assert task
     msg = "BOOM!"
     raise MyError(msg=msg)
