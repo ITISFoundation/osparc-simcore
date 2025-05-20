@@ -5,7 +5,6 @@
 # pylint: disable=unused-variable
 
 
-import asyncio
 from collections.abc import Callable
 
 import pytest
@@ -43,16 +42,14 @@ def app_environment(
 
 
 @pytest.fixture
-def client(
+async def client(
     session_url_path: str,
-    event_loop: asyncio.AbstractEventLoop,
     aiohttp_client: Callable,
     disable_static_webserver: Callable,
     app_environment: EnvVarsDict,
     postgres_db,
     mock_orphaned_services,  # disables gc
 ) -> TestClient:
-
     extra_routes = web.RouteTableDef()
 
     @extra_routes.get(session_url_path)
@@ -65,7 +62,7 @@ def client(
 
     app.add_routes(extra_routes)
 
-    return event_loop.run_until_complete(aiohttp_client(app))
+    return await aiohttp_client(app)
 
 
 async def test_security_identity_is_email_and_product(
@@ -121,7 +118,6 @@ async def test_security_identity_is_email_and_product(
 def test_session_settings(
     session_key: str | bytes | None, mock_env_devel_environment: EnvVarsDict
 ):
-
     if session_key is not None:
         settings = SessionSettings(WEBSERVER_SESSION_SECRET_KEY=session_key)
     else:

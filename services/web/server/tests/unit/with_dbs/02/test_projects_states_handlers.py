@@ -7,7 +7,7 @@
 
 import asyncio
 import time
-from collections.abc import Awaitable, Callable, Iterator
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from copy import deepcopy
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
@@ -104,7 +104,6 @@ async def _list_projects(
     expected: HTTPStatus,
     query_parameters: dict | None = None,
 ) -> list[ProjectDict]:
-
     assert client.app
 
     # GET /v0/projects
@@ -296,8 +295,8 @@ async def test_share_project(
     )
     if new_project:
         assert new_project["accessRights"] == {
-            f'{primary_group["gid"]}': {"read": True, "write": True, "delete": True},
-            f'{(all_group["gid"])}': share_rights,
+            f"{primary_group['gid']}": {"read": True, "write": True, "delete": True},
+            f"{(all_group['gid'])}": share_rights,
         }
 
         # user 1 can always get to his project
@@ -1214,9 +1213,9 @@ async def test_project_node_lifetime(  # noqa: PLR0915
 
 
 @pytest.fixture
-def client_on_running_server_factory(
-    client: TestClient, event_loop
-) -> Iterator[Callable]:
+async def client_on_running_server_factory(
+    client: TestClient,
+) -> AsyncIterator[Callable]:
     # Creates clients connected to the same server as the reference client
     #
     # Implemented as aihttp_client but creates a client using a running server,
@@ -1227,7 +1226,7 @@ def client_on_running_server_factory(
     clients = []
 
     def go():
-        cli = TestClient(client.server, loop=event_loop)
+        cli = TestClient(client.server, loop=asyncio.get_event_loop())
         assert client.server.started
         # AVOIDS client.start_server
         clients.append(cli)
@@ -1249,7 +1248,7 @@ def client_on_running_server_factory(
         while clients:
             await close_client_but_not_server(clients.pop())
 
-    event_loop.run_until_complete(finalize())
+    await finalize()
 
 
 @pytest.fixture
@@ -1280,7 +1279,7 @@ async def test_open_shared_project_2_users_locked(
 
     client_1 = client
     client_id1 = client_session_id_factory()
-    client_2 = client_on_running_server_factory()
+    client_2 = await client_on_running_server_factory()
     client_id2 = client_session_id_factory()
 
     # 1. user 1 opens project
@@ -1472,7 +1471,7 @@ async def test_open_shared_project_at_same_time(
     ]
     # create other clients
     for _i in range(NUMBER_OF_ADDITIONAL_CLIENTS):
-        new_client = client_on_running_server_factory()
+        new_client = await client_on_running_server_factory()
         user = await log_client_in(
             new_client,
             {"role": user_role.name},
