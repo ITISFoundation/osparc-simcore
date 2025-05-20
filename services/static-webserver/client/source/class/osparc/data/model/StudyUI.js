@@ -94,6 +94,7 @@ qx.Class.define("osparc.data.model.StudyUI", {
     TEMPLATE_TYPE: "TEMPLATE",
     TUTORIAL_TYPE: "TUTORIAL",
     HYPERTOOL_TYPE: "HYPERTOOL",
+    HYPERTOOL_ICON: (iconSize = 22) => ("@FontAwesome5Solid/wrench/" + iconSize),
   },
 
   members: {
