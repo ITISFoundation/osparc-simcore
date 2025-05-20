@@ -62,13 +62,31 @@ users_pre_registration_details = sa.Table(
         doc="Phone provided on pre-registration"
         "NOTE: this is not copied upon registration since it needs to be confirmed",
     ),
-    # Approval status of the account request
+    # Account Request
     sa.Column(
         "account_request_status",
         sa.Enum(AccountRequestStatus),
         nullable=False,
         server_default=AccountRequestStatus.PENDING.value,
-        doc="Status of approval of the account request",
+        doc="Status of review for the account request",
+    ),
+    sa.Column(
+        "account_request_reviewed_by",
+        sa.Integer,
+        sa.ForeignKey(
+            users.c.id,
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.SET_NULL,
+            name="fk_users_pre_registration_reviewed_by_user_id",
+        ),
+        nullable=True,
+        doc="Tracks who approved or rejected the account request",
+    ),
+    sa.Column(
+        "account_request_reviewed_at",
+        sa.DateTime(timezone=True),
+        nullable=True,
+        doc="Timestamp when the account request was reviewed",
     ),
     # Product the user is requesting access to
     sa.Column(

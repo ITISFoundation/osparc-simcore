@@ -90,7 +90,7 @@ async def _async_insert_and_get_row(
     values: dict[str, Any],
     pk_col: sa.Column,
     pk_value: Any | None = None,
-):
+) -> sa.engine.Row:
     result = await conn.execute(table.insert().values(**values).returning(pk_col))
     row = result.one()
 
@@ -135,7 +135,7 @@ async def insert_and_get_row_lifespan(
     pk_col: sa.Column,
     pk_value: Any | None = None,
 ) -> AsyncIterator[dict[str, Any]]:
-    # insert & get
+    # SETUP: insert & get
     async with sqlalchemy_async_engine.begin() as conn:
         row = await _async_insert_and_get_row(
             conn, table=table, values=values, pk_col=pk_col, pk_value=pk_value
@@ -150,7 +150,7 @@ async def insert_and_get_row_lifespan(
     # pylint: disable=protected-access
     yield row._asdict()
 
-    # delete row
+    # TEAD-DOWN: delete row
     async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(table.delete().where(pk_col == pk_value))
 
@@ -170,7 +170,7 @@ def sync_insert_and_get_row_lifespan(
     database tables before the app starts since it does not require an `event_loop`
     fixture (which is funcition-scoped )
     """
-    # insert & get
+    # SETUP: insert & get
     with sqlalchemy_sync_engine.begin() as conn:
         row = _sync_insert_and_get_row(
             conn, table=table, values=values, pk_col=pk_col, pk_value=pk_value
@@ -185,6 +185,6 @@ def sync_insert_and_get_row_lifespan(
     # pylint: disable=protected-access
     yield row._asdict()
 
-    # delete row
+    # TEARDOWN: delete row
     with sqlalchemy_sync_engine.begin() as conn:
         conn.execute(table.delete().where(pk_col == pk_value))

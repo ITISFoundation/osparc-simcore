@@ -44,6 +44,22 @@ def upgrade():
     )
     op.add_column(
         "users_pre_registration_details",
+        sa.Column(
+            "account_request_reviewed_by",
+            sa.Integer(),
+            nullable=True,
+        ),
+    )
+    op.add_column(
+        "users_pre_registration_details",
+        sa.Column(
+            "account_request_reviewed_at",
+            sa.DateTime(timezone=True),
+            nullable=True,
+        ),
+    )
+    op.add_column(
+        "users_pre_registration_details",
         sa.Column("product_name", sa.String(), nullable=True),
     )
     op.drop_constraint(
@@ -57,6 +73,16 @@ def upgrade():
         "products",
         ["product_name"],
         ["name"],
+        onupdate="CASCADE",
+        ondelete="SET NULL",
+    )
+    # Add foreign key for account_request_reviewed_by
+    op.create_foreign_key(
+        "fk_users_pre_registration_reviewed_by_user_id",
+        "users_pre_registration_details",
+        "users",
+        ["account_request_reviewed_by"],
+        ["id"],
         onupdate="CASCADE",
         ondelete="SET NULL",
     )
@@ -89,6 +115,11 @@ def downgrade():
         type_="primary",
     )
     op.drop_constraint(
+        "fk_users_pre_registration_reviewed_by_user_id",
+        "users_pre_registration_details",
+        type_="foreignkey",
+    )
+    op.drop_constraint(
         "fk_users_pre_registration_details_product_name",
         "users_pre_registration_details",
         type_="foreignkey",
@@ -99,6 +130,8 @@ def downgrade():
         ["pre_email"],
     )
     op.drop_column("users_pre_registration_details", "product_name")
+    op.drop_column("users_pre_registration_details", "account_request_reviewed_at")
+    op.drop_column("users_pre_registration_details", "account_request_reviewed_by")
     op.drop_column("users_pre_registration_details", "account_request_status")
     op.drop_column("users_pre_registration_details", "id")
 
