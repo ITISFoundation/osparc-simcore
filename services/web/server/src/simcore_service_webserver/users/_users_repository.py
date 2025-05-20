@@ -319,6 +319,7 @@ async def search_users_and_get_profile(
     connection: AsyncConnection | None = None,
     *,
     email_like: str,
+    product_name: ProductName | None = None,
 ) -> list[Row]:
     users_alias = sa.alias(users, name="users_alias")
 
@@ -352,12 +353,16 @@ async def search_users_and_get_profile(
             invited_by,
         )
 
+        join_condition = users.c.id == users_pre_registration_details.c.user_id
+        if product_name:
+            join_condition = join_condition & (
+                users_pre_registration_details.c.product_name == product_name
+            )
+
         left_outer_join = (
             sa.select(*columns)
             .select_from(
-                users_pre_registration_details.outerjoin(
-                    users, users.c.id == users_pre_registration_details.c.user_id
-                )
+                users_pre_registration_details.outerjoin(users, join_condition)
             )
             .where(users_pre_registration_details.c.pre_email.like(email_like))
         )
@@ -366,7 +371,7 @@ async def search_users_and_get_profile(
             .select_from(
                 users.outerjoin(
                     users_pre_registration_details,
-                    users.c.id == users_pre_registration_details.c.user_id,
+                    join_condition,
                 )
             )
             .where(users.c.email.like(email_like))
@@ -412,22 +417,27 @@ async def get_user_products(
         return [row async for row in result]
 
 
-async def create_user_details(
+async def create_user_pre_registration(
     engine: AsyncEngine,
     connection: AsyncConnection | None = None,
     *,
     email: str,
     created_by: UserID,
+    product_name: ProductName,
     **other_values,
-) -> None:
+) -> int:
     async with transaction_context(engine, connection) as conn:
-        await conn.execute(
-            sa.insert(users_pre_registration_details).values(
+        result = await conn.execute(
+            sa.insert(users_pre_registration_details)
+            .values(
                 created_by=created_by,
                 pre_email=email,
+                product_name=product_name,
                 **other_values,
             )
+            .returning(users_pre_registration_details.c.id)
         )
+        return result.scalar_one()
 
 
 async def get_user_billing_details(

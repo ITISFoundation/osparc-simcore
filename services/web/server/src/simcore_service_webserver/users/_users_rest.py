@@ -1,5 +1,6 @@
 import logging
 from contextlib import suppress
+from itertools import product
 
 from aiohttp import web
 from models_library.api_schemas_webserver.users import (
@@ -195,7 +196,10 @@ async def pre_register_user_for_admin(request: web.Request) -> web.Response:
     pre_user_profile = await parse_request_body_as(PreRegisteredUserGet, request)
 
     user_profile = await _users_service.pre_register_user(
-        request.app, profile=pre_user_profile, creator_user_id=req_ctx.user_id
+        request.app,
+        profile=pre_user_profile,
+        creator_user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
     )
     return envelope_json_response(
         user_profile.model_dump(**_RESPONSE_MODEL_MINIMAL_POLICY)
