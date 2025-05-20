@@ -3,7 +3,7 @@ from typing import Annotated, Final
 
 from fastapi import APIRouter, Depends, status
 from fastapi_pagination.api import create_page
-from models_library.api_schemas_webserver.functions_wb_schema import (
+from models_library.api_schemas_webserver.functions import (
     FunctionJobCollection,
     FunctionJobCollectionID,
     FunctionJobCollectionStatus,
@@ -19,11 +19,14 @@ from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver_rpc import get_wb_api_rpc_client
+from ._constants import FMSG_CHANGELOG_NEW_IN_VERSION, create_route_description
 from .function_jobs_routes import function_job_status, get_function_job
 
 # pylint: disable=too-many-arguments
 
 function_job_collections_router = APIRouter()
+
+FIRST_RELEASE_VERSION = "0.8.0"
 
 
 _COMMON_FUNCTION_JOB_COLLECTION_ERROR_RESPONSES: Final[dict] = {
@@ -37,7 +40,10 @@ _COMMON_FUNCTION_JOB_COLLECTION_ERROR_RESPONSES: Final[dict] = {
 @function_job_collections_router.get(
     "",
     response_model=Page[RegisteredFunctionJobCollection],
-    description="List function job collections",
+    description=create_route_description(
+        base="List function job collections",
+        changelog=[FMSG_CHANGELOG_NEW_IN_VERSION.format(FIRST_RELEASE_VERSION)],
+    ),
 )
 async def list_function_job_collections(
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
@@ -58,7 +64,10 @@ async def list_function_job_collections(
     "/{function_job_collection_id:uuid}",
     response_model=RegisteredFunctionJobCollection,
     responses={**_COMMON_FUNCTION_JOB_COLLECTION_ERROR_RESPONSES},
-    description="Get function job collection",
+    description=create_route_description(
+        base="Get function job collection",
+        changelog=[FMSG_CHANGELOG_NEW_IN_VERSION.format(FIRST_RELEASE_VERSION)],
+    ),
 )
 async def get_function_job_collection(
     function_job_collection_id: FunctionJobCollectionID,
@@ -72,7 +81,10 @@ async def get_function_job_collection(
 @function_job_collections_router.post(
     "",
     response_model=RegisteredFunctionJobCollection,
-    description="Register function job collection",
+    description=create_route_description(
+        base="Register function job collection",
+        changelog=[FMSG_CHANGELOG_NEW_IN_VERSION.format(FIRST_RELEASE_VERSION)],
+    ),
 )
 async def register_function_job_collection(
     function_job_collection: FunctionJobCollection,
@@ -87,7 +99,10 @@ async def register_function_job_collection(
     "/{function_job_collection_id:uuid}",
     response_model=None,
     responses={**_COMMON_FUNCTION_JOB_COLLECTION_ERROR_RESPONSES},
-    description="Delete function job collection",
+    description=create_route_description(
+        base="Delete function job collection",
+        changelog=[FMSG_CHANGELOG_NEW_IN_VERSION.format(FIRST_RELEASE_VERSION)],
+    ),
 )
 async def delete_function_job_collection(
     function_job_collection_id: FunctionJobCollectionID,
@@ -102,7 +117,9 @@ async def delete_function_job_collection(
     "/{function_job_collection_id:uuid}/function_jobs",
     response_model=list[RegisteredFunctionJob],
     responses={**_COMMON_FUNCTION_JOB_COLLECTION_ERROR_RESPONSES},
-    description="Get the function jobs in function job collection",
+    description=create_route_description(
+        base="Get the function jobs in function job collection",
+    ),
 )
 async def function_job_collection_list_function_jobs(
     function_job_collection_id: FunctionJobCollectionID,
@@ -125,7 +142,9 @@ async def function_job_collection_list_function_jobs(
     "/{function_job_collection_id:uuid}/status",
     response_model=FunctionJobCollectionStatus,
     responses={**_COMMON_FUNCTION_JOB_COLLECTION_ERROR_RESPONSES},
-    description="Get function job collection status",
+    description=create_route_description(
+        base="Get function job collection status",
+    ),
 )
 async def function_job_collection_status(
     function_job_collection_id: FunctionJobCollectionID,
