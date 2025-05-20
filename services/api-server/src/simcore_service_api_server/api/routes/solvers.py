@@ -57,7 +57,7 @@ router = APIRouter()
         deprecated=True,
         alternative="GET /v0/solvers/page",
         changelog=[
-            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.5.0", ""),
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.5"),
         ],
     ),
 )
@@ -84,12 +84,12 @@ async def list_solvers(
     description=create_route_description(
         base="Lists the latest version of all available solvers (paginated)",
         changelog=[
-            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.8"),
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.9-rc1"),
         ],
     ),
-    include_in_schema=False,  # TO BE RELEASED in 0.8
+    include_in_schema=False,  # TO BE RELEASED in 0.9
 )
-async def get_solvers_page(
+async def list_solvers_paginated(
     page_params: Annotated[PaginationParams, Depends()],
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
     filters: Annotated[SolversListFilters, Depends(get_solvers_filters)],
@@ -118,11 +118,11 @@ async def get_solvers_page(
     summary="Lists All Releases",
     responses=_SOLVER_STATUS_CODES,
     description=create_route_description(
-        base="Lists all released solvers (not just latest version)",
+        base="Lists **all** released solvers (not just latest version)",
         deprecated=True,
         alternative="GET /v0/solvers/{solver_key}/releases/page",
         changelog=[
-            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.5.0", ""),
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.5"),
         ],
     ),
 )
@@ -160,7 +160,7 @@ async def list_solvers_releases(
 
 
 @router.get(
-    "/{solver_key:path}/latest",
+    "/{solver_key:path}/releases/latest",
     response_model=Solver,
     responses=_SOLVER_STATUS_CODES,
     description=create_route_description(
@@ -236,12 +236,12 @@ async def list_solver_releases(
     description=create_route_description(
         base="Lists all releases of a give solver (paginated)",
         changelog=[
-            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.8"),
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.9-rc1"),
         ],
     ),
-    include_in_schema=False,  # TO BE RELEASED in 0.8
+    include_in_schema=False,  # TO BE RELEASED in 0.9
 )
-async def get_solver_releases_page(
+async def list_solver_releases_page(
     solver_key: SolverKeyId,
     page_params: Annotated[PaginationParams, Depends()],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
@@ -315,7 +315,7 @@ async def get_solver_release(
     description=create_route_description(
         base="Lists inputs and outputs of a given solver",
         changelog=[
-            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.5.0"),
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.5"),
             FMSG_CHANGELOG_ADDED_IN_VERSION.format(
                 "0.7.1", "`version_display` field in the response"
             ),

@@ -37,10 +37,10 @@ def create_route_description(
     changelog: list[str] | None = None
 ) -> str:
     """
-    Builds a consistent route description with optional deprecation and changelog information.
+    Builds a consistent route/query description with optional deprecation and changelog information.
 
     Args:
-        base (str): Main route description.
+        base (str): Main route/query description.
         deprecated (tuple): (retirement_date, alternative_route) if deprecated.
         changelog (List[str]): List of formatted changelog strings.
 
