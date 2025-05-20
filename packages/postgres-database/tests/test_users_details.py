@@ -10,8 +10,10 @@ from typing import Any
 import pytest
 import sqlalchemy as sa
 from aiopg.sa.result import RowProxy
+from common_library.groups_enums import GroupType
 from faker import Faker
 from pytest_simcore.helpers.faker_factories import (
+    random_group,
     random_pre_registration_details,
     random_product,
     random_user,
@@ -19,6 +21,7 @@ from pytest_simcore.helpers.faker_factories import (
 from pytest_simcore.helpers.postgres_tools import (
     insert_and_get_row_lifespan,
 )
+from simcore_postgres_database.models.groups import groups
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import UserRole, UserStatus, users
 from simcore_postgres_database.models.users_details import (
@@ -33,17 +36,25 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 
 @pytest.fixture
-async def product_name(
+async def product(
     faker: Faker,
     asyncpg_engine: AsyncEngine,
-) -> AsyncIterable[str]:
-    async with insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
+) -> AsyncIterable[dict[str, Any]]:
+    async with insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup  # noqa: SIM117
         asyncpg_engine,
-        table=products,
-        values=random_product(fake=faker, name="s4l"),
+        table=groups,
+        values=random_group(faker=faker, type=GroupType.STANDARD.name),
         pk_col=products.c.name,
-    ) as row:
-        yield row["name"]
+    ) as product_group:
+        async with insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
+            asyncpg_engine,
+            table=products,
+            values=random_product(
+                fake=faker, name="s4l", group_id=product_group["gid"]
+            ),
+            pk_col=products.c.name,
+        ) as row:
+            yield row
 
 
 @pytest.fixture
@@ -67,8 +78,10 @@ async def test_user_creation_workflow(
     asyncpg_engine: AsyncEngine,
     faker: Faker,
     po_user: dict[str, Any],
-    product_name: str,
+    product: dict[str, Any],
 ):
+    product_name = product["name"]
+
     # a PO creates an invitation
     fake_pre_registration_data = random_pre_registration_details(
         faker, created_by=po_user["id"], product_name=product_name

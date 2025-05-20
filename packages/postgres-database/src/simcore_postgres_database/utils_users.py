@@ -138,13 +138,14 @@ class UsersRepo:
                     users_pre_registration_details.c.pre_email == new_user_email
                 )
             )
-            if details := result.first():
+            if pre_registration_details_data := result.first():
+                # NOTE: could have many products! which to use?
                 await conn.execute(
                     users.update()
                     .where(users.c.id == new_user_id)
                     .values(
-                        first_name=details.pre_first_name,  # type: ignore[union-attr]
-                        last_name=details.pre_last_name,  # type: ignore[union-attr]
+                        first_name=pre_registration_details_data.pre_first_name,  # type: ignore[union-attr]
+                        last_name=pre_registration_details_data.pre_last_name,  # type: ignore[union-attr]
                     )
                 )
 

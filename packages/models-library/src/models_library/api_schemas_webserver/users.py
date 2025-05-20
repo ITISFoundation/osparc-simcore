@@ -241,8 +241,6 @@ class UserGet(OutputSchema):
 
 
 class UsersForAdminListFilter(Filters):
-    # TODO: create a filter for two views that OM needs
-    #
     # 1. States of an Account Resquest: PENDING, REJECTED, APPROVED
     # 2. If APPROVED AND user uses the invitation link, then it can be in any of these states:
     #    CONFIRMATION_PENDING, ACTIVE, EXPIRED, BANNED, DELETED
@@ -250,7 +248,7 @@ class UsersForAdminListFilter(Filters):
     status: Literal["PENDING"] | None = None
 
 
-class UsersForAdminListQueryParams(PageQueryParameters, UsersForAdminListFilter): ...
+class UsersForAdminListQueryParams(UsersForAdminListFilter, PageQueryParameters): ...
 
 
 class UserApprove(InputSchema):
