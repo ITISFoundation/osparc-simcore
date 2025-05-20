@@ -25,6 +25,7 @@ from aws_library.s3 import SimcoreS3API
 from celery import Celery
 from celery.contrib.testing.worker import TestWorkController, start_worker
 from celery.signals import worker_init, worker_shutdown
+from celery.worker.worker import WorkController
 from celery_library.signals import on_worker_init, on_worker_shutdown
 from celery_library.utils import get_celery_worker
 from celery_library.worker import CeleryTaskWorker
@@ -1002,7 +1003,8 @@ async def with_storage_celery_worker_controller(
     app_settings = ApplicationSettings.create_from_envs()
     app_factory = partial(create_app, app_settings)
 
-    def _on_worker_init_wrapper(sender: Celery, **_kwargs) -> None:
+    def _on_worker_init_wrapper(sender: WorkController, **_kwargs) -> None:
+        assert app_settings.STORAGE_CELERY  # nosec
         return partial(on_worker_init, app_factory, app_settings.STORAGE_CELERY)(
             sender, **_kwargs
         )
