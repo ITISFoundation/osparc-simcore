@@ -23,7 +23,7 @@ qx.Class.define("osparc.data.Job", {
 
     this.set({
       projectUuid: jobData["projectUuid"],
-      projectName: jobData["root_project_name"],
+      projectName: jobData["rootProjectName"],
       state: jobData["state"] || "UNKNOWN",
       submittedAt: jobData["submittedAt"] ? new Date(jobData["submittedAt"]) : null,
       startedAt: jobData["startedAt"] ? new Date(jobData["startedAt"]) : null,
