@@ -45,6 +45,10 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     HEIGHT: 36,
 
     getSharedWithOptions: function(resourceType) {
+      if (resourceType === "template") {
+        resourceType = "tutorial";
+      }
+
       const resourceAlias = osparc.product.Utils.resourceTypeToAlias(resourceType, {
         firstUpperCase: true,
         plural: true

@@ -94,9 +94,9 @@ async function dashboardPreferences(page) {
   await utils.waitAndClick(page, '[osparc-test-id="preferencesWindowCloseBtn"]');
 }
 
-async function __dashboardTemplatesBrowser(page) {
-  console.log("Navigating through Templates");
-  await utils.waitAndClick(page, '[osparc-test-id="templatesTabBtn"]');
+async function __dashboardTutorialsBrowser(page) {
+  console.log("Navigating through Tutorials");
+  await utils.waitAndClick(page, '[osparc-test-id="tutorialsTabBtn"]');
 }
 
 async function __dashboardServicesBrowser(page) {
@@ -140,11 +140,11 @@ async function dashboardOpenFirstTemplate(page, templateName) {
   await utils.sleep(10000);
 
   // Returns true if template is found
-  console.log("Creating New Study from template");
+  console.log("Creating New Study from tutorial");
 
-  await utils.takeScreenshot(page, "click on templates tab");
-  await __dashboardTemplatesBrowser(page);
-  await utils.takeScreenshot(page, "clicked on templates tab");
+  await utils.takeScreenshot(page, "click on tutorials tab");
+  await __dashboardTutorialsBrowser(page);
+  await utils.takeScreenshot(page, "clicked on tutorials tab");
 
   if (templateName) {
     // Show flat list
@@ -221,7 +221,7 @@ async function __filterStudiesByText(page, studyName) {
 }
 
 async function __filterTemplatesByText(page, templateName) {
-  await __dashboardTemplatesBrowser(page);
+  await __dashboardTutorialsBrowser(page);
   await __typeInSearchBarFilter(page, "template", templateName);
 }
 
