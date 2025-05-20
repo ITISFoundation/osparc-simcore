@@ -222,7 +222,7 @@ pytest==8.3.5
     #   pytest-xdist
 pytest-aiohttp==1.0.5
     # via -r requirements/_test.in
-pytest-asyncio==0.21.2
+pytest-asyncio==0.26.0
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
