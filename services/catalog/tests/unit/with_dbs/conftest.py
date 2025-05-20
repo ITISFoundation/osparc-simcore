@@ -420,8 +420,14 @@ async def create_fake_service_data(
         everyone_access: str | None = None,
         product: ProductName = products_names[0],
         deprecated: datetime | None = None,
+        version_display: str | None = None,
     ) -> tuple[dict[str, Any], ...]:
-        service = _random_service(key=key, version=version, deprecated=deprecated)
+        service = _random_service(
+            key=key,
+            version=version,
+            deprecated=deprecated,
+            version_display=version_display,
+        )
 
         # owner always has full-access
         owner_access = _random_access(

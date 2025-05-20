@@ -53,9 +53,9 @@
       "placement": "bottom"
     }, {
       "beforeClick": {
-        "selector": "osparc-test-id=templatesTabBtn"
+        "selector": "osparc-test-id=tutorialsTabBtn"
       },
-      "anchorEl": "osparc-test-id=templatesTabBtn",
+      "anchorEl": "osparc-test-id=tutorialsTabBtn",
       "text": "Clicking on a Template will create a copy of that Study, which will appear in your own Studies tab with the same name as the Template. Any changes you make to this copy will not affect the original Template.",
       "placement": "bottom"
     }, {

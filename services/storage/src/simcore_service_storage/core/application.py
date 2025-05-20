@@ -13,11 +13,11 @@ from fastapi_pagination import add_pagination
 from servicelib.fastapi import timing_middleware
 from servicelib.fastapi.cancellation_middleware import RequestCancellationMiddleware
 from servicelib.fastapi.client_session import setup_client_session
-from servicelib.fastapi.openapi import override_fastapi_openapi_method
-from servicelib.fastapi.profiler import ProfilerMiddleware
-from servicelib.fastapi.prometheus_instrumentation import (
+from servicelib.fastapi.monitoring import (
     setup_prometheus_instrumentation,
 )
+from servicelib.fastapi.openapi import override_fastapi_openapi_method
+from servicelib.fastapi.profiler import ProfilerMiddleware
 from servicelib.fastapi.tracing import initialize_tracing
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -113,10 +113,10 @@ def create_app(settings: ApplicationSettings) -> FastAPI:  # noqa: C901
 
     app.add_middleware(RequestCancellationMiddleware)
 
-    if settings.STORAGE_TRACING:
-        initialize_tracing(app, settings.STORAGE_TRACING, APP_NAME)
     if settings.STORAGE_MONITORING_ENABLED:
         setup_prometheus_instrumentation(app)
+    if settings.STORAGE_TRACING:
+        initialize_tracing(app, settings.STORAGE_TRACING, APP_NAME)
 
     async def _on_startup() -> None:
         if settings.STORAGE_WORKER_MODE:

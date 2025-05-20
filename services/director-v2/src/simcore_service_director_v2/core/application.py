@@ -145,6 +145,9 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
 
     substitutions.setup(app)
 
+    if settings.DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED:
+        instrumentation.setup(app)
+
     if settings.DIRECTOR_V2_TRACING:
         initialize_tracing(app, settings.DIRECTOR_V2_TRACING, APP_NAME)
 
@@ -201,9 +204,6 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
         comp_scheduler.setup(app)
 
     resource_usage_tracker_client.setup(app)
-
-    if settings.DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED:
-        instrumentation.setup(app)
 
     if settings.DIRECTOR_V2_PROFILING:
         initialize_profiler(app)

@@ -20,7 +20,9 @@ class CreateFakeServiceDataCallable(Protocol):
         team_access: str | None = None,
         everyone_access: str | None = None,
         product: ProductName = "osparc",
+        # DB overrides
         deprecated: datetime | None = None,  # DB column
+        version_display: str | None = None,  # DB column
     ) -> tuple[dict[str, Any], ...]:  # type: ignore
         """
         Returns a fake factory that creates catalog DATA that can be used to fill

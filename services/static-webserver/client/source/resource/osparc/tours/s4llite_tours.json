@@ -49,9 +49,9 @@
       "placement": "bottom"
     }, {
       "beforeClick": {
-        "selector": "osparc-test-id=templatesTabBtn"
+        "selector": "osparc-test-id=tutorialsTabBtn"
       },
-      "anchorEl": "osparc-test-id=templatesTabBtn",
+      "anchorEl": "osparc-test-id=tutorialsTabBtn",
       "title": "Tutorials",
       "text": "Clicking on a Tutorial will create a copy of that Project, which will appear in your own Projects tab with the same name as the Tutorial. Any changes you make to this copy will not affect the original Tutorial.",
       "placement": "bottom"

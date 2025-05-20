@@ -11,12 +11,15 @@ from dask_task_models_library.container_tasks.protocol import (
     ContainerTaskParameters,
     LogFileUploadURL,
 )
+from dask_task_models_library.plugins.task_life_cycle_worker_plugin import (
+    TaskLifecycleWorkerPlugin,
+)
 from servicelib.logging_utils import log_context
 from settings_library.s3 import S3Settings
 
 from ._meta import print_dask_sidecar_banner
 from .computational_sidecar.core import ComputationalSidecar
-from .rabbitmq_plugin import RabbitMQPlugin
+from .rabbitmq_worker_plugin import RabbitMQPlugin
 from .settings import ApplicationSettings
 from .utils.dask import (
     TaskPublisher,
@@ -76,14 +79,21 @@ async def dask_setup(worker: distributed.Worker) -> None:
                     RabbitMQPlugin(settings.DASK_SIDECAR_RABBITMQ), catch_errors=False
                 )
             except Exception:
-                await worker.close()
+                await worker.close(reason="failed to add RabbitMQ plugin")
                 raise
+        try:
+            await worker.plugin_add(TaskLifecycleWorkerPlugin(), catch_errors=False)
+        except Exception:
+            await worker.close(reason="failed to add TaskLifecycleWorkerPlugin")
+            raise
 
         print_dask_sidecar_banner()
 
 
 async def dask_teardown(worker: distributed.Worker) -> None:
-    with log_context(_logger, logging.INFO, f"tear down dask {worker.address}"):
+    with log_context(
+        _logger, logging.INFO, f"tear down dask worker at {worker.address}"
+    ):
         ...
 
 

@@ -7,7 +7,7 @@ from uuid import uuid4
 
 import pytest
 from httpx import AsyncClient
-from models_library.api_schemas_webserver.functions_wb_schema import (
+from models_library.api_schemas_webserver.functions import (
     FunctionIDNotFoundError,
     FunctionJobCollection,
     ProjectFunction,
@@ -298,6 +298,35 @@ async def test_list_function_jobs(
 
     # Now, list function jobs
     response = await client.get(f"{API_VTAG}/function_jobs")
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()["items"]
+    assert len(data) == 5
+    assert (
+        RegisteredProjectFunctionJob.model_validate(data[0])
+        == sample_registered_function_job
+    )
+
+
+async def test_list_function_jobs_with_function_filter(
+    client: AsyncClient,
+    mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
+    sample_registered_function_job: RegisteredProjectFunctionJob,
+    sample_registered_function: RegisteredProjectFunction,
+) -> None:
+
+    mock_handler_in_functions_rpc_interface(
+        "list_function_jobs",
+        (
+            [sample_registered_function_job for _ in range(5)],
+            PageMetaInfoLimitOffset(total=5, count=5, limit=10, offset=0),
+        ),
+    )
+
+    # Now, list function jobs with a filter
+    response = await client.get(
+        f"{API_VTAG}/functions/{sample_registered_function.uid}/jobs"
+    )
+
     assert response.status_code == status.HTTP_200_OK
     data = response.json()["items"]
     assert len(data) == 5
