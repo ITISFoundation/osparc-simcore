@@ -25,7 +25,7 @@ fsspec==2025.3.2
     # via
     #   -c requirements/./_base.txt
     #   dask
-importlib-metadata==8.5.0
+importlib-metadata==8.6.1
     # via
     #   -c requirements/./_base.txt
     #   dask
@@ -54,7 +54,7 @@ numpy==2.2.6
     # via
     #   -c requirements/./_base.txt
     #   -r requirements/_dask-distributed.in
-packaging==24.2
+packaging==25.0
     # via
     #   -c requirements/./_base.txt
     #   dask
@@ -90,7 +90,7 @@ tornado==6.5
     # via
     #   -c requirements/./_base.txt
     #   distributed
-urllib3==2.3.0
+urllib3==2.4.0
     # via
     #   -c requirements/./_base.txt
     #   distributed

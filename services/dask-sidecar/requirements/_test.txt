@@ -56,7 +56,7 @@ botocore==1.37.3
     #   boto3
     #   moto
     #   s3transfer
-botocore-stubs==1.38.18
+botocore-stubs==1.38.19
     # via
     #   types-aioboto3
     #   types-aiobotocore
@@ -174,7 +174,7 @@ openapi-schema-validator==0.6.3
     # via openapi-spec-validator
 openapi-spec-validator==0.7.1
     # via moto
-packaging==24.2
+packaging==25.0
     # via
     #   -c requirements/_base.txt
     #   pytest
@@ -221,10 +221,8 @@ pytest==8.3.5
     #   pytest-localftpserver
     #   pytest-mock
     #   pytest-sugar
-pytest-asyncio==0.23.8
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -r requirements/_test.in
+pytest-asyncio==0.26.0
+    # via -r requirements/_test.in
 pytest-cov==6.1.1
     # via -r requirements/_test.in
 pytest-icdiff==0.9
@@ -327,7 +325,7 @@ tzdata==2025.2
     # via
     #   -c requirements/_base.txt
     #   faker
-urllib3==2.3.0
+urllib3==2.4.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
