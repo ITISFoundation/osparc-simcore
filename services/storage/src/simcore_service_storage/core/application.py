@@ -87,6 +87,8 @@ def create_app(settings: ApplicationSettings) -> FastAPI:  # noqa: C901
     if not settings.STORAGE_WORKER_MODE:
         setup_rabbitmq(app)
         setup_rpc_api_routes(app)
+
+        assert settings.STORAGE_CELERY  # nosec
         setup_celery_client(app, celery_settings=settings.STORAGE_CELERY)
     setup_rest_api_long_running_tasks_for_uploads(app)
     setup_rest_api_routes(app, API_VTAG)
