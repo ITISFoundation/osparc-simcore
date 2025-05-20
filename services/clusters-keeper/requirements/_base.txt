@@ -1,6 +1,5 @@
 aio-pika==9.5.5
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 aioboto3==14.3.0
@@ -9,30 +8,24 @@ aiobotocore==2.22.0
     # via aioboto3
 aiocache==0.12.3
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 aiodebug==2.3.0
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 aiodocker==0.24.0
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 aiofiles==24.1.0
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   aioboto3
-aiohappyeyeballs==2.4.6
-    # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
-    #   aiohttp
+aiohappyeyeballs==2.6.1
+    # via aiohttp
 aiohttp==3.11.18
     # via
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -56,7 +49,6 @@ aiohttp==3.11.18
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
@@ -65,27 +57,19 @@ aiohttp==3.11.18
 aioitertools==0.12.0
     # via aiobotocore
 aiormq==6.8.1
-    # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
-    #   aio-pika
+    # via aio-pika
 aiosignal==1.3.2
-    # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
-    #   aiohttp
+    # via aiohttp
 annotated-types==0.7.0
+    # via pydantic
+anyio==4.9.0
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
-    #   pydantic
-anyio==4.8.0
-    # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   fast-depends
     #   faststream
     #   httpx
     #   starlette
 arrow==1.3.0
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
@@ -95,9 +79,8 @@ arrow==1.3.0
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 asgiref==3.8.1
     # via opentelemetry-instrumentation-asgi
-attrs==25.1.0
+attrs==25.3.0
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   aiohttp
     #   jsonschema
     #   referencing
@@ -108,9 +91,9 @@ botocore==1.37.3
     #   aiobotocore
     #   boto3
     #   s3transfer
-botocore-stubs==1.35.76
+botocore-stubs==1.38.19
     # via types-aiobotocore
-certifi==2025.1.31
+certifi==2025.4.26
     # via
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -133,20 +116,16 @@ certifi==2025.1.31
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   httpcore
     #   httpx
     #   requests
-charset-normalizer==3.4.1
-    # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
-    #   requests
+charset-normalizer==3.4.2
+    # via requests
 click==8.1.8
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   -c requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask
     #   distributed
@@ -164,7 +143,6 @@ dask==2025.5.0
     #   distributed
 deprecated==1.2.18
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   opentelemetry-api
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
@@ -174,56 +152,43 @@ distributed==2025.5.0
     #   -c requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask
 dnspython==2.7.0
-    # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
-    #   email-validator
+    # via email-validator
 email-validator==2.2.0
-    # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
-    #   pydantic
-exceptiongroup==1.2.2
-    # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
-    #   aio-pika
+    # via pydantic
+exceptiongroup==1.3.0
+    # via aio-pika
 fast-depends==2.4.12
-    # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
-    #   faststream
-fastapi==0.115.6
+    # via faststream
+fastapi==0.115.12
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
     #   fastapi-lifespan-manager
 fastapi-lifespan-manager==0.1.4
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
-faststream==0.5.35
+faststream==0.5.41
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-frozenlist==1.5.0
+frozenlist==1.6.0
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   aiohttp
     #   aiosignal
 fsspec==2025.3.2
     # via
     #   -c requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask
-googleapis-common-protos==1.68.0
+googleapis-common-protos==1.70.0
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
-grpcio==1.70.0
-    # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
-    #   opentelemetry-exporter-otlp-proto-grpc
-h11==0.14.0
+grpcio==1.71.0
+    # via opentelemetry-exporter-otlp-proto-grpc
+h11==0.16.0
     # via
     #   httpcore
     #   uvicorn
-httpcore==1.0.7
+httpcore==1.0.9
     # via httpx
 httpx==0.28.1
     # via
@@ -254,15 +219,13 @@ httpx==0.28.1
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
 idna==3.10
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   anyio
     #   email-validator
     #   httpx
     #   requests
     #   yarl
-importlib-metadata==8.5.0
+importlib-metadata==8.6.1
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   -c requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask
     #   opentelemetry-api
@@ -301,45 +264,36 @@ jmespath==1.0.1
     #   botocore
 jsonschema==4.23.0
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
-jsonschema-specifications==2024.10.1
-    # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
-    #   jsonschema
+jsonschema-specifications==2025.4.1
+    # via jsonschema
 locket==1.0.0
     # via
     #   -c requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
     #   partd
 markdown-it-py==3.0.0
-    # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
-    #   rich
+    # via rich
 markupsafe==3.0.2
     # via
     #   -c requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   jinja2
 mdurl==0.1.2
-    # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
-    #   markdown-it-py
+    # via markdown-it-py
 msgpack==1.1.0
     # via
     #   -c requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
-multidict==6.1.0
+multidict==6.4.4
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   aiobotocore
     #   aiohttp
     #   yarl
-opentelemetry-api==1.30.0
+opentelemetry-api==1.33.1
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   opentelemetry-exporter-otlp-proto-grpc
@@ -355,27 +309,20 @@ opentelemetry-api==1.30.0
     #   opentelemetry-propagator-aws-xray
     #   opentelemetry-sdk
     #   opentelemetry-semantic-conventions
-opentelemetry-exporter-otlp==1.30.0
+opentelemetry-exporter-otlp==1.33.1
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-exporter-otlp-proto-common==1.30.0
+opentelemetry-exporter-otlp-proto-common==1.33.1
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
-opentelemetry-exporter-otlp-proto-grpc==1.30.0
+opentelemetry-exporter-otlp-proto-grpc==1.33.1
+    # via opentelemetry-exporter-otlp
+opentelemetry-exporter-otlp-proto-http==1.33.1
+    # via opentelemetry-exporter-otlp
+opentelemetry-instrumentation==0.54b1
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
-    #   opentelemetry-exporter-otlp
-opentelemetry-exporter-otlp-proto-http==1.30.0
-    # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
-    #   opentelemetry-exporter-otlp
-opentelemetry-instrumentation==0.51b0
-    # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-botocore
     #   opentelemetry-instrumentation-fastapi
@@ -383,47 +330,41 @@ opentelemetry-instrumentation==0.51b0
     #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
-opentelemetry-instrumentation-asgi==0.51b0
+opentelemetry-instrumentation-asgi==0.54b1
     # via opentelemetry-instrumentation-fastapi
-opentelemetry-instrumentation-botocore==0.51b0
+opentelemetry-instrumentation-botocore==0.54b1
     # via -r requirements/../../../packages/aws-library/requirements/_base.in
-opentelemetry-instrumentation-fastapi==0.51b0
+opentelemetry-instrumentation-fastapi==0.54b1
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
-opentelemetry-instrumentation-httpx==0.51b0
+opentelemetry-instrumentation-httpx==0.54b1
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
-opentelemetry-instrumentation-logging==0.51b0
+opentelemetry-instrumentation-logging==0.54b1
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-instrumentation-redis==0.51b0
+opentelemetry-instrumentation-redis==0.54b1
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-instrumentation-requests==0.51b0
+opentelemetry-instrumentation-requests==0.54b1
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-propagator-aws-xray==1.0.2
     # via opentelemetry-instrumentation-botocore
-opentelemetry-proto==1.30.0
+opentelemetry-proto==1.33.1
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   opentelemetry-exporter-otlp-proto-common
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
-opentelemetry-sdk==1.30.0
+opentelemetry-sdk==1.33.1
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
-opentelemetry-semantic-conventions==0.51b0
+opentelemetry-semantic-conventions==0.54b1
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-botocore
@@ -432,14 +373,13 @@ opentelemetry-semantic-conventions==0.51b0
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-sdk
-opentelemetry-util-http==0.51b0
+opentelemetry-util-http==0.54b1
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-requests
-orjson==3.10.15
+orjson==3.10.18
     # via
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -462,7 +402,6 @@ orjson==3.10.15
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
@@ -482,46 +421,38 @@ orjson==3.10.15
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
-packaging==24.2
+packaging==25.0
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   -c requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   -r requirements/_base.in
     #   dask
     #   distributed
     #   opentelemetry-instrumentation
 pamqp==3.3.0
-    # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
-    #   aiormq
+    # via aiormq
 partd==1.4.2
     # via
     #   -c requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask
-prometheus-client==0.21.1
+prometheus-client==0.22.0
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
-propcache==0.3.0
+propcache==0.3.1
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   aiohttp
     #   yarl
-protobuf==5.29.3
+protobuf==5.29.4
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   googleapis-common-protos
     #   opentelemetry-proto
 psutil==7.0.0
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   -c requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   distributed
-pycryptodome==3.21.0
-    # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
-    #   stream-zip
-pydantic==2.10.6
+pycryptodome==3.23.0
+    # via stream-zip
+pydantic==2.11.4
     # via
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -544,7 +475,6 @@ pydantic==2.10.6
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
@@ -575,13 +505,10 @@ pydantic==2.10.6
     #   fastapi
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.27.2
+pydantic-core==2.33.2
+    # via pydantic
+pydantic-extra-types==2.10.4
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
-    #   pydantic
-pydantic-extra-types==2.10.2
-    # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/_base.in
@@ -621,7 +548,6 @@ pydantic-settings==2.7.0
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
@@ -634,24 +560,18 @@ pydantic-settings==2.7.0
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
 pygments==2.19.1
-    # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
-    #   rich
+    # via rich
 pyinstrument==5.0.1
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 python-dateutil==2.9.0.post0
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   aiobotocore
     #   arrow
     #   botocore
-python-dotenv==1.0.1
-    # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
-    #   pydantic-settings
+python-dotenv==1.1.0
+    # via pydantic-settings
 pyyaml==6.0.2
     # via
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -675,7 +595,6 @@ pyyaml==6.0.2
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
@@ -684,7 +603,7 @@ pyyaml==6.0.2
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   dask
     #   distributed
-redis==5.2.1
+redis==6.1.0
     # via
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -707,7 +626,6 @@ redis==5.2.1
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
@@ -736,50 +654,39 @@ referencing==0.35.1
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   jsonschema
     #   jsonschema-specifications
 requests==2.32.3
+    # via opentelemetry-exporter-otlp-proto-http
+rich==14.0.0
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
-    #   opentelemetry-exporter-otlp-proto-http
-rich==13.9.4
-    # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   typer
-rpds-py==0.23.1
+rpds-py==0.25.0
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   jsonschema
     #   referencing
 s3transfer==0.11.3
     # via boto3
-sh==2.1.0
+sh==2.2.2
     # via -r requirements/../../../packages/aws-library/requirements/_base.in
 shellingham==1.5.4
-    # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
-    #   typer
+    # via typer
 six==1.17.0
-    # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
-    #   python-dateutil
+    # via python-dateutil
 sniffio==1.3.1
-    # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
-    #   anyio
+    # via anyio
 sortedcontainers==2.4.0
     # via
     #   -c requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
-starlette==0.41.3
+starlette==0.46.2
     # via
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -808,21 +715,18 @@ starlette==0.41.3
     #   fastapi
 stream-zip==0.0.83
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 tblib==3.1.0
     # via
     #   -c requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
-tenacity==9.0.0
+tenacity==9.1.2
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 toolz==1.0.0
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   -c requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
@@ -835,35 +739,31 @@ tornado==6.5
     #   distributed
 tqdm==4.67.1
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-typer==0.15.2
+typer==0.15.4
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
-types-aiobotocore==2.19.0
+types-aiobotocore==2.22.0
     # via -r requirements/../../../packages/aws-library/requirements/_base.in
-types-aiobotocore-ec2==2.19.0
+types-aiobotocore-ec2==2.22.0
     # via types-aiobotocore
-types-aiobotocore-s3==2.19.0
+types-aiobotocore-s3==2.22.0
     # via types-aiobotocore
-types-aiobotocore-ssm==2.19.0
+types-aiobotocore-ssm==2.22.0
     # via types-aiobotocore
-types-awscrt==0.23.3
+types-awscrt==0.27.2
     # via botocore-stubs
-types-python-dateutil==2.9.0.20241206
+types-python-dateutil==2.9.0.20250516
+    # via arrow
+typing-extensions==4.13.2
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
-    #   arrow
-typing-extensions==4.12.2
-    # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   aiodebug
     #   anyio
+    #   exceptiongroup
     #   fastapi
     #   faststream
     #   opentelemetry-sdk
@@ -875,7 +775,10 @@ typing-extensions==4.12.2
     #   types-aiobotocore-ec2
     #   types-aiobotocore-s3
     #   types-aiobotocore-ssm
-urllib3==2.3.0
+    #   typing-inspection
+typing-inspection==0.4.0
+    # via pydantic
+urllib3==2.4.0
     # via
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -898,7 +801,6 @@ urllib3==2.3.0
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
@@ -906,19 +808,17 @@ urllib3==2.3.0
     #   botocore
     #   distributed
     #   requests
-uvicorn==0.32.1
+uvicorn==0.34.2
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 wrapt==1.17.2
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   aiobotocore
     #   deprecated
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-redis
-yarl==1.18.3
+yarl==1.20.0
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   aio-pika
@@ -930,6 +830,5 @@ zict==3.0.0
     #   distributed
 zipp==3.21.0
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.txt
     #   -c requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   importlib-metadata
