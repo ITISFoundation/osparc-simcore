@@ -1,6 +1,6 @@
 # simcore Celery library
 
-Provides a wrapper around Celery library.
+Provides a wrapper around Celery library [1].
 
 ## Installation
 
@@ -15,3 +15,6 @@ make install-dev
 make help
 make test-dev
 ```
+
+
+[1] https://github.com/celery/celery
