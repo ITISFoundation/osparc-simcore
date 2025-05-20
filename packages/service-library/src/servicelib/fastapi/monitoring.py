@@ -3,6 +3,7 @@
 import asyncio
 import logging
 from collections.abc import AsyncIterator
+from time import perf_counter
 from typing import Final
 
 from fastapi import FastAPI, Request, Response, status
@@ -39,10 +40,12 @@ class PrometheusMiddleware(BaseHTTPMiddleware):
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
         canonical_endpoint = request.url.path
+
         user_agent = request.headers.get(
             X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
         )
 
+        start_time = perf_counter()
         try:
             with record_request_metrics(
                 metrics=self.metrics,
@@ -52,18 +55,26 @@ class PrometheusMiddleware(BaseHTTPMiddleware):
             ):
                 response = await call_next(request)
                 status_code = response.status_code
+
+                # path_params are not available before calling call_next
+                # https://github.com/encode/starlette/issues/685#issuecomment-550240999
+                for k, v in request.path_params.items():
+                    key = "{" + k + "}"
+                    canonical_endpoint = canonical_endpoint.replace(f"/{v}", f"/{key}")
         except Exception:  # pylint: disable=broad-except
             # NOTE: The prometheus metrics middleware should be "outside" exception handling
             # middleware. See https://fastapi.tiangolo.com/advanced/middleware/#adding-asgi-middlewares
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
             raise
         finally:
+            reponse_latency_seconds = perf_counter() - start_time
             record_response_metrics(
                 metrics=self.metrics,
                 method=request.method,
                 endpoint=canonical_endpoint,
                 user_agent=user_agent,
                 http_status=status_code,
+                response_latency_seconds=reponse_latency_seconds,
             )
 
         return response
