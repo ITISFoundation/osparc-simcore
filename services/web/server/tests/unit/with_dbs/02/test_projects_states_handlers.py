@@ -1215,7 +1215,7 @@ async def test_project_node_lifetime(  # noqa: PLR0915
 @pytest.fixture
 async def client_on_running_server_factory(
     client: TestClient,
-) -> AsyncIterator[Callable]:
+) -> AsyncIterator[Callable[[], TestClient]]:
     # Creates clients connected to the same server as the reference client
     #
     # Implemented as aihttp_client but creates a client using a running server,
@@ -1225,7 +1225,7 @@ async def client_on_running_server_factory(
 
     clients = []
 
-    def go():
+    def go() -> TestClient:
         cli = TestClient(client.server, loop=asyncio.get_event_loop())
         assert client.server.started
         # AVOIDS client.start_server
@@ -1234,7 +1234,7 @@ async def client_on_running_server_factory(
 
     yield go
 
-    async def close_client_but_not_server(cli: TestClient):
+    async def close_client_but_not_server(cli: TestClient) -> None:
         # pylint: disable=protected-access
         if not cli._closed:  # noqa: SLF001
             for resp in cli._responses:  # noqa: SLF001
@@ -1259,7 +1259,7 @@ def clean_redis_table(redis_client) -> None:
 @pytest.mark.parametrize(*standard_role_response())
 async def test_open_shared_project_2_users_locked(
     client: TestClient,
-    client_on_running_server_factory: Callable,
+    client_on_running_server_factory: Callable[[], TestClient],
     logged_user: dict,
     shared_project: dict,
     socketio_client_factory: Callable,
@@ -1279,7 +1279,7 @@ async def test_open_shared_project_2_users_locked(
 
     client_1 = client
     client_id1 = client_session_id_factory()
-    client_2 = await client_on_running_server_factory()
+    client_2 = client_on_running_server_factory()
     client_id2 = client_session_id_factory()
 
     # 1. user 1 opens project
@@ -1442,7 +1442,7 @@ async def test_open_shared_project_2_users_locked(
 @pytest.mark.parametrize(*standard_role_response())
 async def test_open_shared_project_at_same_time(
     client: TestClient,
-    client_on_running_server_factory: Callable,
+    client_on_running_server_factory: Callable[[], TestClient],
     logged_user: dict,
     shared_project: ProjectDict,
     socketio_client_factory: Callable,
@@ -1471,7 +1471,7 @@ async def test_open_shared_project_at_same_time(
     ]
     # create other clients
     for _i in range(NUMBER_OF_ADDITIONAL_CLIENTS):
-        new_client = await client_on_running_server_factory()
+        new_client = client_on_running_server_factory()
         user = await log_client_in(
             new_client,
             {"role": user_role.name},
