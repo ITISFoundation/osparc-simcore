@@ -3,6 +3,7 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
+import asyncio
 import random
 import sys
 import textwrap
@@ -24,6 +25,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import aiopg.sa
 import pytest
+import pytest_asyncio
 import redis
 import redis.asyncio as aioredis
 import simcore_postgres_database.cli as pg_cli
@@ -204,7 +206,13 @@ def mocked_send_email(monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
 
-@pytest.fixture
+@pytest_asyncio.fixture(loop_scope="function")
+async def loop() -> asyncio.AbstractEventLoop:
+    # NOTE: This is a hack to ensure the loop is set in the aiohttp_server
+    return asyncio.get_running_loop()
+
+
+@pytest_asyncio.fixture(loop_scope="function")
 async def web_server(
     app_environment: EnvVarsDict,
     postgres_db: sa.engine.Engine,
