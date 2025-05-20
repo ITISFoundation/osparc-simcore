@@ -348,7 +348,9 @@ async def is_completed_upload_file(
         task_result = await celery_client.get_task_result(
             task_context=async_job_name_data.model_dump(), task_uuid=TaskUUID(future_id)
         )
-        assert isinstance(task_result, FileMetaData), f"{task_result=}"  # nosec
+        assert TypeAdapter(FileMetaData).validate_python(
+            task_result
+        ), f"{task_result=}"  # nosec
         new_fmd = task_result
         assert new_fmd.location_id == location_id  # nosec
         assert new_fmd.file_id == file_id  # nosec
