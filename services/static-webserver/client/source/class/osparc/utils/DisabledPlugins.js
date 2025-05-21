@@ -30,7 +30,6 @@ qx.Class.define("osparc.utils.DisabledPlugins", {
     META_MODELING: "WEBSERVER_META_MODELING",
     FUNCTIONS: "WEBSERVER_FUNCTIONS",
     LICENSES: "WEBSERVER_LICENSES",
-    FUNCTIONS: "WEBSERVER_FUNCTIONS",
 
     isExportDisabled: function() {
       return this.__isPluginDisabled(this.EXPORT);
@@ -56,10 +55,6 @@ qx.Class.define("osparc.utils.DisabledPlugins", {
 
     isLicensesDisabled: function() {
       return this.__isPluginDisabled(this.LICENSES);
-    },
-
-    isFunctionsDisabled: function() {
-      return this.__isPluginDisabled(this.FUNCTIONS);
     },
 
     __isPluginDisabled: function(key) {
