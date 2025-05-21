@@ -4,7 +4,6 @@
 # pylint: disable=too-many-arguments
 
 
-import asyncio
 import contextlib
 from collections.abc import AsyncIterator, Callable
 
@@ -46,8 +45,7 @@ from yarl import URL
 
 
 @pytest.fixture
-def client(
-    event_loop: asyncio.AbstractEventLoop,
+async def client(
     aiohttp_client: Callable,
     app_products_names: list[ProductName],
     disabled_setup_garbage_collector: MockType,
@@ -56,7 +54,7 @@ def client(
     web_server: TestServer,
 ) -> TestClient:
     assert app_products_names
-    return event_loop.run_until_complete(aiohttp_client(web_server))
+    return await aiohttp_client(web_server)
 
 
 async def test_two_steps_action_confirmation_workflow(
@@ -261,7 +259,6 @@ async def test_unregistered_product(
     assert client.app
 
     async with NewUser(app=client.app) as user:
-
         # allow in
         await groups_service.auto_add_user_to_product_group(
             client.app, user_id=user["id"], product_name=default_product_name

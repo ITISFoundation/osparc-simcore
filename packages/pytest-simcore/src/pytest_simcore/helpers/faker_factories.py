@@ -89,6 +89,7 @@ def random_pre_registration_details(
     user_id: int | None = None,
     created_by: int | None = None,
     product_name: str | None = None,
+    account_request_reviewed_by: int | None = None,
     **overrides,
 ):
     from simcore_postgres_database.models.users_details import (
@@ -121,6 +122,7 @@ def random_pre_registration_details(
         },
         "product_name": product_name,
         "created_by": created_by,  # user id
+        "account_request_reviewed_by": account_request_reviewed_by,
     }
 
     assert set(data.keys()).issubset(

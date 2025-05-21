@@ -42,13 +42,14 @@ _logger = logging.getLogger(__name__)
 
 async def pre_register_user(
     app: web.Application,
+    *,
     profile: PreRegisteredUserGet,
     creator_user_id: UserID,
     product_name: ProductName,
 ) -> UserForAdminGet:
 
     found = await search_users_as_admin(
-        app, email_glob=profile.email, include_products=False
+        app, email_glob=profile.email, product_name=product_name, include_products=False
     )
     if found:
         raise AlreadyPreRegisteredError(num_found=len(found), email=profile.email)
@@ -73,20 +74,16 @@ async def pre_register_user(
         if key in details:
             details[f"pre_{key}"] = details.pop(key)
 
-    # adds the product name to the extras field
-    extras = details.get("extras", {})
-    extras["product_name"] = product_name
-    details["extras"] = extras
-
-    await _users_repository.create_user_details(
+    await _users_repository.create_user_pre_registration(
         get_asyncpg_engine(app),
         email=profile.email,
         created_by=creator_user_id,
+        product_name=product_name,
         **details,
     )
 
     found = await search_users_as_admin(
-        app, email_glob=profile.email, include_products=False
+        app, email_glob=profile.email, product_name=product_name, include_products=False
     )
 
     assert len(found) == 1  # nosec
@@ -137,7 +134,11 @@ async def get_user_id_from_gid(app: web.Application, primary_gid: GroupID) -> Us
 
 
 async def search_users_as_admin(
-    app: web.Application, email_glob: str, *, include_products: bool = False
+    app: web.Application,
+    *,
+    email_glob: str,
+    product_name: ProductName | None = None,
+    include_products: bool = False,
 ) -> list[UserForAdminGet]:
     """
     WARNING: this information is reserved for admin users. Note that the returned model include UserForAdminGet
@@ -155,7 +156,9 @@ async def search_users_as_admin(
         return sql_like_pattern.replace("*", "%").replace("?", "_")
 
     rows = await _users_repository.search_users_and_get_profile(
-        get_asyncpg_engine(app), email_like=_glob_to_sql_like(email_glob)
+        get_asyncpg_engine(app),
+        email_like=_glob_to_sql_like(email_glob),
+        product_name=product_name,
     )
 
     async def _list_products_or_none(user_id):
