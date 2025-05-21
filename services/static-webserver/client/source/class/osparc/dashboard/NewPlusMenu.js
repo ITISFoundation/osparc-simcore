@@ -207,7 +207,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       osparc.store.Templates.getHypertools()
         .then(hypertools => {
           if (hypertools.length) {
-            const hypertoolsMenuButton = this.self().createMenuButton(osparc.data.model.StudyUI.HYPERTOOL_ICON(16), this.tr("Hypertools"));
+            const hypertoolsMenuButton = this.self().createMenuButton(null, this.tr("Hypertools"));
             this.addAt(hypertoolsMenuButton, this.__itemIdx);
             this.__itemIdx++;
 
@@ -215,6 +215,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
               appearance: "menu-wider",
             });
             hypertoolsMenuButton.setMenu(hypertoolsMenu);
+            this.self().setIcon(hypertoolsMenuButton, osparc.data.model.StudyUI.HYPERTOOL_ICON(16));
 
             hypertools.forEach(templateData => {
               const hypertoolButton = this.self().createMenuButton(templateData["icon"], templateData["name"]);
