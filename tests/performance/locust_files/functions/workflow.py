@@ -119,12 +119,35 @@ class MetaModelingUser(HttpUser):
         function = Function(
             title="Test function",
             description="Test function",
-            default_inputs={},
+            default_inputs={"input_0": f"{self._script_uuid}"},
         )
         response = self.client.post(
             "/v0/functions", json=function.model_dump(), auth=self._auth
         )
         response.raise_for_status()
+        self._function_uid = response.json().get("uid")
+        assert self._function_uid is not None
+
+        response = self.client.post(
+            f"/v0/functions/{self._function_uid}:run",
+            json={"input_1": f"{self._input_json_uuid}"},
+            auth=self._auth,
+            name="/v0/functions/{function_uid}:run",
+        )
+        response.raise_for_status()
+        self._run_uid = response.json().get("uid")
+        assert self._run_uid is not None
+
+        is_done = False
+        while not is_done:
+            response = self.client.get(
+                f"/v0/function_jobs/{self._run_uid}/status",
+                auth=self._auth,
+                name="/v0/function_jobs/{function_run_uid}/status",
+            )
+            response.raise_for_status()
+            status = response.json().get("status")
+            is_done = status in ["DONE", "FAILED"]
 
     def upload_file(self, file: Path) -> UUID:
         assert file.is_file()
