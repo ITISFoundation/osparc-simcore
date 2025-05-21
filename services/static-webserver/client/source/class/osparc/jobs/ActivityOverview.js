@@ -53,9 +53,8 @@ qx.Class.define("osparc.jobs.ActivityOverview", {
       runsHistoryTitleLayout.add(runsHistoryTitleHelper);
       this._add(runsHistoryTitleLayout);
 
-      const latestOnly = false;
       const projectUuid = projectData["uuid"];
-      const runsTable = new osparc.jobs.RunsTable(latestOnly, projectUuid);
+      const runsTable = new osparc.jobs.RunsTable(projectUuid);
       const columnModel = runsTable.getTableColumnModel();
       // Hide project name column
       columnModel.setColumnVisible(osparc.jobs.RunsTable.COLS.PROJECT_NAME.column, false);

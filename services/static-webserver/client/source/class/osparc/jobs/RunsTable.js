@@ -19,10 +19,10 @@
 qx.Class.define("osparc.jobs.RunsTable", {
   extend: qx.ui.table.Table,
 
-  construct: function(latestOnly = true, projectUuid = null) {
+  construct: function(projectUuid = null) {
     this.base(arguments);
 
-    const model = new osparc.jobs.RunsTableModel(latestOnly, projectUuid);
+    const model = new osparc.jobs.RunsTableModel(projectUuid);
     this.setTableModel(model);
 
     this.set({
