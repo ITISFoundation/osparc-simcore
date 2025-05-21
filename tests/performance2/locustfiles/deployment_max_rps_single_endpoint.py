@@ -5,10 +5,9 @@
 import logging
 
 import locust_plugins
+from common.deploy_auth import MonitoringBasicAuth
 from locust import task
 from locust.contrib.fasthttp import FastHttpUser
-from pydantic import Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
 
 logging.basicConfig(level=logging.INFO)
 
@@ -17,12 +16,6 @@ logging.basicConfig(level=logging.INFO)
 # this assert is added to avoid that pycln pre-commit hook does not
 # remove the import (the tool assumes the import is not necessary)
 assert locust_plugins  # nosec
-
-
-class MonitoringBasicAuth(BaseSettings):
-    model_config = SettingsConfigDict(extra="ignore")
-    SC_USER_NAME: str = Field(default=..., examples=["<your username>"])
-    SC_PASSWORD: str = Field(default=..., examples=["<your password>"])
 
 
 class WebApiUser(FastHttpUser):
