@@ -276,6 +276,7 @@ async def _get_data_from_port(
             archive_files: set[Path]
 
             if _is_zip_file(downloaded_file):
+                prunable_folder = PrunableFolder(final_path.parent)
                 with log_context(
                     _logger,
                     logging.DEBUG,
@@ -294,6 +295,7 @@ async def _get_data_from_port(
             else:
                 # move archive to directory as is
                 final_path = final_path / downloaded_file.name
+                prunable_folder = PrunableFolder(final_path.parent)
 
                 with log_context(
                     _logger, logging.DEBUG, f"moving {downloaded_file} to {final_path}"
@@ -305,7 +307,7 @@ async def _get_data_from_port(
 
             # NOTE: after the port content changes, make sure old files
             # which are no longer part of the port, are removed
-            PrunableFolder(final_path).prune(exclude=archive_files)
+            prunable_folder.prune(exclude=archive_files)
         else:
             transferred_bytes = sys.getsizeof(port_data)
 
