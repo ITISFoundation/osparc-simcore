@@ -252,8 +252,8 @@ async def list_my_service_history_latest_first(
         product_name=product_name,
         user_id=user_id,
         service_key=service_key,
-        limit=limit,
-        offset=offset,
+        pagination_limit=limit,
+        pagination_offset=offset,
         filters=TypeAdapter(ServiceDBFilters | None).validate_python(
             filters, from_attributes=True
         ),

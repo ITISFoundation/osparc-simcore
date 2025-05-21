@@ -144,8 +144,8 @@ async def list_latest_catalog_services(
     total_count, services = await repo.list_latest_services(
         product_name=product_name,
         user_id=user_id,
-        limit=limit,
-        offset=offset,
+        pagination_limit=limit,
+        pagination_offset=offset,
         filters=filters,
     )
 
@@ -519,11 +519,11 @@ async def list_user_service_release_history(
     # target service
     service_key: ServiceKey,
     # pagination
-    limit: PageLimitInt | None = None,
-    offset: NonNegativeInt | None = None,
+    pagination_limit: PageLimitInt | None = None,
+    pagination_offset: NonNegativeInt | None = None,
     # filters
     filters: ServiceDBFilters | None = None,
-    # options
+    # result options
     include_compatibility: bool = False,
 ) -> tuple[PageTotalCount, list[ServiceRelease]]:
 
@@ -533,8 +533,8 @@ async def list_user_service_release_history(
         product_name=product_name,
         user_id=user_id,
         key=service_key,
-        limit=limit,
-        offset=offset,
+        pagination_limit=pagination_limit,
+        pagination_offset=pagination_offset,
         filters=filters,
     )
 

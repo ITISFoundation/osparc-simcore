@@ -383,8 +383,8 @@ class ServicesRepository(BaseRepository):
         product_name: ProductName,
         user_id: UserID,
         # list args: pagination
-        limit: int | None = None,
-        offset: int | None = None,
+        pagination_limit: int | None = None,
+        pagination_offset: int | None = None,
         filters: ServiceDBFilters | None = None,
     ) -> tuple[PositiveInt, list[ServiceWithHistoryDBGet]]:
 
@@ -399,8 +399,8 @@ class ServicesRepository(BaseRepository):
             product_name=product_name,
             user_id=user_id,
             access_rights=AccessRightsClauses.can_read,
-            limit=limit,
-            offset=offset,
+            limit=pagination_limit,
+            offset=pagination_offset,
             filters=filters,
         )
 
@@ -475,8 +475,8 @@ class ServicesRepository(BaseRepository):
         # get args
         key: ServiceKey,
         # list args: pagination
-        limit: int | None = None,
-        offset: int | None = None,
+        pagination_limit: int | None = None,
+        pagination_offset: int | None = None,
         filters: ServiceDBFilters | None = None,
     ) -> tuple[PositiveInt, list[ReleaseDBGet]]:
 
@@ -540,8 +540,8 @@ class ServicesRepository(BaseRepository):
                 )
             )
             .order_by(sql.desc(_services_sql.by_version(services_meta_data.c.version)))
-            .offset(offset)
-            .limit(limit)
+            .offset(pagination_offset)
+            .limit(pagination_limit)
         )
 
         async with pass_or_acquire_connection(self.db_engine) as conn:

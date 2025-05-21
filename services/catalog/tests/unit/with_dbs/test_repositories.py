@@ -390,7 +390,7 @@ async def test_list_latest_services_with_pagination(
         assert service.version == expected_latest_version
 
     _, services_items = await services_repo.list_latest_services(
-        product_name=target_product, user_id=user_id, limit=2
+        product_name=target_product, user_id=user_id, pagination_limit=2
     )
     assert len(services_items) == 2
 
@@ -711,8 +711,8 @@ async def test_get_service_history_page(
         product_name=target_product,
         user_id=user_id,
         key=service_key,
-        limit=limit,
-        offset=offset,
+        pagination_limit=limit,
+        pagination_offset=offset,
     )
     assert total_count == num_versions
     assert len(paginated_history) == limit
