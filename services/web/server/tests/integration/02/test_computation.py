@@ -113,8 +113,7 @@ def user_role_response():
 
 
 @pytest.fixture
-def client(
-    event_loop: asyncio.AbstractEventLoop,
+async def client(
     postgres_db: sa.engine.Engine,
     rabbit_service: RabbitSettings,
     redis_settings: RedisSettings,
@@ -151,14 +150,12 @@ def client(
     setup_db_listener(app)
     # no garbage collector
 
-    return event_loop.run_until_complete(
-        aiohttp_client(
-            app,
-            server_kwargs={
-                "port": app_config["main"]["port"],
-                "host": app_config["main"]["host"],
-            },
-        )
+    return await aiohttp_client(
+        app,
+        server_kwargs={
+            "port": app_config["main"]["port"],
+            "host": app_config["main"]["host"],
+        },
     )
 
 
@@ -253,7 +250,7 @@ def _get_project_workbench_from_db(
         project_in_db
     ), f"missing pipeline in the database under comp_pipeline {project_id}"
     print(
-        f"<-- found following workbench: {json_dumps( project_in_db.workbench, indent=2)}"
+        f"<-- found following workbench: {json_dumps(project_in_db.workbench, indent=2)}"
     )
     return project_in_db.workbench
 

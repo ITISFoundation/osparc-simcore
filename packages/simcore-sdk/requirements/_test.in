@@ -19,11 +19,7 @@ faker
 flaky
 moto[server]
 pytest
-# ----
-# Overcomes "Known issues" in https://github.com/pytest-dev/pytest-asyncio/releases/tag/v0.23.8
-# IMPORTANT: This constraint can be removed when `test_pytest_asyncio_known_issue` passes with the new update of pytest-asyncio
-pytest-asyncio<0.23
-# ----
+pytest-asyncio
 pytest-cov
 pytest-icdiff
 pytest-instafail

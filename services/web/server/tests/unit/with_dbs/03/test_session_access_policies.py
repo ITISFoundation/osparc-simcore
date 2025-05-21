@@ -4,7 +4,6 @@
 # pylint: disable=too-many-arguments
 
 
-from asyncio import AbstractEventLoop
 from collections.abc import Callable
 from typing import Protocol
 
@@ -30,8 +29,7 @@ from simcore_service_webserver.session.plugin import setup_session
 
 
 @pytest.fixture
-def client(
-    event_loop: AbstractEventLoop,
+async def client(
     aiohttp_client: Callable,
     mock_env_devel_environment: EnvVarsDict,
 ) -> TestClient:
@@ -115,14 +113,13 @@ def client(
     setup_session(app)
 
     app.add_routes(routes)
-    return event_loop.run_until_complete(aiohttp_client(app))
+    return await aiohttp_client(app)
 
 
 class ClientRequestCallable(Protocol):
     async def __call__(
         self, client: TestClient, name: str, return_status: int | None = None
-    ) -> ClientResponse:
-        ...
+    ) -> ClientResponse: ...
 
 
 @pytest.fixture
@@ -157,7 +154,6 @@ async def test_login_then_submit_code(
 async def test_login_fails_then_no_access(
     client: TestClient, do_request: ClientRequestCallable
 ):
-
     response = await do_request(
         client, "auth_login", return_status=status.HTTP_500_INTERNAL_SERVER_ERROR
     )
