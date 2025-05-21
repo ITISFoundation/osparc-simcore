@@ -223,8 +223,8 @@ async def list_users_as_admin(
     Args:
         app: The web application instance
         filter_approved: If set, filters users by their approval status
-        limit: Maximum number of users to return
-        offset: Number of users to skip for pagination
+        pagination_limit: Maximum number of users to return
+        pagination_offset: Number of users to skip for pagination
 
     Returns:
         A tuple containing (list of user dictionaries, total count of users)

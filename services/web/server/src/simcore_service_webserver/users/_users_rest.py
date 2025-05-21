@@ -1,3 +1,5 @@
+from contextlib import suppress
+
 from aiohttp import web
 from models_library.api_schemas_webserver.users import (
     MyProfileGet,

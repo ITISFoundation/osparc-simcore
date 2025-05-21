@@ -12,9 +12,7 @@ from simcore_postgres_database.models.users_details import (
     users_pre_registration_details,
 )
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
-from simcore_service_webserver.users._users_repository import (
-    create_user_pre_registration,
-)
+from simcore_service_webserver.users import _users_repository
 
 
 async def test_create_user_pre_registration(
@@ -35,7 +33,7 @@ async def test_create_user_pre_registration(
     }
 
     # Act
-    pre_registration_id = await create_user_pre_registration(
+    pre_registration_id = await _users_repository.create_user_pre_registration(
         asyncpg_engine,
         email=test_email,
         created_by=created_by_user_id,
