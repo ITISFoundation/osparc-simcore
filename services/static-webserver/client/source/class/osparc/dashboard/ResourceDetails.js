@@ -98,9 +98,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
     popUpInWindow: function(resourceDetails) {
       // eslint-disable-next-line no-underscore-dangle
-      const resourceAlias = osparc.product.Utils.resourceTypeToAlias(resourceDetails.__resourceData["resourceType"], {firstUpperCase: true});
-      // eslint-disable-next-line no-underscore-dangle
-      const title = `${resourceAlias} ${qx.locale.Manager.tr("Details")} - ${resourceDetails.__resourceData.name}`;
+      const title = resourceDetails.__resourceData.name;
       const win = osparc.ui.window.Window.popUpInWindow(resourceDetails, title, this.WIDTH, this.HEIGHT).set({
         layout: new qx.ui.layout.Grow(),
       });
