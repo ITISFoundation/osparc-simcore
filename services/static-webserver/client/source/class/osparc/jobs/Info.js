@@ -24,8 +24,14 @@ qx.Class.define("osparc.jobs.Info", {
 
     this._setLayout(new qx.ui.layout.VBox());
 
-    const jobInfoViewer = this.getChildControl("job-info-viewer");
-    jobInfoViewer.setJson(info);
+    const divId = "job-info-viewer";
+    const htmlEmbed = osparc.wrapper.JsonFormatter.getInstance().createContainer(divId);
+    this._add(htmlEmbed, {
+      flex: 1
+    });
+    this.addListener("appear", () => {
+      osparc.wrapper.JsonFormatter.getInstance().setJson(info, divId);
+    });
   },
 
   statics: {
