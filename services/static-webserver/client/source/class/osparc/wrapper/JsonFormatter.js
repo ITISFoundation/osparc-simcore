@@ -95,6 +95,9 @@ qx.Class.define("osparc.wrapper.JsonFormatter", {
           #${divId} .json-formatter-key {
             font-size: 13px !important; /* actually keeping the default size */
           }
+          #${divId} .json-formatter-constructor-name {
+            display: none !important; /* Hide "Object" and "Array(n)" labels */
+          }
         `;
         document.head.appendChild(style);
       }
