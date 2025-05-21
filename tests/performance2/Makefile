@@ -30,7 +30,7 @@ GRAFANA_URL := http://127.0.0.1:3000/
 DEFAULT_PROCESSES := 4
 DEFAULT_USERS := 10
 DEFAULT_SPAWN_RATE := 1
-DEFAULT_RUN_TIME := 10s
+DEFAULT_RUN_TIME := 5m
 DEFAULT_HOST := http://localhost:8080
 
 # Function to generate Locust configuration file
