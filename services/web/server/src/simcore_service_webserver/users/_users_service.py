@@ -155,7 +155,7 @@ async def search_users_as_admin(
         # Convert glob wildcards to SQL LIKE wildcards
         return sql_like_pattern.replace("*", "%").replace("?", "_")
 
-    rows = await _users_repository.search_users_and_get_profile(
+    rows = await _users_repository.search_merged_pre_and_registered_users(
         get_asyncpg_engine(app),
         email_like=_glob_to_sql_like(email_glob),
         product_name=product_name,
@@ -232,12 +232,14 @@ async def list_users_as_admin(
     engine = get_asyncpg_engine(app)
 
     # Get user data with pagination
-    users_data, total_count = await _users_repository.list_users_for_admin(
-        engine,
-        product_name=product_name,
-        filter_account_request_status=filter_account_request_status,
-        pagination_limit=pagination_limit,
-        pagination_offset=pagination_offset,
+    users_data, total_count = (
+        await _users_repository.list_merged_pre_and_registered_users(
+            engine,
+            product_name=product_name,
+            filter_account_request_status=filter_account_request_status,
+            pagination_limit=pagination_limit,
+            pagination_offset=pagination_offset,
+        )
     )
 
     # For each user, append additional information if needed

@@ -351,3 +351,133 @@ async def test_create_pre_registration_with_existing_user_linking(
             )
         )
         await conn.commit()
+
+
+async def test_list_merged_pre_and_registered_users(
+    app: web.Application,
+    product_name: ProductName,
+    product_owner_user: dict[str, Any],
+):
+    """Tests that list_merged_pre_and_registered_users correctly merges users from both tables."""
+    # Arrange
+    asyncpg_engine = get_asyncpg_engine(app)
+    created_by_user_id = product_owner_user["id"]
+
+    # The product_owner_user is already a registered user associated with the product
+
+    # 1. Create a pre-registered user that is not in the users table
+    pre_reg_email = "pre.registered.only@example.com"
+    pre_reg_id = await _users_repository.create_user_pre_registration(
+        asyncpg_engine,
+        email=pre_reg_email,
+        created_by=created_by_user_id,
+        product_name=product_name,
+        pre_first_name="Pre-Registered",
+        pre_last_name="Only",
+        institution="Pre-Reg Institution",
+        address="123 Pre Street",
+        city="Pre City",
+        state="Pre State",
+        postal_code="12345",
+        country="US",
+    )
+
+    # 2. Create a pre-registration for the product_owner_user (both registered and pre-registered)
+    owner_pre_reg_id = await _users_repository.create_user_pre_registration(
+        asyncpg_engine,
+        email=product_owner_user["email"],
+        created_by=created_by_user_id,
+        product_name=product_name,
+        pre_first_name="Owner",
+        pre_last_name="PreReg",
+        institution="Owner Institution",
+        link_to_existing_user=True,  # This will link to the existing user
+    )
+
+    try:
+        # Act
+        users_list, total_count = (
+            await _users_repository.list_merged_pre_and_registered_users(
+                asyncpg_engine,
+                product_name=product_name,
+                filter_include_deleted=False,
+                pagination_limit=10,
+                pagination_offset=0,
+            )
+        )
+
+        # Assert
+
+        # 1. Check that we got the correct total count
+        assert (
+            total_count >= 2
+        ), "Should have at least 2 users (pre-registered only and product owner)"
+
+        # 2. Find the pre-registered only user in the results
+        pre_reg_only_user = next(
+            (user for user in users_list if user["email"] == pre_reg_email), None
+        )
+        assert pre_reg_only_user is not None, "Pre-registered user should be in results"
+        assert pre_reg_only_user["is_pre_registered"] is True
+        assert (
+            pre_reg_only_user["user_id"] is None
+        ), "Pre-registered only user shouldn't have a user_id"
+        assert pre_reg_only_user["institution"] == "Pre-Reg Institution"
+        assert pre_reg_only_user["first_name"] == "Pre-Registered"
+        assert pre_reg_only_user["last_name"] == "Only"
+        assert (
+            pre_reg_only_user["invited_by"] is not None
+        ), "Should have invited_by field"
+
+        # 3. Check the product owner (both registered and pre-registered)
+        product_owner = next(
+            (
+                user
+                for user in users_list
+                if user["email"] == product_owner_user["email"]
+            ),
+            None,
+        )
+        assert product_owner is not None, "Product owner should be in results"
+        assert (
+            product_owner["is_pre_registered"] is True
+        ), "Should prefer pre-registration record"
+        assert (
+            product_owner["user_id"] == product_owner_user["id"]
+        ), "Should be linked to existing user"
+        assert product_owner["institution"] == "Owner Institution"
+        assert (
+            product_owner["first_name"] == "Owner"
+        ), "Should use pre-registration first name"
+        assert (
+            product_owner["user_name"] is not None
+        ), "Should include user_name from users table"
+        assert (
+            product_owner["status"] is not None
+        ), "Should include status from users table"
+
+        # 4. Test filtering by account request status
+        pending_users, pending_count = (
+            await _users_repository.list_merged_pre_and_registered_users(
+                asyncpg_engine,
+                product_name=product_name,
+                filter_account_request_status=AccountRequestStatus.PENDING,
+                filter_include_deleted=False,
+            )
+        )
+
+        # Both pre-registrations should be in pending status by default
+        assert pending_count >= 2
+        assert len(pending_users) >= 2
+
+    finally:
+        # Clean up
+        async with asyncpg_engine.connect() as conn:
+            await conn.execute(
+                sa.delete(users_pre_registration_details).where(
+                    users_pre_registration_details.c.id.in_(
+                        [pre_reg_id, owner_pre_reg_id]
+                    )
+                )
+            )
+            await conn.commit()
