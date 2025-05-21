@@ -90,7 +90,7 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
       const getFetchPromise = (offset, limit) => {
         let promise;
         if (this.__projectUuid) {
-          promise = osparc.store.Jobs.getInstance().fetchJobsHistory(this.__projectUuid, offset, limit, JSON.stringify(this.getOrderBy()));
+          promise = osparc.store.Jobs.getInstance().fetchJobsHistory(this.__projectUuid, this.__includeChildren, offset, limit, JSON.stringify(this.getOrderBy()));
         } else {
           promise = osparc.store.Jobs.getInstance().fetchJobsActive(offset, limit, JSON.stringify(this.getOrderBy()));
         }
