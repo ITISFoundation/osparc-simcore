@@ -43,9 +43,12 @@ qx.Class.define("osparc.jobs.Info", {
       switch (id) {
         case "job-info-viewer": {
           control = new osparc.ui.basic.JsonTreeViewer();
+          /*
+          OM remove maybe
           const container = new qx.ui.container.Scroll();
           container.add(control);
-          this._add(container);
+          */
+          this._add(control);
           break;
         }
       }
