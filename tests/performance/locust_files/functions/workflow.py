@@ -99,9 +99,35 @@ class MetaModelingUser(HttpUser):
 
         super().__init__(*args, **kwargs)
 
-    def on_start(self) -> None:
-        response = self.client.get("/v0/me", auth=self._auth)  # fail fast
-        response.raise_for_status()
+    def on_stop(self) -> None:
+        if self._script_uuid is not None:
+            response = self.client.delete(
+                f"/v0/files/{self._script_uuid}",
+                name="/v0/files/[file_id]",
+                auth=self._auth,
+            )
+            response.raise_for_status()
+        if self._input_json_uuid is not None:
+            response = self.client.delete(
+                f"/v0/files/{self._input_json_uuid}",
+                name="/v0/files/[file_id]",
+                auth=self._auth,
+            )
+            response.raise_for_status()
+        if self._function_uid is not None:
+            response = self.client.delete(
+                f"/v0/functions/{self._function_uid}",
+                name="/v0/functions/[function_uid]",
+                auth=self._auth,
+            )
+            response.raise_for_status()
+        if self._run_uid is not None:
+            response = self.client.delete(
+                f"/v0/function_jobs/{self._run_uid}",
+                name="/v0/function_jobs/[function_run_uid]",
+                auth=self._auth,
+            )
+            response.raise_for_status()
 
     @task
     def run_function(self):
@@ -132,7 +158,7 @@ class MetaModelingUser(HttpUser):
             f"/v0/functions/{self._function_uid}:run",
             json={"input_1": f"{self._input_json_uuid}"},
             auth=self._auth,
-            name="/v0/functions/{function_uid}:run",
+            name="/v0/functions/[function_uid]:run",
         )
         response.raise_for_status()
         self._run_uid = response.json().get("uid")
@@ -143,7 +169,7 @@ class MetaModelingUser(HttpUser):
             response = self.client.get(
                 f"/v0/function_jobs/{self._run_uid}/status",
                 auth=self._auth,
-                name="/v0/function_jobs/{function_run_uid}/status",
+                name="/v0/function_jobs/[function_run_uid]/status",
             )
             response.raise_for_status()
             status = response.json().get("status")
