@@ -2,6 +2,7 @@ import logging
 from contextlib import suppress
 
 from aiohttp import web
+from common_library.users_enums import AccountRequestStatus
 from models_library.api_schemas_webserver.users import (
     MyProfileGet,
     MyProfilePatch,
@@ -178,8 +179,9 @@ async def list_users_for_admin(request: web.Request) -> web.Response:
 
     users, total_count = await _users_service.list_users_as_admin(
         request.app,
-        filter_account_request_status={"PENDING": AccountRequestStatus.PENDING}.get(
-            query_params.status or ""
+        product_name=req_ctx.product_name,
+        filter_account_request_status=(
+            AccountRequestStatus(query_params.status) if query_params.status else None
         ),
         pagination_limit=query_params.limit,
         pagination_offset=query_params.offset,
