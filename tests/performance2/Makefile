@@ -25,6 +25,12 @@ define create_locust_config
 		printf "$(YELLOW)First time setup: Creating Locust configuration file$(NC)\n"; \
 		read -p "Number of processes [4]: " processes; \
 		processes=$${processes:-4}; \
+		read -p "Number of users [10]: " users; \
+		users=$${users:-10}; \
+		read -p "Spawn rate [1]: " spawn_rate; \
+		spawn_rate=$${spawn_rate:-1}; \
+		read -p "Run time [10s]: " run_time; \
+		run_time=$${run_time:-10s}; \
 		read -p "Host to load test [http://localhost:8080]: " host; \
 		host=$${host:-http://localhost:8080}; \
 		echo; \
@@ -33,9 +39,9 @@ define create_locust_config
 		echo "locustfile = deployment_max_rps_test.py" >> $(LOCUST_CONFIG_FILE); \
 		echo "headless = true" >> $(LOCUST_CONFIG_FILE); \
 		echo "host = $$host" >> $(LOCUST_CONFIG_FILE); \
-		echo "users = 10" >> $(LOCUST_CONFIG_FILE); \
-		echo "spawn-rate = 1" >> $(LOCUST_CONFIG_FILE); \
-		echo "run-time = 10s" >> $(LOCUST_CONFIG_FILE); \
+		echo "users = $$users" >> $(LOCUST_CONFIG_FILE); \
+		echo "spawn-rate = $$spawn_rate" >> $(LOCUST_CONFIG_FILE); \
+		echo "run-time = $$run_time" >> $(LOCUST_CONFIG_FILE); \
 		echo "processes = $$processes" >> $(LOCUST_CONFIG_FILE); \
 		echo "" >> $(LOCUST_CONFIG_FILE); \
 		echo "[logging]" >> $(LOCUST_CONFIG_FILE); \
@@ -52,6 +58,12 @@ define create_locust_config_no_grafana
 		printf "$(YELLOW)First time setup: Creating Locust configuration file (no Grafana)$(NC)\n"; \
 		read -p "Number of processes [4]: " processes; \
 		processes=$${processes:-4}; \
+		read -p "Number of users [10]: " users; \
+		users=$${users:-10}; \
+		read -p "Spawn rate [1]: " spawn_rate; \
+		spawn_rate=$${spawn_rate:-1}; \
+		read -p "Run time [10s]: " run_time; \
+		run_time=$${run_time:-10s}; \
 		read -p "Host to load test [http://localhost:8080]: " host; \
 		host=$${host:-http://localhost:8080}; \
 		echo; \
@@ -60,9 +72,9 @@ define create_locust_config_no_grafana
 		echo "locustfile = deployment_max_rps_test.py" >> $(LOCUST_CONFIG_FILE)_no_grafana; \
 		echo "headless = false" >> $(LOCUST_CONFIG_FILE)_no_grafana; \
 		echo "host = $$host" >> $(LOCUST_CONFIG_FILE)_no_grafana; \
-		echo "users = 10" >> $(LOCUST_CONFIG_FILE)_no_grafana; \
-		echo "spawn-rate = 1" >> $(LOCUST_CONFIG_FILE)_no_grafana; \
-		echo "run-time = 10s" >> $(LOCUST_CONFIG_FILE)_no_grafana; \
+		echo "users = $$users" >> $(LOCUST_CONFIG_FILE)_no_grafana; \
+		echo "spawn-rate = $$spawn_rate" >> $(LOCUST_CONFIG_FILE)_no_grafana; \
+		echo "run-time = $$run_time" >> $(LOCUST_CONFIG_FILE)_no_grafana; \
 		echo "processes = $$processes" >> $(LOCUST_CONFIG_FILE)_no_grafana; \
 		echo "" >> $(LOCUST_CONFIG_FILE)_no_grafana; \
 		printf "$(GREEN)Locust configuration file (no Grafana) created. It won't be asked again.$(NC)\n"; \
@@ -109,6 +121,52 @@ test-deployment-no-grafana: _check_venv_active ## runs deployment test without G
 	@export $$(cat $(AUTH_CREDS_FILE) | xargs) && \
 	locust --config $(LOCUST_CONFIG_FILE)_no_grafana
 
+test-deployment-light: _check_venv_active ## runs a light load test with 5 users, 1 spawn rate and 10s runtime
+	@$(call prompt_for_credentials)
+	@printf "$(YELLOW)Creating light test configuration...$(NC)\n"
+	@echo "# Locust configuration file - Light Test" > $(LOCUST_CONFIG_FILE)_light; \
+	echo "[locust]" >> $(LOCUST_CONFIG_FILE)_light; \
+	echo "locustfile = deployment_max_rps_test.py" >> $(LOCUST_CONFIG_FILE)_light; \
+	echo "headless = true" >> $(LOCUST_CONFIG_FILE)_light; \
+	echo "host = $$(grep "host = " $(LOCUST_CONFIG_FILE) | cut -d= -f2 | xargs)" >> $(LOCUST_CONFIG_FILE)_light; \
+	echo "users = 5" >> $(LOCUST_CONFIG_FILE)_light; \
+	echo "spawn-rate = 1" >> $(LOCUST_CONFIG_FILE)_light; \
+	echo "run-time = 10s" >> $(LOCUST_CONFIG_FILE)_light; \
+	echo "processes = 2" >> $(LOCUST_CONFIG_FILE)_light; \
+	echo "" >> $(LOCUST_CONFIG_FILE)_light; \
+	echo "[logging]" >> $(LOCUST_CONFIG_FILE)_light; \
+	echo "level = INFO" >> $(LOCUST_CONFIG_FILE)_light;
+	@printf "$(YELLOW)Starting Locust with light load...$(NC)\n"
+	@export $$(cat $(AUTH_CREDS_FILE) | xargs) && \
+	locust --config $(LOCUST_CONFIG_FILE)_light \
+		--grafana-url http://$(HOST_IP):3000/ \
+		--pghost $(HOST_IP) \
+		--pgpassword=password \
+		--pguser=postgres
+
+test-deployment-heavy: _check_venv_active ## runs a heavy load test with 50 users, 5 spawn rate and 60s runtime
+	@$(call prompt_for_credentials)
+	@printf "$(YELLOW)Creating heavy test configuration...$(NC)\n"
+	@echo "# Locust configuration file - Heavy Test" > $(LOCUST_CONFIG_FILE)_heavy; \
+	echo "[locust]" >> $(LOCUST_CONFIG_FILE)_heavy; \
+	echo "locustfile = deployment_max_rps_test.py" >> $(LOCUST_CONFIG_FILE)_heavy; \
+	echo "headless = true" >> $(LOCUST_CONFIG_FILE)_heavy; \
+	echo "host = $$(grep "host = " $(LOCUST_CONFIG_FILE) | cut -d= -f2 | xargs)" >> $(LOCUST_CONFIG_FILE)_heavy; \
+	echo "users = 50" >> $(LOCUST_CONFIG_FILE)_heavy; \
+	echo "spawn-rate = 5" >> $(LOCUST_CONFIG_FILE)_heavy; \
+	echo "run-time = 60s" >> $(LOCUST_CONFIG_FILE)_heavy; \
+	echo "processes = 4" >> $(LOCUST_CONFIG_FILE)_heavy; \
+	echo "" >> $(LOCUST_CONFIG_FILE)_heavy; \
+	echo "[logging]" >> $(LOCUST_CONFIG_FILE)_heavy; \
+	echo "level = INFO" >> $(LOCUST_CONFIG_FILE)_heavy;
+	@printf "$(YELLOW)Starting Locust with heavy load...$(NC)\n"
+	@export $$(cat $(AUTH_CREDS_FILE) | xargs) && \
+	locust --config $(LOCUST_CONFIG_FILE)_heavy \
+		--grafana-url http://$(HOST_IP):3000/ \
+		--pghost $(HOST_IP) \
+		--pgpassword=password \
+		--pguser=postgres
+
 clear-credentials: ## Clear the cached authentication credentials
 	@if [ -f $(AUTH_CREDS_FILE) ]; then \
 		rm $(AUTH_CREDS_FILE); \
@@ -130,6 +188,12 @@ update-locust-config: ## Update the Locust configuration file
 	@printf "$(YELLOW)Updating Locust configuration:$(NC)\n"
 	@read -p "Number of processes [4]: " processes; \
 	processes=$${processes:-4}; \
+	read -p "Number of users [10]: " users; \
+	users=$${users:-10}; \
+	read -p "Spawn rate [1]: " spawn_rate; \
+	spawn_rate=$${spawn_rate:-1}; \
+	read -p "Run time [10s]: " run_time; \
+	run_time=$${run_time:-10s}; \
 	read -p "Host to load test [http://localhost:8080]: " host; \
 	host=$${host:-http://localhost:8080}; \
 	echo; \
@@ -138,9 +202,9 @@ update-locust-config: ## Update the Locust configuration file
 	echo "locustfile = deployment_max_rps_test.py" >> $(LOCUST_CONFIG_FILE); \
 	echo "headless = true" >> $(LOCUST_CONFIG_FILE); \
 	echo "host = $$host" >> $(LOCUST_CONFIG_FILE); \
-	echo "users = 10" >> $(LOCUST_CONFIG_FILE); \
-	echo "spawn-rate = 1" >> $(LOCUST_CONFIG_FILE); \
-	echo "run-time = 10s" >> $(LOCUST_CONFIG_FILE); \
+	echo "users = $$users" >> $(LOCUST_CONFIG_FILE); \
+	echo "spawn-rate = $$spawn_rate" >> $(LOCUST_CONFIG_FILE); \
+	echo "run-time = $$run_time" >> $(LOCUST_CONFIG_FILE); \
 	echo "processes = $$processes" >> $(LOCUST_CONFIG_FILE); \
 	echo "" >> $(LOCUST_CONFIG_FILE); \
 	echo "[logging]" >> $(LOCUST_CONFIG_FILE); \
@@ -151,6 +215,12 @@ update-locust-config-no-grafana: ## Update the Locust configuration file (no Gra
 	@printf "$(YELLOW)Updating Locust configuration (no Grafana):$(NC)\n"
 	@read -p "Number of processes [4]: " processes; \
 	processes=$${processes:-4}; \
+	read -p "Number of users [10]: " users; \
+	users=$${users:-10}; \
+	read -p "Spawn rate [1]: " spawn_rate; \
+	spawn_rate=$${spawn_rate:-1}; \
+	read -p "Run time [10s]: " run_time; \
+	run_time=$${run_time:-10s}; \
 	read -p "Host to load test [http://localhost:8080]: " host; \
 	host=$${host:-http://localhost:8080}; \
 	echo; \
@@ -159,9 +229,9 @@ update-locust-config-no-grafana: ## Update the Locust configuration file (no Gra
 	echo "locustfile = deployment_max_rps_test.py" >> $(LOCUST_CONFIG_FILE)_no_grafana; \
 	echo "headless = true" >> $(LOCUST_CONFIG_FILE)_no_grafana; \
 	echo "host = $$host" >> $(LOCUST_CONFIG_FILE)_no_grafana; \
-	echo "users = 10" >> $(LOCUST_CONFIG_FILE)_no_grafana; \
-	echo "spawn-rate = 1" >> $(LOCUST_CONFIG_FILE)_no_grafana; \
-	echo "run-time = 10s" >> $(LOCUST_CONFIG_FILE)_no_grafana; \
+	echo "users = $$users" >> $(LOCUST_CONFIG_FILE)_no_grafana; \
+	echo "spawn-rate = $$spawn_rate" >> $(LOCUST_CONFIG_FILE)_no_grafana; \
+	echo "run-time = $$run_time" >> $(LOCUST_CONFIG_FILE)_no_grafana; \
 	echo "processes = $$processes" >> $(LOCUST_CONFIG_FILE)_no_grafana; \
 	echo "" >> $(LOCUST_CONFIG_FILE)_no_grafana; \
 	echo "[logging]" >> $(LOCUST_CONFIG_FILE)_no_grafana; \
