@@ -437,7 +437,8 @@ async def create_user_pre_registration(
             )
             .returning(users_pre_registration_details.c.id)
         )
-        return result.scalar_one()
+        pre_registration_id: int = result.scalar_one()
+        return pre_registration_id
 
 
 async def get_user_billing_details(

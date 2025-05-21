@@ -1,6 +1,5 @@
 import logging
 from contextlib import suppress
-from itertools import product
 
 from aiohttp import web
 from models_library.api_schemas_webserver.users import (
