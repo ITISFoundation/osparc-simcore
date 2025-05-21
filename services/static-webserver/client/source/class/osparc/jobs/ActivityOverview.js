@@ -54,7 +54,8 @@ qx.Class.define("osparc.jobs.ActivityOverview", {
       this._add(runsHistoryTitleLayout);
 
       const projectUuid = projectData["uuid"];
-      const runsTable = new osparc.jobs.RunsTable(projectUuid);
+      const includeChildren = true;
+      const runsTable = new osparc.jobs.RunsTable(projectUuid, includeChildren);
       const columnModel = runsTable.getTableColumnModel();
       // Hide project name column
       columnModel.setColumnVisible(osparc.jobs.RunsTable.COLS.PROJECT_NAME.column, false);
@@ -81,7 +82,7 @@ qx.Class.define("osparc.jobs.ActivityOverview", {
       latestTasksTitleLayout.add(latestTasksTitleHelper);
       this._add(latestTasksTitleLayout);
 
-      const subRunsTable = new osparc.jobs.SubRunsTable(projectData["uuid"]);
+      const subRunsTable = new osparc.jobs.SubRunsTable(projectUuid, includeChildren);
       subRunsTable.set({
         maxHeight: 250,
       })
