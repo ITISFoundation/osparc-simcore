@@ -172,23 +172,26 @@ class ServiceGet(
     )
 
 
-class _BaseServiceGetV2(CatalogOutputSchema):
-    # Model used in catalog's rpc and rest interfaces
+class ServiceSummary(CatalogOutputSchema):
     key: ServiceKey
     version: ServiceVersion
-
     name: str
-    thumbnail: HttpUrl | None = None
-    icon: HttpUrl | None = None
     description: str
-
-    description_ui: bool = False
 
     version_display: str | None = None
 
+    contact: LowerCaseEmailStr | None
+
+
+class _BaseServiceGetV2(ServiceSummary):
+    # Model used in catalog's rpc and rest interfaces
+    thumbnail: HttpUrl | None = None
+    icon: HttpUrl | None = None
+
+    description_ui: bool = False
+
     service_type: Annotated[ServiceType, Field(alias="type")]
 
-    contact: LowerCaseEmailStr | None
     authors: Annotated[list[Author], Field(min_length=1)]
     owner: Annotated[
         LowerCaseEmailStr | None,
