@@ -94,7 +94,8 @@ qx.Class.define("osparc.data.model.StudyUI", {
     TEMPLATE_TYPE: "TEMPLATE",
     TUTORIAL_TYPE: "TUTORIAL",
     HYPERTOOL_TYPE: "HYPERTOOL",
-    HYPERTOOL_ICON: (iconSize = 22) => ("@FontAwesome5Solid/wrench/" + iconSize),
+    // HYPERTOOL_ICON: (iconSize = 22) => ("@FontAwesome5Solid/wrench/" + iconSize),
+    HYPERTOOL_ICON: (iconSize = 22) => "https://reserve.freesvg.org/img/cat_line_art_pitr_Kitty_icon.png",
   },
 
   members: {
