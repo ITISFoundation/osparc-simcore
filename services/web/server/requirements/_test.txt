@@ -7,7 +7,6 @@ aiohttp==3.11.18
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   aioresponses
-    #   pytest-aiohttp
 aioresponses==0.7.8
     # via -r requirements/_test.in
 aiosignal==1.2.0
@@ -210,7 +209,6 @@ pyrsistent==0.18.1
 pytest==8.3.5
     # via
     #   -r requirements/_test.in
-    #   pytest-aiohttp
     #   pytest-asyncio
     #   pytest-benchmark
     #   pytest-cov
@@ -220,13 +218,8 @@ pytest==8.3.5
     #   pytest-mock
     #   pytest-sugar
     #   pytest-xdist
-pytest-aiohttp==1.0.5
+pytest-asyncio==0.26.0
     # via -r requirements/_test.in
-pytest-asyncio==0.21.2
-    # via
-    #   -c requirements/../../../../requirements/constraints.txt
-    #   -r requirements/_test.in
-    #   pytest-aiohttp
 pytest-benchmark==5.1.0
     # via -r requirements/_test.in
 pytest-cov==6.0.0

@@ -36,9 +36,6 @@ urllib3>=1.26.5                               # https://github.com/advisories/GH
 sqlalchemy<2.0
 
 
-# SEE https://github.com/pytest-dev/pytest-asyncio/issues/706
-# Many tests fail with `RuntimeError: There is no current event loop in thread 'MainThread'`
-pytest-asyncio<0.24
 
 #
 # Bugs

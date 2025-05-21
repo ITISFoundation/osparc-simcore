@@ -1,64 +1,45 @@
 aiohappyeyeballs==2.4.6
-    # via
-    #   -c requirements/./_base.txt
-    #   aiohttp
+    # via aiohttp
 aiohttp==3.11.18
-    # via
-    #   -c requirements/./_base.txt
-    #   -r requirements/_aiohttp.in
+    # via -r requirements/_aiohttp.in
 aiopg==1.4.0
     # via -r requirements/_aiohttp.in
 aiosignal==1.3.2
-    # via
-    #   -c requirements/./_base.txt
-    #   aiohttp
+    # via aiohttp
 async-timeout==4.0.3
     # via aiopg
 attrs==25.1.0
     # via
-    #   -c requirements/./_base.txt
     #   -r requirements/_aiohttp.in
     #   aiohttp
     #   jsonschema
     #   referencing
 deprecated==1.2.18
     # via
-    #   -c requirements/./_base.txt
     #   opentelemetry-api
     #   opentelemetry-semantic-conventions
 frozenlist==1.5.0
     # via
-    #   -c requirements/./_base.txt
     #   aiohttp
     #   aiosignal
 greenlet==3.1.1
     # via sqlalchemy
 idna==3.10
-    # via
-    #   -c requirements/./_base.txt
-    #   yarl
+    # via yarl
 importlib-metadata==8.5.0
-    # via
-    #   -c requirements/./_base.txt
-    #   opentelemetry-api
+    # via opentelemetry-api
 jsonschema==4.23.0
-    # via
-    #   -c requirements/./_base.txt
-    #   -r requirements/_aiohttp.in
+    # via -r requirements/_aiohttp.in
 jsonschema-specifications==2024.10.1
-    # via
-    #   -c requirements/./_base.txt
-    #   jsonschema
+    # via jsonschema
 markupsafe==3.0.2
     # via werkzeug
 multidict==6.1.0
     # via
-    #   -c requirements/./_base.txt
     #   aiohttp
     #   yarl
 opentelemetry-api==1.30.0
     # via
-    #   -c requirements/./_base.txt
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-aiohttp-client
     #   opentelemetry-instrumentation-aiohttp-server
@@ -67,7 +48,6 @@ opentelemetry-api==1.30.0
     #   opentelemetry-semantic-conventions
 opentelemetry-instrumentation==0.51b0
     # via
-    #   -c requirements/./_base.txt
     #   opentelemetry-instrumentation-aiohttp-client
     #   opentelemetry-instrumentation-aiohttp-server
     #   opentelemetry-instrumentation-aiopg
@@ -82,25 +62,20 @@ opentelemetry-instrumentation-dbapi==0.51b0
     # via opentelemetry-instrumentation-aiopg
 opentelemetry-semantic-conventions==0.51b0
     # via
-    #   -c requirements/./_base.txt
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-aiohttp-client
     #   opentelemetry-instrumentation-aiohttp-server
     #   opentelemetry-instrumentation-dbapi
 opentelemetry-util-http==0.51b0
     # via
-    #   -c requirements/./_base.txt
     #   opentelemetry-instrumentation-aiohttp-client
     #   opentelemetry-instrumentation-aiohttp-server
 packaging==24.2
-    # via
-    #   -c requirements/./_base.txt
-    #   opentelemetry-instrumentation
+    # via opentelemetry-instrumentation
 prometheus-client==0.21.1
     # via -r requirements/_aiohttp.in
 propcache==0.3.0
     # via
-    #   -c requirements/./_base.txt
     #   aiohttp
     #   yarl
 psycopg2-binary==2.9.10
@@ -109,12 +84,10 @@ psycopg2-binary==2.9.10
     #   sqlalchemy
 referencing==0.35.1
     # via
-    #   -c requirements/./_base.txt
     #   jsonschema
     #   jsonschema-specifications
 rpds-py==0.23.1
     # via
-    #   -c requirements/./_base.txt
     #   jsonschema
     #   referencing
 sqlalchemy==1.4.54
@@ -123,7 +96,6 @@ werkzeug==3.1.3
     # via -r requirements/_aiohttp.in
 wrapt==1.17.2
     # via
-    #   -c requirements/./_base.txt
     #   deprecated
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-aiohttp-client
@@ -131,10 +103,6 @@ wrapt==1.17.2
     #   opentelemetry-instrumentation-aiopg
     #   opentelemetry-instrumentation-dbapi
 yarl==1.18.3
-    # via
-    #   -c requirements/./_base.txt
-    #   aiohttp
+    # via aiohttp
 zipp==3.21.0
-    # via
-    #   -c requirements/./_base.txt
-    #   importlib-metadata
+    # via importlib-metadata
