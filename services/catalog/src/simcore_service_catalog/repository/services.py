@@ -376,6 +376,46 @@ class ServicesRepository(BaseRepository):
             )
         return None
 
+    async def list_all_services(
+        self,
+        *,
+        # access-rights
+        product_name: ProductName,
+        user_id: UserID,
+        # list args: pagination
+        pagination_limit: int | None = None,
+        pagination_offset: int | None = None,
+        filters: ServiceDBFilters | None = None,
+    ) -> tuple[PositiveInt, list[ServiceMetaDataDBGet]]:
+        # get page count
+        stmt_total = _services_sql.all_services_total_count_stmt(
+            product_name=product_name,
+            user_id=user_id,
+            access_rights=AccessRightsClauses.can_read,
+            filters=filters,
+        )
+
+        # get page content
+        stmt_page = _services_sql.list_all_services_stmt(
+            product_name=product_name,
+            user_id=user_id,
+            access_rights=AccessRightsClauses.can_read,
+            limit=pagination_limit,
+            offset=pagination_offset,
+            filters=filters,
+        )
+
+        async with self.db_engine.connect() as conn:
+            result = await conn.execute(stmt_total)
+            total_count = result.scalar() or 0
+
+            items_page = [
+                ServiceMetaDataDBGet.model_validate(row)
+                async for row in await conn.stream(stmt_page)
+            ]
+
+        return (total_count, items_page)
+
     async def list_latest_services(
         self,
         *,
