@@ -71,9 +71,9 @@ async def _forget_product_name(request: web.Request) -> ProductName | None:
 
 
 @pytest.fixture
-def set_products_in_app_state() -> Callable[
-    [web.Application, OrderedDict[str, Product]], None
-]:
+def set_products_in_app_state() -> (
+    Callable[[web.Application, OrderedDict[str, Product]], None]
+):
     """
     Add products in app's state to avoid setting up a full database in tests
 
@@ -205,8 +205,7 @@ def app_routes(
 
 
 @pytest.fixture
-def client(
-    event_loop: asyncio.AbstractEventLoop,
+async def client(
     aiohttp_client: Callable[..., Awaitable[TestClient]],
     mocker: MockerFixture,
     app_products: OrderedDict[str, Product],
@@ -234,7 +233,7 @@ def client(
     set_products_in_app_state(app, app_products)
     app.middlewares.append(discover_product_middleware)
 
-    return event_loop.run_until_complete(aiohttp_client(app))
+    return await aiohttp_client(app)
 
 
 @pytest.fixture
@@ -254,7 +253,6 @@ async def test_product_in_session(
     expected_product_name: ProductName,
     basic_db_funs_mocked: None,
 ):
-
     resp = await client.post("/v0/public")
     assert resp.status == status.HTTP_401_UNAUTHORIZED, f"error: {await resp.text()}"
 
@@ -345,7 +343,6 @@ async def test_hack_product_session(
     get_active_user_or_none_dbmock: MagicMock,
     is_user_in_product_name_dbmock: MagicMock,
 ):
-
     resp = await client.post("/v0/hack/s4l")
     assert resp.ok
 

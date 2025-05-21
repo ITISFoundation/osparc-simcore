@@ -5,7 +5,7 @@ import jsonschema
 from fastapi import APIRouter, Depends, Request, status
 from fastapi_pagination.api import create_page
 from jsonschema import ValidationError
-from models_library.api_schemas_webserver.functions_wb_schema import (
+from models_library.api_schemas_api_server.functions import (
     Function,
     FunctionClass,
     FunctionID,
@@ -39,6 +39,7 @@ from ..dependencies.services import get_api_client, get_job_service, get_solver_
 from ..dependencies.webserver_http import get_webserver_session
 from ..dependencies.webserver_rpc import get_wb_api_rpc_client
 from . import solvers_jobs, studies_jobs
+from ._constants import FMSG_CHANGELOG_NEW_IN_VERSION, create_route_description
 from .function_jobs_routes import register_function_job
 
 # pylint: disable=too-many-arguments
@@ -53,12 +54,19 @@ _COMMON_FUNCTION_ERROR_RESPONSES: Final[dict] = {
     },
 }
 
+FIRST_RELEASE_VERSION = "0.8.0"
+
 
 @function_router.post(
     "",
     response_model=RegisteredFunction,
     responses={**_COMMON_FUNCTION_ERROR_RESPONSES},
-    description="Create function",
+    description=create_route_description(
+        base="Create function",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format(FIRST_RELEASE_VERSION),
+        ],
+    ),
 )
 async def register_function(
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
@@ -71,7 +79,12 @@ async def register_function(
     "/{function_id:uuid}",
     response_model=RegisteredFunction,
     responses={**_COMMON_FUNCTION_ERROR_RESPONSES},
-    description="Get function",
+    description=create_route_description(
+        base="Get function",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format(FIRST_RELEASE_VERSION),
+        ],
+    ),
 )
 async def get_function(
     function_id: FunctionID,
@@ -81,7 +94,14 @@ async def get_function(
 
 
 @function_router.get(
-    "", response_model=Page[RegisteredFunction], description="List functions"
+    "",
+    response_model=Page[RegisteredFunction],
+    description=create_route_description(
+        base="List functions",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.8.0"),
+        ],
+    ),
 )
 async def list_functions(
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
@@ -99,11 +119,44 @@ async def list_functions(
     )
 
 
+@function_router.get(
+    "/{function_id:uuid}/jobs",
+    response_model=Page[RegisteredFunctionJob],
+    description=create_route_description(
+        base="List function jobs for a function",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format(FIRST_RELEASE_VERSION),
+        ],
+    ),
+)
+async def list_function_jobs_for_functionid(
+    function_id: FunctionID,
+    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
+    page_params: Annotated[PaginationParams, Depends()],
+):
+    function_jobs_list, meta = await wb_api_rpc.list_function_jobs(
+        pagination_offset=page_params.offset,
+        pagination_limit=page_params.limit,
+        filter_by_function_id=function_id,
+    )
+
+    return create_page(
+        function_jobs_list,
+        total=meta.total,
+        params=page_params,
+    )
+
+
 @function_router.patch(
     "/{function_id:uuid}/title",
     response_model=RegisteredFunction,
     responses={**_COMMON_FUNCTION_ERROR_RESPONSES},
-    description="Update function",
+    description=create_route_description(
+        base="Update function",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format(FIRST_RELEASE_VERSION),
+        ],
+    ),
 )
 async def update_function_title(
     function_id: FunctionID,
@@ -123,7 +176,12 @@ async def update_function_title(
     "/{function_id:uuid}/description",
     response_model=RegisteredFunction,
     responses={**_COMMON_FUNCTION_ERROR_RESPONSES},
-    description="Update function",
+    description=create_route_description(
+        base="Update function",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format(FIRST_RELEASE_VERSION),
+        ],
+    ),
 )
 async def update_function_description(
     function_id: FunctionID,
@@ -157,7 +215,12 @@ def _join_inputs(
     "/{function_id:uuid}/input_schema",
     response_model=FunctionInputSchema,
     responses={**_COMMON_FUNCTION_ERROR_RESPONSES},
-    description="Get function input schema",
+    description=create_route_description(
+        base="Get function input schema",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format(FIRST_RELEASE_VERSION),
+        ],
+    ),
 )
 async def get_function_inputschema(
     function_id: FunctionID,
@@ -171,7 +234,12 @@ async def get_function_inputschema(
     "/{function_id:uuid}/output_schema",
     response_model=FunctionInputSchema,
     responses={**_COMMON_FUNCTION_ERROR_RESPONSES},
-    description="Get function input schema",
+    description=create_route_description(
+        base="Get function output schema",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format(FIRST_RELEASE_VERSION),
+        ],
+    ),
 )
 async def get_function_outputschema(
     function_id: FunctionID,
@@ -188,7 +256,12 @@ async def get_function_outputschema(
         status.HTTP_400_BAD_REQUEST: {"description": "Invalid inputs"},
         status.HTTP_404_NOT_FOUND: {"description": "Function not found"},
     },
-    description="Validate inputs against the function's input schema",
+    description=create_route_description(
+        base="Validate inputs against the function's input schema",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format(FIRST_RELEASE_VERSION),
+        ],
+    ),
 )
 async def validate_function_inputs(
     function_id: FunctionID,
@@ -219,7 +292,12 @@ async def validate_function_inputs(
     "/{function_id:uuid}:run",
     response_model=RegisteredFunctionJob,
     responses={**_COMMON_FUNCTION_ERROR_RESPONSES},
-    description="Run function",
+    description=create_route_description(
+        base="Run function",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format(FIRST_RELEASE_VERSION),
+        ],
+    ),
 )
 async def run_function(  # noqa: PLR0913
     request: Request,
@@ -330,7 +408,12 @@ async def run_function(  # noqa: PLR0913
     "/{function_id:uuid}",
     response_model=None,
     responses={**_COMMON_FUNCTION_ERROR_RESPONSES},
-    description="Delete function",
+    description=create_route_description(
+        base="Delete function",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format(FIRST_RELEASE_VERSION),
+        ],
+    ),
 )
 async def delete_function(
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
@@ -351,7 +434,12 @@ _COMMON_FUNCTION_JOB_ERROR_RESPONSES: Final[dict] = {
     "/{function_id:uuid}:map",
     response_model=RegisteredFunctionJobCollection,
     responses={**_COMMON_FUNCTION_ERROR_RESPONSES},
-    description="Map function over input parameters",
+    description=create_route_description(
+        base="Map function over input parameters",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format(FIRST_RELEASE_VERSION),
+        ],
+    ),
 )
 async def map_function(  # noqa: PLR0913
     function_id: FunctionID,

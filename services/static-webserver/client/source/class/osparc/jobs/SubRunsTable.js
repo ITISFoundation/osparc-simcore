@@ -41,7 +41,7 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
     const fontButtonRendererInfo = new osparc.ui.table.cellrenderer.ImageButtonRenderer("info", iconPathInfo);
     columnModel.setDataCellRenderer(this.self().COLS.INFO.column, fontButtonRendererInfo);
 
-    const iconPathLogs = "osparc/icons/logs-text.svg";
+    const iconPathLogs = "osparc/icons/file-download-text.svg";
     const fontButtonRendererLogs = new osparc.ui.table.cellrenderer.ImageButtonRenderer("logs", iconPathLogs);
     columnModel.setDataCellRenderer(this.self().COLS.LOGS.column, fontButtonRendererLogs);
 
@@ -108,7 +108,7 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
         id: "credits",
         column: 9,
         label: qx.locale.Manager.tr("Credits"),
-        width: 50
+        width: 70
       },
       INFO: {
         id: "info",

@@ -19,6 +19,9 @@ def dask_workers_config() -> dict[str, Any]:
             "options": {
                 "nthreads": 2,
                 "resources": {"CPU": 2, "RAM": 48e9},
+                "preload": (
+                    "dask_task_models_library.plugins.task_life_cycle_worker_plugin",
+                ),
             },
         },
         "gpu-worker": {
@@ -30,6 +33,9 @@ def dask_workers_config() -> dict[str, Any]:
                     "GPU": 1,
                     "RAM": 48e9,
                 },
+                "preload": (
+                    "dask_task_models_library.plugins.task_life_cycle_worker_plugin",
+                ),
             },
         },
         "large-ram-worker": {
@@ -40,6 +46,9 @@ def dask_workers_config() -> dict[str, Any]:
                     "CPU": 8,
                     "RAM": 768e9,
                 },
+                "preload": (
+                    "dask_task_models_library.plugins.task_life_cycle_worker_plugin",
+                ),
             },
         },
     }
@@ -54,6 +63,9 @@ def dask_scheduler_config(
         "options": {
             "port": unused_tcp_port_factory(),
             "dashboard_address": f":{unused_tcp_port_factory()}",
+            "preload": (
+                "dask_task_models_library.plugins.task_life_cycle_scheduler_plugin",
+            ),
         },
     }
 

@@ -8,9 +8,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 # import simcore_service_webserver.functions._functions_controller_rpc as functions_rpc
-from models_library.api_schemas_webserver.functions_wb_schema import (
+from models_library.api_schemas_webserver.functions import (
     Function,
-    FunctionIDNotFoundError,
     FunctionJobCollection,
     FunctionJobIDNotFoundError,
     JSONFunctionInputSchema,
@@ -18,6 +17,7 @@ from models_library.api_schemas_webserver.functions_wb_schema import (
     ProjectFunction,
     ProjectFunctionJob,
 )
+from models_library.functions import FunctionIDNotFoundError
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient
@@ -447,6 +447,65 @@ async def test_list_function_jobs(
     # Assert the list contains the registered job
     assert len(jobs) > 0
     assert any(j.uid == registered_job.uid for j in jobs)
+
+
+async def test_list_function_jobs_for_functionid(
+    client: TestClient, rpc_client: RabbitMQRPCClient, mock_function: ProjectFunction
+):
+    # Register the function first
+    first_registered_function = await functions_rpc.register_function(
+        rabbitmq_rpc_client=rpc_client, function=mock_function
+    )
+    second_registered_function = await functions_rpc.register_function(
+        rabbitmq_rpc_client=rpc_client, function=mock_function
+    )
+
+    first_registered_function_jobs = []
+    second_registered_function_jobs = []
+    for i_job in range(6):
+        if i_job < 3:
+            function_job = ProjectFunctionJob(
+                function_uid=first_registered_function.uid,
+                title="Test Function Job",
+                description="A test function job",
+                project_job_id=uuid4(),
+                inputs={"input1": "value1"},
+                outputs={"output1": "result1"},
+            )
+            # Register the function job
+            first_registered_function_jobs.append(
+                await functions_rpc.register_function_job(
+                    rabbitmq_rpc_client=rpc_client, function_job=function_job
+                )
+            )
+        else:
+            function_job = ProjectFunctionJob(
+                function_uid=second_registered_function.uid,
+                title="Test Function Job",
+                description="A test function job",
+                project_job_id=uuid4(),
+                inputs={"input1": "value1"},
+                outputs={"output1": "result1"},
+            )
+            # Register the function job
+            second_registered_function_jobs.append(
+                await functions_rpc.register_function_job(
+                    rabbitmq_rpc_client=rpc_client, function_job=function_job
+                )
+            )
+
+    # List function jobs for a specific function ID
+    jobs, _ = await functions_rpc.list_function_jobs(
+        rabbitmq_rpc_client=rpc_client,
+        pagination_limit=10,
+        pagination_offset=0,
+        filter_by_function_id=first_registered_function.uid,
+    )
+
+    # Assert the list contains the registered job
+    assert len(jobs) > 0
+    assert len(jobs) == 3
+    assert all(j.function_uid == first_registered_function.uid for j in jobs)
 
 
 async def test_delete_function_job(

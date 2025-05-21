@@ -3,8 +3,8 @@
 # pylint:disable=redefined-outer-name
 
 import json
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, Dict
 
 from simcore_sdk.node_ports_common.dbmanager import DBManager
 
@@ -20,7 +20,7 @@ async def test_db_manager_read_config(
     project_id: str,
     node_uuid: str,
     node_ports_config: None,
-    default_configuration: Dict,
+    default_configuration: dict,
 ):
     db_manager = DBManager()
     ports_configuration_str = await db_manager.get_ports_configuration_from_node_uuid(
