@@ -1,4 +1,5 @@
 # Ignore credentials file
 .auth-credentials.env
-# Ignore locust parameters
-.locust-env.txt
+# Ignore locust configuration
+.locust.conf
+.locust.conf_no_grafana
