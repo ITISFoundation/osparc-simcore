@@ -182,8 +182,6 @@ class ServiceSummary(CatalogOutputSchema):
 
     contact: LowerCaseEmailStr | None
 
-    service_type: Annotated[ServiceType, Field(alias="type")]
-
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
         schema.update(
@@ -196,7 +194,6 @@ class ServiceSummary(CatalogOutputSchema):
                         "description": _EXAMPLE_SLEEPER["description"],
                         "version_display": _EXAMPLE_SLEEPER["version_display"],
                         "contact": _EXAMPLE_SLEEPER["contact"],
-                        "type": _EXAMPLE_SLEEPER["type"],
                     },
                     {
                         "key": _EXAMPLE_FILEPICKER["key"],
@@ -205,7 +202,6 @@ class ServiceSummary(CatalogOutputSchema):
                         "description": _EXAMPLE_FILEPICKER["description"],
                         "version_display": None,
                         "contact": _EXAMPLE_FILEPICKER["contact"],
-                        "type": _EXAMPLE_FILEPICKER["type"],
                     },
                 ]
             }
@@ -220,6 +216,9 @@ class ServiceSummary(CatalogOutputSchema):
 
 class _BaseServiceGetV2(ServiceSummary):
     # Model used in catalog's rpc and rest interfaces
+
+    service_type: Annotated[ServiceType, Field(alias="type")]
+
     thumbnail: HttpUrl | None = None
     icon: HttpUrl | None = None
 
