@@ -105,13 +105,13 @@ qx.Class.define("osparc.wrapper.JsonFormatter", {
       return container
     },
 
-    setData: function(myJSON, divId) {
+    setJson: function(jsonObject, divId) {
       // Remove previous content
       const container = document.getElementById(divId);
       container.innerHTML = "";
 
       // Render JSON
-      const formatter = new JSONFormatter(myJSON, 2); // 2 = expand depth
+      const formatter = new JSONFormatter(jsonObject, 2); // 2 = expand depth
       container.appendChild(formatter.render());
     },
   }

@@ -30,12 +30,8 @@ qx.Class.define("osparc.jobs.Info", {
       flex: 1
     });
     this.addListener("appear", () => {
-      osparc.wrapper.JsonFormatter.getInstance().setData(info, divId);
+      osparc.wrapper.JsonFormatter.getInstance().setJson(info, divId);
     });
-
-    return;
-    const jobInfoViewer = this.getChildControl("job-info-viewer");
-    jobInfoViewer.setJson(info);
   },
 
   statics: {
