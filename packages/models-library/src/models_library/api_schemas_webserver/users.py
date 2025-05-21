@@ -291,7 +291,7 @@ class UserForAdminGet(OutputSchema):
     ] = DEFAULT_FACTORY
 
     # authorization
-    invited_by: str | None = None
+    invited_by: Annotated[str | None, Field(alias="created_by")] = None
 
     # user status
     registered: bool

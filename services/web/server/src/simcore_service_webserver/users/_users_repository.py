@@ -807,21 +807,6 @@ async def list_merged_pre_and_registered_users(
     Returns:
         Tuple of (list of merged user data, total count)
     """
-    # Create alias for users table for creator and reviewer lookups
-    creators_alias = sa.alias(users, name="creators")
-    reviewers_alias = sa.alias(users, name="reviewers")
-
-    # Query for pre-registered users
-    invited_by = (
-        sa.select(
-            creators_alias.c.name,
-        )
-        .where(users_pre_registration_details.c.created_by == creators_alias.c.id)
-        .correlate(None)
-        .scalar_subquery()
-        .label("invited_by")
-    )
-
     # Base where conditions for both queries
     pre_reg_where = [users_pre_registration_details.c.product_name == product_name]
     users_where = []
@@ -851,7 +836,7 @@ async def list_merged_pre_and_registered_users(
             users_pre_registration_details.c.state,
             users_pre_registration_details.c.postal_code,
             users_pre_registration_details.c.country,
-            users_pre_registration_details.c.user_id,
+            users_pre_registration_details.c.user_id.label("pre_reg_user_id"),
             users_pre_registration_details.c.extras,
             users_pre_registration_details.c.created,
             users_pre_registration_details.c.account_request_status,
@@ -859,7 +844,8 @@ async def list_merged_pre_and_registered_users(
             users.c.name.label("user_name"),
             users.c.status,
             users.c.created_at,
-            invited_by,
+            # Use created_by directly instead of a subquery
+            users_pre_registration_details.c.created_by.label("created_by"),
             sa.literal(True).label("is_pre_registered"),
         )
         .select_from(
@@ -883,7 +869,7 @@ async def list_merged_pre_and_registered_users(
             sa.literal(None).label("state"),
             sa.literal(None).label("postal_code"),
             sa.literal(None).label("country"),
-            users.c.id.label("user_id"),
+            sa.literal(None).label("pre_reg_user_id"),
             sa.literal(None).label("extras"),
             users.c.created_at.label("created"),
             sa.literal(None).label("account_request_status"),
@@ -891,7 +877,8 @@ async def list_merged_pre_and_registered_users(
             users.c.name.label("user_name"),
             users.c.status,
             users.c.created_at,
-            sa.literal(None).label("invited_by"),
+            # Match the created_by field from the pre_reg query
+            sa.literal(None).label("created_by"),
             sa.literal(False).label("is_pre_registered"),
         )
         .select_from(
@@ -905,16 +892,17 @@ async def list_merged_pre_and_registered_users(
     # Combine with a UNION ALL query
     merged_query = pre_reg_query.union_all(users_query)
 
-    # Add distinct on user_id to eliminate duplicates
+    # Add distinct on email to eliminate duplicates
+    merged_query_subq = merged_query.subquery()
     distinct_query = (
-        sa.select(merged_query.c)
-        .select_from(merged_query)
-        .distinct(merged_query.c.email)
+        sa.select(merged_query_subq)
+        .select_from(merged_query_subq)
+        .distinct(merged_query_subq.c.email)
         .order_by(
-            merged_query.c.email,
+            merged_query_subq.c.email,
             # Prioritize pre-registration records if duplicate emails exist
-            merged_query.c.is_pre_registered.desc(),
-            merged_query.c.created.desc(),
+            merged_query_subq.c.is_pre_registered.desc(),
+            merged_query_subq.c.created.desc(),
         )
         .limit(pagination_limit)
         .offset(pagination_offset)
@@ -922,7 +910,10 @@ async def list_merged_pre_and_registered_users(
 
     # Count query (for pagination)
     count_query = sa.select(sa.func.count().label("total")).select_from(
-        sa.select(merged_query.c.email).select_from(merged_query).distinct().subquery()
+        sa.select(merged_query_subq.c.email)
+        .select_from(merged_query_subq)
+        .distinct()
+        .subquery()
     )
 
     _logger.debug(

@@ -419,15 +419,19 @@ async def test_list_merged_pre_and_registered_users(
         )
         assert pre_reg_only_user is not None, "Pre-registered user should be in results"
         assert pre_reg_only_user["is_pre_registered"] is True
+        # Check the pre_registration user_id is None but using the new column name
+        assert pre_reg_only_user["pre_reg_user_id"] is None
+        # For non-linked users, user_id is still None
         assert (
             pre_reg_only_user["user_id"] is None
         ), "Pre-registered only user shouldn't have a user_id"
         assert pre_reg_only_user["institution"] == "Pre-Reg Institution"
         assert pre_reg_only_user["first_name"] == "Pre-Registered"
         assert pre_reg_only_user["last_name"] == "Only"
+        # Check created_by field instead of invited_by
         assert (
-            pre_reg_only_user["invited_by"] is not None
-        ), "Should have invited_by field"
+            pre_reg_only_user["created_by"] == created_by_user_id
+        ), "Should have created_by field with the creator's ID"
 
         # 3. Check the product owner (both registered and pre-registered)
         product_owner = next(
@@ -442,6 +446,10 @@ async def test_list_merged_pre_and_registered_users(
         assert (
             product_owner["is_pre_registered"] is True
         ), "Should prefer pre-registration record"
+        # Check both the pre_reg_user_id (from pre-registration) and user_id (from users table)
+        assert (
+            product_owner["pre_reg_user_id"] == product_owner_user["id"]
+        ), "pre_reg_user_id should match the product owner id"
         assert (
             product_owner["user_id"] == product_owner_user["id"]
         ), "Should be linked to existing user"
@@ -455,6 +463,9 @@ async def test_list_merged_pre_and_registered_users(
         assert (
             product_owner["status"] is not None
         ), "Should include status from users table"
+        assert (
+            product_owner["created_by"] == created_by_user_id
+        ), "Should have created_by field with the creator's ID"
 
         # 4. Test filtering by account request status
         pending_users, pending_count = (

@@ -209,7 +209,7 @@ async def is_user_in_product(
     )
 
 
-async def list_users_as_admin(
+async def list_all_users_as_admin(
     app: web.Application,
     *,
     product_name: ProductName,

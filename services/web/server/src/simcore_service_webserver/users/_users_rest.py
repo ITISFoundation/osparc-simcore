@@ -177,7 +177,7 @@ async def list_users_for_admin(request: web.Request) -> web.Response:
         UsersForAdminListQueryParams, request
     )
 
-    users, total_count = await _users_service.list_users_as_admin(
+    users, total_count = await _users_service.list_all_users_as_admin(
         request.app,
         product_name=req_ctx.product_name,
         filter_account_request_status=(
