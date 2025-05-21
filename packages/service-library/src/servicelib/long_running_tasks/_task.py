@@ -262,7 +262,7 @@ class TasksManager:
                     await asyncio.wait_for(
                         _await_task(task), timeout=self._cancel_task_timeout_s
                     )
-                except TimeoutError:
+                except asyncio.TimeoutError:
                     logger.warning(
                         "Timed out while awaiting for cancellation of '%s'", reference
                     )
