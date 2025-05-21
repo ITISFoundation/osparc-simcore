@@ -79,11 +79,28 @@ qx.Class.define("osparc.wrapper.JsonFormatter", {
     },
 
     createContainer: function(divId) {
-      return new qx.ui.embed.Html("<div id='"+divId+"'></div>");
+      const container = new qx.ui.embed.Html("<div id='"+divId+"'></div>");
+
+      // Inject custom CSS for the JSONFormatter container
+      const styleId = "json-formatter-custom-style";
+      if (!document.getElementById(styleId)) {
+        const color = qx.theme.manager.Color.getInstance().resolve("text");
+        const style = document.createElement("style");
+        style.id = styleId;
+        style.innerHTML = `
+          #${divId} * {
+            color: ${color} !important; /* Use your preferred color */
+            font-family: "Manrope", sans-serif !important;
+          }
+        `;
+        document.head.appendChild(style);
+      }
+
+      return container
     },
 
     setData: function(myJSON, divId) {
-      const formatter = new JSONFormatter(myJSON, 1); // 1 = expand depth
+      const formatter = new JSONFormatter(myJSON, 2); // 1 = expand depth
       document.getElementById(divId).appendChild(formatter.render());
     },
   }
