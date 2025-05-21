@@ -5,6 +5,7 @@
 
 from typing import Any
 
+import pytest
 import sqlalchemy as sa
 from aiohttp import web
 from common_library.users_enums import AccountRequestStatus
@@ -284,4 +285,69 @@ async def test_list_user_pre_registrations(
                     users_pre_registration_details.c.id == pre_reg_id
                 )
             )
+        await conn.commit()
+
+
+@pytest.mark.parametrize(
+    "link_to_existing_user,expected_linked", [(True, True), (False, False)]
+)
+async def test_create_pre_registration_with_existing_user_linking(
+    app: web.Application,
+    product_name: ProductName,
+    product_owner_user: dict[str, Any],
+    link_to_existing_user: bool,
+    expected_linked: bool,
+):
+    """Test that creating a pre-registration for an existing user correctly handles auto-linking."""
+    # Arrange
+    asyncpg_engine = get_asyncpg_engine(app)
+    existing_user_id = product_owner_user["id"]
+    existing_user_email = product_owner_user["email"]
+
+    # Act - Create pre-registration with the same email as product_owner_user
+    pre_registration_id = await _users_repository.create_user_pre_registration(
+        asyncpg_engine,
+        email=existing_user_email,  # Same email as existing user
+        created_by=existing_user_id,
+        product_name=product_name,
+        link_to_existing_user=link_to_existing_user,  # Parameter to test
+        pre_first_name="Link-Test",
+        pre_last_name="User",
+        institution=f"{'Auto-linked' if link_to_existing_user else 'No-link'} Institution",
+    )
+
+    # Assert - Verify through list_user_pre_registrations
+    registrations, count = await _users_repository.list_user_pre_registrations(
+        asyncpg_engine,
+        filter_by_pre_email=existing_user_email,
+        filter_by_product_name=product_name,
+    )
+
+    # Verify count and that we found our registration
+    assert count == 1
+    assert len(registrations) == 1
+
+    # Get the registration
+    reg = registrations[0]
+
+    # Verify linking behavior based on parameter
+    assert reg["id"] == pre_registration_id
+    assert reg["pre_email"] == existing_user_email
+
+    # When True, user_id should be set to the existing user ID
+    # When False, user_id should be None
+    if expected_linked:
+        assert (
+            reg["user_id"] == existing_user_id
+        ), "Should be linked to the existing user"
+    else:
+        assert reg["user_id"] is None, "Should NOT be linked to any user"
+
+    # Clean up
+    async with asyncpg_engine.connect() as conn:
+        await conn.execute(
+            sa.delete(users_pre_registration_details).where(
+                users_pre_registration_details.c.id == pre_registration_id
+            )
+        )
         await conn.commit()

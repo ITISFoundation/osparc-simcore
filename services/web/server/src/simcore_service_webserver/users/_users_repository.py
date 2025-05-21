@@ -678,19 +678,54 @@ async def create_user_pre_registration(
     connection: AsyncConnection | None = None,
     *,
     email: str,
-    created_by: UserID,
+    created_by: UserID | None = None,
     product_name: ProductName,
+    link_to_existing_user: bool = True,
     **other_values,
 ) -> int:
+    """Creates a user pre-registration entry.
+
+    Args:
+        engine: Database engine
+        connection: Optional existing connection
+        email: Email address for the pre-registration
+        created_by: ID of the user creating the pre-registration (None for anonymous)
+        product_name: Product name the user is requesting access to
+        link_to_existing_user: Whether to link the pre-registration to an existing user with the same email
+        **other_values: Additional values to insert in the pre-registration entry
+
+    Returns:
+        ID of the created pre-registration
+    """
     async with transaction_context(engine, connection) as conn:
+        # If link_to_existing_user is True, try to find a matching user
+        user_id = None
+        if link_to_existing_user:
+            result = await conn.execute(
+                sa.select(users.c.id).where(users.c.email == email)
+            )
+            user = result.one_or_none()
+            if user:
+                user_id = user.id
+
+        # Insert the pre-registration record
+        values = {
+            "pre_email": email,
+            "product_name": product_name,
+            **other_values,
+        }
+
+        # Only add created_by if not None
+        if created_by is not None:
+            values["created_by"] = created_by
+
+        # Add user_id if found
+        if user_id is not None:
+            values["user_id"] = user_id
+
         result = await conn.execute(
             sa.insert(users_pre_registration_details)
-            .values(
-                created_by=created_by,
-                pre_email=email,
-                product_name=product_name,
-                **other_values,
-            )
+            .values(**values)
             .returning(users_pre_registration_details.c.id)
         )
         pre_registration_id: int = result.scalar_one()

@@ -1,3 +1,4 @@
+import logging
 from contextlib import suppress
 
 from aiohttp import web
