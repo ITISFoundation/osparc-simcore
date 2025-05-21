@@ -20,21 +20,21 @@ qx.Class.define("osparc.ui.basic.JsonTreeViewer", {
   extend: qx.ui.core.Widget,
 
   /**
-   * @param data {Object} Json object to be displayed by JsonTreeViewer
+   * @param jsonObj {Object} Json object to be displayed by JsonTreeViewer
    */
-  construct: function(data) {
+  construct: function(jsonObj) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox());
 
-    if (data) {
-      this.setJson(data);
+    if (jsonObj) {
+      this.setJson(jsonObj);
     }
   },
 
   members: {
-    setJson(data) {
-      osparc.wrapper.JsonTreeViewer.getInstance().print(data, this.getContentElement());
+    setJson(jsonObj) {
+      osparc.wrapper.JsonTreeViewer.getInstance().print(jsonObj, this.getContentElement());
     },
   }
 });
