@@ -42,7 +42,7 @@ async def create_user(
         await UsersRepo.link_and_update_user_from_pre_registration(
             conn, new_user_id=user.id, new_user_email=user.email
         )
-    return dict(user.items())
+    return dict(user._mapping)  # pylint: disable=protected-access # noqa: SLF001
 
 
 async def check_authorized_user_credentials_or_raise(
