@@ -10,7 +10,7 @@ from typing import Any
 
 import pytest
 from fastapi import FastAPI
-from models_library.api_schemas_catalog.services import MyServiceGet
+from models_library.api_schemas_catalog.services import MyServiceGet, ServiceSummary
 from models_library.products import ProductName
 from models_library.users import UserID
 from pydantic import TypeAdapter
@@ -286,8 +286,8 @@ async def test_list_all_vs_latest_services(
     num_services: int,
     num_versions_per_service: int,
 ):
-    """Test that list_all_catalog_services returns all services while
-    list_latest_catalog_services returns only the latest version of each service.
+    """Test that list_all_catalog_services returns all services as summaries while
+    list_latest_catalog_services returns only the latest version of each service with full details.
     """
     # No pagination to get all services
     limit = None
@@ -305,8 +305,8 @@ async def test_list_all_vs_latest_services(
         )
     )
 
-    # Get all services
-    all_total_count, all_items = await catalog_services.list_all_catalog_services(
+    # Get all services as summaries
+    all_total_count, all_items = await catalog_services.list_all_service_summaries(
         services_repo,
         director_client,
         product_name=target_product,
@@ -315,54 +315,26 @@ async def test_list_all_vs_latest_services(
         offset=offset,
     )
 
-    # Test with include_history=True option
-    all_total_count_with_history, all_items_with_history = (
-        await catalog_services.list_all_catalog_services(
-            services_repo,
-            director_client,
-            product_name=target_product,
-            user_id=user_id,
-            limit=limit,
-            offset=offset,
-            include_history=True,
-        )
-    )
-
     # Verify counts
     # - latest_total_count should equal num_services since we only get the latest version of each service
     # - all_total_count should equal num_services * num_versions_per_service since we get all versions
     assert latest_total_count == num_services
     assert all_total_count == num_services * num_versions_per_service
-    assert all_total_count_with_history == num_services * num_versions_per_service
 
     # Verify we got the expected number of items
     assert len(latest_items) == num_services
     assert len(all_items) == num_services * num_versions_per_service
-    assert len(all_items_with_history) == num_services * num_versions_per_service
 
     # Collect all service keys from latest items
     latest_keys = {item.key for item in latest_items}
 
     # Verify all returned items have the expected structure
     for item in all_items:
-        # Each item should have exactly one history entry when include_history=False
-        assert len(item.history) == 1
-        # The history entry should match the current version
-        assert item.history[0].version == item.version
-        # Each service key should be in latest_keys
+        # Each summary should have the basic fields
         assert item.key in latest_keys
-
-    # Verify history is included when include_history=True
-    for item in all_items_with_history:
-        if item.key in latest_keys:
-            service_key = item.key
-            # Find the corresponding service in the latest items
-            latest_service = next(s for s in latest_items if s.key == service_key)
-            # The latest version service should have its history included
-            if item.version == latest_service.version:
-                # Only check that there's proper history if this is the latest version
-                # Some services might have more history than others
-                assert len(item.history) >= 1
+        assert item.name
+        assert item.description is not None
+        assert isinstance(item, ServiceSummary)
 
     # Group all items by key
     key_to_all_versions = {}
@@ -377,5 +349,5 @@ async def test_list_all_vs_latest_services(
 
         # Find this service in latest_items
         latest_item = next(item for item in latest_items if item.key == key)
-        # The latest version should be in the list
+        # Verify there's a summary item with the same version as the latest
         assert any(item.version == latest_item.version for item in versions)

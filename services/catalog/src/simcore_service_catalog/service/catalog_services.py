@@ -8,6 +8,7 @@ from models_library.api_schemas_catalog.services import (
     LatestServiceGet,
     MyServiceGet,
     ServiceGetV2,
+    ServiceSummary,
     ServiceUpdateV2,
 )
 from models_library.api_schemas_directorv2.services import ServiceExtras
@@ -86,6 +87,21 @@ def _aggregate(
         "classifiers": service_db.classifiers,
         "quality": service_db.quality,
         # NOTE: history/release field is removed
+    }
+
+
+def _aggregate_summary(
+    service_db: ServiceWithHistoryDBGet | ServiceMetaDataDBGet,
+    service_manifest: ServiceMetaDataPublished,
+) -> dict:
+    """Creates a minimal dictionary with only the fields needed for ServiceSummary"""
+    return {
+        "key": service_db.key,
+        "version": service_db.version,
+        "name": service_db.name,
+        "description": service_db.description,
+        "version_display": service_db.version_display,
+        "contact": service_manifest.contact,
     }
 
 
@@ -244,7 +260,7 @@ async def _get_services_manifests(
     return service_manifest
 
 
-async def list_all_catalog_services(
+async def list_all_service_summaries(
     repo: ServicesRepository,
     director_api: DirectorClient,
     *,
@@ -253,11 +269,11 @@ async def list_all_catalog_services(
     limit: PageLimitInt | None,
     offset: PageOffsetInt = 0,
     filters: ServiceDBFilters | None = None,
-    include_history: bool = False,
-) -> tuple[PageTotalCount, list[ServiceGetV2]]:
-    """Lists all catalog services.
+) -> tuple[PageTotalCount, list[ServiceSummary]]:
+    """Lists all catalog services with minimal information.
 
-    This is different from list_latest_catalog_services which only returns the latest version of each service.
+    This is different from list_latest_catalog_services which only returns the latest version of each service
+    and includes complete service information.
 
     Args:
         repo: Repository for services
@@ -267,12 +283,9 @@ async def list_all_catalog_services(
         limit: Pagination limit
         offset: Pagination offset
         filters: Filters to apply
-        include_history: Whether to include full version history for each service (default: False)
-            When False, only a minimal history entry with the current version is included
-            When True, complete version history is fetched for each service (can be slower)
 
     Returns:
-        Tuple of total count and list of services
+        Tuple of total count and list of service summaries
     """
     # Get all services with pagination
     total_count, services = await repo.list_all_services(
@@ -298,72 +311,17 @@ async def list_all_catalog_services(
         offset,
     )
 
-    # Prepare for fetching history data if needed
-    service_histories: dict[str, list[ServiceRelease]] = {}
-    compatibility_maps: dict[str, dict[ServiceVersion, Compatibility | None]] = {}
-
-    # Fetch history data if requested
-    if include_history:
-        for sc in services:
-            if access_rights.get((sc.key, sc.version)):
-                # Fetch history for this service
-                service = await repo.get_service_with_history(
-                    product_name=product_name,
-                    user_id=user_id,
-                    key=sc.key,
-                    version=sc.version,
-                )
-                if service:
-                    # Evaluate compatibility map
-                    compatibility_map = await evaluate_service_compatibility_map(
-                        repo,
-                        product_name=product_name,
-                        user_id=user_id,
-                        service_release_history=service.history,
-                    )
-                    compatibility_maps[sc.key] = compatibility_map
-
-                    # Create history entries
-                    service_histories[sc.key] = [
-                        ServiceRelease.model_construct(
-                            version=h.version,
-                            version_display=h.version_display,
-                            released=h.created,
-                            retired=h.deprecated,
-                            compatibility=compatibility_map.get(h.version),
-                        )
-                        for h in service.history
-                    ]
-
-    # Aggregate the services manifest and access-rights
+    # Create service summaries
     items = []
     for sc in services:
-        ar = access_rights.get((sc.key, sc.version))
         sm = service_manifest.get((sc.key, sc.version))
-        if ar and sm:
-            # Base service data
-            service_data = _aggregate(
+        if access_rights.get((sc.key, sc.version)) and sm:
+            # Create a minimal ServiceSummary
+            service_data = _aggregate_summary(
                 service_db=sc,
-                access_rights_db=ar,
                 service_manifest=sm,
             )
-
-            # Add history based on include_history parameter
-            if include_history and sc.key in service_histories:
-                service_data["history"] = service_histories[sc.key]
-            else:
-                # Create minimal history with just the current version
-                service_data["history"] = [
-                    ServiceRelease.model_construct(
-                        version=sc.version,
-                        version_display=sc.version_display,
-                        released=sc.created,
-                        retired=sc.deprecated,
-                        compatibility=None,
-                    )
-                ]
-
-            items.append(ServiceGetV2.model_validate(service_data))
+            items.append(ServiceSummary.model_validate(service_data))
 
     return total_count, items
 

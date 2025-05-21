@@ -341,6 +341,9 @@ PageRpcServiceRelease: TypeAlias = PageRpc[
     ServiceRelease
 ]
 
+# Create PageRpc types
+PageRpcServiceSummary = PageRpc[ServiceSummary]
+
 ServiceResourcesGet: TypeAlias = ServiceResourcesDict
 
 
