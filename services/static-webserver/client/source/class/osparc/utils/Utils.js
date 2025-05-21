@@ -101,8 +101,16 @@ qx.Class.define("osparc.utils.Utils", {
           anonymous: true,
           decorator: "rounded",
         });
-        // eslint-disable-next-line no-underscore-dangle
-        widget._add(thumbnail, {column: 0});
+        switch (widget.classname) {
+          case "qx.ui.menu.Button":
+            // eslint-disable-next-line no-underscore-dangle
+            widget._add(thumbnail, {column: 0});
+            break;
+          case "qx.ui.toolbar.RadioButton":
+            // eslint-disable-next-line no-underscore-dangle
+            widget._addAt(thumbnail, 0);
+            break;
+        }
       }
     },
 
