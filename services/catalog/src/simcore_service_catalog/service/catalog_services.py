@@ -2,7 +2,7 @@
 
 import logging
 from contextlib import suppress
-from typing import Literal
+from typing import Literal, TypeVar
 
 from models_library.api_schemas_catalog.services import (
     LatestServiceGet,
@@ -46,6 +46,9 @@ from .compatibility import evaluate_service_compatibility_map
 from .function_services import is_function_service
 
 _logger = logging.getLogger(__name__)
+
+# Type variable for service models that can be returned from list functions
+T = TypeVar("T", ServiceGetV2, LatestServiceGet)
 
 
 def _aggregate(
@@ -133,59 +136,71 @@ def _to_get_schema(
     )
 
 
-async def list_all_catalog_services(
+async def _get_services_with_access_rights(
     repo: ServicesRepository,
-    director_api: DirectorClient,
-    *,
+    services: list[ServiceWithHistoryDBGet] | list[ServiceMetaDataDBGet],
     product_name: ProductName,
     user_id: UserID,
-    limit: PageLimitInt | None,
-    offset: PageOffsetInt = 0,
-    filters: ServiceDBFilters | None = None,
-    include_history: bool = False,
-) -> tuple[PageTotalCount, list[ServiceGetV2]]:
-    """Lists all catalog services.
-
-    This is different from list_latest_catalog_services which only returns the latest version of each service.
+) -> dict[tuple[str, str], list[ServiceAccessRightsDB]]:
+    """Common function to get access rights for a list of services.
 
     Args:
         repo: Repository for services
+        services: List of services to get access rights for
+        product_name: Product name
+        user_id: User ID
+
+    Returns:
+        Dictionary mapping (key, version) to list of access rights
+
+    Raises:
+        CatalogForbiddenError: If no access rights are found for any service
+    """
+    if not services:
+        return {}
+
+    # Inject access-rights
+    access_rights = await repo.batch_get_services_access_rights(
+        ((sc.key, sc.version) for sc in services), product_name=product_name
+    )
+    if not access_rights:
+        raise CatalogForbiddenError(
+            name="any service",
+            user_id=user_id,
+            product_name=product_name,
+        )
+
+    return access_rights
+
+
+async def _get_services_manifests(
+    services: list[ServiceWithHistoryDBGet] | list[ServiceMetaDataDBGet],
+    access_rights: dict[tuple[str, str], list[ServiceAccessRightsDB]],
+    director_api: DirectorClient,
+    product_name: ProductName,
+    user_id: UserID,
+    filters: ServiceDBFilters | None,
+    limit: PageLimitInt | None,
+    offset: PageOffsetInt | None,
+) -> dict[tuple[str, str], ServiceMetaDataPublished]:
+    """Common function to get service manifests from director.
+
+    Args:
+        services: List of services to get manifests for
+        access_rights: Dictionary mapping (key, version) to list of access rights
         director_api: Director API client
         product_name: Product name
         user_id: User ID
-        limit: Pagination limit
-        offset: Pagination offset
-        filters: Filters to apply
-        include_history: Whether to include full version history for each service (default: False)
-            When False, only a minimal history entry with the current version is included
-            When True, complete version history is fetched for each service (can be slower)
+        filters: Filters that were applied
+        limit: Pagination limit that was applied
+        offset: Pagination offset that was applied
 
     Returns:
-        Tuple of total count and list of services
+        Dictionary mapping (key, version) to manifest
+
+    Raises:
+        CatalogInconsistentError: Logs warning if some services are missing from manifest
     """
-    # Get all services with pagination
-    total_count, services = await repo.list_all_services(
-        product_name=product_name,
-        user_id=user_id,
-        pagination_limit=limit,
-        pagination_offset=offset,
-        filters=filters,
-    )
-
-    if services:
-        # Inject access-rights
-        access_rights: dict[tuple[str, str], list[ServiceAccessRightsDB]] = (
-            await repo.batch_get_services_access_rights(
-                ((sc.key, sc.version) for sc in services), product_name=product_name
-            )
-        )
-        if not access_rights:
-            raise CatalogForbiddenError(
-                name="any service",
-                user_id=user_id,
-                product_name=product_name,
-            )
-
     # Get manifest of those with access rights
     got = await manifest.get_batch_services(
         [
@@ -225,6 +240,63 @@ async def list_all_catalog_services(
         )
         # NOTE: tests should fail if this happens but it is not a critical error so it is ignored in production
         assert len(missing_services) == 0, msg  # nosec
+
+    return service_manifest
+
+
+async def list_all_catalog_services(
+    repo: ServicesRepository,
+    director_api: DirectorClient,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    limit: PageLimitInt | None,
+    offset: PageOffsetInt = 0,
+    filters: ServiceDBFilters | None = None,
+    include_history: bool = False,
+) -> tuple[PageTotalCount, list[ServiceGetV2]]:
+    """Lists all catalog services.
+
+    This is different from list_latest_catalog_services which only returns the latest version of each service.
+
+    Args:
+        repo: Repository for services
+        director_api: Director API client
+        product_name: Product name
+        user_id: User ID
+        limit: Pagination limit
+        offset: Pagination offset
+        filters: Filters to apply
+        include_history: Whether to include full version history for each service (default: False)
+            When False, only a minimal history entry with the current version is included
+            When True, complete version history is fetched for each service (can be slower)
+
+    Returns:
+        Tuple of total count and list of services
+    """
+    # Get all services with pagination
+    total_count, services = await repo.list_all_services(
+        product_name=product_name,
+        user_id=user_id,
+        pagination_limit=limit,
+        pagination_offset=offset,
+        filters=filters,
+    )
+
+    # Get access rights and manifests
+    access_rights = await _get_services_with_access_rights(
+        repo, services, product_name, user_id
+    )
+    service_manifest = await _get_services_manifests(
+        services,
+        access_rights,
+        director_api,
+        product_name,
+        user_id,
+        filters,
+        limit,
+        offset,
+    )
 
     # Prepare for fetching history data if needed
     service_histories: dict[str, list[ServiceRelease]] = {}
@@ -306,7 +378,20 @@ async def list_latest_catalog_services(
     offset: PageOffsetInt = 0,
     filters: ServiceDBFilters | None = None,
 ) -> tuple[PageTotalCount, list[LatestServiceGet]]:
+    """Lists latest versions of catalog services.
 
+    Args:
+        repo: Repository for services
+        director_api: Director API client
+        product_name: Product name
+        user_id: UserID
+        limit: Pagination limit
+        offset: Pagination offset
+        filters: Filters to apply
+
+    Returns:
+        Tuple of total count and list of latest services
+    """
     # defines the order
     total_count, services = await repo.list_latest_services(
         product_name=product_name,
@@ -316,59 +401,20 @@ async def list_latest_catalog_services(
         filters=filters,
     )
 
-    if services:
-        # injects access-rights
-        access_rights: dict[tuple[str, str], list[ServiceAccessRightsDB]] = (
-            await repo.batch_get_services_access_rights(
-                ((sc.key, sc.version) for sc in services), product_name=product_name
-            )
-        )
-        if not access_rights:
-            raise CatalogForbiddenError(
-                name="any service",
-                user_id=user_id,
-                product_name=product_name,
-            )
-
-    # Get manifest of those with access rights
-    got = await manifest.get_batch_services(
-        [
-            (sc.key, sc.version)
-            for sc in services
-            if access_rights.get((sc.key, sc.version))
-        ],
-        director_api,
+    # Get access rights and manifests using shared functions
+    access_rights = await _get_services_with_access_rights(
+        repo, services, product_name, user_id
     )
-    service_manifest = {
-        (sc.key, sc.version): sc
-        for sc in got
-        if isinstance(sc, ServiceMetaDataPublished)
-    }
-
-    # Log a warning for missing services
-    missing_services = [
-        (sc.key, sc.version)
-        for sc in services
-        if (sc.key, sc.version) not in service_manifest
-    ]
-    if missing_services:
-        msg = f"Found {len(missing_services)} services that are in the database but missing in the registry manifest"
-        _logger.warning(
-            **create_troubleshotting_log_kwargs(
-                msg,
-                error=CatalogInconsistentError(
-                    missing_services=missing_services,
-                    user_id=user_id,
-                    product_name=product_name,
-                    filters=filters,
-                    limit=limit,
-                    offset=offset,
-                ),
-                tip="This might be due to malfunction of the background-task or that this call was done while the sync was taking place",
-            )
-        )
-        # NOTE: tests should fail if this happens but it is not a critical error so it is ignored in production
-        assert len(missing_services) == 0, msg  # nosec
+    service_manifest = await _get_services_manifests(
+        services,
+        access_rights,
+        director_api,
+        product_name,
+        user_id,
+        filters,
+        limit,
+        offset,
+    )
 
     # Aggregate the services manifest and access-rights
     items = [
