@@ -89,11 +89,11 @@ qx.Class.define("osparc.wrapper.JsonFormatter", {
         style.id = styleId;
         style.innerHTML = `
           #${divId} * {
-            color: ${color} !important; /* Use your preferred color */
-            font-family: "Manrope", sans-serif !important;
+            color: ${color} !important; /* Use osparc text color */
+            font-family: "Manrope", sans-serif !important; /* Use osparc font */
           }
           #${divId} .json-formatter-key {
-            font-size: 13px !important; /* actually keeping the default size */
+            font-size: 13px !important; /* Actually keeping the default size */
           }
           #${divId} .json-formatter-constructor-name {
             display: none !important; /* Hide "Object" and "Array(n)" labels */
