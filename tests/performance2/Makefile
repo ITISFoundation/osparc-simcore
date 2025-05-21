@@ -36,7 +36,14 @@ test-deployment: _check_venv_active ## runs deployment test on local deploy
 	@$(call prompt_for_credentials)
 	@printf "$(YELLOW)Starting Locust web interface...$(NC)\n"
 	@export $$(cat $(AUTH_CREDS_FILE) | xargs) && \
-	locust --processes 4 --locustfile deployment_max_rps_test.py
+	locust \
+		--processes 4 \
+		--headless \
+		--grafana-url http://192.168.1.20:3000/ \
+		--pghost 192.168.1.20 \
+		--pgpassword=password \
+		--pguser=postgres \
+		--locustfile deployment_max_rps_test.py
 
 clear-credentials: ## Clear the cached authentication credentials
 	@if [ -f $(AUTH_CREDS_FILE) ]; then \
@@ -54,3 +61,8 @@ update-credentials: ## Update the cached authentication credentials
 	echo "SC_USER_NAME=$$username" > $(AUTH_CREDS_FILE); \
 	echo "SC_PASSWORD=$$password" >> $(AUTH_CREDS_FILE); \
 	printf "$(GREEN)Credentials updated successfully.$(NC)\n"
+
+up:
+	@locust-compose up -d
+down:
+	@locust-compose down
