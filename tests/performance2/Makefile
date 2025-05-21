@@ -39,7 +39,7 @@ define generate_locust_config
 	@printf "$(YELLOW)Setting up $(2) configuration...$(NC)\n"
 	@echo "# Locust configuration file - $(5)" > $(LOCUST_CONFIG_FILE)$(1); \
 	echo "[locust]" >> $(LOCUST_CONFIG_FILE)$(1); \
-	echo "locustfile = deployment_max_rps_test.py" >> $(LOCUST_CONFIG_FILE)$(1); \
+	echo "locustfile = ./locustfiles" >> $(LOCUST_CONFIG_FILE)$(1); \
 	echo "headless = true" >> $(LOCUST_CONFIG_FILE)$(1); \
 	if [ -f $(LOCUST_CONFIG_FILE) ]; then \
 		echo "host = $$(grep "host = " $(LOCUST_CONFIG_FILE) | cut -d= -f2 | xargs)" >> $(LOCUST_CONFIG_FILE)$(1); \
