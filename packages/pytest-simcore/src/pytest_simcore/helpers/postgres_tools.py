@@ -89,13 +89,17 @@ async def _async_insert_and_get_row(
     table: sa.Table,
     values: dict[str, Any],
     pk_col: sa.Column,
-    pk_value: Any,
-):
+    pk_value: Any | None = None,
+) -> sa.engine.Row:
     result = await conn.execute(table.insert().values(**values).returning(pk_col))
     row = result.one()
 
-    # NOTE: DO NO USE row[pk_col] since you will get a deprecation error (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
-    assert getattr(row, pk_col.name) == pk_value
+    # Get the pk_value from the row if not provided
+    if pk_value is None:
+        pk_value = getattr(row, pk_col.name)
+    else:
+        # NOTE: DO NO USE row[pk_col] since you will get a deprecation error (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+        assert getattr(row, pk_col.name) == pk_value
 
     result = await conn.execute(sa.select(table).where(pk_col == pk_value))
     return result.one()
@@ -106,13 +110,17 @@ def _sync_insert_and_get_row(
     table: sa.Table,
     values: dict[str, Any],
     pk_col: sa.Column,
-    pk_value: Any,
-):
+    pk_value: Any | None = None,
+) -> sa.engine.Row:
     result = conn.execute(table.insert().values(**values).returning(pk_col))
     row = result.one()
 
-    # NOTE: DO NO USE row[pk_col] since you will get a deprecation error (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
-    assert getattr(row, pk_col.name) == pk_value
+    # Get the pk_value from the row if not provided
+    if pk_value is None:
+        pk_value = getattr(row, pk_col.name)
+    else:
+        # NOTE: DO NO USE row[pk_col] since you will get a deprecation error (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+        assert getattr(row, pk_col.name) == pk_value
 
     result = conn.execute(sa.select(table).where(pk_col == pk_value))
     return result.one()
@@ -125,13 +133,16 @@ async def insert_and_get_row_lifespan(
     table: sa.Table,
     values: dict[str, Any],
     pk_col: sa.Column,
-    pk_value: Any,
+    pk_value: Any | None = None,
 ) -> AsyncIterator[dict[str, Any]]:
-    # insert & get
+    # SETUP: insert & get
     async with sqlalchemy_async_engine.begin() as conn:
         row = await _async_insert_and_get_row(
             conn, table=table, values=values, pk_col=pk_col, pk_value=pk_value
         )
+        # If pk_value was None, get it from the row for deletion later
+        if pk_value is None:
+            pk_value = getattr(row, pk_col.name)
 
     assert row
 
@@ -139,7 +150,7 @@ async def insert_and_get_row_lifespan(
     # pylint: disable=protected-access
     yield row._asdict()
 
-    # delete row
+    # TEAD-DOWN: delete row
     async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(table.delete().where(pk_col == pk_value))
 
@@ -151,7 +162,7 @@ def sync_insert_and_get_row_lifespan(
     table: sa.Table,
     values: dict[str, Any],
     pk_col: sa.Column,
-    pk_value: Any,
+    pk_value: Any | None = None,
 ) -> Iterator[dict[str, Any]]:
     """sync version of insert_and_get_row_lifespan.
 
@@ -159,11 +170,14 @@ def sync_insert_and_get_row_lifespan(
     database tables before the app starts since it does not require an `event_loop`
     fixture (which is funcition-scoped )
     """
-    # insert & get
+    # SETUP: insert & get
     with sqlalchemy_sync_engine.begin() as conn:
         row = _sync_insert_and_get_row(
             conn, table=table, values=values, pk_col=pk_col, pk_value=pk_value
         )
+        # If pk_value was None, get it from the row for deletion later
+        if pk_value is None:
+            pk_value = getattr(row, pk_col.name)
 
     assert row
 
@@ -171,6 +185,6 @@ def sync_insert_and_get_row_lifespan(
     # pylint: disable=protected-access
     yield row._asdict()
 
-    # delete row
+    # TEARDOWN: delete row
     with sqlalchemy_sync_engine.begin() as conn:
         conn.execute(table.delete().where(pk_col == pk_value))
