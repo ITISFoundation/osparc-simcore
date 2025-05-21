@@ -218,7 +218,13 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
               });
               hypertoolsMenu.add(hypertoolButton);
               osparc.study.Utils.guessIcon(templateData)
-                .then(iconSource => osparc.utils.Utils.replaceIconWithThumbnail(hypertoolButton, iconSource, 22));
+                .then(iconSource => {
+                  if (iconSource) {
+                    const iconSize = 22;
+                    hypertoolButton.getChildControl("icon").set({ minWidth: iconSize+2 });
+                    osparc.utils.Utils.replaceIconWithThumbnail(hypertoolButton, iconSource, iconSize);
+                  }
+                });
             });
           }
         });
