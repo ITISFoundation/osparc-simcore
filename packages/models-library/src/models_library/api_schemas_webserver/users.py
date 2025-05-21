@@ -241,24 +241,12 @@ class UserGet(OutputSchema):
 
 
 class UsersForAdminListFilter(Filters):
-    # 1. States of an Account Resquest: PENDING, REJECTED, APPROVED
-    # 2. If APPROVED AND user uses the invitation link, then it can be in any of these states:
-    #    CONFIRMATION_PENDING, ACTIVE, EXPIRED, BANNED, DELETED
+    # 1. account_request_status: PENDING, REJECTED, APPROVED
+    # 2. If APPROVED AND user uses the invitation link, then when user is registered,
+    #  it can be in any of these statuses:
+    #     CONFIRMATION_PENDING, ACTIVE, EXPIRED, BANNED, DELETED
     #
-    status: (
-        Literal[
-            "PENDING",
-            # NOTE: future states
-            # "REJECTED",
-            # "APPROVED",
-            # "CONFIRMATION_PENDING",
-            # "ACTIVE",
-            # "EXPIRED",
-            # "BANNED",
-            # "DELETED",
-        ]
-        | None
-    ) = None
+    account_request_status: Literal["PENDING", "REJECETED", "APPROVED"] | None = None
 
 
 class UsersForAdminListQueryParams(UsersForAdminListFilter, PageQueryParameters): ...

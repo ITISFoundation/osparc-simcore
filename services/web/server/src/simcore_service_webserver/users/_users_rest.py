@@ -183,7 +183,9 @@ async def list_users_for_admin(request: web.Request) -> web.Response:
         request.app,
         product_name=req_ctx.product_name,
         filter_account_request_status=(
-            AccountRequestStatus(query_params.status) if query_params.status else None
+            AccountRequestStatus(query_params.account_request_status)
+            if query_params.account_request_status
+            else None
         ),
         pagination_limit=query_params.limit,
         pagination_offset=query_params.offset,

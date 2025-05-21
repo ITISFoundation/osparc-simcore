@@ -1387,15 +1387,18 @@ paths:
           type: integer
           default: 0
           title: Offset
-      - name: status
+      - name: account_request_status
         in: query
         required: false
         schema:
           anyOf:
-          - const: PENDING
+          - enum:
+            - PENDING
+            - REJECETED
+            - APPROVED
             type: string
           - type: 'null'
-          title: Status
+          title: Account Request Status
       responses:
         '200':
           description: Successful Response

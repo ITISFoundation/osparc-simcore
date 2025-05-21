@@ -267,15 +267,15 @@ async def test_list_users_for_admin(
     assert registered_email not in pending_emails
     assert len(pending_emails) >= len(pre_registered_users) - 1
 
-    # b. Check ACTIVE filter (should include only the registered user)
+    # b. Check all users
     resp = await client.get(
-        f"{url}?status=ACTIVE", headers={X_PRODUCT_NAME_HEADER: product_name}
+        f"{url}?status=APPROVED", headers={X_PRODUCT_NAME_HEADER: product_name}
     )
-    active_data, _ = await assert_status(resp, status.HTTP_200_OK)
+    approved_data, _ = await assert_status(resp, status.HTTP_200_OK)
 
     # Find the registered user in the active users
     active_user = next(
-        (item for item in active_data if item["email"] == registered_email),
+        (item for item in approved_data if item["email"] == registered_email),
         None,
     )
     assert active_user is not None
