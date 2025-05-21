@@ -31,7 +31,7 @@ DEFAULT_PROCESSES := 4
 DEFAULT_USERS := 10
 DEFAULT_SPAWN_RATE := 1
 DEFAULT_RUN_TIME := 5m
-DEFAULT_HOST := http://localhost:8080
+DEFAULT_HOST := http://127.0.0.1:9081
 
 # Function to generate Locust configuration file
 # Usage: $(call generate_locust_config,filename_suffix,processes,users,spawn_rate,run_time,description)
