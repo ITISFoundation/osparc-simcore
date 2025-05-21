@@ -839,6 +839,10 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     },
 
     __getCreateFunctionsPage: function() {
+      if (!osparc.utils.DisabledPlugins.isFunctionsDisabled()) {
+        return null;
+      }
+
       if (!osparc.utils.Resources.isStudy(this.__resourceData)) {
         return null;
       }
