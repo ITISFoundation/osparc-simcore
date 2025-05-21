@@ -103,14 +103,12 @@ def mock_environment(
 
 
 @pytest.fixture
-def client(
-    event_loop: asyncio.AbstractEventLoop,
+async def client(
     unused_tcp_port_factory: Callable,
     aiohttp_client: Callable[..., Awaitable[TestClient]],
     api_version_prefix: str,
     mock_environment: EnvVarsDict,
 ) -> TestClient:
-
     routes = web.RouteTableDef()
 
     @routes.get("/error")
@@ -167,8 +165,8 @@ def client(
 
     app.router.add_routes(routes)
 
-    return event_loop.run_until_complete(
-        aiohttp_client(app, server_kwargs={key: main[key] for key in ("host", "port")})
+    return await aiohttp_client(
+        app, server_kwargs={key: main[key] for key in ("host", "port")}
     )
 
 
@@ -228,7 +226,7 @@ async def test_diagnose_on_response_delays(client: TestClient):
     settings: DiagnosticsSettings = client.app[APP_SETTINGS_KEY].WEBSERVER_DIAGNOSTICS
 
     tmax = settings.DIAGNOSTICS_MAX_AVG_LATENCY
-    coros = [client.get(f"/delay/{1.1*tmax}") for _ in range(10)]
+    coros = [client.get(f"/delay/{1.1 * tmax}") for _ in range(10)]
     resps = await asyncio.gather(*coros)
 
     for resp in resps:

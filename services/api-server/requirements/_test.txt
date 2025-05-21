@@ -35,6 +35,7 @@ attrs==24.2.0
     #   jschema-to-python
     #   jsonschema
     #   pytest-docker
+    #   referencing
     #   sarif-om
 aws-sam-translator==1.55.0
     # via
@@ -268,10 +269,8 @@ pytest==8.3.5
     #   pytest-cov
     #   pytest-docker
     #   pytest-mock
-pytest-asyncio==0.23.8
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -r requirements/_test.in
+pytest-asyncio==0.26.0
+    # via -r requirements/_test.in
 pytest-cov==6.0.0
     # via -r requirements/_test.in
 pytest-docker==3.2.0
@@ -298,6 +297,10 @@ pyyaml==6.0.2
     #   moto
     #   openapi-spec-validator
     #   responses
+referencing==0.35.1
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   types-jsonschema
 requests==2.32.3
     # via
     #   -c requirements/_base.txt
@@ -309,6 +312,8 @@ responses==0.25.6
     # via moto
 respx==0.22.0
     # via -r requirements/_test.in
+rpds-py==0.25.0
+    # via referencing
 rsa==4.9
     # via
     #   -c requirements/../../../requirements/constraints.txt
