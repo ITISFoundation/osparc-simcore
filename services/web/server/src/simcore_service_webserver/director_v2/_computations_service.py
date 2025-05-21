@@ -249,9 +249,7 @@ async def list_computations_latest_iteration_tasks(
         limit=20,
     )
     # Build a dict: project_uuid -> workbench
-    project_uuid_to_workbench = {
-        prj["project_uuid"]: prj["workbench"] for prj in project_dicts
-    }
+    project_uuid_to_workbench = {prj["uuid"]: prj["workbench"] for prj in project_dicts}
 
     _service_run_ids = [item.service_run_id for item in _tasks_get.items]
     _is_product_billable = await is_product_billable(app, product_name=product_name)
@@ -281,7 +279,7 @@ async def list_computations_latest_iteration_tasks(
             started_at=item.started_at,
             ended_at=item.ended_at,
             log_download_link=item.log_download_link,
-            node_name=project_uuid_to_workbench[f"{item.project_uuid}"]["workbench"][
+            node_name=project_uuid_to_workbench[f"{item.project_uuid}"][
                 f"{item.node_id}"
             ].get("label", ""),
             osparc_credits=credits_or_none,

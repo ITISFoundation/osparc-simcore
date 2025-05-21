@@ -229,5 +229,5 @@ async def get_transaction_current_credits_by_service_run_id(
         result = await conn.execute(select_stmt)
     row = result.first()
     if row is None:
-        raise CreditTransactionNotFoundError
+        raise CreditTransactionNotFoundError(service_run_id=service_run_id)
     return Decimal(row[0])

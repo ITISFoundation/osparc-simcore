@@ -94,7 +94,7 @@ class ComputationRunIterationsLatestListQueryParams(ComputationRunListQueryParam
 class ComputationRunIterationsListQueryParams(ComputationRunListQueryParams):
     include_children: bool = Field(
         default=False,
-        description="If true, all tasks of the project and its children are returned (Currently supported only for root projects)",
+        description="If true, all computational runs of the project and its children are returned (Currently supported only for root projects)",
     )
 
 
