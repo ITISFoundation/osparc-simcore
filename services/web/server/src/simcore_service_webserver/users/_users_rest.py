@@ -7,6 +7,7 @@ from common_library.users_enums import AccountRequestStatus
 from models_library.api_schemas_webserver.users import (
     MyProfileGet,
     MyProfilePatch,
+    UserApprove,
     UserForAdminGet,
     UserGet,
     UsersForAdminListQueryParams,
@@ -248,3 +249,25 @@ async def pre_register_user_for_admin(request: web.Request) -> web.Response:
     return envelope_json_response(
         user_profile.model_dump(**_RESPONSE_MODEL_MINIMAL_POLICY)
     )
+
+
+@routes.post(f"/{API_VTAG}/admin/users:approve", name="approve_user_account")
+@login_required
+@permission_required("admin.users.write")
+@_handle_users_exceptions
+async def approve_user_account(request: web.Request) -> web.Response:
+    req_ctx = UsersRequestContext.model_validate(request)
+    assert req_ctx.product_name  # nosec
+
+    approval_data = await parse_request_body_as(UserApprove, request)
+
+    # Approve the user account, passing the current user's ID as the reviewer
+    pre_registration_id = await _users_service.approve_user_account(
+        request.app,
+        pre_registration_email=approval_data.email,
+        product_name=req_ctx.product_name,
+        reviewer_id=req_ctx.user_id,
+    )
+    assert pre_registration_id  # nosec
+
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)

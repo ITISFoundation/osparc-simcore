@@ -230,12 +230,22 @@ async def test_list_users_for_admin(
     )
     data, _ = await assert_status(resp, status.HTTP_200_OK)
 
-    pending_emails = [user["email"] for user in data if user["status"] == "PENDING"]
+    pending_emails = [user["email"] for user in data if user["status"] is None]
     for pre_user in pre_registered_users:
         assert pre_user["email"] in pending_emails
 
-    # 2. Register one of the pre-registered users
+    # 2. Register one of the pre-registered users: approve + create account
     registered_email = pre_registered_users[0]["email"]
+
+    url = client.app.router["approve_user_account"].url_for()
+    resp = await client.post(
+        f"{url}",
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+        json={"email": registered_email},
+    )
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # Emulates user accepting invitation link
     new_user = await simcore_service_webserver.login._auth_service.create_user(
         client.app,
         email=registered_email,
@@ -246,6 +256,7 @@ async def test_list_users_for_admin(
 
     # 3. Test filtering by status
     # a. Check PENDING filter (should exclude the registered user)
+    url = client.app.router["list_users_for_admin"].url_for()
     resp = await client.get(
         f"{url}?status=PENDING", headers={X_PRODUCT_NAME_HEADER: product_name}
     )

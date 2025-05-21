@@ -160,7 +160,7 @@ async def list_users_for_admin(
 
 @router.post(
     "/admin/users:approve",
-    response_model=Envelope[Page[UserForAdminGet]],
+    status_code=status.HTTP_204_NO_CONTENT,
     tags=_extra_tags,
 )
 async def approve_user_account(_body: UserApprove): ...
