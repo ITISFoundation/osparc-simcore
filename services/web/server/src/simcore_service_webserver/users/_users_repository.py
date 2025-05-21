@@ -4,6 +4,7 @@ from typing import Any
 
 import sqlalchemy as sa
 from aiohttp import web
+from common_library.exclude import UnSet, is_unset
 from common_library.users_enums import AccountRequestStatus, UserRole
 from models_library.groups import GroupID
 from models_library.products import ProductName
@@ -534,30 +535,6 @@ async def get_user_products(
         return [row async for row in result]
 
 
-async def create_user_pre_registration(
-    engine: AsyncEngine,
-    connection: AsyncConnection | None = None,
-    *,
-    email: str,
-    created_by: UserID,
-    product_name: ProductName,
-    **other_values,
-) -> int:
-    async with transaction_context(engine, connection) as conn:
-        result = await conn.execute(
-            sa.insert(users_pre_registration_details)
-            .values(
-                created_by=created_by,
-                pre_email=email,
-                product_name=product_name,
-                **other_values,
-            )
-            .returning(users_pre_registration_details.c.id)
-        )
-        pre_registration_id: int = result.scalar_one()
-        return pre_registration_id
-
-
 async def get_user_billing_details(
     engine: AsyncEngine, connection: AsyncConnection | None = None, *, user_id: UserID
 ) -> UserBillingDetails:
@@ -694,3 +671,176 @@ async def update_user_profile(
                 ) from err
 
             raise  # not due to name duplication
+
+
+async def create_user_pre_registration(
+    engine: AsyncEngine,
+    connection: AsyncConnection | None = None,
+    *,
+    email: str,
+    created_by: UserID,
+    product_name: ProductName,
+    **other_values,
+) -> int:
+    async with transaction_context(engine, connection) as conn:
+        result = await conn.execute(
+            sa.insert(users_pre_registration_details)
+            .values(
+                created_by=created_by,
+                pre_email=email,
+                product_name=product_name,
+                **other_values,
+            )
+            .returning(users_pre_registration_details.c.id)
+        )
+        pre_registration_id: int = result.scalar_one()
+        return pre_registration_id
+
+
+async def list_user_pre_registrations(
+    engine: AsyncEngine,
+    connection: AsyncConnection | None = None,
+    *,
+    filter_by_pre_email: str | None = None,
+    filter_by_product_name: ProductName | UnSet = UnSet.VALUE,
+    filter_by_account_request_status: AccountRequestStatus | None = None,
+    pagination_limit: int = 50,
+    pagination_offset: int = 0,
+) -> tuple[list[dict[str, Any]], int]:
+    """Lists user pre-registrations with optional filters.
+
+    Args:
+        engine: Database engine
+        connection: Optional existing connection
+        filter_by_pre_email: Filter by email pattern (SQL LIKE pattern)
+        filter_by_product_name: Filter by product name
+        filter_by_account_request_status: Filter by account request status
+        pagination_limit: Maximum number of results to return
+        pagination_offset: Number of results to skip (for pagination)
+
+    Returns:
+        Tuple of (list of pre-registration records, total count)
+    """
+    # Base query conditions
+    where_conditions = []
+
+    # Apply filters if provided
+    if filter_by_pre_email is not None:
+        where_conditions.append(
+            users_pre_registration_details.c.pre_email.ilike(f"%{filter_by_pre_email}%")
+        )
+
+    if not is_unset(filter_by_product_name):
+        where_conditions.append(
+            users_pre_registration_details.c.product_name == filter_by_product_name
+        )
+
+    if filter_by_account_request_status is not None:
+        where_conditions.append(
+            users_pre_registration_details.c.account_request_status
+            == filter_by_account_request_status
+        )
+
+    # Combine conditions
+    where_clause = sa.and_(*where_conditions) if where_conditions else sa.true()
+
+    # Create an alias for the users table for the created_by join
+    creator_users_alias = sa.alias(users, name="creator")
+    reviewer_users_alias = sa.alias(users, name="reviewer")
+
+    # Count query for pagination
+    count_query = (
+        sa.select(sa.func.count().label("total"))
+        .select_from(users_pre_registration_details)
+        .where(where_clause)
+    )
+
+    # Main query to get pre-registration data
+    main_query = (
+        sa.select(
+            users_pre_registration_details.c.id,
+            users_pre_registration_details.c.user_id,
+            users_pre_registration_details.c.pre_email,
+            users_pre_registration_details.c.pre_first_name,
+            users_pre_registration_details.c.pre_last_name,
+            users_pre_registration_details.c.pre_phone,
+            users_pre_registration_details.c.institution,
+            users_pre_registration_details.c.address,
+            users_pre_registration_details.c.city,
+            users_pre_registration_details.c.state,
+            users_pre_registration_details.c.postal_code,
+            users_pre_registration_details.c.country,
+            users_pre_registration_details.c.product_name,
+            users_pre_registration_details.c.account_request_status,
+            users_pre_registration_details.c.extras,
+            users_pre_registration_details.c.created,
+            users_pre_registration_details.c.modified,
+            users_pre_registration_details.c.created_by,
+            creator_users_alias.c.name.label("created_by_name"),
+            users_pre_registration_details.c.account_request_reviewed_by,
+            reviewer_users_alias.c.name.label("reviewed_by_name"),
+            users_pre_registration_details.c.account_request_reviewed_at,
+        )
+        .select_from(
+            users_pre_registration_details.outerjoin(
+                creator_users_alias,
+                users_pre_registration_details.c.created_by == creator_users_alias.c.id,
+            ).outerjoin(
+                reviewer_users_alias,
+                users_pre_registration_details.c.account_request_reviewed_by
+                == reviewer_users_alias.c.id,
+            )
+        )
+        .where(where_clause)
+        .order_by(
+            users_pre_registration_details.c.created.desc(),
+            users_pre_registration_details.c.pre_email,
+        )
+        .limit(pagination_limit)
+        .offset(pagination_offset)
+    )
+
+    async with pass_or_acquire_connection(engine, connection) as conn:
+        # Get total count
+        count_result = await conn.execute(count_query)
+        total_count = count_result.scalar()
+
+        # Get pre-registration records
+        result = await conn.execute(main_query)
+        records = result.mappings().all()
+
+    return list(records), total_count
+
+
+async def review_user_pre_registration(
+    engine: AsyncEngine,
+    connection: AsyncConnection | None = None,
+    *,
+    pre_registration_id: int,
+    reviewed_by: UserID,
+    new_status: AccountRequestStatus,
+) -> None:
+    """Updates the account request status of a pre-registered user.
+
+    Args:
+        engine: The database engine
+        connection: Optional existing connection
+        pre_registration_id: ID of the pre-registration record
+        reviewed_by: ID of the user who reviewed the request
+        new_status: New status (APPROVED or REJECTED)
+    """
+    if new_status not in (AccountRequestStatus.APPROVED, AccountRequestStatus.REJECTED):
+        raise ValueError(
+            f"Invalid status for review: {new_status}. Must be APPROVED or REJECTED."
+        )
+
+    async with transaction_context(engine, connection) as conn:
+        await conn.execute(
+            users_pre_registration_details.update()
+            .values(
+                account_request_status=new_status,
+                account_request_reviewed_by=reviewed_by,
+                account_request_reviewed_at=sa.func.now(),
+            )
+            .where(users_pre_registration_details.c.id == pre_registration_id)
+        )
