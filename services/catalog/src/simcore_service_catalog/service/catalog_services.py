@@ -14,13 +14,13 @@ from models_library.api_schemas_directorv2.services import ServiceExtras
 from models_library.basic_types import VersionStr
 from models_library.groups import GroupID
 from models_library.products import ProductName
-from models_library.rest_pagination import PageLimitInt, PageTotalCount
+from models_library.rest_pagination import PageLimitInt, PageOffsetInt, PageTotalCount
 from models_library.services_access import ServiceGroupAccessRightsV2
 from models_library.services_history import Compatibility, ServiceRelease
 from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pydantic import HttpUrl, NonNegativeInt
+from pydantic import HttpUrl
 from servicelib.logging_errors import (
     create_troubleshotting_log_kwargs,
 )
@@ -34,6 +34,7 @@ from ..clients.director import DirectorClient
 from ..models.services_db import (
     ServiceAccessRightsDB,
     ServiceDBFilters,
+    ServiceMetaDataDBGet,
     ServiceMetaDataDBPatch,
     ServiceWithHistoryDBGet,
 )
@@ -48,7 +49,7 @@ _logger = logging.getLogger(__name__)
 
 
 def _aggregate(
-    service_db: ServiceWithHistoryDBGet,
+    service_db: ServiceWithHistoryDBGet | ServiceMetaDataDBGet,
     access_rights_db: list[ServiceAccessRightsDB],
     service_manifest: ServiceMetaDataPublished,
 ) -> dict:
@@ -64,7 +65,10 @@ def _aggregate(
         "service_type": service_manifest.service_type,
         "contact": service_manifest.contact,
         "authors": service_manifest.authors,
-        "owner": (service_db.owner_email if service_db.owner_email else None),
+        # Check if owner attribute is available in the service_db object
+        "owner": (
+            service_db.owner_email if hasattr(service_db, "owner_email") else None
+        ),
         "inputs": service_manifest.inputs or {},
         "outputs": service_manifest.outputs or {},
         "boot_options": service_manifest.boot_options,
@@ -129,6 +133,169 @@ def _to_get_schema(
     )
 
 
+async def list_all_catalog_services(
+    repo: ServicesRepository,
+    director_api: DirectorClient,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    limit: PageLimitInt | None,
+    offset: PageOffsetInt = 0,
+    filters: ServiceDBFilters | None = None,
+    include_history: bool = False,
+) -> tuple[PageTotalCount, list[ServiceGetV2]]:
+    """Lists all catalog services.
+
+    This is different from list_latest_catalog_services which only returns the latest version of each service.
+
+    Args:
+        repo: Repository for services
+        director_api: Director API client
+        product_name: Product name
+        user_id: User ID
+        limit: Pagination limit
+        offset: Pagination offset
+        filters: Filters to apply
+        include_history: Whether to include full version history for each service (default: False)
+            When False, only a minimal history entry with the current version is included
+            When True, complete version history is fetched for each service (can be slower)
+
+    Returns:
+        Tuple of total count and list of services
+    """
+    # Get all services with pagination
+    total_count, services = await repo.list_all_services(
+        product_name=product_name,
+        user_id=user_id,
+        pagination_limit=limit,
+        pagination_offset=offset,
+        filters=filters,
+    )
+
+    if services:
+        # Inject access-rights
+        access_rights: dict[tuple[str, str], list[ServiceAccessRightsDB]] = (
+            await repo.batch_get_services_access_rights(
+                ((sc.key, sc.version) for sc in services), product_name=product_name
+            )
+        )
+        if not access_rights:
+            raise CatalogForbiddenError(
+                name="any service",
+                user_id=user_id,
+                product_name=product_name,
+            )
+
+    # Get manifest of those with access rights
+    got = await manifest.get_batch_services(
+        [
+            (sc.key, sc.version)
+            for sc in services
+            if access_rights.get((sc.key, sc.version))
+        ],
+        director_api,
+    )
+    service_manifest = {
+        (sc.key, sc.version): sc
+        for sc in got
+        if isinstance(sc, ServiceMetaDataPublished)
+    }
+
+    # Log a warning for missing services
+    missing_services = [
+        (sc.key, sc.version)
+        for sc in services
+        if (sc.key, sc.version) not in service_manifest
+    ]
+    if missing_services:
+        msg = f"Found {len(missing_services)} services that are in the database but missing in the registry manifest"
+        _logger.warning(
+            **create_troubleshotting_log_kwargs(
+                msg,
+                error=CatalogInconsistentError(
+                    missing_services=missing_services,
+                    user_id=user_id,
+                    product_name=product_name,
+                    filters=filters,
+                    limit=limit,
+                    offset=offset,
+                ),
+                tip="This might be due to malfunction of the background-task or that this call was done while the sync was taking place",
+            )
+        )
+        # NOTE: tests should fail if this happens but it is not a critical error so it is ignored in production
+        assert len(missing_services) == 0, msg  # nosec
+
+    # Prepare for fetching history data if needed
+    service_histories: dict[str, list[ServiceRelease]] = {}
+    compatibility_maps: dict[str, dict[ServiceVersion, Compatibility | None]] = {}
+
+    # Fetch history data if requested
+    if include_history:
+        for sc in services:
+            if access_rights.get((sc.key, sc.version)):
+                # Fetch history for this service
+                service = await repo.get_service_with_history(
+                    product_name=product_name,
+                    user_id=user_id,
+                    key=sc.key,
+                    version=sc.version,
+                )
+                if service:
+                    # Evaluate compatibility map
+                    compatibility_map = await evaluate_service_compatibility_map(
+                        repo,
+                        product_name=product_name,
+                        user_id=user_id,
+                        service_release_history=service.history,
+                    )
+                    compatibility_maps[sc.key] = compatibility_map
+
+                    # Create history entries
+                    service_histories[sc.key] = [
+                        ServiceRelease.model_construct(
+                            version=h.version,
+                            version_display=h.version_display,
+                            released=h.created,
+                            retired=h.deprecated,
+                            compatibility=compatibility_map.get(h.version),
+                        )
+                        for h in service.history
+                    ]
+
+    # Aggregate the services manifest and access-rights
+    items = []
+    for sc in services:
+        ar = access_rights.get((sc.key, sc.version))
+        sm = service_manifest.get((sc.key, sc.version))
+        if ar and sm:
+            # Base service data
+            service_data = _aggregate(
+                service_db=sc,
+                access_rights_db=ar,
+                service_manifest=sm,
+            )
+
+            # Add history based on include_history parameter
+            if include_history and sc.key in service_histories:
+                service_data["history"] = service_histories[sc.key]
+            else:
+                # Create minimal history with just the current version
+                service_data["history"] = [
+                    ServiceRelease.model_construct(
+                        version=sc.version,
+                        version_display=sc.version_display,
+                        released=sc.created,
+                        retired=sc.deprecated,
+                        compatibility=None,
+                    )
+                ]
+
+            items.append(ServiceGetV2.model_validate(service_data))
+
+    return total_count, items
+
+
 async def list_latest_catalog_services(
     repo: ServicesRepository,
     director_api: DirectorClient,
@@ -136,7 +303,7 @@ async def list_latest_catalog_services(
     product_name: ProductName,
     user_id: UserID,
     limit: PageLimitInt | None,
-    offset: NonNegativeInt = 0,
+    offset: PageOffsetInt = 0,
     filters: ServiceDBFilters | None = None,
 ) -> tuple[PageTotalCount, list[LatestServiceGet]]:
 
@@ -520,7 +687,7 @@ async def list_user_service_release_history(
     service_key: ServiceKey,
     # pagination
     pagination_limit: PageLimitInt | None = None,
-    pagination_offset: NonNegativeInt | None = None,
+    pagination_offset: PageOffsetInt | None = None,
     # filters
     filters: ServiceDBFilters | None = None,
     # result options

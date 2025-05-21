@@ -108,7 +108,7 @@ async def director_client(app: FastAPI) -> DirectorClient:
     return director_api
 
 
-async def test_list_services_paginated(
+async def test_list_latest_catalog_services(
     background_sync_task_mocked: None,
     rabbitmq_and_rpc_setup_disabled: None,
     mocked_director_rest_api: MockRouter,
@@ -273,3 +273,109 @@ async def test_batch_get_my_services(
             },
         ]
     )
+
+
+async def test_list_all_vs_latest_services(
+    background_sync_task_mocked: None,
+    rabbitmq_and_rpc_setup_disabled: None,
+    mocked_director_rest_api: MockRouter,
+    target_product: ProductName,
+    services_repo: ServicesRepository,
+    user_id: UserID,
+    director_client: DirectorClient,
+    num_services: int,
+    num_versions_per_service: int,
+):
+    """Test that list_all_catalog_services returns all services while
+    list_latest_catalog_services returns only the latest version of each service.
+    """
+    # No pagination to get all services
+    limit = None
+    offset = 0
+
+    # Get latest services first
+    latest_total_count, latest_items = (
+        await catalog_services.list_latest_catalog_services(
+            services_repo,
+            director_client,
+            product_name=target_product,
+            user_id=user_id,
+            limit=limit,
+            offset=offset,
+        )
+    )
+
+    # Get all services
+    all_total_count, all_items = await catalog_services.list_all_catalog_services(
+        services_repo,
+        director_client,
+        product_name=target_product,
+        user_id=user_id,
+        limit=limit,
+        offset=offset,
+    )
+
+    # Test with include_history=True option
+    all_total_count_with_history, all_items_with_history = (
+        await catalog_services.list_all_catalog_services(
+            services_repo,
+            director_client,
+            product_name=target_product,
+            user_id=user_id,
+            limit=limit,
+            offset=offset,
+            include_history=True,
+        )
+    )
+
+    # Verify counts
+    # - latest_total_count should equal num_services since we only get the latest version of each service
+    # - all_total_count should equal num_services * num_versions_per_service since we get all versions
+    assert latest_total_count == num_services
+    assert all_total_count == num_services * num_versions_per_service
+    assert all_total_count_with_history == num_services * num_versions_per_service
+
+    # Verify we got the expected number of items
+    assert len(latest_items) == num_services
+    assert len(all_items) == num_services * num_versions_per_service
+    assert len(all_items_with_history) == num_services * num_versions_per_service
+
+    # Collect all service keys from latest items
+    latest_keys = {item.key for item in latest_items}
+
+    # Verify all returned items have the expected structure
+    for item in all_items:
+        # Each item should have exactly one history entry when include_history=False
+        assert len(item.history) == 1
+        # The history entry should match the current version
+        assert item.history[0].version == item.version
+        # Each service key should be in latest_keys
+        assert item.key in latest_keys
+
+    # Verify history is included when include_history=True
+    for item in all_items_with_history:
+        if item.key in latest_keys:
+            service_key = item.key
+            # Find the corresponding service in the latest items
+            latest_service = next(s for s in latest_items if s.key == service_key)
+            # The latest version service should have its history included
+            if item.version == latest_service.version:
+                # Only check that there's proper history if this is the latest version
+                # Some services might have more history than others
+                assert len(item.history) >= 1
+
+    # Group all items by key
+    key_to_all_versions = {}
+    for item in all_items:
+        if item.key not in key_to_all_versions:
+            key_to_all_versions[item.key] = []
+        key_to_all_versions[item.key].append(item)
+
+    # For each service key, verify we have the expected number of versions
+    for key, versions in key_to_all_versions.items():
+        assert len(versions) == num_versions_per_service
+
+        # Find this service in latest_items
+        latest_item = next(item for item in latest_items if item.key == key)
+        # The latest version should be in the list
+        assert any(item.version == latest_item.version for item in versions)
