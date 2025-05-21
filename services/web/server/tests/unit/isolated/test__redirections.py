@@ -3,7 +3,6 @@
 # pylint:disable=redefined-outer-name
 
 
-import asyncio
 import textwrap
 from collections.abc import Awaitable, Callable
 from pathlib import Path
@@ -36,12 +35,10 @@ def index_static_path(tmpdir):
 
 
 @pytest.fixture
-def client(
-    event_loop: asyncio.AbstractEventLoop,
+async def client(
     aiohttp_client: Callable[..., Awaitable[TestClient]],
     index_static_path,
 ):
-
     routes = web.RouteTableDef()
 
     @routes.get("/")
@@ -71,7 +68,7 @@ def client(
 
     app = web.Application()
     app.add_routes(routes)
-    return event_loop.run_until_complete(aiohttp_client(app))
+    return await aiohttp_client(app)
 
 
 @pytest.mark.parametrize("test_path", ["/", "/other"])
