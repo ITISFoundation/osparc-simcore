@@ -182,6 +182,41 @@ class ServiceSummary(CatalogOutputSchema):
 
     contact: LowerCaseEmailStr | None
 
+    service_type: Annotated[ServiceType, Field(alias="type")]
+
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "key": _EXAMPLE_SLEEPER["key"],
+                        "version": _EXAMPLE_SLEEPER["version"],
+                        "name": _EXAMPLE_SLEEPER["name"],
+                        "description": _EXAMPLE_SLEEPER["description"],
+                        "version_display": _EXAMPLE_SLEEPER["version_display"],
+                        "contact": _EXAMPLE_SLEEPER["contact"],
+                        "type": _EXAMPLE_SLEEPER["type"],
+                    },
+                    {
+                        "key": _EXAMPLE_FILEPICKER["key"],
+                        "version": _EXAMPLE_FILEPICKER["version"],
+                        "name": _EXAMPLE_FILEPICKER["name"],
+                        "description": _EXAMPLE_FILEPICKER["description"],
+                        "version_display": None,
+                        "contact": _EXAMPLE_FILEPICKER["contact"],
+                        "type": _EXAMPLE_FILEPICKER["type"],
+                    },
+                ]
+            }
+        )
+
+    model_config = ConfigDict(
+        extra="ignore",
+        populate_by_name=True,
+        json_schema_extra=_update_json_schema_extra,
+    )
+
 
 class _BaseServiceGetV2(ServiceSummary):
     # Model used in catalog's rpc and rest interfaces
@@ -189,8 +224,6 @@ class _BaseServiceGetV2(ServiceSummary):
     icon: HttpUrl | None = None
 
     description_ui: bool = False
-
-    service_type: Annotated[ServiceType, Field(alias="type")]
 
     authors: Annotated[list[Author], Field(min_length=1)]
     owner: Annotated[
