@@ -5871,7 +5871,7 @@
           "function_job_collections"
         ],
         "summary": "Function Job Collection List Function Jobs",
-        "description": "Get the function jobs in function job collection",
+        "description": "Get the function jobs in function job collection\n\nNew in *version 0.8.0*",
         "operationId": "function_job_collection_list_function_jobs",
         "parameters": [
           {
@@ -5947,7 +5947,7 @@
           "function_job_collections"
         ],
         "summary": "Function Job Collection Status",
-        "description": "Get function job collection status",
+        "description": "Get function job collection status\n\nNew in *version 0.8.0*",
         "operationId": "function_job_collection_status",
         "security": [
           {
