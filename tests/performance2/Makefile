@@ -106,7 +106,7 @@ endef
 
 test-deployment: test-deployment-with-grafana ## runs deployment test on local deploy (with Grafana by default)
 
-test-deployment-with-grafana: _check_venv_active ## runs deployment test with Grafana integration
+test-deployment-with-grafana: _check_venv_active grafana-dashboards-up ## runs deployment test with Grafana integration
 	@$(call prompt_for_credentials)
 	@$(call create_locust_config)
 	@printf "$(YELLOW)Starting Locust with Grafana integration...$(NC)\n"
@@ -127,47 +127,7 @@ test-deployment-no-grafana: _check_venv_active ## runs deployment test without G
 	locust --config $(LOCUST_CONFIG_FILE) \
 		--headless
 
-test-deployment-light: _check_venv_active ## runs a light load test with 5 users, 1 spawn rate and 10s runtime (with Grafana)
-	@$(call prompt_for_credentials)
-	@$(call generate_locust_config,_light,2,5,1,10s,Light Test)
-	@printf "$(YELLOW)Starting Locust with light load (with Grafana)...$(NC)\n"
-	@export $$(cat $(AUTH_CREDS_FILE) | xargs) && \
-	locust --config $(LOCUST_CONFIG_FILE)_light \
-		--grafana-url $(GRAFANA_URL) \
-		--pghost $(PG_HOST) \
-		--pgport $(PG_PORT) \
-		--pguser $(PG_USER) \
-		--pgpassword=$(PG_PASSWORD) \
-		--timescale
 
-test-deployment-light-no-grafana: _check_venv_active ## runs a light load test with 5 users, 1 spawn rate and 10s runtime (without Grafana)
-	@$(call prompt_for_credentials)
-	@$(call generate_locust_config,_light,2,5,1,10s,Light Test)
-	@printf "$(YELLOW)Starting Locust with light load (without Grafana)...$(NC)\n"
-	@export $$(cat $(AUTH_CREDS_FILE) | xargs) && \
-	locust --config $(LOCUST_CONFIG_FILE)_light \
-		--headless
-
-test-deployment-heavy: _check_venv_active ## runs a heavy load test with 50 users, 5 spawn rate and 60s runtime (with Grafana)
-	@$(call prompt_for_credentials)
-	@$(call generate_locust_config,_heavy,4,50,5,60s,Heavy Test)
-	@printf "$(YELLOW)Starting Locust with heavy load (with Grafana)...$(NC)\n"
-	@export $$(cat $(AUTH_CREDS_FILE) | xargs) && \
-	locust --config $(LOCUST_CONFIG_FILE)_heavy \
-		--grafana-url $(GRAFANA_URL) \
-		--pghost $(PG_HOST) \
-		--pgport $(PG_PORT) \
-		--pguser $(PG_USER) \
-		--pgpassword=$(PG_PASSWORD) \
-		--timescale
-
-test-deployment-heavy-no-grafana: _check_venv_active ## runs a heavy load test with 50 users, 5 spawn rate and 60s runtime (without Grafana)
-	@$(call prompt_for_credentials)
-	@$(call generate_locust_config,_heavy,4,50,5,60s,Heavy Test)
-	@printf "$(YELLOW)Starting Locust with heavy load (without Grafana)...$(NC)\n"
-	@export $$(cat $(AUTH_CREDS_FILE) | xargs) && \
-	locust --config $(LOCUST_CONFIG_FILE)_heavy \
-		--headless
 
 clear-credentials: ## Clear the cached authentication credentials
 	@if [ -f $(AUTH_CREDS_FILE) ]; then \
@@ -222,7 +182,7 @@ clear-locust-config: ## Clear all Locust configuration files
 		printf "$(YELLOW)No Locust configuration files found.$(NC)\n"; \
 	fi
 
-up:
+grafana-dashboards-up:
 	@locust-compose up -d
-down:
+grafana-dashboards-down:
 	@locust-compose down
