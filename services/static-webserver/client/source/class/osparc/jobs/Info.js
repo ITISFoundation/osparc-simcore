@@ -24,12 +24,13 @@ qx.Class.define("osparc.jobs.Info", {
 
     this._setLayout(new qx.ui.layout.VBox());
 
-    const htmlEmbed = osparc.wrapper.JsonFormatter.getInstance().createDiv();
+    const divId = "job-info-viewer";
+    const htmlEmbed = osparc.wrapper.JsonFormatter.getInstance().createContainer(divId);
     this._add(htmlEmbed, {
       flex: 1
     });
     this.addListener("appear", () => {
-      osparc.wrapper.JsonFormatter.getInstance().setData(info);
+      osparc.wrapper.JsonFormatter.getInstance().setData(info, divId);
     });
 
     return;

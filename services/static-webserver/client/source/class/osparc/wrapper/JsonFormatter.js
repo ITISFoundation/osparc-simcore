@@ -78,14 +78,13 @@ qx.Class.define("osparc.wrapper.JsonFormatter", {
       });
     },
 
-    createDiv: function() {
-      const htmlEmbed = new qx.ui.embed.Html("<div id='json-viewer'></div>");
-      return htmlEmbed;
+    createContainer: function(divId) {
+      return new qx.ui.embed.Html("<div id='"+divId+"'></div>");
     },
 
-    setData: function(myJSON) {
+    setData: function(myJSON, divId) {
       const formatter = new JSONFormatter(myJSON, 1); // 1 = expand depth
-      document.getElementById("json-viewer").appendChild(formatter.render());
+      document.getElementById(divId).appendChild(formatter.render());
     },
   }
 });
