@@ -273,3 +273,25 @@ async def approve_user_account(request: web.Request) -> web.Response:
     assert pre_registration_id  # nosec
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
+
+
+@routes.post(f"/{API_VTAG}/admin/users:reject", name="reject_user_account")
+@login_required
+@permission_required("admin.users.write")
+@_handle_users_exceptions
+async def reject_user_account(request: web.Request) -> web.Response:
+    req_ctx = UsersRequestContext.model_validate(request)
+    assert req_ctx.product_name  # nosec
+
+    rejection_data = await parse_request_body_as(UserReject, request)
+
+    # Reject the user account, passing the current user's ID as the reviewer
+    pre_registration_id = await _users_service.reject_user_account(
+        request.app,
+        pre_registration_email=rejection_data.email,
+        product_name=req_ctx.product_name,
+        reviewer_id=req_ctx.user_id,
+    )
+    assert pre_registration_id  # nosec
+
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)

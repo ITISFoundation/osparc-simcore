@@ -499,3 +499,53 @@ async def approve_user_account(
     )
 
     return pre_registration_id
+
+
+async def reject_user_account(
+    app: web.Application,
+    *,
+    pre_registration_email: LowerCaseEmailStr,
+    product_name: ProductName,
+    reviewer_id: UserID,
+) -> int:
+    """Reject a user account based on their pre-registration email.
+
+    Args:
+        app: The web application instance
+        pre_registration_email: Email of the pre-registered user to reject
+        product_name: Product name for which the user is being rejected
+        reviewer_id: ID of the user rejecting the account
+
+    Returns:
+        int: The ID of the rejected pre-registration record
+
+    Raises:
+        ValueError: If no pre-registration is found for the email/product
+    """
+    engine = get_asyncpg_engine(app)
+
+    # First, find the pre-registration entry matching the email and product
+    pre_registrations, _ = await _users_repository.list_user_pre_registrations(
+        engine,
+        filter_by_pre_email=pre_registration_email,
+        filter_by_product_name=product_name,
+        filter_by_account_request_status=AccountRequestStatus.PENDING,
+    )
+
+    if not pre_registrations:
+        msg = f"No pending pre-registration found for email {pre_registration_email} in product {product_name}"
+        raise ValueError(msg)
+
+    # There should be only one registration matching these criteria
+    pre_registration = pre_registrations[0]
+    pre_registration_id = pre_registration["id"]
+
+    # Update the pre-registration status to REJECTED using the reviewer's ID
+    await _users_repository.review_user_pre_registration(
+        engine,
+        pre_registration_id=pre_registration_id,
+        reviewed_by=reviewer_id,
+        new_status=AccountRequestStatus.REJECTED,
+    )
+
+    return pre_registration_id

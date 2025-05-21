@@ -326,3 +326,87 @@ async def test_list_users_for_admin(
     for item in filtered_page_data:
         user = UserForAdminGet(**item)
         assert user.registered is False  # Pending users are not registered
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [
+        UserRole.PRODUCT_OWNER,
+    ],
+)
+async def test_reject_user_account(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    account_request_form: dict[str, Any],
+    faker: Faker,
+    product_name: ProductName,
+):
+    assert client.app
+
+    # 1. Create a pre-registered user
+    form_data = account_request_form.copy()
+    form_data["firstName"] = faker.first_name()
+    form_data["lastName"] = faker.last_name()
+    form_data["email"] = faker.email()
+
+    resp = await client.post(
+        "/v0/admin/users:pre-register",
+        json=form_data,
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+    )
+    pre_registered_data, _ = await assert_status(resp, status.HTTP_200_OK)
+    pre_registered_email = pre_registered_data["email"]
+
+    # 2. Verify the user is in PENDING status
+    url = client.app.router["list_users_for_admin"].url_for()
+    resp = await client.get(
+        f"{url}?status=PENDING", headers={X_PRODUCT_NAME_HEADER: product_name}
+    )
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    pending_emails = [user["email"] for user in data if user["status"] is None]
+    assert pre_registered_email in pending_emails
+
+    # 3. Reject the pre-registered user
+    url = client.app.router["reject_user_account"].url_for()
+    resp = await client.post(
+        f"{url}",
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+        json={"email": pre_registered_email},
+    )
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # 4. Verify the user is no longer in PENDING status
+    url = client.app.router["list_users_for_admin"].url_for()
+    resp = await client.get(
+        f"{url}?status=PENDING", headers={X_PRODUCT_NAME_HEADER: product_name}
+    )
+    pending_data, _ = await assert_status(resp, status.HTTP_200_OK)
+    pending_emails = [user["email"] for user in pending_data]
+    assert pre_registered_email not in pending_emails
+
+    # 5. Verify the user is now in REJECTED status
+    # First get user details to check status
+    resp = await client.get(
+        "/v0/admin/users:search",
+        params={"email": pre_registered_email},
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+    )
+    found, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert len(found) == 1
+
+    # Check that account_request_status is REJECTED
+    user_data = found[0]
+    assert user_data["account_request_status"] == "REJECTED"
+    assert user_data["account_request_reviewed_by"] == logged_user["id"]
+    assert user_data["account_request_reviewed_at"] is not None
+
+    # 6. Verify that a rejected user cannot be approved
+    url = client.app.router["approve_user_account"].url_for()
+    resp = await client.post(
+        f"{url}",
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+        json={"email": pre_registered_email},
+    )
+    # Should fail as the account is already reviewed
+    assert resp.status == status.HTTP_400_BAD_REQUEST

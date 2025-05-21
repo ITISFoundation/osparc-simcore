@@ -170,7 +170,6 @@ async def approve_user_account(_body: UserApprove): ...
     "/admin/users:reject",
     status_code=status.HTTP_204_NO_CONTENT,
     tags=_extra_tags,
-    include_in_schema=False,  # UNDER DEVELOPMENT
 )
 async def reject_user_account(_body: UserReject): ...
 
