@@ -226,7 +226,7 @@ async def _setup_registry(app: FastAPI) -> None:
         reraise=True,
     )
     async def _wait_until_registry_responsive(app: FastAPI) -> None:
-        await _basic_auth_registry_request(app, path="", method="HEAD", timeout=10.0)
+        await _basic_auth_registry_request(app, path="", method="HEAD", timeout=1.0)
 
     with log_context(_logger, logging.INFO, msg="Connecting to docker registry"):
         await _wait_until_registry_responsive(app)
