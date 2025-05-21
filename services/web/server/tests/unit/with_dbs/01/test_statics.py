@@ -1,7 +1,6 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=unused-argument
 
-import asyncio
 import json
 import re
 from collections.abc import Callable
@@ -48,10 +47,9 @@ def mock_static_webserver(aioresponses_mocker: aioresponses) -> None:
 
 
 @pytest.fixture
-def client(
+async def client(
     mock_static_webserver: None,
     app_environment: EnvVarsDict,
-    event_loop: asyncio.AbstractEventLoop,
     aiohttp_client: Callable,
     postgres_db: sa.engine.Engine,
 ) -> TestClient:
@@ -64,9 +62,7 @@ def client(
     setup_products(app)
     assert setup_statics(app)
 
-    return event_loop.run_until_complete(
-        aiohttp_client(app, server_kwargs={"host": "localhost"})
-    )
+    return await aiohttp_client(app, server_kwargs={"host": "localhost"})
 
 
 @pytest.mark.parametrize(

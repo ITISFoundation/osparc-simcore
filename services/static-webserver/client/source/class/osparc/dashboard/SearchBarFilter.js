@@ -274,7 +274,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       });
 
       // hypertools filter
-      const hypertoolTypeButton = new qx.ui.menu.Button("Hypertools", "@FontAwesome5Solid/wrench/"+iconSize);
+      const hypertoolTypeButton = new qx.ui.menu.Button("Hypertools", osparc.data.model.StudyUI.HYPERTOOL_ICON(iconSize));
       serviceTypeMenu.add(hypertoolTypeButton);
       hypertoolTypeButton.addListener("execute", () => this.__addChip("app-type", "hypertool", "Hypertools"), this);
     },

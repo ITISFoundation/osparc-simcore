@@ -130,10 +130,10 @@ router = APIRouter()
     description=create_route_description(
         base="List of all jobs created for any released solver (paginated)",
         changelog=[
-            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.8"),
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.9-rc1"),
         ],
     ),
-    include_in_schema=False,  # TO BE RELEASED in 0.8
+    include_in_schema=False,  # TO BE RELEASED in 0.9
 )
 async def list_all_solvers_jobs(
     page_params: Annotated[PaginationParams, Depends()],
@@ -219,12 +219,15 @@ async def list_jobs(
     "/{solver_key:path}/releases/{version}/jobs/page",
     response_model=Page[Job],
     responses=JOBS_STATUS_CODES,
-    description=(
-        "List of jobs on a specific released solver (includes pagination)\n\n"
-        + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7")
+    description=create_route_description(
+        base="List of jobs on a specific released solver (includes pagination)",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7"),
+        ],
     ),
+    operation_id="get_jobs_page",
 )
-async def get_jobs_page(
+async def list_jobs_paginated(
     solver_key: SolverKeyId,
     version: VersionStr,
     page_params: Annotated[PaginationParams, Depends()],
@@ -356,11 +359,13 @@ async def get_job_outputs(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/outputs/logfile",
     response_class=RedirectResponse,
     responses=_LOGFILE_STATUS_CODES,
-    description=(
-        "Special extra output with persistent logs file for the solver run.\n\n"
+    description=create_route_description(
+        base="Special extra output with persistent logs file for the solver run.\n\n"
         "**NOTE**: this is not a log stream but a predefined output that is only\n"
-        "available after the job is done.\n\n"
-        + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.4.0")
+        "available after the job is done",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.4"),
+        ],
     ),
 )
 async def get_job_output_logfile(
@@ -414,8 +419,10 @@ async def get_job_output_logfile(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/metadata",
     response_model=JobMetadata,
     responses=METADATA_STATUS_CODES,
-    description="Gets custom metadata from a job\n\n"
-    + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7"),
+    description=create_route_description(
+        base="Gets custom metadata from a job",
+        changelog=[FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7")],
+    ),
 )
 async def get_job_custom_metadata(
     solver_key: SolverKeyId,
@@ -444,7 +451,9 @@ async def get_job_custom_metadata(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/wallet",
     response_model=WalletGetWithAvailableCreditsLegacy,
     responses=WALLET_STATUS_CODES,
-    description=("Get job wallet\n\n" + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7")),
+    description=create_route_description(
+        base="Get job wallet", changelog=[FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7")]
+    ),
 )
 async def get_job_wallet(
     solver_key: SolverKeyId,
@@ -464,8 +473,9 @@ async def get_job_wallet(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/pricing_unit",
     response_model=PricingUnitGetLegacy,
     responses=_PRICING_UNITS_STATUS_CODES,
-    description=(
-        "Get job pricing unit\n\n" + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7")
+    description=create_route_description(
+        base="Get job pricing unit",
+        changelog=[FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7")],
     ),
 )
 async def get_job_pricing_unit(

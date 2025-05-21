@@ -3,8 +3,6 @@
 # pylint:disable=redefined-outer-name
 
 
-import asyncio
-
 import aiohttp
 import pytest
 import tenacity
@@ -37,7 +35,6 @@ def traefik_endpoints(
 
 @pytest.fixture()
 async def traefik_service(
-    event_loop: asyncio.AbstractEventLoop,
     traefik_endpoints: tuple[URL, URL, URL],
     docker_stack: dict,
 ) -> tuple[URL, URL, URL]:

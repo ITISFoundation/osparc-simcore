@@ -12,7 +12,7 @@ from typing import Any, Final, TypedDict, cast
 import aiofiles
 import aiofiles.tempfile
 import fsspec  # type: ignore[import-untyped]
-import repro_zipfile  # type: ignore[import-untyped]
+import repro_zipfile
 from pydantic import ByteSize, FileUrl, TypeAdapter
 from pydantic.networks import AnyUrl
 from servicelib.logging_utils import LogLevelInt, LogMessageStr

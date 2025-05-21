@@ -46,19 +46,19 @@ qx.Class.define("osparc.study.CreateFunction", {
     createFunctionData: function(projectData, name, description, exposedInputs, exposedOutputs) {
       const functionData = {
         "projectId": projectData["uuid"],
-        "name": name,
+        "title": name,
         "description": description,
         "function_class": "PROJECT",
         "inputSchema": {
           "schema_class": "application/schema+json",
-          "schema_dict": {
+          "schema_content": {
             "type": "object",
             "properties": {}
           }
         },
         "outputSchema": {
           "schema_class": "application/schema+json",
-          "schema_dict": {
+          "schema_content": {
             "type": "object",
             "properties": {}
           }
@@ -73,10 +73,11 @@ qx.Class.define("osparc.study.CreateFunction", {
           const parameterMetadata = osparc.store.Services.getMetadata(parameter["key"], parameter["version"]);
           if (parameterMetadata) {
             const type = osparc.service.Utils.getParameterType(parameterMetadata);
-            functionData["inputSchema"]["schema_dict"]["properties"][parameterLabel] = {
+            functionData["inputSchema"]["schema_content"]["properties"][parameterLabel] = {
               "type": this.self().typeToFunctionType(type),
             };
           }
+        } else {
           functionData["defaultInputs"][parameterLabel] = osparc.service.Utils.getParameterValue(parameter);
         }
       });
@@ -88,7 +89,7 @@ qx.Class.define("osparc.study.CreateFunction", {
           const probeMetadata = osparc.store.Services.getMetadata(probe["key"], probe["version"]);
           if (probeMetadata) {
             const type = osparc.service.Utils.getProbeType(probeMetadata);
-            functionData["outputSchema"]["schema_dict"]["properties"][probeLabel] = {
+            functionData["outputSchema"]["schema_content"]["properties"][probeLabel] = {
               "type": this.self().typeToFunctionType(type),
             };
           }
