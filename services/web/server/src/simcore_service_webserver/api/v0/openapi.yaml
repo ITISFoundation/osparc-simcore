@@ -2619,6 +2619,13 @@ paths:
           type: integer
           default: 0
           title: Offset
+      - name: include_children
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+          title: Include Children
       responses:
         '200':
           description: Successful Response
@@ -2664,6 +2671,13 @@ paths:
           type: integer
           default: 0
           title: Offset
+      - name: include_children
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+          title: Include Children
       responses:
         '200':
           description: Successful Response
