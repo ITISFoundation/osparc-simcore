@@ -1,12 +1,12 @@
 import re
-from datetime import date
+from datetime import date, datetime
 from enum import Enum
 from typing import Annotated, Any, Literal, Self
 
 import annotated_types
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.dict_tools import remap_keys
-from common_library.users_enums import UserStatus
+from common_library.users_enums import AccountRequestStatus, UserStatus
 from models_library.groups import AccessRightsDict
 from models_library.rest_filters import Filters
 from models_library.rest_pagination import PageQueryParameters
@@ -303,8 +303,11 @@ class UserForAdminGet(OutputSchema):
         ),
     ] = DEFAULT_FACTORY
 
-    # authorization
+    # pre-registration
     invited_by: str | None = None
+    account_request_status: AccountRequestStatus | None
+    account_request_reviewed_by: UserID | None = None
+    account_request_reviewed_at: datetime | None = None
 
     # user status
     registered: bool

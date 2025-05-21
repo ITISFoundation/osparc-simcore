@@ -1373,15 +1373,6 @@ paths:
       summary: List Users For Admin
       operationId: list_users_for_admin
       parameters:
-      - name: status
-        in: query
-        required: false
-        schema:
-          anyOf:
-          - const: PENDING
-            type: string
-          - type: 'null'
-          title: Status
       - name: limit
         in: query
         required: false
@@ -1396,6 +1387,15 @@ paths:
           type: integer
           default: 0
           title: Offset
+      - name: status
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - const: PENDING
+            type: string
+          - type: 'null'
+          title: Status
       responses:
         '200':
           description: Successful Response
@@ -1410,42 +1410,6 @@ paths:
       - admin
       summary: Approve User Account
       operationId: approve_user_account
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UserApprove'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_Page_UserForAdminGet__'
-  /v0/admin/users:reject:
-    post:
-      tags:
-      - users
-      - admin
-      summary: Reject User Account
-      operationId: reject_user_account
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UserReject'
-        required: true
-      responses:
-        '204':
-          description: Successful Response
-  /v0/admin/users:resendConfirmationEmail:
-    post:
-      tags:
-      - users
-      - admin
-      summary: Resend User Confirmation Email
-      operationId: resend_user_confirmation_email
       requestBody:
         content:
           application/json:
@@ -8405,6 +8369,14 @@ components:
           phone: +1 123456789
           postalCode: '98001'
           privacyPolicy: true
+    AccountRequestStatus:
+      type: string
+      enum:
+      - PENDING
+      - APPROVED
+      - REJECTED
+      title: AccountRequestStatus
+      description: Status of the request for an account
     Activity:
       properties:
         stats:
@@ -17076,6 +17048,23 @@ components:
           - type: string
           - type: 'null'
           title: Invitedby
+        accountRequestStatus:
+          anyOf:
+          - $ref: '#/components/schemas/AccountRequestStatus'
+          - type: 'null'
+        accountRequestReviewedBy:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
+          title: Accountrequestreviewedby
+        accountRequestReviewedAt:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Accountrequestreviewedat
         registered:
           type: boolean
           title: Registered
@@ -17104,6 +17093,7 @@ components:
       - state
       - postalCode
       - country
+      - accountRequestStatus
       - registered
       - status
       title: UserForAdminGet
@@ -17268,16 +17258,6 @@ components:
       required:
       - read
       title: UserNotificationPatch
-    UserReject:
-      properties:
-        email:
-          type: string
-          format: email
-          title: Email
-      type: object
-      required:
-      - email
-      title: UserReject
     UserStatus:
       type: string
       enum:
