@@ -104,7 +104,20 @@ define prompt_for_credentials
 endef
 
 
-test-deployment: test-deployment-with-grafana ## runs deployment test on local deploy (with Grafana by default)
+test-deployment: _check_venv_active ## runs deployment test on deploy
+	@$(call prompt_for_credentials)
+	@$(call create_locust_config)
+	@printf "$(YELLOW)Starting Locust...$(NC)\n"
+	@export $$(cat $(AUTH_CREDS_FILE) | xargs) && \
+	locust --config $(LOCUST_CONFIG_FILE)
+
+test-deployment-ci: _check_venv_active ## runs deployment test on CI
+	@$(call prompt_for_credentials)
+	@$(call create_locust_config)
+	@printf "$(YELLOW)Starting Locust headless...$(NC)\n"
+	@export $$(cat $(AUTH_CREDS_FILE) | xargs) && \
+	locust --config $(LOCUST_CONFIG_FILE) \
+		--headless
 
 test-deployment-with-grafana: _check_venv_active grafana-dashboards-up ## runs deployment test with Grafana integration
 	@$(call prompt_for_credentials)
@@ -119,13 +132,6 @@ test-deployment-with-grafana: _check_venv_active grafana-dashboards-up ## runs d
 		--pgpassword=$(PG_PASSWORD) \
 		--timescale
 
-test-deployment-no-grafana: _check_venv_active ## runs deployment test without Grafana integration
-	@$(call prompt_for_credentials)
-	@$(call create_locust_config)
-	@printf "$(YELLOW)Starting Locust without Grafana integration...$(NC)\n"
-	@export $$(cat $(AUTH_CREDS_FILE) | xargs) && \
-	locust --config $(LOCUST_CONFIG_FILE) \
-		--headless
 
 
 
