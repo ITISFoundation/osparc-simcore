@@ -209,7 +209,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
             this.self().setIcon(hypertoolsMenuButton, osparc.data.model.StudyUI.HYPERTOOL_ICON(16));
 
             hypertools.forEach(templateData => {
-              const hypertoolButton = this.self().createMenuButton(templateData["icon"], templateData["name"]);
+              const hypertoolButton = this.self().createMenuButton(null, templateData["name"]);
               hypertoolButton.addListener("tap", () => {
                 this.fireDataEvent("newStudyFromTemplateClicked", {
                   templateData,
@@ -217,6 +217,8 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
                 });
               });
               hypertoolsMenu.add(hypertoolButton);
+              osparc.study.Utils.guessIcon(templateData)
+                .then(iconSource => osparc.utils.Utils.replaceIconWithThumbnail(hypertoolButton, iconSource, 22));
             });
           }
         });
