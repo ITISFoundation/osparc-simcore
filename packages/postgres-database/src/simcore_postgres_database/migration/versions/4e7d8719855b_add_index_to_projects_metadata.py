@@ -1,7 +1,7 @@
 """add index to projects_metadata
 
 Revision ID: 4e7d8719855b
-Revises: e98c45ff314f
+Revises: b39f2dc87ccd
 Create Date: 2025-05-21 11:48:34.062860+00:00
 
 """
@@ -10,7 +10,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "4e7d8719855b"
-down_revision = "e98c45ff314f"
+down_revision = "b39f2dc87ccd"
 branch_labels = None
 depends_on = None
 
