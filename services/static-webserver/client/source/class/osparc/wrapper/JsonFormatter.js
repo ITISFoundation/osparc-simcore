@@ -79,8 +79,8 @@ qx.Class.define("osparc.wrapper.JsonFormatter", {
     },
 
     setData: function(myJSON) {
-      const formatter = new JSONFormatter(myJSON);
-      document.body.appendChild(formatter.render());
+      const formatter = new JSONFormatter(myJSON, 1); // 1 = expand depth
+      document.getElementById("json-viewer").appendChild(formatter.render());
     },
   }
 });
