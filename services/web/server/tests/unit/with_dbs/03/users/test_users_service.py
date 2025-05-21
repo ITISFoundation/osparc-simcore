@@ -163,7 +163,7 @@ async def test_search_users_as_admin_wildcard(
     email_domain = "@example.com"
 
     # Create multiple pre-registered users with the same domain
-    emails = [f"user1{email_domain}", f"user2{email_domain}", f"different@other.com"]
+    emails = [f"user1{email_domain}", f"user2{email_domain}", "different@other.com"]
     created_by_user_id = product_owner_user["id"]
 
     # Create pre-registered users
