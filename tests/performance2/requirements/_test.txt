@@ -63,6 +63,10 @@ platformdirs==4.3.8
     # via locust-cloud
 psutil==7.0.0
     # via locust
+psycogreen==1.0.2
+    # via locust-plugins
+psycopg2-binary==2.9.10
+    # via locust-plugins
 pydantic==2.11.4
     # via
     #   -r requirements/_test.in
