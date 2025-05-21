@@ -1052,6 +1052,7 @@ async def test_compare_list_all_and_latest_services(
 
     # Verify pagination
     assert total_all_page1 == 6  # Total count should still be total
+    assert total_all_page2 == 6
     assert len(all_services_page1) == 2  # But only 2 items on first page
     assert len(all_services_page2) == 2  # And 2 items on second page
 
