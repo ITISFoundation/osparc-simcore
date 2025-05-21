@@ -891,10 +891,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
     __getActivityOverviewPopUp: function() {
       const resourceData = this.__resourceData;
-      if (
-        osparc.desktop.credits.Utils.areWalletsEnabled() &&
-        osparc.utils.Resources.isStudy(resourceData)
-      ) {
+      if (osparc.utils.Resources.isStudy(resourceData)) {
         const title = this.tr("Activity Overview...");
         const iconSrc = "@FontAwesome5Solid/tasks/22";
         const dataAccess = new qx.ui.basic.Atom().set({
