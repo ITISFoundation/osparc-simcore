@@ -1,2 +1,4 @@
 locust
 locust-plugins
+pydantic
+pydantic-settings
