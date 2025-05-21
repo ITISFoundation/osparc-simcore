@@ -139,16 +139,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
     setIcon: function(menuButton, icon, resourceMetadata) {
       const source = icon ? icon : osparc.utils.Utils.getIconFromResource(resourceMetadata);
       if (source) {
-        const thumbnail = new osparc.ui.basic.Thumbnail(source, 24, 24).set({
-          minHeight: 24,
-          minWidth: 24,
-        });
-        thumbnail.getChildControl("image").set({
-          anonymous: true,
-          decorator: "rounded",
-        });
-        // eslint-disable-next-line no-underscore-dangle
-        menuButton._add(thumbnail, {column: 0});
+        osparc.utils.Utils.replaceIconWithThumbnail(menuButton, source, 24);
       }
     },
   },
