@@ -25,7 +25,12 @@ qx.Class.define("osparc.ui.basic.JsonTreeViewer", {
   construct: function(jsonObj) {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox());
+    this.set({
+      minWidth: 200,
+      minHeight: 200,
+      marginLeft: -30,
+      marginTop: -10,
+    });
 
     if (jsonObj) {
       this.setJson(jsonObj);
@@ -34,7 +39,9 @@ qx.Class.define("osparc.ui.basic.JsonTreeViewer", {
 
   members: {
     setJson(jsonObj) {
-      osparc.wrapper.JsonTreeViewer.getInstance().print(jsonObj, this.getContentElement());
+      this.addListenerOnce("appear", () => {
+        osparc.wrapper.JsonTreeViewer.getInstance().print(jsonObj, this.getContentElement().getDomElement());
+      }, this);
     },
   }
 });
