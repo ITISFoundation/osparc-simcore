@@ -92,6 +92,9 @@ qx.Class.define("osparc.wrapper.JsonFormatter", {
             color: ${color} !important; /* Use your preferred color */
             font-family: "Manrope", sans-serif !important;
           }
+          #${divId} .json-formatter-key {
+            font-size: 13px !important; /* actually keeping the default size */
+          }
         `;
         document.head.appendChild(style);
       }
