@@ -78,6 +78,11 @@ qx.Class.define("osparc.wrapper.JsonFormatter", {
       });
     },
 
+    createDiv: function() {
+      const htmlEmbed = new qx.ui.embed.Html("<div id='json-viewer'></div>");
+      return htmlEmbed;
+    },
+
     setData: function(myJSON) {
       const formatter = new JSONFormatter(myJSON, 1); // 1 = expand depth
       document.getElementById("json-viewer").appendChild(formatter.render());
