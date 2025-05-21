@@ -1,7 +1,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=redefined-outer-name
 
-import asyncio
 import logging
 import sys
 from collections.abc import AsyncIterable, Callable, Iterable
@@ -145,9 +144,8 @@ def product_name() -> str:
 
 
 @pytest.fixture
-def client(
+async def client(
     docker_swarm: None,
-    event_loop: asyncio.AbstractEventLoop,
     aiohttp_client: Callable,
     app_config: dict,
     monkeypatch_setenv_from_app_config: Callable,
@@ -185,11 +183,9 @@ def client(
     setup_socketio(app)
     setup_resource_manager(app)
 
-    return event_loop.run_until_complete(
-        aiohttp_client(
-            app,
-            server_kwargs={"port": cfg["main"]["port"], "host": cfg["main"]["host"]},
-        )
+    return await aiohttp_client(
+        app,
+        server_kwargs={"port": cfg["main"]["port"], "host": cfg["main"]["host"]},
     )
 
 

@@ -89,6 +89,20 @@ MOCK_FILE_UPLOAD_COMPLETE_RESPONSE = FileUploadCompleteResponse.model_validate(
 DOUBLE_ENCODE_SLASH_IN_FILE_ID = "ef944bbe-14c7-11ee-a195-02420a0f07ab%252F46ac4913-92dc-432c-98e3-2dea21d3f0ed%252Fa_text_file.txt"
 SINGLE_ENCODE_SLASH_IN_FILE_ID = "ef944bbe-14c7-11ee-a195-02420a0f07ab%2F46ac4913-92dc-432c-98e3-2dea21d3f0ed%2Fa_text_file.txt"
 
+PREFIX = "/" + "v0" + "/storage"
+
+
+@pytest.mark.xfail(
+    reason="This is really weird: A first test that fails is necessary to make this test module work with pytest-asyncio>=0.24.0. "
+    "Maybe because of module/session event loops?"
+)
+async def test_pytest_asyncio_failure(
+    client: TestClient,
+):
+    url = "/v0/storage/locations"
+    assert url.startswith(PREFIX)
+    await client.get(url)
+
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 @pytest.mark.parametrize(

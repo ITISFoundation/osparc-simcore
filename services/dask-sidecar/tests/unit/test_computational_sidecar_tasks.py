@@ -537,7 +537,6 @@ async def log_rabbit_client_parser(
 
 def test_run_computational_sidecar_real_fct(
     caplog_info_level: pytest.LogCaptureFixture,
-    event_loop: asyncio.AbstractEventLoop,
     app_environment: EnvVarsDict,
     dask_subsystem_mock: dict[str, mock.Mock],
     sleeper_task: ServiceExampleParam,

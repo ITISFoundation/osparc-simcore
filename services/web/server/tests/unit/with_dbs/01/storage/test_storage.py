@@ -79,6 +79,18 @@ _user_roles: Final[list[UserRole]] = [
 ]
 
 
+@pytest.mark.xfail(
+    reason="This is really weird: A first test that fails is necessary to make this test module work with pytest-asyncio>=0.24.0. "
+    "Maybe because of module/session event loops?"
+)
+async def test_pytest_asyncio_failure(
+    client: TestClient,
+):
+    url = "/v0/storage/locations"
+    assert url.startswith(PREFIX)
+    await client.get(url)
+
+
 @pytest.mark.parametrize(
     "user_role,expected",
     [
@@ -95,7 +107,6 @@ async def test_list_storage_locations(
 ):
     url = "/v0/storage/locations"
     assert url.startswith(PREFIX)
-
     resp = await client.get(url)
     data, error = await assert_status(resp, expected)
 
