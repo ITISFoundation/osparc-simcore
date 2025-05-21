@@ -119,6 +119,7 @@ async def delete_function_job_collection(
     responses={**_COMMON_FUNCTION_JOB_COLLECTION_ERROR_RESPONSES},
     description=create_route_description(
         base="Get the function jobs in function job collection",
+        changelog=[FMSG_CHANGELOG_NEW_IN_VERSION.format(FIRST_RELEASE_VERSION)],
     ),
 )
 async def function_job_collection_list_function_jobs(
@@ -144,6 +145,7 @@ async def function_job_collection_list_function_jobs(
     responses={**_COMMON_FUNCTION_JOB_COLLECTION_ERROR_RESPONSES},
     description=create_route_description(
         base="Get function job collection status",
+        changelog=[FMSG_CHANGELOG_NEW_IN_VERSION.format(FIRST_RELEASE_VERSION)],
     ),
 )
 async def function_job_collection_status(
