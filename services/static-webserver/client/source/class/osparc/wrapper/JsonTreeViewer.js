@@ -74,9 +74,9 @@ qx.Class.define("osparc.wrapper.JsonTreeViewer", {
       dynLoader.start();
     },
 
-    print: function(data, wrapper) {
-      jsonTree.create(data, wrapper);
-      // tree.expand();
+    print: function(jsonObj, domEl) {
+      const tree = jsonTree.create(jsonObj, domEl);
+      tree.expand();
     }
   }
 });
