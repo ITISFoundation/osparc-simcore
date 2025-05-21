@@ -843,7 +843,6 @@ async def list_merged_pre_and_registered_users(
             users.c.id.label("user_id"),
             users.c.name.label("user_name"),
             users.c.status,
-            users.c.created_at,
             # Use created_by directly instead of a subquery
             users_pre_registration_details.c.created_by.label("created_by"),
             sa.literal(True).label("is_pre_registered"),
@@ -876,7 +875,6 @@ async def list_merged_pre_and_registered_users(
             users.c.id.label("user_id"),
             users.c.name.label("user_name"),
             users.c.status,
-            users.c.created_at,
             # Match the created_by field from the pre_reg query
             sa.literal(None).label("created_by"),
             sa.literal(False).label("is_pre_registered"),

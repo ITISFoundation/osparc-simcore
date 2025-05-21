@@ -1,5 +1,6 @@
 import logging
 from contextlib import suppress
+from typing import Any
 
 from aiohttp import web
 from common_library.users_enums import AccountRequestStatus
@@ -187,9 +188,12 @@ async def list_users_for_admin(request: web.Request) -> web.Response:
         pagination_offset=query_params.offset,
     )
 
+    def _to_domain_model(user: dict[str, Any]) -> UserForAdminGet:
+        return UserForAdminGet(extras=user.pop("extras") or {}, **user)
+
     page = Page[UserForAdminGet].model_validate(
         paginate_data(
-            chunk=users,
+            chunk=[_to_domain_model(user) for user in users],
             request_url=request.url,
             total=total_count,
             limit=query_params.limit,

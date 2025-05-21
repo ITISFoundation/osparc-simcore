@@ -245,7 +245,20 @@ class UsersForAdminListFilter(Filters):
     # 2. If APPROVED AND user uses the invitation link, then it can be in any of these states:
     #    CONFIRMATION_PENDING, ACTIVE, EXPIRED, BANNED, DELETED
     #
-    status: Literal["PENDING"] | None = None
+    status: (
+        Literal[
+            "PENDING",
+            # NOTE: future states
+            # "REJECTED",
+            # "APPROVED",
+            # "CONFIRMATION_PENDING",
+            # "ACTIVE",
+            # "EXPIRED",
+            # "BANNED",
+            # "DELETED",
+        ]
+        | None
+    ) = None
 
 
 class UsersForAdminListQueryParams(UsersForAdminListFilter, PageQueryParameters): ...
@@ -291,7 +304,7 @@ class UserForAdminGet(OutputSchema):
     ] = DEFAULT_FACTORY
 
     # authorization
-    invited_by: Annotated[str | None, Field(alias="created_by")] = None
+    invited_by: str | None = None
 
     # user status
     registered: bool

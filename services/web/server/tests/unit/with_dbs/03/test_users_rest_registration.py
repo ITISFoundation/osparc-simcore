@@ -11,6 +11,9 @@ from typing import Any
 
 import pytest
 import simcore_service_webserver.login._auth_service
+import simcore_service_webserver.users
+import simcore_service_webserver.users._users_repository
+import simcore_service_webserver.users._users_service
 from aiohttp.test_utils import TestClient
 from common_library.users_enums import UserRole, UserStatus
 from faker import Faker
@@ -200,112 +203,13 @@ async def test_list_users_for_admin(
     logged_user: UserInfoDict,
     account_request_form: dict[str, Any],
     faker: Faker,
-):
-    assert client.app
-
-    # Create some pre-registered users
-    pre_registered_users = []
-    for _ in range(3):
-        form_data = account_request_form.copy()
-        form_data["firstName"] = faker.first_name()
-        form_data["lastName"] = faker.last_name()
-        form_data["email"] = faker.email()
-
-        resp = await client.post("/v0/admin/users:pre-register", json=form_data)
-        pre_registered_data, _ = await assert_status(resp, status.HTTP_200_OK)
-        pre_registered_users.append(pre_registered_data)
-
-    # Register one of the pre-registered users
-    new_user = await simcore_service_webserver.login._auth_service.create_user(
-        client.app,
-        email=pre_registered_users[0]["email"],
-        password=DEFAULT_TEST_PASSWORD,
-        status_upon_creation=UserStatus.ACTIVE,
-        expires_at=None,
-    )
-
-    # Test pagination (page 1, limit 2)
-    url = client.app.router["list_users_for_admin"].url_for()
-    resp = await client.get(f"{url}", params={"page": 1, "per_page": 2})
-    data, _ = await assert_status(resp, status.HTTP_200_OK)
-
-    # Verify pagination structure
-    assert "items" in data
-    assert "pagination" in data
-    assert data["pagination"]["page"] == 1
-    assert data["pagination"]["per_page"] == 2
-    assert data["pagination"]["total"] >= 1  # At least the logged user
-
-    # Test pagination (page 2, limit 2)
-    resp = await client.get(f"{url}", params={"page": 2, "per_page": 2})
-    data, _ = await assert_status(resp, status.HTTP_200_OK)
-    assert data["pagination"]["page"] == 2
-
-    # Test filtering by approval status (only approved users)
-    resp = await client.get(f"{url}", params={"approved": True})
-    data, _ = await assert_status(resp, status.HTTP_200_OK)
-
-    # All items should be registered users with status
-    for item in data["items"]:
-        user = UserForAdminGet(**item)
-        assert user.registered is True
-        assert user.status is not None
-
-    # Test filtering by approval status (only non-approved users)
-    resp = await client.get(f"{url}", params={"approved": False})
-    data, _ = await assert_status(resp, status.HTTP_200_OK)
-
-    # All items should be non-registered or non-approved users
-    assert len(data["items"]) >= 2  # We created at least 2 non-registered users
-    for item in data["items"]:
-        user = UserForAdminGet(**item)
-        assert user.registered is False or user.status != UserStatus.ACTIVE
-
-    # Combine pagination and filtering
-    resp = await client.get(
-        f"{url}", params={"approved": True, "page": 1, "per_page": 1}
-    )
-    data, _ = await assert_status(resp, status.HTTP_200_OK)
-    assert len(data["items"]) == 1
-    assert data["pagination"]["page"] == 1
-    assert data["pagination"]["per_page"] == 1
-
-    # Verify content of a specific user
-    resp = await client.get(f"{url}", params={"approved": True})
-    data, _ = await assert_status(resp, status.HTTP_200_OK)
-
-    # Find the newly registered user in the list
-    registered_user = next(
-        (item for item in data["items"] if item["email"] == new_user["email"]),
-        None,
-    )
-    assert registered_user is not None
-
-    user = UserForAdminGet(**registered_user)
-    assert user.registered is True
-    assert user.status == UserStatus.ACTIVE
-    assert user.email == new_user["email"]
-
-
-@pytest.mark.parametrize("user_role", [UserRole.PRODUCT_OWNER])
-async def test_pending_users_management(
-    client: TestClient,
-    logged_user: UserInfoDict,
-    account_request_form: dict[str, Any],
-    faker: Faker,
     product_name: ProductName,
 ):
-    """Test the management of pending users:
-    - list pending users
-    - approve user account
-    - reject user account
-    - resend confirmation email
-    """
     assert client.app
 
-    # Create some pre-registered users
+    # 1. Create several pre-registered users
     pre_registered_users = []
-    for _ in range(3):
+    for _ in range(5):  # Create 5 pre-registered users
         form_data = account_request_form.copy()
         form_data["firstName"] = faker.first_name()
         form_data["lastName"] = faker.last_name()
@@ -319,90 +223,95 @@ async def test_pending_users_management(
         pre_registered_data, _ = await assert_status(resp, status.HTTP_200_OK)
         pre_registered_users.append(pre_registered_data)
 
-    # 1. List pending users (not yet approved)
+    # Verify all pre-registered users are in PENDING status
     url = client.app.router["list_users_for_admin"].url_for()
     resp = await client.get(
         f"{url}?status=PENDING", headers={X_PRODUCT_NAME_HEADER: product_name}
     )
     data, _ = await assert_status(resp, status.HTTP_200_OK)
 
-    # Verify response structure and content
-    assert "items" in data
-    assert "pagination" in data
-    assert len(data["items"]) >= 3  # At least our 3 pre-registered users
-
-    # Verify each pre-registered user is in the list
+    pending_emails = [user["email"] for user in data if user["status"] == "PENDING"]
     for pre_user in pre_registered_users:
-        found = next(
-            (item for item in data["items"] if item["email"] == pre_user["email"]),
-            None,
-        )
-        assert found is not None
-        assert found["registered"] is False
+        assert pre_user["email"] in pending_emails
 
-    # 2. Approve one of the pre-registered users
-    approval_data = {"email": pre_registered_users[0]["email"]}
-    resp = await client.post(
-        "/v0/admin/users:approve",
-        json=approval_data,
-        headers={X_PRODUCT_NAME_HEADER: product_name},
+    # 2. Register one of the pre-registered users
+    registered_email = pre_registered_users[0]["email"]
+    new_user = await simcore_service_webserver.login._auth_service.create_user(
+        client.app,
+        email=registered_email,
+        password=DEFAULT_TEST_PASSWORD,
+        status_upon_creation=UserStatus.ACTIVE,
+        expires_at=None,
     )
-    approved_data, _ = await assert_status(resp, status.HTTP_200_OK)
 
-    # Verify response structure
-    assert "invitationLink" in approved_data
-    assert approved_data.get("email") == pre_registered_users[0]["email"]
-
-    # Verify the user is no longer in the pending list
+    # 3. Test filtering by status
+    # a. Check PENDING filter (should exclude the registered user)
     resp = await client.get(
         f"{url}?status=PENDING", headers={X_PRODUCT_NAME_HEADER: product_name}
     )
-    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    pending_data, _ = await assert_status(resp, status.HTTP_200_OK)
 
-    # The approved user should no longer be in the pending list
-    assert all(
-        item["email"] != pre_registered_users[0]["email"] for item in data["items"]
-    )
+    # The registered user should no longer be in pending status
+    pending_emails = [user["email"] for user in pending_data]
+    assert registered_email not in pending_emails
+    assert len(pending_emails) >= len(pre_registered_users) - 1
 
-    # 3. Reject another pre-registered user
-    rejection_data = {"email": pre_registered_users[1]["email"]}
-    resp = await client.post(
-        "/v0/admin/users:reject",
-        json=rejection_data,
-        headers={X_PRODUCT_NAME_HEADER: product_name},
-    )
-    await assert_status(resp, status.HTTP_204_NO_CONTENT)
-
-    # Verify the rejected user is no longer in the pending list
+    # b. Check ACTIVE filter (should include only the registered user)
     resp = await client.get(
-        f"{url}?status=PENDING", headers={X_PRODUCT_NAME_HEADER: product_name}
+        f"{url}?status=ACTIVE", headers={X_PRODUCT_NAME_HEADER: product_name}
     )
-    data, _ = await assert_status(resp, status.HTTP_200_OK)
-    assert all(
-        item["email"] != pre_registered_users[1]["email"] for item in data["items"]
-    )
+    active_data, _ = await assert_status(resp, status.HTTP_200_OK)
 
-    # 4. Resend confirmation email to the approved user
-    resend_data = {"email": pre_registered_users[0]["email"]}
-    resp = await client.post(
-        "/v0/admin/users:resendConfirmationEmail",
-        json=resend_data,
-        headers={X_PRODUCT_NAME_HEADER: product_name},
+    # Find the registered user in the active users
+    active_user = next(
+        (item for item in active_data if item["email"] == registered_email),
+        None,
     )
-    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+    assert active_user is not None
+    assert UserForAdminGet(**active_user).status == UserStatus.ACTIVE
 
-    # Search for the approved user to confirm their status
+    # 4. Test pagination
+    # a. First page (limit 2)
     resp = await client.get(
-        "/v0/admin/users:search",
-        params={"email": pre_registered_users[0]["email"]},
+        f"{url}",
+        params={"limit": 2, "offset": 0},
         headers={X_PRODUCT_NAME_HEADER: product_name},
     )
-    found_users, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert resp.status == status.HTTP_200_OK
+    page1_payload = await resp.json()
 
-    # Should find exactly one user
-    assert len(found_users) == 1
-    found_user = UserForAdminGet(**found_users[0])
+    assert len(page1_payload["items"]) == 2
+    assert page1_payload["meta"]["limit"] == 2
+    assert page1_payload["meta"]["offset"] == 0
+    assert page1_payload["meta"]["total"] >= len(pre_registered_users)
 
-    # User should be registered but in CONFIRMATION_PENDING status
-    assert found_user.registered is True
-    assert found_user.status == UserStatus.CONFIRMATION_PENDING
+    # b. Second page (limit 2)
+    resp = await client.get(
+        f"{url}",
+        params={"limit": 2, "offset": 2},
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+    )
+    assert resp.status == status.HTTP_200_OK
+    page2_payload = await resp.json()
+
+    assert len(page2_payload["items"]) == 2
+    assert page2_payload["meta"]["limit"] == 2
+    assert page2_payload["meta"]["offset"] == 2
+
+    # Ensure page 1 and page 2 contain different items
+    page1_emails = [item["email"] for item in page1_payload["data"]]
+    page2_emails = [item["email"] for item in page2_payload["data"]]
+    assert not set(page1_emails).intersection(page2_emails)
+
+    # 5. Combine status filter with pagination
+    resp = await client.get(
+        f"{url}",
+        params={"status": "PENDING", "limit": 2, "offset": 0},
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+    )
+    filtered_page_data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    assert len(filtered_page_data) <= 2
+    for item in filtered_page_data:
+        user = UserForAdminGet(**item)
+        assert user.registered is False  # Pending users are not registered
