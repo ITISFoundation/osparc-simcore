@@ -70,6 +70,7 @@ async def test_access_rights_on_search_users_only_product_owners_can_access(
     client: TestClient,
     logged_user: UserInfoDict,
     expected: HTTPStatus,
+    pre_registration_details_db_cleanup: None,
 ):
     assert client.app
 
@@ -393,7 +394,7 @@ async def test_reject_user_account(
     form_data = account_request_form.copy()
     form_data["firstName"] = faker.first_name()
     form_data["lastName"] = faker.last_name()
-    form_data["email"] = faker.email()
+    form_data["email"] = "some-reject-user@email.com"
 
     resp = await client.post(
         "/v0/admin/user-accounts:pre-register",
