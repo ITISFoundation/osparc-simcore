@@ -9,7 +9,7 @@ from typing import Any
 import pytest
 import sqlalchemy as sa
 from aiohttp import web
-from models_library.api_schemas_webserver.users import UserForAdminGet
+from models_library.api_schemas_webserver.users import UserAccountGet
 from models_library.products import ProductName
 from simcore_postgres_database.models.users_details import (
     users_pre_registration_details,
@@ -96,7 +96,7 @@ async def test_search_users_as_admin_real_user(
     )  # This test user does not have a product associated with it
 
     # Verify the UserForAdminGet model is populated correctly
-    assert isinstance(found_user, UserForAdminGet)
+    assert isinstance(found_user, UserAccountGet)
     assert found_user.first_name == product_owner_user["first_name"]
 
 

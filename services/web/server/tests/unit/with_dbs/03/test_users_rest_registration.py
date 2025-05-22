@@ -22,7 +22,7 @@ from common_library.users_enums import UserRole, UserStatus
 from faker import Faker
 from models_library.api_schemas_webserver.auth import AccountRequestInfo
 from models_library.api_schemas_webserver.users import (
-    UserForAdminGet,
+    UserAccountGet,
 )
 from models_library.products import ProductName
 from models_library.rest_pagination import Page
@@ -81,8 +81,8 @@ async def test_access_rights_on_search_users_only_product_owners_can_access(
 ):
     assert client.app
 
-    url = client.app.router["search_users_for_admin"].url_for()
-    assert url.path == "/v0/admin/users:search"
+    url = client.app.router["search_user_account"].url_for()
+    assert url.path == "/v0/admin/user-accounts:search"
 
     resp = await client.get(url.path, params={"email": "do-not-exists@foo.com"})
     await assert_status(resp, expected)
@@ -150,7 +150,7 @@ async def test_search_and_pre_registration(
 
     # ONLY in `users` and NOT `users_pre_registration_details`
     resp = await client.get(
-        "/v0/admin/users:search", params={"email": logged_user["email"]}
+        "/v0/admin/user-accounts:search", params={"email": logged_user["email"]}
     )
     assert resp.status == status.HTTP_200_OK
 
@@ -159,11 +159,11 @@ async def test_search_and_pre_registration(
 
     nullable_fields = {
         name: None
-        for name, field in UserForAdminGet.model_fields.items()
+        for name, field in UserAccountGet.model_fields.items()
         if is_nullable(field)
     }
 
-    got = UserForAdminGet.model_validate({**nullable_fields, **found[0]})
+    got = UserAccountGet.model_validate({**nullable_fields, **found[0]})
     expected = {
         "first_name": logged_user.get("first_name"),
         "last_name": logged_user.get("last_name"),
@@ -184,15 +184,18 @@ async def test_search_and_pre_registration(
     # NOT in `users` and ONLY `users_pre_registration_details`
 
     # create pre-registration
-    resp = await client.post("/v0/admin/users:pre-register", json=account_request_form)
+    resp = await client.post(
+        "/v0/admin/user-accounts:pre-register", json=account_request_form
+    )
     assert resp.status == status.HTTP_200_OK
 
     resp = await client.get(
-        "/v0/admin/users:search", params={"email": account_request_form["email"]}
+        "/v0/admin/user-accounts:search",
+        params={"email": account_request_form["email"]},
     )
     found, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(found) == 1
-    got = UserForAdminGet(**found[0], state=None, status=None)
+    got = UserAccountGet(**found[0], state=None, status=None)
 
     assert got.model_dump(include={"registered", "status"}) == {
         "registered": False,
@@ -211,11 +214,12 @@ async def test_search_and_pre_registration(
     )
 
     resp = await client.get(
-        "/v0/admin/users:search", params={"email": account_request_form["email"]}
+        "/v0/admin/user-accounts:search",
+        params={"email": account_request_form["email"]},
     )
     found, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(found) == 1
-    got = UserForAdminGet(**found[0], state=None)
+    got = UserAccountGet(**found[0], state=None)
     assert got.model_dump(include={"registered", "status"}) == {
         "registered": True,
         "status": new_user["status"].name,
@@ -228,7 +232,7 @@ async def test_search_and_pre_registration(
         UserRole.PRODUCT_OWNER,
     ],
 )
-async def test_list_users_for_admin(
+async def test_list_users_accounts(
     client: TestClient,
     logged_user: UserInfoDict,
     account_request_form: dict[str, Any],
@@ -247,7 +251,7 @@ async def test_list_users_for_admin(
         form_data["email"] = faker.email()
 
         resp = await client.post(
-            "/v0/admin/users:pre-register",
+            "/v0/admin/user-accounts:pre-register",
             json=form_data,
             headers={X_PRODUCT_NAME_HEADER: product_name},
         )
@@ -255,7 +259,7 @@ async def test_list_users_for_admin(
         pre_registered_users.append(pre_registered_data)
 
     # Verify all pre-registered users are in PENDING status
-    url = client.app.router["list_users_for_admin"].url_for()
+    url = client.app.router["list_users_accounts"].url_for()
     resp = await client.get(
         f"{url}?review_status=PENDING", headers={X_PRODUCT_NAME_HEADER: product_name}
     )
@@ -263,7 +267,7 @@ async def test_list_users_for_admin(
     response_json = await resp.json()
 
     # Parse response into Page[UserForAdminGet] model
-    page_model = Page[UserForAdminGet].model_validate(response_json)
+    page_model = Page[UserAccountGet].model_validate(response_json)
 
     # Access the items field from the paginated response
     pending_users = [
@@ -296,13 +300,13 @@ async def test_list_users_for_admin(
 
     # 3. Test filtering by status
     # a. Check PENDING filter (should exclude the registered user)
-    url = client.app.router["list_users_for_admin"].url_for()
+    url = client.app.router["list_users_accounts"].url_for()
     resp = await client.get(
         f"{url}?review_status=PENDING", headers={X_PRODUCT_NAME_HEADER: product_name}
     )
     assert resp.status == status.HTTP_200_OK
     response_json = await resp.json()
-    pending_page = Page[UserForAdminGet].model_validate(response_json)
+    pending_page = Page[UserAccountGet].model_validate(response_json)
 
     # The registered user should no longer be in pending status
     pending_emails = [user.email for user in pending_page.data]
@@ -315,7 +319,7 @@ async def test_list_users_for_admin(
     )
     assert resp.status == status.HTTP_200_OK
     response_json = await resp.json()
-    reviewed_page = Page[UserForAdminGet].model_validate(response_json)
+    reviewed_page = Page[UserAccountGet].model_validate(response_json)
 
     # Find the registered user in the reviewed users
     active_user = next(
@@ -335,7 +339,7 @@ async def test_list_users_for_admin(
     )
     assert resp.status == status.HTTP_200_OK
     response_json = await resp.json()
-    page1 = Page[UserForAdminGet].model_validate(response_json)
+    page1 = Page[UserAccountGet].model_validate(response_json)
 
     assert len(page1.data) == 2
     assert page1.meta.limit == 2
@@ -350,7 +354,7 @@ async def test_list_users_for_admin(
     )
     assert resp.status == status.HTTP_200_OK
     response_json = await resp.json()
-    page2 = Page[UserForAdminGet].model_validate(response_json)
+    page2 = Page[UserAccountGet].model_validate(response_json)
 
     assert len(page2.data) == 2
     assert page2.meta.limit == 2
@@ -369,7 +373,7 @@ async def test_list_users_for_admin(
     )
     assert resp.status == status.HTTP_200_OK
     response_json = await resp.json()
-    filtered_page = Page[UserForAdminGet].model_validate(response_json)
+    filtered_page = Page[UserAccountGet].model_validate(response_json)
 
     assert len(filtered_page.data) <= 2
     for user in filtered_page.data:
@@ -400,7 +404,7 @@ async def test_reject_user_account(
     form_data["email"] = faker.email()
 
     resp = await client.post(
-        "/v0/admin/users:pre-register",
+        "/v0/admin/user-accounts:pre-register",
         json=form_data,
         headers={X_PRODUCT_NAME_HEADER: product_name},
     )
@@ -408,7 +412,7 @@ async def test_reject_user_account(
     pre_registered_email = pre_registered_data["email"]
 
     # 2. Verify the user is in PENDING status
-    url = client.app.router["list_users_for_admin"].url_for()
+    url = client.app.router["list_users_accounts"].url_for()
     resp = await client.get(
         f"{url}?review_status=PENDING", headers={X_PRODUCT_NAME_HEADER: product_name}
     )
@@ -427,7 +431,7 @@ async def test_reject_user_account(
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
     # 4. Verify the user is no longer in PENDING status
-    url = client.app.router["list_users_for_admin"].url_for()
+    url = client.app.router["list_users_accounts"].url_for()
     resp = await client.get(
         f"{url}?review_status=PENDING", headers={X_PRODUCT_NAME_HEADER: product_name}
     )
@@ -438,7 +442,7 @@ async def test_reject_user_account(
     # 5. Verify the user is now in REJECTED status
     # First get user details to check status
     resp = await client.get(
-        "/v0/admin/users:search",
+        "/v0/admin/user-accounts:search",
         params={"email": pre_registered_email},
         headers={X_PRODUCT_NAME_HEADER: product_name},
     )

@@ -7,12 +7,12 @@ from common_library.users_enums import AccountRequestStatus
 from models_library.api_schemas_webserver.users import (
     MyProfileGet,
     MyProfilePatch,
+    UserAccountGet,
+    UserAccountSearchQueryParams,
     UserApprove,
-    UserForAdminGet,
     UserGet,
     UserReject,
-    UsersForAdminListQueryParams,
-    UsersForAdminSearchQueryParams,
+    UsersAccountListQueryParams,
     UsersSearch,
 )
 from models_library.rest_pagination import Page
@@ -173,16 +173,16 @@ _RESPONSE_MODEL_MINIMAL_POLICY = RESPONSE_MODEL_POLICY.copy()
 _RESPONSE_MODEL_MINIMAL_POLICY["exclude_none"] = True
 
 
-@routes.get(f"/{API_VTAG}/admin/users", name="list_users_for_admin")
+@routes.get(f"/{API_VTAG}/admin/user-accounts", name="list_users_accounts")
 @login_required
 @permission_required("admin.users.read")
 @_handle_users_exceptions
-async def list_users_for_admin(request: web.Request) -> web.Response:
+async def list_users_accounts(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     assert req_ctx.product_name  # nosec
 
     query_params = parse_request_query_parameters_as(
-        UsersForAdminListQueryParams, request
+        UsersAccountListQueryParams, request
     )
 
     if query_params.review_status == "PENDING":
@@ -204,12 +204,12 @@ async def list_users_for_admin(request: web.Request) -> web.Response:
         pagination_offset=query_params.offset,
     )
 
-    def _to_domain_model(user: dict[str, Any]) -> UserForAdminGet:
-        return UserForAdminGet(
+    def _to_domain_model(user: dict[str, Any]) -> UserAccountGet:
+        return UserAccountGet(
             extras=user.pop("extras") or {}, pre_registration_id=user.pop("id"), **user
         )
 
-    page = Page[UserForAdminGet].model_validate(
+    page = Page[UserAccountGet].model_validate(
         paginate_data(
             chunk=[_to_domain_model(user) for user in users],
             request_url=request.url,
@@ -222,16 +222,16 @@ async def list_users_for_admin(request: web.Request) -> web.Response:
     return create_json_response_from_page(page)
 
 
-@routes.get(f"/{API_VTAG}/admin/users:search", name="search_users_for_admin")
+@routes.get(f"/{API_VTAG}/admin/user-accounts:search", name="search_user_account")
 @login_required
 @permission_required("admin.users.read")
 @_handle_users_exceptions
-async def search_users_for_admin(request: web.Request) -> web.Response:
+async def search_user_account(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     assert req_ctx.product_name  # nosec
 
-    query_params: UsersForAdminSearchQueryParams = parse_request_query_parameters_as(
-        UsersForAdminSearchQueryParams, request
+    query_params: UserAccountSearchQueryParams = parse_request_query_parameters_as(
+        UserAccountSearchQueryParams, request
     )
 
     found = await _users_service.search_users_as_admin(
@@ -247,12 +247,12 @@ async def search_users_for_admin(request: web.Request) -> web.Response:
 
 
 @routes.post(
-    f"/{API_VTAG}/admin/users:pre-register", name="pre_register_user_for_admin"
+    f"/{API_VTAG}/admin/user-accounts:pre-register", name="pre_register_user_account"
 )
 @login_required
 @permission_required("admin.users.write")
 @_handle_users_exceptions
-async def pre_register_user_for_admin(request: web.Request) -> web.Response:
+async def pre_register_user_account(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     pre_user_profile = await parse_request_body_as(PreRegisteredUserGet, request)
 
@@ -268,7 +268,7 @@ async def pre_register_user_for_admin(request: web.Request) -> web.Response:
     )
 
 
-@routes.post(f"/{API_VTAG}/admin/users:approve", name="approve_user_account")
+@routes.post(f"/{API_VTAG}/admin/user-accounts:approve", name="approve_user_account")
 @login_required
 @permission_required("admin.users.write")
 @_handle_users_exceptions
@@ -301,7 +301,7 @@ async def approve_user_account(request: web.Request) -> web.Response:
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
-@routes.post(f"/{API_VTAG}/admin/users:reject", name="reject_user_account")
+@routes.post(f"/{API_VTAG}/admin/user-accounts:reject", name="reject_user_account")
 @login_required
 @permission_required("admin.users.write")
 @_handle_users_exceptions

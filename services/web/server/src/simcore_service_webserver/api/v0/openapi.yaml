@@ -1365,13 +1365,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_UserGet__'
-  /v0/admin/users:
+  /v0/admin/user-accounts:
     get:
       tags:
       - users
       - admin
-      summary: List Users For Admin
-      operationId: list_users_for_admin
+      summary: List Users Accounts
+      operationId: list_users_accounts
       parameters:
       - name: limit
         in: query
@@ -1404,8 +1404,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Page_UserForAdminGet_'
-  /v0/admin/users:approve:
+                $ref: '#/components/schemas/Page_UserAccountGet_'
+  /v0/admin/user-accounts:approve:
     post:
       tags:
       - users
@@ -1421,7 +1421,7 @@ paths:
       responses:
         '204':
           description: Successful Response
-  /v0/admin/users:reject:
+  /v0/admin/user-accounts:reject:
     post:
       tags:
       - users
@@ -1437,13 +1437,13 @@ paths:
       responses:
         '204':
           description: Successful Response
-  /v0/admin/users:search:
+  /v0/admin/user-accounts:search:
     get:
       tags:
       - users
       - admin
-      summary: Search Users For Admin
-      operationId: search_users_for_admin
+      summary: Search User Account
+      operationId: search_user_account
       parameters:
       - name: email
         in: query
@@ -1459,14 +1459,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_UserForAdminGet__'
-  /v0/admin/users:pre-register:
+                $ref: '#/components/schemas/Envelope_list_UserAccountGet__'
+  /v0/admin/user-accounts:pre-register:
     post:
       tags:
       - users
       - admin
-      summary: Pre Register User For Admin
-      operationId: pre_register_user_for_admin
+      summary: Pre Register User Account
+      operationId: pre_register_user_account
       requestBody:
         content:
           application/json:
@@ -1479,7 +1479,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_UserForAdminGet_'
+                $ref: '#/components/schemas/Envelope_UserAccountGet_'
   /v0/wallets:
     get:
       tags:
@@ -10656,11 +10656,11 @@ components:
           title: Error
       type: object
       title: Envelope[Union[WalletGet, NoneType]]
-    Envelope_UserForAdminGet_:
+    Envelope_UserAccountGet_:
       properties:
         data:
           anyOf:
-          - $ref: '#/components/schemas/UserForAdminGet'
+          - $ref: '#/components/schemas/UserAccountGet'
           - type: 'null'
         error:
           anyOf:
@@ -10668,7 +10668,7 @@ components:
           - type: 'null'
           title: Error
       type: object
-      title: Envelope[UserForAdminGet]
+      title: Envelope[UserAccountGet]
     Envelope_WalletGetWithAvailableCredits_:
       properties:
         data:
@@ -11212,12 +11212,12 @@ components:
           title: Error
       type: object
       title: Envelope[list[TaskGet]]
-    Envelope_list_UserForAdminGet__:
+    Envelope_list_UserAccountGet__:
       properties:
         data:
           anyOf:
           - items:
-              $ref: '#/components/schemas/UserForAdminGet'
+              $ref: '#/components/schemas/UserAccountGet'
             type: array
           - type: 'null'
           title: Data
@@ -11227,7 +11227,7 @@ components:
           - type: 'null'
           title: Error
       type: object
-      title: Envelope[list[UserForAdminGet]]
+      title: Envelope[list[UserAccountGet]]
     Envelope_list_UserGet__:
       properties:
         data:
@@ -13854,7 +13854,7 @@ components:
       - _links
       - data
       title: Page[ServiceRunGet]
-    Page_UserForAdminGet_:
+    Page_UserAccountGet_:
       properties:
         _meta:
           $ref: '#/components/schemas/PageMetaInfoLimitOffset'
@@ -13862,7 +13862,7 @@ components:
           $ref: '#/components/schemas/PageLinks'
         data:
           items:
-            $ref: '#/components/schemas/UserForAdminGet'
+            $ref: '#/components/schemas/UserAccountGet'
           type: array
           title: Data
       additionalProperties: false
@@ -13871,7 +13871,7 @@ components:
       - _meta
       - _links
       - data
-      title: Page[UserForAdminGet]
+      title: Page[UserAccountGet]
     PatchRequestBody:
       properties:
         value:
@@ -16996,21 +16996,7 @@ components:
       - number
       - e_tag
       title: UploadedPart
-    UserApprove:
-      properties:
-        email:
-          type: string
-          format: email
-          title: Email
-        invitation:
-          anyOf:
-          - $ref: '#/components/schemas/InvitationGenerate'
-          - type: 'null'
-      type: object
-      required:
-      - email
-      title: UserApprove
-    UserForAdminGet:
+    UserAccountGet:
       properties:
         firstName:
           anyOf:
@@ -17125,7 +17111,21 @@ components:
       - accountRequestStatus
       - registered
       - status
-      title: UserForAdminGet
+      title: UserAccountGet
+    UserApprove:
+      properties:
+        email:
+          type: string
+          format: email
+          title: Email
+        invitation:
+          anyOf:
+          - $ref: '#/components/schemas/InvitationGenerate'
+          - type: 'null'
+      type: object
+      required:
+      - email
+      title: UserApprove
     UserGet:
       properties:
         userId:

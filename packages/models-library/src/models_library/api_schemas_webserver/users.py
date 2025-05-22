@@ -252,7 +252,7 @@ class UsersForAdminListFilter(Filters):
     model_config = ConfigDict(extra="forbid")
 
 
-class UsersForAdminListQueryParams(UsersForAdminListFilter, PageQueryParameters): ...
+class UsersAccountListQueryParams(UsersForAdminListFilter, PageQueryParameters): ...
 
 
 class UserApprove(InputSchema):
@@ -264,7 +264,7 @@ class UserReject(InputSchema):
     email: EmailStr
 
 
-class UsersForAdminSearchQueryParams(RequestParameters):
+class UserAccountSearchQueryParams(RequestParameters):
     email: Annotated[
         str,
         Field(
@@ -275,7 +275,7 @@ class UsersForAdminSearchQueryParams(RequestParameters):
     ]
 
 
-class UserForAdminGet(OutputSchema):
+class UserAccountGet(OutputSchema):
     # ONLY for admins
     first_name: str | None
     last_name: str | None

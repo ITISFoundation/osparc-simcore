@@ -4,7 +4,7 @@ from typing import Any
 import pycountry
 from aiohttp import web
 from common_library.users_enums import AccountRequestStatus
-from models_library.api_schemas_webserver.users import MyProfilePatch, UserForAdminGet
+from models_library.api_schemas_webserver.users import MyProfilePatch, UserAccountGet
 from models_library.basic_types import IDStr
 from models_library.emails import LowerCaseEmailStr
 from models_library.groups import GroupID
@@ -47,7 +47,7 @@ async def pre_register_user(
     profile: PreRegisteredUserGet,
     creator_user_id: UserID,
     product_name: ProductName,
-) -> UserForAdminGet:
+) -> UserAccountGet:
 
     found = await search_users_as_admin(
         app, email_glob=profile.email, product_name=product_name, include_products=False
@@ -140,7 +140,7 @@ async def search_users_as_admin(
     email_glob: str,
     product_name: ProductName | None = None,
     include_products: bool = False,
-) -> list[UserForAdminGet]:
+) -> list[UserAccountGet]:
     """
     WARNING: this information is reserved for admin users. Note that the returned model include UserForAdminGet
 
@@ -171,7 +171,7 @@ async def search_users_as_admin(
         return None
 
     return [
-        UserForAdminGet(
+        UserAccountGet(
             first_name=r.first_name or r.pre_first_name,
             last_name=r.last_name or r.pre_last_name,
             email=r.email or r.pre_email,

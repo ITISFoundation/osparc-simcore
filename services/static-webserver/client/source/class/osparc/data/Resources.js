@@ -1059,27 +1059,27 @@ qx.Class.define("osparc.data.Resources", {
         endpoints: {
           search: {
             method: "GET",
-            url: statics.API + "/admin/users:search?email={email}"
+            url: statics.API + "/admin/user-accounts:search?email={email}"
           },
           getPendingUsers: {
             method: "GET",
-            url: statics.API + "/admin/users?review_status=PENDING"
+            url: statics.API + "/admin/user-accounts?review_status=PENDING"
           },
           approveUser: {
             method: "POST",
-            url: statics.API + "/admin/users:approve"
+            url: statics.API + "/admin/user-accounts:approve"
           },
           rejectUser: {
             method: "POST",
-            url: statics.API + "/admin/users:reject"
+            url: statics.API + "/admin/user-accounts:reject"
           },
           resendConfirmationEmail: {
             method: "POST",
-            url: statics.API + "/admin/users:resendConfirmationEmail"
+            url: statics.API + "/admin/user-accounts:resendConfirmationEmail"
           },
           preRegister: {
             method: "POST",
-            url: statics.API + "/admin/users:pre-register"
+            url: statics.API + "/admin/user-accounts:pre-register"
           }
         }
       },

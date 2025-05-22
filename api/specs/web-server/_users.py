@@ -15,12 +15,12 @@ from models_library.api_schemas_webserver.users import (
     MyProfilePatch,
     MyTokenCreate,
     MyTokenGet,
+    UserAccountGet,
+    UserAccountSearchQueryParams,
     UserApprove,
-    UserForAdminGet,
     UserGet,
     UserReject,
-    UsersForAdminListQueryParams,
-    UsersForAdminSearchQueryParams,
+    UsersAccountListQueryParams,
     UsersSearch,
 )
 from models_library.api_schemas_webserver.users_preferences import PatchRequestBody
@@ -149,17 +149,17 @@ _extra_tags: list[str | Enum] = ["admin"]
 
 
 @router.get(
-    "/admin/users",
-    response_model=Page[UserForAdminGet],
+    "/admin/user-accounts",
+    response_model=Page[UserAccountGet],
     tags=_extra_tags,
 )
-async def list_users_for_admin(
-    _query: Annotated[as_query(UsersForAdminListQueryParams), Depends()],
+async def list_users_accounts(
+    _query: Annotated[as_query(UsersAccountListQueryParams), Depends()],
 ): ...
 
 
 @router.post(
-    "/admin/users:approve",
+    "/admin/user-accounts:approve",
     status_code=status.HTTP_204_NO_CONTENT,
     tags=_extra_tags,
 )
@@ -167,7 +167,7 @@ async def approve_user_account(_body: UserApprove): ...
 
 
 @router.post(
-    "/admin/users:reject",
+    "/admin/user-accounts:reject",
     status_code=status.HTTP_204_NO_CONTENT,
     tags=_extra_tags,
 )
@@ -175,20 +175,20 @@ async def reject_user_account(_body: UserReject): ...
 
 
 @router.get(
-    "/admin/users:search",
-    response_model=Envelope[list[UserForAdminGet]],
+    "/admin/user-accounts:search",
+    response_model=Envelope[list[UserAccountGet]],
     tags=_extra_tags,
 )
-async def search_users_for_admin(
-    _query: Annotated[UsersForAdminSearchQueryParams, Depends()],
+async def search_user_account(
+    _query: Annotated[UserAccountSearchQueryParams, Depends()],
 ):
     # NOTE: see `Search` in `Common Custom Methods` in https://cloud.google.com/apis/design/custom_methods
     ...
 
 
 @router.post(
-    "/admin/users:pre-register",
-    response_model=Envelope[UserForAdminGet],
+    "/admin/user-accounts:pre-register",
+    response_model=Envelope[UserAccountGet],
     tags=_extra_tags,
 )
-async def pre_register_user_for_admin(_body: PreRegisteredUserGet): ...
+async def pre_register_user_account(_body: PreRegisteredUserGet): ...

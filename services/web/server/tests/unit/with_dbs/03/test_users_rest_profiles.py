@@ -199,7 +199,7 @@ async def test_search_users_by_partial_email(
 
     # SEARCH user for admin (from a USER)
     url = (
-        client.app.router["search_users_for_admin"]
+        client.app.router["search_user_account"]
         .url_for()
         .with_query(email=partial_email)
     )
