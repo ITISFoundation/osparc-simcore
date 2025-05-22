@@ -246,7 +246,7 @@ class UsersForAdminListFilter(Filters):
     #  it can be in any of these statuses:
     #     CONFIRMATION_PENDING, ACTIVE, EXPIRED, BANNED, DELETED
     #
-    account_request_status: Literal["PENDING", "REJECETED", "APPROVED"] | None = None
+    review_status: Literal["PENDING", "REVIEWED"] | None = None
 
 
 class UsersForAdminListQueryParams(UsersForAdminListFilter, PageQueryParameters): ...

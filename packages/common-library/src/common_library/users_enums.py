@@ -65,3 +65,8 @@ class AccountRequestStatus(str, Enum):
     PENDING = "PENDING"  # Pending PO review to approve/reject the request
     APPROVED = "APPROVED"  # PO approved the request
     REJECTED = "REJECTED"  # PO rejected the request
+
+    @classmethod
+    def reviewed(cls) -> list[str]:
+        """Returns the list of statuses that are considered reviewed"""
+        return [cls.APPROVED, cls.REJECTED]
