@@ -51,13 +51,19 @@ async def validate_invitation_url(
     """
     if current_product.group_id is None:
         raise InvitationsServiceUnavailableError(
-            reason="Current product is not configured for invitations"
+            reason="Current product is not configured for invitations",
+            current_product=current_product,
+            guest_email=guest_email,
         )
 
     try:
         valid_url = TypeAdapter(AnyHttpUrl).validate_python(invitation_url)
     except ValidationError as err:
-        raise InvalidInvitationError(reason=MSG_INVALID_INVITATION_URL) from err
+        raise InvalidInvitationError(
+            reason=MSG_INVALID_INVITATION_URL,
+            current_product=current_product,
+            guest_email=guest_email,
+        ) from err
 
     # check with service
     invitation: ApiInvitationContent = await get_invitations_service_api(
@@ -67,7 +73,10 @@ async def validate_invitation_url(
     # check email
     if invitation.guest.lower() != guest_email.lower():
         raise InvalidInvitationError(
-            reason="This invitation was issued for a different email"
+            reason="This invitation was issued for a different email",
+            current_product=current_product,
+            guest_email=guest_email,
+            invitation=invitation,
         )
 
     # check product
