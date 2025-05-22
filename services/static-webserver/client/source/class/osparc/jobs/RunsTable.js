@@ -19,7 +19,7 @@
 qx.Class.define("osparc.jobs.RunsTable", {
   extend: qx.ui.table.Table,
 
-  construct: function(projectUuid = null, includeChildren = false) {
+  construct: function(projectUuid = null, includeChildren = false, runningOnly = true) {
     this.base(arguments);
 
     this.set({

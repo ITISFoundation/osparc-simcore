@@ -26,16 +26,16 @@ qx.Class.define("osparc.jobs.RunsBrowser", {
 
     const jobsFilter = this.getChildControl("jobs-filter");
     const runningCB = this.getChildControl("running-only-cb");
-    const jobsTable = this.getChildControl("runs-table");
+    const runsTable = this.getChildControl("runs-table");
 
     jobsFilter.getChildControl("textfield").addListener("input", e => {
       const filterText = e.getData();
-      jobsTable.getTableModel().setFilters({
+      runsTable.getTableModel().setFilters({
         text: filterText,
       });
     });
 
-    runningCB.addListener("changeValue", () => this.reloadRuns());
+    runningCB.bind("value", runsTable, "runningOnly");
 
     this.__reloadInterval = setInterval(() => this.reloadRuns(), 10*1000);
   },
@@ -73,7 +73,8 @@ qx.Class.define("osparc.jobs.RunsBrowser", {
         case "runs-table": {
           const projectUuid = null;
           const includeChildren = false;
-          control = new osparc.jobs.RunsTable(projectUuid, includeChildren);
+          const runningOnly = true;
+          control = new osparc.jobs.RunsTable(projectUuid, includeChildren, runningOnly);
           control.addListener("runSelected", e => this.fireDataEvent("runSelected", e.getData()));
           this._add(control);
           break;
@@ -84,9 +85,8 @@ qx.Class.define("osparc.jobs.RunsBrowser", {
     },
 
     reloadRuns: function() {
-      const runningOnly = this.getChildControl("running-only-cb").getValue();
       const runsTable = this.getChildControl("runs-table");
-      runsTable.reloadRuns(runningOnly);
+      runsTable.reloadRuns();
     },
 
     stopInterval: function() {
