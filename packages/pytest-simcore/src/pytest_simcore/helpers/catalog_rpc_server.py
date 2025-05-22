@@ -229,7 +229,7 @@ class CatalogRpcSideEffects:
                         ServiceType.COMPUTATIONAL: "/comp/",
                         ServiceType.DYNAMIC: "/dynamic/",
                     }[filters.service_type]
-                    in summary.key
+                    not in summary.key
                 ):
                     continue
 
