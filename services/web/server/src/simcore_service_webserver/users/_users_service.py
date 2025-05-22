@@ -491,7 +491,7 @@ async def approve_user_account(
 
     # There should be only one registration matching these criteria
     pre_registration = pre_registrations[0]
-    pre_registration_id = pre_registration["id"]
+    pre_registration_id: int = pre_registration["id"]
 
     # Update the pre-registration status to APPROVED using the reviewer's ID
     await _users_repository.review_user_pre_registration(
@@ -541,7 +541,7 @@ async def reject_user_account(
 
     # There should be only one registration matching these criteria
     pre_registration = pre_registrations[0]
-    pre_registration_id = pre_registration["id"]
+    pre_registration_id: int = pre_registration["id"]
 
     # Update the pre-registration status to REJECTED using the reviewer's ID
     await _users_repository.review_user_pre_registration(

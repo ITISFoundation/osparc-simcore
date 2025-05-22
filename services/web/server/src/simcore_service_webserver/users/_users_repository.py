@@ -1,6 +1,6 @@
 import contextlib
 import logging
-from typing import Any
+from typing import Any, cast
 
 import sqlalchemy as sa
 from aiohttp import web
@@ -663,13 +663,13 @@ async def list_user_pre_registrations(
     async with pass_or_acquire_connection(engine, connection) as conn:
         # Get total count
         count_result = await conn.execute(count_query)
-        total_count = count_result.scalar()
+        total_count = count_result.scalar_one()
 
         # Get pre-registration records
         result = await conn.execute(main_query)
         records = result.mappings().all()
 
-    return list(records), total_count
+    return cast(list[dict[str, Any]], list(records)), total_count
 
 
 async def review_user_pre_registration(
@@ -894,10 +894,8 @@ async def list_merged_pre_and_registered_users(
 
     # If filtering by account request status, we only want pre-registered users with any of those statuses
     # No need to union with regular users as they don't have account_request_status
-    if (
-        filter_any_account_request_status is not None
-        and filter_any_account_request_status
-    ):
+    merged_query: sa.sql.Select | sa.sql.CompoundSelect
+    if filter_any_account_request_status:
         merged_query = pre_reg_query
     else:
         merged_query = pre_reg_query.union_all(users_query)
@@ -937,10 +935,10 @@ async def list_merged_pre_and_registered_users(
     async with pass_or_acquire_connection(engine, connection) as conn:
         # Get total count
         count_result = await conn.execute(count_query)
-        total_count = count_result.scalar()
+        total_count = count_result.scalar_one()
 
         # Get user records
         result = await conn.execute(distinct_query)
         records = result.mappings().all()
 
-    return list(records), total_count
+    return cast(list[dict[str, Any]], records), total_count

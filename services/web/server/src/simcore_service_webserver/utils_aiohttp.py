@@ -78,7 +78,7 @@ def envelope_json_response(
     )
 
 
-def create_json_response_from_page(page: Page[ItemT]):
+def create_json_response_from_page(page: Page[ItemT]) -> web.Response:
     return web.Response(
         text=page.model_dump_json(**RESPONSE_MODEL_POLICY),
         content_type=MIMETYPE_APPLICATION_JSON,
