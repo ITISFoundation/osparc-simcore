@@ -70,6 +70,12 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
         direction: "desc"
       }
     },
+
+    filterString: {
+      nullable: true,
+      check : "String",
+      init: "",
+    },
   },
 
   statics: {

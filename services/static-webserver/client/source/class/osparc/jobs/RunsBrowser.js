@@ -30,9 +30,7 @@ qx.Class.define("osparc.jobs.RunsBrowser", {
 
     jobsFilter.getChildControl("textfield").addListener("input", e => {
       const filterText = e.getData();
-      runsTable.getTableModel().setFilters({
-        text: filterText,
-      });
+      runsTable.getTableModel().setFilterString(filterText);
     });
 
     runningCB.bind("value", runsTable, "runningOnly");
