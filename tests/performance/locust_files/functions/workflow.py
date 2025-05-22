@@ -123,14 +123,13 @@ class MetaModelingUser(HttpUser):
 
     @task
     def run_function(self):
-        with TemporaryDirectory() as tmpdir:
-            tmp_dir = Path(tmpdir)
-            script = tmp_dir / "script.py"
+        with TemporaryDirectory() as tmpdir_str, Path(tmpdir_str) as tmpdir:
+            script = tmpdir / "script.py"
             script.write_text(_PYTHON_SCRIPT)
             self._script_uuid = self.upload_file(script)
 
             inputs = {"x": random.uniform(-10, 10), "y": random.uniform(-10, 10)}
-            input_json = tmp_dir / "function_inputs.json"
+            input_json = tmpdir / "function_inputs.json"
             input_json.write_text(json.dumps(inputs))
             self._input_json_uuid = self.upload_file(input_json)
 
