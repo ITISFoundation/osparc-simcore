@@ -82,7 +82,7 @@ async def test_search_users_as_admin_real_user(
     user_email = product_owner_user["email"]
 
     # Act
-    found_users = await _users_service.search_users_as_admin(
+    found_users = await _users_service.search_users_accounts(
         app, email_glob=user_email, product_name=product_name, include_products=False
     )
 
@@ -111,7 +111,7 @@ async def test_search_users_as_admin_pre_registered_user(
     pre_registration_details = pre_registered_user_created["details"]
 
     # Act
-    found_users = await _users_service.search_users_as_admin(
+    found_users = await _users_service.search_users_accounts(
         app, email_glob=pre_registered_email, product_name=product_name
     )
 
@@ -164,7 +164,7 @@ async def test_search_users_as_admin_wildcard(
         )
 
     # Act - search with wildcard for the domain
-    found_users = await _users_service.search_users_as_admin(
+    found_users = await _users_service.search_users_accounts(
         app, email_glob=f"*{email_domain}", product_name=product_name
     )
 

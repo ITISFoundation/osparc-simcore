@@ -196,7 +196,7 @@ async def list_users_accounts(request: web.Request) -> web.Response:
         # ALL
         filter_any_account_request_status = None
 
-    users, total_count = await _users_service.list_all_users_as_admin(
+    users, total_count = await _users_service.list_user_accounts(
         request.app,
         product_name=req_ctx.product_name,
         filter_any_account_request_status=filter_any_account_request_status,
@@ -234,7 +234,7 @@ async def search_user_accounts(request: web.Request) -> web.Response:
         UserAccountSearchQueryParams, request
     )
 
-    found = await _users_service.search_users_as_admin(
+    found = await _users_service.search_users_accounts(
         request.app, email_glob=query_params.email, include_products=True
     )
 
