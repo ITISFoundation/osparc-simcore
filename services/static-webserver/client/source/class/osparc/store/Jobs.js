@@ -45,6 +45,7 @@ qx.Class.define("osparc.store.Jobs", {
         field: "submitted_at",
         direction: "desc"
       },
+      filters = null,
       resolveWResponse = false
     ) {
       const params = {
@@ -58,7 +59,13 @@ qx.Class.define("osparc.store.Jobs", {
       const options = {
         resolveWResponse: true
       };
-      return osparc.data.Resources.fetch("runs", "getPageLatest", params, options)
+      if (filters) {
+        params["url"]["filters"] = JSON.stringify(filters);
+        promise = osparc.data.Resources.fetch("runs", "getPageLatestFiltered", params, options);
+      } else {
+        promise = osparc.data.Resources.fetch("runs", "getPageLatest", params, options);
+      }
+      return promise
         .then(jobsResp => {
           if (runningOnly) {
             this.fireDataEvent("changeJobsActive", jobsResp["_meta"]["total"]);

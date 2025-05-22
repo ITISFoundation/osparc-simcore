@@ -354,6 +354,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/computations/-/iterations/latest?offset={offset}&limit={limit}&order_by=%7B%22field%22:%22submitted_at%22,%22direction%22:%22desc%22%7D&filter_only_running={runningOnly}"
           },
+          getPageLatestFiltered: {
+            method: "GET",
+            url: statics.API + "/computations/-/iterations/latest?offset={offset}&limit={limit}&order_by=%7B%22field%22:%22submitted_at%22,%22direction%22:%22desc%22%7D&filter_only_running={runningOnly}&filters={filters}"
+          },
           getPageHistory: {
             method: "GET",
             url: statics.API + "/computations/{studyId}/iterations?offset={offset}&limit={limit}&order_by=%7B%22field%22:%22submitted_at%22,%22direction%22:%22desc%22%7D&include_children={includeChildren}"
