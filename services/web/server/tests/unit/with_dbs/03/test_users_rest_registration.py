@@ -126,13 +126,15 @@ async def test_search_and_pre_registration(
     found, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(found) == 1
     got = UserForAdminGet(
-        **found[0],
         institution=None,
         address=None,
         city=None,
         state=None,
         postal_code=None,
         country=None,
+        pre_registration_id=None,
+        invited_by=None,
+        **found[0],
     )
     expected = {
         "first_name": logged_user.get("first_name"),
@@ -233,7 +235,7 @@ async def test_list_users_for_admin(
     # Access the items field from the paginated response
     pending_emails = [
         user["email"]
-        for user in data["items"]
+        for user in data
         if user.get("account_request_status") == "PENDING"
     ]
     for pre_user in pre_registered_users:
