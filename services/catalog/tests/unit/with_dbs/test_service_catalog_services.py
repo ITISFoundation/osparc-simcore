@@ -10,7 +10,7 @@ from typing import Any
 
 import pytest
 from fastapi import FastAPI
-from models_library.api_schemas_catalog.services import MyServiceGet
+from models_library.api_schemas_catalog.services import MyServiceGet, ServiceSummary
 from models_library.products import ProductName
 from models_library.users import UserID
 from pydantic import TypeAdapter
@@ -108,7 +108,7 @@ async def director_client(app: FastAPI) -> DirectorClient:
     return director_api
 
 
-async def test_list_services_paginated(
+async def test_list_latest_catalog_services(
     background_sync_task_mocked: None,
     rabbitmq_and_rpc_setup_disabled: None,
     mocked_director_rest_api: MockRouter,
@@ -273,3 +273,81 @@ async def test_batch_get_my_services(
             },
         ]
     )
+
+
+async def test_list_all_vs_latest_services(
+    background_sync_task_mocked: None,
+    rabbitmq_and_rpc_setup_disabled: None,
+    mocked_director_rest_api: MockRouter,
+    target_product: ProductName,
+    services_repo: ServicesRepository,
+    user_id: UserID,
+    director_client: DirectorClient,
+    num_services: int,
+    num_versions_per_service: int,
+):
+    """Test that list_all_catalog_services returns all services as summaries while
+    list_latest_catalog_services returns only the latest version of each service with full details.
+    """
+    # No pagination to get all services
+    limit = None
+    offset = 0
+
+    # Get latest services first
+    latest_total_count, latest_items = (
+        await catalog_services.list_latest_catalog_services(
+            services_repo,
+            director_client,
+            product_name=target_product,
+            user_id=user_id,
+            limit=limit,
+            offset=offset,
+        )
+    )
+
+    # Get all services as summaries
+    all_total_count, all_items = await catalog_services.list_all_service_summaries(
+        services_repo,
+        director_client,
+        product_name=target_product,
+        user_id=user_id,
+        limit=limit,
+        offset=offset,
+    )
+
+    # Verify counts
+    # - latest_total_count should equal num_services since we only get the latest version of each service
+    # - all_total_count should equal num_services * num_versions_per_service since we get all versions
+    assert latest_total_count == num_services
+    assert all_total_count == num_services * num_versions_per_service
+
+    # Verify we got the expected number of items
+    assert len(latest_items) == num_services
+    assert len(all_items) == num_services * num_versions_per_service
+
+    # Collect all service keys from latest items
+    latest_keys = {item.key for item in latest_items}
+
+    # Verify all returned items have the expected structure
+    for item in all_items:
+        # Each summary should have the basic fields
+        assert item.key in latest_keys
+        assert item.name
+        assert item.description is not None
+        assert isinstance(item, ServiceSummary)
+
+    # Group all items by key
+    key_to_all_versions = {}
+    for item in all_items:
+        if item.key not in key_to_all_versions:
+            key_to_all_versions[item.key] = []
+        key_to_all_versions[item.key].append(item)
+
+    # For each service key, verify we have the expected number of versions
+    for key, versions in key_to_all_versions.items():
+        assert len(versions) == num_versions_per_service
+
+        # Find this service in latest_items
+        latest_item = next(item for item in latest_items if item.key == key)
+        # Verify there's a summary item with the same version as the latest
+        assert any(item.version == latest_item.version for item in versions)

@@ -34,6 +34,7 @@ from simcore_sdk.node_ports_common.exceptions import (
     NodeportsException,
     S3InvalidPathError,
     StorageInvalidCall,
+    UnboundPortError,
 )
 from simcore_sdk.node_ports_v2 import FileLinkType, Port, links, port_utils
 from simcore_sdk.node_ports_v2.links import ItemValue as _NPItemValue
@@ -147,6 +148,20 @@ async def parse_output_data(
             await (await ports.outputs)[port_key].set_value(value_to_transfer)
         except ValidationError as err:
             ports_errors.extend(_get_port_validation_errors(port_key, err))
+        except UnboundPortError as err:
+            ports_errors.extend(
+                [
+                    {
+                        "loc": (
+                            f"{project_id}",
+                            f"{node_id}",
+                            f"{port_key}",
+                        ),
+                        "msg": str(err),
+                        "type": "unbound_port",
+                    }
+                ]
+            )
 
     if ports_errors:
         raise PortsValidationError(

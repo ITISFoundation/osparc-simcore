@@ -172,23 +172,57 @@ class ServiceGet(
     )
 
 
-class _BaseServiceGetV2(CatalogOutputSchema):
-    # Model used in catalog's rpc and rest interfaces
+class ServiceSummary(CatalogOutputSchema):
     key: ServiceKey
     version: ServiceVersion
-
     name: str
-    thumbnail: HttpUrl | None = None
-    icon: HttpUrl | None = None
     description: str
-
-    description_ui: bool = False
 
     version_display: str | None = None
 
+    contact: LowerCaseEmailStr | None
+
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "key": _EXAMPLE_SLEEPER["key"],
+                        "version": _EXAMPLE_SLEEPER["version"],
+                        "name": _EXAMPLE_SLEEPER["name"],
+                        "description": _EXAMPLE_SLEEPER["description"],
+                        "version_display": _EXAMPLE_SLEEPER["version_display"],
+                        "contact": _EXAMPLE_SLEEPER["contact"],
+                    },
+                    {
+                        "key": _EXAMPLE_FILEPICKER["key"],
+                        "version": _EXAMPLE_FILEPICKER["version"],
+                        "name": _EXAMPLE_FILEPICKER["name"],
+                        "description": _EXAMPLE_FILEPICKER["description"],
+                        "version_display": None,
+                        "contact": _EXAMPLE_FILEPICKER["contact"],
+                    },
+                ]
+            }
+        )
+
+    model_config = ConfigDict(
+        extra="ignore",
+        populate_by_name=True,
+        alias_generator=snake_to_camel,
+        json_schema_extra=_update_json_schema_extra,
+    )
+
+
+class _BaseServiceGetV2(ServiceSummary):
     service_type: Annotated[ServiceType, Field(alias="type")]
 
-    contact: LowerCaseEmailStr | None
+    thumbnail: HttpUrl | None = None
+    icon: HttpUrl | None = None
+
+    description_ui: bool = False
+
     authors: Annotated[list[Author], Field(min_length=1)]
     owner: Annotated[
         LowerCaseEmailStr | None,
@@ -217,6 +251,7 @@ class _BaseServiceGetV2(CatalogOutputSchema):
         extra="forbid",
         populate_by_name=True,
         alias_generator=snake_to_camel,
+        json_schema_extra={"example": _EXAMPLE_SLEEPER},
     )
 
 
@@ -249,7 +284,6 @@ class LatestServiceGet(_BaseServiceGetV2):
 
 
 class ServiceGetV2(_BaseServiceGetV2):
-    # Model used in catalog's rpc and rest interfaces
     history: Annotated[
         list[ServiceRelease],
         Field(
@@ -337,6 +371,9 @@ PageRpcServiceRelease: TypeAlias = PageRpc[
     # and will fail to serialize/deserialize these parameters when transmitted/received
     ServiceRelease
 ]
+
+# Create PageRpc types
+PageRpcServiceSummary = PageRpc[ServiceSummary]
 
 ServiceResourcesGet: TypeAlias = ServiceResourcesDict
 
