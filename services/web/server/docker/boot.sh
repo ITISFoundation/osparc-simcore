@@ -31,7 +31,11 @@ fi
 
 if [ "${SC_BOOT_MODE}" = "debug" ]; then
   # NOTE: production does NOT pre-installs debugpy
-  uv pip install debugpy
+  if command -v uv >/dev/null 2>&1; then
+    uv pip install debugpy
+  else
+    pip install debugpy
+  fi
 fi
 
 APP_LOG_LEVEL=${WEBSERVER_LOGLEVEL:-${LOG_LEVEL:-${LOGLEVEL:-INFO}}}
@@ -54,7 +58,7 @@ echo "$INFO" "GUNICORN_CMD_ARGS: $GUNICORN_CMD_ARGS"
 if [ "${SC_BOOT_MODE}" = "debug" ]; then
   # NOTE: ptvsd is programmatically enabled inside of the service
   # this way we can have reload in place as well
-  exec python -m debugpy --listen 0.0.0.0:"${WEBSERVER_REMOTE_DEBUGGING_PORT}" -m gunicorn simcore_service_webserver.cli:app_factory \
+  exec python -Xfrozen_modules=off -m debugpy --listen 0.0.0.0:"${WEBSERVER_REMOTE_DEBUGGING_PORT}" -m gunicorn simcore_service_webserver.cli:app_factory \
     --log-level="${SERVER_LOG_LEVEL}" \
     --bind 0.0.0.0:8080 \
     --worker-class aiohttp.GunicornUVLoopWebWorker \
