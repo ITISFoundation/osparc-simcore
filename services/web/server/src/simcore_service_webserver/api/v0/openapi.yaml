@@ -1404,7 +1404,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_Page_UserForAdminGet__'
+                $ref: '#/components/schemas/Page_UserForAdminGet_'
   /v0/admin/users:approve:
     post:
       tags:
@@ -10258,19 +10258,6 @@ components:
           title: Error
       type: object
       title: Envelope[NodeRetrieved]
-    Envelope_Page_UserForAdminGet__:
-      properties:
-        data:
-          anyOf:
-          - $ref: '#/components/schemas/Page_UserForAdminGet_'
-          - type: 'null'
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[Page[UserForAdminGet]]
     Envelope_PaymentMethodGet_:
       properties:
         data:
@@ -17065,6 +17052,11 @@ components:
           type: object
           title: Extras
           description: Keeps extra information provided in the request form
+        preRegistrationId:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Preregistrationid
         invitedBy:
           anyOf:
           - type: string
@@ -17115,6 +17107,7 @@ components:
       - state
       - postalCode
       - country
+      - preRegistrationId
       - accountRequestStatus
       - registered
       - status

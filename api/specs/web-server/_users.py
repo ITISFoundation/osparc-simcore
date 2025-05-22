@@ -15,7 +15,6 @@ from models_library.api_schemas_webserver.users import (
     MyProfilePatch,
     MyTokenCreate,
     MyTokenGet,
-    ResendConfirmationCode,
     UserApprove,
     UserForAdminGet,
     UserGet,
@@ -151,7 +150,7 @@ _extra_tags: list[str | Enum] = ["admin"]
 
 @router.get(
     "/admin/users",
-    response_model=Envelope[Page[UserForAdminGet]],
+    response_model=Page[UserForAdminGet],
     tags=_extra_tags,
 )
 async def list_users_for_admin(
@@ -173,15 +172,6 @@ async def approve_user_account(_body: UserApprove): ...
     tags=_extra_tags,
 )
 async def reject_user_account(_body: UserReject): ...
-
-
-@router.post(
-    "/admin/users:resendConfirmationEmail",
-    status_code=status.HTTP_204_NO_CONTENT,
-    tags=_extra_tags,
-    include_in_schema=False,  # UNDER DEVELOPMENT
-)
-async def resend_user_confirmation_email(_body: ResendConfirmationCode): ...
 
 
 @router.get(
