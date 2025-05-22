@@ -325,6 +325,9 @@ async def get_user_products(
     *,
     user_id: UserID,
 ) -> list[Row]:
+    """Returns the products the user is part of, i.e.
+    the user is registered and assigned to the product's group
+    """
     async with pass_or_acquire_connection(engine, connection) as conn:
         product_name_subq = (
             sa.select(
