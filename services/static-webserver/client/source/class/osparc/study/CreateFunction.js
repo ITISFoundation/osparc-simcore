@@ -36,7 +36,7 @@ qx.Class.define("osparc.study.CreateFunction", {
     typeToFunctionType: function(type) {
       switch (type) {
         case "number":
-          return "float"
+          return "number"
         case "data:*/*":
           return "FileID"
       }
