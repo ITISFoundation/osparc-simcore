@@ -1,9 +1,8 @@
-""" input/output datasets used in the rest-API
+"""input/output datasets used in the rest-API
 
 NOTE: Most of the model schemas are in `models_library.api_schemas_webserver.users`,
 the rest (hidden or needs a dependency) is here
 """
-
 
 import re
 import sys
@@ -12,7 +11,7 @@ from typing import Annotated, Any, Final
 
 import pycountry
 from models_library.api_schemas_webserver._base import InputSchema
-from models_library.api_schemas_webserver.users import UserForAdminGet
+from models_library.api_schemas_webserver.users import UserAccountGet
 from models_library.emails import LowerCaseEmailStr
 from models_library.users import UserID
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -110,5 +109,5 @@ class PreRegisteredUserGet(InputSchema):
 
 # asserts field names are in sync
 assert set(PreRegisteredUserGet.model_fields).issubset(
-    UserForAdminGet.model_fields
+    UserAccountGet.model_fields
 )  # nosec

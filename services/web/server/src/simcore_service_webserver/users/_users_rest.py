@@ -1,14 +1,22 @@
 import logging
 from contextlib import suppress
+from typing import Any
 
 from aiohttp import web
+from common_library.users_enums import AccountRequestStatus
 from models_library.api_schemas_webserver.users import (
     MyProfileGet,
     MyProfilePatch,
+    UserAccountApprove,
+    UserAccountGet,
+    UserAccountReject,
+    UserAccountSearchQueryParams,
     UserGet,
-    UsersForAdminSearchQueryParams,
+    UsersAccountListQueryParams,
     UsersSearch,
 )
+from models_library.rest_pagination import Page
+from models_library.rest_pagination_utils import paginate_data
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -29,12 +37,13 @@ from ..login.decorators import login_required
 from ..products import products_web
 from ..products.models import Product
 from ..security.decorators import permission_required
-from ..utils_aiohttp import envelope_json_response
+from ..utils_aiohttp import create_json_response_from_page, envelope_json_response
 from . import _users_service
 from ._common.schemas import PreRegisteredUserGet, UsersRequestContext
 from .exceptions import (
     AlreadyPreRegisteredError,
     MissingGroupExtraPropertiesForProductError,
+    PendingPreRegistrationNotFoundError,
     UserNameDuplicateError,
     UserNotFoundError,
 )
@@ -43,6 +52,10 @@ _logger = logging.getLogger(__name__)
 
 
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
+    PendingPreRegistrationNotFoundError: HttpErrorInfo(
+        status.HTTP_400_BAD_REQUEST,
+        PendingPreRegistrationNotFoundError.msg_template,
+    ),
     UserNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
         "This user cannot be found. Either it is not registered or has enabled privacy settings.",
@@ -160,19 +173,68 @@ _RESPONSE_MODEL_MINIMAL_POLICY = RESPONSE_MODEL_POLICY.copy()
 _RESPONSE_MODEL_MINIMAL_POLICY["exclude_none"] = True
 
 
-@routes.get(f"/{API_VTAG}/admin/users:search", name="search_users_for_admin")
+@routes.get(f"/{API_VTAG}/admin/user-accounts", name="list_users_accounts")
 @login_required
 @permission_required("admin.users.read")
 @_handle_users_exceptions
-async def search_users_for_admin(request: web.Request) -> web.Response:
+async def list_users_accounts(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     assert req_ctx.product_name  # nosec
 
-    query_params: UsersForAdminSearchQueryParams = parse_request_query_parameters_as(
-        UsersForAdminSearchQueryParams, request
+    query_params = parse_request_query_parameters_as(
+        UsersAccountListQueryParams, request
     )
 
-    found = await _users_service.search_users_as_admin(
+    if query_params.review_status == "PENDING":
+        filter_any_account_request_status = [AccountRequestStatus.PENDING]
+    elif query_params.review_status == "REVIEWED":
+        filter_any_account_request_status = [
+            AccountRequestStatus.APPROVED,
+            AccountRequestStatus.REJECTED,
+        ]
+    else:
+        # ALL
+        filter_any_account_request_status = None
+
+    users, total_count = await _users_service.list_user_accounts(
+        request.app,
+        product_name=req_ctx.product_name,
+        filter_any_account_request_status=filter_any_account_request_status,
+        pagination_limit=query_params.limit,
+        pagination_offset=query_params.offset,
+    )
+
+    def _to_domain_model(user: dict[str, Any]) -> UserAccountGet:
+        return UserAccountGet(
+            extras=user.pop("extras") or {}, pre_registration_id=user.pop("id"), **user
+        )
+
+    page = Page[UserAccountGet].model_validate(
+        paginate_data(
+            chunk=[_to_domain_model(user) for user in users],
+            request_url=request.url,
+            total=total_count,
+            limit=query_params.limit,
+            offset=query_params.offset,
+        )
+    )
+
+    return create_json_response_from_page(page)
+
+
+@routes.get(f"/{API_VTAG}/admin/user-accounts:search", name="search_user_accounts")
+@login_required
+@permission_required("admin.users.read")
+@_handle_users_exceptions
+async def search_user_accounts(request: web.Request) -> web.Response:
+    req_ctx = UsersRequestContext.model_validate(request)
+    assert req_ctx.product_name  # nosec
+
+    query_params: UserAccountSearchQueryParams = parse_request_query_parameters_as(
+        UserAccountSearchQueryParams, request
+    )
+
+    found = await _users_service.search_users_accounts(
         request.app, email_glob=query_params.email, include_products=True
     )
 
@@ -185,12 +247,12 @@ async def search_users_for_admin(request: web.Request) -> web.Response:
 
 
 @routes.post(
-    f"/{API_VTAG}/admin/users:pre-register", name="pre_register_user_for_admin"
+    f"/{API_VTAG}/admin/user-accounts:pre-register", name="pre_register_user_account"
 )
 @login_required
-@permission_required("admin.users.read")
+@permission_required("admin.users.write")
 @_handle_users_exceptions
-async def pre_register_user_for_admin(request: web.Request) -> web.Response:
+async def pre_register_user_account(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     pre_user_profile = await parse_request_body_as(PreRegisteredUserGet, request)
 
@@ -200,6 +262,62 @@ async def pre_register_user_for_admin(request: web.Request) -> web.Response:
         creator_user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
     )
+
     return envelope_json_response(
         user_profile.model_dump(**_RESPONSE_MODEL_MINIMAL_POLICY)
     )
+
+
+@routes.post(f"/{API_VTAG}/admin/user-accounts:approve", name="approve_user_account")
+@login_required
+@permission_required("admin.users.write")
+@_handle_users_exceptions
+async def approve_user_account(request: web.Request) -> web.Response:
+    req_ctx = UsersRequestContext.model_validate(request)
+    assert req_ctx.product_name  # nosec
+
+    approval_data = await parse_request_body_as(UserAccountApprove, request)
+
+    if approval_data.invitation:
+        _logger.debug(
+            "TODO: User is being approved with invitation %s: \n"
+            "1. Approve user account\n"
+            "2. Generate invitation\n"
+            "3. Store invitation in extras\n"
+            "4. Send invitation to user %s\n",
+            approval_data.invitation.model_dump_json(indent=1),
+            approval_data.email,
+        )
+
+    # Approve the user account, passing the current user's ID as the reviewer
+    pre_registration_id = await _users_service.approve_user_account(
+        request.app,
+        pre_registration_email=approval_data.email,
+        product_name=req_ctx.product_name,
+        reviewer_id=req_ctx.user_id,
+    )
+    assert pre_registration_id  # nosec
+
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
+
+
+@routes.post(f"/{API_VTAG}/admin/user-accounts:reject", name="reject_user_account")
+@login_required
+@permission_required("admin.users.write")
+@_handle_users_exceptions
+async def reject_user_account(request: web.Request) -> web.Response:
+    req_ctx = UsersRequestContext.model_validate(request)
+    assert req_ctx.product_name  # nosec
+
+    rejection_data = await parse_request_body_as(UserAccountReject, request)
+
+    # Reject the user account, passing the current user's ID as the reviewer
+    pre_registration_id = await _users_service.reject_user_account(
+        request.app,
+        pre_registration_email=rejection_data.email,
+        product_name=req_ctx.product_name,
+        reviewer_id=req_ctx.user_id,
+    )
+    assert pre_registration_id  # nosec
+
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
