@@ -3,7 +3,7 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-from collections.abc import AsyncGenerator, AsyncIterable
+from collections.abc import AsyncIterable
 from typing import Any
 
 import pytest
@@ -19,19 +19,6 @@ from simcore_service_webserver.users import _users_service
 from simcore_service_webserver.users._users_repository import (
     create_user_pre_registration,
 )
-
-
-@pytest.fixture
-async def pre_registration_details_cleanup(
-    app: web.Application,
-) -> AsyncGenerator[None, None]:
-    """Fixture to clean up all pre-registration details after test"""
-    yield
-
-    # Tear down - clean up the pre-registration details table
-    async with get_asyncpg_engine(app).connect() as conn:
-        await conn.execute(sa.delete(users_pre_registration_details))
-        await conn.commit()
 
 
 @pytest.fixture
@@ -155,7 +142,7 @@ async def test_search_users_as_admin_wildcard(
     app: web.Application,
     product_name: ProductName,
     product_owner_user: dict[str, Any],
-    pre_registration_details_cleanup: None,
+    pre_registration_details_db_cleanup: None,
 ):
     """Test searching for users with wildcards"""
     # Arrange

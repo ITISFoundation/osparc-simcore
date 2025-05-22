@@ -3,6 +3,8 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
+from collections.abc import AsyncIterator
+from dataclasses import dataclass
 from typing import Any
 
 import pytest
@@ -17,10 +19,35 @@ from simcore_service_webserver.db.plugin import get_asyncpg_engine
 from simcore_service_webserver.users import _users_repository
 
 
+@pytest.fixture
+async def pre_registration_details_db_cleanup(
+    app: web.Application,
+) -> AsyncIterator[list[int]]:
+    """Fixture to clean up pre-registration details after tests.
+
+    Returns a list that tests can append pre-registration IDs to.
+    All records with these IDs will be deleted when the fixture is torn down.
+    """
+    pre_registration_ids = []
+    yield pre_registration_ids
+
+    if pre_registration_ids:
+        # Clean up at the end of the test
+        asyncpg_engine = get_asyncpg_engine(app)
+        async with asyncpg_engine.connect() as conn:
+            await conn.execute(
+                sa.delete(users_pre_registration_details).where(
+                    users_pre_registration_details.c.id.in_(pre_registration_ids)
+                )
+            )
+            await conn.commit()
+
+
 async def test_create_user_pre_registration(
     app: web.Application,
     product_name: ProductName,
     product_owner_user: dict[str, Any],
+    pre_registration_details_db_cleanup: list[int],
 ):
     # Arrange
     asyncpg_engine = get_asyncpg_engine(app)
@@ -43,6 +70,9 @@ async def test_create_user_pre_registration(
         **pre_registration_details,
     )
 
+    # Add to cleanup list
+    pre_registration_details_db_cleanup.append(pre_registration_id)
+
     # Assert
     async with asyncpg_engine.connect() as conn:
         # Query to check if the record was inserted
@@ -53,14 +83,6 @@ async def test_create_user_pre_registration(
             )
         )
         record = result.first()
-
-        # Clean up - delete the test record
-        await conn.execute(
-            sa.delete(users_pre_registration_details).where(
-                users_pre_registration_details.c.id == pre_registration_id
-            )
-        )
-        await conn.commit()
 
     # Verify the record was created with correct values
     assert record is not None
@@ -74,6 +96,7 @@ async def test_review_user_pre_registration(
     app: web.Application,
     product_name: ProductName,
     product_owner_user: dict[str, Any],
+    pre_registration_details_db_cleanup: list[int],
 ):
     # Arrange
     asyncpg_engine = get_asyncpg_engine(app)
@@ -96,6 +119,9 @@ async def test_review_user_pre_registration(
         product_name=product_name,
         **pre_registration_details,
     )
+
+    # Add to cleanup list
+    pre_registration_details_db_cleanup.append(pre_registration_id)
 
     # Act - review and approve the registration
     new_status = AccountRequestStatus.APPROVED
@@ -148,6 +174,7 @@ async def test_list_user_pre_registrations(
     app: web.Application,
     product_name: ProductName,
     product_owner_user: dict[str, Any],
+    pre_registration_details_db_cleanup: list[int],
 ):
     # Arrange
     asyncpg_engine = get_asyncpg_engine(app)
@@ -174,6 +201,8 @@ async def test_list_user_pre_registrations(
             institution="Test Institution",
         )
         pre_reg_ids.append(pre_reg_id)
+        # Add to cleanup list
+        pre_registration_details_db_cleanup.append(pre_reg_id)
 
     # Create and approve one registration
     await _users_repository.review_user_pre_registration(
@@ -297,6 +326,7 @@ async def test_create_pre_registration_with_existing_user_linking(
     product_owner_user: dict[str, Any],
     link_to_existing_user: bool,
     expected_linked: bool,
+    pre_registration_details_db_cleanup: list[int],
 ):
     """Test that creating a pre-registration for an existing user correctly handles auto-linking."""
     # Arrange
@@ -315,6 +345,9 @@ async def test_create_pre_registration_with_existing_user_linking(
         pre_last_name="User",
         institution=f"{'Auto-linked' if link_to_existing_user else 'No-link'} Institution",
     )
+
+    # Add to cleanup list
+    pre_registration_details_db_cleanup.append(pre_registration_id)
 
     # Assert - Verify through list_user_pre_registrations
     registrations, count = await _users_repository.list_user_pre_registrations(
@@ -343,27 +376,39 @@ async def test_create_pre_registration_with_existing_user_linking(
     else:
         assert reg["user_id"] is None, "Should NOT be linked to any user"
 
-    # Clean up
-    async with asyncpg_engine.connect() as conn:
-        await conn.execute(
-            sa.delete(users_pre_registration_details).where(
-                users_pre_registration_details.c.id == pre_registration_id
-            )
-        )
-        await conn.commit()
+
+@dataclass
+class MixedUserTestData:
+    """Test data for user pre-registration tests with mixed states."""
+
+    created_by_user_id: str
+    product_owner_email: str
+    product_owner_id: str
+    pre_reg_email: str
+    pre_reg_id: int
+    owner_pre_reg_id: int
+    approved_email: str
+    approved_reg_id: int
 
 
-async def test_list_merged_pre_and_registered_users(
+@pytest.fixture
+async def mixed_user_data(
     app: web.Application,
     product_name: ProductName,
     product_owner_user: dict[str, Any],
-):
-    """Tests that list_merged_pre_and_registered_users correctly merges users from both tables."""
-    # Arrange
+    pre_registration_details_db_cleanup: list[int],
+) -> MixedUserTestData:
+    """Create a mix of pre-registered users in different states to test listing functionality.
+
+    Creates:
+    1. A pre-registered only user (PENDING)
+    2. A pre-registration for the existing product owner (linked)
+    3. A pre-registered user in APPROVED state
+
+    Returns a dataclass with created IDs and emails for verification and cleanup.
+    """
     asyncpg_engine = get_asyncpg_engine(app)
     created_by_user_id = product_owner_user["id"]
-
-    # The product_owner_user is already a registered user associated with the product
 
     # 1. Create a pre-registered user that is not in the users table - PENDING status
     pre_reg_email = "pre.registered.only@example.com"
@@ -382,6 +427,9 @@ async def test_list_merged_pre_and_registered_users(
         country="US",
     )
 
+    # Add to cleanup list
+    pre_registration_details_db_cleanup.append(pre_reg_id)
+
     # 2. Create a pre-registration for the product_owner_user (both registered and pre-registered)
     owner_pre_reg_id = await _users_repository.create_user_pre_registration(
         asyncpg_engine,
@@ -394,6 +442,9 @@ async def test_list_merged_pre_and_registered_users(
         link_to_existing_user=True,  # This will link to the existing user
     )
 
+    # Add to cleanup list
+    pre_registration_details_db_cleanup.append(owner_pre_reg_id)
+
     # 3. Create another pre-registered user with APPROVED status
     approved_email = "approved.user@example.com"
     approved_reg_id = await _users_repository.create_user_pre_registration(
@@ -405,6 +456,10 @@ async def test_list_merged_pre_and_registered_users(
         pre_last_name="User",
         institution="Approved Institution",
     )
+
+    # Add to cleanup list
+    pre_registration_details_db_cleanup.append(approved_reg_id)
+
     # Set to APPROVED status
     await _users_repository.review_user_pre_registration(
         asyncpg_engine,
@@ -413,142 +468,268 @@ async def test_list_merged_pre_and_registered_users(
         new_status=AccountRequestStatus.APPROVED,
     )
 
-    try:
-        # Act - Get all users without filtering
-        users_list, total_count = (
-            await _users_repository.list_merged_pre_and_registered_users(
-                asyncpg_engine,
-                product_name=product_name,
-                filter_include_deleted=False,
-                pagination_limit=10,
-                pagination_offset=0,
-            )
+    return MixedUserTestData(
+        created_by_user_id=created_by_user_id,
+        product_owner_email=product_owner_user["email"],
+        product_owner_id=product_owner_user["id"],
+        pre_reg_email=pre_reg_email,
+        pre_reg_id=pre_reg_id,
+        owner_pre_reg_id=owner_pre_reg_id,
+        approved_email=approved_email,
+        approved_reg_id=approved_reg_id,
+    )
+
+    # No explicit cleanup needed here, as pre_registration_details_db_cleanup will handle it
+
+
+async def test_list_merged_users_all_users(
+    app: web.Application,
+    product_name: ProductName,
+    mixed_user_data: MixedUserTestData,
+):
+    """Test that list_merged_pre_and_registered_users correctly returns all users."""
+    asyncpg_engine = get_asyncpg_engine(app)
+
+    # Act - Get all users without filtering
+    users_list, total_count = (
+        await _users_repository.list_merged_pre_and_registered_users(
+            asyncpg_engine,
+            product_name=product_name,
+            filter_include_deleted=False,
+            pagination_limit=10,
+            pagination_offset=0,
         )
+    )
 
-        # Assert
-        # 1. Check that we got the correct total count - should include all users
-        assert total_count >= 3, "Should have at least 3 users"
+    # Assert
+    # Check that we got the correct total count - should include all users from test data
+    assert total_count >= 3, "Should have at least 3 users"
 
-        # 2. Find the pre-registered only user in the results
-        pre_reg_only_user = next(
-            (user for user in users_list if user["email"] == pre_reg_email), None
+    # Create a set of expected emails for easier checking
+    expected_emails = {
+        mixed_user_data.pre_reg_email,
+        mixed_user_data.product_owner_email,
+        mixed_user_data.approved_email,
+    }
+
+    # Check that all our test users are in the results
+    found_emails = {user["email"] for user in users_list}
+    assert expected_emails.issubset(
+        found_emails
+    ), "All expected users should be in results"
+
+
+async def test_list_merged_users_pre_registered_only(
+    app: web.Application,
+    product_name: ProductName,
+    mixed_user_data: MixedUserTestData,
+):
+    """Test pre-registered only user details are correctly returned."""
+    asyncpg_engine = get_asyncpg_engine(app)
+
+    # Act - Get all users
+    users_list, _ = await _users_repository.list_merged_pre_and_registered_users(
+        asyncpg_engine,
+        product_name=product_name,
+        filter_include_deleted=False,
+    )
+
+    # Find the pre-registered only user in the results
+    pre_reg_only_user = next(
+        (user for user in users_list if user["email"] == mixed_user_data.pre_reg_email),
+        None,
+    )
+
+    # Assert
+    assert pre_reg_only_user is not None, "Pre-registered user should be in results"
+    assert pre_reg_only_user["is_pre_registered"] is True
+    # Check the pre_registration user_id is None but using the new column name
+    assert pre_reg_only_user["pre_reg_user_id"] is None
+    # For non-linked users, user_id is still None
+    assert (
+        pre_reg_only_user["user_id"] is None
+    ), "Pre-registered only user shouldn't have a user_id"
+    assert pre_reg_only_user["institution"] == "Pre-Reg Institution"
+    assert pre_reg_only_user["first_name"] == "Pre-Registered"
+    assert pre_reg_only_user["last_name"] == "Only"
+    assert pre_reg_only_user["created_by"] == mixed_user_data.created_by_user_id
+
+
+async def test_list_merged_users_linked_user(
+    app: web.Application,
+    product_name: ProductName,
+    mixed_user_data: MixedUserTestData,
+):
+    """Test that a linked user (both registered and pre-registered) has correct data."""
+    asyncpg_engine = get_asyncpg_engine(app)
+
+    # Act - Get all users
+    users_list, _ = await _users_repository.list_merged_pre_and_registered_users(
+        asyncpg_engine,
+        product_name=product_name,
+        filter_include_deleted=False,
+    )
+
+    # Find the product owner (both registered and pre-registered) in the results
+    product_owner = next(
+        (
+            user
+            for user in users_list
+            if user["email"] == mixed_user_data.product_owner_email
+        ),
+        None,
+    )
+
+    # Assert
+    assert product_owner is not None, "Product owner should be in results"
+    assert (
+        product_owner["is_pre_registered"] is True
+    ), "Should prefer pre-registration record"
+
+    # Check both the pre_reg_user_id (from pre-registration) and user_id (from users table)
+    assert (
+        product_owner["pre_reg_user_id"] == mixed_user_data.product_owner_id
+    ), "pre_reg_user_id should match the product owner id"
+    assert (
+        product_owner["user_id"] == mixed_user_data.product_owner_id
+    ), "Should be linked to existing user"
+
+    assert product_owner["institution"] == "Owner Institution"
+    assert (
+        product_owner["first_name"] == "Owner"
+    ), "Should use pre-registration first name"
+    assert (
+        product_owner["user_name"] is not None
+    ), "Should include user_name from users table"
+    assert product_owner["status"] is not None, "Should include status from users table"
+    assert product_owner["created_by"] == mixed_user_data.created_by_user_id
+
+
+async def test_list_merged_users_filter_pending(
+    app: web.Application,
+    product_name: ProductName,
+    mixed_user_data: MixedUserTestData,
+):
+    """Test filtering by PENDING account request status."""
+    asyncpg_engine = get_asyncpg_engine(app)
+
+    # Act - Get users with PENDING status
+    pending_users, pending_count = (
+        await _users_repository.list_merged_pre_and_registered_users(
+            asyncpg_engine,
+            product_name=product_name,
+            filter_any_account_request_status=[AccountRequestStatus.PENDING],
+            filter_include_deleted=False,
         )
-        assert pre_reg_only_user is not None, "Pre-registered user should be in results"
-        assert pre_reg_only_user["is_pre_registered"] is True
-        # Check the pre_registration user_id is None but using the new column name
-        assert pre_reg_only_user["pre_reg_user_id"] is None
-        # For non-linked users, user_id is still None
-        assert (
-            pre_reg_only_user["user_id"] is None
-        ), "Pre-registered only user shouldn't have a user_id"
-        assert pre_reg_only_user["institution"] == "Pre-Reg Institution"
-        assert pre_reg_only_user["first_name"] == "Pre-Registered"
-        assert pre_reg_only_user["last_name"] == "Only"
-        # Check created_by field instead of invited_by
-        assert (
-            pre_reg_only_user["created_by"] == created_by_user_id
-        ), "Should have created_by field with the creator's ID"
+    )
 
-        # 3. Check the product owner (both registered and pre-registered)
-        product_owner = next(
-            (
-                user
-                for user in users_list
-                if user["email"] == product_owner_user["email"]
-            ),
-            None,
+    # Assert
+    # Only pending pre-registrations should be included (default status is PENDING)
+    assert pending_count == 2
+    assert len(pending_users) == 2
+    pending_emails = [user["email"] for user in pending_users]
+    assert mixed_user_data.pre_reg_email in pending_emails
+    assert mixed_user_data.product_owner_email in pending_emails
+    # The approved user should not be in this result
+    assert mixed_user_data.approved_email not in pending_emails
+
+
+async def test_list_merged_users_filter_approved(
+    app: web.Application,
+    product_name: ProductName,
+    mixed_user_data: MixedUserTestData,
+):
+    """Test filtering by APPROVED account request status."""
+    asyncpg_engine = get_asyncpg_engine(app)
+
+    # Act - Get users with APPROVED status
+    approved_users, approved_count = (
+        await _users_repository.list_merged_pre_and_registered_users(
+            asyncpg_engine,
+            product_name=product_name,
+            filter_any_account_request_status=[AccountRequestStatus.APPROVED],
+            filter_include_deleted=False,
         )
-        assert product_owner is not None, "Product owner should be in results"
-        assert (
-            product_owner["is_pre_registered"] is True
-        ), "Should prefer pre-registration record"
-        # Check both the pre_reg_user_id (from pre-registration) and user_id (from users table)
-        assert (
-            product_owner["pre_reg_user_id"] == product_owner_user["id"]
-        ), "pre_reg_user_id should match the product owner id"
-        assert (
-            product_owner["user_id"] == product_owner_user["id"]
-        ), "Should be linked to existing user"
-        assert product_owner["institution"] == "Owner Institution"
-        assert (
-            product_owner["first_name"] == "Owner"
-        ), "Should use pre-registration first name"
-        assert (
-            product_owner["user_name"] is not None
-        ), "Should include user_name from users table"
-        assert (
-            product_owner["status"] is not None
-        ), "Should include status from users table"
-        assert (
-            product_owner["created_by"] == created_by_user_id
-        ), "Should have created_by field with the creator's ID"
+    )
 
-        # 4. Test filtering by any account request status - PENDING only
-        pending_users, pending_count = (
-            await _users_repository.list_merged_pre_and_registered_users(
-                asyncpg_engine,
-                product_name=product_name,
-                filter_any_account_request_status=[AccountRequestStatus.PENDING],
-                filter_include_deleted=False,
-            )
+    # Assert
+    # Only approved pre-registrations should be included
+    assert approved_count == 1
+    assert len(approved_users) == 1
+    assert approved_users[0]["email"] == mixed_user_data.approved_email
+    assert approved_users[0]["account_request_status"] == AccountRequestStatus.APPROVED
+
+
+async def test_list_merged_users_multiple_statuses(
+    app: web.Application,
+    product_name: ProductName,
+    mixed_user_data: MixedUserTestData,
+):
+    """Test filtering by multiple account request statuses."""
+    asyncpg_engine = get_asyncpg_engine(app)
+
+    # Act - Get users with either PENDING or APPROVED status
+    mixed_status_users, mixed_status_count = (
+        await _users_repository.list_merged_pre_and_registered_users(
+            asyncpg_engine,
+            product_name=product_name,
+            filter_any_account_request_status=[
+                AccountRequestStatus.PENDING,
+                AccountRequestStatus.APPROVED,
+            ],
+            filter_include_deleted=False,
         )
+    )
 
-        # Only pending pre-registrations should be included (default status is PENDING)
-        assert pending_count == 2
-        assert len(pending_users) == 2
-        pending_emails = [user["email"] for user in pending_users]
-        assert pre_reg_email in pending_emails
-        assert product_owner_user["email"] in pending_emails
-        # The approved user should not be in this result
-        assert approved_email not in pending_emails
+    # Assert
+    # Both pending and approved users should be included
+    assert mixed_status_count == 3
+    assert len(mixed_status_users) == 3
+    mixed_status_emails = [user["email"] for user in mixed_status_users]
+    assert mixed_user_data.pre_reg_email in mixed_status_emails
+    assert mixed_user_data.product_owner_email in mixed_status_emails
+    assert mixed_user_data.approved_email in mixed_status_emails
 
-        # 5. Test filtering by any account request status - APPROVED only
-        approved_users, approved_count = (
-            await _users_repository.list_merged_pre_and_registered_users(
-                asyncpg_engine,
-                product_name=product_name,
-                filter_any_account_request_status=[AccountRequestStatus.APPROVED],
-                filter_include_deleted=False,
-            )
+
+async def test_list_merged_users_pagination(
+    app: web.Application,
+    product_name: ProductName,
+    mixed_user_data: MixedUserTestData,
+):
+    """Test pagination of merged user results."""
+    asyncpg_engine = get_asyncpg_engine(app)
+
+    # Act - Get first page with limit 2
+    page1_users, total_count = (
+        await _users_repository.list_merged_pre_and_registered_users(
+            asyncpg_engine,
+            product_name=product_name,
+            filter_include_deleted=False,
+            pagination_limit=2,
+            pagination_offset=0,
         )
+    )
 
-        # Only approved pre-registrations should be included
-        assert approved_count == 1
-        assert len(approved_users) == 1
-        assert approved_users[0]["email"] == approved_email
-        assert (
-            approved_users[0]["account_request_status"] == AccountRequestStatus.APPROVED
-        )
+    # Get second page with limit 2
+    page2_users, _ = await _users_repository.list_merged_pre_and_registered_users(
+        asyncpg_engine,
+        product_name=product_name,
+        filter_include_deleted=False,
+        pagination_limit=2,
+        pagination_offset=2,
+    )
 
-        # 6. Test filtering by multiple account request statuses - PENDING and APPROVED
-        mixed_status_users, mixed_status_count = (
-            await _users_repository.list_merged_pre_and_registered_users(
-                asyncpg_engine,
-                product_name=product_name,
-                filter_any_account_request_status=[
-                    AccountRequestStatus.PENDING,
-                    AccountRequestStatus.APPROVED,
-                ],
-                filter_include_deleted=False,
-            )
-        )
+    # Assert
+    # Check pagination works correctly
+    assert len(page1_users) == 2, "First page should have 2 users"
+    assert total_count >= 3, "Total count should report all users"
 
-        # Both pending and approved users should be included
-        assert mixed_status_count == 3
-        assert len(mixed_status_users) == 3
-        mixed_status_emails = [user["email"] for user in mixed_status_users]
-        assert pre_reg_email in mixed_status_emails
-        assert product_owner_user["email"] in mixed_status_emails
-        assert approved_email in mixed_status_emails
+    if total_count > 2:
+        assert len(page2_users) > 0, "Second page should have at least 1 user"
 
-    finally:
-        # Clean up
-        async with asyncpg_engine.connect() as conn:
-            await conn.execute(
-                sa.delete(users_pre_registration_details).where(
-                    users_pre_registration_details.c.id.in_(
-                        [pre_reg_id, owner_pre_reg_id, approved_reg_id]
-                    )
-                )
-            )
-            await conn.commit()
+    # Ensure the emails are different between pages
+    page1_emails = [user["email"] for user in page1_users]
+    page2_emails = [user["email"] for user in page2_users]
+    assert not set(page1_emails).intersection(
+        set(page2_emails)
+    ), "Pages should have different users"
