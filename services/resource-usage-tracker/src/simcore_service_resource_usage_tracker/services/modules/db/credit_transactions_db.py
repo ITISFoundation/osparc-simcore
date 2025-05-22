@@ -227,7 +227,7 @@ async def get_transaction_current_credits_by_service_run_id(
             resource_tracker_credit_transactions.c.service_run_id == f"{service_run_id}"
         )
         result = await conn.execute(select_stmt)
-    row = result.first()
+    row = result.one_or_none()
     if row is None:
-        raise CreditTransactionNotFoundError
+        raise CreditTransactionNotFoundError(service_run_id=service_run_id)
     return Decimal(row[0])

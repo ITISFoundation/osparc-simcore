@@ -32,6 +32,7 @@ from ..projects.api import (
 )
 from ..projects.projects_metadata_service import (
     get_project_custom_metadata_or_empty_dict,
+    get_project_uuids_by_root_parent_project_id,
 )
 from ..rabbitmq import get_rabbitmq_rpc_client
 
@@ -120,9 +121,12 @@ async def list_computations_latest_iteration(
 
 async def list_computation_iterations(
     app: web.Application,
+    *,
     product_name: ProductName,
     user_id: UserID,
     project_id: ProjectID,
+    # filters
+    include_children: bool = False,
     # pagination
     offset: int,
     limit: NonNegativeInt,
@@ -130,23 +134,37 @@ async def list_computation_iterations(
     order_by: OrderBy,
 ) -> tuple[int, list[ComputationRunWithAttributes]]:
     """Returns the list of computations for a specific project (all iterations)"""
+    await check_user_project_permission(
+        app, project_id=project_id, user_id=user_id, product_name=product_name
+    )
+
+    if include_children:
+        child_projects = await get_project_uuids_by_root_parent_project_id(
+            app, root_parent_project_uuid=project_id
+        )
+        child_projects_with_root = [*child_projects, project_id]
+    else:
+        child_projects_with_root = [project_id]
+
     rpc_client = get_rabbitmq_rpc_client(app)
     _runs_get = await computations.list_computations_iterations_page(
         rpc_client,
         product_name=product_name,
         user_id=user_id,
-        project_id=project_id,
+        project_ids=child_projects_with_root,
         offset=offset,
         limit=limit,
         order_by=order_by,
     )
 
+    # NOTE: MD: can be improved, many times we ask for the same project
     # Get projects metadata
-    _projects_metadata = await _get_projects_metadata(app, project_uuids=[project_id])
-    assert len(_projects_metadata) == 1  # nosec
+    _projects_metadata = await _get_projects_metadata(
+        app, project_uuids=[item.project_uuid for item in _runs_get.items]
+    )
     # Get Root project names
-    _projects_root_names = await _get_root_project_names(app, [_runs_get.items[0]])
-    assert len(_projects_root_names) == 1  # nosec
+    root_project_names = await batch_get_project_name(app, projects_uuids=[project_id])
+    assert len(root_project_names) == 1
 
     _computational_runs_output = [
         ComputationRunWithAttributes(
@@ -157,10 +175,12 @@ async def list_computation_iterations(
             submitted_at=item.submitted_at,
             started_at=item.started_at,
             ended_at=item.ended_at,
-            root_project_name=_projects_root_names[0],
-            project_custom_metadata=_projects_metadata[0],
+            root_project_name=root_project_names[0],
+            project_custom_metadata=project_metadata,
         )
-        for item in _runs_get.items
+        for item, project_metadata in zip(
+            _runs_get.items, _projects_metadata, strict=True
+        )
     ]
 
     return _runs_get.total, _computational_runs_output
@@ -181,9 +201,12 @@ async def _get_credits_or_zero_by_service_run_id(
 
 async def list_computations_latest_iteration_tasks(
     app: web.Application,
+    *,
     product_name: ProductName,
     user_id: UserID,
     project_id: ProjectID,
+    # filters
+    include_children: bool = False,
     # pagination
     offset: int,
     limit: NonNegativeInt,
@@ -191,25 +214,42 @@ async def list_computations_latest_iteration_tasks(
     order_by: OrderBy,
 ) -> tuple[int, list[ComputationTaskWithAttributes]]:
     """Returns the list of tasks for the latest iteration of a computation"""
-
     await check_user_project_permission(
         app, project_id=project_id, user_id=user_id, product_name=product_name
     )
+
+    if include_children:
+        child_projects = await get_project_uuids_by_root_parent_project_id(
+            app, root_parent_project_uuid=project_id
+        )
+        child_projects_with_root = [*child_projects, project_id]
+    else:
+        child_projects_with_root = [project_id]
 
     rpc_client = get_rabbitmq_rpc_client(app)
     _tasks_get = await computations.list_computations_latest_iteration_tasks_page(
         rpc_client,
         product_name=product_name,
         user_id=user_id,
-        project_id=project_id,
+        project_ids=child_projects_with_root,
         offset=offset,
         limit=limit,
         order_by=order_by,
     )
 
-    # Get node names (for all project nodes)
-    project_dict = await get_project_dict_legacy(app, project_uuid=project_id)
-    workbench = project_dict["workbench"]
+    # Get unique set of all project_uuids from comp_tasks
+    unique_project_uuids = {task.project_uuid for task in _tasks_get.items}
+    # Fetch projects metadata concurrently
+    # NOTE: MD: can be improved with a single batch call
+    project_dicts = await limited_gather(
+        *[
+            get_project_dict_legacy(app, project_uuid=project_uuid)
+            for project_uuid in unique_project_uuids
+        ],
+        limit=20,
+    )
+    # Build a dict: project_uuid -> workbench
+    project_uuid_to_workbench = {prj["uuid"]: prj["workbench"] for prj in project_dicts}
 
     _service_run_ids = [item.service_run_id for item in _tasks_get.items]
     _is_product_billable = await is_product_billable(app, product_name=product_name)
@@ -239,7 +279,9 @@ async def list_computations_latest_iteration_tasks(
             started_at=item.started_at,
             ended_at=item.ended_at,
             log_download_link=item.log_download_link,
-            node_name=workbench[f"{item.node_id}"].get("label", ""),
+            node_name=project_uuid_to_workbench[f"{item.project_uuid}"][
+                f"{item.node_id}"
+            ].get("label", ""),
             osparc_credits=credits_or_none,
         )
         for item, credits_or_none in zip(
