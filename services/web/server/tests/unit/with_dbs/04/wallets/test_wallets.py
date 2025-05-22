@@ -258,3 +258,61 @@ async def test_get_default_wallet_access_rights(
         status.HTTP_401_UNAUTHORIZED,
         status.HTTP_403_FORBIDDEN,
     ), f"{error}"
+
+
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
+async def test_update_wallet_without_thumbnail(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    expected: HTTPStatus,
+    wallets_clean_db: AsyncIterator[None],
+    mock_rut_sum_total_available_credits_in_the_wallet: mock.Mock,
+):
+    assert client.app
+
+    # Create a wallet first
+    url = client.app.router["create_wallet"].url_for()
+    resp = await client.post(
+        url.path,
+        json={
+            "name": "Test wallet",
+            "description": "Test description",
+            "thumbnail": "Initial thumbnail",
+        },
+    )
+    created_wallet, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    assert created_wallet["thumbnail"] == "Initial thumbnail"
+
+    # Update the wallet without a thumbnail in the request body
+    url = client.app.router["update_wallet"].url_for(
+        wallet_id=f"{created_wallet['walletId']}"
+    )
+    resp = await client.put(
+        url.path,
+        json={
+            "name": "Updated wallet name",
+            "description": "Updated description",
+            "status": "ACTIVE",
+        },
+    )
+    updated_wallet, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    # Verify that the thumbnail is set to None when not provided in the request
+    assert updated_wallet["walletId"] == created_wallet["walletId"]
+    assert updated_wallet["name"] == "Updated wallet name"
+    assert updated_wallet["description"] == "Updated description"
+    assert (
+        updated_wallet["thumbnail"] is None
+    )  # Thumbnail should be None when not provided
+    assert updated_wallet["status"] == "ACTIVE"
+
+    # Get the wallet to verify the changes persisted
+    url = client.app.router["get_wallet"].url_for(
+        wallet_id=f"{created_wallet['walletId']}"
+    )
+    resp = await client.get(url.path)
+    fetched_wallet, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    assert (
+        fetched_wallet["thumbnail"] is None
+    )  # Confirm thumbnail is None in the database
