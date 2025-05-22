@@ -183,6 +183,9 @@ async def search_users_as_admin(
             country=r.country,
             extras=r.extras or {},
             invited_by=r.invited_by,
+            account_request_status=r.account_request_status,
+            account_request_reviewed_by=r.account_request_reviewed_by,
+            account_request_reviewed_at=r.account_request_reviewed_at,
             products=await _list_products_or_none(r.user_id),
             # NOTE: old users will not have extra details
             registered=r.user_id is not None if r.pre_email else r.status is not None,
@@ -213,7 +216,7 @@ async def list_all_users_as_admin(
     app: web.Application,
     *,
     product_name: ProductName,
-    filter_account_request_status: AccountRequestStatus | None = None,
+    filter_any_account_request_status: list[AccountRequestStatus] | None = None,
     pagination_limit: int = 50,
     pagination_offset: int = 0,
 ) -> tuple[list[dict[str, Any]], int]:
@@ -236,7 +239,7 @@ async def list_all_users_as_admin(
         await _users_repository.list_merged_pre_and_registered_users(
             engine,
             product_name=product_name,
-            filter_account_request_status=filter_account_request_status,
+            filter_any_account_request_status=filter_any_account_request_status,
             pagination_limit=pagination_limit,
             pagination_offset=pagination_offset,
         )

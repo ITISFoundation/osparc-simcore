@@ -690,9 +690,8 @@ async def review_user_pre_registration(
         new_status: New status (APPROVED or REJECTED)
     """
     if new_status not in (AccountRequestStatus.APPROVED, AccountRequestStatus.REJECTED):
-        raise ValueError(
-            f"Invalid status for review: {new_status}. Must be APPROVED or REJECTED."
-        )
+        msg = f"Invalid status for review: {new_status}. Must be APPROVED or REJECTED."
+        raise ValueError(msg)
 
     async with transaction_context(engine, connection) as conn:
         await conn.execute(
@@ -783,7 +782,7 @@ async def list_merged_pre_and_registered_users(
     connection: AsyncConnection | None = None,
     *,
     product_name: ProductName,
-    filter_account_request_status: AccountRequestStatus | None = None,
+    filter_any_account_request_status: list[AccountRequestStatus] | None = None,
     filter_include_deleted: bool = False,
     pagination_limit: int = 50,
     pagination_offset: int = 0,
@@ -799,7 +798,8 @@ async def list_merged_pre_and_registered_users(
         engine: Database engine
         connection: Optional existing connection
         product_name: Product name to filter by
-        filter_account_request_status: Optional filter by account request status
+        filter_any_account_request_status: If provided, only returns users with account request status in this list
+            (only pre-registered users with any of these statuses will be included)
         filter_include_deleted: Whether to include deleted users
         pagination_limit: Maximum number of results to return
         pagination_offset: Number of results to skip (for pagination)
@@ -812,10 +812,11 @@ async def list_merged_pre_and_registered_users(
     users_where = []
 
     # Add account request status filter if specified
-    if filter_account_request_status is not None:
+    if filter_any_account_request_status:
         pre_reg_where.append(
-            users_pre_registration_details.c.account_request_status
-            == filter_account_request_status
+            users_pre_registration_details.c.account_request_status.in_(
+                filter_any_account_request_status
+            )
         )
 
     # Add filter for deleted users
@@ -891,8 +892,15 @@ async def list_merged_pre_and_registered_users(
         .where(sa.and_(products.c.name == product_name, *users_where))
     )
 
-    # Combine with a UNION ALL query
-    merged_query = pre_reg_query.union_all(users_query)
+    # If filtering by account request status, we only want pre-registered users with any of those statuses
+    # No need to union with regular users as they don't have account_request_status
+    if (
+        filter_any_account_request_status is not None
+        and filter_any_account_request_status
+    ):
+        merged_query = pre_reg_query
+    else:
+        merged_query = pre_reg_query.union_all(users_query)
 
     # Add distinct on email to eliminate duplicates
     merged_query_subq = merged_query.subquery()

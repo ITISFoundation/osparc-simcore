@@ -226,11 +226,16 @@ async def test_list_users_for_admin(
     # Verify all pre-registered users are in PENDING status
     url = client.app.router["list_users_for_admin"].url_for()
     resp = await client.get(
-        f"{url}?status=PENDING", headers={X_PRODUCT_NAME_HEADER: product_name}
+        f"{url}?review_status=PENDING", headers={X_PRODUCT_NAME_HEADER: product_name}
     )
     data, _ = await assert_status(resp, status.HTTP_200_OK)
 
-    pending_emails = [user["email"] for user in data if user["status"] is None]
+    # Access the items field from the paginated response
+    pending_emails = [
+        user["email"]
+        for user in data["items"]
+        if user.get("account_request_status") == "PENDING"
+    ]
     for pre_user in pre_registered_users:
         assert pre_user["email"] in pending_emails
 
@@ -258,7 +263,7 @@ async def test_list_users_for_admin(
     # a. Check PENDING filter (should exclude the registered user)
     url = client.app.router["list_users_for_admin"].url_for()
     resp = await client.get(
-        f"{url}?status=PENDING", headers={X_PRODUCT_NAME_HEADER: product_name}
+        f"{url}?review_status=PENDING", headers={X_PRODUCT_NAME_HEADER: product_name}
     )
     pending_data, _ = await assert_status(resp, status.HTTP_200_OK)
 
@@ -267,19 +272,24 @@ async def test_list_users_for_admin(
     assert registered_email not in pending_emails
     assert len(pending_emails) >= len(pre_registered_users) - 1
 
-    # b. Check all users
+    # b. Check REVIEWED users (should include the registered user)
     resp = await client.get(
-        f"{url}?status=APPROVED", headers={X_PRODUCT_NAME_HEADER: product_name}
+        f"{url}?review_status=REVIEWED", headers={X_PRODUCT_NAME_HEADER: product_name}
     )
     approved_data, _ = await assert_status(resp, status.HTTP_200_OK)
 
-    # Find the registered user in the active users
+    # Find the registered user in the reviewed users
     active_user = next(
-        (item for item in approved_data if item["email"] == registered_email),
+        (
+            UserForAdminGet(**item)
+            for item in approved_data
+            if item["email"] == registered_email
+        ),
         None,
     )
     assert active_user is not None
-    assert UserForAdminGet(**active_user).status == UserStatus.ACTIVE
+    assert active_user.account_request_status == "APPROVED"
+    assert active_user.status == UserStatus.ACTIVE
 
     # 4. Test pagination
     # a. First page (limit 2)
@@ -317,15 +327,17 @@ async def test_list_users_for_admin(
     # 5. Combine status filter with pagination
     resp = await client.get(
         f"{url}",
-        params={"status": "PENDING", "limit": 2, "offset": 0},
+        params={"review_status": "PENDING", "limit": 2, "offset": 0},
         headers={X_PRODUCT_NAME_HEADER: product_name},
     )
-    filtered_page_data, _ = await assert_status(resp, status.HTTP_200_OK)
+    filtered_page_payload, _ = await assert_status(resp, status.HTTP_200_OK)
+    filtered_page_data = filtered_page_payload["data"]
 
     assert len(filtered_page_data) <= 2
     for item in filtered_page_data:
         user = UserForAdminGet(**item)
         assert user.registered is False  # Pending users are not registered
+        assert user.account_request_status == "PENDING"
 
 
 @pytest.mark.parametrize(

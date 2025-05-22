@@ -10,6 +10,7 @@ from models_library.api_schemas_webserver.users import (
     UserApprove,
     UserForAdminGet,
     UserGet,
+    UserReject,
     UsersForAdminListQueryParams,
     UsersForAdminSearchQueryParams,
     UsersSearch,
@@ -179,14 +180,21 @@ async def list_users_for_admin(request: web.Request) -> web.Response:
         UsersForAdminListQueryParams, request
     )
 
+    if query_params.review_status == "PENDING":
+        filter_any_account_request_status = [AccountRequestStatus.PENDING]
+    elif query_params.review_status == "REVIEWED":
+        filter_any_account_request_status = [
+            AccountRequestStatus.APPROVED,
+            AccountRequestStatus.REJECTED,
+        ]
+    else:
+        # ALL
+        filter_any_account_request_status = None
+
     users, total_count = await _users_service.list_all_users_as_admin(
         request.app,
         product_name=req_ctx.product_name,
-        filter_account_request_status=(
-            AccountRequestStatus(query_params.account_request_status)
-            if query_params.account_request_status
-            else None
-        ),
+        filter_any_account_request_status=filter_any_account_request_status,
         pagination_limit=query_params.limit,
         pagination_offset=query_params.offset,
     )
