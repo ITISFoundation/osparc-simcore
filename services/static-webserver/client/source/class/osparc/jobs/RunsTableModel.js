@@ -75,6 +75,7 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
       nullable: true,
       check : "String",
       init: "",
+      apply: "reloadData",
     },
   },
 
