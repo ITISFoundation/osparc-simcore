@@ -13,12 +13,6 @@ from requests.auth import HTTPBasicAuth
 from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_exponential
 from urllib3 import PoolManager, Retry
 
-# Perform the following setup in order to run this load test:
-# 1. Copy .env-devel to .env in this directory and add your osparc keys to .env.
-# 2. Construct a study **template** according to study_template.png. passer.py is the file next to this file.
-# 3. Setup the locust settings in the .env file (see https://docs.locust.io/en/stable/configuration.html#all-available-configuration-options)
-# run 'make test target=metamodeling/workflow.py' in your terminal and watch the magic happen 🤩
-
 
 class UserSettings(BaseSettings):
     model_config = SettingsConfigDict(extra="ignore")
