@@ -54,7 +54,7 @@ qx.Class.define("osparc.store.Jobs", {
           offset,
           limit,
           orderBy: JSON.stringify(orderBy),
-          filters: filters ? JSON.stringify(filters) : {}
+          filters: JSON.stringify(filters ? filters : {}),
         }
       };
       const options = {
