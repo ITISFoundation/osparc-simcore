@@ -15,11 +15,11 @@ from models_library.api_schemas_webserver.users import (
     MyProfilePatch,
     MyTokenCreate,
     MyTokenGet,
+    UserAccountApprove,
     UserAccountGet,
+    UserAccountReject,
     UserAccountSearchQueryParams,
-    UserApprove,
     UserGet,
-    UserReject,
     UsersAccountListQueryParams,
     UsersSearch,
 )
@@ -163,7 +163,7 @@ async def list_users_accounts(
     status_code=status.HTTP_204_NO_CONTENT,
     tags=_extra_tags,
 )
-async def approve_user_account(_body: UserApprove): ...
+async def approve_user_account(_body: UserAccountApprove): ...
 
 
 @router.post(
@@ -171,7 +171,7 @@ async def approve_user_account(_body: UserApprove): ...
     status_code=status.HTTP_204_NO_CONTENT,
     tags=_extra_tags,
 )
-async def reject_user_account(_body: UserReject): ...
+async def reject_user_account(_body: UserAccountReject): ...
 
 
 @router.get(

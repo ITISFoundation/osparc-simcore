@@ -255,12 +255,12 @@ class UsersForAdminListFilter(Filters):
 class UsersAccountListQueryParams(UsersForAdminListFilter, PageQueryParameters): ...
 
 
-class UserApprove(InputSchema):
+class UserAccountApprove(InputSchema):
     email: EmailStr
     invitation: InvitationGenerate | None = None
 
 
-class UserReject(InputSchema):
+class UserAccountReject(InputSchema):
     email: EmailStr
 
 

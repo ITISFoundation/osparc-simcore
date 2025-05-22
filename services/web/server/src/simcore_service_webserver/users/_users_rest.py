@@ -7,11 +7,11 @@ from common_library.users_enums import AccountRequestStatus
 from models_library.api_schemas_webserver.users import (
     MyProfileGet,
     MyProfilePatch,
+    UserAccountApprove,
     UserAccountGet,
+    UserAccountReject,
     UserAccountSearchQueryParams,
-    UserApprove,
     UserGet,
-    UserReject,
     UsersAccountListQueryParams,
     UsersSearch,
 )
@@ -276,7 +276,7 @@ async def approve_user_account(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     assert req_ctx.product_name  # nosec
 
-    approval_data = await parse_request_body_as(UserApprove, request)
+    approval_data = await parse_request_body_as(UserAccountApprove, request)
 
     if approval_data.invitation:
         _logger.debug(
@@ -309,7 +309,7 @@ async def reject_user_account(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     assert req_ctx.product_name  # nosec
 
-    rejection_data = await parse_request_body_as(UserReject, request)
+    rejection_data = await parse_request_body_as(UserAccountReject, request)
 
     # Reject the user account, passing the current user's ID as the reviewer
     pre_registration_id = await _users_service.reject_user_account(

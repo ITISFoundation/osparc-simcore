@@ -1416,7 +1416,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserApprove'
+              $ref: '#/components/schemas/UserAccountApprove'
         required: true
       responses:
         '204':
@@ -1432,7 +1432,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserReject'
+              $ref: '#/components/schemas/UserAccountReject'
         required: true
       responses:
         '204':
@@ -1442,7 +1442,7 @@ paths:
       tags:
       - users
       - admin
-      summary: Search User Account
+      summary: Search User Accounts
       operationId: search_user_accounts
       parameters:
       - name: email
@@ -16996,6 +16996,20 @@ components:
       - number
       - e_tag
       title: UploadedPart
+    UserAccountApprove:
+      properties:
+        email:
+          type: string
+          format: email
+          title: Email
+        invitation:
+          anyOf:
+          - $ref: '#/components/schemas/InvitationGenerate'
+          - type: 'null'
+      type: object
+      required:
+      - email
+      title: UserAccountApprove
     UserAccountGet:
       properties:
         firstName:
@@ -17112,20 +17126,16 @@ components:
       - registered
       - status
       title: UserAccountGet
-    UserApprove:
+    UserAccountReject:
       properties:
         email:
           type: string
           format: email
           title: Email
-        invitation:
-          anyOf:
-          - $ref: '#/components/schemas/InvitationGenerate'
-          - type: 'null'
       type: object
       required:
       - email
-      title: UserApprove
+      title: UserAccountReject
     UserGet:
       properties:
         userId:
@@ -17287,16 +17297,6 @@ components:
       required:
       - read
       title: UserNotificationPatch
-    UserReject:
-      properties:
-        email:
-          type: string
-          format: email
-          title: Email
-      type: object
-      required:
-      - email
-      title: UserReject
     UserStatus:
       type: string
       enum:
