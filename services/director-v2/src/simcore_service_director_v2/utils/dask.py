@@ -153,9 +153,9 @@ async def parse_output_data(
                 [
                     {
                         "loc": (
-                            project_id,
-                            node_id,
-                            port_key,
+                            f"{project_id}",
+                            f"{node_id}",
+                            f"{port_key}",
                         ),
                         "msg": str(err),
                         "type": "unbound_port",
