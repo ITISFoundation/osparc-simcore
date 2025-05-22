@@ -729,6 +729,7 @@ async def search_merged_pre_and_registered_users(
 
     async with pass_or_acquire_connection(engine, connection) as conn:
         columns = (
+            users_pre_registration_details.c.id,
             users.c.first_name,
             users.c.last_name,
             users.c.email,
@@ -830,6 +831,7 @@ async def list_merged_pre_and_registered_users(
     # We need to left join with users to identify if the pre-registered user is already in the system
     pre_reg_query = (
         sa.select(
+            users_pre_registration_details.c.id,
             users_pre_registration_details.c.pre_email.label("email"),
             users_pre_registration_details.c.pre_first_name.label("first_name"),
             users_pre_registration_details.c.pre_last_name.label("last_name"),
@@ -864,6 +866,7 @@ async def list_merged_pre_and_registered_users(
     # Query for users that are associated with the product through groups
     users_query = (
         sa.select(
+            sa.literal(None).label("id"),
             users.c.email,
             users.c.first_name,
             users.c.last_name,

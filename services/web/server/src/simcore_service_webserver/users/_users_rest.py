@@ -200,7 +200,9 @@ async def list_users_for_admin(request: web.Request) -> web.Response:
     )
 
     def _to_domain_model(user: dict[str, Any]) -> UserForAdminGet:
-        return UserForAdminGet(extras=user.pop("extras") or {}, **user)
+        return UserForAdminGet(
+            extras=user.pop("extras") or {}, pre_registration_id=user.pop("id"), **user
+        )
 
     page = Page[UserForAdminGet].model_validate(
         paginate_data(
@@ -243,7 +245,7 @@ async def search_users_for_admin(request: web.Request) -> web.Response:
     f"/{API_VTAG}/admin/users:pre-register", name="pre_register_user_for_admin"
 )
 @login_required
-@permission_required("admin.users.read")
+@permission_required("admin.users.write")
 @_handle_users_exceptions
 async def pre_register_user_for_admin(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
@@ -273,9 +275,13 @@ async def approve_user_account(request: web.Request) -> web.Response:
 
     if approval_data.invitation:
         _logger.debug(
-            "TODO: User %s is being approved with invitation %s. Generating invitation ... ",
+            "TODO: User is being approved with invitation %s: \n"
+            "1. Approve user account\n"
+            "2. Generate invitation\n"
+            "3. Store invitation in extras\n"
+            "4. Send invitation to user %s\n",
+            approval_data.invitation.model_dump_json(indent=1),
             approval_data.email,
-            approval_data.invitation,
         )
 
     # Approve the user account, passing the current user's ID as the reviewer

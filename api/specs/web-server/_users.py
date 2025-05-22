@@ -15,6 +15,7 @@ from models_library.api_schemas_webserver.users import (
     MyProfilePatch,
     MyTokenCreate,
     MyTokenGet,
+    ResendConfirmationCode,
     UserApprove,
     UserForAdminGet,
     UserGet,
@@ -180,7 +181,7 @@ async def reject_user_account(_body: UserReject): ...
     tags=_extra_tags,
     include_in_schema=False,  # UNDER DEVELOPMENT
 )
-async def resend_user_confirmation_email(_body: UserApprove): ...
+async def resend_user_confirmation_email(_body: ResendConfirmationCode): ...
 
 
 @router.get(

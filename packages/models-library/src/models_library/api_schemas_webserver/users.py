@@ -294,6 +294,7 @@ class UserForAdminGet(OutputSchema):
     ] = DEFAULT_FACTORY
 
     # pre-registration
+    pre_registration_id: int | None
     invited_by: str | None = None
     account_request_status: AccountRequestStatus | None
     account_request_reviewed_by: UserID | None = None
