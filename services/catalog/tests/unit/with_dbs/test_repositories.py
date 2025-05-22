@@ -390,7 +390,7 @@ async def test_list_latest_services_with_pagination(
         assert service.version == expected_latest_version
 
     _, services_items = await services_repo.list_latest_services(
-        product_name=target_product, user_id=user_id, limit=2
+        product_name=target_product, user_id=user_id, pagination_limit=2
     )
     assert len(services_items) == 2
 
@@ -711,8 +711,8 @@ async def test_get_service_history_page(
         product_name=target_product,
         user_id=user_id,
         key=service_key,
-        limit=limit,
-        offset=offset,
+        pagination_limit=limit,
+        pagination_offset=offset,
     )
     assert total_count == num_versions
     assert len(paginated_history) == limit
@@ -900,3 +900,263 @@ async def test_list_services_from_published_templates_with_invalid_service(
             "service {'key': 'simcore/services/dynamic/invalid-service', 'version': 'invalid'} could not be validated"
             in caplog.text
         )
+
+
+async def test_compare_list_all_and_latest_services(
+    target_product: ProductName,
+    create_fake_service_data: CreateFakeServiceDataCallable,
+    services_db_tables_injector: Callable,
+    services_repo: ServicesRepository,
+    user_id: UserID,
+):
+    # Setup: Create multiple versions of the same service and a few distinct services
+    service_data: list[tuple] = []
+
+    # Service 1 with multiple versions
+    service_key_1 = "simcore/services/dynamic/multi-version"
+    service_versions_1 = ["1.0.0", "1.1.0", "2.0.0"]
+    service_data.extend(
+        [
+            create_fake_service_data(
+                service_key_1,
+                version_,
+                team_access=None,
+                everyone_access=None,
+                product=target_product,
+            )
+            for version_ in service_versions_1
+        ]
+    )
+
+    # Service 2 with single version
+    service_key_2 = "simcore/services/dynamic/single-version"
+    service_data.append(
+        create_fake_service_data(
+            service_key_2,
+            "1.0.0",
+            team_access=None,
+            everyone_access=None,
+            product=target_product,
+        )
+    )
+
+    # Service 3 with computational type
+    service_key_3 = "simcore/services/comp/computational-service"
+    service_versions_3 = ["0.5.0", "1.0.0"]
+    service_data.extend(
+        [
+            create_fake_service_data(
+                service_key_3,
+                version_,
+                team_access=None,
+                everyone_access=None,
+                product=target_product,
+            )
+            for version_ in service_versions_3
+        ]
+    )
+
+    await services_db_tables_injector(service_data)
+
+    # Test 1: Compare all services vs latest without filters
+    total_all, all_services = await services_repo.list_all_services(
+        product_name=target_product, user_id=user_id
+    )
+    total_latest, latest_services = await services_repo.list_latest_services(
+        product_name=target_product, user_id=user_id
+    )
+
+    # Verify counts
+    # All services should be 6 (3 versions of service 1, 1 of service 2, 2 of service 3)
+    assert total_all == 6
+    # Latest services should be 3 (one latest for each distinct service key)
+    assert total_latest == 3
+
+    # Verify latest services are contained in all services
+    latest_key_versions = {(s.key, s.version) for s in latest_services}
+    all_key_versions = {(s.key, s.version) for s in all_services}
+    assert latest_key_versions.issubset(all_key_versions)
+
+    # Verify latest versions are correct
+    latest_versions_by_key = {s.key: s.version for s in latest_services}
+    assert latest_versions_by_key[service_key_1] == "2.0.0"
+    assert latest_versions_by_key[service_key_2] == "1.0.0"
+    assert latest_versions_by_key[service_key_3] == "1.0.0"
+
+    # Test 2: Using service_type filter to get only dynamic services
+    filters = ServiceDBFilters(service_type=ServiceType.DYNAMIC)
+
+    total_all_filtered, all_services_filtered = await services_repo.list_all_services(
+        product_name=target_product, user_id=user_id, filters=filters
+    )
+    total_latest_filtered, latest_services_filtered = (
+        await services_repo.list_latest_services(
+            product_name=target_product, user_id=user_id, filters=filters
+        )
+    )
+
+    # Verify counts with filter
+    assert total_all_filtered == 4  # 3 versions of service 1, 1 of service 2
+    assert total_latest_filtered == 2  # 1 latest each for service 1 and 2
+
+    # Verify service types are correct after filtering
+    assert all(
+        s.key.startswith(DYNAMIC_SERVICE_KEY_PREFIX) for s in all_services_filtered
+    )
+    assert all(
+        s.key.startswith(DYNAMIC_SERVICE_KEY_PREFIX) for s in latest_services_filtered
+    )
+
+    # Verify latest versions are correct
+    latest_versions_by_key = {s.key: s.version for s in latest_services_filtered}
+    assert latest_versions_by_key[service_key_1] == "2.0.0"
+    assert latest_versions_by_key[service_key_2] == "1.0.0"
+    assert service_key_3 not in latest_versions_by_key  # Filtered out
+
+    # Test 3: Using service_key_pattern to find specific service
+    filters = ServiceDBFilters(service_key_pattern="*/multi-*")
+
+    total_all_filtered, all_services_filtered = await services_repo.list_all_services(
+        product_name=target_product, user_id=user_id, filters=filters
+    )
+    total_latest_filtered, latest_services_filtered = (
+        await services_repo.list_latest_services(
+            product_name=target_product, user_id=user_id, filters=filters
+        )
+    )
+
+    # Verify counts with key pattern filter
+    assert total_all_filtered == 3  # All 3 versions of service 1
+    assert total_latest_filtered == 1  # Only latest version of service 1
+
+    # Verify service key pattern is matched
+    assert all(s.key == service_key_1 for s in all_services_filtered)
+    assert all(s.key == service_key_1 for s in latest_services_filtered)
+
+    # Test 4: Pagination
+    # Get first page (limit=2)
+    total_all_page1, all_services_page1 = await services_repo.list_all_services(
+        product_name=target_product,
+        user_id=user_id,
+        pagination_limit=2,
+        pagination_offset=0,
+    )
+
+    # Get second page (limit=2, offset=2)
+    total_all_page2, all_services_page2 = await services_repo.list_all_services(
+        product_name=target_product,
+        user_id=user_id,
+        pagination_limit=2,
+        pagination_offset=2,
+    )
+
+    # Verify pagination
+    assert total_all_page1 == 6  # Total count should still be total
+    assert total_all_page2 == 6
+    assert len(all_services_page1) == 2  # But only 2 items on first page
+    assert len(all_services_page2) == 2  # And 2 items on second page
+
+    # Ensure pages have different items
+    page1_key_versions = {(s.key, s.version) for s in all_services_page1}
+    page2_key_versions = {(s.key, s.version) for s in all_services_page2}
+    assert not page1_key_versions.intersection(page2_key_versions)
+
+
+async def test_list_all_services_empty_database(
+    target_product: ProductName,
+    services_repo: ServicesRepository,
+    user_id: UserID,
+):
+    """Test list_all_services and list_latest_services with an empty database."""
+    # Test with empty database
+    total_all, all_services = await services_repo.list_all_services(
+        product_name=target_product, user_id=user_id
+    )
+    total_latest, latest_services = await services_repo.list_latest_services(
+        product_name=target_product, user_id=user_id
+    )
+
+    assert total_all == 0
+    assert len(all_services) == 0
+    assert total_latest == 0
+    assert len(latest_services) == 0
+
+
+async def test_list_all_services_deprecated_versions(
+    target_product: ProductName,
+    create_fake_service_data: CreateFakeServiceDataCallable,
+    services_db_tables_injector: Callable,
+    services_repo: ServicesRepository,
+    user_id: UserID,
+):
+    """Test that list_all_services includes deprecated versions while list_latest_services ignores them."""
+    from datetime import datetime, timedelta
+
+    # Create a service with regular and deprecated versions
+    service_key = "simcore/services/dynamic/with-deprecated"
+    service_data = []
+
+    # Add regular version
+    service_data.append(
+        create_fake_service_data(
+            service_key,
+            "1.0.0",
+            team_access=None,
+            everyone_access=None,
+            product=target_product,
+        )
+    )
+
+    # Add deprecated version (with higher version number)
+    deprecated_service = create_fake_service_data(
+        service_key,
+        "2.0.0",
+        team_access=None,
+        everyone_access=None,
+        product=target_product,
+    )
+    # Set deprecated timestamp to yesterday
+    deprecated_service[0]["deprecated"] = datetime.now() - timedelta(days=1)
+    service_data.append(deprecated_service)
+
+    # Add newer non-deprecated version
+    service_data.append(
+        create_fake_service_data(
+            service_key,
+            "3.0.0",
+            team_access=None,
+            everyone_access=None,
+            product=target_product,
+        )
+    )
+
+    await services_db_tables_injector(service_data)
+
+    # Get all services - should include both deprecated and non-deprecated
+    total_all, all_services = await services_repo.list_all_services(
+        product_name=target_product, user_id=user_id
+    )
+
+    # Get latest services - should only show latest non-deprecated
+    total_latest, latest_services = await services_repo.list_latest_services(
+        product_name=target_product, user_id=user_id
+    )
+
+    # Verify counts
+    assert total_all == 3  # All 3 versions
+
+    # Verify latest is the newest non-deprecated version
+    assert len(latest_services) == 1
+    assert latest_services[0].key == service_key
+    assert latest_services[0].version == "3.0.0"
+
+    # Get versions from all services
+    versions = [s.version for s in all_services if s.key == service_key]
+    assert sorted(versions) == ["1.0.0", "2.0.0", "3.0.0"]
+
+    # Verify the deprecated status is correctly set
+    for service in all_services:
+        if service.key == service_key and service.version == "2.0.0":
+            assert service.deprecated is not None
+        else:
+            assert service.deprecated is None

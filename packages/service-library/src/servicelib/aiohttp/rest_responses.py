@@ -92,6 +92,7 @@ def create_http_error(
     )
 
     return http_error_cls(
+        # Multiline not allowed in HTTP reason
         reason=reason.replace("\n", " ") if reason else None,
         text=json_dumps(
             payload,

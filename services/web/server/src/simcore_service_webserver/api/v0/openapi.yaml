@@ -2691,6 +2691,13 @@ paths:
           type: integer
           default: 0
           title: Offset
+      - name: include_children
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+          title: Include Children
       responses:
         '200':
           description: Successful Response
@@ -2736,6 +2743,13 @@ paths:
           type: integer
           default: 0
           title: Offset
+      - name: include_children
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+          title: Include Children
       responses:
         '200':
           description: Successful Response
@@ -8682,6 +8696,22 @@ components:
         name:
           type: string
           title: Name
+        description:
+          type: string
+          title: Description
+        versionDisplay:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Versiondisplay
+        contact:
+          anyOf:
+          - type: string
+            format: email
+          - type: 'null'
+          title: Contact
+        type:
+          $ref: '#/components/schemas/ServiceType'
         thumbnail:
           anyOf:
           - type: string
@@ -8692,26 +8722,10 @@ components:
           - type: string
           - type: 'null'
           title: Icon
-        description:
-          type: string
-          title: Description
         descriptionUi:
           type: boolean
           title: Descriptionui
           default: false
-        versionDisplay:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Versiondisplay
-        type:
-          $ref: '#/components/schemas/ServiceType'
-        contact:
-          anyOf:
-          - type: string
-            format: email
-          - type: 'null'
-          title: Contact
         authors:
           items:
             $ref: '#/components/schemas/Author'
@@ -8768,8 +8782,8 @@ components:
       - version
       - name
       - description
-      - type
       - contact
+      - type
       - authors
       - owner
       - inputs
@@ -8901,6 +8915,22 @@ components:
         name:
           type: string
           title: Name
+        description:
+          type: string
+          title: Description
+        versionDisplay:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Versiondisplay
+        contact:
+          anyOf:
+          - type: string
+            format: email
+          - type: 'null'
+          title: Contact
+        type:
+          $ref: '#/components/schemas/ServiceType'
         thumbnail:
           anyOf:
           - type: string
@@ -8911,26 +8941,10 @@ components:
           - type: string
           - type: 'null'
           title: Icon
-        description:
-          type: string
-          title: Description
         descriptionUi:
           type: boolean
           title: Descriptionui
           default: false
-        versionDisplay:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Versiondisplay
-        type:
-          $ref: '#/components/schemas/ServiceType'
-        contact:
-          anyOf:
-          - type: string
-            format: email
-          - type: 'null'
-          title: Contact
         authors:
           items:
             $ref: '#/components/schemas/Author'
@@ -8994,8 +9008,8 @@ components:
       - version
       - name
       - description
-      - type
       - contact
+      - type
       - authors
       - owner
       - inputs

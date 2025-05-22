@@ -5,6 +5,7 @@ from models_library.api_schemas_catalog.services import (
     LatestServiceGet,
     ServiceGetV2,
     ServiceListFilters,
+    ServiceSummary,
 )
 from models_library.api_schemas_catalog.services_ports import ServicePortGet
 from models_library.products import ProductName
@@ -80,6 +81,41 @@ class CatalogService:
             service_key=filter_by_service_key,
             offset=pagination_offset,
             limit=pagination_limit,
+        )
+        meta = PageMetaInfoLimitOffset(
+            limit=page.meta.limit,
+            offset=page.meta.offset,
+            total=page.meta.total,
+            count=page.meta.count,
+        )
+        return page.data, meta
+
+    async def list_all_services_summaries(
+        self,
+        *,
+        pagination_offset: PageOffsetInt = 0,
+        pagination_limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+        filters: ServiceListFilters | None = None,
+    ) -> tuple[list[ServiceSummary], PageMetaInfoLimitOffset]:
+        """Lists all services with pagination, including all versions of each service.
+
+        Returns a lightweight summary view of services for better performance.
+
+        Args:
+            pagination_offset: Number of items to skip
+            pagination_limit: Maximum number of items to return
+            filters: Optional filters to apply
+
+        Returns:
+            Tuple containing list of service summaries and pagination metadata
+        """
+        page = await catalog_rpc.list_all_services_summaries_paginated(
+            self._rpc_client,
+            product_name=self.product_name,
+            user_id=self.user_id,
+            offset=pagination_offset,
+            limit=pagination_limit,
+            filters=filters,
         )
         meta = PageMetaInfoLimitOffset(
             limit=page.meta.limit,

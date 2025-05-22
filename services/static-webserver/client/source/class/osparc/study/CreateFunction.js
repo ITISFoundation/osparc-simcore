@@ -33,16 +33,6 @@ qx.Class.define("osparc.study.CreateFunction", {
   },
 
   statics: {
-    typeToFunctionType: function(type) {
-      switch (type) {
-        case "number":
-          return "float"
-        case "data:*/*":
-          return "FileID"
-      }
-      return type;
-    },
-
     createFunctionData: function(projectData, name, description, exposedInputs, exposedOutputs) {
       const functionData = {
         "projectId": projectData["uuid"],
@@ -74,7 +64,7 @@ qx.Class.define("osparc.study.CreateFunction", {
           if (parameterMetadata) {
             const type = osparc.service.Utils.getParameterType(parameterMetadata);
             functionData["inputSchema"]["schema_content"]["properties"][parameterLabel] = {
-              "type": this.self().typeToFunctionType(type),
+              "type": type,
             };
           }
         } else {
@@ -90,7 +80,7 @@ qx.Class.define("osparc.study.CreateFunction", {
           if (probeMetadata) {
             const type = osparc.service.Utils.getProbeType(probeMetadata);
             functionData["outputSchema"]["schema_content"]["properties"][probeLabel] = {
-              "type": this.self().typeToFunctionType(type),
+              "type": type,
             };
           }
         }
