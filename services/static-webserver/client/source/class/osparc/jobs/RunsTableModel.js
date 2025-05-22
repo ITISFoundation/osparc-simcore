@@ -26,7 +26,6 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
 
     this.set({
       projectUuid,
-      includeChildren,
     });
 
     const jobsCols = osparc.jobs.RunsTable.COLS;
