@@ -41,6 +41,7 @@ from ._base import (
     OutputSchemaWithoutCamelCase,
 )
 from .groups import MyGroupsGet
+from .products import InvitationGenerate
 from .users_preferences import AggregatedPreferences
 
 #
@@ -254,6 +255,7 @@ class UsersForAdminListQueryParams(UsersForAdminListFilter, PageQueryParameters)
 
 class UserApprove(InputSchema):
     email: EmailStr
+    invitation: InvitationGenerate | None = None
 
 
 class UserReject(InputSchema):

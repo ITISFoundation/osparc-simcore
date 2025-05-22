@@ -271,6 +271,13 @@ async def approve_user_account(request: web.Request) -> web.Response:
 
     approval_data = await parse_request_body_as(UserApprove, request)
 
+    if approval_data.invitation:
+        _logger.debug(
+            "TODO: User %s is being approved with invitation %s. Generating invitation ... ",
+            approval_data.email,
+            approval_data.invitation,
+        )
+
     # Approve the user account, passing the current user's ID as the reviewer
     pre_registration_id = await _users_service.approve_user_account(
         request.app,

@@ -1387,18 +1387,17 @@ paths:
           type: integer
           default: 0
           title: Offset
-      - name: account_request_status
+      - name: review_status
         in: query
         required: false
         schema:
           anyOf:
           - enum:
             - PENDING
-            - REJECETED
-            - APPROVED
+            - REVIEWED
             type: string
           - type: 'null'
-          title: Account Request Status
+          title: Review Status
       responses:
         '200':
           description: Successful Response
@@ -17002,6 +17001,10 @@ components:
           type: string
           format: email
           title: Email
+        invitation:
+          anyOf:
+          - $ref: '#/components/schemas/InvitationGenerate'
+          - type: 'null'
       type: object
       required:
       - email
