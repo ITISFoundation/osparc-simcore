@@ -1,6 +1,6 @@
 """
-    These tables were designed to be controled by projects-plugin in
-    the webserver's service
+These tables were designed to be controled by projects-plugin in
+the webserver's service
 """
 
 import sqlalchemy as sa
@@ -99,6 +99,10 @@ projects_metadata = sa.Table(
         onupdate=RefActions.CASCADE,
         ondelete=RefActions.SET_NULL,
         name="fk_projects_metadata_root_parent_node_id",
+    ),
+    #######
+    sa.Index(
+        "idx_projects_metadata_root_parent_project_uuid", "root_parent_project_uuid"
     ),
 )
 

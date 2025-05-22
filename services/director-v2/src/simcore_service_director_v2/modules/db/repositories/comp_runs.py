@@ -295,7 +295,7 @@ class CompRunsRepository(BaseRepository):
         *,
         product_name: str,
         user_id: UserID,
-        project_id: ProjectID,
+        project_ids: list[ProjectID],
         # pagination
         offset: int,
         limit: int,
@@ -309,7 +309,11 @@ class CompRunsRepository(BaseRepository):
             *self._COMPUTATION_RUNS_RPC_GET_COLUMNS,
         ).where(
             (comp_runs.c.user_id == user_id)
-            & (comp_runs.c.project_uuid == f"{project_id}")
+            & (
+                comp_runs.c.project_uuid.in_(
+                    [f"{project_id}" for project_id in project_ids]
+                )
+            )
             & (
                 comp_runs.c.metadata["product_name"].astext == product_name
             )  # <-- NOTE: We might create a separate column for this for fast retrieval

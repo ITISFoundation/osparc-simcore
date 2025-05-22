@@ -35,7 +35,8 @@ class WalletTransactionError(OsparcErrorMixin, Exception):
     msg_template = "{msg}"
 
 
-class CreditTransactionNotFoundError(OsparcErrorMixin, Exception): ...
+class CreditTransactionNotFoundError(OsparcErrorMixin, Exception):
+    msg_template = "Credit transaction for service run id {service_run_id} not found."
 
 
 ### Pricing Plans Error

@@ -38,6 +38,7 @@ qx.Class.define("osparc.store.Jobs", {
 
   members: {
     fetchJobsActive: function(
+      runningOnly = true,
       offset = 0,
       limit = this.self().SERVER_MAX_LIMIT,
       orderBy = {
@@ -48,6 +49,7 @@ qx.Class.define("osparc.store.Jobs", {
     ) {
       const params = {
         url: {
+          runningOnly,
           offset,
           limit,
           orderBy: JSON.stringify(orderBy),
@@ -56,9 +58,11 @@ qx.Class.define("osparc.store.Jobs", {
       const options = {
         resolveWResponse: true
       };
-      return osparc.data.Resources.fetch("jobs", "getPageLatestActive", params, options)
+      return osparc.data.Resources.fetch("runs", "getPageLatest", params, options)
         .then(jobsResp => {
-          this.fireDataEvent("changeJobsActive", jobsResp["_meta"]["total"]);
+          if (runningOnly) {
+            this.fireDataEvent("changeJobsActive", jobsResp["_meta"]["total"]);
+          }
           const jobsActive = [];
           if ("data" in jobsResp) {
             jobsResp["data"].forEach(jobActiveData => {
@@ -75,6 +79,7 @@ qx.Class.define("osparc.store.Jobs", {
 
     fetchJobsHistory: function(
       studyId,
+      includeChildren = false,
       offset = 0,
       limit = this.self().SERVER_MAX_LIMIT,
       orderBy = {
@@ -86,6 +91,7 @@ qx.Class.define("osparc.store.Jobs", {
       const params = {
         url: {
           studyId,
+          includeChildren,
           offset,
           limit,
           orderBy: JSON.stringify(orderBy),
@@ -94,7 +100,7 @@ qx.Class.define("osparc.store.Jobs", {
       const options = {
         resolveWResponse: true
       };
-      return osparc.data.Resources.fetch("jobs", "getPageHistory", params, options)
+      return osparc.data.Resources.fetch("runs", "getPageHistory", params, options)
         .then(jobsResp => {
           if (resolveWResponse) {
             return jobsResp;
@@ -111,13 +117,14 @@ qx.Class.define("osparc.store.Jobs", {
         .catch(err => console.error(err));
     },
 
-    fetchSubJobs: function(projectUuid) {
+    fetchSubJobs: function(projectUuid, includeChildren = false) {
       const params = {
         url: {
           studyId: projectUuid,
+          includeChildren,
         }
       };
-      return osparc.data.Resources.getInstance().getAllPages("subJobs", params, "getPageLatest")
+      return osparc.data.Resources.getInstance().getAllPages("subRuns", params, "getPageLatest")
         .then(subJobsData => {
           const subJobs = [];
           subJobsData.forEach(subJobData => {
