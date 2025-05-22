@@ -97,7 +97,7 @@ async def test_rpc_list_computation_runs_and_tasks(
     # Tasks
 
     output = await rpc_computations.list_computations_latest_iteration_tasks_page(
-        rpc_client, product_name="osparc", user_id=user["id"], project_id=proj.uuid
+        rpc_client, product_name="osparc", user_id=user["id"], project_ids=[proj.uuid]
     )
     assert output
     assert output.total == 4
@@ -201,7 +201,7 @@ async def test_rpc_list_computation_runs_history(
     )
 
     output = await rpc_computations.list_computations_iterations_page(
-        rpc_client, product_name="osparc", user_id=user["id"], project_id=proj.uuid
+        rpc_client, product_name="osparc", user_id=user["id"], project_ids=[proj.uuid]
     )
     assert output.total == 3
     assert isinstance(output, ComputationRunRpcGetPage)
