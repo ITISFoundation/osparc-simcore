@@ -517,7 +517,7 @@ class DaskClient:
         except KeyError as exc:
             raise ComputationalBackendTaskNotFoundError(job_id=job_id) from exc
         except distributed.TimeoutError as exc:
-            raise ComputationalBackendTaskResultsNotReadyError from exc
+            raise ComputationalBackendTaskResultsNotReadyError(job_id=job_id) from exc
 
     async def release_task_result(self, job_id: str) -> None:
         _logger.debug("releasing results for %s", f"{job_id=}")
