@@ -89,7 +89,7 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
       if (this.getProjectUuid()) {
         promise = osparc.store.Jobs.getInstance().fetchJobsHistory(this.getProjectUuid(), this.__includeChildren, offset, limit, JSON.stringify(this.getOrderBy()), resolveWResponse);
       } else {
-        promise = osparc.store.Jobs.getInstance().fetchJobsActive(true, offset, limit, JSON.stringify(this.getOrderBy()), resolveWResponse);
+        promise = osparc.store.Jobs.getInstance().fetchJobsActive(this.getRunningOnly(), offset, limit, JSON.stringify(this.getOrderBy()), resolveWResponse);
       }
       promise
         .then(resp => {
@@ -111,7 +111,7 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
         if (this.getProjectUuid()) {
           promise = osparc.store.Jobs.getInstance().fetchJobsHistory(this.getProjectUuid(), this.__includeChildren, offset, limit, JSON.stringify(this.getOrderBy()));
         } else {
-          promise = osparc.store.Jobs.getInstance().fetchJobsActive(true, offset, limit, JSON.stringify(this.getOrderBy()));
+          promise = osparc.store.Jobs.getInstance().fetchJobsActive(this.getRunningOnly(), offset, limit, JSON.stringify(this.getOrderBy()));
         }
         return promise
           .then(jobs => {
