@@ -155,7 +155,7 @@ async def set_project_ancestors(
         )
 
 
-async def get_project_uuids_by_root_parent_project_id(
+async def list_project_uuids_by_root_parent_project_id(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
@@ -167,7 +167,4 @@ async def get_project_uuids_by_root_parent_project_id(
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(stmt)
-        output: list[ProjectID] = [
-            ProjectID(row["project_uuid"]) async for row in result
-        ]
-        return output
+        return [ProjectID(row["project_uuid"]) async for row in result]
