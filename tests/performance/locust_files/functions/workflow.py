@@ -3,6 +3,7 @@ import random
 from datetime import timedelta
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from typing import Annotated
 from urllib.parse import quote
 from uuid import UUID
 
@@ -16,8 +17,8 @@ from urllib3 import PoolManager, Retry
 
 class UserSettings(BaseSettings):
     model_config = SettingsConfigDict(extra="ignore")
-    OSPARC_API_KEY: str = Field(default=...)
-    OSPARC_API_SECRET: str = Field(default=...)
+    OSPARC_API_KEY: Annotated[str, Field()]  # required, no default
+    OSPARC_API_SECRET: Annotated[str, Field()]  # required, no default
 
 
 _SOLVER_KEY = "simcore/services/comp/osparc-python-runner"
@@ -44,19 +45,19 @@ if __name__ == "__main__":
 
 
 class Schema(BaseModel):
-    schema_content: dict = Field(default={})
-    schema_class: str = Field(default="application/schema+json")
+    schema_content: dict = {}
+    schema_class: str = "application/schema+json"
 
 
 class Function(BaseModel):
-    function_class: str = Field(default="SOLVER")
+    function_class: str = "SOLVER"
     title: str
     description: str
-    input_schema: Schema = Field(default=Schema())
-    output_schema: Schema = Field(default=Schema())
-    default_inputs: dict[str, str] = Field(default=dict())
-    solver_key: str = Field(default=_SOLVER_KEY)
-    solver_version: str = Field(default=_SOLVER_VERSION)
+    input_schema: Annotated[Schema, Field()] = Schema()
+    output_schema: Annotated[Schema, Field()] = Schema()
+    default_inputs: Annotated[dict[str, str], Field()] = dict()
+    solver_key: Annotated[str, Field()] = _SOLVER_KEY
+    solver_version: Annotated[str, Field()] = _SOLVER_VERSION
 
 
 class MetaModelingUser(HttpUser):
