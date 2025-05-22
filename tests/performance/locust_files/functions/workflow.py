@@ -1,13 +1,16 @@
 import json
 import random
+from datetime import timedelta
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from urllib.parse import quote
 from uuid import UUID
 
 from locust import HttpUser, task
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from requests.auth import HTTPBasicAuth
+from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_exponential
 from urllib3 import PoolManager, Retry
 
 # Perform the following setup in order to run this load test:
@@ -93,6 +96,7 @@ class MetaModelingUser(HttpUser):
         self._input_json_uuid = None
         self._script_uuid = None
         self._run_uid = None
+        self._solver_job_uid = None
 
         super().__init__(*args, **kwargs)
 
@@ -156,17 +160,33 @@ class MetaModelingUser(HttpUser):
         response.raise_for_status()
         self._run_uid = response.json().get("uid")
         assert self._run_uid is not None
+        self._solver_job_uid = response.json().get("solver_job_id")
+        assert self._solver_job_uid is not None
 
-        is_done = False
-        while not is_done:
-            response = self.client.get(
-                f"/v0/function_jobs/{self._run_uid}/status",
-                auth=self._auth,
-                name="/v0/function_jobs/[function_run_uid]/status",
-            )
-            response.raise_for_status()
-            status = response.json().get("status")
-            is_done = status in ["DONE", "FAILED"]
+        self.wait_until_done()
+
+        response = self.client.get(
+            f"/v0/solvers/{quote(_SOLVER_KEY, safe='')}/releases/{_SOLVER_VERSION}/jobs/{self._solver_job_uid}/outputs",
+            auth=self._auth,
+            name="/v0/solvers/[solver_key]/releases/[solver_version]/jobs/[solver_job_id]/outputs",
+        )
+        response.raise_for_status()
+
+    @retry(
+        stop=stop_after_delay(timedelta(minutes=10)),
+        wait=wait_exponential(multiplier=1, min=1, max=10),
+        retry=retry_if_exception_type(AssertionError),
+        reraise=False,
+    )
+    def wait_until_done(self):
+        response = self.client.get(
+            f"/v0/function_jobs/{self._run_uid}/status",
+            auth=self._auth,
+            name="/v0/function_jobs/[function_run_uid]/status",
+        )
+        response.raise_for_status()
+        status = response.json().get("status")
+        assert status in ["DONE", "FAILED"]
 
     def upload_file(self, file: Path) -> UUID:
         assert file.is_file()
