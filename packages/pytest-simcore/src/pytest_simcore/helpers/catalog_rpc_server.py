@@ -225,7 +225,11 @@ class CatalogRpcSideEffects:
                 # Match service type if specified
                 if (
                     filters.service_type
-                    and summary.service_type != filters.service_type
+                    and {
+                        ServiceType.COMPUTATIONAL: "/comp/",
+                        ServiceType.DYNAMIC: "/dynamic/",
+                    }[filters.service_type]
+                    in summary.key
                 ):
                     continue
 

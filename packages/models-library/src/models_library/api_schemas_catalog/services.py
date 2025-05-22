@@ -252,6 +252,7 @@ class _BaseServiceGetV2(ServiceSummary):
         extra="forbid",
         populate_by_name=True,
         alias_generator=snake_to_camel,
+        json_schema_extra={"example": _EXAMPLE_SLEEPER},
     )
 
 
