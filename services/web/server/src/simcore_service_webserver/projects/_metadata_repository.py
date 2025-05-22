@@ -7,7 +7,6 @@ from aiohttp import web
 from aiopg.sa.engine import Engine
 from models_library.api_schemas_webserver.projects_metadata import MetadataDict
 from models_library.projects import ProjectID
-from models_library.projects_metadata import ProjectsMetadataDBGet
 from models_library.projects_nodes_io import NodeID
 from pydantic import TypeAdapter
 from simcore_postgres_database import utils_projects_metadata
@@ -24,7 +23,6 @@ from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodesRepo,
 )
 from simcore_postgres_database.utils_repos import (
-    get_columns_from_db_model,
     pass_or_acquire_connection,
 )
 from sqlalchemy.ext.asyncio import AsyncConnection
@@ -39,12 +37,6 @@ from .exceptions import (
 )
 
 F = TypeVar("F", bound=Callable[..., Awaitable[Any]])
-
-
-PROJECT_METADATA_DB_COLS = get_columns_from_db_model(
-    projects_metadata,
-    ProjectsMetadataDBGet,
-)
 
 
 def _handle_projects_metadata_exceptions(fct: F) -> F:
@@ -161,24 +153,6 @@ async def set_project_ancestors(
             parent_project_uuid=parent_project_uuid,
             parent_node_id=parent_node_id,
         )
-
-
-async def get(
-    app: web.Application,
-    connection: AsyncConnection | None = None,
-    *,
-    project_uuid: ProjectID,
-) -> ProjectsMetadataDBGet:
-    query = sa.select(*PROJECT_METADATA_DB_COLS).where(
-        projects_metadata.c.project_uuid == f"{project_uuid}"
-    )
-
-    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.execute(query)
-        row = result.one_or_none()
-        if row is None:
-            raise ProjectNotFoundError(project_uuid=project_uuid)
-        return ProjectsMetadataDBGet.model_validate(row)
 
 
 async def get_project_uuids_by_root_parent_project_id(
