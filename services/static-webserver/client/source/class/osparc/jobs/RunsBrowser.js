@@ -61,9 +61,9 @@ qx.Class.define("osparc.jobs.RunsBrowser", {
           });
           break;
         case "runs-table": {
-          const latestOnly = true;
           const projectUuid = null;
-          control = new osparc.jobs.RunsTable(latestOnly, projectUuid);
+          const includeChildren = false;
+          control = new osparc.jobs.RunsTable(projectUuid, includeChildren);
           control.addListener("runSelected", e => this.fireDataEvent("runSelected", e.getData()));
           this._add(control);
           break;

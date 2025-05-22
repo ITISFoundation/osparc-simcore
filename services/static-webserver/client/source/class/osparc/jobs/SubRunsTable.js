@@ -19,10 +19,10 @@
 qx.Class.define("osparc.jobs.SubRunsTable", {
   extend: qx.ui.table.Table,
 
-  construct: function(projectUuid) {
+  construct: function(projectUuid, includeChildren = false) {
     this.base(arguments);
 
-    const model = new osparc.jobs.SubRunsTableModel(projectUuid);
+    const model = new osparc.jobs.SubRunsTableModel(projectUuid, includeChildren);
     this.setTableModel(model);
 
     this.set({
