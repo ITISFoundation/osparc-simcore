@@ -70,9 +70,7 @@ def _aggregate(
         "contact": service_manifest.contact,
         "authors": service_manifest.authors,
         # Check if owner attribute is available in the service_db object
-        "owner": (
-            service_db.owner_email if hasattr(service_db, "owner_email") else None
-        ),
+        "owner": getattr(service_db, "owner_email", None),
         "inputs": service_manifest.inputs or {},
         "outputs": service_manifest.outputs or {},
         "boot_options": service_manifest.boot_options,
