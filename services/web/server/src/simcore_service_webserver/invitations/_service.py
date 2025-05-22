@@ -78,6 +78,7 @@ async def validate_invitation_url(
             f"Got '{invitation.product}', expected '{current_product.name}'",
             guest_email=guest_email,
             current_product=current_product,
+            invitation=invitation,
         )
 
     # check invitation used
@@ -94,6 +95,8 @@ async def validate_invitation_url(
             guest_email=guest_email,
             current_product=current_product,
             invitation=invitation,
+            tip="A user might be already registered or was registered for a different product."
+            "As soon as the user is registered, the invitation is invalidated",
         )
 
     return invitation
