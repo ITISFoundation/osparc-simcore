@@ -116,3 +116,11 @@ async def set_project_ancestors(
         parent_project_uuid=parent_project_uuid,
         parent_node_id=parent_node_id,
     )
+
+
+async def get_project_uuids_by_root_parent_project_id(
+    app: web.Application, root_parent_project_uuid: ProjectID
+) -> list[ProjectID]:
+    return await _metadata_repository.list_project_uuids_by_root_parent_project_id(
+        app=app, root_parent_project_uuid=root_parent_project_uuid
+    )

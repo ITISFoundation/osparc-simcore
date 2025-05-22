@@ -19,10 +19,17 @@
 qx.Class.define("osparc.jobs.RunsTable", {
   extend: qx.ui.table.Table,
 
-  construct: function(latestOnly = true, projectUuid = null) {
+  construct: function(projectUuid = null, includeChildren = false, runningOnly = true) {
     this.base(arguments);
 
-    const model = new osparc.jobs.RunsTableModel(latestOnly, projectUuid);
+    this.set({
+      projectUuid,
+      runningOnly,
+    });
+
+    const model = new osparc.jobs.RunsTableModel(projectUuid, includeChildren);
+    this.bind("projectUuid", model, "projectUuid");
+    this.bind("runningOnly", model, "runningOnly");
     this.setTableModel(model);
 
     this.set({
@@ -45,6 +52,22 @@ qx.Class.define("osparc.jobs.RunsTable", {
     columnModel.setDataCellRenderer(this.self().COLS.ACTION_INFO.column, fontButtonRendererInfo);
 
     this.__attachHandlers();
+  },
+
+  properties: {
+    projectUuid: {
+      check: "String",
+      init: null,
+      nullable: true,
+      event: "changeProjectUuid",
+    },
+
+    runningOnly: {
+      check: "Boolean",
+      init: true,
+      nullable: false,
+      event: "changeRunningOnly",
+    },
   },
 
   events: {
