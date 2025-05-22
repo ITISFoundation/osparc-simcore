@@ -204,6 +204,10 @@ def test_create_task_output_from_task_ignores_additional_entries(
     # Add more data to the output file to simulate additional entries
     file_path = tmp_path / output_file
     data = json.loads(file_path.read_text())
+    # Ensure the file contains the expected keys first
+    for key in task_output_schema:
+        assert key in data
+    # Add an extra key
     data["extra_key"] = "extra_value"
     file_path.write_text(json.dumps(data))
 
@@ -212,4 +216,7 @@ def test_create_task_output_from_task_ignores_additional_entries(
         output_folder=tmp_path,
         output_file_ext=output_file,
     )
-    assert len(task_output_data) == 2, "Should only contain the expected keys"
+    # Only keys defined in the schema should be present
+    assert set(task_output_data.keys()) == set(
+        task_output_schema.keys()
+    ), "Should only contain the expected keys"
