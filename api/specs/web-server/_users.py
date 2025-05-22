@@ -179,7 +179,7 @@ async def reject_user_account(_body: UserReject): ...
     response_model=Envelope[list[UserAccountGet]],
     tags=_extra_tags,
 )
-async def search_user_account(
+async def search_user_accounts(
     _query: Annotated[UserAccountSearchQueryParams, Depends()],
 ):
     # NOTE: see `Search` in `Common Custom Methods` in https://cloud.google.com/apis/design/custom_methods

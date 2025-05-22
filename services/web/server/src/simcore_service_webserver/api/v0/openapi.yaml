@@ -1443,7 +1443,7 @@ paths:
       - users
       - admin
       summary: Search User Account
-      operationId: search_user_account
+      operationId: search_user_accounts
       parameters:
       - name: email
         in: query

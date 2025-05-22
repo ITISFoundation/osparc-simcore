@@ -81,7 +81,7 @@ async def test_access_rights_on_search_users_only_product_owners_can_access(
 ):
     assert client.app
 
-    url = client.app.router["search_user_account"].url_for()
+    url = client.app.router["search_user_accounts"].url_for()
     assert url.path == "/v0/admin/user-accounts:search"
 
     resp = await client.get(url.path, params={"email": "do-not-exists@foo.com"})

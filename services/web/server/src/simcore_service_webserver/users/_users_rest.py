@@ -222,11 +222,11 @@ async def list_users_accounts(request: web.Request) -> web.Response:
     return create_json_response_from_page(page)
 
 
-@routes.get(f"/{API_VTAG}/admin/user-accounts:search", name="search_user_account")
+@routes.get(f"/{API_VTAG}/admin/user-accounts:search", name="search_user_accounts")
 @login_required
 @permission_required("admin.users.read")
 @_handle_users_exceptions
-async def search_user_account(request: web.Request) -> web.Response:
+async def search_user_accounts(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     assert req_ctx.product_name  # nosec
 
