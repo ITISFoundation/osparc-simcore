@@ -97,25 +97,25 @@ class MetaModelingUser(HttpUser):
 
     def on_stop(self) -> None:
         if self._script_uuid is not None:
-            _ = self.client.delete(
+            self.client.delete(
                 f"/v0/files/{self._script_uuid}",
                 name="/v0/files/[file_id]",
                 auth=self._auth,
             )
         if self._input_json_uuid is not None:
-            _ = self.client.delete(
+            self.client.delete(
                 f"/v0/files/{self._input_json_uuid}",
                 name="/v0/files/[file_id]",
                 auth=self._auth,
             )
         if self._function_uid is not None:
-            _ = self.client.delete(
+            self.client.delete(
                 f"/v0/functions/{self._function_uid}",
                 name="/v0/functions/[function_uid]",
                 auth=self._auth,
             )
         if self._run_uid is not None:
-            _ = self.client.delete(
+            self.client.delete(
                 f"/v0/function_jobs/{self._run_uid}",
                 name="/v0/function_jobs/[function_run_uid]",
                 auth=self._auth,
