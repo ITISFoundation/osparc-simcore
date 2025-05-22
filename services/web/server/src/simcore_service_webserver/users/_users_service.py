@@ -183,6 +183,7 @@ async def search_users_as_admin(
             country=r.country,
             extras=r.extras or {},
             invited_by=r.invited_by,
+            pre_registration_id=r.id,
             account_request_status=r.account_request_status,
             account_request_reviewed_by=r.account_request_reviewed_by,
             account_request_reviewed_at=r.account_request_reviewed_at,
