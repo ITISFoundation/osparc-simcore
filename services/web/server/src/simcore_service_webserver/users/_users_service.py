@@ -31,6 +31,7 @@ from ._common.schemas import PreRegisteredUserGet
 from .exceptions import (
     AlreadyPreRegisteredError,
     MissingGroupExtraPropertiesForProductError,
+    PendingPreRegistrationNotFoundError,
 )
 
 _logger = logging.getLogger(__name__)
@@ -474,7 +475,7 @@ async def approve_user_account(
         int: The ID of the approved pre-registration record
 
     Raises:
-        ValueError: If no pre-registration is found for the email/product
+        PendingPreRegistrationNotFoundError: If no pre-registration is found for the email/product
     """
     engine = get_asyncpg_engine(app)
 
@@ -487,8 +488,9 @@ async def approve_user_account(
     )
 
     if not pre_registrations:
-        msg = f"No pending pre-registration found for email {pre_registration_email} in product {product_name}"
-        raise ValueError(msg)
+        raise PendingPreRegistrationNotFoundError(
+            email=pre_registration_email, product_name=product_name
+        )
 
     # There should be only one registration matching these criteria
     pre_registration = pre_registrations[0]
@@ -524,7 +526,7 @@ async def reject_user_account(
         int: The ID of the rejected pre-registration record
 
     Raises:
-        ValueError: If no pre-registration is found for the email/product
+        PendingPreRegistrationNotFoundError: If no pre-registration is found for the email/product
     """
     engine = get_asyncpg_engine(app)
 
@@ -537,8 +539,9 @@ async def reject_user_account(
     )
 
     if not pre_registrations:
-        msg = f"No pending pre-registration found for email {pre_registration_email} in product {product_name}"
-        raise ValueError(msg)
+        raise PendingPreRegistrationNotFoundError(
+            email=pre_registration_email, product_name=product_name
+        )
 
     # There should be only one registration matching these criteria
     pre_registration = pre_registrations[0]

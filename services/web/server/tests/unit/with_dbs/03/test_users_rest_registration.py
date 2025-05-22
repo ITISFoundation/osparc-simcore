@@ -6,6 +6,7 @@
 # pylint: disable=unused-variable
 
 
+from collections.abc import AsyncGenerator
 from http import HTTPStatus
 from typing import Any
 
@@ -14,7 +15,9 @@ import simcore_service_webserver.login._auth_service
 import simcore_service_webserver.users
 import simcore_service_webserver.users._users_repository
 import simcore_service_webserver.users._users_service
+import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
+from common_library.pydantic_fields_extension import is_nullable
 from common_library.users_enums import UserRole, UserStatus
 from faker import Faker
 from models_library.api_schemas_webserver.auth import AccountRequestInfo
@@ -22,16 +25,27 @@ from models_library.api_schemas_webserver.users import (
     UserForAdminGet,
 )
 from models_library.products import ProductName
+from models_library.rest_pagination import Page
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.faker_factories import (
     DEFAULT_TEST_PASSWORD,
 )
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import (
     UserInfoDict,
 )
 from servicelib.aiohttp import status
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
+from simcore_postgres_database.models.users_details import (
+    users_pre_registration_details,
+)
+from simcore_service_webserver.db.plugin import get_asyncpg_engine
+
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
 
 
 @pytest.fixture
@@ -101,6 +115,22 @@ def account_request_form(faker: Faker) -> dict[str, Any]:
     return form
 
 
+@pytest.fixture
+async def pre_registration_details_db_cleanup(
+    client: TestClient,
+) -> AsyncGenerator[None, None]:
+    """Fixture to clean up all pre-registration details after test"""
+
+    assert client.app
+
+    yield
+
+    # Tear down - clean up the pre-registration details table
+    async with get_asyncpg_engine(client.app).connect() as conn:
+        await conn.execute(sa.delete(users_pre_registration_details))
+        await conn.commit()
+
+
 @pytest.mark.acceptance_test(
     "pre-registration in https://github.com/ITISFoundation/osparc-simcore/issues/5138"
 )
@@ -114,6 +144,7 @@ async def test_search_and_pre_registration(
     client: TestClient,
     logged_user: UserInfoDict,
     account_request_form: dict[str, Any],
+    pre_registration_details_db_cleanup: None,
 ):
     assert client.app
 
@@ -125,17 +156,14 @@ async def test_search_and_pre_registration(
 
     found, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(found) == 1
-    got = UserForAdminGet(
-        institution=None,
-        address=None,
-        city=None,
-        state=None,
-        postal_code=None,
-        country=None,
-        pre_registration_id=None,
-        invited_by=None,
-        **found[0],
-    )
+
+    nullable_fields = {
+        name: None
+        for name, field in UserForAdminGet.model_fields.items()
+        if is_nullable(field)
+    }
+
+    got = UserForAdminGet.model_validate({**nullable_fields, **found[0]})
     expected = {
         "first_name": logged_user.get("first_name"),
         "last_name": logged_user.get("last_name"),
@@ -206,6 +234,7 @@ async def test_list_users_for_admin(
     account_request_form: dict[str, Any],
     faker: Faker,
     product_name: ProductName,
+    pre_registration_details_db_cleanup: None,
 ):
     assert client.app
 
@@ -230,14 +259,18 @@ async def test_list_users_for_admin(
     resp = await client.get(
         f"{url}?review_status=PENDING", headers={X_PRODUCT_NAME_HEADER: product_name}
     )
-    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert resp.status == status.HTTP_200_OK
+    response_json = await resp.json()
+
+    # Parse response into Page[UserForAdminGet] model
+    page_model = Page[UserForAdminGet].model_validate(response_json)
 
     # Access the items field from the paginated response
-    pending_emails = [
-        user["email"]
-        for user in data
-        if user.get("account_request_status") == "PENDING"
+    pending_users = [
+        user for user in page_model.data if user.account_request_status == "PENDING"
     ]
+    pending_emails = [user.email for user in pending_users]
+
     for pre_user in pre_registered_users:
         assert pre_user["email"] in pending_emails
 
@@ -267,10 +300,12 @@ async def test_list_users_for_admin(
     resp = await client.get(
         f"{url}?review_status=PENDING", headers={X_PRODUCT_NAME_HEADER: product_name}
     )
-    pending_data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert resp.status == status.HTTP_200_OK
+    response_json = await resp.json()
+    pending_page = Page[UserForAdminGet].model_validate(response_json)
 
     # The registered user should no longer be in pending status
-    pending_emails = [user["email"] for user in pending_data]
+    pending_emails = [user.email for user in pending_page.data]
     assert registered_email not in pending_emails
     assert len(pending_emails) >= len(pre_registered_users) - 1
 
@@ -278,15 +313,13 @@ async def test_list_users_for_admin(
     resp = await client.get(
         f"{url}?review_status=REVIEWED", headers={X_PRODUCT_NAME_HEADER: product_name}
     )
-    approved_data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert resp.status == status.HTTP_200_OK
+    response_json = await resp.json()
+    reviewed_page = Page[UserForAdminGet].model_validate(response_json)
 
     # Find the registered user in the reviewed users
     active_user = next(
-        (
-            UserForAdminGet(**item)
-            for item in approved_data
-            if item["email"] == registered_email
-        ),
+        (user for user in reviewed_page.data if user.email == registered_email),
         None,
     )
     assert active_user is not None
@@ -301,12 +334,13 @@ async def test_list_users_for_admin(
         headers={X_PRODUCT_NAME_HEADER: product_name},
     )
     assert resp.status == status.HTTP_200_OK
-    page1_payload = await resp.json()
+    response_json = await resp.json()
+    page1 = Page[UserForAdminGet].model_validate(response_json)
 
-    assert len(page1_payload["items"]) == 2
-    assert page1_payload["meta"]["limit"] == 2
-    assert page1_payload["meta"]["offset"] == 0
-    assert page1_payload["meta"]["total"] >= len(pre_registered_users)
+    assert len(page1.data) == 2
+    assert page1.meta.limit == 2
+    assert page1.meta.offset == 0
+    assert page1.meta.total >= len(pre_registered_users)
 
     # b. Second page (limit 2)
     resp = await client.get(
@@ -315,15 +349,16 @@ async def test_list_users_for_admin(
         headers={X_PRODUCT_NAME_HEADER: product_name},
     )
     assert resp.status == status.HTTP_200_OK
-    page2_payload = await resp.json()
+    response_json = await resp.json()
+    page2 = Page[UserForAdminGet].model_validate(response_json)
 
-    assert len(page2_payload["items"]) == 2
-    assert page2_payload["meta"]["limit"] == 2
-    assert page2_payload["meta"]["offset"] == 2
+    assert len(page2.data) == 2
+    assert page2.meta.limit == 2
+    assert page2.meta.offset == 2
 
     # Ensure page 1 and page 2 contain different items
-    page1_emails = [item["email"] for item in page1_payload["data"]]
-    page2_emails = [item["email"] for item in page2_payload["data"]]
+    page1_emails = [user.email for user in page1.data]
+    page2_emails = [user.email for user in page2.data]
     assert not set(page1_emails).intersection(page2_emails)
 
     # 5. Combine status filter with pagination
@@ -332,12 +367,12 @@ async def test_list_users_for_admin(
         params={"review_status": "PENDING", "limit": 2, "offset": 0},
         headers={X_PRODUCT_NAME_HEADER: product_name},
     )
-    filtered_page_payload, _ = await assert_status(resp, status.HTTP_200_OK)
-    filtered_page_data = filtered_page_payload["data"]
+    assert resp.status == status.HTTP_200_OK
+    response_json = await resp.json()
+    filtered_page = Page[UserForAdminGet].model_validate(response_json)
 
-    assert len(filtered_page_data) <= 2
-    for item in filtered_page_data:
-        user = UserForAdminGet(**item)
+    assert len(filtered_page.data) <= 2
+    for user in filtered_page.data:
         assert user.registered is False  # Pending users are not registered
         assert user.account_request_status == "PENDING"
 
@@ -354,6 +389,7 @@ async def test_reject_user_account(
     account_request_form: dict[str, Any],
     faker: Faker,
     product_name: ProductName,
+    pre_registration_details_db_cleanup: None,
 ):
     assert client.app
 
@@ -374,7 +410,7 @@ async def test_reject_user_account(
     # 2. Verify the user is in PENDING status
     url = client.app.router["list_users_for_admin"].url_for()
     resp = await client.get(
-        f"{url}?status=PENDING", headers={X_PRODUCT_NAME_HEADER: product_name}
+        f"{url}?review_status=PENDING", headers={X_PRODUCT_NAME_HEADER: product_name}
     )
     data, _ = await assert_status(resp, status.HTTP_200_OK)
 
@@ -393,7 +429,7 @@ async def test_reject_user_account(
     # 4. Verify the user is no longer in PENDING status
     url = client.app.router["list_users_for_admin"].url_for()
     resp = await client.get(
-        f"{url}?status=PENDING", headers={X_PRODUCT_NAME_HEADER: product_name}
+        f"{url}?review_status=PENDING", headers={X_PRODUCT_NAME_HEADER: product_name}
     )
     pending_data, _ = await assert_status(resp, status.HTTP_200_OK)
     pending_emails = [user["email"] for user in pending_data]
@@ -411,9 +447,9 @@ async def test_reject_user_account(
 
     # Check that account_request_status is REJECTED
     user_data = found[0]
-    assert user_data["account_request_status"] == "REJECTED"
-    assert user_data["account_request_reviewed_by"] == logged_user["id"]
-    assert user_data["account_request_reviewed_at"] is not None
+    assert user_data["accountRequestStatus"] == "REJECTED"
+    assert user_data["accountRequestReviewedBy"] == logged_user["id"]
+    assert user_data["accountRequestReviewedAt"] is not None
 
     # 6. Verify that a rejected user cannot be approved
     url = client.app.router["approve_user_account"].url_for()

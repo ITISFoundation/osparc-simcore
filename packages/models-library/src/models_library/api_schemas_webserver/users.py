@@ -249,6 +249,8 @@ class UsersForAdminListFilter(Filters):
     #
     review_status: Literal["PENDING", "REVIEWED"] | None = None
 
+    model_config = ConfigDict(extra="forbid")
+
 
 class UsersForAdminListQueryParams(UsersForAdminListFilter, PageQueryParameters): ...
 

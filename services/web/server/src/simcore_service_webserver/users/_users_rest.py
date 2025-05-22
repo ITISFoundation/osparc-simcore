@@ -43,6 +43,7 @@ from ._common.schemas import PreRegisteredUserGet, UsersRequestContext
 from .exceptions import (
     AlreadyPreRegisteredError,
     MissingGroupExtraPropertiesForProductError,
+    PendingPreRegistrationNotFoundError,
     UserNameDuplicateError,
     UserNotFoundError,
 )
@@ -51,6 +52,10 @@ _logger = logging.getLogger(__name__)
 
 
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
+    PendingPreRegistrationNotFoundError: HttpErrorInfo(
+        status.HTTP_400_BAD_REQUEST,
+        PendingPreRegistrationNotFoundError.msg_template,
+    ),
     UserNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
         "This user cannot be found. Either it is not registered or has enabled privacy settings.",
