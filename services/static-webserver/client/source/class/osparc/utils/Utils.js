@@ -91,6 +91,29 @@ qx.Class.define("osparc.utils.Utils", {
 
     FLOATING_Z_INDEX: 1000001 + 1,
 
+    replaceIconWithThumbnail: function(widget, thumbnailUrl, size = 24) {
+      if (thumbnailUrl) {
+        const thumbnail = new osparc.ui.basic.Thumbnail(thumbnailUrl, size, size).set({
+          minHeight: size,
+          minWidth: size,
+        });
+        thumbnail.getChildControl("image").set({
+          anonymous: true,
+          decorator: "rounded",
+        });
+        switch (widget.classname) {
+          case "qx.ui.menu.Button":
+            // eslint-disable-next-line no-underscore-dangle
+            widget._add(thumbnail, {column: 0});
+            break;
+          case "qx.ui.toolbar.RadioButton":
+            // eslint-disable-next-line no-underscore-dangle
+            widget._addAt(thumbnail, 0);
+            break;
+        }
+      }
+    },
+
     disableAutocomplete: function(control) {
       if (control && control.getContentElement()) {
         control.getContentElement().setAttribute("autocomplete", "off");
