@@ -2,7 +2,6 @@ import json
 import random
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Final
 from uuid import UUID
 
 from locust import HttpUser, task
@@ -10,9 +9,6 @@ from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from requests.auth import HTTPBasicAuth
 from urllib3 import PoolManager, Retry
-
-_MAX_WAIT_SECONDS: Final[int] = 60
-
 
 # Perform the following setup in order to run this load test:
 # 1. Copy .env-devel to .env in this directory and add your osparc keys to .env.
@@ -95,39 +91,36 @@ class MetaModelingUser(HttpUser):
 
         self._function_uid = None
         self._input_json_uuid = None
-        self._job_uuid = None
+        self._script_uuid = None
+        self._run_uid = None
 
         super().__init__(*args, **kwargs)
 
     def on_stop(self) -> None:
         if self._script_uuid is not None:
-            response = self.client.delete(
+            _ = self.client.delete(
                 f"/v0/files/{self._script_uuid}",
                 name="/v0/files/[file_id]",
                 auth=self._auth,
             )
-            response.raise_for_status()
         if self._input_json_uuid is not None:
-            response = self.client.delete(
+            _ = self.client.delete(
                 f"/v0/files/{self._input_json_uuid}",
                 name="/v0/files/[file_id]",
                 auth=self._auth,
             )
-            response.raise_for_status()
         if self._function_uid is not None:
-            response = self.client.delete(
+            _ = self.client.delete(
                 f"/v0/functions/{self._function_uid}",
                 name="/v0/functions/[function_uid]",
                 auth=self._auth,
             )
-            response.raise_for_status()
         if self._run_uid is not None:
-            response = self.client.delete(
+            _ = self.client.delete(
                 f"/v0/function_jobs/{self._run_uid}",
                 name="/v0/function_jobs/[function_run_uid]",
                 auth=self._auth,
             )
-            response.raise_for_status()
 
     @task
     def run_function(self):
@@ -142,13 +135,13 @@ class MetaModelingUser(HttpUser):
             input_json.write_text(json.dumps(inputs))
             self._input_json_uuid = self.upload_file(input_json)
 
-        function = Function(
+        _function = Function(
             title="Test function",
             description="Test function",
             default_inputs={"input_0": f"{self._script_uuid}"},
         )
         response = self.client.post(
-            "/v0/functions", json=function.model_dump(), auth=self._auth
+            "/v0/functions", json=_function.model_dump(), auth=self._auth
         )
         response.raise_for_status()
         self._function_uid = response.json().get("uid")
@@ -177,7 +170,7 @@ class MetaModelingUser(HttpUser):
 
     def upload_file(self, file: Path) -> UUID:
         assert file.is_file()
-        with open(f"{file.resolve()}", "rb") as f:
+        with file.open(mode="rb") as f:
             files = {"file": f}
             response = self.client.put(
                 "/v0/files/content", files=files, auth=self._auth
