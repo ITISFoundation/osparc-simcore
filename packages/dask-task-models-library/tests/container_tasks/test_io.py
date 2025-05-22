@@ -184,3 +184,32 @@ def test_objects_are_compatible_with_dask_requirements(model_cls, model_cls_exam
         model_instance = model_cls.model_validate(example)
         reloaded_instance = loads(dumps(model_instance))
         assert reloaded_instance == model_instance
+
+
+def test_create_task_output_from_task_ignores_additional_entries(
+    tmp_path: Path, faker: Faker
+):
+    task_output_schema = TaskOutputDataSchema.model_validate(
+        {
+            "some_output_1": {
+                "required": True,
+            },
+            "some_output_2": {
+                "required": True,
+            },
+        }
+    )
+    output_file = _create_fake_outputs(task_output_schema, tmp_path, False, faker)
+    assert output_file
+    # Add more data to the output file to simulate additional entries
+    file_path = tmp_path / output_file
+    data = json.loads(file_path.read_text())
+    data["extra_key"] = "extra_value"
+    file_path.write_text(json.dumps(data))
+
+    task_output_data = TaskOutputData.from_task_output(
+        schema=task_output_schema,
+        output_folder=tmp_path,
+        output_file_ext=output_file,
+    )
+    assert len(task_output_data) == 2, "Should only contain the expected keys"
