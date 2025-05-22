@@ -216,8 +216,6 @@ class ServiceSummary(CatalogOutputSchema):
 
 
 class _BaseServiceGetV2(ServiceSummary):
-    # Model used in catalog's rpc and rest interfaces
-
     service_type: Annotated[ServiceType, Field(alias="type")]
 
     thumbnail: HttpUrl | None = None
@@ -286,7 +284,6 @@ class LatestServiceGet(_BaseServiceGetV2):
 
 
 class ServiceGetV2(_BaseServiceGetV2):
-    # Model used in catalog's rpc and rest interfaces
     history: Annotated[
         list[ServiceRelease],
         Field(
