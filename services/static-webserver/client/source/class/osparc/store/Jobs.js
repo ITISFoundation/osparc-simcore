@@ -37,7 +37,7 @@ qx.Class.define("osparc.store.Jobs", {
   },
 
   members: {
-    fetchJobsActive: function(
+    fetchJobsLatest: function(
       runningOnly = true,
       offset = 0,
       limit = this.self().SERVER_MAX_LIMIT,
@@ -54,18 +54,13 @@ qx.Class.define("osparc.store.Jobs", {
           offset,
           limit,
           orderBy: JSON.stringify(orderBy),
+          filters: filters ? JSON.stringify(filters) : {}
         }
       };
       const options = {
         resolveWResponse: true
       };
-      if (filters) {
-        params["url"]["filters"] = JSON.stringify(filters);
-        promise = osparc.data.Resources.fetch("runs", "getPageLatestFiltered", params, options);
-      } else {
-        promise = osparc.data.Resources.fetch("runs", "getPageLatest", params, options);
-      }
-      return promise
+      return osparc.data.Resources.fetch("runs", "getPageLatest", params, options)
         .then(jobsResp => {
           if (runningOnly) {
             this.fireDataEvent("changeJobsActive", jobsResp["_meta"]["total"]);
