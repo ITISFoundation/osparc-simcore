@@ -95,7 +95,7 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
       if (this.getProjectUuid()) {
         promise = osparc.store.Jobs.getInstance().fetchJobsHistory(this.getProjectUuid(), this.__includeChildren, offset, limit, orderBy, resolveWResponse);
       } else {
-        const filters = null;
+        const filters = this.getFilterString() ? { text: this.getFilterString() } : null;
         promise = osparc.store.Jobs.getInstance().fetchJobsActive(this.getRunningOnly(), offset, limit, orderBy, filters, resolveWResponse);
       }
       promise
@@ -119,7 +119,7 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
         if (this.getProjectUuid()) {
           promise = osparc.store.Jobs.getInstance().fetchJobsHistory(this.getProjectUuid(), this.__includeChildren, offset, limit, orderBy);
         } else {
-          const filters = null;
+          const filters = this.getFilterString() ? { text: this.getFilterString() } : null;
           promise = osparc.store.Jobs.getInstance().fetchJobsActive(this.getRunningOnly(), offset, limit, orderBy, filters);
         }
         return promise
