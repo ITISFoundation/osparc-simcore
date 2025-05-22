@@ -1137,10 +1137,12 @@ qx.Class.define("osparc.dashboard.CardBase", {
       return this.self().filterClassifiers(checks, classifiers);
     },
 
-    _shouldApplyFilter: function(data) {
-      let filterId = "searchBarFilter";
+    __curateFilterId: function(filterId) {
       if (this.isPropertyInitialized("resourceType")) {
         switch (this.getResourceType()) {
+          case "tutorial":
+            filterId += "-template";
+            break;
           case "hypertool":
             filterId += "-service";
             break;
@@ -1149,6 +1151,11 @@ qx.Class.define("osparc.dashboard.CardBase", {
             break;
         }
       }
+      return filterId;
+    },
+
+    _shouldApplyFilter: function(data) {
+      const filterId = this.__curateFilterId("searchBarFilter");
       data = filterId in data ? data[filterId] : data;
       if (this._filterText(data.text)) {
         return true;
@@ -1169,17 +1176,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     _shouldReactToFilter: function(data) {
-      let filterId = "searchBarFilter";
-      if (this.isPropertyInitialized("resourceType")) {
-        switch (this.getResourceType()) {
-          case "hypertool":
-            filterId += "-service";
-            break;
-          default:
-            filterId += "-" + this.getResourceType();
-            break;
-        }
-      }
+      const filterId = this.__curateFilterId("searchBarFilter");
       data = filterId in data ? data[filterId] : data;
       if (data.text && data.text.length > 1) {
         return true;
