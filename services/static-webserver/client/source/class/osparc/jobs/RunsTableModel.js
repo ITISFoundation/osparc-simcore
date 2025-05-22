@@ -22,8 +22,12 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
   construct: function(projectUuid = null, includeChildren = false) {
     this.base(arguments);
 
-    this.__projectUuid = projectUuid;
     this.__includeChildren = includeChildren;
+
+    this.set({
+      projectUuid,
+      includeChildren,
+    });
 
     const jobsCols = osparc.jobs.RunsTable.COLS;
     const colLabels = Object.values(jobsCols).map(col => col.label);
@@ -38,6 +42,22 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
   },
 
   properties: {
+    projectUuid: {
+      check: "String",
+      init: null,
+      nullable: true,
+      event: "changeProjectUuid",
+      apply: "reloadData",
+    },
+
+    runningOnly: {
+      check: "Boolean",
+      init: true,
+      nullable: false,
+      event: "changeRunningOnly",
+      apply: "reloadData",
+    },
+
     isFetching: {
       check: "Boolean",
       init: false,
@@ -58,7 +78,6 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
   },
 
   members: {
-    __projectUuid: null,
     __includeChildren: false,
 
     // overridden
@@ -67,10 +86,10 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
       const limit = 1;
       const resolveWResponse = true;
       let promise;
-      if (this.__projectUuid) {
-        promise = osparc.store.Jobs.getInstance().fetchJobsHistory(this.__projectUuid, this.__includeChildren, offset, limit, JSON.stringify(this.getOrderBy()), resolveWResponse);
+      if (this.getProjectUuid()) {
+        promise = osparc.store.Jobs.getInstance().fetchJobsHistory(this.getProjectUuid(), this.__includeChildren, offset, limit, JSON.stringify(this.getOrderBy()), resolveWResponse);
       } else {
-        promise = osparc.store.Jobs.getInstance().fetchJobsActive(offset, limit, JSON.stringify(this.getOrderBy()), resolveWResponse);
+        promise = osparc.store.Jobs.getInstance().fetchJobsActive(true, offset, limit, JSON.stringify(this.getOrderBy()), resolveWResponse);
       }
       promise
         .then(resp => {
@@ -89,10 +108,10 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
       // Returns a request promise with given offset and limit
       const getFetchPromise = (offset, limit) => {
         let promise;
-        if (this.__projectUuid) {
-          promise = osparc.store.Jobs.getInstance().fetchJobsHistory(this.__projectUuid, this.__includeChildren, offset, limit, JSON.stringify(this.getOrderBy()));
+        if (this.getProjectUuid()) {
+          promise = osparc.store.Jobs.getInstance().fetchJobsHistory(this.getProjectUuid(), this.__includeChildren, offset, limit, JSON.stringify(this.getOrderBy()));
         } else {
-          promise = osparc.store.Jobs.getInstance().fetchJobsActive(offset, limit, JSON.stringify(this.getOrderBy()));
+          promise = osparc.store.Jobs.getInstance().fetchJobsActive(true, offset, limit, JSON.stringify(this.getOrderBy()));
         }
         return promise
           .then(jobs => {
