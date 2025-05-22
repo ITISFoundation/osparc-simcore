@@ -12,9 +12,6 @@ from typing import Any
 
 import pytest
 import simcore_service_webserver.login._auth_service
-import simcore_service_webserver.users
-import simcore_service_webserver.users._users_repository
-import simcore_service_webserver.users._users_service
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from common_library.pydantic_fields_extension import is_nullable
@@ -30,7 +27,7 @@ from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.faker_factories import (
     DEFAULT_TEST_PASSWORD,
 )
-from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import (
     UserInfoDict,
@@ -41,11 +38,6 @@ from simcore_postgres_database.models.users_details import (
     users_pre_registration_details,
 )
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
-
-# pylint: disable=redefined-outer-name
-# pylint: disable=unused-argument
-# pylint: disable=unused-variable
-# pylint: disable=too-many-arguments
 
 
 @pytest.fixture
