@@ -15248,7 +15248,6 @@ components:
       required:
       - name
       - description
-      - thumbnail
       - status
       title: PutWalletBodyParams
     RegisterBody:
