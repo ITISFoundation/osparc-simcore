@@ -11,7 +11,14 @@ from common_library.basic_types import DEFAULT_FACTORY
 from models_library.basic_types import ConstrainedStr
 from models_library.folders import FolderID
 from models_library.workspaces import WorkspaceID
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    HttpUrl,
+    StringConstraints,
+    field_validator,
+)
 
 from .basic_regex import DATE_RE, UUID_RE_BASE
 from .emails import LowerCaseEmailStr
@@ -35,8 +42,7 @@ NodesDict: TypeAlias = dict[NodeIDStr, Node]
 _DATETIME_FORMAT: Final[str] = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 
-class ProjectIDStr(ConstrainedStr):
-    pattern = UUID_RE_BASE
+ProjectIDStr: TypeAlias = Annotated[str, StringConstraints(pattern=UUID_RE_BASE)]
 
 
 class DateTimeStr(ConstrainedStr):
