@@ -88,7 +88,7 @@ def event_extra_data(  # noqa: PLR0911
     host_url = f"https://{product_name}.io"
 
     match event_name:
-        case "on_account_form":
+        case "on_account_requested":
             return {
                 "host": host_url,
                 "name": "support-team",
@@ -183,7 +183,7 @@ def event_attachments(event_name: str, faker: Faker) -> list[tuple[bytes, str]]:
     "event_name",
     [
         "on_account_approved",
-        "on_account_form",
+        "on_account_requested",
         "on_account_rejected",
         "on_change_email",
         "on_new_code",
@@ -263,7 +263,7 @@ async def test_email_event(
 @pytest.mark.parametrize(
     "event_name",
     [
-        "on_account_form",
+        "on_account_requested",
     ],
 )
 async def test_email_with_reply_to(
