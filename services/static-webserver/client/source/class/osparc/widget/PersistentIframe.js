@@ -334,7 +334,9 @@ qx.Class.define("osparc.widget.PersistentIframe", {
               const templateId = data["message"]["functionId"];
               osparc.store.Templates.fetchTemplate(templateId)
                 .then(templateData => {
-                  const resourceDetails = new osparc.dashboard.ResourceDetails(templateData);
+                  const resourceDetails = new osparc.dashboard.ResourceDetails(templateData).set({
+                    showOpenButton: false,
+                  });
                   osparc.dashboard.ResourceDetails.popUpInWindow(resourceDetails);
                 })
                 .catch(() => osparc.FlashMessenger.logError(this.tr("Function not found")));
