@@ -13,9 +13,13 @@ from typing import Any
 from unittest import mock
 
 import pytest
+import simcore_service_webserver
+import simcore_service_webserver.db_listener
+import simcore_service_webserver.db_listener._db_comp_tasks_listening_task
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.projects import ProjectAtDB
+from pytest_mock import MockType
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from simcore_postgres_database.models.comp_pipeline import StateType
@@ -73,6 +77,16 @@ async def with_started_listening_task(client: TestClient) -> AsyncIterator:
     async for _comp_task in create_comp_tasks_listening_task(client.app):
         # first call creates the task, second call cleans it
         yield
+
+
+@pytest.fixture
+async def spied_get_changed_comp_task_row(
+    mocker: MockerFixture,
+) -> MockType:
+    return mocker.spy(
+        simcore_service_webserver.db_listener._db_comp_tasks_listening_task,  # noqa: SLF001
+        "_get_changed_comp_task_row",
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -151,6 +165,7 @@ async def _assert_listener_triggers(
 async def test_db_listener_triggers_on_event_with_multiple_tasks(
     sqlalchemy_async_engine: AsyncEngine,
     mock_project_subsystem: dict[str, mock.Mock],
+    spied_get_changed_comp_task_row: MockType,
     logged_user: UserInfoDict,
     project: Callable[..., Awaitable[ProjectAtDB]],
     pipeline: Callable[..., dict[str, Any]],
@@ -159,6 +174,7 @@ async def test_db_listener_triggers_on_event_with_multiple_tasks(
     params: _CompTaskChangeParams,
     task_class: NodeClass,
     faker: Faker,
+    mocker: MockerFixture,
 ):
     some_project = await project(logged_user)
     pipeline(project_id=f"{some_project.uuid}")
@@ -173,10 +189,21 @@ async def test_db_listener_triggers_on_event_with_multiple_tasks(
         for _ in range(3)
     ]
     random_task_to_update = tasks[secrets.randbelow(len(tasks))]
+    updated_task_id = random_task_to_update["task_id"]
+
     async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(
             comp_tasks.update()
             .values(**params.update_values)
-            .where(comp_tasks.c.task_id == random_task_to_update["task_id"])
+            .where(comp_tasks.c.task_id == updated_task_id)
         )
     await _assert_listener_triggers(mock_project_subsystem, params.expected_calls)
+
+    # Assert the spy was called with the correct task_id
+    if params.expected_calls:
+        assert any(
+            call.args[1] == updated_task_id
+            for call in spied_get_changed_comp_task_row.call_args_list
+        ), f"_get_changed_comp_task_row was not called with task_id={updated_task_id}. Calls: {spy_get_changed.call_args_list}"
+    else:
+        spied_get_changed_comp_task_row.assert_not_called()
