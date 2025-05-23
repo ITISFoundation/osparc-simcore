@@ -10,7 +10,6 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 
 from ..db.plugin import setup_db
 from ..projects._projects_repository_legacy import setup_projects_db
-from ..rabbitmq import setup_rabbitmq
 from ..socketio.plugin import setup_socketio
 from ._db_comp_tasks_listening_task import create_comp_tasks_listening_task
 
@@ -24,7 +23,6 @@ _logger = logging.getLogger(__name__)
     logger=_logger,
 )
 def setup_db_listener(app: web.Application):
-    setup_rabbitmq(app)
     setup_socketio(app)
     setup_projects_db(app)
     # Creates a task to listen to comp_task pg-db's table events
