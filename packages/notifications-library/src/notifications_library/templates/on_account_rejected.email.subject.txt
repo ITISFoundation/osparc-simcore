@@ -1,1 +1,1 @@
-Your Registration Request for {{host}} Has Been Denied
+Your Registration Request for {{ product.display_name }} Has Been Denied

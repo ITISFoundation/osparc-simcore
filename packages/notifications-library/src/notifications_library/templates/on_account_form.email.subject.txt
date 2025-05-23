@@ -1,1 +1,1 @@
-Request for an Account in {{ host }}
+Request for an Account in {{ product.display_name }}.
