@@ -274,3 +274,14 @@ class FunctionJobCollectionDB(BaseModel):
 
 class RegisteredFunctionJobCollectionDB(FunctionJobCollectionDB):
     uuid: FunctionJobCollectionID
+
+
+class FunctionJobCollectionsListFilters(BaseModel):
+    """Filters for listing function job collections"""
+
+    has_function_id: Annotated[
+        FunctionID | None,
+        Field(
+            description="Filter by having a function ID in the collection",
+        ),
+    ] = None

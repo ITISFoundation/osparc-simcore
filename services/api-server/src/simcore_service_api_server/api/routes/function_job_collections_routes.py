@@ -6,6 +6,7 @@ from fastapi_pagination.api import create_page
 from models_library.api_schemas_webserver.functions import (
     FunctionJobCollection,
     FunctionJobCollectionID,
+    FunctionJobCollectionsListFilters,
     FunctionJobCollectionStatus,
     RegisteredFunctionJob,
     RegisteredFunctionJobCollection,
@@ -48,10 +49,12 @@ _COMMON_FUNCTION_JOB_COLLECTION_ERROR_RESPONSES: Final[dict] = {
 async def list_function_job_collections(
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     page_params: Annotated[PaginationParams, Depends()],
+    filters: Annotated[FunctionJobCollectionsListFilters, Depends()],
 ):
     function_job_collection_list, meta = await wb_api_rpc.list_function_job_collections(
         pagination_offset=page_params.offset,
         pagination_limit=page_params.limit,
+        filters=filters,
     )
     return create_page(
         function_job_collection_list,
