@@ -11,6 +11,7 @@ from typing import Final, NoReturn
 
 from aiohttp import web
 from aiopg.sa.connection import SAConnection
+from aiopg.sa.result import RowProxy
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -60,21 +61,22 @@ async def _update_project_state(
     await _projects_service.notify_project_state_update(app, project)
 
 
+async def _get_changed_comp_task_row(
+    conn: SAConnection, task_id: PositiveInt
+) -> RowProxy | None:
+    result = await conn.execute(
+        select(comp_tasks).where(comp_tasks.c.task_id == task_id)
+    )
+    return await result.fetchone()
+
+
 async def _handle_db_notification(
     app: web.Application, payload: CompTaskNotificationPayload, conn: SAConnection
 ) -> None:
     try:
         the_project_owner = await _get_project_owner(conn, payload.project_id)
-
-        # Fetch the latest comp_tasks row for this node/project
-        result = await conn.execute(
-            select(comp_tasks).where(
-                (comp_tasks.c.project_id == f"{payload.project_id}")
-                & (comp_tasks.c.node_id == f"{payload.node_id}")
-            )
-        )
-        row = await result.first()
-        if not row:
+        changed_row = await _get_changed_comp_task_row(conn, payload.task_id)
+        if not changed_row:
             _logger.warning(
                 "No comp_tasks row found for project_id=%s node_id=%s",
                 payload.project_id,
@@ -83,31 +85,26 @@ async def _handle_db_notification(
             return
 
         if any(f in payload.changes for f in ["outputs", "run_hash"]):
-            new_outputs = row.outputs
-            new_run_hash = row.run_hash
-            node_errors = row.errors
             await update_node_outputs(
                 app,
                 the_project_owner,
                 payload.project_id,
                 payload.node_id,
-                new_outputs,
-                new_run_hash,
-                node_errors=node_errors,
+                changed_row.outputs,
+                changed_row.run_hash,
+                node_errors=changed_row.errors,
                 ui_changed_keys=None,
             )
 
-        if "state" in payload.changes:
-            new_state = row.state
-            if new_state is not None:
-                await _update_project_state(
-                    app,
-                    the_project_owner,
-                    payload.project_id,
-                    payload.node_id,
-                    convert_state_from_db(new_state),
-                    node_errors=row.errors,
-                )
+        if "state" in payload.changes and (changed_row.state is not None):
+            await _update_project_state(
+                app,
+                the_project_owner,
+                payload.project_id,
+                payload.node_id,
+                convert_state_from_db(changed_row.state),
+                node_errors=changed_row.errors,
+            )
 
     except exceptions.ProjectNotFoundError as exc:
         _logger.warning(
