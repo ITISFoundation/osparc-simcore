@@ -733,7 +733,7 @@ async def test_list_function_job_collections_filtered_function_id(
         pagination_limit=10,
         pagination_offset=1,
         filters=FunctionJobCollectionsListFilters(
-            has_function_id=registered_function.uid
+            has_function_id=str(registered_function.uid)
         ),
     )
 
