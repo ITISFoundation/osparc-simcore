@@ -9,7 +9,6 @@ from collections.abc import AsyncIterator
 
 import pytest
 from aiopg.sa.engine import Engine, SAConnection
-from aiopg.sa.result import RowProxy
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_tasks import (
     DB_CHANNEL_NAME,
@@ -20,7 +19,7 @@ from sqlalchemy.sql.elements import literal_column
 
 
 @pytest.fixture()
-async def db_connection(aiopg_engine: Engine) -> SAConnection:
+async def db_connection(aiopg_engine: Engine) -> AsyncIterator[SAConnection]:
     async with aiopg_engine.acquire() as conn:
         yield conn
 
@@ -31,6 +30,7 @@ async def db_notification_queue(
 ) -> AsyncIterator[asyncio.Queue]:
     listen_query = f"LISTEN {DB_CHANNEL_NAME};"
     await db_connection.execute(listen_query)
+    assert db_connection.connection
     notifications_queue: asyncio.Queue = db_connection.connection.notifies
     assert notifications_queue.empty()
     yield notifications_queue
@@ -51,7 +51,8 @@ async def task(
         .values(outputs=json.dumps({}), node_class=task_class)
         .returning(literal_column("*"))
     )
-    row: RowProxy = await result.fetchone()
+    row = await result.fetchone()
+    assert row
     task = dict(row)
 
     assert (
@@ -73,8 +74,15 @@ async def _assert_notification_queue_status(
 
         assert msg, "notification msg from postgres is empty!"
         task_data = json.loads(msg.payload)
-
-        for k in ["table", "changes", "action", "data"]:
+        expected_keys = [
+            "task_id",
+            "project_id",
+            "node_id",
+            "changes",
+            "action",
+            "table",
+        ]
+        for k in expected_keys:
             assert k in task_data, f"invalid structure, expected [{k}] in {task_data}"
 
         tasks.append(task_data)
@@ -110,9 +118,15 @@ async def test_listen_query(
     )
     tasks = await _assert_notification_queue_status(db_notification_queue, 1)
     assert tasks[0]["changes"] == ["modified", "outputs", "state"]
+    assert tasks[0]["action"] == "UPDATE"
+    assert tasks[0]["table"] == "comp_tasks"
+    assert tasks[0]["task_id"] == task["task_id"]
+    assert tasks[0]["project_id"] == task["project_id"]
+    assert tasks[0]["node_id"] == task["node_id"]
+
     assert (
-        tasks[0]["data"]["outputs"] == updated_output
-    ), f"the data received from the database is {tasks[0]}, expected new output is {updated_output}"
+        "data" not in tasks[0]
+    ), "data is not expected in the notification payload anymore"
 
     # setting the exact same data twice triggers only ONCE
     updated_output = {"some new stuff": "it is newer"}
@@ -120,10 +134,11 @@ async def test_listen_query(
     await _update_comp_task_with(db_connection, task, outputs=updated_output)
     tasks = await _assert_notification_queue_status(db_notification_queue, 1)
     assert tasks[0]["changes"] == ["modified", "outputs"]
-    assert (
-        tasks[0]["data"]["outputs"] == updated_output
-    ), f"the data received from the database is {tasks[0]}, expected new output is {updated_output}"
-
+    assert tasks[0]["action"] == "UPDATE"
+    assert tasks[0]["table"] == "comp_tasks"
+    assert tasks[0]["task_id"] == task["task_id"]
+    assert tasks[0]["project_id"] == task["project_id"]
+    assert tasks[0]["node_id"] == task["node_id"]
     # updating a number of times with different stuff comes out in FIFO order
     NUM_CALLS = 20
     update_outputs = []
@@ -135,7 +150,10 @@ async def test_listen_query(
     tasks = await _assert_notification_queue_status(db_notification_queue, NUM_CALLS)
 
     for n, output in enumerate(update_outputs):
+        assert output
         assert tasks[n]["changes"] == ["modified", "outputs"]
-        assert (
-            tasks[n]["data"]["outputs"] == output
-        ), f"the data received from the database is {tasks[n]}, expected new output is {output}"
+        assert tasks[0]["action"] == "UPDATE"
+        assert tasks[0]["table"] == "comp_tasks"
+        assert tasks[0]["task_id"] == task["task_id"]
+        assert tasks[0]["project_id"] == task["project_id"]
+        assert tasks[0]["node_id"] == task["node_id"]

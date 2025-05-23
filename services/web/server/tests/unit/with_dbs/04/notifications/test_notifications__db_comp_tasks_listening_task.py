@@ -3,6 +3,7 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=no-value-for-parameter
 # pylint:disable=too-many-arguments
+# pylint:disable=protected-access
 
 import json
 import logging
@@ -204,6 +205,6 @@ async def test_db_listener_triggers_on_event_with_multiple_tasks(
         assert any(
             call.args[1] == updated_task_id
             for call in spied_get_changed_comp_task_row.call_args_list
-        ), f"_get_changed_comp_task_row was not called with task_id={updated_task_id}. Calls: {spy_get_changed.call_args_list}"
+        ), f"_get_changed_comp_task_row was not called with task_id={updated_task_id}. Calls: {spied_get_changed_comp_task_row.call_args_list}"
     else:
         spied_get_changed_comp_task_row.assert_not_called()
