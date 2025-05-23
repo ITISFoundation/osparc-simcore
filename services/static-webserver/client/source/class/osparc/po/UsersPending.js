@@ -138,14 +138,14 @@ qx.Class.define("osparc.po.UsersPending", {
         column: 2,
       });
 
-      pendingUsersLayout.add(new qx.ui.basic.Label(this.tr("Info")).set({
+      pendingUsersLayout.add(new qx.ui.basic.Label(this.tr("Status")).set({
         font: "text-14"
       }), {
         row: 0,
         column: 3,
       });
 
-      pendingUsersLayout.add(new qx.ui.basic.Label(this.tr("Status")).set({
+      pendingUsersLayout.add(new qx.ui.basic.Label(this.tr("Info")).set({
         font: "text-14"
       }), {
         row: 0,
@@ -165,7 +165,8 @@ qx.Class.define("osparc.po.UsersPending", {
 
       let row = 1;
       pendingUsers.forEach(pendingUser => {
-        pendingUsersLayout.add(new qx.ui.basic.Label(pendingUser.name), {
+        console.log("Pending user", pendingUser);
+        pendingUsersLayout.add(new qx.ui.basic.Label(pendingUser.firstName + " " + pendingUser.lastName), {
           row,
           column: 0,
         });
@@ -173,16 +174,16 @@ qx.Class.define("osparc.po.UsersPending", {
           row,
           column: 1,
         });
-        pendingUsersLayout.add(new qx.ui.basic.Label(osparc.utils.Utils.formatDateAndTime(new Date(pendingUser.date))), {
+        pendingUsersLayout.add(new qx.ui.basic.Label(pendingUser.date ? osparc.utils.Utils.formatDateAndTime(new Date(pendingUser.date)) : "-"), {
           row,
           column: 2,
         });
-        const infoButton = this.self().createInfoButton(pendingUser.info);
-        pendingUsersLayout.add(infoButton, {
+        pendingUsersLayout.add(new qx.ui.basic.Label(pendingUser.accountRequestStatus.toLowerCase()), {
           row,
           column: 3,
         });
-        pendingUsersLayout.add(new qx.ui.basic.Label(pendingUser.status.toLowerCase()), {
+        const infoButton = this.self().createInfoButton(pendingUser);
+        pendingUsersLayout.add(infoButton, {
           row,
           column: 4,
         });
@@ -192,7 +193,7 @@ qx.Class.define("osparc.po.UsersPending", {
           column: 5,
         });
 
-        switch (pendingUser.status) {
+        switch (pendingUser.accountRequestStatus) {
           case "PENDING": {
             const approveButton = this.self().createApproveButton(pendingUser.email);
             buttonsLayout.add(approveButton);
