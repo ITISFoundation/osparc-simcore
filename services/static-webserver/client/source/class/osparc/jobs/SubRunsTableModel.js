@@ -34,7 +34,6 @@ qx.Class.define("osparc.jobs.SubRunsTableModel", {
     });
 
     this.setProjectUuid(projectUuid);
-    this.__includeChildren = includeChildren;
   },
 
   properties: {
