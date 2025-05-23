@@ -169,15 +169,13 @@ qx.Class.define("osparc.notification.NotificationUI", {
         case "TEMPLATE_SHARED":
           icon.setSource("@FontAwesome5Solid/copy/14");
           if (resourceId) {
-            const template = osparc.store.Templates.getTemplate(resourceId);
-            if (template) {
-              const templateAlias = osparc.product.Utils.getTemplateAlias({
-                firstUpperCase: true
-              });
-              titleLabel.setValue(`${templateAlias} '${template["name"]}'`);
-            } else {
-              this.setEnabled(false);
-            }
+            osparc.store.Templates.fetchTemplate(resourceId)
+              .then(templateData => {
+                if (templateData) {
+                  titleLabel.setValue(templateData["name"]);
+                }
+              })
+              .catch(() => this.setEnabled(false));
           }
           if (userFromId) {
             const user = osparc.store.Groups.getInstance().getUserByUserId(userFromId);
