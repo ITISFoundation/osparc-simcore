@@ -87,7 +87,7 @@ async def app(
 ) -> AsyncIterable[FastAPI]:
     mocker.patch(
         "simcore_service_dynamic_sidecar.modules.system_monitor._disk_usage._get_monitored_paths",
-        return_value=[],
+        return_value={},
     )
 
     async with LifespanManager(app):
