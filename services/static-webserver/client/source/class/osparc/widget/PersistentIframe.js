@@ -332,10 +332,12 @@ qx.Class.define("osparc.widget.PersistentIframe", {
             // this is the MetaModeling service trying to show function/template information
             if (data["message"] && data["message"]["functionId"]) {
               const templateId = data["message"]["functionId"];
-
-              const resourceData = this.getResourceData();
-              const resourceDetails = new osparc.dashboard.ResourceDetails(resourceData);
-              osparc.dashboard.ResourceDetails.popUpInWindow(resourceDetails);
+              osparc.store.Templates.fetchTemplate(templateId)
+                .then(templateData => {
+                  const resourceDetails = new osparc.dashboard.ResourceDetails(templateData);
+                  osparc.dashboard.ResourceDetails.popUpInWindow(resourceDetails);
+                })
+                .catch(() => osparc.FlashMessenger.logError(this.tr("Function not found")));
             }
             break;
           }

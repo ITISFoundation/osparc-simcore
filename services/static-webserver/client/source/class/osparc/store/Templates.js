@@ -43,6 +43,16 @@ qx.Class.define("osparc.store.Templates", {
       return this.__fetchTemplatesPaginated(params, options);
     },
 
+    fetchTemplate: function(templateId) {
+      const params = {
+        url: {
+          "templateId": templateId,
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "getOne", params)
+        .catch(err => console.error(err));
+    },
+
     __fetchAllTutorials: function() {
       const params = {
         url: {
