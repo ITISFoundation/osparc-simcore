@@ -101,6 +101,7 @@ def _startup(tracing_settings: TracingSettings, service_name: str) -> None:
     span_processor = BatchSpanProcessor(otlp_exporter)
     global_tracer_provider.add_span_processor(span_processor)
 
+    FastAPIInstrumentor().instrument()
     if HAS_AIOPG:
         with log_context(
             _logger,
@@ -147,6 +148,7 @@ def _startup(tracing_settings: TracingSettings, service_name: str) -> None:
 
 def _shutdown() -> None:
     """Uninstruments all opentelemetry instrumentors that were instrumented."""
+    FastAPIInstrumentor().uninstrument()
     if HAS_AIOPG:
         try:
             AiopgInstrumentor().uninstrument()
@@ -189,13 +191,9 @@ def setup_tracing(
 
     _startup(tracing_settings=tracing_settings, service_name=service_name)
 
-    def _on_startup() -> None:
-        FastAPIInstrumentor().instrument_app(app)
-
     def _on_shutdown() -> None:
         _shutdown()
 
-    app.add_event_handler("startup", _on_startup)
     app.add_event_handler("shutdown", _on_shutdown)
 
 
@@ -208,7 +206,7 @@ def get_tracing_instrumentation_lifespan(
     async def tracing_instrumentation_lifespan(
         app: FastAPI,
     ) -> AsyncIterator[State]:
-        FastAPIInstrumentor().instrument_app(app)
+        assert app  # nosec
 
         yield {}
 
