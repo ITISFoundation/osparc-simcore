@@ -240,6 +240,8 @@ opentelemetry-instrumentation==0.54b1
     #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
+opentelemetry-instrumentation-aio-pika==0.54b1
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-logging==0.54b1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-redis==0.54b1
