@@ -299,6 +299,7 @@ opentelemetry-api==1.33.1
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
     #   opentelemetry-instrumentation
+    #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-botocore
     #   opentelemetry-instrumentation-fastapi
@@ -323,6 +324,7 @@ opentelemetry-exporter-otlp-proto-http==1.33.1
     # via opentelemetry-exporter-otlp
 opentelemetry-instrumentation==0.54b1
     # via
+    #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-botocore
     #   opentelemetry-instrumentation-fastapi
@@ -330,6 +332,10 @@ opentelemetry-instrumentation==0.54b1
     #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
+opentelemetry-instrumentation-aio-pika==0.54b1
+    # via
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-asgi==0.54b1
     # via opentelemetry-instrumentation-fastapi
 opentelemetry-instrumentation-botocore==0.54b1
@@ -815,6 +821,7 @@ wrapt==1.17.2
     #   aiobotocore
     #   deprecated
     #   opentelemetry-instrumentation
+    #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-redis
 yarl==1.20.0
