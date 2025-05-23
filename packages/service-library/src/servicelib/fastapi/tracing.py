@@ -70,7 +70,7 @@ except ImportError:
     HAS_AIOPIKA_INSTRUMENTOR = False
 
 
-def _startup(
+def initialize_tracing(
     app: FastAPI, tracing_settings: TracingSettings, service_name: str
 ) -> None:
     if (
@@ -191,7 +191,7 @@ def setup_tracing(
     app: FastAPI, tracing_settings: TracingSettings, service_name: str
 ) -> None:
 
-    _startup(app, tracing_settings, service_name)
+    initialize_tracing(app, tracing_settings, service_name)
 
     def _on_shutdown() -> None:
         _shutdown()
@@ -200,15 +200,11 @@ def setup_tracing(
 
 
 async def tracing_instrumentation_lifespan(
-    *,
     app: FastAPI,
-    state: State,
-    tracing_settings: TracingSettings,
-    service_name: str,
 ) -> AsyncIterator[State]:
+    # initialize tracing must be called (typically right after the app is created)
+    assert app  # nosec
 
-    _startup(app, tracing_settings, service_name)
-
-    yield state
+    yield {}
 
     _shutdown()
