@@ -49,7 +49,7 @@ qx.Class.define("osparc.jobs.SubRunsBrowser", {
       }));
 
       const prevBtn = new qx.ui.form.Button().set({
-        toolTipText: this.tr("Return to Runs and Clusters"),
+        toolTipText: this.tr("Return to Runs"),
         icon: "@FontAwesome5Solid/arrow-left/20",
         backgroundColor: "transparent"
       });

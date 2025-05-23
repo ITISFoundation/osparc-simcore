@@ -66,7 +66,7 @@ qx.Class.define("osparc.jobs.ActivityOverview", {
         });
         stack.setSelection([tasksLayout]);
 
-        this.__subRunsTable.addListener("backToRuns", e => {
+        tasksLayout.addListener("backToRuns", () => {
           stack.setSelection([runsHistoryLayout]);
         });
       });
@@ -84,7 +84,7 @@ qx.Class.define("osparc.jobs.ActivityOverview", {
         font: "text-14"
       });
       runsHistoryTitleLayout.add(runsHistoryTitle);
-      const runsHistoryTitleHelper = new osparc.ui.hint.InfoHint(this.tr("In this table, the history of the project runs is shown."))
+      const runsHistoryTitleHelper = new osparc.ui.hint.InfoHint(this.tr("In this table, the history of the project runs is shown. Select a run to see its tasks."))
       runsHistoryTitleLayout.add(runsHistoryTitleHelper);
       runsHistoryLayout.add(runsHistoryTitleLayout);
 
@@ -112,11 +112,20 @@ qx.Class.define("osparc.jobs.ActivityOverview", {
       })).set({
         paddingLeft: 10,
       });
+
+      const prevBtn = new qx.ui.form.Button().set({
+        toolTipText: this.tr("Return to Runs"),
+        icon: "@FontAwesome5Solid/arrow-left/20",
+        backgroundColor: "transparent"
+      });
+      prevBtn.addListener("execute", () => tasksLayout.fireEvent("backToRuns"));
+      latestTasksTitleLayout.add(prevBtn);
+
       const latestTasksTitle = new qx.ui.basic.Label(this.tr("Tasks")).set({
         font: "text-14"
       });
       latestTasksTitleLayout.add(latestTasksTitle);
-      const latestTasksTitleHelper = new osparc.ui.hint.InfoHint(this.tr("In this table, the latest tasks or simulations of the selected run are shown. If available, the logs can be downloaded."))
+      const latestTasksTitleHelper = new osparc.ui.hint.InfoHint(this.tr("In this table, the tasks or simulations of the selected run are shown. If available, the logs can be downloaded."))
       latestTasksTitleLayout.add(latestTasksTitleHelper);
       tasksLayout.add(latestTasksTitleLayout);
 
