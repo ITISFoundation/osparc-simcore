@@ -3,6 +3,7 @@ from enum import Enum
 from re import Pattern
 from typing import Annotated, ClassVar, Final, TypeAlias
 
+import annotated_types
 from common_library.basic_types import BootModeEnum, BuildTargetEnum, LogLevel
 from pydantic import Field, HttpUrl, PositiveInt, StringConstraints
 from pydantic_core import core_schema
@@ -13,15 +14,16 @@ from .basic_regex import (
     SIMPLE_VERSION_RE,
     UUID_RE,
 )
+from .utils.common_validators import trim_string_before
 
 assert issubclass(LogLevel, Enum)  # nosec
 assert issubclass(BootModeEnum, Enum)  # nosec
 assert issubclass(BuildTargetEnum, Enum)  # nosec
 
 __all__: tuple[str, ...] = (
-    "LogLevel",
     "BootModeEnum",
     "BuildTargetEnum",
+    "LogLevel",
 )
 
 
@@ -70,12 +72,31 @@ EnvVarKey: TypeAlias = Annotated[str, StringConstraints(pattern=r"^[a-zA-Z]\w*")
 UUIDStr: TypeAlias = Annotated[str, StringConstraints(pattern=UUID_RE)]
 
 
+SafeQueryStr: TypeAlias = Annotated[
+    str,
+    StringConstraints(
+        max_length=512,  # Reasonable limit for query parameters to avoid overflows
+        strip_whitespace=True,
+    ),
+    annotated_types.doc(
+        """
+        A string that is safe to use in URLs and query parameters.
+        """,
+    ),
+]
+
+
 # non-empty bounded string used as identifier
 # e.g. "123" or "name_123" or "fa327c73-52d8-462a-9267-84eeaf0f90e3" but NOT ""
 _ELLIPSIS_CHAR: Final[str] = "..."
 
 
 class ConstrainedStr(str):
+    """Emulates pydantic's v1 constrained types
+
+    DEPRECATED: Use instead Annotated[str, StringConstraints(...)]
+    """
+
     pattern: str | Pattern[str] | None = None
     min_length: int | None = None
     max_length: int | None = None
@@ -102,6 +123,11 @@ class ConstrainedStr(str):
 
 
 class IDStr(ConstrainedStr):
+    """Non-empty bounded string used as identifier
+
+    DEPRECATED: Use instead Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
+    """
+
     strip_whitespace = True
     min_length = 1
     max_length = 100
@@ -125,21 +151,36 @@ class IDStr(ConstrainedStr):
         return IDStr(result)
 
 
-class ShortTruncatedStr(ConstrainedStr):
-    # NOTE: Use to input e.g. titles or display names
-    # A truncated string:
-    #   - Strips whitespaces and truncate strings that exceed the specified characters limit (curtail_length).
-    #   - Ensures that the **input** data length to the API is controlled and prevents exceeding large inputs silently, i.e. without raising errors.
-    # SEE https://github.com/ITISFoundation/osparc-simcore/pull/5989#discussion_r1650506583
-    strip_whitespace = True
-    curtail_length = 600
+_SHORT_TRUNCATED_STR_MAX_LENGTH: Final[int] = 600
+ShortTruncatedStr: TypeAlias = Annotated[
+    str,
+    StringConstraints(strip_whitespace=True),
+    trim_string_before(max_length=_SHORT_TRUNCATED_STR_MAX_LENGTH),
+    annotated_types.doc(
+        """
+        A truncated string used to input e.g. titles or display names.
+        Strips whitespaces and truncate strings that exceed the specified characters limit (curtail_length).
+        Ensures that the **input** data length to the API is controlled and prevents exceeding large inputs silently,
+        i.e. without raising errors.
+        """
+        # SEE https://github.com/ITISFoundation/osparc-simcore/pull/5989#discussion_r1650506583
+    ),
+]
 
-
-class LongTruncatedStr(ConstrainedStr):
-    # NOTE: Use to input e.g. descriptions or summaries
-    # Analogous to ShortTruncatedStr
-    strip_whitespace = True
-    curtail_length = 65536  # same as github descripton
+_LONG_TRUNCATED_STR_MAX_LENGTH: Final[int] = 65536  # same as github description
+LongTruncatedStr: TypeAlias = Annotated[
+    str,
+    StringConstraints(strip_whitespace=True),
+    trim_string_before(max_length=_LONG_TRUNCATED_STR_MAX_LENGTH),
+    annotated_types.doc(
+        """
+        A truncated string used to input e.g. descriptions or summaries.
+        Strips whitespaces and truncate strings that exceed the specified characters limit (curtail_length).
+        Ensures that the **input** data length to the API is controlled and prevents exceeding large inputs silently,
+        i.e. without raising errors.
+        """
+    ),
+]
 
 
 # auto-incremented primary-key IDs
