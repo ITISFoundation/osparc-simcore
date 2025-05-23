@@ -225,8 +225,8 @@ qx.Class.define("osparc.po.UsersPending", {
         osparc.data.Resources.fetch("poUsers", "getReviewedUsers")
       ])
         .then(resps => {
-          const pendingUsers = resps[0]["data"];
-          const reviewedUsers = resps[1]["data"];
+          const pendingUsers = resps[0];
+          const reviewedUsers = resps[1];
           const pendingUsersLayout = this.getChildControl("pending-users-layout");
           pendingUsersLayout.removeAll();
           this.__addHeader();
