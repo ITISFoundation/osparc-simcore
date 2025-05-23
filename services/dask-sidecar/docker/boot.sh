@@ -33,7 +33,11 @@ fi
 
 if [ "${SC_BOOT_MODE}" = "debug" ]; then
   # NOTE: production does NOT pre-installs debugpy
-  uv pip install debugpy
+  if command -v uv >/dev/null 2>&1; then
+    uv pip install debugpy
+  else
+    pip install debugpy
+  fi
 fi
 
 # RUNNING application ----------------------------------------

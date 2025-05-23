@@ -3,13 +3,13 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-from collections.abc import AsyncGenerator, AsyncIterable
+from collections.abc import AsyncIterable
 from typing import Any
 
 import pytest
 import sqlalchemy as sa
 from aiohttp import web
-from models_library.api_schemas_webserver.users import UserForAdminGet
+from models_library.api_schemas_webserver.users import UserAccountGet
 from models_library.products import ProductName
 from simcore_postgres_database.models.users_details import (
     users_pre_registration_details,
@@ -19,19 +19,6 @@ from simcore_service_webserver.users import _users_service
 from simcore_service_webserver.users._users_repository import (
     create_user_pre_registration,
 )
-
-
-@pytest.fixture
-async def pre_registration_details_cleanup(
-    app: web.Application,
-) -> AsyncGenerator[None, None]:
-    """Fixture to clean up all pre-registration details after test"""
-    yield
-
-    # Tear down - clean up the pre-registration details table
-    async with get_asyncpg_engine(app).connect() as conn:
-        await conn.execute(sa.delete(users_pre_registration_details))
-        await conn.commit()
 
 
 @pytest.fixture
@@ -95,7 +82,7 @@ async def test_search_users_as_admin_real_user(
     user_email = product_owner_user["email"]
 
     # Act
-    found_users = await _users_service.search_users_as_admin(
+    found_users = await _users_service.search_users_accounts(
         app, email_glob=user_email, product_name=product_name, include_products=False
     )
 
@@ -109,7 +96,7 @@ async def test_search_users_as_admin_real_user(
     )  # This test user does not have a product associated with it
 
     # Verify the UserForAdminGet model is populated correctly
-    assert isinstance(found_user, UserForAdminGet)
+    assert isinstance(found_user, UserAccountGet)
     assert found_user.first_name == product_owner_user["first_name"]
 
 
@@ -124,7 +111,7 @@ async def test_search_users_as_admin_pre_registered_user(
     pre_registration_details = pre_registered_user_created["details"]
 
     # Act
-    found_users = await _users_service.search_users_as_admin(
+    found_users = await _users_service.search_users_accounts(
         app, email_glob=pre_registered_email, product_name=product_name
     )
 
@@ -155,7 +142,7 @@ async def test_search_users_as_admin_wildcard(
     app: web.Application,
     product_name: ProductName,
     product_owner_user: dict[str, Any],
-    pre_registration_details_cleanup: None,
+    pre_registration_details_db_cleanup: None,
 ):
     """Test searching for users with wildcards"""
     # Arrange
@@ -177,7 +164,7 @@ async def test_search_users_as_admin_wildcard(
         )
 
     # Act - search with wildcard for the domain
-    found_users = await _users_service.search_users_as_admin(
+    found_users = await _users_service.search_users_accounts(
         app, email_glob=f"*{email_domain}", product_name=product_name
     )
 
