@@ -3,6 +3,7 @@ from enum import Enum
 from re import Pattern
 from typing import Annotated, ClassVar, Final, TypeAlias
 
+import annotated_types
 from common_library.basic_types import BootModeEnum, BuildTargetEnum, LogLevel
 from pydantic import Field, HttpUrl, PositiveInt, StringConstraints
 from pydantic_core import core_schema
@@ -68,6 +69,20 @@ EnvVarKey: TypeAlias = Annotated[str, StringConstraints(pattern=r"^[a-zA-Z]\w*")
 
 # e.g. '5c833a78-1af3-43a7-9ed7-6a63b188f4d8'
 UUIDStr: TypeAlias = Annotated[str, StringConstraints(pattern=UUID_RE)]
+
+
+SafeQueryStr: TypeAlias = Annotated[
+    str,
+    StringConstraints(
+        max_length=512,  # Reasonable limit for query parameters to avoid overflows
+        strip_whitespace=True,
+    ),
+    annotated_types.doc(
+        """
+        A string that is safe to use in URLs and query parameters.
+        """,
+    ),
+]
 
 
 # non-empty bounded string used as identifier
