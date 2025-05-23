@@ -6,6 +6,7 @@
 
 import json
 import logging
+import secrets
 from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any
@@ -147,7 +148,7 @@ async def _assert_listener_triggers(
     ],
 )
 @pytest.mark.parametrize("user_role", [UserRole.USER])
-async def test_db_listener_triggers_on_event(
+async def test_db_listener_triggers_on_event_with_multiple_tasks(
     sqlalchemy_async_engine: AsyncEngine,
     mock_project_subsystem: dict[str, mock.Mock],
     logged_user: UserInfoDict,
@@ -161,18 +162,21 @@ async def test_db_listener_triggers_on_event(
 ):
     some_project = await project(logged_user)
     pipeline(project_id=f"{some_project.uuid}")
-    task = comp_task(
-        project_id=f"{some_project.uuid}",
-        node_id=faker.uuid4(),
-        outputs=json.dumps({}),
-        node_class=task_class,
-    )
+    # Create 3 tasks with different node_ids
+    tasks = [
+        comp_task(
+            project_id=f"{some_project.uuid}",
+            node_id=faker.uuid4(),
+            outputs=json.dumps({}),
+            node_class=task_class,
+        )
+        for _ in range(3)
+    ]
+    random_task_to_update = tasks[secrets.randbelow(len(tasks))]
     async with sqlalchemy_async_engine.begin() as conn:
-        # let's update some values
         await conn.execute(
             comp_tasks.update()
             .values(**params.update_values)
-            .where(comp_tasks.c.task_id == task["task_id"])
+            .where(comp_tasks.c.task_id == random_task_to_update["task_id"])
         )
-
     await _assert_listener_triggers(mock_project_subsystem, params.expected_calls)
