@@ -78,6 +78,8 @@ class DiskUsageMonitor:
 
     @cached_property
     def _monitored_paths_set(self) -> set[Path]:
+        if not self.monitored_paths:
+            return set()
         return set.union(*self.monitored_paths.values())
 
     @cached_property
@@ -137,7 +139,7 @@ class DiskUsageMonitor:
             self.app, user_id=self.user_id, node_id=self.node_id, usage=usage
         )
 
-    async def _monitor(self) -> None:
+    async def get_disk_usage(self) -> dict[MountPathCategory, DiskUsage]:
         measured_disk_usage = await self._get_measured_disk_usage()
 
         local_disk_usage = self._get_local_disk_usage(measured_disk_usage)
@@ -167,12 +169,14 @@ class DiskUsageMonitor:
                 msg = f"Could not assign {disk_usage=} for {folder_names=}"
                 raise RuntimeError(msg)
 
-        supported_usage = {k: v for k, v in usage.items() if k in _SUPPORTED_ITEMS}
+        return {k: v for k, v in usage.items() if k in _SUPPORTED_ITEMS}
 
+    async def _monitor(self) -> None:
+        disk_usage = await self.get_disk_usage()
         # notify only when usage changes
-        if self._last_usage != supported_usage:
-            await self._publish_disk_usage(supported_usage)
-            self._last_usage = supported_usage
+        if self._last_usage != disk_usage:
+            await self._publish_disk_usage(disk_usage)
+            self._last_usage = disk_usage
 
     async def setup(self) -> None:
         self._monitor_task = create_periodic_task(
@@ -202,25 +206,30 @@ def _get_monitored_paths(app: FastAPI) -> dict[MountPathCategory, set[Path]]:
     }
 
 
-def get_disk_usage_monitor(app: FastAPI) -> DiskUsageMonitor:
-    disk_usage_monitor: DiskUsageMonitor = app.state.disk_usage_monitor
-    return disk_usage_monitor
+def create_disk_usage_monitor(app: FastAPI) -> DiskUsageMonitor:
+    settings: ApplicationSettings = app.state.settings
+    return DiskUsageMonitor(
+        app,
+        user_id=settings.DY_SIDECAR_USER_ID,
+        node_id=settings.DY_SIDECAR_NODE_ID,
+        interval=settings.DYNAMIC_SIDECAR_TELEMETRY_DISK_USAGE_MONITOR_INTERVAL,
+        monitored_paths=_get_monitored_paths(app),
+        dy_volumes_mount_dir=settings.DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR,
+    )
+
+
+def get_disk_usage_monitor(app: FastAPI) -> DiskUsageMonitor | None:
+    if hasattr(app.state, "disk_usage_monitor"):
+        disk_usage_monitor: DiskUsageMonitor = app.state.disk_usage_monitor
+        return disk_usage_monitor
+    return None
 
 
 def setup_disk_usage(app: FastAPI) -> None:
     async def on_startup() -> None:
         with log_context(_logger, logging.INFO, "setup disk monitor"):
-            settings: ApplicationSettings = app.state.settings
-
-            app.state.disk_usage_monitor = disk_usage_monitor = DiskUsageMonitor(
-                app,
-                user_id=settings.DY_SIDECAR_USER_ID,
-                node_id=settings.DY_SIDECAR_NODE_ID,
-                interval=settings.DYNAMIC_SIDECAR_TELEMETRY_DISK_USAGE_MONITOR_INTERVAL,
-                monitored_paths=_get_monitored_paths(app),
-                dy_volumes_mount_dir=settings.DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR,
-            )
-            await disk_usage_monitor.setup()
+            app.state.disk_usage_monitor = create_disk_usage_monitor(app)
+            await app.state.disk_usage_monitor.setup()
 
     async def on_shutdown() -> None:
         with log_context(_logger, logging.INFO, "shutdown disk monitor"):

@@ -183,9 +183,9 @@ def create_app():
     setup_background_log_fetcher(app)
     setup_resource_tracking(app)
     setup_notifications(app)
-    setup_system_monitor(app)
 
     setup_mounted_fs(app)
+    setup_system_monitor(app)
     setup_inputs(app)
     setup_outputs(app)
 
