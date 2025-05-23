@@ -70,9 +70,7 @@ except ImportError:
     HAS_AIOPIKA_INSTRUMENTOR = False
 
 
-def initialize_tracing(
-    app: FastAPI, tracing_settings: TracingSettings, service_name: str
-) -> None:
+def _startup(tracing_settings: TracingSettings, service_name: str) -> None:
     if (
         not tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT
         and not tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_PORT
@@ -102,8 +100,6 @@ def initialize_tracing(
     otlp_exporter = OTLPSpanExporterHTTP(endpoint=tracing_destination)
     span_processor = BatchSpanProcessor(otlp_exporter)
     global_tracer_provider.add_span_processor(span_processor)
-    # Instrument FastAPI
-    FastAPIInstrumentor().instrument_app(app)
 
     if HAS_AIOPG:
         with log_context(
@@ -191,20 +187,31 @@ def setup_tracing(
     app: FastAPI, tracing_settings: TracingSettings, service_name: str
 ) -> None:
 
-    initialize_tracing(app, tracing_settings, service_name)
+    _startup(tracing_settings=tracing_settings, service_name=service_name)
+
+    def _on_startup() -> None:
+        FastAPIInstrumentor().instrument_app(app)
 
     def _on_shutdown() -> None:
         _shutdown()
 
+    app.add_event_handler("startup", _on_startup)
     app.add_event_handler("shutdown", _on_shutdown)
 
 
-async def tracing_instrumentation_lifespan(
-    app: FastAPI,
-) -> AsyncIterator[State]:
-    # initialize tracing must be called (typically right after the app is created)
-    assert app  # nosec
+def get_tracing_instrumentation_lifespan(
+    tracing_settings: TracingSettings, service_name: str
+):
 
-    yield {}
+    _startup(tracing_settings=tracing_settings, service_name=service_name)
 
-    _shutdown()
+    async def tracing_instrumentation_lifespan(
+        app: FastAPI,
+    ) -> AsyncIterator[State]:
+        FastAPIInstrumentor().instrument_app(app)
+
+        yield {}
+
+        _shutdown()
+
+    return tracing_instrumentation_lifespan

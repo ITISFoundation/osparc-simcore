@@ -4,7 +4,7 @@ from servicelib.fastapi.monitoring import (
 )
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.profiler import initialize_profiler
-from servicelib.fastapi.tracing import initialize_tracing
+from servicelib.fastapi.tracing import _startup
 
 from .._meta import API_VERSION, API_VTAG, APP_NAME, PROJECT_NAME, SUMMARY
 from ..api.frontend import initialize_frontend
@@ -34,7 +34,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     assert app.state.settings.API_VERSION == API_VERSION  # nosec
 
     if app_settings.DYNAMIC_SCHEDULER_TRACING:
-        initialize_tracing(app, app_settings.DYNAMIC_SCHEDULER_TRACING, APP_NAME)
+        _startup(app, app_settings.DYNAMIC_SCHEDULER_TRACING, APP_NAME)
 
     initialize_rest_api(app)
 

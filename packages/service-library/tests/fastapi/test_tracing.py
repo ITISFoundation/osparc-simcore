@@ -12,8 +12,7 @@ import pytest
 from fastapi import FastAPI
 from pydantic import ValidationError
 from servicelib.fastapi.tracing import (
-    initialize_tracing,
-    tracing_instrumentation_lifespan,
+    get_tracing_instrumentation_lifespan,
 )
 from settings_library.tracing import TracingSettings
 
@@ -66,22 +65,14 @@ async def test_valid_tracing_settings(
     uninstrument_opentelemetry: Iterator[None],
 ):
     tracing_settings = TracingSettings()
-    initialize_tracing(
-        app=mocked_app,
+    async for _ in get_tracing_instrumentation_lifespan(
         tracing_settings=tracing_settings,
         service_name="Mock-Openetlemetry-Pytest",
-    )
-    async for state in tracing_instrumentation_lifespan(
-        app=mocked_app,
-    ):
-        initialize_tracing(
-            app=mocked_app,
+    )(app=mocked_app):
+        async for _ in get_tracing_instrumentation_lifespan(
             tracing_settings=tracing_settings,
             service_name="Mock-Openetlemetry-Pytest",
-        )
-        async for _ in tracing_instrumentation_lifespan(
-            app=mocked_app,
-        ):
+        )(app=mocked_app):
             pass
 
 
@@ -110,15 +101,10 @@ async def test_invalid_tracing_settings(
     app = mocked_app
     with pytest.raises((BaseException, ValidationError, TypeError)):  # noqa: PT012
         tracing_settings = TracingSettings()
-        initialize_tracing(
-            app=app,
+        async for _ in get_tracing_instrumentation_lifespan(
             tracing_settings=tracing_settings,
             service_name="Mock-Openetlemetry-Pytest",
-        )
-
-        async for _ in tracing_instrumentation_lifespan(
-            app=app,
-        ):
+        )(app=app):
             pass
 
 
@@ -171,22 +157,13 @@ async def test_tracing_setup_package_detection(
     package_name = manage_package
     importlib.import_module(package_name)
     tracing_settings = TracingSettings()
-    # Use tracing_instrumentation_lifespan instead of _startup
-    initialize_tracing(
-        app=mocked_app,
+    async for _ in get_tracing_instrumentation_lifespan(
         tracing_settings=tracing_settings,
         service_name="Mock-Openetlemetry-Pytest",
-    )
-    async for _ in tracing_instrumentation_lifespan(
-        app=mocked_app,
-    ):
-        # idempotency: call again
-        initialize_tracing(
-            app=mocked_app,
+    )(app=mocked_app):
+        # idempotency check
+        async for _ in get_tracing_instrumentation_lifespan(
             tracing_settings=tracing_settings,
             service_name="Mock-Openetlemetry-Pytest",
-        )
-        async for _ in tracing_instrumentation_lifespan(
-            app=mocked_app,
-        ):
+        )(app=mocked_app):
             pass
