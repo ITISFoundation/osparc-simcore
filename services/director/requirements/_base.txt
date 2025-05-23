@@ -191,6 +191,7 @@ opentelemetry-api==1.28.1
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
     #   opentelemetry-instrumentation
+    #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-httpx
@@ -211,12 +212,15 @@ opentelemetry-exporter-otlp-proto-http==1.28.1
     # via opentelemetry-exporter-otlp
 opentelemetry-instrumentation==0.49b1
     # via
+    #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
+opentelemetry-instrumentation-aio-pika==0.49b1
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-asgi==0.49b1
     # via opentelemetry-instrumentation-fastapi
 opentelemetry-instrumentation-fastapi==0.49b1
@@ -525,6 +529,7 @@ wrapt==1.16.0
     # via
     #   deprecated
     #   opentelemetry-instrumentation
+    #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-redis
 yarl==1.17.1
