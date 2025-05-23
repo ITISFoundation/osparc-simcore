@@ -34,6 +34,20 @@ def iter_pagination_params(
     offset: NonNegativeInt = 0,
     total_number_of_items: NonNegativeInt | None = None,
 ) -> Iterable[PageParams]:
+    """Iterates through pages of a collection by yielding PageParams for each page.
+
+    Args:
+        limit: The maximum number of items to return in a single page.
+        offset: The number of items to skip before starting to collect the items for the current page.
+        total_number_of_items: The total count of items in the collection being paginated.
+            Must be set during the first iteration if not provided initially.
+
+    Yields:
+        PageParams for each page in the collection.
+
+    Raises:
+        RuntimeError: If total_number_of_items is not set before first iteration or if it changes between iterations.
+    """
 
     kwargs = {}
     if total_number_of_items:
