@@ -268,7 +268,7 @@ async def list_solver_releases_paginated(
     page_params.offset = page_meta.offset
     return create_page(
         solvers,
-        total=len(solvers),
+        total=page_meta.total,
         params=page_params,
     )
 

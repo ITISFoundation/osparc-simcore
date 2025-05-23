@@ -211,9 +211,15 @@ async def test_solvers_page_pagination_last_page(
     assert response.status_code == status.HTTP_200_OK
     total_items = response.json()["total"]
 
+    assert (
+        total_items > 1
+    ), "Total items in MOCK examples should be greater than 1 for pagination test since we need 'prev', 'self' and 'prev' links"
+    last_item = total_items - 1
+    page_size = 1
+
     # Request the last page by using the total count as offset
     response = await client.get(
-        f"/{API_VTAG}/solvers/page?offset={total_items-1}", auth=auth
+        f"/{API_VTAG}/solvers/page?limit={page_size}&offset={last_item}", auth=auth
     )
     assert response.status_code == status.HTTP_200_OK
 
@@ -221,5 +227,10 @@ async def test_solvers_page_pagination_last_page(
     assert "links" in response_data, "Response should contain links section"
 
     links = response_data["links"]
-    assert links["next"] is None, "Next link should be None for the last page"
-    assert links["prev"] is not None, "Prev link should be present for the last page"
+    assert links["next"] is None, "Next link should be None for the last page (size=1)"
+    assert (
+        links["prev"] is not None
+    ), "Prev link should be present for the last page (size=1)"
+    assert (
+        links["last"] == links["self"]
+    ), "Last link should be the same as self link for the last page"
