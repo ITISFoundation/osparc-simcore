@@ -49,7 +49,7 @@ class JobService:
         """Lists all jobs for a user with pagination based on resource name prefix"""
 
         pagination_kwargs = as_dict_exclude_none(
-            offset=pagination_offset, limit=pagination_limit
+            pagination_offset=pagination_offset, pagination_limit=pagination_limit
         )
 
         # 1. List projects marked as jobs
