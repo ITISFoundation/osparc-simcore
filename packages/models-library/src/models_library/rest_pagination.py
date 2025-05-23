@@ -22,18 +22,23 @@ from .utils.common_validators import none_to_empty_list_pre_validator
 MINIMUM_NUMBER_OF_ITEMS_PER_PAGE: Final[int] = 1
 MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE: Final[int] = 50
 
-
 PageLimitInt: TypeAlias = Annotated[
     int,
     Field(
         ge=MINIMUM_NUMBER_OF_ITEMS_PER_PAGE,
         le=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
+        description="The maximum number of items to return in a single page.",
     ),
 ]
-
-PageOffsetInt: TypeAlias = NonNegativeInt
-
+PageOffsetInt: TypeAlias = Annotated[
+    int,
+    Field(
+        ge=0,
+        description="The number of items to skip before starting to collect the items for the current pag",
+    ),
+]
 PageTotalCount: TypeAlias = NonNegativeInt
+
 
 DEFAULT_NUMBER_OF_ITEMS_PER_PAGE: Final[PageLimitInt] = TypeAdapter(
     PageLimitInt
@@ -41,12 +46,13 @@ DEFAULT_NUMBER_OF_ITEMS_PER_PAGE: Final[PageLimitInt] = TypeAdapter(
 
 
 class CursorQueryParameters(RequestParameters):
-    """Use as pagination options in query parameters"""
+    """Query parameters for Cursor-Based Pagination
+
+    SEE https://uriyyo-fastapi-pagination.netlify.app/learn/pagination/techniques/#cursor-based-pagination
+    """
 
     size: PageLimitInt = Field(
-        default=TypeAdapter(PageLimitInt).validate_python(
-            DEFAULT_NUMBER_OF_ITEMS_PER_PAGE
-        ),
+        default=DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
         description="maximum number of items to return (pagination)",
     )
     cursor: Annotated[
@@ -58,21 +64,13 @@ class CursorQueryParameters(RequestParameters):
 
 
 class PageQueryParameters(RequestParameters):
-    """Use as pagination options in query parameters"""
+    """Query parameters for Limit-Offset Pagination
 
-    limit: Annotated[
-        PageLimitInt,
-        Field(
-            default=TypeAdapter(PageLimitInt).validate_python(
-                DEFAULT_NUMBER_OF_ITEMS_PER_PAGE
-            ),
-            description="maximum number of items to return (pagination)",
-        ),
-    ]
-    offset: Annotated[
-        PageOffsetInt,
-        Field(default=0, description="index to the first item to return (pagination)"),
-    ]
+    SEE https://uriyyo-fastapi-pagination.netlify.app/learn/pagination/techniques/#limit-offset-pagination
+    """
+
+    limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE
+    offset: PageOffsetInt = 0
 
 
 class PageMetaInfoLimitOffset(BaseModel):
