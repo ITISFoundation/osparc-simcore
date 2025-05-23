@@ -1616,11 +1616,10 @@ paths:
         required: false
         schema:
           type: integer
+          maximum: 50
           minimum: 1
-          exclusiveMaximum: true
           default: 20
           title: Limit
-          maximum: 50
       - name: offset
         in: query
         required: false
@@ -2062,11 +2061,10 @@ paths:
         required: false
         schema:
           type: integer
+          maximum: 50
           minimum: 1
-          exclusiveMaximum: true
           default: 20
           title: Limit
-          maximum: 50
       - name: offset
         in: query
         required: false
@@ -5075,11 +5073,10 @@ paths:
         required: false
         schema:
           type: integer
+          maximum: 50
           minimum: 1
-          exclusiveMaximum: true
           default: 20
           title: Limit
-          maximum: 50
       - name: offset
         in: query
         required: false
@@ -5243,11 +5240,10 @@ paths:
         required: false
         schema:
           type: integer
+          maximum: 50
           minimum: 1
-          exclusiveMaximum: true
           default: 20
           title: Limit
-          maximum: 50
       - name: offset
         in: query
         required: false
