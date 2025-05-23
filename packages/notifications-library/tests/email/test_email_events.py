@@ -106,6 +106,15 @@ def event_extra_data(  # noqa: PLR0911
                 "ipinfo": ipinfo,
                 "dumps": functools.partial(_safe_json_dumps, indent=1),
             }
+        case "on_account_rejected":
+            return {
+                "host": host_url,
+            }
+        case "on_account_approved":
+            return {
+                "host": host_url,
+                "link": f"{host_url}?invitation={code}",
+            }
         case "on_change_email":
             return {
                 "host": host_url,
@@ -173,7 +182,9 @@ def event_attachments(event_name: str, faker: Faker) -> list[tuple[bytes, str]]:
 @pytest.mark.parametrize(
     "event_name",
     [
+        "on_account_approved",
         "on_account_form",
+        "on_account_rejected",
         "on_change_email",
         "on_new_code",
         "on_new_invitation",
