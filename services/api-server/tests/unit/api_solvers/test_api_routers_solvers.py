@@ -172,3 +172,54 @@ async def test_list_solver_ports_again(
     )
     assert response.status_code == status.HTTP_200_OK
     assert TypeAdapter(OnePage[SolverPort]).validate_python(response.json())
+
+
+async def test_solvers_page_pagination_links(
+    mocked_catalog_rpc_api: dict[str, MockType],
+    client: httpx.AsyncClient,
+    auth: httpx.BasicAuth,
+):
+    # Use a small limit to ensure pagination is needed
+    limit = 2
+    response = await client.get(f"/{API_VTAG}/solvers/page?limit={limit}", auth=auth)
+
+    assert response.status_code == status.HTTP_200_OK
+
+    response_data = response.json()
+    assert "links" in response_data, "Response should contain links section"
+
+    links = response_data["links"]
+    assert "next" in links, "Pagination should include 'next' link"
+    assert "prev" in links, "Pagination should include 'prev' link"
+    assert "first" in links, "Pagination should include 'first' link"
+    assert "last" in links, "Pagination should include 'last' link"
+    assert "self" in links, "Pagination should include 'self' link"
+
+    # Verify the self link contains the correct limit parameter
+    assert (
+        f"limit={limit}" in links["self"]
+    ), "Self link should reflect the requested limit"
+
+
+async def test_solvers_page_pagination_last_page(
+    mocked_catalog_rpc_api: dict[str, MockType],
+    client: httpx.AsyncClient,
+    auth: httpx.BasicAuth,
+):
+    # Get total count first
+    response = await client.get(f"/{API_VTAG}/solvers/page", auth=auth)
+    assert response.status_code == status.HTTP_200_OK
+    total_items = response.json()["total"]
+
+    # Request the last page by using the total count as offset
+    response = await client.get(
+        f"/{API_VTAG}/solvers/page?offset={total_items-1}", auth=auth
+    )
+    assert response.status_code == status.HTTP_200_OK
+
+    response_data = response.json()
+    assert "links" in response_data, "Response should contain links section"
+
+    links = response_data["links"]
+    assert links["next"] is None, "Next link should be None for the last page"
+    assert links["prev"] is not None, "Prev link should be present for the last page"
