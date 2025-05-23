@@ -19,11 +19,16 @@ from .utils.common_validators import none_to_empty_list_pre_validator
 # Default limit values
 #  - Using same values across all pagination entrypoints simplifies
 #    interconnecting paginated calls
+MINIMUM_NUMBER_OF_ITEMS_PER_PAGE: Final[int] = 1
 MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE: Final[int] = 50
 
 
 PageLimitInt: TypeAlias = Annotated[
-    int, Field(ge=1, lt=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE)
+    int,
+    Field(
+        ge=MINIMUM_NUMBER_OF_ITEMS_PER_PAGE,
+        le=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
+    ),
 ]
 
 PageOffsetInt: TypeAlias = NonNegativeInt
