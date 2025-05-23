@@ -150,27 +150,27 @@ def _shutdown() -> None:
     """Uninstruments all opentelemetry instrumentors that were instrumented."""
     try:
         AioHttpClientInstrumentor().uninstrument()
-    except Exception:
+    except Exception:  # pylint:disable=broad-exception-caught
         _logger.exception("Failed to uninstrument AioHttpClientInstrumentor")
     if HAS_AIOPG:
         try:
             AiopgInstrumentor().uninstrument()
-        except Exception:
+        except Exception:  # pylint:disable=broad-exception-caught
             _logger.exception("Failed to uninstrument AiopgInstrumentor")
     if HAS_BOTOCORE:
         try:
             BotocoreInstrumentor().uninstrument()
-        except Exception:
+        except Exception:  # pylint:disable=broad-exception-caught
             _logger.exception("Failed to uninstrument BotocoreInstrumentor")
     if HAS_REQUESTS:
         try:
             RequestsInstrumentor().uninstrument()
-        except Exception:
+        except Exception:  # pylint:disable=broad-exception-caught
             _logger.exception("Failed to uninstrument RequestsInstrumentor")
     if HAS_AIO_PIKA:
         try:
             AioPikaInstrumentor().uninstrument()
-        except Exception:
+        except Exception:  # pylint:disable=broad-exception-caught
             _logger.exception("Failed to uninstrument AioPikaInstrumentor")
 
 
