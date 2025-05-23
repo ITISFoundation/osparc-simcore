@@ -57,6 +57,10 @@ qx.Class.define("osparc.jobs.RunsBrowser", {
             allowStretchX: true,
             margin: 0
           });
+          control.getChildControl("textfield").set({
+            placeholder: qx.locale.Manager.tr("Filter by name or ID"),
+          });
+          control.hide(); // @matusdrobuliak66: remove this when the backend is ready
           this.getChildControl("header-filter").add(control, {
             flex: 1
           });
