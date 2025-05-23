@@ -109,9 +109,14 @@ async def list_all_solvers_paginated(
             "get_solver_release", solver_key=solver.id, version=solver.version
         )
 
-    page_params.limit = page_meta.limit
-    page_params.offset = page_meta.offset
-    return create_page(solvers, total=len(solvers), params=page_params)
+    assert page_params.limit == page_meta.limit  # nosec
+    assert page_params.offset == page_meta.offset  # nosec
+
+    return create_page(
+        solvers,
+        total=page_meta.total,
+        params=page_params,
+    )
 
 
 @router.get(
