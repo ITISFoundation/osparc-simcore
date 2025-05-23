@@ -388,10 +388,8 @@ qx.Class.define("osparc.pricing.UnitEditor", {
     __updatePricingUnit: function() {
       const data = {
         "unitName": this.getUnitName(),
-        "pricingUnitCostUpdate": {
-          "costPerUnit": this.getCostPerUnit(),
-          "comment": this.getComment(),
-        },
+        "costPerUnit": this.getCostPerUnit(),
+        "comment": this.getComment(),
         "default": this.getDefault(),
       };
 
