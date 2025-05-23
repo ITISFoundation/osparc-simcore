@@ -11,7 +11,6 @@ from models_library.rest_pagination import (
 from models_library.rpc_pagination import PageLimitInt
 from models_library.services_enums import ServiceType
 from models_library.users import UserID
-from pydantic import NonNegativeInt, PositiveInt
 from simcore_service_api_server.models.basic_types import NameValueTuple
 
 from ._service_jobs import JobService
@@ -125,8 +124,8 @@ class SolverService:
         self,
         *,
         solver_key: SolverKeyId,
-        pagination_offset: NonNegativeInt,
-        pagination_limit: PositiveInt,
+        pagination_offset: PageOffsetInt,
+        pagination_limit: PageLimitInt,
     ) -> tuple[list[Solver], PageMetaInfoLimitOffset]:
 
         releases, page_meta = (
@@ -156,8 +155,8 @@ class SolverService:
     async def list_all_solvers(
         self,
         *,
-        pagination_offset: NonNegativeInt,
-        pagination_limit: PositiveInt,
+        pagination_offset: PageOffsetInt,
+        pagination_limit: PageLimitInt,
         filter_by_solver_key_pattern: str | None = None,
         filter_by_version_display_pattern: str | None = None,
     ) -> tuple[list[Solver], PageMetaInfoLimitOffset]:
@@ -197,8 +196,8 @@ class SolverService:
     async def latest_solvers(
         self,
         *,
-        pagination_offset: NonNegativeInt,
-        pagination_limit: PositiveInt,
+        pagination_offset: PageOffsetInt,
+        pagination_limit: PageLimitInt,
         filter_by_solver_key_pattern: str | None = None,
         filter_by_version_display_pattern: str | None = None,
     ) -> tuple[list[Solver], PageMetaInfoLimitOffset]:
