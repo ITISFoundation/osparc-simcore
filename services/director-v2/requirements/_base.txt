@@ -397,6 +397,7 @@ opentelemetry-api==1.33.1
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
     #   opentelemetry-instrumentation
+    #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-asyncpg
     #   opentelemetry-instrumentation-fastapi
@@ -420,6 +421,7 @@ opentelemetry-exporter-otlp-proto-http==1.33.1
     # via opentelemetry-exporter-otlp
 opentelemetry-instrumentation==0.54b1
     # via
+    #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-asyncpg
     #   opentelemetry-instrumentation-fastapi
@@ -427,6 +429,10 @@ opentelemetry-instrumentation==0.54b1
     #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
+opentelemetry-instrumentation-aio-pika==0.54b1
+    # via
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-asgi==0.54b1
     # via opentelemetry-instrumentation-fastapi
 opentelemetry-instrumentation-asyncpg==0.54b1
@@ -1121,6 +1127,7 @@ wrapt==1.17.2
     # via
     #   deprecated
     #   opentelemetry-instrumentation
+    #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-redis
 wsproto==1.2.0

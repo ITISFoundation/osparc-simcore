@@ -9,7 +9,7 @@ from servicelib.fastapi.openapi import (
     get_common_oas_options,
     override_fastapi_openapi_method,
 )
-from servicelib.fastapi.tracing import initialize_tracing
+from servicelib.fastapi.tracing import setup_tracing
 from servicelib.logging_utils import config_all_loggers
 from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 
@@ -175,6 +175,9 @@ def create_app():
     app.state.application_health = ApplicationHealth()
     application_settings: ApplicationSettings = app.state.settings
 
+    if application_settings.DYNAMIC_SIDECAR_TRACING:
+        setup_tracing(app, application_settings.DYNAMIC_SIDECAR_TRACING, PROJECT_NAME)
+
     setup_rabbitmq(app)
     setup_rpc_api_routes(app)
     setup_background_log_fetcher(app)
@@ -192,11 +195,6 @@ def create_app():
 
     if application_settings.are_prometheus_metrics_enabled:
         setup_prometheus_metrics(app)
-
-    if application_settings.DYNAMIC_SIDECAR_TRACING:
-        initialize_tracing(
-            app, application_settings.DYNAMIC_SIDECAR_TRACING, PROJECT_NAME
-        )
 
     # ERROR HANDLERS  ------------
     app.add_exception_handler(
