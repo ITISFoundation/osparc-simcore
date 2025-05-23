@@ -7,6 +7,7 @@ from models_library.api_schemas_catalog.services import (
     MyServiceGet,
     PageRpcLatestServiceGet,
     PageRpcServiceRelease,
+    PageRpcServiceSummary,
     ServiceGetV2,
     ServiceListFilters,
     ServiceUpdateV2,
@@ -252,8 +253,8 @@ async def list_my_service_history_latest_first(
         product_name=product_name,
         user_id=user_id,
         service_key=service_key,
-        limit=limit,
-        offset=offset,
+        pagination_limit=limit,
+        pagination_offset=offset,
         filters=TypeAdapter(ServiceDBFilters | None).validate_python(
             filters, from_attributes=True
         ),
@@ -310,3 +311,59 @@ async def get_service_ports(
         )
         for port in service_ports
     ]
+
+
+@router.expose(reraise_if_error_type=(CatalogForbiddenError, ValidationError))
+@_profile_rpc_call
+@validate_call(config={"arbitrary_types_allowed": True})
+async def list_all_services_summaries_paginated(
+    app: FastAPI,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+    offset: PageOffsetInt = 0,
+    filters: ServiceListFilters | None = None,
+) -> PageRpcServiceSummary:
+    """Lists all services with pagination, including all versions of each service.
+
+    Returns a lightweight summary view of services for better performance compared to
+    full service details. This is useful for listings where complete details aren't needed.
+
+    Args:
+        app: FastAPI application
+        product_name: Product name
+        user_id: User ID
+        limit: Maximum number of items to return
+        offset: Number of items to skip
+        filters: Optional filters to apply
+
+    Returns:
+        Paginated list of all services as summaries
+    """
+    assert app.state.engine  # nosec
+
+    total_count, items = await catalog_services.list_all_service_summaries(
+        repo=ServicesRepository(app.state.engine),
+        director_api=get_director_client(app),
+        product_name=product_name,
+        user_id=user_id,
+        limit=limit,
+        offset=offset,
+        filters=TypeAdapter(ServiceDBFilters | None).validate_python(
+            filters, from_attributes=True
+        ),
+    )
+
+    assert len(items) <= total_count  # nosec
+    assert len(items) <= limit if limit is not None else True  # nosec
+
+    return cast(
+        PageRpcServiceSummary,
+        PageRpcServiceSummary.create(
+            items,
+            total=total_count,
+            limit=limit,
+            offset=offset,
+        ),
+    )

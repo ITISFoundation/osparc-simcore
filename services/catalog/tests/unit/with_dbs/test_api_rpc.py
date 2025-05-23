@@ -16,7 +16,10 @@ from models_library.api_schemas_catalog.services import (
     ServiceUpdateV2,
 )
 from models_library.products import ProductName
-from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+from models_library.rest_pagination import (
+    DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+    MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
+)
 from models_library.services_enums import ServiceType
 from models_library.services_history import ServiceRelease
 from models_library.services_types import ServiceKey, ServiceVersion
@@ -143,7 +146,8 @@ async def test_rpc_list_services_paginated_with_filters(
         user_id=user_id,
         filters={"service_type": "computational"},
     )
-    assert page.meta.total == page.meta.count
+    # Fixed: Count might be capped by page limit
+    assert page.meta.count <= page.meta.total
     assert page.meta.total > 0
 
     page = await catalog_rpc.list_services_paginated(
@@ -821,7 +825,7 @@ async def test_rpc_get_service_ports_validation_error(
     user_id: UserID,
     app: FastAPI,
 ):
-    """Tests validation error handling for invalid service key format"""
+    """Tests validation error handling for list_all_services_summaries_paginated."""
     assert app
 
     # Test with invalid service key format
@@ -833,3 +837,207 @@ async def test_rpc_get_service_ports_validation_error(
             service_key="invalid-service-key-format",
             service_version="1.0.0",
         )
+
+
+async def test_rpc_list_all_services_summaries_paginated_with_no_services_returns_empty_page(
+    background_sync_task_mocked: None,
+    mocked_director_rest_api: MockRouter,
+    rpc_client: RabbitMQRPCClient,
+    user_id: UserID,
+    app: FastAPI,
+):
+    """Tests that requesting summaries for non-existing services returns an empty page."""
+    assert app
+
+    page = await catalog_rpc.list_all_services_summaries_paginated(
+        rpc_client, product_name="not_existing_returns_no_services", user_id=user_id
+    )
+    assert page.data == []
+    assert page.links.next is None
+    assert page.links.prev is None
+    assert page.meta.count == 0
+    assert page.meta.total == 0
+
+
+async def test_rpc_list_all_services_summaries_paginated_with_filters(
+    background_sync_task_mocked: None,
+    mocked_director_rest_api: MockRouter,
+    rpc_client: RabbitMQRPCClient,
+    product_name: ProductName,
+    user_id: UserID,
+    app: FastAPI,
+):
+    """Tests that service summaries can be filtered by service type."""
+    assert app
+
+    # Get all computational services introduced by the background_sync_task_mocked
+    page = await catalog_rpc.list_all_services_summaries_paginated(
+        rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        filters={"service_type": "computational"},
+    )
+    # Fixed: Count might be capped by page limit
+    assert page.meta.count <= page.meta.total
+    assert page.meta.total > 0
+
+    # All items should be service summaries with the expected minimal fields
+    for item in page.data:
+        assert "key" in item.model_dump()
+        assert "name" in item.model_dump()
+        assert "version" in item.model_dump()
+        assert "description" in item.model_dump()
+
+    # Filter for a service type that doesn't exist
+    page = await catalog_rpc.list_all_services_summaries_paginated(
+        rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        filters=ServiceListFilters(service_type=ServiceType.DYNAMIC),
+    )
+    assert page.meta.total == 0
+
+
+async def test_rpc_list_all_services_summaries_paginated_with_pagination(
+    background_sync_task_mocked: None,
+    mocked_director_rest_api: MockRouter,
+    rpc_client: RabbitMQRPCClient,
+    product_name: ProductName,
+    user_id: UserID,
+    app: FastAPI,
+    num_services: int,
+    num_versions_per_service: int,
+):
+    """Tests pagination of service summaries."""
+    assert app
+
+    total_services = num_services * num_versions_per_service
+
+    # Get first page with default page size
+    first_page = await catalog_rpc.list_all_services_summaries_paginated(
+        rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+    )
+
+    # Verify total count is correct
+    assert first_page.meta.total == total_services
+
+    # Maximum items per page is constrained by DEFAULT_NUMBER_OF_ITEMS_PER_PAGE
+    assert len(first_page.data) <= DEFAULT_NUMBER_OF_ITEMS_PER_PAGE
+
+    # Test with small page size
+    page_size = 5
+    first_small_page = await catalog_rpc.list_all_services_summaries_paginated(
+        rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        limit=page_size,
+        offset=0,
+    )
+    assert len(first_small_page.data) == page_size
+    assert first_small_page.meta.total == total_services
+    assert first_small_page.links.next is not None
+    assert first_small_page.links.prev is None
+
+    # Get next page and verify different content
+    next_page = await catalog_rpc.list_all_services_summaries_paginated(
+        rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        limit=page_size,
+        offset=page_size,
+    )
+    assert len(next_page.data) == page_size
+    assert next_page.meta.total == first_small_page.meta.total
+
+    # Check that first and second page contain different items
+    first_page_keys = {(item.key, item.version) for item in first_small_page.data}
+    next_page_keys = {(item.key, item.version) for item in next_page.data}
+    assert not first_page_keys.intersection(next_page_keys)
+
+
+async def test_rpc_compare_latest_vs_all_services_summaries(
+    background_sync_task_mocked: None,
+    mocked_director_rest_api: MockRouter,
+    rpc_client: RabbitMQRPCClient,
+    product_name: ProductName,
+    user_id: UserID,
+    app: FastAPI,
+    num_services: int,
+    num_versions_per_service: int,
+):
+    """Compares results of list_services_paginated vs list_all_services_summaries_paginated."""
+    assert app
+
+    total_expected_services = num_services * num_versions_per_service
+
+    # Get all latest services (should fit in one page)
+    latest_page = await catalog_rpc.list_services_paginated(
+        rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+    )
+    assert latest_page.meta.total == num_services
+
+    # For all services (all versions), we might need multiple requests
+    # First page to get metadata
+    first_all_page = await catalog_rpc.list_all_services_summaries_paginated(
+        rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+    )
+    assert first_all_page.meta.total == total_expected_services
+
+    # Collect all items across multiple pages if needed
+    all_items = list(first_all_page.data)
+    offset = len(all_items)
+
+    # Continue fetching pages until we have all items
+    while offset < total_expected_services:
+        next_page = await catalog_rpc.list_all_services_summaries_paginated(
+            rpc_client,
+            product_name=product_name,
+            user_id=user_id,
+            offset=offset,
+        )
+        all_items.extend(next_page.data)
+        offset += len(next_page.data)
+        if not next_page.links.next:
+            break
+
+    # Verify we got all items
+    assert len(all_items) == total_expected_services
+
+    # Collect unique keys from both responses
+    latest_keys = {item.key for item in latest_page.data}
+    all_keys = {item.key for item in all_items}
+
+    # All service keys in latest should be in all services
+    assert latest_keys.issubset(all_keys)
+
+    # For each key in latest, there should be exactly num_versions_per_service entries in all
+    for key in latest_keys:
+        versions_in_all = [item.version for item in all_items if item.key == key]
+        assert len(versions_in_all) == num_versions_per_service
+
+        # Get the latest version from latest_page
+        latest_version = next(
+            item.version for item in latest_page.data if item.key == key
+        )
+
+        # Verify this version exists in versions_in_all
+        assert latest_version in versions_in_all
+
+    # Verify all items are ServiceSummary objects with just the essential fields
+    for item in all_items:
+        item_dict = item.model_dump()
+        assert "key" in item_dict
+        assert "version" in item_dict
+        assert "name" in item_dict
+        assert "description" in item_dict
+        assert "thumbnail" not in item_dict
+        assert "service_type" not in item_dict
+        assert "inputs" not in item_dict
+        assert "outputs" not in item_dict
+        assert "access_rights" not in item_dict

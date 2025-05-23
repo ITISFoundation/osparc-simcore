@@ -6,12 +6,12 @@
 
 
 import httpx
+from fastapi import status
 from pydantic import TypeAdapter
 from pytest_mock import MockType
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.pagination import OnePage
 from simcore_service_api_server.models.schemas.solvers import Solver, SolverPort
-from starlette import status
 
 
 async def test_list_all_solvers(

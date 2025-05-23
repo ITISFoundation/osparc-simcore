@@ -509,38 +509,27 @@ def mocked_catalog_rpc_api(
         services as catalog_rpc,  # keep import here
     )
 
-    return {
-        "list_services_paginated": mocker.patch.object(
-            catalog_rpc,
-            "list_services_paginated",
-            autospec=True,
-            side_effect=catalog_rpc_side_effects.list_services_paginated,
-        ),
-        "get_service": mocker.patch.object(
-            catalog_rpc,
-            "get_service",
-            autospec=True,
-            side_effect=catalog_rpc_side_effects.get_service,
-        ),
-        "update_service": mocker.patch.object(
-            catalog_rpc,
-            "update_service",
-            autospec=True,
-            side_effect=catalog_rpc_side_effects.update_service,
-        ),
-        "list_my_service_history_latest_first": mocker.patch.object(
-            catalog_rpc,
-            "list_my_service_history_latest_first",
-            autospec=True,
-            side_effect=catalog_rpc_side_effects.list_my_service_history_latest_first,
-        ),
-        "get_service_ports": mocker.patch.object(
-            catalog_rpc,
-            "get_service_ports",
-            autospec=True,
-            side_effect=catalog_rpc_side_effects.get_service_ports,
-        ),
-    }
+    mocks = {}
+
+    # Get all callable methods from the side effects class that are not built-ins
+    side_effect_methods = [
+        method_name
+        for method_name in dir(catalog_rpc_side_effects)
+        if not method_name.startswith("_")
+        and callable(getattr(catalog_rpc_side_effects, method_name))
+    ]
+
+    # Create mocks for each method in catalog_rpc that has a corresponding side effect
+    for method_name in side_effect_methods:
+        if hasattr(catalog_rpc, method_name):
+            mocks[method_name] = mocker.patch.object(
+                catalog_rpc,
+                method_name,
+                autospec=True,
+                side_effect=getattr(catalog_rpc_side_effects, method_name),
+            )
+
+    return mocks
 
 
 #

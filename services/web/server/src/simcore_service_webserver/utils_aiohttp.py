@@ -9,6 +9,7 @@ from aiohttp.web_routedef import RouteDef, RouteTableDef
 from common_library.json_serialization import json_dumps
 from common_library.network import is_ip_address
 from models_library.generics import Envelope
+from models_library.rest_pagination import ItemT, Page
 from pydantic import BaseModel, Field
 from servicelib.common_headers import X_FORWARDED_PROTO
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -74,6 +75,13 @@ def envelope_json_response(
         text=json_dumps(enveloped.model_dump(**RESPONSE_MODEL_POLICY)),
         content_type=MIMETYPE_APPLICATION_JSON,
         status=status_cls.status_code,
+    )
+
+
+def create_json_response_from_page(page: Page[ItemT]) -> web.Response:
+    return web.Response(
+        text=page.model_dump_json(**RESPONSE_MODEL_POLICY),
+        content_type=MIMETYPE_APPLICATION_JSON,
     )
 
 
