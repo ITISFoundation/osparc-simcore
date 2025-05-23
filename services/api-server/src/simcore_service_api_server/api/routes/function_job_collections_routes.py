@@ -6,6 +6,7 @@ from fastapi_pagination.api import create_page
 from models_library.api_schemas_webserver.functions import (
     FunctionJobCollection,
     FunctionJobCollectionID,
+    FunctionJobCollectionsListFilters,
     FunctionJobCollectionStatus,
     RegisteredFunctionJob,
     RegisteredFunctionJobCollection,
@@ -17,6 +18,9 @@ from ...models.schemas.errors import ErrorGet
 from ...services_http.director_v2 import DirectorV2Api
 from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.authentication import get_current_user_id
+from ..dependencies.models_schemas_function_filters import (
+    get_function_job_collections_filters,
+)
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver_rpc import get_wb_api_rpc_client
 from ._constants import FMSG_CHANGELOG_NEW_IN_VERSION, create_route_description
@@ -48,10 +52,14 @@ _COMMON_FUNCTION_JOB_COLLECTION_ERROR_RESPONSES: Final[dict] = {
 async def list_function_job_collections(
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     page_params: Annotated[PaginationParams, Depends()],
+    filters: Annotated[
+        FunctionJobCollectionsListFilters, Depends(get_function_job_collections_filters)
+    ],
 ):
     function_job_collection_list, meta = await wb_api_rpc.list_function_job_collections(
         pagination_offset=page_params.offset,
         pagination_limit=page_params.limit,
+        filters=filters,
     )
     return create_page(
         function_job_collection_list,

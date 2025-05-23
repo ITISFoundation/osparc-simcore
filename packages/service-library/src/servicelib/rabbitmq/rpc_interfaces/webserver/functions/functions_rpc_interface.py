@@ -9,6 +9,7 @@ from models_library.api_schemas_webserver.functions import (
     FunctionJob,
     FunctionJobCollection,
     FunctionJobCollectionID,
+    FunctionJobCollectionsListFilters,
     FunctionJobID,
     FunctionOutputSchema,
     RegisteredFunction,
@@ -146,12 +147,14 @@ async def list_function_job_collections(
     *,
     pagination_limit: int,
     pagination_offset: int,
+    filters: FunctionJobCollectionsListFilters | None = None,
 ) -> tuple[list[RegisteredFunctionJobCollection], PageMetaInfoLimitOffset]:
     result = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("list_function_job_collections"),
         pagination_offset=pagination_offset,
         pagination_limit=pagination_limit,
+        filters=filters,
     )
     return TypeAdapter(
         tuple[list[RegisteredFunctionJobCollection], PageMetaInfoLimitOffset]

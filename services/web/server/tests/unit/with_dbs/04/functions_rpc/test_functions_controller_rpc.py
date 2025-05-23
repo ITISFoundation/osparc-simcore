@@ -17,7 +17,10 @@ from models_library.api_schemas_webserver.functions import (
     ProjectFunction,
     ProjectFunctionJob,
 )
-from models_library.functions import FunctionIDNotFoundError
+from models_library.functions import (
+    FunctionIDNotFoundError,
+    FunctionJobCollectionsListFilters,
+)
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient
@@ -28,21 +31,6 @@ from settings_library.rabbit import RabbitSettings
 from simcore_service_webserver.application_settings import ApplicationSettings
 
 pytest_simcore_core_services_selection = ["rabbit"]
-
-
-@pytest.fixture
-async def clean_functions(client: TestClient, rpc_client: RabbitMQRPCClient) -> None:
-    assert client.app
-    # This function is a placeholder for the actual implementation
-    # that deletes all registered functions from the database.
-    functions, _ = await functions_rpc.list_functions(
-        rabbitmq_rpc_client=rpc_client, pagination_limit=100, pagination_offset=0
-    )
-    for function in functions:
-        assert function.uid is not None
-        await functions_rpc.delete_function(
-            rabbitmq_rpc_client=rpc_client, function_id=function.uid
-        )
 
 
 @pytest.fixture
@@ -606,7 +594,10 @@ async def test_function_job_collection(
 
 
 async def test_list_function_job_collections(
-    client: TestClient, mock_function: ProjectFunction, rpc_client: RabbitMQRPCClient
+    client: TestClient,
+    mock_function: ProjectFunction,
+    rpc_client: RabbitMQRPCClient,
+    clean_functions: None,
 ):
     assert client.app
     # Register the function first
@@ -653,10 +644,104 @@ async def test_list_function_job_collections(
     )
 
     # List function job collections
-    collections, _ = await functions_rpc.list_function_job_collections(
-        rabbitmq_rpc_client=rpc_client, pagination_limit=1, pagination_offset=1
+    collections, page_params = await functions_rpc.list_function_job_collections(
+        rabbitmq_rpc_client=rpc_client, pagination_limit=2, pagination_offset=1
     )
 
     # Assert the list contains the registered collection
-    assert len(collections) == 1
+    assert page_params.count == 2
+    assert page_params.total == 3
+    assert page_params.offset == 1
+    assert len(collections) == 2
     assert collections[0].uid == registered_collections[1].uid
+    assert collections[1].uid == registered_collections[2].uid
+
+
+async def test_list_function_job_collections_empty(
+    client: TestClient,
+    rpc_client: RabbitMQRPCClient,
+    clean_functions: None,
+    clean_function_job_collections: None,
+):
+    # List function job collections when none are registered
+    collections, page_meta = await functions_rpc.list_function_job_collections(
+        rabbitmq_rpc_client=rpc_client, pagination_limit=10, pagination_offset=0
+    )
+
+    # Assert the list is empty
+    assert page_meta.count == 0
+    assert page_meta.total == 0
+    assert page_meta.offset == 0
+    assert len(collections) == 0
+
+
+async def test_list_function_job_collections_filtered_function_id(
+    client: TestClient,
+    rpc_client: RabbitMQRPCClient,
+    mock_function: ProjectFunction,
+    clean_functions: None,
+    clean_function_job_collections: None,
+):
+    # Register the function first
+    registered_function = await functions_rpc.register_function(
+        rabbitmq_rpc_client=rpc_client, function=mock_function
+    )
+    other_registered_function = await functions_rpc.register_function(
+        rabbitmq_rpc_client=rpc_client, function=mock_function
+    )
+
+    registered_collections = []
+    for coll_i in range(5):
+        if coll_i < 3:
+            function_id = registered_function.uid
+        else:
+            function_id = other_registered_function.uid
+        # Create a function job collection
+        function_job_ids = []
+        for _ in range(3):
+            registered_function_job = ProjectFunctionJob(
+                function_uid=function_id,
+                title="Test Function Job",
+                description="A test function job",
+                project_job_id=uuid4(),
+                inputs={"input1": "value1"},
+                outputs={"output1": "result1"},
+            )
+            # Register the function job
+            registered_job = await functions_rpc.register_function_job(
+                rabbitmq_rpc_client=rpc_client, function_job=registered_function_job
+            )
+            assert registered_job.uid is not None
+            function_job_ids.append(registered_job.uid)
+
+        function_job_collection = FunctionJobCollection(
+            title="Test Function Job Collection",
+            description="A test function job collection",
+            job_ids=function_job_ids,
+        )
+
+        # Register the function job collection
+        registered_collection = await functions_rpc.register_function_job_collection(
+            rabbitmq_rpc_client=rpc_client,
+            function_job_collection=function_job_collection,
+        )
+        registered_collections.append(registered_collection)
+
+    # List function job collections with a specific function ID
+    collections, page_meta = await functions_rpc.list_function_job_collections(
+        rabbitmq_rpc_client=rpc_client,
+        pagination_limit=10,
+        pagination_offset=1,
+        filters=FunctionJobCollectionsListFilters(
+            has_function_id=str(registered_function.uid)
+        ),
+    )
+
+    # Assert the list contains the registered collection
+    assert page_meta.count == 2
+    assert page_meta.total == 3
+    assert page_meta.offset == 1
+
+    assert len(collections) == 2
+    assert collections[0].uid == registered_collections[1].uid
+    assert collections[1].uid == registered_collections[2].uid

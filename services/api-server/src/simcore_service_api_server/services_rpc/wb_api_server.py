@@ -14,6 +14,7 @@ from models_library.api_schemas_api_server.functions import (
     FunctionJob,
     FunctionJobCollection,
     FunctionJobCollectionID,
+    FunctionJobCollectionsListFilters,
     FunctionJobID,
     FunctionOutputSchema,
     RegisteredFunction,
@@ -324,11 +325,13 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         *,
         pagination_offset: PageOffsetInt = 0,
         pagination_limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+        filters: FunctionJobCollectionsListFilters | None = None,
     ) -> tuple[list[RegisteredFunctionJobCollection], PageMetaInfoLimitOffset]:
         return await functions_rpc_interface.list_function_job_collections(
             self._client,
             pagination_offset=pagination_offset,
             pagination_limit=pagination_limit,
+            filters=filters,
         )
 
     async def run_function(
