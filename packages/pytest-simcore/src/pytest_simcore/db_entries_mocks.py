@@ -171,9 +171,8 @@ def comp_task(postgres_db: sa.engine.Engine) -> Iterator[Callable[..., dict[str,
                 .values(**task_config)
                 .returning(sa.literal_column("*"))
             )
-            new_task = result.first()
-            assert new_task
-            new_task = dict(new_task)
+            row = result.one()
+            new_task = row._asdict()
             created_task_ids.append(new_task["task_id"])
         return new_task
 

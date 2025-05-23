@@ -80,6 +80,25 @@ class _CompTaskChangeParams:
     expected_calls: list[str]
 
 
+async def _assert_listener_triggers(
+    mock_project_subsystem: dict[str, mock.Mock], expected_calls: list[str]
+) -> None:
+    for call_name, mocked_call in mock_project_subsystem.items():
+        if call_name in expected_calls:
+            async for attempt in AsyncRetrying(
+                wait=wait_fixed(1),
+                stop=stop_after_delay(10),
+                retry=retry_if_exception_type(AssertionError),
+                before_sleep=before_sleep_log(logger, logging.INFO),
+                reraise=True,
+            ):
+                with attempt:
+                    mocked_call.assert_called_once()
+
+        else:
+            mocked_call.assert_not_called()
+
+
 @pytest.mark.parametrize(
     "task_class", [NodeClass.COMPUTATIONAL, NodeClass.INTERACTIVE, NodeClass.FRONTEND]
 )
@@ -128,7 +147,7 @@ class _CompTaskChangeParams:
     ],
 )
 @pytest.mark.parametrize("user_role", [UserRole.USER])
-async def test_listen_comp_tasks_task(
+async def test_db_listener_triggers_on_event(
     sqlalchemy_async_engine: AsyncEngine,
     mock_project_subsystem: dict[str, mock.Mock],
     logged_user: UserInfoDict,
@@ -148,27 +167,12 @@ async def test_listen_comp_tasks_task(
         outputs=json.dumps({}),
         node_class=task_class,
     )
-    async with sqlalchemy_async_engine.connect() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         # let's update some values
         await conn.execute(
             comp_tasks.update()
             .values(**params.update_values)
             .where(comp_tasks.c.task_id == task["task_id"])
         )
-        await conn.commit()
 
-        # tests whether listener gets executed
-        for call_name, mocked_call in mock_project_subsystem.items():
-            if call_name in params.expected_calls:
-                async for attempt in AsyncRetrying(
-                    wait=wait_fixed(1),
-                    stop=stop_after_delay(10),
-                    retry=retry_if_exception_type(AssertionError),
-                    before_sleep=before_sleep_log(logger, logging.INFO),
-                    reraise=True,
-                ):
-                    with attempt:
-                        mocked_call.assert_called_once()
-
-            else:
-                mocked_call.assert_not_called()
+    await _assert_listener_triggers(mock_project_subsystem, params.expected_calls)
