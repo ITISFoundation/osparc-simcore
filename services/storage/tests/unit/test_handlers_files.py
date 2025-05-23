@@ -23,6 +23,7 @@ import pytest
 from aiohttp import ClientSession
 from aws_library.s3 import S3KeyNotFoundError, S3ObjectKey, SimcoreS3API
 from aws_library.s3._constants import MULTIPART_UPLOADS_MIN_TOTAL_SIZE
+from celery_library.worker import CeleryTaskWorker
 from faker import Faker
 from fastapi import FastAPI
 from models_library.api_schemas_storage.storage_schemas import (
@@ -53,7 +54,6 @@ from pytest_simcore.helpers.storage_utils_file_meta_data import (
 from servicelib.aiohttp import status
 from simcore_service_storage.constants import S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID
 from simcore_service_storage.models import FileDownloadResponse, S3BucketName, UploadID
-from simcore_service_storage.modules.celery.worker import CeleryTaskWorker
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy.ext.asyncio import AsyncEngine
 from tenacity.asyncio import AsyncRetrying

@@ -1,9 +1,9 @@
 import pytest
-from models_library.api_schemas_storage.export_data_async_jobs import AccessRightError
-from simcore_service_storage.modules.celery.errors import (
+from celery_library.errors import (
     decode_celery_transferrable_error,
     encore_celery_transferrable_error,
 )
+from models_library.api_schemas_storage.export_data_async_jobs import AccessRightError
 
 
 @pytest.mark.parametrize(

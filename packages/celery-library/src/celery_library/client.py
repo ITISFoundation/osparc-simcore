@@ -54,7 +54,7 @@ class CeleryTaskClient:
             self._celery_app.send_task(
                 task_metadata.name,
                 task_id=task_id,
-                kwargs=task_params,
+                kwargs={"task_id": task_id} | task_params,
                 queue=task_metadata.queue.value,
             )
 
