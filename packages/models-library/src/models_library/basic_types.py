@@ -14,6 +14,7 @@ from .basic_regex import (
     SIMPLE_VERSION_RE,
     UUID_RE,
 )
+from .utils.common_validators import trim_string_before
 
 assert issubclass(LogLevel, Enum)  # nosec
 assert issubclass(BootModeEnum, Enum)  # nosec
@@ -150,32 +151,36 @@ class IDStr(ConstrainedStr):
         return IDStr(result)
 
 
-class ShortTruncatedStr(ConstrainedStr):
-    """A truncated string used to input e.g. titles or display names
+_SHORT_TRUNCATED_STR_MAX_LENGTH: Final[int] = 600
+ShortTruncatedStr: TypeAlias = Annotated[
+    str,
+    StringConstraints(strip_whitespace=True),
+    trim_string_before(max_length=_SHORT_TRUNCATED_STR_MAX_LENGTH),
+    annotated_types.doc(
+        """
+        A truncated string used to input e.g. titles or display names.
+        Strips whitespaces and truncate strings that exceed the specified characters limit (curtail_length).
+        Ensures that the **input** data length to the API is controlled and prevents exceeding large inputs silently,
+        i.e. without raising errors.
+        """
+        # SEE https://github.com/ITISFoundation/osparc-simcore/pull/5989#discussion_r1650506583
+    ),
+]
 
-       - Strips whitespaces and truncate strings that exceed the specified characters limit (curtail_length).
-       - Ensures that the **input** data length to the API is controlled and prevents exceeding large inputs silently,
-       i.e. without raising errors.
-
-    SEE https://github.com/ITISFoundation/osparc-simcore/pull/5989#discussion_r1650506583
-
-    DEPRECATED: Use instead Annotated[str, StringConstraints(strip_whitespace=True), trim_string_before(max_length=600)]
-    """
-
-    strip_whitespace = True
-    curtail_length = 600
-
-
-class LongTruncatedStr(ConstrainedStr):
-    """Use to input e.g. descriptions or summaries
-
-    Analogous to ShortTruncatedStr
-
-    DEPRECATED: Use instead Annotated[str, StringConstraints(strip_whitespace=True), trim_string_before(max_length=65536)]
-    """
-
-    strip_whitespace = True
-    curtail_length = 65536  # same as github descripton
+_LONG_TRUNCATED_STR_MAX_LENGTH: Final[int] = 65536  # same as github description
+LongTruncatedStr: TypeAlias = Annotated[
+    str,
+    StringConstraints(strip_whitespace=True),
+    trim_string_before(max_length=_LONG_TRUNCATED_STR_MAX_LENGTH),
+    annotated_types.doc(
+        """
+        A truncated string used to input e.g. descriptions or summaries.
+        Strips whitespaces and truncate strings that exceed the specified characters limit (curtail_length).
+        Ensures that the **input** data length to the API is controlled and prevents exceeding large inputs silently,
+        i.e. without raising errors.
+        """
+    ),
+]
 
 
 # auto-incremented primary-key IDs

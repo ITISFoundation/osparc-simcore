@@ -2,6 +2,7 @@ from typing import NamedTuple
 
 import pytest
 from models_library.basic_types import (
+    _SHORT_TRUNCATED_STR_MAX_LENGTH,
     EnvVarKey,
     IDStr,
     MD5Str,
@@ -76,16 +77,13 @@ def test_string_identifier_constraint_type():
 
 
 def test_short_truncated_string():
+    curtail_length = _SHORT_TRUNCATED_STR_MAX_LENGTH
     assert (
-        TypeAdapter(ShortTruncatedStr).validate_python(
-            "X" * ShortTruncatedStr.curtail_length
-        )
-        == "X" * ShortTruncatedStr.curtail_length
+        TypeAdapter(ShortTruncatedStr).validate_python("X" * curtail_length)
+        == "X" * curtail_length
     )
 
     assert (
-        TypeAdapter(ShortTruncatedStr).validate_python(
-            "X" * (ShortTruncatedStr.curtail_length + 1)
-        )
-        == "X" * ShortTruncatedStr.curtail_length
+        TypeAdapter(ShortTruncatedStr).validate_python("X" * (curtail_length + 1))
+        == "X" * curtail_length
     )
