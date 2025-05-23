@@ -77,12 +77,13 @@ qx.Class.define("osparc.po.UsersPending", {
                 email,
               },
             };
+            params.data["invitation"] = {};
             const extraCreditsInUsd = form.getItems()["credits"].getValue();
             if (extraCreditsInUsd > 0) {
-              params.data["extraCreditsInUsd"] = extraCreditsInUsd;
+              params.data["invitation"]["extraCreditsInUsd"] = extraCreditsInUsd;
             }
             if (form.getItems()["withExpiration"].getValue()) {
-              params.data["trialAccountDays"] = form.getItems()["trialDays"].getValue();
+              params.data["invitation"]["trialAccountDays"] = form.getItems()["trialDays"].getValue();
             }
             osparc.data.Resources.fetch("poUsers", "approveUser", params)
               .then(() => {
