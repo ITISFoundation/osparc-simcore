@@ -1,6 +1,6 @@
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Query, Request, status
+from fastapi import APIRouter, Depends, Request, status
 
 from ...long_running_tasks._errors import TaskNotCompletedError, TaskNotFoundError
 from ...long_running_tasks._models import TaskGet, TaskId, TaskResult, TaskStatus
@@ -60,16 +60,10 @@ async def get_task_result(
     request: Request,
     task_id: TaskId,
     tasks_manager: Annotated[TasksManager, Depends(get_tasks_manager)],
-    *,
-    return_exception: Annotated[bool, Query()] = False,
 ) -> TaskResult | Any:
     assert request  # nosec
-    # TODO: refactor this to use same as in https://github.com/ITISFoundation/osparc-simcore/issues/3265
     try:
-        if return_exception:
-            task_result = tasks_manager.get_task_result(task_id, with_task_context=None)
-        else:
-            task_result = tasks_manager.get_task_result_old(task_id=task_id)
+        task_result = tasks_manager.get_task_result(task_id, with_task_context=None)
         await tasks_manager.remove_task(
             task_id, with_task_context=None, reraise_errors=False
         )

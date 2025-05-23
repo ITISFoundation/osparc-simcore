@@ -124,8 +124,7 @@ async def _start_containers(
     response = await test_client.get(f"/task/{task_id}/result")
     assert response.status_code == status.HTTP_200_OK
     result_response = response.json()
-    assert result_response["error"] is None
-    response_containers = result_response["result"]
+    response_containers = result_response
 
     shared_store: SharedStore = test_client.application.state.shared_store
     container_names = shared_store.container_names

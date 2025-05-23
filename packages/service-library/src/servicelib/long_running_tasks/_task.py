@@ -22,7 +22,7 @@ from ._errors import (
     TaskNotCompletedError,
     TaskNotFoundError,
 )
-from ._models import TaskId, TaskName, TaskResult, TaskStatus, TrackedTask
+from ._models import TaskId, TaskName, TaskStatus, TrackedTask
 
 logger = logging.getLogger(__name__)
 
@@ -241,36 +241,6 @@ class TasksManager:
             # the task was cancelled
             raise TaskCancelledError(task_id=task_id) from exc
 
-    def get_task_result_old(self, task_id: TaskId) -> TaskResult:
-        """
-        returns: the result of the task
-
-        raises TaskNotFoundError if the task cannot be found
-        """
-        tracked_task = self._get_tracked_task(task_id, {})
-
-        if not tracked_task.task.done():
-            raise TaskNotCompletedError(task_id=task_id)
-
-        error: TaskExceptionError | TaskCancelledError
-        try:
-            exception = tracked_task.task.exception()
-            if exception is not None:
-                formatted_traceback = "\n".join(
-                    traceback.format_tb(exception.__traceback__)
-                )
-                error = TaskExceptionError(
-                    task_id=task_id, exception=exception, traceback=formatted_traceback
-                )
-                logger.warning("Task %s finished with error: %s", task_id, f"{error}")
-                return TaskResult(result=None, error=f"{error}")
-        except asyncio.CancelledError:
-            error = TaskCancelledError(task_id=task_id)
-            logger.warning("Task %s was cancelled", task_id)
-            return TaskResult(result=None, error=f"{error}")
-
-        return TaskResult(result=tracked_task.task.result(), error=None)
-
     async def cancel_task(
         self, task_id: TaskId, with_task_context: TaskContext | None
     ) -> None:
@@ -354,12 +324,12 @@ class TasksManager:
 
 
 class TaskProtocol(Protocol):
-    async def __call__(self, progress: TaskProgress, *args: Any, **kwargs: Any) -> Any:
-        ...
+    async def __call__(
+        self, progress: TaskProgress, *args: Any, **kwargs: Any
+    ) -> Any: ...
 
     @property
-    def __name__(self) -> str:
-        ...
+    def __name__(self) -> str: ...
 
 
 def start_task(
@@ -449,7 +419,5 @@ __all__: tuple[str, ...] = (
     "TaskProgress",
     "TaskProtocol",
     "TaskStatus",
-    "TaskResult",
     "TrackedTask",
-    "TaskResult",
 )

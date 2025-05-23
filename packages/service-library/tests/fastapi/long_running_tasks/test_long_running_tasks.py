@@ -103,9 +103,9 @@ def start_long_running_task() -> Callable[[FastAPI, AsyncClient], Awaitable[Task
 
 
 @pytest.fixture
-def wait_for_task() -> Callable[
-    [FastAPI, AsyncClient, TaskId, TaskContext], Awaitable[None]
-]:
+def wait_for_task() -> (
+    Callable[[FastAPI, AsyncClient, TaskId, TaskContext], Awaitable[None]]
+):
     async def _waiter(
         app: FastAPI,
         client: AsyncClient,
@@ -183,9 +183,7 @@ async def test_workflow(
     result = await client.get(f"{result_url}")
     # NOTE: this is DIFFERENT than with aiohttp where we return the real result
     assert result.status_code == status.HTTP_200_OK
-    task_result = long_running_tasks.server.TaskResult.model_validate(result.json())
-    assert not task_result.error
-    assert task_result.result == [f"{x}" for x in range(10)]
+    assert result.json() == [f"{x}" for x in range(10)]
     # getting the result again should raise a 404
     result = await client.get(result_url)
     assert result.status_code == status.HTTP_404_NOT_FOUND
@@ -220,19 +218,9 @@ async def test_failing_task_returns_error(
     await wait_for_task(app, client, task_id, {})
     # get the result
     result_url = app.url_path_for("get_task_result", task_id=task_id)
-    result = await client.get(f"{result_url}")
-    assert result.status_code == status.HTTP_200_OK
-    task_result = long_running_tasks.server.TaskResult.model_validate(result.json())
-
-    assert not task_result.result
-    assert task_result.error
-    assert task_result.error.startswith(f"Task {task_id} finished with exception: ")
-    assert 'raise RuntimeError("We were asked to fail!!")' in task_result.error
-    # NOTE: this is not yet happening with fastapi version of long running task
-    # assert "errors" in task_result.error
-    # assert len(task_result.error["errors"]) == 1
-    # assert task_result.error["errors"][0]["code"] == "RuntimeError"
-    # assert task_result.error["errors"][0]["message"] == "We were asked to fail!!"
+    with pytest.raises(RuntimeError) as exec_info:
+        await client.get(f"{result_url}")
+    assert f"{exec_info.value}" == "We were asked to fail!!"
 
 
 async def test_get_results_before_tasks_finishes_returns_404(
