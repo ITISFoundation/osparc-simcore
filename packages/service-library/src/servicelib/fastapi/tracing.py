@@ -154,32 +154,32 @@ def _shutdown() -> None:
     if HAS_AIOPG:
         try:
             AiopgInstrumentor().uninstrument()
-        except Exception:
+        except Exception:  # pylint:disable=bare-except
             _logger.exception("Failed to uninstrument AiopgInstrumentor")
     if HAS_AIOPIKA_INSTRUMENTOR:
         try:
             AioPikaInstrumentor().uninstrument()
-        except Exception:
+        except Exception:  # pylint:disable=bare-except
             _logger.exception("Failed to uninstrument AioPikaInstrumentor")
     if HAS_ASYNCPG:
         try:
             AsyncPGInstrumentor().uninstrument()
-        except Exception:
+        except Exception:  # pylint:disable=bare-except
             _logger.exception("Failed to uninstrument AsyncPGInstrumentor")
     if HAS_REDIS:
         try:
             RedisInstrumentor().uninstrument()
-        except Exception:
+        except Exception:  # pylint:disable=bare-except
             _logger.exception("Failed to uninstrument RedisInstrumentor")
     if HAS_BOTOCORE:
         try:
             BotocoreInstrumentor().uninstrument()
-        except Exception:
+        except Exception:  # pylint:disable=bare-except
             _logger.exception("Failed to uninstrument BotocoreInstrumentor")
     if HAS_REQUESTS:
         try:
             RequestsInstrumentor().uninstrument()
-        except Exception:
+        except Exception:  # pylint:disable=bare-except
             _logger.exception("Failed to uninstrument RequestsInstrumentor")
 
 
