@@ -55,7 +55,22 @@ qx.Class.define("osparc.jobs.ActivityOverview", {
       stack.add(tasksLayout);
 
       this.__runsTable.addListener("runSelected", e => {
-        const project = e.getData();
+        const data = e.getData();
+        // Hacky-hacky
+        if (this.__runsTable.getTableModel().getRowCount() > 1) {
+          const firstRow = this.__runsTable.getTableModel().getRowData(0);
+          const secondRow = this.__runsTable.getTableModel().getRowData(1);
+          if (
+            data["rowIdx"] !== 0 &&
+            firstRow["projectUuid"] === secondRow["projectUuid"]
+          ) {
+            const msg = this.tr("Only the latest run's tasks are available");
+            osparc.FlashMessenger.logAs(msg, "WARNING");
+            return;
+          }
+        }
+
+        const project = data["rowData"];
         if (this.__subRunsTable) {
           tasksLayout.remove(this.__subRunsTable);
           this.__subRunsTable = null;
@@ -69,7 +84,7 @@ qx.Class.define("osparc.jobs.ActivityOverview", {
         tasksLayout.addListener("backToRuns", () => {
           stack.setSelection([runsHistoryLayout]);
         });
-      });
+      }, this);
     },
 
     __createRunsHistoryView: function(projectData) {
