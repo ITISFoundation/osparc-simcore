@@ -125,7 +125,6 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
         }
         return promise
           .then(jobs => {
-            console.log("Jobs fetched", jobs);
             const data = [];
             const jobsCols = osparc.jobs.RunsTable.COLS;
             jobs.forEach(job => {
