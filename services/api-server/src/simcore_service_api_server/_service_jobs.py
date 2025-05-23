@@ -2,12 +2,12 @@ import logging
 from collections.abc import Callable
 from dataclasses import dataclass
 
+from common_library.exclude import as_dict_exclude_none
 from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.rest_pagination import (
-    MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
     PageMetaInfoLimitOffset,
     PageOffsetInt,
 )
@@ -43,19 +43,22 @@ class JobService:
         job_parent_resource_name: str,
         *,
         filter_any_custom_metadata: list[NameValueTuple] | None = None,
-        pagination_offset: PageOffsetInt = 0,
-        pagination_limit: PageLimitInt = MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE - 1,
+        pagination_offset: PageOffsetInt | None = None,
+        pagination_limit: PageLimitInt | None = None,
     ) -> tuple[list[Job], PageMetaInfoLimitOffset]:
         """Lists all jobs for a user with pagination based on resource name prefix"""
+
+        pagination_kwargs = as_dict_exclude_none(
+            offset=pagination_offset, limit=pagination_limit
+        )
 
         # 1. List projects marked as jobs
         projects_page = await self._web_rpc_client.list_projects_marked_as_jobs(
             product_name=self.product_name,
             user_id=self.user_id,
-            pagination_offset=pagination_offset,
-            pagination_limit=pagination_limit,
             filter_by_job_parent_resource_name_prefix=job_parent_resource_name,
             filter_any_custom_metadata=filter_any_custom_metadata,
+            **pagination_kwargs,
         )
 
         # 2. Convert projects to jobs

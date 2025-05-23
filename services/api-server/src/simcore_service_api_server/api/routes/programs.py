@@ -90,8 +90,8 @@ async def list_program_history(
 ):
     programs, page_meta = await program_service.list_program_history(
         program_key=program_key,
-        offset=page_params.offset,
-        limit=page_params.limit,
+        pagination_offset=page_params.offset,
+        pagination_limit=page_params.limit,
     )
     page_params.limit = page_meta.limit
     page_params.offset = page_meta.offset
