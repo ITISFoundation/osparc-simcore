@@ -1,6 +1,7 @@
 """Adds aiohttp middleware for tracing using opentelemetry instrumentation."""
 
 import logging
+from collections.abc import AsyncIterator, Callable
 
 from aiohttp import web
 from opentelemetry import trace
@@ -50,7 +51,7 @@ except ImportError:
     HAS_AIO_PIKA = False
 
 
-def setup_tracing(
+def _startup(
     app: web.Application,
     tracing_settings: TracingSettings,
     service_name: str,
@@ -143,3 +144,43 @@ def setup_tracing(
             msg="Attempting to add aio_pika opentelemetry autoinstrumentation...",
         ):
             AioPikaInstrumentor().instrument()
+
+
+def _shutdown() -> None:
+    """Uninstruments all opentelemetry instrumentors that were instrumented."""
+    try:
+        AioHttpClientInstrumentor().uninstrument()
+    except Exception:
+        _logger.exception("Failed to uninstrument AioHttpClientInstrumentor")
+    if HAS_AIOPG:
+        try:
+            AiopgInstrumentor().uninstrument()
+        except Exception:
+            _logger.exception("Failed to uninstrument AiopgInstrumentor")
+    if HAS_BOTOCORE:
+        try:
+            BotocoreInstrumentor().uninstrument()
+        except Exception:
+            _logger.exception("Failed to uninstrument BotocoreInstrumentor")
+    if HAS_REQUESTS:
+        try:
+            RequestsInstrumentor().uninstrument()
+        except Exception:
+            _logger.exception("Failed to uninstrument RequestsInstrumentor")
+    if HAS_AIO_PIKA:
+        try:
+            AioPikaInstrumentor().uninstrument()
+        except Exception:
+            _logger.exception("Failed to uninstrument AioPikaInstrumentor")
+
+
+def get_tracing_lifespan(
+    app: web.Application, tracing_settings: TracingSettings, service_name: str
+) -> Callable[[web.Application], AsyncIterator]:
+    _startup(app=app, tracing_settings=tracing_settings, service_name=service_name)
+
+    async def tracing_lifespan(app: web.Application):
+        yield
+        _shutdown()
+
+    return tracing_lifespan

@@ -11,7 +11,7 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from pydantic import ValidationError
-from servicelib.aiohttp.tracing import setup_tracing
+from servicelib.aiohttp.tracing import get_tracing_lifespan
 from settings_library.tracing import TracingSettings
 
 
@@ -59,11 +59,10 @@ async def test_valid_tracing_settings(
     app = web.Application()
     service_name = "simcore_service_webserver"
     tracing_settings = TracingSettings()
-    setup_tracing(
-        app,
-        service_name=service_name,
-        tracing_settings=tracing_settings,
-    )
+    async for _ in get_tracing_lifespan(
+        app, service_name=service_name, tracing_settings=tracing_settings
+    )(app):
+        pass
 
 
 @pytest.mark.parametrize(
@@ -137,14 +136,15 @@ async def test_tracing_setup_package_detection(
     app = web.Application()
     service_name = "simcore_service_webserver"
     tracing_settings = TracingSettings()
-    setup_tracing(
+    async for _ in get_tracing_lifespan(
         app,
         service_name=service_name,
         tracing_settings=tracing_settings,
-    )
-    # idempotency
-    setup_tracing(
-        app,
-        service_name=service_name,
-        tracing_settings=tracing_settings,
-    )
+    )(app):
+        # idempotency
+        async for _ in get_tracing_lifespan(
+            app,
+            service_name=service_name,
+            tracing_settings=tracing_settings,
+        )(app):
+            pass
