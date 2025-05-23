@@ -78,7 +78,7 @@ class DiskUsageMonitor:
 
     @cached_property
     def _monitored_paths_set(self) -> set[Path]:
-        return set.union(*self.monitored_paths.values())
+        return set(self.monitored_paths.values())
 
     @cached_property
     def _normalized_monitored_paths(self) -> dict[MountPathCategory, set[str]]:
