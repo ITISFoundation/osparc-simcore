@@ -4,14 +4,13 @@ of a record in comp_task table is changed.
 """
 
 import asyncio
+import datetime
 import logging
 from collections.abc import AsyncIterator
-from contextlib import suppress
 from dataclasses import dataclass
 from typing import Final, NoReturn
 
 from aiohttp import web
-from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from common_library.json_serialization import json_loads
 from models_library.errors import ErrorDict
@@ -19,6 +18,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from pydantic.types import PositiveInt
+from servicelib.background_task import periodic_task
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.webserver_models import DB_CHANNEL_NAME, projects
 from sqlalchemy.sql import select
@@ -150,9 +150,9 @@ async def _handle_db_notification(
         )
 
 
-async def _listen(app: web.Application, db_engine: Engine) -> NoReturn:
+async def _listen(app: web.Application) -> NoReturn:
     listen_query = f"LISTEN {DB_CHANNEL_NAME};"
-
+    db_engine = get_database_engine(app)
     async with db_engine.acquire() as conn:
         assert conn.connection  # nosec
         await conn.execute(listen_query)
@@ -173,37 +173,11 @@ async def _listen(app: web.Application, db_engine: Engine) -> NoReturn:
             await _handle_db_notification(app, payload, conn)
 
 
-async def _comp_tasks_listening_task(app: web.Application) -> None:
-    _logger.info("starting comp_task db listening task...")
-    while True:
-        try:
-            db_engine = get_database_engine(app)
-            _logger.info("listening to comp_task events...")
-            await _listen(app, db_engine)
-        except asyncio.CancelledError:
-            _logger.info("cancelled comp_tasks events")
-            raise
-        except Exception:  # pylint: disable=broad-except
-            _logger.exception(
-                "caught unhandled comp_task db listening task exception, restarting...",
-            )
-            # wait a bit and try restart the task
-            await asyncio.sleep(3)
-
-
 async def create_comp_tasks_listening_task(app: web.Application) -> AsyncIterator[None]:
-    task = asyncio.create_task(
-        _comp_tasks_listening_task(app), name="computation db listener"
-    )
-    _logger.debug("comp_tasks db listening task created %s", f"{task=}")
-
-    yield
-
-    _logger.debug("cancelling comp_tasks db listening %s task...", f"{task=}")
-    task.cancel()
-    _logger.debug("waiting for comp_tasks db listening %s to stop", f"{task=}")
-    with suppress(asyncio.CancelledError):
-        await task
-    _logger.debug(
-        "waiting for comp_tasks db listening %s to stop completed", f"{task=}"
-    )
+    async with periodic_task(
+        _listen,
+        interval=datetime.timedelta(seconds=_LISTENING_TASK_BASE_SLEEPING_TIME_S),
+        task_name="computation db listener",
+        app=app,
+    ):
+        yield
