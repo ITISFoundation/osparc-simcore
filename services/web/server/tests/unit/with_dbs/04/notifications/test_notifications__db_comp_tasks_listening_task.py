@@ -7,6 +7,7 @@
 import json
 import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
+from dataclasses import dataclass
 from typing import Any
 from unittest import mock
 
@@ -63,6 +64,12 @@ async def with_started_listening_task(client: TestClient) -> AsyncIterator:
         yield
 
 
+@dataclass(frozen=True, slots=True)
+class _CompTaskChangeParams:
+    update_values: dict[str, Any]
+    expected_calls: list[str]
+
+
 @pytest.mark.parametrize(
     "task_class", [NodeClass.COMPUTATIONAL, NodeClass.INTERACTIVE, NodeClass.FRONTEND]
 )
@@ -70,25 +77,33 @@ async def with_started_listening_task(client: TestClient) -> AsyncIterator:
     "update_values, expected_calls",
     [
         pytest.param(
-            {
-                "outputs": {"some new stuff": "it is new"},
-            },
-            ["_get_project_owner", "update_node_outputs"],
+            _CompTaskChangeParams(
+                {
+                    "outputs": {"some new stuff": "it is new"},
+                },
+                ["_get_project_owner", "update_node_outputs"],
+            ),
             id="new output shall trigger",
         ),
         pytest.param(
-            {"state": StateType.ABORTED},
-            ["_get_project_owner", "_update_project_state"],
+            _CompTaskChangeParams(
+                {"state": StateType.ABORTED},
+                ["_get_project_owner", "_update_project_state"],
+            ),
             id="new state shall trigger",
         ),
         pytest.param(
-            {"outputs": {"some new stuff": "it is new"}, "state": StateType.ABORTED},
-            ["_get_project_owner", "update_node_outputs", "_update_project_state"],
+            _CompTaskChangeParams(
+                {
+                    "outputs": {"some new stuff": "it is new"},
+                    "state": StateType.ABORTED,
+                },
+                ["_get_project_owner", "update_node_outputs", "_update_project_state"],
+            ),
             id="new output and state shall double trigger",
         ),
         pytest.param(
-            {"inputs": {"should not trigger": "right?"}},
-            [],
+            _CompTaskChangeParams({"inputs": {"should not trigger": "right?"}}, []),
             id="no new output or state shall not trigger",
         ),
     ],
@@ -102,8 +117,7 @@ async def test_listen_comp_tasks_task(
     pipeline: Callable[..., dict[str, Any]],
     comp_task: Callable[..., dict[str, Any]],
     with_started_listening_task: None,
-    update_values: dict[str, Any],
-    expected_calls: list[str],
+    params: _CompTaskChangeParams,
     task_class: NodeClass,
     faker: Faker,
 ):
@@ -119,14 +133,14 @@ async def test_listen_comp_tasks_task(
         # let's update some values
         await conn.execute(
             comp_tasks.update()
-            .values(**update_values)
+            .values(**params.update_values)
             .where(comp_tasks.c.task_id == task["task_id"])
         )
         await conn.commit()
 
         # tests whether listener gets executed
         for call_name, mocked_call in mock_project_subsystem.items():
-            if call_name in expected_calls:
+            if call_name in params.expected_calls:
                 async for attempt in AsyncRetrying(
                     wait=wait_fixed(1),
                     stop=stop_after_delay(10),
