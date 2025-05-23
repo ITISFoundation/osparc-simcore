@@ -20,21 +20,81 @@ qx.Class.define("osparc.po.UsersPending", {
   extend: osparc.po.BaseView,
 
   statics: {
+    createInvitationForm: function() {
+      const form = new qx.ui.form.Form();
+
+      const extraCreditsInUsd = new qx.ui.form.Spinner().set({
+        minimum: 0,
+        maximum: 1000,
+        value: 100
+      });
+      form.add(extraCreditsInUsd, qx.locale.Manager.tr("Welcome Credits (USD)"), null, "credits");
+
+      const withExpiration = new qx.ui.form.CheckBox().set({
+        value: false
+      });
+      form.add(withExpiration, qx.locale.Manager.tr("With expiration"), null, "withExpiration");
+
+      const trialDays = new qx.ui.form.Spinner().set({
+        minimum: 1,
+        maximum: 1000,
+        value: 1
+      });
+      withExpiration.bind("value", trialDays, "visibility", {
+        converter: val => val ? "visible" : "excluded"
+      });
+      form.add(trialDays, qx.locale.Manager.tr("Trial Days"), null, "trialDays");
+
+      return form;
+    },
+
     createApproveButton: function(email) {
-      const button = new osparc.ui.form.FetchButton(qx.locale.Manager.tr("Approve"));
+      const button = new qx.ui.form.Button(qx.locale.Manager.tr("Approve"));
       button.addListener("execute", () => {
-        button.setFetching(true);
-        const params = {
-          data: {
-            email,
-          },
-        };
-        osparc.data.Resources.fetch("poUsers", "approveUser", params)
-          .then(() => {
-            osparc.FlashMessenger.logAs(qx.locale.Manager.tr("User approved"), "INFO");
-          })
-          .catch(err => osparc.FlashMessenger.logError(err))
-          .finally(() => button.setFetching(false));
+        const form = this.createInvitationForm();
+        const approveBtn = new osparc.ui.form.FetchButton(qx.locale.Manager.tr("Approve"));
+        approveBtn.set({
+          appearance: "form-button"
+        });
+        form.addButton(approveBtn);
+        const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+        const invitationForm = new qx.ui.form.renderer.Single(form);
+        layout.add(invitationForm);
+        const win = osparc.ui.window.Window.popUpInWindow(layout, email, 350, 150).set({
+          clickAwayClose: false,
+          resizable: false,
+          showClose: true
+        });
+        win.open();
+        approveBtn.addListener("execute", () => {
+          if (!osparc.data.Permissions.getInstance().canDo("user.invitation.generate", true)) {
+            return;
+          }
+          if (form.validate()) {
+            approveBtn.setFetching(true);
+            const params = {
+              data: {
+                email,
+              },
+            };
+            const extraCreditsInUsd = form.getItems()["credits"].getValue();
+            if (extraCreditsInUsd > 0) {
+              params.data["extraCreditsInUsd"] = extraCreditsInUsd;
+            }
+            if (form.getItems()["withExpiration"].getValue()) {
+              params.data["trialAccountDays"] = form.getItems()["trialDays"].getValue();
+            }
+            osparc.data.Resources.fetch("poUsers", "approveUser", params)
+              .then(() => {
+                osparc.FlashMessenger.logAs(qx.locale.Manager.tr("User approved"), "INFO");
+              })
+              .catch(err => osparc.FlashMessenger.logError(err))
+              .finally(() => {
+                approveBtn.setFetching(false);
+                win.close();
+              });
+          }
+        });
       });
       return button;
     },
@@ -165,7 +225,6 @@ qx.Class.define("osparc.po.UsersPending", {
 
       let row = 1;
       pendingUsers.forEach(pendingUser => {
-        console.log("Pending user", pendingUser);
         pendingUsersLayout.add(new qx.ui.basic.Label(pendingUser.firstName + " " + pendingUser.lastName), {
           row,
           column: 0,
