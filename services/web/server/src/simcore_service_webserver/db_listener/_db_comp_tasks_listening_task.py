@@ -7,16 +7,15 @@ import asyncio
 import datetime
 import logging
 from collections.abc import AsyncIterator
-from dataclasses import dataclass
-from typing import Final, NoReturn
+from typing import Final, NoReturn, TypeAlias
 
 from aiohttp import web
 from aiopg.sa.connection import SAConnection
-from common_library.json_serialization import json_loads
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
+from pydantic import BaseModel
 from pydantic.types import PositiveInt
 from servicelib.background_task import periodic_task
 from simcore_postgres_database.models.comp_tasks import comp_tasks
@@ -32,9 +31,11 @@ _LISTENING_TASK_BASE_SLEEPING_TIME_S: Final[int] = 1
 _logger = logging.getLogger(__name__)
 
 
-async def _get_project_owner(conn: SAConnection, project_uuid: str) -> PositiveInt:
+async def _get_project_owner(
+    conn: SAConnection, project_uuid: ProjectID
+) -> PositiveInt:
     the_project_owner: PositiveInt | None = await conn.scalar(
-        select(projects.c.prj_owner).where(projects.c.uuid == project_uuid)
+        select(projects.c.prj_owner).where(projects.c.uuid == f"{project_uuid}")
     )
     if not the_project_owner:
         raise exceptions.ProjectOwnerNotFoundError(project_uuid=project_uuid)
@@ -59,77 +60,65 @@ async def _update_project_state(
     await _projects_service.notify_project_state_update(app, project)
 
 
-@dataclass(frozen=True)
-class _CompTaskNotificationPayload:
+_DB_KEY: TypeAlias = str
+
+
+class _CompTaskNotificationPayload(BaseModel):
     action: str
-    changes: dict
+    changes: list[_DB_KEY]
     table: str
-    task_id: str | None = None
-    project_id: str | None = None
-    node_id: str | None = None
+    task_id: int
+    project_id: ProjectID
+    node_id: NodeID
 
 
 async def _handle_db_notification(
     app: web.Application, payload: _CompTaskNotificationPayload, conn: SAConnection
 ) -> None:
-    project_uuid = payload.project_id
-    node_uuid = payload.node_id
-    task_changes = payload.changes
-
-    if any(x is None for x in [project_uuid, node_uuid]):
-        _logger.warning(
-            "comp_tasks row is corrupted. TIP: please check DB entry containing '%s'",
-            f"{payload=}",
-        )
-        return
-
-    assert project_uuid  # nosec
-    assert node_uuid  # nosec
-
     try:
-        the_project_owner = await _get_project_owner(conn, project_uuid)
+        the_project_owner = await _get_project_owner(conn, payload.project_id)
 
         # Fetch the latest comp_tasks row for this node/project
         result = await conn.execute(
             select(comp_tasks).where(
-                (comp_tasks.c.project_id == project_uuid)
-                & (comp_tasks.c.node_id == node_uuid)
+                (comp_tasks.c.project_id == f"{payload.project_id}")
+                & (comp_tasks.c.node_id == f"{payload.node_id}")
             )
         )
         row = await result.first()
         if not row:
             _logger.warning(
                 "No comp_tasks row found for project_id=%s node_id=%s",
-                project_uuid,
-                node_uuid,
+                payload.project_id,
+                payload.node_id,
             )
             return
 
-        if any(f in task_changes for f in ["outputs", "run_hash"]):
-            new_outputs = row.outputs if hasattr(row, "outputs") else {}
-            new_run_hash = row.run_hash if hasattr(row, "run_hash") else None
-            node_errors = row.errors if hasattr(row, "errors") else None
+        if any(f in payload.changes for f in ["outputs", "run_hash"]):
+            new_outputs = row.outputs
+            new_run_hash = row.run_hash
+            node_errors = row.errors
             await update_node_outputs(
                 app,
                 the_project_owner,
-                ProjectID(project_uuid),
-                NodeID(node_uuid),
+                payload.project_id,
+                payload.node_id,
                 new_outputs,
                 new_run_hash,
                 node_errors=node_errors,
                 ui_changed_keys=None,
             )
 
-        if "state" in task_changes:
-            new_state = row.state if hasattr(row, "state") else None
+        if "state" in payload.changes:
+            new_state = row.state
             if new_state is not None:
                 await _update_project_state(
                     app,
                     the_project_owner,
-                    ProjectID(project_uuid),
-                    NodeID(node_uuid),
+                    payload.project_id,
+                    payload.node_id,
                     convert_state_from_db(new_state),
-                    node_errors=row.errors if hasattr(row, "errors") else None,
+                    node_errors=row.errors,
                 )
 
     except exceptions.ProjectNotFoundError as exc:
@@ -168,7 +157,9 @@ async def _listen(app: web.Application) -> NoReturn:
                 await asyncio.sleep(_LISTENING_TASK_BASE_SLEEPING_TIME_S)
                 continue
             notification = conn.connection.notifies.get_nowait()
-            payload = _CompTaskNotificationPayload(**json_loads(notification.payload))
+            payload = _CompTaskNotificationPayload.model_validate_json(
+                notification.payload
+            )
             _logger.debug("received update from database: %s", f"{payload=}")
             await _handle_db_notification(app, payload, conn)
 
