@@ -32,7 +32,11 @@ fi
 
 if [ "${SC_BOOT_MODE}" = "debug" ]; then
   # NOTE: production does NOT pre-installs debugpy
-  uv pip install debugpy
+  if command -v uv >/dev/null 2>&1; then
+    uv pip install debugpy
+  else
+    pip install debugpy
+  fi
 fi
 
 #
@@ -70,7 +74,7 @@ else
 
     exec sh -c "
     cd services/storage/src/simcore_service_storage && \
-    python -m debugpy --listen 0.0.0.0:${STORAGE_REMOTE_DEBUGGING_PORT} -m uvicorn main:app \
+    python -Xfrozen_modules=off -m debugpy --listen 0.0.0.0:${STORAGE_REMOTE_DEBUGGING_PORT} -m uvicorn main:app \
       --host 0.0.0.0 \
       --port ${STORAGE_PORT} \
       --reload \

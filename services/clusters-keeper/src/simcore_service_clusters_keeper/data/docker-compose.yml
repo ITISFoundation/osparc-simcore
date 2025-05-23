@@ -3,6 +3,8 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG}
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    volumes:
+      - computational_shared_data:${SIDECAR_COMP_SERVICES_SHARED_FOLDER:-/home/scu/computational_shared_data}
     networks:
       - cluster
     environment:
@@ -14,6 +16,9 @@ services:
       DASK_START_AS_SCHEDULER: 1
       DASK_WORKER_SATURATION: ${DASK_WORKER_SATURATION}
       LOG_LEVEL: ${LOG_LEVEL}
+
+      SIDECAR_COMP_SERVICES_SHARED_FOLDER: /home/scu/computational_shared_data
+      SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME: computational_shared_data
 
     ports:
       - 8786:8786 # dask-scheduler access
@@ -110,7 +115,7 @@ services:
       EC2_INSTANCES_TIME_BEFORE_DRAINING: ${WORKERS_EC2_INSTANCES_TIME_BEFORE_DRAINING}
       EC2_INSTANCES_TIME_BEFORE_TERMINATION: ${WORKERS_EC2_INSTANCES_TIME_BEFORE_TERMINATION}
       LOG_FORMAT_LOCAL_DEV_ENABLED: 1
-      LOG_LEVEL: ${LOG_LEVEL:-WARNING}
+      LOG_LEVEL: ${LOG_LEVEL}
       REDIS_HOST: redis
       REDIS_PORT: 6379
     volumes:

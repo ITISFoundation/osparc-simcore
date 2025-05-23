@@ -64,3 +64,14 @@ class BillingDetailsNotFoundError(UsersBaseError):
 class MissingGroupExtraPropertiesForProductError(UsersBaseError):
     msg_template = "Missing group_extra_property for product_name={product_name}"
     tip = "Add a new row in group_extra_property table and assign it to this product"
+
+
+class PendingPreRegistrationNotFoundError(UsersBaseError):
+    msg_template = (
+        "No pending pre-registration found for email {email} in product {product_name}"
+    )
+
+    def __init__(self, *, email: str, product_name: str, **ctx: Any):
+        super().__init__(**ctx)
+        self.email = email
+        self.product_name = product_name
