@@ -180,6 +180,7 @@ def get_tracing_lifespan(
     _startup(app=app, tracing_settings=tracing_settings, service_name=service_name)
 
     async def tracing_lifespan(app: web.Application):
+        assert app  # nosec
         yield
         _shutdown()
 
