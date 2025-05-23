@@ -29,8 +29,9 @@ class PageParams(BaseModel):
 
 
 def iter_pagination_params(
+    *,
+    limit: PositiveInt,
     offset: NonNegativeInt = 0,
-    limit: PositiveInt = 100,
     total_number_of_items: NonNegativeInt | None = None,
 ) -> Iterable[PageParams]:
 
