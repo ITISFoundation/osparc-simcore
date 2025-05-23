@@ -19,9 +19,9 @@ assert issubclass(BootModeEnum, Enum)  # nosec
 assert issubclass(BuildTargetEnum, Enum)  # nosec
 
 __all__: tuple[str, ...] = (
-    "LogLevel",
     "BootModeEnum",
     "BuildTargetEnum",
+    "LogLevel",
 )
 
 
@@ -76,6 +76,11 @@ _ELLIPSIS_CHAR: Final[str] = "..."
 
 
 class ConstrainedStr(str):
+    """Emulates pydantic's v1 constrained types
+
+    DEPRECATED: Use instead Annotated[str, StringConstraints(...)]
+    """
+
     pattern: str | Pattern[str] | None = None
     min_length: int | None = None
     max_length: int | None = None
@@ -102,6 +107,11 @@ class ConstrainedStr(str):
 
 
 class IDStr(ConstrainedStr):
+    """Non-empty bounded string used as identifier
+
+    DEPRECATED: Use instead Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
+    """
+
     strip_whitespace = True
     min_length = 1
     max_length = 100
@@ -126,18 +136,29 @@ class IDStr(ConstrainedStr):
 
 
 class ShortTruncatedStr(ConstrainedStr):
-    # NOTE: Use to input e.g. titles or display names
-    # A truncated string:
-    #   - Strips whitespaces and truncate strings that exceed the specified characters limit (curtail_length).
-    #   - Ensures that the **input** data length to the API is controlled and prevents exceeding large inputs silently, i.e. without raising errors.
-    # SEE https://github.com/ITISFoundation/osparc-simcore/pull/5989#discussion_r1650506583
+    """A truncated string used to input e.g. titles or display names
+
+       - Strips whitespaces and truncate strings that exceed the specified characters limit (curtail_length).
+       - Ensures that the **input** data length to the API is controlled and prevents exceeding large inputs silently,
+       i.e. without raising errors.
+
+    SEE https://github.com/ITISFoundation/osparc-simcore/pull/5989#discussion_r1650506583
+
+    DEPRECATED: Use instead Annotated[str, StringConstraints(strip_whitespace=True), trim_string_before(max_length=600)]
+    """
+
     strip_whitespace = True
     curtail_length = 600
 
 
 class LongTruncatedStr(ConstrainedStr):
-    # NOTE: Use to input e.g. descriptions or summaries
-    # Analogous to ShortTruncatedStr
+    """Use to input e.g. descriptions or summaries
+
+    Analogous to ShortTruncatedStr
+
+    DEPRECATED: Use instead Annotated[str, StringConstraints(strip_whitespace=True), trim_string_before(max_length=65536)]
+    """
+
     strip_whitespace = True
     curtail_length = 65536  # same as github descripton
 
