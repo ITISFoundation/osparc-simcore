@@ -5695,6 +5695,24 @@
               "default": 0,
               "title": "Offset"
             }
+          },
+          {
+            "name": "has_function_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by having a function ID in the collection",
+              "title": "Has Function Id"
+            },
+            "description": "Filter by having a function ID in the collection"
           }
         ],
         "responses": {
