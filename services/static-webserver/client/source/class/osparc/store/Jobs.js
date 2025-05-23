@@ -37,7 +37,7 @@ qx.Class.define("osparc.store.Jobs", {
   },
 
   members: {
-    fetchJobsActive: function(
+    fetchJobsLatest: function(
       runningOnly = true,
       offset = 0,
       limit = this.self().SERVER_MAX_LIMIT,
@@ -45,6 +45,7 @@ qx.Class.define("osparc.store.Jobs", {
         field: "submitted_at",
         direction: "desc"
       },
+      filters = null,
       resolveWResponse = false
     ) {
       const params = {
@@ -53,6 +54,7 @@ qx.Class.define("osparc.store.Jobs", {
           offset,
           limit,
           orderBy: JSON.stringify(orderBy),
+          filters: JSON.stringify(filters ? filters : {}),
         }
       };
       const options = {

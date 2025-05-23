@@ -13,8 +13,10 @@ from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from servicelib.rabbitmq import RPCRouter
 from servicelib.utils import limited_gather
-from simcore_service_director_v2.models.comp_tasks import ComputationTaskForRpcDBGet
 
+from ...core.errors import ComputationalRunNotFoundError
+from ...models.comp_runs import CompRunsAtDB
+from ...models.comp_tasks import ComputationTaskForRpcDBGet
 from ...modules.db.repositories.comp_runs import CompRunsRepository
 from ...modules.db.repositories.comp_tasks import CompTasksRepository
 from ...utils import dask as dask_utils
@@ -95,6 +97,19 @@ async def _fetch_task_log(
     return None
 
 
+async def _get_latest_run_or_none(
+    comp_runs_repo: CompRunsRepository,
+    user_id: UserID,
+    project_uuid: ProjectID,
+) -> CompRunsAtDB | None:
+    try:
+        return await comp_runs_repo.get(
+            user_id=user_id, project_id=project_uuid, iteration=None
+        )
+    except ComputationalRunNotFoundError:
+        return None
+
+
 @router.expose(reraise_if_error_type=())
 async def list_computations_latest_iteration_tasks_page(
     app: FastAPI,
@@ -127,13 +142,15 @@ async def list_computations_latest_iteration_tasks_page(
     # Fetch latest run for each project concurrently
     latest_runs = await limited_gather(
         *[
-            comp_runs_repo.get(user_id=user_id, project_id=project_uuid, iteration=None)
+            _get_latest_run_or_none(comp_runs_repo, user_id, project_uuid)
             for project_uuid in unique_project_uuids
         ],
         limit=20,
     )
     # Build a dict: project_uuid -> iteration
-    project_uuid_to_iteration = {run.project_uuid: run.iteration for run in latest_runs}
+    project_uuid_to_iteration = {
+        run.project_uuid: run.iteration for run in latest_runs if run is not None
+    }
 
     # Run all log fetches concurrently
     log_files = await limited_gather(
