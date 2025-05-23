@@ -152,6 +152,16 @@ qx.Class.define("osparc.po.UsersPending", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "reload-button":
+          control = new qx.ui.form.Button(this.tr("Reload")).set({
+            allowGrowX: false,
+          });
+          control.addListener("execute", () => {
+            this.getChildControl("pending-users-layout").removeAll();
+            this.__populatePendingUsersLayout();
+          });
+          this._add(control);
+          break;
         case "pending-users-container":
           control = new qx.ui.container.Scroll();
           this._add(control, {
@@ -169,6 +179,7 @@ qx.Class.define("osparc.po.UsersPending", {
     },
 
     _buildLayout: function() {
+      this.getChildControl("reload-button");
       this.getChildControl("pending-users-container");
 
       this.__populatePendingUsersLayout();
