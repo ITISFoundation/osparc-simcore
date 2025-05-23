@@ -1,5 +1,6 @@
 import json
 
+import sqlalchemy
 from aiohttp import web
 from models_library.functions import (
     FunctionClass,
@@ -291,7 +292,7 @@ async def list_function_job_collections(
     """
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        filter_condition = True
+        filter_condition = sqlalchemy.sql.true()
 
         if filters and filters.has_function_id:
             subquery = (
