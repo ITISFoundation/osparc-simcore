@@ -221,9 +221,7 @@ class CompRunsRepository(BaseRepository):
         if order_by is None:
             order_by = OrderBy(field=IDStr("run_id"))  # default ordering
 
-        base_select_query = sa.select(
-            *self._COMPUTATION_RUNS_RPC_GET_COLUMNS
-        ).select_from(
+        _latest_runs = (
             sa.select(
                 comp_runs.c.project_uuid,
                 sa.func.max(comp_runs.c.iteration).label(
@@ -235,20 +233,23 @@ class CompRunsRepository(BaseRepository):
                 & (
                     comp_runs.c.metadata["product_name"].astext == product_name
                 )  # <-- NOTE: We might create a separate column for this for fast retrieval
-                & (
-                    comp_runs.c.result.in_(
-                        [
-                            RUNNING_STATE_TO_DB[item]
-                            for item in RunningState.list_running_states()
-                        ]
-                    )
-                )
-                if filter_only_running
-                else True
             )
             .group_by(comp_runs.c.project_uuid)
-            .subquery("latest_runs")
-            .join(
+        )
+        if filter_only_running:
+            _latest_runs = _latest_runs.where(
+                comp_runs.c.result.in_(
+                    [
+                        RUNNING_STATE_TO_DB[item]
+                        for item in RunningState.list_running_states()
+                    ]
+                )
+            )
+
+        base_select_query = sa.select(
+            *self._COMPUTATION_RUNS_RPC_GET_COLUMNS
+        ).select_from(
+            _latest_runs.subquery().join(
                 comp_runs,
                 sa.and_(
                     comp_runs.c.project_uuid

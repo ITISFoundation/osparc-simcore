@@ -129,6 +129,8 @@ async def list_computations_latest_iteration_tasks_page(
     comp_tasks_repo = CompTasksRepository.instance(db_engine=app.state.engine)
     comp_runs_repo = CompRunsRepository.instance(db_engine=app.state.engine)
 
+    # Get latest
+
     total, comp_tasks = await comp_tasks_repo.list_computational_tasks_rpc_domain(
         project_ids=project_ids,
         offset=offset,
