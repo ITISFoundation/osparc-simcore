@@ -20,7 +20,6 @@ from models_library.folders import FolderQuery, FolderScope
 from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.projects import ProjectID, ProjectIDStr
-from models_library.projects_comments import CommentID, ProjectsCommentsDB
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.resource_tracker import (
@@ -72,14 +71,6 @@ from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 
 from ..utils import now_str
-from ._comments_repository import (
-    create_project_comment,
-    delete_project_comment,
-    get_project_comment,
-    list_project_comments,
-    total_project_comments,
-    update_project_comment,
-)
 from ._projects_repository import PROJECT_DB_COLS
 from ._projects_repository_legacy_utils import (
     ANY_USER_ID_SENTINEL,
@@ -1336,51 +1327,6 @@ class ProjectDBAPI(BaseProjectDB):
                 if tag_id in project["tags"]:
                     project["tags"].remove(tag_id)
                 return convert_to_schema_names(project, user_email)
-
-    #
-    # Project Comments
-    #
-
-    async def create_project_comment(
-        self, project_uuid: ProjectID, user_id: UserID, contents: str
-    ) -> CommentID:
-        async with self.engine.acquire() as conn:
-            return await create_project_comment(conn, project_uuid, user_id, contents)
-
-    async def list_project_comments(
-        self,
-        project_uuid: ProjectID,
-        offset: PositiveInt,
-        limit: int,
-    ) -> list[ProjectsCommentsDB]:
-        async with self.engine.acquire() as conn:
-            return await list_project_comments(conn, project_uuid, offset, limit)
-
-    async def total_project_comments(
-        self,
-        project_uuid: ProjectID,
-    ) -> PositiveInt:
-        async with self.engine.acquire() as conn:
-            return await total_project_comments(conn, project_uuid)
-
-    async def update_project_comment(
-        self,
-        comment_id: CommentID,
-        project_uuid: ProjectID,
-        contents: str,
-    ) -> ProjectsCommentsDB:
-        async with self.engine.acquire() as conn:
-            return await update_project_comment(
-                conn, comment_id, project_uuid, contents
-            )
-
-    async def delete_project_comment(self, comment_id: CommentID) -> None:
-        async with self.engine.acquire() as conn:
-            return await delete_project_comment(conn, comment_id)
-
-    async def get_project_comment(self, comment_id: CommentID) -> ProjectsCommentsDB:
-        async with self.engine.acquire() as conn:
-            return await get_project_comment(conn, comment_id)
 
     #
     # Project Wallet
