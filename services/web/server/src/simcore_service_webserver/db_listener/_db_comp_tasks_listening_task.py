@@ -7,7 +7,7 @@ import asyncio
 import datetime
 import logging
 from collections.abc import AsyncIterator
-from typing import Final, NoReturn, TypeAlias
+from typing import Final, NoReturn
 
 from aiohttp import web
 from aiopg.sa.connection import SAConnection
@@ -15,7 +15,6 @@ from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
-from pydantic import BaseModel
 from pydantic.types import PositiveInt
 from servicelib.background_task import periodic_task
 from simcore_postgres_database.models.comp_tasks import comp_tasks
@@ -25,6 +24,7 @@ from sqlalchemy.sql import select
 from ..db.plugin import get_database_engine
 from ..projects import _projects_service, exceptions
 from ..projects.nodes_utils import update_node_outputs
+from ._models import CompTaskNotificationPayload
 from ._utils import convert_state_from_db
 
 _LISTENING_TASK_BASE_SLEEPING_TIME_S: Final[int] = 1
@@ -60,20 +60,8 @@ async def _update_project_state(
     await _projects_service.notify_project_state_update(app, project)
 
 
-_DB_KEY: TypeAlias = str
-
-
-class _CompTaskNotificationPayload(BaseModel):
-    action: str
-    changes: list[_DB_KEY]
-    table: str
-    task_id: int
-    project_id: ProjectID
-    node_id: NodeID
-
-
 async def _handle_db_notification(
-    app: web.Application, payload: _CompTaskNotificationPayload, conn: SAConnection
+    app: web.Application, payload: CompTaskNotificationPayload, conn: SAConnection
 ) -> None:
     try:
         the_project_owner = await _get_project_owner(conn, payload.project_id)
@@ -157,7 +145,7 @@ async def _listen(app: web.Application) -> NoReturn:
                 await asyncio.sleep(_LISTENING_TASK_BASE_SLEEPING_TIME_S)
                 continue
             notification = conn.connection.notifies.get_nowait()
-            payload = _CompTaskNotificationPayload.model_validate_json(
+            payload = CompTaskNotificationPayload.model_validate_json(
                 notification.payload
             )
             _logger.debug("received update from database: %s", f"{payload=}")
