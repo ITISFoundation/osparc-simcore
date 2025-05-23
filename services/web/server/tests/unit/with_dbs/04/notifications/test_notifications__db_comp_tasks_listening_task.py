@@ -6,16 +6,15 @@
 
 import json
 import logging
-from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Any
 from unittest import mock
 
 import aiopg.sa
 import pytest
-import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from faker import Faker
-from models_library.projects import ProjectAtDB, ProjectID
+from models_library.projects import ProjectAtDB
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp.application_keys import APP_AIOPG_ENGINE_KEY
@@ -37,7 +36,7 @@ logger = logging.getLogger(__name__)
 @pytest.fixture
 async def mock_project_subsystem(
     mocker: MockerFixture,
-) -> AsyncIterator[dict[str, mock.MagicMock]]:
+) -> dict[str, mock.MagicMock]:
     mocked_project_calls = {}
 
     mocked_project_calls["update_node_outputs"] = mocker.patch(
@@ -58,42 +57,11 @@ async def mock_project_subsystem(
 
 
 @pytest.fixture
-async def comp_task_listening_task(
-    mock_project_subsystem: dict, client: TestClient
-) -> AsyncIterator:
+async def with_started_listening_task(client: TestClient) -> AsyncIterator:
     assert client.app
     async for _comp_task in create_comp_tasks_listening_task(client.app):
         # first call creates the task, second call cleans it
         yield
-
-
-@pytest.fixture
-def comp_task(
-    postgres_db: sa.engine.Engine,
-) -> Iterator[Callable[..., dict[str, Any]]]:
-    created_task_ids: list[int] = []
-
-    def creator(project_id: ProjectID, **task_kwargs) -> dict[str, Any]:
-        task_config = {"project_id": f"{project_id}"} | task_kwargs
-        with postgres_db.connect() as conn:
-            result = conn.execute(
-                comp_tasks.insert()
-                .values(**task_config)
-                .returning(sa.literal_column("*"))
-            )
-            new_task = result.first()
-            assert new_task
-            new_task = dict(new_task)
-            created_task_ids.append(new_task["task_id"])
-        return new_task
-
-    yield creator
-
-    # cleanup
-    with postgres_db.connect() as conn:
-        conn.execute(
-            comp_tasks.delete().where(comp_tasks.c.task_id.in_(created_task_ids))
-        )
 
 
 @pytest.mark.parametrize(
@@ -133,7 +101,7 @@ async def test_listen_comp_tasks_task(
     project: Callable[..., Awaitable[ProjectAtDB]],
     pipeline: Callable[..., dict[str, Any]],
     comp_task: Callable[..., dict[str, Any]],
-    comp_task_listening_task: None,
+    with_started_listening_task: None,
     client,
     update_values: dict[str, Any],
     expected_calls: list[str],

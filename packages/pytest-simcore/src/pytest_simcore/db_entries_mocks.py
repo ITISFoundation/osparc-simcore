@@ -10,9 +10,10 @@ from uuid import uuid4
 import pytest
 import sqlalchemy as sa
 from faker import Faker
-from models_library.projects import ProjectAtDB
+from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from simcore_postgres_database.models.comp_pipeline import StateType, comp_pipeline
+from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.projects import ProjectType, projects
 from simcore_postgres_database.models.users import UserRole, UserStatus, users
 from simcore_postgres_database.utils_projects_nodes import (
@@ -142,9 +143,8 @@ def pipeline(postgres_db: sa.engine.Engine) -> Iterator[Callable[..., dict[str, 
                 .values(**pipeline_config)
                 .returning(sa.literal_column("*"))
             )
-            new_pipeline = result.first()
-            assert new_pipeline
-            new_pipeline = dict(new_pipeline)
+            row = result.one()
+            new_pipeline = row._asdict()
             created_pipeline_ids.append(new_pipeline["project_id"])
             return new_pipeline
 
@@ -156,4 +156,31 @@ def pipeline(postgres_db: sa.engine.Engine) -> Iterator[Callable[..., dict[str, 
             comp_pipeline.delete().where(
                 comp_pipeline.c.project_id.in_(created_pipeline_ids)
             )
+        )
+
+
+@pytest.fixture
+def comp_task(postgres_db: sa.engine.Engine) -> Iterator[Callable[..., dict[str, Any]]]:
+    created_task_ids: list[int] = []
+
+    def creator(project_id: ProjectID, **task_kwargs) -> dict[str, Any]:
+        task_config = {"project_id": f"{project_id}"} | task_kwargs
+        with postgres_db.connect() as conn:
+            result = conn.execute(
+                comp_tasks.insert()
+                .values(**task_config)
+                .returning(sa.literal_column("*"))
+            )
+            new_task = result.first()
+            assert new_task
+            new_task = dict(new_task)
+            created_task_ids.append(new_task["task_id"])
+        return new_task
+
+    yield creator
+
+    # cleanup
+    with postgres_db.connect() as conn:
+        conn.execute(
+            comp_tasks.delete().where(comp_tasks.c.task_id.in_(created_task_ids))
         )
