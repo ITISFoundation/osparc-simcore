@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from servicelib.fastapi.monitoring import (
     setup_prometheus_instrumentation,
 )
-from servicelib.fastapi.tracing import initialize_tracing
+from servicelib.fastapi.tracing import setup_tracing
 
 from .._meta import (
     API_VERSION,
@@ -58,14 +58,14 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     app.state.settings = settings
     assert app.state.settings.API_VERSION == API_VERSION  # nosec
 
-    if app.state.settings.CLUSTERS_KEEPER_PROMETHEUS_INSTRUMENTATION_ENABLED:
-        setup_prometheus_instrumentation(app)
     if app.state.settings.CLUSTERS_KEEPER_TRACING:
-        initialize_tracing(
+        setup_tracing(
             app,
             app.state.settings.CLUSTERS_KEEPER_TRACING,
             APP_NAME,
         )
+    if app.state.settings.CLUSTERS_KEEPER_PROMETHEUS_INSTRUMENTATION_ENABLED:
+        setup_prometheus_instrumentation(app)
 
     # PLUGINS SETUP
     setup_api_routes(app)

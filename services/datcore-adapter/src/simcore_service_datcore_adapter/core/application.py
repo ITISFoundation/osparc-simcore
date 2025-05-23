@@ -10,7 +10,7 @@ from servicelib.fastapi.monitoring import (
     setup_prometheus_instrumentation,
 )
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
-from servicelib.fastapi.tracing import initialize_tracing
+from servicelib.fastapi.tracing import setup_tracing
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from .._meta import API_VERSION, API_VTAG, APP_NAME
@@ -60,14 +60,14 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
 
     app.state.settings = settings
 
-    if app.state.settings.DATCORE_ADAPTER_PROMETHEUS_INSTRUMENTATION_ENABLED:
-        setup_prometheus_instrumentation(app)
     if app.state.settings.DATCORE_ADAPTER_TRACING:
-        initialize_tracing(
+        setup_tracing(
             app,
             app.state.settings.DATCORE_ADAPTER_TRACING,
             APP_NAME,
         )
+    if app.state.settings.DATCORE_ADAPTER_PROMETHEUS_INSTRUMENTATION_ENABLED:
+        setup_prometheus_instrumentation(app)
 
     if settings.SC_BOOT_MODE != BootModeEnum.PRODUCTION:
         # middleware to time requests (ONLY for development)

@@ -1,8 +1,10 @@
 """Adds fastapi middleware for tracing using opentelemetry instrumentation."""
 
 import logging
+from collections.abc import AsyncIterator
 
 from fastapi import FastAPI
+from fastapi_lifespan_manager import State
 from httpx import AsyncClient, Client
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
@@ -68,7 +70,7 @@ except ImportError:
     HAS_AIOPIKA_INSTRUMENTOR = False
 
 
-def initialize_tracing(
+def _startup(
     app: FastAPI, tracing_settings: TracingSettings, service_name: str
 ) -> None:
     if (
@@ -147,5 +149,66 @@ def initialize_tracing(
             RequestsInstrumentor().instrument()
 
 
+def _shutdown() -> None:
+    """Uninstruments all opentelemetry instrumentors that were instrumented."""
+    if HAS_AIOPG:
+        try:
+            AiopgInstrumentor().uninstrument()
+        except Exception:
+            _logger.exception("Failed to uninstrument AiopgInstrumentor")
+    if HAS_AIOPIKA_INSTRUMENTOR:
+        try:
+            AioPikaInstrumentor().uninstrument()
+        except Exception:
+            _logger.exception("Failed to uninstrument AioPikaInstrumentor")
+    if HAS_ASYNCPG:
+        try:
+            AsyncPGInstrumentor().uninstrument()
+        except Exception:
+            _logger.exception("Failed to uninstrument AsyncPGInstrumentor")
+    if HAS_REDIS:
+        try:
+            RedisInstrumentor().uninstrument()
+        except Exception:
+            _logger.exception("Failed to uninstrument RedisInstrumentor")
+    if HAS_BOTOCORE:
+        try:
+            BotocoreInstrumentor().uninstrument()
+        except Exception:
+            _logger.exception("Failed to uninstrument BotocoreInstrumentor")
+    if HAS_REQUESTS:
+        try:
+            RequestsInstrumentor().uninstrument()
+        except Exception:
+            _logger.exception("Failed to uninstrument RequestsInstrumentor")
+
+
 def setup_httpx_client_tracing(client: AsyncClient | Client):
     HTTPXClientInstrumentor.instrument_client(client)
+
+
+def setup_tracing(
+    app: FastAPI, tracing_settings: TracingSettings, service_name: str
+) -> None:
+
+    _startup(app, tracing_settings, service_name)
+
+    def _on_shutdown() -> None:
+        _shutdown()
+
+    app.add_event_handler("shutdown", _on_shutdown)
+
+
+async def tracing_instrumentation_lifespan(
+    *,
+    app: FastAPI,
+    state: State,
+    tracing_settings: TracingSettings,
+    service_name: str,
+) -> AsyncIterator[State]:
+
+    _startup(app, tracing_settings, service_name)
+
+    yield state
+
+    _shutdown()
