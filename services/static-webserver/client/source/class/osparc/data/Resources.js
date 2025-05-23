@@ -352,7 +352,7 @@ qx.Class.define("osparc.data.Resources", {
         endpoints: {
           getPageLatest: {
             method: "GET",
-            url: statics.API + "/computations/-/iterations/latest?offset={offset}&limit={limit}&order_by=%7B%22field%22:%22submitted_at%22,%22direction%22:%22desc%22%7D&filter_only_running={runningOnly}"
+            url: statics.API + "/computations/-/iterations/latest?offset={offset}&limit={limit}&order_by=%7B%22field%22:%22submitted_at%22,%22direction%22:%22desc%22%7D&filter_only_running={runningOnly}&filters={filters}"
           },
           getPageHistory: {
             method: "GET",
