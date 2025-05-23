@@ -66,7 +66,7 @@ async def list_programs(
 
     return create_page(
         programs,
-        total=len(programs),
+        total=page_meta.total,
         params=page_params,
     )
 
@@ -103,7 +103,7 @@ async def list_program_history(
 
     return create_page(
         programs,
-        total=len(programs),
+        total=page_meta.total,
         params=page_params,
     )
 

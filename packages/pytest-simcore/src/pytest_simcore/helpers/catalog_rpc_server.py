@@ -28,7 +28,7 @@ from models_library.services_regex import (
 )
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pydantic import NonNegativeInt, TypeAdapter, validate_call
+from pydantic import TypeAdapter, validate_call
 from pytest_mock import MockType
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 
@@ -52,7 +52,7 @@ class CatalogRpcSideEffects:
         product_name: ProductName,
         user_id: UserID,
         limit: PageLimitInt,
-        offset: NonNegativeInt,
+        offset: PageOffsetInt,
         filters: ServiceListFilters | None = None,
     ):
         assert rpc_client
@@ -209,7 +209,7 @@ class CatalogRpcSideEffects:
         product_name: ProductName,
         user_id: UserID,
         limit: PageLimitInt,
-        offset: NonNegativeInt,
+        offset: PageOffsetInt,
         filters: ServiceListFilters | None = None,
     ):
         assert rpc_client
