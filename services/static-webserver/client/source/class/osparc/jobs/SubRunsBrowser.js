@@ -74,8 +74,7 @@ qx.Class.define("osparc.jobs.SubRunsBrowser", {
 
       this.__titleLabel.setValue(project["projectName"])
 
-      const includeChildren = false;
-      const subRunsTable = this.__subRunsTable = new osparc.jobs.SubRunsTable(project["projectUuid"], includeChildren);
+      const subRunsTable = this.__subRunsTable = new osparc.jobs.SubRunsTable(project["projectUuid"]);
       this._add(subRunsTable, {
         flex: 1
       });

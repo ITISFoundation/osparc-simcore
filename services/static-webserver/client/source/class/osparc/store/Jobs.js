@@ -119,11 +119,11 @@ qx.Class.define("osparc.store.Jobs", {
         .catch(err => console.error(err));
     },
 
-    fetchSubJobs: function(projectUuid, includeChildren = false) {
+    fetchSubJobs: function(projectUuid) {
       const params = {
         url: {
           studyId: projectUuid,
-          includeChildren,
+          includeChildren: false,
         }
       };
       return osparc.data.Resources.getInstance().getAllPages("subRuns", params, "getPageLatest")
