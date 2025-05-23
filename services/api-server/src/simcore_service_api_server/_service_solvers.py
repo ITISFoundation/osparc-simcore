@@ -4,7 +4,6 @@ from models_library.api_schemas_catalog.services import ServiceListFilters
 from models_library.basic_types import VersionStr
 from models_library.products import ProductName
 from models_library.rest_pagination import (
-    MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
     PageMetaInfoLimitOffset,
     PageOffsetInt,
 )
@@ -25,8 +24,6 @@ from .models.api_resources import compose_resource_name
 from .models.schemas.jobs import Job
 from .models.schemas.solvers import Solver, SolverKeyId
 from .services_rpc.catalog import CatalogService
-
-DEFAULT_PAGINATION_LIMIT = MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE - 1
 
 
 @dataclass(frozen=True, kw_only=True)
