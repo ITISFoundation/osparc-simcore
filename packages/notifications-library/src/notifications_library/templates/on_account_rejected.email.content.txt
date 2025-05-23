@@ -1,0 +1,8 @@
+Dear {{ user.first_name or user.user_name }},
+
+Thank you for your interest in {{ product.display_name }}. Unfortunately, your registration is not eligible for participation in this program.
+
+In case of further interest in this or other solutions we might offer, please check contact us at {{ product.support_email }}.
+
+Best regards,
+The {{ product.display_name }} Team
