@@ -67,7 +67,7 @@ async def _get_changed_comp_task_row(
     result = await conn.execute(
         select(comp_tasks).where(comp_tasks.c.task_id == task_id)
     )
-    return await result.fetchone()
+    return cast(RowProxy | None, await result.fetchone())
 
 
 async def _handle_db_notification(
