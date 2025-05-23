@@ -34,9 +34,7 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.fixture
-async def mock_project_subsystem(
-    mocker: MockerFixture,
-) -> dict[str, mock.MagicMock]:
+async def mock_project_subsystem(mocker: MockerFixture) -> dict[str, mock.Mock]:
     mocked_project_calls = {}
 
     mocked_project_calls["update_node_outputs"] = mocker.patch(
@@ -44,13 +42,25 @@ async def mock_project_subsystem(
         return_value="",
     )
 
-    mocked_project_calls["_get_project_owner"] = mocker.patch(
-        "simcore_service_webserver.db_listener._db_comp_tasks_listening_task._get_project_owner",
-        return_value="",
+    mocked_project_calls["_update_project_state.update_project_node_state"] = (
+        mocker.patch(
+            "simcore_service_webserver.projects._projects_service.update_project_node_state",
+            autospec=True,
+        )
     )
-    mocked_project_calls["_update_project_state"] = mocker.patch(
-        "simcore_service_webserver.db_listener._db_comp_tasks_listening_task._update_project_state",
-        return_value="",
+
+    mocked_project_calls["_update_project_state.notify_project_node_update"] = (
+        mocker.patch(
+            "simcore_service_webserver.projects._projects_service.notify_project_node_update",
+            autospec=True,
+        )
+    )
+
+    mocked_project_calls["_update_project_state.notify_project_state_update"] = (
+        mocker.patch(
+            "simcore_service_webserver.projects._projects_service.notify_project_state_update",
+            autospec=True,
+        )
     )
 
     return mocked_project_calls
@@ -74,21 +84,25 @@ class _CompTaskChangeParams:
     "task_class", [NodeClass.COMPUTATIONAL, NodeClass.INTERACTIVE, NodeClass.FRONTEND]
 )
 @pytest.mark.parametrize(
-    "update_values, expected_calls",
+    "params",
     [
         pytest.param(
             _CompTaskChangeParams(
                 {
                     "outputs": {"some new stuff": "it is new"},
                 },
-                ["_get_project_owner", "update_node_outputs"],
+                ["update_node_outputs"],
             ),
             id="new output shall trigger",
         ),
         pytest.param(
             _CompTaskChangeParams(
                 {"state": StateType.ABORTED},
-                ["_get_project_owner", "_update_project_state"],
+                [
+                    "_update_project_state.update_project_node_state",
+                    "_update_project_state.notify_project_node_update",
+                    "_update_project_state.notify_project_state_update",
+                ],
             ),
             id="new state shall trigger",
         ),
@@ -98,7 +112,12 @@ class _CompTaskChangeParams:
                     "outputs": {"some new stuff": "it is new"},
                     "state": StateType.ABORTED,
                 },
-                ["_get_project_owner", "update_node_outputs", "_update_project_state"],
+                [
+                    "update_node_outputs",
+                    "_update_project_state.update_project_node_state",
+                    "_update_project_state.notify_project_node_update",
+                    "_update_project_state.notify_project_state_update",
+                ],
             ),
             id="new output and state shall double trigger",
         ),
@@ -111,7 +130,7 @@ class _CompTaskChangeParams:
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_listen_comp_tasks_task(
     sqlalchemy_async_engine: AsyncEngine,
-    mock_project_subsystem: dict,
+    mock_project_subsystem: dict[str, mock.Mock],
     logged_user: UserInfoDict,
     project: Callable[..., Awaitable[ProjectAtDB]],
     pipeline: Callable[..., dict[str, Any]],
@@ -149,7 +168,7 @@ async def test_listen_comp_tasks_task(
                     reraise=True,
                 ):
                     with attempt:
-                        mocked_call.assert_awaited()
+                        mocked_call.assert_called_once()
 
             else:
                 mocked_call.assert_not_called()
