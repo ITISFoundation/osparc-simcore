@@ -334,6 +334,7 @@ qx.Class.define("osparc.widget.PersistentIframe", {
               const templateId = data["message"]["functionId"];
               osparc.store.Templates.fetchTemplate(templateId)
                 .then(templateData => {
+                  templateData["resourceType"] = "template";
                   const resourceDetails = new osparc.dashboard.ResourceDetails(templateData).set({
                     showOpenButton: false,
                   });
