@@ -328,6 +328,17 @@ qx.Class.define("osparc.widget.PersistentIframe", {
             }
             break;
           }
+          case "openFunction": {
+            // this is the MetaModeling service trying to show function/template information
+            if (data["message"] && data["message"]["functionId"]) {
+              const templateId = data["message"]["functionId"];
+
+              const resourceData = this.getResourceData();
+              const resourceDetails = new osparc.dashboard.ResourceDetails(resourceData);
+              osparc.dashboard.ResourceDetails.popUpInWindow(resourceDetails);
+            }
+            break;
+          }
         }
       }
     },
