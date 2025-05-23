@@ -245,17 +245,16 @@ class CompRunsRepository(BaseRepository):
                     ]
                 )
             )
+        _latest_runs_subquery = _latest_runs.subquery().alias("latest_runs")
 
         base_select_query = sa.select(
             *self._COMPUTATION_RUNS_RPC_GET_COLUMNS
         ).select_from(
-            _latest_runs.subquery().join(
+            _latest_runs_subquery.join(
                 comp_runs,
                 sa.and_(
-                    comp_runs.c.project_uuid
-                    == literal_column("latest_runs.project_uuid"),
-                    comp_runs.c.iteration
-                    == literal_column("latest_runs.latest_iteration"),
+                    comp_runs.c.project_uuid == _latest_runs_subquery.c.project_uuid,
+                    comp_runs.c.iteration == _latest_runs_subquery.c.latest_iteration,
                 ),
             )
         )
