@@ -294,12 +294,6 @@ async def list_function_job_collections(
         filter_condition = True
 
         if filters and filters.has_function_id:
-            result = await conn.stream(
-                function_jobs_table.select()
-                .with_only_columns([function_jobs_table.c.uuid])
-                .where(function_jobs_table.c.function_uuid == filters.has_function_id)
-            )
-            function_job_uuids = [row["uuid"] for row in await result.all()]
             subquery = (
                 function_job_collections_to_function_jobs_table.select()
                 .with_only_columns(
@@ -307,11 +301,12 @@ async def list_function_job_collections(
                         function_job_collections_to_function_jobs_table.c.function_job_collection_uuid
                     )
                 )
-                .where(
-                    function_job_collections_to_function_jobs_table.c.function_job_uuid.in_(
-                        function_job_uuids
-                    )
+                .join(
+                    function_jobs_table,
+                    function_job_collections_to_function_jobs_table.c.function_job_uuid
+                    == function_jobs_table.c.uuid,
                 )
+                .where(function_jobs_table.c.function_uuid == filters.has_function_id)
             )
             filter_condition = function_job_collections_table.c.uuid.in_(subquery)
         total_count_result = await conn.scalar(
