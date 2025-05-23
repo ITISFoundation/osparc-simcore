@@ -47,6 +47,7 @@ async def maybe_await(
     Args:
         obj: Either an awaitable coroutine or direct result value
 
+
     Returns:
         The result value, after awaiting if necessary
 
