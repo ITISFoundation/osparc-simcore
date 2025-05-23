@@ -10,20 +10,19 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Any
 from unittest import mock
 
-import aiopg.sa
 import pytest
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.projects import ProjectAtDB
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.webserver_login import UserInfoDict
-from servicelib.aiohttp.application_keys import APP_AIOPG_ENGINE_KEY
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.db_listener._db_comp_tasks_listening_task import (
     create_comp_tasks_listening_task,
 )
+from sqlalchemy.ext.asyncio import AsyncEngine
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type
@@ -96,19 +95,18 @@ async def with_started_listening_task(client: TestClient) -> AsyncIterator:
 )
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_listen_comp_tasks_task(
+    sqlalchemy_async_engine: AsyncEngine,
     mock_project_subsystem: dict,
     logged_user: UserInfoDict,
     project: Callable[..., Awaitable[ProjectAtDB]],
     pipeline: Callable[..., dict[str, Any]],
     comp_task: Callable[..., dict[str, Any]],
     with_started_listening_task: None,
-    client,
     update_values: dict[str, Any],
     expected_calls: list[str],
     task_class: NodeClass,
     faker: Faker,
 ):
-    db_engine: aiopg.sa.Engine = client.app[APP_AIOPG_ENGINE_KEY]
     some_project = await project(logged_user)
     pipeline(project_id=f"{some_project.uuid}")
     task = comp_task(
@@ -117,13 +115,14 @@ async def test_listen_comp_tasks_task(
         outputs=json.dumps({}),
         node_class=task_class,
     )
-    async with db_engine.acquire() as conn:
+    async with sqlalchemy_async_engine.connect() as conn:
         # let's update some values
         await conn.execute(
             comp_tasks.update()
             .values(**update_values)
             .where(comp_tasks.c.task_id == task["task_id"])
         )
+        await conn.commit()
 
         # tests whether listener gets executed
         for call_name, mocked_call in mock_project_subsystem.items():
