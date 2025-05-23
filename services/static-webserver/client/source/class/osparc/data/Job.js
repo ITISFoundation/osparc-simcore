@@ -23,17 +23,14 @@ qx.Class.define("osparc.data.Job", {
 
     this.set({
       projectUuid: jobData["projectUuid"],
+      projectName: jobData["rootProjectName"] || "",
       state: jobData["state"] || "UNKNOWN",
       submittedAt: jobData["submittedAt"] ? new Date(jobData["submittedAt"]) : null,
       startedAt: jobData["startedAt"] ? new Date(jobData["startedAt"]) : null,
       endedAt: jobData["endedAt"] ? new Date(jobData["endedAt"]) : null,
       info: jobData["info"] || null,
-      customMetadata: jobData["customMetadata"] || null,
+      customMetadata: jobData["projectCustomMetadata"] || null,
     });
-
-    if (jobData["info"] && jobData["info"]["project_name"]) {
-      this.setProjectName(jobData["info"]["project_name"]);
-    }
 
     this.__subJobs = [];
   },

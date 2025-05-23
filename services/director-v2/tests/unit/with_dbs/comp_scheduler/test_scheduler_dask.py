@@ -60,7 +60,6 @@ from simcore_service_director_v2.core.errors import (
 from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.comp_runs import CompRunsAtDB, RunMetadataDict
 from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB, Image
-from simcore_service_director_v2.models.dask_subsystem import DaskClientTaskState
 from simcore_service_director_v2.modules.comp_scheduler._manager import (
     run_new_pipeline,
     stop_pipeline,
@@ -206,8 +205,8 @@ async def _assert_publish_in_dask_backend(
     for p in expected_pending_tasks:
         published_tasks.remove(p)
 
-    async def _return_tasks_pending(job_ids: list[str]) -> list[DaskClientTaskState]:
-        return [DaskClientTaskState.PENDING for job_id in job_ids]
+    async def _return_tasks_pending(job_ids: list[str]) -> list[RunningState]:
+        return [RunningState.PENDING for job_id in job_ids]
 
     mocked_dask_client.get_tasks_status.side_effect = _return_tasks_pending
     assert published_project.project.prj_owner
@@ -445,17 +444,16 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     )
 
     # -------------------------------------------------------------------------------
-    # 2.1. the dask-worker might be taking the task, until we get a progress we do not know
-    #      whether it effectively started or it is still queued in the worker process
+    # 2.1. the dask-worker takes the task
     exp_started_task = expected_pending_tasks[0]
     expected_pending_tasks.remove(exp_started_task)
 
-    async def _return_1st_task_running(job_ids: list[str]) -> list[DaskClientTaskState]:
+    async def _return_1st_task_running(job_ids: list[str]) -> list[RunningState]:
         return [
             (
-                DaskClientTaskState.PENDING_OR_STARTED
+                RunningState.STARTED
                 if job_id == exp_started_task.job_id
-                else DaskClientTaskState.PENDING
+                else RunningState.PENDING
             )
             for job_id in job_ids
         ]
@@ -469,7 +467,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     await assert_comp_runs(
         sqlalchemy_async_engine,
         expected_total=1,
-        expected_state=RunningState.PENDING,
+        expected_state=RunningState.STARTED,
         where_statement=and_(
             comp_runs.c.user_id == published_project.project.prj_owner,
             comp_runs.c.project_uuid == f"{published_project.project.uuid}",
@@ -478,8 +476,14 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     await assert_comp_tasks(
         sqlalchemy_async_engine,
         project_uuid=published_project.project.uuid,
-        task_ids=[exp_started_task.node_id]
-        + [p.node_id for p in expected_pending_tasks],
+        task_ids=[exp_started_task.node_id],
+        expected_state=RunningState.STARTED,
+        expected_progress=None,
+    )
+    await assert_comp_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=published_project.project.uuid,
+        task_ids=[p.node_id for p in expected_pending_tasks],
         expected_state=RunningState.PENDING,
         expected_progress=None,
     )
@@ -572,12 +576,12 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
 
     # -------------------------------------------------------------------------------
     # 4. the dask-worker completed the task successfully
-    async def _return_1st_task_success(job_ids: list[str]) -> list[DaskClientTaskState]:
+    async def _return_1st_task_success(job_ids: list[str]) -> list[RunningState]:
         return [
             (
-                DaskClientTaskState.SUCCESS
+                RunningState.SUCCESS
                 if job_id == exp_started_task.job_id
-                else DaskClientTaskState.PENDING
+                else RunningState.PENDING
             )
             for job_id in job_ids
         ]
@@ -679,12 +683,12 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     # 6. the dask-worker starts processing a task
     exp_started_task = next_pending_task
 
-    async def _return_2nd_task_running(job_ids: list[str]) -> list[DaskClientTaskState]:
+    async def _return_2nd_task_running(job_ids: list[str]) -> list[RunningState]:
         return [
             (
-                DaskClientTaskState.PENDING_OR_STARTED
+                RunningState.STARTED
                 if job_id == exp_started_task.job_id
-                else DaskClientTaskState.PENDING
+                else RunningState.PENDING
             )
             for job_id in job_ids
         ]
@@ -743,12 +747,12 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
 
     # -------------------------------------------------------------------------------
     # 7. the task fails
-    async def _return_2nd_task_failed(job_ids: list[str]) -> list[DaskClientTaskState]:
+    async def _return_2nd_task_failed(job_ids: list[str]) -> list[RunningState]:
         return [
             (
-                DaskClientTaskState.ERRED
+                RunningState.FAILED
                 if job_id == exp_started_task.job_id
-                else DaskClientTaskState.PENDING
+                else RunningState.PENDING
             )
             for job_id in job_ids
         ]
@@ -805,12 +809,12 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     # 8. the last task shall succeed
     exp_started_task = expected_pending_tasks[0]
 
-    async def _return_3rd_task_success(job_ids: list[str]) -> list[DaskClientTaskState]:
+    async def _return_3rd_task_success(job_ids: list[str]) -> list[RunningState]:
         return [
             (
-                DaskClientTaskState.SUCCESS
+                RunningState.SUCCESS
                 if job_id == exp_started_task.job_id
-                else DaskClientTaskState.PENDING
+                else RunningState.PENDING
             )
             for job_id in job_ids
         ]
@@ -917,12 +921,12 @@ async def with_started_project(
     exp_started_task = expected_pending_tasks[0]
     expected_pending_tasks.remove(exp_started_task)
 
-    async def _return_1st_task_running(job_ids: list[str]) -> list[DaskClientTaskState]:
+    async def _return_1st_task_running(job_ids: list[str]) -> list[RunningState]:
         return [
             (
-                DaskClientTaskState.PENDING_OR_STARTED
+                RunningState.STARTED
                 if job_id == exp_started_task.job_id
-                else DaskClientTaskState.PENDING
+                else RunningState.PENDING
             )
             for job_id in job_ids
         ]
@@ -939,7 +943,7 @@ async def with_started_project(
     await assert_comp_runs(
         sqlalchemy_async_engine,
         expected_total=1,
-        expected_state=RunningState.PENDING,
+        expected_state=RunningState.STARTED,
         where_statement=and_(
             comp_runs.c.user_id == published_project.project.prj_owner,
             comp_runs.c.project_uuid == f"{published_project.project.uuid}",
@@ -948,8 +952,14 @@ async def with_started_project(
     await assert_comp_tasks(
         sqlalchemy_async_engine,
         project_uuid=published_project.project.uuid,
-        task_ids=[exp_started_task.node_id]
-        + [p.node_id for p in expected_pending_tasks],
+        task_ids=[exp_started_task.node_id],
+        expected_state=RunningState.STARTED,
+        expected_progress=None,
+    )
+    await assert_comp_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=published_project.project.uuid,
+        task_ids=[p.node_id for p in expected_pending_tasks],
         expected_state=RunningState.PENDING,
         expected_progress=None,
     )
@@ -1306,9 +1316,17 @@ async def test_handling_of_disconnected_scheduler_dask(
     )
 
 
+@pytest.fixture
+def with_disabled_unknown_max_time(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "simcore_service_director_v2.modules.comp_scheduler._scheduler_base._MAX_WAITING_TIME_FOR_UNKNOWN_TASKS",
+        new=datetime.timedelta(0),
+    )
+
+
 @dataclass(frozen=True, kw_only=True)
 class RebootState:
-    dask_task_status: DaskClientTaskState
+    dask_task_status: RunningState
     task_result: Exception | TaskOutputData
     expected_task_state_group1: RunningState
     expected_task_progress_group1: float
@@ -1322,7 +1340,7 @@ class RebootState:
     [
         pytest.param(
             RebootState(
-                dask_task_status=DaskClientTaskState.LOST,
+                dask_task_status=RunningState.UNKNOWN,
                 task_result=ComputationalBackendTaskNotFoundError(job_id="fake_job_id"),
                 expected_task_state_group1=RunningState.FAILED,
                 expected_task_progress_group1=1,
@@ -1334,7 +1352,7 @@ class RebootState:
         ),
         pytest.param(
             RebootState(
-                dask_task_status=DaskClientTaskState.ABORTED,
+                dask_task_status=RunningState.ABORTED,
                 task_result=TaskCancelledError(job_id="fake_job_id"),
                 expected_task_state_group1=RunningState.ABORTED,
                 expected_task_progress_group1=1,
@@ -1346,7 +1364,7 @@ class RebootState:
         ),
         pytest.param(
             RebootState(
-                dask_task_status=DaskClientTaskState.ERRED,
+                dask_task_status=RunningState.FAILED,
                 task_result=ValueError("some error during the call"),
                 expected_task_state_group1=RunningState.FAILED,
                 expected_task_progress_group1=1,
@@ -1358,7 +1376,7 @@ class RebootState:
         ),
         pytest.param(
             RebootState(
-                dask_task_status=DaskClientTaskState.PENDING_OR_STARTED,
+                dask_task_status=RunningState.STARTED,
                 task_result=ComputationalBackendTaskResultsNotReadyError(
                     job_id="fake_job_id"
                 ),
@@ -1372,7 +1390,7 @@ class RebootState:
         ),
         pytest.param(
             RebootState(
-                dask_task_status=DaskClientTaskState.SUCCESS,
+                dask_task_status=RunningState.SUCCESS,
                 task_result=TaskOutputData.model_validate({"whatever_output": 123}),
                 expected_task_state_group1=RunningState.SUCCESS,
                 expected_task_progress_group1=1,
@@ -1387,6 +1405,7 @@ class RebootState:
 async def test_handling_scheduled_tasks_after_director_reboots(
     with_disabled_auto_scheduling: mock.Mock,
     with_disabled_scheduler_publisher: mock.Mock,
+    with_disabled_unknown_max_time: None,
     mocked_dask_client: mock.MagicMock,
     sqlalchemy_async_engine: AsyncEngine,
     running_project: RunningProject,
@@ -1399,7 +1418,7 @@ async def test_handling_scheduled_tasks_after_director_reboots(
     shall continue scheduling correctly. Even though the task might have continued to run
     in the dask-scheduler."""
 
-    async def mocked_get_tasks_status(job_ids: list[str]) -> list[DaskClientTaskState]:
+    async def mocked_get_tasks_status(job_ids: list[str]) -> list[RunningState]:
         return [reboot_state.dask_task_status for j in job_ids]
 
     mocked_dask_client.get_tasks_status.side_effect = mocked_get_tasks_status
@@ -1514,8 +1533,8 @@ async def test_handling_cancellation_of_jobs_after_reboot(
     )
 
     # the backend shall report the tasks as running
-    async def mocked_get_tasks_status(job_ids: list[str]) -> list[DaskClientTaskState]:
-        return [DaskClientTaskState.PENDING_OR_STARTED for j in job_ids]
+    async def mocked_get_tasks_status(job_ids: list[str]) -> list[RunningState]:
+        return [RunningState.STARTED for j in job_ids]
 
     mocked_dask_client.get_tasks_status.side_effect = mocked_get_tasks_status
     # Running the scheduler, should actually cancel the run now
@@ -1559,8 +1578,8 @@ async def test_handling_cancellation_of_jobs_after_reboot(
     # the backend shall now report the tasks as aborted
     async def mocked_get_tasks_status_aborted(
         job_ids: list[str],
-    ) -> list[DaskClientTaskState]:
-        return [DaskClientTaskState.ABORTED for j in job_ids]
+    ) -> list[RunningState]:
+        return [RunningState.ABORTED for j in job_ids]
 
     mocked_dask_client.get_tasks_status.side_effect = mocked_get_tasks_status_aborted
 
@@ -1641,12 +1660,12 @@ async def test_running_pipeline_triggers_heartbeat(
     exp_started_task = expected_pending_tasks[0]
     expected_pending_tasks.remove(exp_started_task)
 
-    async def _return_1st_task_running(job_ids: list[str]) -> list[DaskClientTaskState]:
+    async def _return_1st_task_running(job_ids: list[str]) -> list[RunningState]:
         return [
             (
-                DaskClientTaskState.PENDING_OR_STARTED
+                RunningState.STARTED
                 if job_id == exp_started_task.job_id
-                else DaskClientTaskState.PENDING
+                else RunningState.PENDING
             )
             for job_id in job_ids
         ]

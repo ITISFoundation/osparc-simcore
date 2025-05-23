@@ -115,6 +115,11 @@ class SortedTasks:
     potentially_lost: list[CompTaskAtDB]
 
 
+_MAX_WAITING_TIME_FOR_UNKNOWN_TASKS: Final[datetime.timedelta] = datetime.timedelta(
+    seconds=30
+)
+
+
 async def _triage_changed_tasks(
     changed_tasks: list[tuple[_Previous, _Current]],
 ) -> SortedTasks:
@@ -128,7 +133,6 @@ async def _triage_changed_tasks(
         )
     ]
 
-    # NOTE: some tasks can be both started and completed since we might have the time they were running
     completed_tasks = [
         current for _, current in changed_tasks if current.state in COMPLETED_STATES
     ]
@@ -139,20 +143,26 @@ async def _triage_changed_tasks(
         if current.state in WAITING_FOR_START_STATES
     ]
 
-    lost_or_momentarily_lost_tasks = [
-        current for _, current in changed_tasks if current.state is RunningState.UNKNOWN
+    lost_tasks = [
+        current
+        for previous, current in changed_tasks
+        if (current.state is RunningState.UNKNOWN)
+        and (
+            (arrow.utcnow().datetime - previous.modified)
+            > _MAX_WAITING_TIME_FOR_UNKNOWN_TASKS
+        )
     ]
-    if lost_or_momentarily_lost_tasks:
+    if lost_tasks:
         _logger.warning(
             "%s are currently in unknown state. TIP: If they are running in an external cluster and it is not yet ready, that might explain it. But inform @sanderegg nevertheless!",
-            [t.node_id for t in lost_or_momentarily_lost_tasks],
+            [t.node_id for t in lost_tasks],
         )
 
     return SortedTasks(
         started_tasks,
         completed_tasks,
         waiting_for_resources_tasks,
-        lost_or_momentarily_lost_tasks,
+        lost_tasks,
     )
 
 
@@ -321,21 +331,30 @@ class BaseCompScheduler(ABC):
         user_id: UserID,
         processing_tasks: list[CompTaskAtDB],
         comp_run: CompRunsAtDB,
-    ) -> list[tuple[_Previous, _Current]]:
+    ) -> tuple[list[tuple[_Previous, _Current]], list[CompTaskAtDB]]:
         tasks_backend_status = await self._get_tasks_status(
             user_id, processing_tasks, comp_run
         )
 
-        return [
-            (
-                task,
-                task.model_copy(update={"state": backend_state}),
-            )
-            for task, backend_state in zip(
-                processing_tasks, tasks_backend_status, strict=True
-            )
-            if task.state is not backend_state
-        ]
+        return (
+            [
+                (
+                    task,
+                    task.model_copy(update={"state": backend_state}),
+                )
+                for task, backend_state in zip(
+                    processing_tasks, tasks_backend_status, strict=True
+                )
+                if task.state is not backend_state
+            ],
+            [
+                task
+                for task, backend_state in zip(
+                    processing_tasks, tasks_backend_status, strict=True
+                )
+                if task.state is backend_state is RunningState.STARTED
+            ],
+        )
 
     async def _process_started_tasks(
         self,
@@ -476,7 +495,10 @@ class BaseCompScheduler(ABC):
             return
 
         # get the tasks which state actually changed since last check
-        tasks_with_changed_states = await self._get_changed_tasks_from_backend(
+        (
+            tasks_with_changed_states,
+            executing_tasks,
+        ) = await self._get_changed_tasks_from_backend(
             user_id, tasks_inprocess, comp_run
         )
         # NOTE: typical states a task goes through
@@ -484,13 +506,14 @@ class BaseCompScheduler(ABC):
         # PENDING -> WAITING_FOR_RESOURCES (workers creation or missing) -> PENDING -> STARTED (worker started processing the task) -> SUCCESS/FAILED
         # or ABORTED (user cancelled) or UNKNOWN (lost task - it might be transient, be careful with this one)
         sorted_tasks = await _triage_changed_tasks(tasks_with_changed_states)
-
+        _logger.debug("found the following %s tasks with changed states", sorted_tasks)
         # now process the tasks
         if sorted_tasks.started:
             # NOTE: the dask-scheduler cannot differentiate between tasks that are effectively computing and
-            # tasks that are only queued and accepted by a dask-worker.
+            # tasks that are only queued and accepted by a dask-worker. We use dask plugins to report on tasks states
+            # states are published to log_event, and we directly publish into RabbitMQ the sidecar and services logs.
             # tasks_started should therefore be mostly empty but for cases where
-            # - dask Pub/Sub mechanism failed, the tasks goes from PENDING -> SUCCESS/FAILED/ABORTED without STARTED
+            # - dask log_event/subscribe_topic mechanism failed, the tasks goes from PENDING -> SUCCESS/FAILED/ABORTED without STARTED
             # - the task finished so fast that the STARTED state was skipped between 2 runs of the dv-2 comp scheduler
             await self._process_started_tasks(
                 sorted_tasks.started,
@@ -510,6 +533,9 @@ class BaseCompScheduler(ABC):
 
         if sorted_tasks.waiting:
             await self._process_waiting_tasks(sorted_tasks.waiting)
+
+        if executing_tasks:
+            await self._process_executing_tasks(user_id, executing_tasks, comp_run)
 
     @abstractmethod
     async def _start_tasks(
@@ -544,6 +570,15 @@ class BaseCompScheduler(ABC):
         comp_run: CompRunsAtDB,
     ) -> None:
         """process tasks from the 3rd party backend"""
+
+    @abstractmethod
+    async def _process_executing_tasks(
+        self,
+        user_id: UserID,
+        tasks: list[CompTaskAtDB],
+        comp_run: CompRunsAtDB,
+    ) -> None:
+        """process executing tasks from the 3rd party backend"""
 
     async def apply(
         self,

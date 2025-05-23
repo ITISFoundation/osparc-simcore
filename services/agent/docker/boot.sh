@@ -32,7 +32,11 @@ fi
 
 if [ "${SC_BOOT_MODE}" = "debug" ]; then
   # NOTE: production does NOT pre-installs debugpy
-  uv pip install debugpy
+  if command -v uv >/dev/null 2>&1; then
+    uv pip install debugpy
+  else
+    pip install debugpy
+  fi
 fi
 
 #
@@ -48,7 +52,7 @@ if [ "${SC_BOOT_MODE}" = "debug" ]; then
 
   exec sh -c "
     cd services/agent/src/simcore_service_agent && \
-    python -m debugpy --listen 0.0.0.0:${AGENT_SERVER_REMOTE_DEBUG_PORT} -m uvicorn main:the_app \
+    python -Xfrozen_modules=off -m debugpy --listen 0.0.0.0:${AGENT_SERVER_REMOTE_DEBUG_PORT} -m uvicorn main:the_app \
       --host 0.0.0.0 \
       --port 8000 \
       --reload \

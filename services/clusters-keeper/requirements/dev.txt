@@ -18,6 +18,7 @@
 --editable ../../packages/pytest-simcore
 --editable ../../packages/service-library[fastapi]
 --editable ../../packages/settings-library
+--editable ../../packages/dask-task-models-library
 
 # installs current package
 --editable .

@@ -3,7 +3,6 @@
 # pylint: disable=unused-variable
 
 
-from asyncio import AbstractEventLoop
 from collections.abc import Callable
 from typing import Any
 
@@ -21,8 +20,7 @@ from servicelib.common_headers import (
 
 
 @pytest.fixture
-def client(
-    event_loop: AbstractEventLoop,
+async def client(
     aiohttp_client: Callable,
     unused_tcp_port_factory: Callable,
 ) -> TestClient:
@@ -40,9 +38,7 @@ def client(
 
     setup_monitoring(app, app_name="pytest_app")
 
-    return event_loop.run_until_complete(
-        aiohttp_client(app, server_kwargs={"port": ports[0]})
-    )
+    return await aiohttp_client(app, server_kwargs={"port": ports[0]})
 
 
 def _assert_metrics_contain_entry(

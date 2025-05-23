@@ -19,11 +19,14 @@
 qx.Class.define("osparc.jobs.RunsTableModel", {
   extend: qx.ui.table.model.Remote,
 
-  construct: function(latestOnly = true, projectUuid = null) {
+  construct: function(projectUuid = null, includeChildren = false) {
     this.base(arguments);
 
-    this.__latestOnly = latestOnly;
-    this.__projectUuid = projectUuid;
+    this.__includeChildren = includeChildren;
+
+    this.set({
+      projectUuid,
+    });
 
     const jobsCols = osparc.jobs.RunsTable.COLS;
     const colLabels = Object.values(jobsCols).map(col => col.label);
@@ -38,6 +41,22 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
   },
 
   properties: {
+    projectUuid: {
+      check: "String",
+      init: null,
+      nullable: true,
+      event: "changeProjectUuid",
+      apply: "reloadData",
+    },
+
+    runningOnly: {
+      check: "Boolean",
+      init: true,
+      nullable: false,
+      event: "changeRunningOnly",
+      apply: "reloadData",
+    },
+
     isFetching: {
       check: "Boolean",
       init: false,
@@ -51,6 +70,12 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
         direction: "desc"
       }
     },
+
+    filterString: {
+      nullable: true,
+      check : "String",
+      init: "",
+    },
   },
 
   statics: {
@@ -58,16 +83,19 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
   },
 
   members: {
+    __includeChildren: false,
+
     // overridden
     _loadRowCount() {
       const offset = 0;
       const limit = 1;
+      const orderBy = this.getOrderBy();
       const resolveWResponse = true;
       let promise;
-      if (this.__latestOnly && this.__projectUuid === null) {
-        promise = osparc.store.Jobs.getInstance().fetchJobsActive(offset, limit, JSON.stringify(this.getOrderBy()), resolveWResponse);
+      if (this.getProjectUuid()) {
+        promise = osparc.store.Jobs.getInstance().fetchJobsHistory(this.getProjectUuid(), this.__includeChildren, offset, limit, orderBy, resolveWResponse);
       } else {
-        promise = osparc.store.Jobs.getInstance().fetchJobsHistory(this.__projectUuid, offset, limit, JSON.stringify(this.getOrderBy()), resolveWResponse);
+        promise = osparc.store.Jobs.getInstance().fetchJobsActive(this.getRunningOnly(), offset, limit, orderBy, resolveWResponse);
       }
       promise
         .then(resp => {
@@ -85,11 +113,12 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
       const lastRow = Math.min(qxLastRow, this._rowCount - 1);
       // Returns a request promise with given offset and limit
       const getFetchPromise = (offset, limit) => {
+      const orderBy = this.getOrderBy();
         let promise;
-        if (this.__latestOnly && this.__projectUuid === null) {
-          promise = osparc.store.Jobs.getInstance().fetchJobsActive(offset, limit, JSON.stringify(this.getOrderBy()));
+        if (this.getProjectUuid()) {
+          promise = osparc.store.Jobs.getInstance().fetchJobsHistory(this.getProjectUuid(), this.__includeChildren, offset, limit, orderBy);
         } else {
-          promise = osparc.store.Jobs.getInstance().fetchJobsHistory(this.__projectUuid, offset, limit, JSON.stringify(this.getOrderBy()));
+          promise = osparc.store.Jobs.getInstance().fetchJobsActive(this.getRunningOnly(), offset, limit, orderBy);
         }
         return promise
           .then(jobs => {

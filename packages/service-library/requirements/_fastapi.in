@@ -3,8 +3,6 @@
 #
 #
 
---constraint ./_base.txt
-
 
 fastapi
 fastapi-lifespan-manager

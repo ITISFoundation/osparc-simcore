@@ -22,7 +22,7 @@ from sqlalchemy.sql import and_, or_
 from sqlalchemy.sql.expression import func
 from sqlalchemy.sql.selectable import Select
 
-from ..models.services_db import ServiceFiltersDB, ServiceMetaDataDBGet
+from ..models.services_db import ServiceDBFilters, ServiceMetaDataDBGet
 
 SERVICES_META_DATA_COLS = get_columns_from_db_model(
     services_meta_data, ServiceMetaDataDBGet
@@ -116,10 +116,12 @@ def _has_access_rights(
     )
 
 
-def _apply_services_filters(
+def apply_services_filters(
     stmt: sa.sql.Select,
-    filters: ServiceFiltersDB,
+    filters: ServiceDBFilters,
 ) -> sa.sql.Select:
+    conditions = []
+
     if filters.service_type:
         prefix = SERVICE_TYPE_TO_PREFIX_MAP.get(filters.service_type)
         if prefix is None:
@@ -127,7 +129,34 @@ def _apply_services_filters(
             raise ValueError(msg)
 
         assert not prefix.endswith("/")  # nosec
-        return stmt.where(services_meta_data.c.key.like(f"{prefix}/%"))
+        conditions.append(services_meta_data.c.key.like(f"{prefix}/%"))
+
+    if filters.service_key_pattern:
+        # Convert glob pattern to SQL LIKE pattern
+        sql_pattern = filters.service_key_pattern.replace("*", "%")
+        conditions.append(services_meta_data.c.key.like(sql_pattern))
+
+    if filters.version_display_pattern:
+        # Convert glob pattern to SQL LIKE pattern and handle NULL values
+        sql_pattern = filters.version_display_pattern.replace("*", "%")
+        version_display_condition = services_meta_data.c.version_display.like(
+            sql_pattern
+        )
+
+        if sql_pattern == "%":
+            conditions.append(
+                sa.or_(
+                    version_display_condition,
+                    # If pattern==*, also match NULL when rest is empty
+                    services_meta_data.c.version_display.is_(None),
+                )
+            )
+        else:
+            conditions.append(version_display_condition)
+
+    if conditions:
+        stmt = stmt.where(sa.and_(*conditions))
+
     return stmt
 
 
@@ -136,7 +165,7 @@ def latest_services_total_count_stmt(
     product_name: ProductName,
     user_id: UserID,
     access_rights: sa.sql.ClauseElement,
-    filters: ServiceFiltersDB | None = None,
+    filters: ServiceDBFilters | None = None,
 ):
     stmt = (
         sa.select(func.count(sa.distinct(services_meta_data.c.key)))
@@ -156,7 +185,7 @@ def latest_services_total_count_stmt(
     )
 
     if filters:
-        stmt = _apply_services_filters(stmt, filters)
+        stmt = apply_services_filters(stmt, filters)
 
     return stmt
 
@@ -168,7 +197,7 @@ def list_latest_services_stmt(
     access_rights: sa.sql.ClauseElement,
     limit: int | None,
     offset: int | None,
-    filters: ServiceFiltersDB | None = None,
+    filters: ServiceDBFilters | None = None,
 ):
     # get all distinct services key fitting a page
     # and its corresponding latest version
@@ -200,7 +229,7 @@ def list_latest_services_stmt(
     )
 
     if filters:
-        cte_stmt = _apply_services_filters(cte_stmt, filters)
+        cte_stmt = apply_services_filters(cte_stmt, filters)
 
     cte = cte_stmt.cte("cte")
 
@@ -407,3 +436,79 @@ def get_service_history_stmt(
         .select_from(history_subquery)
         .group_by(history_subquery.c.key)
     )
+
+
+def all_services_total_count_stmt(
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    access_rights: AccessRightsClauses,
+    filters: ServiceDBFilters | None = None,
+) -> sa.sql.Select:
+    """Statement to count all services"""
+    stmt = (
+        sa.select(sa.func.count())
+        .select_from(
+            services_meta_data.join(
+                services_access_rights,
+                (services_meta_data.c.key == services_access_rights.c.key)
+                & (services_meta_data.c.version == services_access_rights.c.version),
+            ).join(
+                user_to_groups,
+                (user_to_groups.c.gid == services_access_rights.c.gid),
+            )
+        )
+        .where(
+            (services_access_rights.c.product_name == product_name)
+            & (user_to_groups.c.uid == user_id)
+            & access_rights
+        )
+    )
+
+    if filters:
+        stmt = apply_services_filters(stmt, filters)
+
+    return stmt
+
+
+def list_all_services_stmt(
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    access_rights: AccessRightsClauses,
+    limit: int | None = None,
+    offset: int | None = None,
+    filters: ServiceDBFilters | None = None,
+) -> sa.sql.Select:
+    """Statement to list all services with pagination"""
+    stmt = (
+        sa.select(*SERVICES_META_DATA_COLS)
+        .select_from(
+            services_meta_data.join(
+                services_access_rights,
+                (services_meta_data.c.key == services_access_rights.c.key)
+                & (services_meta_data.c.version == services_access_rights.c.version),
+            ).join(
+                user_to_groups,
+                (user_to_groups.c.gid == services_access_rights.c.gid),
+            )
+        )
+        .where(
+            (services_access_rights.c.product_name == product_name)
+            & (user_to_groups.c.uid == user_id)
+            & access_rights
+        )
+        .order_by(
+            services_meta_data.c.key, sa.desc(by_version(services_meta_data.c.version))
+        )
+    )
+
+    if filters:
+        stmt = apply_services_filters(stmt, filters)
+
+    if offset is not None:
+        stmt = stmt.offset(offset)
+    if limit is not None:
+        stmt = stmt.limit(limit)
+
+    return stmt

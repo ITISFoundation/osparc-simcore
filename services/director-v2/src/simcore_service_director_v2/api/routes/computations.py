@@ -17,6 +17,7 @@ Therefore,
 
 import contextlib
 import logging
+from datetime import timedelta
 from typing import Annotated, Any, Final
 
 import networkx as nx
@@ -84,7 +85,7 @@ from ..dependencies.rabbitmq import rabbitmq_rpc_client
 from ..dependencies.rut_client import get_rut_client
 from .computations_tasks import analyze_pipeline
 
-_PIPELINE_ABORT_TIMEOUT_S: Final[int] = 10
+_PIPELINE_ABORT_TIMEOUT_S: Final[timedelta] = timedelta(seconds=30)
 
 _logger = logging.getLogger(__name__)
 
@@ -121,7 +122,7 @@ async def _check_pipeline_startable(
     ):
         raise HTTPException(
             status_code=status.HTTP_406_NOT_ACCEPTABLE,
-            detail=f"Project {computation.project_id} cannot run since it contains deprecated tasks {jsonable_encoder( deprecated_tasks)}",
+            detail=f"Project {computation.project_id} cannot run since it contains deprecated tasks {jsonable_encoder(deprecated_tasks)}",
         )
 
 
@@ -624,7 +625,7 @@ async def delete_computation(
                 return retry_state.outcome.result()
 
             @retry(
-                stop=stop_after_delay(_PIPELINE_ABORT_TIMEOUT_S),
+                stop=stop_after_delay(_PIPELINE_ABORT_TIMEOUT_S.total_seconds()),
                 wait=wait_random(0, 2),
                 retry_error_callback=return_last_value,
                 retry=retry_if_result(lambda result: result is False),
@@ -643,7 +644,7 @@ async def delete_computation(
             # wait for the pipeline to be stopped
             if not await check_pipeline_stopped():
                 _logger.error(
-                    "pipeline %s could not be stopped properly after %ss",
+                    "pipeline %s could not be stopped properly after %s",
                     project_id,
                     _PIPELINE_ABORT_TIMEOUT_S,
                 )

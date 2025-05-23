@@ -84,10 +84,17 @@ class ComputationRunListQueryParams(
 ): ...
 
 
-class ComputationRunWithFiltersListQueryParams(ComputationRunListQueryParams):
+class ComputationRunIterationsLatestListQueryParams(ComputationRunListQueryParams):
     filter_only_running: bool = Field(
         default=False,
         description="If true, only running computations are returned",
+    )
+
+
+class ComputationRunIterationsListQueryParams(ComputationRunListQueryParams):
+    include_children: bool = Field(
+        default=False,
+        description="If true, all computational runs of the project and its children are returned (Currently supported only for root projects)",
     )
 
 
@@ -128,7 +135,11 @@ ComputationTaskListOrderParams = create_ordering_query_model_class(
 class ComputationTaskListQueryParams(
     PageQueryParameters,
     ComputationTaskListOrderParams,  # type: ignore[misc, valid-type]
-): ...
+):
+    include_children: bool = Field(
+        default=False,
+        description="If true, all tasks of the project and its children are returned (Currently supported only for root projects)",
+    )
 
 
 class ComputationTaskRestGet(OutputSchema):

@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.65.0
+  version: 0.66.0
 servers:
 - url: ''
   description: webserver
@@ -371,8 +371,8 @@ paths:
     get:
       tags:
       - auth
-      summary: Request Captcha
-      operationId: request_captcha
+      summary: Create Captcha
+      operationId: create_captcha
       responses:
         '200':
           description: Successful Response
@@ -1365,13 +1365,85 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_UserGet__'
-  /v0/admin/users:search:
+  /v0/admin/user-accounts:
     get:
       tags:
       - users
       - admin
-      summary: Search Users For Admin
-      operationId: search_users_for_admin
+      summary: List Users Accounts
+      operationId: list_users_accounts
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Offset
+      - name: review_status
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - enum:
+            - PENDING
+            - REVIEWED
+            type: string
+          - type: 'null'
+          title: Review Status
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page_UserAccountGet_'
+  /v0/admin/user-accounts:approve:
+    post:
+      tags:
+      - users
+      - admin
+      summary: Approve User Account
+      operationId: approve_user_account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserAccountApprove'
+        required: true
+      responses:
+        '204':
+          description: Successful Response
+  /v0/admin/user-accounts:reject:
+    post:
+      tags:
+      - users
+      - admin
+      summary: Reject User Account
+      operationId: reject_user_account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserAccountReject'
+        required: true
+      responses:
+        '204':
+          description: Successful Response
+  /v0/admin/user-accounts:search:
+    get:
+      tags:
+      - users
+      - admin
+      summary: Search User Accounts
+      operationId: search_user_accounts
       parameters:
       - name: email
         in: query
@@ -1387,14 +1459,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_UserForAdminGet__'
-  /v0/admin/users:pre-register:
+                $ref: '#/components/schemas/Envelope_list_UserAccountGet__'
+  /v0/admin/user-accounts:pre-register:
     post:
       tags:
       - users
       - admin
-      summary: Pre Register User For Admin
-      operationId: pre_register_user_for_admin
+      summary: Pre Register User Account
+      operationId: pre_register_user_account
       requestBody:
         content:
           application/json:
@@ -1407,7 +1479,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_UserForAdminGet_'
+                $ref: '#/components/schemas/Envelope_UserAccountGet_'
   /v0/wallets:
     get:
       tags:
@@ -2619,6 +2691,13 @@ paths:
           type: integer
           default: 0
           title: Offset
+      - name: include_children
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+          title: Include Children
       responses:
         '200':
           description: Successful Response
@@ -2664,6 +2743,13 @@ paths:
           type: integer
           default: 0
           title: Offset
+      - name: include_children
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+          title: Include Children
       responses:
         '200':
           description: Successful Response
@@ -3093,6 +3179,70 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Service Unavailable
+  /v0/functions:
+    post:
+      tags:
+      - functions
+      summary: Register Function
+      operationId: register_function
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+              - $ref: '#/components/schemas/ProjectFunctionToRegister'
+              - $ref: '#/components/schemas/SolverFunctionToRegister'
+              title: ' Body'
+              discriminator:
+                propertyName: functionClass
+                mapping:
+                  PROJECT: '#/components/schemas/ProjectFunctionToRegister'
+                  SOLVER: '#/components/schemas/SolverFunctionToRegister'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_Annotated_Union_RegisteredProjectFunctionGet__RegisteredSolverFunctionGet___FieldInfo_annotation_NoneType__required_True__discriminator__function_class____'
+  /v0/functions/{function_id}:
+    get:
+      tags:
+      - functions
+      summary: Get Function
+      operationId: get_function
+      parameters:
+      - name: function_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Function Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_Annotated_Union_RegisteredProjectFunctionGet__RegisteredSolverFunctionGet___FieldInfo_annotation_NoneType__required_True__discriminator__function_class____'
+    delete:
+      tags:
+      - functions
+      summary: Delete Function
+      operationId: delete_function
+      parameters:
+      - name: function_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Function Id
+      responses:
+        '204':
+          description: Successful Response
   /v0/tasks:
     get:
       tags:
@@ -8251,6 +8401,14 @@ components:
           phone: +1 123456789
           postalCode: '98001'
           privacyPolicy: true
+    AccountRequestStatus:
+      type: string
+      enum:
+      - PENDING
+      - APPROVED
+      - REJECTED
+      title: AccountRequestStatus
+      description: Status of the request for an account
     Activity:
       properties:
         stats:
@@ -8538,6 +8696,22 @@ components:
         name:
           type: string
           title: Name
+        description:
+          type: string
+          title: Description
+        versionDisplay:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Versiondisplay
+        contact:
+          anyOf:
+          - type: string
+            format: email
+          - type: 'null'
+          title: Contact
+        type:
+          $ref: '#/components/schemas/ServiceType'
         thumbnail:
           anyOf:
           - type: string
@@ -8548,26 +8722,10 @@ components:
           - type: string
           - type: 'null'
           title: Icon
-        description:
-          type: string
-          title: Description
         descriptionUi:
           type: boolean
           title: Descriptionui
           default: false
-        versionDisplay:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Versiondisplay
-        type:
-          $ref: '#/components/schemas/ServiceType'
-        contact:
-          anyOf:
-          - type: string
-            format: email
-          - type: 'null'
-          title: Contact
         authors:
           items:
             $ref: '#/components/schemas/Author'
@@ -8624,8 +8782,8 @@ components:
       - version
       - name
       - description
-      - type
       - contact
+      - type
       - authors
       - owner
       - inputs
@@ -8757,6 +8915,22 @@ components:
         name:
           type: string
           title: Name
+        description:
+          type: string
+          title: Description
+        versionDisplay:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Versiondisplay
+        contact:
+          anyOf:
+          - type: string
+            format: email
+          - type: 'null'
+          title: Contact
+        type:
+          $ref: '#/components/schemas/ServiceType'
         thumbnail:
           anyOf:
           - type: string
@@ -8767,26 +8941,10 @@ components:
           - type: string
           - type: 'null'
           title: Icon
-        description:
-          type: string
-          title: Description
         descriptionUi:
           type: boolean
           title: Descriptionui
           default: false
-        versionDisplay:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Versiondisplay
-        type:
-          $ref: '#/components/schemas/ServiceType'
-        contact:
-          anyOf:
-          - type: string
-            format: email
-          - type: 'null'
-          title: Contact
         authors:
           items:
             $ref: '#/components/schemas/Author'
@@ -8850,8 +9008,8 @@ components:
       - version
       - name
       - description
-      - type
       - contact
+      - type
       - authors
       - owner
       - inputs
@@ -9688,6 +9846,28 @@ components:
       additionalProperties: false
       type: object
       title: EmptyModel
+    ? Envelope_Annotated_Union_RegisteredProjectFunctionGet__RegisteredSolverFunctionGet___FieldInfo_annotation_NoneType__required_True__discriminator__function_class____
+    : properties:
+        data:
+          anyOf:
+          - oneOf:
+            - $ref: '#/components/schemas/RegisteredProjectFunctionGet'
+            - $ref: '#/components/schemas/RegisteredSolverFunctionGet'
+            discriminator:
+              propertyName: functionClass
+              mapping:
+                PROJECT: '#/components/schemas/RegisteredProjectFunctionGet'
+                SOLVER: '#/components/schemas/RegisteredSolverFunctionGet'
+          - type: 'null'
+          title: Data
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[Annotated[Union[RegisteredProjectFunctionGet, RegisteredSolverFunctionGet],
+        FieldInfo(annotation=NoneType, required=True, discriminator='function_class')]]
     Envelope_AnyUrl_:
       properties:
         data:
@@ -10476,11 +10656,11 @@ components:
           title: Error
       type: object
       title: Envelope[Union[WalletGet, NoneType]]
-    Envelope_UserForAdminGet_:
+    Envelope_UserAccountGet_:
       properties:
         data:
           anyOf:
-          - $ref: '#/components/schemas/UserForAdminGet'
+          - $ref: '#/components/schemas/UserAccountGet'
           - type: 'null'
         error:
           anyOf:
@@ -10488,7 +10668,7 @@ components:
           - type: 'null'
           title: Error
       type: object
-      title: Envelope[UserForAdminGet]
+      title: Envelope[UserAccountGet]
     Envelope_WalletGetWithAvailableCredits_:
       properties:
         data:
@@ -11032,12 +11212,12 @@ components:
           title: Error
       type: object
       title: Envelope[list[TaskGet]]
-    Envelope_list_UserForAdminGet__:
+    Envelope_list_UserAccountGet__:
       properties:
         data:
           anyOf:
           - items:
-              $ref: '#/components/schemas/UserForAdminGet'
+              $ref: '#/components/schemas/UserAccountGet'
             type: array
           - type: 'null'
           title: Data
@@ -11047,7 +11227,7 @@ components:
           - type: 'null'
           title: Error
       type: object
-      title: Envelope[list[UserForAdminGet]]
+      title: Envelope[list[UserAccountGet]]
     Envelope_list_UserGet__:
       properties:
         data:
@@ -12100,6 +12280,34 @@ components:
       additionalProperties: false
       type: object
       title: InvitationInfo
+    JSONFunctionInputSchema:
+      properties:
+        schema_content:
+          type: object
+          title: JSON Schema
+          description: JSON Schema
+          default: {}
+        schema_class:
+          type: string
+          const: application/schema+json
+          title: Schema Class
+          default: application/schema+json
+      type: object
+      title: JSONFunctionInputSchema
+    JSONFunctionOutputSchema:
+      properties:
+        schema_content:
+          type: object
+          title: JSON Schema
+          description: JSON Schema
+          default: {}
+        schema_class:
+          type: string
+          const: application/schema+json
+          title: Schema Class
+          default: application/schema+json
+      type: object
+      title: JSONFunctionOutputSchema
     LicensedItemPurchaseGet:
       properties:
         licensedItemPurchaseId:
@@ -13646,6 +13854,24 @@ components:
       - _links
       - data
       title: Page[ServiceRunGet]
+    Page_UserAccountGet_:
+      properties:
+        _meta:
+          $ref: '#/components/schemas/PageMetaInfoLimitOffset'
+        _links:
+          $ref: '#/components/schemas/PageLinks'
+        data:
+          items:
+            $ref: '#/components/schemas/UserAccountGet'
+          type: array
+          title: Data
+      additionalProperties: false
+      type: object
+      required:
+      - _meta
+      - _links
+      - data
+      title: Page[UserAccountGet]
     PatchRequestBody:
       properties:
         value:
@@ -14382,6 +14608,53 @@ components:
       - workbench
       - accessRights
       title: ProjectCreateNew
+    ProjectFunctionToRegister:
+      properties:
+        functionClass:
+          type: string
+          const: PROJECT
+          title: Functionclass
+          default: PROJECT
+        title:
+          type: string
+          title: Title
+          default: ''
+        description:
+          type: string
+          title: Description
+          default: ''
+        inputSchema:
+          oneOf:
+          - $ref: '#/components/schemas/JSONFunctionInputSchema'
+          title: Inputschema
+          discriminator:
+            propertyName: schema_class
+            mapping:
+              application/schema+json: '#/components/schemas/JSONFunctionInputSchema'
+        outputSchema:
+          oneOf:
+          - $ref: '#/components/schemas/JSONFunctionOutputSchema'
+          title: Outputschema
+          discriminator:
+            propertyName: schema_class
+            mapping:
+              application/schema+json: '#/components/schemas/JSONFunctionOutputSchema'
+        defaultInputs:
+          anyOf:
+          - type: object
+          - type: 'null'
+          title: Defaultinputs
+        projectId:
+          type: string
+          format: uuid
+          title: Projectid
+      type: object
+      required:
+      - inputSchema
+      - outputSchema
+      - defaultInputs
+      - projectId
+      title: ProjectFunctionToRegister
     ProjectGet:
       properties:
         uuid:
@@ -15154,6 +15427,115 @@ components:
       - name
       - message
       title: RegisterPhoneNextPage
+    RegisteredProjectFunctionGet:
+      properties:
+        functionClass:
+          type: string
+          const: PROJECT
+          title: Functionclass
+          default: PROJECT
+        title:
+          type: string
+          title: Title
+          default: ''
+        description:
+          type: string
+          title: Description
+          default: ''
+        inputSchema:
+          oneOf:
+          - $ref: '#/components/schemas/JSONFunctionInputSchema'
+          title: Inputschema
+          discriminator:
+            propertyName: schema_class
+            mapping:
+              application/schema+json: '#/components/schemas/JSONFunctionInputSchema'
+        outputSchema:
+          oneOf:
+          - $ref: '#/components/schemas/JSONFunctionOutputSchema'
+          title: Outputschema
+          discriminator:
+            propertyName: schema_class
+            mapping:
+              application/schema+json: '#/components/schemas/JSONFunctionOutputSchema'
+        defaultInputs:
+          anyOf:
+          - type: object
+          - type: 'null'
+          title: Defaultinputs
+        uid:
+          type: string
+          format: uuid
+          title: Uid
+        projectId:
+          type: string
+          format: uuid
+          title: Projectid
+      type: object
+      required:
+      - inputSchema
+      - outputSchema
+      - defaultInputs
+      - uid
+      - projectId
+      title: RegisteredProjectFunctionGet
+    RegisteredSolverFunctionGet:
+      properties:
+        functionClass:
+          type: string
+          const: SOLVER
+          title: Functionclass
+          default: SOLVER
+        title:
+          type: string
+          title: Title
+          default: ''
+        description:
+          type: string
+          title: Description
+          default: ''
+        inputSchema:
+          oneOf:
+          - $ref: '#/components/schemas/JSONFunctionInputSchema'
+          title: Inputschema
+          discriminator:
+            propertyName: schema_class
+            mapping:
+              application/schema+json: '#/components/schemas/JSONFunctionInputSchema'
+        outputSchema:
+          oneOf:
+          - $ref: '#/components/schemas/JSONFunctionOutputSchema'
+          title: Outputschema
+          discriminator:
+            propertyName: schema_class
+            mapping:
+              application/schema+json: '#/components/schemas/JSONFunctionOutputSchema'
+        defaultInputs:
+          anyOf:
+          - type: object
+          - type: 'null'
+          title: Defaultinputs
+        uid:
+          type: string
+          format: uuid
+          title: Uid
+        solverKey:
+          type: string
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+          title: Solverkey
+        solverVersion:
+          type: string
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          title: Solverversion
+      type: object
+      required:
+      - inputSchema
+      - outputSchema
+      - defaultInputs
+      - uid
+      - solverKey
+      - solverVersion
+      title: RegisteredSolverFunctionGet
     ReplaceWalletAutoRecharge:
       properties:
         enabled:
@@ -15945,6 +16327,58 @@ components:
       required:
       - position
       title: SlideshowUI
+    SolverFunctionToRegister:
+      properties:
+        functionClass:
+          type: string
+          const: SOLVER
+          title: Functionclass
+          default: SOLVER
+        title:
+          type: string
+          title: Title
+          default: ''
+        description:
+          type: string
+          title: Description
+          default: ''
+        inputSchema:
+          oneOf:
+          - $ref: '#/components/schemas/JSONFunctionInputSchema'
+          title: Inputschema
+          discriminator:
+            propertyName: schema_class
+            mapping:
+              application/schema+json: '#/components/schemas/JSONFunctionInputSchema'
+        outputSchema:
+          oneOf:
+          - $ref: '#/components/schemas/JSONFunctionOutputSchema'
+          title: Outputschema
+          discriminator:
+            propertyName: schema_class
+            mapping:
+              application/schema+json: '#/components/schemas/JSONFunctionOutputSchema'
+        defaultInputs:
+          anyOf:
+          - type: object
+          - type: 'null'
+          title: Defaultinputs
+        solverKey:
+          type: string
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+          title: Solverkey
+        solverVersion:
+          type: string
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          title: Solverversion
+      type: object
+      required:
+      - inputSchema
+      - outputSchema
+      - defaultInputs
+      - solverKey
+      - solverVersion
+      title: SolverFunctionToRegister
     SpecificInfo:
       properties:
         aws_ec2_instances:
@@ -16562,7 +16996,21 @@ components:
       - number
       - e_tag
       title: UploadedPart
-    UserForAdminGet:
+    UserAccountApprove:
+      properties:
+        email:
+          type: string
+          format: email
+          title: Email
+        invitation:
+          anyOf:
+          - $ref: '#/components/schemas/InvitationGenerate'
+          - type: 'null'
+      type: object
+      required:
+      - email
+      title: UserAccountApprove
+    UserAccountGet:
       properties:
         firstName:
           anyOf:
@@ -16618,11 +17066,33 @@ components:
           type: object
           title: Extras
           description: Keeps extra information provided in the request form
+        preRegistrationId:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Preregistrationid
         invitedBy:
           anyOf:
           - type: string
           - type: 'null'
           title: Invitedby
+        accountRequestStatus:
+          anyOf:
+          - $ref: '#/components/schemas/AccountRequestStatus'
+          - type: 'null'
+        accountRequestReviewedBy:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
+          title: Accountrequestreviewedby
+        accountRequestReviewedAt:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Accountrequestreviewedat
         registered:
           type: boolean
           title: Registered
@@ -16651,9 +17121,21 @@ components:
       - state
       - postalCode
       - country
+      - preRegistrationId
+      - accountRequestStatus
       - registered
       - status
-      title: UserForAdminGet
+      title: UserAccountGet
+    UserAccountReject:
+      properties:
+        email:
+          type: string
+          format: email
+          title: Email
+      type: object
+      required:
+      - email
+      title: UserAccountReject
     UserGet:
       properties:
         userId:

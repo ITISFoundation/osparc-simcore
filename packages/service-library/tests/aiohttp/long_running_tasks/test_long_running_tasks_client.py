@@ -30,15 +30,12 @@ def app(server_routes: web.RouteTableDef) -> web.Application:
 
 
 @pytest.fixture
-def client(
-    event_loop: asyncio.AbstractEventLoop,
+async def client(
     aiohttp_client: Callable,
     unused_tcp_port_factory: Callable,
     app: web.Application,
 ) -> TestClient:
-    return event_loop.run_until_complete(
-        aiohttp_client(app, server_kwargs={"port": unused_tcp_port_factory()})
-    )
+    return await aiohttp_client(app, server_kwargs={"port": unused_tcp_port_factory()})
 
 
 @pytest.fixture

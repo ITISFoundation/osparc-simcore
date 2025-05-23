@@ -53,11 +53,11 @@ qx.Class.define("osparc.wrapper.JsonTreeViewer", {
   members: {
     init: function() {
       // initialize the script loading
-      let jsonTreeViewerPath = "jsontreeviewer/jsonTree.js";
-      let jsonTreeViewerCss = "jsontreeviewer/jsonTree.css";
-      let jsonTreeViewerCssUri = qx.util.ResourceManager.getInstance().toUri(jsonTreeViewerCss);
+      const jsonTreeViewerPath = "jsontreeviewer/jsonTree.js";
+      const jsonTreeViewerCss = "jsontreeviewer/jsonTree.css";
+      const jsonTreeViewerCssUri = qx.util.ResourceManager.getInstance().toUri(jsonTreeViewerCss);
       qx.module.Css.includeStylesheet(jsonTreeViewerCssUri);
-      let dynLoader = new qx.util.DynamicScriptLoader([
+      const dynLoader = new qx.util.DynamicScriptLoader([
         jsonTreeViewerPath
       ]);
 
@@ -67,16 +67,16 @@ qx.Class.define("osparc.wrapper.JsonTreeViewer", {
       }, this);
 
       dynLoader.addListener("failed", e => {
-        let data = e.getData();
+        const data = e.getData();
         console.error("failed to load " + data.script);
       }, this);
 
       dynLoader.start();
     },
 
-    print: function(data, wrapper) {
-      jsonTree.create(data, wrapper);
-      // tree.expand();
+    print: function(jsonObj, domEl) {
+      const tree = jsonTree.create(jsonObj, domEl);
+      tree.expand();
     }
   }
 });

@@ -23,8 +23,7 @@ from simcore_service_webserver.users.plugin import setup_users
 
 
 @pytest.fixture
-def client(
-    event_loop,
+async def client(
     aiohttp_client: Callable,
     app_environment: EnvVarsDict,
     postgres_db: sa.engine.Engine,
@@ -40,4 +39,4 @@ def client(
     setup_users(app)
     setup_groups(app)
 
-    return event_loop.run_until_complete(aiohttp_client(app))
+    return await aiohttp_client(app)

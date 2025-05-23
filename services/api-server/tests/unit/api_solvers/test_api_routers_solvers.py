@@ -6,12 +6,12 @@
 
 
 import httpx
+from fastapi import status
 from pydantic import TypeAdapter
 from pytest_mock import MockType
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.pagination import OnePage
 from simcore_service_api_server.models.schemas.solvers import Solver, SolverPort
-from starlette import status
 
 
 async def test_list_all_solvers(
@@ -31,6 +31,47 @@ async def test_list_all_solvers_paginated(
     response = await client.get(f"/{API_VTAG}/solvers/page", auth=auth)
     assert response.status_code == status.HTTP_200_OK
     assert len(response.json()["items"]) == response.json()["total"]
+
+
+async def test_list_all_solvers_paginated_with_filters(
+    mocked_catalog_rpc_api: dict[str, MockType],
+    client: httpx.AsyncClient,
+    auth: httpx.BasicAuth,
+):
+    # Test filter by solver_id
+    response = await client.get(
+        f"/{API_VTAG}/solvers/page?solver_id=simcore/services/comp/itis/*",
+        auth=auth,
+    )
+    assert response.status_code == status.HTTP_200_OK
+    solvers = response.json()["items"]
+    assert all("simcore/services/comp/itis/" in solver["id"] for solver in solvers)
+
+    # Test filter by version_display
+    response = await client.get(
+        f"/{API_VTAG}/solvers/page?version_display=*Xtreme*",
+        auth=auth,
+    )
+    assert response.status_code == status.HTTP_200_OK
+    solvers = response.json()["items"]
+    assert all(
+        solver["version_display"] and "Xtreme" in solver["version_display"]
+        for solver in solvers
+    )
+
+    # Test combination of both filters
+    response = await client.get(
+        f"/{API_VTAG}/solvers/page?solver_id=simcore/services/comp/itis/*&version_display=*Xtreme*",
+        auth=auth,
+    )
+    assert response.status_code == status.HTTP_200_OK
+    solvers = response.json()["items"]
+    assert all(
+        "simcore/services/comp/itis/" in solver["id"]
+        and solver["version_display"]
+        and "Xtreme" in solver["version_display"]
+        for solver in solvers
+    )
 
 
 async def test_list_all_solvers_releases(

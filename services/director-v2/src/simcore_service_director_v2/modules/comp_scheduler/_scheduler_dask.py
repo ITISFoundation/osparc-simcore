@@ -31,7 +31,6 @@ from ...core.errors import (
 )
 from ...models.comp_runs import CompRunsAtDB, Iteration, RunMetadataDict
 from ...models.comp_tasks import CompTaskAtDB
-from ...models.dask_subsystem import DaskClientTaskState
 from ...utils.dask import (
     clean_task_output_and_log_files_if_invalid,
     parse_output_data,
@@ -45,23 +44,16 @@ from ...utils.rabbitmq import (
 from ..clusters_keeper import get_or_create_on_demand_cluster
 from ..dask_client import DaskClient, PublishedComputationTask
 from ..dask_clients_pool import DaskClientsPool
-from ..db.repositories.comp_runs import CompRunsRepository
+from ..db.repositories.comp_runs import (
+    CompRunsRepository,
+)
 from ..db.repositories.comp_tasks import CompTasksRepository
 from ._scheduler_base import BaseCompScheduler
+from ._utils import (
+    WAITING_FOR_START_STATES,
+)
 
 _logger = logging.getLogger(__name__)
-
-
-_DASK_CLIENT_TASK_STATE_TO_RUNNING_STATE_MAP: dict[
-    DaskClientTaskState, RunningState
-] = {
-    DaskClientTaskState.PENDING: RunningState.PENDING,
-    DaskClientTaskState.NO_WORKER: RunningState.WAITING_FOR_RESOURCES,
-    DaskClientTaskState.LOST: RunningState.UNKNOWN,
-    DaskClientTaskState.ERRED: RunningState.FAILED,
-    DaskClientTaskState.ABORTED: RunningState.ABORTED,
-    DaskClientTaskState.SUCCESS: RunningState.SUCCESS,
-}
 
 
 @asynccontextmanager
@@ -159,31 +151,67 @@ class DaskScheduler(BaseCompScheduler):
                 use_on_demand_clusters=comp_run.use_on_demand_clusters,
                 run_metadata=comp_run.metadata,
             ) as client:
-                tasks_statuses = await client.get_tasks_status(
-                    [f"{t.job_id}" for t in tasks]
-                )
-                # process dask states
-            running_states: list[RunningState] = []
-            for dask_task_state, task in zip(tasks_statuses, tasks, strict=True):
-                if dask_task_state is DaskClientTaskState.PENDING_OR_STARTED:
-                    running_states += [
-                        (
-                            RunningState.STARTED
-                            if task.progress is not None
-                            else RunningState.PENDING
-                        )
-                    ]
-                else:
-                    running_states += [
-                        _DASK_CLIENT_TASK_STATE_TO_RUNNING_STATE_MAP.get(
-                            dask_task_state, RunningState.UNKNOWN
-                        )
-                    ]
-            return running_states
+                return await client.get_tasks_status([f"{t.job_id}" for t in tasks])
 
         except ComputationalBackendOnDemandNotReadyError:
             _logger.info("The on demand computational backend is not ready yet...")
             return [RunningState.WAITING_FOR_CLUSTER] * len(tasks)
+
+    async def _process_executing_tasks(
+        self,
+        user_id: UserID,
+        tasks: list[CompTaskAtDB],
+        comp_run: CompRunsAtDB,
+    ) -> None:
+        task_progresses = []
+        try:
+            async with _cluster_dask_client(
+                user_id,
+                self,
+                use_on_demand_clusters=comp_run.use_on_demand_clusters,
+                run_metadata=comp_run.metadata,
+            ) as client:
+                task_progresses = await client.get_tasks_progress(
+                    [f"{t.job_id}" for t in tasks],
+                )
+            for task_progress_event in task_progresses:
+                if task_progress_event:
+                    await CompTasksRepository(
+                        self.db_engine
+                    ).update_project_task_progress(
+                        task_progress_event.task_owner.project_id,
+                        task_progress_event.task_owner.node_id,
+                        task_progress_event.progress,
+                    )
+
+        except ComputationalBackendOnDemandNotReadyError:
+            _logger.info("The on demand computational backend is not ready yet...")
+
+        comp_tasks_repo = CompTasksRepository(self.db_engine)
+        await asyncio.gather(
+            *(
+                comp_tasks_repo.update_project_task_progress(
+                    t.task_owner.project_id,
+                    t.task_owner.node_id,
+                    t.progress,
+                )
+                for t in task_progresses
+                if t
+            )
+        )
+        await asyncio.gather(
+            *(
+                publish_service_progress(
+                    self.rabbitmq_client,
+                    user_id=t.task_owner.user_id,
+                    project_id=t.task_owner.project_id,
+                    node_id=t.task_owner.node_id,
+                    progress=t.progress,
+                )
+                for t in task_progresses
+                if t
+            )
+        )
 
     async def _stop_tasks(
         self, user_id: UserID, tasks: list[CompTaskAtDB], comp_run: CompRunsAtDB
@@ -356,7 +384,7 @@ class DaskScheduler(BaseCompScheduler):
             node_id = task_progress_event.task_owner.node_id
             comp_tasks_repo = CompTasksRepository(self.db_engine)
             task = await comp_tasks_repo.get_task(project_id, node_id)
-            if task.progress is None:
+            if task.state in WAITING_FOR_START_STATES:
                 task.state = RunningState.STARTED
                 task.progress = task_progress_event.progress
                 run = await CompRunsRepository(self.db_engine).get(user_id, project_id)

@@ -19,10 +19,10 @@
 qx.Class.define("osparc.jobs.SubRunsTable", {
   extend: qx.ui.table.Table,
 
-  construct: function(projectUuid) {
+  construct: function(projectUuid, includeChildren = false) {
     this.base(arguments);
 
-    const model = new osparc.jobs.SubRunsTableModel(projectUuid);
+    const model = new osparc.jobs.SubRunsTableModel(projectUuid, includeChildren);
     this.setTableModel(model);
 
     this.set({
@@ -41,7 +41,7 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
     const fontButtonRendererInfo = new osparc.ui.table.cellrenderer.ImageButtonRenderer("info", iconPathInfo);
     columnModel.setDataCellRenderer(this.self().COLS.INFO.column, fontButtonRendererInfo);
 
-    const iconPathLogs = "osparc/icons/logs-text.svg";
+    const iconPathLogs = "osparc/icons/file-download-text.svg";
     const fontButtonRendererLogs = new osparc.ui.table.cellrenderer.ImageButtonRenderer("logs", iconPathLogs);
     columnModel.setDataCellRenderer(this.self().COLS.LOGS.column, fontButtonRendererLogs);
 
@@ -108,7 +108,7 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
         id: "credits",
         column: 9,
         label: qx.locale.Manager.tr("Credits"),
-        width: 50
+        width: 70
       },
       INFO: {
         id: "info",
@@ -175,7 +175,7 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
           if (logDownloadLink) {
             osparc.utils.Utils.downloadLink(logDownloadLink, "GET", rowData["nodeName"] + ".logs");
           } else {
-            osparc.component.message.FlashMessenger.getInstance().logAsWarning(this.tr("No logs available"));
+            osparc.FlashMessenger.logAs(this.tr("No logs available"), "WARNING");
           }
           break;
         }
