@@ -38,7 +38,9 @@ async def test_iter_pages_args(
 
     num_pages = 0
     page_args = None
-    for page_index, page_args in enumerate(iter_pagination_params(offset, limit)):
+    for page_index, page_args in enumerate(
+        iter_pagination_params(offset=offset, limit=limit)
+    ):
 
         page_items, page_args.total_number_of_items = await get_page(
             page_args.offset_current, page_args.limit
