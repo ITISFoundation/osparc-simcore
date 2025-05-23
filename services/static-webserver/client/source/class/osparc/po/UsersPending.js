@@ -20,50 +20,6 @@ qx.Class.define("osparc.po.UsersPending", {
   extend: osparc.po.BaseView,
 
   statics: {
-    getPendingUsers: function() {
-      return new Promise(resolve => {
-        resolve({
-          data: [{
-            name: "John Doe",
-            email: "john.doe@email.com",
-            date: "2025-01-01 00:00:00.702394",
-            status: "PENDING",
-            info: {
-              "institution": "ETH Zurich",
-              "department": "Department of Physics",
-              "position": "PhD Student",
-              "country": "Switzerland",
-              "city": "Zurich",
-            },
-          }, {
-            name: "Jane Doe",
-            email: "jane.doe@email.com",
-            date: "2025-01-01 00:01:00.702394",
-            status: "REJECTED",
-            info: {
-              "institution": "ETH Zurich",
-              "department": "Department of Physics",
-              "position": "PhD Student",
-              "country": "Switzerland",
-              "city": "Zurich",
-            },
-          }, {
-            name: "Alice Smith",
-            email: "alice.smith@email.com",
-            date: "2025-01-01 00:02:00.702394",
-            status: "APPROVED",
-            info: {
-              "institution": "ETH Zurich",
-              "department": "Department of Physics",
-              "position": "PhD Student",
-              "country": "Switzerland",
-              "city": "Zurich",
-            },
-          }]
-        });
-      });
-    },
-
     createApproveButton: function(email) {
       const button = new osparc.ui.form.FetchButton(qx.locale.Manager.tr("Approve"));
       button.addListener("execute", () => {
@@ -250,8 +206,12 @@ qx.Class.define("osparc.po.UsersPending", {
             break;
           }
           case "APPROVED": {
+            /*
             const resendEmailButton = this.self().createResendEmailButton(pendingUser.email);
             buttonsLayout.add(resendEmailButton);
+            */
+            const rejectButton = this.self().createRejectButton(pendingUser.email);
+            buttonsLayout.add(rejectButton);
             break;
           }
         }
@@ -260,13 +220,17 @@ qx.Class.define("osparc.po.UsersPending", {
     },
 
     __populatePendingUsersLayout: function() {
-      // osparc.data.Resources.fetch("poUsers", "getPendingUsers", params)
-      this.self().getPendingUsers()
-        .then(pendingUsers => {
+      Promise.all([
+        osparc.data.Resources.fetch("poUsers", "getPendingUsers"),
+        osparc.data.Resources.fetch("poUsers", "getReviewedUsers")
+      ])
+        .then(resps => {
+          const pendingUsers = resps[0]["data"];
+          const reviewedUsers = resps[1]["data"];
           const pendingUsersLayout = this.getChildControl("pending-users-layout");
           pendingUsersLayout.removeAll();
           this.__addHeader();
-          this.__addRows(pendingUsers["data"]);
+          this.__addRows(pendingUsers.concat(reviewedUsers));
         })
         .catch(err => osparc.FlashMessenger.logError(err));
     }
