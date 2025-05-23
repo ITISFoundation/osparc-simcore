@@ -46,7 +46,7 @@ qx.Class.define("osparc.store.Templates", {
     fetchTemplate: function(templateId) {
       const params = {
         url: {
-          "templateId": templateId,
+          "studyId": templateId,
         }
       };
       return osparc.data.Resources.fetch("studies", "getOne", params)
