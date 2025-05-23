@@ -15,6 +15,7 @@ from fastapi_pagination.links import LimitOffsetPage as _LimitOffsetPage
 from models_library.rest_pagination import (
     DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
+    MINIMUM_NUMBER_OF_ITEMS_PER_PAGE,
 )
 from pydantic import (
     BaseModel,
@@ -32,8 +33,9 @@ Page = CustomizedPage[
     # Customizes the default and maximum to fit those of the web-server. It simplifies interconnection
     UseParamsFields(
         limit=Query(
+            # NOTE: in sync with PageLimitInt
             DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
-            ge=1,
+            ge=MINIMUM_NUMBER_OF_ITEMS_PER_PAGE,
             le=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
             description="Page size limit",
         )

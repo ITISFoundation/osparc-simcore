@@ -4,14 +4,12 @@ from models_library.api_schemas_catalog.services import ServiceListFilters
 from models_library.basic_types import VersionStr
 from models_library.products import ProductName
 from models_library.rest_pagination import (
-    MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
     PageMetaInfoLimitOffset,
     PageOffsetInt,
 )
 from models_library.rpc_pagination import PageLimitInt
 from models_library.services_enums import ServiceType
 from models_library.users import UserID
-from pydantic import NonNegativeInt, PositiveInt
 from simcore_service_api_server.models.basic_types import NameValueTuple
 
 from ._service_jobs import JobService
@@ -26,8 +24,6 @@ from .models.api_resources import compose_resource_name
 from .models.schemas.jobs import Job
 from .models.schemas.solvers import Solver, SolverKeyId
 from .services_rpc.catalog import CatalogService
-
-DEFAULT_PAGINATION_LIMIT = MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE - 1
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -91,11 +87,11 @@ class SolverService:
     async def list_jobs(
         self,
         *,
+        pagination_offset: PageOffsetInt | None = None,
+        pagination_limit: PageLimitInt | None = None,
         filter_by_solver_key: SolverKeyId | None = None,
         filter_by_solver_version: VersionStr | None = None,
         filter_any_custom_metadata: list[NameValueTuple] | None = None,
-        pagination_offset: PageOffsetInt = 0,
-        pagination_limit: PageLimitInt = DEFAULT_PAGINATION_LIMIT,
     ) -> tuple[list[Job], PageMetaInfoLimitOffset]:
         """Lists all solver jobs for a user with pagination"""
 
@@ -125,8 +121,8 @@ class SolverService:
         self,
         *,
         solver_key: SolverKeyId,
-        pagination_offset: NonNegativeInt,
-        pagination_limit: PositiveInt,
+        pagination_offset: PageOffsetInt | None = None,
+        pagination_limit: PageLimitInt | None = None,
     ) -> tuple[list[Solver], PageMetaInfoLimitOffset]:
 
         releases, page_meta = (
@@ -156,8 +152,8 @@ class SolverService:
     async def list_all_solvers(
         self,
         *,
-        pagination_offset: NonNegativeInt,
-        pagination_limit: PositiveInt,
+        pagination_offset: PageOffsetInt | None = None,
+        pagination_limit: PageLimitInt | None = None,
         filter_by_solver_key_pattern: str | None = None,
         filter_by_version_display_pattern: str | None = None,
     ) -> tuple[list[Solver], PageMetaInfoLimitOffset]:
@@ -197,8 +193,8 @@ class SolverService:
     async def latest_solvers(
         self,
         *,
-        pagination_offset: NonNegativeInt,
-        pagination_limit: PositiveInt,
+        pagination_offset: PageOffsetInt | None = None,
+        pagination_limit: PageLimitInt | None = None,
         filter_by_solver_key_pattern: str | None = None,
         filter_by_version_display_pattern: str | None = None,
     ) -> tuple[list[Solver], PageMetaInfoLimitOffset]:

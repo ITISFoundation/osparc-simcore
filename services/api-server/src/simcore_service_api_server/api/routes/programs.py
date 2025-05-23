@@ -66,7 +66,7 @@ async def list_programs(
 
     return create_page(
         programs,
-        total=len(programs),
+        total=page_meta.total,
         params=page_params,
     )
 
@@ -90,8 +90,8 @@ async def list_program_history(
 ):
     programs, page_meta = await program_service.list_program_history(
         program_key=program_key,
-        offset=page_params.offset,
-        limit=page_params.limit,
+        pagination_offset=page_params.offset,
+        pagination_limit=page_params.limit,
     )
     page_params.limit = page_meta.limit
     page_params.offset = page_meta.offset
@@ -103,7 +103,7 @@ async def list_program_history(
 
     return create_page(
         programs,
-        total=len(programs),
+        total=page_meta.total,
         params=page_params,
     )
 

@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from functools import partial
+from typing import Any
 
+from common_library.exclude import as_dict_exclude_none
 from models_library.api_schemas_catalog.services import (
     LatestServiceGet,
     ServiceGetV2,
@@ -10,7 +12,6 @@ from models_library.api_schemas_catalog.services import (
 from models_library.api_schemas_catalog.services_ports import ServicePortGet
 from models_library.products import ProductName
 from models_library.rest_pagination import (
-    DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     PageLimitInt,
     PageMetaInfoLimitOffset,
     PageOffsetInt,
@@ -36,6 +37,16 @@ from ..exceptions.service_errors_utils import service_exception_mapper
 _exception_mapper = partial(service_exception_mapper, service_name="CatalogService")
 
 
+def _create_page_meta_info(page: Any) -> PageMetaInfoLimitOffset:
+    """Creates a PageMetaInfoLimitOffset from an RPC response page."""
+    return PageMetaInfoLimitOffset(
+        limit=page.meta.limit,
+        offset=page.meta.offset,
+        total=page.meta.total,
+        count=page.meta.count,
+    )
+
+
 @dataclass(frozen=True, kw_only=True)
 class CatalogService:
     _rpc_client: RabbitMQRPCClient
@@ -45,56 +56,53 @@ class CatalogService:
     async def list_latest_releases(
         self,
         *,
-        pagination_offset: PageOffsetInt = 0,
-        pagination_limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+        pagination_offset: PageOffsetInt | None = None,
+        pagination_limit: PageLimitInt | None = None,
         filters: ServiceListFilters | None = None,
     ) -> tuple[list[LatestServiceGet], PageMetaInfoLimitOffset]:
+
+        pagination_kwargs = as_dict_exclude_none(
+            offset=pagination_offset, limit=pagination_limit
+        )
 
         page = await catalog_rpc.list_services_paginated(
             self._rpc_client,
             product_name=self.product_name,
             user_id=self.user_id,
-            offset=pagination_offset,
-            limit=pagination_limit,
             filters=filters,
+            **pagination_kwargs,
         )
-        meta = PageMetaInfoLimitOffset(
-            limit=page.meta.limit,
-            offset=page.meta.offset,
-            total=page.meta.total,
-            count=page.meta.count,
-        )
+        meta = _create_page_meta_info(page)
         return page.data, meta
 
     async def list_release_history_latest_first(
         self,
         *,
         filter_by_service_key: ServiceKey,
-        pagination_offset: PageOffsetInt = 0,
-        pagination_limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+        pagination_offset: PageOffsetInt | None = None,
+        pagination_limit: PageLimitInt | None = None,
     ) -> tuple[list[ServiceRelease], PageMetaInfoLimitOffset]:
+
+        pagination_kwargs = as_dict_exclude_none(
+            offset=pagination_offset, limit=pagination_limit
+        )
 
         page = await catalog_rpc.list_my_service_history_latest_first(
             self._rpc_client,
             product_name=self.product_name,
             user_id=self.user_id,
             service_key=filter_by_service_key,
-            offset=pagination_offset,
-            limit=pagination_limit,
+            **pagination_kwargs,
         )
-        meta = PageMetaInfoLimitOffset(
-            limit=page.meta.limit,
-            offset=page.meta.offset,
-            total=page.meta.total,
-            count=page.meta.count,
-        )
+
+        meta = _create_page_meta_info(page)
         return page.data, meta
 
     async def list_all_services_summaries(
         self,
         *,
-        pagination_offset: PageOffsetInt = 0,
-        pagination_limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+        pagination_offset: PageOffsetInt | None = None,
+        pagination_limit: PageLimitInt | None = None,
         filters: ServiceListFilters | None = None,
     ) -> tuple[list[ServiceSummary], PageMetaInfoLimitOffset]:
         """Lists all services with pagination, including all versions of each service.
@@ -109,20 +117,19 @@ class CatalogService:
         Returns:
             Tuple containing list of service summaries and pagination metadata
         """
+
+        pagination_kwargs = as_dict_exclude_none(
+            offset=pagination_offset, limit=pagination_limit
+        )
+
         page = await catalog_rpc.list_all_services_summaries_paginated(
             self._rpc_client,
             product_name=self.product_name,
             user_id=self.user_id,
-            offset=pagination_offset,
-            limit=pagination_limit,
             filters=filters,
+            **pagination_kwargs,
         )
-        meta = PageMetaInfoLimitOffset(
-            limit=page.meta.limit,
-            offset=page.meta.offset,
-            total=page.meta.total,
-            count=page.meta.count,
-        )
+        meta = _create_page_meta_info(page)
         return page.data, meta
 
     @_exception_mapper(

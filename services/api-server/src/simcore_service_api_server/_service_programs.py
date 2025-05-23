@@ -2,9 +2,12 @@ from dataclasses import dataclass
 
 from models_library.api_schemas_catalog.services import ServiceListFilters
 from models_library.basic_types import VersionStr
-from models_library.rest_pagination import PageMetaInfoLimitOffset
+from models_library.rest_pagination import (
+    PageLimitInt,
+    PageMetaInfoLimitOffset,
+    PageOffsetInt,
+)
 from models_library.services_enums import ServiceType
-from pydantic import NonNegativeInt, PositiveInt
 
 from .models.schemas.programs import Program, ProgramKeyId
 from .services_rpc.catalog import CatalogService
@@ -31,8 +34,8 @@ class ProgramService:
     async def list_latest_programs(
         self,
         *,
-        pagination_offset: NonNegativeInt,
-        pagination_limit: PositiveInt,
+        pagination_offset: PageOffsetInt | None = None,
+        pagination_limit: PageLimitInt | None = None,
     ) -> tuple[list[Program], PageMetaInfoLimitOffset]:
         page, page_meta = await self.catalog_service.list_latest_releases(
             pagination_offset=pagination_offset,
@@ -47,13 +50,13 @@ class ProgramService:
         self,
         *,
         program_key: ProgramKeyId,
-        offset: NonNegativeInt,
-        limit: PositiveInt,
+        pagination_offset: PageOffsetInt | None = None,
+        pagination_limit: PageLimitInt | None = None,
     ) -> tuple[list[Program], PageMetaInfoLimitOffset]:
         page, page_meta = await self.catalog_service.list_release_history_latest_first(
             filter_by_service_key=program_key,
-            pagination_offset=offset,
-            pagination_limit=limit,
+            pagination_offset=pagination_offset,
+            pagination_limit=pagination_limit,
         )
         if len(page) == 0:
             return [], page_meta
