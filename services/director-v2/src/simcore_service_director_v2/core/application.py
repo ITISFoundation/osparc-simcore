@@ -7,7 +7,7 @@ from servicelib.fastapi.openapi import (
     override_fastapi_openapi_method,
 )
 from servicelib.fastapi.profiler import initialize_profiler
-from servicelib.fastapi.tracing import setup_tracing
+from servicelib.fastapi.tracing import setup_fastapi_app_tracing, setup_tracing
 from servicelib.logging_utils import config_all_loggers
 
 from .._meta import API_VERSION, API_VTAG, APP_NAME, PROJECT_NAME, SUMMARY
@@ -173,6 +173,9 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
         )
 
     db.setup(app, settings.POSTGRES)
+
+    if settings.DIRECTOR_V2_TRACING:
+        setup_fastapi_app_tracing(app)
 
     if settings.DYNAMIC_SERVICES.DIRECTOR_V2_DYNAMIC_SERVICES_ENABLED:
         dynamic_services.setup(app, tracing_settings=settings.DIRECTOR_V2_TRACING)

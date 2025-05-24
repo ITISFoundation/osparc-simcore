@@ -101,7 +101,6 @@ def _startup(tracing_settings: TracingSettings, service_name: str) -> None:
     span_processor = BatchSpanProcessor(otlp_exporter)
     global_tracer_provider.add_span_processor(span_processor)
 
-    FastAPIInstrumentor().instrument()
     if HAS_AIOPG:
         with log_context(
             _logger,
@@ -181,6 +180,10 @@ def _shutdown() -> None:
             _logger.exception("Failed to uninstrument RequestsInstrumentor")
 
 
+def setup_fastapi_app_tracing(app: FastAPI):
+    FastAPIInstrumentor.instrument_app(app)
+
+
 def setup_httpx_client_tracing(client: AsyncClient | Client):
     HTTPXClientInstrumentor.instrument_client(client)
 
@@ -188,7 +191,7 @@ def setup_httpx_client_tracing(client: AsyncClient | Client):
 def setup_tracing(
     app: FastAPI, tracing_settings: TracingSettings, service_name: str
 ) -> None:
-
+    # NOTE: This does not instrument the app itself. Call setup_fastapi_app_tracing to do that.
     _startup(tracing_settings=tracing_settings, service_name=service_name)
 
     def _on_shutdown() -> None:
@@ -200,7 +203,7 @@ def setup_tracing(
 def get_tracing_instrumentation_lifespan(
     tracing_settings: TracingSettings, service_name: str
 ):
-
+    # NOTE: This lifespan does not instrument the app itself. Call setup_fastapi_app_tracing to do that.
     _startup(tracing_settings=tracing_settings, service_name=service_name)
 
     async def tracing_instrumentation_lifespan(
