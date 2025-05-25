@@ -1,7 +1,10 @@
 import logging
 
 from fastapi import FastAPI
-from servicelib.fastapi.tracing import setup_fastapi_app_tracing, setup_tracing
+from servicelib.fastapi.tracing import (
+    setup_fastapi_app_tracing,
+    tracing_instrument_tooling,
+)
 
 from .._meta import (
     API_VERSION,
@@ -61,7 +64,9 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
 
     # PLUGINS SETUP
     if app.state.settings.AUTOSCALING_TRACING:
-        setup_tracing(app, app.state.settings.AUTOSCALING_TRACING, APP_NAME)
+        tracing_instrument_tooling(
+            app, app.state.settings.AUTOSCALING_TRACING, APP_NAME
+        )
 
     setup_instrumentation(app)
     setup_api_routes(app)

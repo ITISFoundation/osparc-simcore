@@ -17,7 +17,10 @@ from servicelib.fastapi.monitoring import (
 )
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.profiler import ProfilerMiddleware
-from servicelib.fastapi.tracing import setup_tracing
+from servicelib.fastapi.tracing import (
+    setup_fastapi_app_tracing,
+    tracing_instrument_tooling,
+)
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from .._meta import (
@@ -81,7 +84,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:  # noqa: C901
     app.state.settings = settings
 
     if settings.STORAGE_TRACING:
-        setup_tracing(app, settings.STORAGE_TRACING, APP_NAME)
+        tracing_instrument_tooling(app, settings.STORAGE_TRACING, APP_NAME)
 
     setup_db(app)
     setup_s3(app)
@@ -116,6 +119,9 @@ def create_app(settings: ApplicationSettings) -> FastAPI:  # noqa: C901
 
     if settings.STORAGE_MONITORING_ENABLED:
         setup_prometheus_instrumentation(app)
+
+    if settings.STORAGE_TRACING:
+        setup_fastapi_app_tracing(app)
 
     async def _on_startup() -> None:
         if settings.STORAGE_WORKER_MODE:

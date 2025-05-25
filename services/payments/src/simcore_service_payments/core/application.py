@@ -3,7 +3,10 @@ from servicelib.fastapi.monitoring import (
     setup_prometheus_instrumentation,
 )
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
-from servicelib.fastapi.tracing import setup_tracing
+from servicelib.fastapi.tracing import (
+    setup_fastapi_app_tracing,
+    tracing_instrument_tooling,
+)
 
 from .._meta import (
     API_VERSION,
@@ -47,7 +50,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
     # PLUGINS SETUP
     if app.state.settings.PAYMENTS_TRACING:
-        setup_tracing(app, app.state.settings.PAYMENTS_TRACING, APP_NAME)
+        tracing_instrument_tooling(app, app.state.settings.PAYMENTS_TRACING, APP_NAME)
 
     # API w/ postgres db
     setup_postgres(app)
@@ -73,6 +76,9 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
     if app.state.settings.PAYMENTS_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)
+
+    if app.state.settings.PAYMENTS_TRACING:
+        setup_fastapi_app_tracing(app)
 
     # ERROR HANDLERS
     # ... add here ...

@@ -5,7 +5,10 @@ from servicelib.fastapi.openapi import (
     get_common_oas_options,
     override_fastapi_openapi_method,
 )
-from servicelib.fastapi.tracing import setup_fastapi_app_tracing, setup_tracing
+from servicelib.fastapi.tracing import (
+    setup_fastapi_app_tracing,
+    tracing_instrument_tooling,
+)
 from servicelib.logging_utils import config_all_loggers
 
 from .._meta import (
@@ -56,7 +59,7 @@ def create_app() -> FastAPI:
     app.state.settings = settings
 
     if settings.AGENT_TRACING:
-        setup_tracing(app, settings.AGENT_TRACING, APP_NAME)
+        tracing_instrument_tooling(app, settings.AGENT_TRACING, APP_NAME)
 
     setup_instrumentation(app)
 

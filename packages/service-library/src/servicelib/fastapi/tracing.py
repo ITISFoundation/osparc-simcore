@@ -188,7 +188,7 @@ def setup_httpx_client_tracing(client: AsyncClient | Client):
     HTTPXClientInstrumentor.instrument_client(client)
 
 
-def setup_tracing(
+def tracing_instrument_tooling(
     app: FastAPI, tracing_settings: TracingSettings, service_name: str
 ) -> None:
     # NOTE: This does not instrument the app itself. Call setup_fastapi_app_tracing to do that.

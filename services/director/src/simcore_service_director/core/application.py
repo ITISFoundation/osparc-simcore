@@ -4,7 +4,10 @@ from typing import Final
 from fastapi import FastAPI
 from servicelib.async_utils import cancel_sequential_workers
 from servicelib.fastapi.client_session import setup_client_session
-from servicelib.fastapi.tracing import setup_tracing
+from servicelib.fastapi.tracing import (
+    setup_fastapi_app_tracing,
+    tracing_instrument_tooling,
+)
 
 from .._meta import (
     API_VERSION,
@@ -49,7 +52,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
 
     # PLUGINS SETUP
     if app.state.settings.DIRECTOR_TRACING:
-        setup_tracing(app, app.state.settings.DIRECTOR_TRACING, APP_NAME)
+        tracing_instrument_tooling(app, app.state.settings.DIRECTOR_TRACING, APP_NAME)
 
     setup_api_routes(app)
 
@@ -61,6 +64,9 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
         default_timeout=settings.DIRECTOR_REGISTRY_CLIENT_TIMEOUT,
     )
     setup_registry(app)
+
+    if app.state.settings.DIRECTOR_TRACING:
+        setup_fastapi_app_tracing(app)
 
     # ERROR HANDLERS
 

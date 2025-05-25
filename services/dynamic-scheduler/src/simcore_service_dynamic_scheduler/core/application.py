@@ -28,8 +28,6 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
         lifespan=events.create_app_lifespan(settings=app_settings),
     )
     override_fastapi_openapi_method(app)
-    if app_settings.DYNAMIC_SCHEDULER_TRACING:
-        setup_fastapi_app_tracing(app)
 
     # STATE
     app.state.settings = app_settings
@@ -44,5 +42,8 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
     if app_settings.DYNAMIC_SCHEDULER_PROFILING:
         initialize_profiler(app)
+
+    if app_settings.DYNAMIC_SCHEDULER_TRACING:
+        setup_fastapi_app_tracing(app)
 
     return app

@@ -5,7 +5,10 @@ from fastapi_pagination import add_pagination
 from models_library.basic_types import BootModeEnum
 from packaging.version import Version
 from servicelib.fastapi.profiler import initialize_profiler
-from servicelib.fastapi.tracing import setup_fastapi_app_tracing, setup_tracing
+from servicelib.fastapi.tracing import (
+    setup_fastapi_app_tracing,
+    tracing_instrument_tooling,
+)
 from servicelib.logging_utils import config_all_loggers
 
 from .. import exceptions
@@ -83,7 +86,7 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
     app.state.settings = settings
 
     if settings.API_SERVER_TRACING:
-        setup_tracing(app, settings.API_SERVER_TRACING, APP_NAME)
+        tracing_instrument_tooling(app, settings.API_SERVER_TRACING, APP_NAME)
 
     if settings.API_SERVER_POSTGRES:
         setup_postgres(app)

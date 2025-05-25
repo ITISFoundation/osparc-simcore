@@ -8,7 +8,10 @@ from servicelib.fastapi.openapi import (
     get_common_oas_options,
     override_fastapi_openapi_method,
 )
-from servicelib.fastapi.tracing import setup_tracing
+from servicelib.fastapi.tracing import (
+    setup_fastapi_app_tracing,
+    tracing_instrument_tooling,
+)
 from servicelib.logging_utils import config_all_loggers
 
 from .._meta import API_VTAG, APP_NAME, SUMMARY, VERSION
@@ -50,11 +53,16 @@ def create_app() -> FastAPI:
     app.state.settings = settings
 
     if settings.NOTIFICATIONS_TRACING:
-        setup_tracing(app, settings.NOTIFICATIONS_TRACING, APP_NAME)  # pragma: no cover
+        tracing_instrument_tooling(
+            app, settings.NOTIFICATIONS_TRACING, APP_NAME
+        )  # pragma: no cover
 
     initialize_rest_api(app)
 
     if settings.NOTIFICATIONS_PROMETHEUS_INSTRUMENTATION_ENABLED:
         initialize_prometheus_instrumentation(app)
+
+    if settings.NOTIFICATIONS_TRACING:
+        setup_fastapi_app_tracing(app)
 
     return app

@@ -10,7 +10,10 @@ from servicelib.fastapi.monitoring import (
     setup_prometheus_instrumentation,
 )
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
-from servicelib.fastapi.tracing import setup_fastapi_app_tracing, setup_tracing
+from servicelib.fastapi.tracing import (
+    setup_fastapi_app_tracing,
+    tracing_instrument_tooling,
+)
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from .._meta import API_VERSION, API_VTAG, APP_NAME
@@ -61,7 +64,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     app.state.settings = settings
 
     if app.state.settings.DATCORE_ADAPTER_TRACING:
-        setup_tracing(
+        tracing_instrument_tooling(
             app,
             app.state.settings.DATCORE_ADAPTER_TRACING,
             APP_NAME,
