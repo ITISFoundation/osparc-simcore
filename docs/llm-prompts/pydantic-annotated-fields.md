@@ -1,5 +1,6 @@
 # Prompt
 
+```
 Please convert all pydantic model fields that use `Field()` with default values to use the Annotated pattern instead.
 Follow these guidelines:
 
@@ -9,7 +10,7 @@ Follow these guidelines:
 4. Add the import: `from common_library.basic_types import DEFAULT_FACTORY` if it's not already present.
 5. If `Field()` has no parameters (empty), don't use Annotated at all. Just use: `field_name: field_type = default_value`.
 6. Leave any model validations, `model_config` settings, and `field_validators` untouched.
-
+```
 ## Examples
 
 ### Before:
