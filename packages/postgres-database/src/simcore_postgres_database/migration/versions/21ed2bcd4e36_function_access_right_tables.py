@@ -50,7 +50,7 @@ def upgrade():
         sa.ForeignKeyConstraint(
             ["function_job_collection_uuid"],
             ["funcapi_function_job_collections.uuid"],
-            name="fk_func_access_to_func_job_collections_to_func_job_collection_uuid",
+            name="fk_func_access_to_func_job_colls_to_func_job_coll_uuid",
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),
