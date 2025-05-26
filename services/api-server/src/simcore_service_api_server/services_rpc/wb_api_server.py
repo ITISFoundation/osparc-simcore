@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from functools import partial
 from typing import cast
 
+from common_library.exclude import as_dict_exclude_none
 from fastapi import FastAPI
 from fastapi_pagination import create_page
 from models_library.api_schemas_api_server.functions import (
@@ -254,6 +255,10 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         filter_by_job_parent_resource_name_prefix: str | None,
         filter_any_custom_metadata: list[NameValueTuple] | None,
     ):
+        pagination_kwargs = as_dict_exclude_none(
+            offset=pagination_offset, limit=pagination_limit
+        )
+
         filters = ListProjectsMarkedAsJobRpcFilters(
             job_parent_resource_name_prefix=filter_by_job_parent_resource_name_prefix,
             any_custom_metadata=(
@@ -270,9 +275,8 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             rpc_client=self._client,
             product_name=product_name,
             user_id=user_id,
-            offset=pagination_offset,
-            limit=pagination_limit,
             filters=filters,
+            **pagination_kwargs,
         )
 
     async def register_function(self, *, function: Function) -> RegisteredFunction:

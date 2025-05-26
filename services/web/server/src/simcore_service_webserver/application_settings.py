@@ -108,9 +108,9 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     WEBSERVER_FUNCTIONS: Annotated[
         bool,
         Field(
-            json_schema_extra={_X_FEATURE_UNDER_DEVELOPMENT: True},
+            description="Metamodeling functions plugin",
         ),
-    ] = True
+    ] = False
 
     WEBSERVER_LOGLEVEL: Annotated[
         LogLevel,

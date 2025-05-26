@@ -6,4 +6,5 @@ class SDSException(HTTPBadRequest):  # pylint: disable=too-many-ancestors
     """Basic exception for errors raised inside the module"""
 
     def __init__(self, message: str):
-        super().__init__(reason=message)
+        # Multiline not allowed in HTTP reason attribute
+        super().__init__(reason=message.replace("\n", " ") if message else None)

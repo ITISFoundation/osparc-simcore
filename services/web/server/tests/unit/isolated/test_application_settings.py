@@ -141,13 +141,11 @@ def test_disabled_plugins_settings_to_client_statics(
 
     if is_dev_feature_enabled:
         assert settings.WEBSERVER_DEV_FEATURES_ENABLED is True
-        assert settings.WEBSERVER_FUNCTIONS is True
 
         assert settings.TEST_FOO is True
         assert settings.TEST_BAR == 42
     else:
         assert settings.WEBSERVER_DEV_FEATURES_ENABLED is False
-        assert settings.WEBSERVER_FUNCTIONS is False
 
         assert settings.TEST_FOO is False
         assert settings.TEST_BAR is None

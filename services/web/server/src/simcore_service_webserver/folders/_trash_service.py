@@ -225,7 +225,9 @@ async def list_explicitly_trashed_folders(
 ) -> list[FolderID]:
     trashed_folder_ids: list[FolderID] = []
 
-    for page_params in iter_pagination_params(limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
+    for page_params in iter_pagination_params(
+        offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+    ):
         (
             folders,
             page_params.total_number_of_items,
@@ -301,7 +303,9 @@ async def batch_delete_trashed_folders_as_admin(
     """
     errors: list[tuple[FolderID, Exception]] = []
 
-    for page_params in iter_pagination_params(limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
+    for page_params in iter_pagination_params(
+        offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+    ):
         (
             page_params.total_number_of_items,
             expired_trashed_folders,
@@ -349,7 +353,9 @@ async def batch_delete_folders_with_content_in_root_workspace_as_admin(
     deleted_folder_ids: list[FolderID] = []
     errors: list[tuple[FolderID, Exception]] = []
 
-    for page_params in iter_pagination_params(limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
+    for page_params in iter_pagination_params(
+        offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+    ):
         (
             page_params.total_number_of_items,
             folders_for_deletion,
