@@ -1,6 +1,6 @@
 # services
 >
-> Auto generated on `2025-05-23 14:45:20` using
+> Auto generated on `2025-05-26 09:50:15` using
 ```cmd
 cd osparc-simcore
 python ./scripts/echo_services_markdown.py
@@ -11,17 +11,11 @@ python ./scripts/echo_services_markdown.py
 | |[services/agent/Dockerfile](./services/agent/Dockerfile)|[![Docker Image Size](https://img.shields.io/docker/image-size/itisfoundation/agent)](https://hub.docker.com/r/itisfoundation/agent/tags) |
 | **API-SERVER**|| |
 | |[services/api-server/openapi.json](./services/api-server/openapi.json)|[![ReDoc](https://img.shields.io/badge/OpenAPI-ReDoc-85ea2d?logo=openapiinitiative)](https://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/api-server/openapi.json) [![Swagger UI](https://img.shields.io/badge/OpenAPI-Swagger_UI-85ea2d?logo=swagger)](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/api-server/openapi.json) |
-| |[services/api-server/.mypy_cache/3.11/servicelib/fastapi/openapi.data.json](./services/api-server/.mypy_cache/3.11/servicelib/fastapi/openapi.data.json)| |
-| |[services/api-server/.mypy_cache/3.11/servicelib/fastapi/openapi.meta.json](./services/api-server/.mypy_cache/3.11/servicelib/fastapi/openapi.meta.json)| |
-| |[services/api-server/.mypy_cache/3.11/simcore_service_api_server/core/openapi.data.json](./services/api-server/.mypy_cache/3.11/simcore_service_api_server/core/openapi.data.json)| |
-| |[services/api-server/.mypy_cache/3.11/simcore_service_api_server/core/openapi.meta.json](./services/api-server/.mypy_cache/3.11/simcore_service_api_server/core/openapi.meta.json)| |
 | |[services/api-server/Dockerfile](./services/api-server/Dockerfile)|[![Docker Image Size](https://img.shields.io/docker/image-size/itisfoundation/api-server)](https://hub.docker.com/r/itisfoundation/api-server/tags) |
 | **AUTOSCALING**|| |
 | |[services/autoscaling/Dockerfile](./services/autoscaling/Dockerfile)|[![Docker Image Size](https://img.shields.io/docker/image-size/itisfoundation/autoscaling)](https://hub.docker.com/r/itisfoundation/autoscaling/tags) |
 | **CATALOG**|| |
 | |[services/catalog/openapi.json](./services/catalog/openapi.json)|[![ReDoc](https://img.shields.io/badge/OpenAPI-ReDoc-85ea2d?logo=openapiinitiative)](https://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/catalog/openapi.json) [![Swagger UI](https://img.shields.io/badge/OpenAPI-Swagger_UI-85ea2d?logo=swagger)](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/catalog/openapi.json) |
-| |[services/catalog/.mypy_cache/3.11/servicelib/fastapi/openapi.data.json](./services/catalog/.mypy_cache/3.11/servicelib/fastapi/openapi.data.json)| |
-| |[services/catalog/.mypy_cache/3.11/servicelib/fastapi/openapi.meta.json](./services/catalog/.mypy_cache/3.11/servicelib/fastapi/openapi.meta.json)| |
 | |[services/catalog/Dockerfile](./services/catalog/Dockerfile)|[![Docker Image Size](https://img.shields.io/docker/image-size/itisfoundation/catalog)](https://hub.docker.com/r/itisfoundation/catalog/tags) |
 | **CLUSTERS-KEEPER**|| |
 | |[services/clusters-keeper/Dockerfile](./services/clusters-keeper/Dockerfile)|[![Docker Image Size](https://img.shields.io/docker/image-size/itisfoundation/clusters-keeper)](https://hub.docker.com/r/itisfoundation/clusters-keeper/tags) |
