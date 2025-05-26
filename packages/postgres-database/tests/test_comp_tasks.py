@@ -152,8 +152,8 @@ async def test_listen_query(
     for n, output in enumerate(update_outputs):
         assert output
         assert tasks[n]["changes"] == ["modified", "outputs"]
-        assert tasks[0]["action"] == "UPDATE"
-        assert tasks[0]["table"] == "comp_tasks"
-        assert tasks[0]["task_id"] == task["task_id"]
-        assert tasks[0]["project_id"] == task["project_id"]
-        assert tasks[0]["node_id"] == task["node_id"]
+        assert tasks[n]["action"] == "UPDATE"
+        assert tasks[n]["table"] == "comp_tasks"
+        assert tasks[n]["task_id"] == task["task_id"]
+        assert tasks[n]["project_id"] == task["project_id"]
+        assert tasks[n]["node_id"] == task["node_id"]
