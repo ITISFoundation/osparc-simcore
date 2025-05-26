@@ -5703,16 +5703,15 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "pattern": "[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "description": "Filter by having a function ID in the collection",
               "title": "Has Function Id"
-            },
-            "description": "Filter by having a function ID in the collection"
+            }
           }
         ],
         "responses": {
