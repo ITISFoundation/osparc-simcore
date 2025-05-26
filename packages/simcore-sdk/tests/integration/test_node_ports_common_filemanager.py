@@ -84,8 +84,8 @@ def _file_size(size_str: str, **pytest_params):
     [
         _file_size("10Mib"),
         _file_size("103Mib"),
-        _file_size("1003Mib"),
-        _file_size("7Gib"),
+        _file_size("1003Mib", marks=pytest.mark.heavy_load),
+        _file_size("7Gib", marks=pytest.mark.heavy_load),
     ],
     ids=byte_size_ids,
 )
