@@ -199,6 +199,7 @@ async def _try_start_pipeline(
     project: ProjectAtDB,
     users_repo: UsersRepository,
     projects_metadata_repo: ProjectsMetadataRepository,
+    filtered_comp_tasks_in_db: list[CompTaskAtDB],
 ) -> None:
     if not minimal_dag.nodes():
         # 2 options here: either we have cycles in the graph or it's really done
@@ -241,6 +242,7 @@ async def _try_start_pipeline(
         )
         or {},
         use_on_demand_clusters=computation.use_on_demand_clusters,
+        filtered_comp_tasks_in_db=filtered_comp_tasks_in_db,
     )
 
 
@@ -340,6 +342,13 @@ async def create_computation(  # noqa: PLR0913 # pylint: disable=too-many-positi
             rabbitmq_rpc_client=rpc_client,
         )
 
+        # filter the tasks by the effective pipeline
+        filtered_tasks = [
+            t
+            for t in comp_tasks
+            if f"{t.node_id}" in set(minimal_computational_dag.nodes())
+        ]
+
         if computation.start_pipeline:
             await _try_start_pipeline(
                 request.app,
@@ -350,14 +359,9 @@ async def create_computation(  # noqa: PLR0913 # pylint: disable=too-many-positi
                 project=project,
                 users_repo=users_repo,
                 projects_metadata_repo=projects_metadata_repo,
+                filtered_comp_tasks_in_db=filtered_tasks,
             )
 
-        # filter the tasks by the effective pipeline
-        filtered_tasks = [
-            t
-            for t in comp_tasks
-            if f"{t.node_id}" in set(minimal_computational_dag.nodes())
-        ]
         pipeline_state = utils.get_pipeline_state_from_task_states(filtered_tasks)
 
         # get run details if any

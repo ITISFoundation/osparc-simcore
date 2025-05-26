@@ -11,9 +11,13 @@ from servicelib.exception_utils import silence_exceptions
 from servicelib.logging_utils import log_context
 from servicelib.redis import CouldNotAcquireLockError, exclusive
 from servicelib.utils import limited_gather
+from simcore_service_director_v2.modules.db.repositories.comp_runs_snapshot_tasks import (
+    CompRunsSnapshotTasksRepository,
+)
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ...models.comp_runs import RunMetadataDict
+from ...models.comp_tasks import CompTaskAtDB
 from ...utils.rabbitmq import publish_project_log
 from ..db import get_db_engine
 from ..db.repositories.comp_pipelines import CompPipelinesRepository
@@ -37,6 +41,7 @@ async def run_new_pipeline(
     project_id: ProjectID,
     run_metadata: RunMetadataDict,
     use_on_demand_clusters: bool,
+    filtered_comp_tasks_in_db: list[CompTaskAtDB],
 ) -> None:
     """Sets a new pipeline to be scheduled on the computational resources."""
     # ensure the pipeline exists and is populated with something
@@ -54,6 +59,18 @@ async def run_new_pipeline(
         project_id=project_id,
         metadata=run_metadata,
         use_on_demand_clusters=use_on_demand_clusters,
+    )
+
+    db_create_snaphot_tasks = [
+        {
+            **task.to_db_model(exclude={"created", "modified", "submit"}),
+            "run_id": new_run.run_id,
+            # "submit": datetime.fromisoformat(task.submit)
+        }
+        for task in filtered_comp_tasks_in_db
+    ]
+    await CompRunsSnapshotTasksRepository.instance(db_engine).batch_create(
+        data=db_create_snaphot_tasks
     )
 
     rabbitmq_client = get_rabbitmq_client(app)

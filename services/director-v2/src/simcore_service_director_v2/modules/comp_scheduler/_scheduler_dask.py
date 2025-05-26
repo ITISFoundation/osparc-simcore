@@ -21,6 +21,7 @@ from models_library.projects_state import RunningState
 from models_library.rabbitmq_messages import SimcorePlatformStatus
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
+from pydantic import PositiveInt
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.logging_utils import log_catch
 
@@ -106,6 +107,7 @@ class DaskScheduler(BaseCompScheduler):
             comp_tasks_repo = CompTasksRepository.instance(self.db_engine)
             await comp_tasks_repo.update_project_tasks_state(
                 project_id,
+                comp_run.run_id,
                 list(scheduled_tasks.keys()),
                 RunningState.PENDING,
             )
@@ -115,6 +117,7 @@ class DaskScheduler(BaseCompScheduler):
                     client.send_computation_tasks(
                         user_id=user_id,
                         project_id=project_id,
+                        run_id=comp_run.run_id,
                         tasks={node_id: task.image},
                         hardware_info=task.hardware_info,
                         callback=wake_up_callback,
@@ -131,7 +134,7 @@ class DaskScheduler(BaseCompScheduler):
             await asyncio.gather(
                 *(
                     comp_tasks_repo.update_project_task_job_id(
-                        project_id, task.node_id, task.job_id
+                        project_id, task.node_id, comp_run.run_id, task.job_id
                     )
                     for task_sents in results
                     for task in task_sents
@@ -181,6 +184,7 @@ class DaskScheduler(BaseCompScheduler):
                     ).update_project_task_progress(
                         task_progress_event.task_owner.project_id,
                         task_progress_event.task_owner.node_id,
+                        comp_run.run_id,
                         task_progress_event.progress,
                     )
 
@@ -193,6 +197,7 @@ class DaskScheduler(BaseCompScheduler):
                 comp_tasks_repo.update_project_task_progress(
                     t.task_owner.project_id,
                     t.task_owner.node_id,
+                    comp_run.run_id,
                     t.progress,
                 )
                 for t in task_progresses
@@ -264,7 +269,7 @@ class DaskScheduler(BaseCompScheduler):
             await asyncio.gather(
                 *[
                     self._process_task_result(
-                        task, result, comp_run.metadata, iteration
+                        task, result, comp_run.metadata, iteration, comp_run.run_id
                     )
                     for task, result in zip(tasks, tasks_results, strict=True)
                 ]
@@ -286,6 +291,7 @@ class DaskScheduler(BaseCompScheduler):
         result: BaseException | TaskOutputData,
         run_metadata: RunMetadataDict,
         iteration: Iteration,
+        run_id: PositiveInt,
     ) -> None:
         _logger.debug("received %s result: %s", f"{task=}", f"{result=}")
         task_final_state = RunningState.FAILED
@@ -366,6 +372,7 @@ class DaskScheduler(BaseCompScheduler):
 
         await CompTasksRepository(self.db_engine).update_project_tasks_state(
             task.project_id,
+            run_id,
             [task.node_id],
             task_final_state,
             errors=errors,
@@ -394,6 +401,7 @@ class DaskScheduler(BaseCompScheduler):
                     project_id=project_id,
                     iteration=run.iteration,
                     run_metadata=run.metadata,
+                    run_id=run.run_id,
                 )
             else:
                 await comp_tasks_repo.update_project_task_progress(

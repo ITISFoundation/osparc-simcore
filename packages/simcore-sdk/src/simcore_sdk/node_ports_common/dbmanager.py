@@ -2,14 +2,20 @@ import logging
 
 import sqlalchemy as sa
 from common_library.json_serialization import json_dumps, json_loads
-
 from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from pydantic import TypeAdapter
 from servicelib.db_asyncpg_utils import create_async_engine_and_database_ready
 from settings_library.node_ports import NodePortsSettings
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.projects import projects
+from simcore_service_director_v2.modules.db.repositories.comp_runs import (
+    CompRunsRepository,
+)
+from simcore_service_director_v2.modules.db.repositories.comp_runs_snapshot_tasks import (
+    CompRunsSnapshotTasksRepository,
+)
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from .exceptions import NodeNotFound, ProjectNotFoundError
@@ -78,7 +84,10 @@ class DBManager:
         self._db_engine = db_engine
 
     async def write_ports_configuration(
-        self, json_configuration: str, project_id: str, node_uuid: str
+        self,
+        json_configuration: str,
+        project_id: str,
+        node_uuid: str,
     ):
         message = (
             f"Writing port configuration to database for "
@@ -91,7 +100,7 @@ class DBManager:
             DBContextManager(self._db_engine) as engine,
             engine.begin() as connection,
         ):
-            # update the necessary parts
+            # 1. Update comp_tasks table
             await connection.execute(
                 comp_tasks.update()
                 .where(
@@ -104,6 +113,26 @@ class DBManager:
                     outputs=node_configuration["outputs"],
                     run_hash=node_configuration.get("run_hash"),
                 )
+            )
+            # 2. Get latest run id for the project
+            _latest_run_id = await CompRunsRepository.instance(
+                engine
+            ).get_latest_run_id_for_project(
+                connection, project_id=ProjectID(project_id)
+            )
+            # 3. Update comp_run_snapshot_tasks table
+            await CompRunsSnapshotTasksRepository.instance(
+                engine
+            ).update_for_run_id_and_node_id(
+                connection,
+                run_id=_latest_run_id,
+                node_id=NodeID(node_uuid),
+                data={
+                    "schema": node_configuration["schema"],
+                    "inputs": node_configuration["inputs"],
+                    "outputs": node_configuration["outputs"],
+                    "run_hash": node_configuration.get("run_hash"),
+                },
             )
 
     async def get_ports_configuration_from_node_uuid(

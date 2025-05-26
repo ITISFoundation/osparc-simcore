@@ -114,7 +114,7 @@ class NodeSchema(BaseModel):
     model_config = ConfigDict(extra="forbid", from_attributes=True)
 
 
-class CompTaskAtDB(BaseModel):
+class BaseCompTaskAtDB(BaseModel):
     project_id: ProjectID
     node_id: NodeID
     job_id: str | None = Field(default=None, description="The worker job ID")
@@ -132,7 +132,6 @@ class CompTaskAtDB(BaseModel):
     start: dt.datetime | None = None
     end: dt.datetime | None = None
     state: RunningState
-    task_id: PositiveInt | None = None
     internal_id: PositiveInt
     node_class: NodeClass
     errors: list[ErrorDict] | None = None
@@ -180,6 +179,10 @@ class CompTaskAtDB(BaseModel):
         if v is None:
             return HardwareInfo(aws_ec2_instances=[])
         return v
+
+
+class CompTaskAtDB(BaseCompTaskAtDB):
+    task_id: PositiveInt | None = None
 
     def to_db_model(self, **exclusion_rules) -> dict[str, Any]:
         # mode json is used to ensure the UUIDs are converted to strings
