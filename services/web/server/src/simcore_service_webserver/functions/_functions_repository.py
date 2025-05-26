@@ -3,24 +3,32 @@ import json
 import sqlalchemy
 from aiohttp import web
 from models_library.functions import (
+    FunctionAccessRightsDB,
     FunctionClass,
     FunctionID,
     FunctionIDNotFoundError,
     FunctionInputs,
     FunctionInputSchema,
+    FunctionJobAccessRightsDB,
     FunctionJobClassSpecificData,
+    FunctionJobCollectionAccessRightsDB,
     FunctionJobCollectionIDNotFoundError,
     FunctionJobCollectionsListFilters,
     FunctionJobID,
     FunctionJobIDNotFoundError,
     FunctionOutputs,
     FunctionOutputSchema,
+    FunctionReadAccessDeniedError,
     RegisteredFunctionDB,
     RegisteredFunctionJobCollectionDB,
     RegisteredFunctionJobDB,
 )
 from models_library.rest_pagination import PageMetaInfoLimitOffset
+from models_library.users import UserID
 from pydantic import TypeAdapter
+from simcore_postgres_database.models.funcapi_function_job_collections_access_rights_table import (
+    function_job_collections_access_rights_table,
+)
 from simcore_postgres_database.models.funcapi_function_job_collections_table import (
     function_job_collections_table,
 )
@@ -29,6 +37,9 @@ from simcore_postgres_database.models.funcapi_function_job_collections_to_functi
 )
 from simcore_postgres_database.models.funcapi_function_jobs_table import (
     function_jobs_table,
+)
+from simcore_postgres_database.models.funcapi_functions_access_rights_table import (
+    functions_access_rights_table,
 )
 from simcore_postgres_database.models.funcapi_functions_table import functions_table
 from simcore_postgres_database.utils_repos import (
@@ -48,12 +59,22 @@ _FUNCTION_JOBS_TABLE_COLS = get_columns_from_db_model(
 _FUNCTION_JOB_COLLECTIONS_TABLE_COLS = get_columns_from_db_model(
     function_job_collections_table, RegisteredFunctionJobCollectionDB
 )
+_FUNCTIONS_ACCESS_RIGHTS_TABLE_COLS = get_columns_from_db_model(
+    functions_access_rights_table, FunctionAccessRightsDB
+)
+_FUNCTION_JOB_COLLECTIONS_ACCESS_RIGHTS_TABLE_COLS = get_columns_from_db_model(
+    function_job_collections_access_rights_table, FunctionJobAccessRightsDB
+)
+_FUNCTION_JOB_COLLECTIONS_ACCESS_RIGHTS_TABLE_COLS = get_columns_from_db_model(
+    function_job_collections_access_rights_table, FunctionJobCollectionAccessRightsDB
+)
 
 
 async def create_function(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
+    user_id: UserID,
     function_class: FunctionClass,
     class_specific_data: dict,
     title: str,
@@ -77,12 +98,19 @@ async def create_function(
             )
             .returning(*_FUNCTIONS_TABLE_COLS)
         )
-        row = await result.one_or_none()
+        row = await result.one()
 
-        assert row is not None, (
-            "No row was returned from the database after creating function."
-            f" Function: {title}"
-        )  # nosec
+        registered_function = RegisteredFunctionDB.model_validate(dict(row))
+
+        await set_user_permissions_for_function_ids(
+            app,
+            connection=connection,
+            user_id=user_id,
+            function_ids=[registered_function.uuid],
+            read=True,
+            write=True,
+            execute=True,
+        )
 
         return RegisteredFunctionDB.model_validate(dict(row))
 
@@ -91,6 +119,7 @@ async def create_function_job(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
+    user_id: UserID,
     function_class: FunctionClass,
     function_uid: FunctionID,
     title: str,
@@ -115,12 +144,9 @@ async def create_function_job(
             )
             .returning(*_FUNCTION_JOBS_TABLE_COLS)
         )
-        row = await result.one_or_none()
+        row = await result.one()
 
-        assert row is not None, (
-            "No row was returned from the database after creating function job."
-            f" Function job: {title}"
-        )  # nosec
+        await result.one()
 
         return RegisteredFunctionJobDB.model_validate(dict(row))
 
@@ -129,6 +155,7 @@ async def create_function_job_collection(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
+    user_id: UserID,
     title: str,
     description: str,
     job_ids: list[FunctionJobID],
@@ -181,8 +208,15 @@ async def get_function(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
+    user_id: UserID,
     function_id: FunctionID,
 ) -> RegisteredFunctionDB:
+
+    user_permission = await get_user_permissions_for_function_id(
+        app, connection=connection, user_id=user_id, function_id=function_id
+    )
+    if user_permission is None or not user_permission.read:
+        raise FunctionReadAccessDeniedError(function_id=function_id, user_id=user_id)
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(
@@ -199,16 +233,33 @@ async def list_functions(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
+    user_id: UserID,
     pagination_limit: int,
     pagination_offset: int,
 ) -> tuple[list[RegisteredFunctionDB], PageMetaInfoLimitOffset]:
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        # Filter functions by user read access
+        subquery = (
+            functions_access_rights_table.select()
+            .with_only_columns(functions_access_rights_table.c.function_uuid)
+            .where(
+                functions_access_rights_table.c.user_id == user_id,
+                functions_access_rights_table.c.read,
+            )
+        )
+
         total_count_result = await conn.scalar(
-            func.count().select().select_from(functions_table)
+            func.count()
+            .select()
+            .select_from(functions_table)
+            .where(functions_table.c.uuid.in_(subquery))
         )
         result = await conn.stream(
-            functions_table.select().offset(pagination_offset).limit(pagination_limit)
+            functions_table.select()
+            .where(functions_table.c.uuid.in_(subquery))
+            .offset(pagination_offset)
+            .limit(pagination_limit)
         )
         rows = await result.all()
         if rows is None:
@@ -230,6 +281,7 @@ async def list_function_jobs(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
+    user_id: UserID,
     pagination_limit: int,
     pagination_offset: int,
     filter_by_function_id: FunctionID | None = None,
@@ -280,6 +332,7 @@ async def list_function_job_collections(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
+    user_id: UserID,
     pagination_limit: int,
     pagination_offset: int,
     filters: FunctionJobCollectionsListFilters | None = None,
@@ -359,6 +412,7 @@ async def delete_function(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
+    user_id: UserID,
     function_id: FunctionID,
 ) -> None:
 
@@ -379,7 +433,7 @@ async def delete_function(
 
 
 async def update_function_title(
-    app: web.Application, *, function_id: FunctionID, title: str
+    app: web.Application, *, user_id: UserID, function_id: FunctionID, title: str
 ) -> RegisteredFunctionDB:
     async with transaction_context(get_asyncpg_engine(app)) as conn:
         result = await conn.stream(
@@ -397,7 +451,7 @@ async def update_function_title(
 
 
 async def update_function_description(
-    app: web.Application, *, function_id: FunctionID, description: str
+    app: web.Application, *, user_id: UserID, function_id: FunctionID, description: str
 ) -> RegisteredFunctionDB:
     async with transaction_context(get_asyncpg_engine(app)) as conn:
         result = await conn.stream(
@@ -418,6 +472,7 @@ async def get_function_job(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
+    user_id: UserID,
     function_job_id: FunctionID,
 ) -> RegisteredFunctionJobDB:
 
@@ -439,6 +494,7 @@ async def delete_function_job(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
+    user_id: UserID,
     function_job_id: FunctionID,
 ) -> None:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
@@ -464,6 +520,7 @@ async def find_cached_function_job(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
+    user_id: UserID,
     function_id: FunctionID,
     inputs: FunctionInputs,
 ) -> RegisteredFunctionJobDB | None:
@@ -499,6 +556,7 @@ async def get_function_job_collection(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
+    user_id: UserID,
     function_job_collection_id: FunctionID,
 ) -> tuple[RegisteredFunctionJobCollectionDB, list[FunctionJobID]]:
 
@@ -536,6 +594,7 @@ async def delete_function_job_collection(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
+    user_id: UserID,
     function_job_collection_id: FunctionID,
 ) -> None:
 
@@ -563,3 +622,72 @@ async def delete_function_job_collection(
                 == function_job_collection_id
             )
         )
+
+
+async def set_user_permissions_for_function_ids(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    user_id: UserID,
+    function_ids: list[FunctionID],
+    read: bool | None = None,
+    write: bool | None = None,
+    execute: bool | None = None,
+) -> None:
+
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        for function_id in function_ids:
+            # Check if the user already has access rights for the function
+            result = await conn.stream(
+                functions_access_rights_table.select().where(
+                    functions_access_rights_table.c.function_uuid == function_id,
+                    functions_access_rights_table.c.user_id == user_id,
+                )
+            )
+            row = await result.one_or_none()
+
+            if row is None:
+                # Insert new access rights if the user does not have any
+                await conn.execute(
+                    functions_access_rights_table.insert().values(
+                        function_uuid=function_id,
+                        user_id=user_id,
+                        read=read if read is not None else False,
+                        write=write if write is not None else False,
+                        execute=execute if execute is not None else False,
+                    )
+                )
+            else:
+                # Update existing access rights only for non-None values
+                update_values = {
+                    "read": read if read is not None else row["read"],
+                    "write": write if write is not None else row["write"],
+                    "execute": execute if execute is not None else row["execute"],
+                }
+
+                await conn.execute(
+                    functions_access_rights_table.update()
+                    .where(
+                        functions_access_rights_table.c.function_uuid == function_id,
+                        functions_access_rights_table.c.user_id == user_id,
+                    )
+                    .values(**update_values)
+                )
+
+
+async def get_user_permissions_for_function_id(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    user_id: UserID,
+    function_id: FunctionID,
+) -> FunctionAccessRightsDB | None:
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        result = await conn.stream(
+            functions_access_rights_table.select().where(
+                functions_access_rights_table.c.user_id == user_id,
+                functions_access_rights_table.c.function_uuid == function_id,
+            )
+        )
+        row = await result.one_or_none()
+        return FunctionAccessRightsDB.model_validate(dict(row)) if row else None

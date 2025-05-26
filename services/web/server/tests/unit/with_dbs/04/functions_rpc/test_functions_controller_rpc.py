@@ -5,6 +5,7 @@ from collections.abc import Awaitable, Callable
 from uuid import uuid4
 
 import pytest
+from common_library.users_enums import UserRole
 from fastapi.testclient import TestClient
 
 # import simcore_service_webserver.functions._functions_controller_rpc as functions_rpc
@@ -23,6 +24,7 @@ from models_library.functions import (
 )
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.webserver.functions import (
     functions_rpc_interface as functions_rpc,
@@ -86,17 +88,30 @@ def mock_function() -> Function:
     )
 
 
+@pytest.fixture
+def user_role() -> UserRole:
+    return UserRole.USER
+
+
 async def test_register_function(
-    client: TestClient, rpc_client: RabbitMQRPCClient, mock_function: ProjectFunction
+    client: TestClient,
+    rpc_client: RabbitMQRPCClient,
+    mock_function: ProjectFunction,
+    logged_user: UserInfoDict,
+    user_role: UserRole,
 ):
     # Register the function
     registered_function = await functions_rpc.register_function(
-        rabbitmq_rpc_client=rpc_client, function=mock_function
+        rabbitmq_rpc_client=rpc_client,
+        function=mock_function,
+        user_id=logged_user["id"],
     )
     assert registered_function.uid is not None
     # Retrieve the function from the repository to verify it was saved
     saved_function = await functions_rpc.get_function(
-        rabbitmq_rpc_client=rpc_client, function_id=registered_function.uid
+        rabbitmq_rpc_client=rpc_client,
+        function_id=registered_function.uid,
+        user_id=logged_user["id"],
     )
 
     # Assert the saved function matches the input function

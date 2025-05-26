@@ -7,10 +7,13 @@ from common_library.errors_classes import OsparcErrorMixin
 from models_library import projects
 from models_library.basic_regex import UUID_RE_BASE
 from models_library.basic_types import ConstrainedStr
+from models_library.groups import GroupID
 from models_library.services_types import ServiceKey, ServiceVersion
-from pydantic import BaseModel, Field
+from models_library.users import UserID
+from pydantic import BaseModel, ConfigDict, Field
 
 from .projects import ProjectID
+from .utils.change_case import snake_to_camel
 
 FunctionID: TypeAlias = UUID
 FunctionJobID: TypeAlias = UUID
@@ -241,6 +244,10 @@ class FunctionInputsValidationError(FunctionBaseError):
     msg_template: str = "Function inputs validation failed: {error}"
 
 
+class FunctionReadAccessDeniedError(FunctionBaseError):
+    msg_template: str = "Function {function_id} read access denied for user {user_id}"
+
+
 class FunctionJobDB(BaseModel):
     function_uuid: FunctionID
     title: str = ""
@@ -286,3 +293,48 @@ class FunctionJobCollectionsListFilters(BaseModel):
     """Filters for listing function job collections"""
 
     has_function_id: FunctionIDString | None = None
+
+
+class FunctionAccessRights(BaseModel):
+    read: bool = False
+    write: bool = False
+    execute: bool = False
+
+    model_config = ConfigDict(
+        alias_generator=snake_to_camel,
+        populate_by_name=True,
+        extra="forbid",
+    )
+
+
+class FunctionUserAccessRights(FunctionAccessRights):
+    user_id: UserID
+
+
+class FunctionGroupAccessRights(FunctionAccessRights):
+    group_id: GroupID
+
+
+class FunctionAccessRightsDB(BaseModel):
+    user_id: UserID | None = None
+    group_id: GroupID | None = None
+    read: bool = False
+    write: bool = False
+    execute: bool = False
+
+    model_config = ConfigDict(
+        alias_generator=snake_to_camel,
+        populate_by_name=True,
+        extra="forbid",
+    )
+
+
+FunctionJobAccessRights: TypeAlias = FunctionAccessRights
+FunctionJobAccessRightsDB: TypeAlias = FunctionAccessRightsDB
+FunctionJobUserAccessRights: TypeAlias = FunctionUserAccessRights
+FunctionJobGroupAccessRights: TypeAlias = FunctionGroupAccessRights
+
+FunctionJobCollectionAccessRights: TypeAlias = FunctionAccessRights
+FunctionJobCollectionAccessRightsDB: TypeAlias = FunctionAccessRightsDB
+FunctionJobCollectionUserAccessRights: TypeAlias = FunctionUserAccessRights
+FunctionJobCollectionGroupAccessRights: TypeAlias = FunctionGroupAccessRights
