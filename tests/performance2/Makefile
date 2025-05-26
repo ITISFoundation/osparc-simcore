@@ -44,7 +44,7 @@ define generate_locust_config
 	echo "[locust]" >> $(LOCUST_CONFIG_FILE)$(1); \
 	echo "locustfile = ./locustfiles/deployment_max_rps_single_endpoint.py" >> $(LOCUST_CONFIG_FILE)$(1); \
 	if [ -f $(LOCUST_CONFIG_FILE) ]; then \
-		echo "host = $$(grep "host = " $(LOCUST_CONFIG_FILE) | cut -d= -f2 | xargs)" >> $(LOCUST_CONFIG_FILE)$(1); \
+		echo "host = $$(grep \"host = \" $(LOCUST_CONFIG_FILE) | cut -d= -f2 | xargs)" >> $(LOCUST_CONFIG_FILE)$(1); \
 	else \
 		echo "host = $(DEFAULT_HOST)" >> $(LOCUST_CONFIG_FILE)$(1); \
 	fi; \
@@ -52,9 +52,7 @@ define generate_locust_config
 	echo "spawn-rate = $(4)" >> $(LOCUST_CONFIG_FILE)$(1); \
 	echo "run-time = $(5)" >> $(LOCUST_CONFIG_FILE)$(1); \
 	echo "processes = $(2)" >> $(LOCUST_CONFIG_FILE)$(1); \
-	echo "" >> $(LOCUST_CONFIG_FILE)$(1); \
-	echo "[logging]" >> $(LOCUST_CONFIG_FILE)$(1); \
-	echo "level = INFO" >> $(LOCUST_CONFIG_FILE)$(1);
+	echo "" >> $(LOCUST_CONFIG_FILE)$(1);
 endef
 
 # Function to create or update Locust configuration with user input
@@ -83,8 +81,6 @@ define create_locust_config
 		echo "run-time = $$run_time" >> $(LOCUST_CONFIG_FILE); \
 		echo "processes = $$processes" >> $(LOCUST_CONFIG_FILE); \
 		echo "" >> $(LOCUST_CONFIG_FILE); \
-		echo "[logging]" >> $(LOCUST_CONFIG_FILE); \
-		echo "level = INFO" >> $(LOCUST_CONFIG_FILE); \
 		printf "$(GREEN)Locust configuration file created. It won't be asked again.$(NC)\n"; \
 	else \
 		printf "$(GREEN)Using existing Locust configuration file $(LOCUST_CONFIG_FILE)$(NC)\n"; \
