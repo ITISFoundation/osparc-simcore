@@ -5,7 +5,6 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Annotated
 from urllib.parse import quote
-from uuid import UUID
 
 from locust import HttpUser, task
 from pydantic import BaseModel, Field
@@ -28,11 +27,12 @@ _PYTHON_SCRIPT = """
 import numpy as np
 import pathlib as pl
 import json
+import os
 
 def main():
 
     input_json = pl.Path(os.environ["INPUT_FOLDER"]) / "function_inputs.json"
-    object = json.load(input_json..read_text())
+    object = json.loads(input_json.read_text())
     x = object["x"]
     y = object["y"]
 
@@ -41,6 +41,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 """
 
 
@@ -88,23 +89,23 @@ class MetaModelingUser(HttpUser):
         self.pool_manager = PoolManager(retries=retry_strategy)
 
         self._function_uid = None
-        self._input_json_uuid = None
-        self._script_uuid = None
+        self._input_json = None
+        self._script = None
         self._run_uid = None
         self._solver_job_uid = None
 
         super().__init__(*args, **kwargs)
 
     def on_stop(self) -> None:
-        if self._script_uuid is not None:
+        if self._script is not None:
             self.client.delete(
-                f"/v0/files/{self._script_uuid}",
+                f"/v0/files/{self._script.get('id')}",
                 name="/v0/files/[file_id]",
                 auth=self._auth,
             )
-        if self._input_json_uuid is not None:
+        if self._input_json is not None:
             self.client.delete(
-                f"/v0/files/{self._input_json_uuid}",
+                f"/v0/files/{self._input_json.get('id')}",
                 name="/v0/files/[file_id]",
                 auth=self._auth,
             )
@@ -126,17 +127,17 @@ class MetaModelingUser(HttpUser):
         with TemporaryDirectory() as tmpdir_str, Path(tmpdir_str) as tmpdir:
             script = tmpdir / "script.py"
             script.write_text(_PYTHON_SCRIPT)
-            self._script_uuid = self.upload_file(script)
+            self._script = self.upload_file(script)
 
             inputs = {"x": random.uniform(-10, 10), "y": random.uniform(-10, 10)}
             input_json = tmpdir / "function_inputs.json"
             input_json.write_text(json.dumps(inputs))
-            self._input_json_uuid = self.upload_file(input_json)
+            self._input_json = self.upload_file(input_json)
 
         _function = Function(
             title="Test function",
             description="Test function",
-            default_inputs={"input_0": f"{self._script_uuid}"},
+            default_inputs={"input_1": json.dumps(self._script)},
         )
         response = self.client.post(
             "/v0/functions", json=_function.model_dump(), auth=self._auth
@@ -147,7 +148,7 @@ class MetaModelingUser(HttpUser):
 
         response = self.client.post(
             f"/v0/functions/{self._function_uid}:run",
-            json={"input_1": f"{self._input_json_uuid}"},
+            json={"input_2": json.dumps(self._input_json)},
             auth=self._auth,
             name="/v0/functions/[function_uid]:run",
         )
@@ -182,7 +183,7 @@ class MetaModelingUser(HttpUser):
         status = response.json().get("status")
         assert status in ["DONE", "FAILED"]
 
-    def upload_file(self, file: Path) -> UUID:
+    def upload_file(self, file: Path) -> dict:
         assert file.is_file()
         with file.open(mode="rb") as f:
             files = {"file": f}
@@ -190,9 +191,8 @@ class MetaModelingUser(HttpUser):
                 "/v0/files/content", files=files, auth=self._auth
             )
             response.raise_for_status()
-            file_uuid = response.json().get("id")
-        assert file_uuid is not None
-        return UUID(file_uuid)
+            assert response.json().get("id") is not None
+            return response.json()
 
 
 if __name__ == "__main__":
