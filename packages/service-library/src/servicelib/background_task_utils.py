@@ -3,6 +3,9 @@ import functools
 from collections.abc import Callable, Coroutine
 from typing import Any, ParamSpec, TypeVar
 
+from servicelib.exception_utils import silence_exceptions
+from servicelib.redis._errors import CouldNotAcquireLockError
+
 from .background_task import periodic
 from .redis import RedisClientSDK, exclusive
 
@@ -36,6 +39,11 @@ def exclusive_periodic(
         coro: Callable[P, Coroutine[Any, Any, None]],
     ) -> Callable[P, Coroutine[Any, Any, None]]:
         @periodic(interval=retry_after)
+        @silence_exceptions(
+            # Replicas will raise CouldNotAcquireLockError
+            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/7574
+            (CouldNotAcquireLockError,)
+        )
         @exclusive(
             redis_client,
             lock_key=f"lock:exclusive_periodic_task:{coro.__module__}.{coro.__name__}",
