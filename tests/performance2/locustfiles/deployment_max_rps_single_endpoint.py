@@ -11,7 +11,7 @@
 import logging
 
 import locust_plugins
-from common.deploy_auth import MonitoringBasicAuth
+from common.deploy_auth import MonitoringBasicAuth, OsparcAuth
 from locust import events, task
 from locust.contrib.fasthttp import FastHttpUser
 
@@ -26,7 +26,7 @@ assert locust_plugins  # nosec
 _endpoint_holder = {"endpoint": "/"}
 
 
-def add_endpoint_argument(parser):
+def add_endpoint_argument(parser) -> None:
     parser.add_argument(
         "--endpoint",
         type=str,
@@ -42,7 +42,7 @@ def _(parser):
 
 
 @events.init.add_listener
-def _(environment, **_kwargs):
+def _(environment, **_kwargs) -> None:
     _endpoint_holder["endpoint"] = environment.parsed_options.endpoint
     logging.info("Testing endpoint: %s", _endpoint_holder["endpoint"])
 
@@ -52,7 +52,25 @@ class WebApiUser(FastHttpUser):
         super().__init__(*args, **kwargs)
         self.auth = MonitoringBasicAuth().to_auth()
         self.endpoint = _endpoint_holder["endpoint"]
+        self.osparc_auth = OsparcAuth()
+        self.requires_login = False
 
     @task
-    def get_endpoint(self):
+    def get_endpoint(self) -> None:
         self.client.get(self.endpoint, auth=self.auth)
+
+    def _login(self) -> None:
+        # Implement login logic here
+        logging.info("Logging in user with email: %s", self.osparc_auth)
+
+    def _logout(self) -> None:
+        # Implement logout logic here
+        logging.info("Logging out user with email: %s", self.osparc_auth)
+
+    def on_start(self) -> None:
+        if self.requires_login:
+            self._login()
+
+    def on_stop(self) -> None:
+        if self.requires_login:
+            self._logout()

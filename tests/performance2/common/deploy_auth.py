@@ -9,3 +9,12 @@ class MonitoringBasicAuth(BaseSettings):
 
     def to_auth(self) -> tuple[str, str]:
         return (self.SC_USER_NAME, self.SC_PASSWORD)
+
+
+class OsparcAuth(BaseSettings):
+    model_config = SettingsConfigDict(extra="ignore")
+    OSPARC_USER_NAME: str = Field(default=..., examples=["<your username>"])
+    OSPARC_PASSWORD: str = Field(default=..., examples=["<your password>"])
+
+    def to_auth(self) -> tuple[str, str]:
+        return (self.OS_USER_NAME, self.OS_PASSWORD)
