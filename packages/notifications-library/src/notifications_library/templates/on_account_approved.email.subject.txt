@@ -1,0 +1,1 @@
+Your Registration Request for {{ product.display_name }} Has Been Accepted

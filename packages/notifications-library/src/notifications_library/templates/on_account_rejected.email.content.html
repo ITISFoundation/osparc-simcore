@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %} {% include 'on_account_rejected.email.subject.txt' %} {% endblock %}
+{% block content %}
+<p>Dear {{ user.first_name or user.user_name }},</p>
+
+<p>
+  Thank you for your interest in {{ product.display_name }}. Unfortunately, your registration is not eligible for participation in this program.
+</p>
+
+<p>
+  In case of further interest in this or other solutions we might offer, please contact us at <a href="mailto:{{ product.support_email }}">{{ product.support_email }}</a>.
+</p>
+
+<p>Best regards,</p>
+
+<p>The {{ product.display_name }} Team</p>
+{% endblock %}
