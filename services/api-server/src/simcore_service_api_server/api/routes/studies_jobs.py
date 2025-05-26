@@ -116,11 +116,13 @@ async def create_study_job(
     job_inputs: JobInputs,
     study_service: Annotated[StudyService, Depends(get_study_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
+    # Filters
     hidden: Annotated[  # noqa: FBT002
-        bool, Query(description="If True (default) hides project from UI")
+        bool, Query(description="Hide this study in web UI (default: True)")
     ] = True,
-    x_simcore_parent_project_uuid: ProjectID | None = Header(default=None),
-    x_simcore_parent_node_id: NodeID | None = Header(default=None),
+    # Headers
+    x_simcore_parent_project_uuid: Annotated[ProjectID | None, Header()] = None,
+    x_simcore_parent_node_id: Annotated[NodeID | None, Header()] = None,
 ) -> Job:
 
     job = await study_service.create_job(

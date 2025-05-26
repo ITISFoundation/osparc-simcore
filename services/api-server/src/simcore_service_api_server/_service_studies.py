@@ -74,6 +74,7 @@ class StudyService:
 
     async def create_job(
         self,
+        *,
         study_id: StudyID,
         job_inputs: JobInputs,
         hidden: bool = True,

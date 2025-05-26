@@ -4593,7 +4593,6 @@
           "studies"
         ],
         "summary": "Create Study Job",
-        "description": "hidden -- if True (default) hides project from UI",
         "operationId": "create_study_job",
         "security": [
           {
@@ -4617,9 +4616,11 @@
             "required": false,
             "schema": {
               "type": "boolean",
+              "description": "If True (default) hides project from UI",
               "default": true,
               "title": "Hidden"
-            }
+            },
+            "description": "If True (default) hides project from UI"
           },
           {
             "name": "x-simcore-parent-project-uuid",
