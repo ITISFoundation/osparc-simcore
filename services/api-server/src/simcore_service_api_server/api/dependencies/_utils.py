@@ -1,15 +1,11 @@
 from typing import Any
 
+from common_library.exclude import as_dict_exclude_none
 from pydantic.fields import FieldInfo
 
 
-def _get_query_params(field: FieldInfo) -> dict[str, Any]:
-    params = {}
-
-    if field.description:
-        params["description"] = field.description
-    if field.examples:
-        params["example"] = next(
-            (example for example in field.examples if "*" in example), field.examples[0]
-        )
-    return params
+def get_query_params(field: FieldInfo) -> dict[str, Any]:
+    return as_dict_exclude_none(
+        description=field.description,
+        examples=field.examples or None,
+    )

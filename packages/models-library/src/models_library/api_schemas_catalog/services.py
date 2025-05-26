@@ -177,9 +177,7 @@ class ServiceSummary(CatalogOutputSchema):
     version: ServiceVersion
     name: str
     description: str
-
     version_display: str | None = None
-
     contact: LowerCaseEmailStr | None
 
     @staticmethod
@@ -194,6 +192,14 @@ class ServiceSummary(CatalogOutputSchema):
                         "description": _EXAMPLE_SLEEPER["description"],
                         "version_display": _EXAMPLE_SLEEPER["version_display"],
                         "contact": _EXAMPLE_SLEEPER["contact"],
+                    },
+                    {
+                        "key": _EXAMPLE_SLEEPER["key"],
+                        "version": "100.0.0",
+                        "name": "sleeper",
+                        "description": "short description",
+                        "version_display": "HUGE Release",
+                        "contact": "contact@acme.com",
                     },
                     {
                         "key": _EXAMPLE_FILEPICKER["key"],

@@ -161,7 +161,9 @@ async def list_explicitly_trashed_projects(
     """
     trashed_projects: list[ProjectID] = []
 
-    for page_params in iter_pagination_params(limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
+    for page_params in iter_pagination_params(
+        offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+    ):
         (
             projects,
             page_params.total_number_of_items,
@@ -238,7 +240,9 @@ async def batch_delete_trashed_projects_as_admin(
     deleted_project_ids: list[ProjectID] = []
     errors: list[tuple[ProjectID, Exception]] = []
 
-    for page_params in iter_pagination_params(limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
+    for page_params in iter_pagination_params(
+        offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+    ):
         (
             page_params.total_number_of_items,
             expired_trashed_projects,
@@ -291,7 +295,9 @@ async def batch_delete_projects_in_root_workspace_as_admin(
     deleted_project_ids: list[ProjectID] = []
     errors: list[tuple[ProjectID, Exception]] = []
 
-    for page_params in iter_pagination_params(limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
+    for page_params in iter_pagination_params(
+        offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+    ):
         (
             page_params.total_number_of_items,
             projects_for_deletion,

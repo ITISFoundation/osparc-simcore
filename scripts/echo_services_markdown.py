@@ -1,8 +1,8 @@
 #!/bin/env python
-""" Usage
+"""Usage
 
-    cd osparc-simcore
-    ./scripts/echo_services_markdown.py >services.md
+cd osparc-simcore
+./scripts/echo_services_markdown.py >services.md
 """
 
 import itertools
@@ -16,9 +16,9 @@ from typing import Final, NamedTuple
 CURRENT_FILE = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve()
 CURRENT_DIR = CURRENT_FILE.parent
 
-_URL_PREFIX: Final[
-    str
-] = "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master"
+_URL_PREFIX: Final[str] = (
+    "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master"
+)
 
 _REDOC_URL_PREFIX: Final[str] = f"https://redocly.github.io/redoc/?url={_URL_PREFIX}"
 _SWAGGER_URL_PREFIX: Final[str] = f"https://petstore.swagger.io/?url={_URL_PREFIX}"
@@ -110,12 +110,19 @@ if __name__ == "__main__":
             file.relative_to(repo_base_path),
         )
 
-    dockerfiles_found = (_to_tuple(file) for file in services_path.rglob("Dockerfile"))
+    def _is_hidden(file: Path) -> bool:
+        return any(p.name.startswith(".") for p in file.parents)
+
+    dockerfiles_found = (
+        _to_tuple(file)
+        for file in services_path.rglob("Dockerfile")
+        if not _is_hidden(file)
+    )
 
     openapi_files_found = (
         _to_tuple(file)
         for file in services_path.rglob("openapi.*")
-        if file.suffix in {".json", ".yaml", ".yml"}
+        if file.suffix in {".json", ".yaml", ".yml"} and not _is_hidden(file)
     )
 
     markdown_table = generate_markdown_table(
