@@ -14,9 +14,9 @@ from ._base import AiohttpExceptionHandler, ExceptionHandlersMap
 _logger = logging.getLogger(__name__)
 
 
-_STATUS_CODE_TO_HTTP_ERRORS: dict[
-    int, type[web.HTTPError]
-] = get_all_aiohttp_http_exceptions(web.HTTPError)
+_STATUS_CODE_TO_HTTP_ERRORS: dict[int, type[web.HTTPError]] = (
+    get_all_aiohttp_http_exceptions(web.HTTPError)
+)
 
 
 class _DefaultDict(dict):
@@ -40,7 +40,8 @@ def create_error_response(error: ErrorGet, status_code: int) -> web.Response:
     return web.json_response(
         data={"error": error.model_dump(exclude_unset=True, mode="json")},
         dumps=json_dumps,
-        reason=error.message,
+        # NOTE: Multiline not allowed in StreamReponse's reason attribute
+        reason=error.message.replace("\n", " ") if error.message else None,
         status=status_code,
     )
 
