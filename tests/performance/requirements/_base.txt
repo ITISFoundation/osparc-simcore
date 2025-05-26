@@ -2,3 +2,4 @@ locust-plugins
 parse
 pydantic
 pydantic-settings
+tenacity
