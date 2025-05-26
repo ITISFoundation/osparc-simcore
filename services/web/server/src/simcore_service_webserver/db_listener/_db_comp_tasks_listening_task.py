@@ -7,7 +7,7 @@ import asyncio
 import datetime
 import logging
 from collections.abc import AsyncIterator
-from typing import Final, NoReturn
+from typing import Final, NoReturn, cast
 
 from aiohttp import web
 from aiopg.sa.connection import SAConnection
