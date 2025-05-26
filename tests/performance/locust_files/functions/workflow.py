@@ -3,10 +3,10 @@ import random
 from datetime import timedelta
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Annotated
+from typing import Annotated, Any
 from urllib.parse import quote
 
-from locust import HttpUser, task
+from locust import HttpUser, run_single_user, task
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from requests.auth import HTTPBasicAuth
@@ -56,7 +56,7 @@ class Function(BaseModel):
     description: str
     input_schema: Annotated[Schema, Field()] = Schema()
     output_schema: Annotated[Schema, Field()] = Schema()
-    default_inputs: Annotated[dict[str, str], Field()] = dict()
+    default_inputs: Annotated[dict[str, Any], Field()] = dict()
     solver_key: Annotated[str, Field()] = _SOLVER_KEY
     solver_version: Annotated[str, Field()] = _SOLVER_VERSION
 
@@ -137,7 +137,7 @@ class MetaModelingUser(HttpUser):
         _function = Function(
             title="Test function",
             description="Test function",
-            default_inputs={"input_1": json.dumps(self._script)},
+            default_inputs={"input_1": self._script},
         )
         response = self.client.post(
             "/v0/functions", json=_function.model_dump(), auth=self._auth
@@ -148,7 +148,7 @@ class MetaModelingUser(HttpUser):
 
         response = self.client.post(
             f"/v0/functions/{self._function_uid}:run",
-            json={"input_2": json.dumps(self._input_json)},
+            json={"input_2": self._input_json},
             auth=self._auth,
             name="/v0/functions/[function_uid]:run",
         )
@@ -181,9 +181,9 @@ class MetaModelingUser(HttpUser):
         )
         response.raise_for_status()
         status = response.json().get("status")
-        assert status in ["DONE", "FAILED"]
+        assert status in ["SUCCESS", "FAILED"]
 
-    def upload_file(self, file: Path) -> dict:
+    def upload_file(self, file: Path) -> dict[str, str]:
         assert file.is_file()
         with file.open(mode="rb") as f:
             files = {"file": f}
@@ -196,9 +196,4 @@ class MetaModelingUser(HttpUser):
 
 
 if __name__ == "__main__":
-    function = Function(
-        title="Test function",
-        description="Test function",
-        default_inputs={},
-    )
-    print(function.model_dump_json())
+    run_single_user(MetaModelingUser)
