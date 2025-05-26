@@ -20,6 +20,7 @@ from models_library.functions import (
     RegisteredFunctionJobDB,
 )
 from models_library.rest_pagination import PageMetaInfoLimitOffset
+from pydantic import TypeAdapter
 from simcore_postgres_database.models.funcapi_function_job_collections_table import (
     function_job_collections_table,
 )
@@ -292,9 +293,12 @@ async def list_function_job_collections(
     """
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        filter_condition = sqlalchemy.sql.true()
+        filter_condition: sqlalchemy.sql.ColumnElement = sqlalchemy.sql.true()
 
         if filters and filters.has_function_id:
+            function_id = TypeAdapter(FunctionID).validate_python(
+                filters.has_function_id
+            )
             subquery = (
                 function_job_collections_to_function_jobs_table.select()
                 .with_only_columns(
@@ -307,7 +311,7 @@ async def list_function_job_collections(
                     function_job_collections_to_function_jobs_table.c.function_job_uuid
                     == function_jobs_table.c.uuid,
                 )
-                .where(function_jobs_table.c.function_uuid == filters.has_function_id)
+                .where(function_jobs_table.c.function_uuid == function_id)
             )
             filter_condition = function_job_collections_table.c.uuid.in_(subquery)
         total_count_result = await conn.scalar(
