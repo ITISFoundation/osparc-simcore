@@ -3,28 +3,33 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=no-value-for-parameter
 # pylint:disable=too-many-arguments
+# pylint:disable=protected-access
 
 import json
 import logging
-from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
+import secrets
+from collections.abc import AsyncIterator, Awaitable, Callable
+from dataclasses import dataclass
 from typing import Any
 from unittest import mock
 
-import aiopg.sa
 import pytest
-import sqlalchemy as sa
+import simcore_service_webserver
+import simcore_service_webserver.db_listener
+import simcore_service_webserver.db_listener._db_comp_tasks_listening_task
 from aiohttp.test_utils import TestClient
 from faker import Faker
-from models_library.projects import ProjectAtDB, ProjectID
+from models_library.projects import ProjectAtDB
+from pytest_mock import MockType
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.webserver_login import UserInfoDict
-from servicelib.aiohttp.application_keys import APP_AIOPG_ENGINE_KEY
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.db_listener._db_comp_tasks_listening_task import (
     create_comp_tasks_listening_task,
 )
+from sqlalchemy.ext.asyncio import AsyncEngine
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type
@@ -35,9 +40,7 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.fixture
-async def mock_project_subsystem(
-    mocker: MockerFixture,
-) -> AsyncIterator[dict[str, mock.MagicMock]]:
+async def mock_project_subsystem(mocker: MockerFixture) -> dict[str, mock.Mock]:
     mocked_project_calls = {}
 
     mocked_project_calls["update_node_outputs"] = mocker.patch(
@@ -45,22 +48,32 @@ async def mock_project_subsystem(
         return_value="",
     )
 
-    mocked_project_calls["_get_project_owner"] = mocker.patch(
-        "simcore_service_webserver.db_listener._db_comp_tasks_listening_task._get_project_owner",
-        return_value="",
+    mocked_project_calls["_update_project_state.update_project_node_state"] = (
+        mocker.patch(
+            "simcore_service_webserver.projects._projects_service.update_project_node_state",
+            autospec=True,
+        )
     )
-    mocked_project_calls["_update_project_state"] = mocker.patch(
-        "simcore_service_webserver.db_listener._db_comp_tasks_listening_task._update_project_state",
-        return_value="",
+
+    mocked_project_calls["_update_project_state.notify_project_node_update"] = (
+        mocker.patch(
+            "simcore_service_webserver.projects._projects_service.notify_project_node_update",
+            autospec=True,
+        )
+    )
+
+    mocked_project_calls["_update_project_state.notify_project_state_update"] = (
+        mocker.patch(
+            "simcore_service_webserver.projects._projects_service.notify_project_state_update",
+            autospec=True,
+        )
     )
 
     return mocked_project_calls
 
 
 @pytest.fixture
-async def comp_task_listening_task(
-    mock_project_subsystem: dict, client: TestClient
-) -> AsyncIterator:
+async def with_started_listening_task(client: TestClient) -> AsyncIterator:
     assert client.app
     async for _comp_task in create_comp_tasks_listening_task(client.app):
         # first call creates the task, second call cleans it
@@ -68,107 +81,130 @@ async def comp_task_listening_task(
 
 
 @pytest.fixture
-def comp_task(
-    postgres_db: sa.engine.Engine,
-) -> Iterator[Callable[..., dict[str, Any]]]:
-    created_task_ids: list[int] = []
+async def spied_get_changed_comp_task_row(
+    mocker: MockerFixture,
+) -> MockType:
+    return mocker.spy(
+        simcore_service_webserver.db_listener._db_comp_tasks_listening_task,  # noqa: SLF001
+        "_get_changed_comp_task_row",
+    )
 
-    def creator(project_id: ProjectID, **task_kwargs) -> dict[str, Any]:
-        task_config = {"project_id": f"{project_id}"} | task_kwargs
-        with postgres_db.connect() as conn:
-            result = conn.execute(
-                comp_tasks.insert()
-                .values(**task_config)
-                .returning(sa.literal_column("*"))
-            )
-            new_task = result.first()
-            assert new_task
-            new_task = dict(new_task)
-            created_task_ids.append(new_task["task_id"])
-        return new_task
 
-    yield creator
+@dataclass(frozen=True, slots=True)
+class _CompTaskChangeParams:
+    update_values: dict[str, Any]
+    expected_calls: list[str]
 
-    # cleanup
-    with postgres_db.connect() as conn:
-        conn.execute(
-            comp_tasks.delete().where(comp_tasks.c.task_id.in_(created_task_ids))
-        )
+
+async def _assert_listener_triggers(
+    mock_project_subsystem: dict[str, mock.Mock], expected_calls: list[str]
+) -> None:
+    for call_name, mocked_call in mock_project_subsystem.items():
+        if call_name in expected_calls:
+            async for attempt in AsyncRetrying(
+                wait=wait_fixed(1),
+                stop=stop_after_delay(10),
+                retry=retry_if_exception_type(AssertionError),
+                before_sleep=before_sleep_log(logger, logging.INFO),
+                reraise=True,
+            ):
+                with attempt:
+                    mocked_call.assert_called_once()
+
+        else:
+            mocked_call.assert_not_called()
 
 
 @pytest.mark.parametrize(
     "task_class", [NodeClass.COMPUTATIONAL, NodeClass.INTERACTIVE, NodeClass.FRONTEND]
 )
 @pytest.mark.parametrize(
-    "update_values, expected_calls",
+    "params",
     [
         pytest.param(
-            {
-                "outputs": {"some new stuff": "it is new"},
-            },
-            ["_get_project_owner", "update_node_outputs"],
+            _CompTaskChangeParams(
+                {
+                    "outputs": {"some new stuff": "it is new"},
+                },
+                ["update_node_outputs"],
+            ),
             id="new output shall trigger",
         ),
         pytest.param(
-            {"state": StateType.ABORTED},
-            ["_get_project_owner", "_update_project_state"],
+            _CompTaskChangeParams(
+                {"state": StateType.ABORTED},
+                [
+                    "_update_project_state.update_project_node_state",
+                    "_update_project_state.notify_project_node_update",
+                    "_update_project_state.notify_project_state_update",
+                ],
+            ),
             id="new state shall trigger",
         ),
         pytest.param(
-            {"outputs": {"some new stuff": "it is new"}, "state": StateType.ABORTED},
-            ["_get_project_owner", "update_node_outputs", "_update_project_state"],
+            _CompTaskChangeParams(
+                {
+                    "outputs": {"some new stuff": "it is new"},
+                    "state": StateType.ABORTED,
+                },
+                [
+                    "update_node_outputs",
+                    "_update_project_state.update_project_node_state",
+                    "_update_project_state.notify_project_node_update",
+                    "_update_project_state.notify_project_state_update",
+                ],
+            ),
             id="new output and state shall double trigger",
         ),
         pytest.param(
-            {"inputs": {"should not trigger": "right?"}},
-            [],
+            _CompTaskChangeParams({"inputs": {"should not trigger": "right?"}}, []),
             id="no new output or state shall not trigger",
         ),
     ],
 )
 @pytest.mark.parametrize("user_role", [UserRole.USER])
-async def test_listen_comp_tasks_task(
-    mock_project_subsystem: dict,
+async def test_db_listener_triggers_on_event_with_multiple_tasks(
+    sqlalchemy_async_engine: AsyncEngine,
+    mock_project_subsystem: dict[str, mock.Mock],
+    spied_get_changed_comp_task_row: MockType,
     logged_user: UserInfoDict,
     project: Callable[..., Awaitable[ProjectAtDB]],
     pipeline: Callable[..., dict[str, Any]],
     comp_task: Callable[..., dict[str, Any]],
-    comp_task_listening_task: None,
-    client,
-    update_values: dict[str, Any],
-    expected_calls: list[str],
+    with_started_listening_task: None,
+    params: _CompTaskChangeParams,
     task_class: NodeClass,
     faker: Faker,
+    mocker: MockerFixture,
 ):
-    db_engine: aiopg.sa.Engine = client.app[APP_AIOPG_ENGINE_KEY]
     some_project = await project(logged_user)
     pipeline(project_id=f"{some_project.uuid}")
-    task = comp_task(
-        project_id=f"{some_project.uuid}",
-        node_id=faker.uuid4(),
-        outputs=json.dumps({}),
-        node_class=task_class,
-    )
-    async with db_engine.acquire() as conn:
-        # let's update some values
+    # Create 3 tasks with different node_ids
+    tasks = [
+        comp_task(
+            project_id=f"{some_project.uuid}",
+            node_id=faker.uuid4(),
+            outputs=json.dumps({}),
+            node_class=task_class,
+        )
+        for _ in range(3)
+    ]
+    random_task_to_update = tasks[secrets.randbelow(len(tasks))]
+    updated_task_id = random_task_to_update["task_id"]
+
+    async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(
             comp_tasks.update()
-            .values(**update_values)
-            .where(comp_tasks.c.task_id == task["task_id"])
+            .values(**params.update_values)
+            .where(comp_tasks.c.task_id == updated_task_id)
         )
+    await _assert_listener_triggers(mock_project_subsystem, params.expected_calls)
 
-        # tests whether listener gets executed
-        for call_name, mocked_call in mock_project_subsystem.items():
-            if call_name in expected_calls:
-                async for attempt in AsyncRetrying(
-                    wait=wait_fixed(1),
-                    stop=stop_after_delay(10),
-                    retry=retry_if_exception_type(AssertionError),
-                    before_sleep=before_sleep_log(logger, logging.INFO),
-                    reraise=True,
-                ):
-                    with attempt:
-                        mocked_call.assert_awaited()
-
-            else:
-                mocked_call.assert_not_called()
+    # Assert the spy was called with the correct task_id
+    if params.expected_calls:
+        assert any(
+            call.args[1] == updated_task_id
+            for call in spied_get_changed_comp_task_row.call_args_list
+        ), f"_get_changed_comp_task_row was not called with task_id={updated_task_id}. Calls: {spied_get_changed_comp_task_row.call_args_list}"
+    else:
+        spied_get_changed_comp_task_row.assert_not_called()
