@@ -17,7 +17,7 @@ function_job_collections_access_rights_table = sa.Table(
         "function_job_collection_uuid",
         sa.ForeignKey(
             function_job_collections_table.c.uuid,
-            name="fk_func_access_to_func_job_collections_to_func_job_collection_uuid",
+            name="fk_func_access_to_func_job_colls_to_func_job_coll_uuid",
             onupdate=RefActions.CASCADE,
             ondelete=RefActions.CASCADE,
         ),
