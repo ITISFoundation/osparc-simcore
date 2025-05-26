@@ -1,4 +1,4 @@
-""" Defines the different exceptions that may arise in the director
+"""Defines the different exceptions that may arise in the director
 
 
 TODO: Exceptions should provide all info to create Error instances of the API model
@@ -88,13 +88,14 @@ class TaskSchedulingError(ComputationalSchedulerError):
 
     def get_errors(self) -> list[ErrorDict]:
         # default implementation
+
         return [
             {
                 "loc": (
                     f"{self.project_id}",
                     f"{self.node_id}",
                 ),
-                "msg": f"{self.args[0]}",
+                "msg": f"{self}",
                 "type": self.code,
             },
         ]

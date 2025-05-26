@@ -140,6 +140,7 @@ opentelemetry-api==1.30.0
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
     #   opentelemetry-instrumentation
+    #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
@@ -157,9 +158,12 @@ opentelemetry-exporter-otlp-proto-http==1.30.0
     # via opentelemetry-exporter-otlp
 opentelemetry-instrumentation==0.51b0
     # via
+    #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
+opentelemetry-instrumentation-aio-pika==0.51b0
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-logging==0.51b0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-redis==0.51b0
@@ -295,21 +299,8 @@ pytest==8.3.5
     #   pytest-asyncio
     #   pytest-cov
     #   pytest-mock
-pytest-asyncio==0.23.8
-    # via
-    #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -r requirements/_test.in
+pytest-asyncio==0.26.0
+    # via -r requirements/_test.in
 pytest-cov==6.0.0
     # via -r requirements/_test.in
 pytest-mock==3.14.0
@@ -452,6 +443,7 @@ wrapt==1.17.2
     # via
     #   deprecated
     #   opentelemetry-instrumentation
+    #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-redis
 yarl==1.18.3
     # via

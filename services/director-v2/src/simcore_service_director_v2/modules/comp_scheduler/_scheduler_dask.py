@@ -23,9 +23,6 @@ from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.logging_utils import log_catch
-from simcore_service_director_v2.modules.comp_scheduler._utils import (
-    WAITING_FOR_START_STATES,
-)
 
 from ...core.errors import (
     ComputationalBackendNotConnectedError,
@@ -52,6 +49,9 @@ from ..db.repositories.comp_runs import (
 )
 from ..db.repositories.comp_tasks import CompTasksRepository
 from ._scheduler_base import BaseCompScheduler
+from ._utils import (
+    WAITING_FOR_START_STATES,
+)
 
 _logger = logging.getLogger(__name__)
 

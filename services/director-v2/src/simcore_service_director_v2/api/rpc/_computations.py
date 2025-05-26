@@ -13,8 +13,10 @@ from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from servicelib.rabbitmq import RPCRouter
 from servicelib.utils import limited_gather
-from simcore_service_director_v2.models.comp_tasks import ComputationTaskForRpcDBGet
 
+from ...core.errors import ComputationalRunNotFoundError
+from ...models.comp_runs import CompRunsAtDB
+from ...models.comp_tasks import ComputationTaskForRpcDBGet
 from ...modules.db.repositories.comp_runs import CompRunsRepository
 from ...modules.db.repositories.comp_tasks import CompTasksRepository
 from ...utils import dask as dask_utils
@@ -59,7 +61,7 @@ async def list_computations_iterations_page(
     *,
     product_name: ProductName,
     user_id: UserID,
-    project_id: ProjectID,
+    project_ids: list[ProjectID],
     # pagination
     offset: int = 0,
     limit: int = 20,
@@ -71,7 +73,7 @@ async def list_computations_iterations_page(
         await comp_runs_repo.list_for_user_and_project_all_iterations(
             product_name=product_name,
             user_id=user_id,
-            project_id=project_id,
+            project_ids=project_ids,
             offset=offset,
             limit=limit,
             order_by=order_by,
@@ -84,15 +86,28 @@ async def list_computations_iterations_page(
 
 
 async def _fetch_task_log(
-    user_id: UserID, project_id: ProjectID, task: ComputationTaskForRpcDBGet
+    user_id: UserID, task: ComputationTaskForRpcDBGet
 ) -> TaskLogFileGet | None:
     if not task.state.is_running():
         return await dask_utils.get_task_log_file(
             user_id=user_id,
-            project_id=project_id,
+            project_id=task.project_uuid,
             node_id=task.node_id,
         )
     return None
+
+
+async def _get_latest_run_or_none(
+    comp_runs_repo: CompRunsRepository,
+    user_id: UserID,
+    project_uuid: ProjectID,
+) -> CompRunsAtDB | None:
+    try:
+        return await comp_runs_repo.get(
+            user_id=user_id, project_id=project_uuid, iteration=None
+        )
+    except ComputationalRunNotFoundError:
+        return None
 
 
 @router.expose(reraise_if_error_type=())
@@ -101,7 +116,7 @@ async def list_computations_latest_iteration_tasks_page(
     *,
     product_name: ProductName,
     user_id: UserID,
-    project_id: ProjectID,
+    project_ids: list[ProjectID],
     # pagination
     offset: int = 0,
     limit: int = 20,
@@ -114,20 +129,32 @@ async def list_computations_latest_iteration_tasks_page(
     comp_tasks_repo = CompTasksRepository.instance(db_engine=app.state.engine)
     comp_runs_repo = CompRunsRepository.instance(db_engine=app.state.engine)
 
-    comp_latest_run = await comp_runs_repo.get(
-        user_id=user_id, project_id=project_id, iteration=None  # Returns last iteration
-    )
-
     total, comp_tasks = await comp_tasks_repo.list_computational_tasks_rpc_domain(
-        project_id=project_id,
+        project_ids=project_ids,
         offset=offset,
         limit=limit,
         order_by=order_by,
     )
 
+    # Get unique set of all project_uuids from comp_tasks
+    unique_project_uuids = {task.project_uuid for task in comp_tasks}
+
+    # Fetch latest run for each project concurrently
+    latest_runs = await limited_gather(
+        *[
+            _get_latest_run_or_none(comp_runs_repo, user_id, project_uuid)
+            for project_uuid in unique_project_uuids
+        ],
+        limit=20,
+    )
+    # Build a dict: project_uuid -> iteration
+    project_uuid_to_iteration = {
+        run.project_uuid: run.iteration for run in latest_runs if run is not None
+    }
+
     # Run all log fetches concurrently
     log_files = await limited_gather(
-        *[_fetch_task_log(user_id, project_id, task) for task in comp_tasks],
+        *[_fetch_task_log(user_id, task) for task in comp_tasks],
         limit=20,
     )
 
@@ -142,7 +169,10 @@ async def list_computations_latest_iteration_tasks_page(
             ended_at=task.ended_at,
             log_download_link=log_file.download_link if log_file else None,
             service_run_id=ServiceRunID.get_resource_tracking_run_id_for_computational(
-                user_id, project_id, task.node_id, comp_latest_run.iteration
+                user_id,
+                task.project_uuid,
+                task.node_id,
+                project_uuid_to_iteration[task.project_uuid],
             ),
         )
         for task, log_file in zip(comp_tasks, log_files, strict=True)

@@ -132,10 +132,8 @@ pytest==8.3.5
     #   pytest-mock
 pytest-aiohttp==1.1.0
     # via -r requirements/_test.in
-pytest-asyncio==0.23.8
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   pytest-aiohttp
+pytest-asyncio==0.26.0
+    # via pytest-aiohttp
 pytest-benchmark==5.1.0
     # via -r requirements/_test.in
 pytest-cov==6.0.0

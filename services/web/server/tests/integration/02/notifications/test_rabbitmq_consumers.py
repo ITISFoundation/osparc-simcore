@@ -3,7 +3,6 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-import asyncio
 from collections.abc import Awaitable, Callable
 from random import choice
 from typing import Any
@@ -130,9 +129,8 @@ async def _assert_handler_called_with_json(
 
 
 @pytest.fixture
-def client(
+async def client(
     mock_redis_socket_timeout: None,
-    event_loop: asyncio.AbstractEventLoop,
     aiohttp_client: Callable,
     app_config: dict[str, Any],
     rabbit_service: RabbitSettings,
@@ -159,14 +157,12 @@ def client(
     setup_socketio(app)
     setup_resource_manager(app)
 
-    return event_loop.run_until_complete(
-        aiohttp_client(
-            app,
-            server_kwargs={
-                "port": app_config["main"]["port"],
-                "host": app_config["main"]["host"],
-            },
-        )
+    return await aiohttp_client(
+        app,
+        server_kwargs={
+            "port": app_config["main"]["port"],
+            "host": app_config["main"]["host"],
+        },
     )
 
 

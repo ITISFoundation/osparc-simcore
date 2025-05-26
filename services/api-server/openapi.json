@@ -1423,7 +1423,7 @@
           "solvers"
         ],
         "summary": "List Solvers",
-        "description": "\ud83d\udea8 **Deprecated**: This endpoint is deprecated and will be removed in a future release.\nPlease use `GET /v0/solvers/page` instead.\n\n\n\nLists all available solvers (latest version)\n\nNew in *version 0.5.0*",
+        "description": "\ud83d\udea8 **Deprecated**: This endpoint is deprecated and will be removed in a future release.\nPlease use `GET /v0/solvers/page` instead.\n\n\n\nLists all available solvers (latest version)\n\nNew in *version 0.5*",
         "operationId": "list_solvers",
         "responses": {
           "200": {
@@ -1514,7 +1514,7 @@
           "solvers"
         ],
         "summary": "Lists All Releases",
-        "description": "\ud83d\udea8 **Deprecated**: This endpoint is deprecated and will be removed in a future release.\nPlease use `GET /v0/solvers/{solver_key}/releases/page` instead.\n\n\n\nLists all released solvers (not just latest version)\n\nNew in *version 0.5.0*",
+        "description": "\ud83d\udea8 **Deprecated**: This endpoint is deprecated and will be removed in a future release.\nPlease use `GET /v0/solvers/{solver_key}/releases/page` instead.\n\n\n\nLists **all** released solvers (not just latest version)\n\nNew in *version 0.5*",
         "operationId": "list_solvers_releases",
         "responses": {
           "200": {
@@ -1946,7 +1946,7 @@
           "solvers"
         ],
         "summary": "List Solver Ports",
-        "description": "Lists inputs and outputs of a given solver\n\nNew in *version 0.5.0*\n\nAdded in *version 0.7.1*: `version_display` field in the response",
+        "description": "Lists inputs and outputs of a given solver\n\nNew in *version 0.5*\n\nAdded in *version 0.7.1*: `version_display` field in the response",
         "operationId": "list_solver_ports",
         "security": [
           {
@@ -2184,7 +2184,7 @@
           "solvers"
         ],
         "summary": "Create Solver Job",
-        "description": "Creates a job in a specific release with given inputs.\n\nNOTE: This operation does **not** start the job",
+        "description": "Creates a job in a specific release with given inputs. This operation does not start the job.\n\nNew in *version 0.5*",
         "operationId": "create_solver_job",
         "security": [
           {
@@ -2767,7 +2767,7 @@
           "solvers"
         ],
         "summary": "Start Job",
-        "description": "Starts job job_id created with the solver solver_key:version\n\nAdded in *version 0.4.3*: query parameter `cluster_id`\nAdded in *version 0.6*: responds with a 202 when successfully starting a computation\nChanged in *version 0.8*: query parameter `cluster_id` deprecated",
+        "description": "Starts job job_id created with the solver solver_key:version\n\nAdded in *version 0.4.3*: query parameter `cluster_id`\n\nAdded in *version 0.6*: responds with a 202 when successfully starting a computation\n\nChanged in *version 0.7*: query parameter `cluster_id` deprecated",
         "operationId": "start_job",
         "security": [
           {
@@ -2945,6 +2945,7 @@
           "solvers"
         ],
         "summary": "Stop Job",
+        "description": "Stops a running job\n\nNew in *version 0.5*",
         "operationId": "stop_job",
         "security": [
           {
@@ -3083,6 +3084,7 @@
           "solvers"
         ],
         "summary": "Inspect Job",
+        "description": "Inspects the current status of a job\n\nNew in *version 0.5*",
         "operationId": "inspect_job",
         "security": [
           {
@@ -3486,9 +3488,9 @@
         "tags": [
           "solvers"
         ],
-        "summary": "Get Jobs Page",
+        "summary": "List Jobs Paginated",
         "description": "List of jobs on a specific released solver (includes pagination)\n\nNew in *version 0.7*",
-        "operationId": "get_jobs_page",
+        "operationId": "list_jobs_paginated",
         "security": [
           {
             "HTTPBasic": []
@@ -3777,7 +3779,7 @@
           "solvers"
         ],
         "summary": "Get Job Output Logfile",
-        "description": "Special extra output with persistent logs file for the solver run.\n\n**NOTE**: this is not a log stream but a predefined output that is only\navailable after the job is done.\n\nNew in *version 0.4.0*",
+        "description": "Special extra output with persistent logs file for the solver run.\n\n**NOTE**: this is not a log stream but a predefined output that is only\navailable after the job is done\n\nNew in *version 0.4*",
         "operationId": "get_job_output_logfile",
         "security": [
           {
@@ -4319,7 +4321,7 @@
           "studies"
         ],
         "summary": "List Studies",
-        "description": "New in *version 0.5.0*",
+        "description": "List all studies\n\nNew in *version 0.5*",
         "operationId": "list_studies",
         "security": [
           {
@@ -4381,7 +4383,7 @@
           "studies"
         ],
         "summary": "Get Study",
-        "description": "New in *version 0.5.0*",
+        "description": "Get study by ID\n\nNew in *version 0.5*",
         "operationId": "get_study",
         "security": [
           {
@@ -4532,7 +4534,7 @@
           "studies"
         ],
         "summary": "List Study Ports",
-        "description": "Lists metadata on ports of a given study\n\nNew in *version 0.5.0*",
+        "description": "Lists metadata on ports of a given study\n\nNew in *version 0.5*",
         "operationId": "list_study_ports",
         "security": [
           {
@@ -4756,7 +4758,7 @@
           "studies"
         ],
         "summary": "Start Study Job",
-        "description": "Changed in *version 0.6.0*: Now responds with a 202 when successfully starting a computation\nChanged in *version 0.8*: query parameter `cluster_id` deprecated",
+        "description": "Changed in *version 0.6*: Now responds with a 202 when successfully starting a computation",
         "operationId": "start_study_job",
         "security": [
           {
@@ -4798,9 +4800,11 @@
                   "type": "null"
                 }
               ],
+              "description": "Changed in *version 0.7*: query parameter `cluster_id` deprecated\n",
               "deprecated": true,
               "title": "Cluster Id"
             },
+            "description": "Changed in *version 0.7*: query parameter `cluster_id` deprecated\n",
             "deprecated": true
           }
         ],
@@ -5691,6 +5695,23 @@
               "default": 0,
               "title": "Offset"
             }
+          },
+          {
+            "name": "has_function_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Has Function Id"
+            }
           }
         ],
         "responses": {
@@ -5867,7 +5888,7 @@
           "function_job_collections"
         ],
         "summary": "Function Job Collection List Function Jobs",
-        "description": "Get the function jobs in function job collection",
+        "description": "Get the function jobs in function job collection\n\nNew in *version 0.8.0*",
         "operationId": "function_job_collection_list_function_jobs",
         "parameters": [
           {
@@ -5943,7 +5964,7 @@
           "function_job_collections"
         ],
         "summary": "Function Job Collection Status",
-        "description": "Get function job collection status",
+        "description": "Get function job collection status\n\nNew in *version 0.8.0*",
         "operationId": "function_job_collection_status",
         "security": [
           {
@@ -6217,7 +6238,7 @@
           "wallets"
         ],
         "summary": "Get Available Licensed Items For Wallet",
-        "description": "Get all available licensed items for a given wallet",
+        "description": "Get all available licensed items for a given wallet\n\nNew in *version 0.6*",
         "operationId": "get_available_licensed_items_for_wallet",
         "security": [
           {
@@ -6496,7 +6517,7 @@
           "credits"
         ],
         "summary": "Get Credits Price",
-        "description": "New in *version 0.6.0*",
+        "description": "New in *version 0.6*",
         "operationId": "get_credits_price",
         "responses": {
           "200": {

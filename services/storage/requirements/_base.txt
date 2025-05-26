@@ -419,9 +419,11 @@ opentelemetry-api==1.30.0
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
     #   opentelemetry-instrumentation
+    #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-asyncpg
     #   opentelemetry-instrumentation-botocore
+    #   opentelemetry-instrumentation-celery
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-logging
@@ -445,14 +447,20 @@ opentelemetry-exporter-otlp-proto-http==1.30.0
     # via opentelemetry-exporter-otlp
 opentelemetry-instrumentation==0.51b0
     # via
+    #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-asyncpg
     #   opentelemetry-instrumentation-botocore
+    #   opentelemetry-instrumentation-celery
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
+opentelemetry-instrumentation-aio-pika==0.51b0
+    # via
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-asgi==0.51b0
     # via opentelemetry-instrumentation-fastapi
 opentelemetry-instrumentation-asyncpg==0.51b0
@@ -461,6 +469,8 @@ opentelemetry-instrumentation-botocore==0.51b0
     # via
     #   -r requirements/../../../packages/aws-library/requirements/_base.in
     #   -r requirements/_base.in
+opentelemetry-instrumentation-celery==0.51b0
+    # via -r requirements/_base.in
 opentelemetry-instrumentation-fastapi==0.51b0
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 opentelemetry-instrumentation-httpx==0.51b0
@@ -500,6 +510,7 @@ opentelemetry-semantic-conventions==0.51b0
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-asyncpg
     #   opentelemetry-instrumentation-botocore
+    #   opentelemetry-instrumentation-celery
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-redis
@@ -1206,6 +1217,7 @@ wrapt==1.17.2
     #   aiobotocore
     #   deprecated
     #   opentelemetry-instrumentation
+    #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-redis
 yarl==1.18.3

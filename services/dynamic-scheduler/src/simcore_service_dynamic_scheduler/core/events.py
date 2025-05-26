@@ -13,8 +13,9 @@ from servicelib.fastapi.monitoring import (
 from servicelib.fastapi.postgres_lifespan import (
     create_postgres_database_input_state,
 )
+from servicelib.fastapi.tracing import get_tracing_instrumentation_lifespan
 
-from .._meta import APP_FINISHED_BANNER_MSG, APP_STARTED_BANNER_MSG
+from .._meta import APP_FINISHED_BANNER_MSG, APP_NAME, APP_STARTED_BANNER_MSG
 from ..api.rpc.routes import rpc_api_routes_lifespan
 from ..repository.events import repository_lifespan_manager
 from ..services.catalog import catalog_lifespan
@@ -50,9 +51,17 @@ async def _settings_lifespan(app: FastAPI) -> AsyncIterator[State]:
     }
 
 
-def create_app_lifespan() -> LifespanManager:
+def create_app_lifespan(settings: ApplicationSettings) -> LifespanManager:
     app_lifespan = LifespanManager()
     app_lifespan.add(_settings_lifespan)
+
+    if settings.DYNAMIC_SCHEDULER_TRACING:
+        app_lifespan.add(
+            get_tracing_instrumentation_lifespan(
+                tracing_settings=settings.DYNAMIC_SCHEDULER_TRACING,
+                service_name=APP_NAME,
+            )
+        )
 
     app_lifespan.include(repository_lifespan_manager)
     app_lifespan.add(director_v2_lifespan)

@@ -87,10 +87,10 @@ def _compose_job_resource_name(study_key, job_id) -> str:
     description=create_route_description(
         base="List of all jobs created for a given study (paginated)",
         changelog=[
-            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.8"),
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.9-rc1"),
         ],
     ),
-    include_in_schema=False,  # TO BE RELEASED in 0.8
+    include_in_schema=False,  # TO BE RELEASED in 0.9
 )
 async def list_study_jobs(
     study_id: StudyID,
@@ -163,7 +163,7 @@ async def create_study_job(
 
     await webserver_api.patch_project(
         project_id=job.id,
-        patch_params=ProjectPatch(name=job.name),  # type: ignore[arg-type]
+        patch_params=ProjectPatch(name=job.name),
     )
 
     await wb_api_rpc.mark_project_as_job(
@@ -217,10 +217,10 @@ async def create_study_job(
     description=create_route_description(
         base="Gets a jobs for a given study",
         changelog=[
-            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.8"),
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.9-rc1"),
         ],
     ),
-    include_in_schema=False,  # TO BE RELEASED in 0.8
+    include_in_schema=False,  # TO BE RELEASED in 0.9
 )
 async def get_study_job(
     study_id: StudyID,
@@ -267,11 +267,13 @@ async def delete_study_job(
             "model": ErrorGet,
         },
     },
-    description=FMSG_CHANGELOG_CHANGED_IN_VERSION.format(
-        "0.6.0", "Now responds with a 202 when successfully starting a computation"
-    )
-    + FMSG_CHANGELOG_CHANGED_IN_VERSION.format(
-        "0.8", "query parameter `cluster_id` deprecated"
+    description=create_route_description(
+        changelog=[
+            FMSG_CHANGELOG_CHANGED_IN_VERSION.format(
+                "0.6",
+                "Now responds with a 202 when successfully starting a computation",
+            ),
+        ]
     ),
 )
 async def start_study_job(
@@ -282,7 +284,17 @@ async def start_study_job(
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
     cluster_id: Annotated[  # pylint: disable=unused-argument  # noqa: ARG001
-        ClusterID | None, Query(deprecated=True)
+        ClusterID | None,
+        Query(
+            description=create_route_description(
+                changelog=[
+                    FMSG_CHANGELOG_CHANGED_IN_VERSION.format(
+                        "0.7", "query parameter `cluster_id` deprecated"
+                    ),
+                ]
+            ),
+            deprecated=True,
+        ),
     ] = None,
 ):
     job_name = _compose_job_resource_name(study_id, job_id)

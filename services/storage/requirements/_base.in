@@ -20,6 +20,7 @@ aiofiles # i/o
 asgi_lifespan
 asyncpg # database
 httpx
+opentelemetry-instrumentation-celery
 opentelemetry-instrumentation-botocore
 packaging
 fastapi[all]

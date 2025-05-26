@@ -3,7 +3,6 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-import asyncio
 import random
 import sys
 import textwrap
@@ -25,6 +24,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import aiopg.sa
 import pytest
+import pytest_asyncio
 import redis
 import redis.asyncio as aioredis
 import simcore_postgres_database.cli as pg_cli
@@ -205,9 +205,8 @@ def mocked_send_email(monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
 
-@pytest.fixture
-def web_server(
-    event_loop: asyncio.AbstractEventLoop,
+@pytest_asyncio.fixture(loop_scope="function")
+async def web_server(
     app_environment: EnvVarsDict,
     postgres_db: sa.engine.Engine,
     webserver_test_server_port: int,
@@ -223,9 +222,7 @@ def web_server(
 
     disable_static_webserver(app)
 
-    server = event_loop.run_until_complete(
-        aiohttp_server(app, port=webserver_test_server_port)
-    )
+    server = await aiohttp_server(app, port=webserver_test_server_port)
 
     assert isinstance(postgres_db, sa.engine.Engine)
 
@@ -238,8 +235,7 @@ def web_server(
 
 
 @pytest.fixture
-def client(
-    event_loop: asyncio.AbstractEventLoop,
+async def client(
     aiohttp_client: Callable,
     web_server: TestServer,
     mock_orphaned_services,
@@ -250,7 +246,7 @@ def client(
     client connect to web-server
     """
     # WARNING: this fixture is commonly overriden. Check before renaming.
-    return event_loop.run_until_complete(aiohttp_client(web_server))
+    return await aiohttp_client(web_server)
 
 
 @pytest.fixture(scope="session")

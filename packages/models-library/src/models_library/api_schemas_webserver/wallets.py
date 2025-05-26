@@ -74,16 +74,16 @@ class WalletGetPermissions(WalletGet):
     )
 
 
-class CreateWalletBodyParams(OutputSchema):
+class CreateWalletBodyParams(InputSchema):
     name: str
     description: str | None = None
     thumbnail: str | None = None
 
 
-class PutWalletBodyParams(OutputSchema):
+class PutWalletBodyParams(InputSchema):
     name: str
     description: str | None
-    thumbnail: str | None
+    thumbnail: str | None = None
     status: WalletStatus
 
 

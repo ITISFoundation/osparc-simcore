@@ -129,8 +129,7 @@ class Handlers:
 
 
 @pytest.fixture
-def client(
-    event_loop: asyncio.AbstractEventLoop,
+async def client(
     aiohttp_client: Callable,
     monkeypatch: pytest.MonkeyPatch,
 ):
@@ -175,7 +174,7 @@ def client(
     app.middlewares.append(error_middleware_factory(api_version="/v1"))
     app.middlewares.append(envelope_middleware_factory(api_version="/v1"))
 
-    return event_loop.run_until_complete(aiohttp_client(app))
+    return await aiohttp_client(app)
 
 
 @pytest.mark.parametrize(

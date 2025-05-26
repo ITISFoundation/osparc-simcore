@@ -347,25 +347,25 @@ qx.Class.define("osparc.data.Resources", {
           },
         }
       },
-      "jobs": {
-        useCache: false, // handled in osparc.store.Jobs
-        endpoints: {
-          getPageLatestActive: {
-            method: "GET",
-            url: statics.API + "/computations/-/iterations/latest?offset={offset}&limit={limit}&order_by=%7B%22field%22:%22submitted_at%22,%22direction%22:%22desc%22%7D&filter_only_running=true"
-          },
-          getPageHistory: {
-            method: "GET",
-            url: statics.API + "/computations/{studyId}/iterations?offset={offset}&limit={limit}&order_by=%7B%22field%22:%22submitted_at%22,%22direction%22:%22desc%22%7D"
-          },
-        }
-      },
-      "subJobs": {
+      "runs": {
         useCache: false, // handled in osparc.store.Jobs
         endpoints: {
           getPageLatest: {
             method: "GET",
-            url: statics.API + "/computations/{studyId}/iterations/latest/tasks?offset={offset}&limit={limit}"
+            url: statics.API + "/computations/-/iterations/latest?offset={offset}&limit={limit}&order_by=%7B%22field%22:%22submitted_at%22,%22direction%22:%22desc%22%7D&filter_only_running={runningOnly}&filters={filters}"
+          },
+          getPageHistory: {
+            method: "GET",
+            url: statics.API + "/computations/{studyId}/iterations?offset={offset}&limit={limit}&order_by=%7B%22field%22:%22submitted_at%22,%22direction%22:%22desc%22%7D&include_children={includeChildren}"
+          },
+        }
+      },
+      "subRuns": {
+        useCache: false, // handled in osparc.store.Jobs
+        endpoints: {
+          getPageLatest: {
+            method: "GET",
+            url: statics.API + "/computations/{studyId}/iterations/latest/tasks?offset={offset}&limit={limit}&include_children={includeChildren}"
           },
         }
       },
@@ -1059,27 +1059,27 @@ qx.Class.define("osparc.data.Resources", {
         endpoints: {
           search: {
             method: "GET",
-            url: statics.API + "/admin/users:search?email={email}"
+            url: statics.API + "/admin/user-accounts:search?email={email}"
           },
           getPendingUsers: {
             method: "GET",
-            url: statics.API + "/admin/users?status=PENDING"
+            url: statics.API + "/admin/user-accounts?review_status=PENDING"
           },
           approveUser: {
             method: "POST",
-            url: statics.API + "/admin/users:approve"
+            url: statics.API + "/admin/user-accounts:approve"
           },
           rejectUser: {
             method: "POST",
-            url: statics.API + "/admin/users:reject"
+            url: statics.API + "/admin/user-accounts:reject"
           },
           resendConfirmationEmail: {
             method: "POST",
-            url: statics.API + "/admin/users:resendConfirmationEmail"
+            url: statics.API + "/admin/user-accounts:resendConfirmationEmail"
           },
           preRegister: {
             method: "POST",
-            url: statics.API + "/admin/users:pre-register"
+            url: statics.API + "/admin/user-accounts:pre-register"
           }
         }
       },

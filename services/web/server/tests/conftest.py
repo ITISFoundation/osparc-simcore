@@ -3,6 +3,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import asyncio
 import json
 import logging
 import random
@@ -62,6 +63,7 @@ logging.getLogger("sqlalchemy").setLevel(logging.WARNING)
 
 # imports the fixtures for the integration tests
 pytest_plugins = [
+    "aiohttp.pytest_plugin",
     "pytest_simcore.cli_runner",
     "pytest_simcore.db_entries_mocks",
     "pytest_simcore.docker_compose",
@@ -157,7 +159,7 @@ async def logged_user(
             "first_name": faker.first_name(),
             "last_name": faker.last_name(),
             "phone": faker.phone_number()
-            + f"{random.randint(1000,9999)}",  # noqa: S311
+            + f"{random.randint(1000, 9999)}",  # noqa: S311
         },
         check_if_succeeds=user_role != UserRole.ANONYMOUS,
     ) as user:
@@ -241,7 +243,6 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
             "templateType": None,
         }
         if from_study:
-
             from_study_wo_access_rights = deepcopy(from_study)
             from_study_wo_access_rights.pop("accessRights")
             expected_data = {
@@ -478,3 +479,11 @@ def mock_dynamic_scheduler(mocker: MockerFixture) -> None:
         "simcore_service_webserver.dynamic_scheduler.api.update_projects_networks",
         autospec=True,
     )
+
+
+@pytest.fixture
+async def loop(
+    event_loop: asyncio.AbstractEventLoop,
+) -> asyncio.AbstractEventLoop:
+    """Override the event loop inside pytest-aiohttp with the one from pytest-asyncio."""
+    return event_loop

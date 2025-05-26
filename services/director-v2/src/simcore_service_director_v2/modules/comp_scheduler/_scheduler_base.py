@@ -115,12 +115,17 @@ class SortedTasks:
     potentially_lost: list[CompTaskAtDB]
 
 
+_MAX_WAITING_TIME_FOR_UNKNOWN_TASKS: Final[datetime.timedelta] = datetime.timedelta(
+    seconds=30
+)
+
+
 async def _triage_changed_tasks(
-    changed_tasks_or_executing: list[tuple[_Previous, _Current]],
+    changed_tasks: list[tuple[_Previous, _Current]],
 ) -> SortedTasks:
     started_tasks = [
         current
-        for previous, current in changed_tasks_or_executing
+        for previous, current in changed_tasks
         if current.state in RUNNING_STATES
         or (
             previous.state in WAITING_FOR_START_STATES
@@ -128,35 +133,36 @@ async def _triage_changed_tasks(
         )
     ]
 
-    # NOTE: some tasks can be both started and completed since we might have the time they were running
     completed_tasks = [
-        current
-        for _, current in changed_tasks_or_executing
-        if current.state in COMPLETED_STATES
+        current for _, current in changed_tasks if current.state in COMPLETED_STATES
     ]
 
     waiting_for_resources_tasks = [
         current
-        for previous, current in changed_tasks_or_executing
+        for previous, current in changed_tasks
         if current.state in WAITING_FOR_START_STATES
     ]
 
-    lost_or_momentarily_lost_tasks = [
+    lost_tasks = [
         current
-        for _, current in changed_tasks_or_executing
-        if current.state is RunningState.UNKNOWN
+        for previous, current in changed_tasks
+        if (current.state is RunningState.UNKNOWN)
+        and (
+            (arrow.utcnow().datetime - previous.modified)
+            > _MAX_WAITING_TIME_FOR_UNKNOWN_TASKS
+        )
     ]
-    if lost_or_momentarily_lost_tasks:
+    if lost_tasks:
         _logger.warning(
             "%s are currently in unknown state. TIP: If they are running in an external cluster and it is not yet ready, that might explain it. But inform @sanderegg nevertheless!",
-            [t.node_id for t in lost_or_momentarily_lost_tasks],
+            [t.node_id for t in lost_tasks],
         )
 
     return SortedTasks(
         started_tasks,
         completed_tasks,
         waiting_for_resources_tasks,
-        lost_or_momentarily_lost_tasks,
+        lost_tasks,
     )
 
 
@@ -500,7 +506,7 @@ class BaseCompScheduler(ABC):
         # PENDING -> WAITING_FOR_RESOURCES (workers creation or missing) -> PENDING -> STARTED (worker started processing the task) -> SUCCESS/FAILED
         # or ABORTED (user cancelled) or UNKNOWN (lost task - it might be transient, be careful with this one)
         sorted_tasks = await _triage_changed_tasks(tasks_with_changed_states)
-
+        _logger.debug("found the following %s tasks with changed states", sorted_tasks)
         # now process the tasks
         if sorted_tasks.started:
             # NOTE: the dask-scheduler cannot differentiate between tasks that are effectively computing and

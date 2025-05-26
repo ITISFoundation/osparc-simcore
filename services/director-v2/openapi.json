@@ -2810,6 +2810,7 @@
           "simcore.service.compose-spec": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -3208,6 +3209,7 @@
         "properties": {
           "nodes_outputs": {
             "additionalProperties": {
+              "additionalProperties": true,
               "propertyNames": {
                 "maxLength": 100,
                 "minLength": 1

@@ -19,10 +19,17 @@
 qx.Class.define("osparc.jobs.RunsTable", {
   extend: qx.ui.table.Table,
 
-  construct: function(latestOnly = true, projectUuid = null) {
+  construct: function(projectUuid = null, includeChildren = false, runningOnly = true) {
     this.base(arguments);
 
-    const model = new osparc.jobs.RunsTableModel(latestOnly, projectUuid);
+    this.set({
+      projectUuid,
+      runningOnly,
+    });
+
+    const model = new osparc.jobs.RunsTableModel(projectUuid, includeChildren);
+    this.bind("projectUuid", model, "projectUuid");
+    this.bind("runningOnly", model, "runningOnly");
     this.setTableModel(model);
 
     this.set({
@@ -45,6 +52,22 @@ qx.Class.define("osparc.jobs.RunsTable", {
     columnModel.setDataCellRenderer(this.self().COLS.ACTION_INFO.column, fontButtonRendererInfo);
 
     this.__attachHandlers();
+  },
+
+  properties: {
+    projectUuid: {
+      check: "String",
+      init: null,
+      nullable: true,
+      event: "changeProjectUuid",
+    },
+
+    runningOnly: {
+      check: "Boolean",
+      init: true,
+      nullable: false,
+      event: "changeRunningOnly",
+    },
   },
 
   events: {
@@ -116,16 +139,19 @@ qx.Class.define("osparc.jobs.RunsTable", {
 
     __attachHandlers: function() {
       this.addListener("cellTap", e => {
-        const row = e.getRow();
+        const rowIdx = e.getRow();
         const target = e.getOriginalTarget();
         if (target.closest(".qx-material-button") && (target.tagName === "IMG" || target.tagName === "DIV")) {
           const action = target.closest(".qx-material-button").getAttribute("data-action");
           if (action) {
-            this.__handleButtonClick(action, row);
+            this.__handleButtonClick(action, rowIdx);
           }
         } else {
-          const rowData = this.getTableModel().getRowData(row);
-          this.fireDataEvent("runSelected", rowData);
+          const rowData = this.getTableModel().getRowData(rowIdx);
+          this.fireDataEvent("runSelected", {
+            rowData,
+            rowIdx,
+          });
           this.resetSelection();
         }
       });

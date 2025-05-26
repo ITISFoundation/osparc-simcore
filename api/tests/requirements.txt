@@ -85,10 +85,8 @@ pytest==8.3.5
     #   pytest-cov
     #   pytest-instafail
     #   pytest-sugar
-pytest-asyncio==0.23.8
-    # via
-    #   -c ../../requirements/constraints.txt
-    #   -r requirements.in
+pytest-asyncio==0.26.0
+    # via -r requirements.in
 pytest-cov==6.0.0
     # via -r requirements.in
 pytest-instafail==0.5.0

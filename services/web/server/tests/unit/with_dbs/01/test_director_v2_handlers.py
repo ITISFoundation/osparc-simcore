@@ -181,9 +181,11 @@ def mock_rpc_list_computations_latest_iteration_tasks_page(
     mocker: MockerFixture,
     user_project: ProjectDict,
 ) -> ComputationTaskRpcGetPage:
+    project_uuid = user_project["uuid"]
     workbench_ids = list(user_project["workbench"].keys())
     example = ComputationTaskRpcGet.model_config["json_schema_extra"]["examples"][0]
     example["node_id"] = workbench_ids[0]
+    example["project_uuid"] = project_uuid
 
     return mocker.patch(
         "simcore_service_webserver.director_v2._computations_service.computations.list_computations_latest_iteration_tasks_page",

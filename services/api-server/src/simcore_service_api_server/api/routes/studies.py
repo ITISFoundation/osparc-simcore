@@ -7,12 +7,12 @@ from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 
-from ...api.routes._constants import FMSG_CHANGELOG_NEW_IN_VERSION
 from ...models.pagination import OnePage, Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.studies import Study, StudyID, StudyPort
 from ...services_http.webserver import AuthSession
 from ..dependencies.webserver_http import get_webserver_session
+from ._constants import FMSG_CHANGELOG_NEW_IN_VERSION, create_route_description
 
 _logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -38,7 +38,12 @@ def _create_study_from_project(project: ProjectGet) -> Study:
 @router.get(
     "",
     response_model=Page[Study],
-    description=FMSG_CHANGELOG_NEW_IN_VERSION.format("0.5.0"),
+    description=create_route_description(
+        base="List all studies",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.5"),
+        ],
+    ),
 )
 async def list_studies(
     page_params: Annotated[PaginationParams, Depends()],
@@ -63,7 +68,12 @@ async def list_studies(
     "/{study_id:uuid}",
     response_model=Study,
     responses={**_COMMON_ERROR_RESPONSES},
-    description=FMSG_CHANGELOG_NEW_IN_VERSION.format("0.5.0"),
+    description=create_route_description(
+        base="Get study by ID",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.5"),
+        ],
+    ),
 )
 async def get_study(
     study_id: StudyID,
@@ -98,8 +108,12 @@ async def clone_study(
     "/{study_id:uuid}/ports",
     response_model=OnePage[StudyPort],
     responses={**_COMMON_ERROR_RESPONSES},
-    description="Lists metadata on ports of a given study\n\n"
-    + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.5.0"),
+    description=create_route_description(
+        base="Lists metadata on ports of a given study",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.5"),
+        ],
+    ),
 )
 async def list_study_ports(
     study_id: StudyID,

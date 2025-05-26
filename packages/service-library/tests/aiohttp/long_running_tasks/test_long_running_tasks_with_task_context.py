@@ -9,8 +9,6 @@ How these tests works:
 
 """
 
-
-import asyncio
 from collections.abc import Awaitable, Callable
 from functools import wraps
 from typing import Optional
@@ -79,17 +77,13 @@ def app_with_task_context(
 
 
 @pytest.fixture
-def client_with_task_context(
-    event_loop: asyncio.AbstractEventLoop,
+async def client_with_task_context(
     aiohttp_client: Callable,
     unused_tcp_port_factory: Callable,
     app_with_task_context: web.Application,
 ) -> TestClient:
-
-    return event_loop.run_until_complete(
-        aiohttp_client(
-            app_with_task_context, server_kwargs={"port": unused_tcp_port_factory()}
-        )
+    return await aiohttp_client(
+        app_with_task_context, server_kwargs={"port": unused_tcp_port_factory()}
     )
 
 

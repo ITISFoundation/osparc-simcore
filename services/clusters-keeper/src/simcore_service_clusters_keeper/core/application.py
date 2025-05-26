@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from servicelib.fastapi.monitoring import (
     setup_prometheus_instrumentation,
 )
-from servicelib.fastapi.tracing import initialize_tracing
+from servicelib.fastapi.tracing import setup_tracing
 
 from .._meta import (
     API_VERSION,
@@ -23,11 +23,27 @@ from ..modules.ssm import setup as setup_ssm
 from ..rpc.rpc_routes import setup_rpc_routes
 from .settings import ApplicationSettings
 
-logger = logging.getLogger(__name__)
+_LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
+_NOISY_LOGGERS = (
+    "aiobotocore",
+    "aio_pika",
+    "aiormq",
+    "botocore",
+    "werkzeug",
+)
+
+_logger = logging.getLogger(__name__)
 
 
 def create_app(settings: ApplicationSettings) -> FastAPI:
-    logger.info("app settings: %s", settings.model_dump_json(indent=1))
+    # keep mostly quiet noisy loggers
+    quiet_level: int = max(
+        min(logging.root.level + _LOG_LEVEL_STEP, logging.CRITICAL), logging.WARNING
+    )
+    for name in _NOISY_LOGGERS:
+        logging.getLogger(name).setLevel(quiet_level)
+
+    _logger.info("app settings: %s", settings.model_dump_json(indent=1))
 
     app = FastAPI(
         debug=settings.CLUSTERS_KEEPER_DEBUG,
@@ -42,14 +58,14 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     app.state.settings = settings
     assert app.state.settings.API_VERSION == API_VERSION  # nosec
 
-    if app.state.settings.CLUSTERS_KEEPER_PROMETHEUS_INSTRUMENTATION_ENABLED:
-        setup_prometheus_instrumentation(app)
     if app.state.settings.CLUSTERS_KEEPER_TRACING:
-        initialize_tracing(
+        setup_tracing(
             app,
             app.state.settings.CLUSTERS_KEEPER_TRACING,
             APP_NAME,
         )
+    if app.state.settings.CLUSTERS_KEEPER_PROMETHEUS_INSTRUMENTATION_ENABLED:
+        setup_prometheus_instrumentation(app)
 
     # PLUGINS SETUP
     setup_api_routes(app)

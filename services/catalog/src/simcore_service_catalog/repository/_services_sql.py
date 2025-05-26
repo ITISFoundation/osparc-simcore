@@ -436,3 +436,79 @@ def get_service_history_stmt(
         .select_from(history_subquery)
         .group_by(history_subquery.c.key)
     )
+
+
+def all_services_total_count_stmt(
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    access_rights: AccessRightsClauses,
+    filters: ServiceDBFilters | None = None,
+) -> sa.sql.Select:
+    """Statement to count all services"""
+    stmt = (
+        sa.select(sa.func.count())
+        .select_from(
+            services_meta_data.join(
+                services_access_rights,
+                (services_meta_data.c.key == services_access_rights.c.key)
+                & (services_meta_data.c.version == services_access_rights.c.version),
+            ).join(
+                user_to_groups,
+                (user_to_groups.c.gid == services_access_rights.c.gid),
+            )
+        )
+        .where(
+            (services_access_rights.c.product_name == product_name)
+            & (user_to_groups.c.uid == user_id)
+            & access_rights
+        )
+    )
+
+    if filters:
+        stmt = apply_services_filters(stmt, filters)
+
+    return stmt
+
+
+def list_all_services_stmt(
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    access_rights: AccessRightsClauses,
+    limit: int | None = None,
+    offset: int | None = None,
+    filters: ServiceDBFilters | None = None,
+) -> sa.sql.Select:
+    """Statement to list all services with pagination"""
+    stmt = (
+        sa.select(*SERVICES_META_DATA_COLS)
+        .select_from(
+            services_meta_data.join(
+                services_access_rights,
+                (services_meta_data.c.key == services_access_rights.c.key)
+                & (services_meta_data.c.version == services_access_rights.c.version),
+            ).join(
+                user_to_groups,
+                (user_to_groups.c.gid == services_access_rights.c.gid),
+            )
+        )
+        .where(
+            (services_access_rights.c.product_name == product_name)
+            & (user_to_groups.c.uid == user_id)
+            & access_rights
+        )
+        .order_by(
+            services_meta_data.c.key, sa.desc(by_version(services_meta_data.c.version))
+        )
+    )
+
+    if filters:
+        stmt = apply_services_filters(stmt, filters)
+
+    if offset is not None:
+        stmt = stmt.offset(offset)
+    if limit is not None:
+        stmt = stmt.limit(limit)
+
+    return stmt

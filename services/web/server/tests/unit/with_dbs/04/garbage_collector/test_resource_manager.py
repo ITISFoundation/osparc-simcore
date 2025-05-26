@@ -122,8 +122,7 @@ def app_environment(
 
 
 @pytest.fixture
-def client(
-    event_loop: asyncio.AbstractEventLoop,
+async def client(
     aiohttp_client: Callable,
     app_environment: EnvVarsDict,
     postgres_db: sa.engine.Engine,
@@ -159,11 +158,7 @@ def client(
     # garbage_collectorgc_core.collect_garbage
     assert not is_setup_completed("simcore_service_webserver.garbage_collector", app)
 
-    return event_loop.run_until_complete(
-        aiohttp_client(
-            app,
-        )
-    )
+    return await aiohttp_client(app)
 
 
 @pytest.fixture
