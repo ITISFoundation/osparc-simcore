@@ -40,7 +40,7 @@ def create_error_response(error: ErrorGet, status_code: int) -> web.Response:
     return web.json_response(
         data={"error": error.model_dump(exclude_unset=True, mode="json")},
         dumps=json_dumps,
-        # NOTE: Multiline not allowed in StreamReponse's reason attribute
+        # NOTE: Multiline not allowed in HTTP reason attribute (aiohttp now raises ValueError)
         reason=error.message.replace("\n", " ") if error.message else None,
         status=status_code,
     )
