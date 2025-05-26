@@ -31,7 +31,7 @@ class PageParams(BaseModel):
 def iter_pagination_params(
     *,
     limit: PositiveInt,
-    offset: NonNegativeInt = 0,
+    offset: NonNegativeInt,
     total_number_of_items: NonNegativeInt | None = None,
 ) -> Iterable[PageParams]:
     """Iterates through pages of a collection by yielding PageParams for each page.

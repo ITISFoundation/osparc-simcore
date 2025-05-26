@@ -99,7 +99,9 @@ async def delete_workspace_with_all_content(
     )
 
     # Get all root projects
-    for page_params in iter_pagination_params(limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
+    for page_params in iter_pagination_params(
+        offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+    ):
         (
             projects,
             page_params.total_number_of_items,
@@ -131,7 +133,9 @@ async def delete_workspace_with_all_content(
             )
 
     # Get all root folders
-    for page_params in iter_pagination_params(limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
+    for page_params in iter_pagination_params(
+        offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+    ):
         (
             folders,
             page_params.total_number_of_items,

@@ -136,7 +136,9 @@ async def list_solvers_releases(
 ):
 
     latest_solvers: list[Solver] = []
-    for page_params in iter_pagination_params(limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
+    for page_params in iter_pagination_params(
+        offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+    ):
         solvers, page_meta = await solver_service.latest_solvers(
             pagination_offset=page_params.offset,
             pagination_limit=page_params.limit,
@@ -147,7 +149,7 @@ async def list_solvers_releases(
     all_solvers = []
     for solver in latest_solvers:
         for page_params in iter_pagination_params(
-            limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+            offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
         ):
             solvers, page_meta = await solver_service.solver_release_history(
                 solver_key=solver.id,
@@ -219,7 +221,9 @@ async def list_solver_releases(
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
     all_releases: list[Solver] = []
-    for page_params in iter_pagination_params(limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
+    for page_params in iter_pagination_params(
+        offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+    ):
         solvers, page_meta = await solver_service.solver_release_history(
             solver_key=solver_key,
             pagination_offset=page_params.offset,

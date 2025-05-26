@@ -76,7 +76,7 @@ def test_fails_if_total_number_of_items_not_set():
         RuntimeError,
         match="page_args.total_number_of_items = total_count",
     ):
-        for _ in iter_pagination_params(limit=2):
+        for _ in iter_pagination_params(offset=0, limit=2):
             pass
 
 
@@ -85,6 +85,8 @@ def test_fails_if_total_number_of_items_changes():
         RuntimeError,
         match="total_number_of_items cannot change on every iteration",
     ):
-        for page_params in iter_pagination_params(limit=2, total_number_of_items=4):
+        for page_params in iter_pagination_params(
+            offset=0, limit=2, total_number_of_items=4
+        ):
             assert page_params.total_number_of_items == 4
             page_params.total_number_of_items += 1
