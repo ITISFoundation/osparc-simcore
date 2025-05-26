@@ -1,8 +1,5 @@
-import logging
 from contextlib import suppress
 from pathlib import Path
-
-_logger = logging.getLogger(__name__)
 
 
 def is_leaf_path(p: Path) -> bool:
