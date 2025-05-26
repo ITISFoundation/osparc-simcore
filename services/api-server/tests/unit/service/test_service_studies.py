@@ -15,7 +15,7 @@ from simcore_service_api_server.models.schemas.jobs import JobInputs
 from simcore_service_api_server.models.schemas.studies import StudyID
 
 
-async def test_list_jobs_no_study_id(
+async def test_list_study_jobs_no_study_id(
     mocked_rpc_client: MockType,
     study_service: StudyService,
 ):
@@ -46,7 +46,7 @@ async def test_list_jobs_no_study_id(
     assert mocked_rpc_client.request.call_args.kwargs["limit"] == page_meta.limit
 
 
-async def test_list_jobs_with_study_id(
+async def test_list_study_jobs_with_study_id(
     mocked_rpc_client: MockType,
     study_service: StudyService,
 ):
@@ -97,7 +97,7 @@ def mock_project(mocker: MockerFixture):
     }
 
 
-async def test_create_job(
+async def test_create_study_job(
     study_service: StudyService,
     job_inputs: JobInputs,
     mock_project: dict,
@@ -160,7 +160,7 @@ async def test_create_job(
     )
 
 
-async def test_create_job_with_inputs(
+async def test_create_study_job_with_inputs(
     study_service: StudyService,
     mock_project: dict,
     mocker: MockerFixture,

@@ -64,13 +64,16 @@ class JobService:
         # 2. Convert projects to jobs
         jobs: list[Job] = []
         for project_job in projects_page.data:
+
+            # NOTE: this is only valid for jobs created for Solvers or Programs which expect a single node per project!
+
             assert (  # nosec
                 len(project_job.workbench) == 1
             ), "Expected only one solver node in workbench"
 
-            solver_node = next(iter(project_job.workbench.values()))
+            one_project_node = next(iter(project_job.workbench.values()))
             job_inputs: JobInputs = create_job_inputs_from_node_inputs(
-                inputs=solver_node.inputs or {}
+                inputs=one_project_node.inputs or {}
             )
             assert project_job.job_parent_resource_name  # nosec
 

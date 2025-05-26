@@ -54,7 +54,11 @@ class StudyService:
         pagination_offset: PageOffsetInt | None = None,
         pagination_limit: PageLimitInt | None = None,
     ) -> tuple[list[Job], PageMetaInfoLimitOffset]:
-        """Lists all solver jobs for a user with pagination"""
+        """Lists all study jobs for a user with pagination
+
+
+        If filter_by_study_id==None then it lists all study-jobs of the user
+        """
 
         # 1. Compose job parent resource name prefix
         collection_or_resource_ids: list[str] = [
