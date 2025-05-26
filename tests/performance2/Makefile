@@ -190,5 +190,5 @@ clear-locust-config: ## Clear all Locust configuration files
 
 grafana-dashboards-up:
 	@locust-compose up -d
-grafana-dashboards-down:
+down grafana-dashboards-down:
 	@locust-compose down
