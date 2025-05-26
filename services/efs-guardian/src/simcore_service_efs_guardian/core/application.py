@@ -2,7 +2,7 @@ import logging
 
 from fastapi import FastAPI
 from servicelib.fastapi.tracing import (
-    setup_fastapi_app_tracing,
+    initialize_fastapi_app_tracing,
     setup_tracing,
 )
 
@@ -63,7 +63,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     setup_fire_and_forget(app)
 
     if app.state.settings.EFS_GUARDIAN_TRACING:
-        setup_fastapi_app_tracing(app)
+        initialize_fastapi_app_tracing(app)
 
     # EVENTS
     async def _on_startup() -> None:

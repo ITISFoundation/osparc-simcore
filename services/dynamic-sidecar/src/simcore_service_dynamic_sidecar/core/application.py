@@ -10,7 +10,7 @@ from servicelib.fastapi.openapi import (
     override_fastapi_openapi_method,
 )
 from servicelib.fastapi.tracing import (
-    setup_fastapi_app_tracing,
+    initialize_fastapi_app_tracing,
     setup_tracing,
 )
 from servicelib.logging_utils import config_all_loggers
@@ -200,7 +200,7 @@ def create_app():
         setup_prometheus_metrics(app)
 
     if application_settings.DYNAMIC_SIDECAR_TRACING:
-        setup_fastapi_app_tracing(app)
+        initialize_fastapi_app_tracing(app)
 
     # ERROR HANDLERS  ------------
     app.add_exception_handler(

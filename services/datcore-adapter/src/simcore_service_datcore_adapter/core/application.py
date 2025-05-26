@@ -11,7 +11,7 @@ from servicelib.fastapi.monitoring import (
 )
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.tracing import (
-    setup_fastapi_app_tracing,
+    initialize_fastapi_app_tracing,
     setup_tracing,
 )
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -80,7 +80,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     app.add_middleware(GZipMiddleware)
 
     if app.state.settings.DATCORE_ADAPTER_TRACING:
-        setup_fastapi_app_tracing(app)
+        initialize_fastapi_app_tracing(app)
 
     # events
     app.add_event_handler("startup", on_startup)

@@ -6,7 +6,7 @@ from models_library.basic_types import BootModeEnum
 from packaging.version import Version
 from servicelib.fastapi.profiler import initialize_profiler
 from servicelib.fastapi.tracing import (
-    setup_fastapi_app_tracing,
+    initialize_fastapi_app_tracing,
     setup_tracing,
 )
 from servicelib.logging_utils import config_all_loggers
@@ -97,7 +97,7 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
         setup_prometheus_instrumentation(app)
 
     if settings.API_SERVER_TRACING:
-        setup_fastapi_app_tracing(app)
+        initialize_fastapi_app_tracing(app)
 
     if settings.API_SERVER_WEBSERVER:
         webserver.setup(

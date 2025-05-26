@@ -9,7 +9,7 @@ from servicelib.fastapi.openapi import (
     override_fastapi_openapi_method,
 )
 from servicelib.fastapi.tracing import (
-    setup_fastapi_app_tracing,
+    initialize_fastapi_app_tracing,
     setup_tracing,
 )
 from servicelib.logging_utils import config_all_loggers
@@ -61,6 +61,6 @@ def create_app() -> FastAPI:
         initialize_prometheus_instrumentation(app)
 
     if settings.NOTIFICATIONS_TRACING:
-        setup_fastapi_app_tracing(app)
+        initialize_fastapi_app_tracing(app)
 
     return app

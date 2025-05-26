@@ -180,7 +180,7 @@ def _shutdown() -> None:
             _logger.exception("Failed to uninstrument RequestsInstrumentor")
 
 
-def setup_fastapi_app_tracing(app: FastAPI):
+def initialize_fastapi_app_tracing(app: FastAPI):
     FastAPIInstrumentor.instrument_app(app)
 
 

@@ -2,7 +2,7 @@ import logging
 
 from fastapi import FastAPI
 from servicelib.fastapi.tracing import (
-    setup_fastapi_app_tracing,
+    initialize_fastapi_app_tracing,
     setup_tracing,
 )
 
@@ -75,7 +75,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     setup_redis(app)
 
     if app.state.settings.AUTOSCALING_TRACING:
-        setup_fastapi_app_tracing(app)
+        initialize_fastapi_app_tracing(app)
 
     setup_auto_scaler_background_task(app)
     setup_buffer_machines_pool_task(app)
