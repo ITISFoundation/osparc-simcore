@@ -5,6 +5,8 @@ from uuid import UUID
 
 from common_library.errors_classes import OsparcErrorMixin
 from models_library import projects
+from models_library.basic_regex import UUID_RE_BASE
+from models_library.basic_types import ConstrainedStr
 from models_library.services_types import ServiceKey, ServiceVersion
 from pydantic import BaseModel, Field
 
@@ -274,3 +276,13 @@ class FunctionJobCollectionDB(BaseModel):
 
 class RegisteredFunctionJobCollectionDB(FunctionJobCollectionDB):
     uuid: FunctionJobCollectionID
+
+
+class FunctionIDString(ConstrainedStr):
+    pattern = UUID_RE_BASE
+
+
+class FunctionJobCollectionsListFilters(BaseModel):
+    """Filters for listing function job collections"""
+
+    has_function_id: FunctionIDString | None = None
