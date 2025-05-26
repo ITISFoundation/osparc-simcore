@@ -188,7 +188,7 @@ clear-locust-config: ## Clear all Locust configuration files
 		printf "$(YELLOW)No Locust configuration files found.$(NC)\n"; \
 	fi
 
-grafana-dashboards-up:
+grafana-dashboards-up: ## start grafana dashboards for locust
 	@locust-compose up -d
-down grafana-dashboards-down:
+down grafana-dashboards-down: ## stop grafana dashboards for locust
 	@locust-compose down
