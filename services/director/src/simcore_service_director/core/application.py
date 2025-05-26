@@ -6,7 +6,7 @@ from servicelib.async_utils import cancel_sequential_workers
 from servicelib.fastapi.client_session import setup_client_session
 from servicelib.fastapi.tracing import (
     setup_fastapi_app_tracing,
-    tracing_instrument_tooling,
+    setup_tracing,
 )
 
 from .._meta import (
@@ -52,7 +52,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
 
     # PLUGINS SETUP
     if app.state.settings.DIRECTOR_TRACING:
-        tracing_instrument_tooling(app, app.state.settings.DIRECTOR_TRACING, APP_NAME)
+        setup_tracing(app, app.state.settings.DIRECTOR_TRACING, APP_NAME)
 
     setup_api_routes(app)
 

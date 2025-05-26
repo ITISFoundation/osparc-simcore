@@ -7,7 +7,7 @@ from packaging.version import Version
 from servicelib.fastapi.profiler import initialize_profiler
 from servicelib.fastapi.tracing import (
     setup_fastapi_app_tracing,
-    tracing_instrument_tooling,
+    setup_tracing,
 )
 from servicelib.logging_utils import config_all_loggers
 
@@ -86,7 +86,7 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
     app.state.settings = settings
 
     if settings.API_SERVER_TRACING:
-        tracing_instrument_tooling(app, settings.API_SERVER_TRACING, APP_NAME)
+        setup_tracing(app, settings.API_SERVER_TRACING, APP_NAME)
 
     if settings.API_SERVER_POSTGRES:
         setup_postgres(app)

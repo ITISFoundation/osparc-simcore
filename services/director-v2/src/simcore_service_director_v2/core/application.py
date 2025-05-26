@@ -9,7 +9,7 @@ from servicelib.fastapi.openapi import (
 from servicelib.fastapi.profiler import initialize_profiler
 from servicelib.fastapi.tracing import (
     setup_fastapi_app_tracing,
-    tracing_instrument_tooling,
+    setup_tracing,
 )
 from servicelib.logging_utils import config_all_loggers
 
@@ -149,7 +149,7 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
     substitutions.setup(app)
 
     if settings.DIRECTOR_V2_TRACING:
-        tracing_instrument_tooling(app, settings.DIRECTOR_V2_TRACING, APP_NAME)
+        setup_tracing(app, settings.DIRECTOR_V2_TRACING, APP_NAME)
 
     if settings.DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED:
         instrumentation.setup(app)

@@ -6,7 +6,7 @@ from servicelib.fastapi.monitoring import (
 )
 from servicelib.fastapi.tracing import (
     setup_fastapi_app_tracing,
-    tracing_instrument_tooling,
+    setup_tracing,
 )
 
 from .._meta import (
@@ -62,7 +62,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     assert app.state.settings.API_VERSION == API_VERSION  # nosec
 
     if app.state.settings.CLUSTERS_KEEPER_TRACING:
-        tracing_instrument_tooling(
+        setup_tracing(
             app,
             app.state.settings.CLUSTERS_KEEPER_TRACING,
             APP_NAME,

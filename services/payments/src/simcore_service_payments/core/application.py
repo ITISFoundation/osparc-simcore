@@ -5,7 +5,7 @@ from servicelib.fastapi.monitoring import (
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.tracing import (
     setup_fastapi_app_tracing,
-    tracing_instrument_tooling,
+    setup_tracing,
 )
 
 from .._meta import (
@@ -50,7 +50,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
     # PLUGINS SETUP
     if app.state.settings.PAYMENTS_TRACING:
-        tracing_instrument_tooling(app, app.state.settings.PAYMENTS_TRACING, APP_NAME)
+        setup_tracing(app, app.state.settings.PAYMENTS_TRACING, APP_NAME)
 
     # API w/ postgres db
     setup_postgres(app)

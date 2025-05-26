@@ -19,7 +19,7 @@ from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.profiler import ProfilerMiddleware
 from servicelib.fastapi.tracing import (
     setup_fastapi_app_tracing,
-    tracing_instrument_tooling,
+    setup_tracing,
 )
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -84,7 +84,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:  # noqa: C901
     app.state.settings = settings
 
     if settings.STORAGE_TRACING:
-        tracing_instrument_tooling(app, settings.STORAGE_TRACING, APP_NAME)
+        setup_tracing(app, settings.STORAGE_TRACING, APP_NAME)
 
     setup_db(app)
     setup_s3(app)

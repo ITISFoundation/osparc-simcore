@@ -11,7 +11,7 @@ from servicelib.fastapi.openapi import (
 )
 from servicelib.fastapi.tracing import (
     setup_fastapi_app_tracing,
-    tracing_instrument_tooling,
+    setup_tracing,
 )
 from servicelib.logging_utils import config_all_loggers
 from simcore_sdk.node_ports_common.exceptions import NodeNotFound
@@ -179,9 +179,7 @@ def create_app():
     application_settings: ApplicationSettings = app.state.settings
 
     if application_settings.DYNAMIC_SIDECAR_TRACING:
-        tracing_instrument_tooling(
-            app, application_settings.DYNAMIC_SIDECAR_TRACING, PROJECT_NAME
-        )
+        setup_tracing(app, application_settings.DYNAMIC_SIDECAR_TRACING, PROJECT_NAME)
 
     setup_rabbitmq(app)
     setup_rpc_api_routes(app)

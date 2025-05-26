@@ -10,7 +10,7 @@ from servicelib.fastapi.openapi import (
 )
 from servicelib.fastapi.tracing import (
     setup_fastapi_app_tracing,
-    tracing_instrument_tooling,
+    setup_tracing,
 )
 from servicelib.logging_utils import config_all_loggers
 
@@ -53,9 +53,7 @@ def create_app() -> FastAPI:
     app.state.settings = settings
 
     if settings.NOTIFICATIONS_TRACING:
-        tracing_instrument_tooling(
-            app, settings.NOTIFICATIONS_TRACING, APP_NAME
-        )  # pragma: no cover
+        setup_tracing(app, settings.NOTIFICATIONS_TRACING, APP_NAME)  # pragma: no cover
 
     initialize_rest_api(app)
 

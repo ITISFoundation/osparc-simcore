@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.tracing import (
     setup_fastapi_app_tracing,
-    tracing_instrument_tooling,
+    setup_tracing,
 )
 
 from .._meta import (
@@ -54,7 +54,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
 
     # PLUGINS SETUP
     if app.state.settings.RESOURCE_USAGE_TRACKER_TRACING:
-        tracing_instrument_tooling(
+        setup_tracing(
             app,
             app.state.settings.RESOURCE_USAGE_TRACKER_TRACING,
             app.state.settings.APP_NAME,
