@@ -129,6 +129,7 @@ test-deployment-with-grafana: _check_venv_active grafana-dashboards-up ## runs d
 		--pgport $(PG_PORT) \
 		--pguser $(PG_USER) \
 		--pgpassword=$(PG_PASSWORD) \
+		--headless \
 		--timescale $(if $(endpoint),--endpoint $(endpoint),--endpoint $(DEFAULT_ENDPOINT))
 
 
