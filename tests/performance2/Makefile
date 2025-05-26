@@ -108,7 +108,8 @@ test-deployment: _check_venv_active ## runs deployment test on deploy, optionall
 	@$(call create_locust_config)
 	@printf "$(YELLOW)Starting Locust...$(NC)\n"
 	@export $$(cat $(AUTH_CREDS_FILE) | xargs) && \
-	locust --config $(LOCUST_CONFIG_FILE) $(if $(endpoint),--endpoint $(endpoint),--endpoint $(DEFAULT_ENDPOINT))
+	locust --config $(LOCUST_CONFIG_FILE) \
+	$(if $(endpoint),--endpoint $(endpoint),--endpoint $(DEFAULT_ENDPOINT))
 
 test-deployment-ci: _check_venv_active ## runs deployment test on CI, optionally pass endpoint=path to test specific endpoint
 	@$(call prompt_for_credentials)
@@ -116,7 +117,8 @@ test-deployment-ci: _check_venv_active ## runs deployment test on CI, optionally
 	@printf "$(YELLOW)Starting Locust headless...$(NC)\n"
 	@export $$(cat $(AUTH_CREDS_FILE) | xargs) && \
 	locust --config $(LOCUST_CONFIG_FILE) \
-		--headless $(if $(endpoint),--endpoint $(endpoint),--endpoint $(DEFAULT_ENDPOINT))
+		--headless \
+		$(if $(endpoint),--endpoint $(endpoint),--endpoint $(DEFAULT_ENDPOINT))
 
 test-deployment-with-grafana: _check_venv_active grafana-dashboards-up ## runs deployment test with Grafana integration, optionally pass endpoint=path to test specific endpoint
 	@$(call prompt_for_credentials)
@@ -130,7 +132,8 @@ test-deployment-with-grafana: _check_venv_active grafana-dashboards-up ## runs d
 		--pguser $(PG_USER) \
 		--pgpassword=$(PG_PASSWORD) \
 		--headless \
-		--timescale $(if $(endpoint),--endpoint $(endpoint),--endpoint $(DEFAULT_ENDPOINT))
+		--timescale \
+		$(if $(endpoint),--endpoint $(endpoint),--endpoint $(DEFAULT_ENDPOINT))
 
 
 
