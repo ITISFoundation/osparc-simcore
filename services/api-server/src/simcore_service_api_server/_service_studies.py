@@ -71,6 +71,7 @@ class StudyService:
 
         # 2. list jobs under job_parent_resource_name
         return await self.job_service.list_jobs(
+            # FIXME: these jobs are only valid for solvers and programs but not studies!
             job_parent_resource_name=job_parent_resource_name,
             pagination_offset=pagination_offset,
             pagination_limit=pagination_limit,
