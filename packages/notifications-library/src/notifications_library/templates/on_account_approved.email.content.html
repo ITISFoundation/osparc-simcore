@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %} {% include 'on_account_approved.email.subject.txt' %} {% endblock %}
+{% block content %}
+<p>Dear {{ user.first_name or user.user_name }},</p>
+
+<p>
+  Thank you for your interest in {{ product.display_name }}. We are pleased to provide you with a one-time invitation link to register on the platform.
+</p>
+
+<p>
+  Click <a href="{{ link }}">here</a> to access the registration page.
+</p>
+
+<p>
+  Please follow the on-screen information and proceed with your registration. If any problem should occur, please feel free to contact us at <a href="mailto:{{ product.support_email }}">{{ product.support_email }}</a>.
+</p>
+
+<p>Enjoy {{ product.display_name }}!</p>
+
+<p>Best regards,</p>
+
+<p>The {{ product.display_name }} Team</p>
+{% endblock %}

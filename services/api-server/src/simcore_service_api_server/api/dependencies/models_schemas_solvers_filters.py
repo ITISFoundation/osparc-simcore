@@ -1,6 +1,7 @@
 from typing import Annotated, Any
 
 from fastapi import Query
+from models_library.basic_types import SafeQueryStr
 from pydantic.fields import FieldInfo
 
 from ...models.schemas.solvers_filters import SolversListFilters
@@ -21,11 +22,11 @@ def _get_query_params(field: FieldInfo) -> dict[str, Any]:
 def get_solvers_filters(
     # pylint: disable=unsubscriptable-object
     solver_id: Annotated[
-        str | None,
+        SafeQueryStr | None,
         Query(**_get_query_params(SolversListFilters.model_fields["solver_id"])),
     ] = None,
     version_display: Annotated[
-        str | None,
+        SafeQueryStr | None,
         Query(**_get_query_params(SolversListFilters.model_fields["version_display"])),
     ] = None,
 ) -> SolversListFilters:

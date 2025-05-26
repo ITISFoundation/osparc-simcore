@@ -4,7 +4,7 @@ from typing import Final
 from fastapi import FastAPI
 from servicelib.async_utils import cancel_sequential_workers
 from servicelib.fastapi.client_session import setup_client_session
-from servicelib.fastapi.tracing import initialize_tracing
+from servicelib.fastapi.tracing import setup_tracing
 
 from .._meta import (
     API_VERSION,
@@ -48,12 +48,12 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     assert app.state.settings.API_VERSION == API_VERSION  # nosec
 
     # PLUGINS SETUP
+    if app.state.settings.DIRECTOR_TRACING:
+        setup_tracing(app, app.state.settings.DIRECTOR_TRACING, APP_NAME)
+
     setup_api_routes(app)
 
     setup_instrumentation(app)
-
-    if app.state.settings.DIRECTOR_TRACING:
-        initialize_tracing(app, app.state.settings.DIRECTOR_TRACING, APP_NAME)
 
     setup_client_session(
         app,

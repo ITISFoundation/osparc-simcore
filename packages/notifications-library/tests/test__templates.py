@@ -11,7 +11,7 @@ from notifications_library._templates import (
 @pytest.mark.parametrize(
     "event_name",
     [
-        "on_account_form",
+        "on_account_requested",
         "on_change_email",
         "on_new_code",
         "on_new_invitation",
