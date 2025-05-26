@@ -5,7 +5,7 @@ from typing import cast
 
 import sqlalchemy as sa
 from aiohttp import web
-from common_library.exclude import UnSet, as_dict_exclude_unset, is_set
+from common_library.exclude import Unset, as_dict_exclude_unset, is_set
 from models_library.folders import (
     FolderDB,
     FolderID,
@@ -265,9 +265,9 @@ async def list_folders_db_as_admin(
     connection: AsyncConnection | None = None,
     *,
     # filter
-    trashed_explicitly: bool | UnSet = UnSet.VALUE,
-    trashed_before: datetime | UnSet = UnSet.VALUE,
-    shared_workspace_id: WorkspaceID | UnSet = UnSet.VALUE,  # <-- Workspace filter
+    trashed_explicitly: bool | Unset = Unset.VALUE,
+    trashed_before: datetime | Unset = Unset.VALUE,
+    shared_workspace_id: WorkspaceID | Unset = Unset.VALUE,  # <-- Workspace filter
     # pagination
     offset: NonNegativeInt,
     limit: int,
@@ -382,13 +382,13 @@ async def update(
     folders_id_or_ids: FolderID | set[FolderID],
     product_name: ProductName,
     # updatable columns
-    name: str | UnSet = UnSet.VALUE,
-    parent_folder_id: FolderID | None | UnSet = UnSet.VALUE,
-    trashed: datetime | None | UnSet = UnSet.VALUE,
-    trashed_explicitly: bool | UnSet = UnSet.VALUE,
-    trashed_by: UserID | None | UnSet = UnSet.VALUE,  # who trashed
-    workspace_id: WorkspaceID | None | UnSet = UnSet.VALUE,
-    user_id: UserID | None | UnSet = UnSet.VALUE,  # ownership
+    name: str | Unset = Unset.VALUE,
+    parent_folder_id: FolderID | None | Unset = Unset.VALUE,
+    trashed: datetime | None | Unset = Unset.VALUE,
+    trashed_explicitly: bool | Unset = Unset.VALUE,
+    trashed_by: UserID | None | Unset = Unset.VALUE,  # who trashed
+    workspace_id: WorkspaceID | None | Unset = Unset.VALUE,
+    user_id: UserID | None | Unset = Unset.VALUE,  # ownership
 ) -> FolderDB:
     """
     Batch/single patch of folder/s

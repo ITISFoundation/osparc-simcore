@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import Query
 from models_library.functions import FunctionIDString, FunctionJobCollectionsListFilters
 
-from ._utils import _get_query_params
+from ._utils import get_query_params
 
 
 def get_function_job_collections_filters(
@@ -11,7 +11,7 @@ def get_function_job_collections_filters(
     has_function_id: Annotated[
         FunctionIDString | None,
         Query(
-            **_get_query_params(
+            **get_query_params(
                 FunctionJobCollectionsListFilters.model_fields["has_function_id"]
             )
         ),
