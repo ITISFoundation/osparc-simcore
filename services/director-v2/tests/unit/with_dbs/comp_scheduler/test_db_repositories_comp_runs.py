@@ -93,6 +93,7 @@ async def test_list(
         iteration=None,
         metadata=run_metadata,
         use_on_demand_clusters=faker.pybool(),
+        dag_adjacency_list=published_project.pipeline.dag_adjacency_list,
     )
     assert await CompRunsRepository(sqlalchemy_async_engine).list_() == [created]
 
@@ -104,6 +105,7 @@ async def test_list(
                 iteration=created.iteration + n + 1,
                 metadata=run_metadata,
                 use_on_demand_clusters=faker.pybool(),
+                dag_adjacency_list=published_project.pipeline.dag_adjacency_list,
             )
             for n in range(50)
         )
@@ -268,6 +270,7 @@ async def test_create(
             iteration=None,
             metadata=run_metadata,
             use_on_demand_clusters=faker.pybool(),
+            dag_adjacency_list={},
         )
     published_project = await publish_project()
     with pytest.raises(UserNotFoundError):
@@ -277,6 +280,7 @@ async def test_create(
             iteration=None,
             metadata=run_metadata,
             use_on_demand_clusters=faker.pybool(),
+            dag_adjacency_list=published_project.pipeline.dag_adjacency_list,
         )
 
     created = await CompRunsRepository(sqlalchemy_async_engine).create(
@@ -285,6 +289,7 @@ async def test_create(
         iteration=None,
         metadata=run_metadata,
         use_on_demand_clusters=faker.pybool(),
+        dag_adjacency_list=published_project.pipeline.dag_adjacency_list,
     )
     got = await CompRunsRepository(sqlalchemy_async_engine).get(
         user_id=published_project.user["id"],
@@ -299,6 +304,7 @@ async def test_create(
         iteration=None,
         metadata=run_metadata,
         use_on_demand_clusters=faker.pybool(),
+        dag_adjacency_list=published_project.pipeline.dag_adjacency_list,
     )
     assert created != got
     assert created.iteration == got.iteration + 1
@@ -332,6 +338,7 @@ async def test_update(
         iteration=None,
         metadata=run_metadata,
         use_on_demand_clusters=faker.pybool(),
+        dag_adjacency_list=published_project.pipeline.dag_adjacency_list,
     )
 
     got = await CompRunsRepository(sqlalchemy_async_engine).get(
@@ -365,6 +372,7 @@ async def test_set_run_result(
         iteration=None,
         metadata=run_metadata,
         use_on_demand_clusters=faker.pybool(),
+        dag_adjacency_list=published_project.pipeline.dag_adjacency_list,
     )
     got = await CompRunsRepository(sqlalchemy_async_engine).get(
         user_id=published_project.user["id"],
@@ -412,6 +420,7 @@ async def test_mark_for_cancellation(
         iteration=None,
         metadata=run_metadata,
         use_on_demand_clusters=faker.pybool(),
+        dag_adjacency_list=published_project.pipeline.dag_adjacency_list,
     )
     got = await CompRunsRepository(sqlalchemy_async_engine).get(
         user_id=published_project.user["id"],
@@ -443,6 +452,7 @@ async def test_mark_for_scheduling(
         iteration=None,
         metadata=run_metadata,
         use_on_demand_clusters=faker.pybool(),
+        dag_adjacency_list=published_project.pipeline.dag_adjacency_list,
     )
     got = await CompRunsRepository(sqlalchemy_async_engine).get(
         user_id=published_project.user["id"],
@@ -476,6 +486,7 @@ async def test_mark_scheduling_done(
         iteration=None,
         metadata=run_metadata,
         use_on_demand_clusters=faker.pybool(),
+        dag_adjacency_list=published_project.pipeline.dag_adjacency_list,
     )
     got = await CompRunsRepository(sqlalchemy_async_engine).get(
         user_id=published_project.user["id"],

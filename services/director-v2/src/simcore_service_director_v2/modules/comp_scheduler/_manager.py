@@ -1,7 +1,6 @@
 import logging
 from typing import Final
 
-import networkx as nx
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.users import UserID
@@ -11,6 +10,7 @@ from servicelib.exception_utils import silence_exceptions
 from servicelib.logging_utils import log_context
 from servicelib.redis import CouldNotAcquireLockError, exclusive
 from servicelib.utils import limited_gather
+from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.modules.db.repositories.comp_runs_snapshot_tasks import (
     CompRunsSnapshotTasksRepository,
 )
@@ -46,7 +46,8 @@ async def run_new_pipeline(
     """Sets a new pipeline to be scheduled on the computational resources."""
     # ensure the pipeline exists and is populated with something
     db_engine = get_db_engine(app)
-    dag = await _get_pipeline_dag(project_id, db_engine)
+    comp_pipeline_at_db = await _get_pipeline_at_db(project_id, db_engine)
+    dag = comp_pipeline_at_db.get_graph()
     if not dag:
         _logger.warning(
             "project %s has no computational dag defined. not scheduled for a run.",
@@ -59,6 +60,7 @@ async def run_new_pipeline(
         project_id=project_id,
         metadata=run_metadata,
         use_on_demand_clusters=use_on_demand_clusters,
+        dag_adjacency_list=comp_pipeline_at_db.dag_adjacency_list,
     )
 
     db_create_snaphot_tasks = [
@@ -120,12 +122,12 @@ async def stop_pipeline(
         )
 
 
-async def _get_pipeline_dag(
+async def _get_pipeline_at_db(
     project_id: ProjectID, db_engine: AsyncEngine
-) -> nx.DiGraph:
+) -> CompPipelineAtDB:
     comp_pipeline_repo = CompPipelinesRepository.instance(db_engine)
     pipeline_at_db = await comp_pipeline_repo.get_pipeline(project_id)
-    return pipeline_at_db.get_graph()
+    return pipeline_at_db
 
 
 _LOST_TASKS_FACTOR: Final[int] = 10

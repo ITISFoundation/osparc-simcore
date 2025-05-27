@@ -56,6 +56,7 @@ class CompRunsAtDB(BaseModel):
     use_on_demand_clusters: bool
     scheduled: datetime.datetime | None
     processed: datetime.datetime | None
+    dag_adjacency_list: dict[str, list[str]]
 
     @field_validator("result", mode="before")
     @classmethod
@@ -102,6 +103,7 @@ class CompRunsAtDB(BaseModel):
                     "use_on_demand_clusters": False,
                     "scheduled": None,
                     "processed": None,
+                    "dag_adjacency_list": {},
                 },
                 {
                     "run_id": 432,
@@ -117,6 +119,7 @@ class CompRunsAtDB(BaseModel):
                     "use_on_demand_clusters": False,
                     "scheduled": None,
                     "processed": None,
+                    "dag_adjacency_list": {},
                 },
                 {
                     "run_id": 43243,
@@ -139,6 +142,7 @@ class CompRunsAtDB(BaseModel):
                     "use_on_demand_clusters": False,
                     "scheduled": None,
                     "processed": None,
+                    "dag_adjacency_list": {},
                 },
                 {
                     "run_id": 43243,
@@ -155,6 +159,7 @@ class CompRunsAtDB(BaseModel):
                     "use_on_demand_clusters": False,
                     "scheduled": None,
                     "processed": None,
+                    "dag_adjacency_list": {},
                 },
             ]
         },

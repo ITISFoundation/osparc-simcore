@@ -196,6 +196,7 @@ async def create_comp_run(
             "result": StateType.NOT_STARTED,
             "metadata": jsonable_encoder(run_metadata),
             "use_on_demand_clusters": False,
+            "dag_adjacency_list": {},
         }
         run_config.update(**run_kwargs)
         async with sqlalchemy_async_engine.begin() as conn:
