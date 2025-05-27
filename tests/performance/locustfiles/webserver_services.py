@@ -6,24 +6,13 @@ import logging
 import urllib
 import urllib.parse
 
-import faker
 import locust
 from common.base_user import OsparcWebUserBase
-from dotenv import load_dotenv
 
 _logger = logging.getLogger(__name__)
 
-fake = faker.Faker()
-
-load_dotenv()  # take environment variables from .env
-
 
 class WebApiUser(OsparcWebUserBase):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.email = fake.email()
-        self.password = "testtesttest"  # noqa: S105
-
     @locust.task
     def list_latest_services(self):
         base_url = "/v0/catalog/services/-/latest"
