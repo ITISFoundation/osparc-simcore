@@ -55,6 +55,6 @@ async def update_for_run_id_and_node_id(
         )
         row = await result.one_or_none()
         if row is None:
-            raise ValueError("improve message")
-            # return None
+            msg = f"update for run_id={run_id} and node_id={node_id} did not return any row"
+            raise ValueError(msg)
         return row

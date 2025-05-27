@@ -199,7 +199,7 @@ async def _try_start_pipeline(
     project: ProjectAtDB,
     users_repo: UsersRepository,
     projects_metadata_repo: ProjectsMetadataRepository,
-    filtered_comp_tasks_in_db: list[CompTaskAtDB],
+    tasks_to_run: list[CompTaskAtDB],
 ) -> None:
     if not minimal_dag.nodes():
         # 2 options here: either we have cycles in the graph or it's really done
@@ -242,7 +242,7 @@ async def _try_start_pipeline(
         )
         or {},
         use_on_demand_clusters=computation.use_on_demand_clusters,
-        filtered_comp_tasks_in_db=filtered_comp_tasks_in_db,
+        tasks_to_run=tasks_to_run,
     )
 
 
@@ -359,7 +359,7 @@ async def create_computation(  # noqa: PLR0913 # pylint: disable=too-many-positi
                 project=project,
                 users_repo=users_repo,
                 projects_metadata_repo=projects_metadata_repo,
-                filtered_comp_tasks_in_db=filtered_tasks,
+                tasks_to_run=filtered_tasks,
             )
 
         pipeline_state = utils.get_pipeline_state_from_task_states(filtered_tasks)

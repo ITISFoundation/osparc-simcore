@@ -68,5 +68,6 @@ async def get_latest_run_id_for_project(
         result = await _conn.execute(base_select_query)
         row = result.one_or_none()
         if not row:
-            raise ValueError("improve")
+            msg = f"get_latest_run_id_for_project did not return any row for project_id={project_id}"
+            raise ValueError(msg)
         return cast(PositiveInt, row.run_id)

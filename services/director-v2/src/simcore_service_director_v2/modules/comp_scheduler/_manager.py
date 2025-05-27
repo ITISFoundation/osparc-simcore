@@ -41,7 +41,7 @@ async def run_new_pipeline(
     project_id: ProjectID,
     run_metadata: RunMetadataDict,
     use_on_demand_clusters: bool,
-    filtered_comp_tasks_in_db: list[CompTaskAtDB],
+    tasks_to_run: list[CompTaskAtDB],
 ) -> None:
     """Sets a new pipeline to be scheduled on the computational resources."""
     # ensure the pipeline exists and is populated with something
@@ -69,7 +69,7 @@ async def run_new_pipeline(
             "run_id": new_run.run_id,
             # "submit": datetime.fromisoformat(task.submit)
         }
-        for task in filtered_comp_tasks_in_db
+        for task in tasks_to_run
     ]
     await CompRunsSnapshotTasksRepository.instance(db_engine).batch_create(
         data=db_create_snaphot_tasks

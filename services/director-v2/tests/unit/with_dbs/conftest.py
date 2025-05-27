@@ -22,7 +22,7 @@ from models_library.projects_nodes_io import NodeID
 from pydantic.main import BaseModel
 from simcore_postgres_database.models.comp_pipeline import StateType, comp_pipeline
 from simcore_postgres_database.models.comp_runs import comp_runs
-from simcore_postgres_database.models.comp_tasks import comp_tasks
+from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
 from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.comp_runs import (
     CompRunsAtDB,
@@ -231,16 +231,23 @@ async def publish_project(
 
     async def _() -> PublishedProject:
         created_project = await project(user, workbench=fake_workbench_without_outputs)
+        created_pipeline = await create_pipeline(
+            project_id=f"{created_project.uuid}",
+            dag_adjacency_list=fake_workbench_adjacency,
+        )
+        created_tasks = await create_tasks(
+            user=user, project=created_project, state=StateType.PUBLISHED
+        )
+        tasks_to_run = [
+            t for t in created_tasks if t.node_class == NodeClass.COMPUTATIONAL
+        ]
+
         return PublishedProject(
             user=user,
             project=created_project,
-            pipeline=await create_pipeline(
-                project_id=f"{created_project.uuid}",
-                dag_adjacency_list=fake_workbench_adjacency,
-            ),
-            tasks=await create_tasks(
-                user=user, project=created_project, state=StateType.PUBLISHED
-            ),
+            pipeline=created_pipeline,
+            tasks=created_tasks,
+            tasks_to_run=tasks_to_run,
         )
 
     return _
@@ -266,6 +273,15 @@ async def running_project(
     user = create_registered_user()
     created_project = await project(user, workbench=fake_workbench_without_outputs)
     now_time = arrow.utcnow().datetime
+    created_tasks = await create_tasks(
+        user=user,
+        project=created_project,
+        state=StateType.RUNNING,
+        progress=0.0,
+        start=now_time,
+    )
+    tasks_to_run = [t for t in created_tasks if t.node_class == NodeClass.COMPUTATIONAL]
+
     return RunningProject(
         user=user,
         project=created_project,
@@ -273,13 +289,7 @@ async def running_project(
             project_id=f"{created_project.uuid}",
             dag_adjacency_list=fake_workbench_adjacency,
         ),
-        tasks=await create_tasks(
-            user=user,
-            project=created_project,
-            state=StateType.RUNNING,
-            progress=0.0,
-            start=now_time,
-        ),
+        tasks=created_tasks,
         runs=await create_comp_run(
             user=user,
             project=created_project,
@@ -287,6 +297,7 @@ async def running_project(
             result=StateType.RUNNING,
         ),
         task_to_callback_mapping={},
+        tasks_to_run=tasks_to_run,
     )
 
 
@@ -302,6 +313,14 @@ async def running_project_mark_for_cancellation(
 ) -> RunningProject:
     user = create_registered_user()
     created_project = await project(user, workbench=fake_workbench_without_outputs)
+    created_tasks = await create_tasks(
+        user=user,
+        project=created_project,
+        state=StateType.RUNNING,
+        progress=0.0,
+        start=now_time,
+    )
+    tasks_to_run = [t for t in created_tasks if t.node_class == NodeClass.COMPUTATIONAL]
     now_time = arrow.utcnow().datetime
     return RunningProject(
         user=user,
@@ -310,13 +329,7 @@ async def running_project_mark_for_cancellation(
             project_id=f"{created_project.uuid}",
             dag_adjacency_list=fake_workbench_adjacency,
         ),
-        tasks=await create_tasks(
-            user=user,
-            project=created_project,
-            state=StateType.RUNNING,
-            progress=0.0,
-            start=now_time,
-        ),
+        tasks=created_tasks,
         runs=await create_comp_run(
             user=user,
             project=created_project,
@@ -325,6 +338,7 @@ async def running_project_mark_for_cancellation(
             cancelled=now_time + datetime.timedelta(seconds=5),
         ),
         task_to_callback_mapping={},
+        tasks_to_run=tasks_to_run,
     )
 
 

@@ -21,6 +21,7 @@ class PublishedProject:
     project: ProjectAtDB
     pipeline: CompPipelineAtDB
     tasks: list[CompTaskAtDB]
+    tasks_to_run: list[CompTaskAtDB]
 
 
 @dataclass(kw_only=True)
