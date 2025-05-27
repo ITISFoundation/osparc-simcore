@@ -6,6 +6,7 @@ from typing import Any
 from aiohttp.abc import AbstractStreamWriter
 from aiohttp.typedefs import LooseHeaders
 from aiohttp.web import BaseRequest, FileResponse
+from servicelib.aiohttp.rest_responses import safe_status_message
 
 
 class CleanupFileResponse(FileResponse):  # pylint: disable=too-many-ancestors
@@ -27,8 +28,7 @@ class CleanupFileResponse(FileResponse):  # pylint: disable=too-many-ancestors
             path=path,
             chunk_size=chunk_size,
             status=status,
-            # Multiline not allowed in HTTP reason
-            reason=reason.replace("\n", " ") if reason else None,
+            reason=safe_status_message(reason),
             headers=headers,
         )
         self.remove_tmp_dir_cb = remove_tmp_dir_cb

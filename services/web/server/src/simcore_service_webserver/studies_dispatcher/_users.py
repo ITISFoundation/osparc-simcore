@@ -204,7 +204,7 @@ async def get_or_create_guest_user(
 
     if not allow_anonymous_or_guest_users and (not user or user.get("role") == GUEST):
         # NOTE: if allow_anonymous_users=False then GUEST users are NOT allowed!
-        raise web.HTTPUnauthorized(reason=MSG_GUESTS_NOT_ALLOWED)
+        raise web.HTTPUnauthorized(text=MSG_GUESTS_NOT_ALLOWED)
 
     assert isinstance(user, dict)  # nosec
 

@@ -59,7 +59,7 @@ async def _get_product_name(request: web.Request) -> ProductName | None:
         return product_name
 
     # NOTE: this or deduce from url
-    raise web.HTTPUnauthorized(reason="Invalid session. Reload / first")
+    raise web.HTTPUnauthorized(text="Invalid session. Reload / first")
 
 
 async def _forget_product_name(request: web.Request) -> ProductName | None:
@@ -173,11 +173,11 @@ def app_routes(
 
         # Permission in this product: Has user access to product?
         if product_name not in registered_users[email]["registered_products"]:
-            raise web.HTTPForbidden(reason="no access to this product")
+            raise web.HTTPForbidden(text="no access to this product")
 
         # Authentication takes place here
         if body.get("password") != "secret":
-            raise web.HTTPUnauthorized(reason="wrong password")
+            raise web.HTTPUnauthorized(text="wrong password")
 
         # if all good, let's update session with
         return await remember_identity(request, web.HTTPOk(), user_email=email)
