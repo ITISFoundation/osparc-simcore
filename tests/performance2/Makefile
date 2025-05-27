@@ -79,6 +79,13 @@ define prompt_for_credentials
 		echo; \
 		echo "SC_USER_NAME=$$username" > $(AUTH_CREDS_FILE); \
 		echo "SC_PASSWORD=$$password" >> $(AUTH_CREDS_FILE); \
+		read -p "osparc Username (optional, press enter to skip): " osparc_username; \
+		if [ ! -z "$$osparc_username" ]; then \
+			read -sp "osparc Password: " osparc_password; \
+			echo; \
+			echo "OSPARC_USER_NAME=$$osparc_username" >> $(AUTH_CREDS_FILE); \
+			echo "OSPARC_PASSWORD=$$osparc_password" >> $(AUTH_CREDS_FILE); \
+		fi; \
 		printf "$(GREEN)Credentials saved. They won't be asked again.$(NC)\n"; \
 	else \
 		printf "$(GREEN)Using cached credentials from $(AUTH_CREDS_FILE)$(NC)\n"; \
@@ -134,6 +141,13 @@ update-credentials: ## Update the cached authentication credentials
 	echo; \
 	echo "SC_USER_NAME=$$username" > $(AUTH_CREDS_FILE); \
 	echo "SC_PASSWORD=$$password" >> $(AUTH_CREDS_FILE); \
+	read -p "osparc Username (optional, press enter to skip): " osparc_username; \
+	if [ ! -z "$$osparc_username" ]; then \
+		read -sp "osparc Password: " osparc_password; \
+		echo; \
+		echo "OSPARC_USER_NAME=$$osparc_username" >> $(AUTH_CREDS_FILE); \
+		echo "OSPARC_PASSWORD=$$osparc_password" >> $(AUTH_CREDS_FILE); \
+	fi; \
 	printf "$(GREEN)Credentials updated successfully.$(NC)\n"
 
 update-locust-config: ## Update the Locust configuration file
