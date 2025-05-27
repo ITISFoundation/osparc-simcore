@@ -15,7 +15,5 @@ class DeploymentAuth(BaseSettings):
 
 class OsparcAuth(BaseSettings):
     model_config = SettingsConfigDict(extra="ignore")
-    OSPARC_USER_NAME: Annotated[str | None, Field(examples=["<your username>"])] = None
-    OSPARC_PASSWORD: Annotated[
-        SecretStr | None, Field(examples=["<your password>"])
-    ] = None
+    OSPARC_USER_NAME: Annotated[str, Field(examples=["<your username>"])]
+    OSPARC_PASSWORD: Annotated[SecretStr, Field(examples=["<your password>"])]
