@@ -49,11 +49,11 @@ class WebApiUser(FastHttpUser):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.deploy_auth = DeploymentAuth()
-        logging.info("Using deployment auth: %s", self.deploy_auth)
+        logging.debug("Using deployment auth: %s", self.deploy_auth)
 
         if self.environment.parsed_options.requires_login:
             self.osparc_auth = OsparcAuth()
-            logging.info("Using OsparcAuth for login: %s", self.osparc_auth)
+            logging.debug("Using OsparcAuth for login: %s", self.osparc_auth)
 
     @task
     def get_endpoint(self) -> None:
