@@ -104,7 +104,8 @@ test-deployment-ci: _check_venv_active $(AUTH_CREDS_FILE) $(LOCUST_CONFIG_FILE) 
 	@printf "$(YELLOW)Starting Locust headless...$(NC)\n"
 	@export $$(cat $(AUTH_CREDS_FILE) | xargs) && \
 	locust --config $(LOCUST_CONFIG_FILE) \
-		--headless
+		--headless \
+		--html test_report_{u}users_{r}userspawnrate_{t}s.html
 
 test-deployment-with-grafana: _check_venv_active grafana-dashboards-up ## runs deployment test with Grafana integration
 	@$(call prompt_for_credentials)
