@@ -23,6 +23,31 @@ class OsparcUserBase(FastHttpUser):
             "Using deployment auth with username: %s", self.deploy_auth.SC_USER_NAME
         )
 
+    def authenticated_get(self, url, **kwargs):
+        """Make GET request with deployment auth"""
+        kwargs.setdefault("auth", self.deploy_auth.to_auth())
+        return self.client.get(url, **kwargs)
+
+    def authenticated_post(self, url, **kwargs):
+        """Make POST request with deployment auth"""
+        kwargs.setdefault("auth", self.deploy_auth.to_auth())
+        return self.client.post(url, **kwargs)
+
+    def authenticated_put(self, url, **kwargs):
+        """Make PUT request with deployment auth"""
+        kwargs.setdefault("auth", self.deploy_auth.to_auth())
+        return self.client.put(url, **kwargs)
+
+    def authenticated_delete(self, url, **kwargs):
+        """Make DELETE request with deployment auth"""
+        kwargs.setdefault("auth", self.deploy_auth.to_auth())
+        return self.client.delete(url, **kwargs)
+
+    def authenticated_patch(self, url, **kwargs):
+        """Make PATCH request with deployment auth"""
+        kwargs.setdefault("auth", self.deploy_auth.to_auth())
+        return self.client.patch(url, **kwargs)
+
 
 class OsparcWebUserBase(OsparcUserBase):
     """
@@ -64,20 +89,19 @@ class OsparcWebUserBase(OsparcUserBase):
             "Logging in user with email: %s",
             self.osparc_auth.OSPARC_USER_NAME,
         )
-        response = self.client.post(
+        response = self.authenticated_post(
             "/v0/auth/login",
             json={
                 "email": self.osparc_auth.OSPARC_USER_NAME,
                 "password": self.osparc_auth.OSPARC_PASSWORD.get_secret_value(),
             },
-            auth=self.deploy_auth.to_auth(),
         )
         response.raise_for_status()
         logging.info("Logged in user with email: %s", self.osparc_auth.OSPARC_USER_NAME)
 
     def _logout(self) -> None:
         # Implement logout logic here
-        self.client.post("/v0/auth/logout", auth=self.deploy_auth.to_auth())
+        self.authenticated_post("/v0/auth/logout")
         logging.info(
             "Logged out user with email: %s", self.osparc_auth.OSPARC_USER_NAME
         )
