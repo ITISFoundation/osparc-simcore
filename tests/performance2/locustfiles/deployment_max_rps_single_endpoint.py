@@ -12,7 +12,7 @@ import logging
 
 import locust_plugins
 from common.auth_settings import DeploymentAuth, OsparcAuth
-from locust import HttpUser, events, task
+from locust import FastHttpUser, events, task
 
 logging.basicConfig(level=logging.INFO)
 
@@ -45,12 +45,11 @@ def _(environment, **_kwargs) -> None:
     logging.info("Requires login: %s", environment.parsed_options.requires_login)
 
 
-class WebApiUser(HttpUser):
+class WebApiUser(FastHttpUser):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.deploy_auth = DeploymentAuth()
         logging.info("Using deployment auth: %s", self.deploy_auth)
-        self.client.auth = self.deploy_auth.to_auth()
 
         if self.environment.parsed_options.requires_login:
             self.osparc_auth = OsparcAuth()
@@ -58,7 +57,9 @@ class WebApiUser(HttpUser):
 
     @task
     def get_endpoint(self) -> None:
-        self.client.get(self.environment.parsed_options.endpoint)
+        self.client.get(
+            self.environment.parsed_options.endpoint, auth=self.deploy_auth.to_auth()
+        )
 
     def _login(self) -> None:
         # Implement login logic here
@@ -75,13 +76,14 @@ class WebApiUser(HttpUser):
                 "email": self.osparc_auth.OSPARC_USER_NAME,
                 "password": self.osparc_auth.OSPARC_PASSWORD.get_secret_value(),
             },
+            auth=self.deploy_auth.to_auth(),
         )
         response.raise_for_status()
         logging.info("Logged in user with email: %s", self.osparc_auth)
 
     def _logout(self) -> None:
         # Implement logout logic here
-        self.client.post("/v0/auth/logout")
+        self.client.post("/v0/auth/logout", auth=self.deploy_auth.to_auth())
         logging.info("Logged out user with email: %s", self.osparc_auth)
 
     def on_start(self) -> None:
