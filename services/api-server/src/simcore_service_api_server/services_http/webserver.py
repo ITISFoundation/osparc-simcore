@@ -38,7 +38,7 @@ from models_library.api_schemas_webserver.wallets import WalletGet
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.rest_pagination import Page
+from models_library.rest_pagination import Page, PageLimitInt, PageOffsetInt
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import PositiveInt
 from servicelib.aiohttp.long_running_tasks.server import TaskStatus
@@ -353,7 +353,7 @@ class AuthSession:
         return data
 
     async def get_projects_w_solver_page(
-        self, *, solver_name: str, limit: int, offset: int
+        self, *, solver_name: str, limit: PageLimitInt, offset: PageOffsetInt
     ) -> Page[ProjectGet]:
         assert not solver_name.endswith("/")  # nosec
 
@@ -364,7 +364,7 @@ class AuthSession:
             search_by_project_name=solver_name,
         )
 
-    async def get_projects_page(self, *, limit: int, offset: int):
+    async def get_projects_page(self, *, limit: PageLimitInt, offset: PageOffsetInt):
         return await self._page_projects(
             limit=limit,
             offset=offset,

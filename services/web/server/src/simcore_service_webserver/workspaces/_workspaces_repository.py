@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import cast
 
 from aiohttp import web
-from common_library.exclude import UnSet, is_set
+from common_library.exclude import Unset, is_set
 from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.rest_ordering import OrderBy, OrderDirection
@@ -277,7 +277,7 @@ async def list_workspaces_db_get_as_admin(
     connection: AsyncConnection | None = None,
     *,
     # filter
-    trashed_before: datetime | UnSet = UnSet.VALUE,
+    trashed_before: datetime | Unset = Unset.VALUE,
     # pagination
     offset: NonNegativeInt,
     limit: int,
