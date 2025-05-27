@@ -1,6 +1,7 @@
+from models_library.resource_tracker import HardwareInfo
 from pydantic import ConfigDict, PositiveInt
 
-from .comp_tasks import BaseCompTaskAtDB, HardwareInfo, Image
+from .comp_tasks import BaseCompTaskAtDB, Image
 
 
 class CompRunSnapshotTaskAtDBGet(BaseCompTaskAtDB):

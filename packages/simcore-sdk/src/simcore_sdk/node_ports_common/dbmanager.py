@@ -7,7 +7,7 @@ from models_library.users import UserID
 from pydantic import TypeAdapter
 from servicelib.db_asyncpg_utils import create_async_engine_and_database_ready
 from settings_library.node_ports import NodePortsSettings
-from simcore_postgres_database.models.comp_tasks import comp_tasks
+from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.utils_comp_run_snapshot_tasks import (
     update_for_run_id_and_node_id,
@@ -111,24 +111,28 @@ class DBManager:
                     run_hash=node_configuration.get("run_hash"),
                 )
             )
-            # 2. Get latest run id for the project
-            _latest_run_id = await get_latest_run_id_for_project(
-                engine, connection, project_id=project_id
-            )
 
-            # 3. Update comp_run_snapshot_tasks table
-            await update_for_run_id_and_node_id(
-                engine,
-                connection,
-                run_id=_latest_run_id,
-                node_id=node_uuid,
-                data={
-                    "schema": node_configuration["schema"],
-                    "inputs": node_configuration["inputs"],
-                    "outputs": node_configuration["outputs"],
-                    "run_hash": node_configuration.get("run_hash"),
-                },
-            )
+            # 2. Update comp_run_snapshot_tasks table only if the node is computational
+            node = await _get_node_from_db(project_id, node_uuid, connection)
+            if node.node_class == NodeClass.COMPUTATIONAL.value:
+                # 2.1 Get latest run id for the project
+                _latest_run_id = await get_latest_run_id_for_project(
+                    engine, connection, project_id=project_id
+                )
+
+                # 2.2 Update comp_run_snapshot_tasks table
+                await update_for_run_id_and_node_id(
+                    engine,
+                    connection,
+                    run_id=_latest_run_id,
+                    node_id=node_uuid,
+                    data={
+                        "schema": node_configuration["schema"],
+                        "inputs": node_configuration["inputs"],
+                        "outputs": node_configuration["outputs"],
+                        "run_hash": node_configuration.get("run_hash"),
+                    },
+                )
 
     async def get_ports_configuration_from_node_uuid(
         self, project_id: str, node_uuid: str
