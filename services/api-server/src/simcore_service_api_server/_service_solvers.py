@@ -4,14 +4,12 @@ from models_library.api_schemas_catalog.services import ServiceListFilters
 from models_library.basic_types import VersionStr
 from models_library.products import ProductName
 from models_library.rest_pagination import (
-    MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
     PageMetaInfoLimitOffset,
     PageOffsetInt,
 )
 from models_library.rpc_pagination import PageLimitInt
 from models_library.services_enums import ServiceType
 from models_library.users import UserID
-from pydantic import NonNegativeInt, PositiveInt
 from simcore_service_api_server.models.basic_types import NameValueTuple
 
 from ._service_jobs import JobService
@@ -26,8 +24,6 @@ from .models.api_resources import compose_resource_name
 from .models.schemas.jobs import Job
 from .models.schemas.solvers import Solver, SolverKeyId
 from .services_rpc.catalog import CatalogService
-
-DEFAULT_PAGINATION_LIMIT = MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE - 1
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -91,11 +87,11 @@ class SolverService:
     async def list_jobs(
         self,
         *,
+        pagination_offset: PageOffsetInt | None = None,
+        pagination_limit: PageLimitInt | None = None,
         filter_by_solver_key: SolverKeyId | None = None,
         filter_by_solver_version: VersionStr | None = None,
         filter_any_custom_metadata: list[NameValueTuple] | None = None,
-        pagination_offset: PageOffsetInt = 0,
-        pagination_limit: PageLimitInt = DEFAULT_PAGINATION_LIMIT,
     ) -> tuple[list[Job], PageMetaInfoLimitOffset]:
         """Lists all solver jobs for a user with pagination"""
 
@@ -125,15 +121,15 @@ class SolverService:
         self,
         *,
         solver_key: SolverKeyId,
-        offset: NonNegativeInt,
-        limit: PositiveInt,
+        pagination_offset: PageOffsetInt | None = None,
+        pagination_limit: PageLimitInt | None = None,
     ) -> tuple[list[Solver], PageMetaInfoLimitOffset]:
 
         releases, page_meta = (
             await self.catalog_service.list_release_history_latest_first(
                 filter_by_service_key=solver_key,
-                pagination_offset=offset,
-                pagination_limit=limit,
+                pagination_offset=pagination_offset,
+                pagination_limit=pagination_limit,
             )
         )
 
@@ -153,21 +149,24 @@ class SolverService:
             for service in releases
         ], page_meta
 
-    async def latest_solvers(
+    async def list_all_solvers(
         self,
         *,
-        pagination_offset: NonNegativeInt,
-        pagination_limit: PositiveInt,
-        filter_by_solver_id: str | None = None,
-        filter_by_version_display: str | None = None,
+        pagination_offset: PageOffsetInt | None = None,
+        pagination_limit: PageLimitInt | None = None,
+        filter_by_solver_key_pattern: str | None = None,
+        filter_by_version_display_pattern: str | None = None,
     ) -> tuple[list[Solver], PageMetaInfoLimitOffset]:
-        """Lists the latest solvers with pagination and filtering.
+        """Lists all solvers with pagination and filtering, including all versions.
+
+        Unlike `latest_solvers` which only shows the latest version of each solver,
+        this method returns all versions of solvers that match the filters.
 
         Args:
-            offset: Pagination offset
-            limit: Pagination limit
-            solver_id_pattern: Optional pattern to filter solvers by ID
-            version_display_pattern: Optional pattern to filter by version display
+            pagination_offset: Pagination offset
+            pagination_limit: Pagination limit
+            filter_by_solver_key_pattern: Optional pattern to filter solvers by key e.g. "simcore/service/my_solver*"
+            filter_by_version_display_pattern: Optional pattern to filter by version display e.g. "1.0.*-beta"
 
         Returns:
             A tuple with the list of filtered solvers and pagination metadata
@@ -175,12 +174,50 @@ class SolverService:
         filters = ServiceListFilters(service_type=ServiceType.COMPUTATIONAL)
 
         # Add key_pattern filter for solver ID if provided
-        if filter_by_solver_id:
-            filters.service_key_pattern = filter_by_solver_id
+        if filter_by_solver_key_pattern:
+            filters.service_key_pattern = filter_by_solver_key_pattern
 
         # Add version_display_pattern filter if provided
-        if filter_by_version_display:
-            filters.version_display_pattern = filter_by_version_display
+        if filter_by_version_display_pattern:
+            filters.version_display_pattern = filter_by_version_display_pattern
+
+        services, page_meta = await self.catalog_service.list_all_services_summaries(
+            pagination_offset=pagination_offset,
+            pagination_limit=pagination_limit,
+            filters=filters,
+        )
+
+        solvers = [Solver.create_from_service(service) for service in services]
+        return solvers, page_meta
+
+    async def latest_solvers(
+        self,
+        *,
+        pagination_offset: PageOffsetInt | None = None,
+        pagination_limit: PageLimitInt | None = None,
+        filter_by_solver_key_pattern: str | None = None,
+        filter_by_version_display_pattern: str | None = None,
+    ) -> tuple[list[Solver], PageMetaInfoLimitOffset]:
+        """Lists the latest solvers with pagination and filtering.
+
+        Args:
+            pagination_offset: Pagination offset
+            pagination_limit: Pagination limit
+            filter_by_solver_key_pattern: Optional pattern to filter solvers by key e.g. "simcore/service/my_solver*"
+            filter_by_version_display_pattern: Optional pattern to filter by version display e.g. "1.0.*-beta"
+
+        Returns:
+            A tuple with the list of filtered solvers and pagination metadata
+        """
+        filters = ServiceListFilters(service_type=ServiceType.COMPUTATIONAL)
+
+        # Add key_pattern filter for solver ID if provided
+        if filter_by_solver_key_pattern:
+            filters.service_key_pattern = filter_by_solver_key_pattern
+
+        # Add version_display_pattern filter if provided
+        if filter_by_version_display_pattern:
+            filters.version_display_pattern = filter_by_version_display_pattern
 
         services, page_meta = await self.catalog_service.list_latest_releases(
             pagination_offset=pagination_offset,

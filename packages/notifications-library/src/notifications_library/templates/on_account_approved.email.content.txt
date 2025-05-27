@@ -1,0 +1,13 @@
+Dear {{ user.first_name or user.user_name }},
+
+Thank you for your interest in {{ product.display_name }} . We are pleased to provide you with a one-time invitation link to register on the platform.
+
+Click {{ link }} to access the registration page.
+
+Please follow the on-screen information and proceed with your registration. If any problem should occur, please feel free to contact us at {{ product.support_email }}.
+
+Enjoy {{ product.display_name }} !
+
+Best regards,
+
+The {{ product.display_name }} Team

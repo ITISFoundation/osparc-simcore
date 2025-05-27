@@ -1,8 +1,7 @@
-""" Adds aiohttp middleware for tracing using opentelemetry instrumentation.
-
-"""
+"""Adds aiohttp middleware for tracing using opentelemetry instrumentation."""
 
 import logging
+from collections.abc import AsyncIterator, Callable
 
 from aiohttp import web
 from opentelemetry import trace
@@ -44,8 +43,15 @@ try:
 except ImportError:
     HAS_REQUESTS = False
 
+try:
+    from opentelemetry.instrumentation.aio_pika import AioPikaInstrumentor
 
-def setup_tracing(
+    HAS_AIO_PIKA = True
+except ImportError:
+    HAS_AIO_PIKA = False
+
+
+def _startup(
     app: web.Application,
     tracing_settings: TracingSettings,
     service_name: str,
@@ -74,7 +80,9 @@ def setup_tracing(
     trace.set_tracer_provider(TracerProvider(resource=resource))
     tracer_provider: trace.TracerProvider = trace.get_tracer_provider()
 
-    tracing_destination: str = f"{URL(opentelemetry_collector_endpoint).with_port(opentelemetry_collector_port).with_path('/v1/traces')}"
+    tracing_destination: str = (
+        f"{URL(opentelemetry_collector_endpoint).with_port(opentelemetry_collector_port).with_path('/v1/traces')}"
+    )
 
     _logger.info(
         "Trying to connect service %s to tracing collector at %s.",
@@ -128,3 +136,52 @@ def setup_tracing(
             msg="Attempting to add requests opentelemetry autoinstrumentation...",
         ):
             RequestsInstrumentor().instrument()
+
+    if HAS_AIO_PIKA:
+        with log_context(
+            _logger,
+            logging.INFO,
+            msg="Attempting to add aio_pika opentelemetry autoinstrumentation...",
+        ):
+            AioPikaInstrumentor().instrument()
+
+
+def _shutdown() -> None:
+    """Uninstruments all opentelemetry instrumentors that were instrumented."""
+    try:
+        AioHttpClientInstrumentor().uninstrument()
+    except Exception:  # pylint:disable=broad-exception-caught
+        _logger.exception("Failed to uninstrument AioHttpClientInstrumentor")
+    if HAS_AIOPG:
+        try:
+            AiopgInstrumentor().uninstrument()
+        except Exception:  # pylint:disable=broad-exception-caught
+            _logger.exception("Failed to uninstrument AiopgInstrumentor")
+    if HAS_BOTOCORE:
+        try:
+            BotocoreInstrumentor().uninstrument()
+        except Exception:  # pylint:disable=broad-exception-caught
+            _logger.exception("Failed to uninstrument BotocoreInstrumentor")
+    if HAS_REQUESTS:
+        try:
+            RequestsInstrumentor().uninstrument()
+        except Exception:  # pylint:disable=broad-exception-caught
+            _logger.exception("Failed to uninstrument RequestsInstrumentor")
+    if HAS_AIO_PIKA:
+        try:
+            AioPikaInstrumentor().uninstrument()
+        except Exception:  # pylint:disable=broad-exception-caught
+            _logger.exception("Failed to uninstrument AioPikaInstrumentor")
+
+
+def get_tracing_lifespan(
+    app: web.Application, tracing_settings: TracingSettings, service_name: str
+) -> Callable[[web.Application], AsyncIterator]:
+    _startup(app=app, tracing_settings=tracing_settings, service_name=service_name)
+
+    async def tracing_lifespan(app: web.Application):
+        assert app  # nosec
+        yield
+        _shutdown()
+
+    return tracing_lifespan

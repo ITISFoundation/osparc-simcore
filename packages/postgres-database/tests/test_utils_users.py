@@ -4,35 +4,48 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+from collections.abc import AsyncIterable
 from typing import Any
 
 import pytest
-from aiopg.sa.connection import SAConnection
 from faker import Faker
-from pytest_simcore.helpers.faker_factories import random_user
+from pytest_simcore.helpers.faker_factories import (
+    random_user,
+)
+from pytest_simcore.helpers.postgres_tools import (
+    insert_and_get_row_lifespan,
+)
 from simcore_postgres_database.models.users import UserRole, users
+from simcore_postgres_database.utils_repos import (
+    pass_or_acquire_connection,
+)
 from simcore_postgres_database.utils_users import UserNotFoundInRepoError, UsersRepo
-from sqlalchemy.ext.asyncio import AsyncConnection
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 
 @pytest.fixture
-async def user(connection: SAConnection, faker: Faker) -> dict[str, Any]:
-    data = random_user(role=faker.random_element(elements=UserRole))
-    user_id = await connection.scalar(
-        users.insert().values(**data).returning(users.c.id)
-    )
-    assert user_id
-    data["id"] = user_id
-    return data
+async def user(
+    faker: Faker,
+    asyncpg_engine: AsyncEngine,
+) -> AsyncIterable[dict[str, Any]]:
+    async with insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
+        asyncpg_engine,
+        table=users,
+        values=random_user(
+            faker,
+            role=faker.random_element(elements=UserRole),
+        ),
+        pk_col=users.c.id,
+    ) as row:
+        yield row
 
 
-async def test_users_repo_get(
-    connection_factory: SAConnection | AsyncConnection, user: dict[str, Any]
-):
+async def test_users_repo_get(asyncpg_engine: AsyncEngine, user: dict[str, Any]):
     repo = UsersRepo()
-    # NOTE: Temporary usage of connection_factory until asyncpg is used
-    assert await repo.get_email(connection_factory, user_id=user["id"]) == user["email"]
-    assert await repo.get_role(connection_factory, user_id=user["id"]) == user["role"]
 
-    with pytest.raises(UserNotFoundInRepoError):
-        await repo.get_role(connection_factory, user_id=55)
+    async with pass_or_acquire_connection(asyncpg_engine) as connection:
+        assert await repo.get_email(connection, user_id=user["id"]) == user["email"]
+        assert await repo.get_role(connection, user_id=user["id"]) == user["role"]
+
+        with pytest.raises(UserNotFoundInRepoError):
+            await repo.get_role(connection, user_id=55)

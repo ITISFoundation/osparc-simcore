@@ -2,10 +2,10 @@ import logging
 
 from aiohttp import web
 from models_library.api_schemas_webserver.computations import (
-    ComputationRunListQueryParams,
+    ComputationRunIterationsLatestListQueryParams,
+    ComputationRunIterationsListQueryParams,
     ComputationRunPathParams,
     ComputationRunRestGet,
-    ComputationRunWithFiltersListQueryParams,
     ComputationTaskListQueryParams,
     ComputationTaskPathParams,
     ComputationTaskRestGet,
@@ -51,9 +51,9 @@ class ComputationsRequestContext(RequestParameters):
 async def list_computations_latest_iteration(request: web.Request) -> web.Response:
 
     req_ctx = ComputationsRequestContext.model_validate(request)
-    query_params: ComputationRunWithFiltersListQueryParams = (
+    query_params: ComputationRunIterationsLatestListQueryParams = (
         parse_request_query_parameters_as(
-            ComputationRunWithFiltersListQueryParams, request
+            ComputationRunIterationsLatestListQueryParams, request
         )
     )
 
@@ -99,8 +99,10 @@ async def list_computations_latest_iteration(request: web.Request) -> web.Respon
 async def list_computation_iterations(request: web.Request) -> web.Response:
 
     req_ctx = ComputationsRequestContext.model_validate(request)
-    query_params: ComputationRunListQueryParams = parse_request_query_parameters_as(
-        ComputationRunListQueryParams, request
+    query_params: ComputationRunIterationsListQueryParams = (
+        parse_request_query_parameters_as(
+            ComputationRunIterationsListQueryParams, request
+        )
     )
     path_params = parse_request_path_parameters_as(ComputationRunPathParams, request)
 
@@ -109,6 +111,8 @@ async def list_computation_iterations(request: web.Request) -> web.Response:
         product_name=req_ctx.product_name,
         user_id=req_ctx.user_id,
         project_id=path_params.project_id,
+        # filters
+        include_children=query_params.include_children,
         # pagination
         offset=query_params.offset,
         limit=query_params.limit,
@@ -157,6 +161,8 @@ async def list_computations_latest_iteration_tasks(
             product_name=req_ctx.product_name,
             user_id=req_ctx.user_id,
             project_id=path_params.project_id,
+            # filters
+            include_children=query_params.include_children,
             # pagination
             offset=query_params.offset,
             limit=query_params.limit,

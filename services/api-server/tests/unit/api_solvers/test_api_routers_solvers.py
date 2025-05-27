@@ -6,12 +6,12 @@
 
 
 import httpx
+from fastapi import status
 from pydantic import TypeAdapter
 from pytest_mock import MockType
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.pagination import OnePage
 from simcore_service_api_server.models.schemas.solvers import Solver, SolverPort
-from starlette import status
 
 
 async def test_list_all_solvers(
@@ -172,3 +172,65 @@ async def test_list_solver_ports_again(
     )
     assert response.status_code == status.HTTP_200_OK
     assert TypeAdapter(OnePage[SolverPort]).validate_python(response.json())
+
+
+async def test_solvers_page_pagination_links(
+    mocked_catalog_rpc_api: dict[str, MockType],
+    client: httpx.AsyncClient,
+    auth: httpx.BasicAuth,
+):
+    # Use a small limit to ensure pagination is needed
+    limit = 2
+    response = await client.get(f"/{API_VTAG}/solvers/page?limit={limit}", auth=auth)
+
+    assert response.status_code == status.HTTP_200_OK
+
+    response_data = response.json()
+    assert "links" in response_data, "Response should contain links section"
+
+    links = response_data["links"]
+    assert "next" in links, "Pagination should include 'next' link"
+    assert "prev" in links, "Pagination should include 'prev' link"
+    assert "first" in links, "Pagination should include 'first' link"
+    assert "last" in links, "Pagination should include 'last' link"
+    assert "self" in links, "Pagination should include 'self' link"
+
+    # Verify the self link contains the correct limit parameter
+    assert (
+        f"limit={limit}" in links["self"]
+    ), "Self link should reflect the requested limit"
+
+
+async def test_solvers_page_pagination_last_page(
+    mocked_catalog_rpc_api: dict[str, MockType],
+    client: httpx.AsyncClient,
+    auth: httpx.BasicAuth,
+):
+    # Get total count first
+    response = await client.get(f"/{API_VTAG}/solvers/page", auth=auth)
+    assert response.status_code == status.HTTP_200_OK
+    total_items = response.json()["total"]
+
+    assert (
+        total_items > 1
+    ), "Total items in MOCK examples should be greater than 1 for pagination test since we need 'prev', 'self' and 'prev' links"
+    last_item = total_items - 1
+    page_size = 1
+
+    # Request the last page by using the total count as offset
+    response = await client.get(
+        f"/{API_VTAG}/solvers/page?limit={page_size}&offset={last_item}", auth=auth
+    )
+    assert response.status_code == status.HTTP_200_OK
+
+    response_data = response.json()
+    assert "links" in response_data, "Response should contain links section"
+
+    links = response_data["links"]
+    assert links["next"] is None, "Next link should be None for the last page (size=1)"
+    assert (
+        links["prev"] is not None
+    ), "Prev link should be present for the last page (size=1)"
+    assert (
+        links["last"] == links["self"]
+    ), "Last link should be the same as self link for the last page"

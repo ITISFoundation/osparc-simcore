@@ -78,7 +78,7 @@ class CompTasksRepository(BaseRepository):
     async def list_computational_tasks_rpc_domain(
         self,
         *,
-        project_id: ProjectID,
+        project_ids: list[ProjectID],
         # pagination
         offset: int = 0,
         limit: int = 20,
@@ -100,7 +100,11 @@ class CompTasksRepository(BaseRepository):
             )
             .select_from(comp_tasks)
             .where(
-                (comp_tasks.c.project_id == f"{project_id}")
+                (
+                    comp_tasks.c.project_id.in_(
+                        [f"{project_id}" for project_id in project_ids]
+                    )
+                )
                 & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
             )
         )

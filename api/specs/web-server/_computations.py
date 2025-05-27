@@ -6,9 +6,10 @@ from fastapi_pagination import Page
 from models_library.api_schemas_webserver.computations import (
     ComputationGet,
     ComputationPathParams,
+    ComputationRunIterationsLatestListQueryParams,
+    ComputationRunIterationsListQueryParams,
     ComputationRunPathParams,
     ComputationRunRestGet,
-    ComputationRunWithFiltersListQueryParams,
     ComputationStart,
     ComputationStarted,
     ComputationTaskRestGet,
@@ -16,7 +17,6 @@ from models_library.api_schemas_webserver.computations import (
 from models_library.generics import Envelope
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.director_v2._controller.computations_rest import (
-    ComputationRunListQueryParams,
     ComputationTaskListQueryParams,
     ComputationTaskPathParams,
 )
@@ -71,7 +71,9 @@ async def stop_computation(_path: Annotated[ComputationPathParams, Depends()]): 
     response_model=Page[ComputationRunRestGet],
 )
 async def list_computations_latest_iteration(
-    _query: Annotated[as_query(ComputationRunWithFiltersListQueryParams), Depends()],
+    _query: Annotated[
+        as_query(ComputationRunIterationsLatestListQueryParams), Depends()
+    ],
 ): ...
 
 
@@ -80,7 +82,7 @@ async def list_computations_latest_iteration(
     response_model=Page[ComputationRunRestGet],
 )
 async def list_computation_iterations(
-    _query: Annotated[as_query(ComputationRunListQueryParams), Depends()],
+    _query: Annotated[as_query(ComputationRunIterationsListQueryParams), Depends()],
     _path: Annotated[ComputationRunPathParams, Depends()],
 ): ...
 

@@ -32,9 +32,6 @@ from ._constants import (
     create_route_description,
 )
 
-DEFAULT_PAGINATION_LIMIT = MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE - 1
-
-
 _logger = logging.getLogger(__name__)
 
 _SOLVER_STATUS_CODES: dict[int | str, dict[str, Any]] = {
@@ -45,7 +42,9 @@ _SOLVER_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     **DEFAULT_BACKEND_SERVICE_STATUS_CODES,
 }
 
-router = APIRouter()
+router = APIRouter(
+    # /v0/solvers/
+)
 
 
 @router.get(
@@ -82,24 +81,24 @@ async def list_solvers(
     "/page",
     response_model=Page[Solver],
     description=create_route_description(
-        base="Lists the latest version of all available solvers (paginated)",
+        base="Lists all available solvers (paginated)",
         changelog=[
             FMSG_CHANGELOG_NEW_IN_VERSION.format("0.9-rc1"),
         ],
     ),
     include_in_schema=False,  # TO BE RELEASED in 0.9
 )
-async def list_solvers_paginated(
+async def list_all_solvers_paginated(
     page_params: Annotated[PaginationParams, Depends()],
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
     filters: Annotated[SolversListFilters, Depends(get_solvers_filters)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
-    solvers, page_meta = await solver_service.latest_solvers(
+    solvers, page_meta = await solver_service.list_all_solvers(
         pagination_offset=page_params.offset,
         pagination_limit=page_params.limit,
-        filter_by_solver_id=filters.solver_id,
-        filter_by_version_display=filters.version_display,
+        filter_by_solver_key_pattern=filters.solver_id,
+        filter_by_version_display_pattern=filters.version_display,
     )
 
     for solver in solvers:
@@ -107,9 +106,14 @@ async def list_solvers_paginated(
             "get_solver_release", solver_key=solver.id, version=solver.version
         )
 
-    page_params.limit = page_meta.limit
-    page_params.offset = page_meta.offset
-    return create_page(solvers, total=len(solvers), params=page_params)
+    assert page_params.limit == page_meta.limit  # nosec
+    assert page_params.offset == page_meta.offset  # nosec
+
+    return create_page(
+        solvers,
+        total=page_meta.total,
+        params=page_params,
+    )
 
 
 @router.get(
@@ -132,7 +136,9 @@ async def list_solvers_releases(
 ):
 
     latest_solvers: list[Solver] = []
-    for page_params in iter_pagination_params(limit=DEFAULT_PAGINATION_LIMIT):
+    for page_params in iter_pagination_params(
+        offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+    ):
         solvers, page_meta = await solver_service.latest_solvers(
             pagination_offset=page_params.offset,
             pagination_limit=page_params.limit,
@@ -142,11 +148,13 @@ async def list_solvers_releases(
 
     all_solvers = []
     for solver in latest_solvers:
-        for page_params in iter_pagination_params(limit=DEFAULT_PAGINATION_LIMIT):
+        for page_params in iter_pagination_params(
+            offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+        ):
             solvers, page_meta = await solver_service.solver_release_history(
                 solver_key=solver.id,
-                offset=page_params.offset,
-                limit=page_params.limit,
+                pagination_offset=page_params.offset,
+                pagination_limit=page_params.limit,
             )
             page_params.total_number_of_items = page_meta.total
             all_solvers.extend(solvers)
@@ -213,11 +221,13 @@ async def list_solver_releases(
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
     all_releases: list[Solver] = []
-    for page_params in iter_pagination_params(limit=DEFAULT_PAGINATION_LIMIT):
+    for page_params in iter_pagination_params(
+        offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+    ):
         solvers, page_meta = await solver_service.solver_release_history(
             solver_key=solver_key,
-            offset=page_params.offset,
-            limit=page_params.limit,
+            pagination_offset=page_params.offset,
+            pagination_limit=page_params.limit,
         )
         page_params.total_number_of_items = page_meta.total
         all_releases.extend(solvers)
@@ -249,8 +259,8 @@ async def list_solver_releases_paginated(
 ):
     solvers, page_meta = await solver_service.solver_release_history(
         solver_key=solver_key,
-        offset=page_params.offset,
-        limit=page_params.limit,
+        pagination_offset=page_params.offset,
+        pagination_limit=page_params.limit,
     )
 
     for solver in solvers:
@@ -261,7 +271,7 @@ async def list_solver_releases_paginated(
     page_params.offset = page_meta.offset
     return create_page(
         solvers,
-        total=len(solvers),
+        total=page_meta.total,
         params=page_params,
     )
 

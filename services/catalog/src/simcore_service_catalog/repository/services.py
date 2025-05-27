@@ -376,6 +376,83 @@ class ServicesRepository(BaseRepository):
             )
         return None
 
+    async def list_all_services(
+        self,
+        *,
+        # access-rights
+        product_name: ProductName,
+        user_id: UserID,
+        # list args: pagination
+        pagination_limit: int | None = None,
+        pagination_offset: int | None = None,
+        filters: ServiceDBFilters | None = None,
+    ) -> tuple[PositiveInt, list[ServiceMetaDataDBGet]]:
+        # Create base query that's common to both count and content queries
+        base_query = (
+            sa.select(services_meta_data.c.key, services_meta_data.c.version)
+            .select_from(
+                services_meta_data.join(
+                    services_access_rights,
+                    (services_meta_data.c.key == services_access_rights.c.key)
+                    & (
+                        services_meta_data.c.version == services_access_rights.c.version
+                    ),
+                ).join(
+                    user_to_groups,
+                    (user_to_groups.c.gid == services_access_rights.c.gid),
+                )
+            )
+            .where(
+                (services_access_rights.c.product_name == product_name)
+                & (user_to_groups.c.uid == user_id)
+                & AccessRightsClauses.can_read
+            )
+            .distinct()
+        )
+
+        if filters:
+            base_query = _services_sql.apply_services_filters(base_query, filters)
+
+        # Subquery for efficient counting and further joins
+        subquery = base_query.subquery()
+
+        # Count query - only counts distinct key/version pairs
+        stmt_total = sa.select(sa.func.count()).select_from(subquery)
+
+        # Content query - gets all details with pagination
+        stmt_page = (
+            sa.select(*SERVICES_META_DATA_COLS)
+            .select_from(
+                subquery.join(
+                    services_meta_data,
+                    (subquery.c.key == services_meta_data.c.key)
+                    & (subquery.c.version == services_meta_data.c.version),
+                )
+            )
+            .order_by(
+                services_meta_data.c.key,
+                sa.desc(_services_sql.by_version(services_meta_data.c.version)),
+            )
+        )
+
+        # Apply pagination to content query
+        if pagination_offset is not None:
+            stmt_page = stmt_page.offset(pagination_offset)
+        if pagination_limit is not None:
+            stmt_page = stmt_page.limit(pagination_limit)
+
+        # Execute both queries
+        async with self.db_engine.connect() as conn:
+            result = await conn.execute(stmt_total)
+            total_count = result.scalar() or 0
+
+            items_page = [
+                ServiceMetaDataDBGet.model_validate(row)
+                async for row in await conn.stream(stmt_page)
+            ]
+
+        return (total_count, items_page)
+
     async def list_latest_services(
         self,
         *,
@@ -383,8 +460,8 @@ class ServicesRepository(BaseRepository):
         product_name: ProductName,
         user_id: UserID,
         # list args: pagination
-        limit: int | None = None,
-        offset: int | None = None,
+        pagination_limit: int | None = None,
+        pagination_offset: int | None = None,
         filters: ServiceDBFilters | None = None,
     ) -> tuple[PositiveInt, list[ServiceWithHistoryDBGet]]:
 
@@ -399,8 +476,8 @@ class ServicesRepository(BaseRepository):
             product_name=product_name,
             user_id=user_id,
             access_rights=AccessRightsClauses.can_read,
-            limit=limit,
-            offset=offset,
+            limit=pagination_limit,
+            offset=pagination_offset,
             filters=filters,
         )
 
@@ -475,8 +552,8 @@ class ServicesRepository(BaseRepository):
         # get args
         key: ServiceKey,
         # list args: pagination
-        limit: int | None = None,
-        offset: int | None = None,
+        pagination_limit: int | None = None,
+        pagination_offset: int | None = None,
         filters: ServiceDBFilters | None = None,
     ) -> tuple[PositiveInt, list[ReleaseDBGet]]:
 
@@ -540,8 +617,8 @@ class ServicesRepository(BaseRepository):
                 )
             )
             .order_by(sql.desc(_services_sql.by_version(services_meta_data.c.version)))
-            .offset(offset)
-            .limit(limit)
+            .offset(pagination_offset)
+            .limit(pagination_limit)
         )
 
         async with pass_or_acquire_connection(self.db_engine) as conn:

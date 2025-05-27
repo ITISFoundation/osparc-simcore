@@ -4,12 +4,13 @@ from typing import Any
 from aiohttp import web
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserStatus
+from simcore_postgres_database.utils_repos import transaction_context
 from simcore_postgres_database.utils_users import UsersRepo
+from simcore_service_webserver.db.plugin import get_asyncpg_engine
 
-from ..db.plugin import get_database_engine
-from ..groups.api import is_user_by_email_in_group
+from ..groups import api as groups_service
 from ..products.models import Product
-from ..security.api import check_password, encrypt_password
+from ..security import api as security_service
 from . import _login_service
 from ._constants import MSG_UNKNOWN_EMAIL, MSG_WRONG_PASSWORD
 from ._login_repository_legacy import AsyncpgStorage, get_plugin_storage
@@ -30,18 +31,18 @@ async def create_user(
     expires_at: datetime | None,
 ) -> dict[str, Any]:
 
-    async with get_database_engine(app).acquire() as conn:
+    async with transaction_context(get_asyncpg_engine(app)) as conn:
         user = await UsersRepo.new_user(
             conn,
             email=email,
-            password_hash=encrypt_password(password),
+            password_hash=security_service.encrypt_password(password),
             status=status_upon_creation,
             expires_at=expires_at,
         )
-        await UsersRepo.join_and_update_from_pre_registration_details(
-            conn, user.id, user.email
+        await UsersRepo.link_and_update_user_from_pre_registration(
+            conn, new_user_id=user.id, new_user_email=user.email
         )
-    return dict(user.items())
+    return dict(user._mapping)  # pylint: disable=protected-access # noqa: SLF001
 
 
 async def check_authorized_user_credentials_or_raise(
@@ -57,7 +58,7 @@ async def check_authorized_user_credentials_or_raise(
 
     _login_service.validate_user_status(user=user, support_email=product.support_email)
 
-    if not check_password(password, user["password_hash"]):
+    if not security_service.check_password(password, user["password_hash"]):
         raise web.HTTPUnauthorized(
             reason=MSG_WRONG_PASSWORD, content_type=MIMETYPE_APPLICATION_JSON
         )
@@ -75,8 +76,11 @@ async def check_authorized_user_in_product_or_raise(
     product_group_id = product.group_id
     assert product_group_id is not None  # nosec
 
-    if product_group_id is not None and not await is_user_by_email_in_group(
-        app, user_email=email, group_id=product_group_id
+    if (
+        product_group_id is not None
+        and not await groups_service.is_user_by_email_in_group(
+            app, user_email=email, group_id=product_group_id
+        )
     ):
         raise web.HTTPUnauthorized(
             reason=MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON

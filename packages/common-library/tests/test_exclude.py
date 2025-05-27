@@ -1,11 +1,11 @@
 from typing import Any
 
-from common_library.exclude import UnSet, as_dict_exclude_none, as_dict_exclude_unset
+from common_library.exclude import Unset, as_dict_exclude_none, as_dict_exclude_unset
 
 
 def test_as_dict_exclude_unset():
     def f(
-        par1: str | UnSet = UnSet.VALUE, par2: int | UnSet = UnSet.VALUE
+        par1: str | Unset = Unset.VALUE, par2: int | Unset = Unset.VALUE
     ) -> dict[str, Any]:
         return as_dict_exclude_unset(par1=par1, par2=par2)
 

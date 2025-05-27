@@ -1316,6 +1316,14 @@ async def test_handling_of_disconnected_scheduler_dask(
     )
 
 
+@pytest.fixture
+def with_disabled_unknown_max_time(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "simcore_service_director_v2.modules.comp_scheduler._scheduler_base._MAX_WAITING_TIME_FOR_UNKNOWN_TASKS",
+        new=datetime.timedelta(0),
+    )
+
+
 @dataclass(frozen=True, kw_only=True)
 class RebootState:
     dask_task_status: RunningState
@@ -1397,6 +1405,7 @@ class RebootState:
 async def test_handling_scheduled_tasks_after_director_reboots(
     with_disabled_auto_scheduling: mock.Mock,
     with_disabled_scheduler_publisher: mock.Mock,
+    with_disabled_unknown_max_time: None,
     mocked_dask_client: mock.MagicMock,
     sqlalchemy_async_engine: AsyncEngine,
     running_project: RunningProject,

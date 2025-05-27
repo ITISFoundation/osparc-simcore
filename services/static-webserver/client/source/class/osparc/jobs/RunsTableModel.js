@@ -19,11 +19,14 @@
 qx.Class.define("osparc.jobs.RunsTableModel", {
   extend: qx.ui.table.model.Remote,
 
-  construct: function(latestOnly = true, projectUuid = null) {
+  construct: function(projectUuid = null, includeChildren = false) {
     this.base(arguments);
 
-    this.__latestOnly = latestOnly;
-    this.__projectUuid = projectUuid;
+    this.__includeChildren = includeChildren;
+
+    this.set({
+      projectUuid,
+    });
 
     const jobsCols = osparc.jobs.RunsTable.COLS;
     const colLabels = Object.values(jobsCols).map(col => col.label);
@@ -38,6 +41,22 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
   },
 
   properties: {
+    projectUuid: {
+      check: "String",
+      init: null,
+      nullable: true,
+      event: "changeProjectUuid",
+      apply: "reloadData",
+    },
+
+    runningOnly: {
+      check: "Boolean",
+      init: true,
+      nullable: false,
+      event: "changeRunningOnly",
+      apply: "reloadData",
+    },
+
     isFetching: {
       check: "Boolean",
       init: false,
@@ -51,6 +70,13 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
         direction: "desc"
       }
     },
+
+    filterString: {
+      nullable: true,
+      check : "String",
+      init: "",
+      apply: "reloadData",
+    },
   },
 
   statics: {
@@ -58,16 +84,20 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
   },
 
   members: {
+    __includeChildren: false,
+
     // overridden
     _loadRowCount() {
       const offset = 0;
       const limit = 1;
+      const orderBy = this.getOrderBy();
       const resolveWResponse = true;
       let promise;
-      if (this.__latestOnly && this.__projectUuid === null) {
-        promise = osparc.store.Jobs.getInstance().fetchJobsActive(offset, limit, JSON.stringify(this.getOrderBy()), resolveWResponse);
+      if (this.getProjectUuid()) {
+        promise = osparc.store.Jobs.getInstance().fetchJobsHistory(this.getProjectUuid(), this.__includeChildren, offset, limit, orderBy, resolveWResponse);
       } else {
-        promise = osparc.store.Jobs.getInstance().fetchJobsHistory(this.__projectUuid, offset, limit, JSON.stringify(this.getOrderBy()), resolveWResponse);
+        const filters = this.getFilterString() ? { text: this.getFilterString() } : null;
+        promise = osparc.store.Jobs.getInstance().fetchJobsLatest(this.getRunningOnly(), offset, limit, orderBy, filters, resolveWResponse);
       }
       promise
         .then(resp => {
@@ -85,11 +115,13 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
       const lastRow = Math.min(qxLastRow, this._rowCount - 1);
       // Returns a request promise with given offset and limit
       const getFetchPromise = (offset, limit) => {
+      const orderBy = this.getOrderBy();
         let promise;
-        if (this.__latestOnly && this.__projectUuid === null) {
-          promise = osparc.store.Jobs.getInstance().fetchJobsActive(offset, limit, JSON.stringify(this.getOrderBy()));
+        if (this.getProjectUuid()) {
+          promise = osparc.store.Jobs.getInstance().fetchJobsHistory(this.getProjectUuid(), this.__includeChildren, offset, limit, orderBy);
         } else {
-          promise = osparc.store.Jobs.getInstance().fetchJobsHistory(this.__projectUuid, offset, limit, JSON.stringify(this.getOrderBy()));
+          const filters = this.getFilterString() ? { text: this.getFilterString() } : null;
+          promise = osparc.store.Jobs.getInstance().fetchJobsLatest(this.getRunningOnly(), offset, limit, orderBy, filters);
         }
         return promise
           .then(jobs => {
@@ -111,11 +143,14 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
 
       // Divides the model row request into several server requests to comply with the number of rows server limit
       const reqLimit = lastRow - firstRow + 1; // Number of requested rows
-      const nRequests = Math.ceil(reqLimit / this.self().SERVER_MAX_LIMIT);
+      let nRequests = Math.ceil(reqLimit / this.self().SERVER_MAX_LIMIT);
       if (nRequests > 1) {
         const requests = [];
         for (let i=firstRow; i <= lastRow; i += this.self().SERVER_MAX_LIMIT) {
-          requests.push(getFetchPromise(i, i > lastRow - this.self().SERVER_MAX_LIMIT + 1 ? reqLimit % this.self().SERVER_MAX_LIMIT : this.self().SERVER_MAX_LIMIT))
+        // fetch the first page only
+          if (i < 1) {
+            requests.push(getFetchPromise(i, i > lastRow - this.self().SERVER_MAX_LIMIT + 1 ? reqLimit % this.self().SERVER_MAX_LIMIT : this.self().SERVER_MAX_LIMIT))
+          }
         }
         Promise.all(requests)
           .then(responses => this._onRowDataLoaded(responses.flat()))

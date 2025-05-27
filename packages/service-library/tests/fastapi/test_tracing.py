@@ -11,7 +11,9 @@ import pip
 import pytest
 from fastapi import FastAPI
 from pydantic import ValidationError
-from servicelib.fastapi.tracing import initialize_tracing
+from servicelib.fastapi.tracing import (
+    get_tracing_instrumentation_lifespan,
+)
 from settings_library.tracing import TracingSettings
 
 
@@ -29,14 +31,23 @@ def tracing_settings_in(request: pytest.FixtureRequest) -> dict[str, Any]:
 def set_and_clean_settings_env_vars(
     monkeypatch: pytest.MonkeyPatch, tracing_settings_in: Callable[[], dict[str, Any]]
 ) -> None:
+    endpoint_mocked = False
     if tracing_settings_in[0]:
+        endpoint_mocked = True
         monkeypatch.setenv(
             "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT", f"{tracing_settings_in[0]}"
         )
+    port_mocked = False
     if tracing_settings_in[1]:
+        port_mocked = True
         monkeypatch.setenv(
             "TRACING_OPENTELEMETRY_COLLECTOR_PORT", f"{tracing_settings_in[1]}"
         )
+    yield
+    if endpoint_mocked:
+        monkeypatch.delenv("TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT")
+    if port_mocked:
+        monkeypatch.delenv("TRACING_OPENTELEMETRY_COLLECTOR_PORT")
 
 
 @pytest.mark.parametrize(
@@ -54,17 +65,15 @@ async def test_valid_tracing_settings(
     uninstrument_opentelemetry: Iterator[None],
 ):
     tracing_settings = TracingSettings()
-    initialize_tracing(
-        mocked_app,
+    async for _ in get_tracing_instrumentation_lifespan(
         tracing_settings=tracing_settings,
         service_name="Mock-Openetlemetry-Pytest",
-    )
-    # idempotency
-    initialize_tracing(
-        mocked_app,
-        tracing_settings=tracing_settings,
-        service_name="Mock-Openetlemetry-Pytest",
-    )
+    )(app=mocked_app):
+        async for _ in get_tracing_instrumentation_lifespan(
+            tracing_settings=tracing_settings,
+            service_name="Mock-Openetlemetry-Pytest",
+        )(app=mocked_app):
+            pass
 
 
 @pytest.mark.parametrize(
@@ -92,11 +101,11 @@ async def test_invalid_tracing_settings(
     app = mocked_app
     with pytest.raises((BaseException, ValidationError, TypeError)):  # noqa: PT012
         tracing_settings = TracingSettings()
-        initialize_tracing(
-            app,
+        async for _ in get_tracing_instrumentation_lifespan(
             tracing_settings=tracing_settings,
             service_name="Mock-Openetlemetry-Pytest",
-        )
+        )(app=app):
+            pass
 
 
 def install_package(package):
@@ -147,16 +156,14 @@ async def test_tracing_setup_package_detection(
 ):
     package_name = manage_package
     importlib.import_module(package_name)
-    #
     tracing_settings = TracingSettings()
-    initialize_tracing(
-        mocked_app,
+    async for _ in get_tracing_instrumentation_lifespan(
         tracing_settings=tracing_settings,
         service_name="Mock-Openetlemetry-Pytest",
-    )
-    # idempotency
-    initialize_tracing(
-        mocked_app,
-        tracing_settings=tracing_settings,
-        service_name="Mock-Openetlemetry-Pytest",
-    )
+    )(app=mocked_app):
+        # idempotency check
+        async for _ in get_tracing_instrumentation_lifespan(
+            tracing_settings=tracing_settings,
+            service_name="Mock-Openetlemetry-Pytest",
+        )(app=mocked_app):
+            pass

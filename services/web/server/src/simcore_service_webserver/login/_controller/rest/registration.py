@@ -211,7 +211,10 @@ async def register(request: web.Request):
             app=request.app,
         )
         if invitation.trial_account_days:
-            expires_at = datetime.now(UTC) + timedelta(invitation.trial_account_days)
+            # NOTE: expires_at is currently set as offset-naive
+            expires_at = (
+                datetime.now(UTC) + timedelta(invitation.trial_account_days)
+            ).replace(tzinfo=None)
 
     #  get authorized user or create new
     user = await _auth_service.get_user_by_email(request.app, email=registration.email)

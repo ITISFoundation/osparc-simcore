@@ -416,7 +416,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
       });
 
       // hypertools filter
-      const button = new qx.ui.toolbar.RadioButton("Hypertools", osparc.data.model.StudyUI.HYPERTOOL_ICON(iconSize));
+      const button = new qx.ui.toolbar.RadioButton("Hypertools", null);
+      osparc.utils.Utils.replaceIconWithThumbnail(button, osparc.data.model.StudyUI.HYPERTOOL_ICON(), 20);
       button.appType = "hypertool";
       this.__appTypeButtons.push(button);
 

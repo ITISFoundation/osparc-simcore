@@ -7,6 +7,7 @@
 from enum import Enum
 from typing import Annotated
 
+from _common import as_query
 from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.users import (
     MyPermissionGet,
@@ -14,13 +15,17 @@ from models_library.api_schemas_webserver.users import (
     MyProfilePatch,
     MyTokenCreate,
     MyTokenGet,
-    UserForAdminGet,
+    UserAccountApprove,
+    UserAccountGet,
+    UserAccountReject,
+    UserAccountSearchQueryParams,
     UserGet,
-    UsersForAdminSearchQueryParams,
+    UsersAccountListQueryParams,
     UsersSearch,
 )
 from models_library.api_schemas_webserver.users_preferences import PatchRequestBody
 from models_library.generics import Envelope
+from models_library.rest_pagination import Page
 from models_library.user_preferences import PreferenceIdentifier
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.users._common.schemas import PreRegisteredUserGet
@@ -144,20 +149,46 @@ _extra_tags: list[str | Enum] = ["admin"]
 
 
 @router.get(
-    "/admin/users:search",
-    response_model=Envelope[list[UserForAdminGet]],
+    "/admin/user-accounts",
+    response_model=Page[UserAccountGet],
     tags=_extra_tags,
 )
-async def search_users_for_admin(
-    _query: Annotated[UsersForAdminSearchQueryParams, Depends()],
+async def list_users_accounts(
+    _query: Annotated[as_query(UsersAccountListQueryParams), Depends()],
+): ...
+
+
+@router.post(
+    "/admin/user-accounts:approve",
+    status_code=status.HTTP_204_NO_CONTENT,
+    tags=_extra_tags,
+)
+async def approve_user_account(_body: UserAccountApprove): ...
+
+
+@router.post(
+    "/admin/user-accounts:reject",
+    status_code=status.HTTP_204_NO_CONTENT,
+    tags=_extra_tags,
+)
+async def reject_user_account(_body: UserAccountReject): ...
+
+
+@router.get(
+    "/admin/user-accounts:search",
+    response_model=Envelope[list[UserAccountGet]],
+    tags=_extra_tags,
+)
+async def search_user_accounts(
+    _query: Annotated[UserAccountSearchQueryParams, Depends()],
 ):
     # NOTE: see `Search` in `Common Custom Methods` in https://cloud.google.com/apis/design/custom_methods
     ...
 
 
 @router.post(
-    "/admin/users:pre-register",
-    response_model=Envelope[UserForAdminGet],
+    "/admin/user-accounts:pre-register",
+    response_model=Envelope[UserAccountGet],
     tags=_extra_tags,
 )
-async def pre_register_user_for_admin(_body: PreRegisteredUserGet): ...
+async def pre_register_user_account(_body: PreRegisteredUserGet): ...

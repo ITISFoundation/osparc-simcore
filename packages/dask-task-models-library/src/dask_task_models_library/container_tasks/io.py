@@ -195,7 +195,9 @@ class TaskOutputData(DictModel[ServicePortKey, PortValue]):
             with suppress(json.JSONDecodeError):
                 # NOTE: The suppression here is ok, since if the data is empty,
                 # there will be a validation error anyway
-                data = json_loads(output_data_file.read_text())
+                loaded_data = json_loads(output_data_file.read_text())
+                # ignore what is not in the schema
+                data = {k: v for k, v in loaded_data.items() if k in schema}
 
         for output_key, output_params in schema.items():
             if isinstance(output_params, FilePortSchema):

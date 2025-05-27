@@ -85,8 +85,11 @@ def random_user(
 def random_pre_registration_details(
     fake: Faker = DEFAULT_FAKER,
     *,
+    # foreign keys
     user_id: int | None = None,
     created_by: int | None = None,
+    product_name: str | None = None,
+    account_request_reviewed_by: int | None = None,
     **overrides,
 ):
     from simcore_postgres_database.models.users_details import (
@@ -117,7 +120,9 @@ def random_pre_registration_details(
             "eula": True,
             "ipinfo": {"x-real-ip": "127.0.0.1"},
         },
+        "product_name": product_name,
         "created_by": created_by,  # user id
+        "account_request_reviewed_by": account_request_reviewed_by,
     }
 
     assert set(data.keys()).issubset(
@@ -258,7 +263,7 @@ def random_product(
             invitation_form=fake.boolean(),
             address=fake.address().replace("\n", ". "),
             ui=VendorUI(
-                logo_url=fake.url(),
+                logo_url="https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/static-webserver/client/source/resource/osparc/osparc-black.svg",
                 strong_color=fake.color(),
                 project_alias=fake.random_element(elements=["project", "study"]),
             ),
