@@ -73,7 +73,7 @@ endef
 # Function to prompt for credentials if they don't exist
 define prompt_for_credentials
 	@if [ ! -f $(AUTH_CREDS_FILE) ]; then \
-		printf "$(YELLOW)First time setup: Please enter your credentials$(NC)\n"; \
+		printf "$(YELLOW)First time setup: Please enter the deployment credentials$(NC)\n"; \
 		read -p "Username: " username; \
 		read -sp "Password: " password; \
 		echo; \
