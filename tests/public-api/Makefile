@@ -38,7 +38,8 @@ test-dev: ## runs tests with --keep-docker-up, --pdb and --ff
 	--failed-first \
 	--durations=10 \
 	--asyncio-mode=auto \
-	$(TEST_TARGET)
+	--pdb \
+	$(CURDIR)
 
 
 .PHONY: test-ci
