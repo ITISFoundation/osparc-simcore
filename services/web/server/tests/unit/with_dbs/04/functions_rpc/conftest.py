@@ -3,11 +3,13 @@
 # pylint:disable=redefined-outer-name
 
 
+from collections.abc import AsyncIterator
+
 import pytest
-from fastapi.testclient import TestClient
+from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.webserver_login import UserInfoDict
+from pytest_simcore.helpers.webserver_login import LoggedUser, UserInfoDict
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.webserver.functions import (
     functions_rpc_interface as functions_rpc,
@@ -27,6 +29,14 @@ def app_environment(
             "WEBSERVER_FUNCTIONS": "1",
         },
     )
+
+
+@pytest.fixture
+async def other_logged_user(
+    client: TestClient, rpc_client: RabbitMQRPCClient
+) -> AsyncIterator[UserInfoDict]:
+    async with LoggedUser(client) as other_user:
+        yield other_user
 
 
 @pytest.fixture

@@ -6767,6 +6767,11 @@
         "summary": "Register Function",
         "description": "Create function\n\nNew in *version 0.8.0*",
         "operationId": "register_function",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -6855,6 +6860,11 @@
         "summary": "List Functions",
         "description": "List functions\n\nNew in *version 0.8.0*",
         "operationId": "list_functions",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "limit",
@@ -6912,6 +6922,11 @@
         "summary": "Get Function",
         "description": "Get function\n\nNew in *version 0.8.0*",
         "operationId": "get_function",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "function_id",
@@ -6983,6 +6998,11 @@
         "summary": "Delete Function",
         "description": "Delete function\n\nNew in *version 0.8.0*",
         "operationId": "delete_function",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "function_id",
@@ -7035,6 +7055,11 @@
         "summary": "List Function Jobs For Functionid",
         "description": "List function jobs for a function\n\nNew in *version 0.8.0*",
         "operationId": "list_function_jobs_for_functionid",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "function_id",
@@ -7102,6 +7127,11 @@
         "summary": "Update Function Title",
         "description": "Update function\n\nNew in *version 0.8.0*",
         "operationId": "update_function_title",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "function_id",
@@ -7184,6 +7214,11 @@
         "summary": "Update Function Description",
         "description": "Update function\n\nNew in *version 0.8.0*",
         "operationId": "update_function_description",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "function_id",
@@ -7266,6 +7301,11 @@
         "summary": "Get Function Inputschema",
         "description": "Get function input schema\n\nNew in *version 0.8.0*",
         "operationId": "get_function_inputschema",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "function_id",
@@ -7331,6 +7371,11 @@
         "summary": "Get Function Outputschema",
         "description": "Get function output schema\n\nNew in *version 0.8.0*",
         "operationId": "get_function_outputschema",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "function_id",
@@ -7396,6 +7441,11 @@
         "summary": "Validate Function Inputs",
         "description": "Validate inputs against the function's input schema\n\nNew in *version 0.8.0*",
         "operationId": "validate_function_inputs",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "function_id",

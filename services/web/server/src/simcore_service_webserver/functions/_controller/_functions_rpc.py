@@ -9,11 +9,15 @@ from models_library.functions import (
     FunctionJob,
     FunctionJobCollection,
     FunctionJobCollectionIDNotFoundError,
+    FunctionJobCollectionReadAccessDeniedError,
     FunctionJobCollectionsListFilters,
     FunctionJobID,
     FunctionJobIDNotFoundError,
+    FunctionJobReadAccessDeniedError,
+    FunctionJobWriteAccessDeniedError,
     FunctionOutputSchema,
     FunctionReadAccessDeniedError,
+    FunctionWriteAccessDeniedError,
     RegisteredFunction,
     RegisteredFunctionJob,
     RegisteredFunctionJobCollection,
@@ -73,7 +77,9 @@ async def get_function(
     )
 
 
-@router.expose(reraise_if_error_type=(FunctionJobIDNotFoundError,))
+@router.expose(
+    reraise_if_error_type=(FunctionJobIDNotFoundError, FunctionJobReadAccessDeniedError)
+)
 async def get_function_job(
     app: web.Application, *, user_id: UserID, function_job_id: FunctionJobID
 ) -> RegisteredFunctionJob:
@@ -84,7 +90,12 @@ async def get_function_job(
     )
 
 
-@router.expose(reraise_if_error_type=(FunctionJobCollectionIDNotFoundError,))
+@router.expose(
+    reraise_if_error_type=(
+        FunctionJobCollectionIDNotFoundError,
+        FunctionJobCollectionReadAccessDeniedError,
+    )
+)
 async def get_function_job_collection(
     app: web.Application, *, user_id: UserID, function_job_collection_id: FunctionJobID
 ) -> RegisteredFunctionJobCollection:
@@ -147,7 +158,13 @@ async def list_function_job_collections(
     )
 
 
-@router.expose(reraise_if_error_type=(FunctionIDNotFoundError,))
+@router.expose(
+    reraise_if_error_type=(
+        FunctionIDNotFoundError,
+        FunctionReadAccessDeniedError,
+        FunctionWriteAccessDeniedError,
+    )
+)
 async def delete_function(
     app: web.Application, *, user_id: UserID, function_id: FunctionID
 ) -> None:
@@ -158,7 +175,13 @@ async def delete_function(
     )
 
 
-@router.expose(reraise_if_error_type=(FunctionJobIDNotFoundError,))
+@router.expose(
+    reraise_if_error_type=(
+        FunctionJobIDNotFoundError,
+        FunctionJobReadAccessDeniedError,
+        FunctionJobWriteAccessDeniedError,
+    )
+)
 async def delete_function_job(
     app: web.Application, *, user_id: UserID, function_job_id: FunctionJobID
 ) -> None:
@@ -180,7 +203,12 @@ async def delete_function_job_collection(
     )
 
 
-@router.expose()
+@router.expose(
+    reraise_if_error_type=(
+        FunctionIDNotFoundError,
+        FunctionReadAccessDeniedError,
+    )
+)
 async def update_function_title(
     app: web.Application, *, user_id: UserID, function_id: FunctionID, title: str
 ) -> RegisteredFunction:
@@ -192,7 +220,9 @@ async def update_function_title(
     )
 
 
-@router.expose(reraise_if_error_type=(FunctionIDNotFoundError,))
+@router.expose(
+    reraise_if_error_type=(FunctionIDNotFoundError, FunctionReadAccessDeniedError)
+)
 async def update_function_description(
     app: web.Application, *, user_id: UserID, function_id: FunctionID, description: str
 ) -> RegisteredFunction:

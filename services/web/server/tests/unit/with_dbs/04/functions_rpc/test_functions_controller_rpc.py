@@ -5,8 +5,8 @@ from collections.abc import Awaitable, Callable
 from uuid import uuid4
 
 import pytest
+from aiohttp.test_utils import TestClient
 from common_library.users_enums import UserRole
-from fastapi.testclient import TestClient
 
 # import simcore_service_webserver.functions._functions_controller_rpc as functions_rpc
 from models_library.api_schemas_webserver.functions import (
@@ -23,6 +23,7 @@ from models_library.api_schemas_webserver.functions import (
 from models_library.functions import (
     FunctionIDNotFoundError,
     FunctionJobCollectionsListFilters,
+    FunctionJobReadAccessDeniedError,
 )
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -90,17 +91,17 @@ def mock_function() -> Function:
     )
 
 
-@pytest.fixture
-def user_role() -> UserRole:
-    return UserRole.USER
-
-
-async def test_register_get_function(
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+async def test_register_get_delete_function(
     client: TestClient,
     rpc_client: RabbitMQRPCClient,
     mock_function: ProjectFunction,
     logged_user: UserInfoDict,
     user_role: UserRole,
+    other_logged_user: UserInfoDict,
 ):
     # Register the function
     registered_function = await functions_rpc.register_function(
@@ -115,6 +116,13 @@ async def test_register_get_function(
         function_id=registered_function.uid,
         user_id=logged_user["id"],
     )
+
+    with pytest.raises(FunctionReadAccessDeniedError):
+        await functions_rpc.get_function(
+            rabbitmq_rpc_client=rpc_client,
+            function_id=registered_function.uid,
+            user_id=other_logged_user["id"],
+        )
 
     # Assert the saved function matches the input function
     assert saved_function.uid is not None
@@ -131,31 +139,34 @@ async def test_register_get_function(
     assert isinstance(registered_function, ProjectFunction)
     assert registered_function.project_id == mock_function.project_id
 
+    with pytest.raises(FunctionReadAccessDeniedError):
+        # Attempt to delete the function by another user
+        await functions_rpc.delete_function(
+            rabbitmq_rpc_client=rpc_client,
+            function_id=registered_function.uid,
+            user_id=other_logged_user["id"],
+        )
 
-async def test_register_get_function_otheruser(
-    client: TestClient,
-    rpc_client: RabbitMQRPCClient,
-    mock_function: ProjectFunction,
-    logged_user: UserInfoDict,
-    user_role: UserRole,
-):
-    # Register the function
-    registered_function = await functions_rpc.register_function(
+    # Delete the function using its ID
+    await functions_rpc.delete_function(
         rabbitmq_rpc_client=rpc_client,
-        function=mock_function,
+        function_id=registered_function.uid,
         user_id=logged_user["id"],
     )
-    assert registered_function.uid is not None
-    # Retrieve the function from the repository to verify it was saved
 
-    with pytest.raises(FunctionReadAccessDeniedError):
+    # Attempt to retrieve the deleted function
+    with pytest.raises(FunctionIDNotFoundError):
         await functions_rpc.get_function(
             rabbitmq_rpc_client=rpc_client,
             function_id=registered_function.uid,
-            user_id=logged_user["id"] + 1,
+            user_id=logged_user["id"],
         )
 
 
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
 async def test_get_function_not_found(
     client: TestClient, rpc_client: RabbitMQRPCClient, logged_user: UserInfoDict
 ):
@@ -168,9 +179,27 @@ async def test_get_function_not_found(
         )
 
 
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
 async def test_list_functions(
-    client: TestClient, rpc_client: RabbitMQRPCClient, logged_user: UserInfoDict
+    client: TestClient,
+    rpc_client: RabbitMQRPCClient,
+    logged_user: UserInfoDict,
+    clean_functions: None,
 ):
+    # List functions when none are registered
+    functions, _ = await functions_rpc.list_functions(
+        rabbitmq_rpc_client=rpc_client,
+        pagination_limit=10,
+        pagination_offset=0,
+        user_id=logged_user["id"],
+    )
+
+    # Assert the list is empty
+    assert len(functions) == 0
+
     # Register a function first
     mock_function = ProjectFunction(
         title="Test Function",
@@ -200,60 +229,75 @@ async def test_list_functions(
     assert any(f.uid == registered_function.uid for f in functions)
 
 
-# async def test_list_functions_mixed_user(
-#     client: TestClient,
-#     rpc_client: RabbitMQRPCClient,
-#     mock_function: ProjectFunction,
-#     logged_user: UserInfoDict,
-# ):
-#     # Register a function for the logged user
-#     registered_function = await functions_rpc.register_function(
-#         rabbitmq_rpc_client=rpc_client,
-#         function=mock_function,
-#         user_id=logged_user["id"],
-#     )
-#     assert registered_function.uid is not None
-
-#     # Register a function for another user
-#     other_user_id = logged_user["id"] + 1
-#     other_registered_function = await functions_rpc.register_function(
-#         rabbitmq_rpc_client=rpc_client,
-#         function=mock_function,
-#         user_id=other_user_id,
-#     )
-#     assert other_registered_function.uid is not None
-
-#     # List functions for the logged user
-#     functions, _ = await functions_rpc.list_functions(
-#         rabbitmq_rpc_client=rpc_client,
-#         pagination_limit=10,
-#         pagination_offset=0,
-#         user_id=logged_user["id"],
-#     )
-
-#     # Assert the list contains only the logged user's function
-#     assert len(functions) == 1
-#     assert functions[0].uid == registered_function.uid
-
-
-async def test_list_functions_empty(
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+async def test_list_functions_mixed_user(
     client: TestClient,
     rpc_client: RabbitMQRPCClient,
-    clean_functions: None,
+    mock_function: ProjectFunction,
     logged_user: UserInfoDict,
+    other_logged_user: UserInfoDict,
 ):
-    # List functions when none are registered
+    # Register a function for the logged user
+    registered_functions = [
+        await functions_rpc.register_function(
+            rabbitmq_rpc_client=rpc_client,
+            function=mock_function,
+            user_id=logged_user["id"],
+        )
+        for _ in range(2)
+    ]
+
+    # List functions for the other logged user
+    other_functions, _ = await functions_rpc.list_functions(
+        rabbitmq_rpc_client=rpc_client,
+        pagination_limit=10,
+        pagination_offset=0,
+        user_id=other_logged_user["id"],
+    )
+    # Assert the list contains only the logged user's function
+    assert len(other_functions) == 0
+
+    # Register a function for another user
+    other_registered_function = [
+        await functions_rpc.register_function(
+            rabbitmq_rpc_client=rpc_client,
+            function=mock_function,
+            user_id=other_logged_user["id"],
+        )
+        for _ in range(3)
+    ]
+
+    # List functions for the logged user
     functions, _ = await functions_rpc.list_functions(
         rabbitmq_rpc_client=rpc_client,
         pagination_limit=10,
         pagination_offset=0,
         user_id=logged_user["id"],
     )
+    # Assert the list contains only the logged user's function
+    assert len(functions) == 2
+    assert all(f.uid in [rf.uid for rf in registered_functions] for f in functions)
 
-    # Assert the list is empty
-    assert len(functions) == 0
+    other_functions, _ = await functions_rpc.list_functions(
+        rabbitmq_rpc_client=rpc_client,
+        pagination_limit=10,
+        pagination_offset=0,
+        user_id=other_logged_user["id"],
+    )
+    # Assert the list contains only the other user's functions
+    assert len(other_functions) == 3
+    assert all(
+        f.uid in [orf.uid for orf in other_registered_function] for f in other_functions
+    )
 
 
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
 async def test_list_functions_with_pagination(
     client: TestClient,
     rpc_client: RabbitMQRPCClient,
@@ -304,11 +348,16 @@ async def test_list_functions_with_pagination(
     assert page_info.total == TOTAL_FUNCTIONS
 
 
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
 async def test_update_function_title(
     client: TestClient,
     rpc_client: RabbitMQRPCClient,
     mock_function: ProjectFunction,
     logged_user: UserInfoDict,
+    other_logged_user: UserInfoDict,
 ):
     # Register the function first
     registered_function = await functions_rpc.register_function(
@@ -333,7 +382,22 @@ async def test_update_function_title(
     # Assert the updated function's title matches the new title
     assert updated_function.title == updated_title
 
+    # Update the function's title by other user
+    updated_title = "Updated Function Title by Other User"
+    registered_function.title = updated_title
+    with pytest.raises(FunctionReadAccessDeniedError):
+        updated_function = await functions_rpc.update_function_title(
+            rabbitmq_rpc_client=rpc_client,
+            function_id=registered_function.uid,
+            title=updated_title,
+            user_id=other_logged_user["id"],
+        )
 
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
 async def test_update_function_description(
     client: TestClient,
     rpc_client: RabbitMQRPCClient,
@@ -364,6 +428,10 @@ async def test_update_function_description(
     assert updated_function.description == updated_description
 
 
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
 async def test_get_function_input_schema(
     client: TestClient,
     rpc_client: RabbitMQRPCClient,
@@ -389,6 +457,10 @@ async def test_get_function_input_schema(
     assert input_schema == registered_function.input_schema
 
 
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
 async def test_get_function_output_schema(
     client: TestClient,
     rpc_client: RabbitMQRPCClient,
@@ -414,11 +486,16 @@ async def test_get_function_output_schema(
     assert output_schema == registered_function.output_schema
 
 
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
 async def test_delete_function(
     client: TestClient,
     rpc_client: RabbitMQRPCClient,
     mock_function: ProjectFunction,
     logged_user: UserInfoDict,
+    other_logged_user: UserInfoDict,
 ):
     # Register the function first
     registered_function = await functions_rpc.register_function(
@@ -428,27 +505,17 @@ async def test_delete_function(
     )
     assert registered_function.uid is not None
 
-    # Delete the function using its ID
-    await functions_rpc.delete_function(
-        rabbitmq_rpc_client=rpc_client,
-        function_id=registered_function.uid,
-        user_id=logged_user["id"],
-    )
 
-    # Attempt to retrieve the deleted function
-    with pytest.raises(FunctionIDNotFoundError):
-        await functions_rpc.get_function(
-            rabbitmq_rpc_client=rpc_client,
-            function_id=registered_function.uid,
-            user_id=logged_user["id"],
-        )
-
-
-async def test_register_function_job(
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+async def test_register_get_delete_function_job(
     client: TestClient,
     rpc_client: RabbitMQRPCClient,
     mock_function: ProjectFunction,
     logged_user: UserInfoDict,
+    other_logged_user: UserInfoDict,
 ):
     # Register the function first
     registered_function = await functions_rpc.register_function(
@@ -479,38 +546,6 @@ async def test_register_function_job(
     assert registered_job.inputs == function_job.inputs
     assert registered_job.outputs == function_job.outputs
 
-
-async def test_get_function_job(
-    client: TestClient,
-    rpc_client: RabbitMQRPCClient,
-    mock_function: ProjectFunction,
-    logged_user: UserInfoDict,
-):
-    # Register the function first
-    registered_function = await functions_rpc.register_function(
-        rabbitmq_rpc_client=rpc_client,
-        function=mock_function,
-        user_id=logged_user["id"],
-    )
-    assert registered_function.uid is not None
-
-    function_job = ProjectFunctionJob(
-        function_uid=registered_function.uid,
-        title="Test Function Job",
-        description="A test function job",
-        project_job_id=uuid4(),
-        inputs={"input1": "value1"},
-        outputs={"output1": "result1"},
-    )
-
-    # Register the function job
-    registered_job = await functions_rpc.register_function_job(
-        rabbitmq_rpc_client=rpc_client,
-        function_job=function_job,
-        user_id=logged_user["id"],
-    )
-    assert registered_job.uid is not None
-
     # Retrieve the function job using its ID
     retrieved_job = await functions_rpc.get_function_job(
         rabbitmq_rpc_client=rpc_client,
@@ -523,7 +558,41 @@ async def test_get_function_job(
     assert retrieved_job.inputs == registered_job.inputs
     assert retrieved_job.outputs == registered_job.outputs
 
+    with pytest.raises(FunctionJobReadAccessDeniedError):
+        await functions_rpc.get_function_job(
+            rabbitmq_rpc_client=rpc_client,
+            function_job_id=registered_job.uid,
+            user_id=other_logged_user["id"],
+        )
 
+    with pytest.raises(FunctionJobReadAccessDeniedError):
+        # Attempt to delete the function job by another user
+        await functions_rpc.delete_function_job(
+            rabbitmq_rpc_client=rpc_client,
+            function_job_id=registered_job.uid,
+            user_id=other_logged_user["id"],
+        )
+
+    # Delete the function job using its ID
+    await functions_rpc.delete_function_job(
+        rabbitmq_rpc_client=rpc_client,
+        function_job_id=registered_job.uid,
+        user_id=logged_user["id"],
+    )
+
+    # Attempt to retrieve the deleted job
+    with pytest.raises(FunctionJobIDNotFoundError):
+        await functions_rpc.get_function_job(
+            rabbitmq_rpc_client=rpc_client,
+            function_job_id=registered_job.uid,
+            user_id=logged_user["id"],
+        )
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
 async def test_get_function_job_not_found(
     client: TestClient, rpc_client: RabbitMQRPCClient, logged_user: UserInfoDict
 ):
@@ -536,6 +605,10 @@ async def test_get_function_job_not_found(
         )
 
 
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
 async def test_list_function_jobs(
     client: TestClient,
     rpc_client: RabbitMQRPCClient,
@@ -579,6 +652,10 @@ async def test_list_function_jobs(
     assert any(j.uid == registered_job.uid for j in jobs)
 
 
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
 async def test_list_function_jobs_for_functionid(
     client: TestClient,
     rpc_client: RabbitMQRPCClient,
@@ -650,53 +727,10 @@ async def test_list_function_jobs_for_functionid(
     assert all(j.function_uid == first_registered_function.uid for j in jobs)
 
 
-async def test_delete_function_job(
-    client: TestClient,
-    mock_function: ProjectFunction,
-    rpc_client: RabbitMQRPCClient,
-    logged_user: UserInfoDict,
-):
-    # Register the function first
-    registered_function = await functions_rpc.register_function(
-        rabbitmq_rpc_client=rpc_client,
-        function=mock_function,
-        user_id=logged_user["id"],
-    )
-    assert registered_function.uid is not None
-
-    function_job = ProjectFunctionJob(
-        function_uid=registered_function.uid,
-        title="Test Function Job",
-        description="A test function job",
-        project_job_id=uuid4(),
-        inputs={"input1": "value1"},
-        outputs={"output1": "result1"},
-    )
-
-    # Register the function job
-    registered_job = await functions_rpc.register_function_job(
-        rabbitmq_rpc_client=rpc_client,
-        function_job=function_job,
-        user_id=logged_user["id"],
-    )
-    assert registered_job.uid is not None
-
-    # Delete the function job using its ID
-    await functions_rpc.delete_function_job(
-        rabbitmq_rpc_client=rpc_client,
-        function_job_id=registered_job.uid,
-        user_id=logged_user["id"],
-    )
-
-    # Attempt to retrieve the deleted job
-    with pytest.raises(FunctionJobIDNotFoundError):
-        await functions_rpc.get_function_job(
-            rabbitmq_rpc_client=rpc_client,
-            function_job_id=registered_job.uid,
-            user_id=logged_user["id"],
-        )
-
-
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
 async def test_function_job_collection(
     client: TestClient,
     mock_function: ProjectFunction,
@@ -770,6 +804,10 @@ async def test_function_job_collection(
         )
 
 
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
 async def test_list_function_job_collections(
     client: TestClient,
     mock_function: ProjectFunction,
@@ -778,7 +816,20 @@ async def test_list_function_job_collections(
     clean_function_job_collections: None,
     logged_user: UserInfoDict,
 ):
-    assert client.app
+    # List function job collections when none are registered
+    collections, page_meta = await functions_rpc.list_function_job_collections(
+        rabbitmq_rpc_client=rpc_client,
+        pagination_limit=10,
+        pagination_offset=0,
+        user_id=logged_user["id"],
+    )
+
+    # Assert the list is empty
+    assert page_meta.count == 0
+    assert page_meta.total == 0
+    assert page_meta.offset == 0
+    assert len(collections) == 0
+
     # Register the function first
     registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client,
@@ -848,28 +899,10 @@ async def test_list_function_job_collections(
     ]
 
 
-async def test_list_function_job_collections_empty(
-    client: TestClient,
-    rpc_client: RabbitMQRPCClient,
-    clean_functions: None,
-    clean_function_job_collections: None,
-    logged_user: UserInfoDict,
-):
-    # List function job collections when none are registered
-    collections, page_meta = await functions_rpc.list_function_job_collections(
-        rabbitmq_rpc_client=rpc_client,
-        pagination_limit=10,
-        pagination_offset=0,
-        user_id=logged_user["id"],
-    )
-
-    # Assert the list is empty
-    assert page_meta.count == 0
-    assert page_meta.total == 0
-    assert page_meta.offset == 0
-    assert len(collections) == 0
-
-
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
 async def test_list_function_job_collections_filtered_function_id(
     client: TestClient,
     rpc_client: RabbitMQRPCClient,
