@@ -39,7 +39,7 @@ def _handle_client_exceptions(app: web.Application) -> Iterator[ClientSession]:
 
     except ClientResponseError as err:
         if err.status == status.HTTP_404_NOT_FOUND:
-            raise web.HTTPNotFound(reason=MSG_CATALOG_SERVICE_NOT_FOUND)
+            raise web.HTTPNotFound(text=MSG_CATALOG_SERVICE_NOT_FOUND) from err
         raise web.HTTPServiceUnavailable(
             reason=MSG_CATALOG_SERVICE_UNAVAILABLE
         ) from err

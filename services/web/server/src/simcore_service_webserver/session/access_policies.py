@@ -116,11 +116,11 @@ def session_access_required(
             with _access_tokens_cleanup_ctx(session) as access_tokens:
                 access: _AccessToken | None = access_tokens.get(name, None)
                 if not access:
-                    raise web.HTTPUnauthorized(reason=unauthorized_reason)
+                    raise web.HTTPUnauthorized(text=unauthorized_reason)
 
                 access["count"] -= 1  # consume access count
                 if access["count"] < 0 or _is_expired(access):
-                    raise web.HTTPUnauthorized(reason=unauthorized_reason)
+                    raise web.HTTPUnauthorized(text=unauthorized_reason)
 
                 # update and keep for future accesses (e.g. retry this route)
                 access_tokens[name] = access
