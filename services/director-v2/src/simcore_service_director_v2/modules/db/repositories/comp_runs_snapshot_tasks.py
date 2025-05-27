@@ -18,6 +18,12 @@ class CompRunsSnapshotTasksRepository(BaseRepository):
     async def batch_create(
         self, *, data: list[dict]
     ) -> None:  # list[CompRunSnapshotTaskAtDBGet]:
+        if not data:
+            logger.warning(
+                "No data provided for batch creation of comp run snapshot tasks"
+            )
+            return
+
         async with transaction_context(self.db_engine) as conn:
 
             try:
