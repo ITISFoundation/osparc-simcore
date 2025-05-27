@@ -10,12 +10,10 @@ from servicelib.db_asyncpg_utils import create_async_engine_and_database_ready
 from settings_library.node_ports import NodePortsSettings
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.projects import projects
-from simcore_service_director_v2.modules.db.repositories.comp_runs import (
-    CompRunsRepository,
+from simcore_postgres_database.utils_comp_run_snapshot_tasks import (
+    update_for_run_id_and_node_id,
 )
-from simcore_service_director_v2.modules.db.repositories.comp_runs_snapshot_tasks import (
-    CompRunsSnapshotTasksRepository,
-)
+from simcore_postgres_database.utils_comp_runs import get_latest_run_id_for_project
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from .exceptions import NodeNotFound, ProjectNotFoundError
@@ -115,15 +113,13 @@ class DBManager:
                 )
             )
             # 2. Get latest run id for the project
-            _latest_run_id = await CompRunsRepository.instance(
-                engine
-            ).get_latest_run_id_for_project(
-                connection, project_id=ProjectID(project_id)
+            _latest_run_id = await get_latest_run_id_for_project(
+                engine, connection, project_id=ProjectID(project_id)
             )
+
             # 3. Update comp_run_snapshot_tasks table
-            await CompRunsSnapshotTasksRepository.instance(
-                engine
-            ).update_for_run_id_and_node_id(
+            await update_for_run_id_and_node_id(
+                engine,
                 connection,
                 run_id=_latest_run_id,
                 node_id=NodeID(node_uuid),

@@ -14,6 +14,7 @@ from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import PositiveInt
+from simcore_postgres_database.utils_comp_runs import get_latest_run_id_for_project
 from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
@@ -356,62 +357,9 @@ class CompRunsRepository(BaseRepository):
         *,
         project_id: ProjectID,
     ) -> PositiveInt:
-        # Get latest run per (project_uuid, user_id)
-        project_and_user_latest_runs = (
-            sa.select(
-                comp_runs.c.project_uuid,
-                comp_runs.c.user_id,
-                sa.func.max(comp_runs.c.iteration).label("latest_iteration"),
-                sa.func.max(comp_runs.c.created).label("created"),
-            )
-            .where(comp_runs.c.project_uuid == f"{project_id}")
-            .group_by(comp_runs.c.project_uuid, comp_runs.c.user_id)
-            .subquery("project_and_user_latest_runs")
+        return await get_latest_run_id_for_project(
+            self.db_engine, conn, project_id=project_id
         )
-
-        # Rank users per project by latest run creation time
-        ranked = sa.select(
-            project_and_user_latest_runs.c.project_uuid,
-            project_and_user_latest_runs.c.user_id,
-            project_and_user_latest_runs.c.latest_iteration,
-            project_and_user_latest_runs.c.created,
-            sa.func.row_number()
-            .over(
-                partition_by=project_and_user_latest_runs.c.project_uuid,
-                order_by=project_and_user_latest_runs.c.created.desc(),
-            )
-            .label("row_number"),
-        ).subquery("ranked")
-
-        # Filter to only the top-ranked (most recent) user per project
-        filtered_ranked = (
-            sa.select(
-                ranked.c.project_uuid,
-                ranked.c.user_id,
-                ranked.c.latest_iteration,
-            )
-            .where(ranked.c.row_number == 1)
-            .subquery("filtered_ranked")
-        )
-
-        # Base select query
-        base_select_query = sa.select(comp_runs.c.run_id).select_from(
-            filtered_ranked.join(
-                comp_runs,
-                sa.and_(
-                    comp_runs.c.project_uuid == filtered_ranked.c.project_uuid,
-                    comp_runs.c.user_id == filtered_ranked.c.user_id,
-                    comp_runs.c.iteration == filtered_ranked.c.latest_iteration,
-                ),
-            )
-        )
-
-        async with pass_or_acquire_connection(self.db_engine, connection=conn) as _conn:
-            result = await conn.execute(base_select_query)
-            row = result.one_or_none()
-            if not row:
-                raise ValueError("improve")
-            return row.run_id
 
     async def create(
         self,
