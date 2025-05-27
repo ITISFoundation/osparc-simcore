@@ -11,9 +11,10 @@
 import logging
 
 import locust_plugins
-from common.deploy_auth import MonitoringBasicAuth, OsparcAuth
 from locust import events, task
 from locust.contrib.fasthttp import FastHttpUser
+
+from tests.performance2.common.auth_settings import DeploymentAuth, OsparcAuth
 
 logging.basicConfig(level=logging.INFO)
 
@@ -50,7 +51,7 @@ def _(environment, **_kwargs) -> None:
 class WebApiUser(FastHttpUser):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.auth = MonitoringBasicAuth().to_auth()
+        self.auth = DeploymentAuth().to_auth()
         self.endpoint = _endpoint_holder["endpoint"]
         self.osparc_auth = OsparcAuth()
         self.requires_login = False
