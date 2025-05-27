@@ -14,10 +14,14 @@ class OsparcUserBase(FastHttpUser):
     different behaviors or tasks.
     """
 
+    abstract = True  # This class is abstract and won't be instantiated by Locust
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.deploy_auth = DeploymentAuth()
-        _logger.debug("Using deployment auth: %s", self.deploy_auth)
+        _logger.debug(
+            "Using deployment auth with username: %s", self.deploy_auth.SC_USER_NAME
+        )
 
 
 class OsparcWebUserBase(OsparcUserBase):
@@ -27,11 +31,16 @@ class OsparcWebUserBase(OsparcUserBase):
     different behaviors or tasks.
     """
 
+    abstract = True  # This class is abstract and won't be instantiated by Locust
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.environment.parsed_options.requires_login:
             self.osparc_auth = OsparcAuth()
-            _logger.debug("Using OsparcAuth for login: %s", self.osparc_auth)
+            _logger.debug(
+                "Using OsparcAuth for login with username: %s",
+                self.osparc_auth.OSPARC_USER_NAME,
+            )
 
     def on_start(self) -> None:
         """
@@ -52,11 +61,8 @@ class OsparcWebUserBase(OsparcUserBase):
     def _login(self) -> None:
         # Implement login logic here
         logging.info(
-            "Loggin in user with email: %s",
-            {
-                "email": self.osparc_auth.OSPARC_USER_NAME,
-                "password": self.osparc_auth.OSPARC_PASSWORD.get_secret_value(),
-            },
+            "Logging in user with email: %s",
+            self.osparc_auth.OSPARC_USER_NAME,
         )
         response = self.client.post(
             "/v0/auth/login",
@@ -67,9 +73,11 @@ class OsparcWebUserBase(OsparcUserBase):
             auth=self.deploy_auth.to_auth(),
         )
         response.raise_for_status()
-        logging.info("Logged in user with email: %s", self.osparc_auth)
+        logging.info("Logged in user with email: %s", self.osparc_auth.OSPARC_USER_NAME)
 
     def _logout(self) -> None:
         # Implement logout logic here
         self.client.post("/v0/auth/logout", auth=self.deploy_auth.to_auth())
-        logging.info("Logged out user with email: %s", self.osparc_auth)
+        logging.info(
+            "Logged out user with email: %s", self.osparc_auth.OSPARC_USER_NAME
+        )
