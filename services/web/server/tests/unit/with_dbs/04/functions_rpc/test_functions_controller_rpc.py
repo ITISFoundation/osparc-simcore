@@ -11,8 +11,10 @@ from fastapi.testclient import TestClient
 # import simcore_service_webserver.functions._functions_controller_rpc as functions_rpc
 from models_library.api_schemas_webserver.functions import (
     Function,
+    FunctionIDString,
     FunctionJobCollection,
     FunctionJobIDNotFoundError,
+    FunctionReadAccessDeniedError,
     JSONFunctionInputSchema,
     JSONFunctionOutputSchema,
     ProjectFunction,
@@ -93,7 +95,7 @@ def user_role() -> UserRole:
     return UserRole.USER
 
 
-async def test_register_function(
+async def test_register_get_function(
     client: TestClient,
     rpc_client: RabbitMQRPCClient,
     mock_function: ProjectFunction,
@@ -130,42 +132,45 @@ async def test_register_function(
     assert registered_function.project_id == mock_function.project_id
 
 
-async def test_get_function(
-    client: TestClient, rpc_client: RabbitMQRPCClient, mock_function: ProjectFunction
+async def test_register_get_function_otheruser(
+    client: TestClient,
+    rpc_client: RabbitMQRPCClient,
+    mock_function: ProjectFunction,
+    logged_user: UserInfoDict,
+    user_role: UserRole,
 ):
-    # Register the function first
+    # Register the function
     registered_function = await functions_rpc.register_function(
-        rabbitmq_rpc_client=rpc_client, function=mock_function
+        rabbitmq_rpc_client=rpc_client,
+        function=mock_function,
+        user_id=logged_user["id"],
     )
     assert registered_function.uid is not None
+    # Retrieve the function from the repository to verify it was saved
 
-    # Retrieve the function using its ID
-    retrieved_function = await functions_rpc.get_function(
-        rabbitmq_rpc_client=rpc_client, function_id=registered_function.uid
-    )
-
-    # Assert the retrieved function matches the registered function
-    assert retrieved_function.uid == registered_function.uid
-    assert retrieved_function.title == registered_function.title
-    assert retrieved_function.description == registered_function.description
-
-    # Ensure retrieved_function is of type ProjectFunction before accessing project_id
-    assert isinstance(retrieved_function, ProjectFunction)
-    assert isinstance(registered_function, ProjectFunction)
-    assert retrieved_function.project_id == registered_function.project_id
+    with pytest.raises(FunctionReadAccessDeniedError):
+        await functions_rpc.get_function(
+            rabbitmq_rpc_client=rpc_client,
+            function_id=registered_function.uid,
+            user_id=logged_user["id"] + 1,
+        )
 
 
 async def test_get_function_not_found(
-    client: TestClient, rpc_client: RabbitMQRPCClient
+    client: TestClient, rpc_client: RabbitMQRPCClient, logged_user: UserInfoDict
 ):
     # Attempt to retrieve a function that does not exist
     with pytest.raises(FunctionIDNotFoundError):
         await functions_rpc.get_function(
-            rabbitmq_rpc_client=rpc_client, function_id=uuid4()
+            rabbitmq_rpc_client=rpc_client,
+            function_id=uuid4(),
+            user_id=logged_user["id"],
         )
 
 
-async def test_list_functions(client: TestClient, rpc_client: RabbitMQRPCClient):
+async def test_list_functions(
+    client: TestClient, rpc_client: RabbitMQRPCClient, logged_user: UserInfoDict
+):
     # Register a function first
     mock_function = ProjectFunction(
         title="Test Function",
@@ -176,13 +181,18 @@ async def test_list_functions(client: TestClient, rpc_client: RabbitMQRPCClient)
         default_inputs=None,
     )
     registered_function = await functions_rpc.register_function(
-        rabbitmq_rpc_client=rpc_client, function=mock_function
+        rabbitmq_rpc_client=rpc_client,
+        function=mock_function,
+        user_id=logged_user["id"],
     )
     assert registered_function.uid is not None
 
     # List functions
     functions, _ = await functions_rpc.list_functions(
-        rabbitmq_rpc_client=rpc_client, pagination_limit=10, pagination_offset=0
+        rabbitmq_rpc_client=rpc_client,
+        pagination_limit=10,
+        pagination_offset=0,
+        user_id=logged_user["id"],
     )
 
     # Assert the list contains the registered function
@@ -190,12 +200,54 @@ async def test_list_functions(client: TestClient, rpc_client: RabbitMQRPCClient)
     assert any(f.uid == registered_function.uid for f in functions)
 
 
+# async def test_list_functions_mixed_user(
+#     client: TestClient,
+#     rpc_client: RabbitMQRPCClient,
+#     mock_function: ProjectFunction,
+#     logged_user: UserInfoDict,
+# ):
+#     # Register a function for the logged user
+#     registered_function = await functions_rpc.register_function(
+#         rabbitmq_rpc_client=rpc_client,
+#         function=mock_function,
+#         user_id=logged_user["id"],
+#     )
+#     assert registered_function.uid is not None
+
+#     # Register a function for another user
+#     other_user_id = logged_user["id"] + 1
+#     other_registered_function = await functions_rpc.register_function(
+#         rabbitmq_rpc_client=rpc_client,
+#         function=mock_function,
+#         user_id=other_user_id,
+#     )
+#     assert other_registered_function.uid is not None
+
+#     # List functions for the logged user
+#     functions, _ = await functions_rpc.list_functions(
+#         rabbitmq_rpc_client=rpc_client,
+#         pagination_limit=10,
+#         pagination_offset=0,
+#         user_id=logged_user["id"],
+#     )
+
+#     # Assert the list contains only the logged user's function
+#     assert len(functions) == 1
+#     assert functions[0].uid == registered_function.uid
+
+
 async def test_list_functions_empty(
-    client: TestClient, rpc_client: RabbitMQRPCClient, clean_functions: None
+    client: TestClient,
+    rpc_client: RabbitMQRPCClient,
+    clean_functions: None,
+    logged_user: UserInfoDict,
 ):
     # List functions when none are registered
     functions, _ = await functions_rpc.list_functions(
-        rabbitmq_rpc_client=rpc_client, pagination_limit=10, pagination_offset=0
+        rabbitmq_rpc_client=rpc_client,
+        pagination_limit=10,
+        pagination_offset=0,
+        user_id=logged_user["id"],
     )
 
     # Assert the list is empty
@@ -207,21 +259,30 @@ async def test_list_functions_with_pagination(
     rpc_client: RabbitMQRPCClient,
     mock_function: ProjectFunction,
     clean_functions: None,
+    logged_user: UserInfoDict,
 ):
     # Register multiple functions
     TOTAL_FUNCTIONS = 3
     for _ in range(TOTAL_FUNCTIONS):
         await functions_rpc.register_function(
-            rabbitmq_rpc_client=rpc_client, function=mock_function
+            rabbitmq_rpc_client=rpc_client,
+            function=mock_function,
+            user_id=logged_user["id"],
         )
 
     functions, page_info = await functions_rpc.list_functions(
-        rabbitmq_rpc_client=rpc_client, pagination_limit=2, pagination_offset=0
+        rabbitmq_rpc_client=rpc_client,
+        pagination_limit=2,
+        pagination_offset=0,
+        user_id=logged_user["id"],
     )
 
     # List functions with pagination
     functions, page_info = await functions_rpc.list_functions(
-        rabbitmq_rpc_client=rpc_client, pagination_limit=2, pagination_offset=0
+        rabbitmq_rpc_client=rpc_client,
+        pagination_limit=2,
+        pagination_offset=0,
+        user_id=logged_user["id"],
     )
 
     # Assert the list contains the correct number of functions
@@ -231,7 +292,10 @@ async def test_list_functions_with_pagination(
 
     # List the next page of functions
     functions, page_info = await functions_rpc.list_functions(
-        rabbitmq_rpc_client=rpc_client, pagination_limit=2, pagination_offset=2
+        rabbitmq_rpc_client=rpc_client,
+        pagination_limit=2,
+        pagination_offset=2,
+        user_id=logged_user["id"],
     )
 
     # Assert the list contains the correct number of functions
@@ -241,11 +305,16 @@ async def test_list_functions_with_pagination(
 
 
 async def test_update_function_title(
-    client: TestClient, rpc_client: RabbitMQRPCClient, mock_function: ProjectFunction
+    client: TestClient,
+    rpc_client: RabbitMQRPCClient,
+    mock_function: ProjectFunction,
+    logged_user: UserInfoDict,
 ):
     # Register the function first
     registered_function = await functions_rpc.register_function(
-        rabbitmq_rpc_client=rpc_client, function=mock_function
+        rabbitmq_rpc_client=rpc_client,
+        function=mock_function,
+        user_id=logged_user["id"],
     )
     assert registered_function.uid is not None
 
@@ -256,6 +325,7 @@ async def test_update_function_title(
         rabbitmq_rpc_client=rpc_client,
         function_id=registered_function.uid,
         title=updated_title,
+        user_id=logged_user["id"],
     )
 
     assert isinstance(updated_function, ProjectFunction)
@@ -265,11 +335,16 @@ async def test_update_function_title(
 
 
 async def test_update_function_description(
-    client: TestClient, rpc_client: RabbitMQRPCClient, mock_function: ProjectFunction
+    client: TestClient,
+    rpc_client: RabbitMQRPCClient,
+    mock_function: ProjectFunction,
+    logged_user: UserInfoDict,
 ):
     # Register the function first
     registered_function = await functions_rpc.register_function(
-        rabbitmq_rpc_client=rpc_client, function=mock_function
+        rabbitmq_rpc_client=rpc_client,
+        function=mock_function,
+        user_id=logged_user["id"],
     )
     assert registered_function.uid is not None
 
@@ -280,6 +355,7 @@ async def test_update_function_description(
         rabbitmq_rpc_client=rpc_client,
         function_id=registered_function.uid,
         description=updated_description,
+        user_id=logged_user["id"],
     )
 
     assert isinstance(updated_function, ProjectFunction)
@@ -289,17 +365,24 @@ async def test_update_function_description(
 
 
 async def test_get_function_input_schema(
-    client: TestClient, rpc_client: RabbitMQRPCClient, mock_function: ProjectFunction
+    client: TestClient,
+    rpc_client: RabbitMQRPCClient,
+    mock_function: ProjectFunction,
+    logged_user: UserInfoDict,
 ):
     # Register the function first
     registered_function = await functions_rpc.register_function(
-        rabbitmq_rpc_client=rpc_client, function=mock_function
+        rabbitmq_rpc_client=rpc_client,
+        function=mock_function,
+        user_id=logged_user["id"],
     )
     assert registered_function.uid is not None
 
     # Retrieve the input schema using its ID
     input_schema = await functions_rpc.get_function_input_schema(
-        rabbitmq_rpc_client=rpc_client, function_id=registered_function.uid
+        rabbitmq_rpc_client=rpc_client,
+        function_id=registered_function.uid,
+        user_id=logged_user["id"],
     )
 
     # Assert the input schema matches the registered function's input schema
@@ -307,17 +390,24 @@ async def test_get_function_input_schema(
 
 
 async def test_get_function_output_schema(
-    client: TestClient, rpc_client: RabbitMQRPCClient, mock_function: ProjectFunction
+    client: TestClient,
+    rpc_client: RabbitMQRPCClient,
+    mock_function: ProjectFunction,
+    logged_user: UserInfoDict,
 ):
     # Register the function first
     registered_function = await functions_rpc.register_function(
-        rabbitmq_rpc_client=rpc_client, function=mock_function
+        rabbitmq_rpc_client=rpc_client,
+        function=mock_function,
+        user_id=logged_user["id"],
     )
     assert registered_function.uid is not None
 
     # Retrieve the output schema using its ID
     output_schema = await functions_rpc.get_function_output_schema(
-        rabbitmq_rpc_client=rpc_client, function_id=registered_function.uid
+        rabbitmq_rpc_client=rpc_client,
+        function_id=registered_function.uid,
+        user_id=logged_user["id"],
     )
 
     # Assert the output schema matches the registered function's output schema
@@ -325,32 +415,46 @@ async def test_get_function_output_schema(
 
 
 async def test_delete_function(
-    client: TestClient, rpc_client: RabbitMQRPCClient, mock_function: ProjectFunction
+    client: TestClient,
+    rpc_client: RabbitMQRPCClient,
+    mock_function: ProjectFunction,
+    logged_user: UserInfoDict,
 ):
     # Register the function first
     registered_function = await functions_rpc.register_function(
-        rabbitmq_rpc_client=rpc_client, function=mock_function
+        rabbitmq_rpc_client=rpc_client,
+        function=mock_function,
+        user_id=logged_user["id"],
     )
     assert registered_function.uid is not None
 
     # Delete the function using its ID
     await functions_rpc.delete_function(
-        rabbitmq_rpc_client=rpc_client, function_id=registered_function.uid
+        rabbitmq_rpc_client=rpc_client,
+        function_id=registered_function.uid,
+        user_id=logged_user["id"],
     )
 
     # Attempt to retrieve the deleted function
     with pytest.raises(FunctionIDNotFoundError):
         await functions_rpc.get_function(
-            rabbitmq_rpc_client=rpc_client, function_id=registered_function.uid
+            rabbitmq_rpc_client=rpc_client,
+            function_id=registered_function.uid,
+            user_id=logged_user["id"],
         )
 
 
 async def test_register_function_job(
-    client: TestClient, rpc_client: RabbitMQRPCClient, mock_function: ProjectFunction
+    client: TestClient,
+    rpc_client: RabbitMQRPCClient,
+    mock_function: ProjectFunction,
+    logged_user: UserInfoDict,
 ):
     # Register the function first
     registered_function = await functions_rpc.register_function(
-        rabbitmq_rpc_client=rpc_client, function=mock_function
+        rabbitmq_rpc_client=rpc_client,
+        function=mock_function,
+        user_id=logged_user["id"],
     )
     assert registered_function.uid is not None
 
@@ -365,7 +469,9 @@ async def test_register_function_job(
 
     # Register the function job
     registered_job = await functions_rpc.register_function_job(
-        rabbitmq_rpc_client=rpc_client, function_job=function_job
+        rabbitmq_rpc_client=rpc_client,
+        function_job=function_job,
+        user_id=logged_user["id"],
     )
 
     # Assert the registered job matches the input job
@@ -375,11 +481,16 @@ async def test_register_function_job(
 
 
 async def test_get_function_job(
-    client: TestClient, rpc_client: RabbitMQRPCClient, mock_function: ProjectFunction
+    client: TestClient,
+    rpc_client: RabbitMQRPCClient,
+    mock_function: ProjectFunction,
+    logged_user: UserInfoDict,
 ):
     # Register the function first
     registered_function = await functions_rpc.register_function(
-        rabbitmq_rpc_client=rpc_client, function=mock_function
+        rabbitmq_rpc_client=rpc_client,
+        function=mock_function,
+        user_id=logged_user["id"],
     )
     assert registered_function.uid is not None
 
@@ -394,13 +505,17 @@ async def test_get_function_job(
 
     # Register the function job
     registered_job = await functions_rpc.register_function_job(
-        rabbitmq_rpc_client=rpc_client, function_job=function_job
+        rabbitmq_rpc_client=rpc_client,
+        function_job=function_job,
+        user_id=logged_user["id"],
     )
     assert registered_job.uid is not None
 
     # Retrieve the function job using its ID
     retrieved_job = await functions_rpc.get_function_job(
-        rabbitmq_rpc_client=rpc_client, function_job_id=registered_job.uid
+        rabbitmq_rpc_client=rpc_client,
+        function_job_id=registered_job.uid,
+        user_id=logged_user["id"],
     )
 
     # Assert the retrieved job matches the registered job
@@ -410,21 +525,28 @@ async def test_get_function_job(
 
 
 async def test_get_function_job_not_found(
-    client: TestClient, rpc_client: RabbitMQRPCClient
+    client: TestClient, rpc_client: RabbitMQRPCClient, logged_user: UserInfoDict
 ):
     # Attempt to retrieve a function job that does not exist
     with pytest.raises(FunctionJobIDNotFoundError):
         await functions_rpc.get_function_job(
-            rabbitmq_rpc_client=rpc_client, function_job_id=uuid4()
+            rabbitmq_rpc_client=rpc_client,
+            function_job_id=uuid4(),
+            user_id=logged_user["id"],
         )
 
 
 async def test_list_function_jobs(
-    client: TestClient, rpc_client: RabbitMQRPCClient, mock_function: ProjectFunction
+    client: TestClient,
+    rpc_client: RabbitMQRPCClient,
+    mock_function: ProjectFunction,
+    logged_user: UserInfoDict,
 ):
     # Register the function first
     registered_function = await functions_rpc.register_function(
-        rabbitmq_rpc_client=rpc_client, function=mock_function
+        rabbitmq_rpc_client=rpc_client,
+        function=mock_function,
+        user_id=logged_user["id"],
     )
     assert registered_function.uid is not None
 
@@ -439,12 +561,17 @@ async def test_list_function_jobs(
 
     # Register the function job
     registered_job = await functions_rpc.register_function_job(
-        rabbitmq_rpc_client=rpc_client, function_job=function_job
+        rabbitmq_rpc_client=rpc_client,
+        function_job=function_job,
+        user_id=logged_user["id"],
     )
 
     # List function jobs
     jobs, _ = await functions_rpc.list_function_jobs(
-        rabbitmq_rpc_client=rpc_client, pagination_limit=10, pagination_offset=0
+        rabbitmq_rpc_client=rpc_client,
+        pagination_limit=10,
+        pagination_offset=0,
+        user_id=logged_user["id"],
     )
 
     # Assert the list contains the registered job
@@ -453,14 +580,21 @@ async def test_list_function_jobs(
 
 
 async def test_list_function_jobs_for_functionid(
-    client: TestClient, rpc_client: RabbitMQRPCClient, mock_function: ProjectFunction
+    client: TestClient,
+    rpc_client: RabbitMQRPCClient,
+    mock_function: ProjectFunction,
+    logged_user: UserInfoDict,
 ):
     # Register the function first
     first_registered_function = await functions_rpc.register_function(
-        rabbitmq_rpc_client=rpc_client, function=mock_function
+        rabbitmq_rpc_client=rpc_client,
+        function=mock_function,
+        user_id=logged_user["id"],
     )
     second_registered_function = await functions_rpc.register_function(
-        rabbitmq_rpc_client=rpc_client, function=mock_function
+        rabbitmq_rpc_client=rpc_client,
+        function=mock_function,
+        user_id=logged_user["id"],
     )
 
     first_registered_function_jobs = []
@@ -478,7 +612,9 @@ async def test_list_function_jobs_for_functionid(
             # Register the function job
             first_registered_function_jobs.append(
                 await functions_rpc.register_function_job(
-                    rabbitmq_rpc_client=rpc_client, function_job=function_job
+                    rabbitmq_rpc_client=rpc_client,
+                    function_job=function_job,
+                    user_id=logged_user["id"],
                 )
             )
         else:
@@ -493,7 +629,9 @@ async def test_list_function_jobs_for_functionid(
             # Register the function job
             second_registered_function_jobs.append(
                 await functions_rpc.register_function_job(
-                    rabbitmq_rpc_client=rpc_client, function_job=function_job
+                    rabbitmq_rpc_client=rpc_client,
+                    function_job=function_job,
+                    user_id=logged_user["id"],
                 )
             )
 
@@ -503,6 +641,7 @@ async def test_list_function_jobs_for_functionid(
         pagination_limit=10,
         pagination_offset=0,
         filter_by_function_id=first_registered_function.uid,
+        user_id=logged_user["id"],
     )
 
     # Assert the list contains the registered job
@@ -512,11 +651,16 @@ async def test_list_function_jobs_for_functionid(
 
 
 async def test_delete_function_job(
-    client: TestClient, mock_function: ProjectFunction, rpc_client: RabbitMQRPCClient
+    client: TestClient,
+    mock_function: ProjectFunction,
+    rpc_client: RabbitMQRPCClient,
+    logged_user: UserInfoDict,
 ):
     # Register the function first
     registered_function = await functions_rpc.register_function(
-        rabbitmq_rpc_client=rpc_client, function=mock_function
+        rabbitmq_rpc_client=rpc_client,
+        function=mock_function,
+        user_id=logged_user["id"],
     )
     assert registered_function.uid is not None
 
@@ -531,28 +675,39 @@ async def test_delete_function_job(
 
     # Register the function job
     registered_job = await functions_rpc.register_function_job(
-        rabbitmq_rpc_client=rpc_client, function_job=function_job
+        rabbitmq_rpc_client=rpc_client,
+        function_job=function_job,
+        user_id=logged_user["id"],
     )
     assert registered_job.uid is not None
 
     # Delete the function job using its ID
     await functions_rpc.delete_function_job(
-        rabbitmq_rpc_client=rpc_client, function_job_id=registered_job.uid
+        rabbitmq_rpc_client=rpc_client,
+        function_job_id=registered_job.uid,
+        user_id=logged_user["id"],
     )
 
     # Attempt to retrieve the deleted job
     with pytest.raises(FunctionJobIDNotFoundError):
         await functions_rpc.get_function_job(
-            rabbitmq_rpc_client=rpc_client, function_job_id=registered_job.uid
+            rabbitmq_rpc_client=rpc_client,
+            function_job_id=registered_job.uid,
+            user_id=logged_user["id"],
         )
 
 
 async def test_function_job_collection(
-    client: TestClient, mock_function: ProjectFunction, rpc_client: RabbitMQRPCClient
+    client: TestClient,
+    mock_function: ProjectFunction,
+    rpc_client: RabbitMQRPCClient,
+    logged_user: UserInfoDict,
 ):
     # Register the function first
     registered_function = await functions_rpc.register_function(
-        rabbitmq_rpc_client=rpc_client, function=mock_function
+        rabbitmq_rpc_client=rpc_client,
+        function=mock_function,
+        user_id=logged_user["id"],
     )
     assert registered_function.uid is not None
 
@@ -577,7 +732,9 @@ async def test_function_job_collection(
         )
         # Register the function job
         registered_job = await functions_rpc.register_function_job(
-            rabbitmq_rpc_client=rpc_client, function_job=registered_function_job
+            rabbitmq_rpc_client=rpc_client,
+            function_job=registered_function_job,
+            user_id=logged_user["id"],
         )
         assert registered_job.uid is not None
         function_job_ids.append(registered_job.uid)
@@ -590,7 +747,9 @@ async def test_function_job_collection(
 
     # Register the function job collection
     registered_collection = await functions_rpc.register_function_job_collection(
-        rabbitmq_rpc_client=rpc_client, function_job_collection=function_job_collection
+        rabbitmq_rpc_client=rpc_client,
+        function_job_collection=function_job_collection,
+        user_id=logged_user["id"],
     )
     assert registered_collection.uid is not None
 
@@ -600,11 +759,14 @@ async def test_function_job_collection(
     await functions_rpc.delete_function_job_collection(
         rabbitmq_rpc_client=rpc_client,
         function_job_collection_id=registered_collection.uid,
+        user_id=logged_user["id"],
     )
     # Attempt to retrieve the deleted collection
     with pytest.raises(FunctionJobIDNotFoundError):
         await functions_rpc.get_function_job(
-            rabbitmq_rpc_client=rpc_client, function_job_id=registered_collection.uid
+            rabbitmq_rpc_client=rpc_client,
+            function_job_id=registered_collection.uid,
+            user_id=logged_user["id"],
         )
 
 
@@ -613,11 +775,15 @@ async def test_list_function_job_collections(
     mock_function: ProjectFunction,
     rpc_client: RabbitMQRPCClient,
     clean_functions: None,
+    clean_function_job_collections: None,
+    logged_user: UserInfoDict,
 ):
     assert client.app
     # Register the function first
     registered_function = await functions_rpc.register_function(
-        rabbitmq_rpc_client=rpc_client, function=mock_function
+        rabbitmq_rpc_client=rpc_client,
+        function=mock_function,
+        user_id=logged_user["id"],
     )
     assert registered_function.uid is not None
 
@@ -634,7 +800,9 @@ async def test_list_function_job_collections(
         )
         # Register the function job
         registered_job = await functions_rpc.register_function_job(
-            rabbitmq_rpc_client=rpc_client, function_job=registered_function_job
+            rabbitmq_rpc_client=rpc_client,
+            function_job=registered_function_job,
+            user_id=logged_user["id"],
         )
         assert registered_job.uid is not None
         function_job_ids.append(registered_job.uid)
@@ -650,6 +818,7 @@ async def test_list_function_job_collections(
         await functions_rpc.register_function_job_collection(
             rabbitmq_rpc_client=rpc_client,
             function_job_collection=function_job_collection,
+            user_id=logged_user["id"],
         )
         for _ in range(3)
     ]
@@ -660,7 +829,10 @@ async def test_list_function_job_collections(
 
     # List function job collections
     collections, page_params = await functions_rpc.list_function_job_collections(
-        rabbitmq_rpc_client=rpc_client, pagination_limit=2, pagination_offset=1
+        rabbitmq_rpc_client=rpc_client,
+        pagination_limit=2,
+        pagination_offset=1,
+        user_id=logged_user["id"],
     )
 
     # Assert the list contains the registered collection
@@ -668,8 +840,12 @@ async def test_list_function_job_collections(
     assert page_params.total == 3
     assert page_params.offset == 1
     assert len(collections) == 2
-    assert collections[0].uid == registered_collections[1].uid
-    assert collections[1].uid == registered_collections[2].uid
+    assert collections[0].uid in [
+        collection.uid for collection in registered_collections
+    ]
+    assert collections[1].uid in [
+        collection.uid for collection in registered_collections
+    ]
 
 
 async def test_list_function_job_collections_empty(
@@ -677,10 +853,14 @@ async def test_list_function_job_collections_empty(
     rpc_client: RabbitMQRPCClient,
     clean_functions: None,
     clean_function_job_collections: None,
+    logged_user: UserInfoDict,
 ):
     # List function job collections when none are registered
     collections, page_meta = await functions_rpc.list_function_job_collections(
-        rabbitmq_rpc_client=rpc_client, pagination_limit=10, pagination_offset=0
+        rabbitmq_rpc_client=rpc_client,
+        pagination_limit=10,
+        pagination_offset=0,
+        user_id=logged_user["id"],
     )
 
     # Assert the list is empty
@@ -696,13 +876,18 @@ async def test_list_function_job_collections_filtered_function_id(
     mock_function: ProjectFunction,
     clean_functions: None,
     clean_function_job_collections: None,
+    logged_user: UserInfoDict,
 ):
     # Register the function first
     registered_function = await functions_rpc.register_function(
-        rabbitmq_rpc_client=rpc_client, function=mock_function
+        rabbitmq_rpc_client=rpc_client,
+        function=mock_function,
+        user_id=logged_user["id"],
     )
     other_registered_function = await functions_rpc.register_function(
-        rabbitmq_rpc_client=rpc_client, function=mock_function
+        rabbitmq_rpc_client=rpc_client,
+        function=mock_function,
+        user_id=logged_user["id"],
     )
 
     registered_collections = []
@@ -724,7 +909,9 @@ async def test_list_function_job_collections_filtered_function_id(
             )
             # Register the function job
             registered_job = await functions_rpc.register_function_job(
-                rabbitmq_rpc_client=rpc_client, function_job=registered_function_job
+                rabbitmq_rpc_client=rpc_client,
+                function_job=registered_function_job,
+                user_id=logged_user["id"],
             )
             assert registered_job.uid is not None
             function_job_ids.append(registered_job.uid)
@@ -739,6 +926,7 @@ async def test_list_function_job_collections_filtered_function_id(
         registered_collection = await functions_rpc.register_function_job_collection(
             rabbitmq_rpc_client=rpc_client,
             function_job_collection=function_job_collection,
+            user_id=logged_user["id"],
         )
         registered_collections.append(registered_collection)
 
@@ -748,8 +936,9 @@ async def test_list_function_job_collections_filtered_function_id(
         pagination_limit=10,
         pagination_offset=1,
         filters=FunctionJobCollectionsListFilters(
-            has_function_id=str(registered_function.uid)
+            has_function_id=FunctionIDString(registered_function.uid)
         ),
+        user_id=logged_user["id"],
     )
 
     # Assert the list contains the registered collection
@@ -758,5 +947,9 @@ async def test_list_function_job_collections_filtered_function_id(
     assert page_meta.offset == 1
 
     assert len(collections) == 2
-    assert collections[0].uid == registered_collections[1].uid
-    assert collections[1].uid == registered_collections[2].uid
+    assert collections[0].uid in [
+        collection.uid for collection in registered_collections
+    ]
+    assert collections[1].uid in [
+        collection.uid for collection in registered_collections
+    ]

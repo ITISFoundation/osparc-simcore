@@ -13,6 +13,7 @@ from .funcapi_functions_table import functions_table
 functions_access_rights_table = sa.Table(
     "funcapi_functions_access_rights",
     metadata,
+    sa.Column("id", sa.Integer, primary_key=True, autoincrement=True),
     sa.Column(
         "function_uuid",
         sa.ForeignKey(
@@ -32,6 +33,7 @@ functions_access_rights_table = sa.Table(
             onupdate=RefActions.CASCADE,
             ondelete=RefActions.CASCADE,
         ),
+        nullable=True,
         doc="User id",
     ),
     sa.Column(
@@ -42,21 +44,25 @@ functions_access_rights_table = sa.Table(
             onupdate=RefActions.CASCADE,
             ondelete=RefActions.CASCADE,
         ),
+        nullable=True,
         doc="Group id",
     ),
     sa.Column(
         "read",
         sa.Boolean,
+        default=False,
         doc="Read access right for the function",
     ),
     sa.Column(
         "write",
         sa.Boolean,
+        default=False,
         doc="Write access right for the function",
     ),
     sa.Column(
         "execute",
         sa.Boolean,
+        default=False,
         doc="Execute access right for the function",
     ),
     column_created_datetime(),
@@ -68,10 +74,9 @@ functions_access_rights_table = sa.Table(
         ),
         name="ck_user_or_group_exclusive",
     ),  # Instead of using two tables, i make sure one of these is None
-    sa.PrimaryKeyConstraint(
-        "function_uuid",
+    sa.UniqueConstraint(
         "user_id",
         "group_id",
-        name="funcapi_functions_access_rights_pk",
+        name="uq_funcapi_functions_access_rights_user_group",
     ),
 )

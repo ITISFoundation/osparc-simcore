@@ -248,6 +248,52 @@ class FunctionReadAccessDeniedError(FunctionBaseError):
     msg_template: str = "Function {function_id} read access denied for user {user_id}"
 
 
+class FunctionJobReadAccessDeniedError(FunctionBaseError):
+    msg_template: str = (
+        "Function job {function_job_id} read access denied for user {user_id}"
+    )
+
+
+class FunctionJobCollectionReadAccessDeniedError(FunctionBaseError):
+    msg_template: str = (
+        "Function job collection {function_job_collection_id} read access denied for user {user_id}"
+    )
+
+
+class FunctionWriteAccessDeniedError(FunctionBaseError):
+    msg_template: str = "Function {function_id} write access denied for user {user_id}"
+
+
+class FunctionJobWriteAccessDeniedError(FunctionBaseError):
+    msg_template: str = (
+        "Function job {function_job_id} write access denied for user {user_id}"
+    )
+
+
+class FunctionJobCollectionWriteAccessDeniedError(FunctionBaseError):
+    msg_template: str = (
+        "Function job collection {function_job_collection_id} write access denied for user {user_id}"
+    )
+
+
+class FunctionExecuteAccessDeniedError(FunctionBaseError):
+    msg_template: str = (
+        "Function {function_id} execute access denied for user {user_id}"
+    )
+
+
+class FunctionJobExecuteAccessDeniedError(FunctionBaseError):
+    msg_template: str = (
+        "Function job {function_job_id} execute access denied for user {user_id}"
+    )
+
+
+class FunctionJobCollectionExecuteAccessDeniedError(FunctionBaseError):
+    msg_template: str = (
+        "Function job collection {function_job_collection_id} execute access denied for user {user_id}"
+    )
+
+
 class FunctionJobDB(BaseModel):
     function_uuid: FunctionID
     title: str = ""

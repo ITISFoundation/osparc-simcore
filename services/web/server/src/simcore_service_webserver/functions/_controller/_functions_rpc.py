@@ -13,6 +13,7 @@ from models_library.functions import (
     FunctionJobID,
     FunctionJobIDNotFoundError,
     FunctionOutputSchema,
+    FunctionReadAccessDeniedError,
     RegisteredFunction,
     RegisteredFunctionJob,
     RegisteredFunctionJobCollection,
@@ -59,7 +60,9 @@ async def register_function_job_collection(
     )
 
 
-@router.expose(reraise_if_error_type=(FunctionIDNotFoundError,))
+@router.expose(
+    reraise_if_error_type=(FunctionIDNotFoundError, FunctionReadAccessDeniedError)
+)
 async def get_function(
     app: web.Application, *, user_id: UserID, function_id: FunctionID
 ) -> RegisteredFunction:
