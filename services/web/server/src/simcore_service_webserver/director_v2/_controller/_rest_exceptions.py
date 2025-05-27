@@ -1,4 +1,5 @@
 from servicelib.aiohttp import status
+from simcore_service_webserver.constants import MSG_TRY_AGAIN_OR_SUPPORT
 from simcore_service_webserver.director_v2.exceptions import DirectorServiceError
 
 from ...exception_handling import (
@@ -25,7 +26,8 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     ),
     DirectorServiceError: HttpErrorInfo(
         status.HTTP_503_SERVICE_UNAVAILABLE,
-        "This service is currently not available. The incident was logged and will be investigated. Please try again later.",
+        "This service is temporarily unavailable. The incident was logged and will be investigated. "
+        + MSG_TRY_AGAIN_OR_SUPPORT,
     ),
 }
 
