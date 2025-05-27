@@ -14,7 +14,7 @@ charset-normalizer==3.4.2
     # via requests
 click==8.2.1
     # via flask
-configargparse==1.7
+configargparse==1.7.1
     # via
     #   locust
     #   locust-cloud
@@ -44,11 +44,11 @@ itsdangerous==2.2.0
     # via flask
 jinja2==3.1.6
     # via flask
-locust==2.37.4
+locust==2.37.5
     # via
     #   -r requirements/_test.in
     #   locust-plugins
-locust-cloud==1.21.7
+locust-cloud==1.21.8
     # via locust
 locust-plugins==4.7.0
     # via -r requirements/_test.in
@@ -67,7 +67,7 @@ psycogreen==1.0.2
     # via locust-plugins
 psycopg2-binary==2.9.10
     # via locust-plugins
-pydantic==2.11.4
+pydantic==2.11.5
     # via
     #   -r requirements/_test.in
     #   pydantic-settings
@@ -87,7 +87,7 @@ requests==2.32.3
     # via
     #   locust
     #   python-socketio
-setuptools==80.8.0
+setuptools==80.9.0
     # via
     #   locust
     #   zope-event
@@ -100,7 +100,7 @@ typing-extensions==4.13.2
     #   pydantic
     #   pydantic-core
     #   typing-inspection
-typing-inspection==0.4.0
+typing-inspection==0.4.1
     # via
     #   pydantic
     #   pydantic-settings

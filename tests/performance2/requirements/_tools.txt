@@ -19,7 +19,7 @@ distlib==0.3.9
     # via virtualenv
 filelock==3.18.0
     # via virtualenv
-identify==2.6.10
+identify==2.6.12
     # via pre-commit
 isort==6.0.1
     # via
@@ -63,9 +63,9 @@ pyyaml==6.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   pre-commit
-ruff==0.11.10
+ruff==0.11.11
     # via -r requirements/../../../requirements/devenv.txt
-setuptools==80.8.0
+setuptools==80.9.0
     # via
     #   -c requirements/_test.txt
     #   pip-tools
