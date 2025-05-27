@@ -51,6 +51,4 @@ class WebApiUser(OsparcWebUserBase):
 
     @task
     def get_endpoint(self) -> None:
-        self.client.get(
-            self.environment.parsed_options.endpoint, auth=self.deploy_auth.to_auth()
-        )
+        self.authenticated_get(self.environment.parsed_options.endpoint)
