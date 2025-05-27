@@ -36,28 +36,7 @@ DEFAULT_HOST := http://127.0.0.1:9081
 # Default endpoint to test
 DEFAULT_ENDPOINT := /
 
-# Function to generate Locust configuration file
-# Usage: $(call generate_locust_config,filename_suffix,processes,users,spawn_rate,run_time,description)
-define generate_locust_config
-	@printf "$(YELLOW)Setting up $(2) configuration...$(NC)\n"
-	@echo "# Locust configuration file - $(5)" > $(LOCUST_CONFIG_FILE)$(1); \
-	echo "[locust]" >> $(LOCUST_CONFIG_FILE)$(1); \
-	echo "locustfile = ./locustfiles/deployment_max_rps_single_endpoint.py" >> $(LOCUST_CONFIG_FILE)$(1); \
-	if [ -f $(LOCUST_CONFIG_FILE) ]; then \
-		echo "host = $$(grep \"host = \" $(LOCUST_CONFIG_FILE) | cut -d= -f2 | xargs)" >> $(LOCUST_CONFIG_FILE)$(1); \
-	else \
-		echo "host = $(DEFAULT_HOST)" >> $(LOCUST_CONFIG_FILE)$(1); \
-	fi; \
-	echo "users = $(3)" >> $(LOCUST_CONFIG_FILE)$(1); \
-	echo "spawn-rate = $(4)" >> $(LOCUST_CONFIG_FILE)$(1); \
-	echo "run-time = $(5)" >> $(LOCUST_CONFIG_FILE)$(1); \
-	echo "processes = $(2)" >> $(LOCUST_CONFIG_FILE)$(1); \
-	echo "stop-timeout = 10s" >> $(LOCUST_CONFIG_FILE); \
-	echo "loglevel = INFO" >> $(LOCUST_CONFIG_FILE); \
-	echo "" >> $(LOCUST_CONFIG_FILE)$(1);
-endef
 
-# Function to create or update Locust configuration with user input
 define create_locust_config
 	@if [ ! -f $(LOCUST_CONFIG_FILE) ]; then \
 		printf "$(YELLOW)First time setup: Creating Locust configuration file$(NC)\n"; \
@@ -115,9 +94,7 @@ test-deployment: _check_venv_active ## runs deployment test on deploy, optionall
 	locust --config $(LOCUST_CONFIG_FILE) \
 	$(if $(endpoint),--endpoint $(endpoint),--endpoint $(DEFAULT_ENDPOINT))
 
-test-deployment-ci: _check_venv_active ## runs deployment test on CI, optionally pass endpoint=path to test specific endpoint
-	@$(call prompt_for_credentials)
-	@$(call create_locust_config)
+test-deployment-ci: _check_venv_active $(AUTH_CREDS_FILE) $(LOCUST_CONFIG_FILE) ## runs deployment test on CI, expects all config and credentials files to be present, does not prompt
 	@printf "$(YELLOW)Starting Locust headless...$(NC)\n"
 	@export $$(cat $(AUTH_CREDS_FILE) | xargs) && \
 	locust --config $(LOCUST_CONFIG_FILE) \
