@@ -130,16 +130,27 @@ def _collect_http_exceptions(exception_cls: type[HTTPException] = HTTPException)
     return http_statuses
 
 
-def safe_status_message(message: str | None, max_length: int = 1500) -> str | None:
+def safe_status_message(message: str | None, max_length: int = 50) -> str | None:
     """
     Truncates a status-message (i.e. `reason` in HTTP errors) to a maximum length, replacing newlines with spaces.
+
+    If the message is longer than max_length, it will be truncated and "..." will be appended.
 
     This prevents issues such as:
         - `aiohttp.http_exceptions.LineTooLong`: 400, message: Got more than 8190 bytes when reading Status line is too long.
         - Multiline not allowed in HTTP reason attribute (aiohttp now raises ValueError).
 
     See:
+        - When to use http status and/or text messages https://github.com/ITISFoundation/osparc-simcore/pull/7760
         - [RFC 9112, Section 4.1: HTTP/1.1 Message Syntax and Routing](https://datatracker.ietf.org/doc/html/rfc9112#section-4.1) (status line length limits)
         - [RFC 9110, Section 15.5: Reason Phrase](https://datatracker.ietf.org/doc/html/rfc9110#section-15.5) (reason phrase definition)
     """
-    return message.replace("\n", " ")[:max_length] if message else None
+    if not message:
+        return None
+
+    flat_message = message.replace("\n", " ")
+    if len(flat_message) <= max_length:
+        return flat_message
+
+    # Truncate and add ellipsis
+    return flat_message[: max_length - 3] + "..."

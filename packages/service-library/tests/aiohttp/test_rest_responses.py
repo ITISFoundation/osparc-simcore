@@ -109,11 +109,11 @@ def tests_exception_to_response(skip_details: bool, error_code: ErrorCodeStr | N
             "Message\nwith\nnewlines",
             "Message with newlines",
         ),  # Newlines are replaced with spaces
-        ("A" * 2000, "A" * 1500),  # Long message gets truncated to max_length (1500)
+        ("A" * 100, "A" * 47 + "..."),  # Long message gets truncated with ellipsis
         (
-            "Line1\nLine2\nLine3" + "X" * 1500,
-            "Line1 Line2 Line3" + "X" * 1483,
-        ),  # Combined case: newlines and truncation
+            "Line1\nLine2\nLine3" + "X" * 100,
+            "Line1 Line2 Line3" + "X" * 30 + "...",
+        ),  # Combined case: newlines and truncation with ellipsis
     ],
     ids=[
         "none_input",
@@ -137,6 +137,9 @@ def test_safe_status_message(input_message: str | None, expected_output: str | N
     # Check length constraint is respected
     if result_custom is not None:
         assert len(result_custom) <= custom_max
+        # Check that ellipsis is added when truncated
+        if input_message and len(input_message.replace("\n", " ")) > custom_max:
+            assert result_custom.endswith("...")
 
     # Verify it can be used in a web response without raising exceptions
     try:
