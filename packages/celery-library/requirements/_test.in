@@ -11,6 +11,7 @@
 # testing
 coverage
 faker
+fakeredis
 fastapi
 docker
 httpx
@@ -18,6 +19,7 @@ pint
 pytest
 pytest-asyncio
 pytest-benchmark
+pytest-celery
 pytest-cov
 pytest-icdiff
 pytest-instafail

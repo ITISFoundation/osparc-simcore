@@ -1,3 +1,7 @@
+amqp==5.3.1
+    # via
+    #   -c requirements/_base.txt
+    #   kombu
 annotated-types==0.7.0
     # via
     #   -c requirements/_base.txt
@@ -7,6 +11,14 @@ anyio==4.9.0
     #   -c requirements/_base.txt
     #   httpx
     #   starlette
+billiard==4.2.1
+    # via
+    #   -c requirements/_base.txt
+    #   celery
+celery==5.5.2
+    # via
+    #   -c requirements/_base.txt
+    #   pytest-celery
 certifi==2025.4.26
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -18,13 +30,39 @@ charset-normalizer==3.4.2
     # via
     #   -c requirements/_base.txt
     #   requests
+click==8.2.1
+    # via
+    #   -c requirements/_base.txt
+    #   celery
+    #   click-didyoumean
+    #   click-plugins
+    #   click-repl
+click-didyoumean==0.3.1
+    # via
+    #   -c requirements/_base.txt
+    #   celery
+click-plugins==1.1.1
+    # via
+    #   -c requirements/_base.txt
+    #   celery
+click-repl==0.3.0
+    # via
+    #   -c requirements/_base.txt
+    #   celery
 coverage==7.8.2
     # via
     #   -r requirements/_test.in
     #   pytest-cov
+debugpy==1.8.14
+    # via pytest-celery
 docker==7.1.0
-    # via -r requirements/_test.in
+    # via
+    #   -r requirements/_test.in
+    #   pytest-celery
+    #   pytest-docker-tools
 faker==37.3.0
+    # via -r requirements/_test.in
+fakeredis==2.29.0
     # via -r requirements/_test.in
 fastapi==0.115.12
     # via -r requirements/_test.in
@@ -50,6 +88,11 @@ idna==3.10
     #   requests
 iniconfig==2.1.0
     # via pytest
+kombu==5.5.3
+    # via
+    #   -c requirements/_base.txt
+    #   celery
+    #   pytest-celery
 packaging==25.0
     # via
     #   -c requirements/_base.txt
@@ -63,6 +106,14 @@ pluggy==1.6.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
+prompt-toolkit==3.0.51
+    # via
+    #   -c requirements/_base.txt
+    #   click-repl
+psutil==7.0.0
+    # via
+    #   -c requirements/_base.txt
+    #   pytest-celery
 py-cpuinfo==9.0.0
     # via pytest-benchmark
 pydantic==2.11.5
@@ -74,12 +125,17 @@ pydantic-core==2.33.2
     # via
     #   -c requirements/_base.txt
     #   pydantic
+pyjwt==2.9.0
+    # via
+    #   -c requirements/_base.txt
+    #   redis
 pytest==8.3.5
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
     #   pytest-benchmark
     #   pytest-cov
+    #   pytest-docker-tools
     #   pytest-icdiff
     #   pytest-instafail
     #   pytest-mock
@@ -88,8 +144,12 @@ pytest-asyncio==1.0.0
     # via -r requirements/_test.in
 pytest-benchmark==5.1.0
     # via -r requirements/_test.in
+pytest-celery==1.2.0
+    # via -r requirements/_test.in
 pytest-cov==6.1.1
     # via -r requirements/_test.in
+pytest-docker-tools==3.1.9
+    # via pytest-celery
 pytest-icdiff==0.9
     # via -r requirements/_test.in
 pytest-instafail==0.5.0
@@ -100,6 +160,10 @@ pytest-runner==6.0.1
     # via -r requirements/_test.in
 pytest-sugar==1.0.0
     # via -r requirements/_test.in
+python-dateutil==2.9.0.post0
+    # via
+    #   -c requirements/_base.txt
+    #   celery
 python-dotenv==1.1.0
     # via
     #   -c requirements/_base.txt
@@ -109,18 +173,35 @@ pyyaml==6.0.2
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
+redis==5.3.0
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   fakeredis
 requests==2.32.3
     # via
     #   -c requirements/_base.txt
     #   docker
+setuptools==80.9.0
+    # via pytest-celery
+six==1.17.0
+    # via
+    #   -c requirements/_base.txt
+    #   python-dateutil
 sniffio==1.3.1
     # via
     #   -c requirements/_base.txt
     #   anyio
+sortedcontainers==2.4.0
+    # via fakeredis
 starlette==0.46.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   fastapi
+tenacity==9.1.2
+    # via
+    #   -c requirements/_base.txt
+    #   pytest-celery
 termcolor==3.1.0
     # via pytest-sugar
 typing-extensions==4.13.2
@@ -142,9 +223,20 @@ tzdata==2025.2
     # via
     #   -c requirements/_base.txt
     #   faker
+    #   kombu
 urllib3==2.4.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   docker
     #   requests
+vine==5.1.0
+    # via
+    #   -c requirements/_base.txt
+    #   amqp
+    #   celery
+    #   kombu
+wcwidth==0.2.13
+    # via
+    #   -c requirements/_base.txt
+    #   prompt-toolkit

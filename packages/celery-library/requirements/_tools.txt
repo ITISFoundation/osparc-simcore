@@ -11,6 +11,7 @@ cfgv==3.4.0
 click==8.2.1
     # via
     #   -c requirements/_base.txt
+    #   -c requirements/_test.txt
     #   black
     #   pip-tools
 dill==0.4.0
@@ -70,7 +71,9 @@ pyyaml==6.0.2
 ruff==0.11.11
     # via -r requirements/../../../requirements/devenv.txt
 setuptools==80.9.0
-    # via pip-tools
+    # via
+    #   -c requirements/_test.txt
+    #   pip-tools
 tomlkit==0.13.2
     # via pylint
 typing-extensions==4.13.2
