@@ -52,6 +52,8 @@ define generate_locust_config
 	echo "spawn-rate = $(4)" >> $(LOCUST_CONFIG_FILE)$(1); \
 	echo "run-time = $(5)" >> $(LOCUST_CONFIG_FILE)$(1); \
 	echo "processes = $(2)" >> $(LOCUST_CONFIG_FILE)$(1); \
+	echo "stop-timeout = 10s" >> $(LOCUST_CONFIG_FILE); \
+	echo "loglevel = INFO" >> $(LOCUST_CONFIG_FILE); \
 	echo "" >> $(LOCUST_CONFIG_FILE)$(1);
 endef
 
@@ -80,6 +82,8 @@ define create_locust_config
 		echo "spawn-rate = $$spawn_rate" >> $(LOCUST_CONFIG_FILE); \
 		echo "run-time = $$run_time" >> $(LOCUST_CONFIG_FILE); \
 		echo "processes = $$processes" >> $(LOCUST_CONFIG_FILE); \
+		echo "stop-timeout = 10s" >> $(LOCUST_CONFIG_FILE); \
+		echo "loglevel = INFO" >> $(LOCUST_CONFIG_FILE); \
 		echo "" >> $(LOCUST_CONFIG_FILE); \
 		printf "$(GREEN)Locust configuration file created. It won't be asked again.$(NC)\n"; \
 	else \
