@@ -200,8 +200,6 @@ class CompTasksRepository(BaseRepository):
             # NOTE: comp_tasks DB only trigger a notification to the webserver if an UPDATE on comp_tasks.outputs or comp_tasks.state is done
             # NOTE: an exception to this is when a frontend service changes its output since there is no node_ports, the UPDATE must be done here.
 
-            # NOTE: MD here I do not need to update the new db table!!! (remove this comment)
-
             inserted_comp_tasks_db: list[CompTaskAtDB] = []
             for comp_task_db in list_of_comp_tasks_in_project:
                 insert_stmt = insert(comp_tasks).values(
@@ -277,8 +275,6 @@ class CompTasksRepository(BaseRepository):
     async def mark_project_published_waiting_for_cluster_tasks_as_aborted(
         self, project_id: ProjectID, run_id: PositiveInt
     ) -> None:
-        # NOTE: MD here is creation/update of comp_tasks table
-
         # block all pending tasks, so the sidecars stop taking them
         async with self.db_engine.begin() as conn:
             await conn.execute(

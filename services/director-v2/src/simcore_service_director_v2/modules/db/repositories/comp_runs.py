@@ -14,7 +14,6 @@ from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import PositiveInt
-from simcore_postgres_database.utils_comp_runs import get_latest_run_id_for_project
 from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
@@ -350,16 +349,6 @@ class CompRunsRepository(BaseRepository):
             ]
 
             return cast(int, total_count), items
-
-    async def get_latest_run_id_for_project(
-        self,
-        conn: AsyncConnection | None = None,
-        *,
-        project_id: ProjectID,
-    ) -> PositiveInt:
-        return await get_latest_run_id_for_project(
-            self.db_engine, conn, project_id=f"{project_id}"
-        )
 
     async def create(
         self,

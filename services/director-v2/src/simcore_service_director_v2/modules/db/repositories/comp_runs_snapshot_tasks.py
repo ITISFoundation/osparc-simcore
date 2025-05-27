@@ -33,29 +33,6 @@ class CompRunsSnapshotTasksRepository(BaseRepository):
                     ),
                     data,
                 )
-                # rows = result.fetchall()
-                # return [CompRunSnapshotTaskAtDBGet.model_validate(row) for row in rows]
-            except Exception as e:
-                logger.error(
-                    "Failed to batch create comp run snapshot tasks: %s",
-                    e,
-                    exc_info=True,
-                )
+            except Exception:
+                logger.exception("Failed to batch create comp run snapshot tasks")
                 raise
-
-    # async def update_for_run_id_and_node_id(
-    #     self,
-    #     connection: AsyncConnection | None = None,
-    #     *,
-    #     run_id: PositiveInt,
-    #     node_id: NodeID,
-    #     data: dict,
-    # ) -> CompRunSnapshotTaskAtDBGet:
-    #     row = await update_for_run_id_and_node_id(
-    #         self.db_engine,
-    #         conn=connection,
-    #         run_id=run_id,
-    #         node_id=f"{node_id}",
-    #         data=data,
-    #     )
-    #     return CompRunSnapshotTaskAtDBGet.model_validate(row)
