@@ -8,8 +8,8 @@ import urllib.parse
 
 import faker
 import locust
+from common.base_user import OsparcWebUserBase
 from dotenv import load_dotenv
-from locust.contrib.fasthttp import FastHttpUser
 
 logging.basicConfig(level=logging.INFO)
 
@@ -18,11 +18,11 @@ fake = faker.Faker()
 load_dotenv()  # take environment variables from .env
 
 
-class WebApiUser(FastHttpUser):
+class WebApiUser(OsparcWebUserBase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
         self.email = fake.email()
+        self.password = "testtesttest"  # noqa: S105
 
     @locust.task
     def list_latest_services(self):
@@ -30,7 +30,7 @@ class WebApiUser(FastHttpUser):
         params = {"offset": 20, "limit": 20}
 
         while True:
-            response = self.client.get(base_url, params=params)
+            response = self.authenticated_get(base_url, params=params)
             response.raise_for_status()
 
             page = response.json()
@@ -46,25 +46,31 @@ class WebApiUser(FastHttpUser):
             params = dict(urllib.parse.parse_qsl(parsed_next.query))
 
     def on_start(self):
-        print("Created User ", self.email)
-        password = "testtesttest"  # noqa: S105
+        logging.info("Creating user with email: %s", self.email)
 
-        self.client.post(
+        # Register user
+        self.authenticated_post(
             "/v0/auth/register",
             json={
                 "email": self.email,
-                "password": password,
-                "confirm": password,
-            },
-        )
-        self.client.post(
-            "/v0/auth/login",
-            json={
-                "email": self.email,
-                "password": password,
+                "password": self.password,
+                "confirm": self.password,
             },
         )
 
+        # Login using the custom user credentials instead of the default ones
+        logging.info("Logging in user with email: %s", self.email)
+        response = self.authenticated_post(
+            "/v0/auth/login",
+            json={
+                "email": self.email,
+                "password": self.password,
+            },
+        )
+        response.raise_for_status()
+        logging.info("Logged in user with email: %s", self.email)
+
     def on_stop(self):
-        self.client.post("/v0/auth/logout")
-        print("Stopping", self.email)
+        # Logout
+        self.authenticated_post("/v0/auth/logout")
+        logging.info("Logged out user with email: %s", self.email)
