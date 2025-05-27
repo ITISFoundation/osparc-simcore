@@ -97,6 +97,7 @@ test-deployment: _check_venv_active ## runs deployment test on deploy
 	@$(call prompt_for_credentials)
 	@$(call create_locust_config)
 	@printf "$(YELLOW)Starting Locust...$(NC)\n"
+	@xdg-open http://localhost:8089/ &
 	@export $$(cat $(AUTH_CREDS_FILE) | xargs) && \
 	locust --config $(LOCUST_CONFIG_FILE)
 
@@ -111,6 +112,7 @@ test-deployment-with-grafana: _check_venv_active grafana-dashboards-up ## runs d
 	@$(call prompt_for_credentials)
 	@$(call create_locust_config)
 	@printf "$(YELLOW)Starting Locust with Grafana integration...$(NC)\n"
+	@xdg-open $(GRAFANA_URL)
 	@export $$(cat $(AUTH_CREDS_FILE) | xargs) && \
 	locust --config $(LOCUST_CONFIG_FILE) \
 		--grafana-url $(GRAFANA_URL) \

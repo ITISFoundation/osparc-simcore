@@ -46,9 +46,6 @@ def _(environment, **_kwargs) -> None:
 
 
 class WebApiUser(OsparcWebUserBase):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
     @task
     def get_endpoint(self) -> None:
         self.authenticated_get(self.environment.parsed_options.endpoint)
