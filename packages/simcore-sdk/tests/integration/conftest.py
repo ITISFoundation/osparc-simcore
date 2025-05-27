@@ -337,7 +337,7 @@ def _assign_config(
 @pytest.fixture
 async def r_clone_settings_factory(
     minio_s3_settings: S3Settings, storage_service: URL
-) -> Awaitable[RCloneSettings]:
+) -> Callable[[], Awaitable[RCloneSettings]]:
     async def _factory() -> RCloneSettings:
         settings = RCloneSettings(
             R_CLONE_S3=minio_s3_settings, R_CLONE_PROVIDER=S3Provider.MINIO
@@ -347,13 +347,13 @@ async def r_clone_settings_factory(
 
         return settings
 
-    return _factory()
+    return _factory
 
 
 @pytest.fixture
 async def aws_s3_cli_settings_factory(
     minio_s3_settings: S3Settings, storage_service: URL
-) -> Awaitable[AwsS3CliSettings]:
+) -> Callable[[], Awaitable[AwsS3CliSettings]]:
     async def _factory() -> AwsS3CliSettings:
         settings = AwsS3CliSettings(AWS_S3_CLI_S3=minio_s3_settings)
         if not await is_aws_s3_cli_available(settings):
@@ -361,21 +361,21 @@ async def aws_s3_cli_settings_factory(
 
         return settings
 
-    return _factory()
+    return _factory
 
 
 @pytest.fixture
 async def r_clone_settings(
-    r_clone_settings_factory: Awaitable[RCloneSettings],
+    r_clone_settings_factory: Callable[[], Awaitable[RCloneSettings]],
 ) -> RCloneSettings:
-    return await r_clone_settings_factory
+    return await r_clone_settings_factory()
 
 
 @pytest.fixture
 async def aws_s3_cli_settings(
-    aws_s3_cli_settings_factory: Awaitable[AwsS3CliSettings],
+    aws_s3_cli_settings_factory: Callable[[], Awaitable[AwsS3CliSettings]],
 ) -> AwsS3CliSettings:
-    return await aws_s3_cli_settings_factory
+    return await aws_s3_cli_settings_factory()
 
 
 @pytest.fixture
