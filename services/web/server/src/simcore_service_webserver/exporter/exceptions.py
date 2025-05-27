@@ -1,4 +1,5 @@
 from aiohttp.web import HTTPBadRequest
+from servicelib.aiohttp.rest_responses import safe_status_message
 
 
 class SDSException(HTTPBadRequest):  # pylint: disable=too-many-ancestors
@@ -6,5 +7,4 @@ class SDSException(HTTPBadRequest):  # pylint: disable=too-many-ancestors
     """Basic exception for errors raised inside the module"""
 
     def __init__(self, message: str):
-        # Multiline not allowed in HTTP reason attribute
-        super().__init__(reason=message.replace("\n", " ") if message else None)
+        super().__init__(reason=safe_status_message(message))
