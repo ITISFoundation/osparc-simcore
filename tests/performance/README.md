@@ -77,7 +77,6 @@ users = 10
 spawn-rate = 1
 run-time = 5m
 processes = 4
-stop-timeout = 10s
 loglevel = INFO
 EOF
 

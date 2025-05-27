@@ -4,6 +4,7 @@ from typing import Any
 
 import locust_plugins
 from locust import FastHttpUser, events
+from locust.argument_parser import LocustArgumentParser
 from locust.env import Environment
 
 from .auth_settings import DeploymentAuth, OsparcAuth
@@ -59,7 +60,7 @@ class OsparcUserBase(FastHttpUser):
 
 
 @events.init_command_line_parser.add_listener
-def _(parser) -> None:
+def _(parser: LocustArgumentParser) -> None:
     parser.add_argument(
         "--requires-login",
         action="store_true",
@@ -83,12 +84,20 @@ class OsparcWebUserBase(OsparcUserBase):
     """
 
     abstract = True  # This class is abstract and won't be instantiated by Locust
+    requires_login = False  # Default value, can be overridden by subclasses
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if self.environment.parsed_options.requires_login:
+        # Determine if login is required once during initialization
+        self._login_required = (
+            getattr(self.__class__, "requires_login", False)
+            or self.environment.parsed_options.requires_login
+        )
+
+        # Initialize auth if login is required
+        if self._login_required:
             self.osparc_auth = OsparcAuth()
-            _logger.debug(
+            _logger.info(
                 "Using OsparcAuth for login with username: %s",
                 self.osparc_auth.OSPARC_USER_NAME,
             )
@@ -98,7 +107,7 @@ class OsparcWebUserBase(OsparcUserBase):
         Called when a web user starts. Can be overridden by subclasses
         to implement custom startup behavior, such as logging in.
         """
-        if self.environment.parsed_options.requires_login:
+        if self._login_required:
             self._login()
 
     def on_stop(self) -> None:
@@ -106,7 +115,7 @@ class OsparcWebUserBase(OsparcUserBase):
         Called when a web user stops. Can be overridden by subclasses
         to implement custom shutdown behavior, such as logging out.
         """
-        if self.environment.parsed_options.requires_login:
+        if self._login_required:
             self._logout()
 
     def _login(self) -> None:
@@ -119,13 +128,13 @@ class OsparcWebUserBase(OsparcUserBase):
             },
         )
         response.raise_for_status()
-        logging.debug(
+        _logger.debug(
             "Logged in user with email: %s", self.osparc_auth.OSPARC_USER_NAME
         )
 
     def _logout(self) -> None:
         # Implement logout logic here
         self.authenticated_post("/v0/auth/logout")
-        logging.debug(
+        _logger.debug(
             "Logged out user with email: %s", self.osparc_auth.OSPARC_USER_NAME
         )
