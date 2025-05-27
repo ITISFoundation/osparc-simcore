@@ -21,7 +21,6 @@ import np_helpers
 import pytest
 import sqlalchemy as sa
 from faker import Faker
-from models_library.projects import ProjectIDStr
 from models_library.projects_nodes_io import (
     BaseFileLink,
     DownloadLink,
@@ -156,10 +155,10 @@ def config_value_symlink_path(symlink_path: Path) -> dict[str, Any]:
 
 @pytest.fixture(params=[True, False])
 async def option_r_clone_settings(
-    request, r_clone_settings_factory: Awaitable[RCloneSettings]
+    request, r_clone_settings_factory: Callable[[], Awaitable[RCloneSettings]]
 ) -> RCloneSettings | None:
     if request.param:
-        return await r_clone_settings_factory
+        return await r_clone_settings_factory()
     return None
 
 
@@ -174,7 +173,7 @@ async def test_default_configuration(
     await check_config_valid(
         await node_ports_v2.ports(
             user_id=user_id,
-            project_id=ProjectIDStr(project_id),
+            project_id=project_id,
             node_uuid=node_uuid,
             r_clone_settings=option_r_clone_settings,
         ),
@@ -192,7 +191,7 @@ async def test_invalid_ports(
     config_dict, _, _ = create_special_configuration()
     PORTS = await node_ports_v2.ports(
         user_id=user_id,
-        project_id=ProjectIDStr(project_id),
+        project_id=project_id,
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
     )
@@ -238,7 +237,7 @@ async def test_port_value_accessors(
 
     PORTS = await node_ports_v2.ports(
         user_id=user_id,
-        project_id=ProjectIDStr(project_id),
+        project_id=project_id,
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
     )
@@ -298,7 +297,7 @@ async def test_port_file_accessors(
 
     PORTS = await node_ports_v2.ports(
         user_id=user_id,
-        project_id=ProjectIDStr(project_id),
+        project_id=project_id,
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
     )
@@ -375,7 +374,7 @@ async def test_adding_new_ports(
     config_dict, project_id, node_uuid = create_special_configuration()
     PORTS = await node_ports_v2.ports(
         user_id=user_id,
-        project_id=ProjectIDStr(project_id),
+        project_id=project_id,
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
     )
@@ -429,7 +428,7 @@ async def test_removing_ports(
     )  # pylint: disable=W0612
     PORTS = await node_ports_v2.ports(
         user_id=user_id,
-        project_id=ProjectIDStr(project_id),
+        project_id=project_id,
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
     )
@@ -489,7 +488,7 @@ async def test_get_value_from_previous_node(
 
     PORTS = await node_ports_v2.ports(
         user_id=user_id,
-        project_id=ProjectIDStr(project_id),
+        project_id=project_id,
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
     )
@@ -541,7 +540,7 @@ async def test_get_file_from_previous_node(
     )
     PORTS = await node_ports_v2.ports(
         user_id=user_id,
-        project_id=ProjectIDStr(project_id),
+        project_id=project_id,
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
     )
@@ -598,7 +597,7 @@ async def test_get_file_from_previous_node_with_mapping_of_same_key_name(
     )
     PORTS = await node_ports_v2.ports(
         user_id=user_id,
-        project_id=ProjectIDStr(project_id),
+        project_id=project_id,
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
     )
@@ -659,7 +658,7 @@ async def test_file_mapping(
     )
     PORTS = await node_ports_v2.ports(
         user_id=user_id,
-        project_id=ProjectIDStr(project_id),
+        project_id=project_id,
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
     )
@@ -752,7 +751,7 @@ async def test_regression_concurrent_port_update_fails(
 
     PORTS = await node_ports_v2.ports(
         user_id=user_id,
-        project_id=ProjectIDStr(project_id),
+        project_id=project_id,
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
     )
@@ -841,7 +840,7 @@ async def test_batch_update_inputs_outputs(
 
     PORTS = await node_ports_v2.ports(
         user_id=user_id,
-        project_id=ProjectIDStr(project_id),
+        project_id=project_id,
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
     )
