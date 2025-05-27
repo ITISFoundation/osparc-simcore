@@ -79,7 +79,7 @@ define prompt_for_credentials
 		echo; \
 		echo "SC_USER_NAME=$$username" > $(AUTH_CREDS_FILE); \
 		echo "SC_PASSWORD=$$password" >> $(AUTH_CREDS_FILE); \
-		read -p "osparc Username (optional, press enter to skip): " osparc_username; \
+		read -p "osparc Username (required if login in osparc is necessary, press enter to skip): " osparc_username; \
 		if [ ! -z "$$osparc_username" ]; then \
 			read -sp "osparc Password: " osparc_password; \
 			echo; \
