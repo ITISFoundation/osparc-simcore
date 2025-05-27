@@ -3,7 +3,6 @@ import logging
 import sqlalchemy as sa
 from common_library.json_serialization import json_dumps, json_loads
 from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from pydantic import TypeAdapter
 from servicelib.db_asyncpg_utils import create_async_engine_and_database_ready
@@ -114,7 +113,7 @@ class DBManager:
             )
             # 2. Get latest run id for the project
             _latest_run_id = await get_latest_run_id_for_project(
-                engine, connection, project_id=ProjectID(project_id)
+                engine, connection, project_id=project_id
             )
 
             # 3. Update comp_run_snapshot_tasks table
@@ -122,7 +121,7 @@ class DBManager:
                 engine,
                 connection,
                 run_id=_latest_run_id,
-                node_id=NodeID(node_uuid),
+                node_id=node_uuid,
                 data={
                     "schema": node_configuration["schema"],
                     "inputs": node_configuration["inputs"],

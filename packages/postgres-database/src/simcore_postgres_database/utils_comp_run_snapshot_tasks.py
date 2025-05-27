@@ -1,5 +1,4 @@
 import sqlalchemy as sa
-from models_library.projects_nodes_io import NodeID
 from pydantic import PositiveInt
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
@@ -38,7 +37,7 @@ async def update_for_run_id_and_node_id(
     conn: AsyncConnection | None = None,
     *,
     run_id: PositiveInt,
-    node_id: NodeID,
+    node_id: str,
     data: dict,
 ):
     async with pass_or_acquire_connection(engine, connection=conn) as _conn:
@@ -50,7 +49,7 @@ async def update_for_run_id_and_node_id(
             )
             .where(
                 (comp_run_snapshot_tasks.c.run_id == run_id)
-                & (comp_run_snapshot_tasks.c.node_id == f"{node_id}")
+                & (comp_run_snapshot_tasks.c.node_id == node_id)
             )
             .returning(*COMP_RUN_SNAPSHOT_TASKS_DB_COLS)
         )

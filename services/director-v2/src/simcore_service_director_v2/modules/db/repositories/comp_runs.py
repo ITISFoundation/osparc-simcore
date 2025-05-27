@@ -358,7 +358,7 @@ class CompRunsRepository(BaseRepository):
         project_id: ProjectID,
     ) -> PositiveInt:
         return await get_latest_run_id_for_project(
-            self.db_engine, conn, project_id=project_id
+            self.db_engine, conn, project_id=f"{project_id}"
         )
 
     async def create(

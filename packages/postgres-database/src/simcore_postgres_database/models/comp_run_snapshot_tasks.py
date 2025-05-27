@@ -35,7 +35,6 @@ comp_run_snapshot_tasks = sa.Table(
     sa.Column(
         "project_id",
         sa.String,
-        sa.ForeignKey("comp_pipeline.project_id"),
         doc="Project that contains the node associated to this task",
     ),
     sa.Column("node_id", sa.String, doc="Node associated to this task"),

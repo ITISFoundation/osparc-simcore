@@ -1,5 +1,4 @@
 import sqlalchemy as sa
-from models_library.projects import ProjectID
 from pydantic import PositiveInt
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
@@ -11,7 +10,7 @@ async def get_latest_run_id_for_project(
     engine: AsyncEngine,
     conn: AsyncConnection | None = None,
     *,
-    project_id: ProjectID,
+    project_id: str,
 ) -> PositiveInt:
     # Get latest run per (project_uuid, user_id)
     project_and_user_latest_runs = (
@@ -21,7 +20,7 @@ async def get_latest_run_id_for_project(
             sa.func.max(comp_runs.c.iteration).label("latest_iteration"),
             sa.func.max(comp_runs.c.created).label("created"),
         )
-        .where(comp_runs.c.project_uuid == f"{project_id}")
+        .where(comp_runs.c.project_uuid == project_id)
         .group_by(comp_runs.c.project_uuid, comp_runs.c.user_id)
         .subquery("project_and_user_latest_runs")
     )

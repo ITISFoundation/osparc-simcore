@@ -27,14 +27,22 @@ class CompRunsSnapshotTasksRepository(BaseRepository):
     ) -> list[CompRunSnapshotTaskAtDBGet]:
         async with transaction_context(self.db_engine) as conn:
 
-            result = await conn.execute(
-                comp_run_snapshot_tasks.insert().returning(
-                    *COMP_RUN_SNAPSHOT_TASKS_DB_COLS
-                ),
-                data,
-            )
-            rows = result.fetchall()
-            return [CompRunSnapshotTaskAtDBGet.model_validate(row) for row in rows]
+            try:
+                result = await conn.execute(
+                    comp_run_snapshot_tasks.insert().returning(
+                        *COMP_RUN_SNAPSHOT_TASKS_DB_COLS
+                    ),
+                    data,
+                )
+                rows = result.fetchall()
+                return [CompRunSnapshotTaskAtDBGet.model_validate(row) for row in rows]
+            except Exception as e:
+                logger.error(
+                    "Failed to batch create comp run snapshot tasks: %s",
+                    e,
+                    exc_info=True,
+                )
+                raise
 
     async def update_for_run_id_and_node_id(
         self,
@@ -45,6 +53,10 @@ class CompRunsSnapshotTasksRepository(BaseRepository):
         data: dict,
     ) -> CompRunSnapshotTaskAtDBGet:
         row = await update_for_run_id_and_node_id(
-            self.db_engine, conn=connection, run_id=run_id, node_id=node_id, data=data
+            self.db_engine,
+            conn=connection,
+            run_id=run_id,
+            node_id=f"{node_id}",
+            data=data,
         )
         return CompRunSnapshotTaskAtDBGet.model_validate(row)

@@ -117,7 +117,6 @@ class DaskScheduler(BaseCompScheduler):
                     client.send_computation_tasks(
                         user_id=user_id,
                         project_id=project_id,
-                        run_id=comp_run.run_id,
                         tasks={node_id: task.image},
                         hardware_info=task.hardware_info,
                         callback=wake_up_callback,
