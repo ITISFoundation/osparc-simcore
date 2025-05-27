@@ -1,7 +1,4 @@
-from aiohttp import web
 from servicelib.aiohttp import status
-from servicelib.aiohttp.rest_responses import create_http_error
-from servicelib.aiohttp.web_exceptions_extension import get_http_error_class_or_none
 from simcore_service_webserver.director_v2.exceptions import DirectorServiceError
 
 from ...exception_handling import (
@@ -17,23 +14,6 @@ from ...wallets.errors import WalletNotEnoughCreditsError
 _exceptions_handlers_map: ExceptionHandlersMap = {}
 
 
-async def _handler_director_service_error(
-    request: web.Request, exception: Exception
-) -> web.Response:
-    assert request  # nosec
-
-    assert isinstance(exception, DirectorServiceError)  # nosec
-    return create_http_error(
-        exception,
-        reason=exception.reason,
-        http_error_cls=get_http_error_class_or_none(exception.status)
-        or web.HTTPServiceUnavailable,
-    )
-
-
-_exceptions_handlers_map[DirectorServiceError] = _handler_director_service_error
-
-
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     UserDefaultWalletNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
@@ -42,6 +22,10 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     WalletNotEnoughCreditsError: HttpErrorInfo(
         status.HTTP_402_PAYMENT_REQUIRED,
         "Wallet does not have enough credits for computations. {reason}",
+    ),
+    DirectorServiceError: HttpErrorInfo(
+        status.HTTP_503_SERVICE_UNAVAILABLE,
+        "This service is currently not available. The incident was logged and will be investigated. Please try again later.",
     ),
 }
 
