@@ -56,15 +56,17 @@ class _SyncSettings(BaseModel):
         "Both RClone and AwsS3Cli disabled",
     ],
 )
-def optional_sync_settings(
-    r_clone_settings: RCloneSettings,
-    aws_s3_cli_settings: AwsS3CliSettings,
+async def optional_sync_settings(
+    r_clone_settings_factory: Callable[[], Awaitable[RCloneSettings]],
+    aws_s3_cli_settings_factory: Callable[[], Awaitable[AwsS3CliSettings]],
     request: pytest.FixtureRequest,
 ) -> _SyncSettings:
     _rclone_enabled, _aws_s3_cli_enabled = request.param
 
-    _r_clone_settings = r_clone_settings if _rclone_enabled else None
-    _aws_s3_cli_settings = aws_s3_cli_settings if _aws_s3_cli_enabled else None
+    _r_clone_settings = await r_clone_settings_factory() if _rclone_enabled else None
+    _aws_s3_cli_settings = (
+        await aws_s3_cli_settings_factory() if _aws_s3_cli_enabled else None
+    )
 
     return _SyncSettings(
         r_clone_settings=_r_clone_settings, aws_s3_cli_settings=_aws_s3_cli_settings

@@ -5,7 +5,7 @@ from typing import cast
 
 import sqlalchemy as sa
 from aiohttp import web
-from common_library.exclude import UnSet, is_set
+from common_library.exclude import Unset, is_set
 from models_library.basic_types import IDStr
 from models_library.groups import GroupID
 from models_library.projects import ProjectID
@@ -54,9 +54,9 @@ async def list_projects_db_get_as_admin(
     connection: AsyncConnection | None = None,
     *,
     # filter
-    trashed_explicitly: bool | UnSet = UnSet.VALUE,
-    trashed_before: datetime | UnSet = UnSet.VALUE,
-    shared_workspace_id: WorkspaceID | UnSet = UnSet.VALUE,
+    trashed_explicitly: bool | Unset = Unset.VALUE,
+    trashed_before: datetime | Unset = Unset.VALUE,
+    shared_workspace_id: WorkspaceID | Unset = Unset.VALUE,
     # pagination
     offset: NonNegativeInt = 0,
     limit: PositiveInt = MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,

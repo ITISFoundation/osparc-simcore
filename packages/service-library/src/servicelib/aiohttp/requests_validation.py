@@ -209,7 +209,7 @@ async def parse_request_body_as(
             try:
                 body = await request.json()
             except json.decoder.JSONDecodeError as err:
-                raise web.HTTPBadRequest(reason=f"Invalid json in body: {err}") from err
+                raise web.HTTPBadRequest(text=f"Invalid json in body: {err}") from err
 
         if hasattr(model_schema_cls, "model_validate"):
             # NOTE: model_schema can be 'list[T]' or 'dict[T]' which raise TypeError

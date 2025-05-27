@@ -39,7 +39,6 @@ class PrunableFolder:
         """
         Deletes all paths in folder skipping the exclude set
         """
-        assert all(self.basedir in p.parents for p in exclude)  # nosec
 
         after_relpaths = {p.relative_to(self.basedir) for p in exclude}
         to_delete = self.before_relpaths.difference(after_relpaths)

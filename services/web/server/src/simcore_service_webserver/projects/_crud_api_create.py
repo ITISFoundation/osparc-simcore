@@ -469,10 +469,10 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
         )
 
     except JsonSchemaValidationError as exc:
-        raise web.HTTPBadRequest(reason="Invalid project data") from exc
+        raise web.HTTPBadRequest(text="Invalid project data") from exc
 
     except ProjectNotFoundError as exc:
-        raise web.HTTPNotFound(reason=f"Project {exc.project_uuid} not found") from exc
+        raise web.HTTPNotFound(text=f"Project {exc.project_uuid} not found") from exc
 
     except (ProjectInvalidRightsError, WorkspaceAccessForbiddenError) as exc:
         raise web.HTTPForbidden from exc
@@ -485,7 +485,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
                 user_id=user_id,
                 simcore_user_agent=simcore_user_agent,
             )
-        raise web.HTTPNotFound(reason=f"{exc}") from exc
+        raise web.HTTPNotFound(text=f"{exc}") from exc
 
     except asyncio.CancelledError:
         log.warning(

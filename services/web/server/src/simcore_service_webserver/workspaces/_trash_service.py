@@ -63,7 +63,9 @@ async def _list_root_child_folders(
 ) -> list[FolderID]:
 
     child_folders: list[FolderID] = []
-    for page_params in iter_pagination_params(limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
+    for page_params in iter_pagination_params(
+        offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+    ):
         (
             folders,
             page_params.total_number_of_items,
@@ -93,7 +95,9 @@ async def _list_root_child_projects(
 ) -> list[ProjectID]:
 
     child_projects: list[ProjectID] = []
-    for page_params in iter_pagination_params(limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
+    for page_params in iter_pagination_params(
+        offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+    ):
         (
             projects,
             page_params.total_number_of_items,
@@ -285,7 +289,9 @@ async def list_trashed_workspaces(
 ) -> list[WorkspaceID]:
     trashed_workspace_ids: list[WorkspaceID] = []
 
-    for page_params in iter_pagination_params(limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
+    for page_params in iter_pagination_params(
+        offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+    ):
         (
             page_params.total_number_of_items,
             workspaces,
@@ -326,7 +332,9 @@ async def batch_delete_trashed_workspaces_as_admin(
     deleted_workspace_ids: list[WorkspaceID] = []
     errors: list[tuple[WorkspaceID, Exception]] = []
 
-    for page_params in iter_pagination_params(limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
+    for page_params in iter_pagination_params(
+        offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+    ):
         (
             page_params.total_number_of_items,
             expired_trashed_workspaces,

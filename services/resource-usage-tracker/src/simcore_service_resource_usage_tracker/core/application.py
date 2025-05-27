@@ -2,7 +2,10 @@ import logging
 
 from fastapi import FastAPI
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
-from servicelib.fastapi.tracing import setup_tracing
+from servicelib.fastapi.tracing import (
+    initialize_fastapi_app_tracing,
+    setup_tracing,
+)
 
 from .._meta import (
     API_VERSION,
@@ -71,6 +74,9 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     setup_background_task_periodic_heartbeat_check(app)  # Requires Redis, DB
 
     setup_process_message_running_service(app)  # Requires Rabbit
+
+    if app.state.settings.RESOURCE_USAGE_TRACKER_TRACING:
+        initialize_fastapi_app_tracing(app)
 
     # ERROR HANDLERS
     setup_exception_handlers(app)
