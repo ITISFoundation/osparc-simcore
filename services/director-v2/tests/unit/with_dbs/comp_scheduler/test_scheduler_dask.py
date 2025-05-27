@@ -169,6 +169,7 @@ async def _assert_start_pipeline(
         project_id=published_project.project.uuid,
         run_metadata=run_metadata,
         use_on_demand_clusters=False,
+        filtered_comp_tasks_in_db=[],
     )
 
     # check the database is correctly updated, the run is published
@@ -1124,6 +1125,7 @@ async def test_broken_pipeline_configuration_is_not_scheduled_and_aborted(
         project_id=sleepers_project.uuid,
         run_metadata=run_metadata,
         use_on_demand_clusters=False,
+        filtered_comp_tasks_in_db=[],
     )
     with_disabled_scheduler_publisher.assert_called_once()
     # we shall have a a new comp_runs row with the new pipeline job
@@ -1251,6 +1253,7 @@ async def test_handling_of_disconnected_scheduler_dask(
         project_id=published_project.project.uuid,
         run_metadata=run_metadata,
         use_on_demand_clusters=False,
+        filtered_comp_tasks_in_db=[],
     )
 
     # since there is no cluster, there is no dask-scheduler,
@@ -1766,6 +1769,7 @@ async def test_pipeline_with_on_demand_cluster_with_not_ready_backend_waits(
         project_id=published_project.project.uuid,
         run_metadata=run_metadata,
         use_on_demand_clusters=True,
+        filtered_comp_tasks_in_db=[],
     )
 
     # we ask to use an on-demand cluster, therefore the tasks are published first
@@ -1870,6 +1874,7 @@ async def test_pipeline_with_on_demand_cluster_with_no_clusters_keeper_fails(
         project_id=published_project.project.uuid,
         run_metadata=run_metadata,
         use_on_demand_clusters=True,
+        filtered_comp_tasks_in_db=[],
     )
 
     # we ask to use an on-demand cluster, therefore the tasks are published first

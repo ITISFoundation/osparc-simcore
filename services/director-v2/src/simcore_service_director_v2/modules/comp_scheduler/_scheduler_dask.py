@@ -391,10 +391,10 @@ class DaskScheduler(BaseCompScheduler):
             node_id = task_progress_event.task_owner.node_id
             comp_tasks_repo = CompTasksRepository(self.db_engine)
             task = await comp_tasks_repo.get_task(project_id, node_id)
+            run = await CompRunsRepository(self.db_engine).get(user_id, project_id)
             if task.state in WAITING_FOR_START_STATES:
                 task.state = RunningState.STARTED
                 task.progress = task_progress_event.progress
-                run = await CompRunsRepository(self.db_engine).get(user_id, project_id)
                 await self._process_started_tasks(
                     [task],
                     user_id=user_id,
@@ -405,7 +405,7 @@ class DaskScheduler(BaseCompScheduler):
                 )
             else:
                 await comp_tasks_repo.update_project_task_progress(
-                    project_id, node_id, task_progress_event.progress
+                    project_id, node_id, run.run_id, task_progress_event.progress
                 )
             await publish_service_progress(
                 self.rabbitmq_client,

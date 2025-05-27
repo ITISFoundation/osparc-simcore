@@ -284,6 +284,7 @@ class BaseCompScheduler(ABC):
         self,
         user_id: UserID,
         project_id: ProjectID,
+        run_id: PositiveInt,
         iteration: Iteration,
         dag: nx.DiGraph,
     ) -> None:
@@ -322,7 +323,7 @@ class BaseCompScheduler(ABC):
             await asyncio.gather(
                 *(
                     comp_tasks_repo.update_project_task_last_heartbeat(
-                        t.project_id, t.node_id, utc_now
+                        t.project_id, t.node_id, run_id, utc_now
                     )
                     for t in running_tasks
                 )
@@ -643,7 +644,7 @@ class BaseCompScheduler(ABC):
                 )
                 # 5. send a heartbeat
                 await self._send_running_tasks_heartbeat(
-                    user_id, project_id, iteration, dag
+                    user_id, project_id, comp_run.run_id, iteration, dag
                 )
 
                 # 6. Update the run result

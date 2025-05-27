@@ -57,7 +57,7 @@ from models_library.projects_state import RunningState
 from models_library.resource_tracker import HardwareInfo
 from models_library.services import ServiceRunID
 from models_library.users import UserID
-from pydantic import PositiveInt, TypeAdapter, ValidationError
+from pydantic import TypeAdapter, ValidationError
 from pydantic.networks import AnyUrl
 from servicelib.logging_utils import log_catch, log_context
 from settings_library.s3 import S3Settings
@@ -267,7 +267,6 @@ class DaskClient:
         *,
         user_id: UserID,
         project_id: ProjectID,
-        run_id: PositiveInt,
         tasks: dict[NodeID, Image],
         callback: _UserCallbackInSepThread,
         remote_fct: ContainerRemoteFct | None = None,
