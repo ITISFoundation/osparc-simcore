@@ -151,7 +151,7 @@ async def test_task_result_task_result_is_an_error(
 
     url = TypeAdapter(AnyHttpUrl).validate_python("http://backgroud.testserver.io/")
     client = Client(app=bg_task_app, async_client=async_client, base_url=url)
-    with pytest.raises(RuntimeError) as exec_info:
+    with pytest.raises(RuntimeError, match="I am failing as requested"):
         async with periodic_task_result(
             client,
             task_id,
@@ -159,7 +159,6 @@ async def test_task_result_task_result_is_an_error(
             status_poll_interval=TASK_SLEEP_INTERVAL / 3,
         ):
             pass
-    assert f"{exec_info.value}" == "I am failing as requested"
     await _assert_task_removed(async_client, task_id, router_prefix)
 
 
