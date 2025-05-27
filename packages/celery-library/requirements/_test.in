@@ -12,6 +12,7 @@
 coverage
 faker
 fastapi
+docker
 httpx
 pint
 pytest
