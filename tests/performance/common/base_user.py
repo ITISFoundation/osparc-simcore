@@ -36,26 +36,31 @@ class OsparcUserBase(FastHttpUser):
     def authenticated_get(self, url, **kwargs):
         """Make GET request with deployment auth"""
         kwargs.setdefault("auth", self.deploy_auth.to_auth())
+        kwargs.setdefault("headers", {"Accept-Encoding": "gzip, deflate"})
         return self.client.get(url, **kwargs)
 
     def authenticated_post(self, url, **kwargs):
         """Make POST request with deployment auth"""
         kwargs.setdefault("auth", self.deploy_auth.to_auth())
+        kwargs.setdefault("headers", {"Accept-Encoding": "gzip, deflate"})
         return self.client.post(url, **kwargs)
 
     def authenticated_put(self, url, **kwargs):
         """Make PUT request with deployment auth"""
         kwargs.setdefault("auth", self.deploy_auth.to_auth())
+        kwargs.setdefault("headers", {"Accept-Encoding": "gzip, deflate"})
         return self.client.put(url, **kwargs)
 
     def authenticated_delete(self, url, **kwargs):
         """Make DELETE request with deployment auth"""
         kwargs.setdefault("auth", self.deploy_auth.to_auth())
+        kwargs.setdefault("headers", {"Accept-Encoding": "gzip, deflate"})
         return self.client.delete(url, **kwargs)
 
     def authenticated_patch(self, url, **kwargs):
         """Make PATCH request with deployment auth"""
         kwargs.setdefault("auth", self.deploy_auth.to_auth())
+        kwargs.setdefault("headers", {"Accept-Encoding": "gzip, deflate"})
         return self.client.patch(url, **kwargs)
 
 
