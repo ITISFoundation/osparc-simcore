@@ -26,6 +26,8 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     ),
     DirectorServiceError: HttpErrorInfo(
         status.HTTP_503_SERVICE_UNAVAILABLE,
+        # This error is raised when the director service raises an unhandled exception.
+        # Most likely the director service is down or misconfigured so the user is asked to try again later.
         "This service is temporarily unavailable. The incident was logged and will be investigated. "
         + MSG_TRY_AGAIN_OR_SUPPORT,
     ),
