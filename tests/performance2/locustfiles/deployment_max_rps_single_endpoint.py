@@ -11,10 +11,9 @@
 import logging
 
 import locust_plugins
+from common.auth_settings import DeploymentAuth, OsparcAuth
 from locust import events, task
 from locust.contrib.fasthttp import FastHttpUser
-
-from tests.performance2.common.auth_settings import DeploymentAuth, OsparcAuth
 
 logging.basicConfig(level=logging.INFO)
 
