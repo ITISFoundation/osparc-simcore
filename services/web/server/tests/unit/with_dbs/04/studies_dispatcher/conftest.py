@@ -22,10 +22,11 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatc
         {
             "WEBSERVER_ACTIVITY": "null",
             "WEBSERVER_CATALOG": "null",
-            "WEBSERVER_NOTIFICATIONS": "0",
             "WEBSERVER_DIAGNOSTICS": "null",
             "WEBSERVER_EXPORTER": "null",
+            "WEBSERVER_FUNCTIONS": "0",
             "WEBSERVER_GROUPS": "1",
+            "WEBSERVER_NOTIFICATIONS": "0",
             "WEBSERVER_PRODUCTS": "1",
             "WEBSERVER_PUBLICATIONS": "0",
             "WEBSERVER_RABBITMQ": "null",

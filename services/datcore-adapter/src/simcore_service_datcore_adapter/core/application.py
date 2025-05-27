@@ -10,7 +10,10 @@ from servicelib.fastapi.monitoring import (
     setup_prometheus_instrumentation,
 )
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
-from servicelib.fastapi.tracing import setup_tracing
+from servicelib.fastapi.tracing import (
+    initialize_fastapi_app_tracing,
+    setup_tracing,
+)
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from .._meta import API_VERSION, API_VTAG, APP_NAME
@@ -75,6 +78,9 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
             BaseHTTPMiddleware, dispatch=timing_middleware.add_process_time_header
         )
     app.add_middleware(GZipMiddleware)
+
+    if app.state.settings.DATCORE_ADAPTER_TRACING:
+        initialize_fastapi_app_tracing(app)
 
     # events
     app.add_event_handler("startup", on_startup)

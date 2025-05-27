@@ -4,7 +4,7 @@ from typing import Any, cast
 
 import sqlalchemy as sa
 from aiohttp import web
-from common_library.exclude import UnSet, is_unset
+from common_library.exclude import Unset, is_unset
 from common_library.users_enums import AccountRequestStatus, UserRole
 from models_library.groups import GroupID
 from models_library.products import ProductName
@@ -565,7 +565,7 @@ async def list_user_pre_registrations(
     connection: AsyncConnection | None = None,
     *,
     filter_by_pre_email: str | None = None,
-    filter_by_product_name: ProductName | UnSet = UnSet.VALUE,
+    filter_by_product_name: ProductName | Unset = Unset.VALUE,
     filter_by_account_request_status: AccountRequestStatus | None = None,
     pagination_limit: int = 50,
     pagination_offset: int = 0,

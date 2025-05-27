@@ -1,10 +1,11 @@
 import asyncio
 import hashlib
 import shutil
+from collections.abc import Iterator
 from contextlib import contextmanager
 from logging import Logger
 from pathlib import Path
-from typing import Final, Iterator, Protocol
+from typing import Final, Protocol
 
 # https://docs.python.org/3/library/shutil.html#shutil.rmtree
 # https://docs.python.org/3/library/os.html#os.remove
@@ -13,11 +14,13 @@ from aiofiles.os import wrap as sync_to_async
 from pydantic import ByteSize, TypeAdapter
 
 CHUNK_4KB: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("4kb")  # 4K blocks
+CHUNK_8MB: Final[ByteSize] = TypeAdapter(ByteSize).validate_python(
+    "8MiB"
+)  # 8mIB blocks
 
 
 class AsyncStream(Protocol):
-    async def read(self, size: int = -1) -> bytes:
-        ...
+    async def read(self, size: int = -1) -> bytes: ...
 
 
 _shutil_rmtree = sync_to_async(shutil.rmtree)
@@ -45,7 +48,7 @@ async def remove_directory(
 
 
 async def create_sha256_checksum(
-    async_stream: AsyncStream, *, chunk_size: ByteSize = CHUNK_4KB
+    async_stream: AsyncStream, *, chunk_size: ByteSize = CHUNK_8MB
 ) -> str:
     """
     Usage:

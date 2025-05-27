@@ -19,7 +19,11 @@ from models_library.api_schemas_catalog.services import (
 from models_library.api_schemas_catalog.services_ports import ServicePortGet
 from models_library.products import ProductName
 from models_library.rest_pagination import PageOffsetInt
-from models_library.rpc_pagination import PageLimitInt, PageRpc
+from models_library.rpc_pagination import (
+    DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+    PageLimitInt,
+    PageRpc,
+)
 from models_library.services_enums import ServiceType
 from models_library.services_history import ServiceRelease
 from models_library.services_regex import (
@@ -28,7 +32,7 @@ from models_library.services_regex import (
 )
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pydantic import NonNegativeInt, TypeAdapter, validate_call
+from pydantic import TypeAdapter, validate_call
 from pytest_mock import MockType
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 
@@ -51,8 +55,8 @@ class CatalogRpcSideEffects:
         *,
         product_name: ProductName,
         user_id: UserID,
-        limit: PageLimitInt,
-        offset: NonNegativeInt,
+        limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+        offset: PageOffsetInt = 0,
         filters: ServiceListFilters | None = None,
     ):
         assert rpc_client
@@ -158,8 +162,8 @@ class CatalogRpcSideEffects:
         product_name: ProductName,
         user_id: UserID,
         service_key: ServiceKey,
-        offset: PageOffsetInt,
-        limit: PageLimitInt,
+        limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+        offset: PageOffsetInt = 0,
         filters: ServiceListFilters | None = None,
     ) -> PageRpc[ServiceRelease]:
 
@@ -208,8 +212,8 @@ class CatalogRpcSideEffects:
         *,
         product_name: ProductName,
         user_id: UserID,
-        limit: PageLimitInt,
-        offset: NonNegativeInt,
+        limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+        offset: PageOffsetInt = 0,
         filters: ServiceListFilters | None = None,
     ):
         assert rpc_client
@@ -274,7 +278,7 @@ class ZeroListingCatalogRpcSideEffects:
         return PageRpc[ServiceRelease].create(
             [],
             total=0,
-            limit=10,
+            limit=DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
             offset=0,
         )
 
@@ -282,6 +286,6 @@ class ZeroListingCatalogRpcSideEffects:
         return PageRpc[ServiceSummary].create(
             [],
             total=0,
-            limit=10,
+            limit=DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
             offset=0,
         )
