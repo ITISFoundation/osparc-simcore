@@ -142,9 +142,9 @@ async def _forward_request_to_storage(
                     reason=await resp.text(), content_type=resp.content_type
                 )
             case status.HTTP_404_NOT_FOUND:
-                raise web.HTTPNotFound(reason=await resp.text())
+                raise web.HTTPNotFound(text=await resp.text())
             case _ if resp.status >= status.HTTP_400_BAD_REQUEST:
-                raise web.HTTPError(reason=await resp.text())
+                raise web.HTTPError(text=await resp.text())
             case _:
                 payload = await resp.json()
                 return _ResponseTuple(payload=payload, status_code=resp.status)

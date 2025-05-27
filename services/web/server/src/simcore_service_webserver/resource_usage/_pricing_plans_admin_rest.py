@@ -58,7 +58,7 @@ def _handle_pricing_plan_admin_exceptions(handler: Handler):
             return await handler(request)
 
         except (ValueError, PricingUnitDuplicationError) as exc:
-            raise web.HTTPBadRequest(reason=f"{exc}") from exc
+            raise web.HTTPBadRequest(text=f"{exc}") from exc
 
         except RPCServerError as exc:
             # NOTE: This will be improved; we will add a mapping between

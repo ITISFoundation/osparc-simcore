@@ -97,3 +97,58 @@ def tests_exception_to_response(skip_details: bool, error_code: ErrorCodeStr | N
     assert response_json["error"]["message"] == expected_reason
     assert response_json["error"]["supportId"] == error_code
     assert response_json["error"]["status"] == response.status
+
+
+@pytest.mark.parametrize(
+    "input_message, expected_output",
+    [
+        (None, None),  # None input returns None
+        ("", None),  # Empty string returns None
+        ("Simple message", "Simple message"),  # Simple message stays the same
+        (
+            "Message\nwith\nnewlines",
+            "Message with newlines",
+        ),  # Newlines are replaced with spaces
+        ("A" * 100, "A" * 47 + "..."),  # Long message gets truncated with ellipsis
+        (
+            "Line1\nLine2\nLine3" + "X" * 100,
+            "Line1 Line2 Line3" + "X" * 30 + "...",
+        ),  # Combined case: newlines and truncation with ellipsis
+    ],
+    ids=[
+        "none_input",
+        "empty_string",
+        "simple_message",
+        "newlines_replaced",
+        "long_message_truncated",
+        "newlines_and_truncation",
+    ],
+)
+def test_safe_status_message(input_message: str | None, expected_output: str | None):
+    from servicelib.aiohttp.rest_responses import safe_status_message
+
+    result = safe_status_message(input_message)
+    assert result == expected_output
+
+    # Test with custom max_length
+    custom_max = 10
+    result_custom = safe_status_message(input_message, max_length=custom_max)
+
+    # Check length constraint is respected
+    if result_custom is not None:
+        assert len(result_custom) <= custom_max
+        # Check that ellipsis is added when truncated
+        if input_message and len(input_message.replace("\n", " ")) > custom_max:
+            assert result_custom.endswith("...")
+
+    # Verify it can be used in a web response without raising exceptions
+    try:
+        # This would fail with long or multiline reasons
+        if result is not None:
+            web.Response(reason=result)
+
+        # Test with custom length result too
+        if result_custom is not None:
+            web.Response(reason=result_custom)
+    except ValueError:
+        pytest.fail("safe_status_message result caused an exception in web.Response")

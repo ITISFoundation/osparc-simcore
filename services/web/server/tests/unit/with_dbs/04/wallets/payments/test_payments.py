@@ -334,9 +334,6 @@ async def test_billing_info_missing_error(
     assert not data
     assert MSG_BILLING_DETAILS_NOT_DEFINED_ERROR in error["message"]
 
-    assert response.reason
-    assert MSG_BILLING_DETAILS_NOT_DEFINED_ERROR in response.reason
-
 
 async def test_payment_not_found(
     latest_osparc_price: Decimal,
@@ -356,7 +353,7 @@ async def test_payment_not_found(
 
     data, error = await assert_status(response, status.HTTP_404_NOT_FOUND)
     assert data is None
-    error_msg = error["errors"][0]["message"]
+    error_msg = error["message"]
     assert payment_id in error_msg
     assert ":cancel" not in error_msg
 
@@ -391,7 +388,7 @@ async def test_payment_on_wallet_without_access(
         assert data is None
         assert error
 
-        error_msg = error["errors"][0]["message"]
+        error_msg = error["message"]
         assert f"{wallet.wallet_id}" in error_msg
 
 

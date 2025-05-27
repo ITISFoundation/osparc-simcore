@@ -32,7 +32,7 @@ async def add_project_tag(request: web.Request):
             request.match_info["project_uuid"],
         )
     except KeyError as err:
-        raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
+        raise web.HTTPBadRequest(text=f"Invalid request parameter {err}") from err
 
     project = await tags_api.add_tag(
         request.app,

@@ -301,7 +301,7 @@ async def register(request: web.Request):
 
             await db.delete_confirmation_and_user(user, _confirmation)
 
-            raise web.HTTPServiceUnavailable(reason=user_error_msg) from err
+            raise web.HTTPServiceUnavailable(text=user_error_msg) from err
 
         return flash_response(
             "You are registered successfully! To activate your account, please, "

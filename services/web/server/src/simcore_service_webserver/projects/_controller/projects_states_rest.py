@@ -63,7 +63,7 @@ async def open_project(request: web.Request) -> web.Response:
         client_session_id = await request.json()
 
     except json.JSONDecodeError as exc:
-        raise web.HTTPBadRequest(reason="Invalid request body") from exc
+        raise web.HTTPBadRequest(text="Invalid request body") from exc
 
     try:
         project_type: ProjectType = await _projects_service.get_project_type(
@@ -74,7 +74,7 @@ async def open_project(request: web.Request) -> web.Response:
         )
         if project_type is ProjectType.TEMPLATE and user_role < UserRole.USER:
             # only USERS/TESTERS can do that
-            raise web.HTTPForbidden(reason="Wrong user role to open/edit a template")
+            raise web.HTTPForbidden(text="Wrong user role to open/edit a template")
 
         project = await _projects_service.get_project_for_user(
             request.app,
@@ -101,7 +101,7 @@ async def open_project(request: web.Request) -> web.Response:
             app=request.app,
             max_number_of_studies_per_user=product.max_open_studies_per_user,
         ):
-            raise HTTPLockedError(reason="Project is locked, try later")
+            raise HTTPLockedError(text="Project is locked, try later")
 
         # the project can be opened, let's update its product links
         await _projects_service.update_project_linked_product(
@@ -175,7 +175,7 @@ async def close_project(request: web.Request) -> web.Response:
         client_session_id = await request.json()
 
     except json.JSONDecodeError as exc:
-        raise web.HTTPBadRequest(reason="Invalid request body") from exc
+        raise web.HTTPBadRequest(text="Invalid request body") from exc
 
     # ensure the project exists
     await _projects_service.get_project_for_user(
