@@ -14,7 +14,7 @@ import locust_plugins
 from common.base_user import OsparcWebUserBase
 from locust import events, task
 
-logging.basicConfig(level=logging.INFO)
+_logger = logging.getLogger(__name__)
 
 # NOTE: 'import locust_plugins' is necessary to use --check-fail-ratio
 # this assert is added to avoid that pycln pre-commit hook does not
@@ -41,8 +41,8 @@ def _(parser) -> None:
 
 @events.init.add_listener
 def _(environment, **_kwargs) -> None:
-    logging.info("Testing endpoint: %s", environment.parsed_options.endpoint)
-    logging.info("Requires login: %s", environment.parsed_options.requires_login)
+    _logger.info("Testing endpoint: %s", environment.parsed_options.endpoint)
+    _logger.info("Requires login: %s", environment.parsed_options.requires_login)
 
 
 class WebApiUser(OsparcWebUserBase):
