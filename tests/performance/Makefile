@@ -38,8 +38,8 @@ define create_locust_config
 	@if [ ! -f $(LOCUST_CONFIG_FILE) ]; then \
 		printf "$(YELLOW)First time setup: Creating Locust configuration file$(NC)\n"; \
 		printf "Available locust files in locustfiles/:\n"; \
-		find locustfiles -type f -name '*.py' ! -name '__init__.py' -printf '  %p\n'; \
-		find locustfiles -type f -name 'workflow.py' -printf '  %p\n'; \
+		find locustfiles -maxdepth 1 -type f -name '*.py' ! -name '__init__.py' -printf '  %p\n'; \
+		find locustfiles -mindepth 2 -type f -name 'workflow.py' -printf '  %p\n'; \
 		read -p "Locust file to use [./locustfiles/deployment_max_rps_single_endpoint.py]: " locustfile; \
 		locustfile=$${locustfile:-./locustfiles/deployment_max_rps_single_endpoint.py}; \
 		read -p "Number of processes [$(DEFAULT_PROCESSES)]: " processes; \
