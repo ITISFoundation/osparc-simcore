@@ -1,3 +1,5 @@
+from typing import cast
+
 import sqlalchemy as sa
 from pydantic import PositiveInt
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
@@ -67,4 +69,4 @@ async def get_latest_run_id_for_project(
         row = result.one_or_none()
         if not row:
             raise ValueError("improve")
-        return row.run_id
+        return cast(PositiveInt, row.run_id)
