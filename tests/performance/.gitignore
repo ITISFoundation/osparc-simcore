@@ -1,0 +1,8 @@
+# Ignore credentials file
+.auth-credentials.env
+
+# Ignore all locust configuration files
+.locust.conf*
+
+# ignore test reports
+*.html

@@ -1,33 +1,91 @@
-# performance testing using [locust.io](https://docs.locust.io/en/stable/index.html)
+# osparc-simcore Performance Test Suite
 
-Locust allows simple testing of endpoints, and checks for response time, response type. It also allows to create useful reports.
+This directory contains performance testing tools and scripts for osparc-simcore, using [Locust](https://locust.io/) for load testing. The suite is designed for both interactive (developer) and CI (automation) usage, with robust credential/config prompts and support for result visualization in Grafana.
 
-## configuration
+## Makefile Targets
 
-In the [locust_files] folder are located the test files.
+All main operations are managed via the provided `Makefile`. Ensure you have a Python virtual environment activated and all dependencies installed before running the targets.
 
-## Usage
+### Main Targets
 
-1. All settings are passed to the locust container as environment variables in `.env`. To generate locust env vars, run `make config` with appropriate `input`. To see what the possible settings are, run `make config input="--help"`. E.g. you could run
-```bash
-make config input="--LOCUST_HOST=https://api.osparc-master.speag.com
---LOCUST_USERS=100 --LOCUST_RUN_TIME=0:10:00 --LOCUST_LOCUSTFILE=locust_files/platform_ping_test.py"
+- **`make test-deployment`**
+  Interactively prompts for credentials and Locust configuration, then runs a Locust test. If required files are missing, you will be prompted for:
+  - SC (Simcore) username and password
+  - Optionally, OSPARC username and password (press Enter to skip)
+  - Locust configuration (target host, users, etc.)
+  - Locust file selection: a list of available `.py` files (excluding `__init__.py`) and `workflow.py` in subfolders will be shown; enter the path to the desired file.
+
+- **`make test-deployment-with-grafana`**
+  Like `test-deployment`, but also starts Grafana dashboards for monitoring. Prompts for credentials and configuration if needed.
+
+- **`make test-deployment-ci`**
+  Runs a Locust test in CI mode. Expects `.auth-credentials.env` and `.locust.conf` to already exist (no prompts). Fails if these files are missing. Use this for automation and CI pipelines.
+
+- **`make clear-credentials`**
+  Removes cached credentials (`.auth-credentials.env`).
+
+- **`make clear-locust-config`**
+  Removes Locust configuration files (`.locust.conf`).
+
+- **`make clear`**
+  Removes both credentials and Locust config files.
+
+
+
+## Locust File Selection
+
+When prompted to select a Locust file, the script will list all available `.py` files (excluding `__init__.py`) and any `workflow.py` in subfolders. Enter the path to the file you wish to use (e.g., `locustfiles/deployment_max_rps_single_endpoint.py`).
+
+## Visualizing Test Results with Locust UI
+
+When running Locust (`make test-deployment`), open the following website in your browser to visualize the performance test dashboards:
+
+- [http://127.0.0.1:8089/](http://127.0.0.1:8089/)
+
+## Visualizing Test Results with Grafana
+
+When running with Grafana integration (`make test-deployment-with-grafana`), open the following website in your browser to visualize the performance test dashboards:
+
+- [http://127.0.0.1:3000/](http://127.0.0.1:3000/)
+
+## Example: Running in CI
+
+To use the `test-deployment-ci` target in a CI pipeline (e.g., GitLab CI), you must first generate the required files non-interactively. For example:
+
+```sh
+# Set credentials as environment variables (in CI, use CI/CD secrets)
+export SC_USER_NAME=youruser
+export SC_PASSWORD=yourpass
+# Optionally for osparc login
+export OSPARC_USER_NAME=osparcuser
+export OSPARC_PASSWORD=osparcpass
+
+# Create the credentials file
+cat <<EOF > .auth-credentials.env
+SC_USER_NAME=$SC_USER_NAME
+SC_PASSWORD=$SC_PASSWORD
+OSPARC_USER_NAME=$OSPARC_USER_NAME
+OSPARC_PASSWORD=$OSPARC_PASSWORD
+EOF
+
+# Create a Locust config file (adjust locustfile path as needed)
+cat <<EOF > .locust.conf
+[locust]
+locustfile = ./locustfiles/deployment_max_rps_single_endpoint.py
+host = http://127.0.0.1:9081
+users = 10
+spawn-rate = 1
+run-time = 5m
+processes = 4
+loglevel = INFO
+EOF
+
+# Run the CI target
+make test-deployment-ci
 ```
-This will validate your settings and you should be good to go once you see a the settings printed in your terminal.
 
-2. Once you have all settings setup you run your test script using the Make `test` recipe:
-```bash
-make test-up
-```
+In a GitLab CI YAML job, you can use these steps in the `script:` section, using CI/CD variables for secrets.
 
-3. If you want to clean up after your tests (remove docker containers) you run `make test-down`
+---
 
-## Dashboards for visualization
-- You can visualize the results of your tests (in real time) in a collection of beautiful [Grafana dashboards](https://github.com/SvenskaSpel/locust-plugins/tree/master/locust_plugins/dashboards).
-- To do this, run `make dashboards-up`. If you are on linux you should see your browser opening `localhost:3000`, where you can view the dashboards. If the browser doesn't open automatically, do it manually and navigate to `localhost:3000`.The way you tell locust to send test results to the database/grafana is by ensuring `LOCUST_TIMESCALE=1` (see how to generate settings in [usage](#usage))
-- When you are done you run `make dashboards-down` to clean up.
-- If you are using VPN you will need to forward port 3000 to your local machine to view the dashboard.
-
-
-## Tricky settings 🚨
-- `LOCUST_TIMESCALE` tells locust whether or not to send data to the database associated with visualizing the results. If you are not using the Grafana [dashboards](#dashboards-for-visualization) you should set `LOCUST_TIMESCALE=0`.
+For more details, see the Makefile and comments in this directory. If you encounter issues or need to update the workflow, please refer to the latest Makefile and scripts for guidance.
