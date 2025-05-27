@@ -50,14 +50,14 @@ def _(environment, **_kwargs) -> None:
 class WebApiUser(FastHttpUser):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.auth = DeploymentAuth().to_auth()
+        self.deploy_auth = DeploymentAuth()
         self.endpoint = _endpoint_holder["endpoint"]
         self.osparc_auth = OsparcAuth()
         self.requires_login = False
 
     @task
     def get_endpoint(self) -> None:
-        self.client.get(self.endpoint, auth=self.auth)
+        self.client.get(self.endpoint, auth=self.deploy_auth.to_auth())
 
     def _login(self) -> None:
         # Implement login logic here
