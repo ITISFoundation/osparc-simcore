@@ -1,6 +1,6 @@
 from servicelib.aiohttp import status
 from simcore_service_webserver.constants import MSG_TRY_AGAIN_OR_SUPPORT
-from simcore_service_webserver.director_v2.exceptions import DirectorServiceError
+from simcore_service_webserver.director_v2.exceptions import DirectorV2ServiceError
 
 from ...exception_handling import (
     ExceptionHandlersMap,
@@ -24,7 +24,7 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
         status.HTTP_402_PAYMENT_REQUIRED,
         "Wallet does not have enough credits for computations. {reason}",
     ),
-    DirectorServiceError: HttpErrorInfo(
+    DirectorV2ServiceError: HttpErrorInfo(
         status.HTTP_503_SERVICE_UNAVAILABLE,
         # This error is raised when the director service raises an unhandled exception.
         # Most likely the director service is down or misconfigured so the user is asked to try again later.
