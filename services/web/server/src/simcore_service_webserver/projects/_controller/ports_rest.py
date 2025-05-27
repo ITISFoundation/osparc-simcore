@@ -101,7 +101,7 @@ async def update_project_inputs(request: web.Request) -> web.Response:
     for input_update in inputs_updates:
         node_id = input_update.key
         if node_id not in current_inputs:
-            raise web.HTTPBadRequest(reason=f"Invalid input key [{node_id}]")
+            raise web.HTTPBadRequest(text=f"Invalid input key [{node_id}]")
 
         workbench[node_id].outputs = {KeyIDStr("out_1"): input_update.value}
         partial_workbench_data[node_id] = workbench[node_id].model_dump(

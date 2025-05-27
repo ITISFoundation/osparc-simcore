@@ -1,7 +1,7 @@
-""" Defines **async** handlers for socket.io server
+"""Defines **async** handlers for socket.io server
 
-    SEE https://pypi.python.org/pypi/python-socketio
-    SEE http://python-socketio.readthedocs.io/en/latest/
+SEE https://pypi.python.org/pypi/python-socketio
+SEE http://python-socketio.readthedocs.io/en/latest/
 """
 
 import logging
@@ -62,7 +62,7 @@ def auth_user_factory(socket_id: SocketID):
             _logger.error(
                 "Tab ID is missing", extra=get_log_record_extra(user_id=user_id)
             )
-            raise web.HTTPUnauthorized(reason=_MSG_UNAUTHORIZED_MISSING_SESSION_INFO)
+            raise web.HTTPUnauthorized(text=_MSG_UNAUTHORIZED_MISSING_SESSION_INFO)
 
         # here we keep the original HTTP request in the socket session storage
         sio = get_socket_server(app)

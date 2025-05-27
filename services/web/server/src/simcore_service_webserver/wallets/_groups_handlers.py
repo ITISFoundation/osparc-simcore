@@ -1,6 +1,4 @@
-""" Handlers for project comments operations
-
-"""
+"""Handlers for project comments operations"""
 
 import functools
 import logging
@@ -36,10 +34,10 @@ def _handle_wallets_groups_exceptions(handler: Handler):
             return await handler(request)
 
         except WalletGroupNotFoundError as exc:
-            raise web.HTTPNotFound(reason=f"{exc}") from exc
+            raise web.HTTPNotFound(text=f"{exc}") from exc
 
         except WalletAccessForbiddenError as exc:
-            raise web.HTTPForbidden(reason=f"{exc}") from exc
+            raise web.HTTPForbidden(text=f"{exc}") from exc
 
     return wrapper
 
@@ -97,13 +95,13 @@ async def list_wallet_groups(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
 
-    wallets: list[
-        WalletGroupGet
-    ] = await _groups_api.list_wallet_groups_by_user_and_wallet(
-        request.app,
-        user_id=req_ctx.user_id,
-        wallet_id=path_params.wallet_id,
-        product_name=req_ctx.product_name,
+    wallets: list[WalletGroupGet] = (
+        await _groups_api.list_wallet_groups_by_user_and_wallet(
+            request.app,
+            user_id=req_ctx.user_id,
+            wallet_id=path_params.wallet_id,
+            product_name=req_ctx.product_name,
+        )
     )
 
     return envelope_json_response(wallets, web.HTTPOk)
