@@ -1,0 +1,5 @@
+locust
+locust-plugins[dashboards]
+pydantic
+pydantic-settings
+tenacity
