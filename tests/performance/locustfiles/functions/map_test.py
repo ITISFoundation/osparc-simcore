@@ -1,20 +1,24 @@
 # /// script
 # requires-python = ">=3.11"
 # dependencies = [
+#     "httpx",
+#     "matplotlib",
 #     "osparc>=0.8.3.post0.dev26",
 #     "tenacity",
 # ]
 # ///
 
 
+import argparse
 import json
 import os
-import time
-import zipfile
+from datetime import datetime, timedelta
 from pathlib import Path
 
-# import osparc
+import matplotlib.pyplot as plt
 import osparc_client
+from httpx import BasicAuth, Client, HTTPStatusError
+from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_exponential
 
 _SCRIPT_DIR = Path(__file__).parent
 _MAIN_FILE = _SCRIPT_DIR / "main.py"
@@ -28,7 +32,8 @@ _SOLVER_KEY = "simcore/services/comp/s4l-python-runner"
 _SOLVER_VERSION = "1.2.200"
 
 
-def main():
+def main(log_job: bool = False):
+
     url = os.environ.get("OSPARC_API_URL")
     assert url
     key = os.environ.get("OSPARC_API_KEY")
@@ -39,6 +44,7 @@ def main():
 
     uploaded_files = []
     registered_functions = []
+    job_statuses = dict()
 
     with osparc_client.ApiClient(configuration) as api_client:
         try:
@@ -91,38 +97,33 @@ def main():
             function_id = registered_function.to_dict().get("uid")
             assert function_id
 
-            received_function = api_instance.get_function(function_id)
-
             function_job = api_instance.run_function(
                 function_id, {"input_3": values_file}
             )
 
+            print(f"function_job: {function_job.to_dict()}")
+
             function_job_uid = function_job.to_dict().get("uid")
             assert function_job_uid
 
-            while (
-                job_status := job_api_instance.function_job_status(
-                    function_job_uid
-                ).status
-            ) not in ("SUCCESS", "FAILED"):
-                print(f"Job status: {job_status}")
-                time.sleep(5)
-            print(f"Job status: {job_status}")
+            if log_job:
+                print(f"Logging job log for job UID: {function_job_uid}")
+                print_job_logs(configuration, function_job_uid)
 
-            job_output_dict = job_api_instance.function_job_outputs(function_job_uid)
-            print(f"\nJob output: {job_output_dict}")
+            for job_uid in [function_job_uid]:
+                status = wait_until_done(job_api_instance, job_uid)
+                job_statuses[status] = job_statuses.get(status, 0) + 1
 
-            downloaded_file = file_instance.download_file(
-                job_output_dict["output_1"]["id"],
-                destination_folder=pl.Path("./solver_files"),
-            )
-            print(f"Downloaded file: {downloaded_file}")
-            with zipfile.ZipFile(downloaded_file, "r") as zip_file:
-                job_output = json.loads(
-                    zip_file.read("function_outputs.json").decode("utf-8")
-                )
+            statuses = list(job_statuses.keys())
+            counts = [job_statuses[status] for status in statuses]
 
-            print(f"Job output: {job_output}")
+            plt.figure(figsize=(6, 4))
+            plt.bar(statuses, counts, color="skyblue")
+            plt.xlabel("Job Status")
+            plt.ylabel("Count")
+            plt.title("Function Job Status Counts")
+            plt.tight_layout()
+            plt.show(block=True)
 
         finally:
 
@@ -133,6 +134,54 @@ def main():
                 except Exception as e:
                     print(f"Failed to delete file {file.id}: {e}")
 
+            for function in registered_functions:
+                try:
+                    api_instance.delete_function(function.uid)
+                    print(f"Deleted function {function.uid}")
+                except Exception as e:
+                    print(f"Failed to delete function {function.uid}: {e}")
+
+
+@retry(
+    stop=stop_after_delay(timedelta(minutes=10)),
+    wait=wait_exponential(multiplier=1, min=1, max=5),
+    retry=retry_if_exception_type(AssertionError),
+    reraise=True,
+)
+def wait_until_done(function_api: osparc_client.FunctionJobsApi, function_job_uid: str):
+    job_status = function_api.function_job_status(function_job_uid).status
+    assert job_status in ("SUCCESS", "FAILED")
+    return job_status
+
+
+@retry(
+    stop=stop_after_delay(timedelta(minutes=10)),
+    wait=wait_exponential(multiplier=1, min=1, max=5),
+    retry=retry_if_exception_type(HTTPStatusError),
+    reraise=True,
+)
+def print_job_logs(configuration: osparc_client.Configuration, job_uid: str):
+    client = Client(
+        base_url=configuration.host,
+        auth=BasicAuth(
+            username=configuration.username, password=configuration.password
+        ),
+    )
+    with client.stream(
+        "GET",
+        f"/v0/solvers/{_SOLVER_KEY}/releases/{_SOLVER_VERSION}/jobs/{job_uid}/logstream",
+        timeout=10 * 60,
+    ) as response:
+        response.raise_for_status()
+        for line in response.iter_lines():
+            for msg in json.loads(line).get("messages"):
+                print(f"{datetime.now().isoformat()}: {msg}")
+
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--log-job", action="store_true", help="Log details of a single job"
+    )
+    args = parser.parse_args()
+    main(log_job=args.log_job)
