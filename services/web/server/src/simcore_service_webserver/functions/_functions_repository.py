@@ -35,6 +35,7 @@ from models_library.functions_errors import (
     FunctionReadAccessDeniedError,
     FunctionWriteAccessDeniedError,
 )
+from models_library.groups import GroupID
 from models_library.rest_pagination import PageMetaInfoLimitOffset
 from models_library.users import UserID
 from pydantic import TypeAdapter
@@ -61,10 +62,12 @@ from simcore_postgres_database.utils_repos import (
     get_columns_from_db_model,
     transaction_context,
 )
+from simcore_service_webserver.users.api import get_user_primary_group_id
 from sqlalchemy import Text, cast
 from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.sql import func
 
+from ..db.models import groups, user_to_groups
 from ..db.plugin import get_asyncpg_engine
 
 _FUNCTIONS_TABLE_COLS = get_columns_from_db_model(functions_table, RegisteredFunctionDB)
@@ -117,10 +120,11 @@ async def create_function(
 
         registered_function = RegisteredFunctionDB.model_validate(dict(row))
 
-    await set_user_permissions(
+    user_primary_group_id = await get_user_primary_group_id(app, user_id=user_id)
+    await set_group_permissions(
         app,
         connection=connection,
-        user_id=user_id,
+        group_id=user_primary_group_id,
         object_type="function",
         object_ids=[registered_function.uuid],
         read=True,
@@ -164,10 +168,11 @@ async def create_function_job(
 
         registered_function_job = RegisteredFunctionJobDB.model_validate(dict(row))
 
-    await set_user_permissions(
+    user_primary_group_id = await get_user_primary_group_id(app, user_id=user_id)
+    await set_group_permissions(
         app,
         connection=connection,
-        user_id=user_id,
+        group_id=user_primary_group_id,
         object_type="function_job",
         object_ids=[registered_function_job.uuid],
         read=True,
@@ -237,10 +242,11 @@ async def create_function_job_collection(
             )  # nosec
             job_collection_entries.append(dict(entry))
 
-    await set_user_permissions(
+    user_primary_group_id = await get_user_primary_group_id(app, user_id=user_id)
+    await set_group_permissions(
         app,
         connection=connection,
-        user_id=user_id,
+        group_id=user_primary_group_id,
         object_type="function_job_collection",
         object_ids=[function_job_collection_db.uuid],
         read=True,
@@ -775,11 +781,11 @@ async def delete_function_job_collection(
         )
 
 
-async def set_user_permissions(
+async def set_group_permissions(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
-    user_id: UserID,
+    group_id: GroupID,
     object_type: Literal["function", "function_job", "function_job_collection"],
     object_ids: list[UUID],
     read: bool | None = None,
@@ -804,21 +810,21 @@ async def set_user_permissions(
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         for object_id in object_ids:
-            # Check if the user already has access rights for the function
+            # Check if the group already has access rights for the function
             result = await conn.stream(
                 access_rights_table.select().where(
                     getattr(access_rights_table.c, field_name) == object_id,
-                    access_rights_table.c.user_id == user_id,
+                    access_rights_table.c.group_id == group_id,
                 )
             )
             row = await result.one_or_none()
 
             if row is None:
-                # Insert new access rights if the user does not have any
+                # Insert new access rights if the group does not have any
                 await conn.execute(
                     access_rights_table.insert().values(
                         **{field_name: object_id},
-                        user_id=user_id,
+                        group_id=group_id,
                         read=read if read is not None else False,
                         write=write if write is not None else False,
                         execute=execute if execute is not None else False,
@@ -836,7 +842,7 @@ async def set_user_permissions(
                     access_rights_table.update()
                     .where(
                         getattr(access_rights_table.c, field_name) == object_id,
-                        access_rights_table.c.user_id == user_id,
+                        access_rights_table.c.group_id == group_id,
                     )
                     .values(**update_values)
                 )
@@ -871,16 +877,41 @@ async def get_user_permissions(
     assert access_rights_table is not None  # nosec
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        # Get all groups the user belongs to
+        user_groups_result = await conn.stream(
+            sqlalchemy.select(groups.c.gid)
+            .select_from(
+                user_to_groups.join(groups, user_to_groups.c.gid == groups.c.gid),
+            )
+            .where(user_to_groups.c.uid == user_id)
+        )
+        user_groups = [row["gid"] for row in await user_groups_result.all()]
+
+        if not user_groups:
+            return None
+
+        # Combine permissions for all groups the user belongs to
         result = await conn.stream(
             access_rights_table.select()
             .with_only_columns(cols)
             .where(
-                access_rights_table.c.user_id == user_id,
                 getattr(access_rights_table.c, f"{object_type}_uuid") == object_id,
+                access_rights_table.c.group_id.in_(user_groups),
             )
         )
-        row = await result.one_or_none()
-        return FunctionAccessRightsDB.model_validate(dict(row)) if row else None
+        rows = await result.all()
+
+        if not rows:
+            return None
+
+        # Combine permissions across all rows
+        combined_permissions = {
+            "read": any(row["read"] for row in rows),
+            "write": any(row["write"] for row in rows),
+            "execute": any(row["execute"] for row in rows),
+        }
+
+        return FunctionAccessRightsDB.model_validate(combined_permissions)
 
 
 async def check_exists(

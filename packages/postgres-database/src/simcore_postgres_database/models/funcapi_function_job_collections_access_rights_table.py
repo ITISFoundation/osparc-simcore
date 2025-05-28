@@ -13,7 +13,6 @@ from .funcapi_function_job_collections_table import function_job_collections_tab
 function_job_collections_access_rights_table = sa.Table(
     "funcapi_function_job_collections_access_rights",
     metadata,
-    sa.Column("id", sa.Integer, primary_key=True, autoincrement=True),
     sa.Column(
         "function_job_collection_uuid",
         sa.ForeignKey(
@@ -24,17 +23,6 @@ function_job_collections_access_rights_table = sa.Table(
         ),
         nullable=False,
         doc="Unique identifier of the function job collection",
-    ),
-    sa.Column(
-        "user_id",
-        sa.ForeignKey(
-            "users.id",
-            name="fk_func_access_to_users_user_id",
-            onupdate=RefActions.CASCADE,
-            ondelete=RefActions.CASCADE,
-        ),
-        nullable=True,
-        doc="User id",
     ),
     sa.Column(
         "group_id",
@@ -67,16 +55,9 @@ function_job_collections_access_rights_table = sa.Table(
     ),
     column_created_datetime(),
     column_modified_datetime(),
-    sa.CheckConstraint(
-        sa.or_(
-            sa.and_(sa.column("user_id").is_(None), sa.column("group_id").isnot(None)),
-            sa.and_(sa.column("user_id").isnot(None), sa.column("group_id").is_(None)),
-        ),
-        name="ck_user_or_group_exclusive",
-    ),  # Instead of using two tables, i make sure one of these is None
-    sa.UniqueConstraint(
-        "user_id",
+    sa.PrimaryKeyConstraint(
+        "function_job_collection_uuid",
         "group_id",
-        name="uq_funcapi_function_job_colls_access_rights_user_group",
+        name="pk_func_access_to_func_job_colls_group",
     ),
 )
