@@ -91,10 +91,9 @@ email-validator==2.2.0
     #   pydantic
 fast-depends==2.4.12
     # via faststream
-fastapi==0.115.5
+fastapi==0.115.12
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
-    #   -r requirements/_base.in
     #   fastapi-lifespan-manager
 fastapi-cli==0.0.5
     # via fastapi
@@ -152,9 +151,7 @@ idna==3.10
     #   yarl
 importlib-metadata==8.5.0
     # via opentelemetry-api
-itsdangerous==2.2.0
-    # via fastapi
-jinja2==3.1.4
+jinja2==3.1.6
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -280,7 +277,6 @@ orjson==3.10.11
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
-    #   fastapi
 packaging==24.2
     # via opentelemetry-instrumentation
 pamqp==3.3.0
@@ -343,7 +339,6 @@ pydantic-extra-types==2.10.0
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
-    #   fastapi
 pydantic-settings==2.6.1
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -362,7 +357,6 @@ pydantic-settings==2.6.1
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
-    #   fastapi
 pygments==2.18.0
     # via rich
 pyinstrument==5.0.0
@@ -373,7 +367,7 @@ python-dotenv==1.0.1
     # via
     #   pydantic-settings
     #   uvicorn
-python-multipart==0.0.17
+python-multipart==0.0.20
     # via fastapi
 pyyaml==6.0.2
     # via
@@ -390,7 +384,6 @@ pyyaml==6.0.2
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-    #   fastapi
     #   uvicorn
 redis==5.2.1
     # via
@@ -484,21 +477,6 @@ typing-extensions==4.12.2
     #   pydantic-core
     #   pydantic-extra-types
     #   typer
-ujson==5.10.0
-    # via
-    #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../requirements/constraints.txt
-    #   fastapi
 urllib3==2.2.3
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -514,9 +492,8 @@ urllib3==2.2.3
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
-uvicorn==0.32.0
+uvicorn==0.34.2
     # via
-    #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   fastapi
     #   fastapi-cli
 uvloop==0.21.0

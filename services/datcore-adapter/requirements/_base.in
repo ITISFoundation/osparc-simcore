@@ -15,9 +15,6 @@
 aiocache
 boto3
 aiofiles
-fastapi
 fastapi-pagination
-httpx[http2]
 pydantic
 python-multipart # for fastapi multipart uploads
-uvicorn[standard]

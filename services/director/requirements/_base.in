@@ -14,7 +14,6 @@
 
 aiocache
 aiodocker
-fastapi[all]
 httpx[http2]
 prometheus-client
 pydantic

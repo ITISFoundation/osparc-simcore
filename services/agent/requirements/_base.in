@@ -14,7 +14,5 @@
 --requirement ../../../packages/service-library/requirements/_fastapi.in
 
 aiodocker
-fastapi
 packaging
 pydantic
-uvicorn
