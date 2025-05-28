@@ -51,6 +51,35 @@ async def _get_node_from_db(
     return node
 
 
+async def _update_comp_run_snapshot_tasks_if_computational(
+    engine: AsyncEngine,
+    connection: AsyncConnection,
+    project_id: str,
+    node_uuid: str,
+    node_configuration: dict,
+) -> None:
+    """
+    Updates comp_run_snapshot_tasks table for computational nodes.
+    """
+    node = await _get_node_from_db(project_id, node_uuid, connection)
+    if node.node_class == NodeClass.COMPUTATIONAL.value:
+        _latest_run_id = await get_latest_run_id_for_project(
+            engine, connection, project_id=project_id
+        )
+        await update_for_run_id_and_node_id(
+            engine,
+            connection,
+            run_id=_latest_run_id,
+            node_id=node_uuid,
+            data={
+                "schema": node_configuration["schema"],
+                "inputs": node_configuration["inputs"],
+                "outputs": node_configuration["outputs"],
+                "run_hash": node_configuration.get("run_hash"),
+            },
+        )
+
+
 class DBContextManager:
     def __init__(self, db_engine: AsyncEngine | None = None) -> None:
         self._db_engine: AsyncEngine | None = db_engine
@@ -113,26 +142,9 @@ class DBManager:
             )
 
             # 2. Update comp_run_snapshot_tasks table only if the node is computational
-            node = await _get_node_from_db(project_id, node_uuid, connection)
-            if node.node_class == NodeClass.COMPUTATIONAL.value:
-                # 2.1 Get latest run id for the project
-                _latest_run_id = await get_latest_run_id_for_project(
-                    engine, connection, project_id=project_id
-                )
-
-                # 2.2 Update comp_run_snapshot_tasks table
-                await update_for_run_id_and_node_id(
-                    engine,
-                    connection,
-                    run_id=_latest_run_id,
-                    node_id=node_uuid,
-                    data={
-                        "schema": node_configuration["schema"],
-                        "inputs": node_configuration["inputs"],
-                        "outputs": node_configuration["outputs"],
-                        "run_hash": node_configuration.get("run_hash"),
-                    },
-                )
+            await _update_comp_run_snapshot_tasks_if_computational(
+                engine, connection, project_id, node_uuid, node_configuration
+            )
 
     async def get_ports_configuration_from_node_uuid(
         self, project_id: str, node_uuid: str
