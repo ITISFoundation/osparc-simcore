@@ -1,3 +1,5 @@
+# pylint: disable=protected-access
+
 import types
 from unittest.mock import AsyncMock
 
