@@ -891,21 +891,23 @@ async def check_exists(
     """
     Checks if the object exists in the database.
     """
-    main_table = None
-    error = None
-    if object_type == "function":
-        main_table = functions_table
-        error = FunctionIDNotFoundError(function_id=object_id)
-    elif object_type == "function_job":
-        main_table = function_jobs_table
-        error = FunctionJobIDNotFoundError(function_job_id=object_id)
-    elif object_type == "function_job_collection":
-        main_table = function_job_collections_table
-        error = FunctionJobCollectionIDNotFoundError(
-            function_job_collection_id=object_id
-        )
-    assert error is not None  # nosec
-    assert main_table is not None  # nosec
+    error: (
+        FunctionIDNotFoundError
+        | FunctionJobIDNotFoundError
+        | FunctionJobCollectionIDNotFoundError
+    )  # This is to avoid mypy bug
+    match object_type:
+        case "function":
+            main_table = functions_table
+            error = FunctionIDNotFoundError(function_id=object_id)
+        case "function_job":
+            main_table = function_jobs_table
+            error = FunctionJobIDNotFoundError(function_job_id=object_id)
+        case "function_job_collection":
+            main_table = function_job_collections_table
+            error = FunctionJobCollectionIDNotFoundError(
+                function_job_collection_id=object_id
+            )
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(
