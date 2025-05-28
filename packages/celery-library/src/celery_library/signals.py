@@ -2,18 +2,18 @@ import asyncio
 import datetime
 import logging
 import threading
+from collections.abc import Callable
 from typing import Final
 
 from asgi_lifespan import LifespanManager
 from celery import Celery  # type: ignore[import-untyped]
+from celery.worker.worker import WorkController  # type: ignore[import-untyped]
 from fastapi import FastAPI
 from servicelib.logging_utils import log_context
 from servicelib.redis._client import RedisClientSDK
+from settings_library.celery import CelerySettings
 from settings_library.redis import RedisDatabase
-from simcore_service_storage._meta import APP_NAME
 
-from ...core.application import create_app
-from ...core.settings import ApplicationSettings
 from . import set_event_loop
 from .backends._redis import RedisTaskInfoStore
 from .utils import (
@@ -29,7 +29,12 @@ _SHUTDOWN_TIMEOUT: Final[float] = datetime.timedelta(seconds=10).total_seconds()
 _STARTUP_TIMEOUT: Final[float] = datetime.timedelta(minutes=1).total_seconds()
 
 
-def on_worker_init(sender, **_kwargs) -> None:
+def on_worker_init(
+    app_factory: Callable[[], FastAPI],
+    celery_settings: CelerySettings,
+    sender: WorkController,
+    **_kwargs,
+) -> None:
     startup_complete_event = threading.Event()
 
     def _init(startup_complete_event: threading.Event) -> None:
@@ -37,22 +42,24 @@ def on_worker_init(sender, **_kwargs) -> None:
         asyncio.set_event_loop(loop)
         shutdown_event = asyncio.Event()
 
-        app_settings = ApplicationSettings.create_from_envs()
-        fastapi_app = create_app(app_settings)
-
-        assert app_settings.STORAGE_CELERY
-        celery_settings = app_settings.STORAGE_CELERY
+        fastapi_app = app_factory()
+        assert isinstance(fastapi_app, FastAPI)  # nosec
 
         async def setup_task_worker():
             redis_client_sdk = RedisClientSDK(
                 celery_settings.CELERY_REDIS_RESULT_BACKEND.build_redis_dsn(
                     RedisDatabase.CELERY_TASKS
                 ),
-                client_name=f"{APP_NAME}.celery_tasks",
+                client_name=f"{fastapi_app.title}.celery_tasks",
             )
 
+            assert sender.app  # nosec
+            assert isinstance(sender.app, Celery)  # nosec
             set_celery_worker(
-                sender.app, CeleryTaskWorker(RedisTaskInfoStore(redis_client_sdk))
+                sender.app,
+                CeleryTaskWorker(
+                    RedisTaskInfoStore(redis_client_sdk),
+                ),
             )
 
         async def fastapi_lifespan(

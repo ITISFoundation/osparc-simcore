@@ -1,6 +1,8 @@
 import logging
 
 from celery import Task  # type: ignore[import-untyped]
+from celery_library.models import TaskId
+from celery_library.utils import get_fastapi_app
 from models_library.api_schemas_storage.storage_schemas import (
     FileUploadCompletionBody,
 )
@@ -10,8 +12,6 @@ from servicelib.logging_utils import log_context
 
 from ...dsm import get_dsm_provider
 from ...models import FileMetaData
-from ...modules.celery.models import TaskId
-from ...modules.celery.utils import get_fastapi_app
 
 _logger = logging.getLogger(__name__)
 

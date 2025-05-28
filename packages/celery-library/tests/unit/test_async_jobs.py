@@ -3,13 +3,18 @@
 
 import asyncio
 import pickle
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from datetime import timedelta
 from enum import Enum
 from typing import Any
 
 import pytest
 from celery import Celery, Task
+from celery_library import get_celery_client
+from celery_library.client import TaskMetadata
+from celery_library.models import TaskID
+from celery_library.task import register_task
+from celery_library.worker import CeleryTaskWorker
 from fastapi import FastAPI
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobGet,
@@ -19,19 +24,12 @@ from models_library.api_schemas_rpc_async_jobs.exceptions import (
     JobAbortedError,
     JobError,
 )
-from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from models_library.api_schemas_storage.export_data_async_jobs import AccessRightError
 from models_library.products import ProductName
-from models_library.rabbitmq_basic_types import RPCMethodName
+from models_library.rabbitmq_basic_types import RPCMethodName, RPCNamespace
 from models_library.users import UserID
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCRouter
 from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
-from simcore_service_storage.api.rpc.routes import get_rabbitmq_rpc_server
-from simcore_service_storage.modules.celery import get_celery_client
-from simcore_service_storage.modules.celery._task import register_task
-from simcore_service_storage.modules.celery.client import TaskMetadata
-from simcore_service_storage.modules.celery.models import TaskID
-from simcore_service_storage.modules.celery.worker import CeleryTaskWorker
 from tenacity import (
     AsyncRetrying,
     retry_if_exception_type,
@@ -41,9 +39,9 @@ from tenacity import (
 
 pytest_simcore_core_services_selection = [
     "rabbit",
+    "redis",
     "postgres",
 ]
-
 
 ###### RPC Interface ######
 router = RPCRouter()
@@ -94,8 +92,9 @@ async def _process_action(action: str, payload: Any) -> Any:
     return None
 
 
-def sync_job(task: Task, action: Action, payload: Any) -> Any:
+def sync_job(task: Task, task_id: TaskID, action: Action, payload: Any) -> Any:
     _ = task
+    _ = task_id
     return asyncio.run(_process_action(action, payload))
 
 
@@ -109,14 +108,26 @@ async def async_job(task: Task, task_id: TaskID, action: Action, payload: Any) -
 
 
 @pytest.fixture
-async def register_rpc_routes(initialized_app: FastAPI) -> None:
-    rpc_server = get_rabbitmq_rpc_server(initialized_app)
-    await rpc_server.register_router(router, STORAGE_RPC_NAMESPACE, initialized_app)
+async def register_routes(
+    initialized_fast_api: FastAPI, rpc_namespace: RPCNamespace
+) -> None:
+    client = initialized_fast_api.state.rabbitmq_rpc_client
+    assert isinstance(client, RabbitMQRPCClient)
+    await client.register_router(router, rpc_namespace, initialized_fast_api)
+
+
+@pytest.fixture
+async def rpc_client(
+    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
+) -> RabbitMQRPCClient:
+    client = await rabbitmq_rpc_client("celery_test_client")
+    return client
 
 
 async def _start_task_via_rpc(
     client: RabbitMQRPCClient,
     *,
+    rpc_namespace: RPCNamespace,
     rpc_task_name: str,
     user_id: UserID,
     product_name: ProductName,
@@ -125,7 +136,7 @@ async def _start_task_via_rpc(
     job_id_data = AsyncJobNameData(user_id=user_id, product_name=product_name)
     async_job_get = await async_jobs.submit(
         rabbitmq_rpc_client=client,
-        rpc_namespace=STORAGE_RPC_NAMESPACE,
+        rpc_namespace=rpc_namespace,
         method_name=RPCMethodName(rpc_task_name),
         job_id_data=job_id_data,
         **kwargs,
@@ -157,6 +168,7 @@ def register_celery_tasks() -> Callable[[Celery], None]:
 async def _wait_for_job(
     storage_rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
+    rpc_namespace: RPCNamespace,
     async_job_get: AsyncJobGet,
     job_id_data: AsyncJobNameData,
     stop_after: timedelta = timedelta(seconds=5),
@@ -171,7 +183,7 @@ async def _wait_for_job(
         with attempt:
             result = await async_jobs.status(
                 storage_rabbitmq_rpc_client,
-                rpc_namespace=STORAGE_RPC_NAMESPACE,
+                rpc_namespace=rpc_namespace,
                 job_id=async_job_get.job_id,
                 job_id_data=job_id_data,
             )
@@ -199,17 +211,18 @@ async def _wait_for_job(
     ],
 )
 async def test_async_jobs_workflow(
-    initialized_app: FastAPI,
-    register_rpc_routes: None,
-    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
-    with_storage_celery_worker: CeleryTaskWorker,
+    register_routes,
+    rpc_client: RabbitMQRPCClient,
+    rpc_namespace: RPCNamespace,
+    with_celery_worker: CeleryTaskWorker,
     user_id: UserID,
     product_name: ProductName,
     exposed_rpc_start: str,
     payload: Any,
 ):
     async_job_get, job_id_data = await _start_task_via_rpc(
-        storage_rabbitmq_rpc_client,
+        rpc_client,
+        rpc_namespace=rpc_namespace,
         rpc_task_name=exposed_rpc_start,
         user_id=user_id,
         product_name=product_name,
@@ -218,22 +231,23 @@ async def test_async_jobs_workflow(
     )
 
     jobs = await async_jobs.list_jobs(
-        storage_rabbitmq_rpc_client,
-        rpc_namespace=STORAGE_RPC_NAMESPACE,
+        rpc_client,
+        rpc_namespace=rpc_namespace,
         filter_="",  # currently not used
         job_id_data=job_id_data,
     )
     assert len(jobs) > 0
 
     await _wait_for_job(
-        storage_rabbitmq_rpc_client,
+        rpc_client,
+        rpc_namespace=rpc_namespace,
         async_job_get=async_job_get,
         job_id_data=job_id_data,
     )
 
     async_job_result = await async_jobs.result(
-        storage_rabbitmq_rpc_client,
-        rpc_namespace=STORAGE_RPC_NAMESPACE,
+        rpc_client,
+        rpc_namespace=rpc_namespace,
         job_id=async_job_get.job_id,
         job_id_data=job_id_data,
     )
@@ -247,16 +261,18 @@ async def test_async_jobs_workflow(
     ],
 )
 async def test_async_jobs_cancel(
-    initialized_app: FastAPI,
+    # initialized_app: FastAPI,
     register_rpc_routes: None,
+    rpc_namespace: RPCNamespace,
     storage_rabbitmq_rpc_client: RabbitMQRPCClient,
-    with_storage_celery_worker: CeleryTaskWorker,
+    with_celery_worker: CeleryTaskWorker,
     user_id: UserID,
     product_name: ProductName,
     exposed_rpc_start: str,
 ):
     async_job_get, job_id_data = await _start_task_via_rpc(
         storage_rabbitmq_rpc_client,
+        rpc_namespace=rpc_namespace,
         rpc_task_name=exposed_rpc_start,
         user_id=user_id,
         product_name=product_name,
@@ -266,20 +282,21 @@ async def test_async_jobs_cancel(
 
     await async_jobs.cancel(
         storage_rabbitmq_rpc_client,
-        rpc_namespace=STORAGE_RPC_NAMESPACE,
+        rpc_namespace=rpc_namespace,
         job_id=async_job_get.job_id,
         job_id_data=job_id_data,
     )
 
     await _wait_for_job(
         storage_rabbitmq_rpc_client,
+        rpc_namespace=rpc_namespace,
         async_job_get=async_job_get,
         job_id_data=job_id_data,
     )
 
     jobs = await async_jobs.list_jobs(
         storage_rabbitmq_rpc_client,
-        rpc_namespace=STORAGE_RPC_NAMESPACE,
+        rpc_namespace=rpc_namespace,
         filter_="",  # currently not used
         job_id_data=job_id_data,
     )
@@ -288,7 +305,7 @@ async def test_async_jobs_cancel(
     with pytest.raises(JobAbortedError):
         await async_jobs.result(
             storage_rabbitmq_rpc_client,
-            rpc_namespace=STORAGE_RPC_NAMESPACE,
+            rpc_namespace=rpc_namespace,
             job_id=async_job_get.job_id,
             job_id_data=job_id_data,
         )
@@ -312,10 +329,11 @@ async def test_async_jobs_cancel(
     ],
 )
 async def test_async_jobs_raises(
-    initialized_app: FastAPI,
+    # initialized_app: FastAPI,
     register_rpc_routes: None,
+    rpc_namespace: RPCNamespace,
     storage_rabbitmq_rpc_client: RabbitMQRPCClient,
-    with_storage_celery_worker: CeleryTaskWorker,
+    with_celery_worker: CeleryTaskWorker,
     user_id: UserID,
     product_name: ProductName,
     exposed_rpc_start: str,
@@ -323,6 +341,7 @@ async def test_async_jobs_raises(
 ):
     async_job_get, job_id_data = await _start_task_via_rpc(
         storage_rabbitmq_rpc_client,
+        rpc_namespace=rpc_namespace,
         rpc_task_name=exposed_rpc_start,
         user_id=user_id,
         product_name=product_name,
@@ -332,6 +351,7 @@ async def test_async_jobs_raises(
 
     await _wait_for_job(
         storage_rabbitmq_rpc_client,
+        rpc_namespace=rpc_namespace,
         async_job_get=async_job_get,
         job_id_data=job_id_data,
         stop_after=timedelta(minutes=1),
@@ -340,7 +360,7 @@ async def test_async_jobs_raises(
     with pytest.raises(JobError) as exc:
         await async_jobs.result(
             storage_rabbitmq_rpc_client,
-            rpc_namespace=STORAGE_RPC_NAMESPACE,
+            rpc_namespace=rpc_namespace,
             job_id=async_job_get.job_id,
             job_id_data=job_id_data,
         )

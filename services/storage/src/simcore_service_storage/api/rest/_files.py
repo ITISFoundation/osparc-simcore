@@ -2,6 +2,8 @@ import logging
 from typing import Annotated, Final, cast
 from urllib.parse import quote
 
+from celery_library.client import CeleryTaskClient
+from celery_library.models import TaskMetadata, TaskUUID
 from fastapi import APIRouter, Depends, Header, Request
 from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobNameData
 from models_library.api_schemas_storage.storage_schemas import (
@@ -34,8 +36,6 @@ from ...models import (
     StorageQueryParamsBase,
     UploadLinks,
 )
-from ...modules.celery.client import CeleryTaskClient
-from ...modules.celery.models import TaskMetadata, TaskUUID
 from ...simcore_s3_dsm import SimcoreS3DataManager
 from .._worker_tasks._files import complete_upload_file as remote_complete_upload_file
 from .dependencies.celery import get_celery_client
@@ -292,7 +292,7 @@ async def complete_upload_file(
         user_id=async_job_name_data.user_id,
         location_id=location_id,
         file_id=file_id,
-        body=body,
+        body=body.model_dump(),
     )
 
     route = (
@@ -345,15 +345,18 @@ async def is_completed_upload_file(
     )
     # first check if the task is in the app
     if task_status.is_done:
-        task_result = await celery_client.get_task_result(
-            task_context=async_job_name_data.model_dump(), task_uuid=TaskUUID(future_id)
+        task_result = TypeAdapter(FileMetaData).validate_python(
+            await celery_client.get_task_result(
+                task_context=async_job_name_data.model_dump(),
+                task_uuid=TaskUUID(future_id),
+            )
         )
-        assert isinstance(task_result, FileMetaData), f"{task_result=}"  # nosec
         new_fmd = task_result
         assert new_fmd.location_id == location_id  # nosec
         assert new_fmd.file_id == file_id  # nosec
         response = FileUploadCompleteFutureResponse(
-            state=FileUploadCompleteState.OK, e_tag=new_fmd.entity_tag
+            state=FileUploadCompleteState.OK,
+            e_tag=FileMetaData.model_validate(new_fmd).entity_tag,
         )
     else:
         # the task is still running

@@ -1,10 +1,9 @@
 from typing import Annotated
 
+from celery_library import get_celery_client as _get_celery_client_from_app
+from celery_library.client import CeleryTaskClient
 from fastapi import Depends, FastAPI
 from servicelib.fastapi.dependencies import get_app
-
-from ....modules.celery import get_celery_client as _get_celery_client_from_app
-from ....modules.celery.client import CeleryTaskClient
 
 
 def get_celery_client(
