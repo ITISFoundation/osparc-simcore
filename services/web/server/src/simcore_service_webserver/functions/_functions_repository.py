@@ -62,12 +62,12 @@ from simcore_postgres_database.utils_repos import (
     get_columns_from_db_model,
     transaction_context,
 )
+from simcore_service_webserver.groups.api import list_all_user_groups_ids
 from simcore_service_webserver.users.api import get_user_primary_group_id
 from sqlalchemy import Text, cast
 from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.sql import func
 
-from ..db.models import groups, user_to_groups
 from ..db.plugin import get_asyncpg_engine
 
 _FUNCTIONS_TABLE_COLS = get_columns_from_db_model(functions_table, RegisteredFunctionDB)
@@ -299,12 +299,13 @@ async def list_functions(
 ) -> tuple[list[RegisteredFunctionDB], PageMetaInfoLimitOffset]:
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        # Filter functions by user read access
+        user_groups = await list_all_user_groups_ids(app, user_id=user_id)
+
         subquery = (
             functions_access_rights_table.select()
             .with_only_columns(functions_access_rights_table.c.function_uuid)
             .where(
-                functions_access_rights_table.c.user_id == user_id,
+                functions_access_rights_table.c.group_id.in_(user_groups),
                 functions_access_rights_table.c.read,
             )
         )
@@ -348,11 +349,13 @@ async def list_function_jobs(
 ) -> tuple[list[RegisteredFunctionJobDB], PageMetaInfoLimitOffset]:
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        user_groups = await list_all_user_groups_ids(app, user_id=user_id)
+
         access_subquery = (
             function_jobs_access_rights_table.select()
             .with_only_columns(function_jobs_access_rights_table.c.function_job_uuid)
             .where(
-                function_jobs_access_rights_table.c.user_id == user_id,
+                function_jobs_access_rights_table.c.group_id.in_(user_groups),
                 function_jobs_access_rights_table.c.read,
             )
         )
@@ -434,6 +437,7 @@ async def list_function_job_collections(
                 .where(function_jobs_table.c.function_uuid == function_id)
             )
             filter_condition = function_job_collections_table.c.uuid.in_(subquery)
+        user_groups = await list_all_user_groups_ids(app, user_id=user_id)
 
         access_subquery = (
             function_job_collections_access_rights_table.select()
@@ -441,10 +445,13 @@ async def list_function_job_collections(
                 function_job_collections_access_rights_table.c.function_job_collection_uuid
             )
             .where(
-                function_job_collections_access_rights_table.c.user_id == user_id,
+                function_job_collections_access_rights_table.c.group_id.in_(
+                    user_groups
+                ),
                 function_job_collections_access_rights_table.c.read,
             )
         )
+
         filter_and_access_condition = sqlalchemy.and_(
             filter_condition,
             function_job_collections_table.c.uuid.in_(access_subquery),
@@ -877,18 +884,7 @@ async def get_user_permissions(
     assert access_rights_table is not None  # nosec
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        # Get all groups the user belongs to
-        user_groups_result = await conn.stream(
-            sqlalchemy.select(groups.c.gid)
-            .select_from(
-                user_to_groups.join(groups, user_to_groups.c.gid == groups.c.gid),
-            )
-            .where(user_to_groups.c.uid == user_id)
-        )
-        user_groups = [row["gid"] for row in await user_groups_result.all()]
-
-        if not user_groups:
-            return None
+        user_groups = await list_all_user_groups_ids(app, user_id=user_id)
 
         # Combine permissions for all groups the user belongs to
         result = await conn.stream(

@@ -277,7 +277,6 @@ class FunctionGroupAccessRights(FunctionAccessRights):
 
 
 class FunctionAccessRightsDB(BaseModel):
-    user_id: UserID | None = None
     group_id: GroupID | None = None
     read: bool = False
     write: bool = False
