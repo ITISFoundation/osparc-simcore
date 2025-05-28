@@ -133,11 +133,12 @@ async def assert_comp_tasks_and_comp_run_snapshot_tasks(
                     )
                 )  # there is only one entry
             )
+            x = result.fetchall()
             snapshot_tasks = TypeAdapter(
                 list[CompRunSnapshotTaskAtDBGet]
-            ).validate_python(result.fetchall())
+            ).validate_python(x)
         assert all(
-            t.state == expected_state for t in snapshot_tasks
+            t.state.value == expected_state for t in snapshot_tasks
         ), f"expected state: {expected_state}, found: {[t.state for t in snapshot_tasks]}"
         assert all(
             t.progress == expected_progress for t in snapshot_tasks

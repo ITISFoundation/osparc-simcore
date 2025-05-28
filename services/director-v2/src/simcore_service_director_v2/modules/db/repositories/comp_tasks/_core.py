@@ -261,12 +261,7 @@ class CompTasksRepository(BaseRepository):
                         & (comp_run_snapshot_tasks.c.project_id == f"{project_id}")
                         & (comp_run_snapshot_tasks.c.node_id == f"{task}")
                     )
-                    .values(
-                        **{
-                            k: (v.value if hasattr(v, "value") else v)
-                            for k, v in task_kwargs.items()
-                        }
-                    )
+                    .values(**task_kwargs)
                 )
 
                 row = result.one()
@@ -297,20 +292,17 @@ class CompTasksRepository(BaseRepository):
                 .where(
                     (comp_run_snapshot_tasks.c.run_id == run_id)
                     & (comp_run_snapshot_tasks.c.project_id == f"{project_id}")
+                    & (comp_run_snapshot_tasks.c.node_class == NodeClass.COMPUTATIONAL)
                     & (
-                        comp_run_snapshot_tasks.c.node_class
-                        == NodeClass.COMPUTATIONAL.value
-                    )
-                    & (
-                        (comp_run_snapshot_tasks.c.state == StateType.PUBLISHED.value)
+                        (comp_run_snapshot_tasks.c.state == StateType.PUBLISHED)
                         | (
                             comp_run_snapshot_tasks.c.state
-                            == StateType.WAITING_FOR_CLUSTER.value
+                            == StateType.WAITING_FOR_CLUSTER
                         )
                     )
                 )
                 .values(
-                    state=StateType.ABORTED.value,
+                    state=StateType.ABORTED,
                     progress=1.0,
                     end=arrow.utcnow().datetime,
                 )

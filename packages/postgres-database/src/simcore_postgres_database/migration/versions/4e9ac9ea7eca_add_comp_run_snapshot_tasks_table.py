@@ -1,8 +1,8 @@
 """add comp_run_snapshot_tasks table
 
-Revision ID: 0019fbd911b6
+Revision ID: 4e9ac9ea7eca
 Revises: 278daef7e99d
-Create Date: 2025-05-28 08:51:35.563513+00:00
+Create Date: 2025-05-28 14:00:23.502544+00:00
 
 """
 
@@ -11,7 +11,7 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = "0019fbd911b6"
+revision = "4e9ac9ea7eca"
 down_revision = "278daef7e99d"
 branch_labels = None
 depends_on = None
@@ -25,17 +25,7 @@ def upgrade():
         sa.Column("run_id", sa.Integer(), nullable=False),
         sa.Column("project_id", sa.String(), nullable=True),
         sa.Column("node_id", sa.String(), nullable=True),
-        sa.Column(
-            "node_class",
-            postgresql.ENUM(
-                "COMPUTATIONAL",
-                "INTERACTIVE",
-                "FRONTEND",
-                name="nodeclass",
-                create_type=False,
-            ),
-            nullable=True,
-        ),
+        # sa.Column('node_class', sa.Enum('COMPUTATIONAL', 'INTERACTIVE', 'FRONTEND', name='nodeclass'), nullable=True),
         sa.Column("job_id", sa.String(), nullable=True),
         sa.Column("internal_id", sa.Integer(), nullable=True),
         sa.Column("schema", sa.JSON(), nullable=True),
@@ -43,22 +33,7 @@ def upgrade():
         sa.Column("outputs", sa.JSON(), nullable=True),
         sa.Column("run_hash", sa.String(), nullable=True),
         sa.Column("image", sa.JSON(), nullable=True),
-        sa.Column(
-            "state",
-            postgresql.ENUM(
-                "NOT_STARTED",
-                "PUBLISHED",
-                "PENDING",
-                "RUNNING",
-                "SUCCESS",
-                "FAILED",
-                "ABORTED",
-                name="statetype",
-                create_type=False,
-            ),
-            server_default="NOT_STARTED",
-            nullable=False,
-        ),
+        # sa.Column('state', sa.Enum('NOT_STARTED', 'PUBLISHED', 'PENDING', 'RUNNING', 'SUCCESS', 'FAILED', 'ABORTED', 'WAITING_FOR_RESOURCES', 'WAITING_FOR_CLUSTER', name='statetype'), server_default='NOT_STARTED', nullable=False),
         sa.Column("errors", postgresql.JSONB(astext_type=sa.Text()), nullable=True),
         sa.Column("progress", sa.Numeric(precision=3, scale=2), nullable=True),
         sa.Column("start", sa.DateTime(timezone=True), nullable=True),
@@ -98,6 +73,8 @@ def upgrade():
         ),
     )
     # ### end Alembic commands ###
+    op.execute("ALTER TABLE comp_run_snapshot_tasks ADD COLUMN node_class nodeclass;")
+    op.execute("ALTER TABLE comp_run_snapshot_tasks ADD COLUMN state statetype;")
 
 
 def downgrade():

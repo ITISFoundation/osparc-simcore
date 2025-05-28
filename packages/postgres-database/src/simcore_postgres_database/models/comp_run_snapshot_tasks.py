@@ -1,8 +1,8 @@
 """Computational Tasks Table"""
 
 import sqlalchemy as sa
+from simcore_postgres_database.models.comp_tasks import NodeClass
 from sqlalchemy.dialects import postgresql
-from sqlalchemy.dialects.postgresql import ENUM
 
 from ._common import (
     RefActions,
@@ -40,13 +40,7 @@ comp_run_snapshot_tasks = sa.Table(
     sa.Column("node_id", sa.String, doc="Node associated to this task"),
     sa.Column(
         "node_class",
-        ENUM(
-            "COMPUTATIONAL",
-            "INTERACTIVE",
-            "FRONTEND",
-            name="nodeclass",
-            create_type=False,  # necessary to avoid alembic nodeclass already exists error
-        ),
+        sa.Enum(NodeClass, name="nodeclass"),
         doc="Classification of the node associated to this task",
     ),
     sa.Column("job_id", sa.String, doc="Worker job ID for this task"),
@@ -65,17 +59,7 @@ comp_run_snapshot_tasks = sa.Table(
     ),
     sa.Column(
         "state",
-        ENUM(
-            "NOT_STARTED",
-            "PUBLISHED",
-            "PENDING",
-            "RUNNING",
-            "SUCCESS",
-            "FAILED",
-            "ABORTED",
-            name="statetype",
-            create_type=False,  # necessary to avoid alembic statetype already exists error
-        ),
+        sa.Enum(StateType, name="statetype"),
         nullable=False,
         server_default=StateType.NOT_STARTED.value,
         doc="Current state in the task lifecycle",

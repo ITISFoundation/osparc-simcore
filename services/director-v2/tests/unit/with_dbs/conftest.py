@@ -289,12 +289,7 @@ async def create_comp_run_snapshot_tasks(
             async with sqlalchemy_async_engine.begin() as conn:
                 result = await conn.execute(
                     comp_run_snapshot_tasks.insert()
-                    .values(
-                        **{
-                            k: (v.value if hasattr(v, "value") else v)
-                            for k, v in task_config.items()
-                        }
-                    )
+                    .values(**task_config)
                     .returning(sa.literal_column("*"))
                 )
                 new_run_snapshot_task = CompRunSnapshotTaskAtDBGet.model_validate(
