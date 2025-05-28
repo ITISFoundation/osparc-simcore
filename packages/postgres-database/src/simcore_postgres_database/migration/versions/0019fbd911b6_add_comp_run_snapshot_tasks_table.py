@@ -1,8 +1,8 @@
 """add comp_run_snapshot_tasks table
 
-Revision ID: ae0f63bb3c86
+Revision ID: 0019fbd911b6
 Revises: 278daef7e99d
-Create Date: 2025-05-27 14:12:10.926590+00:00
+Create Date: 2025-05-28 08:51:35.563513+00:00
 
 """
 
@@ -11,7 +11,7 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = "ae0f63bb3c86"
+revision = "0019fbd911b6"
 down_revision = "278daef7e99d"
 branch_labels = None
 depends_on = None
@@ -82,12 +82,6 @@ def upgrade():
         sa.Column(
             "hardware_info", postgresql.JSONB(astext_type=sa.Text()), nullable=True
         ),
-        sa.Column(
-            "submit",
-            sa.DateTime(timezone=True),
-            server_default=sa.text("'1900-01-01T00:00:00Z'::timestamptz"),
-            nullable=True,
-        ),
         sa.ForeignKeyConstraint(
             ["run_id"],
             ["comp_runs.run_id"],
@@ -98,7 +92,10 @@ def upgrade():
         sa.PrimaryKeyConstraint("snapshot_task_id"),
     )
     op.add_column(
-        "comp_runs", sa.Column("dag_adjacency_list", sa.JSON(), nullable=True)
+        "comp_runs",
+        sa.Column(
+            "dag_adjacency_list", postgresql.JSONB(astext_type=sa.Text()), nullable=True
+        ),
     )
     # ### end Alembic commands ###
 

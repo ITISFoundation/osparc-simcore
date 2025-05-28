@@ -118,12 +118,4 @@ comp_run_snapshot_tasks = sa.Table(
         nullable=True,
         doc="Harware information of this task",
     ),
-    # deprecated columns must be kept due to legacy services
-    # utc timestamps for submission/start/end
-    sa.Column(
-        "submit",
-        sa.DateTime(timezone=True),
-        server_default=sa.text("'1900-01-01T00:00:00Z'::timestamptz"),
-        doc="[DEPRECATED unused but kept for legacy services and must be filled with a default value of 1 January 1900]",
-    ),
 )

@@ -150,10 +150,6 @@ class BaseCompTaskAtDB(BaseModel):
     pricing_info: dict | None
     hardware_info: HardwareInfo
 
-    submit: dt.datetime | None = Field(
-        default=None, deprecated=True, description="Required for legacy services"
-    )
-
     @field_validator("state", mode="before")
     @classmethod
     def _convert_state_from_state_type_enum_if_needed(cls, v):
@@ -183,6 +179,9 @@ class BaseCompTaskAtDB(BaseModel):
 
 class CompTaskAtDB(BaseCompTaskAtDB):
     task_id: PositiveInt | None = None
+    submit: dt.datetime | None = Field(
+        default=None, deprecated=True, description="Required for legacy services"
+    )
 
     def to_db_model(self, **exclusion_rules) -> dict[str, Any]:
         # mode json is used to ensure the UUIDs are converted to strings

@@ -99,7 +99,7 @@ comp_runs = sa.Table(
         doc="the run uses on demand clusters",
     ),
     sa.Column(
-        "dag_adjacency_list", sa.JSON, doc="Adjancey list for the pipeline's graph"
+        "dag_adjacency_list", JSONB, doc="Adjancey list for the pipeline's graph"
     ),
     sa.UniqueConstraint("project_uuid", "user_id", "iteration"),
     sa.Index("ix_comp_runs_user_id", "user_id"),

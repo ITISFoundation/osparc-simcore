@@ -69,7 +69,6 @@ async def test_worker_properly_autocalls_scheduler_api(
         project_id=published_project.project.uuid,
         run_metadata=run_metadata,
         use_on_demand_clusters=False,
-        tasks_to_run=published_project.tasks_to_run,
     )
     mocked_get_scheduler_worker.assert_called_once_with(initialized_app)
     mocked_get_scheduler_worker.return_value.apply.assert_called_once_with(
@@ -127,7 +126,6 @@ async def test_worker_scheduling_parallelism(
             project_id=published_project.project.uuid,
             run_metadata=run_metadata,
             use_on_demand_clusters=False,
-            tasks_to_run=published_project.tasks_to_run,
         )
 
     # whatever scheduling concurrency we call in here, we shall always see the same number of calls to the scheduler

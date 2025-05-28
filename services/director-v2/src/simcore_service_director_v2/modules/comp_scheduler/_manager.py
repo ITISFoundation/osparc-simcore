@@ -1,6 +1,7 @@
 import logging
 from typing import Final
 
+import networkx as nx
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.users import UserID
@@ -22,6 +23,7 @@ from ...utils.rabbitmq import publish_project_log
 from ..db import get_db_engine
 from ..db.repositories.comp_pipelines import CompPipelinesRepository
 from ..db.repositories.comp_runs import CompRunsRepository
+from ..db.repositories.comp_tasks import CompTasksRepository
 from ..rabbitmq import get_rabbitmq_client
 from ._constants import (
     MAX_CONCURRENT_PIPELINE_SCHEDULING,
@@ -41,13 +43,13 @@ async def run_new_pipeline(
     project_id: ProjectID,
     run_metadata: RunMetadataDict,
     use_on_demand_clusters: bool,
-    tasks_to_run: list[CompTaskAtDB],
 ) -> None:
     """Sets a new pipeline to be scheduled on the computational resources."""
     # ensure the pipeline exists and is populated with something
     db_engine = get_db_engine(app)
     comp_pipeline_at_db = await _get_pipeline_at_db(project_id, db_engine)
     dag = comp_pipeline_at_db.get_graph()
+
     if not dag:
         _logger.warning(
             "project %s has no computational dag defined. not scheduled for a run.",
@@ -63,11 +65,11 @@ async def run_new_pipeline(
         dag_adjacency_list=comp_pipeline_at_db.dag_adjacency_list,
     )
 
+    tasks_to_run = await _get_pipeline_tasks_at_db(db_engine, project_id, dag)
     db_create_snaphot_tasks = [
         {
-            **task.to_db_model(exclude={"created", "modified", "submit"}),
+            **task.to_db_model(exclude={"created", "modified"}),
             "run_id": new_run.run_id,
-            # "submit": datetime.fromisoformat(task.submit)
         }
         for task in tasks_to_run
     ]
@@ -128,6 +130,17 @@ async def _get_pipeline_at_db(
     comp_pipeline_repo = CompPipelinesRepository.instance(db_engine)
     pipeline_at_db = await comp_pipeline_repo.get_pipeline(project_id)
     return pipeline_at_db
+
+
+async def _get_pipeline_tasks_at_db(
+    db_engine: AsyncEngine, project_id: ProjectID, pipeline_dag: nx.DiGraph
+) -> list[CompTaskAtDB]:
+    comp_tasks_repo = CompTasksRepository.instance(db_engine)
+    return [
+        t
+        for t in await comp_tasks_repo.list_computational_tasks(project_id)
+        if (f"{t.node_id}" in list(pipeline_dag.nodes()))
+    ]
 
 
 _LOST_TASKS_FACTOR: Final[int] = 10

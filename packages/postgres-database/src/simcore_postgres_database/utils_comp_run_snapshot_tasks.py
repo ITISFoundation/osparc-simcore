@@ -1,3 +1,5 @@
+from typing import Any
+
 import sqlalchemy as sa
 from pydantic import PositiveInt
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
@@ -28,7 +30,6 @@ COMP_RUN_SNAPSHOT_TASKS_DB_COLS = (
     comp_run_snapshot_tasks.c.modified,
     comp_run_snapshot_tasks.c.pricing_info,
     comp_run_snapshot_tasks.c.hardware_info,
-    comp_run_snapshot_tasks.c.submit,
 )
 
 
@@ -38,7 +39,7 @@ async def update_for_run_id_and_node_id(
     *,
     run_id: PositiveInt,
     node_id: str,
-    data: dict,
+    data: dict[str, Any],
 ):
     async with pass_or_acquire_connection(engine, connection=conn) as _conn:
         result = await _conn.stream(
