@@ -343,7 +343,7 @@ urllib3==2.2.3
     #   -c requirements/_base.txt
     #   docker
     #   requests
-uvicorn==0.34.0
+uvicorn==0.34.2
     # via
     #   fastapi
     #   fastapi-cli

@@ -16,5 +16,4 @@
 --requirement ../../../packages/service-library/requirements/_fastapi.in
 
 
-fastapi
 packaging
