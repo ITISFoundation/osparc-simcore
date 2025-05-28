@@ -13,6 +13,7 @@ from fastapi import APIRouter, BackgroundTasks, FastAPI
 from pytest_simcore.helpers.logging_tools import log_context
 from servicelib.fastapi.cancellation_middleware import RequestCancellationMiddleware
 from servicelib.utils import unused_port
+from tenacity import retry, stop_after_delay, wait_fixed
 from yarl import URL
 
 
@@ -31,6 +32,12 @@ def fastapi_router(
     server_done_event: asyncio.Event, server_cancelled_mock: AsyncMock
 ) -> APIRouter:
     router = APIRouter()
+
+    @router.get("/")
+    async def root() -> dict[str, str]:
+        with log_context(logging.INFO, msg="root endpoint") as ctx:
+            ctx.logger.info("root endpoint called")
+            return {"message": "Hello, World!"}
 
     @router.get("/sleep")
     async def sleep(sleep_time: float) -> dict[str, str]:
@@ -92,6 +99,16 @@ def uvicorn_server(fastapi_app: FastAPI) -> Iterator[URL]:
         thread = Thread(target=server.run)
         thread.daemon = True
         thread.start()
+
+        @retry(wait=wait_fixed(0.1), stop=stop_after_delay(10), reraise=True)
+        def wait_for_server_ready() -> None:
+            with httpx.Client() as client:
+                response = client.get(f"http://127.0.1:{random_port}/")
+                assert (
+                    response.is_success
+                ), f"Server did not start successfully: {response.status_code} {response.text}"
+
+        wait_for_server_ready()
 
         ctx.logger.info(
             "server ready at: %s",

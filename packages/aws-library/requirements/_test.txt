@@ -70,7 +70,7 @@ docker==7.1.0
     # via moto
 faker==36.1.1
     # via -r requirements/_test.in
-fastapi==0.115.11
+fastapi==0.115.12
     # via -r requirements/_test.in
 flask==3.1.0
     # via

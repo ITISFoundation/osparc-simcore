@@ -18,8 +18,6 @@
 
 aiocache[redis,msgpack]
 asyncpg # database
-fastapi[all] # fastapi and extensions
-httpx # web client
 packaging
 pydantic[dotenv] # data models
 pyyaml
