@@ -285,6 +285,7 @@ async def running_project(
             project=created_project,
             started=now_time,
             result=StateType.RUNNING,
+            dag_adjacency_list=fake_workbench_adjacency,
         ),
         task_to_callback_mapping={},
     )
@@ -323,6 +324,7 @@ async def running_project_mark_for_cancellation(
             result=StateType.RUNNING,
             started=now_time,
             cancelled=now_time + datetime.timedelta(seconds=5),
+            dag_adjacency_list=fake_workbench_adjacency,
         ),
         task_to_callback_mapping={},
     )

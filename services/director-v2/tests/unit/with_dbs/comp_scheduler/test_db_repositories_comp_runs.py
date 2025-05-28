@@ -70,9 +70,16 @@ async def test_get(
             published_project.project.prj_owner, published_project.project.uuid
         )
 
-    await create_comp_run(published_project.user, published_project.project)
-    await CompRunsRepository(sqlalchemy_async_engine).get(
+    await create_comp_run(
+        published_project.user,
+        published_project.project,
+        dag_adjacency_list=published_project.pipeline.dag_adjacency_list,
+    )
+    comp_run_db = await CompRunsRepository(sqlalchemy_async_engine).get(
         published_project.project.prj_owner, published_project.project.uuid
+    )
+    assert (
+        comp_run_db.dag_adjacency_list == published_project.pipeline.dag_adjacency_list
     )
 
 

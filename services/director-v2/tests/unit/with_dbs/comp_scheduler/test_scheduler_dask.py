@@ -232,6 +232,8 @@ async def _assert_publish_in_dask_backend(
         expected_state=RunningState.PENDING,
         expected_progress=None,
     )
+    # NOTE: MD: here add assert my new table
+
     # the other tasks are still waiting in published state
     await assert_comp_tasks(
         sqlalchemy_async_engine,

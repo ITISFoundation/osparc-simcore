@@ -11,18 +11,18 @@ from servicelib.exception_utils import silence_exceptions
 from servicelib.logging_utils import log_context
 from servicelib.redis import CouldNotAcquireLockError, exclusive
 from servicelib.utils import limited_gather
-from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
-from simcore_service_director_v2.modules.db.repositories.comp_runs_snapshot_tasks import (
-    CompRunsSnapshotTasksRepository,
-)
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from ...models.comp_pipelines import CompPipelineAtDB
 from ...models.comp_runs import RunMetadataDict
 from ...models.comp_tasks import CompTaskAtDB
 from ...utils.rabbitmq import publish_project_log
 from ..db import get_db_engine
 from ..db.repositories.comp_pipelines import CompPipelinesRepository
 from ..db.repositories.comp_runs import CompRunsRepository
+from ..db.repositories.comp_runs_snapshot_tasks import (
+    CompRunsSnapshotTasksRepository,
+)
 from ..db.repositories.comp_tasks import CompTasksRepository
 from ..rabbitmq import get_rabbitmq_client
 from ._constants import (
