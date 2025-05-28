@@ -17,12 +17,9 @@
 
 aiosmtplib # notifier
 cryptography
-fastapi
-httpx
 Jinja2 # notifier
 packaging
 python-jose
 python-multipart
 python-socketio # notifier
 typer[all]
-uvicorn[standard]
