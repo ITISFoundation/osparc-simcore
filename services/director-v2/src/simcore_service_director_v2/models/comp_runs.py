@@ -142,7 +142,7 @@ class CompRunsAtDB(BaseModel):
                     "use_on_demand_clusters": False,
                     "scheduled": None,
                     "processed": None,
-                    "dag_adjacency_list": {},
+                    "dag_adjacency_list": {"4f15c166-cd27-5d7b-8277-af5ad6e0a7e1": []},
                 },
                 {
                     "run_id": 43243,
@@ -159,7 +159,10 @@ class CompRunsAtDB(BaseModel):
                     "use_on_demand_clusters": False,
                     "scheduled": None,
                     "processed": None,
-                    "dag_adjacency_list": {},
+                    "dag_adjacency_list": {
+                        "901b3ad0-4dc2-4f97-94c2-07621d862baa": [],
+                        "5e463365-2f8e-4b74-883e-97b0a1ae7798": [],
+                    },
                 },
             ]
         },

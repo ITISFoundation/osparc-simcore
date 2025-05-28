@@ -1,7 +1,6 @@
 """Computational Tasks Table"""
 
 import sqlalchemy as sa
-from simcore_postgres_database.models.comp_tasks import NodeClass
 from sqlalchemy.dialects import postgresql
 
 from ._common import (
@@ -12,6 +11,7 @@ from ._common import (
 from .base import metadata
 from .comp_pipeline import StateType
 from .comp_runs import comp_runs
+from .comp_tasks import NodeClass
 
 comp_run_snapshot_tasks = sa.Table(
     "comp_run_snapshot_tasks",
