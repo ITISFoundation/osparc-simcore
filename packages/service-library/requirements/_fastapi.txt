@@ -132,7 +132,7 @@ typing-extensions==4.12.2
     #   pydantic-core
     #   rich-toolkit
     #   typer
-uvicorn==0.34.0
+uvicorn==0.34.2
     # via
     #   fastapi
     #   fastapi-cli

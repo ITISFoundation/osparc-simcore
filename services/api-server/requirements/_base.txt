@@ -888,7 +888,7 @@ urllib3==2.2.3
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
-uvicorn==0.32.1
+uvicorn==0.34.2
     # via
     #   fastapi
     #   fastapi-cli
