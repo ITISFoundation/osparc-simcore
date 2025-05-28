@@ -28,8 +28,11 @@ assert _NERVE_MODEL_FILE.is_file(), f"Nerve model file not found: {_NERVE_MODEL_
 _VALUES_FILE = _SCRIPT_DIR / "values.json"
 assert _VALUES_FILE.is_file(), f"Values file not found: {_VALUES_FILE}"
 
-_SOLVER_KEY = "simcore/services/comp/s4l-python-runner"
-_SOLVER_VERSION = "1.2.200"
+# _SOLVER_KEY = "simcore/services/comp/s4l-python-runner"
+# _SOLVER_VERSION = "1.2.200"
+
+_SOLVER_KEY = "simcore/services/comp/osparc-python-runner"
+_SOLVER_VERSION = "1.4.1"
 
 
 def main(log_job: bool = False):
@@ -77,8 +80,8 @@ def main(log_job: bool = False):
             solver_function = osparc_client.Function(
                 osparc_client.SolverFunction(
                     uid=None,
-                    title="SincSolver",
-                    description="2D sinc using solver",
+                    title="s4l-python-runner",
+                    description="Run Python code using sim4life",
                     input_schema=osparc_client.JSONFunctionInputSchema(),
                     output_schema=osparc_client.JSONFunctionOutputSchema(),
                     solver_key=_SOLVER_KEY,
@@ -105,10 +108,11 @@ def main(log_job: bool = False):
 
             function_job_uid = function_job.to_dict().get("uid")
             assert function_job_uid
+            solver_job_id = function_job.to_dict().get("solver_job_id")
+            assert solver_job_id
 
             if log_job:
-                print(f"Logging job log for job UID: {function_job_uid}")
-                print_job_logs(configuration, function_job_uid)
+                print_job_logs(configuration, solver_job_id)
 
             for job_uid in [function_job_uid]:
                 status = wait_until_done(job_api_instance, job_uid)
@@ -155,12 +159,13 @@ def wait_until_done(function_api: osparc_client.FunctionJobsApi, function_job_ui
 
 
 @retry(
-    stop=stop_after_delay(timedelta(minutes=10)),
+    stop=stop_after_delay(timedelta(minutes=5)),
     wait=wait_exponential(multiplier=1, min=1, max=5),
     retry=retry_if_exception_type(HTTPStatusError),
-    reraise=True,
+    reraise=False,
 )
-def print_job_logs(configuration: osparc_client.Configuration, job_uid: str):
+def print_job_logs(configuration: osparc_client.Configuration, solver_job_uid: str):
+    print(f"Logging job log for solver job UID: {solver_job_uid}")
     client = Client(
         base_url=configuration.host,
         auth=BasicAuth(
@@ -169,8 +174,8 @@ def print_job_logs(configuration: osparc_client.Configuration, job_uid: str):
     )
     with client.stream(
         "GET",
-        f"/v0/solvers/{_SOLVER_KEY}/releases/{_SOLVER_VERSION}/jobs/{job_uid}/logstream",
-        timeout=10 * 60,
+        f"/v0/solvers/{_SOLVER_KEY}/releases/{_SOLVER_VERSION}/jobs/{solver_job_uid}/logstream",
+        timeout=5 * 60,
     ) as response:
         response.raise_for_status()
         for line in response.iter_lines():
