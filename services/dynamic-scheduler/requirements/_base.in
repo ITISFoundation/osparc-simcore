@@ -15,7 +15,6 @@
 --requirement ../../../packages/service-library/requirements/_fastapi.in
 
 
-arrow
 nicegui
 packaging
 python-socketio
