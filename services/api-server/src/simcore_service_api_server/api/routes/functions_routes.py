@@ -25,7 +25,7 @@ from models_library.functions_errors import (
     FunctionInputsValidationError,
     UnsupportedFunctionClassError,
 )
-from pydantic import PositiveInt
+from models_library.users import UserID
 from servicelib.fastapi.dependencies import get_reverse_url_mapper
 from simcore_service_api_server._service_jobs import JobService
 
@@ -72,7 +72,7 @@ FIRST_RELEASE_VERSION = "0.8.0"
 )
 async def register_function(
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
     function: Function,
 ) -> RegisteredFunction:
     return await wb_api_rpc.register_function(user_id=user_id, function=function)
@@ -92,7 +92,7 @@ async def register_function(
 async def get_function(
     function_id: FunctionID,
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
 ) -> RegisteredFunction:
     return await wb_api_rpc.get_function(function_id=function_id, user_id=user_id)
 
@@ -110,7 +110,7 @@ async def get_function(
 async def list_functions(
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     page_params: Annotated[PaginationParams, Depends()],
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
 ):
     functions_list, meta = await wb_api_rpc.list_functions(
         pagination_offset=page_params.offset,
@@ -139,7 +139,7 @@ async def list_function_jobs_for_functionid(
     function_id: FunctionID,
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     page_params: Annotated[PaginationParams, Depends()],
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
 ):
     function_jobs_list, meta = await wb_api_rpc.list_function_jobs(
         pagination_offset=page_params.offset,
@@ -170,7 +170,7 @@ async def update_function_title(
     function_id: FunctionID,
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     title: str,
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
 ) -> RegisteredFunction:
     returned_function = await wb_api_rpc.update_function_title(
         function_id=function_id, title=title, user_id=user_id
@@ -196,7 +196,7 @@ async def update_function_description(
     function_id: FunctionID,
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     description: str,
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
 ) -> RegisteredFunction:
     returned_function = await wb_api_rpc.update_function_description(
         function_id=function_id, description=description, user_id=user_id
@@ -235,7 +235,7 @@ def _join_inputs(
 async def get_function_inputschema(
     function_id: FunctionID,
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
 ) -> FunctionInputSchema:
     function = await wb_api_rpc.get_function(function_id=function_id, user_id=user_id)
     return function.input_schema
@@ -255,7 +255,7 @@ async def get_function_inputschema(
 async def get_function_outputschema(
     function_id: FunctionID,
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
 ) -> FunctionOutputSchema:
     function = await wb_api_rpc.get_function(function_id=function_id, user_id=user_id)
     return function.output_schema
@@ -279,7 +279,7 @@ async def validate_function_inputs(
     function_id: FunctionID,
     inputs: FunctionInputs,
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
 ) -> tuple[bool, str]:
     function = await wb_api_rpc.get_function(function_id=function_id, user_id=user_id)
 
@@ -320,7 +320,7 @@ async def run_function(  # noqa: PLR0913
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
     function_id: FunctionID,
     function_inputs: FunctionInputs,
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[str, Depends(get_product_name)],
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
     job_service: Annotated[JobService, Depends(get_job_service)],
@@ -437,7 +437,7 @@ async def run_function(  # noqa: PLR0913
 async def delete_function(
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     function_id: FunctionID,
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
 ) -> None:
     return await wb_api_rpc.delete_function(function_id=function_id, user_id=user_id)
 
@@ -469,7 +469,7 @@ async def map_function(  # noqa: PLR0913
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[str, Depends(get_product_name)],
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
     job_service: Annotated[JobService, Depends(get_job_service)],
