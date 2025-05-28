@@ -6,10 +6,16 @@ import sqlalchemy as sa
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
-from pydantic import TypeAdapter
+from pydantic import PositiveInt, TypeAdapter
+from simcore_postgres_database.models.comp_run_snapshot_tasks import (
+    comp_run_snapshot_tasks,
+)
 from simcore_postgres_database.models.comp_runs import comp_runs
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
+from simcore_service_director_v2.models.comp_run_snapshot_tasks import (
+    CompRunSnapshotTaskAtDBGet,
+)
 from simcore_service_director_v2.models.comp_runs import CompRunsAtDB
 from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -26,6 +32,7 @@ class PublishedProject:
 @dataclass(kw_only=True)
 class RunningProject(PublishedProject):
     runs: CompRunsAtDB
+    runs_snapshot_tasks: list[CompRunSnapshotTaskAtDBGet]
     task_to_callback_mapping: dict[NodeID, Callable[[], None]]
 
 
@@ -83,14 +90,17 @@ async def assert_comp_runs_empty(sqlalchemy_async_engine: AsyncEngine) -> None:
     await assert_comp_runs(sqlalchemy_async_engine, expected_total=0)
 
 
-async def assert_comp_tasks(
+async def assert_comp_tasks_and_comp_run_snapshot_tasks(
     sqlalchemy_async_engine: AsyncEngine,
     *,
     project_uuid: ProjectID,
     task_ids: list[NodeID],
     expected_state: RunningState,
     expected_progress: float | None,
-) -> list[CompTaskAtDB]:
+    run_id: (
+        PositiveInt | None
+    ),  # If provided, checks the comp_run_snapshot_tasks table as well
+) -> tuple[list[CompTaskAtDB], list[CompRunSnapshotTaskAtDBGet]]:
     # check the database is correctly updated, the run is published
     async with sqlalchemy_async_engine.connect() as conn:
         result = await conn.execute(
@@ -99,11 +109,39 @@ async def assert_comp_tasks(
                 & (comp_tasks.c.node_id.in_([f"{n}" for n in task_ids]))
             )  # there is only one entry
         )
-        tasks = TypeAdapter(list[CompTaskAtDB]).validate_python(result.fetchall())
+        original_tasks = TypeAdapter(list[CompTaskAtDB]).validate_python(
+            result.fetchall()
+        )
     assert all(
-        t.state == expected_state for t in tasks
-    ), f"expected state: {expected_state}, found: {[t.state for t in tasks]}"
+        t.state == expected_state for t in original_tasks
+    ), f"expected state: {expected_state}, found: {[t.state for t in original_tasks]}"
     assert all(
-        t.progress == expected_progress for t in tasks
-    ), f"{expected_progress=}, found: {[t.progress for t in tasks]}"
-    return tasks
+        t.progress == expected_progress for t in original_tasks
+    ), f"{expected_progress=}, found: {[t.progress for t in original_tasks]}"
+
+    if run_id:
+        # check the comp_runs_snapshot_tasks table is correctly updated
+        async with sqlalchemy_async_engine.connect() as conn:
+            result = await conn.execute(
+                comp_run_snapshot_tasks.select().where(
+                    (comp_run_snapshot_tasks.c.run_id == run_id)
+                    & (comp_run_snapshot_tasks.c.project_id == f"{project_uuid}")
+                    & (
+                        comp_run_snapshot_tasks.c.node_id.in_(
+                            [f"{n}" for n in task_ids]
+                        )
+                    )
+                )  # there is only one entry
+            )
+            snapshot_tasks = TypeAdapter(
+                list[CompRunSnapshotTaskAtDBGet]
+            ).validate_python(result.fetchall())
+        assert all(
+            t.state == expected_state for t in snapshot_tasks
+        ), f"expected state: {expected_state}, found: {[t.state for t in snapshot_tasks]}"
+        assert all(
+            t.progress == expected_progress for t in snapshot_tasks
+        ), f"{expected_progress=}, found: {[t.progress for t in snapshot_tasks]}"
+
+    # return the original CompTaskAtDB tasks
+    return original_tasks, snapshot_tasks

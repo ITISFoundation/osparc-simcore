@@ -13,16 +13,20 @@ from uuid import uuid4
 import arrow
 import pytest
 import sqlalchemy as sa
-from _helpers import PublishedProject, RunningProject
+from _helpers import CompRunSnapshotTaskAtDBGet, PublishedProject, RunningProject
 from dask_task_models_library.container_tasks.utils import generate_dask_job_id
 from faker import Faker
 from fastapi.encoders import jsonable_encoder
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
+from pydantic import PositiveInt
 from pydantic.main import BaseModel
 from simcore_postgres_database.models.comp_pipeline import StateType, comp_pipeline
+from simcore_postgres_database.models.comp_run_snapshot_tasks import (
+    comp_run_snapshot_tasks,
+)
 from simcore_postgres_database.models.comp_runs import comp_runs
-from simcore_postgres_database.models.comp_tasks import comp_tasks
+from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
 from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.comp_runs import (
     CompRunsAtDB,
@@ -219,6 +223,101 @@ async def create_comp_run(
 
 
 @pytest.fixture
+async def create_comp_run_snapshot_tasks(
+    sqlalchemy_async_engine: AsyncEngine,
+) -> AsyncIterator[Callable[..., Awaitable[list[CompRunSnapshotTaskAtDBGet]]]]:
+    created_task_ids: list[int] = []
+
+    async def _(
+        user: dict[str, Any],
+        project: ProjectAtDB,
+        run_id: PositiveInt,
+        **overrides_kwargs,
+    ) -> list[CompRunSnapshotTaskAtDBGet]:
+        created_run_snapshot_tasks: list[CompRunSnapshotTaskAtDBGet] = []
+        for internal_id, (node_id, node_data) in enumerate(project.workbench.items()):
+            if to_node_class(node_data.key) != NodeClass.COMPUTATIONAL:
+                continue
+
+            task_config = {
+                "run_id": run_id,  # <-- this is the run_id from comp_runs
+                "project_id": f"{project.uuid}",
+                "node_id": f"{node_id}",
+                "schema": {"inputs": {}, "outputs": {}},
+                "inputs": (
+                    {
+                        key: (
+                            value.model_dump(
+                                mode="json", by_alias=True, exclude_unset=True
+                            )
+                            if isinstance(value, BaseModel)
+                            else value
+                        )
+                        for key, value in node_data.inputs.items()
+                    }
+                    if node_data.inputs
+                    else {}
+                ),
+                "outputs": (
+                    {
+                        key: (
+                            value.model_dump(
+                                mode="json", by_alias=True, exclude_unset=True
+                            )
+                            if isinstance(value, BaseModel)
+                            else value
+                        )
+                        for key, value in node_data.outputs.items()
+                    }
+                    if node_data.outputs
+                    else {}
+                ),
+                "image": Image(name=node_data.key, tag=node_data.version).model_dump(
+                    by_alias=True, exclude_unset=True
+                ),
+                "node_class": to_node_class(node_data.key),
+                "internal_id": internal_id + 1,
+                "job_id": generate_dask_job_id(
+                    service_key=node_data.key,
+                    service_version=node_data.version,
+                    user_id=user["id"],
+                    project_id=project.uuid,
+                    node_id=NodeID(node_id),
+                ),
+            }
+            task_config.update(**overrides_kwargs)
+            async with sqlalchemy_async_engine.begin() as conn:
+                result = await conn.execute(
+                    comp_run_snapshot_tasks.insert()
+                    .values(
+                        **{
+                            k: (v.value if hasattr(v, "value") else v)
+                            for k, v in task_config.items()
+                        }
+                    )
+                    .returning(sa.literal_column("*"))
+                )
+                new_run_snapshot_task = CompRunSnapshotTaskAtDBGet.model_validate(
+                    result.first()
+                )
+                created_run_snapshot_tasks.append(new_run_snapshot_task)
+            created_task_ids.extend(
+                [t.snapshot_task_id for t in created_run_snapshot_tasks]
+            )
+        return created_run_snapshot_tasks
+
+    yield _
+
+    # cleanup
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            comp_run_snapshot_tasks.delete().where(
+                comp_run_snapshot_tasks.c.snapshot_task_id.in_(created_task_ids)
+            )
+        )
+
+
+@pytest.fixture
 async def publish_project(
     create_registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., Awaitable[ProjectAtDB]],
@@ -260,12 +359,22 @@ async def running_project(
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
     create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
     create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
+    create_comp_run_snapshot_tasks: Callable[
+        ..., Awaitable[list[CompRunSnapshotTaskAtDBGet]]
+    ],
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
 ) -> RunningProject:
     user = create_registered_user()
     created_project = await project(user, workbench=fake_workbench_without_outputs)
     now_time = arrow.utcnow().datetime
+    _comp_run = await create_comp_run(
+        user=user,
+        project=created_project,
+        started=now_time,
+        result=StateType.RUNNING,
+        dag_adjacency_list=fake_workbench_adjacency,
+    )
     return RunningProject(
         user=user,
         project=created_project,
@@ -280,12 +389,14 @@ async def running_project(
             progress=0.0,
             start=now_time,
         ),
-        runs=await create_comp_run(
+        runs=_comp_run,
+        runs_snapshot_tasks=await create_comp_run_snapshot_tasks(
             user=user,
             project=created_project,
-            started=now_time,
-            result=StateType.RUNNING,
-            dag_adjacency_list=fake_workbench_adjacency,
+            run_id=_comp_run.run_id,
+            state=StateType.RUNNING,
+            progress=0.0,
+            start=now_time,
         ),
         task_to_callback_mapping={},
     )
@@ -298,12 +409,23 @@ async def running_project_mark_for_cancellation(
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
     create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
     create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
+    create_comp_run_snapshot_tasks: Callable[
+        ..., Awaitable[list[CompRunSnapshotTaskAtDBGet]]
+    ],
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
 ) -> RunningProject:
     user = create_registered_user()
     created_project = await project(user, workbench=fake_workbench_without_outputs)
     now_time = arrow.utcnow().datetime
+    _comp_run = await create_comp_run(
+        user=user,
+        project=created_project,
+        result=StateType.RUNNING,
+        started=now_time,
+        cancelled=now_time + datetime.timedelta(seconds=5),
+        dag_adjacency_list=fake_workbench_adjacency,
+    )
     return RunningProject(
         user=user,
         project=created_project,
@@ -318,13 +440,14 @@ async def running_project_mark_for_cancellation(
             progress=0.0,
             start=now_time,
         ),
-        runs=await create_comp_run(
+        runs=_comp_run,
+        runs_snapshot_tasks=await create_comp_run_snapshot_tasks(
             user=user,
             project=created_project,
-            result=StateType.RUNNING,
-            started=now_time,
-            cancelled=now_time + datetime.timedelta(seconds=5),
-            dag_adjacency_list=fake_workbench_adjacency,
+            run_id=_comp_run.run_id,
+            state=StateType.RUNNING,
+            progress=0.0,
+            start=now_time,
         ),
         task_to_callback_mapping={},
     )
