@@ -1065,6 +1065,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/admin/user-accounts?review_status=PENDING"
           },
+          getReviewedUsers: {
+            method: "GET",
+            url: statics.API + "/admin/user-accounts?review_status=REVIEWED"
+          },
           approveUser: {
             method: "POST",
             url: statics.API + "/admin/user-accounts:approve"
