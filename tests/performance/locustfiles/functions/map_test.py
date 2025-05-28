@@ -28,11 +28,11 @@ assert _NERVE_MODEL_FILE.is_file(), f"Nerve model file not found: {_NERVE_MODEL_
 _VALUES_FILE = _SCRIPT_DIR / "values.json"
 assert _VALUES_FILE.is_file(), f"Values file not found: {_VALUES_FILE}"
 
-# _SOLVER_KEY = "simcore/services/comp/s4l-python-runner"
-# _SOLVER_VERSION = "1.2.200"
+_SOLVER_KEY = "simcore/services/comp/s4l-python-runner"
+_SOLVER_VERSION = "1.2.200"
 
-_SOLVER_KEY = "simcore/services/comp/osparc-python-runner"
-_SOLVER_VERSION = "1.4.1"
+# _SOLVER_KEY = "simcore/services/comp/osparc-python-runner"
+# _SOLVER_VERSION = "1.4.1"
 
 
 def main(log_job: bool = False):
