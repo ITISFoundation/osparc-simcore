@@ -16,11 +16,8 @@
 
 
 arrow
-fastapi
-httpx
 nicegui
 packaging
 python-socketio
 typer[all]
 u-msgpack-python
-uvicorn[standard]
