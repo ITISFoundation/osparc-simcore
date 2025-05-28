@@ -11,7 +11,7 @@ from models_library.api_schemas_webserver.functions import (
     RegisteredFunctionJob,
     RegisteredFunctionJobCollection,
 )
-from pydantic import PositiveInt
+from models_library.users import UserID  # Import UserID
 
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
@@ -55,7 +55,7 @@ async def list_function_job_collections(
     filters: Annotated[
         FunctionJobCollectionsListFilters, Depends(get_function_job_collections_filters)
     ],
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],  # Updated type
 ):
     function_job_collection_list, meta = await wb_api_rpc.list_function_job_collections(
         pagination_offset=page_params.offset,
@@ -82,7 +82,7 @@ async def list_function_job_collections(
 async def get_function_job_collection(
     function_job_collection_id: FunctionJobCollectionID,
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],  # Updated type
 ) -> RegisteredFunctionJobCollection:
     return await wb_api_rpc.get_function_job_collection(
         function_job_collection_id=function_job_collection_id, user_id=user_id
@@ -100,7 +100,7 @@ async def get_function_job_collection(
 async def register_function_job_collection(
     function_job_collection: FunctionJobCollection,
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],  # Updated type
 ) -> RegisteredFunctionJobCollection:
     return await wb_api_rpc.register_function_job_collection(
         function_job_collection=function_job_collection, user_id=user_id
@@ -119,7 +119,7 @@ async def register_function_job_collection(
 async def delete_function_job_collection(
     function_job_collection_id: FunctionJobCollectionID,
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],  # Updated type
 ) -> None:
     return await wb_api_rpc.delete_function_job_collection(
         function_job_collection_id=function_job_collection_id,
@@ -139,7 +139,7 @@ async def delete_function_job_collection(
 async def function_job_collection_list_function_jobs(
     function_job_collection_id: FunctionJobCollectionID,
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],  # Updated type
 ) -> list[RegisteredFunctionJob]:
     function_job_collection = await get_function_job_collection(
         function_job_collection_id=function_job_collection_id,
@@ -165,7 +165,7 @@ async def function_job_collection_status(
     function_job_collection_id: FunctionJobCollectionID,
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],  # Updated type
 ) -> FunctionJobCollectionStatus:
     function_job_collection = await get_function_job_collection(
         function_job_collection_id=function_job_collection_id,
