@@ -9,7 +9,6 @@ import httpx
 import pytest
 from httpx import AsyncClient
 from models_library.api_schemas_webserver.functions import (
-    FunctionIDNotFoundError,
     FunctionJobCollection,
     ProjectFunction,
     ProjectFunctionJob,
@@ -17,6 +16,7 @@ from models_library.api_schemas_webserver.functions import (
     RegisteredProjectFunction,
     RegisteredProjectFunctionJob,
 )
+from models_library.functions_errors import FunctionIDNotFoundError
 from models_library.rest_pagination import PageMetaInfoLimitOffset
 from servicelib.aiohttp import status
 from simcore_service_api_server._meta import API_VTAG

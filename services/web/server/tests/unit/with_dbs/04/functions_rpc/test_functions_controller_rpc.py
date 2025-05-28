@@ -7,23 +7,23 @@ from uuid import uuid4
 import pytest
 from aiohttp.test_utils import TestClient
 from common_library.users_enums import UserRole
-
-# import simcore_service_webserver.functions._functions_controller_rpc as functions_rpc
 from models_library.api_schemas_webserver.functions import (
     Function,
     FunctionIDString,
     FunctionJobCollection,
-    FunctionJobIDNotFoundError,
-    FunctionReadAccessDeniedError,
     JSONFunctionInputSchema,
     JSONFunctionOutputSchema,
     ProjectFunction,
     ProjectFunctionJob,
 )
-from models_library.functions import (
+from models_library.functions import FunctionJobCollectionsListFilters
+
+# import simcore_service_webserver.functions._functions_controller_rpc as functions_rpc
+from models_library.functions_errors import (
     FunctionIDNotFoundError,
-    FunctionJobCollectionsListFilters,
+    FunctionJobIDNotFoundError,
     FunctionJobReadAccessDeniedError,
+    FunctionReadAccessDeniedError,
 )
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict

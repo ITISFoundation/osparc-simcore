@@ -7,31 +7,33 @@ from aiohttp import web
 from models_library.functions import (
     FunctionAccessRightsDB,
     FunctionClass,
-    FunctionExecuteAccessDeniedError,
     FunctionID,
-    FunctionIDNotFoundError,
     FunctionInputs,
     FunctionInputSchema,
     FunctionJobAccessRightsDB,
     FunctionJobClassSpecificData,
     FunctionJobCollectionAccessRightsDB,
-    FunctionJobCollectionExecuteAccessDeniedError,
-    FunctionJobCollectionIDNotFoundError,
-    FunctionJobCollectionReadAccessDeniedError,
     FunctionJobCollectionsListFilters,
-    FunctionJobCollectionWriteAccessDeniedError,
-    FunctionJobExecuteAccessDeniedError,
     FunctionJobID,
-    FunctionJobIDNotFoundError,
-    FunctionJobReadAccessDeniedError,
-    FunctionJobWriteAccessDeniedError,
     FunctionOutputs,
     FunctionOutputSchema,
-    FunctionReadAccessDeniedError,
-    FunctionWriteAccessDeniedError,
     RegisteredFunctionDB,
     RegisteredFunctionJobCollectionDB,
     RegisteredFunctionJobDB,
+)
+from models_library.functions_errors import (
+    FunctionExecuteAccessDeniedError,
+    FunctionIDNotFoundError,
+    FunctionJobCollectionExecuteAccessDeniedError,
+    FunctionJobCollectionIDNotFoundError,
+    FunctionJobCollectionReadAccessDeniedError,
+    FunctionJobCollectionWriteAccessDeniedError,
+    FunctionJobExecuteAccessDeniedError,
+    FunctionJobIDNotFoundError,
+    FunctionJobReadAccessDeniedError,
+    FunctionJobWriteAccessDeniedError,
+    FunctionReadAccessDeniedError,
+    FunctionWriteAccessDeniedError,
 )
 from models_library.rest_pagination import PageMetaInfoLimitOffset
 from models_library.users import UserID
@@ -938,43 +940,43 @@ async def check_user_permissions(
     )
 
     errors = None
-    if object_type == "function":
-        errors = {
-            "read": FunctionReadAccessDeniedError(
-                user_id=user_id, function_id=object_id
-            ),
-            "write": FunctionWriteAccessDeniedError(
-                user_id=user_id, function_id=object_id
-            ),
-            "execute": FunctionExecuteAccessDeniedError(
-                user_id=user_id, function_id=object_id
-            ),
-        }
-    if object_type == "function_job":
-        errors = {
-            "read": FunctionJobReadAccessDeniedError(
-                user_id=user_id, function_job_id=object_id
-            ),
-            "write": FunctionJobWriteAccessDeniedError(
-                user_id=user_id, function_job_id=object_id
-            ),
-            "execute": FunctionJobExecuteAccessDeniedError(
-                user_id=user_id, function_job_id=object_id
-            ),
-        }
-    if object_type == "function_job_collection":
-        errors = {
-            "read": FunctionJobCollectionReadAccessDeniedError(
-                user_id=user_id, function_job_collection_id=object_id
-            ),
-            "write": FunctionJobCollectionWriteAccessDeniedError(
-                user_id=user_id, function_job_collection_id=object_id
-            ),
-            "execute": FunctionJobCollectionExecuteAccessDeniedError(
-                user_id=user_id, function_job_collection_id=object_id
-            ),
-        }
-
+    match object_type:
+        case "function":
+            errors = {
+                "read": FunctionReadAccessDeniedError(
+                    user_id=user_id, function_id=object_id
+                ),
+                "write": FunctionWriteAccessDeniedError(
+                    user_id=user_id, function_id=object_id
+                ),
+                "execute": FunctionExecuteAccessDeniedError(
+                    user_id=user_id, function_id=object_id
+                ),
+            }
+        case "function_job":
+            errors = {
+                "read": FunctionJobReadAccessDeniedError(
+                    user_id=user_id, function_job_id=object_id
+                ),
+                "write": FunctionJobWriteAccessDeniedError(
+                    user_id=user_id, function_job_id=object_id
+                ),
+                "execute": FunctionJobExecuteAccessDeniedError(
+                    user_id=user_id, function_job_id=object_id
+                ),
+            }
+        case "function_job_collection":
+            errors = {
+                "read": FunctionJobCollectionReadAccessDeniedError(
+                    user_id=user_id, function_job_collection_id=object_id
+                ),
+                "write": FunctionJobCollectionWriteAccessDeniedError(
+                    user_id=user_id, function_job_collection_id=object_id
+                ),
+                "execute": FunctionJobCollectionExecuteAccessDeniedError(
+                    user_id=user_id, function_job_collection_id=object_id
+                ),
+            }
     assert errors is not None
 
     if user_permissions is None:

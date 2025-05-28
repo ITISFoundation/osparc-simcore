@@ -12,7 +12,6 @@ from models_library.api_schemas_api_server.functions import (
     FunctionInputs,
     FunctionInputSchema,
     FunctionInputsList,
-    FunctionInputsValidationError,
     FunctionJobCollection,
     FunctionOutputSchema,
     FunctionSchemaClass,
@@ -21,6 +20,9 @@ from models_library.api_schemas_api_server.functions import (
     RegisteredFunctionJob,
     RegisteredFunctionJobCollection,
     SolverFunctionJob,
+)
+from models_library.functions_errors import (
+    FunctionInputsValidationError,
     UnsupportedFunctionClassError,
 )
 from pydantic import PositiveInt
