@@ -1,8 +1,8 @@
 """Add function access rights
 
-Revision ID: 53236b6476f3
-Revises: 4e7d8719855b
-Create Date: 2025-05-27 07:36:17.252224+00:00
+Revision ID: d3982ce629b9
+Revises: 278daef7e99d
+Create Date: 2025-05-28 06:29:49.436254+00:00
 
 """
 
@@ -11,8 +11,8 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = "53236b6476f3"
-down_revision = "4e7d8719855b"
+revision = "d3982ce629b9"
+down_revision = "278daef7e99d"
 branch_labels = None
 depends_on = None
 
