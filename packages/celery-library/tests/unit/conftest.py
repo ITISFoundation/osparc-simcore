@@ -127,7 +127,7 @@ async def celery_worker_controller(
 
 
 @pytest.fixture
-def with_storage_celery_worker(
+def with_celery_worker(
     celery_worker_controller: TestWorkController,
 ) -> CeleryTaskWorker:
     assert isinstance(celery_worker_controller.app, Celery)
