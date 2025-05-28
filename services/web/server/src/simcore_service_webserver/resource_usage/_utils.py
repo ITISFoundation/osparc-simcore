@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -22,14 +21,14 @@ def handle_client_exceptions(app: web.Application) -> Iterator[ClientSession]:
         session: ClientSession = get_client_session(app)
 
         yield session
-    except (ClientResponseError) as err:
+    except ClientResponseError as err:
         if err.status == status.HTTP_404_NOT_FOUND:
-            raise web.HTTPNotFound(reason=MSG_RESOURCE_USAGE_TRACKER_NOT_FOUND)
+            raise web.HTTPNotFound(text=MSG_RESOURCE_USAGE_TRACKER_NOT_FOUND)
         raise web.HTTPServiceUnavailable(
             reason=MSG_RESOURCE_USAGE_TRACKER_SERVICE_UNAVAILABLE
         ) from err
 
-    except (asyncio.TimeoutError, ClientConnectionError) as err:
+    except (TimeoutError, ClientConnectionError) as err:
         _logger.debug("Request to resource usage tracker service failed: %s", err)
         raise web.HTTPServiceUnavailable(
             reason=MSG_RESOURCE_USAGE_TRACKER_SERVICE_UNAVAILABLE

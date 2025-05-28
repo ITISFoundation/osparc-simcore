@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from functools import partial
 from typing import cast
 
+from common_library.exclude import as_dict_exclude_none
 from fastapi import FastAPI
 from fastapi_pagination import create_page
 from models_library.api_schemas_api_server.functions import (
@@ -14,6 +15,7 @@ from models_library.api_schemas_api_server.functions import (
     FunctionJob,
     FunctionJobCollection,
     FunctionJobCollectionID,
+    FunctionJobCollectionsListFilters,
     FunctionJobID,
     FunctionOutputSchema,
     RegisteredFunction,
@@ -253,6 +255,10 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         filter_by_job_parent_resource_name_prefix: str | None,
         filter_any_custom_metadata: list[NameValueTuple] | None,
     ):
+        pagination_kwargs = as_dict_exclude_none(
+            offset=pagination_offset, limit=pagination_limit
+        )
+
         filters = ListProjectsMarkedAsJobRpcFilters(
             job_parent_resource_name_prefix=filter_by_job_parent_resource_name_prefix,
             any_custom_metadata=(
@@ -269,9 +275,8 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             rpc_client=self._client,
             product_name=product_name,
             user_id=user_id,
-            offset=pagination_offset,
-            limit=pagination_limit,
             filters=filters,
+            **pagination_kwargs,
         )
 
     async def register_function(self, *, function: Function) -> RegisteredFunction:
@@ -324,11 +329,13 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         *,
         pagination_offset: PageOffsetInt = 0,
         pagination_limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+        filters: FunctionJobCollectionsListFilters | None = None,
     ) -> tuple[list[RegisteredFunctionJobCollection], PageMetaInfoLimitOffset]:
         return await functions_rpc_interface.list_function_job_collections(
             self._client,
             pagination_offset=pagination_offset,
             pagination_limit=pagination_limit,
+            filters=filters,
         )
 
     async def run_function(

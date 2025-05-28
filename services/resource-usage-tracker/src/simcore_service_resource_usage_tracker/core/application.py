@@ -2,7 +2,10 @@ import logging
 
 from fastapi import FastAPI
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
-from servicelib.fastapi.tracing import initialize_tracing
+from servicelib.fastapi.tracing import (
+    initialize_fastapi_app_tracing,
+    setup_tracing,
+)
 
 from .._meta import (
     API_VERSION,
@@ -50,6 +53,12 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     assert app.state.settings.API_VERSION == API_VERSION  # nosec
 
     # PLUGINS SETUP
+    if app.state.settings.RESOURCE_USAGE_TRACKER_TRACING:
+        setup_tracing(
+            app,
+            app.state.settings.RESOURCE_USAGE_TRACKER_TRACING,
+            app.state.settings.APP_NAME,
+        )
     setup_api_routes(app)
     fire_and_forget_setup(app)
 
@@ -67,11 +76,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     setup_process_message_running_service(app)  # Requires Rabbit
 
     if app.state.settings.RESOURCE_USAGE_TRACKER_TRACING:
-        initialize_tracing(
-            app,
-            app.state.settings.RESOURCE_USAGE_TRACKER_TRACING,
-            app.state.settings.APP_NAME,
-        )
+        initialize_fastapi_app_tracing(app)
 
     # ERROR HANDLERS
     setup_exception_handlers(app)

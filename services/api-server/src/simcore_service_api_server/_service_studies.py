@@ -36,8 +36,8 @@ class StudyService:
         self,
         *,
         filter_by_study_id: StudyID | None = None,
-        pagination_offset: PageOffsetInt = 0,
-        pagination_limit: PageLimitInt = DEFAULT_PAGINATION_LIMIT,
+        pagination_offset: PageOffsetInt | None = None,
+        pagination_limit: PageLimitInt | None = None,
     ) -> tuple[list[Job], PageMetaInfoLimitOffset]:
         """Lists all solver jobs for a user with pagination"""
 

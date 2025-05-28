@@ -139,16 +139,19 @@ qx.Class.define("osparc.jobs.RunsTable", {
 
     __attachHandlers: function() {
       this.addListener("cellTap", e => {
-        const row = e.getRow();
+        const rowIdx = e.getRow();
         const target = e.getOriginalTarget();
         if (target.closest(".qx-material-button") && (target.tagName === "IMG" || target.tagName === "DIV")) {
           const action = target.closest(".qx-material-button").getAttribute("data-action");
           if (action) {
-            this.__handleButtonClick(action, row);
+            this.__handleButtonClick(action, rowIdx);
           }
         } else {
-          const rowData = this.getTableModel().getRowData(row);
-          this.fireDataEvent("runSelected", rowData);
+          const rowData = this.getTableModel().getRowData(rowIdx);
+          this.fireDataEvent("runSelected", {
+            rowData,
+            rowIdx,
+          });
           this.resetSelection();
         }
       });

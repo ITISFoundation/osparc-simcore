@@ -38,7 +38,7 @@ def _handle_exceptions_as_503():
         yield
     except DatabaseError as err:
         _logger.exception("Auth unavailable due to database error")
-        raise web.HTTPServiceUnavailable(reason=MSG_AUTH_NOT_AVAILABLE) from err
+        raise web.HTTPServiceUnavailable(text=MSG_AUTH_NOT_AVAILABLE) from err
 
 
 class AuthorizationPolicy(AbstractAuthorizationPolicy):

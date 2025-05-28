@@ -305,7 +305,7 @@ async def _stop_dynamic_service_task(
 
     except (RPCServerError, ServiceWaitingForManualInterventionError) as exc:
         # in case there is an error reply as not found
-        raise web.HTTPNotFound(reason=f"{exc}") from exc
+        raise web.HTTPNotFound(text=f"{exc}") from exc
 
     except ServiceWasNotFoundError:
         # in case the service is not found reply as all OK

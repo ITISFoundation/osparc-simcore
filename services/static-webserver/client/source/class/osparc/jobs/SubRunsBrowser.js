@@ -49,7 +49,7 @@ qx.Class.define("osparc.jobs.SubRunsBrowser", {
       }));
 
       const prevBtn = new qx.ui.form.Button().set({
-        toolTipText: this.tr("Return to Runs and Clusters"),
+        toolTipText: this.tr("Return to Runs"),
         icon: "@FontAwesome5Solid/arrow-left/20",
         backgroundColor: "transparent"
       });
@@ -74,8 +74,7 @@ qx.Class.define("osparc.jobs.SubRunsBrowser", {
 
       this.__titleLabel.setValue(project["projectName"])
 
-      const includeChildren = false;
-      const subRunsTable = this.__subRunsTable = new osparc.jobs.SubRunsTable(project["projectUuid"], includeChildren);
+      const subRunsTable = this.__subRunsTable = new osparc.jobs.SubRunsTable(project["projectUuid"]);
       this._add(subRunsTable, {
         flex: 1
       });

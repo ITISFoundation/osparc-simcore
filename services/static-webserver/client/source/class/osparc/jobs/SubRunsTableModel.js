@@ -19,7 +19,7 @@
 qx.Class.define("osparc.jobs.SubRunsTableModel", {
   extend: qx.ui.table.model.Remote,
 
-  construct: function(projectUuid, includeChildren = false) {
+  construct: function(projectUuid) {
     this.base(arguments);
 
     const subJobsCols = osparc.jobs.SubRunsTable.COLS;
@@ -34,7 +34,6 @@ qx.Class.define("osparc.jobs.SubRunsTableModel", {
     });
 
     this.setProjectUuid(projectUuid);
-    this.__includeChildren = includeChildren;
   },
 
   properties: {
@@ -51,11 +50,9 @@ qx.Class.define("osparc.jobs.SubRunsTableModel", {
   },
 
   members: {
-    __includeChildren: null,
-
     // overridden
     _loadRowCount() {
-      osparc.store.Jobs.getInstance().fetchSubJobs(this.getProjectUuid(), this.__includeChildren)
+      osparc.store.Jobs.getInstance().fetchSubJobs(this.getProjectUuid())
         .then(subJobs => {
           this._onRowCountLoaded(subJobs.length)
         })
@@ -71,7 +68,7 @@ qx.Class.define("osparc.jobs.SubRunsTableModel", {
       const lastRow = Math.min(qxLastRow, this._rowCount - 1);
       // Returns a request promise with given offset and limit
       const getFetchPromise = () => {
-        return osparc.store.Jobs.getInstance().fetchSubJobs(this.getProjectUuid(), this.__includeChildren)
+        return osparc.store.Jobs.getInstance().fetchSubJobs(this.getProjectUuid())
           .then(subJobs => {
             const data = [];
             const subJobsCols = osparc.jobs.SubRunsTable.COLS;
