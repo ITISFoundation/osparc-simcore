@@ -5288,6 +5288,11 @@
         "summary": "List Function Jobs",
         "description": "List function jobs\n\nNew in *version 0.8.0*",
         "operationId": "list_function_jobs",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "limit",
@@ -5343,6 +5348,11 @@
         "summary": "Register Function Job",
         "description": "Create function job\n\nNew in *version 0.8.0*",
         "operationId": "register_function_job",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -5423,6 +5433,11 @@
         "summary": "Get Function Job",
         "description": "Get function job\n\nNew in *version 0.8.0*",
         "operationId": "get_function_job",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "function_job_id",
@@ -5494,6 +5509,11 @@
         "summary": "Delete Function Job",
         "description": "Delete function job\n\nNew in *version 0.8.0*",
         "operationId": "delete_function_job",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "function_job_id",
@@ -5672,6 +5692,11 @@
         "summary": "List Function Job Collections",
         "description": "List function job collections\n\nNew in *version 0.8.0*",
         "operationId": "list_function_job_collections",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "limit",
@@ -5744,6 +5769,11 @@
         "summary": "Register Function Job Collection",
         "description": "Register function job collection\n\nNew in *version 0.8.0*",
         "operationId": "register_function_job_collection",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -5786,6 +5816,11 @@
         "summary": "Get Function Job Collection",
         "description": "Get function job collection\n\nNew in *version 0.8.0*",
         "operationId": "get_function_job_collection",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "function_job_collection_id",
@@ -5838,6 +5873,11 @@
         "summary": "Delete Function Job Collection",
         "description": "Delete function job collection\n\nNew in *version 0.8.0*",
         "operationId": "delete_function_job_collection",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "function_job_collection_id",
@@ -5890,6 +5930,11 @@
         "summary": "Function Job Collection List Function Jobs",
         "description": "Get the function jobs in function job collection\n\nNew in *version 0.8.0*",
         "operationId": "function_job_collection_list_function_jobs",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "function_job_collection_id",
