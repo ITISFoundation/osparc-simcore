@@ -36,7 +36,7 @@ async def sample_comp_runs(asyncpg_engine: AsyncEngine):
                     "processed": None,
                     "metadata": None,
                     "use_on_demand_clusters": False,
-                    "dag_adjacency_list": None,
+                    "dag_adjacency_list": {},
                 },
                 {
                     "run_id": 2,
@@ -57,7 +57,7 @@ async def sample_comp_runs(asyncpg_engine: AsyncEngine):
                     "processed": None,
                     "metadata": None,
                     "use_on_demand_clusters": False,
-                    "dag_adjacency_list": None,
+                    "dag_adjacency_list": {},
                 },
                 {
                     "run_id": 3,
@@ -78,7 +78,7 @@ async def sample_comp_runs(asyncpg_engine: AsyncEngine):
                     "processed": None,
                     "metadata": None,
                     "use_on_demand_clusters": False,
-                    "dag_adjacency_list": None,
+                    "dag_adjacency_list": {},
                 },
                 {
                     "run_id": 4,
@@ -99,7 +99,7 @@ async def sample_comp_runs(asyncpg_engine: AsyncEngine):
                     "processed": None,
                     "metadata": None,
                     "use_on_demand_clusters": False,
-                    "dag_adjacency_list": None,
+                    "dag_adjacency_list": {},
                 },
             ],
         )

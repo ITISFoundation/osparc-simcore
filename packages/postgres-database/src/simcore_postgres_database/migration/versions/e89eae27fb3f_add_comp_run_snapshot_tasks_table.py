@@ -1,8 +1,8 @@
 """add comp_run_snapshot_tasks table
 
-Revision ID: 4e9ac9ea7eca
+Revision ID: e89eae27fb3f
 Revises: 278daef7e99d
-Create Date: 2025-05-28 14:00:23.502544+00:00
+Create Date: 2025-05-29 16:52:00.435268+00:00
 
 """
 
@@ -11,7 +11,7 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = "4e9ac9ea7eca"
+revision = "e89eae27fb3f"
 down_revision = "278daef7e99d"
 branch_labels = None
 depends_on = None
@@ -69,12 +69,33 @@ def upgrade():
     op.add_column(
         "comp_runs",
         sa.Column(
-            "dag_adjacency_list", postgresql.JSONB(astext_type=sa.Text()), nullable=True
+            "dag_adjacency_list",
+            postgresql.JSONB(astext_type=sa.Text()),
+            server_default=sa.text("'{}'::jsonb"),
+            nullable=False,
         ),
     )
     # ### end Alembic commands ###
     op.execute("ALTER TABLE comp_run_snapshot_tasks ADD COLUMN node_class nodeclass;")
     op.execute("ALTER TABLE comp_run_snapshot_tasks ADD COLUMN state statetype;")
+
+    op.alter_column(
+        "comp_run_snapshot_tasks",
+        "state",
+        existing_type=postgresql.ENUM(
+            "NOT_STARTED",
+            "PUBLISHED",
+            "PENDING",
+            "RUNNING",
+            "SUCCESS",
+            "FAILED",
+            "ABORTED",
+            "WAITING_FOR_RESOURCES",
+            "WAITING_FOR_CLUSTER",
+            name="statetype",
+        ),
+        nullable=False,
+    )
 
 
 def downgrade():
