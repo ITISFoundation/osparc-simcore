@@ -103,6 +103,7 @@ opentelemetry-api==1.30.0
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
     #   opentelemetry-instrumentation
+    #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
@@ -120,9 +121,12 @@ opentelemetry-exporter-otlp-proto-http==1.30.0
     # via opentelemetry-exporter-otlp
 opentelemetry-instrumentation==0.51b0
     # via
+    #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
+opentelemetry-instrumentation-aio-pika==0.51b0
+    # via -r requirements/_base.in
 opentelemetry-instrumentation-logging==0.51b0
     # via -r requirements/_base.in
 opentelemetry-instrumentation-redis==0.51b0
@@ -216,7 +220,7 @@ pyinstrument==5.0.1
     # via -r requirements/_base.in
 python-dateutil==2.9.0.post0
     # via arrow
-python-dotenv==1.0.1
+python-dotenv==1.1.0
     # via pydantic-settings
 pyyaml==6.0.2
     # via
@@ -248,7 +252,7 @@ referencing==0.35.1
     #   jsonschema-specifications
 requests==2.32.3
     # via opentelemetry-exporter-otlp-proto-http
-rich==13.9.4
+rich==14.0.0
     # via
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   typer
@@ -270,7 +274,7 @@ toolz==1.0.0
     # via -r requirements/_base.in
 tqdm==4.67.1
     # via -r requirements/_base.in
-typer==0.15.2
+typer==0.16.0
     # via -r requirements/../../../packages/settings-library/requirements/_base.in
 types-python-dateutil==2.9.0.20241206
     # via arrow
@@ -297,6 +301,7 @@ wrapt==1.17.2
     # via
     #   deprecated
     #   opentelemetry-instrumentation
+    #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-redis
 yarl==1.18.3
     # via

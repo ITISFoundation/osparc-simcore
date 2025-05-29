@@ -163,7 +163,7 @@ async def create_study_job(
 
     await webserver_api.patch_project(
         project_id=job.id,
-        patch_params=ProjectPatch(name=job.name),  # type: ignore[arg-type]
+        patch_params=ProjectPatch(name=job.name),
     )
 
     await wb_api_rpc.mark_project_as_job(

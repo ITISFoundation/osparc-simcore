@@ -19,10 +19,10 @@
 qx.Class.define("osparc.jobs.SubRunsTable", {
   extend: qx.ui.table.Table,
 
-  construct: function(projectUuid, includeChildren = false) {
+  construct: function(projectUuid) {
     this.base(arguments);
 
-    const model = new osparc.jobs.SubRunsTableModel(projectUuid, includeChildren);
+    const model = new osparc.jobs.SubRunsTableModel(projectUuid);
     this.setTableModel(model);
 
     this.set({
@@ -173,7 +173,7 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
           }
           const logDownloadLink = subJob.getLogDownloadLink()
           if (logDownloadLink) {
-            osparc.utils.Utils.downloadLink(logDownloadLink, "GET", rowData["nodeName"] + ".logs");
+            osparc.utils.Utils.downloadLink(logDownloadLink, "GET", rowData["nodeName"] + ".zip");
           } else {
             osparc.FlashMessenger.logAs(this.tr("No logs available"), "WARNING");
           }

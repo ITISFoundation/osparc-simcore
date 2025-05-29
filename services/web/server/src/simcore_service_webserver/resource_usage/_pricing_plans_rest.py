@@ -39,7 +39,7 @@ def _handle_resource_usage_exceptions(handler: Handler):
             return await handler(request)
 
         except WalletAccessForbiddenError as exc:
-            raise web.HTTPForbidden(reason=f"{exc}") from exc
+            raise web.HTTPForbidden(text=f"{exc}") from exc
 
     return wrapper
 

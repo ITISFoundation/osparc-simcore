@@ -47,38 +47,38 @@ def _handle_resource_usage_exceptions(handler: Handler):
             return await handler(request)
 
         except WalletAccessForbiddenError as exc:
-            raise web.HTTPForbidden(reason=f"{exc}") from exc
+            raise web.HTTPForbidden(text=f"{exc}") from exc
 
     return wrapper
 
 
-_ResorceUsagesListOrderQueryParams: type[
-    RequestParameters
-] = create_ordering_query_model_class(
-    ordering_fields={
-        "wallet_id",
-        "wallet_name",
-        "user_id",
-        "user_email",
-        "project_id",
-        "project_name",
-        "node_id",
-        "node_name",
-        "root_parent_project_id",
-        "root_parent_project_name",
-        "service_key",
-        "service_version",
-        "service_type",
-        "started_at",
-        "stopped_at",
-        "service_run_status",
-        "credit_cost",
-        "transaction_status",
-    },
-    default=OrderBy(field=IDStr("started_at"), direction=OrderDirection.DESC),
-    ordering_fields_api_to_column_map={
-        "credit_cost": "osparc_credits",
-    },
+_ResorceUsagesListOrderQueryParams: type[RequestParameters] = (
+    create_ordering_query_model_class(
+        ordering_fields={
+            "wallet_id",
+            "wallet_name",
+            "user_id",
+            "user_email",
+            "project_id",
+            "project_name",
+            "node_id",
+            "node_name",
+            "root_parent_project_id",
+            "root_parent_project_name",
+            "service_key",
+            "service_version",
+            "service_type",
+            "started_at",
+            "stopped_at",
+            "service_run_status",
+            "credit_cost",
+            "transaction_status",
+        },
+        default=OrderBy(field=IDStr("started_at"), direction=OrderDirection.DESC),
+        ordering_fields_api_to_column_map={
+            "credit_cost": "osparc_credits",
+        },
+    )
 )
 
 

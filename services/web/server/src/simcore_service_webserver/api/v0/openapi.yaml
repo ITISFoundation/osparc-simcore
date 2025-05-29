@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.65.0
+  version: 0.67.0
 servers:
 - url: ''
   description: webserver
@@ -371,8 +371,8 @@ paths:
     get:
       tags:
       - auth
-      summary: Request Captcha
-      operationId: request_captcha
+      summary: Create Captcha
+      operationId: create_captcha
       responses:
         '200':
           description: Successful Response
@@ -1365,13 +1365,85 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_UserGet__'
-  /v0/admin/users:search:
+  /v0/admin/user-accounts:
     get:
       tags:
       - users
       - admin
-      summary: Search Users For Admin
-      operationId: search_users_for_admin
+      summary: List Users Accounts
+      operationId: list_users_accounts
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Offset
+      - name: review_status
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - enum:
+            - PENDING
+            - REVIEWED
+            type: string
+          - type: 'null'
+          title: Review Status
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page_UserAccountGet_'
+  /v0/admin/user-accounts:approve:
+    post:
+      tags:
+      - users
+      - admin
+      summary: Approve User Account
+      operationId: approve_user_account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserAccountApprove'
+        required: true
+      responses:
+        '204':
+          description: Successful Response
+  /v0/admin/user-accounts:reject:
+    post:
+      tags:
+      - users
+      - admin
+      summary: Reject User Account
+      operationId: reject_user_account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserAccountReject'
+        required: true
+      responses:
+        '204':
+          description: Successful Response
+  /v0/admin/user-accounts:search:
+    get:
+      tags:
+      - users
+      - admin
+      summary: Search User Accounts
+      operationId: search_user_accounts
       parameters:
       - name: email
         in: query
@@ -1387,14 +1459,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_UserForAdminGet__'
-  /v0/admin/users:pre-register:
+                $ref: '#/components/schemas/Envelope_list_UserAccountGet__'
+  /v0/admin/user-accounts:pre-register:
     post:
       tags:
       - users
       - admin
-      summary: Pre Register User For Admin
-      operationId: pre_register_user_for_admin
+      summary: Pre Register User Account
+      operationId: pre_register_user_account
       requestBody:
         content:
           application/json:
@@ -1407,7 +1479,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_UserForAdminGet_'
+                $ref: '#/components/schemas/Envelope_UserAccountGet_'
   /v0/wallets:
     get:
       tags:
@@ -1544,11 +1616,10 @@ paths:
         required: false
         schema:
           type: integer
+          maximum: 50
           minimum: 1
-          exclusiveMaximum: true
           default: 20
           title: Limit
-          maximum: 50
       - name: offset
         in: query
         required: false
@@ -1990,11 +2061,10 @@ paths:
         required: false
         schema:
           type: integer
+          maximum: 50
           minimum: 1
-          exclusiveMaximum: true
           default: 20
           title: Limit
-          maximum: 50
       - name: offset
         in: query
         required: false
@@ -5003,11 +5073,10 @@ paths:
         required: false
         schema:
           type: integer
+          maximum: 50
           minimum: 1
-          exclusiveMaximum: true
           default: 20
           title: Limit
-          maximum: 50
       - name: offset
         in: query
         required: false
@@ -5171,11 +5240,10 @@ paths:
         required: false
         schema:
           type: integer
+          maximum: 50
           minimum: 1
-          exclusiveMaximum: true
           default: 20
           title: Limit
-          maximum: 50
       - name: offset
         in: query
         required: false
@@ -8329,6 +8397,14 @@ components:
           phone: +1 123456789
           postalCode: '98001'
           privacyPolicy: true
+    AccountRequestStatus:
+      type: string
+      enum:
+      - PENDING
+      - APPROVED
+      - REJECTED
+      title: AccountRequestStatus
+      description: Status of the request for an account
     Activity:
       properties:
         stats:
@@ -10576,11 +10652,11 @@ components:
           title: Error
       type: object
       title: Envelope[Union[WalletGet, NoneType]]
-    Envelope_UserForAdminGet_:
+    Envelope_UserAccountGet_:
       properties:
         data:
           anyOf:
-          - $ref: '#/components/schemas/UserForAdminGet'
+          - $ref: '#/components/schemas/UserAccountGet'
           - type: 'null'
         error:
           anyOf:
@@ -10588,7 +10664,7 @@ components:
           - type: 'null'
           title: Error
       type: object
-      title: Envelope[UserForAdminGet]
+      title: Envelope[UserAccountGet]
     Envelope_WalletGetWithAvailableCredits_:
       properties:
         data:
@@ -11132,12 +11208,12 @@ components:
           title: Error
       type: object
       title: Envelope[list[TaskGet]]
-    Envelope_list_UserForAdminGet__:
+    Envelope_list_UserAccountGet__:
       properties:
         data:
           anyOf:
           - items:
-              $ref: '#/components/schemas/UserForAdminGet'
+              $ref: '#/components/schemas/UserAccountGet'
             type: array
           - type: 'null'
           title: Data
@@ -11147,7 +11223,7 @@ components:
           - type: 'null'
           title: Error
       type: object
-      title: Envelope[list[UserForAdminGet]]
+      title: Envelope[list[UserAccountGet]]
     Envelope_list_UserGet__:
       properties:
         data:
@@ -13774,6 +13850,24 @@ components:
       - _links
       - data
       title: Page[ServiceRunGet]
+    Page_UserAccountGet_:
+      properties:
+        _meta:
+          $ref: '#/components/schemas/PageMetaInfoLimitOffset'
+        _links:
+          $ref: '#/components/schemas/PageLinks'
+        data:
+          items:
+            $ref: '#/components/schemas/UserAccountGet'
+          type: array
+          title: Data
+      additionalProperties: false
+      type: object
+      required:
+      - _meta
+      - _links
+      - data
+      title: Page[UserAccountGet]
     PatchRequestBody:
       properties:
         value:
@@ -15248,7 +15342,6 @@ components:
       required:
       - name
       - description
-      - thumbnail
       - status
       title: PutWalletBodyParams
     RegisterBody:
@@ -16898,7 +16991,21 @@ components:
       - number
       - e_tag
       title: UploadedPart
-    UserForAdminGet:
+    UserAccountApprove:
+      properties:
+        email:
+          type: string
+          format: email
+          title: Email
+        invitation:
+          anyOf:
+          - $ref: '#/components/schemas/InvitationGenerate'
+          - type: 'null'
+      type: object
+      required:
+      - email
+      title: UserAccountApprove
+    UserAccountGet:
       properties:
         firstName:
           anyOf:
@@ -16954,11 +17061,33 @@ components:
           type: object
           title: Extras
           description: Keeps extra information provided in the request form
+        preRegistrationId:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Preregistrationid
         invitedBy:
           anyOf:
           - type: string
           - type: 'null'
           title: Invitedby
+        accountRequestStatus:
+          anyOf:
+          - $ref: '#/components/schemas/AccountRequestStatus'
+          - type: 'null'
+        accountRequestReviewedBy:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
+          title: Accountrequestreviewedby
+        accountRequestReviewedAt:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Accountrequestreviewedat
         registered:
           type: boolean
           title: Registered
@@ -16987,9 +17116,21 @@ components:
       - state
       - postalCode
       - country
+      - preRegistrationId
+      - accountRequestStatus
       - registered
       - status
-      title: UserForAdminGet
+      title: UserAccountGet
+    UserAccountReject:
+      properties:
+        email:
+          type: string
+          format: email
+          title: Email
+      type: object
+      required:
+      - email
+      title: UserAccountReject
     UserGet:
       properties:
         userId:

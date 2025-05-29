@@ -81,24 +81,22 @@ def error_middleware_factory(  # noqa: C901
             return await handler(request)
 
         except web.HTTPError as err:
-            # TODO: differenciate between server/client error
-            if not err.reason:
-                err.set_status(err.status_code, reason="Unexpected error")
 
             err.content_type = MIMETYPE_APPLICATION_JSON
 
             if not err.text or not is_enveloped_from_text(err.text):
-                error = ErrorGet(
+                error_message = err.text or err.reason or "Unexpected error"
+                error_model = ErrorGet(
                     errors=[
                         ErrorItemType.from_error(err),
                     ],
                     status=err.status,
                     logs=[
-                        LogMessageType(message=err.reason, level="ERROR"),
+                        LogMessageType(message=error_message, level="ERROR"),
                     ],
-                    message=err.reason,
+                    message=error_message,
                 )
-                err.text = EnvelopeFactory(error=error).as_text()
+                err.text = EnvelopeFactory(error=error_model).as_text()
 
             raise
 

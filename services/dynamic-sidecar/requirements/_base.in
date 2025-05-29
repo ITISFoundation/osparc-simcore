@@ -29,14 +29,10 @@ aio-pika
 aiodocker
 aiofiles
 aioprocessing
-arrow
-fastapi
-httpx
 psutil
 pydantic
 python-magic # file type identification library. See 'magic.from_file(...)' NOTE: requires `libmagic`` installed
 python-socketio
 PyYAML
 u-msgpack-python
-uvicorn
 watchdog

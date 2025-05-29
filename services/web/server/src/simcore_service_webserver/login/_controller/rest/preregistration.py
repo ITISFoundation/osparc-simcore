@@ -148,15 +148,12 @@ async def unregister_account(request: web.Request):
         return response
 
 
-@routes.get(
-    f"/{API_VTAG}/auth/captcha",
-    name="request_captcha",
-)
+@routes.get(f"/{API_VTAG}/auth/captcha", name="create_captcha")
 @global_rate_limit_route(number_of_requests=30, interval_seconds=MINUTE)
-async def request_captcha(request: web.Request):
+async def create_captcha(request: web.Request):
     session = await get_session(request)
 
-    captcha_text, image_data = await _preregistration_service.generate_captcha()
+    captcha_text, image_data = await _preregistration_service.create_captcha()
 
     # Store captcha text in session
     session[CAPTCHA_SESSION_KEY] = captcha_text

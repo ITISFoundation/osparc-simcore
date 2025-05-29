@@ -1,9 +1,8 @@
-""" Defines different user roles and its associated permission
+"""Defines different user roles and its associated permission
 
-    This definition is consumed by the security._access_model to build an access model for the framework
-    The access model is created upon setting up of the security subsystem
+This definition is consumed by the security._access_model to build an access model for the framework
+The access model is created upon setting up of the security subsystem
 """
-
 
 from simcore_postgres_database.models.users import UserRole
 from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
@@ -106,6 +105,7 @@ ROLES_PERMISSIONS: dict[UserRole, PermissionDict] = {
             "product.details.*",
             "product.invitations.create",
             "admin.users.read",
+            "admin.users.write",
         ],
         inherits=[UserRole.TESTER],
     ),

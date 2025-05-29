@@ -108,7 +108,7 @@ async def send_account_request_email_to_support(
         )
 
 
-async def generate_captcha() -> tuple[str, bytes]:
+async def create_captcha() -> tuple[str, bytes]:
     captcha_text = generate_passcode(number_of_digits=6)
     image = ImageCaptcha(width=140, height=45)
 

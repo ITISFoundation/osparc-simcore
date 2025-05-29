@@ -15,7 +15,5 @@
 
 
 cryptography
-fastapi
 packaging
 typer[all]
-uvicorn[standard]

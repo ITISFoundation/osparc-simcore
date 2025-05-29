@@ -1,5 +1,6 @@
 import json
 
+import sqlalchemy
 from aiohttp import web
 from models_library.functions import (
     FunctionClass,
@@ -9,6 +10,7 @@ from models_library.functions import (
     FunctionInputSchema,
     FunctionJobClassSpecificData,
     FunctionJobCollectionIDNotFoundError,
+    FunctionJobCollectionsListFilters,
     FunctionJobID,
     FunctionJobIDNotFoundError,
     FunctionOutputs,
@@ -18,6 +20,7 @@ from models_library.functions import (
     RegisteredFunctionJobDB,
 )
 from models_library.rest_pagination import PageMetaInfoLimitOffset
+from pydantic import TypeAdapter
 from simcore_postgres_database.models.funcapi_function_job_collections_table import (
     function_job_collections_table,
 )
@@ -279,21 +282,48 @@ async def list_function_job_collections(
     *,
     pagination_limit: int,
     pagination_offset: int,
+    filters: FunctionJobCollectionsListFilters | None = None,
 ) -> tuple[
     list[tuple[RegisteredFunctionJobCollectionDB, list[FunctionJobID]]],
     PageMetaInfoLimitOffset,
 ]:
     """
     Returns a list of function job collections and their associated job ids.
+    Filters the collections to include only those that have function jobs with the specified function id if filters.has_function_id is provided.
     """
+
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        filter_condition: sqlalchemy.sql.ColumnElement = sqlalchemy.sql.true()
+
+        if filters and filters.has_function_id:
+            function_id = TypeAdapter(FunctionID).validate_python(
+                filters.has_function_id
+            )
+            subquery = (
+                function_job_collections_to_function_jobs_table.select()
+                .with_only_columns(
+                    func.distinct(
+                        function_job_collections_to_function_jobs_table.c.function_job_collection_uuid
+                    )
+                )
+                .join(
+                    function_jobs_table,
+                    function_job_collections_to_function_jobs_table.c.function_job_uuid
+                    == function_jobs_table.c.uuid,
+                )
+                .where(function_jobs_table.c.function_uuid == function_id)
+            )
+            filter_condition = function_job_collections_table.c.uuid.in_(subquery)
         total_count_result = await conn.scalar(
-            func.count().select().select_from(function_job_collections_table)
+            func.count()
+            .select()
+            .select_from(function_job_collections_table)
+            .where(filter_condition)
         )
+        query = function_job_collections_table.select().where(filter_condition)
+
         result = await conn.stream(
-            function_job_collections_table.select()
-            .offset(pagination_offset)
-            .limit(pagination_limit)
+            query.offset(pagination_offset).limit(pagination_limit)
         )
         rows = await result.all()
         if rows is None:
