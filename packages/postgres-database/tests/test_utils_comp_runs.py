@@ -128,8 +128,7 @@ async def test_get_latest_run_id_for_project_no_runs(
 ):
     import uuid
 
-    with pytest.raises(ValueError, match="did not return any row") as exc:
-        await get_latest_run_id_for_project(
-            asyncpg_engine, project_id=str(uuid.uuid4())
-        )
-    assert "did not return any row" in str(exc.value)
+    output = await get_latest_run_id_for_project(
+        asyncpg_engine, project_id=str(uuid.uuid4())
+    )
+    assert output is None
