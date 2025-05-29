@@ -1,3 +1,4 @@
+import logging
 from typing import cast
 
 import sqlalchemy as sa
@@ -7,13 +8,15 @@ from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from .models.comp_runs import comp_runs
 from .utils_repos import pass_or_acquire_connection
 
+_logger = logging.getLogger(__name__)
+
 
 async def get_latest_run_id_for_project(
     engine: AsyncEngine,
     conn: AsyncConnection | None = None,
     *,
     project_id: str,
-) -> PositiveInt:
+) -> PositiveInt | None:
     # Get latest run per (project_uuid, user_id)
     project_and_user_latest_runs = (
         sa.select(
@@ -68,6 +71,7 @@ async def get_latest_run_id_for_project(
         result = await _conn.execute(base_select_query)
         row = result.one_or_none()
         if not row:
-            msg = f"get_latest_run_id_for_project did not return any row for project_id={project_id}"
-            raise ValueError(msg)
+            msg = f"get_latest_run_id_for_project did not return any row for project_id={project_id} (MD: I think this should not happen, but if it happens contact MD/SAN)"
+            _logger.error(msg)
+            return None
         return cast(PositiveInt, row.run_id)

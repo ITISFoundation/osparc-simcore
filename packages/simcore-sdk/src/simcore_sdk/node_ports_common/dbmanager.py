@@ -66,18 +66,19 @@ async def _update_comp_run_snapshot_tasks_if_computational(
         _latest_run_id = await get_latest_run_id_for_project(
             engine, connection, project_id=project_id
         )
-        await update_for_run_id_and_node_id(
-            engine,
-            connection,
-            run_id=_latest_run_id,
-            node_id=node_uuid,
-            data={
-                "schema": node_configuration["schema"],
-                "inputs": node_configuration["inputs"],
-                "outputs": node_configuration["outputs"],
-                "run_hash": node_configuration.get("run_hash"),
-            },
-        )
+        if _latest_run_id is not None:
+            await update_for_run_id_and_node_id(
+                engine,
+                connection,
+                run_id=_latest_run_id,
+                node_id=node_uuid,
+                data={
+                    "schema": node_configuration["schema"],
+                    "inputs": node_configuration["inputs"],
+                    "outputs": node_configuration["outputs"],
+                    "run_hash": node_configuration.get("run_hash"),
+                },
+            )
 
 
 class DBContextManager:
