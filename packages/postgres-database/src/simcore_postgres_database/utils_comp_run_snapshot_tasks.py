@@ -2,6 +2,7 @@ from typing import Any
 
 import sqlalchemy as sa
 from pydantic import PositiveInt
+from sqlalchemy.engine.row import Row
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from .models.comp_run_snapshot_tasks import comp_run_snapshot_tasks
@@ -40,9 +41,9 @@ async def update_for_run_id_and_node_id(
     run_id: PositiveInt,
     node_id: str,
     data: dict[str, Any],
-):
+) -> Row:
     async with pass_or_acquire_connection(engine, connection=conn) as _conn:
-        result = await _conn.stream(
+        result = await _conn.execute(
             comp_run_snapshot_tasks.update()
             .values(
                 **data,
@@ -54,7 +55,7 @@ async def update_for_run_id_and_node_id(
             )
             .returning(*COMP_RUN_SNAPSHOT_TASKS_DB_COLS)
         )
-        row = await result.one_or_none()
+        row = result.one_or_none()
         if row is None:
             msg = f"update for run_id={run_id} and node_id={node_id} did not return any row"
             raise ValueError(msg)
