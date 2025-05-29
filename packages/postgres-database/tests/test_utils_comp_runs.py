@@ -1,3 +1,4 @@
+# pylint: disable=unused-argument
 import datetime
 
 import pytest
@@ -110,7 +111,7 @@ async def sample_comp_runs(asyncpg_engine: AsyncEngine):
 
 
 async def test_get_latest_run_id_for_project(
-    asyncpg_engine: AsyncEngine, sample_comp_runs
+    asyncpg_engine: AsyncEngine, sample_comp_runs: None
 ):
     run_id = await get_latest_run_id_for_project(asyncpg_engine, project_id="project-1")
     assert run_id == 3
@@ -122,7 +123,7 @@ async def test_get_latest_run_id_for_project(
 
 
 async def test_get_latest_run_id_for_project_no_runs(
-    asyncpg_engine: AsyncEngine, sample_comp_runs
+    asyncpg_engine: AsyncEngine, sample_comp_runs: None
 ):
     import uuid
 
