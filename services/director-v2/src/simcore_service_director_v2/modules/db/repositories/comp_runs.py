@@ -358,6 +358,7 @@ class CompRunsRepository(BaseRepository):
         iteration: PositiveInt | None = None,
         metadata: RunMetadataDict,
         use_on_demand_clusters: bool,
+        dag_adjacency_list: dict[str, list[str]],
     ) -> CompRunsAtDB:
         try:
             async with transaction_context(self.db_engine) as conn:
@@ -373,6 +374,7 @@ class CompRunsRepository(BaseRepository):
                         result=RUNNING_STATE_TO_DB[RunningState.PUBLISHED],
                         metadata=jsonable_encoder(metadata),
                         use_on_demand_clusters=use_on_demand_clusters,
+                        dag_adjacency_list=dag_adjacency_list,
                     )
                     .returning(literal_column("*"))
                 )

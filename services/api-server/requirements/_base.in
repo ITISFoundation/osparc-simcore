@@ -19,8 +19,6 @@
 aiofiles
 cryptography
 fastapi-pagination
-fastapi[all]
-httpx
 orjson
 packaging
 parse

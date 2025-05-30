@@ -957,7 +957,10 @@ async def test_get_computation_from_published_computation_task(
         user=user, project=proj, state=StateType.PUBLISHED, progress=0
     )
     comp_runs = await create_comp_run(
-        user=user, project=proj, result=StateType.PUBLISHED
+        user=user,
+        project=proj,
+        result=StateType.PUBLISHED,
+        dag_adjacency_list=fake_workbench_adjacency,
     )
     assert comp_runs
     get_computation_url = httpx.URL(

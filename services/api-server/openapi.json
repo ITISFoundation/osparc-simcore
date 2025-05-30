@@ -5288,6 +5288,11 @@
         "summary": "List Function Jobs",
         "description": "List function jobs\n\nNew in *version 0.8.0*",
         "operationId": "list_function_jobs",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "limit",
@@ -5343,6 +5348,11 @@
         "summary": "Register Function Job",
         "description": "Create function job\n\nNew in *version 0.8.0*",
         "operationId": "register_function_job",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -5423,6 +5433,11 @@
         "summary": "Get Function Job",
         "description": "Get function job\n\nNew in *version 0.8.0*",
         "operationId": "get_function_job",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "function_job_id",
@@ -5494,6 +5509,11 @@
         "summary": "Delete Function Job",
         "description": "Delete function job\n\nNew in *version 0.8.0*",
         "operationId": "delete_function_job",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "function_job_id",
@@ -5672,6 +5692,11 @@
         "summary": "List Function Job Collections",
         "description": "List function job collections\n\nNew in *version 0.8.0*",
         "operationId": "list_function_job_collections",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "limit",
@@ -5744,6 +5769,11 @@
         "summary": "Register Function Job Collection",
         "description": "Register function job collection\n\nNew in *version 0.8.0*",
         "operationId": "register_function_job_collection",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -5786,6 +5816,11 @@
         "summary": "Get Function Job Collection",
         "description": "Get function job collection\n\nNew in *version 0.8.0*",
         "operationId": "get_function_job_collection",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "function_job_collection_id",
@@ -5838,6 +5873,11 @@
         "summary": "Delete Function Job Collection",
         "description": "Delete function job collection\n\nNew in *version 0.8.0*",
         "operationId": "delete_function_job_collection",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "function_job_collection_id",
@@ -5890,6 +5930,11 @@
         "summary": "Function Job Collection List Function Jobs",
         "description": "Get the function jobs in function job collection\n\nNew in *version 0.8.0*",
         "operationId": "function_job_collection_list_function_jobs",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "function_job_collection_id",
@@ -6767,6 +6812,11 @@
         "summary": "Register Function",
         "description": "Create function\n\nNew in *version 0.8.0*",
         "operationId": "register_function",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -6855,6 +6905,11 @@
         "summary": "List Functions",
         "description": "List functions\n\nNew in *version 0.8.0*",
         "operationId": "list_functions",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "limit",
@@ -6912,6 +6967,11 @@
         "summary": "Get Function",
         "description": "Get function\n\nNew in *version 0.8.0*",
         "operationId": "get_function",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "function_id",
@@ -6983,6 +7043,11 @@
         "summary": "Delete Function",
         "description": "Delete function\n\nNew in *version 0.8.0*",
         "operationId": "delete_function",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "function_id",
@@ -7035,6 +7100,11 @@
         "summary": "List Function Jobs For Functionid",
         "description": "List function jobs for a function\n\nNew in *version 0.8.0*",
         "operationId": "list_function_jobs_for_functionid",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "function_id",
@@ -7102,6 +7172,11 @@
         "summary": "Update Function Title",
         "description": "Update function\n\nNew in *version 0.8.0*",
         "operationId": "update_function_title",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "function_id",
@@ -7184,6 +7259,11 @@
         "summary": "Update Function Description",
         "description": "Update function\n\nNew in *version 0.8.0*",
         "operationId": "update_function_description",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "function_id",
@@ -7266,6 +7346,11 @@
         "summary": "Get Function Inputschema",
         "description": "Get function input schema\n\nNew in *version 0.8.0*",
         "operationId": "get_function_inputschema",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "function_id",
@@ -7331,6 +7416,11 @@
         "summary": "Get Function Outputschema",
         "description": "Get function output schema\n\nNew in *version 0.8.0*",
         "operationId": "get_function_outputschema",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "function_id",
@@ -7396,6 +7486,11 @@
         "summary": "Validate Function Inputs",
         "description": "Validate inputs against the function's input schema\n\nNew in *version 0.8.0*",
         "operationId": "validate_function_inputs",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "function_id",
