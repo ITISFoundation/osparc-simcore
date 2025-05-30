@@ -76,7 +76,7 @@ async def _create_services_in_database(
             (
                 owner_gid,
                 service_access_rights,
-            ) = await access_rights.evaluate_service_ownership_and_rights(
+            ) = await access_rights.evaluate_default_service_ownership_and_rights(
                 app,
                 service=service_metadata,
                 product_name=app.state.default_product_name,

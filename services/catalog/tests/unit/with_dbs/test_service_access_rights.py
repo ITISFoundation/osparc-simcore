@@ -15,7 +15,7 @@ from pytest_simcore.helpers.catalog_services import CreateFakeServiceDataCallabl
 from simcore_service_catalog.models.services_db import ServiceAccessRightsDB
 from simcore_service_catalog.repository.services import ServicesRepository
 from simcore_service_catalog.service.access_rights import (
-    evaluate_service_ownership_and_rights,
+    evaluate_default_service_ownership_and_rights,
     inherit_from_previous_release,
     reduce_access_rights,
 )
@@ -186,8 +186,10 @@ async def test_auto_upgrade_policy(
     services_repo = ServicesRepository(app.state.engine)
 
     # DEFAULT policies
-    owner_gid, service_access_rights = await evaluate_service_ownership_and_rights(
-        app, service=new_service_metadata, product_name=target_product
+    owner_gid, service_access_rights = (
+        await evaluate_default_service_ownership_and_rights(
+            app, service=new_service_metadata, product_name=target_product
+        )
     )
     assert owner_gid == user_gid
     assert len(service_access_rights) == 1
