@@ -5,6 +5,7 @@
 #     "matplotlib",
 #     "osparc>=0.8.3.post0.dev26",
 #     "tenacity",
+#     "tqdm",
 # ]
 # ///
 
@@ -20,14 +21,6 @@ import matplotlib.pyplot as plt
 import osparc_client
 from httpx import BasicAuth, Client, HTTPStatusError
 from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_exponential
-
-_SCRIPT_DIR = Path(__file__).parent
-_MAIN_FILE = _SCRIPT_DIR / "main.py"
-assert _MAIN_FILE.is_file(), f"Main file not found: {_MAIN_FILE}"
-_NERVE_MODEL_FILE = _SCRIPT_DIR / "Nerve_Model.sab"
-assert _NERVE_MODEL_FILE.is_file(), f"Nerve model file not found: {_NERVE_MODEL_FILE}"
-_VALUES_FILE = _SCRIPT_DIR / "values.json"
-assert _VALUES_FILE.is_file(), f"Values file not found: {_VALUES_FILE}"
 
 _SOLVER_KEY = "simcore/services/comp/itis/sleeper"
 _SOLVER_VERSION = "2.2.1"
