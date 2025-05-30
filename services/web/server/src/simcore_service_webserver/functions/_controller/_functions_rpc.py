@@ -238,7 +238,12 @@ async def delete_function_job(
     )
 
 
-@router.expose(reraise_if_error_type=(FunctionJobCollectionIDNotFoundError,))
+@router.expose(
+    reraise_if_error_type=(
+        FunctionJobCollectionIDNotFoundError,
+        FunctionJobCollectionReadAccessDeniedError,
+    )
+)
 async def delete_function_job_collection(
     app: web.Application,
     *,

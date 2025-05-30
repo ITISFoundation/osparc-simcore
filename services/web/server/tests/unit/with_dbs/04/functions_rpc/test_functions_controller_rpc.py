@@ -21,6 +21,7 @@ from models_library.functions import FunctionJobCollectionsListFilters
 # import simcore_service_webserver.functions._functions_controller_rpc as functions_rpc
 from models_library.functions_errors import (
     FunctionIDNotFoundError,
+    FunctionJobCollectionReadAccessDeniedError,
     FunctionJobIDNotFoundError,
     FunctionJobReadAccessDeniedError,
     FunctionReadAccessDeniedError,
@@ -151,6 +152,15 @@ async def test_register_get_delete_function(
             function_id=registered_function.uid,
             user_id=other_logged_user["id"],
             product_name=osparc_product_name,
+        )
+
+    with pytest.raises(FunctionReadAccessDeniedError):
+        # Attempt to delete the function by another user
+        await functions_rpc.delete_function(
+            rabbitmq_rpc_client=rpc_client,
+            function_id=registered_function.uid,
+            user_id=other_logged_user["id"],
+            product_name="this_is_not_osparc",
         )
 
     # Delete the function using its ID
@@ -812,6 +822,7 @@ async def test_function_job_collection(
     mock_function: ProjectFunction,
     rpc_client: RabbitMQRPCClient,
     logged_user: UserInfoDict,
+    other_logged_user: UserInfoDict,
     osparc_product_name: ProductName,
 ):
     # Register the function first
@@ -867,8 +878,42 @@ async def test_function_job_collection(
     )
     assert registered_collection.uid is not None
 
-    # Assert the registered collection matches the input collection
+    # Get the function job collection
+    retrieved_collection = await functions_rpc.get_function_job_collection(
+        rabbitmq_rpc_client=rpc_client,
+        function_job_collection_id=registered_collection.uid,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+    )
+    assert retrieved_collection.uid == registered_collection.uid
     assert registered_collection.job_ids == function_job_ids
+
+    # Test denied access for another user
+    with pytest.raises(FunctionJobCollectionReadAccessDeniedError):
+        await functions_rpc.get_function_job_collection(
+            rabbitmq_rpc_client=rpc_client,
+            function_job_collection_id=registered_collection.uid,
+            user_id=other_logged_user["id"],
+            product_name=osparc_product_name,
+        )
+
+    # Test denied access for another product
+    with pytest.raises(FunctionJobCollectionReadAccessDeniedError):
+        await functions_rpc.get_function_job_collection(
+            rabbitmq_rpc_client=rpc_client,
+            function_job_collection_id=registered_collection.uid,
+            user_id=other_logged_user["id"],
+            product_name="this_is_not_osparc",
+        )
+
+    # Attempt to delete the function job collection by another user
+    with pytest.raises(FunctionJobCollectionReadAccessDeniedError):
+        await functions_rpc.delete_function_job_collection(
+            rabbitmq_rpc_client=rpc_client,
+            function_job_collection_id=registered_collection.uid,
+            user_id=other_logged_user["id"],
+            product_name=osparc_product_name,
+        )
 
     await functions_rpc.delete_function_job_collection(
         rabbitmq_rpc_client=rpc_client,
