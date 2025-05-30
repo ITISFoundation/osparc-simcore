@@ -86,7 +86,7 @@ def test_reduce_access_rights():
     }
 
 
-async def test_auto_upgrade_policy(
+async def test_service_upgrade_metadata_inheritance(
     sqlalchemy_async_engine: AsyncEngine,
     user: dict[str, Any],
     user_groups_ids: list[GroupID],
@@ -97,6 +97,8 @@ async def test_auto_upgrade_policy(
     mocker: MockerFixture,
 ):
     everyone_gid, user_gid, team_gid = user_groups_ids
+
+    assert user_gid == user["primary_gid"]
 
     # Avoids calls to director API
     mocker.patch.object(
@@ -223,8 +225,11 @@ async def test_auto_upgrade_policy(
     service_access_rights = reduce_access_rights(service_access_rights)
 
     assert len(service_access_rights) == 4
-    assert {a.gid for a in service_access_rights} == {team_gid, owner_gid}
+    assert {a.gid for a in service_access_rights} == {
+        team_gid,
+        owner_gid,
+    }, "last version was exposed to a team"
     assert {a.product_name for a in service_access_rights} == {
         target_product,
         other_product,
-    }
+    }, "last version was exposed to two products"
