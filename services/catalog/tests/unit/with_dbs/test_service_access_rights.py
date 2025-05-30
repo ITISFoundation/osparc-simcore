@@ -16,7 +16,7 @@ from simcore_service_catalog.models.services_db import ServiceAccessRightsDB
 from simcore_service_catalog.repository.services import ServicesRepository
 from simcore_service_catalog.service.access_rights import (
     evaluate_default_service_ownership_and_rights,
-    inherit_from_previous_release,
+    inherit_from_latest_compatible_release,
     reduce_access_rights,
 )
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -205,7 +205,7 @@ async def test_auto_upgrade_policy(
     assert service_access_rights[0].product_name == target_product
 
     # Inheritance policy (both access rights and metadata)
-    inherited_data = await inherit_from_previous_release(
+    inherited_data = await inherit_from_latest_compatible_release(
         services_repo, service_metadata=new_service_metadata
     )
 

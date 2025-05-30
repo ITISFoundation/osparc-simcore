@@ -144,7 +144,10 @@ async def _find_previous_compatible_release(
         service_metadata.key,
         major=new_version.major,
         minor=new_version.minor,
+        limit_count=5,
     )
+
+    # FIXME: deprecated versions hsould not coutn!!!
 
     # latest_releases is sorted from newer to older
     for release in latest_releases:
@@ -156,7 +159,7 @@ async def _find_previous_compatible_release(
     return None
 
 
-async def inherit_from_previous_release(
+async def inherit_from_latest_compatible_release(
     services_repo: ServicesRepository, *, service_metadata: ServiceMetaDataPublished
 ) -> InheritedData:
     """

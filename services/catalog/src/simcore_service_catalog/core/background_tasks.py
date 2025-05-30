@@ -70,9 +70,7 @@ async def _create_services_in_database(
             (service_key, service_version)
         ]
         try:
-            ## Set deprecation date to null (is valid date value for postgres)
-
-            # DEFAULT policies
+            # 1. Evaluate DEFAULT ownership and access rights
             (
                 owner_gid,
                 service_access_rights,
@@ -82,12 +80,13 @@ async def _create_services_in_database(
                 product_name=app.state.default_product_name,
             )
 
-            # AUTO-UPGRADE PATCH policy
-            inherited_data = await access_rights.inherit_from_previous_release(
+            # 2. Inherit access rights from the latest compatible release
+            inherited_data = await access_rights.inherit_from_latest_compatible_release(
                 service_metadata=service_metadata,
                 services_repo=services_repo,
             )
 
+            # 3. Aggregates access rights and metadata updates
             service_access_rights += inherited_data["access_rights"]
             service_access_rights = access_rights.reduce_access_rights(
                 service_access_rights
@@ -98,7 +97,7 @@ async def _create_services_in_database(
                 **inherited_data["metadata_updates"],
             }
 
-            # set the service in the DB
+            # 4. Create or update the service in the database
             await services_repo.create_or_update_service(
                 ServiceMetaDataDBCreate(**metadata_updates, owner=owner_gid),
                 service_access_rights,
