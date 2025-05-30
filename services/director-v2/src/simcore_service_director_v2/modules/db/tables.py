@@ -1,4 +1,7 @@
 from simcore_postgres_database.models.comp_pipeline import StateType, comp_pipeline
+from simcore_postgres_database.models.comp_run_snapshot_tasks import (
+    comp_run_snapshot_tasks,
+)
 from simcore_postgres_database.models.comp_runs import comp_runs
 from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
 from simcore_postgres_database.models.groups import user_to_groups
@@ -19,4 +22,5 @@ __all__ = [
     "ProjectType",
     "StateType",
     "user_to_groups",
+    "comp_run_snapshot_tasks",
 ]
