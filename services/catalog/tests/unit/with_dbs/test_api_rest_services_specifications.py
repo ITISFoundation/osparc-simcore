@@ -32,6 +32,7 @@ from models_library.generated_models.docker_rest_api import (
 )
 from models_library.products import ProductName
 from models_library.users import UserID
+from pytest_simcore.helpers.catalog_services import CreateFakeServiceDataCallable
 from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.services_specifications import (
     services_specifications,
