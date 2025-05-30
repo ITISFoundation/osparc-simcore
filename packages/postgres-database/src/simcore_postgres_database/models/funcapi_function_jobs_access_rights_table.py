@@ -67,6 +67,9 @@ function_jobs_access_rights_table = sa.Table(
     column_created_datetime(),
     column_modified_datetime(),
     sa.PrimaryKeyConstraint(
-        "function_job_uuid", "group_id", name="pk_func_access_to_func_jobs_group"
+        "function_job_uuid",
+        "group_id",
+        "product_name",
+        name="pk_func_access_to_func_jobs_group",
     ),
 )

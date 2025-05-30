@@ -1,8 +1,8 @@
 """Add functions product access
 
-Revision ID: fa3c3a9a1f7f
+Revision ID: afb1ba08f3c2
 Revises: 275642b33db0
-Create Date: 2025-05-30 11:28:17.223201+00:00
+Create Date: 2025-05-30 14:24:46.198755+00:00
 
 """
 
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "fa3c3a9a1f7f"
+revision = "afb1ba08f3c2"
 down_revision = "275642b33db0"
 branch_labels = None
 depends_on = None
