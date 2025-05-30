@@ -26,6 +26,7 @@ from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from packaging import version
 from pydantic import ValidationError
+from pytest_simcore.helpers.catalog_services import CreateFakeServiceDataCallable
 from pytest_simcore.helpers.faker_factories import random_icon_url
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -70,7 +71,7 @@ def num_versions_per_service() -> int:
 @pytest.fixture
 def fake_data_for_services(
     target_product: ProductName,
-    create_fake_service_data: Callable,
+    create_fake_service_data: CreateFakeServiceDataCallable,
     num_services: int,
     num_versions_per_service: int,
 ) -> list:
@@ -169,7 +170,7 @@ async def test_rpc_list_services_paginated_with_filter_combinations(
     product_name: ProductName,
     user_id: UserID,
     app: FastAPI,
-    create_fake_service_data: Callable,
+    create_fake_service_data: CreateFakeServiceDataCallable,
     services_db_tables_injector: Callable,
 ):
     """Tests all combinations of filters for list_services_paginated"""
@@ -565,7 +566,7 @@ async def test_rpc_batch_get_my_services(
     user: dict[str, Any],
     user_id: UserID,
     app: FastAPI,
-    create_fake_service_data: Callable,
+    create_fake_service_data: CreateFakeServiceDataCallable,
     services_db_tables_injector: Callable,
 ):
     # Create fake services data
@@ -645,7 +646,7 @@ async def test_rpc_list_my_service_history_paginated(
     product_name: ProductName,
     user_id: UserID,
     app: FastAPI,
-    create_fake_service_data: Callable,
+    create_fake_service_data: CreateFakeServiceDataCallable,
     services_db_tables_injector: Callable,
 ):
     assert app
@@ -775,7 +776,7 @@ async def test_rpc_get_service_ports_permission_denied(
     user_id: UserID,
     other_user: dict[str, Any],
     app: FastAPI,
-    create_fake_service_data: Callable,
+    create_fake_service_data: CreateFakeServiceDataCallable,
     services_db_tables_injector: Callable,
 ):
     """Tests that appropriate error is raised when user doesn't have permission"""
