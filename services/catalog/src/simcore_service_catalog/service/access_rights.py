@@ -9,6 +9,7 @@ from typing import Any, TypedDict, cast
 import arrow
 from fastapi import FastAPI
 from models_library.groups import GroupID
+from models_library.products import ProductName
 from models_library.services import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from packaging.version import Version
@@ -48,7 +49,7 @@ async def _is_old_service(app: FastAPI, service: ServiceMetaDataPublished) -> bo
 
 
 async def evaluate_service_ownership_and_rights(
-    app: FastAPI, service: ServiceMetaDataPublished
+    app: FastAPI, *, service: ServiceMetaDataPublished, product_name: ProductName
 ) -> tuple[GroupID | None, list[ServiceAccessRightsDB]]:
     """Evaluates the owner (group_id) and the access rights for a service
 
@@ -114,7 +115,7 @@ async def evaluate_service_ownership_and_rights(
             write_access=(
                 gid == owner_gid
             ),  # we add the owner with full rights, unless it's everyone
-            product_name=app.state.default_product_name,
+            product_name=product_name,
         )
         for gid in set(group_ids)
     ]
@@ -191,7 +192,7 @@ async def inherit_from_previous_release(
         return inherited_data
 
     # 1. ACCESS-RIGHTS:
-    #    Inherit access rights
+    #    Inherit access rights (from all products) from the previous release
     previous_access_rights = await services_repo.get_service_access_rights(
         previous_release.key, previous_release.version
     )

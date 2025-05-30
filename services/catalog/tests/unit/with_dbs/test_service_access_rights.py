@@ -123,6 +123,7 @@ async def test_auto_upgrade_policy(
     new_service_metadata.version = TypeAdapter(ServiceVersion).validate_python("1.0.11")
     new_service_metadata.icon = None  # Remove icon to test inheritance
 
+    # latest-release
     latest_release_service, *latest_release_service_access_rights = (
         create_fake_service_data(
             new_service_metadata.key,
@@ -133,6 +134,23 @@ async def test_auto_upgrade_policy(
         )
     )
     latest_release_service["icon"] = "https://foo/previous_icon.svg"
+    latest_release = (latest_release_service, *latest_release_service_access_rights)
+
+    # latest-release in other product
+    _, *latest_release_service_access_rights_in_other_product = (
+        create_fake_service_data(
+            new_service_metadata.key,
+            latest_release_service["version"],
+            team_access="x",
+            everyone_access=None,
+            product=other_product,  # <-- different product
+        ),
+    )
+
+    latest_release_in_other_product = (
+        latest_release_service,
+        *latest_release_service_access_rights_in_other_product,  # <-- different product
+    )
 
     # we have three versions of the service in the database for which the sorting matters: (1.0.11 should inherit from 1.0.10 not 1.0.9)
     await services_db_tables_injector(
@@ -153,7 +171,8 @@ async def test_auto_upgrade_policy(
             ),
             # new release is a patch on released 1.0.X
             # which were released in two different product
-            (latest_release_service, *latest_release_service_access_rights),
+            latest_release,
+            latest_release_in_other_product,
         ]
     )
 
@@ -168,7 +187,7 @@ async def test_auto_upgrade_policy(
 
     # DEFAULT policies
     owner_gid, service_access_rights = await evaluate_service_ownership_and_rights(
-        app, new_service_metadata
+        app, service=new_service_metadata, product_name=target_product
     )
     assert owner_gid == user_gid
     assert len(service_access_rights) == 1
