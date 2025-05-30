@@ -15,6 +15,7 @@ from models_library.api_schemas_catalog.service_access_rights import (
 )
 from models_library.products import ProductName
 from pydantic import TypeAdapter
+from pytest_simcore.helpers.catalog_services import CreateFakeServiceDataCallable
 from respx.router import MockRouter
 from starlette.testclient import TestClient
 from yarl import URL
@@ -33,7 +34,7 @@ async def test_get_service_access_rights(
     rabbitmq_and_rpc_setup_disabled: None,
     user: dict[str, Any],
     target_product: ProductName,
-    create_fake_service_data: Callable,
+    create_fake_service_data: CreateFakeServiceDataCallable,
     services_db_tables_injector: Callable,
     client: TestClient,
 ):
@@ -80,7 +81,7 @@ async def test_get_service_access_rights_with_more_gids(
     rabbitmq_and_rpc_setup_disabled: None,
     user: dict[str, Any],
     other_product: ProductName,
-    create_fake_service_data: Callable,
+    create_fake_service_data: CreateFakeServiceDataCallable,
     services_db_tables_injector: Callable,
     user_groups_ids: list[int],
     client: TestClient,

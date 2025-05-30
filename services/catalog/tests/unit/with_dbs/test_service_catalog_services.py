@@ -54,7 +54,7 @@ def num_versions_per_service() -> int:
 @pytest.fixture
 def fake_services_data(
     target_product: ProductName,
-    create_fake_service_data: Callable,
+    create_fake_service_data: CreateFakeServiceDataCallable,
     num_services: int,
     num_versions_per_service: int,
 ) -> list:

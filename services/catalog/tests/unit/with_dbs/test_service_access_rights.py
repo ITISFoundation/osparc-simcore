@@ -11,6 +11,7 @@ from models_library.products import ProductName
 from models_library.services import ServiceMetaDataPublished, ServiceVersion
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.catalog_services import CreateFakeServiceDataCallable
 from simcore_service_catalog.models.services_db import ServiceAccessRightsDB
 from simcore_service_catalog.repository.services import ServicesRepository
 from simcore_service_catalog.service.access_rights import (
@@ -89,7 +90,7 @@ async def test_auto_upgrade_policy(
     target_product: ProductName,
     other_product: ProductName,
     services_db_tables_injector: Callable,
-    create_fake_service_data: Callable,
+    create_fake_service_data: CreateFakeServiceDataCallable,
     mocker: MockerFixture,
 ):
     everyone_gid, user_gid, team_gid = user_groups_ids
@@ -122,6 +123,17 @@ async def test_auto_upgrade_policy(
     new_service_metadata.version = TypeAdapter(ServiceVersion).validate_python("1.0.11")
     new_service_metadata.icon = None  # Remove icon to test inheritance
 
+    latest_release_service, *latest_release_service_access_rights = (
+        create_fake_service_data(
+            new_service_metadata.key,
+            "1.0.10",
+            team_access="x",
+            everyone_access=None,
+            product=target_product,
+        )
+    )
+    latest_release_service["icon"] = "https://foo/previous_icon.svg"
+
     # we have three versions of the service in the database for which the sorting matters: (1.0.11 should inherit from 1.0.10 not 1.0.9)
     await services_db_tables_injector(
         [
@@ -141,23 +153,10 @@ async def test_auto_upgrade_policy(
             ),
             # new release is a patch on released 1.0.X
             # which were released in two different product
-            create_fake_service_data(
-                new_service_metadata.key,
-                "1.0.10",
-                team_access="x",
-                everyone_access=None,
-                product=target_product,
-                icon="previous_icon.svg",
-            ),
-            create_fake_service_data(
-                new_service_metadata.key,
-                "1.0.10",
-                team_access="x",
-                everyone_access=None,
-                product=other_product,
-            ),
+            (latest_release_service, *latest_release_service_access_rights),
         ]
     )
+
     # ------------
 
     app = FastAPI()
@@ -201,7 +200,7 @@ async def test_auto_upgrade_policy(
     # Check metadata inheritance
     inherited_metadata = inherited_data["metadata_updates"]
     assert "icon" in inherited_metadata
-    assert inherited_metadata["icon"] == "previous_icon.svg"
+    assert inherited_metadata["icon"] == latest_release_service["icon"]
 
     # ALL
     service_access_rights += inherited_access_rights
