@@ -16,6 +16,7 @@ from simcore_service_catalog.repository.services import ServicesRepository
 from simcore_service_catalog.service.access_rights import (
     evaluate_auto_upgrade_policy,
     evaluate_service_ownership_and_rights,
+    inherit_from_previous_release,
     reduce_access_rights,
 )
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -120,6 +121,7 @@ async def test_auto_upgrade_policy(
         ServiceMetaDataPublished.model_json_schema()["examples"][MOST_UPDATED_EXAMPLE]
     )
     new_service_metadata.version = TypeAdapter(ServiceVersion).validate_python("1.0.11")
+    new_service_metadata.icon = None  # Remove icon to test inheritance
 
     # we have three versions of the service in the database for which the sorting matters: (1.0.11 should inherit from 1.0.10 not 1.0.9)
     await services_db_tables_injector(
@@ -146,6 +148,7 @@ async def test_auto_upgrade_policy(
                 team_access="x",
                 everyone_access=None,
                 product=target_product,
+                icon="previous_icon.svg",
             ),
             create_fake_service_data(
                 new_service_metadata.key,
@@ -182,17 +185,29 @@ async def test_auto_upgrade_policy(
     }
     assert service_access_rights[0].product_name == target_product
 
-    # AUTO-UPGRADE PATCH policy
-    inherited_access_rights = await evaluate_auto_upgrade_policy(
-        new_service_metadata, services_repo
+    # Inheritance policy (both access rights and metadata)
+    inherited_data = await inherit_from_previous_release(
+        services_repo, service_metadata=new_service_metadata
     )
 
+    # Check access rights inheritance
+    inherited_access_rights = inherited_data["access_rights"]
     assert len(inherited_access_rights) == 4
     assert {a.gid for a in inherited_access_rights} == {team_gid, owner_gid}
     assert {a.product_name for a in inherited_access_rights} == {
         target_product,
         other_product,
     }
+
+    # Check metadata inheritance
+    assert "icon" in inherited_data["metadata_updates"]
+    assert inherited_data["metadata_updates"]["icon"] == "previous_icon.svg"
+
+    # Test backward compatibility with evaluate_auto_upgrade_policy
+    legacy_result = await evaluate_auto_upgrade_policy(
+        services_repo, service_metadata=new_service_metadata
+    )
+    assert legacy_result["access_rights"] == inherited_data["access_rights"]
 
     # ALL
     service_access_rights += inherited_access_rights

@@ -4,7 +4,7 @@ import logging
 import operator
 from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import cast
+from typing import Any, TypedDict, cast
 
 import arrow
 from fastapi import FastAPI
@@ -16,7 +16,7 @@ from pydantic.types import PositiveInt
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..api._dependencies.director import get_director_client
-from ..models.services_db import ServiceAccessRightsDB
+from ..models.services_db import ServiceAccessRightsDB, ServiceMetaDataDBGet
 from ..repository.groups import GroupsRepository
 from ..repository.services import ServicesRepository
 from ..utils.versioning import as_version, is_patch_release
@@ -24,6 +24,11 @@ from ..utils.versioning import as_version, is_patch_release
 _logger = logging.getLogger(__name__)
 
 _LEGACY_SERVICES_DATE: datetime = datetime(year=2020, month=8, day=19, tzinfo=UTC)
+
+
+class InheritedData(TypedDict):
+    access_rights: list[ServiceAccessRightsDB]
+    metadata_updates: dict[str, Any]
 
 
 def _is_frontend_service(service: ServiceMetaDataPublished) -> bool:
@@ -117,34 +122,22 @@ async def evaluate_service_ownership_and_rights(
     return (owner_gid, default_access_rights)
 
 
-async def evaluate_auto_upgrade_policy(
+async def _find_previous_compatible_release(
     services_repo: ServicesRepository, *, service_metadata: ServiceMetaDataPublished
-) -> list[ServiceAccessRightsDB]:
+) -> ServiceMetaDataDBGet | None:
     """
-    Evaluates the access rights for a service based on the auto-upgrade patch policy.
-
-    The AUTO-UPGRADE PATCH policy ensures that:
-      - Any new patch release of a service automatically inherits the access rights from the previous compatible version.
-      - This policy does NOT apply to frontend services.
+    Finds the previous compatible release for a service.
 
     Args:
         services_repo: Instance of ServicesRepository for database access.
         service_metadata: Metadata of the service being evaluated.
 
     Returns:
-        A list of ServiceAccessRightsDB objects representing the inherited access rights for the new patch version.
-        Returns an empty list if the service is a frontend service or if no previous compatible version is found.
-
-    Notes:
-        - The policy is described in https://github.com/ITISFoundation/osparc-simcore/issues/2244
-        - Inheritance is only for patch releases (i.e., same major and minor version).
-        - Future improvement: Consider making this behavior configurable in the service publication contract.
-
+        The previous compatible release if found, None otherwise.
     """
     if _is_frontend_service(service_metadata):
-        return []
+        return None
 
-    service_access_rights = []
     new_version: Version = as_version(service_metadata.version)
     latest_releases = await services_repo.list_service_releases(
         service_metadata.key,
@@ -152,36 +145,81 @@ async def evaluate_auto_upgrade_policy(
         minor=new_version.minor,
     )
 
-    previous_release = None
+    # latest_releases is sorted from newer to older
     for release in latest_releases:
-        # latest_releases is sorted from newer to older
-        # Find the previous version that is patched by new_version
+        # COMPATIBILITY RULE:
+        # - a patch release is compatible with the previous patch release
         if is_patch_release(new_version, release.version):
-            previous_release = release
-            break
+            return release
 
-    if previous_release:
-        previous_access_rights = await services_repo.get_service_access_rights(
-            previous_release.key, previous_release.version
+    return None
+
+
+async def inherit_from_previous_release(
+    services_repo: ServicesRepository, *, service_metadata: ServiceMetaDataPublished
+) -> InheritedData:
+    """
+    Inherits metadata and access rights from a previous compatible release.
+
+    This function applies inheritance policies:
+    - AUTO-UPGRADE PATCH policy: new patch releases inherit access rights from previous compatible versions
+    - Metadata inheritance: icon and other metadata fields are inherited if not specified in the new version
+
+    Args:
+        services_repo: Instance of ServicesRepository for database access.
+        service_metadata: Metadata of the service being evaluated.
+
+    Returns:
+        An InheritedData object containing:
+        - access_rights: List of ServiceAccessRightsDB objects inherited from the previous release
+        - metadata_updates: Dict of metadata fields that should be updated in the new service
+
+    Notes:
+        - The policy is described in https://github.com/ITISFoundation/osparc-simcore/issues/2244
+        - Inheritance is only for patch releases (i.e., same major and minor version).
+    """
+    inherited_data: InheritedData = {
+        "access_rights": [],
+        "metadata_updates": {},
+    }
+
+    previous_release = await _find_previous_compatible_release(
+        services_repo, service_metadata=service_metadata
+    )
+
+    if not previous_release:
+        return inherited_data
+
+    # 1. ACCESS-RIGHTS:
+    #    Inherit access rights
+    previous_access_rights = await services_repo.get_service_access_rights(
+        previous_release.key, previous_release.version
+    )
+
+    inherited_data["access_rights"] = [
+        access.model_copy(
+            update={"version": service_metadata.version},
+            deep=True,
         )
+        for access in previous_access_rights
+    ]
 
-        service_access_rights = [
-            access.model_copy(
-                update={"version": service_metadata.version},
-                deep=True,
-            )
-            for access in previous_access_rights
-        ]
-    return service_access_rights
+    # 2. METADATA:
+    #    Inherit icon if not specified in the new service
+    if not service_metadata.icon and previous_release.icon:
+        inherited_data["metadata_updates"]["icon"] = previous_release.icon
+
+    return inherited_data
 
 
 def reduce_access_rights(
     access_rights: list[ServiceAccessRightsDB],
     reduce_operation: Callable = operator.ior,
 ) -> list[ServiceAccessRightsDB]:
-    """
-    Reduces a list of access-rights per target
+    """Reduces a list of access-rights per target
+
     By default, the reduction is OR (i.e. preserves True flags)
+
     """
     # TODO: probably a lot of room to optimize
     # helper functions to simplify operation of access rights
