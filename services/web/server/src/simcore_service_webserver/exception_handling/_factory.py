@@ -1,5 +1,5 @@
 import logging
-from typing import NamedTuple, TypeAlias
+from typing import Any, NamedTuple, TypeAlias
 
 from aiohttp import web
 from common_library.error_codes import create_error_code
@@ -33,6 +33,15 @@ class HttpErrorInfo(NamedTuple):
 
 
 ExceptionToHttpErrorMap: TypeAlias = dict[type[Exception], HttpErrorInfo]
+
+
+def create_error_context_from_request(request: web.Request) -> dict[str, Any]:
+    return {
+        "request": request,
+        "request.remote": f"{request.remote}",
+        "request.method": f"{request.method}",
+        "request.path": f"{request.path}",
+    }
 
 
 def create_error_response(error: ErrorGet, status_code: int) -> web.Response:
@@ -85,20 +94,19 @@ def create_exception_handler_from_http_info(
 
         if is_5xx_server_error(status_code):
             oec = create_error_code(exception)
+            error_context = {
+                # NOTE: `error_context` is also used to substitute f-string tokens
+                # in the `user_msg`
+                **create_error_context_from_request(request),
+                "error_code": oec,
+            }
+
             _logger.exception(
                 **create_troubleshotting_log_kwargs(
                     user_msg,
                     error=exception,
                     error_code=oec,
-                    error_context={
-                        # NOTE: context is also used to substitute tokens in the error message
-                        # e.g. "support error is {error_code}"
-                        "request": request,
-                        "request.remote": f"{request.remote}",
-                        "request.method": f"{request.method}",
-                        "request.path": f"{request.path}",
-                        "error_code": oec,
-                    },
+                    error_context=error_context,
                 )
             )
             error = ErrorGet.model_construct(

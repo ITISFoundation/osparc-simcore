@@ -13,7 +13,7 @@ from models_library.projects_state import ProjectState
 from pydantic import ValidationError
 from servicelib.aiohttp import status
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.director_v2.exceptions import DirectorServiceError
+from simcore_service_webserver.director_v2.exceptions import DirectorV2ServiceError
 from simcore_service_webserver.projects._controller.projects_states_rest import (
     ProjectPathParams,
     _OpenProjectQuery,
@@ -62,7 +62,7 @@ def to_desc(exceptions: list[type[Exception]] | type[Exception]):
             "description": to_desc([ValidationError])
         },
         status.HTTP_503_SERVICE_UNAVAILABLE: {
-            "description": to_desc([DirectorServiceError])
+            "description": to_desc([DirectorV2ServiceError])
         },
     },
 )
