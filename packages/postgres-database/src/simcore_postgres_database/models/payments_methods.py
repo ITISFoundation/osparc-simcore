@@ -3,11 +3,13 @@ import enum
 import sqlalchemy as sa
 
 from ._common import (
+    RefActions,
     column_created_datetime,
     column_modified_datetime,
     register_modified_datetime_auto_update_trigger,
 )
 from .base import metadata
+from .wallets import wallets
 
 
 @enum.unique
@@ -41,6 +43,12 @@ payments_methods = sa.Table(
     sa.Column(
         "user_id",
         sa.BigInteger,
+        sa.ForeignKey(
+            "users.id",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
+            name="fk_payments_methods_to_user_id",
+        ),
         nullable=False,
         doc="Unique identifier of the user",
         index=True,
@@ -48,6 +56,12 @@ payments_methods = sa.Table(
     sa.Column(
         "wallet_id",
         sa.BigInteger,
+        sa.ForeignKey(
+            wallets.c.wallet_id,
+            name="fk_payments_methods_to_wallet_id",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
+        ),
         nullable=False,
         doc="Unique identifier to the wallet owned by the user",
         index=True,
