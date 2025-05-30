@@ -17,7 +17,6 @@ from aiohttp.web_exceptions import (
     HTTPOk,
 )
 from common_library.error_codes import ErrorCodeStr, create_error_code
-from servicelib.aiohttp import status
 from servicelib.aiohttp.rest_responses import create_http_error, exception_to_response
 from servicelib.aiohttp.web_exceptions_extension import (
     _STATUS_CODE_TO_HTTP_ERRORS,
@@ -61,16 +60,43 @@ def test_collected_http_errors_map(status_code: int, http_error_cls: type[HTTPEr
 
 @pytest.mark.parametrize("skip_details", [True, False])
 @pytest.mark.parametrize("error_code", [None, create_error_code(Exception("fake"))])
-def tests_exception_to_response(skip_details: bool, error_code: ErrorCodeStr | None):
-
-    expected_reason = "Something whent wrong !"
+@pytest.mark.parametrize(
+    "http_error_cls",
+    [
+        web.HTTPBadRequest,  # 400
+        web.HTTPUnauthorized,  # 401
+        web.HTTPForbidden,  # 403
+        web.HTTPNotFound,  # 404
+        web.HTTPGone,  # 410
+        web.HTTPInternalServerError,  # 500
+        web.HTTPBadGateway,  # 502
+        web.HTTPServiceUnavailable,  # 503
+    ],
+    ids=[
+        "400",
+        "401",
+        "403",
+        "404",
+        "410",
+        "500",
+        "502",
+        "503",
+    ],
+)
+def tests_exception_to_response(
+    skip_details: bool, error_code: ErrorCodeStr | None, http_error_cls: type[HTTPError]
+):
+    expected_status_reason = "SHORT REASON"
+    expected_error_message = "Something whent wrong !"
     expected_exceptions: list[Exception] = [RuntimeError("foo")]
 
     http_error = create_http_error(
         errors=expected_exceptions,
-        reason=expected_reason,
-        http_error_cls=web.HTTPInternalServerError,
-        skip_internal_error_details=skip_details,
+        error_message=expected_error_message,
+        status_reason=expected_status_reason,
+        http_error_cls=http_error_cls,
+        skip_internal_error_details=skip_details
+        and (http_error_cls == web.HTTPInternalServerError),
         error_code=error_code,
     )
 
@@ -87,16 +113,17 @@ def tests_exception_to_response(skip_details: bool, error_code: ErrorCodeStr | N
 
     # checks response components
     assert response.content_type == MIMETYPE_APPLICATION_JSON
-    assert response.status == status.HTTP_500_INTERNAL_SERVER_ERROR
+    assert response.status == http_error_cls.status_code
     assert response.text
     assert response.body
 
     # checks response model
     response_json = json.loads(response.text)
     assert response_json["data"] is None
-    assert response_json["error"]["message"] == expected_reason
+    assert response_json["error"]["message"] == expected_error_message
     assert response_json["error"]["supportId"] == error_code
     assert response_json["error"]["status"] == response.status
+    assert response.reason == expected_status_reason
 
 
 @pytest.mark.parametrize(
