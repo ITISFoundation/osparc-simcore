@@ -12,6 +12,7 @@ from models_library.projects_state import RunningState
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.users import UserID
 from models_library.wallets import WalletInfo
+from pydantic import PositiveInt
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.utils import logged_gather
@@ -24,7 +25,7 @@ from .....modules.resource_usage_tracker_client import ResourceUsageTrackerClien
 from .....utils.computations import to_node_class
 from .....utils.db import DB_TO_RUNNING_STATE, RUNNING_STATE_TO_DB
 from ....catalog import CatalogClient
-from ...tables import NodeClass, StateType, comp_tasks
+from ...tables import NodeClass, StateType, comp_run_snapshot_tasks, comp_tasks
 from .._base import BaseRepository
 from . import _utils
 
@@ -198,6 +199,7 @@ class CompTasksRepository(BaseRepository):
             # insert or update the remaining tasks
             # NOTE: comp_tasks DB only trigger a notification to the webserver if an UPDATE on comp_tasks.outputs or comp_tasks.state is done
             # NOTE: an exception to this is when a frontend service changes its output since there is no node_ports, the UPDATE must be done here.
+
             inserted_comp_tasks_db: list[CompTaskAtDB] = []
             for comp_task_db in list_of_comp_tasks_in_project:
                 insert_stmt = insert(comp_tasks).values(
@@ -234,7 +236,7 @@ class CompTasksRepository(BaseRepository):
             return inserted_comp_tasks_db
 
     async def _update_task(
-        self, project_id: ProjectID, task: NodeID, **task_kwargs
+        self, project_id: ProjectID, task: NodeID, run_id: PositiveInt, **task_kwargs
     ) -> CompTaskAtDB:
         with log_context(
             _logger,
@@ -251,11 +253,22 @@ class CompTasksRepository(BaseRepository):
                     .values(**task_kwargs)
                     .returning(literal_column("*"))
                 )
+                # Sync with comp_run_snapshot_tasks table
+                await conn.execute(
+                    sa.update(comp_run_snapshot_tasks)
+                    .where(
+                        (comp_run_snapshot_tasks.c.run_id == run_id)
+                        & (comp_run_snapshot_tasks.c.project_id == f"{project_id}")
+                        & (comp_run_snapshot_tasks.c.node_id == f"{task}")
+                    )
+                    .values(**task_kwargs)
+                )
+
                 row = result.one()
                 return CompTaskAtDB.model_validate(row)
 
     async def mark_project_published_waiting_for_cluster_tasks_as_aborted(
-        self, project_id: ProjectID
+        self, project_id: ProjectID, run_id: PositiveInt
     ) -> None:
         # block all pending tasks, so the sidecars stop taking them
         async with self.db_engine.begin() as conn:
@@ -273,16 +286,39 @@ class CompTasksRepository(BaseRepository):
                     state=StateType.ABORTED, progress=1.0, end=arrow.utcnow().datetime
                 )
             )
+            # Sync with comp_run_snapshot_tasks table
+            await conn.execute(
+                sa.update(comp_run_snapshot_tasks)
+                .where(
+                    (comp_run_snapshot_tasks.c.run_id == run_id)
+                    & (comp_run_snapshot_tasks.c.project_id == f"{project_id}")
+                    & (comp_run_snapshot_tasks.c.node_class == NodeClass.COMPUTATIONAL)
+                    & (
+                        (comp_run_snapshot_tasks.c.state == StateType.PUBLISHED)
+                        | (
+                            comp_run_snapshot_tasks.c.state
+                            == StateType.WAITING_FOR_CLUSTER
+                        )
+                    )
+                )
+                .values(
+                    state=StateType.ABORTED,
+                    progress=1.0,
+                    end=arrow.utcnow().datetime,
+                )
+            )
+
         _logger.debug("marked project %s published tasks as aborted", f"{project_id=}")
 
     async def update_project_task_job_id(
-        self, project_id: ProjectID, task: NodeID, job_id: str
+        self, project_id: ProjectID, task: NodeID, run_id: PositiveInt, job_id: str
     ) -> None:
-        await self._update_task(project_id, task, job_id=job_id)
+        await self._update_task(project_id, task, run_id, job_id=job_id)
 
     async def update_project_tasks_state(
         self,
         project_id: ProjectID,
+        run_id: PositiveInt,
         tasks: list[NodeID],
         state: RunningState,
         errors: list[ErrorDict] | None = None,
@@ -311,20 +347,30 @@ class CompTasksRepository(BaseRepository):
             update_values["end"] = optional_stopped
         await logged_gather(
             *(
-                self._update_task(project_id, task_id, **update_values)
+                self._update_task(project_id, task_id, run_id, **update_values)
                 for task_id in tasks
             )
         )
 
     async def update_project_task_progress(
-        self, project_id: ProjectID, node_id: NodeID, progress: float
+        self,
+        project_id: ProjectID,
+        node_id: NodeID,
+        run_id: PositiveInt,
+        progress: float,
     ) -> None:
-        await self._update_task(project_id, node_id, progress=progress)
+        await self._update_task(project_id, node_id, run_id, progress=progress)
 
     async def update_project_task_last_heartbeat(
-        self, project_id: ProjectID, node_id: NodeID, heartbeat_time: datetime
+        self,
+        project_id: ProjectID,
+        node_id: NodeID,
+        run_id: PositiveInt,
+        heartbeat_time: datetime,
     ) -> None:
-        await self._update_task(project_id, node_id, last_heartbeat=heartbeat_time)
+        await self._update_task(
+            project_id, node_id, run_id, last_heartbeat=heartbeat_time
+        )
 
     async def delete_tasks_from_project(self, project_id: ProjectID) -> None:
         async with self.db_engine.begin() as conn:
