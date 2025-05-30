@@ -3,12 +3,14 @@
 # pylint: disable=unused-variable
 
 from collections.abc import Callable
+from typing import Any
 
 import simcore_service_catalog.service.access_rights
 from fastapi import FastAPI
 from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.services import ServiceMetaDataPublished, ServiceVersion
+from models_library.services_authoring import Author
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.catalog_services import CreateFakeServiceDataCallable
@@ -86,6 +88,7 @@ def test_reduce_access_rights():
 
 async def test_auto_upgrade_policy(
     sqlalchemy_async_engine: AsyncEngine,
+    user: dict[str, Any],
     user_groups_ids: list[GroupID],
     target_product: ProductName,
     other_product: ProductName,
@@ -101,25 +104,16 @@ async def test_auto_upgrade_policy(
         "_is_old_service",
         return_value=False,
     )
-    # Avoids creating a users + user_to_group table
-    # data = GroupAtDB.model_json_schema()["example"]
-    # data["gid"] = everyone_gid
-    # mocker.patch.object(
-    #     simcore_service_catalog.service.access_rights.GroupsRepository,
-    #     "get_everyone_group",
-    #     return_value=GroupAtDB.model_validate(data),
-    # )
-    # mocker.patch.object(
-    #     simcore_service_catalog.service.access_rights.GroupsRepository,
-    #     "get_user_gid_from_email",
-    #     return_value=user_gid,
-    # )
 
     # SETUP ---
     MOST_UPDATED_EXAMPLE = -1
     new_service_metadata = ServiceMetaDataPublished.model_validate(
         ServiceMetaDataPublished.model_json_schema()["examples"][MOST_UPDATED_EXAMPLE]
     )
+    new_service_metadata.contact = user["email"]
+    new_service_metadata.authors = [
+        Author(name=user["name"], email=user["email"], affiliation=None)
+    ]
     new_service_metadata.version = TypeAdapter(ServiceVersion).validate_python("1.0.11")
     new_service_metadata.icon = None  # Remove icon to test inheritance
 
@@ -133,6 +127,7 @@ async def test_auto_upgrade_policy(
             product=target_product,
         )
     )
+
     latest_release_service["icon"] = "https://foo/previous_icon.svg"
     latest_release = (latest_release_service, *latest_release_service_access_rights)
 
