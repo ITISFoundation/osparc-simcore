@@ -123,38 +123,34 @@ async def evaluate_default_service_ownership_and_rights(
     return (owner_gid, default_access_rights)
 
 
-async def _find_previous_compatible_release(
+async def _find_latest_patch_compatible_release(
     services_repo: ServicesRepository, *, service_metadata: ServiceMetaDataPublished
 ) -> ServiceMetaDataDBGet | None:
     """
-    Finds the previous compatible release for a service.
+    Finds the previous patched release for a service.
 
     Args:
         services_repo: Instance of ServicesRepository for database access.
         service_metadata: Metadata of the service being evaluated.
 
     Returns:
-        The previous compatible release if found, None otherwise.
+        Latest patch release of the service if it exists, otherwise None.
     """
     if _is_frontend_service(service_metadata):
         return None
 
     new_version: Version = as_version(service_metadata.version)
-    latest_releases = await services_repo.list_service_releases(
+    patch_releases_latest_first = await services_repo.list_service_releases(
         service_metadata.key,
         major=new_version.major,
         minor=new_version.minor,
-        limit_count=5,
     )
 
-    # FIXME: deprecated versions hsould not coutn!!!
-
     # latest_releases is sorted from newer to older
-    for release in latest_releases:
+    for release in patch_releases_latest_first:
         # COMPATIBILITY RULE:
         # - a patch release is compatible with the previous patch release
-
-        # FIXME: not all compatible releases!!!
+        # - WARNING: this does not account for custom compatibility policies!!!!
         if is_patch_release(new_version, release.version):
             return release
 
@@ -169,7 +165,7 @@ async def inherit_from_latest_compatible_release(
 
     This function applies inheritance policies:
     - AUTO-UPGRADE PATCH policy: new patch releases inherit access rights from previous compatible versions
-    - Metadata inheritance: icon and other metadata fields are inherited if not specified in the new version
+    - Metadata inheritance: icon and thumbnail fields are inherited if not specified in the new version
 
     Args:
         services_repo: Instance of ServicesRepository for database access.
@@ -189,7 +185,7 @@ async def inherit_from_latest_compatible_release(
         "metadata_updates": {},
     }
 
-    previous_release = await _find_previous_compatible_release(
+    previous_release = await _find_latest_patch_compatible_release(
         services_repo, service_metadata=service_metadata
     )
 
@@ -210,10 +206,12 @@ async def inherit_from_latest_compatible_release(
         for access in previous_access_rights
     ]
 
-    # 2. METADATA:
-    #    Inherit icon if not specified in the new service
+    # 2. ServiceMetaDataPublished
+    #    Inherit some fields if not specified in the new service
     if not service_metadata.icon and previous_release.icon:
         inherited_data["metadata_updates"]["icon"] = previous_release.icon
+    if not service_metadata.thumbnail and previous_release.thumbnail:
+        inherited_data["metadata_updates"]["thumbnail"] = previous_release.thumbnail
 
     return inherited_data
 
