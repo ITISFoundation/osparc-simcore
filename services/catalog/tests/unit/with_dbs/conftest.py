@@ -168,13 +168,13 @@ async def other_user(
     faker: Faker,
 ) -> AsyncIterator[dict[str, Any]]:
 
-    _user = random_user(fake=faker, id=user_id + 1)
+    _other_user = random_user(fake=faker, id=user_id + 1)
     async with insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
         sqlalchemy_async_engine,
         table=users,
-        values=_user,
+        values=_other_user,
         pk_col=users.c.id,
-        pk_value=_user["id"],
+        pk_value=_other_user["id"],
     ) as row:
         yield row
 

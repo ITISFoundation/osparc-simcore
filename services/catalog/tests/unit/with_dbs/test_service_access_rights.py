@@ -6,15 +6,16 @@ from collections.abc import Callable
 
 import simcore_service_catalog.service.access_rights
 from fastapi import FastAPI
-from models_library.groups import GroupAtDB
+from models_library.groups import GroupAtDB, GroupID
 from models_library.products import ProductName
 from models_library.services import ServiceMetaDataPublished, ServiceVersion
 from pydantic import TypeAdapter
+from pytest_mock import MockerFixture
 from simcore_service_catalog.models.services_db import ServiceAccessRightsDB
 from simcore_service_catalog.repository.services import ServicesRepository
 from simcore_service_catalog.service.access_rights import (
     evaluate_auto_upgrade_policy,
-    evaluate_default_policy,
+    evaluate_service_ownership_and_rights,
     reduce_access_rights,
 )
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -84,12 +85,12 @@ def test_reduce_access_rights():
 
 async def test_auto_upgrade_policy(
     sqlalchemy_async_engine: AsyncEngine,
-    user_groups_ids: list[int],
+    user_groups_ids: list[GroupID],
     target_product: ProductName,
     other_product: ProductName,
     services_db_tables_injector: Callable,
     create_fake_service_data: Callable,
-    mocker,
+    mocker: MockerFixture,
 ):
     everyone_gid, user_gid, team_gid = user_groups_ids
 
@@ -165,7 +166,7 @@ async def test_auto_upgrade_policy(
     services_repo = ServicesRepository(app.state.engine)
 
     # DEFAULT policies
-    owner_gid, service_access_rights = await evaluate_default_policy(
+    owner_gid, service_access_rights = await evaluate_service_ownership_and_rights(
         app, new_service_metadata
     )
     assert owner_gid == user_gid
