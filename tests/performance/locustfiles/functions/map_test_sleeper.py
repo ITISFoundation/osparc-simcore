@@ -21,6 +21,7 @@ import matplotlib.pyplot as plt
 import osparc_client
 from httpx import BasicAuth, Client, HTTPStatusError
 from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_exponential
+from tqdm import tqdm
 
 _SOLVER_KEY = "simcore/services/comp/itis/sleeper"
 _SOLVER_VERSION = "2.2.1"
@@ -110,7 +111,9 @@ def main(njobs: int, sleep_seconds: int, log_job: bool = False):
                 job = job_api_instance.get_function_job(function_job_ids[0])
                 print_job_logs(configuration, job.actual_instance.solver_job_id)
 
-            for job_uid in function_job_ids:
+            for job_uid in tqdm(
+                function_job_ids, desc="Waiting for jobs to complete", unit="job"
+            ):
                 status = wait_until_done(job_api_instance, job_uid)
                 job_statuses[status] = job_statuses.get(status, 0) + 1
 
