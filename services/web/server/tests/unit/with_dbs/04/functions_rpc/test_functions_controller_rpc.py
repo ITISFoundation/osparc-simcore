@@ -605,12 +605,22 @@ async def test_register_get_delete_function_job(
     assert retrieved_job.inputs == registered_job.inputs
     assert retrieved_job.outputs == registered_job.outputs
 
+    # Test denied access for another user
     with pytest.raises(FunctionJobReadAccessDeniedError):
         await functions_rpc.get_function_job(
             rabbitmq_rpc_client=rpc_client,
             function_job_id=registered_job.uid,
             user_id=other_logged_user["id"],
             product_name=osparc_product_name,
+        )
+
+    # Test denied access for anothe product
+    with pytest.raises(FunctionJobReadAccessDeniedError):
+        await functions_rpc.get_function_job(
+            rabbitmq_rpc_client=rpc_client,
+            function_job_id=registered_job.uid,
+            user_id=other_logged_user["id"],
+            product_name="this_is_not_osparc",
         )
 
     with pytest.raises(FunctionJobReadAccessDeniedError):
