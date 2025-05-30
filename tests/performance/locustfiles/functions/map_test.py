@@ -94,6 +94,7 @@ def main(log_job: bool = False):
             registered_function = api_instance.register_function(
                 solver_function.model_dump()
             )
+            registered_functions.append(registered_function)
 
             print(f"Registered function: {registered_function.to_dict()}\n")
 
