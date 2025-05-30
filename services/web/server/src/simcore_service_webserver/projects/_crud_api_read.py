@@ -21,6 +21,7 @@ from simcore_postgres_database.webserver_models import (
     ProjectTemplateType as ProjectTemplateTypeDB,
 )
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
+from ._access_rights_repository import batch_get_project_access_rights
 
 from ..catalog import catalog_service
 from ..folders import _folders_repository
@@ -66,6 +67,11 @@ async def _aggregate_data_to_projects_from_other_sources(
 
     _batch_update("trashed_by_primary_gid", trashed_by_primary_gid_values, db_projects)
 
+    # Add here get batch Project access rights
+    project_to_access_rights = await batch_get_project_access_rights(
+        app=app, projects_uuids=[ProjectID(p["uuid"]) for p in db_projects]
+    )
+
     # udpating `project.state`
     update_state_per_project = [
         _projects_service.add_project_states_for_user(
@@ -80,6 +86,9 @@ async def _aggregate_data_to_projects_from_other_sources(
     updated_projects: list[ProjectDict] = await _paralell_update(
         *update_state_per_project,
     )
+
+    for project in updated_projects:
+        project["access_rights"] = project_to_access_rights[project["uuid"]]
 
     return updated_projects
 
