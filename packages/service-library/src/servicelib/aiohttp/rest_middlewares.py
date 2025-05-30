@@ -186,10 +186,7 @@ def envelope_middleware_factory(
             return resp
 
         if not isinstance(resp, StreamResponse):
-            resp = create_data_response(
-                data=resp,
-                skip_internal_error_details=_is_prod,
-            )
+            resp = create_data_response(data=resp)
 
         assert isinstance(resp, web.StreamResponse)  # nosec
         return resp

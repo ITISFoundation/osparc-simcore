@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Final, TypedDict
 
 from aiohttp import web
 from aiohttp.web_exceptions import HTTPError
@@ -10,19 +10,63 @@ from ..aiohttp.status import HTTP_200_OK
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 from ..rest_constants import RESPONSE_MODEL_POLICY
 from ..rest_responses import is_enveloped
-from ..status_codes_utils import get_code_description
+from ..status_codes_utils import get_code_description, is_error
+
+
+class EnvelopeDict(TypedDict):
+    data: Any
+    error: Any
 
 
 def wrap_as_envelope(
-    data: Any = None,
-    error: Any = None,
-) -> dict[str, Any]:
+    data: Any | None = None,
+    error: Any | None = None,
+) -> EnvelopeDict:
     return {"data": data, "error": error}
 
 
 def create_data_response(data: Any, *, status: int = HTTP_200_OK) -> web.Response:
+    """Creates a JSON response with the given data and ensures it is wrapped in an envelope."""
+
+    assert (  # nosec
+        is_error(status) is False
+    ), f"Expected a non-error status code, got {status=}"
+
     enveloped_payload = wrap_as_envelope(data) if not is_enveloped(data) else data
     return web.json_response(enveloped_payload, dumps=json_dumps, status=status)
+
+
+MAX_STATUS_MESSAGE_LENGTH: Final[int] = 50
+
+
+def safe_status_message(
+    message: str | None, max_length: int = MAX_STATUS_MESSAGE_LENGTH
+) -> str | None:
+    """
+    Truncates a status-message (i.e. `reason` in HTTP errors) to a maximum length, replacing newlines with spaces.
+
+    If the message is longer than max_length, it will be truncated and "..." will be appended.
+
+    This prevents issues such as:
+        - `aiohttp.http_exceptions.LineTooLong`: 400, message: Got more than 8190 bytes when reading Status line is too long.
+        - Multiline not allowed in HTTP reason attribute (aiohttp now raises ValueError).
+
+    See:
+        - When to use http status and/or text messages https://github.com/ITISFoundation/osparc-simcore/pull/7760
+        - [RFC 9112, Section 4.1: HTTP/1.1 Message Syntax and Routing](https://datatracker.ietf.org/doc/html/rfc9112#section-4.1) (status line length limits)
+        - [RFC 9110, Section 15.5: Reason Phrase](https://datatracker.ietf.org/doc/html/rfc9110#section-15.5) (reason phrase definition)
+    """
+    assert max_length > 0  # nosec
+
+    if not message:
+        return None
+
+    flat_message = message.replace("\n", " ")
+    if len(flat_message) <= max_length:
+        return flat_message
+
+    # Truncate and add ellipsis
+    return flat_message[: max_length - 3] + "..."
 
 
 def create_http_error(
@@ -45,7 +89,9 @@ def create_http_error(
     is_internal_error = bool(http_error_cls == web.HTTPInternalServerError)
 
     status_reason = status_reason or get_code_description(http_error_cls.status_code)
-    error_message = error_message or status_reason
+    error_message = error_message or get_code_description(http_error_cls.status_code)
+
+    assert len(status_reason) < MAX_STATUS_MESSAGE_LENGTH  # nosec
 
     if is_internal_error and skip_internal_error_details:
         error = ErrorGet.model_validate(
@@ -90,29 +136,3 @@ def exception_to_response(exc: HTTPError) -> web.Response:
         reason=exc.reason,
         text=exc.text,
     )
-
-
-def safe_status_message(message: str | None, max_length: int = 50) -> str | None:
-    """
-    Truncates a status-message (i.e. `reason` in HTTP errors) to a maximum length, replacing newlines with spaces.
-
-    If the message is longer than max_length, it will be truncated and "..." will be appended.
-
-    This prevents issues such as:
-        - `aiohttp.http_exceptions.LineTooLong`: 400, message: Got more than 8190 bytes when reading Status line is too long.
-        - Multiline not allowed in HTTP reason attribute (aiohttp now raises ValueError).
-
-    See:
-        - When to use http status and/or text messages https://github.com/ITISFoundation/osparc-simcore/pull/7760
-        - [RFC 9112, Section 4.1: HTTP/1.1 Message Syntax and Routing](https://datatracker.ietf.org/doc/html/rfc9112#section-4.1) (status line length limits)
-        - [RFC 9110, Section 15.5: Reason Phrase](https://datatracker.ietf.org/doc/html/rfc9110#section-15.5) (reason phrase definition)
-    """
-    if not message:
-        return None
-
-    flat_message = message.replace("\n", " ")
-    if len(flat_message) <= max_length:
-        return flat_message
-
-    # Truncate and add ellipsis
-    return flat_message[: max_length - 3] + "..."
