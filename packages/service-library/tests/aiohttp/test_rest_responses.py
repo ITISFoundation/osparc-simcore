@@ -63,12 +63,14 @@ def test_collected_http_errors_map(status_code: int, http_error_cls: type[HTTPEr
 @pytest.mark.parametrize("error_code", [None, create_error_code(Exception("fake"))])
 def tests_exception_to_response(skip_details: bool, error_code: ErrorCodeStr | None):
 
-    expected_reason = "Something whent wrong !"
+    expected_status_reason = "SHORT REASON"
+    expected_error_message = "Something whent wrong !"
     expected_exceptions: list[Exception] = [RuntimeError("foo")]
 
     http_error = create_http_error(
         errors=expected_exceptions,
-        reason=expected_reason,
+        error_message=expected_error_message,
+        status_reason="SHORT REASON",
         http_error_cls=web.HTTPInternalServerError,
         skip_internal_error_details=skip_details,
         error_code=error_code,
@@ -94,7 +96,7 @@ def tests_exception_to_response(skip_details: bool, error_code: ErrorCodeStr | N
     # checks response model
     response_json = json.loads(response.text)
     assert response_json["data"] is None
-    assert response_json["error"]["message"] == expected_reason
+    assert response_json["error"]["message"] == expected_error_message
     assert response_json["error"]["supportId"] == error_code
     assert response_json["error"]["status"] == response.status
 
