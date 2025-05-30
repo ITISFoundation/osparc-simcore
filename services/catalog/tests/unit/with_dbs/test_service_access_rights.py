@@ -14,7 +14,6 @@ from pytest_mock import MockerFixture
 from simcore_service_catalog.models.services_db import ServiceAccessRightsDB
 from simcore_service_catalog.repository.services import ServicesRepository
 from simcore_service_catalog.service.access_rights import (
-    evaluate_auto_upgrade_policy,
     evaluate_service_ownership_and_rights,
     inherit_from_previous_release,
     reduce_access_rights,
@@ -200,14 +199,9 @@ async def test_auto_upgrade_policy(
     }
 
     # Check metadata inheritance
-    assert "icon" in inherited_data["metadata_updates"]
-    assert inherited_data["metadata_updates"]["icon"] == "previous_icon.svg"
-
-    # Test backward compatibility with evaluate_auto_upgrade_policy
-    legacy_result = await evaluate_auto_upgrade_policy(
-        services_repo, service_metadata=new_service_metadata
-    )
-    assert legacy_result["access_rights"] == inherited_data["access_rights"]
+    inherited_metadata = inherited_data["metadata_updates"]
+    assert "icon" in inherited_metadata
+    assert inherited_metadata["icon"] == "previous_icon.svg"
 
     # ALL
     service_access_rights += inherited_access_rights
