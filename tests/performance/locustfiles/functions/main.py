@@ -11,7 +11,6 @@ import numpy as np
 import s4l_v1 as s4l
 import s4l_v1.analysis as analysis
 import s4l_v1.document as document
-import s4l_v1.materials.database as database
 import s4l_v1.model as model
 import s4l_v1.units as units
 import XCoreModeling as xcm
@@ -54,6 +53,7 @@ filename_model = os.path.join(input_folder, "Nerve_Model.sab")
 
 
 def Creates_EM_Simulation():
+    import s4l_v1.materials.database as database
 
     # Creating the simulation
     simulation = emlf.ElectroQsOhmicSimulation()
