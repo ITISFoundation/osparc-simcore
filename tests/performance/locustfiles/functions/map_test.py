@@ -20,6 +20,7 @@ import matplotlib.pyplot as plt
 import osparc_client
 from httpx import BasicAuth, Client, HTTPStatusError
 from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_exponential
+from tqdm import tqdm
 
 _SCRIPT_DIR = Path(__file__).parent
 _MAIN_FILE = _SCRIPT_DIR / "main.py"
@@ -30,13 +31,11 @@ _VALUES_FILE = _SCRIPT_DIR / "values.json"
 assert _VALUES_FILE.is_file(), f"Values file not found: {_VALUES_FILE}"
 
 _SOLVER_KEY = "simcore/services/comp/s4l-python-runner"
-_SOLVER_VERSION = "1.2.200"
-
-# _SOLVER_KEY = "simcore/services/comp/osparc-python-runner"
-# _SOLVER_VERSION = "1.4.1"
+_SOLVER_VERSION = "1.2.130"
 
 
-def main(log_job: bool = False):
+def main(njobs: int, log_job: bool = False):
+    assert njobs > 0
 
     url = os.environ.get("OSPARC_API_URL")
     assert url
@@ -81,7 +80,7 @@ def main(log_job: bool = False):
             solver_function = osparc_client.Function(
                 osparc_client.SolverFunction(
                     uid=None,
-                    title="s4l-python-runner",
+                    title="test-s4l-python-runner",
                     description="Run Python code using sim4life",
                     input_schema=osparc_client.JSONFunctionInputSchema(),
                     output_schema=osparc_client.JSONFunctionOutputSchema(),
@@ -102,21 +101,26 @@ def main(log_job: bool = False):
             function_id = registered_function.to_dict().get("uid")
             assert function_id
 
-            function_job = api_instance.run_function(
-                function_id, {"input_3": values_file}
+            # Prepare inputs for map_function
+            inputs = njobs * [{"input_3": values_file}]
+
+            function_jobs = api_instance.map_function(
+                function_id=function_id,
+                request_body=inputs,
             )
 
-            print(f"function_job: {function_job.to_dict()}")
-
-            function_job_uid = function_job.to_dict().get("uid")
-            assert function_job_uid
-            solver_job_id = function_job.to_dict().get("solver_job_id")
-            assert solver_job_id
+            print(f"function_jobs: {function_jobs.to_dict()}")
+            function_job_ids = function_jobs.job_ids
+            assert function_job_ids
 
             if log_job:
+                job = job_api_instance.get_function_job(function_job_ids[0])
+                solver_job_id = job.actual_instance.solver_job_id
                 print_job_logs(configuration, solver_job_id)
 
-            for job_uid in [function_job_uid]:
+            for job_uid in tqdm(
+                function_job_ids, desc="Waiting for jobs to complete", unit="job"
+            ):
                 status = wait_until_done(job_api_instance, job_uid)
                 job_statuses[status] = job_statuses.get(status, 0) + 1
 
@@ -132,7 +136,6 @@ def main(log_job: bool = False):
             plt.show(block=True)
 
         finally:
-
             for file in uploaded_files:
                 try:
                     file_client_instance.delete_file(file.id)
@@ -141,11 +144,12 @@ def main(log_job: bool = False):
                     print(f"Failed to delete file {file.id}: {e}")
 
             for function in registered_functions:
+                uid = function.actual_instance.uid
                 try:
-                    api_instance.delete_function(function.uid)
-                    print(f"Deleted function {function.uid}")
+                    api_instance.delete_function(uid)
+                    print(f"Deleted function {uid}")
                 except Exception as e:
-                    print(f"Failed to delete function {function.uid}: {e}")
+                    print(f"Failed to delete function {uid}: {e}")
 
 
 @retry(
@@ -177,7 +181,7 @@ def print_job_logs(configuration: osparc_client.Configuration, solver_job_uid: s
     with client.stream(
         "GET",
         f"/v0/solvers/{_SOLVER_KEY}/releases/{_SOLVER_VERSION}/jobs/{solver_job_uid}/logstream",
-        timeout=5 * 60,
+        timeout=60,
     ) as response:
         response.raise_for_status()
         for line in response.iter_lines():
@@ -190,5 +194,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "--log-job", action="store_true", help="Log details of a single job"
     )
+    parser.add_argument(
+        "--njobs",
+        type=int,
+        default=1,
+        help="Number of jobs to run (default: 1)",
+    )
     args = parser.parse_args()
-    main(log_job=args.log_job)
+    main(njobs=args.njobs, log_job=args.log_job)

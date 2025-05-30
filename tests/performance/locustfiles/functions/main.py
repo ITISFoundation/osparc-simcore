@@ -645,14 +645,14 @@ axonlist = model.CreateAxonNeurons(axons, senn_props)
 simulation = Creates_EM_Simulation()
 simulation.UpdateGrid()
 simulation.CreateVoxels()
-simulation.RunSimulation()
+simulation.RunSimulation(wait=True)
 
 # Extracts the Potential
 [current, peak_averaged_field] = ExtractsResults(simulation)
 
 # ### Creates and Runs The Neuronal Simulation
 neuron_simulation = CreatesNeuroCache(axonlist)
-neuron_simulation.RunSimulation()
+neuron_simulation.RunSimulation(wait=True)
 tf = ExtractThresholdsInfo(neuron_simulation)
 
 # Calculates Isopercentiles
