@@ -153,6 +153,8 @@ async def _find_previous_compatible_release(
     for release in latest_releases:
         # COMPATIBILITY RULE:
         # - a patch release is compatible with the previous patch release
+
+        # FIXME: not all compatible releases!!!
         if is_patch_release(new_version, release.version):
             return release
 
