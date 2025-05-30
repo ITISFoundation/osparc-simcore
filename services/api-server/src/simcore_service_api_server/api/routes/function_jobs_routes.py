@@ -10,10 +10,12 @@ from models_library.api_schemas_webserver.functions import (
     FunctionJobStatus,
     FunctionOutputs,
     RegisteredFunctionJob,
+)
+from models_library.functions_errors import (
     UnsupportedFunctionClassError,
     UnsupportedFunctionFunctionJobClassCombinationError,
 )
-from pydantic import PositiveInt
+from models_library.users import UserID
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ...models.pagination import Page, PaginationParams
@@ -57,10 +59,12 @@ FIRST_RELEASE_VERSION = "0.8.0"
 async def list_function_jobs(
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     page_params: Annotated[PaginationParams, Depends()],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
 ):
     function_jobs_list, meta = await wb_api_rpc.list_function_jobs(
         pagination_offset=page_params.offset,
         pagination_limit=page_params.limit,
+        user_id=user_id,
     )
 
     return create_page(
@@ -81,8 +85,11 @@ async def list_function_jobs(
 async def register_function_job(
     function_job: FunctionJob,
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
 ) -> RegisteredFunctionJob:
-    return await wb_api_rpc.register_function_job(function_job=function_job)
+    return await wb_api_rpc.register_function_job(
+        function_job=function_job, user_id=user_id
+    )
 
 
 @function_job_router.get(
@@ -97,8 +104,11 @@ async def register_function_job(
 async def get_function_job(
     function_job_id: FunctionJobID,
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
 ) -> RegisteredFunctionJob:
-    return await wb_api_rpc.get_function_job(function_job_id=function_job_id)
+    return await wb_api_rpc.get_function_job(
+        function_job_id=function_job_id, user_id=user_id
+    )
 
 
 @function_job_router.delete(
@@ -113,8 +123,11 @@ async def get_function_job(
 async def delete_function_job(
     function_job_id: FunctionJobID,
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
 ) -> None:
-    return await wb_api_rpc.delete_function_job(function_job_id=function_job_id)
+    return await wb_api_rpc.delete_function_job(
+        function_job_id=function_job_id, user_id=user_id
+    )
 
 
 @function_job_router.get(
@@ -129,12 +142,12 @@ async def delete_function_job(
 async def function_job_status(
     function_job_id: FunctionJobID,
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
 ) -> FunctionJobStatus:
 
     function, function_job = await get_function_from_functionjobid(
-        wb_api_rpc=wb_api_rpc, function_job_id=function_job_id
+        wb_api_rpc=wb_api_rpc, function_job_id=function_job_id, user_id=user_id
     )
 
     if (
@@ -170,16 +183,19 @@ async def function_job_status(
 async def get_function_from_functionjobid(
     wb_api_rpc: WbApiRpcClient,
     function_job_id: FunctionJobID,
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
 ) -> tuple[Function, FunctionJob]:
     function_job = await get_function_job(
-        wb_api_rpc=wb_api_rpc, function_job_id=function_job_id
+        wb_api_rpc=wb_api_rpc, function_job_id=function_job_id, user_id=user_id
     )
 
     from .functions_routes import get_function
 
     return (
         await get_function(
-            wb_api_rpc=wb_api_rpc, function_id=function_job.function_uid
+            wb_api_rpc=wb_api_rpc,
+            function_id=function_job.function_uid,
+            user_id=user_id,
         ),
         function_job,
     )
@@ -197,13 +213,13 @@ async def get_function_from_functionjobid(
 async def function_job_outputs(
     function_job_id: FunctionJobID,
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     async_pg_engine: Annotated[AsyncEngine, Depends(get_db_asyncpg_engine)],
 ) -> FunctionOutputs:
     function, function_job = await get_function_from_functionjobid(
-        wb_api_rpc=wb_api_rpc, function_job_id=function_job_id
+        wb_api_rpc=wb_api_rpc, function_job_id=function_job_id, user_id=user_id
     )
 
     if (
