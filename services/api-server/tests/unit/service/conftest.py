@@ -132,12 +132,16 @@ def solver_service(
 @pytest.fixture
 def study_service(
     job_service: JobService,
+    auth_session: AuthSession,
+    wb_api_rpc_client: WbApiRpcClient,
     product_name: ProductName,
     user_id: UserID,
 ) -> StudyService:
 
     return StudyService(
         job_service=job_service,
+        webserver_api=auth_session,
+        wb_api_rpc=wb_api_rpc_client,
         user_id=user_id,
         product_name=product_name,
     )

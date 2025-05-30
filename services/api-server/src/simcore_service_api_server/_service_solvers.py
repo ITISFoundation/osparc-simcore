@@ -100,7 +100,7 @@ class SolverService:
             "solvers",  # solver_id, "releases", solver_version, "jobs",
         ]
         if filter_by_solver_key:
-            collection_or_resource_ids.append(filter_by_solver_key)
+            collection_or_resource_ids.append(f"{filter_by_solver_key}")
             if filter_by_solver_version:
                 collection_or_resource_ids.append("releases")
                 collection_or_resource_ids.append(filter_by_solver_version)
