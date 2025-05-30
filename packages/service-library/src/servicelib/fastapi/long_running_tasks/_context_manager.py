@@ -1,7 +1,8 @@
 import asyncio
 from asyncio.log import logger
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator, Final
+from typing import Any, Final
 
 from pydantic import PositiveFloat
 
@@ -87,8 +88,7 @@ async def periodic_task_result(
     - `status_poll_interval` optional: when waiting for a task to finish,
         how frequent should the server be queried
 
-    raises: `TaskClientResultError` if the task finished with an error instead of
-        the expected result
+    raises: the original expcetion the task raised, if any
     raises: `asyncio.TimeoutError` NOTE: the remote task will also be removed
     """
 

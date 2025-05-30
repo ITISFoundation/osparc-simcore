@@ -10,7 +10,11 @@ from typing import Any
 import httpx
 from fastapi import status
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
-from models_library.api_schemas_long_running_tasks.tasks import TaskGet, TaskStatus
+from models_library.api_schemas_long_running_tasks.tasks import (
+    TaskGet,
+    TaskResult,
+    TaskStatus,
+)
 from tenacity import (
     AsyncRetrying,
     TryAgain,
@@ -23,7 +27,6 @@ from tenacity import (
 from yarl import URL
 
 from ...long_running_tasks._constants import DEFAULT_POLL_INTERVAL_S, HOUR
-from ...long_running_tasks._errors import TaskClientResultError
 from ...long_running_tasks._models import (
     ClientConfiguration,
     LRTask,
@@ -32,7 +35,7 @@ from ...long_running_tasks._models import (
     ProgressPercent,
     RequestBody,
 )
-from ...long_running_tasks._task import TaskId, TaskResult
+from ...long_running_tasks._task import TaskId
 from ...rest_responses import unwrap_envelope_if_required
 from ._client import DEFAULT_HTTP_REQUESTS_TIMEOUT, Client, setup
 from ._context_manager import periodic_task_result
@@ -97,7 +100,7 @@ async def _wait_for_completion(
 
 @retry(**_DEFAULT_FASTAPI_RETRY_POLICY)
 async def _task_result(session: httpx.AsyncClient, result_url: URL) -> Any:
-    response = await session.get(f"{result_url}", params={"return_exception": True})
+    response = await session.get(f"{result_url}")
     response.raise_for_status()
     if response.status_code != status.HTTP_204_NO_CONTENT:
         return unwrap_envelope_if_required(response.json())
@@ -155,7 +158,6 @@ __all__: tuple[str, ...] = (
     "ProgressCallback",
     "ProgressMessage",
     "ProgressPercent",
-    "TaskClientResultError",
     "TaskId",
     "TaskResult",
     "periodic_task_result",

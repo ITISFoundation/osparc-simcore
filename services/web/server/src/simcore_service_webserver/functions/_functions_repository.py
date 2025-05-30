@@ -1,40 +1,72 @@
+# pylint: disable=too-many-arguments
+
 import json
+from typing import Literal
+from uuid import UUID
 
 import sqlalchemy
 from aiohttp import web
 from models_library.functions import (
+    FunctionAccessRightsDB,
     FunctionClass,
     FunctionID,
-    FunctionIDNotFoundError,
     FunctionInputs,
     FunctionInputSchema,
+    FunctionJobAccessRightsDB,
     FunctionJobClassSpecificData,
-    FunctionJobCollectionIDNotFoundError,
+    FunctionJobCollectionAccessRightsDB,
     FunctionJobCollectionsListFilters,
     FunctionJobID,
-    FunctionJobIDNotFoundError,
     FunctionOutputs,
     FunctionOutputSchema,
     RegisteredFunctionDB,
     RegisteredFunctionJobCollectionDB,
     RegisteredFunctionJobDB,
 )
+from models_library.functions_errors import (
+    FunctionExecuteAccessDeniedError,
+    FunctionIDNotFoundError,
+    FunctionJobCollectionExecuteAccessDeniedError,
+    FunctionJobCollectionIDNotFoundError,
+    FunctionJobCollectionReadAccessDeniedError,
+    FunctionJobCollectionWriteAccessDeniedError,
+    FunctionJobExecuteAccessDeniedError,
+    FunctionJobIDNotFoundError,
+    FunctionJobReadAccessDeniedError,
+    FunctionJobWriteAccessDeniedError,
+    FunctionReadAccessDeniedError,
+    FunctionWriteAccessDeniedError,
+)
+from models_library.groups import GroupID
+from models_library.products import ProductName
 from models_library.rest_pagination import PageMetaInfoLimitOffset
+from models_library.users import UserID
 from pydantic import TypeAdapter
+from simcore_postgres_database.models.funcapi_function_job_collections_access_rights_table import (
+    function_job_collections_access_rights_table,
+)
 from simcore_postgres_database.models.funcapi_function_job_collections_table import (
     function_job_collections_table,
 )
 from simcore_postgres_database.models.funcapi_function_job_collections_to_function_jobs_table import (
     function_job_collections_to_function_jobs_table,
 )
+from simcore_postgres_database.models.funcapi_function_jobs_access_rights_table import (
+    function_jobs_access_rights_table,
+)
 from simcore_postgres_database.models.funcapi_function_jobs_table import (
     function_jobs_table,
+)
+from simcore_postgres_database.models.funcapi_functions_access_rights_table import (
+    functions_access_rights_table,
 )
 from simcore_postgres_database.models.funcapi_functions_table import functions_table
 from simcore_postgres_database.utils_repos import (
     get_columns_from_db_model,
     transaction_context,
 )
+from simcore_service_webserver.groups.api import list_all_user_groups_ids
+from simcore_service_webserver.users.api import get_user_primary_group_id
 from sqlalchemy import Text, cast
 from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.sql import func
@@ -48,12 +80,23 @@ _FUNCTION_JOBS_TABLE_COLS = get_columns_from_db_model(
 _FUNCTION_JOB_COLLECTIONS_TABLE_COLS = get_columns_from_db_model(
     function_job_collections_table, RegisteredFunctionJobCollectionDB
 )
+_FUNCTIONS_ACCESS_RIGHTS_TABLE_COLS = get_columns_from_db_model(
+    functions_access_rights_table, FunctionAccessRightsDB
+)
+_FUNCTION_JOBS_ACCESS_RIGHTS_TABLE_COLS = get_columns_from_db_model(
+    function_jobs_access_rights_table, FunctionJobAccessRightsDB
+)
+_FUNCTION_JOB_COLLECTIONS_ACCESS_RIGHTS_TABLE_COLS = get_columns_from_db_model(
+    function_job_collections_access_rights_table, FunctionJobCollectionAccessRightsDB
+)
 
 
-async def create_function(
+async def create_function(  # noqa: PLR0913
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
+    user_id: UserID,
+    product_name: ProductName,
     function_class: FunctionClass,
     class_specific_data: dict,
     title: str,
@@ -77,20 +120,32 @@ async def create_function(
             )
             .returning(*_FUNCTIONS_TABLE_COLS)
         )
-        row = await result.one_or_none()
+        row = await result.one()
 
-        assert row is not None, (
-            "No row was returned from the database after creating function."
-            f" Function: {title}"
-        )  # nosec
+        registered_function = RegisteredFunctionDB.model_validate(dict(row))
 
-        return RegisteredFunctionDB.model_validate(dict(row))
+    user_primary_group_id = await get_user_primary_group_id(app, user_id=user_id)
+    await set_group_permissions(
+        app,
+        connection=connection,
+        group_id=user_primary_group_id,
+        product_name=product_name,
+        object_type="function",
+        object_ids=[registered_function.uuid],
+        read=True,
+        write=True,
+        execute=True,
+    )
+
+    return RegisteredFunctionDB.model_validate(dict(row))
 
 
-async def create_function_job(
+async def create_function_job(  # noqa: PLR0913
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
+    user_id: UserID,
+    product_name: ProductName,
     function_class: FunctionClass,
     function_uid: FunctionID,
     title: str,
@@ -115,24 +170,48 @@ async def create_function_job(
             )
             .returning(*_FUNCTION_JOBS_TABLE_COLS)
         )
-        row = await result.one_or_none()
+        row = await result.one()
 
-        assert row is not None, (
-            "No row was returned from the database after creating function job."
-            f" Function job: {title}"
-        )  # nosec
+        registered_function_job = RegisteredFunctionJobDB.model_validate(dict(row))
 
-        return RegisteredFunctionJobDB.model_validate(dict(row))
+    user_primary_group_id = await get_user_primary_group_id(app, user_id=user_id)
+    await set_group_permissions(
+        app,
+        connection=connection,
+        group_id=user_primary_group_id,
+        product_name=product_name,
+        object_type="function_job",
+        object_ids=[registered_function_job.uuid],
+        read=True,
+        write=True,
+        execute=True,
+    )
+
+    return registered_function_job
 
 
 async def create_function_job_collection(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
+    user_id: UserID,
+    product_name: ProductName,
     title: str,
     description: str,
     job_ids: list[FunctionJobID],
 ) -> tuple[RegisteredFunctionJobCollectionDB, list[FunctionJobID]]:
+
+    for job_id in job_ids:
+        await check_user_permissions(
+            app,
+            connection=connection,
+            user_id=user_id,
+            product_name=product_name,
+            object_type="function_job",
+            object_id=job_id,
+            permissions=["read"],
+        )
+
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(
             function_job_collections_table.insert()
@@ -172,15 +251,30 @@ async def create_function_job_collection(
             )  # nosec
             job_collection_entries.append(dict(entry))
 
-        return function_job_collection_db, [
-            dict(entry)["function_job_uuid"] for entry in job_collection_entries
-        ]
+    user_primary_group_id = await get_user_primary_group_id(app, user_id=user_id)
+    await set_group_permissions(
+        app,
+        connection=connection,
+        group_id=user_primary_group_id,
+        product_name=product_name,
+        object_type="function_job_collection",
+        object_ids=[function_job_collection_db.uuid],
+        read=True,
+        write=True,
+        execute=True,
+    )
+
+    return function_job_collection_db, [
+        dict(entry)["function_job_uuid"] for entry in job_collection_entries
+    ]
 
 
 async def get_function(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
+    user_id: UserID,
+    product_name: ProductName,
     function_id: FunctionID,
 ) -> RegisteredFunctionDB:
 
@@ -192,23 +286,55 @@ async def get_function(
 
         if row is None:
             raise FunctionIDNotFoundError(function_id=function_id)
-        return RegisteredFunctionDB.model_validate(dict(row))
+        registered_function = RegisteredFunctionDB.model_validate(dict(row))
+
+    await check_user_permissions(
+        app,
+        connection=connection,
+        user_id=user_id,
+        product_name=product_name,
+        object_id=function_id,
+        object_type="function",
+        permissions=["read"],
+    )
+
+    return registered_function
 
 
 async def list_functions(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
+    user_id: UserID,
+    product_name: ProductName,
     pagination_limit: int,
     pagination_offset: int,
 ) -> tuple[list[RegisteredFunctionDB], PageMetaInfoLimitOffset]:
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        user_groups = await list_all_user_groups_ids(app, user_id=user_id)
+
+        subquery = (
+            functions_access_rights_table.select()
+            .with_only_columns(functions_access_rights_table.c.function_uuid)
+            .where(
+                functions_access_rights_table.c.group_id.in_(user_groups),
+                functions_access_rights_table.c.product_name == product_name,
+                functions_access_rights_table.c.read,
+            )
+        )
+
         total_count_result = await conn.scalar(
-            func.count().select().select_from(functions_table)
+            func.count()
+            .select()
+            .select_from(functions_table)
+            .where(functions_table.c.uuid.in_(subquery))
         )
         result = await conn.stream(
-            functions_table.select().offset(pagination_offset).limit(pagination_limit)
+            functions_table.select()
+            .where(functions_table.c.uuid.in_(subquery))
+            .offset(pagination_offset)
+            .limit(pagination_limit)
         )
         rows = await result.all()
         if rows is None:
@@ -230,35 +356,47 @@ async def list_function_jobs(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
+    user_id: UserID,
+    product_name: ProductName,
     pagination_limit: int,
     pagination_offset: int,
     filter_by_function_id: FunctionID | None = None,
 ) -> tuple[list[RegisteredFunctionJobDB], PageMetaInfoLimitOffset]:
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        user_groups = await list_all_user_groups_ids(app, user_id=user_id)
+
+        access_subquery = (
+            function_jobs_access_rights_table.select()
+            .with_only_columns(function_jobs_access_rights_table.c.function_job_uuid)
+            .where(
+                function_jobs_access_rights_table.c.group_id.in_(user_groups),
+                function_jobs_access_rights_table.c.product_name == product_name,
+                function_jobs_access_rights_table.c.read,
+            )
+        )
+
         total_count_result = await conn.scalar(
             func.count()
             .select()
             .select_from(function_jobs_table)
+            .where(function_jobs_table.c.uuid.in_(access_subquery))
             .where(
-                (
-                    function_jobs_table.c.function_uuid == filter_by_function_id
-                    if filter_by_function_id
-                    else True
-                ),
+                function_jobs_table.c.function_uuid == filter_by_function_id
+                if filter_by_function_id
+                else sqlalchemy.sql.true()
             )
         )
         result = await conn.stream(
             function_jobs_table.select()
+            .where(function_jobs_table.c.uuid.in_(access_subquery))
+            .where(
+                function_jobs_table.c.function_uuid == filter_by_function_id
+                if filter_by_function_id
+                else sqlalchemy.sql.true()
+            )
             .offset(pagination_offset)
             .limit(pagination_limit)
-            .where(
-                (
-                    function_jobs_table.c.function_uuid == filter_by_function_id
-                    if filter_by_function_id
-                    else True
-                ),
-            )
         )
         rows = await result.all()
         if rows is None:
@@ -280,6 +418,8 @@ async def list_function_job_collections(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
+    user_id: UserID,
+    product_name: ProductName,
     pagination_limit: int,
     pagination_offset: int,
     filters: FunctionJobCollectionsListFilters | None = None,
@@ -314,13 +454,37 @@ async def list_function_job_collections(
                 .where(function_jobs_table.c.function_uuid == function_id)
             )
             filter_condition = function_job_collections_table.c.uuid.in_(subquery)
+        user_groups = await list_all_user_groups_ids(app, user_id=user_id)
+
+        access_subquery = (
+            function_job_collections_access_rights_table.select()
+            .with_only_columns(
+                function_job_collections_access_rights_table.c.function_job_collection_uuid
+            )
+            .where(
+                function_job_collections_access_rights_table.c.group_id.in_(
+                    user_groups
+                ),
+                function_job_collections_access_rights_table.c.product_name
+                == product_name,
+                function_job_collections_access_rights_table.c.read,
+            )
+        )
+
+        filter_and_access_condition = sqlalchemy.and_(
+            filter_condition,
+            function_job_collections_table.c.uuid.in_(access_subquery),
+        )
+
         total_count_result = await conn.scalar(
             func.count()
             .select()
             .select_from(function_job_collections_table)
-            .where(filter_condition)
+            .where(filter_and_access_condition)
         )
-        query = function_job_collections_table.select().where(filter_condition)
+        query = function_job_collections_table.select().where(
+            filter_and_access_condition
+        )
 
         result = await conn.stream(
             query.offset(pagination_offset).limit(pagination_limit)
@@ -359,8 +523,20 @@ async def delete_function(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
+    user_id: UserID,
+    product_name: ProductName,
     function_id: FunctionID,
 ) -> None:
+
+    await check_user_permissions(
+        app,
+        connection=connection,
+        user_id=user_id,
+        product_name=product_name,
+        object_id=function_id,
+        object_type="function",
+        permissions=["write"],
+    )
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         # Check if the function exists
@@ -379,8 +555,22 @@ async def delete_function(
 
 
 async def update_function_title(
-    app: web.Application, *, function_id: FunctionID, title: str
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_id: FunctionID,
+    title: str,
 ) -> RegisteredFunctionDB:
+    await check_user_permissions(
+        app,
+        user_id=user_id,
+        product_name=product_name,
+        object_id=function_id,
+        object_type="function",
+        permissions=["write"],
+    )
+
     async with transaction_context(get_asyncpg_engine(app)) as conn:
         result = await conn.stream(
             functions_table.update()
@@ -397,8 +587,22 @@ async def update_function_title(
 
 
 async def update_function_description(
-    app: web.Application, *, function_id: FunctionID, description: str
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_id: FunctionID,
+    description: str,
 ) -> RegisteredFunctionDB:
+    await check_user_permissions(
+        app,
+        user_id=user_id,
+        product_name=product_name,
+        object_id=function_id,
+        object_type="function",
+        permissions=["write"],
+    )
+
     async with transaction_context(get_asyncpg_engine(app)) as conn:
         result = await conn.stream(
             functions_table.update()
@@ -418,8 +622,19 @@ async def get_function_job(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
+    user_id: UserID,
+    product_name: ProductName,
     function_job_id: FunctionID,
 ) -> RegisteredFunctionJobDB:
+    await check_user_permissions(
+        app,
+        connection=connection,
+        user_id=user_id,
+        product_name=product_name,
+        object_id=function_job_id,
+        object_type="function_job",
+        permissions=["read"],
+    )
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(
@@ -439,8 +654,20 @@ async def delete_function_job(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
+    user_id: UserID,
+    product_name: ProductName,
     function_job_id: FunctionID,
 ) -> None:
+    await check_user_permissions(
+        app,
+        connection=connection,
+        user_id=user_id,
+        product_name=product_name,
+        object_id=function_job_id,
+        object_type="function_job",
+        permissions=["write"],
+    )
+
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         # Check if the function job exists
         result = await conn.stream(
@@ -464,7 +691,9 @@ async def find_cached_function_job(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
+    user_id: UserID,
     function_id: FunctionID,
+    product_name: ProductName,
     inputs: FunctionInputs,
 ) -> RegisteredFunctionJobDB | None:
 
@@ -489,6 +718,20 @@ async def find_cached_function_job(
         row = rows[0]
 
         job = RegisteredFunctionJobDB.model_validate(dict(row))
+        try:
+            await check_user_permissions(
+                app,
+                connection=connection,
+                user_id=user_id,
+                product_name=product_name,
+                object_id=job.uuid,
+                object_type="function_job",
+                permissions=["read"],
+            )
+        except FunctionJobReadAccessDeniedError:
+            # If the user does not have read access, return None
+            return None
+
         if job.inputs == inputs:
             return job
 
@@ -499,8 +742,19 @@ async def get_function_job_collection(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
+    user_id: UserID,
+    product_name: ProductName,
     function_job_collection_id: FunctionID,
 ) -> tuple[RegisteredFunctionJobCollectionDB, list[FunctionJobID]]:
+    await check_user_permissions(
+        app,
+        connection=connection,
+        user_id=user_id,
+        product_name=product_name,
+        object_id=function_job_collection_id,
+        object_type="function_job_collection",
+        permissions=["read"],
+    )
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(
@@ -529,15 +783,27 @@ async def get_function_job_collection(
         )
 
         job_collection = RegisteredFunctionJobCollectionDB.model_validate(dict(row))
-        return job_collection, job_ids
+
+    return job_collection, job_ids
 
 
 async def delete_function_job_collection(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
+    user_id: UserID,
+    product_name: ProductName,
     function_job_collection_id: FunctionID,
 ) -> None:
+    await check_user_permissions(
+        app,
+        connection=connection,
+        user_id=user_id,
+        product_name=product_name,
+        object_id=function_job_collection_id,
+        object_type="function_job_collection",
+        permissions=["write"],
+    )
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         # Check if the function job collection exists
@@ -563,3 +829,237 @@ async def delete_function_job_collection(
                 == function_job_collection_id
             )
         )
+
+
+async def set_group_permissions(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    group_id: GroupID,
+    product_name: ProductName,
+    object_type: Literal["function", "function_job", "function_job_collection"],
+    object_ids: list[UUID],
+    read: bool | None = None,
+    write: bool | None = None,
+    execute: bool | None = None,
+) -> None:
+
+    access_rights_table = None
+    field_name = None
+    if object_type == "function":
+        access_rights_table = functions_access_rights_table
+        field_name = "function_uuid"
+    elif object_type == "function_job":
+        access_rights_table = function_jobs_access_rights_table
+        field_name = "function_job_uuid"
+    elif object_type == "function_job_collection":
+        access_rights_table = function_job_collections_access_rights_table
+        field_name = "function_job_collection_uuid"
+
+    assert access_rights_table is not None  # nosec
+    assert field_name is not None  # nosec
+
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        for object_id in object_ids:
+            # Check if the group already has access rights for the function
+            result = await conn.stream(
+                access_rights_table.select().where(
+                    getattr(access_rights_table.c, field_name) == object_id,
+                    access_rights_table.c.group_id == group_id,
+                )
+            )
+            row = await result.one_or_none()
+
+            if row is None:
+                # Insert new access rights if the group does not have any
+                await conn.execute(
+                    access_rights_table.insert().values(
+                        **{field_name: object_id},
+                        group_id=group_id,
+                        product_name=product_name,
+                        read=read if read is not None else False,
+                        write=write if write is not None else False,
+                        execute=execute if execute is not None else False,
+                    )
+                )
+            else:
+                # Update existing access rights only for non-None values
+                update_values = {
+                    "read": read if read is not None else row["read"],
+                    "write": write if write is not None else row["write"],
+                    "execute": execute if execute is not None else row["execute"],
+                }
+
+                await conn.execute(
+                    access_rights_table.update()
+                    .where(
+                        getattr(access_rights_table.c, field_name) == object_id,
+                        access_rights_table.c.group_id == group_id,
+                    )
+                    .values(**update_values)
+                )
+
+
+async def get_user_permissions(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    object_id: UUID,
+    object_type: Literal["function", "function_job", "function_job_collection"],
+) -> FunctionAccessRightsDB | None:
+
+    await check_exists(
+        app,
+        object_id=object_id,
+        object_type=object_type,
+    )
+
+    access_rights_table = None
+    cols = None
+    if object_type == "function":
+        access_rights_table = functions_access_rights_table
+        cols = _FUNCTIONS_ACCESS_RIGHTS_TABLE_COLS
+    elif object_type == "function_job":
+        access_rights_table = function_jobs_access_rights_table
+        cols = _FUNCTION_JOBS_ACCESS_RIGHTS_TABLE_COLS
+    elif object_type == "function_job_collection":
+        access_rights_table = function_job_collections_access_rights_table
+        cols = _FUNCTION_JOB_COLLECTIONS_ACCESS_RIGHTS_TABLE_COLS
+    assert access_rights_table is not None  # nosec
+
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        user_groups = await list_all_user_groups_ids(app, user_id=user_id)
+
+        # Combine permissions for all groups the user belongs to
+        result = await conn.stream(
+            access_rights_table.select()
+            .with_only_columns(cols)
+            .where(
+                getattr(access_rights_table.c, f"{object_type}_uuid") == object_id,
+                access_rights_table.c.product_name == product_name,
+                access_rights_table.c.group_id.in_(user_groups),
+            )
+        )
+        rows = await result.all()
+
+        if not rows:
+            return None
+
+        # Combine permissions across all rows
+        combined_permissions = {
+            "read": any(row["read"] for row in rows),
+            "write": any(row["write"] for row in rows),
+            "execute": any(row["execute"] for row in rows),
+        }
+
+        return FunctionAccessRightsDB.model_validate(combined_permissions)
+
+
+async def check_exists(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    object_id: UUID,
+    object_type: Literal["function", "function_job", "function_job_collection"],
+) -> bool:
+    """
+    Checks if the object exists in the database.
+    """
+    error: (
+        FunctionIDNotFoundError
+        | FunctionJobIDNotFoundError
+        | FunctionJobCollectionIDNotFoundError
+    )  # This is to avoid mypy bug
+    match object_type:
+        case "function":
+            main_table = functions_table
+            error = FunctionIDNotFoundError(function_id=object_id)
+        case "function_job":
+            main_table = function_jobs_table
+            error = FunctionJobIDNotFoundError(function_job_id=object_id)
+        case "function_job_collection":
+            main_table = function_job_collections_table
+            error = FunctionJobCollectionIDNotFoundError(
+                function_job_collection_id=object_id
+            )
+
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        result = await conn.stream(
+            main_table.select().where(main_table.c.uuid == object_id)
+        )
+        row = await result.one_or_none()
+
+        if row is None:
+            raise error
+        return True
+
+
+async def check_user_permissions(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    object_id: UUID,
+    object_type: Literal["function", "function_job", "function_job_collection"],
+    permissions: list[Literal["read", "write", "execute"]],
+) -> bool:
+    user_permissions = await get_user_permissions(
+        app,
+        connection=connection,
+        user_id=user_id,
+        product_name=product_name,
+        object_id=object_id,
+        object_type=object_type,
+    )
+
+    errors = None
+    match object_type:
+        case "function":
+            errors = {
+                "read": FunctionReadAccessDeniedError(
+                    user_id=user_id, function_id=object_id
+                ),
+                "write": FunctionWriteAccessDeniedError(
+                    user_id=user_id, function_id=object_id
+                ),
+                "execute": FunctionExecuteAccessDeniedError(
+                    user_id=user_id, function_id=object_id
+                ),
+            }
+        case "function_job":
+            errors = {
+                "read": FunctionJobReadAccessDeniedError(
+                    user_id=user_id, function_job_id=object_id
+                ),
+                "write": FunctionJobWriteAccessDeniedError(
+                    user_id=user_id, function_job_id=object_id
+                ),
+                "execute": FunctionJobExecuteAccessDeniedError(
+                    user_id=user_id, function_job_id=object_id
+                ),
+            }
+        case "function_job_collection":
+            errors = {
+                "read": FunctionJobCollectionReadAccessDeniedError(
+                    user_id=user_id, function_job_collection_id=object_id
+                ),
+                "write": FunctionJobCollectionWriteAccessDeniedError(
+                    user_id=user_id, function_job_collection_id=object_id
+                ),
+                "execute": FunctionJobCollectionExecuteAccessDeniedError(
+                    user_id=user_id, function_job_collection_id=object_id
+                ),
+            }
+    assert errors is not None
+
+    if user_permissions is None:
+        raise errors["read"]
+
+    for permission in permissions:
+        if not getattr(user_permissions, permission):
+            raise errors[permission]
+
+    return True

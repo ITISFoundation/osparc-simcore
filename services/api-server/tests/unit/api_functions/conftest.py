@@ -14,7 +14,6 @@ from fastapi import FastAPI
 from models_library.api_schemas_webserver.functions import (
     Function,
     FunctionClass,
-    FunctionIDNotFoundError,
     FunctionJob,
     FunctionJobCollection,
     JSONFunctionInputSchema,
@@ -27,6 +26,7 @@ from models_library.api_schemas_webserver.functions import (
     RegisteredProjectFunctionJob,
 )
 from models_library.functions import RegisteredFunctionJobCollection
+from models_library.functions_errors import FunctionIDNotFoundError
 from models_library.projects import ProjectID
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
