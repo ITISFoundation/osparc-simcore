@@ -7,6 +7,7 @@ from models_library import projects
 from models_library.basic_regex import UUID_RE_BASE
 from models_library.basic_types import ConstrainedStr
 from models_library.groups import GroupID
+from models_library.products import ProductName
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import BaseModel, ConfigDict, Field
@@ -278,6 +279,7 @@ class FunctionGroupAccessRights(FunctionAccessRights):
 
 class FunctionAccessRightsDB(BaseModel):
     group_id: GroupID | None = None
+    product_name: ProductName | None = None
     read: bool = False
     write: bool = False
     execute: bool = False

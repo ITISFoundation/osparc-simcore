@@ -36,6 +36,7 @@ from models_library.functions_errors import (
     FunctionWriteAccessDeniedError,
 )
 from models_library.groups import GroupID
+from models_library.products import ProductName
 from models_library.rest_pagination import PageMetaInfoLimitOffset
 from models_library.users import UserID
 from pydantic import TypeAdapter
@@ -88,11 +89,12 @@ _FUNCTION_JOB_COLLECTIONS_ACCESS_RIGHTS_TABLE_COLS = get_columns_from_db_model(
 )
 
 
-async def create_function(
+async def create_function(  # noqa: PLR0913
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
+    product_name: ProductName,
     function_class: FunctionClass,
     class_specific_data: dict,
     title: str,
@@ -125,6 +127,7 @@ async def create_function(
         app,
         connection=connection,
         group_id=user_primary_group_id,
+        product_name=product_name,
         object_type="function",
         object_ids=[registered_function.uuid],
         read=True,
@@ -135,11 +138,12 @@ async def create_function(
     return RegisteredFunctionDB.model_validate(dict(row))
 
 
-async def create_function_job(
+async def create_function_job(  # noqa: PLR0913
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
+    product_name: ProductName,
     function_class: FunctionClass,
     function_uid: FunctionID,
     title: str,
@@ -173,6 +177,7 @@ async def create_function_job(
         app,
         connection=connection,
         group_id=user_primary_group_id,
+        product_name=product_name,
         object_type="function_job",
         object_ids=[registered_function_job.uuid],
         read=True,
@@ -188,6 +193,7 @@ async def create_function_job_collection(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
+    product_name: ProductName,
     title: str,
     description: str,
     job_ids: list[FunctionJobID],
@@ -198,6 +204,7 @@ async def create_function_job_collection(
             app,
             connection=connection,
             user_id=user_id,
+            product_name=product_name,
             object_type="function_job",
             object_id=job_id,
             permissions=["read"],
@@ -247,6 +254,7 @@ async def create_function_job_collection(
         app,
         connection=connection,
         group_id=user_primary_group_id,
+        product_name=product_name,
         object_type="function_job_collection",
         object_ids=[function_job_collection_db.uuid],
         read=True,
@@ -264,6 +272,7 @@ async def get_function(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
+    product_name: ProductName,
     function_id: FunctionID,
 ) -> RegisteredFunctionDB:
 
@@ -281,6 +290,7 @@ async def get_function(
         app,
         connection=connection,
         user_id=user_id,
+        product_name=product_name,
         object_id=function_id,
         object_type="function",
         permissions=["read"],
@@ -294,6 +304,7 @@ async def list_functions(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
+    product_name: ProductName,
     pagination_limit: int,
     pagination_offset: int,
 ) -> tuple[list[RegisteredFunctionDB], PageMetaInfoLimitOffset]:
@@ -306,6 +317,7 @@ async def list_functions(
             .with_only_columns(functions_access_rights_table.c.function_uuid)
             .where(
                 functions_access_rights_table.c.group_id.in_(user_groups),
+                functions_access_rights_table.c.product_name == product_name,
                 functions_access_rights_table.c.read,
             )
         )
@@ -343,6 +355,7 @@ async def list_function_jobs(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
+    product_name: ProductName,
     pagination_limit: int,
     pagination_offset: int,
     filter_by_function_id: FunctionID | None = None,
@@ -356,6 +369,7 @@ async def list_function_jobs(
             .with_only_columns(function_jobs_access_rights_table.c.function_job_uuid)
             .where(
                 function_jobs_access_rights_table.c.group_id.in_(user_groups),
+                function_jobs_access_rights_table.c.product_name == product_name,
                 function_jobs_access_rights_table.c.read,
             )
         )
@@ -403,6 +417,7 @@ async def list_function_job_collections(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
+    product_name: ProductName,
     pagination_limit: int,
     pagination_offset: int,
     filters: FunctionJobCollectionsListFilters | None = None,
@@ -448,6 +463,8 @@ async def list_function_job_collections(
                 function_job_collections_access_rights_table.c.group_id.in_(
                     user_groups
                 ),
+                function_job_collections_access_rights_table.c.product_name
+                == product_name,
                 function_job_collections_access_rights_table.c.read,
             )
         )
@@ -505,6 +522,7 @@ async def delete_function(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
+    product_name: ProductName,
     function_id: FunctionID,
 ) -> None:
 
@@ -512,6 +530,7 @@ async def delete_function(
         app,
         connection=connection,
         user_id=user_id,
+        product_name=product_name,
         object_id=function_id,
         object_type="function",
         permissions=["write"],
@@ -534,11 +553,17 @@ async def delete_function(
 
 
 async def update_function_title(
-    app: web.Application, *, user_id: UserID, function_id: FunctionID, title: str
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_id: FunctionID,
+    title: str,
 ) -> RegisteredFunctionDB:
     await check_user_permissions(
         app,
         user_id=user_id,
+        product_name=product_name,
         object_id=function_id,
         object_type="function",
         permissions=["write"],
@@ -560,11 +585,17 @@ async def update_function_title(
 
 
 async def update_function_description(
-    app: web.Application, *, user_id: UserID, function_id: FunctionID, description: str
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_id: FunctionID,
+    description: str,
 ) -> RegisteredFunctionDB:
     await check_user_permissions(
         app,
         user_id=user_id,
+        product_name=product_name,
         object_id=function_id,
         object_type="function",
         permissions=["write"],
@@ -590,12 +621,14 @@ async def get_function_job(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
+    product_name: ProductName,
     function_job_id: FunctionID,
 ) -> RegisteredFunctionJobDB:
     await check_user_permissions(
         app,
         connection=connection,
         user_id=user_id,
+        product_name=product_name,
         object_id=function_job_id,
         object_type="function_job",
         permissions=["read"],
@@ -620,12 +653,14 @@ async def delete_function_job(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
+    product_name: ProductName,
     function_job_id: FunctionID,
 ) -> None:
     await check_user_permissions(
         app,
         connection=connection,
         user_id=user_id,
+        product_name=product_name,
         object_id=function_job_id,
         object_type="function_job",
         permissions=["write"],
@@ -656,6 +691,7 @@ async def find_cached_function_job(
     *,
     user_id: UserID,
     function_id: FunctionID,
+    product_name: ProductName,
     inputs: FunctionInputs,
 ) -> RegisteredFunctionJobDB | None:
 
@@ -685,6 +721,7 @@ async def find_cached_function_job(
                 app,
                 connection=connection,
                 user_id=user_id,
+                product_name=product_name,
                 object_id=job.uuid,
                 object_type="function_job",
                 permissions=["read"],
@@ -704,12 +741,14 @@ async def get_function_job_collection(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
+    product_name: ProductName,
     function_job_collection_id: FunctionID,
 ) -> tuple[RegisteredFunctionJobCollectionDB, list[FunctionJobID]]:
     await check_user_permissions(
         app,
         connection=connection,
         user_id=user_id,
+        product_name=product_name,
         object_id=function_job_collection_id,
         object_type="function_job_collection",
         permissions=["read"],
@@ -751,12 +790,14 @@ async def delete_function_job_collection(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
+    product_name: ProductName,
     function_job_collection_id: FunctionID,
 ) -> None:
     await check_user_permissions(
         app,
         connection=connection,
         user_id=user_id,
+        product_name=product_name,
         object_id=function_job_collection_id,
         object_type="function_job_collection",
         permissions=["write"],
@@ -793,6 +834,7 @@ async def set_group_permissions(
     connection: AsyncConnection | None = None,
     *,
     group_id: GroupID,
+    product_name: ProductName,
     object_type: Literal["function", "function_job", "function_job_collection"],
     object_ids: list[UUID],
     read: bool | None = None,
@@ -832,6 +874,7 @@ async def set_group_permissions(
                     access_rights_table.insert().values(
                         **{field_name: object_id},
                         group_id=group_id,
+                        product_name=product_name,
                         read=read if read is not None else False,
                         write=write if write is not None else False,
                         execute=execute if execute is not None else False,
@@ -860,6 +903,7 @@ async def get_user_permissions(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
+    product_name: ProductName,
     object_id: UUID,
     object_type: Literal["function", "function_job", "function_job_collection"],
 ) -> FunctionAccessRightsDB | None:
@@ -892,6 +936,7 @@ async def get_user_permissions(
             .with_only_columns(cols)
             .where(
                 getattr(access_rights_table.c, f"{object_type}_uuid") == object_id,
+                access_rights_table.c.product_name == product_name,
                 access_rights_table.c.group_id.in_(user_groups),
             )
         )
@@ -954,6 +999,7 @@ async def check_user_permissions(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
+    product_name: ProductName,
     object_id: UUID,
     object_type: Literal["function", "function_job", "function_job_collection"],
     permissions: list[Literal["read", "write", "execute"]],
@@ -962,6 +1008,7 @@ async def check_user_permissions(
         app,
         connection=connection,
         user_id=user_id,
+        product_name=product_name,
         object_id=object_id,
         object_type=object_type,
     )

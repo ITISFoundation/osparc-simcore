@@ -36,6 +36,17 @@ function_jobs_access_rights_table = sa.Table(
         doc="Group id",
     ),
     sa.Column(
+        "product_name",
+        sa.ForeignKey(
+            "products.name",
+            name="fk_func_access_to_products_product_name",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
+        ),
+        nullable=False,
+        doc="Name of the product",
+    ),
+    sa.Column(
         "read",
         sa.Boolean,
         default=False,
