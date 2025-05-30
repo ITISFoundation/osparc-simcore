@@ -88,6 +88,8 @@ async def _create_services_in_database(
                 service_access_rights
             )
 
+            # TODO: if icon is not set, use the icon from previous version
+
             # set the service in the DB
             await services_repo.create_or_update_service(
                 ServiceMetaDataDBCreate(
