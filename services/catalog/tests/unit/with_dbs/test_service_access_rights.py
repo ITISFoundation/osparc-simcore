@@ -6,7 +6,7 @@ from collections.abc import Callable
 
 import simcore_service_catalog.service.access_rights
 from fastapi import FastAPI
-from models_library.groups import GroupAtDB, GroupID
+from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.services import ServiceMetaDataPublished, ServiceVersion
 from pydantic import TypeAdapter
@@ -102,18 +102,18 @@ async def test_auto_upgrade_policy(
         return_value=False,
     )
     # Avoids creating a users + user_to_group table
-    data = GroupAtDB.model_json_schema()["example"]
-    data["gid"] = everyone_gid
-    mocker.patch.object(
-        simcore_service_catalog.service.access_rights.GroupsRepository,
-        "get_everyone_group",
-        return_value=GroupAtDB.model_validate(data),
-    )
-    mocker.patch.object(
-        simcore_service_catalog.service.access_rights.GroupsRepository,
-        "get_user_gid_from_email",
-        return_value=user_gid,
-    )
+    # data = GroupAtDB.model_json_schema()["example"]
+    # data["gid"] = everyone_gid
+    # mocker.patch.object(
+    #     simcore_service_catalog.service.access_rights.GroupsRepository,
+    #     "get_everyone_group",
+    #     return_value=GroupAtDB.model_validate(data),
+    # )
+    # mocker.patch.object(
+    #     simcore_service_catalog.service.access_rights.GroupsRepository,
+    #     "get_user_gid_from_email",
+    #     return_value=user_gid,
+    # )
 
     # SETUP ---
     MOST_UPDATED_EXAMPLE = -1
@@ -144,7 +144,7 @@ async def test_auto_upgrade_policy(
             team_access="x",
             everyone_access=None,
             product=other_product,  # <-- different product
-        ),
+        )
     )
 
     latest_release_in_other_product = (
