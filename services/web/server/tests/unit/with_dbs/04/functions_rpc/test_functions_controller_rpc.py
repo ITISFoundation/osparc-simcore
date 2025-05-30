@@ -21,10 +21,12 @@ from models_library.functions import FunctionJobCollectionsListFilters
 # import simcore_service_webserver.functions._functions_controller_rpc as functions_rpc
 from models_library.functions_errors import (
     FunctionIDNotFoundError,
+    FunctionJobCollectionReadAccessDeniedError,
     FunctionJobIDNotFoundError,
     FunctionJobReadAccessDeniedError,
     FunctionReadAccessDeniedError,
 )
+from models_library.products import ProductName
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import UserInfoDict
@@ -101,6 +103,7 @@ async def test_register_get_delete_function(
     mock_function: ProjectFunction,
     logged_user: UserInfoDict,
     user_role: UserRole,
+    osparc_product_name: ProductName,
     other_logged_user: UserInfoDict,
 ):
     # Register the function
@@ -108,6 +111,7 @@ async def test_register_get_delete_function(
         rabbitmq_rpc_client=rpc_client,
         function=mock_function,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
     assert registered_function.uid is not None
     # Retrieve the function from the repository to verify it was saved
@@ -115,6 +119,7 @@ async def test_register_get_delete_function(
         rabbitmq_rpc_client=rpc_client,
         function_id=registered_function.uid,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
 
     with pytest.raises(FunctionReadAccessDeniedError):
@@ -122,6 +127,7 @@ async def test_register_get_delete_function(
             rabbitmq_rpc_client=rpc_client,
             function_id=registered_function.uid,
             user_id=other_logged_user["id"],
+            product_name=osparc_product_name,
         )
 
     # Assert the saved function matches the input function
@@ -145,6 +151,16 @@ async def test_register_get_delete_function(
             rabbitmq_rpc_client=rpc_client,
             function_id=registered_function.uid,
             user_id=other_logged_user["id"],
+            product_name=osparc_product_name,
+        )
+
+    with pytest.raises(FunctionReadAccessDeniedError):
+        # Attempt to delete the function by another user
+        await functions_rpc.delete_function(
+            rabbitmq_rpc_client=rpc_client,
+            function_id=registered_function.uid,
+            user_id=other_logged_user["id"],
+            product_name="this_is_not_osparc",
         )
 
     # Delete the function using its ID
@@ -152,6 +168,7 @@ async def test_register_get_delete_function(
         rabbitmq_rpc_client=rpc_client,
         function_id=registered_function.uid,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
 
     # Attempt to retrieve the deleted function
@@ -160,6 +177,7 @@ async def test_register_get_delete_function(
             rabbitmq_rpc_client=rpc_client,
             function_id=registered_function.uid,
             user_id=logged_user["id"],
+            product_name=osparc_product_name,
         )
 
 
@@ -168,7 +186,11 @@ async def test_register_get_delete_function(
     [UserRole.USER],
 )
 async def test_get_function_not_found(
-    client: TestClient, rpc_client: RabbitMQRPCClient, logged_user: UserInfoDict
+    client: TestClient,
+    rpc_client: RabbitMQRPCClient,
+    logged_user: UserInfoDict,
+    osparc_product_name: ProductName,
+    clean_functions: None,
 ):
     # Attempt to retrieve a function that does not exist
     with pytest.raises(FunctionIDNotFoundError):
@@ -176,6 +198,7 @@ async def test_get_function_not_found(
             rabbitmq_rpc_client=rpc_client,
             function_id=uuid4(),
             user_id=logged_user["id"],
+            product_name=osparc_product_name,
         )
 
 
@@ -187,6 +210,7 @@ async def test_list_functions(
     client: TestClient,
     rpc_client: RabbitMQRPCClient,
     logged_user: UserInfoDict,
+    osparc_product_name: ProductName,
     clean_functions: None,
 ):
     # List functions when none are registered
@@ -195,6 +219,7 @@ async def test_list_functions(
         pagination_limit=10,
         pagination_offset=0,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
 
     # Assert the list is empty
@@ -213,6 +238,7 @@ async def test_list_functions(
         rabbitmq_rpc_client=rpc_client,
         function=mock_function,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
     assert registered_function.uid is not None
 
@@ -222,6 +248,7 @@ async def test_list_functions(
         pagination_limit=10,
         pagination_offset=0,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
 
     # Assert the list contains the registered function
@@ -238,6 +265,7 @@ async def test_list_functions_mixed_user(
     rpc_client: RabbitMQRPCClient,
     mock_function: ProjectFunction,
     logged_user: UserInfoDict,
+    osparc_product_name: ProductName,
     other_logged_user: UserInfoDict,
 ):
     # Register a function for the logged user
@@ -246,6 +274,7 @@ async def test_list_functions_mixed_user(
             rabbitmq_rpc_client=rpc_client,
             function=mock_function,
             user_id=logged_user["id"],
+            product_name=osparc_product_name,
         )
         for _ in range(2)
     ]
@@ -256,6 +285,7 @@ async def test_list_functions_mixed_user(
         pagination_limit=10,
         pagination_offset=0,
         user_id=other_logged_user["id"],
+        product_name=osparc_product_name,
     )
     # Assert the list contains only the logged user's function
     assert len(other_functions) == 0
@@ -266,6 +296,7 @@ async def test_list_functions_mixed_user(
             rabbitmq_rpc_client=rpc_client,
             function=mock_function,
             user_id=other_logged_user["id"],
+            product_name=osparc_product_name,
         )
         for _ in range(3)
     ]
@@ -276,6 +307,7 @@ async def test_list_functions_mixed_user(
         pagination_limit=10,
         pagination_offset=0,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
     # Assert the list contains only the logged user's function
     assert len(functions) == 2
@@ -286,6 +318,7 @@ async def test_list_functions_mixed_user(
         pagination_limit=10,
         pagination_offset=0,
         user_id=other_logged_user["id"],
+        product_name=osparc_product_name,
     )
     # Assert the list contains only the other user's functions
     assert len(other_functions) == 3
@@ -303,6 +336,7 @@ async def test_list_functions_with_pagination(
     rpc_client: RabbitMQRPCClient,
     mock_function: ProjectFunction,
     clean_functions: None,
+    osparc_product_name: ProductName,
     logged_user: UserInfoDict,
 ):
     # Register multiple functions
@@ -312,6 +346,7 @@ async def test_list_functions_with_pagination(
             rabbitmq_rpc_client=rpc_client,
             function=mock_function,
             user_id=logged_user["id"],
+            product_name=osparc_product_name,
         )
 
     functions, page_info = await functions_rpc.list_functions(
@@ -319,6 +354,7 @@ async def test_list_functions_with_pagination(
         pagination_limit=2,
         pagination_offset=0,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
 
     # List functions with pagination
@@ -327,6 +363,7 @@ async def test_list_functions_with_pagination(
         pagination_limit=2,
         pagination_offset=0,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
 
     # Assert the list contains the correct number of functions
@@ -340,6 +377,7 @@ async def test_list_functions_with_pagination(
         pagination_limit=2,
         pagination_offset=2,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
 
     # Assert the list contains the correct number of functions
@@ -358,12 +396,14 @@ async def test_update_function_title(
     mock_function: ProjectFunction,
     logged_user: UserInfoDict,
     other_logged_user: UserInfoDict,
+    osparc_product_name: ProductName,
 ):
     # Register the function first
     registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client,
         function=mock_function,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
     assert registered_function.uid is not None
 
@@ -375,6 +415,7 @@ async def test_update_function_title(
         function_id=registered_function.uid,
         title=updated_title,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
 
     assert isinstance(updated_function, ProjectFunction)
@@ -391,6 +432,7 @@ async def test_update_function_title(
             function_id=registered_function.uid,
             title=updated_title,
             user_id=other_logged_user["id"],
+            product_name=osparc_product_name,
         )
 
 
@@ -403,12 +445,14 @@ async def test_update_function_description(
     rpc_client: RabbitMQRPCClient,
     mock_function: ProjectFunction,
     logged_user: UserInfoDict,
+    osparc_product_name: ProductName,
 ):
     # Register the function first
     registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client,
         function=mock_function,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
     assert registered_function.uid is not None
 
@@ -420,6 +464,7 @@ async def test_update_function_description(
         function_id=registered_function.uid,
         description=updated_description,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
 
     assert isinstance(updated_function, ProjectFunction)
@@ -437,12 +482,14 @@ async def test_get_function_input_schema(
     rpc_client: RabbitMQRPCClient,
     mock_function: ProjectFunction,
     logged_user: UserInfoDict,
+    osparc_product_name: ProductName,
 ):
     # Register the function first
     registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client,
         function=mock_function,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
     assert registered_function.uid is not None
 
@@ -451,6 +498,7 @@ async def test_get_function_input_schema(
         rabbitmq_rpc_client=rpc_client,
         function_id=registered_function.uid,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
 
     # Assert the input schema matches the registered function's input schema
@@ -466,12 +514,14 @@ async def test_get_function_output_schema(
     rpc_client: RabbitMQRPCClient,
     mock_function: ProjectFunction,
     logged_user: UserInfoDict,
+    osparc_product_name: ProductName,
 ):
     # Register the function first
     registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client,
         function=mock_function,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
     assert registered_function.uid is not None
 
@@ -480,6 +530,7 @@ async def test_get_function_output_schema(
         rabbitmq_rpc_client=rpc_client,
         function_id=registered_function.uid,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
 
     # Assert the output schema matches the registered function's output schema
@@ -496,12 +547,14 @@ async def test_delete_function(
     mock_function: ProjectFunction,
     logged_user: UserInfoDict,
     other_logged_user: UserInfoDict,
+    osparc_product_name: ProductName,
 ):
     # Register the function first
     registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client,
         function=mock_function,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
     assert registered_function.uid is not None
 
@@ -516,12 +569,14 @@ async def test_register_get_delete_function_job(
     mock_function: ProjectFunction,
     logged_user: UserInfoDict,
     other_logged_user: UserInfoDict,
+    osparc_product_name: ProductName,
 ):
     # Register the function first
     registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client,
         function=mock_function,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
     assert registered_function.uid is not None
 
@@ -539,6 +594,7 @@ async def test_register_get_delete_function_job(
         rabbitmq_rpc_client=rpc_client,
         function_job=function_job,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
 
     # Assert the registered job matches the input job
@@ -551,6 +607,7 @@ async def test_register_get_delete_function_job(
         rabbitmq_rpc_client=rpc_client,
         function_job_id=registered_job.uid,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
 
     # Assert the retrieved job matches the registered job
@@ -558,11 +615,22 @@ async def test_register_get_delete_function_job(
     assert retrieved_job.inputs == registered_job.inputs
     assert retrieved_job.outputs == registered_job.outputs
 
+    # Test denied access for another user
     with pytest.raises(FunctionJobReadAccessDeniedError):
         await functions_rpc.get_function_job(
             rabbitmq_rpc_client=rpc_client,
             function_job_id=registered_job.uid,
             user_id=other_logged_user["id"],
+            product_name=osparc_product_name,
+        )
+
+    # Test denied access for anothe product
+    with pytest.raises(FunctionJobReadAccessDeniedError):
+        await functions_rpc.get_function_job(
+            rabbitmq_rpc_client=rpc_client,
+            function_job_id=registered_job.uid,
+            user_id=other_logged_user["id"],
+            product_name="this_is_not_osparc",
         )
 
     with pytest.raises(FunctionJobReadAccessDeniedError):
@@ -571,6 +639,7 @@ async def test_register_get_delete_function_job(
             rabbitmq_rpc_client=rpc_client,
             function_job_id=registered_job.uid,
             user_id=other_logged_user["id"],
+            product_name=osparc_product_name,
         )
 
     # Delete the function job using its ID
@@ -578,6 +647,7 @@ async def test_register_get_delete_function_job(
         rabbitmq_rpc_client=rpc_client,
         function_job_id=registered_job.uid,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
 
     # Attempt to retrieve the deleted job
@@ -586,6 +656,7 @@ async def test_register_get_delete_function_job(
             rabbitmq_rpc_client=rpc_client,
             function_job_id=registered_job.uid,
             user_id=logged_user["id"],
+            product_name=osparc_product_name,
         )
 
 
@@ -594,7 +665,11 @@ async def test_register_get_delete_function_job(
     [UserRole.USER],
 )
 async def test_get_function_job_not_found(
-    client: TestClient, rpc_client: RabbitMQRPCClient, logged_user: UserInfoDict
+    client: TestClient,
+    rpc_client: RabbitMQRPCClient,
+    logged_user: UserInfoDict,
+    osparc_product_name: ProductName,
+    clean_functions: None,
 ):
     # Attempt to retrieve a function job that does not exist
     with pytest.raises(FunctionJobIDNotFoundError):
@@ -602,6 +677,7 @@ async def test_get_function_job_not_found(
             rabbitmq_rpc_client=rpc_client,
             function_job_id=uuid4(),
             user_id=logged_user["id"],
+            product_name=osparc_product_name,
         )
 
 
@@ -614,12 +690,14 @@ async def test_list_function_jobs(
     rpc_client: RabbitMQRPCClient,
     mock_function: ProjectFunction,
     logged_user: UserInfoDict,
+    osparc_product_name: ProductName,
 ):
     # Register the function first
     registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client,
         function=mock_function,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
     assert registered_function.uid is not None
 
@@ -637,6 +715,7 @@ async def test_list_function_jobs(
         rabbitmq_rpc_client=rpc_client,
         function_job=function_job,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
 
     # List function jobs
@@ -645,6 +724,7 @@ async def test_list_function_jobs(
         pagination_limit=10,
         pagination_offset=0,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
 
     # Assert the list contains the registered job
@@ -661,17 +741,20 @@ async def test_list_function_jobs_for_functionid(
     rpc_client: RabbitMQRPCClient,
     mock_function: ProjectFunction,
     logged_user: UserInfoDict,
+    osparc_product_name: ProductName,
 ):
     # Register the function first
     first_registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client,
         function=mock_function,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
     second_registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client,
         function=mock_function,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
 
     first_registered_function_jobs = []
@@ -692,6 +775,7 @@ async def test_list_function_jobs_for_functionid(
                     rabbitmq_rpc_client=rpc_client,
                     function_job=function_job,
                     user_id=logged_user["id"],
+                    product_name=osparc_product_name,
                 )
             )
         else:
@@ -709,6 +793,7 @@ async def test_list_function_jobs_for_functionid(
                     rabbitmq_rpc_client=rpc_client,
                     function_job=function_job,
                     user_id=logged_user["id"],
+                    product_name=osparc_product_name,
                 )
             )
 
@@ -719,6 +804,7 @@ async def test_list_function_jobs_for_functionid(
         pagination_offset=0,
         filter_by_function_id=first_registered_function.uid,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
 
     # Assert the list contains the registered job
@@ -736,12 +822,15 @@ async def test_function_job_collection(
     mock_function: ProjectFunction,
     rpc_client: RabbitMQRPCClient,
     logged_user: UserInfoDict,
+    other_logged_user: UserInfoDict,
+    osparc_product_name: ProductName,
 ):
     # Register the function first
     registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client,
         function=mock_function,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
     assert registered_function.uid is not None
 
@@ -769,6 +858,7 @@ async def test_function_job_collection(
             rabbitmq_rpc_client=rpc_client,
             function_job=registered_function_job,
             user_id=logged_user["id"],
+            product_name=osparc_product_name,
         )
         assert registered_job.uid is not None
         function_job_ids.append(registered_job.uid)
@@ -784,16 +874,52 @@ async def test_function_job_collection(
         rabbitmq_rpc_client=rpc_client,
         function_job_collection=function_job_collection,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
     assert registered_collection.uid is not None
 
-    # Assert the registered collection matches the input collection
+    # Get the function job collection
+    retrieved_collection = await functions_rpc.get_function_job_collection(
+        rabbitmq_rpc_client=rpc_client,
+        function_job_collection_id=registered_collection.uid,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+    )
+    assert retrieved_collection.uid == registered_collection.uid
     assert registered_collection.job_ids == function_job_ids
+
+    # Test denied access for another user
+    with pytest.raises(FunctionJobCollectionReadAccessDeniedError):
+        await functions_rpc.get_function_job_collection(
+            rabbitmq_rpc_client=rpc_client,
+            function_job_collection_id=registered_collection.uid,
+            user_id=other_logged_user["id"],
+            product_name=osparc_product_name,
+        )
+
+    # Test denied access for another product
+    with pytest.raises(FunctionJobCollectionReadAccessDeniedError):
+        await functions_rpc.get_function_job_collection(
+            rabbitmq_rpc_client=rpc_client,
+            function_job_collection_id=registered_collection.uid,
+            user_id=other_logged_user["id"],
+            product_name="this_is_not_osparc",
+        )
+
+    # Attempt to delete the function job collection by another user
+    with pytest.raises(FunctionJobCollectionReadAccessDeniedError):
+        await functions_rpc.delete_function_job_collection(
+            rabbitmq_rpc_client=rpc_client,
+            function_job_collection_id=registered_collection.uid,
+            user_id=other_logged_user["id"],
+            product_name=osparc_product_name,
+        )
 
     await functions_rpc.delete_function_job_collection(
         rabbitmq_rpc_client=rpc_client,
         function_job_collection_id=registered_collection.uid,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
     # Attempt to retrieve the deleted collection
     with pytest.raises(FunctionJobIDNotFoundError):
@@ -801,6 +927,7 @@ async def test_function_job_collection(
             rabbitmq_rpc_client=rpc_client,
             function_job_id=registered_collection.uid,
             user_id=logged_user["id"],
+            product_name=osparc_product_name,
         )
 
 
@@ -815,6 +942,7 @@ async def test_list_function_job_collections(
     clean_functions: None,
     clean_function_job_collections: None,
     logged_user: UserInfoDict,
+    osparc_product_name: ProductName,
 ):
     # List function job collections when none are registered
     collections, page_meta = await functions_rpc.list_function_job_collections(
@@ -822,6 +950,7 @@ async def test_list_function_job_collections(
         pagination_limit=10,
         pagination_offset=0,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
 
     # Assert the list is empty
@@ -835,6 +964,7 @@ async def test_list_function_job_collections(
         rabbitmq_rpc_client=rpc_client,
         function=mock_function,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
     assert registered_function.uid is not None
 
@@ -854,6 +984,7 @@ async def test_list_function_job_collections(
             rabbitmq_rpc_client=rpc_client,
             function_job=registered_function_job,
             user_id=logged_user["id"],
+            product_name=osparc_product_name,
         )
         assert registered_job.uid is not None
         function_job_ids.append(registered_job.uid)
@@ -870,6 +1001,7 @@ async def test_list_function_job_collections(
             rabbitmq_rpc_client=rpc_client,
             function_job_collection=function_job_collection,
             user_id=logged_user["id"],
+            product_name=osparc_product_name,
         )
         for _ in range(3)
     ]
@@ -884,6 +1016,7 @@ async def test_list_function_job_collections(
         pagination_limit=2,
         pagination_offset=1,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
 
     # Assert the list contains the registered collection
@@ -910,17 +1043,20 @@ async def test_list_function_job_collections_filtered_function_id(
     clean_functions: None,
     clean_function_job_collections: None,
     logged_user: UserInfoDict,
+    osparc_product_name: ProductName,
 ):
     # Register the function first
     registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client,
         function=mock_function,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
     other_registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client,
         function=mock_function,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
 
     registered_collections = []
@@ -945,6 +1081,7 @@ async def test_list_function_job_collections_filtered_function_id(
                 rabbitmq_rpc_client=rpc_client,
                 function_job=registered_function_job,
                 user_id=logged_user["id"],
+                product_name=osparc_product_name,
             )
             assert registered_job.uid is not None
             function_job_ids.append(registered_job.uid)
@@ -960,6 +1097,7 @@ async def test_list_function_job_collections_filtered_function_id(
             rabbitmq_rpc_client=rpc_client,
             function_job_collection=function_job_collection,
             user_id=logged_user["id"],
+            product_name=osparc_product_name,
         )
         registered_collections.append(registered_collection)
 
@@ -972,6 +1110,7 @@ async def test_list_function_job_collections_filtered_function_id(
             has_function_id=FunctionIDString(registered_function.uid)
         ),
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
 
     # Assert the list contains the registered collection

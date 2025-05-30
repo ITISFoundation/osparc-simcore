@@ -44,6 +44,7 @@ async def register_function(request: web.Request) -> web.Response:
             app=request.app,
             function=TypeAdapter(Function).validate_python(function_to_register),
             user_id=req_ctx.user_id,
+            product_name=req_ctx.product_name,
         )
     )
 
@@ -71,6 +72,7 @@ async def get_function(request: web.Request) -> web.Response:
         app=request.app,
         function_id=function_id,
         user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
     )
 
     return envelope_json_response(
@@ -95,6 +97,7 @@ async def delete_function(request: web.Request) -> web.Response:
         app=request.app,
         function_id=function_id,
         user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
     )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)

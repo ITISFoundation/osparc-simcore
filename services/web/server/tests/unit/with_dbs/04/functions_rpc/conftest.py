@@ -7,6 +7,7 @@ from collections.abc import AsyncIterator
 
 import pytest
 from aiohttp.test_utils import TestClient
+from models_library.products import ProductName
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import LoggedUser, UserInfoDict
@@ -40,7 +41,10 @@ async def other_logged_user(
 
 @pytest.fixture
 async def clean_functions(
-    client: TestClient, rpc_client: RabbitMQRPCClient, logged_user: UserInfoDict
+    client: TestClient,
+    rpc_client: RabbitMQRPCClient,
+    logged_user: UserInfoDict,
+    osparc_product_name: ProductName,
 ) -> None:
     assert client.app
 
@@ -49,6 +53,7 @@ async def clean_functions(
         pagination_limit=100,
         pagination_offset=0,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
     for function in functions:
         assert function.uid is not None
@@ -56,12 +61,16 @@ async def clean_functions(
             rabbitmq_rpc_client=rpc_client,
             function_id=function.uid,
             user_id=logged_user["id"],
+            product_name=osparc_product_name,
         )
 
 
 @pytest.fixture
 async def clean_function_job_collections(
-    client: TestClient, rpc_client: RabbitMQRPCClient, logged_user: UserInfoDict
+    client: TestClient,
+    rpc_client: RabbitMQRPCClient,
+    logged_user: UserInfoDict,
+    osparc_product_name: ProductName,
 ) -> None:
     assert client.app
 
@@ -70,6 +79,7 @@ async def clean_function_job_collections(
         pagination_limit=100,
         pagination_offset=0,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
     for function_job_collection in job_collections:
         assert function_job_collection.uid is not None
@@ -77,4 +87,5 @@ async def clean_function_job_collections(
             rabbitmq_rpc_client=rpc_client,
             function_job_collection_id=function_job_collection.uid,
             user_id=logged_user["id"],
+            product_name=osparc_product_name,
         )
