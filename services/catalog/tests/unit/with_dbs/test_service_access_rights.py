@@ -68,30 +68,41 @@ def app_with_repo(
 class CreateLatetReleaseCallable(Protocol):
     """Callable to create a latest release with specified metadata fields."""
 
-    async def __call__(self, metadata_fields: dict[str, Any]) -> dict[str, Any]: ...
+    async def __call__(
+        self, metadata_fields: dict[str, Any], product: ProductName
+    ) -> dict[str, Any]: ...
 
 
 @pytest.fixture
 def create_latest_release(
     create_fake_service_data: CreateFakeServiceDataCallable,
     new_service_metadata_published: ServiceMetaDataPublished,
-    target_product: ProductName,
     services_db_tables_injector: Callable,
 ) -> CreateLatetReleaseCallable:
-    """Creates a latest release with specified metadata fields."""
+    """Creates a latest release with specified metadata fields for a product.
+
+    Args:
+        metadata_fields: Dictionary of metadata fields to set
+        product: Product to create the service for
+
+    Returns:
+        The created service metadata
+    """
 
     from packaging.version import Version
 
     new_version = Version(new_service_metadata_published.version)
 
-    async def _create(metadata_fields: dict[str, Any]) -> dict[str, Any]:
+    async def _create(
+        metadata_fields: dict[str, Any], product: ProductName
+    ) -> dict[str, Any]:
         latest_release_service, *latest_release_service_access_rights = (
             create_fake_service_data(
                 new_service_metadata_published.key,
                 f"{new_version.major}.{new_version.minor}.{new_version.micro-1}",
                 team_access="x",
                 everyone_access=None,
-                product=target_product,
+                product=product,
             )
         )
 
@@ -165,6 +176,7 @@ async def test_metadata_inheritance_variations(
     new_service_metadata_published: ServiceMetaDataPublished,
     app_with_repo: tuple[FastAPI, ServicesRepository],
     create_latest_release: CreateLatetReleaseCallable,
+    target_product: ProductName,
 ):
     """Test different variations of metadata inheritance with complete previous release."""
     app, services_repo = app_with_repo
@@ -174,7 +186,8 @@ async def test_metadata_inheritance_variations(
         {
             "icon": "https://foo/previous_icon.svg",
             "thumbnail": "https://foo/previous_thumbnail.jpg",
-        }
+        },
+        target_product,
     )
 
     # Case 1: All fields missing in new service - only icon and thumbnail should be inherited
@@ -228,6 +241,7 @@ async def test_metadata_inheritance_with_incomplete_previous_release(
     new_service_metadata_published: ServiceMetaDataPublished,
     app_with_repo: tuple[FastAPI, ServicesRepository],
     create_latest_release: CreateLatetReleaseCallable,
+    target_product: ProductName,
 ):
     """Test metadata inheritance when previous release has incomplete metadata fields."""
     app, services_repo = app_with_repo
@@ -237,7 +251,8 @@ async def test_metadata_inheritance_with_incomplete_previous_release(
         {
             "icon": "https://foo/previous_icon.svg",
             "thumbnail": "https://foo/previous_thumbnail.jpg",
-        }
+        },
+        target_product,
     )
 
     new_service = new_service_metadata_published.model_copy(deep=True)
@@ -278,7 +293,8 @@ async def test_service_upgrade_metadata_inheritance_old_service(
             "icon": "https://foo/previous_icon.svg",
             "description": "Previous description",  # This won't be inherited
             "thumbnail": "https://foo/previous_thumbnail.jpg",
-        }
+        },
+        target_product,
     )
 
     # DEFAULT policies for old service
@@ -330,6 +346,7 @@ async def test_service_upgrade_metadata_inheritance_new_service_multi_product(
     mocker: MockerFixture,
     new_service_metadata_published: ServiceMetaDataPublished,
     app_with_repo: tuple[FastAPI, ServicesRepository],
+    create_latest_release: CreateLatetReleaseCallable,
 ):
     """Test inheritance behavior when the service is new and latest version exists in multiple products"""
     everyone_gid, user_gid, team_gid = user_groups_ids
@@ -342,37 +359,21 @@ async def test_service_upgrade_metadata_inheritance_new_service_multi_product(
         return_value=False,
     )
 
-    # Create latest-release service
-    latest_release_service, *latest_release_service_access_rights = (
-        create_fake_service_data(
-            new_service_metadata_published.key,
-            "1.0.10",
-            team_access="x",
-            everyone_access=None,
-            product=target_product,
-        )
+    # Create latest-release service with metadata for target product
+    metadata_fields = {
+        "icon": "https://foo/previous_icon.svg",
+        "thumbnail": "https://foo/previous_thumbnail.jpg",
+    }
+
+    # Create in target product
+    latest_release_service = await create_latest_release(
+        metadata_fields, target_product
     )
 
-    latest_release_service["icon"] = "https://foo/previous_icon.svg"
-    latest_release = (latest_release_service, *latest_release_service_access_rights)
+    # Create in other product
+    await create_latest_release(metadata_fields, other_product)
 
-    # latest-release in other product
-    _, *latest_release_service_access_rights_in_other_product = (
-        create_fake_service_data(
-            new_service_metadata_published.key,
-            latest_release_service["version"],
-            team_access="x",
-            everyone_access=None,
-            product=other_product,  # <-- different product
-        )
-    )
-
-    latest_release_in_other_product = (
-        latest_release_service,
-        *latest_release_service_access_rights_in_other_product,  # <-- different product
-    )
-
-    # Setup multiple versions in database
+    # Create older versions in target product to test proper version ordering
     await services_db_tables_injector(
         [
             create_fake_service_data(
@@ -389,8 +390,6 @@ async def test_service_upgrade_metadata_inheritance_new_service_multi_product(
                 everyone_access=None,
                 product=target_product,
             ),
-            latest_release,
-            latest_release_in_other_product,
         ]
     )
 
@@ -431,6 +430,8 @@ async def test_service_upgrade_metadata_inheritance_new_service_multi_product(
     inherited_metadata = inherited_data["metadata_updates"]
     assert "icon" in inherited_metadata
     assert inherited_metadata["icon"] == latest_release_service["icon"]
+    assert "thumbnail" in inherited_metadata
+    assert inherited_metadata["thumbnail"] == latest_release_service["thumbnail"]
 
     # ALL
     service_access_rights += inherited_access_rights
