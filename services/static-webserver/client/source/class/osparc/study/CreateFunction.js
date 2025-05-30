@@ -43,14 +43,16 @@ qx.Class.define("osparc.study.CreateFunction", {
           "schema_class": "application/schema+json",
           "schema_content": {
             "type": "object",
-            "properties": {}
+            "properties": {},
+            "required": []
           }
         },
         "outputSchema": {
           "schema_class": "application/schema+json",
           "schema_content": {
             "type": "object",
-            "properties": {}
+            "properties": {},
+            "required": []
           }
         },
         "defaultInputs": {},
@@ -66,6 +68,7 @@ qx.Class.define("osparc.study.CreateFunction", {
             functionData["inputSchema"]["schema_content"]["properties"][parameterLabel] = {
               "type": type,
             };
+            functionData["inputSchema"]["schema_content"]["required"].push(parameterLabel);
           }
         } else {
           functionData["defaultInputs"][parameterLabel] = osparc.service.Utils.getParameterValue(parameter);
@@ -82,6 +85,7 @@ qx.Class.define("osparc.study.CreateFunction", {
             functionData["outputSchema"]["schema_content"]["properties"][probeLabel] = {
               "type": type,
             };
+            functionData["outputSchema"]["schema_content"]["required"].push(probeLabel);
           }
         }
       });
