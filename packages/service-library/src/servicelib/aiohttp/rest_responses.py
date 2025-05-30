@@ -1,10 +1,7 @@
-"""Utils to check, convert and compose server responses for the RESTApi"""
-
-import inspect
 from typing import Any
 
-from aiohttp import web, web_exceptions
-from aiohttp.web_exceptions import HTTPError, HTTPException
+from aiohttp import web
+from aiohttp.web_exceptions import HTTPError
 from common_library.error_codes import ErrorCodeStr
 from common_library.json_serialization import json_dumps
 from models_library.rest_error import ErrorGet, ErrorItemType
@@ -23,36 +20,17 @@ def wrap_as_envelope(
     return {"data": data, "error": error}
 
 
-# RESPONSES FACTORIES -------------------------------
-
-
-def create_data_response(
-    data: Any, *, skip_internal_error_details=False, status=HTTP_200_OK
-) -> web.Response:
-    response = None
-    try:
-        payload = wrap_as_envelope(data) if not is_enveloped(data) else data
-
-        response = web.json_response(payload, dumps=json_dumps, status=status)
-    except (TypeError, ValueError) as err:
-        response = exception_to_response(
-            create_http_error(
-                [
-                    err,
-                ],
-                str(err),
-                web.HTTPInternalServerError,
-                skip_internal_error_details=skip_internal_error_details,
-            )
-        )
-    return response
+def create_data_response(data: Any, *, status: int = HTTP_200_OK) -> web.Response:
+    enveloped_payload = wrap_as_envelope(data) if not is_enveloped(data) else data
+    return web.json_response(enveloped_payload, dumps=json_dumps, status=status)
 
 
 def create_http_error(
     errors: list[Exception] | Exception,
-    reason: str | None = None,
+    error_message: str | None = None,
     http_error_cls: type[HTTPError] = web.HTTPInternalServerError,
     *,
+    status_reason: str | None = None,
     skip_internal_error_details: bool = False,
     error_code: ErrorCodeStr | None = None,
 ) -> HTTPError:
@@ -64,14 +42,16 @@ def create_http_error(
     if not isinstance(errors, list):
         errors = [errors]
 
-    is_internal_error: bool = http_error_cls == web.HTTPInternalServerError
-    default_message = reason or get_code_description(http_error_cls.status_code)
+    is_internal_error = bool(http_error_cls == web.HTTPInternalServerError)
+
+    status_reason = status_reason or get_code_description(http_error_cls.status_code)
+    error_message = error_message or status_reason
 
     if is_internal_error and skip_internal_error_details:
         error = ErrorGet.model_validate(
             {
                 "status": http_error_cls.status_code,
-                "message": default_message,
+                "message": error_message,
                 "support_id": error_code,
             }
         )
@@ -81,7 +61,7 @@ def create_http_error(
             {
                 "errors": items,  # NOTE: deprecated!
                 "status": http_error_cls.status_code,
-                "message": default_message,
+                "message": error_message,
                 "support_id": error_code,
             }
         )
@@ -92,7 +72,7 @@ def create_http_error(
     )
 
     return http_error_cls(
-        reason=safe_status_message(reason),
+        reason=safe_status_message(status_reason),
         text=json_dumps(
             payload,
         ),
@@ -110,24 +90,6 @@ def exception_to_response(exc: HTTPError) -> web.Response:
         reason=exc.reason,
         text=exc.text,
     )
-
-
-# Inverse map from code to HTTPException classes
-def _collect_http_exceptions(exception_cls: type[HTTPException] = HTTPException):
-    def _pred(obj) -> bool:
-        return (
-            inspect.isclass(obj)
-            and issubclass(obj, exception_cls)
-            and getattr(obj, "status_code", 0) > 0
-        )
-
-    found: list[tuple[str, Any]] = inspect.getmembers(web_exceptions, _pred)
-    assert found  # nosec
-
-    http_statuses = {cls.status_code: cls for _, cls in found}
-    assert len(http_statuses) == len(found), "No duplicates"  # nosec
-
-    return http_statuses
 
 
 def safe_status_message(message: str | None, max_length: int = 50) -> str | None:

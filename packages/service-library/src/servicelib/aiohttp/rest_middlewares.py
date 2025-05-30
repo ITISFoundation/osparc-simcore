@@ -18,7 +18,12 @@ from ..logging_errors import create_troubleshotting_log_kwargs
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 from ..rest_responses import is_enveloped_from_map, is_enveloped_from_text
 from ..utils import is_production_environ
-from .rest_responses import create_data_response, create_http_error, wrap_as_envelope
+from .rest_responses import (
+    create_data_response,
+    create_http_error,
+    safe_status_message,
+    wrap_as_envelope,
+)
 from .rest_utils import EnvelopeFactory
 from .typing_extension import Handler, Middleware
 
@@ -83,6 +88,8 @@ def error_middleware_factory(  # noqa: C901
         except web.HTTPError as err:
 
             err.content_type = MIMETYPE_APPLICATION_JSON
+            if err.reason:
+                err.set_status(err.status, safe_status_message(message=err.reason))
 
             if not err.text or not is_enveloped_from_text(err.text):
                 error_message = err.text or err.reason or "Unexpected error"
@@ -102,6 +109,9 @@ def error_middleware_factory(  # noqa: C901
 
         except web.HTTPSuccessful as err:
             err.content_type = MIMETYPE_APPLICATION_JSON
+            if err.reason:
+                err.set_status(err.status, safe_status_message(message=err.reason))
+
             if err.text:
                 try:
                     payload = json_loads(err.text)
