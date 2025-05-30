@@ -10,7 +10,7 @@ from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_random
 from yarl import URL
 
-from .exceptions import DirectorServiceError
+from .exceptions import DirectorV2ServiceError
 from .settings import get_client_session
 
 log = logging.getLogger(__name__)
@@ -30,7 +30,9 @@ DataType: TypeAlias = dict[str, Any]
 DataBody: TypeAlias = DataType | list[DataType] | None
 
 
-_StatusToExceptionMapping = dict[int, tuple[type[DirectorServiceError], dict[str, Any]]]
+_StatusToExceptionMapping = dict[
+    int, tuple[type[DirectorV2ServiceError], dict[str, Any]]
+]
 
 
 def _get_exception_from(
@@ -40,7 +42,7 @@ def _get_exception_from(
         exc, exc_ctx = on_error[status_code]
         return exc(**exc_ctx, status=status_code, reason=reason)
     # default
-    return DirectorServiceError(status=status_code, reason=reason, url=url)
+    return DirectorV2ServiceError(status=status_code, reason=reason, url=url)
 
 
 @retry(**DEFAULT_RETRY_POLICY)
@@ -95,14 +97,14 @@ async def request_director_v2(
         return payload
 
     except TimeoutError as err:
-        raise DirectorServiceError(
+        raise DirectorV2ServiceError(
             status=status.HTTP_503_SERVICE_UNAVAILABLE,
             reason=f"request to director-v2 timed-out: {err}",
             url=url,
         ) from err
 
     except aiohttp.ClientError as err:
-        raise DirectorServiceError(
+        raise DirectorV2ServiceError(
             status=status.HTTP_503_SERVICE_UNAVAILABLE,
             reason=f"request to director-v2 service unexpected error {err}",
             url=url,

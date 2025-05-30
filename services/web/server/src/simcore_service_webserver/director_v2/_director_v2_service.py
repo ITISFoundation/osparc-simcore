@@ -31,7 +31,7 @@ from ..users import preferences_api as user_preferences_service
 from ..users.exceptions import UserDefaultWalletNotFoundError
 from ..wallets import api as wallets_service
 from ._client_base import DataType, request_director_v2
-from .exceptions import ComputationNotFoundError, DirectorServiceError
+from .exceptions import ComputationNotFoundError, DirectorV2ServiceError
 from .settings import DirectorV2Settings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
@@ -75,7 +75,7 @@ async def create_or_update_pipeline(
         assert isinstance(computation_task_out, dict)  # nosec
         return computation_task_out
 
-    except DirectorServiceError as exc:
+    except DirectorV2ServiceError as exc:
         _logger.error(  # noqa: TRY400
             "could not create pipeline from project %s: %s",
             project_id,
@@ -117,7 +117,7 @@ async def get_computation_task(
         _logger.debug("found computation task: %s", f"{task_out=}")
 
         return task_out
-    except DirectorServiceError as exc:
+    except DirectorV2ServiceError as exc:
         if exc.status == status.HTTP_404_NOT_FOUND:
             # the pipeline might not exist and that is ok
             return None
