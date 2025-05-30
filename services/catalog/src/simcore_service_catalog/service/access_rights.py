@@ -8,6 +8,7 @@ from typing import cast
 
 import arrow
 from fastapi import FastAPI
+from models_library.groups import GroupID
 from models_library.services import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from packaging.version import Version
@@ -41,21 +42,32 @@ async def _is_old_service(app: FastAPI, service: ServiceMetaDataPublished) -> bo
     return bool(service_build_data < _LEGACY_SERVICES_DATE)
 
 
-async def evaluate_default_policy(
+async def evaluate_service_ownership_and_rights(
     app: FastAPI, service: ServiceMetaDataPublished
-) -> tuple[PositiveInt | None, list[ServiceAccessRightsDB]]:
-    """Given a service, it returns the owner's group-id (gid) and a list of access rights following
-    default access-rights policies
+) -> tuple[GroupID | None, list[ServiceAccessRightsDB]]:
+    """Evaluates the owner (group_id) and the access rights for a service
 
-    - DEFAULT Access Rights policies:
-        1. All services published in osparc prior 19.08.2020 will be visible to everyone (refered as 'old service').
-        2. Services published after 19.08.2020 will be visible ONLY to his/her owner
-        3. Front-end services are have execute-access to everyone
+    This function determines:
+    1. Who owns the service (based on contact or author email)
+    2. Who can access the service based on the following rules:
+       - All services published before August 19, 2020 (_LEGACY_SERVICES_DATE) are accessible to everyone
+       - Services published after August 19, 2020 are only accessible to their owner
+       - Frontend services are accessible to everyone regardless of publication date
+
+    Args:
+        app: FastAPI application instance containing database engine and settings
+        service: Service metadata including key, version, contact and authors information
+
+    Returns:
+        A tuple containing:
+        - The owner's group ID (gid) if found, None otherwise
+        - A list of ServiceAccessRightsDB objects representing the default access rights
+          for the service, including who can execute and/or modify the service
 
     Raises:
-        HTTPException: from calls to director's rest API. Maps director errors into catalog's server error
-        SQLAlchemyError: from access to pg database
-        ValidationError: from pydantic model errors
+        HTTPException: If there's an error communicating with the director API
+        SQLAlchemyError: If there's an error accessing the database
+        ValidationError: If there's an error validating the Pydantic models
     """
     db_engine: AsyncEngine = app.state.engine
 
@@ -83,7 +95,7 @@ async def evaluate_default_policy(
         if possible_gid and not owner_gid:
             owner_gid = possible_gid
     if not owner_gid:
-        _logger.warning("service %s:%s has no owner", service.key, service.version)
+        _logger.warning("Service %s:%s has no owner", service.key, service.version)
     else:
         group_ids.append(owner_gid)
 
@@ -106,16 +118,29 @@ async def evaluate_default_policy(
 
 
 async def evaluate_auto_upgrade_policy(
-    service_metadata: ServiceMetaDataPublished, services_repo: ServicesRepository
+    services_repo: ServicesRepository, *, service_metadata: ServiceMetaDataPublished
 ) -> list[ServiceAccessRightsDB]:
-    # AUTO-UPGRADE PATCH policy:
-    #
-    #  - Any new patch released, inherits the access rights from previous compatible version
-    #  - IDEA: add as option in the publication contract, i.e. in ServiceDockerData?
-    #  - Does NOT apply to front-end services
-    #
-    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/2244)
-    #
+    """
+    Evaluates the access rights for a service based on the auto-upgrade patch policy.
+
+    The AUTO-UPGRADE PATCH policy ensures that:
+      - Any new patch release of a service automatically inherits the access rights from the previous compatible version.
+      - This policy does NOT apply to frontend services.
+
+    Args:
+        services_repo: Instance of ServicesRepository for database access.
+        service_metadata: Metadata of the service being evaluated.
+
+    Returns:
+        A list of ServiceAccessRightsDB objects representing the inherited access rights for the new patch version.
+        Returns an empty list if the service is a frontend service or if no previous compatible version is found.
+
+    Notes:
+        - The policy is described in https://github.com/ITISFoundation/osparc-simcore/issues/2244
+        - Inheritance is only for patch releases (i.e., same major and minor version).
+        - Future improvement: Consider making this behavior configurable in the service publication contract.
+
+    """
     if _is_frontend_service(service_metadata):
         return []
 
@@ -129,8 +154,8 @@ async def evaluate_auto_upgrade_policy(
 
     previous_release = None
     for release in latest_releases:
-        # NOTE: latest_release is sorted from newer to older
-        # Here we search for the previous version patched by new-version
+        # latest_releases is sorted from newer to older
+        # Find the previous version that is patched by new_version
         if is_patch_release(new_version, release.version):
             previous_release = release
             break
