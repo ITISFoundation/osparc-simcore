@@ -52,7 +52,6 @@ async def evaluate_default_policy(
         2. Services published after 19.08.2020 will be visible ONLY to his/her owner
         3. Front-end services are have execute-access to everyone
 
-
     Raises:
         HTTPException: from calls to director's rest API. Maps director errors into catalog's server error
         SQLAlchemyError: from access to pg database
@@ -64,13 +63,17 @@ async def evaluate_default_policy(
     owner_gid = None
     group_ids: list[PositiveInt] = []
 
+    # 1. If service is old or frontend, we add the everyone group
     if _is_frontend_service(service) or await _is_old_service(app, service):
         everyone_gid = (await groups_repo.get_everyone_group()).gid
-        _logger.debug("service %s:%s is old or frontend", service.key, service.version)
-        # let's make that one available to everyone
-        group_ids.append(everyone_gid)
+        group_ids.append(everyone_gid)  # let's make that one available to everyone
+        _logger.debug(
+            "service %s:%s is old or frontend. Set available to everyone",
+            service.key,
+            service.version,
+        )
 
-    # try to find the owner
+    # 2. Deducing the owner gid
     possible_owner_email = [service.contact] + [
         author.email for author in service.authors
     ]
@@ -84,14 +87,16 @@ async def evaluate_default_policy(
     else:
         group_ids.append(owner_gid)
 
-    # we add the owner with full rights, unless it's everyone
+    # 3. Aplying default access rights
     default_access_rights = [
         ServiceAccessRightsDB(
             key=service.key,
             version=service.version,
             gid=gid,
             execute_access=True,
-            write_access=(gid == owner_gid),
+            write_access=(
+                gid == owner_gid
+            ),  # we add the owner with full rights, unless it's everyone
             product_name=app.state.default_product_name,
         )
         for gid in set(group_ids)
