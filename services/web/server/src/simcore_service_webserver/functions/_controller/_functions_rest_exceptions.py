@@ -1,4 +1,4 @@
-from models_library.functions import (
+from models_library.functions_errors import (
     FunctionIDNotFoundError,
     FunctionJobCollectionIDNotFoundError,
     FunctionJobIDNotFoundError,
