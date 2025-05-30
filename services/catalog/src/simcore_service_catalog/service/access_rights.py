@@ -48,7 +48,7 @@ async def _is_old_service(app: FastAPI, service: ServiceMetaDataPublished) -> bo
     return bool(service_build_data < _LEGACY_SERVICES_DATE)
 
 
-async def evaluate_service_ownership_and_rights(
+async def evaluate_default_service_ownership_and_rights(
     app: FastAPI, *, service: ServiceMetaDataPublished, product_name: ProductName
 ) -> tuple[GroupID | None, list[ServiceAccessRightsDB]]:
     """Evaluates the owner (group_id) and the access rights for a service
