@@ -374,29 +374,6 @@ class ProjectDBAPI(BaseProjectDB):
                 WorkspaceScope.ALL,
             )
 
-            # access_rights_subquery = (
-            #     sa.select(
-            #         project_to_groups.c.project_uuid,
-            #         sa.func.jsonb_object_agg(
-            #             project_to_groups.c.gid,
-            #             sa.func.jsonb_build_object(
-            #                 "read",
-            #                 project_to_groups.c.read,
-            #                 "write",
-            #                 project_to_groups.c.write,
-            #                 "delete",
-            #                 project_to_groups.c.delete,
-            #             ),
-            #         ).label("access_rights"),
-            #     )
-            #     .where(
-            #         project_to_groups.c.project_uuid == projects.c.uuid
-            #     )  # Correlate with main query
-            #     .where(project_to_groups.c.read)
-            #     .group_by(project_to_groups.c.project_uuid)
-            #     .lateral()  # Critical for per-row execution
-            # )
-
             my_access_rights_subquery = (
                 sa.select(
                     project_to_groups.c.project_uuid,
@@ -427,7 +404,6 @@ class ProjectDBAPI(BaseProjectDB):
                 sa.select(
                     *PROJECT_DB_COLS,
                     projects.c.workbench,
-                    # access_rights_subquery.c.access_rights,
                     projects_to_products.c.product_name,
                     projects_to_folders.c.folder_id,
                 )
@@ -442,10 +418,6 @@ class ProjectDBAPI(BaseProjectDB):
                         ),
                         isouter=True,
                     )
-                    # .join(
-                    #     access_rights_subquery,
-                    #     access_rights_subquery.c.project_uuid == projects.c.uuid,
-                    # )
                 )
                 .where(
                     (projects.c.workspace_id.is_(None))  # <-- Private workspace
