@@ -1,4 +1,3 @@
-import sqlalchemy
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.engine import Engine
@@ -22,7 +21,7 @@ from .exceptions import ProjectNotFoundError
 
 async def get_project_owner(engine: Engine, project_uuid: ProjectID) -> UserID:
     async with engine.acquire() as connection:
-        stmt = sqlalchemy.select(projects.c.prj_owner).where(
+        stmt = sa.select(projects.c.prj_owner).where(
             projects.c.uuid == f"{project_uuid}"
         )
 

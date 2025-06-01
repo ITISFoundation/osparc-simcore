@@ -91,7 +91,7 @@ async def _aggregate_data_to_projects_from_other_sources(
     )
 
     for project in updated_projects:
-        project["access_rights"] = project_to_access_rights[project["uuid"]]
+        project["accessRights"] = project_to_access_rights[project["uuid"]]
 
     return updated_projects
 
