@@ -3,13 +3,13 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.engine import Engine
 from models_library.groups import GroupID
-from models_library.projects import ProjectID
+from models_library.projects import ProjectID, ProjectIDStr
 from models_library.users import UserID
 from models_library.workspaces import WorkspaceID
 from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects import projects
-from simcore_postgres_database.models.workspace_access_rights import (
-    workspace_access_rights,
+from simcore_postgres_database.models.workspaces_access_rights import (
+    workspaces_access_rights,
 )
 from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
@@ -33,22 +33,30 @@ async def get_project_owner(engine: Engine, project_uuid: ProjectID) -> UserID:
         return owner_id
 
 
+def _split_private_and_shared_projects(
+    projects_uuids_with_workspace_id: list[tuple[ProjectID, WorkspaceID | None]],
+) -> tuple[list[ProjectID], dict[WorkspaceID, list[ProjectID]]]:
+    """Splits project tuples into private project IDs and a mapping of workspace_id to project IDs."""
+    private_project_ids = []
+    workspace_to_project_ids: dict[WorkspaceID, list[ProjectID]] = {}
+    for pid, wid in projects_uuids_with_workspace_id:
+        if wid is None:
+            private_project_ids.append(pid)
+        else:
+            workspace_to_project_ids.setdefault(wid, []).append(pid)
+    return private_project_ids, workspace_to_project_ids
+
+
 async def batch_get_project_access_rights(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
-    projects_uuids_with_workspace_id: list[
-        tuple[ProjectID, WorkspaceID | None]
-    ],  # list of tuples (project_uuid, workspace_id)
-) -> dict[ProjectID, dict[GroupID, dict[str, bool]]]:
-    # Split into private and shared workspace project IDs
-    private_project_ids = [
-        pid for pid, wid in projects_uuids_with_workspace_id if wid is None
-    ]
-    shared_project_ids = [
-        pid for pid, wid in projects_uuids_with_workspace_id if wid is not None
-    ]
-
+    projects_uuids_with_workspace_id: list[tuple[ProjectID, WorkspaceID | None]],
+) -> dict[ProjectIDStr, dict[GroupID, dict[str, bool]]]:
+    private_project_ids, workspace_to_project_ids = _split_private_and_shared_projects(
+        projects_uuids_with_workspace_id
+    )
+    shared_workspace_ids = set(workspace_to_project_ids.keys())
     results = {}
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
@@ -80,32 +88,37 @@ async def batch_get_project_access_rights(
             async for row in private_result:
                 results[row.project_uuid] = row.access_rights
 
-        # Query shared workspace projects
-        if shared_project_ids:
+        # Query shared workspace projects by workspace_id
+        if shared_workspace_ids:
             shared_query = (
                 sa.select(
-                    workspace_access_rights.c.project_uuid,
+                    workspaces_access_rights.c.workspace_id,
                     sa.func.jsonb_object_agg(
-                        workspace_access_rights.c.gid,
+                        workspaces_access_rights.c.gid,
                         sa.func.jsonb_build_object(
                             "read",
-                            workspace_access_rights.c.read,
+                            workspaces_access_rights.c.read,
                             "write",
-                            workspace_access_rights.c.write,
+                            workspaces_access_rights.c.write,
                             "delete",
-                            workspace_access_rights.c.delete,
+                            workspaces_access_rights.c.delete,
                         ),
                     ).label("access_rights"),
                 )
                 .where(
-                    workspace_access_rights.c.project_uuid.in_(
-                        [f"{uuid}" for uuid in shared_project_ids]
-                    )
+                    workspaces_access_rights.c.workspace_id.in_(shared_workspace_ids)
                 )
-                .group_by(workspace_access_rights.c.project_uuid)
+                .group_by(workspaces_access_rights.c.workspace_id)
             )
             shared_result = await conn.stream(shared_query)
+            workspace_access_rights_map = {}
             async for row in shared_result:
-                results[row.project_uuid] = row.access_rights
+                workspace_access_rights_map[row.workspace_id] = row.access_rights
+            # Assign access rights to each project in the workspace
+            for wid, project_ids in workspace_to_project_ids.items():
+                access_rights = workspace_access_rights_map.get(wid)
+                if access_rights is not None:
+                    for pid in project_ids:
+                        results[f"{pid}"] = access_rights
 
     return results
