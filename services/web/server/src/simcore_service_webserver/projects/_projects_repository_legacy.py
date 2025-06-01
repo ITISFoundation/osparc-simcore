@@ -479,31 +479,6 @@ class ProjectDBAPI(BaseProjectDB):
                 WorkspaceScope.ALL,
             )
 
-            # workspace_access_rights_subquery = (
-            #     (
-            #         sa.select(
-            #             workspaces_access_rights.c.workspace_id,
-            #             sa.func.jsonb_object_agg(
-            #                 workspaces_access_rights.c.gid,
-            #                 sa.func.jsonb_build_object(
-            #                     "read",
-            #                     workspaces_access_rights.c.read,
-            #                     "write",
-            #                     workspaces_access_rights.c.write,
-            #                     "delete",
-            #                     workspaces_access_rights.c.delete,
-            #                 ),
-            #             ).label("access_rights"),
-            #         )
-            #         .where(
-            #             workspaces_access_rights.c.read,
-            #         )
-            #         .group_by(workspaces_access_rights.c.workspace_id)
-            #     )
-            #     .subquery("workspace_access_rights_subquery")
-            #     .lateral()
-            # )
-
             my_workspace_access_rights_subquery = (
                 sa.select(
                     workspaces_access_rights.c.workspace_id,
@@ -530,7 +505,6 @@ class ProjectDBAPI(BaseProjectDB):
                 sa.select(
                     *PROJECT_DB_COLS,
                     projects.c.workbench,
-                    # workspace_access_rights_subquery.c.access_rights,
                     projects_to_products.c.product_name,
                     projects_to_folders.c.folder_id,
                 )
@@ -549,11 +523,6 @@ class ProjectDBAPI(BaseProjectDB):
                         ),
                         isouter=True,
                     )
-                    # .join(
-                    #     workspace_access_rights_subquery,
-                    #     projects.c.workspace_id
-                    #     == workspace_access_rights_subquery.c.workspace_id,
-                    # )
                 )
                 .where(projects_to_products.c.product_name == product_name)
             )
@@ -759,8 +728,6 @@ class ProjectDBAPI(BaseProjectDB):
                 select_projects_query=combined_query.offset(offset).limit(limit),
                 filter_by_services=filter_by_services,
             )
-
-            # For now is withgout access rights
 
             return (
                 prjs,
