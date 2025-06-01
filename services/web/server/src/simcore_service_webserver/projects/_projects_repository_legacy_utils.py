@@ -233,9 +233,6 @@ class BaseProjectDB:
                 continue
             db_projects.append(prj)
 
-        # Here batch get project access rights
-        
-
         # NOTE: DO NOT nest _get_tags_by_project in async loop above !!!
         # FIXME: temporary avoids inner async loops issue https://github.com/aio-libs/aiopg/issues/535
         for db_prj in db_projects:

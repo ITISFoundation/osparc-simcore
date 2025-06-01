@@ -21,12 +21,12 @@ from simcore_postgres_database.webserver_models import (
     ProjectTemplateType as ProjectTemplateTypeDB,
 )
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
-from ._access_rights_repository import batch_get_project_access_rights
 
 from ..catalog import catalog_service
 from ..folders import _folders_repository
 from ..workspaces.api import check_user_workspace_access
 from . import _projects_service
+from ._access_rights_repository import batch_get_project_access_rights
 from ._projects_repository import batch_get_trashed_by_primary_gid
 from ._projects_repository_legacy import ProjectDBAPI
 from .models import ProjectDict, ProjectTypeAPI
@@ -69,7 +69,10 @@ async def _aggregate_data_to_projects_from_other_sources(
 
     # Add here get batch Project access rights
     project_to_access_rights = await batch_get_project_access_rights(
-        app=app, projects_uuids=[ProjectID(p["uuid"]) for p in db_projects]
+        app=app,
+        projects_uuids_with_workspace_id=[
+            (ProjectID(p["uuid"]), p["workspaceId"]) for p in db_projects
+        ],
     )
 
     # udpating `project.state`

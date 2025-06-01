@@ -1,38 +1,22 @@
-from numpy import diff
 import sqlalchemy
-from aiopg.sa.engine import Engine
-from models_library.projects import ProjectID
-from models_library.users import UserID
-from simcore_postgres_database.models.projects import projects
-import logging
-from collections.abc import Callable
-from datetime import datetime
-from typing import cast
-
 import sqlalchemy as sa
 from aiohttp import web
-from common_library.exclude import UnSet, is_set
-from models_library.basic_types import IDStr
+from aiopg.sa.engine import Engine
 from models_library.groups import GroupID
 from models_library.projects import ProjectID
-from models_library.rest_ordering import OrderBy, OrderDirection
-from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+from models_library.users import UserID
 from models_library.workspaces import WorkspaceID
-from pydantic import NonNegativeInt, PositiveInt
-from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.project_to_groups import project_to_groups
-from simcore_postgres_database.models.users import users
-from simcore_postgres_database.utils_repos import (
-    get_columns_from_db_model,
-    pass_or_acquire_connection,
-    transaction_context,
+from simcore_postgres_database.models.projects import projects
+from simcore_postgres_database.models.workspace_access_rights import (
+    workspace_access_rights,
 )
-from sqlalchemy import sql
+from simcore_postgres_database.utils_repos import (
+    pass_or_acquire_connection,
+)
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..db.plugin import get_asyncpg_engine
-from .exceptions import ProjectNotFoundError
-from .models import ProjectDBGet
 from .exceptions import ProjectNotFoundError
 
 
@@ -53,56 +37,75 @@ async def batch_get_project_access_rights(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
-    projects_uuids: list[ProjectID],
+    projects_uuids_with_workspace_id: list[
+        tuple[ProjectID, WorkspaceID | None]
+    ],  # list of tuples (project_uuid, workspace_id)
 ) -> dict[ProjectID, dict[GroupID, dict[str, bool]]]:
+    # Split into private and shared workspace project IDs
+    private_project_ids = [
+        pid for pid, wid in projects_uuids_with_workspace_id if wid is None
+    ]
+    shared_project_ids = [
+        pid for pid, wid in projects_uuids_with_workspace_id if wid is not None
+    ]
 
-    # NOTE: MD: TODO: differentiate between private/shared workspaces
-    # based on that use either project_to_groups or workspace_access_rights
-
-    private_workspace_access_rights_query = (
-        sa.select(
-            project_to_groups.c.project_uuid,
-            sa.func.jsonb_object_agg(
-                project_to_groups.c.gid,
-                sa.func.jsonb_build_object(
-                    "read",
-                    project_to_groups.c.read,
-                    "write",
-                    project_to_groups.c.write,
-                    "delete",
-                    project_to_groups.c.delete,
-                ),
-            ).label("access_rights"),
-        )
-        .where(
-            (projects.c.uuid.in_([f"{uuid}" for uuid in projects_uuids]))  # <-- this needs to be prefiltered based on workspace
-            & (project_to_groups.c.read)
-        )
-        .group_by(project_to_groups.c.project_uuid)
-    )
-
-    shared_workspace_access_rights_query = (
-        sa.select(
-            workspace_access_rights.c.project_uuid,
-            sa.func.jsonb_object_agg(
-                project_to_groups.c.gid,
-                sa.func.jsonb_build_object(
-                    "read",
-                    workspace_access_rights.c.read,
-                    "write",
-                    workspace_access_rights.c.write,
-                    "delete",
-                    workspace_access_rights.c.delete,
-                ),
-            ).label("access_rights"),
-        )
-        .where(
-            (projects.c.uuid.in_([f"{uuid}" for uuid in projects_uuids]))  # <-- this needs to be prefiltered based on workspace
-            & (workspace_access_rights.c.read)
-        )
-        .group_by(workspace_access_rights.c.project_uuid)
-    )
+    results = {}
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(access_rights_query)
-        return {row.project_uuid: row.access_rights async for row in result}
+        # Query private workspace projects
+        if private_project_ids:
+            private_query = (
+                sa.select(
+                    project_to_groups.c.project_uuid,
+                    sa.func.jsonb_object_agg(
+                        project_to_groups.c.gid,
+                        sa.func.jsonb_build_object(
+                            "read",
+                            project_to_groups.c.read,
+                            "write",
+                            project_to_groups.c.write,
+                            "delete",
+                            project_to_groups.c.delete,
+                        ),
+                    ).label("access_rights"),
+                )
+                .where(
+                    project_to_groups.c.project_uuid.in_(
+                        [f"{uuid}" for uuid in private_project_ids]
+                    )
+                )
+                .group_by(project_to_groups.c.project_uuid)
+            )
+            private_result = await conn.stream(private_query)
+            async for row in private_result:
+                results[row.project_uuid] = row.access_rights
+
+        # Query shared workspace projects
+        if shared_project_ids:
+            shared_query = (
+                sa.select(
+                    workspace_access_rights.c.project_uuid,
+                    sa.func.jsonb_object_agg(
+                        workspace_access_rights.c.gid,
+                        sa.func.jsonb_build_object(
+                            "read",
+                            workspace_access_rights.c.read,
+                            "write",
+                            workspace_access_rights.c.write,
+                            "delete",
+                            workspace_access_rights.c.delete,
+                        ),
+                    ).label("access_rights"),
+                )
+                .where(
+                    workspace_access_rights.c.project_uuid.in_(
+                        [f"{uuid}" for uuid in shared_project_ids]
+                    )
+                )
+                .group_by(workspace_access_rights.c.project_uuid)
+            )
+            shared_result = await conn.stream(shared_query)
+            async for row in shared_result:
+                results[row.project_uuid] = row.access_rights
+
+    return results
