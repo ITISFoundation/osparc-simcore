@@ -358,7 +358,7 @@ async def find_cached_function_jobs(
     if returned_function_jobs is None or len(returned_function_jobs) == 0:
         return None
 
-    to_return_function_jobs = []
+    to_return_function_jobs: list[RegisteredFunctionJob] = []
     for returned_function_job in returned_function_jobs:
         if returned_function_job.function_class == FunctionClass.PROJECT:
             to_return_function_jobs.append(
