@@ -687,7 +687,7 @@ async def delete_function_job(
         )
 
 
-async def find_cached_function_job(
+async def find_cached_function_jobs(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
@@ -695,7 +695,7 @@ async def find_cached_function_job(
     function_id: FunctionID,
     product_name: ProductName,
     inputs: FunctionInputs,
-) -> RegisteredFunctionJobDB | None:
+) -> list[RegisteredFunctionJobDB] | None:
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(
@@ -704,19 +704,13 @@ async def find_cached_function_job(
                 cast(function_jobs_table.c.inputs, Text) == json.dumps(inputs),
             ),
         )
-
         rows = await result.all()
 
-        if rows is None or len(rows) == 0:
-            return None
+    if rows is None or len(rows) == 0:
+        return None
 
-        assert len(rows) == 1, (
-            "More than one function job found with the same function id and inputs."
-            f" Function id: {function_id}, Inputs: {inputs}"
-        )  # nosec
-
-        row = rows[0]
-
+    jobs = []
+    for row in rows:
         job = RegisteredFunctionJobDB.model_validate(dict(row))
         try:
             await check_user_permissions(
@@ -729,13 +723,14 @@ async def find_cached_function_job(
                 permissions=["read"],
             )
         except FunctionJobReadAccessDeniedError:
-            # If the user does not have read access, return None
-            return None
+            continue
 
-        if job.inputs == inputs:
-            return job
+        jobs.append(job)
 
-        return None
+    if len(jobs) > 0:
+        return jobs
+
+    return None
 
 
 async def get_function_job_collection(
