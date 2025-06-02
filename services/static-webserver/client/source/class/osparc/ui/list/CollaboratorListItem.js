@@ -213,15 +213,17 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
         }
         case "write": {
           const resource = this.getResourceType();
-          const promoteButton = new qx.ui.menu.Button(this.tr(`Promote to ${this.__getRoleInfo("delete").label}`));
-          promoteButton.setVisibility(resource === "service" ? "excluded" : "visible");
-          promoteButton.addListener("execute", () => {
-            this.fireDataEvent("promoteToOwner", {
-              gid: this.getKey(),
-              name: this.getTitle()
+          if (resource !== "service") {
+            // there is no owner role for services
+            const promoteButton = new qx.ui.menu.Button(this.tr(`Promote to ${this.__getRoleInfo("delete").label}`));
+            promoteButton.addListener("execute", () => {
+              this.fireDataEvent("promoteToOwner", {
+                gid: this.getKey(),
+                name: this.getTitle()
+              });
             });
-          });
-          menu.add(promoteButton);
+            menu.add(promoteButton);
+          }
           const demoteButton = new qx.ui.menu.Button(this.tr(`Demote to ${this.__getRoleInfo("read").label}`));
           demoteButton.addListener("execute", () => {
             this.fireDataEvent("demoteToUser", {
