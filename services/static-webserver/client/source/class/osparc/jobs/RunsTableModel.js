@@ -66,7 +66,7 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
     orderBy: {
       check: "Object",
       init: {
-        field: "submitted_at", // state|submitted_at|started_at|ended_at
+        field: "submitted_at", // submitted_at|started_at|ended_at
         direction: "desc"
       }
     },
