@@ -57,6 +57,10 @@ qx.Class.define("osparc.jobs.SubRunsTableModel", {
     },
   },
 
+  statics: {
+    SERVER_MAX_LIMIT: 49,
+  },
+
   members: {
     // overridden
     sortByColumn(columnIndex, ascending) {
