@@ -146,6 +146,8 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
 
     __handleButtonClick: function(action, row) {
       this.resetSelection();
+       // In order to make the button tappable again, the cell needs to be unfocused (blurred)
+      this.resetCellFocus();
       const rowData = this.getTableModel().getRowData(row);
       switch (action) {
         case "info": {
