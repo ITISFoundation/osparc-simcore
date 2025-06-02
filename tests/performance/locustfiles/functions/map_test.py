@@ -186,7 +186,7 @@ def print_job_logs(configuration: osparc_client.Configuration, solver_job_uid: s
         response.raise_for_status()
         for line in response.iter_lines():
             for msg in json.loads(line).get("messages"):
-                print(f"{datetime.now().isoformat()}: {msg}")
+                print(f"{datetime.now().isoformat(timespec='seconds')}: {msg}")
 
 
 if __name__ == "__main__":
