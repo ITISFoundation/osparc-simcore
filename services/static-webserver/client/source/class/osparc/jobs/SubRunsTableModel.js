@@ -27,7 +27,7 @@ qx.Class.define("osparc.jobs.SubRunsTableModel", {
     const colIDs = Object.values(subJobsCols).map(col => col.id);
     this.setColumns(colLabels, colIDs);
 
-    this.setSortColumnIndexWithoutSortingData(subJobsCols.START.column);
+    this.setSortColumnIndexWithoutSortingData(subJobsCols.START.column); // It can only be sorted by started_at
     this.setSortAscendingWithoutSortingData(false);
     Object.values(subJobsCols).forEach(col => {
       this.setColumnSortable(col.column, false);
