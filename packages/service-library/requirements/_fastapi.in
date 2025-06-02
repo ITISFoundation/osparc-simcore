@@ -4,10 +4,9 @@
 #
 
 
-fastapi
+fastapi[standard]
 fastapi-lifespan-manager
-httpx
+httpx[http2]
 opentelemetry-instrumentation-fastapi
 opentelemetry-instrumentation-httpx
 prometheus-client
-uvicorn

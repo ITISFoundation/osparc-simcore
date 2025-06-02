@@ -216,7 +216,7 @@ async def initiate_reset_password(request: web.Request):
                     error_context=_get_error_context(user),
                 )
             )
-            raise web.HTTPServiceUnavailable(reason=MSG_CANT_SEND_MAIL) from err
+            raise web.HTTPServiceUnavailable(text=MSG_CANT_SEND_MAIL) from err
 
     # NOTE: Always same response: guideline #1
     return flash_response(MSG_EMAIL_SENT.format(email=request_body.email), "INFO")
@@ -241,7 +241,7 @@ async def initiate_change_email(request: web.Request):
 
     async with pass_or_acquire_connection(get_asyncpg_engine(request.app)) as conn:
         if await UsersRepo.is_email_used(conn, email=request_body.email):
-            raise web.HTTPUnprocessableEntity(reason="This email cannot be used")
+            raise web.HTTPUnprocessableEntity(text="This email cannot be used")
 
     # Reset if previously requested
     confirmation = await db.get_confirmation({"user": user, "action": CHANGE_EMAIL})
@@ -268,7 +268,7 @@ async def initiate_change_email(request: web.Request):
     except Exception as err:  # pylint: disable=broad-except
         _logger.exception("Can not send change_email_email")
         await db.delete_confirmation(confirmation)
-        raise web.HTTPServiceUnavailable(reason=MSG_CANT_SEND_MAIL) from err
+        raise web.HTTPServiceUnavailable(text=MSG_CANT_SEND_MAIL) from err
 
     return flash_response(MSG_CHANGE_EMAIL_REQUESTED)
 

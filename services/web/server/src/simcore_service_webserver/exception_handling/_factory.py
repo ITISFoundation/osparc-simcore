@@ -1,10 +1,11 @@
 import logging
-from typing import NamedTuple, TypeAlias
+from typing import Any, NamedTuple, TypeAlias
 
 from aiohttp import web
 from common_library.error_codes import create_error_code
 from common_library.json_serialization import json_dumps
 from models_library.rest_error import ErrorGet
+from servicelib.aiohttp.rest_responses import safe_status_message
 from servicelib.aiohttp.web_exceptions_extension import get_all_aiohttp_http_exceptions
 from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from servicelib.status_codes_utils import is_5xx_server_error, is_error
@@ -34,14 +35,22 @@ class HttpErrorInfo(NamedTuple):
 ExceptionToHttpErrorMap: TypeAlias = dict[type[Exception], HttpErrorInfo]
 
 
+def create_error_context_from_request(request: web.Request) -> dict[str, Any]:
+    return {
+        "request": request,
+        "request.remote": f"{request.remote}",
+        "request.method": f"{request.method}",
+        "request.path": f"{request.path}",
+    }
+
+
 def create_error_response(error: ErrorGet, status_code: int) -> web.Response:
     assert is_error(status_code), f"{status_code=} must be an error [{error=}]"  # nosec
 
     return web.json_response(
         data={"error": error.model_dump(exclude_unset=True, mode="json")},
         dumps=json_dumps,
-        # NOTE: Multiline not allowed in HTTP reason attribute (aiohttp now raises ValueError)
-        reason=error.message.replace("\n", " ") if error.message else None,
+        reason=safe_status_message(error.message),
         status=status_code,
     )
 
@@ -85,20 +94,19 @@ def create_exception_handler_from_http_info(
 
         if is_5xx_server_error(status_code):
             oec = create_error_code(exception)
+            error_context = {
+                # NOTE: `error_context` is also used to substitute f-string tokens
+                # in the `user_msg`
+                **create_error_context_from_request(request),
+                "error_code": oec,
+            }
+
             _logger.exception(
                 **create_troubleshotting_log_kwargs(
                     user_msg,
                     error=exception,
                     error_code=oec,
-                    error_context={
-                        # NOTE: context is also used to substitute tokens in the error message
-                        # e.g. "support error is {error_code}"
-                        "request": request,
-                        "request.remote": f"{request.remote}",
-                        "request.method": f"{request.method}",
-                        "request.path": f"{request.path}",
-                        "error_code": oec,
-                    },
+                    error_context=error_context,
                 )
             )
             error = ErrorGet.model_construct(

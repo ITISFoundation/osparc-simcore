@@ -5,17 +5,14 @@ from models_library.functions import (
     FunctionClassSpecificData,
     FunctionDB,
     FunctionID,
-    FunctionIDNotFoundError,
     FunctionInputs,
     FunctionInputSchema,
     FunctionJob,
     FunctionJobClassSpecificData,
     FunctionJobCollection,
-    FunctionJobCollectionIDNotFoundError,
     FunctionJobCollectionsListFilters,
     FunctionJobDB,
     FunctionJobID,
-    FunctionJobIDNotFoundError,
     FunctionOutputSchema,
     RegisteredFunction,
     RegisteredFunctionDB,
@@ -26,22 +23,31 @@ from models_library.functions import (
     RegisteredProjectFunctionJob,
     RegisteredSolverFunction,
     RegisteredSolverFunctionJob,
+)
+from models_library.functions_errors import (
+    FunctionIDNotFoundError,
+    FunctionJobCollectionIDNotFoundError,
+    FunctionJobIDNotFoundError,
     UnsupportedFunctionClassError,
     UnsupportedFunctionJobClassError,
 )
+from models_library.products import ProductName
 from models_library.rest_pagination import PageMetaInfoLimitOffset
+from models_library.users import UserID
 from servicelib.rabbitmq import RPCRouter
 
 from . import _functions_repository
 
 router = RPCRouter()
 
-# pylint: disable=no-else-return
-
 
 @router.expose(reraise_if_error_type=(UnsupportedFunctionClassError,))
 async def register_function(
-    app: web.Application, *, function: Function
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function: Function,
 ) -> RegisteredFunction:
     encoded_function = _encode_function(function)
     saved_function = await _functions_repository.create_function(
@@ -53,17 +59,25 @@ async def register_function(
         output_schema=encoded_function.output_schema,
         default_inputs=encoded_function.default_inputs,
         class_specific_data=encoded_function.class_specific_data,
+        user_id=user_id,
+        product_name=product_name,
     )
     return _decode_function(saved_function)
 
 
 @router.expose(reraise_if_error_type=(UnsupportedFunctionJobClassError,))
 async def register_function_job(
-    app: web.Application, *, function_job: FunctionJob
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_job: FunctionJob,
 ) -> RegisteredFunctionJob:
     encoded_function_job = _encode_functionjob(function_job)
     created_function_job_db = await _functions_repository.create_function_job(
         app=app,
+        user_id=user_id,
+        product_name=product_name,
         function_class=encoded_function_job.function_class,
         title=encoded_function_job.title,
         description=encoded_function_job.description,
@@ -77,11 +91,17 @@ async def register_function_job(
 
 @router.expose(reraise_if_error_type=())
 async def register_function_job_collection(
-    app: web.Application, *, function_job_collection: FunctionJobCollection
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_job_collection: FunctionJobCollection,
 ) -> RegisteredFunctionJobCollection:
     registered_function_job_collection, registered_job_ids = (
         await _functions_repository.create_function_job_collection(
             app=app,
+            user_id=user_id,
+            product_name=product_name,
             title=function_job_collection.title,
             description=function_job_collection.description,
             job_ids=function_job_collection.job_ids,
@@ -97,10 +117,16 @@ async def register_function_job_collection(
 
 @router.expose(reraise_if_error_type=(FunctionIDNotFoundError,))
 async def get_function(
-    app: web.Application, *, function_id: FunctionID
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_id: FunctionID,
 ) -> RegisteredFunction:
     returned_function = await _functions_repository.get_function(
         app=app,
+        user_id=user_id,
+        product_name=product_name,
         function_id=function_id,
     )
     return _decode_function(
@@ -110,10 +136,16 @@ async def get_function(
 
 @router.expose(reraise_if_error_type=(FunctionJobIDNotFoundError,))
 async def get_function_job(
-    app: web.Application, *, function_job_id: FunctionJobID
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_job_id: FunctionJobID,
 ) -> RegisteredFunctionJob:
     returned_function_job = await _functions_repository.get_function_job(
         app=app,
+        user_id=user_id,
+        product_name=product_name,
         function_job_id=function_job_id,
     )
     assert returned_function_job is not None
@@ -123,11 +155,17 @@ async def get_function_job(
 
 @router.expose(reraise_if_error_type=(FunctionJobCollectionIDNotFoundError,))
 async def get_function_job_collection(
-    app: web.Application, *, function_job_collection_id: FunctionJobID
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_job_collection_id: FunctionJobID,
 ) -> RegisteredFunctionJobCollection:
     returned_function_job_collection, returned_job_ids = (
         await _functions_repository.get_function_job_collection(
             app=app,
+            user_id=user_id,
+            product_name=product_name,
             function_job_collection_id=function_job_collection_id,
         )
     )
@@ -142,11 +180,16 @@ async def get_function_job_collection(
 @router.expose()
 async def list_functions(
     app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
     pagination_limit: int,
     pagination_offset: int,
 ) -> tuple[list[RegisteredFunction], PageMetaInfoLimitOffset]:
     returned_functions, page = await _functions_repository.list_functions(
         app=app,
+        user_id=user_id,
+        product_name=product_name,
         pagination_limit=pagination_limit,
         pagination_offset=pagination_offset,
     )
@@ -158,12 +201,17 @@ async def list_functions(
 @router.expose()
 async def list_function_jobs(
     app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
     pagination_limit: int,
     pagination_offset: int,
     filter_by_function_id: FunctionID | None = None,
 ) -> tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset]:
     returned_function_jobs, page = await _functions_repository.list_function_jobs(
         app=app,
+        user_id=user_id,
+        product_name=product_name,
         pagination_limit=pagination_limit,
         pagination_offset=pagination_offset,
         filter_by_function_id=filter_by_function_id,
@@ -177,6 +225,9 @@ async def list_function_jobs(
 @router.expose()
 async def list_function_job_collections(
     app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
     pagination_limit: int,
     pagination_offset: int,
     filters: FunctionJobCollectionsListFilters | None = None,
@@ -184,6 +235,8 @@ async def list_function_job_collections(
     returned_function_job_collections, page = (
         await _functions_repository.list_function_job_collections(
             app=app,
+            user_id=user_id,
+            product_name=product_name,
             pagination_limit=pagination_limit,
             pagination_offset=pagination_offset,
             filters=filters,
@@ -201,39 +254,66 @@ async def list_function_job_collections(
 
 
 @router.expose(reraise_if_error_type=(FunctionIDNotFoundError,))
-async def delete_function(app: web.Application, *, function_id: FunctionID) -> None:
+async def delete_function(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_id: FunctionID,
+) -> None:
     await _functions_repository.delete_function(
         app=app,
+        user_id=user_id,
+        product_name=product_name,
         function_id=function_id,
     )
 
 
 @router.expose(reraise_if_error_type=(FunctionJobIDNotFoundError,))
 async def delete_function_job(
-    app: web.Application, *, function_job_id: FunctionJobID
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_job_id: FunctionJobID,
 ) -> None:
     await _functions_repository.delete_function_job(
         app=app,
+        user_id=user_id,
+        product_name=product_name,
         function_job_id=function_job_id,
     )
 
 
 @router.expose(reraise_if_error_type=(FunctionJobCollectionIDNotFoundError,))
 async def delete_function_job_collection(
-    app: web.Application, *, function_job_collection_id: FunctionJobID
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_job_collection_id: FunctionJobID,
 ) -> None:
     await _functions_repository.delete_function_job_collection(
         app=app,
+        user_id=user_id,
+        product_name=product_name,
         function_job_collection_id=function_job_collection_id,
     )
 
 
 @router.expose()
 async def update_function_title(
-    app: web.Application, *, function_id: FunctionID, title: str
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_id: FunctionID,
+    title: str,
 ) -> RegisteredFunction:
     updated_function = await _functions_repository.update_function_title(
         app=app,
+        user_id=user_id,
+        product_name=product_name,
         function_id=function_id,
         title=title,
     )
@@ -242,10 +322,17 @@ async def update_function_title(
 
 @router.expose(reraise_if_error_type=(FunctionIDNotFoundError,))
 async def update_function_description(
-    app: web.Application, *, function_id: FunctionID, description: str
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_id: FunctionID,
+    description: str,
 ) -> RegisteredFunction:
     updated_function = await _functions_repository.update_function_description(
         app=app,
+        user_id=user_id,
+        product_name=product_name,
         function_id=function_id,
         description=description,
     )
@@ -254,10 +341,19 @@ async def update_function_description(
 
 @router.expose()
 async def find_cached_function_job(
-    app: web.Application, *, function_id: FunctionID, inputs: FunctionInputs
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_id: FunctionID,
+    inputs: FunctionInputs,
 ) -> FunctionJob | None:
     returned_function_job = await _functions_repository.find_cached_function_job(
-        app=app, function_id=function_id, inputs=inputs
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        function_id=function_id,
+        inputs=inputs,
     )
     if returned_function_job is None:
         return None
@@ -290,10 +386,16 @@ async def find_cached_function_job(
 
 @router.expose(reraise_if_error_type=(FunctionIDNotFoundError,))
 async def get_function_input_schema(
-    app: web.Application, *, function_id: FunctionID
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_id: FunctionID,
 ) -> FunctionInputSchema:
     returned_function = await _functions_repository.get_function(
         app=app,
+        user_id=user_id,
+        product_name=product_name,
         function_id=function_id,
     )
     return _decode_function(returned_function).input_schema
@@ -301,10 +403,16 @@ async def get_function_input_schema(
 
 @router.expose(reraise_if_error_type=(FunctionIDNotFoundError,))
 async def get_function_output_schema(
-    app: web.Application, *, function_id: FunctionID
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_id: FunctionID,
 ) -> FunctionOutputSchema:
     returned_function = await _functions_repository.get_function(
         app=app,
+        user_id=user_id,
+        product_name=product_name,
         function_id=function_id,
     )
     return _decode_function(returned_function).output_schema

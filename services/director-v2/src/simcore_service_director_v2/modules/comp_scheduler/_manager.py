@@ -13,11 +13,17 @@ from servicelib.redis import CouldNotAcquireLockError, exclusive
 from servicelib.utils import limited_gather
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from ...models.comp_pipelines import CompPipelineAtDB
 from ...models.comp_runs import RunMetadataDict
+from ...models.comp_tasks import CompTaskAtDB
 from ...utils.rabbitmq import publish_project_log
 from ..db import get_db_engine
 from ..db.repositories.comp_pipelines import CompPipelinesRepository
 from ..db.repositories.comp_runs import CompRunsRepository
+from ..db.repositories.comp_runs_snapshot_tasks import (
+    CompRunsSnapshotTasksRepository,
+)
+from ..db.repositories.comp_tasks import CompTasksRepository
 from ..rabbitmq import get_rabbitmq_client
 from ._constants import (
     MAX_CONCURRENT_PIPELINE_SCHEDULING,
@@ -41,7 +47,9 @@ async def run_new_pipeline(
     """Sets a new pipeline to be scheduled on the computational resources."""
     # ensure the pipeline exists and is populated with something
     db_engine = get_db_engine(app)
-    dag = await _get_pipeline_dag(project_id, db_engine)
+    comp_pipeline_at_db = await _get_pipeline_at_db(project_id, db_engine)
+    dag = comp_pipeline_at_db.get_graph()
+
     if not dag:
         _logger.warning(
             "project %s has no computational dag defined. not scheduled for a run.",
@@ -54,6 +62,19 @@ async def run_new_pipeline(
         project_id=project_id,
         metadata=run_metadata,
         use_on_demand_clusters=use_on_demand_clusters,
+        dag_adjacency_list=comp_pipeline_at_db.dag_adjacency_list,
+    )
+
+    tasks_to_run = await _get_pipeline_tasks_at_db(db_engine, project_id, dag)
+    db_create_snaphot_tasks = [
+        {
+            **task.to_db_model(exclude={"created", "modified"}),
+            "run_id": new_run.run_id,
+        }
+        for task in tasks_to_run
+    ]
+    await CompRunsSnapshotTasksRepository.instance(db_engine).batch_create(
+        data=db_create_snaphot_tasks
     )
 
     rabbitmq_client = get_rabbitmq_client(app)
@@ -103,12 +124,23 @@ async def stop_pipeline(
         )
 
 
-async def _get_pipeline_dag(
+async def _get_pipeline_at_db(
     project_id: ProjectID, db_engine: AsyncEngine
-) -> nx.DiGraph:
+) -> CompPipelineAtDB:
     comp_pipeline_repo = CompPipelinesRepository.instance(db_engine)
     pipeline_at_db = await comp_pipeline_repo.get_pipeline(project_id)
-    return pipeline_at_db.get_graph()
+    return pipeline_at_db
+
+
+async def _get_pipeline_tasks_at_db(
+    db_engine: AsyncEngine, project_id: ProjectID, pipeline_dag: nx.DiGraph
+) -> list[CompTaskAtDB]:
+    comp_tasks_repo = CompTasksRepository.instance(db_engine)
+    return [
+        t
+        for t in await comp_tasks_repo.list_computational_tasks(project_id)
+        if (f"{t.node_id}" in list(pipeline_dag.nodes()))
+    ]
 
 
 _LOST_TASKS_FACTOR: Final[int] = 10

@@ -291,7 +291,7 @@ async def _generate_checksum(
         return checksum
     if isinstance(path_to_upload, Path):
         async with aiofiles.open(path_to_upload, mode="rb") as f:
-            checksum = SHA256Str(await create_sha256_checksum(f))
+            checksum = await create_sha256_checksum(f)
     elif isinstance(path_to_upload, UploadableFileObject):
         checksum = path_to_upload.sha256_checksum
     return checksum

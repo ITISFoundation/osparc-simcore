@@ -279,33 +279,49 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             **pagination_kwargs,
         )
 
-    async def register_function(self, *, function: Function) -> RegisteredFunction:
+    async def register_function(
+        self, *, user_id: UserID, product_name: ProductName, function: Function
+    ) -> RegisteredFunction:
         return await functions_rpc_interface.register_function(
             self._client,
             function=function,
+            user_id=user_id,
+            product_name=product_name,
         )
 
-    async def get_function(self, *, function_id: FunctionID) -> RegisteredFunction:
+    async def get_function(
+        self, *, user_id: UserID, product_name: ProductName, function_id: FunctionID
+    ) -> RegisteredFunction:
         return await functions_rpc_interface.get_function(
             self._client,
+            user_id=user_id,
+            product_name=product_name,
             function_id=function_id,
         )
 
-    async def delete_function(self, *, function_id: FunctionID) -> None:
+    async def delete_function(
+        self, *, user_id: UserID, product_name: ProductName, function_id: FunctionID
+    ) -> None:
         return await functions_rpc_interface.delete_function(
             self._client,
+            user_id=user_id,
+            product_name=product_name,
             function_id=function_id,
         )
 
     async def list_functions(
         self,
         *,
+        user_id: UserID,
+        product_name: ProductName,
         pagination_offset: PageOffsetInt = 0,
         pagination_limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     ) -> tuple[list[RegisteredFunction], PageMetaInfoLimitOffset]:
 
         return await functions_rpc_interface.list_functions(
             self._client,
+            user_id=user_id,
+            product_name=product_name,
             pagination_offset=pagination_offset,
             pagination_limit=pagination_limit,
         )
@@ -313,12 +329,16 @@ class WbApiRpcClient(SingletonInAppStateMixin):
     async def list_function_jobs(
         self,
         *,
+        user_id: UserID,
+        product_name: ProductName,
         pagination_offset: PageOffsetInt = 0,
         pagination_limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
         filter_by_function_id: FunctionID | None = None,
     ) -> tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset]:
         return await functions_rpc_interface.list_function_jobs(
             self._client,
+            user_id=user_id,
+            product_name=product_name,
             pagination_offset=pagination_offset,
             pagination_limit=pagination_limit,
             filter_by_function_id=filter_by_function_id,
@@ -327,108 +347,183 @@ class WbApiRpcClient(SingletonInAppStateMixin):
     async def list_function_job_collections(
         self,
         *,
+        user_id: UserID,
+        product_name: ProductName,
         pagination_offset: PageOffsetInt = 0,
         pagination_limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
         filters: FunctionJobCollectionsListFilters | None = None,
     ) -> tuple[list[RegisteredFunctionJobCollection], PageMetaInfoLimitOffset]:
         return await functions_rpc_interface.list_function_job_collections(
             self._client,
+            user_id=user_id,
+            product_name=product_name,
             pagination_offset=pagination_offset,
             pagination_limit=pagination_limit,
             filters=filters,
         )
 
     async def run_function(
-        self, *, function_id: FunctionID, inputs: FunctionInputs
+        self,
+        *,
+        user_id: UserID,
+        product_name: ProductName,
+        function_id: FunctionID,
+        inputs: FunctionInputs,
     ) -> RegisteredFunctionJob:
         return await functions_rpc_interface.run_function(
             self._client,
+            user_id=user_id,
+            product_name=product_name,
             function_id=function_id,
             inputs=inputs,
         )
 
     async def get_function_job(
-        self, *, function_job_id: FunctionJobID
+        self,
+        *,
+        user_id: UserID,
+        product_name: ProductName,
+        function_job_id: FunctionJobID,
     ) -> RegisteredFunctionJob:
         return await functions_rpc_interface.get_function_job(
             self._client,
+            user_id=user_id,
+            product_name=product_name,
             function_job_id=function_job_id,
         )
 
     async def update_function_title(
-        self, *, function_id: FunctionID, title: str
+        self,
+        *,
+        user_id: UserID,
+        product_name: ProductName,
+        function_id: FunctionID,
+        title: str,
     ) -> RegisteredFunction:
         return await functions_rpc_interface.update_function_title(
             self._client,
+            user_id=user_id,
+            product_name=product_name,
             function_id=function_id,
             title=title,
         )
 
     async def update_function_description(
-        self, *, function_id: FunctionID, description: str
+        self,
+        *,
+        user_id: UserID,
+        product_name: ProductName,
+        function_id: FunctionID,
+        description: str,
     ) -> RegisteredFunction:
         return await functions_rpc_interface.update_function_description(
             self._client,
+            user_id=user_id,
+            product_name=product_name,
             function_id=function_id,
             description=description,
         )
 
-    async def delete_function_job(self, *, function_job_id: FunctionJobID) -> None:
+    async def delete_function_job(
+        self,
+        *,
+        user_id: UserID,
+        product_name: ProductName,
+        function_job_id: FunctionJobID,
+    ) -> None:
         return await functions_rpc_interface.delete_function_job(
             self._client,
+            user_id=user_id,
+            product_name=product_name,
             function_job_id=function_job_id,
         )
 
     async def register_function_job(
-        self, *, function_job: FunctionJob
+        self, *, user_id: UserID, function_job: FunctionJob, product_name: ProductName
     ) -> RegisteredFunctionJob:
         return await functions_rpc_interface.register_function_job(
             self._client,
+            user_id=user_id,
+            product_name=product_name,
             function_job=function_job,
         )
 
     async def get_function_input_schema(
-        self, *, function_id: FunctionID
+        self, *, user_id: UserID, product_name: ProductName, function_id: FunctionID
     ) -> FunctionInputSchema:
         return await functions_rpc_interface.get_function_input_schema(
             self._client,
+            user_id=user_id,
+            product_name=product_name,
             function_id=function_id,
         )
 
     async def get_function_output_schema(
-        self, *, function_id: FunctionID
+        self, *, user_id: UserID, product_name: ProductName, function_id: FunctionID
     ) -> FunctionOutputSchema:
         return await functions_rpc_interface.get_function_output_schema(
             self._client,
+            user_id=user_id,
+            product_name=product_name,
             function_id=function_id,
         )
 
     async def find_cached_function_job(
-        self, *, function_id: FunctionID, inputs: FunctionInputs
+        self,
+        *,
+        user_id: UserID,
+        product_name: ProductName,
+        function_id: FunctionID,
+        inputs: FunctionInputs,
     ) -> RegisteredFunctionJob | None:
         return await functions_rpc_interface.find_cached_function_job(
-            self._client, function_id=function_id, inputs=inputs
+            self._client,
+            user_id=user_id,
+            product_name=product_name,
+            function_id=function_id,
+            inputs=inputs,
         )
 
     async def get_function_job_collection(
-        self, *, function_job_collection_id: FunctionJobCollectionID
+        self,
+        *,
+        user_id: UserID,
+        product_name: ProductName,
+        function_job_collection_id: FunctionJobCollectionID,
     ) -> RegisteredFunctionJobCollection:
         return await functions_rpc_interface.get_function_job_collection(
-            self._client, function_job_collection_id=function_job_collection_id
+            self._client,
+            user_id=user_id,
+            product_name=product_name,
+            function_job_collection_id=function_job_collection_id,
         )
 
     async def register_function_job_collection(
-        self, *, function_job_collection: FunctionJobCollection
+        self,
+        *,
+        user_id: UserID,
+        function_job_collection: FunctionJobCollection,
+        product_name: ProductName,
     ) -> RegisteredFunctionJobCollection:
         return await functions_rpc_interface.register_function_job_collection(
-            self._client, function_job_collection=function_job_collection
+            self._client,
+            user_id=user_id,
+            function_job_collection=function_job_collection,
+            product_name=product_name,
         )
 
     async def delete_function_job_collection(
-        self, *, function_job_collection_id: FunctionJobCollectionID
+        self,
+        *,
+        user_id: UserID,
+        product_name: ProductName,
+        function_job_collection_id: FunctionJobCollectionID,
     ) -> None:
         return await functions_rpc_interface.delete_function_job_collection(
-            self._client, function_job_collection_id=function_job_collection_id
+            self._client,
+            user_id=user_id,
+            product_name=product_name,
+            function_job_collection_id=function_job_collection_id,
         )
 
 

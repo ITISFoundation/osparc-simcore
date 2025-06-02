@@ -34,7 +34,7 @@ def _handle_users_exceptions(handler: Handler):
             CouldNotCreateOrUpdateUserPreferenceError,
             FrontendUserPreferenceIsNotDefinedError,
         ) as exc:
-            raise web.HTTPNotFound(reason=f"{exc}") from exc
+            raise web.HTTPNotFound(text=f"{exc}") from exc
 
     return wrapper
 
