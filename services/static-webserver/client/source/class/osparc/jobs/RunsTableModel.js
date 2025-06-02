@@ -36,7 +36,7 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
     this.setSortColumnIndexWithoutSortingData(jobsCols.SUBMIT.column);
     this.setSortAscendingWithoutSortingData(false);
     Object.values(jobsCols).forEach(col => {
-      this.setColumnSortable(col.column, Boolean(col.sortable));
+      this.setColumnSortable(col.column, Boolean(col.sortableMap));
     });
   },
 
@@ -66,7 +66,7 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
     orderBy: {
       check: "Object",
       init: {
-        field: "submitted_at", // ended_at|started_at|state|submitted_at
+        field: "submitted_at", // state|submitted_at|started_at|ended_at
         direction: "desc"
       }
     },
@@ -85,6 +85,17 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
 
   members: {
     __includeChildren: false,
+
+    // overridden
+    sortByColumn(columnIndex, ascending) {
+      const jobsCols = osparc.jobs.RunsTable.COLS;
+      const colInfo = Object.values(jobsCols).find(col => col.column === columnIndex);
+      this.setOrderBy({
+        field: colInfo.sortableMap,
+        direction: ascending ? "asc" : "desc"
+      })
+      this.base(arguments, columnIndex, ascending)
+    },
 
     // overridden
     _loadRowCount() {
