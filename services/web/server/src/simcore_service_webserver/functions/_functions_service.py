@@ -347,7 +347,7 @@ async def find_cached_function_jobs(
     product_name: ProductName,
     function_id: FunctionID,
     inputs: FunctionInputs,
-) -> list[FunctionJob] | None:
+) -> list[RegisteredFunctionJob] | None:
     returned_function_jobs = await _functions_repository.find_cached_function_jobs(
         app=app,
         user_id=user_id,
