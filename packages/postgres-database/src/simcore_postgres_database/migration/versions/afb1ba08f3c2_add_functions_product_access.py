@@ -81,27 +81,24 @@ def upgrade():
         """
     )
 
-    # Alter columns to set nullable=False and default="osparc"
+    # Alter columns to set nullable=False
     op.alter_column(
         "funcapi_function_job_collections_access_rights",
         "product_name",
         existing_type=sa.String(),
         nullable=False,
-        server_default="osparc",
     )
     op.alter_column(
         "funcapi_function_jobs_access_rights",
         "product_name",
         existing_type=sa.String(),
         nullable=False,
-        server_default="osparc",
     )
     op.alter_column(
         "funcapi_functions_access_rights",
         "product_name",
         existing_type=sa.String(),
         nullable=False,
-        server_default="osparc",
     )
     # ### end Alembic commands ###
 
