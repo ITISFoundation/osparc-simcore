@@ -12,12 +12,12 @@ from ._director_v2_service import (
     is_pipeline_running,
     stop_pipeline,
 )
-from .exceptions import DirectorServiceError
+from .exceptions import DirectorV2ServiceError
 
 # director-v2 module internal API
 __all__: tuple[str, ...] = (
     "AbstractProjectRunPolicy",
-    "DirectorServiceError",
+    "DirectorV2ServiceError",
     "create_or_update_pipeline",
     "delete_pipeline",
     "get_batch_tasks_outputs",

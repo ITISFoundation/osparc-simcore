@@ -25,6 +25,7 @@ from models_library.functions_errors import (
     FunctionInputsValidationError,
     UnsupportedFunctionClassError,
 )
+from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.fastapi.dependencies import get_reverse_url_mapper
 from simcore_service_api_server._service_jobs import JobService
@@ -73,9 +74,12 @@ FIRST_RELEASE_VERSION = "0.8.0"
 async def register_function(
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     user_id: Annotated[UserID, Depends(get_current_user_id)],
+    product_name: Annotated[ProductName, Depends(get_product_name)],
     function: Function,
 ) -> RegisteredFunction:
-    return await wb_api_rpc.register_function(user_id=user_id, function=function)
+    return await wb_api_rpc.register_function(
+        user_id=user_id, product_name=product_name, function=function
+    )
 
 
 @function_router.get(
@@ -93,8 +97,11 @@ async def get_function(
     function_id: FunctionID,
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     user_id: Annotated[UserID, Depends(get_current_user_id)],
+    product_name: Annotated[ProductName, Depends(get_product_name)],
 ) -> RegisteredFunction:
-    return await wb_api_rpc.get_function(function_id=function_id, user_id=user_id)
+    return await wb_api_rpc.get_function(
+        function_id=function_id, user_id=user_id, product_name=product_name
+    )
 
 
 @function_router.get(
@@ -111,11 +118,13 @@ async def list_functions(
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     page_params: Annotated[PaginationParams, Depends()],
     user_id: Annotated[UserID, Depends(get_current_user_id)],
+    product_name: Annotated[ProductName, Depends(get_product_name)],
 ):
     functions_list, meta = await wb_api_rpc.list_functions(
         pagination_offset=page_params.offset,
         pagination_limit=page_params.limit,
         user_id=user_id,
+        product_name=product_name,
     )
 
     return create_page(
@@ -140,12 +149,14 @@ async def list_function_jobs_for_functionid(
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     page_params: Annotated[PaginationParams, Depends()],
     user_id: Annotated[UserID, Depends(get_current_user_id)],
+    product_name: Annotated[ProductName, Depends(get_product_name)],
 ):
     function_jobs_list, meta = await wb_api_rpc.list_function_jobs(
         pagination_offset=page_params.offset,
         pagination_limit=page_params.limit,
         filter_by_function_id=function_id,
         user_id=user_id,
+        product_name=product_name,
     )
 
     return create_page(
@@ -171,9 +182,10 @@ async def update_function_title(
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     title: str,
     user_id: Annotated[UserID, Depends(get_current_user_id)],
+    product_name: Annotated[ProductName, Depends(get_product_name)],
 ) -> RegisteredFunction:
     returned_function = await wb_api_rpc.update_function_title(
-        function_id=function_id, title=title, user_id=user_id
+        function_id=function_id, title=title, user_id=user_id, product_name=product_name
     )
     assert (
         returned_function.title == title
@@ -197,9 +209,13 @@ async def update_function_description(
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     description: str,
     user_id: Annotated[UserID, Depends(get_current_user_id)],
+    product_name: Annotated[ProductName, Depends(get_product_name)],
 ) -> RegisteredFunction:
     returned_function = await wb_api_rpc.update_function_description(
-        function_id=function_id, description=description, user_id=user_id
+        function_id=function_id,
+        description=description,
+        user_id=user_id,
+        product_name=product_name,
     )
     assert (
         returned_function.description == description
@@ -236,8 +252,11 @@ async def get_function_inputschema(
     function_id: FunctionID,
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     user_id: Annotated[UserID, Depends(get_current_user_id)],
+    product_name: Annotated[ProductName, Depends(get_product_name)],
 ) -> FunctionInputSchema:
-    function = await wb_api_rpc.get_function(function_id=function_id, user_id=user_id)
+    function = await wb_api_rpc.get_function(
+        function_id=function_id, user_id=user_id, product_name=product_name
+    )
     return function.input_schema
 
 
@@ -256,8 +275,11 @@ async def get_function_outputschema(
     function_id: FunctionID,
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     user_id: Annotated[UserID, Depends(get_current_user_id)],
+    product_name: Annotated[ProductName, Depends(get_product_name)],
 ) -> FunctionOutputSchema:
-    function = await wb_api_rpc.get_function(function_id=function_id, user_id=user_id)
+    function = await wb_api_rpc.get_function(
+        function_id=function_id, user_id=user_id, product_name=product_name
+    )
     return function.output_schema
 
 
@@ -280,8 +302,11 @@ async def validate_function_inputs(
     inputs: FunctionInputs,
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     user_id: Annotated[UserID, Depends(get_current_user_id)],
+    product_name: Annotated[ProductName, Depends(get_product_name)],
 ) -> tuple[bool, str]:
-    function = await wb_api_rpc.get_function(function_id=function_id, user_id=user_id)
+    function = await wb_api_rpc.get_function(
+        function_id=function_id, user_id=user_id, product_name=product_name
+    )
 
     if function.input_schema is None or function.input_schema.schema_content is None:
         return True, "No input schema defined for this function"
@@ -327,7 +352,7 @@ async def run_function(  # noqa: PLR0913
 ) -> RegisteredFunctionJob:
 
     to_run_function = await wb_api_rpc.get_function(
-        function_id=function_id, user_id=user_id
+        function_id=function_id, user_id=user_id, product_name=product_name
     )
 
     joined_inputs = _join_inputs(
@@ -341,6 +366,7 @@ async def run_function(  # noqa: PLR0913
             inputs=joined_inputs,
             wb_api_rpc=wb_api_rpc,
             user_id=user_id,
+            product_name=product_name,
         )
         if not is_valid:
             raise FunctionInputsValidationError(error=validation_str)
@@ -349,6 +375,7 @@ async def run_function(  # noqa: PLR0913
         function_id=to_run_function.uid,
         inputs=joined_inputs,
         user_id=user_id,
+        product_name=product_name,
     ):
         return cached_function_job
 
@@ -383,6 +410,7 @@ async def run_function(  # noqa: PLR0913
                 project_job_id=study_job.id,
             ),
             user_id=user_id,
+            product_name=product_name,
         )
 
     if to_run_function.function_class == FunctionClass.SOLVER:
@@ -416,6 +444,7 @@ async def run_function(  # noqa: PLR0913
                 solver_job_id=solver_job.id,
             ),
             user_id=user_id,
+            product_name=product_name,
         )
 
     raise UnsupportedFunctionClassError(
@@ -438,8 +467,11 @@ async def delete_function(
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     function_id: FunctionID,
     user_id: Annotated[UserID, Depends(get_current_user_id)],
+    product_name: Annotated[ProductName, Depends(get_product_name)],
 ) -> None:
-    return await wb_api_rpc.delete_function(function_id=function_id, user_id=user_id)
+    return await wb_api_rpc.delete_function(
+        function_id=function_id, user_id=user_id, product_name=product_name
+    )
 
 
 _COMMON_FUNCTION_JOB_ERROR_RESPONSES: Final[dict] = {
@@ -504,4 +536,5 @@ async def map_function(  # noqa: PLR0913
             job_ids=[function_job.uid for function_job in function_jobs],
         ),
         user_id=user_id,
+        product_name=product_name,
     )

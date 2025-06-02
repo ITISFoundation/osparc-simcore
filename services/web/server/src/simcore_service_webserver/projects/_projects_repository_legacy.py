@@ -374,44 +374,8 @@ class ProjectDBAPI(BaseProjectDB):
                 WorkspaceScope.ALL,
             )
 
-            access_rights_subquery = (
-                sa.select(
-                    project_to_groups.c.project_uuid,
-                    sa.func.jsonb_object_agg(
-                        project_to_groups.c.gid,
-                        sa.func.jsonb_build_object(
-                            "read",
-                            project_to_groups.c.read,
-                            "write",
-                            project_to_groups.c.write,
-                            "delete",
-                            project_to_groups.c.delete,
-                        ),
-                    ).label("access_rights"),
-                )
-                .where(
-                    project_to_groups.c.project_uuid == projects.c.uuid
-                )  # Correlate with main query
-                .where(project_to_groups.c.read)
-                .group_by(project_to_groups.c.project_uuid)
-                .lateral()  # Critical for per-row execution
-            )
-
             my_access_rights_subquery = (
-                sa.select(
-                    project_to_groups.c.project_uuid,
-                    sa.func.jsonb_object_agg(
-                        project_to_groups.c.gid,
-                        sa.func.jsonb_build_object(
-                            "read",
-                            project_to_groups.c.read,
-                            "write",
-                            project_to_groups.c.write,
-                            "delete",
-                            project_to_groups.c.delete,
-                        ),
-                    ).label("access_rights"),
-                )
+                sa.select(project_to_groups.c.project_uuid)
                 .where(
                     (
                         project_to_groups.c.read
@@ -427,7 +391,6 @@ class ProjectDBAPI(BaseProjectDB):
                 sa.select(
                     *PROJECT_DB_COLS,
                     projects.c.workbench,
-                    access_rights_subquery.c.access_rights,
                     projects_to_products.c.product_name,
                     projects_to_folders.c.folder_id,
                 )
@@ -441,10 +404,6 @@ class ProjectDBAPI(BaseProjectDB):
                             & (projects_to_folders.c.user_id == user_id)
                         ),
                         isouter=True,
-                    )
-                    .join(
-                        access_rights_subquery,
-                        access_rights_subquery.c.project_uuid == projects.c.uuid,
                     )
                 )
                 .where(
@@ -479,46 +438,8 @@ class ProjectDBAPI(BaseProjectDB):
                 WorkspaceScope.ALL,
             )
 
-            workspace_access_rights_subquery = (
-                (
-                    sa.select(
-                        workspaces_access_rights.c.workspace_id,
-                        sa.func.jsonb_object_agg(
-                            workspaces_access_rights.c.gid,
-                            sa.func.jsonb_build_object(
-                                "read",
-                                workspaces_access_rights.c.read,
-                                "write",
-                                workspaces_access_rights.c.write,
-                                "delete",
-                                workspaces_access_rights.c.delete,
-                            ),
-                        ).label("access_rights"),
-                    )
-                    .where(
-                        workspaces_access_rights.c.read,
-                    )
-                    .group_by(workspaces_access_rights.c.workspace_id)
-                )
-                .subquery("workspace_access_rights_subquery")
-                .lateral()
-            )
-
             my_workspace_access_rights_subquery = (
-                sa.select(
-                    workspaces_access_rights.c.workspace_id,
-                    sa.func.jsonb_object_agg(
-                        workspaces_access_rights.c.gid,
-                        sa.func.jsonb_build_object(
-                            "read",
-                            workspaces_access_rights.c.read,
-                            "write",
-                            workspaces_access_rights.c.write,
-                            "delete",
-                            workspaces_access_rights.c.delete,
-                        ),
-                    ).label("access_rights"),
-                )
+                sa.select(workspaces_access_rights.c.workspace_id)
                 .where(
                     workspaces_access_rights.c.read,
                     workspaces_access_rights.c.gid.in_(user_groups),
@@ -530,7 +451,6 @@ class ProjectDBAPI(BaseProjectDB):
                 sa.select(
                     *PROJECT_DB_COLS,
                     projects.c.workbench,
-                    workspace_access_rights_subquery.c.access_rights,
                     projects_to_products.c.product_name,
                     projects_to_folders.c.folder_id,
                 )
@@ -548,11 +468,6 @@ class ProjectDBAPI(BaseProjectDB):
                             & (projects_to_folders.c.user_id.is_(None))
                         ),
                         isouter=True,
-                    )
-                    .join(
-                        workspace_access_rights_subquery,
-                        projects.c.workspace_id
-                        == workspace_access_rights_subquery.c.workspace_id,
                     )
                 )
                 .where(projects_to_products.c.product_name == product_name)

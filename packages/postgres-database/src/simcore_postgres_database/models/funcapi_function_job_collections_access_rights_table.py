@@ -32,8 +32,19 @@ function_job_collections_access_rights_table = sa.Table(
             onupdate=RefActions.CASCADE,
             ondelete=RefActions.CASCADE,
         ),
-        nullable=True,
+        nullable=False,
         doc="Group id",
+    ),
+    sa.Column(
+        "product_name",
+        sa.ForeignKey(
+            "products.name",
+            name="fk_func_access_to_products_product_name",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
+        ),
+        nullable=False,
+        doc="Name of the product",
     ),
     sa.Column(
         "read",
@@ -58,6 +69,7 @@ function_job_collections_access_rights_table = sa.Table(
     sa.PrimaryKeyConstraint(
         "function_job_collection_uuid",
         "group_id",
+        "product_name",
         name="pk_func_access_to_func_job_colls_group",
     ),
 )

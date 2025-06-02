@@ -5,7 +5,7 @@ from typing import Any
 from ..errors import WebServerBaseError
 
 
-class DirectorServiceError(WebServerBaseError, RuntimeError):
+class DirectorV2ServiceError(WebServerBaseError, RuntimeError):
     """Basic exception for errors raised by director-v2"""
 
     msg_template = "Unexpected error: director-v2 returned '{status}', reason '{reason}' after calling '{url}'"
@@ -16,5 +16,5 @@ class DirectorServiceError(WebServerBaseError, RuntimeError):
         self.reason = reason
 
 
-class ComputationNotFoundError(DirectorServiceError):
+class ComputationNotFoundError(DirectorV2ServiceError):
     msg_template = "Computation '{project_id}' not found"
