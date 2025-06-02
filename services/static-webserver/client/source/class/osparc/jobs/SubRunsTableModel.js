@@ -27,10 +27,10 @@ qx.Class.define("osparc.jobs.SubRunsTableModel", {
     const colIDs = Object.values(subJobsCols).map(col => col.id);
     this.setColumns(colLabels, colIDs);
 
-    this.setSortColumnIndexWithoutSortingData(subJobsCols.START.column); // It can only be sorted by started_at
+    this.setSortColumnIndexWithoutSortingData(subJobsCols.START.column);
     this.setSortAscendingWithoutSortingData(false);
     Object.values(subJobsCols).forEach(col => {
-      this.setColumnSortable(col.column, false);
+      this.setColumnSortable(col.column, Boolean(col.sortableMap));
     });
 
     this.setProjectUuid(projectUuid);
@@ -47,12 +47,31 @@ qx.Class.define("osparc.jobs.SubRunsTableModel", {
       init: false,
       event: "changeFetching"
     },
+
+    orderBy: {
+      check: "Object",
+      init: {
+        field: "started_at", // started_at
+        direction: "desc"
+      }
+    },
   },
 
   members: {
     // overridden
+    sortByColumn(columnIndex, ascending) {
+      const subJobsCols = osparc.jobs.SubRunsTable.COLS;
+      const colInfo = Object.values(subJobsCols).find(col => col.column === columnIndex);
+      this.setOrderBy({
+        field: colInfo.sortableMap,
+        direction: ascending ? "asc" : "desc"
+      })
+      this.base(arguments, columnIndex, ascending)
+    },
+
+    // overridden
     _loadRowCount() {
-      osparc.store.Jobs.getInstance().fetchSubJobs(this.getProjectUuid())
+      osparc.store.Jobs.getInstance().fetchSubJobs(this.getProjectUuid(), this.getOrderBy())
         .then(subJobs => {
           this._onRowCountLoaded(subJobs.length)
         })
@@ -68,7 +87,7 @@ qx.Class.define("osparc.jobs.SubRunsTableModel", {
       const lastRow = Math.min(qxLastRow, this._rowCount - 1);
       // Returns a request promise with given offset and limit
       const getFetchPromise = () => {
-        return osparc.store.Jobs.getInstance().fetchSubJobs(this.getProjectUuid())
+        return osparc.store.Jobs.getInstance().fetchSubJobs(this.getProjectUuid(), this.getOrderBy())
           .then(subJobs => {
             const data = [];
             const subJobsCols = osparc.jobs.SubRunsTable.COLS;
