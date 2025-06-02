@@ -1,15 +1,18 @@
 import logging
 from dataclasses import dataclass
+from typing import Final
 
 import httpx
 from fastapi import FastAPI
-from httpx import AsyncClient
+from httpx import AsyncClient, Timeout
 from servicelib.fastapi.tracing import setup_httpx_client_tracing
 from settings_library.tracing import TracingSettings
 
 from .app_data import AppDataMixin
 
 _logger = logging.getLogger(__name__)
+
+_DEFAULT_BASE_SERVICE_CLIENT_API_TIMEOUT_SECONDS: Final[int] = 60
 
 
 @dataclass
@@ -52,7 +55,10 @@ def setup_client_instance(
 
     assert issubclass(api_cls, BaseServiceClientApi)  # nosec
     # NOTE: this term is mocked in tests. If you need to modify pay attention to the mock
-    client = AsyncClient(base_url=api_baseurl)
+    client = AsyncClient(
+        base_url=api_baseurl,
+        timeout=Timeout(_DEFAULT_BASE_SERVICE_CLIENT_API_TIMEOUT_SECONDS),
+    )
     if tracing_settings:
         setup_httpx_client_tracing(client)
 
