@@ -38,7 +38,7 @@ _MINUTE = 60 * _SECOND
 _CACHE_TTL: Final = 1 * _MINUTE
 
 
-def _hash_service(_f: Callable[..., Any], *_args, **kw):
+def _create_service_cache_key_(_f: Callable[..., Any], *_args, **kw):
     assert len(_args) == 1, f"Expected only app, got {_args}"  # nosec
     return f"get_service_{kw['user_id']}_{kw['service_key']}_{kw['service_version']}_{kw['product_name']}"
 
@@ -118,7 +118,7 @@ async def get_services_for_user_in_product(
 
 @cached(
     ttl=_CACHE_TTL,
-    key_builder=_hash_service,
+    key_builder=_create_service_cache_key_,
     cache=Cache.MEMORY,
 )
 async def get_service(
