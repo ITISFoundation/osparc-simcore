@@ -1746,7 +1746,6 @@ qx.Class.define("osparc.data.Resources", {
         this.__portsCompatibilityPromisesCached = {};
       }
       if (strUrl in this.__portsCompatibilityPromisesCached) {
-        console.log("returning cached promise for ports compatibility");
         return this.__portsCompatibilityPromisesCached[strUrl];
       }
 
