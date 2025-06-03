@@ -248,11 +248,11 @@ qx.Class.define("osparc.widget.PersistentIframe", {
     },
 
     __attachInterframeMessageHandlers: function() {
-      this.__attachThemeSyncer();
-      this.__attachListeners();
+      this.__attachInterIframeThemeSyncer();
+      this.__attachInterIframeListeners();
     },
 
-    __attachThemeSyncer: function() {
+    __attachInterIframeThemeSyncer: function() {
       this.postThemeSwitch = theme => {
         const msg = "osparc;theme=" + theme;
         this.sendMessageToIframe(msg);
@@ -279,7 +279,7 @@ qx.Class.define("osparc.widget.PersistentIframe", {
       }
     },
 
-    __attachListeners: function() {
+    __attachInterIframeListeners: function() {
       this.__iframe.addListener("load", () => {
         const iframe = this._getIframeElement();
         if (iframe) {
