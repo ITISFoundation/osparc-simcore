@@ -150,7 +150,8 @@ def check_need_unzipping(
     Checks if the source URL points to a zip file and if the target mime type is not zip.
     If so, extraction is needed.
     """
-    src_mime_type, _ = mimetypes.guess_type(f"{src_url.path}")
+    assert src_url.path  # nosec
+    src_mime_type, _ = mimetypes.guess_type(src_url.path)
     dst_mime_type = target_mime_type
     if not dst_mime_type:
         dst_mime_type, _ = mimetypes.guess_type(dst_path)
