@@ -98,11 +98,19 @@ def get_solver_service(
 
 def get_study_service(
     job_service: Annotated[JobService, Depends(get_job_service)],
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
 ) -> StudyService:
+    """
+    "Assembles" the StudyService layer to the underlying service and client interfaces
+    in the context of the rest controller (i.e. api/dependencies)
+    """
     return StudyService(
         job_service=job_service,
+        webserver_api=webserver_api,
+        wb_api_rpc=wb_api_rpc,
         user_id=user_id,
         product_name=product_name,
     )
