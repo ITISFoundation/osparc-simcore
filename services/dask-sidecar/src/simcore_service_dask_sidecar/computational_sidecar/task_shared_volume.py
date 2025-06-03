@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import shutil
 from dataclasses import dataclass
@@ -22,7 +23,7 @@ class TaskSharedVolumes:
 
             assert not folder_path.exists()  # nosec
             folder_path.mkdir(parents=True)
-            logger.critical(
+            logger.info(
                 "created %s in %s",
                 f"{folder=}",
                 f"{self.base_path=}",
@@ -60,5 +61,4 @@ class TaskSharedVolumes:
         exc: BaseException | None,
         tb: TracebackType | None,
     ) -> None:
-        ...
-        # await asyncio.get_event_loop().run_in_executor(None, self.cleanup)
+        await asyncio.get_event_loop().run_in_executor(None, self.cleanup)
