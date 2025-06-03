@@ -101,7 +101,7 @@ def _startup(
     )
 
     # Add the span processor to the tracer provider
-    tracer_provider.add_span_processor(_create_span_processor())  # type: ignore[attr-defined] # https://github.com/open-telemetry/opentelemetry-python/issues/3713
+    tracer_provider.add_span_processor(_create_span_processor(tracing_destination))  # type: ignore[attr-defined] # https://github.com/open-telemetry/opentelemetry-python/issues/3713
     # Instrument aiohttp server
     # Explanation for custom middleware call DK 10/2024:
     # OpenTelemetry Aiohttp autoinstrumentation is meant to be used by only calling `AioHttpServerInstrumentor().instrument()`
