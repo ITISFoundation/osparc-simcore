@@ -1,6 +1,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=redefined-outer-name
 
+import datetime
 from collections.abc import Callable
 from typing import Any
 from uuid import uuid4
@@ -27,12 +28,11 @@ async def test_register_function(
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
     mock_function: ProjectFunction,
     auth: httpx.BasicAuth,
+    mock_registered_function: RegisteredProjectFunction,
 ) -> None:
-    registered_function = RegisteredProjectFunction(
-        **{**mock_function.model_dump(), "uid": str(uuid4())}
+    mock_handler_in_functions_rpc_interface(
+        "register_function", mock_registered_function
     )
-
-    mock_handler_in_functions_rpc_interface("register_function", registered_function)
     response = await client.post(
         f"{API_VTAG}/functions", json=mock_function.model_dump(mode="json"), auth=auth
     )
@@ -40,7 +40,7 @@ async def test_register_function(
     data = response.json()
     returned_function = RegisteredProjectFunction.model_validate(data)
     assert returned_function.uid is not None
-    assert returned_function == registered_function
+    assert returned_function == mock_registered_function
 
 
 async def test_register_function_invalid(
@@ -391,6 +391,7 @@ async def test_register_function_job_collection(
             {
                 **mock_function_job_collection.model_dump(),
                 "uid": str(uuid4()),
+                "created_at": datetime.datetime.now(datetime.UTC),
             }
         )
     )
@@ -425,6 +426,7 @@ async def test_get_function_job_collection(
                 "title": "Test Collection",
                 "description": "A test function job collection",
                 "job_ids": [str(uuid4()), str(uuid4())],
+                "created_at": datetime.datetime.now(datetime.UTC),
             }
         )
     )
@@ -456,6 +458,7 @@ async def test_list_function_job_collections(
                 "title": "Test Collection",
                 "description": "A test function job collection",
                 "job_ids": [str(uuid4()), str(uuid4())],
+                "created_at": datetime.datetime.now(datetime.UTC),
             }
         )
     )

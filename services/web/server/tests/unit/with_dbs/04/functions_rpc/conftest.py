@@ -3,10 +3,17 @@
 # pylint:disable=redefined-outer-name
 
 
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
+from uuid import uuid4
 
 import pytest
 from aiohttp.test_utils import TestClient
+from models_library.api_schemas_webserver.functions import (
+    Function,
+    JSONFunctionInputSchema,
+    JSONFunctionOutputSchema,
+    ProjectFunction,
+)
 from models_library.products import ProductName
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -15,19 +22,62 @@ from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.webserver.functions import (
     functions_rpc_interface as functions_rpc,
 )
+from settings_library.rabbit import RabbitSettings
+from simcore_service_webserver.application_settings import ApplicationSettings
 
 
 @pytest.fixture
 def app_environment(
+    rabbit_service: RabbitSettings,
     app_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
-):
-    return setenvs_from_dict(
+) -> EnvVarsDict:
+    new_envs = setenvs_from_dict(
         monkeypatch,
         {
-            **app_environment,  # WARNING: AFTER env_devel_dict because HOST are set to 127.0.0.1 in here
+            **app_environment,
+            "RABBIT_HOST": rabbit_service.RABBIT_HOST,
+            "RABBIT_PORT": f"{rabbit_service.RABBIT_PORT}",
+            "RABBIT_USER": rabbit_service.RABBIT_USER,
+            "RABBIT_SECURE": f"{rabbit_service.RABBIT_SECURE}",
+            "RABBIT_PASSWORD": rabbit_service.RABBIT_PASSWORD.get_secret_value(),
+            "WEBSERVER_DEV_FEATURES_ENABLED": "1",
             "WEBSERVER_FUNCTIONS": "1",
         },
+    )
+
+    settings = ApplicationSettings.create_from_envs()
+    assert settings.WEBSERVER_RABBITMQ
+
+    return new_envs
+
+
+@pytest.fixture
+async def rpc_client(
+    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
+) -> RabbitMQRPCClient:
+    return await rabbitmq_rpc_client("client")
+
+
+@pytest.fixture
+def mock_function() -> Function:
+    return ProjectFunction(
+        title="Test Function",
+        description="A test function",
+        input_schema=JSONFunctionInputSchema(
+            schema_content={
+                "type": "object",
+                "properties": {"input1": {"type": "string"}},
+            }
+        ),
+        output_schema=JSONFunctionOutputSchema(
+            schema_content={
+                "type": "object",
+                "properties": {"output1": {"type": "string"}},
+            }
+        ),
+        project_id=uuid4(),
+        default_inputs=None,
     )
 
 
