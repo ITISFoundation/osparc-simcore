@@ -233,7 +233,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
     __addMoreMenu: function() {
       const moreMenuButton = this.self().createMenuButton("@FontAwesome5Solid/angle-double-right/16", this.tr("More"));
       moreMenuButton.getChildControl("icon").set({
-        marginLeft: 6,
+        marginLeft: 6, // center it
       });
       this.addAt(moreMenuButton, this.__itemIdx);
       this.__itemIdx++;
