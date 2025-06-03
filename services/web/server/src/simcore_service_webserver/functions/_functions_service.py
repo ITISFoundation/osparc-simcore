@@ -340,48 +340,60 @@ async def update_function_description(
 
 
 @router.expose()
-async def find_cached_function_job(
+async def find_cached_function_jobs(
     app: web.Application,
     *,
     user_id: UserID,
     product_name: ProductName,
     function_id: FunctionID,
     inputs: FunctionInputs,
-) -> FunctionJob | None:
-    returned_function_job = await _functions_repository.find_cached_function_job(
+) -> list[RegisteredFunctionJob] | None:
+    returned_function_jobs = await _functions_repository.find_cached_function_jobs(
         app=app,
         user_id=user_id,
         product_name=product_name,
         function_id=function_id,
         inputs=inputs,
     )
-    if returned_function_job is None:
+    if returned_function_jobs is None or len(returned_function_jobs) == 0:
         return None
 
-    if returned_function_job.function_class == FunctionClass.PROJECT:
-        return RegisteredProjectFunctionJob(
-            uid=returned_function_job.uuid,
-            title=returned_function_job.title,
-            description=returned_function_job.description,
-            function_uid=returned_function_job.function_uuid,
-            inputs=returned_function_job.inputs,
-            outputs=None,
-            project_job_id=returned_function_job.class_specific_data["project_job_id"],
-        )
-    if returned_function_job.function_class == FunctionClass.SOLVER:
-        return RegisteredSolverFunctionJob(
-            uid=returned_function_job.uuid,
-            title=returned_function_job.title,
-            description=returned_function_job.description,
-            function_uid=returned_function_job.function_uuid,
-            inputs=returned_function_job.inputs,
-            outputs=None,
-            solver_job_id=returned_function_job.class_specific_data["solver_job_id"],
-        )
+    to_return_function_jobs: list[RegisteredFunctionJob] = []
+    for returned_function_job in returned_function_jobs:
+        if returned_function_job.function_class == FunctionClass.PROJECT:
+            to_return_function_jobs.append(
+                RegisteredProjectFunctionJob(
+                    uid=returned_function_job.uuid,
+                    title=returned_function_job.title,
+                    description=returned_function_job.description,
+                    function_uid=returned_function_job.function_uuid,
+                    inputs=returned_function_job.inputs,
+                    outputs=None,
+                    project_job_id=returned_function_job.class_specific_data[
+                        "project_job_id"
+                    ],
+                )
+            )
+        elif returned_function_job.function_class == FunctionClass.SOLVER:
+            to_return_function_jobs.append(
+                RegisteredSolverFunctionJob(
+                    uid=returned_function_job.uuid,
+                    title=returned_function_job.title,
+                    description=returned_function_job.description,
+                    function_uid=returned_function_job.function_uuid,
+                    inputs=returned_function_job.inputs,
+                    outputs=None,
+                    solver_job_id=returned_function_job.class_specific_data[
+                        "solver_job_id"
+                    ],
+                )
+            )
+        else:
+            raise UnsupportedFunctionJobClassError(
+                function_job_class=returned_function_job.function_class
+            )
 
-    raise UnsupportedFunctionJobClassError(
-        function_job_class=returned_function_job.function_class
-    )
+    return to_return_function_jobs
 
 
 @router.expose(reraise_if_error_type=(FunctionIDNotFoundError,))
