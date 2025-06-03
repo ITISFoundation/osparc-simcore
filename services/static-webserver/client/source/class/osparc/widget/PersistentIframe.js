@@ -248,11 +248,11 @@ qx.Class.define("osparc.widget.PersistentIframe", {
     },
 
     __attachInterframeMessageHandlers: function() {
-      this.__attachTriggerers();
+      this.__attachThemeSyncer();
       this.__attachListeners();
     },
 
-    __attachTriggerers: function() {
+    __attachThemeSyncer: function() {
       this.postThemeSwitch = theme => {
         const msg = "osparc;theme=" + theme;
         this.sendMessageToIframe(msg);
