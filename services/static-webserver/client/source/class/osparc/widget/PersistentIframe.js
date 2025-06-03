@@ -284,7 +284,9 @@ qx.Class.define("osparc.widget.PersistentIframe", {
         const iframe = this._getIframeElement();
         if (iframe) {
           const iframeDomEl = iframe.getDomElement();
-          if (iframeDomEl) {
+          const iframeSource = iframe.getSource();
+          // Make sure the iframe is loaded and has a valid source
+          if (iframeDomEl && iframeSource && iframeSource !== "about:blank") {
             window.addEventListener("message", message => {
               const data = message.data;
               if (data) {
