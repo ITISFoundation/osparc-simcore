@@ -120,6 +120,7 @@ async def get_services_for_user_in_product(
     ttl=_CACHE_TTL,
     key_builder=_create_service_cache_key,
     cache=Cache.MEMORY,
+    # SEE https://github.com/ITISFoundation/osparc-simcore/pull/7802
 )
 async def get_service(
     app: web.Application,
