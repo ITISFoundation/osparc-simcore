@@ -160,7 +160,7 @@ async def test_tracing_setup_package_detection(
     indirect=True,
 )
 @pytest.mark.parametrize(
-    "response", [web.Response(text="Hello, world!"), web.HTTPNotFound()]
+    "server_response", [web.Response(text="Hello, world!"), web.HTTPNotFound()]
 )
 async def test_trace_id_in_response_header(
     mock_otel_collector: InMemorySpanExporter,
@@ -168,16 +168,16 @@ async def test_trace_id_in_response_header(
     set_and_clean_settings_env_vars: Callable,
     tracing_settings_in,
     uninstrument_opentelemetry: Iterator[None],
-    response: web.Response | web.HTTPException,
+    server_response: web.Response | web.HTTPException,
 ) -> None:
     app = web.Application()
     service_name = "simcore_service_webserver"
     tracing_settings = TracingSettings()
 
     async def handler(request: web.Request) -> web.Response:
-        if isinstance(response, web.HTTPException):
-            raise response
-        return response
+        if isinstance(server_response, web.HTTPException):
+            raise server_response
+        return server_response
 
     app.router.add_get("/", handler)
 
