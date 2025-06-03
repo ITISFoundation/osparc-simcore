@@ -130,7 +130,6 @@ qx.Class.define("osparc.info.StudyLarge", {
     __infoElements: function() {
       const infoLayout = {
         "TITLE": {
-          label: this.tr("Title:"),
           view: osparc.info.StudyUtils.createTitle(this.getStudy()),
           action: {
             button: osparc.utils.Utils.getEditButton(this.__canIWrite()),
@@ -139,7 +138,6 @@ qx.Class.define("osparc.info.StudyLarge", {
           }
         },
         "THUMBNAIL": {
-          label: this.tr("Thumbnail:"),
           view: this.__createThumbnail(),
           action: {
             button: osparc.utils.Utils.getEditButton(this.__canIWrite()),
@@ -148,7 +146,6 @@ qx.Class.define("osparc.info.StudyLarge", {
           }
         },
         "DESCRIPTION": {
-          label: this.tr("Description:"),
           view: osparc.info.StudyUtils.createDescriptionMD(this.getStudy(), 150),
           action: {
             button: osparc.utils.Utils.getEditButton(this.__canIWrite()),

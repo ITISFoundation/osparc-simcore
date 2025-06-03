@@ -242,148 +242,149 @@ qx.Class.define("osparc.info.StudyUtils", {
       return tagsContainer;
     },
 
-    __titleWithEditLayout: function(data, titleWidth = 75) {
-      const titleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      const hasButton = Boolean(data.action && data.action.button);
-      // use the width for aligning the buttons
-      const title = new qx.ui.basic.Label(data.label).set({
-        allowGrowX: true,
-        maxWidth: hasButton ? titleWidth : titleWidth + 35 // spacer for the button
-      });
-      titleLayout.add(title, {
-        flex: 1
-      });
-      if (hasButton) {
-        const button = data.action.button;
-        titleLayout.add(button);
-        button.addListener("execute", () => {
-          const cb = data.action.callback;
-          if (typeof cb === "string") {
-            data.action.ctx.fireEvent(cb);
-          } else {
-            cb.call(data.action.ctx);
-          }
-        }, this);
-      }
-      return titleLayout;
-    },
-
     infoElementsToLayout: function(extraInfos) {
+      const container = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+
+      if ("TITLE" in extraInfos) {
+        const extraInfo = extraInfos["TITLE"];
+        const titleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+
+        if (extraInfo.action && extraInfo.action.button) {
+          extraInfo.action.button.set({
+            alignY: "middle",
+          });
+          extraInfo.action.button.addListener("execute", () => {
+            const cb = extraInfo.action.callback;
+            if (typeof cb === "string") {
+              extraInfo.action.ctx.fireEvent(cb);
+            } else {
+              cb.call(extraInfo.action.ctx);
+            }
+          }, this);
+          titleLayout.add(extraInfo.action.button);
+        }
+
+        if (extraInfo.view) {
+          titleLayout.add(extraInfo.view, {
+            flex: 1,
+          });
+        }
+
+        container.add(titleLayout);
+      }
+
       const positions = {
-        TITLE: {
-          column: 0,
-          row: 0,
-        },
         THUMBNAIL: {
           column: 0,
-          row: 1,
-        },
-        DESCRIPTION: {
-          column: 0,
-          row: 2,
+          row: 0,
+          rowSpan: 6,
         },
         AUTHOR: {
-          inline: true,
-          column: 0,
+          column: 1,
           row: 0,
         },
-        CREATED: {
-          inline: true,
-          column: 0,
+        ACCESS_RIGHTS: {
+          column: 1,
           row: 1,
         },
-        MODIFIED: {
-          inline: true,
-          column: 0,
+        CREATED: {
+          column: 1,
           row: 2,
         },
-        ACCESS_RIGHTS: {
-          inline: true,
-          column: 0,
+        MODIFIED: {
+          column: 1,
           row: 3,
         },
         TAGS: {
-          inline: true,
-          column: 0,
+          column: 1,
           row: 4,
         },
-        QUALITY: {
-          inline: true,
-          column: 0,
-          row: 5,
-        },
-        CLASSIFIERS: {
-          inline: true,
-          column: 0,
-          row: 6,
-        },
         LOCATION: {
-          inline: true,
-          column: 0,
-          row: 7,
+          column: 1,
+          row: 5,
         },
       };
 
-      const mainInfoGrid = new qx.ui.layout.Grid(15, 5);
-      mainInfoGrid.setColumnAlign(0, "left", "top");
-      mainInfoGrid.setColumnFlex(0, 1);
+      const itemsPerProp = 3;
+      const mainInfoGrid = new qx.ui.layout.Grid(10, 8);
+      mainInfoGrid.setColumnAlign(0, "right", "middle");
+      mainInfoGrid.setColumnAlign(itemsPerProp, "right", "middle");
       const mainInfoLayout = new qx.ui.container.Composite(mainInfoGrid);
 
-      const extraInfoGrid = new qx.ui.layout.Grid(15, 5);
-      const extraInfoLayout = new qx.ui.container.Composite(extraInfoGrid);
-      extraInfoGrid.setColumnFlex(0, 1);
-
-      let row = 0;
-      let row2 = 0;
       Object.keys(positions).forEach(key => {
         if (key in extraInfos) {
           const extraInfo = extraInfos[key];
           const gridInfo = positions[key];
 
-          if (gridInfo.inline) {
-            const titleLayout = this.__titleWithEditLayout(extraInfo);
-            if (extraInfo.action && extraInfo.action.button) {
-              extraInfo.action.button.set({
-                marginRight: 15
-              });
-            }
-            titleLayout.add(extraInfo.view, {
-              flex: 1
+          if (extraInfo.label) {
+            const title = new qx.ui.basic.Label(extraInfo.label).set({
+              alignX: "right",
             });
-            extraInfoLayout.add(titleLayout, {
-              row: row2,
-              column: gridInfo.column
+            mainInfoLayout.add(title, {
+              row: gridInfo.row,
+              column: gridInfo.column*itemsPerProp + 0,
+              rowSpan: gridInfo.rowSpan || 1,
             });
-            row2++;
-            extraInfoGrid.setRowHeight(row2, 5); // spacer
-            row2++;
-          } else {
-            const titleLayout = this.__titleWithEditLayout(extraInfo);
-            mainInfoLayout.add(titleLayout, {
-              row,
-              column: gridInfo.column
+          }
+
+          if (extraInfo.action && extraInfo.action.button) {
+            extraInfo.action.button.set({
+              alignY: "middle",
             });
-            row++;
+            extraInfo.action.button.addListener("execute", () => {
+              const cb = extraInfo.action.callback;
+              if (typeof cb === "string") {
+                extraInfo.action.ctx.fireEvent(cb);
+              } else {
+                cb.call(extraInfo.action.ctx);
+              }
+            }, this);
+            mainInfoLayout.add(extraInfo.action.button, {
+              row: gridInfo.row,
+              column: gridInfo.column*itemsPerProp + 1,
+              rowSpan: gridInfo.rowSpan || 1,
+            });
+          }
+
+          if (extraInfo.view) {
             mainInfoLayout.add(extraInfo.view, {
-              row,
-              column: gridInfo.column
+              row: gridInfo.row,
+              column: gridInfo.column*itemsPerProp + 2,
+              rowSpan: gridInfo.rowSpan || 1,
+              colSpan: gridInfo.colSpan ? gridInfo.colSpan*itemsPerProp : 1,
             });
-            row++;
-            mainInfoGrid.setRowHeight(row, 5); // spacer
-            row++;
           }
         }
       });
+      container.add(mainInfoLayout);
 
+      if ("DESCRIPTION" in extraInfos) {
+        const extraInfo = extraInfos["DESCRIPTION"];
+        const descriptionLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
 
-      const container = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-      const box1 = this.__createSectionBox(qx.locale.Manager.tr("Details"));
-      box1.add(mainInfoLayout);
-      container.addAt(box1, 0);
+        if (extraInfo.action && extraInfo.action.button) {
+          extraInfo.action.button.set({
+            alignY: "middle",
+          });
+          extraInfo.action.button.addListener("execute", () => {
+            const cb = extraInfo.action.callback;
+            if (typeof cb === "string") {
+              extraInfo.action.ctx.fireEvent(cb);
+            } else {
+              cb.call(extraInfo.action.ctx);
+            }
+          }, this);
+          descriptionLayout.add(extraInfo.action.button);
+        }
 
-      const box2 = this.__createSectionBox(qx.locale.Manager.tr("Meta details"));
-      box2.add(extraInfoLayout);
-      container.addAt(box2, 1);
+        if (extraInfo.view) {
+          descriptionLayout.add(extraInfo.view, {
+            flex: 1,
+          });
+        }
+
+        container.add(descriptionLayout);
+      }
 
       return container;
     },
