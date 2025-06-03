@@ -1682,7 +1682,11 @@ async def is_service_deprecated(
     product_name: str,
 ) -> bool:
     service = await catalog_service.get_service(
-        app, user_id, service_key, service_version, product_name
+        app,
+        user_id=user_id,
+        service_key=service_key,
+        service_version=service_version,
+        product_name=product_name,
     )
     if deprecation_date := service.get("deprecated"):
         deprecation_date_bool: bool = datetime.datetime.now(
