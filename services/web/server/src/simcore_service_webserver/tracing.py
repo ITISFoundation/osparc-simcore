@@ -28,5 +28,6 @@ def setup_app_tracing(app: web.Application):
             app,
             tracing_settings=tracing_settings,
             service_name=APP_NAME,
+            add_response_trace_id_header=True,
         )
     )

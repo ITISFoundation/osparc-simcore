@@ -3,7 +3,7 @@
 import logging
 from collections.abc import AsyncIterator
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi_lifespan_manager import State
 from httpx import AsyncClient, Client
 from opentelemetry import trace
@@ -16,7 +16,9 @@ from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from servicelib.logging_utils import log_context
+from servicelib.tracing import get_trace_id_header
 from settings_library.tracing import TracingSettings
+from starlette.middleware.base import BaseHTTPMiddleware
 from yarl import URL
 
 _logger = logging.getLogger(__name__)
@@ -180,7 +182,11 @@ def _shutdown() -> None:
             _logger.exception("Failed to uninstrument RequestsInstrumentor")
 
 
-def initialize_fastapi_app_tracing(app: FastAPI):
+def initialize_fastapi_app_tracing(
+    app: FastAPI, *, add_response_trace_id_header: bool = False
+):
+    if add_response_trace_id_header:
+        app.add_middleware(ResponseTraceIdHeaderMiddleware)
     FastAPIInstrumentor.instrument_app(app)
 
 
@@ -216,3 +222,13 @@ def get_tracing_instrumentation_lifespan(
         _shutdown()
 
     return tracing_instrumentation_lifespan
+
+
+class ResponseTraceIdHeaderMiddleware(BaseHTTPMiddleware):
+
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        trace_id_header = get_trace_id_header()
+        if trace_id_header:
+            response.headers.update(trace_id_header)
+        return response

@@ -18,6 +18,7 @@ from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from servicelib.logging_utils import log_context
+from servicelib.tracing import get_trace_id_header
 from settings_library.tracing import TracingSettings
 from yarl import URL
 
@@ -55,6 +56,7 @@ def _startup(
     app: web.Application,
     tracing_settings: TracingSettings,
     service_name: str,
+    add_response_trace_id_header: bool = False,
 ) -> None:
     """
     Sets up this service for a distributed tracing system (opentelemetry)
@@ -106,6 +108,8 @@ def _startup(
     #
     # Since the code that is provided (monkeypatched) in the __init__ that the opentelemetry-autoinstrumentation-library provides is only 4 lines,
     # just adding a middleware, we are free to simply execute this "missed call" [since we can't call the monkeypatch'ed __init__()] in this following line:
+    if add_response_trace_id_header:
+        app.middlewares.insert(0, ResponseTraceIdHeaderMiddleware)
     app.middlewares.insert(0, aiohttp_server_opentelemetry_middleware)
     # Code of the aiohttp server instrumentation: github.com/open-telemetry/opentelemetry-python-contrib/blob/eccb05c808a7d797ef5b6ecefed3590664426fbf/instrumentation/opentelemetry-instrumentation-aiohttp-server/src/opentelemetry/instrumentation/aiohttp_server/__init__.py#L246
     # For reference, the above statement was written for:
@@ -146,6 +150,15 @@ def _startup(
             AioPikaInstrumentor().instrument()
 
 
+@web.middleware
+async def ResponseTraceIdHeaderMiddleware(request: web.Request, handler):
+    response = await handler(request)
+    trace_id_header = get_trace_id_header()
+    if trace_id_header:
+        response.headers.update(trace_id_header)
+    return response
+
+
 def _shutdown() -> None:
     """Uninstruments all opentelemetry instrumentors that were instrumented."""
     try:
@@ -175,9 +188,17 @@ def _shutdown() -> None:
 
 
 def get_tracing_lifespan(
-    app: web.Application, tracing_settings: TracingSettings, service_name: str
+    app: web.Application,
+    tracing_settings: TracingSettings,
+    service_name: str,
+    add_response_trace_id_header: bool = False,
 ) -> Callable[[web.Application], AsyncIterator]:
-    _startup(app=app, tracing_settings=tracing_settings, service_name=service_name)
+    _startup(
+        app=app,
+        tracing_settings=tracing_settings,
+        service_name=service_name,
+        add_response_trace_id_header=add_response_trace_id_header,
+    )
 
     async def tracing_lifespan(app: web.Application):
         assert app  # nosec
