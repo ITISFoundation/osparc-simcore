@@ -15,7 +15,7 @@ from opentelemetry.instrumentation.aiohttp_server import (
     middleware as aiohttp_server_opentelemetry_middleware,  # pylint:disable=no-name-in-module
 )
 from opentelemetry.sdk.resources import Resource
-from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace import SpanProcessor, TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from servicelib.logging_utils import log_context
 from servicelib.tracing import get_trace_id_header
@@ -50,6 +50,14 @@ try:
     HAS_AIO_PIKA = True
 except ImportError:
     HAS_AIO_PIKA = False
+
+
+def _create_span_processor(tracing_destination: str) -> SpanProcessor:
+    otlp_exporter = OTLPSpanExporterHTTP(
+        endpoint=tracing_destination,
+    )
+    span_processor = BatchSpanProcessor(otlp_exporter)
+    return span_processor
 
 
 def _startup(
@@ -92,12 +100,8 @@ def _startup(
         tracing_destination,
     )
 
-    otlp_exporter = OTLPSpanExporterHTTP(
-        endpoint=tracing_destination,
-    )
-
     # Add the span processor to the tracer provider
-    tracer_provider.add_span_processor(BatchSpanProcessor(otlp_exporter))  # type: ignore[attr-defined] # https://github.com/open-telemetry/opentelemetry-python/issues/3713
+    tracer_provider.add_span_processor(_create_span_processor())  # type: ignore[attr-defined] # https://github.com/open-telemetry/opentelemetry-python/issues/3713
     # Instrument aiohttp server
     # Explanation for custom middleware call DK 10/2024:
     # OpenTelemetry Aiohttp autoinstrumentation is meant to be used by only calling `AioHttpServerInstrumentor().instrument()`

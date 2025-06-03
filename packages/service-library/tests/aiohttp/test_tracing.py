@@ -10,8 +10,10 @@ import pip
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from pydantic import ValidationError
 from servicelib.aiohttp.tracing import get_tracing_lifespan
+from servicelib.tracing import _OSPARC_TRACE_ID_HEADER
 from settings_library.tracing import TracingSettings
 
 
@@ -148,3 +150,45 @@ async def test_tracing_setup_package_detection(
             tracing_settings=tracing_settings,
         )(app):
             pass
+
+
+@pytest.mark.parametrize(
+    "tracing_settings_in",
+    [
+        ("http://opentelemetry-collector", 4318),
+    ],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    "response", [web.Response(text="Hello, world!"), web.HTTPNotFound()]
+)
+async def test_trace_id_in_response_header(
+    mock_otel_collector: InMemorySpanExporter,
+    aiohttp_client: Callable,
+    set_and_clean_settings_env_vars: Callable,
+    tracing_settings_in,
+    uninstrument_opentelemetry: Iterator[None],
+    response: web.Response | web.HTTPException,
+) -> None:
+    app = web.Application()
+    service_name = "simcore_service_webserver"
+    tracing_settings = TracingSettings()
+
+    async def handler(request: web.Request) -> web.Response:
+        if isinstance(response, web.HTTPException):
+            raise response
+        return response
+
+    app.router.add_get("/", handler)
+
+    async for _ in get_tracing_lifespan(
+        app,
+        service_name=service_name,
+        tracing_settings=tracing_settings,
+        add_response_trace_id_header=True,
+    )(app):
+        client = await aiohttp_client(app)
+        response = await client.get("/")
+        assert _OSPARC_TRACE_ID_HEADER in response.headers
+        trace_id = response.headers[_OSPARC_TRACE_ID_HEADER]
+        assert len(trace_id) == 32  # Ensure trace ID is a 32-character hex string
