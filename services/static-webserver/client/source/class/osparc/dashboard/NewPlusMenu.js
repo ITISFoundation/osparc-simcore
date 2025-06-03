@@ -170,7 +170,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       if (osparc.product.Utils.isS4LProduct()) {
         this.__addHypertools();
       }
-      this.__addOtherTabsAccess();
+      this.__addMoreMenu();
       this.getChildControl("new-folder");
     },
 
@@ -230,8 +230,11 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
         });
     },
 
-    __addOtherTabsAccess: function() {
-      const moreMenuButton = this.self().createMenuButton("@FontAwesome5Solid/star/16", this.tr("More"));
+    __addMoreMenu: function() {
+      const moreMenuButton = this.self().createMenuButton("@FontAwesome5Solid/angle-double-right/16", this.tr("More"));
+      moreMenuButton.getChildControl("icon").set({
+        marginLeft: 6,
+      });
       this.addAt(moreMenuButton, this.__itemIdx);
       this.__itemIdx++;
 
