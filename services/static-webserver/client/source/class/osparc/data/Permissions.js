@@ -163,11 +163,12 @@ qx.Class.define("osparc.data.Permissions", {
           "dashboard.services.read"
         ];
       }
+
       if (osparc.product.Utils.getProductName() !== "osparc") {
         // data tab only available in osparc and testers
-        fromUserToTester = [
+        fromUserToTester.push(
           "dashboard.data.read"
-        ];
+        );
       }
 
       fromUserToTester.forEach(onlyTester => {

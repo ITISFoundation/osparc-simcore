@@ -90,7 +90,8 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
         id: "start",
         column: 6,
         label: qx.locale.Manager.tr("Started"),
-        width: 130
+        width: 130,
+        sortableMap: "started_at",
       },
       END: {
         id: "end",
