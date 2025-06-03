@@ -82,10 +82,10 @@ class ComputationalSidecar:
 
                 destination_path = task_volumes.inputs_folder / file_name
 
-                need_extraction = check_need_unzipping(
+                need_unzipping = check_need_unzipping(
                     input_params.url, input_params.file_mime_type, destination_path
                 )
-                if input_params.file_mapping and need_extraction:
+                if input_params.file_mapping and need_unzipping:
                     raise ServiceInputsUseFileToKeyMapButReceivesZipDataError(
                         service_key=self.task_parameters.image,
                         service_version=self.task_parameters.tag,

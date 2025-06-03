@@ -177,9 +177,9 @@ async def pull_file_from_remote(
     if s3_settings and src_url.scheme in S3_FILE_SYSTEM_SCHEMES:
         storage_kwargs = _s3fs_settings_from_s3_settings(s3_settings)
 
-    need_extraction = check_need_unzipping(src_url, target_mime_type, dst_path)
+    need_unzipping = check_need_unzipping(src_url, target_mime_type, dst_path)
     async with AsyncExitStack() as exit_stack:
-        if need_extraction:
+        if need_unzipping:
             # we need to extract the file, so we create a temporary directory
             # where the file will be downloaded and extracted
             tmp_dir = await exit_stack.enter_async_context(
@@ -203,7 +203,7 @@ async def pull_file_from_remote(
             logging.INFO,
         )
 
-        if need_extraction:
+        if need_unzipping:
             await log_publishing_cb(
                 f"Uncompressing '{download_dst_path.name}'...", logging.INFO
             )
