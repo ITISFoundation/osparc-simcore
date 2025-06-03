@@ -119,10 +119,17 @@ qx.Class.define("osparc.store.Jobs", {
         .catch(err => console.error(err));
     },
 
-    fetchSubJobs: function(projectUuid) {
+    fetchSubJobs: function(
+      projectUuid,
+      orderBy = {
+        field: "started_at",
+        direction: "desc"
+      },
+    ) {
       const params = {
         url: {
           studyId: projectUuid,
+          orderBy: JSON.stringify(orderBy),
           includeChildren: false,
         }
       };

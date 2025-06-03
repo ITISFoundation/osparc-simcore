@@ -57,7 +57,11 @@ qx.Class.define("osparc.info.StudyLarge", {
 
       const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
 
-      if (this.getStudy().getTemplateType() && osparc.data.Permissions.getInstance().isTester()) {
+      if (
+        this.__canIWrite() &&
+        this.getStudy().getTemplateType() &&
+        osparc.data.Permissions.getInstance().isTester()
+      ) {
         // let testers change the template type
         const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
           alignY: "middle",
