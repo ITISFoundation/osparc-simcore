@@ -8,7 +8,7 @@ from settings_library.tracing import TracingSettings
 
 TracingContext: TypeAlias = otcontext.Context | None
 
-_OSPARC_TRACE_ID_HEADER = "X-Osparc-Trace-Id"
+_OSPARC_TRACE_ID_HEADER = "x-osparc-trace-id"
 
 
 def _is_tracing() -> bool:
