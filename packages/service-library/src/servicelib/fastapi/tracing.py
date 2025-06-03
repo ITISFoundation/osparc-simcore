@@ -13,7 +13,7 @@ from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
 from opentelemetry.sdk.resources import Resource
-from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace import SpanProcessor, TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from servicelib.logging_utils import log_context
 from servicelib.tracing import get_trace_id_header
@@ -72,6 +72,11 @@ except ImportError:
     HAS_AIOPIKA_INSTRUMENTOR = False
 
 
+def _create_span_processor(tracing_destination: str) -> SpanProcessor:
+    otlp_exporter = OTLPSpanExporterHTTP(endpoint=tracing_destination)
+    return BatchSpanProcessor(otlp_exporter)
+
+
 def _startup(tracing_settings: TracingSettings, service_name: str) -> None:
     if (
         not tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT
@@ -98,10 +103,10 @@ def _startup(tracing_settings: TracingSettings, service_name: str) -> None:
         service_name,
         tracing_destination,
     )
-    # Configure OTLP exporter to send spans to the collector
-    otlp_exporter = OTLPSpanExporterHTTP(endpoint=tracing_destination)
-    span_processor = BatchSpanProcessor(otlp_exporter)
-    global_tracer_provider.add_span_processor(span_processor)
+    # Add the span processor to the tracer provider
+    global_tracer_provider.add_span_processor(
+        _create_span_processor(tracing_destination)
+    )
 
     if HAS_AIOPG:
         with log_context(
