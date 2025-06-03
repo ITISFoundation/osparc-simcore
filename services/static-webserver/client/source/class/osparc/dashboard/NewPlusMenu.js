@@ -316,7 +316,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
         });
       });
 
-      this.self().setIcon(menuButton, buttonConfig["icon"] || "osparc/icons/diagram.png");
+      this.self().setIcon(menuButton, buttonConfig["icon"] || osparc.data.model.StudyUI.PIPELINE_ICON);
       this.__addFromResourceButton(menuButton, buttonConfig["category"]);
     },
 
