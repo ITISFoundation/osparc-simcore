@@ -5,6 +5,7 @@ import mimetypes
 import time
 import zipfile
 from collections.abc import Callable, Coroutine
+from contextlib import AsyncExitStack
 from io import IOBase
 from pathlib import Path
 from typing import Any, Final, TypedDict, cast
@@ -163,31 +164,50 @@ async def pull_file_from_remote(
     storage_kwargs: S3FsSettingsDict | dict[str, Any] = {}
     if s3_settings and src_url.scheme in S3_FILE_SYSTEM_SCHEMES:
         storage_kwargs = _s3fs_settings_from_s3_settings(s3_settings)
-    await _copy_file(
-        src_url,
-        TypeAdapter(FileUrl).validate_python(dst_path.as_uri()),
-        src_storage_cfg=cast(dict[str, Any], storage_kwargs),
-        log_publishing_cb=log_publishing_cb,
-        text_prefix=f"Downloading '{src_url.path.strip('/')}':",
-    )
 
-    await log_publishing_cb(
-        f"Download of '{src_url}' into local file '{dst_path}' complete.",
-        logging.INFO,
+    need_extraction = (src_mime_type == _ZIP_MIME_TYPE) and (
+        target_mime_type != _ZIP_MIME_TYPE
     )
-
-    if src_mime_type == _ZIP_MIME_TYPE and target_mime_type != _ZIP_MIME_TYPE:
-        await log_publishing_cb(f"Uncompressing '{dst_path.name}'...", logging.INFO)
-        logger.debug("%s is a zip file and will be now uncompressed", dst_path)
-        with repro_zipfile.ReproducibleZipFile(dst_path, "r") as zip_obj:
-            await asyncio.get_event_loop().run_in_executor(
-                None, zip_obj.extractall, dst_path.parents[0]
+    async with AsyncExitStack() as exit_stack:
+        if need_extraction:
+            # we need to extract the file, so we create a temporary directory
+            # where the file will be downloaded and extracted
+            tmp_dir = await exit_stack.enter_async_context(
+                aiofiles.tempfile.TemporaryDirectory()
             )
-        # finally remove the zip archive
-        await log_publishing_cb(
-            f"Uncompressing '{dst_path.name}' complete.", logging.INFO
+            download_dst_path = Path(f"{tmp_dir}") / Path(src_url.path).name
+        else:
+            # no extraction needed, so we can use the provided dst_path directly
+            download_dst_path = dst_path
+
+        await _copy_file(
+            src_url,
+            TypeAdapter(FileUrl).validate_python(f"{download_dst_path.as_uri()}"),
+            src_storage_cfg=cast(dict[str, Any], storage_kwargs),
+            log_publishing_cb=log_publishing_cb,
+            text_prefix=f"Downloading '{src_url.path.strip('/')}':",
         )
-        dst_path.unlink()
+
+        await log_publishing_cb(
+            f"Download of '{src_url}' into local file '{download_dst_path}' complete.",
+            logging.INFO,
+        )
+
+        if need_extraction:
+            await log_publishing_cb(
+                f"Uncompressing '{download_dst_path.name}'...", logging.INFO
+            )
+            logger.debug(
+                "%s is a zip file and will be now uncompressed", download_dst_path
+            )
+            with repro_zipfile.ReproducibleZipFile(download_dst_path, "r") as zip_obj:
+                await asyncio.get_event_loop().run_in_executor(
+                    None, zip_obj.extractall, dst_path.parents[0]
+                )
+            # finally remove the zip archive
+            await log_publishing_cb(
+                f"Uncompressing '{download_dst_path.name}' complete.", logging.INFO
+            )
 
 
 async def _push_file_to_http_link(
