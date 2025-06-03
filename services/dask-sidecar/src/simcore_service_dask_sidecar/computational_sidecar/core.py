@@ -13,7 +13,10 @@ from uuid import uuid4
 from aiodocker import Docker
 from common_library.json_serialization import json_dumps
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
-from dask_task_models_library.container_tasks.errors import ServiceRuntimeError
+from dask_task_models_library.container_tasks.errors import (
+    ServiceInputsUseFileToKeyMapButReceivesZipDataError,
+    ServiceRuntimeError,
+)
 from dask_task_models_library.container_tasks.io import FileUrl, TaskOutputData
 from dask_task_models_library.container_tasks.protocol import ContainerTaskParameters
 from models_library.progress_bar import ProgressReport
@@ -27,7 +30,11 @@ from yarl import URL
 
 from ..settings import ApplicationSettings
 from ..utils.dask import TaskPublisher
-from ..utils.files import pull_file_from_remote, push_file_to_remote
+from ..utils.files import (
+    check_need_unzipping,
+    pull_file_from_remote,
+    push_file_to_remote,
+)
 from .docker_utils import (
     create_container_config,
     get_computational_shared_data_mount_point,
@@ -74,6 +81,17 @@ class ComputationalSidecar:
                 )
 
                 destination_path = task_volumes.inputs_folder / file_name
+
+                need_extraction = check_need_unzipping(
+                    input_params.url, input_params.file_mime_type, destination_path
+                )
+                if input_params.file_mapping and need_extraction:
+                    raise ServiceInputsUseFileToKeyMapButReceivesZipDataError(
+                        service_key=self.task_parameters.image,
+                        service_version=self.task_parameters.tag,
+                        input_key=input_key,
+                        file_to_key_map=input_params.file_mapping,
+                    )
 
                 if destination_path.parent != task_volumes.inputs_folder:
                     # NOTE: only 'task_volumes.inputs_folder' part of 'destination_path' is guaranteed,

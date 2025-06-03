@@ -141,6 +141,22 @@ async def _copy_file(
 _ZIP_MIME_TYPE: Final[str] = "application/zip"
 
 
+def check_need_unzipping(
+    src_url: AnyUrl,
+    target_mime_type: str | None,
+    dst_path: Path,
+) -> bool:
+    """
+    Checks if the source URL points to a zip file and if the target mime type is not zip.
+    If so, extraction is needed.
+    """
+    src_mime_type, _ = mimetypes.guess_type(f"{src_url.path}")
+    dst_mime_type = target_mime_type
+    if not dst_mime_type:
+        dst_mime_type, _ = mimetypes.guess_type(dst_path)
+    return (src_mime_type == _ZIP_MIME_TYPE) and (dst_mime_type != _ZIP_MIME_TYPE)
+
+
 async def pull_file_from_remote(
     src_url: AnyUrl,
     target_mime_type: str | None,
@@ -157,17 +173,11 @@ async def pull_file_from_remote(
         msg = f"{dst_path.parent=} does not exist. It must be created by the caller"
         raise ValueError(msg)
 
-    src_mime_type, _ = mimetypes.guess_type(f"{src_url.path}")
-    if not target_mime_type:
-        target_mime_type, _ = mimetypes.guess_type(dst_path)
-
     storage_kwargs: S3FsSettingsDict | dict[str, Any] = {}
     if s3_settings and src_url.scheme in S3_FILE_SYSTEM_SCHEMES:
         storage_kwargs = _s3fs_settings_from_s3_settings(s3_settings)
 
-    need_extraction = (src_mime_type == _ZIP_MIME_TYPE) and (
-        target_mime_type != _ZIP_MIME_TYPE
-    )
+    need_extraction = check_need_unzipping(src_url, target_mime_type, dst_path)
     async with AsyncExitStack() as exit_stack:
         if need_extraction:
             # we need to extract the file, so we create a temporary directory
