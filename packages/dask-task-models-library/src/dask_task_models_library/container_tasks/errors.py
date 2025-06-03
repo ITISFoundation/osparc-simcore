@@ -1,11 +1,9 @@
-""" Dask task exceptions
+"""Dask task exceptions"""
 
-"""
 from common_library.errors_classes import OsparcErrorMixin
 
 
-class TaskValueError(OsparcErrorMixin, ValueError):
-    ...
+class TaskValueError(OsparcErrorMixin, ValueError): ...
 
 
 class TaskCancelledError(OsparcErrorMixin, RuntimeError):
@@ -17,4 +15,19 @@ class ServiceRuntimeError(OsparcErrorMixin, RuntimeError):
         "The service {service_key}:{service_version}"
         " running in container {container_id} failed with code"
         " {exit_code}. Last logs:\n{service_logs}"
+    )
+
+
+class ServiceInputsBadlyFormattedError(OsparcErrorMixin, RuntimeError):
+    msg_template = (
+        "The service {service_key}:{service_version} contains badly formatted inputs"
+    )
+
+
+class ServiceInputsUseFileToKeyMapButReceivesZipDataError(
+    ServiceInputsBadlyFormattedError
+):
+    msg_template = (
+        "The service {service_key}:{service_version} {input} uses a file-to-key {file_to_key_map} map but receives zip data instead. "
+        "TIP: either pass a single file or zip file and remove the file-to-key map parameter."
     )
