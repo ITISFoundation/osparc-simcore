@@ -10,10 +10,16 @@ from typing import Any
 import pip
 import pytest
 from fastapi import FastAPI
+from fastapi.exceptions import HTTPException
+from fastapi.responses import PlainTextResponse
+from fastapi.testclient import TestClient
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from pydantic import ValidationError
 from servicelib.fastapi.tracing import (
     get_tracing_instrumentation_lifespan,
+    initialize_fastapi_app_tracing,
 )
+from servicelib.tracing import _OSPARC_TRACE_ID_HEADER
 from settings_library.tracing import TracingSettings
 
 
@@ -167,3 +173,45 @@ async def test_tracing_setup_package_detection(
             service_name="Mock-Openetlemetry-Pytest",
         )(app=mocked_app):
             pass
+
+
+@pytest.mark.parametrize(
+    "tracing_settings_in",
+    [
+        ("http://opentelemetry-collector", 4318),
+    ],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    "server_response",
+    [
+        PlainTextResponse("ok"),
+        HTTPException(status_code=400, detail="error"),
+    ],
+)
+async def test_trace_id_in_response_header(
+    mock_otel_collector: InMemorySpanExporter,
+    mocked_app: FastAPI,
+    set_and_clean_settings_env_vars: Callable,
+    tracing_settings_in: Callable,
+    uninstrument_opentelemetry: Iterator[None],
+    server_response: PlainTextResponse | HTTPException,
+) -> None:
+    tracing_settings = TracingSettings()
+
+    @mocked_app.get("/")
+    async def handler():
+        if isinstance(server_response, HTTPException):
+            raise server_response
+        return server_response
+
+    async for _ in get_tracing_instrumentation_lifespan(
+        tracing_settings=tracing_settings,
+        service_name="Mock-OpenTelemetry-Pytest",
+    )(app=mocked_app):
+        initialize_fastapi_app_tracing(mocked_app, add_response_trace_id_header=True)
+        client = TestClient(mocked_app)
+        response = client.get("/")
+        assert _OSPARC_TRACE_ID_HEADER in response.headers
+        trace_id = response.headers[_OSPARC_TRACE_ID_HEADER]
+        assert len(trace_id) == 32  # Ensure trace ID is a 32-character hex string
