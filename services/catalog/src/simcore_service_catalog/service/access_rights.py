@@ -4,10 +4,12 @@ import logging
 import operator
 from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import cast
+from typing import Any, TypedDict, cast
 
 import arrow
 from fastapi import FastAPI
+from models_library.groups import GroupID
+from models_library.products import ProductName
 from models_library.services import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from packaging.version import Version
@@ -15,7 +17,7 @@ from pydantic.types import PositiveInt
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..api._dependencies.director import get_director_client
-from ..models.services_db import ServiceAccessRightsDB
+from ..models.services_db import ServiceAccessRightsDB, ServiceMetaDataDBGet
 from ..repository.groups import GroupsRepository
 from ..repository.services import ServicesRepository
 from ..utils.versioning import as_version, is_patch_release
@@ -23,6 +25,11 @@ from ..utils.versioning import as_version, is_patch_release
 _logger = logging.getLogger(__name__)
 
 _LEGACY_SERVICES_DATE: datetime = datetime(year=2020, month=8, day=19, tzinfo=UTC)
+
+
+class InheritedData(TypedDict):
+    access_rights: list[ServiceAccessRightsDB]
+    metadata_updates: dict[str, Any]
 
 
 def _is_frontend_service(service: ServiceMetaDataPublished) -> bool:
@@ -41,22 +48,28 @@ async def _is_old_service(app: FastAPI, service: ServiceMetaDataPublished) -> bo
     return bool(service_build_data < _LEGACY_SERVICES_DATE)
 
 
-async def evaluate_default_policy(
-    app: FastAPI, service: ServiceMetaDataPublished
-) -> tuple[PositiveInt | None, list[ServiceAccessRightsDB]]:
-    """Given a service, it returns the owner's group-id (gid) and a list of access rights following
-    default access-rights policies
+async def evaluate_default_service_ownership_and_rights(
+    app: FastAPI, *, service: ServiceMetaDataPublished, product_name: ProductName
+) -> tuple[GroupID | None, list[ServiceAccessRightsDB]]:
+    """Evaluates the owner (group_id) and the access rights for a service
 
-    - DEFAULT Access Rights policies:
-        1. All services published in osparc prior 19.08.2020 will be visible to everyone (refered as 'old service').
-        2. Services published after 19.08.2020 will be visible ONLY to his/her owner
-        3. Front-end services are have execute-access to everyone
+    This function determines:
+    1. Who owns the service (based on contact or author email)
+    2. Who can access the service based on the following rules:
+       - All services published before August 19, 2020 (_LEGACY_SERVICES_DATE) are accessible to everyone
+       - Services published after August 19, 2020 are only accessible to their owner
+       - Frontend services are accessible to everyone regardless of publication date
 
+    Returns:
+        A tuple containing:
+        - The owner's group ID (gid) if found, None otherwise
+        - A list of ServiceAccessRightsDB objects representing the default access rights
+          for the service, including who can execute and/or modify the service
 
     Raises:
-        HTTPException: from calls to director's rest API. Maps director errors into catalog's server error
-        SQLAlchemyError: from access to pg database
-        ValidationError: from pydantic model errors
+        HTTPException: If there's an error communicating with the director API
+        SQLAlchemyError: If there's an error accessing the database
+        ValidationError: If there's an error validating the Pydantic models
     """
     db_engine: AsyncEngine = app.state.engine
 
@@ -64,13 +77,17 @@ async def evaluate_default_policy(
     owner_gid = None
     group_ids: list[PositiveInt] = []
 
+    # 1. If service is old or frontend, we add the everyone group
     if _is_frontend_service(service) or await _is_old_service(app, service):
         everyone_gid = (await groups_repo.get_everyone_group()).gid
-        _logger.debug("service %s:%s is old or frontend", service.key, service.version)
-        # let's make that one available to everyone
-        group_ids.append(everyone_gid)
+        group_ids.append(everyone_gid)  # let's make that one available to everyone
+        _logger.debug(
+            "service %s:%s is old or frontend. Set available to everyone",
+            service.key,
+            service.version,
+        )
 
-    # try to find the owner
+    # 2. Deducing the owner gid
     possible_owner_email = [service.contact] + [
         author.email for author in service.authors
     ]
@@ -80,19 +97,21 @@ async def evaluate_default_policy(
         if possible_gid and not owner_gid:
             owner_gid = possible_gid
     if not owner_gid:
-        _logger.warning("service %s:%s has no owner", service.key, service.version)
+        _logger.warning("Service %s:%s has no owner", service.key, service.version)
     else:
         group_ids.append(owner_gid)
 
-    # we add the owner with full rights, unless it's everyone
+    # 3. Aplying default access rights
     default_access_rights = [
         ServiceAccessRightsDB(
             key=service.key,
             version=service.version,
             gid=gid,
             execute_access=True,
-            write_access=(gid == owner_gid),
-            product_name=app.state.default_product_name,
+            write_access=(
+                gid == owner_gid
+            ),  # we add the owner with full rights, unless it's everyone
+            product_name=product_name,
         )
         for gid in set(group_ids)
     ]
@@ -100,58 +119,107 @@ async def evaluate_default_policy(
     return (owner_gid, default_access_rights)
 
 
-async def evaluate_auto_upgrade_policy(
-    service_metadata: ServiceMetaDataPublished, services_repo: ServicesRepository
-) -> list[ServiceAccessRightsDB]:
-    # AUTO-UPGRADE PATCH policy:
-    #
-    #  - Any new patch released, inherits the access rights from previous compatible version
-    #  - IDEA: add as option in the publication contract, i.e. in ServiceDockerData?
-    #  - Does NOT apply to front-end services
-    #
-    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/2244)
-    #
-    if _is_frontend_service(service_metadata):
-        return []
+async def _find_latest_patch_compatible_release(
+    services_repo: ServicesRepository, *, service_metadata: ServiceMetaDataPublished
+) -> ServiceMetaDataDBGet | None:
+    """
+    Finds the previous patched release for a service.
 
-    service_access_rights = []
+    Args:
+        services_repo: Instance of ServicesRepository for database access.
+        service_metadata: Metadata of the service being evaluated.
+
+    Returns:
+        Latest patch release of the service if it exists, otherwise None.
+    """
+    if _is_frontend_service(service_metadata):
+        return None
+
     new_version: Version = as_version(service_metadata.version)
-    latest_releases = await services_repo.list_service_releases(
+    patch_releases_latest_first = await services_repo.list_service_releases(
         service_metadata.key,
         major=new_version.major,
         minor=new_version.minor,
     )
 
-    previous_release = None
-    for release in latest_releases:
-        # NOTE: latest_release is sorted from newer to older
-        # Here we search for the previous version patched by new-version
+    # latest_releases is sorted from newer to older
+    for release in patch_releases_latest_first:
+        # COMPATIBILITY RULE:
+        # - a patch release is compatible with the previous patch release
+        # - WARNING: this does not account for custom compatibility policies!!!!
         if is_patch_release(new_version, release.version):
-            previous_release = release
-            break
+            return release
 
-    if previous_release:
-        previous_access_rights = await services_repo.get_service_access_rights(
-            previous_release.key, previous_release.version
+    return None
+
+
+async def inherit_from_latest_compatible_release(
+    services_repo: ServicesRepository, *, service_metadata: ServiceMetaDataPublished
+) -> InheritedData:
+    """
+    Inherits metadata and access rights from a previous compatible release.
+
+    This function applies inheritance policies:
+    - AUTO-UPGRADE PATCH policy: new patch releases inherit access rights from previous compatible versions
+    - Metadata inheritance: icon and thumbnail fields are inherited if not specified in the new version
+
+    Args:
+        services_repo: Instance of ServicesRepository for database access.
+        service_metadata: Metadata of the service being evaluated.
+
+    Returns:
+        An InheritedData object containing:
+        - access_rights: List of ServiceAccessRightsDB objects inherited from the previous release
+        - metadata_updates: Dict of metadata fields that should be updated in the new service
+
+    Notes:
+        - The policy is described in https://github.com/ITISFoundation/osparc-simcore/issues/2244
+        - Inheritance is only for patch releases (i.e., same major and minor version).
+    """
+    inherited_data: InheritedData = {
+        "access_rights": [],
+        "metadata_updates": {},
+    }
+
+    previous_release = await _find_latest_patch_compatible_release(
+        services_repo, service_metadata=service_metadata
+    )
+
+    if not previous_release:
+        return inherited_data
+
+    # 1. ACCESS-RIGHTS:
+    #    Inherit access rights (from all products) from the previous release
+    previous_access_rights = await services_repo.get_service_access_rights(
+        previous_release.key, previous_release.version
+    )
+
+    inherited_data["access_rights"] = [
+        access.model_copy(
+            update={"version": service_metadata.version},
+            deep=True,
         )
+        for access in previous_access_rights
+    ]
 
-        service_access_rights = [
-            access.model_copy(
-                update={"version": service_metadata.version},
-                deep=True,
-            )
-            for access in previous_access_rights
-        ]
-    return service_access_rights
+    # 2. ServiceMetaDataPublished
+    #    Inherit some fields if not specified in the new service
+    if not service_metadata.icon and previous_release.icon:
+        inherited_data["metadata_updates"]["icon"] = previous_release.icon
+    if not service_metadata.thumbnail and previous_release.thumbnail:
+        inherited_data["metadata_updates"]["thumbnail"] = previous_release.thumbnail
+
+    return inherited_data
 
 
 def reduce_access_rights(
     access_rights: list[ServiceAccessRightsDB],
     reduce_operation: Callable = operator.ior,
 ) -> list[ServiceAccessRightsDB]:
-    """
-    Reduces a list of access-rights per target
+    """Reduces a list of access-rights per target
+
     By default, the reduction is OR (i.e. preserves True flags)
+
     """
     # TODO: probably a lot of room to optimize
     # helper functions to simplify operation of access rights
