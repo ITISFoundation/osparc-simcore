@@ -1125,3 +1125,74 @@ async def test_list_function_job_collections_filtered_function_id(
     assert collections[1].uid in [
         collection.uid for collection in registered_collections
     ]
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+async def test_find_cached_function_jobs(
+    client: TestClient,
+    rpc_client: RabbitMQRPCClient,
+    logged_user: UserInfoDict,
+    other_logged_user: UserInfoDict,
+    osparc_product_name: ProductName,
+    mock_function: ProjectFunction,
+    clean_functions: None,
+):
+
+    # Register the function first
+    registered_function = await functions_rpc.register_function(
+        rabbitmq_rpc_client=rpc_client,
+        function=mock_function,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+    )
+
+    registered_function_jobs = []
+    for value in range(5):
+        function_job = ProjectFunctionJob(
+            function_uid=registered_function.uid,
+            title="Test Function Job",
+            description="A test function job",
+            project_job_id=uuid4(),
+            inputs={"input1": value if value < 4 else 1},
+            outputs={"output1": "result1"},
+        )
+
+        # Register the function job
+        registered_job = await functions_rpc.register_function_job(
+            rabbitmq_rpc_client=rpc_client,
+            function_job=function_job,
+            user_id=logged_user["id"],
+            product_name=osparc_product_name,
+        )
+        registered_function_jobs.append(registered_job)
+
+    # Find cached function jobs
+    cached_jobs = await functions_rpc.find_cached_function_jobs(
+        rabbitmq_rpc_client=rpc_client,
+        function_id=registered_function.uid,
+        inputs={"input1": 1},
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+    )
+
+    # Assert the cached jobs contain the registered job
+    assert cached_jobs is not None
+    assert len(cached_jobs) == 2
+    assert {job.uid for job in cached_jobs} == {
+        registered_function_jobs[1].uid,
+        registered_function_jobs[4].uid,
+    }
+
+    cached_jobs = await functions_rpc.find_cached_function_jobs(
+        rabbitmq_rpc_client=rpc_client,
+        function_id=registered_function.uid,
+        inputs={"input1": 1},
+        user_id=other_logged_user["id"],
+        product_name=osparc_product_name,
+    )
+
+    # Assert the cached jobs does not contain the registered job for the other user
+    assert cached_jobs is None

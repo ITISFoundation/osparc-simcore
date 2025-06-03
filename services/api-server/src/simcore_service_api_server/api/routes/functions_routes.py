@@ -26,6 +26,7 @@ from models_library.functions_errors import (
     UnsupportedFunctionClassError,
 )
 from models_library.products import ProductName
+from models_library.projects_state import RunningState
 from models_library.users import UserID
 from servicelib.fastapi.dependencies import get_reverse_url_mapper
 from simcore_service_api_server._service_jobs import JobService
@@ -351,6 +352,8 @@ async def run_function(  # noqa: PLR0913
     job_service: Annotated[JobService, Depends(get_job_service)],
 ) -> RegisteredFunctionJob:
 
+    from .function_jobs_routes import function_job_status
+
     to_run_function = await wb_api_rpc.get_function(
         function_id=function_id, user_id=user_id, product_name=product_name
     )
@@ -371,13 +374,22 @@ async def run_function(  # noqa: PLR0913
         if not is_valid:
             raise FunctionInputsValidationError(error=validation_str)
 
-    if cached_function_job := await wb_api_rpc.find_cached_function_job(
+    if cached_function_jobs := await wb_api_rpc.find_cached_function_jobs(
         function_id=to_run_function.uid,
         inputs=joined_inputs,
         user_id=user_id,
         product_name=product_name,
     ):
-        return cached_function_job
+        for cached_function_job in cached_function_jobs:
+            job_status = await function_job_status(
+                wb_api_rpc=wb_api_rpc,
+                director2_api=director2_api,
+                function_job_id=cached_function_job.uid,
+                user_id=user_id,
+                product_name=product_name,
+            )
+            if job_status.status == RunningState.SUCCESS:
+                return cached_function_job
 
     if to_run_function.function_class == FunctionClass.PROJECT:
         study_job = await studies_jobs.create_study_job(
