@@ -24,6 +24,7 @@ qx.Class.define("osparc.jobs.RunsBrowser", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
+    this.getChildControl("intro-label");
     const jobsFilter = this.getChildControl("jobs-filter");
     const runningCB = this.getChildControl("running-only-cb");
     const runsTable = this.getChildControl("runs-table");
@@ -51,6 +52,10 @@ qx.Class.define("osparc.jobs.RunsBrowser", {
         case "header-filter":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
           this._add(control);
+          break;
+        case "intro-label":
+          control = new qx.ui.basic.Label(this.tr("Select a Run to check the details"));
+          this.getChildControl("header-filter").add(control);
           break;
         case "jobs-filter":
           control = new osparc.filter.TextFilter("text", "jobsList").set({
