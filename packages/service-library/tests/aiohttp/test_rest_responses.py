@@ -17,7 +17,11 @@ from aiohttp.web_exceptions import (
     HTTPOk,
 )
 from common_library.error_codes import ErrorCodeStr, create_error_code
-from servicelib.aiohttp.rest_responses import create_http_error, exception_to_response
+from servicelib.aiohttp.rest_responses import (
+    MAX_STATUS_MESSAGE_LENGTH,
+    create_http_error,
+    exception_to_response,
+)
 from servicelib.aiohttp.web_exceptions_extension import (
     _STATUS_CODE_TO_HTTP_ERRORS,
     get_http_error_class_or_none,
@@ -136,10 +140,13 @@ def tests_exception_to_response(
             "Message\nwith\nnewlines",
             "Message with newlines",
         ),  # Newlines are replaced with spaces
-        ("A" * 100, "A" * 47 + "..."),  # Long message gets truncated with ellipsis
         (
-            "Line1\nLine2\nLine3" + "X" * 100,
-            "Line1 Line2 Line3" + "X" * 30 + "...",
+            "A" * (MAX_STATUS_MESSAGE_LENGTH + 1),
+            "A" * (MAX_STATUS_MESSAGE_LENGTH - 3) + "...",
+        ),  # Long message gets truncated with ellipsis
+        (
+            "Line1\nLine2\nLine3" + "X" * (MAX_STATUS_MESSAGE_LENGTH + 1),
+            "Line1 Line2 Line3" + "X" * (MAX_STATUS_MESSAGE_LENGTH - 20) + "...",
         ),  # Combined case: newlines and truncation with ellipsis
     ],
     ids=[
