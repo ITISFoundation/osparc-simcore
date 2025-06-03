@@ -1745,7 +1745,13 @@ qx.Class.define("osparc.data.Resources", {
     },
 
     getCompatibleInputs: function(node1, portId1, node2) {
-      const url = this.__getMatchInputsUrl(node1, portId1, node2);
+      const url = {
+        "serviceKey2": encodeURIComponent(node2.getKey()),
+        "serviceVersion2": node2.getVersion(),
+        "serviceKey1": encodeURIComponent(node1.getKey()),
+        "serviceVersion1": node1.getVersion(),
+        "portKey1": portId1
+      };
 
       // eslint-disable-next-line no-underscore-dangle
       const cachedCPs = this.getInstance().__getCached("portsCompatibility") || {};
@@ -1763,16 +1769,6 @@ qx.Class.define("osparc.data.Resources", {
           this.getInstance().__setCached("portsCompatibility", cachedCPs);
           return data;
         });
-    },
-
-    __getMatchInputsUrl: function(node1, portId1, node2) {
-      return {
-        "serviceKey2": encodeURIComponent(node2.getKey()),
-        "serviceVersion2": node2.getVersion(),
-        "serviceKey1": encodeURIComponent(node1.getKey()),
-        "serviceVersion1": node1.getVersion(),
-        "portKey1": portId1
-      };
     },
 
     getErrorMsg: function(resp) {
