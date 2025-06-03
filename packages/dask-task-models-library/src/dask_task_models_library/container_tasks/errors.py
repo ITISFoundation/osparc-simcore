@@ -18,14 +18,8 @@ class ServiceRuntimeError(OsparcErrorMixin, RuntimeError):
     )
 
 
-class ServiceInputsBadlyFormattedError(OsparcErrorMixin, RuntimeError):
-    msg_template = (
-        "The service {service_key}:{service_version} contains badly formatted inputs"
-    )
-
-
 class ServiceInputsUseFileToKeyMapButReceivesZipDataError(
-    ServiceInputsBadlyFormattedError
+    OsparcErrorMixin, RuntimeError
 ):
     msg_template = (
         "The service {service_key}:{service_version} {input} uses a file-to-key {file_to_key_map} map but receives zip data instead. "
