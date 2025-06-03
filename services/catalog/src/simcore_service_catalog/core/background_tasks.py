@@ -97,7 +97,7 @@ async def _create_services_in_database(
                 **inherited_data["metadata_updates"],
             }
 
-            # 4. Create or update the service in the database
+            # 4. Upsert values in database
             await services_repo.create_or_update_service(
                 ServiceMetaDataDBCreate(**metadata_updates, owner=owner_gid),
                 service_access_rights,

@@ -60,10 +60,6 @@ async def evaluate_default_service_ownership_and_rights(
        - Services published after August 19, 2020 are only accessible to their owner
        - Frontend services are accessible to everyone regardless of publication date
 
-    Args:
-        app: FastAPI application instance containing database engine and settings
-        service: Service metadata including key, version, contact and authors information
-
     Returns:
         A tuple containing:
         - The owner's group ID (gid) if found, None otherwise
