@@ -315,17 +315,17 @@ async def delete_function_job(
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def find_cached_function_job(
+async def find_cached_function_jobs(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     user_id: UserID,
     product_name: ProductName,
     function_id: FunctionID,
     inputs: FunctionInputs,
-) -> RegisteredFunctionJob | None:
+) -> list[RegisteredFunctionJob] | None:
     result = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python("find_cached_function_job"),
+        TypeAdapter(RPCMethodName).validate_python("find_cached_function_jobs"),
         function_id=function_id,
         inputs=inputs,
         user_id=user_id,
@@ -333,7 +333,7 @@ async def find_cached_function_job(
     )
     if result is None:
         return None
-    return TypeAdapter(RegisteredFunctionJob).validate_python(result)
+    return TypeAdapter(list[RegisteredFunctionJob]).validate_python(result)
 
 
 @log_decorator(_logger, level=logging.DEBUG)

@@ -468,15 +468,15 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             function_id=function_id,
         )
 
-    async def find_cached_function_job(
+    async def find_cached_function_jobs(
         self,
         *,
         user_id: UserID,
         product_name: ProductName,
         function_id: FunctionID,
         inputs: FunctionInputs,
-    ) -> RegisteredFunctionJob | None:
-        return await functions_rpc_interface.find_cached_function_job(
+    ) -> list[RegisteredFunctionJob] | None:
+        return await functions_rpc_interface.find_cached_function_jobs(
             self._client,
             user_id=user_id,
             product_name=product_name,
