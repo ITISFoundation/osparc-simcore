@@ -15462,6 +15462,10 @@ components:
           type: string
           format: uuid
           title: Uid
+        createdAt:
+          type: string
+          format: date-time
+          title: Createdat
         projectId:
           type: string
           format: uuid
@@ -15472,6 +15476,7 @@ components:
       - outputSchema
       - defaultInputs
       - uid
+      - createdAt
       - projectId
       title: RegisteredProjectFunctionGet
     RegisteredSolverFunctionGet:
@@ -15514,6 +15519,10 @@ components:
           type: string
           format: uuid
           title: Uid
+        createdAt:
+          type: string
+          format: date-time
+          title: Createdat
         solverKey:
           type: string
           pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
@@ -15528,6 +15537,7 @@ components:
       - outputSchema
       - defaultInputs
       - uid
+      - createdAt
       - solverKey
       - solverVersion
       title: RegisteredSolverFunctionGet

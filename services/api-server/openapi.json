@@ -10093,11 +10093,17 @@
             "type": "string",
             "format": "uuid",
             "title": "Uid"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
           }
         },
         "type": "object",
         "required": [
-          "uid"
+          "uid",
+          "created_at"
         ],
         "title": "RegisteredFunctionJobCollection"
       },
@@ -10163,6 +10169,11 @@
             "format": "uuid",
             "title": "Uid"
           },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
           "project_id": {
             "type": "string",
             "format": "uuid",
@@ -10175,6 +10186,7 @@
           "output_schema",
           "default_inputs",
           "uid",
+          "created_at",
           "project_id"
         ],
         "title": "RegisteredProjectFunction"
@@ -10229,6 +10241,11 @@
             "format": "uuid",
             "title": "Uid"
           },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
           "project_job_id": {
             "type": "string",
             "format": "uuid",
@@ -10241,6 +10258,7 @@
           "inputs",
           "outputs",
           "uid",
+          "created_at",
           "project_job_id"
         ],
         "title": "RegisteredProjectFunctionJob"
@@ -10307,6 +10325,11 @@
             "format": "uuid",
             "title": "Uid"
           },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
           "code_url": {
             "type": "string",
             "title": "Code Url"
@@ -10318,6 +10341,7 @@
           "output_schema",
           "default_inputs",
           "uid",
+          "created_at",
           "code_url"
         ],
         "title": "RegisteredPythonCodeFunction"
@@ -10371,6 +10395,11 @@
             "type": "string",
             "format": "uuid",
             "title": "Uid"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
           }
         },
         "type": "object",
@@ -10378,7 +10407,8 @@
           "function_uid",
           "inputs",
           "outputs",
-          "uid"
+          "uid",
+          "created_at"
         ],
         "title": "RegisteredPythonCodeFunctionJob"
       },
@@ -10444,6 +10474,11 @@
             "format": "uuid",
             "title": "Uid"
           },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
           "solver_key": {
             "type": "string",
             "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
@@ -10461,6 +10496,7 @@
           "output_schema",
           "default_inputs",
           "uid",
+          "created_at",
           "solver_key",
           "solver_version"
         ],
@@ -10516,6 +10552,11 @@
             "format": "uuid",
             "title": "Uid"
           },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
           "solver_job_id": {
             "type": "string",
             "format": "uuid",
@@ -10528,6 +10569,7 @@
           "inputs",
           "outputs",
           "uid",
+          "created_at",
           "solver_job_id"
         ],
         "title": "RegisteredSolverFunctionJob"
