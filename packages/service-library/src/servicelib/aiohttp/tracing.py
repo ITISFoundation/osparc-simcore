@@ -152,10 +152,14 @@ def _startup(
 
 @web.middleware
 async def ResponseTraceIdHeaderMiddleware(request: web.Request, handler):
-    response = await handler(request)
-    trace_id_header = get_trace_id_header()
-    if trace_id_header:
-        response.headers.update(trace_id_header)
+    try:
+        response = await handler(request)
+    except web.HTTPException as exc:
+        if headers := get_trace_id_header():
+            exc.headers.update(headers)
+        raise exc
+    if headers := get_trace_id_header():
+        response.headers.update(headers)
     return response
 
 
