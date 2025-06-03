@@ -36,7 +36,7 @@ def create_data_response(data: Any, *, status: int = HTTP_200_OK) -> web.Respons
     return web.json_response(enveloped_payload, dumps=json_dumps, status=status)
 
 
-MAX_STATUS_MESSAGE_LENGTH: Final[int] = 50
+MAX_STATUS_MESSAGE_LENGTH: Final[int] = 100
 
 
 def safe_status_message(
