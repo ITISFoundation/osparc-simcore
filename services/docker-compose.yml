@@ -1403,7 +1403,7 @@ services:
       - "--tracing.otlp.http=true"
     healthcheck:
       # NOTE: this healthcheck to check if traefik is up and running must be run on the ping entrypoint defined in command!
-      test: ["traefik", "healthcheck", "--ping", "--ping.entryPoint=ping", "--ping.address=:9082"]
+      test: traefik healthcheck --ping --ping.entryPoint=ping --entryPoints.ping.address=:9082
       interval: 10s
       timeout: 5s
       retries: 5
