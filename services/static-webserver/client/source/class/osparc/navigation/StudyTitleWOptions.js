@@ -111,8 +111,9 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
           optionsMenu.add(this.getChildControl("study-menu-info"));
           optionsMenu.add(this.getChildControl("study-menu-reload"));
           optionsMenu.add(this.getChildControl("study-menu-conversations"));
-          optionsMenu.add(this.getChildControl("study-menu-convert-to-pipeline"));
-          optionsMenu.add(this.getChildControl("study-menu-restore"));
+          if (osparc.product.Utils.showConvertToPipeline()) {
+            optionsMenu.add(this.getChildControl("study-menu-convert-to-pipeline"));
+          }
           optionsMenu.add(this.getChildControl("study-menu-open-logger"));
           control = new qx.ui.form.MenuButton().set({
             appearance: "fab-button",
@@ -162,15 +163,12 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
           converter: mode => mode === "standalone" ? "visible" : "excluded"
         });
 
-        const convertToPipelineButton = this.getChildControl("study-menu-convert-to-pipeline");
-        study.getUi().bind("mode", convertToPipelineButton, "visibility", {
-          converter: mode => mode === "standalone" ? "visible" : "excluded"
-        });
-
-        const restoreButton = this.getChildControl("study-menu-restore");
-        study.getUi().bind("mode", restoreButton, "visibility", {
-          converter: mode => mode === "standalone" ? "visible" : "excluded"
-        });
+        if (osparc.product.Utils.showConvertToPipeline()) {
+          const convertToPipelineButton = this.getChildControl("study-menu-convert-to-pipeline");
+          study.getUi().bind("mode", convertToPipelineButton, "visibility", {
+            converter: mode => mode === "standalone" ? "visible" : "excluded"
+          });
+        }
 
         const loggerButton = this.getChildControl("study-menu-open-logger");
         study.getUi().bind("mode", loggerButton, "visibility", {
