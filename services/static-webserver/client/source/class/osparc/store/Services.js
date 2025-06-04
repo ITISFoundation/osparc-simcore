@@ -165,17 +165,15 @@ qx.Class.define("osparc.store.Services", {
         }
       };
       this.__studyServicesPromisesCached[studyId] = osparc.data.Resources.fetch("studies", "getServices", params)
-        /*
-        OM: here
         .then(resp => {
           const services = resp["services"];
           services.forEach(service => {
+            // this service information is not complete, keep it in cache anyway
             service.version = service["release"]["version"];
             this.__addServiceToCache(service);
           });
           return resp;
         })
-        */
         .finally(() => {
           delete this.__studyServicesPromisesCached[studyId];
         });
@@ -389,6 +387,15 @@ qx.Class.define("osparc.store.Services", {
     __addToCache: function(key, version, value) {
       if (!(key in this.__servicesCached)) {
         this.__servicesCached[key] = {};
+      }
+      // some services that go to the cache are not complete, e.g. study services
+      // if the one in the cache is the complete one, do not overwrite it
+      if (
+        key in this.__servicesCached[key] &&
+        version in this.__servicesCached[key] &&
+        this.__servicesCached[key][version]["inputs"]
+      ) {
+        return;
       }
       this.__servicesCached[key][version] = value;
     },
