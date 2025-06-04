@@ -1401,6 +1401,14 @@ services:
       - "--tracing.addinternals"
       - "--tracing.otlp=true"
       - "--tracing.otlp.http=true"
+    healthcheck:
+      # NOTE: this healthcheck to check if traefik is up and running must be run on the ping entrypoint defined in command!
+      test: ["traefik", "healthcheck", "--ping", "--ping.entryPoint=ping", "--ping.address=:9082"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+      start_interval: 1s
     volumes:
       # So that Traefik can listen to the Docker events
       - /var/run/docker.sock:/var/run/docker.sock
