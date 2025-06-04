@@ -164,7 +164,11 @@ async def connect_service_to_pricing_plan(
 ) -> PricingPlanToServiceGet:
     # Check whether service key and version exists
     await catalog_service.get_service(
-        app, user_id, service_key, service_version, product_name
+        app,
+        user_id=user_id,
+        service_key=service_key,
+        service_version=service_version,
+        product_name=product_name,
     )
 
     rpc_client = get_rabbitmq_rpc_client(app)

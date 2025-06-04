@@ -32,6 +32,7 @@ from models_library.generated_models.docker_rest_api import (
 )
 from models_library.products import ProductName
 from models_library.users import UserID
+from pytest_simcore.helpers.catalog_services import CreateFakeServiceDataCallable
 from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.services_specifications import (
     services_specifications,
@@ -183,7 +184,7 @@ async def test_get_service_specifications(
     user: dict[str, Any],
     user_groups_ids: list[int],
     target_product: ProductName,
-    create_fake_service_data: Callable,
+    create_fake_service_data: CreateFakeServiceDataCallable,
     services_db_tables_injector: Callable,
     services_specifications_injector: Callable,
     sqlalchemy_async_engine: AsyncEngine,
@@ -278,7 +279,7 @@ async def test_get_service_specifications_are_passed_to_newer_versions_of_servic
     user: dict[str, Any],
     user_groups_ids: list[int],
     target_product: ProductName,
-    create_fake_service_data: Callable,
+    create_fake_service_data: CreateFakeServiceDataCallable,
     services_db_tables_injector: Callable,
     services_specifications_injector: Callable,
     create_service_specifications: Callable[..., ServiceSpecificationsAtDB],

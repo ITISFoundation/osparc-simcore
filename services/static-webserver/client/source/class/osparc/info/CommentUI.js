@@ -126,11 +126,13 @@ qx.Class.define("osparc.info.CommentUI", {
       const commentContent = this.getChildControl("comment-content");
       commentContent.setValue(this.__comment["content"]);
 
-      const user = osparc.store.Groups.getInstance().getUserByGroupId(this.__comment["userGroupId"])
-      if (user) {
-        thumbnail.setSource(user.getThumbnail());
-        userName.setValue(user.getLabel());
-      }
+      osparc.store.Users.getInstance().getUser(this.__comment["userGroupId"])
+        .then(user => {
+          if (user) {
+            thumbnail.setSource(user.getThumbnail());
+            userName.setValue(user.getLabel());
+          }
+        });
 
       this.getChildControl("spacer");
     }

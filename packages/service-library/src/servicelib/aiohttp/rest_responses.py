@@ -1,10 +1,7 @@
-"""Utils to check, convert and compose server responses for the RESTApi"""
+from typing import Any, Final, TypedDict
 
-import inspect
-from typing import Any
-
-from aiohttp import web, web_exceptions
-from aiohttp.web_exceptions import HTTPError, HTTPException
+from aiohttp import web
+from aiohttp.web_exceptions import HTTPError
 from common_library.error_codes import ErrorCodeStr
 from common_library.json_serialization import json_dumps
 from models_library.rest_error import ErrorGet, ErrorItemType
@@ -13,46 +10,71 @@ from ..aiohttp.status import HTTP_200_OK
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 from ..rest_constants import RESPONSE_MODEL_POLICY
 from ..rest_responses import is_enveloped
-from ..status_codes_utils import get_code_description
+from ..status_codes_utils import get_code_description, is_error
+
+
+class EnvelopeDict(TypedDict):
+    data: Any
+    error: Any
 
 
 def wrap_as_envelope(
-    data: Any = None,
-    error: Any = None,
-) -> dict[str, Any]:
+    data: Any | None = None,
+    error: Any | None = None,
+) -> EnvelopeDict:
     return {"data": data, "error": error}
 
 
-# RESPONSES FACTORIES -------------------------------
+def create_data_response(data: Any, *, status: int = HTTP_200_OK) -> web.Response:
+    """Creates a JSON response with the given data and ensures it is wrapped in an envelope."""
+
+    assert (  # nosec
+        is_error(status) is False
+    ), f"Expected a non-error status code, got {status=}"
+
+    enveloped_payload = wrap_as_envelope(data) if not is_enveloped(data) else data
+    return web.json_response(enveloped_payload, dumps=json_dumps, status=status)
 
 
-def create_data_response(
-    data: Any, *, skip_internal_error_details=False, status=HTTP_200_OK
-) -> web.Response:
-    response = None
-    try:
-        payload = wrap_as_envelope(data) if not is_enveloped(data) else data
+MAX_STATUS_MESSAGE_LENGTH: Final[int] = 100
 
-        response = web.json_response(payload, dumps=json_dumps, status=status)
-    except (TypeError, ValueError) as err:
-        response = exception_to_response(
-            create_http_error(
-                [
-                    err,
-                ],
-                str(err),
-                web.HTTPInternalServerError,
-                skip_internal_error_details=skip_internal_error_details,
-            )
-        )
-    return response
+
+def safe_status_message(
+    message: str | None, max_length: int = MAX_STATUS_MESSAGE_LENGTH
+) -> str | None:
+    """
+    Truncates a status-message (i.e. `reason` in HTTP errors) to a maximum length, replacing newlines with spaces.
+
+    If the message is longer than max_length, it will be truncated and "..." will be appended.
+
+    This prevents issues such as:
+        - `aiohttp.http_exceptions.LineTooLong`: 400, message: Got more than 8190 bytes when reading Status line is too long.
+        - Multiline not allowed in HTTP reason attribute (aiohttp now raises ValueError).
+
+    See:
+        - When to use http status and/or text messages https://github.com/ITISFoundation/osparc-simcore/pull/7760
+        - [RFC 9112, Section 4.1: HTTP/1.1 Message Syntax and Routing](https://datatracker.ietf.org/doc/html/rfc9112#section-4.1) (status line length limits)
+        - [RFC 9110, Section 15.5: Reason Phrase](https://datatracker.ietf.org/doc/html/rfc9110#section-15.5) (reason phrase definition)
+    """
+    assert max_length > 0  # nosec
+
+    if not message:
+        return None
+
+    flat_message = message.replace("\n", " ")
+    if len(flat_message) <= max_length:
+        return flat_message
+
+    # Truncate and add ellipsis
+    return flat_message[: max_length - 3] + "..."
 
 
 def create_http_error(
     errors: list[Exception] | Exception,
-    reason: str | None = None,
+    error_message: str | None = None,
     http_error_cls: type[HTTPError] = web.HTTPInternalServerError,
     *,
+    status_reason: str | None = None,
     skip_internal_error_details: bool = False,
     error_code: ErrorCodeStr | None = None,
 ) -> HTTPError:
@@ -64,14 +86,18 @@ def create_http_error(
     if not isinstance(errors, list):
         errors = [errors]
 
-    is_internal_error: bool = http_error_cls == web.HTTPInternalServerError
-    default_message = reason or get_code_description(http_error_cls.status_code)
+    is_internal_error = bool(http_error_cls == web.HTTPInternalServerError)
+
+    status_reason = status_reason or get_code_description(http_error_cls.status_code)
+    error_message = error_message or get_code_description(http_error_cls.status_code)
+
+    assert len(status_reason) < MAX_STATUS_MESSAGE_LENGTH  # nosec
 
     if is_internal_error and skip_internal_error_details:
         error = ErrorGet.model_validate(
             {
                 "status": http_error_cls.status_code,
-                "message": default_message,
+                "message": error_message,
                 "support_id": error_code,
             }
         )
@@ -81,7 +107,7 @@ def create_http_error(
             {
                 "errors": items,  # NOTE: deprecated!
                 "status": http_error_cls.status_code,
-                "message": default_message,
+                "message": error_message,
                 "support_id": error_code,
             }
         )
@@ -92,7 +118,7 @@ def create_http_error(
     )
 
     return http_error_cls(
-        reason=safe_status_message(reason),
+        reason=safe_status_message(status_reason),
         text=json_dumps(
             payload,
         ),
@@ -110,47 +136,3 @@ def exception_to_response(exc: HTTPError) -> web.Response:
         reason=exc.reason,
         text=exc.text,
     )
-
-
-# Inverse map from code to HTTPException classes
-def _collect_http_exceptions(exception_cls: type[HTTPException] = HTTPException):
-    def _pred(obj) -> bool:
-        return (
-            inspect.isclass(obj)
-            and issubclass(obj, exception_cls)
-            and getattr(obj, "status_code", 0) > 0
-        )
-
-    found: list[tuple[str, Any]] = inspect.getmembers(web_exceptions, _pred)
-    assert found  # nosec
-
-    http_statuses = {cls.status_code: cls for _, cls in found}
-    assert len(http_statuses) == len(found), "No duplicates"  # nosec
-
-    return http_statuses
-
-
-def safe_status_message(message: str | None, max_length: int = 50) -> str | None:
-    """
-    Truncates a status-message (i.e. `reason` in HTTP errors) to a maximum length, replacing newlines with spaces.
-
-    If the message is longer than max_length, it will be truncated and "..." will be appended.
-
-    This prevents issues such as:
-        - `aiohttp.http_exceptions.LineTooLong`: 400, message: Got more than 8190 bytes when reading Status line is too long.
-        - Multiline not allowed in HTTP reason attribute (aiohttp now raises ValueError).
-
-    See:
-        - When to use http status and/or text messages https://github.com/ITISFoundation/osparc-simcore/pull/7760
-        - [RFC 9112, Section 4.1: HTTP/1.1 Message Syntax and Routing](https://datatracker.ietf.org/doc/html/rfc9112#section-4.1) (status line length limits)
-        - [RFC 9110, Section 15.5: Reason Phrase](https://datatracker.ietf.org/doc/html/rfc9110#section-15.5) (reason phrase definition)
-    """
-    if not message:
-        return None
-
-    flat_message = message.replace("\n", " ")
-    if len(flat_message) <= max_length:
-        return flat_message
-
-    # Truncate and add ellipsis
-    return flat_message[: max_length - 3] + "..."

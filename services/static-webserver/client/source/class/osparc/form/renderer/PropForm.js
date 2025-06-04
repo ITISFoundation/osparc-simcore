@@ -764,7 +764,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
               destinations[node2Id][portId] = "fetching";
             }
           });
-          osparc.data.Resources.getCompatibleInputs(node1, dragPortId, this.getNode())
+          osparc.data.Resources.getInstance().getCompatibleInputs(node1, dragPortId, this.getNode())
             .then(compatiblePorts => {
               this.getPortIds().forEach(portId => {
                 destinations[node2Id][portId] = compatiblePorts.includes(portId);
