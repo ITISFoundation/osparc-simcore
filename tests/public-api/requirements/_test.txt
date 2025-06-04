@@ -2,7 +2,7 @@ aiodocker==0.24.0
     # via -r requirements/_test.in
 aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.11.13
+aiohttp==3.11.18
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in

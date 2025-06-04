@@ -18,7 +18,7 @@ aiofiles==24.1.0
     #   aioboto3
 aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.11.13
+aiohttp==3.11.18
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt

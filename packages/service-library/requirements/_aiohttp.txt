@@ -1,6 +1,6 @@
 aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.11.13
+aiohttp==3.12.8
     # via -r requirements/_aiohttp.in
 aiopg==1.4.0
     # via -r requirements/_aiohttp.in
