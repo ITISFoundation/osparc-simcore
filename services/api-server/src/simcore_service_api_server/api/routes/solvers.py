@@ -83,10 +83,10 @@ async def list_solvers(
     description=create_route_description(
         base="Lists all available solvers (paginated)",
         changelog=[
-            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.9-rc1"),
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.10-rc1"),
         ],
     ),
-    include_in_schema=False,  # TO BE RELEASED in 0.9
+    include_in_schema=False,  # TO BE RELEASED in 0.10-rc1
 )
 async def list_all_solvers_paginated(
     page_params: Annotated[PaginationParams, Depends()],
@@ -246,10 +246,10 @@ async def list_solver_releases(
     description=create_route_description(
         base="Lists all releases of a give solver (paginated)",
         changelog=[
-            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.9-rc1"),
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.10-rc1"),
         ],
     ),
-    include_in_schema=False,  # TO BE RELEASED in 0.9
+    include_in_schema=False,  # TO BE RELEASED in 0.10-rc1
 )
 async def list_solver_releases_paginated(
     solver_key: SolverKeyId,

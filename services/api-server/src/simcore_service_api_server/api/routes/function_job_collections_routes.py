@@ -24,7 +24,11 @@ from ..dependencies.models_schemas_function_filters import (
 )
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver_rpc import get_wb_api_rpc_client
-from ._constants import FMSG_CHANGELOG_NEW_IN_VERSION, create_route_description
+from ._constants import (
+    FMSG_CHANGELOG_ADDED_IN_VERSION,
+    FMSG_CHANGELOG_NEW_IN_VERSION,
+    create_route_description,
+)
 from .function_jobs_routes import function_job_status, get_function_job
 
 # pylint: disable=too-many-arguments
@@ -40,6 +44,30 @@ _COMMON_FUNCTION_JOB_COLLECTION_ERROR_RESPONSES: Final[dict] = {
         "model": ErrorGet,
     },
 }
+
+ENDPOINTS = [
+    "list_function_job_collections",
+    "register_function_job_collection",
+    "get_function_job_collection",
+    "delete_function_job_collection",
+]
+CHANGE_LOGS = {}
+for endpoint in ENDPOINTS:
+    CHANGE_LOGS[endpoint] = [
+        FMSG_CHANGELOG_NEW_IN_VERSION.format("0.8.0"),
+    ]
+    if endpoint in [
+        "list_function_job_collections",
+        "register_function_job_collection",
+        "get_function_job_collection",
+        "function_job_collection_list_function_jobs",
+    ]:
+        CHANGE_LOGS[endpoint].append(
+            FMSG_CHANGELOG_ADDED_IN_VERSION.format(
+                "0.9.0",
+                "add `created_at` field in the registered function-related objects",
+            )
+        )
 
 
 @function_job_collections_router.get(

@@ -439,7 +439,7 @@ qx.Class.define("osparc.study.Utils", {
     __guessIcon: function(studyData) {
       return new Promise(resolve => {
         if (studyData["ui"]["mode"] === "pipeline") {
-          resolve("osparc/icons/diagram.png");
+          resolve(osparc.data.model.StudyUI.PIPELINE_ICON);
         } else {
           const defaultIcon = osparc.dashboard.CardBase.PRODUCT_ICON;
           // the was to guess the TI type is to check the boot mode of the ti-postpro in the pipeline
@@ -454,7 +454,7 @@ qx.Class.define("osparc.study.Utils", {
                 resolve(defaultIcon);
               });
           } else {
-            resolve("osparc/icons/diagram.png");
+            resolve(osparc.data.model.StudyUI.PIPELINE_ICON);
           }
         }
       });
