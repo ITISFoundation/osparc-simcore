@@ -5,6 +5,7 @@ from typing import Final, cast
 from aiohttp import web
 from models_library.api_schemas_webserver import get_webserver_rpc_namespace
 from models_library.errors import RABBITMQ_CLIENT_UNHEALTHY_MSG
+from models_library.rabbitmq_basic_types import RPCNamespace
 from servicelib.aiohttp.application_keys import (
     APP_RABBITMQ_CLIENT_KEY,
     APP_RABBITMQ_RPC_SERVER_KEY,
@@ -99,6 +100,13 @@ def get_rabbitmq_rpc_server(app: web.Application) -> RabbitMQRPCClient:
     return cast(RabbitMQRPCClient, app[APP_RABBITMQ_RPC_SERVER_KEY])
 
 
+def get_rpc_namespace(app: web.Application) -> RPCNamespace:
+    settings = get_application_settings(app)
+
+    assert settings.WEBSERVER_HOST  # nosec
+    return get_webserver_rpc_namespace(settings.WEBSERVER_HOST)
+
+
 def create_register_rpc_routes_on_startup(router: RPCRouter):
     """
     This high-order function allows for more flexible router registration
@@ -111,10 +119,7 @@ def create_register_rpc_routes_on_startup(router: RPCRouter):
 
     async def _on_startup(app: web.Application):
         rpc_server = get_rabbitmq_rpc_server(app)
-        settings = get_application_settings(app)
-
-        assert settings.WEBSERVER_HOST  # nosec
-        rpc_namespace = get_webserver_rpc_namespace(settings.WEBSERVER_HOST)
+        rpc_namespace = get_rpc_namespace(app)
         await rpc_server.register_router(router, rpc_namespace, app)
 
     return _on_startup
