@@ -72,24 +72,6 @@ async def _finished_banner(app: web.Application):
     print(info.get_finished_banner(), flush=True)  # noqa: T201
 
 
-def create_application_auth() -> web.Application:
-    app = create_safe_application()
-    setup_settings(app)
-
-    setup_db(app)
-    setup_session(app)
-    setup_security(app)
-    setup_rest(app)
-
-    # NOTE: *last* events
-    app.on_startup.append(_welcome_banner)
-    app.on_shutdown.append(_finished_banner)
-
-    _logger.debug("Routes in app: \n %s", pformat(app.router.named_resources()))
-
-    return app
-
-
 def create_application() -> web.Application:
     """
     Initializes service
@@ -187,6 +169,24 @@ def create_application() -> web.Application:
     return app
 
 
+def create_application_authz() -> web.Application:
+    app = create_safe_application()
+    setup_settings(app)
+
+    setup_db(app)
+    setup_session(app)
+    setup_security(app)
+    setup_rest(app)
+
+    # NOTE: *last* events
+    app.on_startup.append(_welcome_banner)
+    app.on_shutdown.append(_finished_banner)
+
+    _logger.debug("Routes in this app: \n %s", pformat(app.router.named_resources()))
+
+    return app
+
+
 def run_service(app: web.Application, config: dict[str, Any]):
     web.run_app(
         app,
@@ -195,9 +195,3 @@ def run_service(app: web.Application, config: dict[str, Any]):
         # this gets overriden by the gunicorn config in /docker/boot.sh
         access_log_format='%a %t "%r" %s %b --- [%Dus] "%{Referer}i" "%{User-Agent}i"',
     )
-
-
-__all__: tuple[str, ...] = (
-    "create_application",
-    "run_service",
-)
