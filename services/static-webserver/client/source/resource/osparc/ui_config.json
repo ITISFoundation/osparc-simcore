@@ -156,6 +156,11 @@
         "title": "${replace_me_product_name}",
         "newStudyLabel": "New Project",
         "idToWidget": "startS4LButton"
+      }, {
+        "resourceType": "service",
+        "expectedKey": "simcore/services/dynamic/s4l-ui-framework",
+        "title": "Sim4Life.framework",
+        "newStudyLabel": "Sim4Life.framework"
       }]
     }
   },
