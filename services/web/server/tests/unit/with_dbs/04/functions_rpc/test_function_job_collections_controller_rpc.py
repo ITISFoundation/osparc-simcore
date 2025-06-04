@@ -14,8 +14,6 @@ from models_library.api_schemas_webserver.functions import (
     ProjectFunctionJob,
 )
 from models_library.functions import FunctionJobCollectionsListFilters
-
-# import simcore_service_webserver.functions._functions_controller_rpc as functions_rpc
 from models_library.functions_errors import (
     FunctionJobCollectionReadAccessDeniedError,
     FunctionJobIDNotFoundError,

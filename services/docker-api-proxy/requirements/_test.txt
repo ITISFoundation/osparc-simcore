@@ -10,9 +10,9 @@ aiodocker==0.24.0
     #   -r requirements/_test.in
 aiofiles==24.1.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-aiohappyeyeballs==2.4.6
+aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.11.18
+aiohttp==3.12.7
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt

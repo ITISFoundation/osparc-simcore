@@ -405,7 +405,7 @@ class BaseCompScheduler(ABC):
                     user_id=user_id,
                     user_email=run_metadata.get("user_email", UNDEFINED_STR_METADATA),
                     project_id=t.project_id,
-                    project_name=run_metadata.get("project_metadata", {}).get(  # type: ignore[arg-type]
+                    project_name=run_metadata.get(
                         "project_name", UNDEFINED_STR_METADATA
                     ),
                     node_id=t.node_id,

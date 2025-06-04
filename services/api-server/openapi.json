@@ -3,7 +3,7 @@
   "info": {
     "title": "osparc.io public API",
     "description": "osparc-simcore public API specifications",
-    "version": "0.8.0"
+    "version": "0.9.0"
   },
   "paths": {
     "/v0/meta": {
@@ -5286,7 +5286,7 @@
           "function_jobs"
         ],
         "summary": "List Function Jobs",
-        "description": "List function jobs\n\nNew in *version 0.8.0*",
+        "description": "List function jobs\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects",
         "operationId": "list_function_jobs",
         "security": [
           {
@@ -5346,7 +5346,7 @@
           "function_jobs"
         ],
         "summary": "Register Function Job",
-        "description": "Create function job\n\nNew in *version 0.8.0*",
+        "description": "Create function job\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects",
         "operationId": "register_function_job",
         "security": [
           {
@@ -5431,7 +5431,7 @@
           "function_jobs"
         ],
         "summary": "Get Function Job",
-        "description": "Get function job\n\nNew in *version 0.8.0*",
+        "description": "Get function job\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects",
         "operationId": "get_function_job",
         "security": [
           {
@@ -6810,7 +6810,7 @@
           "functions"
         ],
         "summary": "Register Function",
-        "description": "Create function\n\nNew in *version 0.8.0*",
+        "description": "Create function\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects",
         "operationId": "register_function",
         "security": [
           {
@@ -6903,7 +6903,7 @@
           "functions"
         ],
         "summary": "List Functions",
-        "description": "List functions\n\nNew in *version 0.8.0*",
+        "description": "List functions\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects",
         "operationId": "list_functions",
         "security": [
           {
@@ -6965,7 +6965,7 @@
           "functions"
         ],
         "summary": "Get Function",
-        "description": "Get function\n\nNew in *version 0.8.0*",
+        "description": "Get function\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects",
         "operationId": "get_function",
         "security": [
           {
@@ -7098,7 +7098,7 @@
           "functions"
         ],
         "summary": "List Function Jobs For Functionid",
-        "description": "List function jobs for a function\n\nNew in *version 0.8.0*",
+        "description": "List function jobs for a function\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects",
         "operationId": "list_function_jobs_for_functionid",
         "security": [
           {
@@ -7170,7 +7170,7 @@
           "functions"
         ],
         "summary": "Update Function Title",
-        "description": "Update function\n\nNew in *version 0.8.0*",
+        "description": "Update function\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects",
         "operationId": "update_function_title",
         "security": [
           {
@@ -7257,7 +7257,7 @@
           "functions"
         ],
         "summary": "Update Function Description",
-        "description": "Update function\n\nNew in *version 0.8.0*",
+        "description": "Update function\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects",
         "operationId": "update_function_description",
         "security": [
           {
@@ -7568,7 +7568,7 @@
           "functions"
         ],
         "summary": "Run Function",
-        "description": "Run function\n\nNew in *version 0.8.0*",
+        "description": "Run function\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects",
         "operationId": "run_function",
         "security": [
           {
@@ -7664,7 +7664,7 @@
           "functions"
         ],
         "summary": "Map Function",
-        "description": "Map function over input parameters\n\nNew in *version 0.8.0*",
+        "description": "Map function over input parameters\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects",
         "operationId": "map_function",
         "security": [
           {
@@ -7699,6 +7699,7 @@
                     }
                   ]
                 },
+                "maxItems": 50,
                 "title": "Function Inputs List"
               }
             }

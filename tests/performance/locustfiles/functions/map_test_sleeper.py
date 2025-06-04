@@ -3,7 +3,7 @@
 # dependencies = [
 #     "httpx",
 #     "matplotlib",
-#     "osparc>=0.8.3.post0.dev26",
+#     "osparc>0.8.3.post0.dev26",
 #     "tenacity",
 #     "tqdm",
 # ]
