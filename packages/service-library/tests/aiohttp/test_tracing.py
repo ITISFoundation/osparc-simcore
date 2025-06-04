@@ -4,12 +4,14 @@
 
 import importlib
 from collections.abc import Callable, Iterator
+from functools import partial
 from typing import Any
 
 import pip
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from opentelemetry import trace
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from pydantic import ValidationError
 from servicelib.aiohttp.tracing import get_tracing_lifespan
@@ -174,12 +176,17 @@ async def test_trace_id_in_response_header(
     service_name = "simcore_service_webserver"
     tracing_settings = TracingSettings()
 
-    async def handler(request: web.Request) -> web.Response:
+    async def handler(handler_data: dict, request: web.Request) -> web.Response:
+        current_span = trace.get_current_span()
+        handler_data[_OSPARC_TRACE_ID_HEADER] = format(
+            current_span.get_span_context().trace_id, "032x"
+        )
         if isinstance(server_response, web.HTTPException):
             raise server_response
         return server_response
 
-    app.router.add_get("/", handler)
+    handler_data = dict()
+    app.router.add_get("/", partial(handler, handler_data))
 
     async for _ in get_tracing_lifespan(
         app=app,
@@ -192,3 +199,6 @@ async def test_trace_id_in_response_header(
         assert _OSPARC_TRACE_ID_HEADER in response.headers
         trace_id = response.headers[_OSPARC_TRACE_ID_HEADER]
         assert len(trace_id) == 32  # Ensure trace ID is a 32-character hex string
+        assert (
+            trace_id == handler_data[_OSPARC_TRACE_ID_HEADER]
+        )  # Ensure trace IDs match
