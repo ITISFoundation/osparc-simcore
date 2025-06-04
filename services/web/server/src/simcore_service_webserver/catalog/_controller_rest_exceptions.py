@@ -7,6 +7,7 @@ from common_library.error_codes import create_error_code
 from models_library.rest_error import ErrorGet
 from servicelib.aiohttp import status
 from servicelib.logging_errors import create_troubleshotting_log_kwargs
+from servicelib.rabbitmq._errors import RemoteMethodNotRegisteredError
 from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogForbiddenError,
     CatalogItemNotFoundError,
@@ -37,7 +38,7 @@ assert CatalogItemNotFoundError  # nosec
 _logger = logging.getLogger(__name__)
 
 
-async def _handler_catalog_response_errors(
+async def _handler_catalog_client_errors(
     request: web.Request, exception: Exception
 ) -> web.Response:
 
@@ -73,13 +74,23 @@ async def _handler_catalog_response_errors(
             )
         )
         error = ErrorGet.model_construct(
-            message=user_msg, support_id=oec, status=status_code
+            message=user_msg,
+            support_id=oec,
+            status=status_code,
         )
 
     return create_error_response(error, status_code=error.status)
 
 
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
+    RemoteMethodNotRegisteredError: HttpErrorInfo(
+        status.HTTP_503_SERVICE_UNAVAILABLE,
+        MSG_CATALOG_SERVICE_UNAVAILABLE,
+    ),
+    CatalogForbiddenError: HttpErrorInfo(
+        status.HTTP_403_FORBIDDEN,
+        "Forbidden catalog access",
+    ),
     CatalogItemNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
         "Catalog item not found",
@@ -91,15 +102,12 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     DefaultPricingUnitForServiceNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND, "Default pricing unit not found"
     ),
-    CatalogForbiddenError: HttpErrorInfo(
-        status.HTTP_403_FORBIDDEN, "Forbidden catalog access"
-    ),
 }
 
 
 _exceptions_handlers_map: ExceptionHandlersMap = {
-    CatalogResponseError: _handler_catalog_response_errors,
-    CatalogConnectionError: _handler_catalog_response_errors,
+    CatalogResponseError: _handler_catalog_client_errors,
+    CatalogConnectionError: _handler_catalog_client_errors,
 }
 _exceptions_handlers_map.update(to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP))
 
