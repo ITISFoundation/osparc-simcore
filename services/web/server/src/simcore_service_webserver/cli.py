@@ -1,4 +1,4 @@
-""" Application's command line .
+"""Application's command line .
 
 Why does this file exist, and why not put this in __main__?
 
@@ -15,13 +15,12 @@ Why does this file exist, and why not put this in __main__?
 
 import logging
 import os
-from typing import Final
+from typing import Annotated, Final
 
 import typer
 from aiohttp import web
 from common_library.json_serialization import json_dumps
 from settings_library.utils_cli import create_settings_command
-from typing_extensions import Annotated
 
 from .application_settings import ApplicationSettings
 from .login import cli as login_cli
