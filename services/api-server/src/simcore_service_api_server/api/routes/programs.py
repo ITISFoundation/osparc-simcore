@@ -42,10 +42,10 @@ router = APIRouter()
     description=create_route_description(
         base="Lists the latest of all available programs",
         changelog=[
-            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.9"),
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.10"),
         ],
     ),
-    include_in_schema=False,  # TO BE RELEASED in 0.9
+    include_in_schema=False,  # TO BE RELEASED in 0.10
 )
 async def list_programs(
     program_service: Annotated[ProgramService, Depends(get_program_service)],
@@ -77,10 +77,10 @@ async def list_programs(
     description=create_route_description(
         base="Lists the latest of all available programs",
         changelog=[
-            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.9"),
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.10"),
         ],
     ),
-    include_in_schema=False,  # TO BE RELEASED in 0.9
+    include_in_schema=False,  # TO BE RELEASED in 0.10
 )
 async def list_program_history(
     program_key: ProgramKeyId,

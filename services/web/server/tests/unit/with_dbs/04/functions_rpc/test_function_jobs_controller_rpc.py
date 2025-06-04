@@ -11,8 +11,6 @@ from models_library.api_schemas_webserver.functions import (
     ProjectFunction,
     ProjectFunctionJob,
 )
-
-# import simcore_service_webserver.functions._functions_controller_rpc as functions_rpc
 from models_library.functions_errors import (
     FunctionJobIDNotFoundError,
     FunctionJobReadAccessDeniedError,
