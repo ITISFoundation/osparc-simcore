@@ -10,7 +10,6 @@ import aiofiles
 from aiohttp import (
     ClientConnectionError,
     ClientError,
-    ClientPayloadError,
     ClientResponse,
     ClientResponseError,
     ClientSession,
@@ -32,7 +31,11 @@ from servicelib.utils import logged_gather, partition_gen
 from tenacity.after import after_log
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
-from tenacity.retry import retry_if_exception, retry_if_exception_type
+from tenacity.retry import (
+    retry_if_exception,
+    retry_if_exception_type,
+    retry_if_not_exception_type,
+)
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_exponential
 from tqdm import tqdm
@@ -154,7 +157,7 @@ async def _file_chunk_writer(
     progress_bar: ProgressBarData,
 ):
     async with aiofiles.open(file, "wb") as file_pointer:
-        while chunk := await response.content.read(CHUNK_SIZE):
+        async for chunk in response.content.iter_chunked(CHUNK_SIZE):
             await file_pointer.write(chunk)
             if io_log_redirect_cb and pbar.update(len(chunk)):
                 with log_catch(_logger, reraise=False):
@@ -181,25 +184,28 @@ async def download_link_to_file(
     progress_bar: ProgressBarData,
 ):
     _logger.debug("Downloading from %s to %s", url, file_path)
-    async for attempt in AsyncRetrying(
-        reraise=True,
-        wait=wait_exponential(min=1, max=10),
-        stop=stop_after_attempt(num_retries),
-        retry=retry_if_exception_type(ClientConnectionError),
-        before_sleep=before_sleep_log(_logger, logging.WARNING, exc_info=True),
-        after=after_log(_logger, log_level=logging.ERROR),
-    ):
-        with attempt:
-            async with AsyncExitStack() as stack:
-                response = await stack.enter_async_context(session.get(url))
-                if response.status == status.HTTP_404_NOT_FOUND:
-                    raise exceptions.InvalidDownloadLinkError(url)
-                if response.status > _VALID_HTTP_STATUS_CODES:
-                    raise exceptions.TransferError(url)
-                file_path.parent.mkdir(parents=True, exist_ok=True)
-                # SEE https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Length
-                file_size = int(response.headers.get("Content-Length", 0)) or None
-                try:
+    try:
+        async for attempt in AsyncRetrying(
+            reraise=True,
+            wait=wait_exponential(min=1, max=10),
+            stop=stop_after_attempt(num_retries),
+            retry=retry_if_not_exception_type(
+                (exceptions.InvalidDownloadLinkError, exceptions.TransferError)
+            ),
+            before_sleep=before_sleep_log(_logger, logging.WARNING, exc_info=True),
+            after=after_log(_logger, log_level=logging.ERROR),
+        ):
+            with attempt:
+                async with AsyncExitStack() as stack:
+                    response = await stack.enter_async_context(session.get(url))
+                    if response.status == status.HTTP_404_NOT_FOUND:
+                        raise exceptions.InvalidDownloadLinkError(url)
+                    if response.status > _VALID_HTTP_STATUS_CODES:
+                        raise exceptions.TransferError(url)
+                    file_path.parent.mkdir(parents=True, exist_ok=True)
+                    # SEE https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Length
+                    file_size = int(response.headers.get("Content-Length", 0)) or None
+
                     tqdm_progress = stack.enter_context(
                         tqdm_logging_redirect(
                             desc=f"downloading {url.path} --> {file_path.name}\n",
@@ -231,8 +237,8 @@ async def download_link_to_file(
                         sub_progress,
                     )
                     _logger.debug("Download complete")
-                except ClientPayloadError as exc:
-                    raise exceptions.TransferError(url) from exc
+    except Exception as exc:
+        raise exceptions.TransferError(url) from exc
 
 
 def _check_for_aws_http_errors(exc: BaseException) -> bool:
