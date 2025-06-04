@@ -1,3 +1,4 @@
+import datetime
 from collections.abc import Mapping
 from enum import Enum
 from typing import Annotated, Any, Literal, TypeAlias
@@ -96,6 +97,7 @@ class FunctionBase(BaseModel):
 
 class RegisteredFunctionBase(FunctionBase):
     uid: FunctionID
+    created_at: datetime.datetime
 
 
 class ProjectFunction(FunctionBase):
@@ -152,6 +154,7 @@ class FunctionJobBase(BaseModel):
 
 class RegisteredFunctionJobBase(FunctionJobBase):
     uid: FunctionJobID
+    created_at: datetime.datetime
 
 
 class ProjectFunctionJob(FunctionJobBase):
@@ -207,6 +210,7 @@ class FunctionJobCollection(BaseModel):
 
 class RegisteredFunctionJobCollection(FunctionJobCollection):
     uid: FunctionJobCollectionID
+    created_at: datetime.datetime
 
 
 class FunctionJobCollectionStatus(BaseModel):
@@ -225,6 +229,7 @@ class FunctionJobDB(BaseModel):
 
 class RegisteredFunctionJobDB(FunctionJobDB):
     uuid: FunctionJobID
+    created: datetime.datetime
 
 
 class FunctionDB(BaseModel):
@@ -239,6 +244,7 @@ class FunctionDB(BaseModel):
 
 class RegisteredFunctionDB(FunctionDB):
     uuid: FunctionID
+    created: datetime.datetime
 
 
 class FunctionJobCollectionDB(BaseModel):
@@ -248,6 +254,7 @@ class FunctionJobCollectionDB(BaseModel):
 
 class RegisteredFunctionJobCollectionDB(FunctionJobCollectionDB):
     uuid: FunctionJobCollectionID
+    created: datetime.datetime
 
 
 class FunctionIDString(ConstrainedStr):

@@ -31,7 +31,11 @@ from ..dependencies.services import get_api_client
 from ..dependencies.webserver_http import get_webserver_session
 from ..dependencies.webserver_rpc import get_wb_api_rpc_client
 from . import solvers_jobs, solvers_jobs_read, studies_jobs
-from ._constants import FMSG_CHANGELOG_NEW_IN_VERSION, create_route_description
+from ._constants import (
+    FMSG_CHANGELOG_ADDED_IN_VERSION,
+    FMSG_CHANGELOG_NEW_IN_VERSION,
+    create_route_description,
+)
 
 # pylint: disable=too-many-arguments
 # pylint: disable=cyclic-import
@@ -46,15 +50,33 @@ _COMMON_FUNCTION_JOB_ERROR_RESPONSES: Final[dict] = {
     },
 }
 
-FIRST_RELEASE_VERSION = "0.8.0"
+ENDPOINTS = [
+    "list_function_jobs",
+    "register_function_job",
+    "get_function_job",
+    "delete_function_job",
+    "function_job_status",
+    "function_job_outputs",
+]
+CHANGE_LOGS = {}
+for endpoint in ENDPOINTS:
+    CHANGE_LOGS[endpoint] = [
+        FMSG_CHANGELOG_NEW_IN_VERSION.format("0.8.0"),
+    ]
+    if endpoint in ["list_function_jobs", "register_function_job", "get_function_job"]:
+        CHANGE_LOGS[endpoint].append(
+            FMSG_CHANGELOG_ADDED_IN_VERSION.format(
+                "0.9.0",
+                "add `created_at` field in the registered function-related objects",
+            )
+        )
 
 
 @function_job_router.get(
     "",
     response_model=Page[RegisteredFunctionJob],
     description=create_route_description(
-        base="List function jobs",
-        changelog=[FMSG_CHANGELOG_NEW_IN_VERSION.format(FIRST_RELEASE_VERSION)],
+        base="List function jobs", changelog=CHANGE_LOGS["list_function_jobs"]
     ),
 )
 async def list_function_jobs(
@@ -82,7 +104,7 @@ async def list_function_jobs(
     response_model=RegisteredFunctionJob,
     description=create_route_description(
         base="Create function job",
-        changelog=[FMSG_CHANGELOG_NEW_IN_VERSION.format(FIRST_RELEASE_VERSION)],
+        changelog=CHANGE_LOGS["register_function_job"],
     ),
 )
 async def register_function_job(
@@ -102,7 +124,7 @@ async def register_function_job(
     responses={**_COMMON_FUNCTION_JOB_ERROR_RESPONSES},
     description=create_route_description(
         base="Get function job",
-        changelog=[FMSG_CHANGELOG_NEW_IN_VERSION.format(FIRST_RELEASE_VERSION)],
+        changelog=CHANGE_LOGS["get_function_job"],
     ),
 )
 async def get_function_job(
@@ -122,7 +144,7 @@ async def get_function_job(
     responses={**_COMMON_FUNCTION_JOB_ERROR_RESPONSES},
     description=create_route_description(
         base="Delete function job",
-        changelog=[FMSG_CHANGELOG_NEW_IN_VERSION.format(FIRST_RELEASE_VERSION)],
+        changelog=CHANGE_LOGS["delete_function_job"],
     ),
 )
 async def delete_function_job(
@@ -142,7 +164,7 @@ async def delete_function_job(
     responses={**_COMMON_FUNCTION_JOB_ERROR_RESPONSES},
     description=create_route_description(
         base="Get function job status",
-        changelog=[FMSG_CHANGELOG_NEW_IN_VERSION.format(FIRST_RELEASE_VERSION)],
+        changelog=CHANGE_LOGS["function_job_status"],
     ),
 )
 async def function_job_status(
@@ -222,7 +244,7 @@ async def get_function_from_functionjobid(
     responses={**_COMMON_FUNCTION_JOB_ERROR_RESPONSES},
     description=create_route_description(
         base="Get function job outputs",
-        changelog=[FMSG_CHANGELOG_NEW_IN_VERSION.format(FIRST_RELEASE_VERSION)],
+        changelog=CHANGE_LOGS["function_job_outputs"],
     ),
 )
 async def function_job_outputs(

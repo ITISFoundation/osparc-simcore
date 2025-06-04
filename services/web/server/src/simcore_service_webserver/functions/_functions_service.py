@@ -112,6 +112,7 @@ async def register_function_job_collection(
         title=registered_function_job_collection.title,
         description=registered_function_job_collection.description,
         job_ids=registered_job_ids,
+        created_at=registered_function_job_collection.created,
     )
 
 
@@ -174,6 +175,7 @@ async def get_function_job_collection(
         title=returned_function_job_collection.title,
         description=returned_function_job_collection.description,
         job_ids=returned_job_ids,
+        created_at=returned_function_job_collection.created,
     )
 
 
@@ -248,6 +250,7 @@ async def list_function_job_collections(
             title=function_job_collection.title,
             description=function_job_collection.description,
             job_ids=job_ids,
+            created_at=function_job_collection.created,
         )
         for function_job_collection, job_ids in returned_function_job_collections
     ], page
@@ -372,6 +375,7 @@ async def find_cached_function_jobs(
                     project_job_id=returned_function_job.class_specific_data[
                         "project_job_id"
                     ],
+                    created_at=returned_function_job.created,
                 )
             )
         elif returned_function_job.function_class == FunctionClass.SOLVER:
@@ -386,6 +390,7 @@ async def find_cached_function_jobs(
                     solver_job_id=returned_function_job.class_specific_data[
                         "solver_job_id"
                     ],
+                    created_at=returned_function_job.created,
                 )
             )
         else:
@@ -442,6 +447,7 @@ def _decode_function(
             output_schema=function.output_schema,
             project_id=function.class_specific_data["project_id"],
             default_inputs=function.default_inputs,
+            created_at=function.created,
         )
 
     if function.function_class == FunctionClass.SOLVER:
@@ -454,6 +460,7 @@ def _decode_function(
             solver_key=function.class_specific_data["solver_key"],
             solver_version=function.class_specific_data["solver_version"],
             default_inputs=function.default_inputs,
+            created_at=function.created,
         )
 
     raise UnsupportedFunctionClassError(function_class=function.function_class)
@@ -530,6 +537,7 @@ def _decode_functionjob(
             inputs=functionjob_db.inputs,
             outputs=functionjob_db.outputs,
             project_job_id=functionjob_db.class_specific_data["project_job_id"],
+            created_at=functionjob_db.created,
         )
 
     if functionjob_db.function_class == FunctionClass.SOLVER:
@@ -541,6 +549,7 @@ def _decode_functionjob(
             inputs=functionjob_db.inputs,
             outputs=functionjob_db.outputs,
             solver_job_id=functionjob_db.class_specific_data["solver_job_id"],
+            created_at=functionjob_db.created,
         )
 
     raise UnsupportedFunctionJobClassError(
