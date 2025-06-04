@@ -1,5 +1,3 @@
-"""Defines the different exceptions that may arise in the catalog subpackage"""
-
 from ..errors import WebServerBaseError
 
 
@@ -23,3 +21,14 @@ class DefaultPricingUnitForServiceNotFoundError(BaseCatalogError):
         super().__init__(**ctxs)
         self.service_key = service_key
         self.service_version = service_version
+
+
+class CatalogResponseError(BaseCatalogError):
+    msg_template = "Catalog response with error status {status} and message '{message}'"
+    status: int
+    message: str
+
+
+class CatalogConnectionError(BaseCatalogError):
+    msg_template = "Catalog connection or timeout error: {message}"
+    message: str
