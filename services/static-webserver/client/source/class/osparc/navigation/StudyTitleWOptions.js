@@ -89,15 +89,6 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
           });
           control.addListener("execute", () => this.__convertToPipelineClicked(), this);
           break;
-        case "study-menu-restore":
-          control = new qx.ui.menu.Button().set({
-            label: this.tr("Restore"),
-            icon: osparc.theme.common.Image.URLS["window-restore"] + "/20",
-          });
-          control.addListener("execute", () => {
-            this.getStudy().getUi().setMode("workbench");
-          });
-          break;
         case "study-menu-open-logger":
           control = new qx.ui.menu.Button().set({
             label: this.tr("Platform Logs..."),
