@@ -94,7 +94,7 @@ qx.Class.define("osparc.data.model.StudyUI", {
     TEMPLATE_TYPE: "TEMPLATE",
     TUTORIAL_TYPE: "TUTORIAL",
     HYPERTOOL_TYPE: "HYPERTOOL",
-    HYPERTOOL_ICON: (iconSize = 22) => "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/refs/heads/main/app/icons/hypertool.png",
+    HYPERTOOL_ICON: "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/refs/heads/main/app/icons/hypertool.png",
     PIPELINE_ICON: "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/refs/heads/main/app/icons/diagram.png",
   },
 

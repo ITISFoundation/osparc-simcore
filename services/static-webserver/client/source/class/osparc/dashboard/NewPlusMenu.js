@@ -91,6 +91,9 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
   },
 
   statics: {
+    MORE_ICON: "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/refs/heads/main/app/icons/arrows.png",
+    FOLDER_ICON: "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/refs/heads/main/app/icons/folder.png",
+
     createMenuButton: function(icon, title, infoText) {
       title = osparc.utils.Utils.replaceTokens(
         title,
@@ -153,10 +156,8 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       switch (id) {
         case "new-folder":
           this.addSeparator();
-          control = this.self().createMenuButton(
-            "@FontAwesome5Solid/folder/16",
-            this.tr("New Folder"),
-          );
+          control = this.self().createMenuButton(null, this.tr("New Folder"));
+          this.self().setIcon(control, this.self().FOLDER_ICON);
           osparc.utils.Utils.setIdToWidget(control, "newFolderButton");
           control.addListener("tap", () => this.__createNewFolder());
           this.add(control);
@@ -206,7 +207,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
               appearance: "menu-wider",
             });
             hypertoolsMenuButton.setMenu(hypertoolsMenu);
-            this.self().setIcon(hypertoolsMenuButton, osparc.data.model.StudyUI.HYPERTOOL_ICON(16));
+            this.self().setIcon(hypertoolsMenuButton, osparc.data.model.StudyUI.HYPERTOOL_ICON);
 
             hypertools.forEach(templateData => {
               const hypertoolButton = this.self().createMenuButton(null, templateData["name"]);
@@ -231,10 +232,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
     },
 
     __addMoreMenu: function() {
-      const moreMenuButton = this.self().createMenuButton("@FontAwesome5Solid/angle-double-right/16", this.tr("More"));
-      moreMenuButton.getChildControl("icon").set({
-        marginLeft: 6, // center it
-      });
+      const moreMenuButton = this.self().createMenuButton(null, this.tr("More"));
       this.addAt(moreMenuButton, this.__itemIdx);
       this.__itemIdx++;
 
@@ -242,6 +240,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
         appearance: "menu-wider",
       });
       moreMenuButton.setMenu(moreMenu);
+      this.self().setIcon(moreMenuButton, this.self().MORE_ICON);
 
       const permissions = osparc.data.Permissions.getInstance();
       if (permissions.canDo("dashboard.templates.read")) {
