@@ -62,7 +62,7 @@ async def test_valid_tracing_settings(
     service_name = "simcore_service_webserver"
     tracing_settings = TracingSettings()
     async for _ in get_tracing_lifespan(
-        app, service_name=service_name, tracing_settings=tracing_settings
+        app=app, service_name=service_name, tracing_settings=tracing_settings
     )(app):
         pass
 
@@ -139,13 +139,13 @@ async def test_tracing_setup_package_detection(
     service_name = "simcore_service_webserver"
     tracing_settings = TracingSettings()
     async for _ in get_tracing_lifespan(
-        app,
+        app=app,
         service_name=service_name,
         tracing_settings=tracing_settings,
     )(app):
         # idempotency
         async for _ in get_tracing_lifespan(
-            app,
+            app=app,
             service_name=service_name,
             tracing_settings=tracing_settings,
         )(app):
@@ -182,7 +182,7 @@ async def test_trace_id_in_response_header(
     app.router.add_get("/", handler)
 
     async for _ in get_tracing_lifespan(
-        app,
+        app=app,
         service_name=service_name,
         tracing_settings=tracing_settings,
         add_response_trace_id_header=True,

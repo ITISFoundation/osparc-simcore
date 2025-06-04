@@ -113,7 +113,7 @@ def _startup(
     # Since the code that is provided (monkeypatched) in the __init__ that the opentelemetry-autoinstrumentation-library provides is only 4 lines,
     # just adding a middleware, we are free to simply execute this "missed call" [since we can't call the monkeypatch'ed __init__()] in this following line:
     if add_response_trace_id_header:
-        app.middlewares.insert(0, ResponseTraceIdHeaderMiddleware)
+        app.middlewares.insert(0, response_trace_id_header_middleware)
     app.middlewares.insert(0, aiohttp_server_opentelemetry_middleware)
     # Code of the aiohttp server instrumentation: github.com/open-telemetry/opentelemetry-python-contrib/blob/eccb05c808a7d797ef5b6ecefed3590664426fbf/instrumentation/opentelemetry-instrumentation-aiohttp-server/src/opentelemetry/instrumentation/aiohttp_server/__init__.py#L246
     # For reference, the above statement was written for:
@@ -155,14 +155,16 @@ def _startup(
 
 
 @web.middleware
-async def ResponseTraceIdHeaderMiddleware(request: web.Request, handler):
+async def response_trace_id_header_middleware(request: web.Request, handler):
+    headers = get_trace_id_header()
+
     try:
         response = await handler(request)
     except web.HTTPException as exc:
-        if headers := get_trace_id_header():
+        if headers:
             exc.headers.update(headers)
         raise exc
-    if headers := get_trace_id_header():
+    if headers:
         response.headers.update(headers)
     return response
 
@@ -196,6 +198,7 @@ def _shutdown() -> None:
 
 
 def get_tracing_lifespan(
+    *,
     app: web.Application,
     tracing_settings: TracingSettings,
     service_name: str,
