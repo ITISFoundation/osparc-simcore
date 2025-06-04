@@ -202,7 +202,7 @@ async def mock_rpc_server(
         product_name: ProductName,
     ) -> InvoiceDataGet:
         return InvoiceDataGet.model_validate(
-            InvoiceDataGet.model_config["json_schema_extra"]["examples"][0]
+            InvoiceDataGet.model_json_schema()["examples"][0]
         )
 
     await rpc_server.register_router(router, namespace=WEBSERVER_RPC_NAMESPACE)
