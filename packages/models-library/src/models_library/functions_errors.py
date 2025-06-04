@@ -1,5 +1,5 @@
 from common_library.errors_classes import OsparcErrorMixin
-from servicelib.aiohttp import status
+from servicelib.aiohttp import status  # type: ignore[import-not-found]
 
 
 class FunctionBaseError(OsparcErrorMixin, Exception):
