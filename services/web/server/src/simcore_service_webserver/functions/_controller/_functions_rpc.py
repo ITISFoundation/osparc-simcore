@@ -1,7 +1,6 @@
 from typing import Literal
 
 from aiohttp import web
-from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.functions import (
     Function,
     FunctionAccessRights,
@@ -53,7 +52,7 @@ from models_library.rest_pagination import PageMetaInfoLimitOffset
 from models_library.users import UserID
 from servicelib.rabbitmq import RPCRouter
 
-from ...rabbitmq import get_rabbitmq_rpc_server
+from ...rabbitmq import create_register_rpc_routes_on_startup
 from .. import _functions_repository, _functions_service
 
 router = RPCRouter()
@@ -567,72 +566,4 @@ async def get_function_output_schema(
     )
 
 
-@router.expose(reraise_if_error_type=())
-async def get_function_user_permissions(
-    app: web.Application,
-    *,
-    user_id: UserID,
-    product_name: ProductName,
-    function_id: FunctionID,
-) -> FunctionAccessRights:
-    """
-    Returns a dictionary with the user's permissions for the function.
-    """
-    return await _functions_service.get_function_user_permissions(
-        app=app,
-        user_id=user_id,
-        product_name=product_name,
-        function_id=function_id,
-    )
-
-
-@router.expose(reraise_if_error_type=())
-async def get_functions_user_api_access_rights(
-    app: web.Application,
-    *,
-    user_id: UserID,
-    product_name: ProductName,
-) -> FunctionUserApiAccessRights:
-    """
-    Returns a dictionary with the user's abilities for all function related objects.
-    """
-    return await _functions_service.get_functions_user_api_access_rights(
-        app=app,
-        user_id=user_id,
-        product_name=product_name,
-    )
-
-
-async def register_rpc_routes_on_startup(app: web.Application):
-    rpc_server = get_rabbitmq_rpc_server(app)
-    await rpc_server.register_router(router, WEBSERVER_RPC_NAMESPACE, app)
-
-
-@router.expose(reraise_if_error_type=())
-async def set_group_permissions(
-    app: web.Application,
-    *,
-    user_id: UserID,
-    permission_group_id: GroupID,
-    product_name: ProductName,
-    object_type: Literal["function", "function_job", "function_job_collection"],
-    object_ids: list[FunctionID | FunctionJobID | FunctionJobCollectionID],
-    read: bool | None = None,
-    write: bool | None = None,
-    execute: bool | None = None,
-) -> list[
-    tuple[
-        FunctionID | FunctionJobID | FunctionJobCollectionID, FunctionGroupAccessRights
-    ]
-]:
-    return await _functions_service.set_group_permissions(
-        app=app,
-        user_id=user_id,
-        permission_group_id=permission_group_id,
-        product_name=product_name,
-        object_type=object_type,
-        object_ids=object_ids,
-        read=read,
-        write=write,
-        execute=execute,
-    )
+register_rpc_routes_on_startup = create_register_rpc_routes_on_startup(router)
