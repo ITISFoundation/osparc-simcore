@@ -1,10 +1,9 @@
 import logging
 from typing import cast
 
-from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.products import ProductName
 from models_library.projects import ProjectID
-from models_library.rabbitmq_basic_types import RPCMethodName
+from models_library.rabbitmq_basic_types import RPCMethodName, RPCNamespace
 from models_library.rest_pagination import PageOffsetInt
 from models_library.rpc.webserver.projects import (
     ListProjectsMarkedAsJobRpcFilters,
@@ -26,6 +25,7 @@ _logger = logging.getLogger(__name__)
 @validate_call(config={"arbitrary_types_allowed": True})
 async def mark_project_as_job(
     rpc_client: RabbitMQRPCClient,
+    rpc_namespace: RPCNamespace,
     *,
     product_name: ProductName,
     user_id: UserID,
@@ -34,7 +34,7 @@ async def mark_project_as_job(
 ) -> None:
 
     result = await rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
+        rpc_namespace,
         TypeAdapter(RPCMethodName).validate_python("mark_project_as_job"),
         product_name=product_name,
         user_id=user_id,
@@ -48,6 +48,7 @@ async def mark_project_as_job(
 @validate_call(config={"arbitrary_types_allowed": True})
 async def list_projects_marked_as_jobs(
     rpc_client: RabbitMQRPCClient,
+    rpc_namespace: RPCNamespace,
     *,
     product_name: ProductName,
     user_id: UserID,
@@ -57,7 +58,7 @@ async def list_projects_marked_as_jobs(
     filters: ListProjectsMarkedAsJobRpcFilters | None = None,
 ) -> PageRpcProjectJobRpcGet:
     result = await rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
+        rpc_namespace,
         TypeAdapter(RPCMethodName).validate_python("list_projects_marked_as_jobs"),
         product_name=product_name,
         user_id=user_id,
