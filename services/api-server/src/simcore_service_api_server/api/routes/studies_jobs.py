@@ -52,17 +52,13 @@ from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.services import get_api_client, get_study_service
 from ..dependencies.webserver_http import AuthSession, get_webserver_session
-from ..dependencies.webserver_rpc import (
-    get_wb_api_rpc_client,
-)
+from ..dependencies.webserver_rpc import get_wb_api_rpc_client
 from ._constants import (
     FMSG_CHANGELOG_CHANGED_IN_VERSION,
     FMSG_CHANGELOG_NEW_IN_VERSION,
     create_route_description,
 )
-from .solvers_jobs import (
-    JOBS_STATUS_CODES,
-)
+from .solvers_jobs import JOBS_STATUS_CODES
 
 # pylint: disable=too-many-arguments
 
@@ -87,10 +83,10 @@ def _compose_job_resource_name(study_key, job_id) -> str:
     description=create_route_description(
         base="List of all jobs created for a given study (paginated)",
         changelog=[
-            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.9-rc1"),
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.10-rc1"),
         ],
     ),
-    include_in_schema=False,  # TO BE RELEASED in 0.9
+    include_in_schema=False,  # TO BE RELEASED in 0.10-rc1
 )
 async def list_study_jobs(
     study_id: StudyID,
@@ -217,10 +213,10 @@ async def create_study_job(
     description=create_route_description(
         base="Gets a jobs for a given study",
         changelog=[
-            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.9-rc1"),
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.10-rc1"),
         ],
     ),
-    include_in_schema=False,  # TO BE RELEASED in 0.9
+    include_in_schema=False,  # TO BE RELEASED in 0.10-rc1
 )
 async def get_study_job(
     study_id: StudyID,
