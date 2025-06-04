@@ -1,5 +1,4 @@
 from aiohttp import web
-from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.api_schemas_webserver.licensed_items import (
     LicensedItemRpcGet,
     LicensedItemRpcGetPage,
@@ -27,7 +26,7 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     NotEnoughAvailableSeatsError,
 )
 
-from ..rabbitmq import get_rabbitmq_rpc_server
+from ..rabbitmq import create_register_rpc_routes_on_startup
 from . import _licensed_items_checkouts_service, _licensed_items_service
 
 router = RPCRouter()
@@ -161,6 +160,4 @@ async def release_licensed_item_for_wallet(
     )
 
 
-async def register_rpc_routes_on_startup(app: web.Application):
-    rpc_server = get_rabbitmq_rpc_server(app)
-    await rpc_server.register_router(router, WEBSERVER_RPC_NAMESPACE, app)
+register_rpc_routes_on_startup = create_register_rpc_routes_on_startup(router)

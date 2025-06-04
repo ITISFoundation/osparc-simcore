@@ -1,13 +1,12 @@
 from datetime import timedelta
 
 from aiohttp import web
-from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.products import ProductName
 from models_library.rpc.webserver.auth.api_keys import ApiKeyGet
 from models_library.users import UserID
 from servicelib.rabbitmq import RPCRouter
 
-from ...rabbitmq import get_rabbitmq_rpc_server
+from ...rabbitmq import create_register_rpc_routes_on_startup
 from .. import _service
 from ..errors import ApiKeyNotFoundError
 from ..models import ApiKey
@@ -68,6 +67,4 @@ async def delete_api_key_by_key(
     )
 
 
-async def register_rpc_routes_on_startup(app: web.Application):
-    rpc_server = get_rabbitmq_rpc_server(app)
-    await rpc_server.register_router(router, WEBSERVER_RPC_NAMESPACE, app)
+register_rpc_routes_on_startup = create_register_rpc_routes_on_startup(router)
