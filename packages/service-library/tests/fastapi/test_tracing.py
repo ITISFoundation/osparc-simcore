@@ -5,6 +5,7 @@ import importlib
 import random
 import string
 from collections.abc import Callable, Iterator
+from functools import partial
 from typing import Any
 
 import pip
@@ -13,6 +14,7 @@ from fastapi import FastAPI
 from fastapi.exceptions import HTTPException
 from fastapi.responses import PlainTextResponse
 from fastapi.testclient import TestClient
+from opentelemetry import trace
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from pydantic import ValidationError
 from servicelib.fastapi.tracing import (
@@ -199,11 +201,18 @@ async def test_trace_id_in_response_header(
 ) -> None:
     tracing_settings = TracingSettings()
 
-    @mocked_app.get("/")
-    async def handler():
+    handler_data = dict()
+
+    async def handler(handler_data: dict):
+        current_span = trace.get_current_span()
+        handler_data[_OSPARC_TRACE_ID_HEADER] = format(
+            current_span.get_span_context().trace_id, "032x"
+        )
         if isinstance(server_response, HTTPException):
             raise server_response
         return server_response
+
+    mocked_app.get("/")(partial(handler, handler_data))
 
     async for _ in get_tracing_instrumentation_lifespan(
         tracing_settings=tracing_settings,
@@ -215,3 +224,4 @@ async def test_trace_id_in_response_header(
         assert _OSPARC_TRACE_ID_HEADER in response.headers
         trace_id = response.headers[_OSPARC_TRACE_ID_HEADER]
         assert len(trace_id) == 32  # Ensure trace ID is a 32-character hex string
+        assert trace_id == handler_data[_OSPARC_TRACE_ID_HEADER]
