@@ -185,7 +185,7 @@ async def mock_rpc_client(
 
 
 @pytest.fixture
-async def mock_rpc_server(
+async def mock_webserver_rpc_server(
     rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
     mocker: MockerFixture,
 ) -> RabbitMQRPCClient:
@@ -230,7 +230,7 @@ async def test_process_message__whole_autorecharge_flow_success(
     wallet_id: int,
     populate_test_db: None,
     mocked_pay_with_payment_method: mock.AsyncMock,
-    mock_rpc_server: RabbitMQRPCClient,
+    mock_webserver_rpc_server: RabbitMQRPCClient,
     mock_rpc_client: RabbitMQRPCClient,
     mock_resoruce_usage_tracker_service_api: MockRouter,
     postgres_db: sa.engine.Engine,
