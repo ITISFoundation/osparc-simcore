@@ -1,5 +1,5 @@
 from common_library.errors_classes import OsparcErrorMixin
-from servicelib.aiohttp import status  # type: ignore
+from fastapi import status  # type: ignore
 
 
 class FunctionBaseError(OsparcErrorMixin, Exception):
