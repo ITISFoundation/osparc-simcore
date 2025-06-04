@@ -6,7 +6,7 @@ aiohappyeyeballs==2.6.1
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-aiohttp==3.12.7
+aiohttp==3.11.18
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
