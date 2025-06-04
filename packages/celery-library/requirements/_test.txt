@@ -15,7 +15,7 @@ billiard==4.2.1
     # via
     #   -c requirements/_base.txt
     #   celery
-celery==5.5.2
+celery==5.5.3
     # via
     #   -c requirements/_base.txt
     #   pytest-celery
@@ -88,7 +88,7 @@ idna==3.10
     #   requests
 iniconfig==2.1.0
     # via pytest
-kombu==5.5.3
+kombu==5.5.4
     # via
     #   -c requirements/_base.txt
     #   celery
@@ -96,6 +96,7 @@ kombu==5.5.3
 packaging==25.0
     # via
     #   -c requirements/_base.txt
+    #   kombu
     #   pytest
     #   pytest-sugar
 pint==0.24.4
@@ -125,11 +126,11 @@ pydantic-core==2.33.2
     # via
     #   -c requirements/_base.txt
     #   pydantic
-pyjwt==2.9.0
+pygments==2.19.1
     # via
     #   -c requirements/_base.txt
-    #   redis
-pytest==8.3.5
+    #   pytest
+pytest==8.4.0
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -173,7 +174,7 @@ pyyaml==6.0.2
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-redis==5.3.0
+redis==5.2.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -204,7 +205,7 @@ tenacity==9.1.2
     #   pytest-celery
 termcolor==3.1.0
     # via pytest-sugar
-typing-extensions==4.13.2
+typing-extensions==4.14.0
     # via
     #   -c requirements/_base.txt
     #   anyio
