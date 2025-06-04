@@ -352,11 +352,11 @@ qx.Class.define("osparc.data.Resources", {
         endpoints: {
           getPageLatest: {
             method: "GET",
-            url: statics.API + "/computations/-/iterations/latest?offset={offset}&limit={limit}&order_by=%7B%22field%22:%22submitted_at%22,%22direction%22:%22desc%22%7D&filter_only_running={runningOnly}&filters={filters}"
+            url: statics.API + "/computations/-/iterations/latest?offset={offset}&limit={limit}&order_by={orderBy}&filter_only_running={runningOnly}&filters={filters}"
           },
           getPageHistory: {
             method: "GET",
-            url: statics.API + "/computations/{studyId}/iterations?offset={offset}&limit={limit}&order_by=%7B%22field%22:%22submitted_at%22,%22direction%22:%22desc%22%7D&include_children={includeChildren}"
+            url: statics.API + "/computations/{studyId}/iterations?offset={offset}&limit={limit}&order_by={orderBy}&include_children={includeChildren}"
           },
         }
       },
@@ -365,7 +365,7 @@ qx.Class.define("osparc.data.Resources", {
         endpoints: {
           getPageLatest: {
             method: "GET",
-            url: statics.API + "/computations/{studyId}/iterations/latest/tasks?offset={offset}&limit={limit}&include_children={includeChildren}"
+            url: statics.API + "/computations/{studyId}/iterations/latest/tasks?offset={offset}&limit={limit}&order_by={orderBy}&include_children={includeChildren}"
           },
         }
       },
@@ -1065,6 +1065,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/admin/user-accounts?review_status=PENDING"
           },
+          getReviewedUsers: {
+            method: "GET",
+            url: statics.API + "/admin/user-accounts?review_status=REVIEWED"
+          },
           approveUser: {
             method: "POST",
             url: statics.API + "/admin/user-accounts:approve"
@@ -1426,6 +1430,8 @@ qx.Class.define("osparc.data.Resources", {
   },
 
   members: {
+    __portsCompatibilityPromisesCached: null,
+
     /**
      * @param {String} resource Name of the resource as defined in the static property 'resources'.
      * @param {String} endpoint Name of the endpoint. Several endpoints can be defined for each resource.
@@ -1718,7 +1724,47 @@ qx.Class.define("osparc.data.Resources", {
      */
     __removeCached: function(resource, deleteId) {
       osparc.store.Store.getInstance().remove(resource, this.self().resources[resource].idField || "uuid", deleteId);
-    }
+    },
+
+    getCompatibleInputs: function(node1, portId1, node2) {
+      const url = {
+        "serviceKey2": encodeURIComponent(node2.getKey()),
+        "serviceVersion2": node2.getVersion(),
+        "serviceKey1": encodeURIComponent(node1.getKey()),
+        "serviceVersion1": node1.getVersion(),
+        "portKey1": portId1
+      };
+
+      const cachedCPs = this.__getCached("portsCompatibility") || {};
+      const strUrl = JSON.stringify(url);
+      if (strUrl in cachedCPs) {
+        return Promise.resolve(cachedCPs[strUrl]);
+      }
+
+      // avoid request deduplication
+      if (this.__portsCompatibilityPromisesCached === null) {
+        this.__portsCompatibilityPromisesCached = {};
+      }
+      if (strUrl in this.__portsCompatibilityPromisesCached) {
+        return this.__portsCompatibilityPromisesCached[strUrl];
+      }
+
+      const params = {
+        url
+      };
+      this.__portsCompatibilityPromisesCached[strUrl] = this.fetch("portsCompatibility", "matchInputs", params)
+        .then(data => {
+          cachedCPs[strUrl] = data;
+          this.__setCached("portsCompatibility", cachedCPs);
+          return data;
+        })
+        .finally(() => {
+          // Remove the promise from the cache
+          delete this.__portsCompatibilityPromisesCached[strUrl];
+        });
+
+      return this.__portsCompatibilityPromisesCached[strUrl];
+    },
   },
 
   statics: {
@@ -1737,37 +1783,6 @@ qx.Class.define("osparc.data.Resources", {
       return {
         "key": encodeURIComponent(key),
         "version": version
-      };
-    },
-
-    getCompatibleInputs: function(node1, portId1, node2) {
-      const url = this.__getMatchInputsUrl(node1, portId1, node2);
-
-      // eslint-disable-next-line no-underscore-dangle
-      const cachedCPs = this.getInstance().__getCached("portsCompatibility") || {};
-      const strUrl = JSON.stringify(url);
-      if (strUrl in cachedCPs) {
-        return Promise.resolve(cachedCPs[strUrl]);
-      }
-      const params = {
-        url
-      };
-      return this.fetch("portsCompatibility", "matchInputs", params)
-        .then(data => {
-          cachedCPs[strUrl] = data;
-          // eslint-disable-next-line no-underscore-dangle
-          this.getInstance().__setCached("portsCompatibility", cachedCPs);
-          return data;
-        });
-    },
-
-    __getMatchInputsUrl: function(node1, portId1, node2) {
-      return {
-        "serviceKey2": encodeURIComponent(node2.getKey()),
-        "serviceVersion2": node2.getVersion(),
-        "serviceKey1": encodeURIComponent(node1.getKey()),
-        "serviceVersion1": node1.getVersion(),
-        "portKey1": portId1
       };
     },
 

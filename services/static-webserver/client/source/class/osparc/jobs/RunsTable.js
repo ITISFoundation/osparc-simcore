@@ -87,34 +87,33 @@ qx.Class.define("osparc.jobs.RunsTable", {
         column: 1,
         label: qx.locale.Manager.tr("Project"),
         width: 150,
-        sortable: true
       },
       STATE: {
         id: "state",
         column: 2,
         label: qx.locale.Manager.tr("Status"),
-        width: 150
+        width: 150,
       },
       SUBMIT: {
         id: "submit",
         column: 3,
         label: qx.locale.Manager.tr("Queued"),
         width: 130,
-        sortable: true
+        sortableMap: "submitted_at",
       },
       START: {
         id: "start",
         column: 4,
         label: qx.locale.Manager.tr("Started"),
         width: 130,
-        sortable: true
+        sortableMap: "started_at",
       },
       END: {
         id: "end",
         column: 5,
         label: qx.locale.Manager.tr("Ended"),
         width: 130,
-        sortable: true
+        sortableMap: "ended_at",
       },
       ACTION_CANCEL: {
         id: "action_cancel",
@@ -159,6 +158,8 @@ qx.Class.define("osparc.jobs.RunsTable", {
 
     __handleButtonClick: function(action, row) {
       this.resetSelection();
+       // In order to make the button tappable again, the cell needs to be unfocused (blurred)
+      this.resetCellFocus();
       const rowData = this.getTableModel().getRowData(row);
       switch (action) {
         case "info": {

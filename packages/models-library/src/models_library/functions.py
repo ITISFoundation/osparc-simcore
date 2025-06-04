@@ -1,16 +1,20 @@
+import datetime
 from collections.abc import Mapping
 from enum import Enum
 from typing import Annotated, Any, Literal, TypeAlias
 from uuid import UUID
 
-from common_library.errors_classes import OsparcErrorMixin
 from models_library import projects
 from models_library.basic_regex import UUID_RE_BASE
 from models_library.basic_types import ConstrainedStr
+from models_library.groups import GroupID
+from models_library.products import ProductName
 from models_library.services_types import ServiceKey, ServiceVersion
-from pydantic import BaseModel, Field
+from models_library.users import UserID
+from pydantic import BaseModel, ConfigDict, Field
 
 from .projects import ProjectID
+from .utils.change_case import snake_to_camel
 
 FunctionID: TypeAlias = UUID
 FunctionJobID: TypeAlias = UUID
@@ -72,7 +76,10 @@ FunctionJobClassSpecificData: TypeAlias = FunctionClassSpecificData
 # see here https://github.com/ITISFoundation/osparc-simcore/issues/7659
 FunctionInputs: TypeAlias = dict[str, Any] | None
 
-FunctionInputsList: TypeAlias = list[FunctionInputs]
+FunctionInputsList: TypeAlias = Annotated[
+    list[FunctionInputs],
+    Field(max_length=50),
+]
 
 FunctionOutputs: TypeAlias = dict[str, Any] | None
 
@@ -90,6 +97,7 @@ class FunctionBase(BaseModel):
 
 class RegisteredFunctionBase(FunctionBase):
     uid: FunctionID
+    created_at: datetime.datetime
 
 
 class ProjectFunction(FunctionBase):
@@ -146,6 +154,7 @@ class FunctionJobBase(BaseModel):
 
 class RegisteredFunctionJobBase(FunctionJobBase):
     uid: FunctionJobID
+    created_at: datetime.datetime
 
 
 class ProjectFunctionJob(FunctionJobBase):
@@ -201,44 +210,11 @@ class FunctionJobCollection(BaseModel):
 
 class RegisteredFunctionJobCollection(FunctionJobCollection):
     uid: FunctionJobCollectionID
+    created_at: datetime.datetime
 
 
 class FunctionJobCollectionStatus(BaseModel):
     status: list[str]
-
-
-class FunctionBaseError(OsparcErrorMixin, Exception):
-    pass
-
-
-class FunctionIDNotFoundError(FunctionBaseError):
-    msg_template: str = "Function {function_id} not found"
-
-
-class FunctionJobIDNotFoundError(FunctionBaseError):
-    msg_template: str = "Function job {function_job_id} not found"
-
-
-class FunctionJobCollectionIDNotFoundError(FunctionBaseError):
-    msg_template: str = "Function job collection {function_job_collection_id} not found"
-
-
-class UnsupportedFunctionClassError(FunctionBaseError):
-    msg_template: str = "Function class {function_class} is not supported"
-
-
-class UnsupportedFunctionJobClassError(FunctionBaseError):
-    msg_template: str = "Function job class {function_job_class} is not supported"
-
-
-class UnsupportedFunctionFunctionJobClassCombinationError(FunctionBaseError):
-    msg_template: str = (
-        "Function class {function_class} and function job class {function_job_class} combination is not supported"
-    )
-
-
-class FunctionInputsValidationError(FunctionBaseError):
-    msg_template: str = "Function inputs validation failed: {error}"
 
 
 class FunctionJobDB(BaseModel):
@@ -253,6 +229,7 @@ class FunctionJobDB(BaseModel):
 
 class RegisteredFunctionJobDB(FunctionJobDB):
     uuid: FunctionJobID
+    created: datetime.datetime
 
 
 class FunctionDB(BaseModel):
@@ -267,6 +244,7 @@ class FunctionDB(BaseModel):
 
 class RegisteredFunctionDB(FunctionDB):
     uuid: FunctionID
+    created: datetime.datetime
 
 
 class FunctionJobCollectionDB(BaseModel):
@@ -276,6 +254,7 @@ class FunctionJobCollectionDB(BaseModel):
 
 class RegisteredFunctionJobCollectionDB(FunctionJobCollectionDB):
     uuid: FunctionJobCollectionID
+    created: datetime.datetime
 
 
 class FunctionIDString(ConstrainedStr):
@@ -286,3 +265,48 @@ class FunctionJobCollectionsListFilters(BaseModel):
     """Filters for listing function job collections"""
 
     has_function_id: FunctionIDString | None = None
+
+
+class FunctionAccessRights(BaseModel):
+    read: bool = False
+    write: bool = False
+    execute: bool = False
+
+    model_config = ConfigDict(
+        alias_generator=snake_to_camel,
+        populate_by_name=True,
+        extra="forbid",
+    )
+
+
+class FunctionUserAccessRights(FunctionAccessRights):
+    user_id: UserID
+
+
+class FunctionGroupAccessRights(FunctionAccessRights):
+    group_id: GroupID
+
+
+class FunctionAccessRightsDB(BaseModel):
+    group_id: GroupID | None = None
+    product_name: ProductName | None = None
+    read: bool = False
+    write: bool = False
+    execute: bool = False
+
+    model_config = ConfigDict(
+        alias_generator=snake_to_camel,
+        populate_by_name=True,
+        extra="forbid",
+    )
+
+
+FunctionJobAccessRights: TypeAlias = FunctionAccessRights
+FunctionJobAccessRightsDB: TypeAlias = FunctionAccessRightsDB
+FunctionJobUserAccessRights: TypeAlias = FunctionUserAccessRights
+FunctionJobGroupAccessRights: TypeAlias = FunctionGroupAccessRights
+
+FunctionJobCollectionAccessRights: TypeAlias = FunctionAccessRights
+FunctionJobCollectionAccessRightsDB: TypeAlias = FunctionAccessRightsDB
+FunctionJobCollectionUserAccessRights: TypeAlias = FunctionUserAccessRights
+FunctionJobCollectionGroupAccessRights: TypeAlias = FunctionGroupAccessRights

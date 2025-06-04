@@ -17,8 +17,11 @@ from aiohttp.web_exceptions import (
     HTTPOk,
 )
 from common_library.error_codes import ErrorCodeStr, create_error_code
-from servicelib.aiohttp import status
-from servicelib.aiohttp.rest_responses import create_http_error, exception_to_response
+from servicelib.aiohttp.rest_responses import (
+    MAX_STATUS_MESSAGE_LENGTH,
+    create_http_error,
+    exception_to_response,
+)
 from servicelib.aiohttp.web_exceptions_extension import (
     _STATUS_CODE_TO_HTTP_ERRORS,
     get_http_error_class_or_none,
@@ -61,16 +64,43 @@ def test_collected_http_errors_map(status_code: int, http_error_cls: type[HTTPEr
 
 @pytest.mark.parametrize("skip_details", [True, False])
 @pytest.mark.parametrize("error_code", [None, create_error_code(Exception("fake"))])
-def tests_exception_to_response(skip_details: bool, error_code: ErrorCodeStr | None):
-
-    expected_reason = "Something whent wrong !"
+@pytest.mark.parametrize(
+    "http_error_cls",
+    [
+        web.HTTPBadRequest,  # 400
+        web.HTTPUnauthorized,  # 401
+        web.HTTPForbidden,  # 403
+        web.HTTPNotFound,  # 404
+        web.HTTPGone,  # 410
+        web.HTTPInternalServerError,  # 500
+        web.HTTPBadGateway,  # 502
+        web.HTTPServiceUnavailable,  # 503
+    ],
+    ids=[
+        "400",
+        "401",
+        "403",
+        "404",
+        "410",
+        "500",
+        "502",
+        "503",
+    ],
+)
+def tests_exception_to_response(
+    skip_details: bool, error_code: ErrorCodeStr | None, http_error_cls: type[HTTPError]
+):
+    expected_status_reason = "SHORT REASON"
+    expected_error_message = "Something whent wrong !"
     expected_exceptions: list[Exception] = [RuntimeError("foo")]
 
     http_error = create_http_error(
         errors=expected_exceptions,
-        reason=expected_reason,
-        http_error_cls=web.HTTPInternalServerError,
-        skip_internal_error_details=skip_details,
+        error_message=expected_error_message,
+        status_reason=expected_status_reason,
+        http_error_cls=http_error_cls,
+        skip_internal_error_details=skip_details
+        and (http_error_cls == web.HTTPInternalServerError),
         error_code=error_code,
     )
 
@@ -87,13 +117,72 @@ def tests_exception_to_response(skip_details: bool, error_code: ErrorCodeStr | N
 
     # checks response components
     assert response.content_type == MIMETYPE_APPLICATION_JSON
-    assert response.status == status.HTTP_500_INTERNAL_SERVER_ERROR
+    assert response.status == http_error_cls.status_code
     assert response.text
     assert response.body
 
     # checks response model
     response_json = json.loads(response.text)
     assert response_json["data"] is None
-    assert response_json["error"]["message"] == expected_reason
+    assert response_json["error"]["message"] == expected_error_message
     assert response_json["error"]["supportId"] == error_code
     assert response_json["error"]["status"] == response.status
+    assert response.reason == expected_status_reason
+
+
+@pytest.mark.parametrize(
+    "input_message, expected_output",
+    [
+        (None, None),  # None input returns None
+        ("", None),  # Empty string returns None
+        ("Simple message", "Simple message"),  # Simple message stays the same
+        (
+            "Message\nwith\nnewlines",
+            "Message with newlines",
+        ),  # Newlines are replaced with spaces
+        (
+            "A" * (MAX_STATUS_MESSAGE_LENGTH + 1),
+            "A" * (MAX_STATUS_MESSAGE_LENGTH - 3) + "...",
+        ),  # Long message gets truncated with ellipsis
+        (
+            "Line1\nLine2\nLine3" + "X" * (MAX_STATUS_MESSAGE_LENGTH + 1),
+            "Line1 Line2 Line3" + "X" * (MAX_STATUS_MESSAGE_LENGTH - 20) + "...",
+        ),  # Combined case: newlines and truncation with ellipsis
+    ],
+    ids=[
+        "none_input",
+        "empty_string",
+        "simple_message",
+        "newlines_replaced",
+        "long_message_truncated",
+        "newlines_and_truncation",
+    ],
+)
+def test_safe_status_message(input_message: str | None, expected_output: str | None):
+    from servicelib.aiohttp.rest_responses import safe_status_message
+
+    result = safe_status_message(input_message)
+    assert result == expected_output
+
+    # Test with custom max_length
+    custom_max = 10
+    result_custom = safe_status_message(input_message, max_length=custom_max)
+
+    # Check length constraint is respected
+    if result_custom is not None:
+        assert len(result_custom) <= custom_max
+        # Check that ellipsis is added when truncated
+        if input_message and len(input_message.replace("\n", " ")) > custom_max:
+            assert result_custom.endswith("...")
+
+    # Verify it can be used in a web response without raising exceptions
+    try:
+        # This would fail with long or multiline reasons
+        if result is not None:
+            web.Response(reason=result)
+
+        # Test with custom length result too
+        if result_custom is not None:
+            web.Response(reason=result_custom)
+    except ValueError:
+        pytest.fail("safe_status_message result caused an exception in web.Response")

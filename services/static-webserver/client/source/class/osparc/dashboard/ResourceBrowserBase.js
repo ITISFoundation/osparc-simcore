@@ -618,7 +618,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         return null;
       }
 
-      const editButton = new qx.ui.menu.Button(this.tr("Open"));
+      const editButton = new qx.ui.menu.Button(this.tr("Edit"));
       editButton.addListener("execute", () => {
         const isStudyCreation = false;
         this._startStudyById(templateData["uuid"], null, null, isStudyCreation);

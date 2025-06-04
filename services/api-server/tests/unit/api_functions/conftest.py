@@ -5,6 +5,7 @@
 # pylint: disable=no-self-use
 # pylint: disable=cyclic-import
 
+import datetime
 from collections.abc import Callable
 from typing import Any
 from uuid import uuid4
@@ -14,7 +15,6 @@ from fastapi import FastAPI
 from models_library.api_schemas_webserver.functions import (
     Function,
     FunctionClass,
-    FunctionIDNotFoundError,
     FunctionJob,
     FunctionJobCollection,
     JSONFunctionInputSchema,
@@ -27,6 +27,7 @@ from models_library.api_schemas_webserver.functions import (
     RegisteredProjectFunctionJob,
 )
 from models_library.functions import RegisteredFunctionJobCollection
+from models_library.functions_errors import FunctionIDNotFoundError
 from models_library.projects import ProjectID
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -119,7 +120,13 @@ def mock_function(
 
 @pytest.fixture
 def mock_registered_function(mock_function: Function) -> RegisteredFunction:
-    return RegisteredProjectFunction(**{**mock_function.dict(), "uid": str(uuid4())})
+    return RegisteredProjectFunction(
+        **{
+            **mock_function.dict(),
+            "uid": str(uuid4()),
+            "created_at": datetime.datetime.now(datetime.UTC),
+        }
+    )
 
 
 @pytest.fixture
@@ -141,7 +148,11 @@ def mock_registered_function_job(
     mock_function_job: FunctionJob,
 ) -> RegisteredFunctionJob:
     return RegisteredProjectFunctionJob(
-        **{**mock_function_job.dict(), "uid": str(uuid4())}
+        **{
+            **mock_function_job.dict(),
+            "uid": str(uuid4()),
+            "created_at": datetime.datetime.now(datetime.UTC),
+        }
     )
 
 
@@ -165,7 +176,11 @@ def mock_registered_function_job_collection(
     mock_function_job_collection: FunctionJobCollection,
 ) -> RegisteredFunctionJobCollection:
     return RegisteredFunctionJobCollection(
-        **{**mock_function_job_collection.model_dump(), "uid": str(uuid4())}
+        **{
+            **mock_function_job_collection.model_dump(),
+            "uid": str(uuid4()),
+            "created_at": datetime.datetime.now(datetime.UTC),
+        }
     )
 
 

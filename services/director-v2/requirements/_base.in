@@ -22,8 +22,6 @@
 aio-pika
 aiocache[redis,msgpack]
 aiodocker
-fastapi[all]
-httpx
 networkx
 ordered-set
 orjson

@@ -90,7 +90,8 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
         id: "start",
         column: 6,
         label: qx.locale.Manager.tr("Started"),
-        width: 130
+        width: 130,
+        sortableMap: "started_at",
       },
       END: {
         id: "end",
@@ -146,6 +147,8 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
 
     __handleButtonClick: function(action, row) {
       this.resetSelection();
+       // In order to make the button tappable again, the cell needs to be unfocused (blurred)
+      this.resetCellFocus();
       const rowData = this.getTableModel().getRowData(row);
       switch (action) {
         case "info": {

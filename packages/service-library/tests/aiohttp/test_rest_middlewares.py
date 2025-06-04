@@ -112,7 +112,7 @@ class Handlers:
 
     @staticmethod
     async def raise_error_with_reason(_request: web.Request):
-        raise web.HTTPNotFound(reason="I did not find it")
+        raise web.HTTPNotFound(reason="A short phrase")
 
     @staticmethod
     async def raise_success(_request: web.Request):

@@ -4,6 +4,7 @@
 # pylint: disable=too-many-arguments
 
 
+from http import HTTPStatus
 from typing import Any
 from uuid import uuid4
 
@@ -16,8 +17,11 @@ from models_library.api_schemas_webserver.functions import (
     RegisteredProjectFunctionGet,
 )
 from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
-from simcore_service_webserver._meta import API_VTAG
+from simcore_service_webserver.db.models import UserRole
+
+pytest_simcore_core_services_selection = ["rabbit"]
 
 
 @pytest.fixture
@@ -43,61 +47,72 @@ def mock_function() -> dict[str, Any]:
     }
 
 
-async def test_register_function(
+@pytest.mark.parametrize(
+    "user_role,expected_register,expected_get,expected_delete,expected_get2",
+    [
+        (
+            UserRole.USER,
+            status.HTTP_201_CREATED,
+            status.HTTP_200_OK,
+            status.HTTP_204_NO_CONTENT,
+            status.HTTP_404_NOT_FOUND,
+        ),
+        (
+            UserRole.GUEST,
+            status.HTTP_403_FORBIDDEN,
+            status.HTTP_403_FORBIDDEN,
+            status.HTTP_403_FORBIDDEN,
+            status.HTTP_403_FORBIDDEN,
+        ),
+    ],
+)
+async def test_register_get_delete_function(
     client: TestClient,
+    logged_user: UserInfoDict,
     mock_function: dict[str, Any],
+    expected_register: HTTPStatus,
+    expected_get: HTTPStatus,
+    expected_delete: HTTPStatus,
+    expected_get2: HTTPStatus,
 ) -> None:
+    assert client.app
+    url = client.app.router["register_function"].url_for()
     response = await client.post(
-        f"/{API_VTAG}/functions",
+        f"{url}",
         json=mock_function,
     )
-    data, error = await assert_status(response, status.HTTP_200_OK)
-    assert not error
-    returned_function = RegisteredProjectFunctionGet.model_validate(data)
-    assert returned_function.uid is not None
+    data, error = await assert_status(response, expected_status_code=expected_register)
 
+    if error:
+        returned_function_uid = uuid4()
+    else:
+        returned_function = RegisteredProjectFunctionGet.model_validate(data)
+        assert returned_function.uid is not None
+        returned_function_uid = returned_function.uid
 
-async def test_get_function(
-    client: TestClient,
-    mock_function: dict[str, Any],
-):
-    response = await client.post(
-        f"/{API_VTAG}/functions",
-        json=mock_function,
+    url = client.app.router["get_function"].url_for(
+        function_id=str(returned_function_uid)
     )
-    data, error = await assert_status(response, status.HTTP_200_OK)
-    assert not error
-    returned_function = RegisteredProjectFunctionGet.model_validate(data)
-    assert returned_function.uid is not None
-
     response = await client.get(
-        f"/{API_VTAG}/functions/{returned_function.uid}",
+        f"{url}",
     )
-    data, error = await assert_status(response, status.HTTP_200_OK)
-    assert not error
-    retrieved_function = RegisteredProjectFunctionGet.model_validate(data)
-    assert retrieved_function.uid == returned_function.uid
+    data, error = await assert_status(response, expected_get)
+    if not error:
+        retrieved_function = RegisteredProjectFunctionGet.model_validate(data)
+        assert retrieved_function.uid == returned_function.uid
 
-
-async def test_delete_function(
-    client: TestClient,
-    mock_function: dict[str, Any],
-):
-    response = await client.post(
-        f"/{API_VTAG}/functions",
-        json=mock_function,
+    url = client.app.router["delete_function"].url_for(
+        function_id=str(returned_function_uid)
     )
-    data, error = await assert_status(response, status.HTTP_200_OK)
-    assert not error
-    returned_function = RegisteredProjectFunctionGet.model_validate(data)
-    assert returned_function.uid is not None
-
     response = await client.delete(
-        f"/{API_VTAG}/functions/{returned_function.uid}",
+        f"{url}",
     )
-    assert response.status == status.HTTP_204_NO_CONTENT
+    data, error = await assert_status(response, expected_delete)
 
-    response = await client.get(
-        f"/{API_VTAG}/functions/{returned_function.uid}",
+    url = client.app.router["get_function"].url_for(
+        function_id=str(returned_function_uid)
     )
-    assert response.status == status.HTTP_404_NOT_FOUND
+    response = await client.get(
+        f"{url}",
+    )
+    data, error = await assert_status(response, expected_get2)

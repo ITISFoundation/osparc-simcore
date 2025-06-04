@@ -100,6 +100,11 @@ qx.Class.define("osparc.jobs.ActivityOverview", {
       runsHistoryTitleLayout.add(runsHistoryTitleHelper);
       runsHistoryLayout.add(runsHistoryTitleLayout);
 
+      const introText = new qx.ui.basic.Label(this.tr("Select a Run to check the details")).set({
+        paddingLeft: 10,
+      });
+      runsHistoryLayout.add(introText);
+
       const projectUuid = projectData["uuid"];
       const includeChildren = true;
       const runningOnly = false;

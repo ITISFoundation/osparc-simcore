@@ -6,19 +6,11 @@ from tempfile import TemporaryDirectory
 from typing import Annotated, Any
 from urllib.parse import quote
 
-from locust import HttpUser, run_single_user, task
+from common.base_user import OsparcWebUserBase
+from locust import run_single_user, task
 from pydantic import BaseModel, Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
-from requests.auth import HTTPBasicAuth
 from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_exponential
 from urllib3 import PoolManager, Retry
-
-
-class UserSettings(BaseSettings):
-    model_config = SettingsConfigDict(extra="ignore")
-    OSPARC_API_KEY: Annotated[str, Field()]  # required, no default
-    OSPARC_API_SECRET: Annotated[str, Field()]  # required, no default
-
 
 _SOLVER_KEY = "simcore/services/comp/osparc-python-runner"
 _SOLVER_VERSION = "1.2.0"
@@ -61,13 +53,11 @@ class Function(BaseModel):
     solver_version: Annotated[str, Field()] = _SOLVER_VERSION
 
 
-class MetaModelingUser(HttpUser):
+class MetaModelingUser(OsparcWebUserBase):
+    # This overrides the class attribute in OsparcWebUserBase
+    requires_login = True
+
     def __init__(self, *args, **kwargs):
-        self._user_settings = UserSettings()
-        self._auth = HTTPBasicAuth(
-            username=self._user_settings.OSPARC_API_KEY,
-            password=self._user_settings.OSPARC_API_SECRET,
-        )
         retry_strategy = Retry(
             total=4,
             backoff_factor=4.0,
@@ -98,28 +88,24 @@ class MetaModelingUser(HttpUser):
 
     def on_stop(self) -> None:
         if self._script is not None:
-            self.client.delete(
+            self.authenticated_delete(
                 f"/v0/files/{self._script.get('id')}",
                 name="/v0/files/[file_id]",
-                auth=self._auth,
             )
         if self._input_json is not None:
-            self.client.delete(
+            self.authenticated_delete(
                 f"/v0/files/{self._input_json.get('id')}",
                 name="/v0/files/[file_id]",
-                auth=self._auth,
             )
         if self._function_uid is not None:
-            self.client.delete(
+            self.authenticated_delete(
                 f"/v0/functions/{self._function_uid}",
                 name="/v0/functions/[function_uid]",
-                auth=self._auth,
             )
         if self._run_uid is not None:
-            self.client.delete(
+            self.authenticated_delete(
                 f"/v0/function_jobs/{self._run_uid}",
                 name="/v0/function_jobs/[function_run_uid]",
-                auth=self._auth,
             )
 
     @task
@@ -139,17 +125,14 @@ class MetaModelingUser(HttpUser):
             description="Test function",
             default_inputs={"input_1": self._script},
         )
-        response = self.client.post(
-            "/v0/functions", json=_function.model_dump(), auth=self._auth
-        )
+        response = self.authenticated_post("/v0/functions", json=_function.model_dump())
         response.raise_for_status()
         self._function_uid = response.json().get("uid")
         assert self._function_uid is not None
 
-        response = self.client.post(
+        response = self.authenticated_post(
             f"/v0/functions/{self._function_uid}:run",
             json={"input_2": self._input_json},
-            auth=self._auth,
             name="/v0/functions/[function_uid]:run",
         )
         response.raise_for_status()
@@ -160,9 +143,8 @@ class MetaModelingUser(HttpUser):
 
         self.wait_until_done()
 
-        response = self.client.get(
+        response = self.authenticated_get(
             f"/v0/solvers/{quote(_SOLVER_KEY, safe='')}/releases/{_SOLVER_VERSION}/jobs/{self._solver_job_uid}/outputs",
-            auth=self._auth,
             name="/v0/solvers/[solver_key]/releases/[solver_version]/jobs/[solver_job_id]/outputs",
         )
         response.raise_for_status()
@@ -174,9 +156,8 @@ class MetaModelingUser(HttpUser):
         reraise=False,
     )
     def wait_until_done(self):
-        response = self.client.get(
+        response = self.authenticated_get(
             f"/v0/function_jobs/{self._run_uid}/status",
-            auth=self._auth,
             name="/v0/function_jobs/[function_run_uid]/status",
         )
         response.raise_for_status()
@@ -187,9 +168,7 @@ class MetaModelingUser(HttpUser):
         assert file.is_file()
         with file.open(mode="rb") as f:
             files = {"file": f}
-            response = self.client.put(
-                "/v0/files/content", files=files, auth=self._auth
-            )
+            response = self.authenticated_put("/v0/files/content", files=files)
             response.raise_for_status()
             assert response.json().get("id") is not None
             return response.json()

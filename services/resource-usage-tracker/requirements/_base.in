@@ -17,9 +17,7 @@
 
 
 aiocache
-fastapi
 packaging
 prometheus_api_client
 shortuuid
 typer[all]
-uvicorn[standard]

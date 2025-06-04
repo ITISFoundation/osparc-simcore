@@ -23,7 +23,7 @@ class TaskSharedVolumes:
 
             assert not folder_path.exists()  # nosec
             folder_path.mkdir(parents=True)
-            logger.debug(
+            logger.info(
                 "created %s in %s",
                 f"{folder=}",
                 f"{self.base_path=}",

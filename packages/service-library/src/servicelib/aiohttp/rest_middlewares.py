@@ -18,7 +18,12 @@ from ..logging_errors import create_troubleshotting_log_kwargs
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 from ..rest_responses import is_enveloped_from_map, is_enveloped_from_text
 from ..utils import is_production_environ
-from .rest_responses import create_data_response, create_http_error, wrap_as_envelope
+from .rest_responses import (
+    create_data_response,
+    create_http_error,
+    safe_status_message,
+    wrap_as_envelope,
+)
 from .rest_utils import EnvelopeFactory
 from .typing_extension import Handler, Middleware
 
@@ -81,29 +86,32 @@ def error_middleware_factory(  # noqa: C901
             return await handler(request)
 
         except web.HTTPError as err:
-            # TODO: differenciate between server/client error
-            if not err.reason:
-                err.set_status(err.status_code, reason="Unexpected error")
 
             err.content_type = MIMETYPE_APPLICATION_JSON
+            if err.reason:
+                err.set_status(err.status, safe_status_message(message=err.reason))
 
             if not err.text or not is_enveloped_from_text(err.text):
-                error = ErrorGet(
+                error_message = err.text or err.reason or "Unexpected error"
+                error_model = ErrorGet(
                     errors=[
                         ErrorItemType.from_error(err),
                     ],
                     status=err.status,
                     logs=[
-                        LogMessageType(message=err.reason, level="ERROR"),
+                        LogMessageType(message=error_message, level="ERROR"),
                     ],
-                    message=err.reason,
+                    message=error_message,
                 )
-                err.text = EnvelopeFactory(error=error).as_text()
+                err.text = EnvelopeFactory(error=error_model).as_text()
 
             raise
 
         except web.HTTPSuccessful as err:
             err.content_type = MIMETYPE_APPLICATION_JSON
+            if err.reason:
+                err.set_status(err.status, safe_status_message(message=err.reason))
+
             if err.text:
                 try:
                     payload = json_loads(err.text)
@@ -178,10 +186,7 @@ def envelope_middleware_factory(
             return resp
 
         if not isinstance(resp, StreamResponse):
-            resp = create_data_response(
-                data=resp,
-                skip_internal_error_details=_is_prod,
-            )
+            resp = create_data_response(data=resp)
 
         assert isinstance(resp, web.StreamResponse)  # nosec
         return resp

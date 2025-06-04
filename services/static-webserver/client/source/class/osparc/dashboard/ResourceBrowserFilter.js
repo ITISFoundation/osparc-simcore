@@ -60,8 +60,12 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
       switch (this.__resourceType) {
         case "study": {
           this._add(this.__createWorkspacesAndFoldersTree());
-          this._add(this.__createTemplates());
-          this._add(this.__createPublicProjects());
+          if (osparc.product.Utils.showTemplates()) {
+            this._add(this.__createTemplates());
+          }
+          if (osparc.product.Utils.showPublicProjects()) {
+            this._add(this.__createPublicProjects());
+          }
           this._add(this.__createTrashBin());
           this._add(filtersSpacer);
           const scrollView = new qx.ui.container.Scroll();
@@ -417,7 +421,13 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
 
       // hypertools filter
       const button = new qx.ui.toolbar.RadioButton("Hypertools", null);
-      osparc.utils.Utils.replaceIconWithThumbnail(button, osparc.data.model.StudyUI.HYPERTOOL_ICON(), 20);
+      osparc.utils.Utils.replaceIconWithThumbnail(button, osparc.data.model.StudyUI.HYPERTOOL_ICON, 26);
+      // align it with the rest of icons
+      button.set({
+        paddingLeft: 5,
+        paddingTop: 0,
+        paddingBottom: 0,
+      });
       button.appType = "hypertool";
       this.__appTypeButtons.push(button);
 

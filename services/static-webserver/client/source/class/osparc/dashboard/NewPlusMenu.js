@@ -91,6 +91,9 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
   },
 
   statics: {
+    MORE_ICON: "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/refs/heads/main/app/icons/arrows.png",
+    FOLDER_ICON: "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/refs/heads/main/app/icons/folder.png",
+
     createMenuButton: function(icon, title, infoText) {
       title = osparc.utils.Utils.replaceTokens(
         title,
@@ -153,10 +156,8 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       switch (id) {
         case "new-folder":
           this.addSeparator();
-          control = this.self().createMenuButton(
-            "@FontAwesome5Solid/folder/16",
-            this.tr("New Folder"),
-          );
+          control = this.self().createMenuButton(null, this.tr("New Folder"));
+          this.self().setIcon(control, this.self().FOLDER_ICON);
           osparc.utils.Utils.setIdToWidget(control, "newFolderButton");
           control.addListener("tap", () => this.__createNewFolder());
           this.add(control);
@@ -170,7 +171,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       if (osparc.product.Utils.isS4LProduct()) {
         this.__addHypertools();
       }
-      this.__addOtherTabsAccess();
+      this.__addMoreMenu();
       this.getChildControl("new-folder");
     },
 
@@ -206,7 +207,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
               appearance: "menu-wider",
             });
             hypertoolsMenuButton.setMenu(hypertoolsMenu);
-            this.self().setIcon(hypertoolsMenuButton, osparc.data.model.StudyUI.HYPERTOOL_ICON(16));
+            this.self().setIcon(hypertoolsMenuButton, osparc.data.model.StudyUI.HYPERTOOL_ICON);
 
             hypertools.forEach(templateData => {
               const hypertoolButton = this.self().createMenuButton(null, templateData["name"]);
@@ -230,8 +231,8 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
         });
     },
 
-    __addOtherTabsAccess: function() {
-      const moreMenuButton = this.self().createMenuButton("@FontAwesome5Solid/star/16", this.tr("More"));
+    __addMoreMenu: function() {
+      const moreMenuButton = this.self().createMenuButton(null, this.tr("More"));
       this.addAt(moreMenuButton, this.__itemIdx);
       this.__itemIdx++;
 
@@ -239,6 +240,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
         appearance: "menu-wider",
       });
       moreMenuButton.setMenu(moreMenu);
+      this.self().setIcon(moreMenuButton, this.self().MORE_ICON);
 
       const permissions = osparc.data.Permissions.getInstance();
       if (permissions.canDo("dashboard.templates.read")) {
@@ -316,7 +318,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
         });
       });
 
-      this.self().setIcon(menuButton, buttonConfig["icon"] || "osparc/icons/diagram.png");
+      this.self().setIcon(menuButton, buttonConfig["icon"] || osparc.data.model.StudyUI.PIPELINE_ICON);
       this.__addFromResourceButton(menuButton, buttonConfig["category"]);
     },
 

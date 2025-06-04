@@ -1,9 +1,9 @@
-aiohappyeyeballs==2.4.6
+aiohappyeyeballs==2.6.1
     # via
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
     #   aiohttp
-aiohttp==3.11.18
+aiohttp==3.12.7
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_aiohttp.txt
@@ -191,14 +191,16 @@ python-dateutil==2.9.0.post0
     # via
     #   -c requirements/_base.txt
     #   botocore
-python-dotenv==1.0.1
+python-dotenv==1.1.0
     # via
     #   -c requirements/_base.txt
+    #   -c requirements/_fastapi.txt
     #   -r requirements/_test.in
 pyyaml==6.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
+    #   -c requirements/_fastapi.txt
     #   jsonschema-path
 referencing==0.35.1
     # via

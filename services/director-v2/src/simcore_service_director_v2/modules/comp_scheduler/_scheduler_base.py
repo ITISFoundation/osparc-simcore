@@ -28,6 +28,7 @@ from models_library.services import ServiceType
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from networkx.classes.reportviews import InDegreeView
+from pydantic import PositiveInt
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
@@ -250,7 +251,7 @@ class BaseCompScheduler(ABC):
         )
 
     async def _set_states_following_failed_to_aborted(
-        self, project_id: ProjectID, dag: nx.DiGraph
+        self, project_id: ProjectID, dag: nx.DiGraph, run_id: PositiveInt
     ) -> dict[NodeIDStr, CompTaskAtDB]:
         tasks = await self._get_pipeline_tasks(project_id, dag)
         # Perform a reverse topological sort to ensure tasks are ordered from last to first
@@ -271,6 +272,7 @@ class BaseCompScheduler(ABC):
             comp_tasks_repo = CompTasksRepository.instance(self.db_engine)
             await comp_tasks_repo.update_project_tasks_state(
                 project_id,
+                run_id,
                 [NodeID(n) for n in node_ids_to_set_as_aborted],
                 RunningState.ABORTED,
                 optional_progress=1.0,
@@ -282,6 +284,7 @@ class BaseCompScheduler(ABC):
         self,
         user_id: UserID,
         project_id: ProjectID,
+        run_id: PositiveInt,
         iteration: Iteration,
         dag: nx.DiGraph,
     ) -> None:
@@ -320,7 +323,7 @@ class BaseCompScheduler(ABC):
             await asyncio.gather(
                 *(
                     comp_tasks_repo.update_project_task_last_heartbeat(
-                        t.project_id, t.node_id, utc_now
+                        t.project_id, t.node_id, run_id, utc_now
                     )
                     for t in running_tasks
                 )
@@ -364,6 +367,7 @@ class BaseCompScheduler(ABC):
         project_id: ProjectID,
         iteration: Iteration,
         run_metadata: RunMetadataDict,
+        run_id: PositiveInt,
     ) -> None:
         utc_now = arrow.utcnow().datetime
 
@@ -401,7 +405,7 @@ class BaseCompScheduler(ABC):
                     user_id=user_id,
                     user_email=run_metadata.get("user_email", UNDEFINED_STR_METADATA),
                     project_id=t.project_id,
-                    project_name=run_metadata.get("project_metadata", {}).get(  # type: ignore[arg-type]
+                    project_name=run_metadata.get(
                         "project_name", UNDEFINED_STR_METADATA
                     ),
                     node_id=t.node_id,
@@ -453,6 +457,7 @@ class BaseCompScheduler(ABC):
             *(
                 comp_tasks_repo.update_project_tasks_state(
                     t.project_id,
+                    run_id,
                     [t.node_id],
                     t.state,
                     optional_started=utc_now,
@@ -468,12 +473,15 @@ class BaseCompScheduler(ABC):
             started_time=utc_now,
         )
 
-    async def _process_waiting_tasks(self, tasks: list[CompTaskAtDB]) -> None:
+    async def _process_waiting_tasks(
+        self, tasks: list[CompTaskAtDB], run_id: PositiveInt
+    ) -> None:
         comp_tasks_repo = CompTasksRepository(self.db_engine)
         await asyncio.gather(
             *(
                 comp_tasks_repo.update_project_tasks_state(
                     t.project_id,
+                    run_id,
                     [t.node_id],
                     t.state,
                 )
@@ -521,6 +529,7 @@ class BaseCompScheduler(ABC):
                 project_id=project_id,
                 iteration=iteration,
                 run_metadata=comp_run.metadata,
+                run_id=comp_run.run_id,
             )
 
         if sorted_tasks.completed or sorted_tasks.potentially_lost:
@@ -532,7 +541,7 @@ class BaseCompScheduler(ABC):
             )
 
         if sorted_tasks.waiting:
-            await self._process_waiting_tasks(sorted_tasks.waiting)
+            await self._process_waiting_tasks(sorted_tasks.waiting, comp_run.run_id)
 
         if executing_tasks:
             await self._process_executing_tasks(user_id, executing_tasks, comp_run)
@@ -605,7 +614,7 @@ class BaseCompScheduler(ABC):
                 )
                 # 2. Any task following a FAILED task shall be ABORTED
                 comp_tasks = await self._set_states_following_failed_to_aborted(
-                    project_id, dag
+                    project_id, dag, comp_run.run_id
                 )
                 # 3. do we want to stop the pipeline now?
                 if comp_run.cancelled:
@@ -631,11 +640,11 @@ class BaseCompScheduler(ABC):
                     )
                 # 4. timeout if waiting for cluster has been there for more than X minutes
                 comp_tasks = await self._timeout_if_waiting_for_cluster_too_long(
-                    user_id, project_id, comp_tasks
+                    user_id, project_id, comp_run.run_id, comp_tasks
                 )
                 # 5. send a heartbeat
                 await self._send_running_tasks_heartbeat(
-                    user_id, project_id, iteration, dag
+                    user_id, project_id, comp_run.run_id, iteration, dag
                 )
 
                 # 6. Update the run result
@@ -678,6 +687,7 @@ class BaseCompScheduler(ABC):
                 comp_tasks_repo = CompTasksRepository(self.db_engine)
                 await comp_tasks_repo.update_project_tasks_state(
                     project_id,
+                    comp_run.run_id,
                     [t.node_id for t in tasks.values()],
                     RunningState.FAILED,
                 )
@@ -700,7 +710,7 @@ class BaseCompScheduler(ABC):
         comp_tasks_repo = CompTasksRepository.instance(self.db_engine)
         await (
             comp_tasks_repo.mark_project_published_waiting_for_cluster_tasks_as_aborted(
-                project_id
+                project_id, comp_run.run_id
             )
         )
         # stop any remaining running task, these are already submitted
@@ -763,6 +773,7 @@ class BaseCompScheduler(ABC):
                 self.db_engine
             ).update_project_tasks_state(
                 project_id,
+                comp_run.run_id,
                 list(tasks_ready_to_start.keys()),
                 RunningState.WAITING_FOR_CLUSTER,
             )
@@ -785,6 +796,7 @@ class BaseCompScheduler(ABC):
                 self.db_engine
             ).update_project_tasks_state(
                 project_id,
+                comp_run.run_id,
                 list(tasks_ready_to_start.keys()),
                 RunningState.WAITING_FOR_CLUSTER,
             )
@@ -804,6 +816,7 @@ class BaseCompScheduler(ABC):
                 self.db_engine
             ).update_project_tasks_state(
                 project_id,
+                comp_run.run_id,
                 list(tasks_ready_to_start.keys()),
                 RunningState.FAILED,
                 optional_progress=1.0,
@@ -822,6 +835,7 @@ class BaseCompScheduler(ABC):
                 self.db_engine
             ).update_project_tasks_state(
                 project_id,
+                comp_run.run_id,
                 [exc.node_id],
                 RunningState.FAILED,
                 exc.get_errors(),
@@ -841,6 +855,7 @@ class BaseCompScheduler(ABC):
                 self.db_engine
             ).update_project_tasks_state(
                 project_id,
+                comp_run.run_id,
                 list(tasks_ready_to_start.keys()),
                 RunningState.FAILED,
                 optional_progress=1.0,
@@ -856,6 +871,7 @@ class BaseCompScheduler(ABC):
         self,
         user_id: UserID,
         project_id: ProjectID,
+        run_id: PositiveInt,
         comp_tasks: dict[NodeIDStr, CompTaskAtDB],
     ) -> dict[NodeIDStr, CompTaskAtDB]:
         if all(
@@ -873,6 +889,7 @@ class BaseCompScheduler(ABC):
                     self.db_engine
                 ).update_project_tasks_state(
                     project_id,
+                    run_id,
                     [NodeID(idstr) for idstr in comp_tasks],
                     RunningState.FAILED,
                     optional_progress=1.0,

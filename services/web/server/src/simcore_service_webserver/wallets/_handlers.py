@@ -68,7 +68,7 @@ def handle_wallets_exceptions(handler: Handler):
             PaymentMethodNotFoundError,
             UserDefaultWalletNotFoundError,
         ) as exc:
-            raise web.HTTPNotFound(reason=f"{exc}") from exc
+            raise web.HTTPNotFound(text=f"{exc}") from exc
 
         except (
             PaymentUniqueViolationError,
@@ -77,22 +77,22 @@ def handle_wallets_exceptions(handler: Handler):
             PaymentMethodUniqueViolationError,
             InvalidPaymentMethodError,
         ) as exc:
-            raise web.HTTPConflict(reason=f"{exc}") from exc
+            raise web.HTTPConflict(text=f"{exc}") from exc
 
         except PaymentServiceUnavailableError as exc:
-            raise web.HTTPServiceUnavailable(reason=f"{exc}") from exc
+            raise web.HTTPServiceUnavailable(text=f"{exc}") from exc
 
         except WalletAccessForbiddenError as exc:
-            raise web.HTTPForbidden(reason=f"{exc}") from exc
+            raise web.HTTPForbidden(text=f"{exc}") from exc
 
         except BelowMinimumPaymentError as exc:
-            raise web.HTTPUnprocessableEntity(reason=f"{exc}") from exc
+            raise web.HTTPUnprocessableEntity(text=f"{exc}") from exc
 
         except ProductPriceNotDefinedError as exc:
-            raise web.HTTPConflict(reason=MSG_PRICE_NOT_DEFINED_ERROR) from exc
+            raise web.HTTPConflict(text=MSG_PRICE_NOT_DEFINED_ERROR) from exc
 
         except WalletNotEnoughCreditsError as exc:
-            raise web.HTTPPaymentRequired(reason=f"{exc}") from exc
+            raise web.HTTPPaymentRequired(text=f"{exc}") from exc
 
         except BillingDetailsNotFoundError as exc:
 
@@ -107,7 +107,7 @@ def handle_wallets_exceptions(handler: Handler):
                 )
             )
 
-            raise web.HTTPServiceUnavailable(reason=user_error_msg) from exc
+            raise web.HTTPServiceUnavailable(text=user_error_msg) from exc
 
     return wrapper
 

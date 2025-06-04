@@ -8,9 +8,9 @@ aiodocker==0.24.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 aiofiles==24.1.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-aiohappyeyeballs==2.4.3
+aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.11.18
+aiohttp==3.12.7
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -85,6 +85,7 @@ charset-normalizer==3.4.0
     # via requests
 click==8.1.7
     # via
+    #   rich-toolkit
     #   typer
     #   uvicorn
 cryptography==44.0.0
@@ -115,16 +116,19 @@ dnspython==2.7.0
 ecdsa==0.19.0
     # via python-jose
 email-validator==2.2.0
-    # via pydantic
+    # via
+    #   fastapi
+    #   pydantic
 exceptiongroup==1.2.2
     # via aio-pika
 fast-depends==2.4.12
     # via faststream
-fastapi==0.115.5
+fastapi==0.115.12
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
-    #   -r requirements/_base.in
     #   fastapi-lifespan-manager
+fastapi-cli==0.0.7
+    # via fastapi
 fastapi-lifespan-manager==0.1.4
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 faststream==0.5.31
@@ -146,6 +150,10 @@ h11==0.14.0
     #   httpcore
     #   uvicorn
     #   wsproto
+h2==4.2.0
+    # via httpx
+hpack==4.1.0
+    # via h2
 httpcore==1.0.7
     # via httpx
 httptools==0.6.4
@@ -167,7 +175,9 @@ httpx==0.27.2
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
-    #   -r requirements/_base.in
+    #   fastapi
+hyperframe==6.1.0
+    # via h2
 idna==3.10
     # via
     #   anyio
@@ -177,7 +187,7 @@ idna==3.10
     #   yarl
 importlib-metadata==8.5.0
     # via opentelemetry-api
-jinja2==3.1.4
+jinja2==3.1.6
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -194,6 +204,7 @@ jinja2==3.1.4
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
+    #   fastapi
 jsonschema==4.23.0
     # via
     #   -r requirements/../../../packages/models-library/requirements/_base.in
@@ -440,8 +451,10 @@ python-engineio==4.10.1
     # via python-socketio
 python-jose==3.3.0
     # via -r requirements/_base.in
-python-multipart==0.0.17
-    # via -r requirements/_base.in
+python-multipart==0.0.20
+    # via
+    #   -r requirements/_base.in
+    #   fastapi
 python-socketio==5.11.4
     # via -r requirements/_base.in
 pyyaml==6.0.2
@@ -503,7 +516,10 @@ rich==13.9.4
     # via
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
+    #   rich-toolkit
     #   typer
+rich-toolkit==0.14.7
+    # via fastapi-cli
 rpds-py==0.21.0
     # via
     #   jsonschema
@@ -585,6 +601,7 @@ typer==0.13.1
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/_base.in
+    #   fastapi-cli
 types-python-dateutil==2.9.0.20241003
     # via arrow
 typing-extensions==4.12.2
@@ -597,6 +614,7 @@ typing-extensions==4.12.2
     #   pydantic
     #   pydantic-core
     #   pydantic-extra-types
+    #   rich-toolkit
     #   typer
 urllib3==2.2.3
     # via
@@ -615,10 +633,10 @@ urllib3==2.2.3
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
-uvicorn==0.32.1
+uvicorn==0.34.2
     # via
-    #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
-    #   -r requirements/_base.in
+    #   fastapi
+    #   fastapi-cli
 uvloop==0.21.0
     # via uvicorn
 watchfiles==1.0.0
