@@ -385,17 +385,17 @@ qx.Class.define("osparc.store.Services", {
     },
 
     __addToCache: function(key, version, value) {
-      if (!(key in this.__servicesCached)) {
-        this.__servicesCached[key] = {};
-      }
       // some services that go to the cache are not complete, e.g. study services
       // if the one in the cache is the complete one, do not overwrite it
       if (
         this.__isInCache(key, version) &&
         "inputs" in this.__servicesCached[key][version]
       ) {
-        console.log("don't save", this.__servicesCached[key][version], value);
         return;
+      }
+
+      if (!(key in this.__servicesCached)) {
+        this.__servicesCached[key] = {};
       }
       this.__servicesCached[key][version] = value;
     },
