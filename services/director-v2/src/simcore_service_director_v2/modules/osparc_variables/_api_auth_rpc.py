@@ -8,6 +8,7 @@ from servicelib.rabbitmq.rpc_interfaces.webserver.auth import (
     api_keys as webserver_auth_api_keys_rpc,
 )
 
+from ...core.settings import get_application_settings
 from ..rabbitmq import get_rabbitmq_rpc_client
 
 
@@ -20,9 +21,11 @@ async def create_api_key(
     expiration: timedelta | None = None,
 ) -> ApiKeyGet:
     rpc_client = get_rabbitmq_rpc_client(app)
+    rpc_namespace = get_application_settings(app).DIRECTOR_V2_WEBSERVER_RPC_NAMESPACE
 
     return await webserver_auth_api_keys_rpc.create_api_key(
         rpc_client,
+        rpc_namespace,
         user_id=user_id,
         product_name=product_name,
         api_key=ApiKeyCreate(display_name=display_name, expiration=expiration),
@@ -37,9 +40,11 @@ async def delete_api_key_by_key(
     api_key: str,
 ) -> None:
     rpc_client = get_rabbitmq_rpc_client(app)
+    rpc_namespace = get_application_settings(app).DIRECTOR_V2_WEBSERVER_RPC_NAMESPACE
 
     result = await webserver_auth_api_keys_rpc.delete_api_key_by_key(
         rpc_client,
+        rpc_namespace,
         product_name=product_name,
         user_id=user_id,
         api_key=api_key,
