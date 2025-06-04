@@ -3,6 +3,7 @@ from collections.abc import AsyncIterator
 from typing import Final, cast
 
 from aiohttp import web
+from models_library.api_schemas_webserver import get_webserver_rpc_namespace
 from models_library.errors import RABBITMQ_CLIENT_UNHEALTHY_MSG
 from servicelib.aiohttp.application_keys import (
     APP_RABBITMQ_CLIENT_KEY,
@@ -13,9 +14,11 @@ from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import (
     RabbitMQClient,
     RabbitMQRPCClient,
+    RPCRouter,
     wait_till_rabbitmq_responsive,
 )
 
+from .application_settings import get_application_settings
 from .rabbitmq_settings import RabbitSettings, get_plugin_settings
 from .rest.healthcheck import HealthCheck, HealthCheckError
 
@@ -94,3 +97,24 @@ def get_rabbitmq_client(app: web.Application) -> RabbitMQClient:
 
 def get_rabbitmq_rpc_server(app: web.Application) -> RabbitMQRPCClient:
     return cast(RabbitMQRPCClient, app[APP_RABBITMQ_RPC_SERVER_KEY])
+
+
+def create_register_rpc_routes_on_startup(router: RPCRouter):
+    """
+    This high-order function allows for more flexible router registration
+    by accepting a router instance and returning an on-startup event handler.
+
+    Args:
+        router: The RPCRouter instance containing the routes to register
+
+    """
+
+    async def _on_startup(app: web.Application):
+        rpc_server = get_rabbitmq_rpc_server(app)
+        settings = get_application_settings(app)
+
+        assert settings.WEBSERVER_HOST  # nosec
+        rpc_namespace = get_webserver_rpc_namespace(settings.WEBSERVER_HOST)
+        await rpc_server.register_router(router, rpc_namespace, app)
+
+    return _on_startup
