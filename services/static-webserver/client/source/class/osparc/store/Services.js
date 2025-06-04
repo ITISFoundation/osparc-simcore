@@ -165,6 +165,17 @@ qx.Class.define("osparc.store.Services", {
         }
       };
       this.__studyServicesPromisesCached[studyId] = osparc.data.Resources.fetch("studies", "getServices", params)
+        /*
+        OM: here
+        .then(resp => {
+          const services = resp["services"];
+          services.forEach(service => {
+            service.version = service["release"]["version"];
+            this.__addServiceToCache(service);
+          });
+          return resp;
+        })
+        */
         .finally(() => {
           delete this.__studyServicesPromisesCached[studyId];
         });
