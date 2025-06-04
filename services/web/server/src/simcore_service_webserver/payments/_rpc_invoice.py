@@ -1,7 +1,6 @@
 from decimal import Decimal
 
 from aiohttp import web
-from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.emails import LowerCaseEmailStr
 from models_library.payments import InvoiceDataGet, UserInvoiceAddress
 from models_library.products import ProductName
@@ -10,8 +9,8 @@ from servicelib.rabbitmq import RPCRouter
 
 from ..products import products_service
 from ..products.models import CreditResult
-from ..rabbitmq import get_rabbitmq_rpc_server
 from ..users import users_service
+from ..rabbitmq import create_register_rpc_routes_on_startup
 
 router = RPCRouter()
 
@@ -47,6 +46,4 @@ async def get_invoice_data(
     )
 
 
-async def register_rpc_routes_on_startup(app: web.Application):
-    rpc_server = get_rabbitmq_rpc_server(app)
-    await rpc_server.register_router(router, WEBSERVER_RPC_NAMESPACE, app)
+register_rpc_routes_on_startup = create_register_rpc_routes_on_startup(router)
