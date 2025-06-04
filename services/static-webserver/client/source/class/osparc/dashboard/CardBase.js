@@ -700,7 +700,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
 
       // Block card
-      const cantReadServices = osparc.study.Utils.getCantExecuteServices(services);
+      const cantReadServices = osparc.study.Utils.getCantReadServices(services);
       if (cantReadServices.length) {
         this.setBlocked("UNKNOWN_SERVICES");
         const image = "@FontAwesome5Solid/ban/";
