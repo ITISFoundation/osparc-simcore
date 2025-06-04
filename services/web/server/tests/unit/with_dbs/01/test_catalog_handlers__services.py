@@ -4,6 +4,7 @@
 
 import re
 import urllib.parse
+from typing import Any
 
 import pytest
 from aiohttp.test_utils import TestClient
@@ -68,6 +69,30 @@ def mocked_catalog_rpc_api(mocker: MockerFixture) -> dict[str, MockType]:
     }
 
 
+@pytest.fixture
+def mocked_catalog_rest_api(aioresponses_mocker: AioResponsesMock) -> dict[str, Any]:
+    """Fixture that mocks catalog service responses for tests"""
+    url_pattern = re.compile(r"http://catalog:8000/v0/services/.*")
+    service_payload = ServiceGetV2.model_json_schema()["examples"][0]
+
+    # Mock multiple responses as needed by tests
+    for _ in range(6):  # Increased to accommodate all tests
+        aioresponses_mocker.get(
+            url_pattern,
+            status=status.HTTP_200_OK,
+            payload=service_payload,
+        )
+
+    service_key = "simcore/services/comp/itis/sleeper"
+    service_version = "0.1.0"
+
+    return {
+        "service_key": service_key,
+        "service_version": service_version,
+        "service_payload": service_payload,
+    }
+
+
 @pytest.mark.parametrize(
     "user_role",
     [UserRole.USER],
@@ -101,20 +126,16 @@ async def test_list_services_latest(
     [UserRole.USER],
 )
 async def test_list_inputs(
-    client: TestClient, logged_user: UserInfoDict, aioresponses_mocker: AioResponsesMock
+    client: TestClient,
+    logged_user: UserInfoDict,
+    mocked_catalog_rest_api: dict[str, Any],
 ):
+    assert client.app
+    assert client.app.router
 
-    url_pattern = re.compile(r"http://catalog:8000/v0/services/.*")
-    service_payload = ServiceGetV2.model_json_schema()["examples"][0]
-    aioresponses_mocker.get(
-        url_pattern,
-        status=status.HTTP_200_OK,
-        payload=service_payload,
-    )
+    service_key = mocked_catalog_rest_api["service_key"]
+    service_version = mocked_catalog_rest_api["service_version"]
 
-    service_key = "simcore/services/comp/itis/sleeper"
-    service_version = "0.1.0"
-    assert client.app and client.app.router
     url = client.app.router["list_service_inputs"].url_for(
         service_key=urllib.parse.quote(service_key, safe=""),
         service_version=service_version,
@@ -130,20 +151,16 @@ async def test_list_inputs(
     [UserRole.USER],
 )
 async def test_list_outputs(
-    client: TestClient, logged_user: UserInfoDict, aioresponses_mocker: AioResponsesMock
+    client: TestClient,
+    logged_user: UserInfoDict,
+    mocked_catalog_rest_api: dict[str, Any],
 ):
+    assert client.app
+    assert client.app.router
 
-    url_pattern = re.compile(r"http://catalog:8000/v0/services/.*")
-    service_payload = ServiceGetV2.model_json_schema()["examples"][0]
-    aioresponses_mocker.get(
-        url_pattern,
-        status=status.HTTP_200_OK,
-        payload=service_payload,
-    )
+    service_key = mocked_catalog_rest_api["service_key"]
+    service_version = mocked_catalog_rest_api["service_version"]
 
-    service_key = "simcore/services/comp/itis/sleeper"
-    service_version = "0.1.0"
-    assert client.app and client.app.router
     url = client.app.router["list_service_outputs"].url_for(
         service_key=urllib.parse.quote(service_key, safe=""),
         service_version=service_version,
@@ -159,20 +176,17 @@ async def test_list_outputs(
     [UserRole.USER],
 )
 async def test_get_outputs(
-    client: TestClient, logged_user: UserInfoDict, aioresponses_mocker: AioResponsesMock
+    client: TestClient,
+    logged_user: UserInfoDict,
+    mocked_catalog_rest_api: dict[str, Any],
 ):
+    assert client.app
+    assert client.app.router
 
-    url_pattern = re.compile(r"http://catalog:8000/v0/services/.*")
-    service_payload = ServiceGetV2.model_json_schema()["examples"][0]
-    aioresponses_mocker.get(
-        url_pattern,
-        status=status.HTTP_200_OK,
-        payload=service_payload,
-    )
+    service_key = mocked_catalog_rest_api["service_key"]
+    service_version = mocked_catalog_rest_api["service_version"]
+    service_payload = mocked_catalog_rest_api["service_payload"]
 
-    service_key = "simcore/services/comp/itis/sleeper"
-    service_version = "0.1.0"
-    assert client.app and client.app.router
     url = client.app.router["get_service_output"].url_for(
         service_key=urllib.parse.quote(service_key, safe=""),
         service_version=service_version,
@@ -189,19 +203,17 @@ async def test_get_outputs(
     [UserRole.USER],
 )
 async def test_get_inputs(
-    client: TestClient, logged_user: UserInfoDict, aioresponses_mocker: AioResponsesMock
+    client: TestClient,
+    logged_user: UserInfoDict,
+    mocked_catalog_rest_api: dict[str, Any],
 ):
-    url_pattern = re.compile(r"http://catalog:8000/v0/services/.*")
-    service_payload = ServiceGetV2.model_json_schema()["examples"][0]
-    aioresponses_mocker.get(
-        url_pattern,
-        status=status.HTTP_200_OK,
-        payload=service_payload,
-    )
+    assert client.app
+    assert client.app.router
 
-    service_key = "simcore/services/comp/itis/sleeper"
-    service_version = "0.1.0"
-    assert client.app and client.app.router
+    service_key = mocked_catalog_rest_api["service_key"]
+    service_version = mocked_catalog_rest_api["service_version"]
+    service_payload = mocked_catalog_rest_api["service_payload"]
+
     url = client.app.router["get_service_input"].url_for(
         service_key=urllib.parse.quote(service_key, safe=""),
         service_version=service_version,
@@ -217,20 +229,17 @@ async def test_get_inputs(
     [UserRole.USER],
 )
 async def test_get_compatible_inputs_given_source_outputs(
-    client: TestClient, logged_user: UserInfoDict, aioresponses_mocker: AioResponsesMock
+    client: TestClient,
+    logged_user: UserInfoDict,
+    mocked_catalog_rest_api: dict[str, Any],
 ):
-    url_pattern = re.compile(r"http://catalog:8000/v0/services/.*")
-    service_payload = ServiceGetV2.model_json_schema()["examples"][0]
-    for _ in range(2):
-        aioresponses_mocker.get(
-            url_pattern,
-            status=status.HTTP_200_OK,
-            payload=service_payload,
-        )
+    assert client.app
+    assert client.app.router
 
-    service_key = "simcore/services/comp/itis/sleeper"
-    service_version = "0.1.0"
-    assert client.app and client.app.router
+    service_key = mocked_catalog_rest_api["service_key"]
+    service_version = mocked_catalog_rest_api["service_version"]
+
+    # Get compatible inputs given source outputs
     url = (
         client.app.router["get_compatible_inputs_given_source_output"]
         .url_for(
@@ -239,8 +248,8 @@ async def test_get_compatible_inputs_given_source_outputs(
         )
         .with_query(
             {
-                "fromService": "simcore/services/comp/itis/sleeper",
-                "fromVersion": "0.1.0",
+                "fromService": service_key,
+                "fromVersion": service_version,
                 "fromOutput": "output_1",
             }
         )
@@ -253,21 +262,17 @@ async def test_get_compatible_inputs_given_source_outputs(
     "user_role",
     [UserRole.USER],
 )
-async def test_get_compatible_outputs_given_target_inptuts(
-    client: TestClient, logged_user: UserInfoDict, aioresponses_mocker: AioResponsesMock
+async def test_get_compatible_outputs_given_target_inputs(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    mocked_catalog_rest_api: dict[str, Any],
 ):
-    url_pattern = re.compile(r"http://catalog:8000/v0/services/.*")
-    service_payload = ServiceGetV2.model_json_schema()["examples"][0]
-    for _ in range(2):
-        aioresponses_mocker.get(
-            url_pattern,
-            status=status.HTTP_200_OK,
-            payload=service_payload,
-        )
+    assert client.app
+    assert client.app.router
 
-    service_key = "simcore/services/comp/itis/sleeper"
-    service_version = "0.1.0"
-    assert client.app and client.app.router
+    service_key = mocked_catalog_rest_api["service_key"]
+    service_version = mocked_catalog_rest_api["service_version"]
+
     url = (
         client.app.router["get_compatible_outputs_given_target_input"]
         .url_for(
@@ -276,8 +281,8 @@ async def test_get_compatible_outputs_given_target_inptuts(
         )
         .with_query(
             {
-                "toService": "simcore/services/comp/itis/sleeper",
-                "toVersion": "0.1.0",
+                "toService": service_key,
+                "toVersion": service_version,
                 "toInput": "input_1",
             }
         )

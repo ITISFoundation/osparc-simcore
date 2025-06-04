@@ -248,11 +248,11 @@ qx.Class.define("osparc.widget.PersistentIframe", {
     },
 
     __attachInterframeMessageHandlers: function() {
-      this.__attachTriggerers();
-      this.__attachListeners();
+      this.__attachInterIframeThemeSyncer();
+      this.__attachInterIframeListeners();
     },
 
-    __attachTriggerers: function() {
+    __attachInterIframeThemeSyncer: function() {
       this.postThemeSwitch = theme => {
         const msg = "osparc;theme=" + theme;
         this.sendMessageToIframe(msg);
@@ -279,12 +279,14 @@ qx.Class.define("osparc.widget.PersistentIframe", {
       }
     },
 
-    __attachListeners: function() {
+    __attachInterIframeListeners: function() {
       this.__iframe.addListener("load", () => {
         const iframe = this._getIframeElement();
         if (iframe) {
           const iframeDomEl = iframe.getDomElement();
-          if (iframeDomEl) {
+          const iframeSource = iframe.getSource();
+          // Make sure the iframe is loaded and has a valid source
+          if (iframeDomEl && iframeSource && iframeSource !== "about:blank") {
             window.addEventListener("message", message => {
               const data = message.data;
               if (data) {
