@@ -70,29 +70,36 @@ async def _create_services_in_database(
             (service_key, service_version)
         ]
         try:
-            ## Set deprecation date to null (is valid date value for postgres)
-
-            # DEFAULT policies
+            # 1. Evaluate DEFAULT ownership and access rights
             (
                 owner_gid,
                 service_access_rights,
-            ) = await access_rights.evaluate_default_policy(app, service_metadata)
-
-            # AUTO-UPGRADE PATCH policy
-            inherited_access_rights = await access_rights.evaluate_auto_upgrade_policy(
-                service_metadata, services_repo
+            ) = await access_rights.evaluate_default_service_ownership_and_rights(
+                app,
+                service=service_metadata,
+                product_name=app.state.default_product_name,
             )
 
-            service_access_rights += inherited_access_rights
+            # 2. Inherit access rights from the latest compatible release
+            inherited_data = await access_rights.inherit_from_latest_compatible_release(
+                service_metadata=service_metadata,
+                services_repo=services_repo,
+            )
+
+            # 3. Aggregates access rights and metadata updates
+            service_access_rights += inherited_data["access_rights"]
             service_access_rights = access_rights.reduce_access_rights(
                 service_access_rights
             )
 
-            # set the service in the DB
+            metadata_updates = {
+                **service_metadata.model_dump(exclude_unset=True),
+                **inherited_data["metadata_updates"],
+            }
+
+            # 4. Upsert values in database
             await services_repo.create_or_update_service(
-                ServiceMetaDataDBCreate(
-                    **service_metadata.model_dump(exclude_unset=True), owner=owner_gid
-                ),
+                ServiceMetaDataDBCreate(**metadata_updates, owner=owner_gid),
                 service_access_rights,
             )
 

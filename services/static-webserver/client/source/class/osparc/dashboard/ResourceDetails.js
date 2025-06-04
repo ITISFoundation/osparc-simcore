@@ -761,7 +761,10 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     },
 
     __getPublishPage: function() {
-      if (!osparc.utils.Resources.isStudy(this.__resourceData)) {
+      if (
+        !osparc.utils.Resources.isStudy(this.__resourceData) ||
+        !osparc.product.Utils.showPublicProjects()
+      ) {
         return null;
       }
 
@@ -799,7 +802,10 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     },
 
     __getCreateTemplatePage: function() {
-      if (!osparc.utils.Resources.isStudy(this.__resourceData)) {
+      if (
+        !osparc.utils.Resources.isStudy(this.__resourceData) ||
+        osparc.product.Utils.showTemplates()
+      ) {
         return null;
       }
 

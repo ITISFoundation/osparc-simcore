@@ -284,6 +284,28 @@ qx.Class.define("osparc.product.Utils", {
       return true;
     },
 
+    showTemplates: function() {
+      if (osparc.data.Permissions.getInstance().isTester()) {
+        return true;
+      }
+
+      if (this.isProduct("tis") || this.isProduct("tiplite")) {
+        return false;
+      }
+      return true;
+    },
+
+    showPublicProjects: function() {
+      if (osparc.data.Permissions.getInstance().isTester()) {
+        return true;
+      }
+
+      if (this.isProduct("tis") || this.isProduct("tiplite")) {
+        return false;
+      }
+      return true;
+    },
+
     showQuality: function() {
       if (this.isProduct("osparc")) {
         return true;
