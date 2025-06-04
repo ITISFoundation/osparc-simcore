@@ -7699,6 +7699,7 @@
                     }
                   ]
                 },
+                "maxItems": 50,
                 "title": "Function Inputs List"
               }
             }

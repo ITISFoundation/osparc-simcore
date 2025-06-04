@@ -75,7 +75,10 @@ FunctionJobClassSpecificData: TypeAlias = FunctionClassSpecificData
 # see here https://github.com/ITISFoundation/osparc-simcore/issues/7659
 FunctionInputs: TypeAlias = dict[str, Any] | None
 
-FunctionInputsList: TypeAlias = list[FunctionInputs]
+FunctionInputsList: TypeAlias = Annotated[
+    list[FunctionInputs],
+    Field(max_length=50),
+]
 
 FunctionOutputs: TypeAlias = dict[str, Any] | None
 
