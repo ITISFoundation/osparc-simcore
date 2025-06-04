@@ -168,13 +168,13 @@ async def other_user(
     faker: Faker,
 ) -> AsyncIterator[dict[str, Any]]:
 
-    _user = random_user(fake=faker, id=user_id + 1)
+    _other_user = random_user(fake=faker, id=user_id + 1)
     async with insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
         sqlalchemy_async_engine,
         table=users,
-        values=_user,
+        values=_other_user,
         pk_col=users.c.id,
-        pk_value=_user["id"],
+        pk_value=_other_user["id"],
     ) as row:
         yield row
 
@@ -247,22 +247,27 @@ async def services_db_tables_injector(
 
     async def _inject_in_db(fake_catalog: list[tuple]):
         # [(service, ar1, ...), (service2, ar1, ...) ]
+        iter_services = (items[0] for items in fake_catalog)
+        iter_access_rights = itertools.chain(items[1:] for items in fake_catalog)
 
         async with sqlalchemy_async_engine.begin() as conn:
             # NOTE: The 'default' dialect with current database version settings does not support in-place multirow inserts
-            for service in [items[0] for items in fake_catalog]:
-                insert_meta = pg_insert(services_meta_data).values(**service)
-                upsert_meta = insert_meta.on_conflict_do_update(
-                    index_elements=[
-                        services_meta_data.c.key,
-                        services_meta_data.c.version,
-                    ],
-                    set_=service,
+            for service in iter_services:
+
+                insert_stmt = pg_insert(services_meta_data).values(**service)
+
+                update_stmt = insert_stmt.on_conflict_do_update(
+                    index_elements=["key", "version"],
+                    set_={
+                        column_name: insert_stmt.excluded[column_name]
+                        for column_name in service
+                        if column_name not in ("key", "version")
+                    },
                 )
-                await conn.execute(upsert_meta)
+                await conn.execute(update_stmt)
                 inserted_services.add((service["key"], service["version"]))
 
-            for access_rights in itertools.chain(items[1:] for items in fake_catalog):
+            for access_rights in iter_access_rights:
                 stmt_access = services_access_rights.insert().values(access_rights)
                 await conn.execute(stmt_access)
 

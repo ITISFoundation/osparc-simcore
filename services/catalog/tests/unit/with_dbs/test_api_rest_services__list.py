@@ -14,6 +14,7 @@ from models_library.products import ProductName
 from models_library.services import ServiceMetaDataPublished
 from models_library.users import UserID
 from pydantic import TypeAdapter
+from pytest_simcore.helpers.catalog_services import CreateFakeServiceDataCallable
 from respx.router import MockRouter
 from starlette import status
 from starlette.testclient import TestClient
@@ -33,7 +34,7 @@ async def test_list_services_with_details(
     mocked_director_rest_api_base: MockRouter,
     user_id: UserID,
     target_product: ProductName,
-    create_fake_service_data: Callable,
+    create_fake_service_data: CreateFakeServiceDataCallable,
     services_db_tables_injector: Callable,
     client: TestClient,
     benchmark,
@@ -89,7 +90,7 @@ async def test_list_services_without_details(
     rabbitmq_and_rpc_setup_disabled: None,
     user_id: int,
     target_product: ProductName,
-    create_fake_service_data: Callable,
+    create_fake_service_data: CreateFakeServiceDataCallable,
     services_db_tables_injector: Callable,
     client: TestClient,
     benchmark,
@@ -133,7 +134,7 @@ async def test_list_services_without_details_with_wrong_user_id_returns_403(
     rabbitmq_and_rpc_setup_disabled: None,
     user_id: int,
     target_product: ProductName,
-    create_fake_service_data: Callable,
+    create_fake_service_data: CreateFakeServiceDataCallable,
     services_db_tables_injector: Callable,
     client: TestClient,
 ):
@@ -166,7 +167,7 @@ async def test_list_services_without_details_with_another_product_returns_other_
     user_id: int,
     target_product: ProductName,
     other_product: ProductName,
-    create_fake_service_data: Callable,
+    create_fake_service_data: CreateFakeServiceDataCallable,
     services_db_tables_injector: Callable,
     client: TestClient,
 ):
@@ -198,7 +199,7 @@ async def test_list_services_without_details_with_wrong_product_returns_0_servic
     rabbitmq_and_rpc_setup_disabled: None,
     user_id: int,
     target_product: ProductName,
-    create_fake_service_data: Callable,
+    create_fake_service_data: CreateFakeServiceDataCallable,
     services_db_tables_injector: Callable,
     client: TestClient,
 ):
@@ -234,7 +235,7 @@ async def test_list_services_that_are_deprecated(
     mocked_director_rest_api_base: MockRouter,
     user_id: int,
     target_product: ProductName,
-    create_fake_service_data: Callable,
+    create_fake_service_data: CreateFakeServiceDataCallable,
     services_db_tables_injector: Callable,
     client: TestClient,
 ):

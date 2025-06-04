@@ -30,6 +30,11 @@ _logger = logging.getLogger(__name__)
 async def _handler_director_service_error_as_503_or_4xx(
     request: web.Request, exception: Exception
 ) -> web.Response:
+    """
+    Handles DirectorV2ServiceError exceptions by returning:
+      - HTTP 503 Service Unavailable if the underlying director-v2 service returns a 5XX server error,
+      - or the original 4XX client error status and message if it is a client error.
+    """
     assert isinstance(exception, DirectorV2ServiceError)  # nosec
     assert status_codes_utils.is_error(
         exception.status
