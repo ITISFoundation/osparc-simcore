@@ -993,7 +993,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
           position: "bottom-left",
         });
         osparc.utils.Utils.setIdToWidget(menu, "studyItemMenuMenu");
-        this.evaluateMenuButtons();
+        menu.addListener("appear", () => this.evaluateMenuButtons());
       }
       menuButton.setVisibility(menu ? "visible" : "excluded");
     },
