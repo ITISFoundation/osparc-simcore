@@ -4,6 +4,7 @@ from typing import Annotated
 
 from common_library.basic_types import DEFAULT_FACTORY
 from models_library.basic_types import NonNegativeDecimal
+from models_library.rabbitmq_basic_types import RPCNamespace
 from pydantic import (
     AliasChoices,
     EmailStr,
@@ -199,4 +200,9 @@ class ApplicationSettings(_BaseApplicationSettings):
             json_schema_extra={"auto_default_from_env": True},
             description="optional email (see notifier_email service)",
         ),
+    ]
+
+    PAYMENTS_WEBSERVER_RPC_NAMESPACE: Annotated[
+        RPCNamespace,
+        Field(description="Namespace to connect to correct webserver's RPC interface"),
     ]

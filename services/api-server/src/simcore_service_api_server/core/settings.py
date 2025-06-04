@@ -3,6 +3,7 @@ from typing import Annotated
 
 from common_library.basic_types import DEFAULT_FACTORY
 from models_library.basic_types import BootModeEnum, LogLevel
+from models_library.rabbitmq_basic_types import RPCNamespace
 from pydantic import (
     AliasChoices,
     Field,
@@ -129,6 +130,7 @@ class ApplicationSettings(BasicSettings):
         DirectorV2Settings | None,
         Field(json_schema_extra={"auto_default_from_env": True}),
     ]
+
     API_SERVER_LOG_CHECK_TIMEOUT_SECONDS: NonNegativeInt = 3 * 60
     API_SERVER_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
     API_SERVER_HEALTH_CHECK_TASK_PERIOD_SECONDS: PositiveInt = 30
@@ -142,6 +144,11 @@ class ApplicationSettings(BasicSettings):
             description="settings for opentelemetry tracing",
             json_schema_extra={"auto_default_from_env": True},
         ),
+    ]
+
+    API_SERVER_WEBSERVER_RPC_NAMESPACE: Annotated[
+        RPCNamespace,
+        Field(description="Namespace to connect to correct webserver's RPC interface"),
     ]
 
     @cached_property

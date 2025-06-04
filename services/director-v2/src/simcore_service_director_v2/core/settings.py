@@ -15,6 +15,7 @@ from models_library.clusters import (
     ClusterTypeInModel,
     NoAuthentication,
 )
+from models_library.rabbitmq_basic_types import RPCNamespace
 from pydantic import (
     AliasChoices,
     AnyUrl,
@@ -235,6 +236,11 @@ class AppSettings(BaseApplicationSettings, MixinLoggingSettings):
         json_schema_extra={"auto_default_from_env": True},
         description="settings for opentelemetry tracing",
     )
+
+    DIRECTOR_V2_WEBSERVER_RPC_NAMESPACE: Annotated[
+        RPCNamespace,
+        Field(description="Namespace to connect to correct webserver's RPC interface"),
+    ]
 
     @field_validator("LOG_LEVEL", mode="before")
     @classmethod
