@@ -10,6 +10,7 @@
 # Vulnerabilities -----------------------------------------------------------------------------------------
 #
 aiohttp>=3.7.4, !=3.11.13                     # https://github.com/advisories/GHSA-v6wp-4m6f-gcjg, 3.11.13 was yanked https://github.com/aio-libs/aiohttp/issues/10617
+aiohttp<=3.11.18                              # attempt to fix an issue with Content Length which could have been introduced in 3.12.x versions
 certifi>=2023.7.22                            # https://github.com/advisories/GHSA-xqr8-7jwr-rhp7
 cryptography>=41.0.6                          # https://github.com/advisories/GHSA-v8gr-m533-ghj9
 httpx>=0.23.0                                 # https://github.com/advisories/GHSA-h8pj-cxx2-jfg2 / CVE-2021-41945
@@ -25,6 +26,7 @@ sqlalchemy>=1.3.3                             # https://nvd.nist.gov/vuln/detail
 starlette>=0.27.0                             # https://github.com/advisories/GHSA-qj8w-rv5x-2v9h
 ujson>=5.4.0                                  # https://github.com/advisories/GHSA-fh56-85cw-5pq6, https://github.com/advisories/GHSA-wpqr-jcpx-745r
 urllib3>=1.26.5                               # https://github.com/advisories/GHSA-q2q7-5pp4-w6pg
+
 
 
 #
