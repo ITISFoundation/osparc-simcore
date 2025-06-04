@@ -81,6 +81,8 @@ qx.Class.define("osparc.editor.TextEditor", {
           writePage.add(control, {
             flex: 1
           });
+          const subtitle = this.getChildControl("subtitle");
+          writePage.add(subtitle);
           tabs.add(writePage);
           break;
         }
