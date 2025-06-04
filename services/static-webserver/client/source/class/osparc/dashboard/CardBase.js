@@ -985,8 +985,17 @@ qx.Class.define("osparc.dashboard.CardBase", {
       throw new Error("Abstract method called!");
     },
 
-    _applyMenu: function(value, old) {
-      throw new Error("Abstract method called!");
+    _applyMenu: function(menu) {
+      const menuButton = this.getChildControl("menu-button");
+      if (menu) {
+        menuButton.setMenu(menu).set({
+          appearance: "menu-wider",
+          position: "bottom-left",
+        });
+        osparc.utils.Utils.setIdToWidget(menu, "studyItemMenuMenu");
+        this.evaluateMenuButtons();
+      }
+      menuButton.setVisibility(menu ? "visible" : "excluded");
     },
 
     _setStudyPermissions: function(accessRights) {
