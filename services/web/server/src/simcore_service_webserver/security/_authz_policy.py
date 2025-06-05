@@ -27,9 +27,14 @@ from ._identity_api import IdentityStr
 
 _logger = logging.getLogger(__name__)
 
-# Keeps a cache during bursts to avoid stress on the database
 _SECOND = 1  # in seconds
-_AUTHZ_BURST_CACHE_TTL: Final = 5 * _SECOND
+_MINUTE: Final = 60 * _SECOND
+_AUTHZ_BURST_CACHE_TTL: Final = (
+    # Rationale: a user's access to a product does not change that frequently
+    # Keeps a cache during bursts to avoid stress on the database
+    30
+    * _MINUTE
+)
 
 
 @contextlib.contextmanager
