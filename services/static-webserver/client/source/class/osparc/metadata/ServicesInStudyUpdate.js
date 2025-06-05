@@ -60,7 +60,7 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
       osparc.store.Services.getStudyServices(this._studyData["uuid"])
         .then(resp => {
           const services = resp["services"];
-          if (osparc.study.Utils.getCantExecuteServices(services).length) {
+          if (osparc.study.Utils.getCantReadServices(services).length) {
             msg += this.tr("Some services are inaccessible. Please contact the service owner:");
             msg += "<br><br>";
           }

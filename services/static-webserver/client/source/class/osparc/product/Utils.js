@@ -230,7 +230,7 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     // oSPARC only
-    hasExportCMisEnabled: function() {
+    showExportCMis: function() {
       const product = this.getProductName();
       return product === "osparc";
     },
@@ -307,17 +307,15 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     showQuality: function() {
-      if (this.isProduct("osparc")) {
-        return true;
-      }
-      return false;
+      return this.isProduct("osparc");
     },
 
     showClassifiers: function() {
-      if (this.getProductName().includes("s4l")) {
-        return false;
-      }
-      return true;
+      return this.isProduct("osparc");
+    },
+
+    showConvertToPipeline: function() {
+      return this.isS4LProduct() || this.isProduct("osparc");
     },
 
     showS4LStore: function() {
