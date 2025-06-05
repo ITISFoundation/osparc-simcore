@@ -55,12 +55,6 @@ from .projects_rest_schemas import (
     ProjectsSearchQueryParams,
 )
 
-# When the user requests a project with a repo, the working copy might differ from
-# the repo project. A middleware in the meta module (if active) will resolve
-# the working copy and redirect to the appropriate project entrypoint. Nonetheless, the
-# response needs to refer to the uuid of the request and this is passed through this request key
-RQ_REQUESTED_REPO_PROJECT_UUID_KEY = f"{__name__}.RQT_REQUESTED_REPO_PROJECT_UUID_KEY"
-
 _logger = logging.getLogger(__name__)
 
 
@@ -277,6 +271,7 @@ async def get_project(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
+    # 1. Get project if user has access
     project = await _projects_service.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_id}",
@@ -285,6 +280,7 @@ async def get_project(request: web.Request):
         include_trashed_by_primary_gid=True,
     )
 
+    # 2. Check if user has access to all services within the project
     services_in_project = {
         (srv["key"], srv["version"]) for _, srv in project.get("workbench", {}).items()
     }
@@ -295,6 +291,7 @@ async def get_project(request: web.Request):
         user_id=req_ctx.user_id,
         services_ids=list(services_in_project),
     )
+
     not_my_services = services_in_project.difference(
         {(srv.key, srv.release.version) for srv in my_services}
     )
@@ -311,10 +308,7 @@ async def get_project(request: web.Request):
             )
         )
 
-    if new_uuid := request.get(RQ_REQUESTED_REPO_PROJECT_UUID_KEY):
-        project["uuid"] = new_uuid
-
-    # Adds permalink
+    # 3. Adds permalink
     await update_or_pop_permalink_in_project(request, project)
 
     data = ProjectGet.from_domain_model(project).data(exclude_unset=True)
