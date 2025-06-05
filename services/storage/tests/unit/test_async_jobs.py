@@ -3,7 +3,7 @@
 
 import asyncio
 import pickle
-from collections.abc import Awaitable, Callable
+from collections.abc import Callable
 from datetime import timedelta
 from enum import Enum
 from typing import Any
@@ -30,6 +30,7 @@ from models_library.rabbitmq_basic_types import RPCMethodName, RPCNamespace
 from models_library.users import UserID
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCRouter
 from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
+from simcore_service_storage.api.rpc.routes import get_rabbitmq_rpc_server
 from tenacity import (
     AsyncRetrying,
     retry_if_exception_type,
@@ -108,20 +109,9 @@ async def async_job(task: Task, task_id: TaskID, action: Action, payload: Any) -
 
 
 @pytest.fixture
-async def register_routes(
-    initialized_fast_api: FastAPI, rpc_namespace: RPCNamespace
-) -> None:
-    client = initialized_fast_api.state.rabbitmq_rpc_client
-    assert isinstance(client, RabbitMQRPCClient)
-    await client.register_router(router, rpc_namespace, initialized_fast_api)
-
-
-@pytest.fixture
-async def rpc_client(
-    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
-) -> RabbitMQRPCClient:
-    client = await rabbitmq_rpc_client("celery_test_client")
-    return client
+async def register_rpc_routes(initialized_app: FastAPI) -> None:
+    rpc_server = get_rabbitmq_rpc_server(initialized_app)
+    await rpc_server.register_router(router, STORAGE_RPC_NAMESPACE, initialized_app)
 
 
 async def _start_task_via_rpc(
@@ -211,18 +201,17 @@ async def _wait_for_job(
     ],
 )
 async def test_async_jobs_workflow(
-    register_routes,
-    rpc_client: RabbitMQRPCClient,
-    rpc_namespace: RPCNamespace,
-    with_celery_worker: CeleryTaskWorker,
+    initialized_app: FastAPI,
+    register_rpc_routes: None,
+    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
+    with_storage_celery_worker: CeleryTaskWorker,
     user_id: UserID,
     product_name: ProductName,
     exposed_rpc_start: str,
     payload: Any,
 ):
     async_job_get, job_id_data = await _start_task_via_rpc(
-        rpc_client,
-        rpc_namespace=rpc_namespace,
+        storage_rabbitmq_rpc_client,
         rpc_task_name=exposed_rpc_start,
         user_id=user_id,
         product_name=product_name,
@@ -231,23 +220,22 @@ async def test_async_jobs_workflow(
     )
 
     jobs = await async_jobs.list_jobs(
-        rpc_client,
-        rpc_namespace=rpc_namespace,
+        storage_rabbitmq_rpc_client,
+        rpc_namespace=STORAGE_RPC_NAMESPACE,
         filter_="",  # currently not used
         job_id_data=job_id_data,
     )
     assert len(jobs) > 0
 
     await _wait_for_job(
-        rpc_client,
-        rpc_namespace=rpc_namespace,
+        storage_rabbitmq_rpc_client,
         async_job_get=async_job_get,
         job_id_data=job_id_data,
     )
 
     async_job_result = await async_jobs.result(
-        rpc_client,
-        rpc_namespace=rpc_namespace,
+        storage_rabbitmq_rpc_client,
+        rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_id=async_job_get.job_id,
         job_id_data=job_id_data,
     )
@@ -261,11 +249,10 @@ async def test_async_jobs_workflow(
     ],
 )
 async def test_async_jobs_cancel(
-    # initialized_app: FastAPI,
-    register_routes: None,
-    rpc_namespace: RPCNamespace,
-    rpc_client: RabbitMQRPCClient,
-    with_celery_worker: CeleryTaskWorker,
+    initialized_app: FastAPI,
+    register_rpc_routes: None,
+    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
+    with_storage_celery_worker: CeleryTaskWorker,
     user_id: UserID,
     product_name: ProductName,
     exposed_rpc_start: str,
@@ -329,11 +316,10 @@ async def test_async_jobs_cancel(
     ],
 )
 async def test_async_jobs_raises(
-    # initialized_app: FastAPI,
-    register_routes: None,
-    rpc_namespace: RPCNamespace,
-    rpc_client: RabbitMQRPCClient,
-    with_celery_worker: CeleryTaskWorker,
+    initialized_app: FastAPI,
+    register_rpc_routes: None,
+    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
+    with_storage_celery_worker: CeleryTaskWorker,
     user_id: UserID,
     product_name: ProductName,
     exposed_rpc_start: str,
