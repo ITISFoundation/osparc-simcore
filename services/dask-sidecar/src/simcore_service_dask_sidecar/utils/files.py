@@ -20,7 +20,7 @@ from servicelib.logging_utils import LogLevelInt, LogMessageStr
 from settings_library.s3 import S3Settings
 from yarl import URL
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 HTTP_FILE_SYSTEM_SCHEMES: Final = ["http", "https"]
 S3_FILE_SYSTEM_SCHEMES: Final = ["s3", "s3a"]
@@ -208,7 +208,7 @@ async def pull_file_from_remote(
             await log_publishing_cb(
                 f"Uncompressing '{download_dst_path.name}'...", logging.INFO
             )
-            logger.debug(
+            _logger.debug(
                 "%s is a zip file and will be now uncompressed", download_dst_path
             )
             with repro_zipfile.ReproducibleZipFile(download_dst_path, "r") as zip_obj:
@@ -258,7 +258,7 @@ async def _push_file_to_remote(
     log_publishing_cb: LogPublishingCB,
     s3_settings: S3Settings | None,
 ) -> None:
-    logger.debug("Uploading %s to %s...", file_to_upload, dst_url)
+    _logger.debug("Uploading %s to %s...", file_to_upload, dst_url)
     assert dst_url.path  # nosec
 
     storage_kwargs: S3FsSettingsDict | dict[str, Any] = {}
@@ -306,7 +306,7 @@ async def push_file_to_remote(
                 await asyncio.get_event_loop().run_in_executor(
                     None, zfp.write, src_path, src_path.name
                 )
-            logger.debug("%s created.", archive_file_path)
+            _logger.debug("%s created.", archive_file_path)
             assert archive_file_path.exists()  # nosec
             file_to_upload = archive_file_path
             await log_publishing_cb(
@@ -319,7 +319,7 @@ async def push_file_to_remote(
         )
 
         if dst_url.scheme in HTTP_FILE_SYSTEM_SCHEMES:
-            logger.debug("destination is a http presigned link")
+            _logger.debug("destination is a http presigned link")
             await _push_file_to_http_link(file_to_upload, dst_url, log_publishing_cb)
         else:
             await _push_file_to_remote(

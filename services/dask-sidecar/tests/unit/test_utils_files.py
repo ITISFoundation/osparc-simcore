@@ -526,7 +526,9 @@ async def test_log_partial_file_content(
 
     # Case 1: file longer than max_chars
     with caplog.at_level(logging.DEBUG, logger=logger.name):
-        await log_partial_file_content(file_path, logger, logging.DEBUG, max_chars=10)
+        await log_partial_file_content(
+            file_path, logger=logger, log_level=logging.DEBUG, max_chars=10
+        )
     assert any(
         "file content (truncated): abcdefghij..." in record.getMessage()
         for record in caplog.records
@@ -538,7 +540,9 @@ async def test_log_partial_file_content(
     short_file = tmp_path / "short.txt"
     short_file.write_text(short_content)
     with caplog.at_level(logging.DEBUG, logger=logger.name):
-        await log_partial_file_content(short_file, logger, logging.DEBUG, max_chars=10)
+        await log_partial_file_content(
+            short_file, logger=logger, log_level=logging.DEBUG, max_chars=10
+        )
     assert any(
         "file content: short" in record.getMessage() for record in caplog.records
     )
@@ -548,7 +552,7 @@ async def test_log_partial_file_content(
     non_existent = tmp_path / "doesnotexist.txt"
     with caplog.at_level(logging.DEBUG, logger=logger.name):
         await log_partial_file_content(
-            non_existent, logger, logging.DEBUG, max_chars=10
+            non_existent, logger=logger, log_level=logging.DEBUG, max_chars=10
         )
     assert any(
         f"file does not exist: {non_existent}" in record.getMessage()
