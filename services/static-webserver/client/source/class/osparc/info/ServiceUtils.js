@@ -95,13 +95,16 @@ qx.Class.define("osparc.info.ServiceUtils", {
       */
     createAuthors: function(serviceData) {
       const authors = new qx.ui.basic.Label().set({
-        rich: true
+        rich: true,
+        wrap: true,
+        maxWidth: 220,
+      });
+      authors.set({
+        value: serviceData["authors"].map(author => author["name"]).join(", "),
       });
       serviceData["authors"].forEach(author => {
-        const oldVal = authors.getValue();
         const oldTTT = authors.getToolTipText();
         authors.set({
-          value: (oldVal ? oldVal : "") + `${author["name"]} <br>`,
           toolTipText: (oldTTT ? oldTTT : "") + `${author["email"]} - ${author["affiliation"]}<br>`
         });
       });
