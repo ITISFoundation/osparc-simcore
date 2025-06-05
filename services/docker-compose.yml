@@ -1249,7 +1249,7 @@ services:
     hostname: "sto-worker-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       <<: *storage_environment
-      STORAGE_WORKER_HOSTNAME: "sto-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
+      STORAGE_WORKER_NAME: "sto-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
       STORAGE_WORKER_MODE: "true"
       CELERY_CONCURRENCY: 100
     networks: *storage_networks
