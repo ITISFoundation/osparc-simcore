@@ -2,10 +2,11 @@
 
 import logging
 import urllib.parse
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
-from typing import Any
+from typing import Any, Final
 
+from aiocache import Cache, cached  # type: ignore[import-untyped]
 from aiohttp import ClientSession, ClientTimeout, web
 from aiohttp.client_exceptions import (
     ClientConnectionError,
@@ -15,19 +16,33 @@ from aiohttp.client_exceptions import (
 from models_library.api_schemas_catalog.service_access_rights import (
     ServiceAccessRightsGet,
 )
+from models_library.products import ProductName
 from models_library.services_resources import ServiceResourcesDict
+from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import TypeAdapter
-from servicelib.aiohttp import status
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
+from simcore_service_webserver.catalog.errors import (
+    CatalogConnectionError,
+    CatalogResponseError,
+)
 from yarl import URL
 
 from .._meta import api_version_prefix
-from ._constants import MSG_CATALOG_SERVICE_NOT_FOUND, MSG_CATALOG_SERVICE_UNAVAILABLE
 from .settings import CatalogSettings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
+
+# Cache settings
+_SECOND = 1  # in seconds
+_MINUTE = 60 * _SECOND
+_CACHE_TTL: Final = 1 * _MINUTE
+
+
+def _create_service_cache_key(_f: Callable[..., Any], *_args, **kw):
+    assert len(_args) == 1, f"Expected only app, got {_args}"  # nosec
+    return f"get_service_{kw['user_id']}_{kw['service_key']}_{kw['service_version']}_{kw['product_name']}"
 
 
 @contextmanager
@@ -38,16 +53,17 @@ def _handle_client_exceptions(app: web.Application) -> Iterator[ClientSession]:
         yield session
 
     except ClientResponseError as err:
-        if err.status == status.HTTP_404_NOT_FOUND:
-            raise web.HTTPNotFound(text=MSG_CATALOG_SERVICE_NOT_FOUND) from err
-        raise web.HTTPServiceUnavailable(
-            reason=MSG_CATALOG_SERVICE_UNAVAILABLE
+        raise CatalogResponseError(
+            status=err.status,
+            message=err.message,
+            headers=err.headers,
+            request_info=err.request_info,
         ) from err
 
     except (TimeoutError, ClientConnectionError) as err:
-        _logger.debug("Request to catalog service failed: %s", err)
-        raise web.HTTPServiceUnavailable(
-            reason=MSG_CATALOG_SERVICE_UNAVAILABLE
+        raise CatalogConnectionError(
+            message=str(err),
+            request_info=getattr(err, "request_info", None),
         ) from err
 
 
@@ -103,12 +119,19 @@ async def get_services_for_user_in_product(
             return body
 
 
+@cached(
+    ttl=_CACHE_TTL,
+    key_builder=_create_service_cache_key,
+    cache=Cache.MEMORY,
+    # SEE https://github.com/ITISFoundation/osparc-simcore/pull/7802
+)
 async def get_service(
     app: web.Application,
+    *,
     user_id: UserID,
-    service_key: str,
-    service_version: str,
-    product_name: str,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+    product_name: ProductName,
 ) -> dict[str, Any]:
     settings: CatalogSettings = get_plugin_settings(app)
     url = URL(

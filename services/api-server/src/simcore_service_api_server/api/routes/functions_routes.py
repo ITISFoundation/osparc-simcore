@@ -26,6 +26,7 @@ from models_library.functions_errors import (
     UnsupportedFunctionClassError,
 )
 from models_library.products import ProductName
+from models_library.projects_state import RunningState
 from models_library.users import UserID
 from servicelib.fastapi.dependencies import get_reverse_url_mapper
 from simcore_service_api_server._service_jobs import JobService
@@ -42,7 +43,11 @@ from ..dependencies.services import get_api_client, get_job_service, get_solver_
 from ..dependencies.webserver_http import get_webserver_session
 from ..dependencies.webserver_rpc import get_wb_api_rpc_client
 from . import solvers_jobs, studies_jobs
-from ._constants import FMSG_CHANGELOG_NEW_IN_VERSION, create_route_description
+from ._constants import (
+    FMSG_CHANGELOG_ADDED_IN_VERSION,
+    FMSG_CHANGELOG_NEW_IN_VERSION,
+    create_route_description,
+)
 from .function_jobs_routes import register_function_job
 
 # pylint: disable=too-many-arguments
@@ -57,7 +62,42 @@ _COMMON_FUNCTION_ERROR_RESPONSES: Final[dict] = {
     },
 }
 
-FIRST_RELEASE_VERSION = "0.8.0"
+
+ENDPOINTS = [
+    "register_function",
+    "get_function",
+    "list_functions",
+    "list_function_jobs_for_functionid",
+    "update_function_title",
+    "update_function_description",
+    "get_function_inputschema",
+    "get_function_outputschema",
+    "validate_function_inputs",
+    "run_function",
+    "delete_function",
+    "map_function",
+]
+CHANGE_LOGS = {}
+for endpoint in ENDPOINTS:
+    CHANGE_LOGS[endpoint] = [
+        FMSG_CHANGELOG_NEW_IN_VERSION.format("0.8.0"),
+    ]
+    if endpoint in [
+        "register_function",
+        "get_function",
+        "list_functions",
+        "list_function_jobs_for_functionid",
+        "update_function_title",
+        "update_function_description",
+        "run_function",
+        "map_function",
+    ]:
+        CHANGE_LOGS[endpoint].append(
+            FMSG_CHANGELOG_ADDED_IN_VERSION.format(
+                "0.9.0",
+                "add `created_at` field in the registered function-related objects",
+            )
+        )
 
 
 @function_router.post(
@@ -66,9 +106,7 @@ FIRST_RELEASE_VERSION = "0.8.0"
     responses={**_COMMON_FUNCTION_ERROR_RESPONSES},
     description=create_route_description(
         base="Create function",
-        changelog=[
-            FMSG_CHANGELOG_NEW_IN_VERSION.format(FIRST_RELEASE_VERSION),
-        ],
+        changelog=CHANGE_LOGS["register_function"],
     ),
 )
 async def register_function(
@@ -88,9 +126,7 @@ async def register_function(
     responses={**_COMMON_FUNCTION_ERROR_RESPONSES},
     description=create_route_description(
         base="Get function",
-        changelog=[
-            FMSG_CHANGELOG_NEW_IN_VERSION.format(FIRST_RELEASE_VERSION),
-        ],
+        changelog=CHANGE_LOGS["get_function"],
     ),
 )
 async def get_function(
@@ -109,9 +145,7 @@ async def get_function(
     response_model=Page[RegisteredFunction],
     description=create_route_description(
         base="List functions",
-        changelog=[
-            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.8.0"),
-        ],
+        changelog=CHANGE_LOGS["list_functions"],
     ),
 )
 async def list_functions(
@@ -139,9 +173,7 @@ async def list_functions(
     response_model=Page[RegisteredFunctionJob],
     description=create_route_description(
         base="List function jobs for a function",
-        changelog=[
-            FMSG_CHANGELOG_NEW_IN_VERSION.format(FIRST_RELEASE_VERSION),
-        ],
+        changelog=CHANGE_LOGS["list_function_jobs_for_functionid"],
     ),
 )
 async def list_function_jobs_for_functionid(
@@ -172,9 +204,7 @@ async def list_function_jobs_for_functionid(
     responses={**_COMMON_FUNCTION_ERROR_RESPONSES},
     description=create_route_description(
         base="Update function",
-        changelog=[
-            FMSG_CHANGELOG_NEW_IN_VERSION.format(FIRST_RELEASE_VERSION),
-        ],
+        changelog=CHANGE_LOGS["update_function_title"],
     ),
 )
 async def update_function_title(
@@ -199,9 +229,7 @@ async def update_function_title(
     responses={**_COMMON_FUNCTION_ERROR_RESPONSES},
     description=create_route_description(
         base="Update function",
-        changelog=[
-            FMSG_CHANGELOG_NEW_IN_VERSION.format(FIRST_RELEASE_VERSION),
-        ],
+        changelog=CHANGE_LOGS["update_function_description"],
     ),
 )
 async def update_function_description(
@@ -243,9 +271,7 @@ def _join_inputs(
     responses={**_COMMON_FUNCTION_ERROR_RESPONSES},
     description=create_route_description(
         base="Get function input schema",
-        changelog=[
-            FMSG_CHANGELOG_NEW_IN_VERSION.format(FIRST_RELEASE_VERSION),
-        ],
+        changelog=CHANGE_LOGS["get_function_inputschema"],
     ),
 )
 async def get_function_inputschema(
@@ -266,9 +292,7 @@ async def get_function_inputschema(
     responses={**_COMMON_FUNCTION_ERROR_RESPONSES},
     description=create_route_description(
         base="Get function output schema",
-        changelog=[
-            FMSG_CHANGELOG_NEW_IN_VERSION.format(FIRST_RELEASE_VERSION),
-        ],
+        changelog=CHANGE_LOGS["get_function_outputschema"],
     ),
 )
 async def get_function_outputschema(
@@ -292,9 +316,7 @@ async def get_function_outputschema(
     },
     description=create_route_description(
         base="Validate inputs against the function's input schema",
-        changelog=[
-            FMSG_CHANGELOG_NEW_IN_VERSION.format(FIRST_RELEASE_VERSION),
-        ],
+        changelog=CHANGE_LOGS["validate_function_inputs"],
     ),
 )
 async def validate_function_inputs(
@@ -332,9 +354,7 @@ async def validate_function_inputs(
     responses={**_COMMON_FUNCTION_ERROR_RESPONSES},
     description=create_route_description(
         base="Run function",
-        changelog=[
-            FMSG_CHANGELOG_NEW_IN_VERSION.format(FIRST_RELEASE_VERSION),
-        ],
+        changelog=CHANGE_LOGS["run_function"],
     ),
 )
 async def run_function(  # noqa: PLR0913
@@ -350,6 +370,8 @@ async def run_function(  # noqa: PLR0913
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
     job_service: Annotated[JobService, Depends(get_job_service)],
 ) -> RegisteredFunctionJob:
+
+    from .function_jobs_routes import function_job_status
 
     to_run_function = await wb_api_rpc.get_function(
         function_id=function_id, user_id=user_id, product_name=product_name
@@ -371,13 +393,22 @@ async def run_function(  # noqa: PLR0913
         if not is_valid:
             raise FunctionInputsValidationError(error=validation_str)
 
-    if cached_function_job := await wb_api_rpc.find_cached_function_job(
+    if cached_function_jobs := await wb_api_rpc.find_cached_function_jobs(
         function_id=to_run_function.uid,
         inputs=joined_inputs,
         user_id=user_id,
         product_name=product_name,
     ):
-        return cached_function_job
+        for cached_function_job in cached_function_jobs:
+            job_status = await function_job_status(
+                wb_api_rpc=wb_api_rpc,
+                director2_api=director2_api,
+                function_job_id=cached_function_job.uid,
+                user_id=user_id,
+                product_name=product_name,
+            )
+            if job_status.status == RunningState.SUCCESS:
+                return cached_function_job
 
     if to_run_function.function_class == FunctionClass.PROJECT:
         study_job = await studies_jobs.create_study_job(
@@ -458,9 +489,7 @@ async def run_function(  # noqa: PLR0913
     responses={**_COMMON_FUNCTION_ERROR_RESPONSES},
     description=create_route_description(
         base="Delete function",
-        changelog=[
-            FMSG_CHANGELOG_NEW_IN_VERSION.format(FIRST_RELEASE_VERSION),
-        ],
+        changelog=CHANGE_LOGS["delete_function"],
     ),
 )
 async def delete_function(
@@ -488,9 +517,7 @@ _COMMON_FUNCTION_JOB_ERROR_RESPONSES: Final[dict] = {
     responses={**_COMMON_FUNCTION_ERROR_RESPONSES},
     description=create_route_description(
         base="Map function over input parameters",
-        changelog=[
-            FMSG_CHANGELOG_NEW_IN_VERSION.format(FIRST_RELEASE_VERSION),
-        ],
+        changelog=CHANGE_LOGS["map_function"],
     ),
 )
 async def map_function(  # noqa: PLR0913

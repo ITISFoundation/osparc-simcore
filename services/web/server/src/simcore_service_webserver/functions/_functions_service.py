@@ -112,6 +112,7 @@ async def register_function_job_collection(
         title=registered_function_job_collection.title,
         description=registered_function_job_collection.description,
         job_ids=registered_job_ids,
+        created_at=registered_function_job_collection.created,
     )
 
 
@@ -174,6 +175,7 @@ async def get_function_job_collection(
         title=returned_function_job_collection.title,
         description=returned_function_job_collection.description,
         job_ids=returned_job_ids,
+        created_at=returned_function_job_collection.created,
     )
 
 
@@ -248,6 +250,7 @@ async def list_function_job_collections(
             title=function_job_collection.title,
             description=function_job_collection.description,
             job_ids=job_ids,
+            created_at=function_job_collection.created,
         )
         for function_job_collection, job_ids in returned_function_job_collections
     ], page
@@ -340,48 +343,62 @@ async def update_function_description(
 
 
 @router.expose()
-async def find_cached_function_job(
+async def find_cached_function_jobs(
     app: web.Application,
     *,
     user_id: UserID,
     product_name: ProductName,
     function_id: FunctionID,
     inputs: FunctionInputs,
-) -> FunctionJob | None:
-    returned_function_job = await _functions_repository.find_cached_function_job(
+) -> list[RegisteredFunctionJob] | None:
+    returned_function_jobs = await _functions_repository.find_cached_function_jobs(
         app=app,
         user_id=user_id,
         product_name=product_name,
         function_id=function_id,
         inputs=inputs,
     )
-    if returned_function_job is None:
+    if returned_function_jobs is None or len(returned_function_jobs) == 0:
         return None
 
-    if returned_function_job.function_class == FunctionClass.PROJECT:
-        return RegisteredProjectFunctionJob(
-            uid=returned_function_job.uuid,
-            title=returned_function_job.title,
-            description=returned_function_job.description,
-            function_uid=returned_function_job.function_uuid,
-            inputs=returned_function_job.inputs,
-            outputs=None,
-            project_job_id=returned_function_job.class_specific_data["project_job_id"],
-        )
-    if returned_function_job.function_class == FunctionClass.SOLVER:
-        return RegisteredSolverFunctionJob(
-            uid=returned_function_job.uuid,
-            title=returned_function_job.title,
-            description=returned_function_job.description,
-            function_uid=returned_function_job.function_uuid,
-            inputs=returned_function_job.inputs,
-            outputs=None,
-            solver_job_id=returned_function_job.class_specific_data["solver_job_id"],
-        )
+    to_return_function_jobs: list[RegisteredFunctionJob] = []
+    for returned_function_job in returned_function_jobs:
+        if returned_function_job.function_class == FunctionClass.PROJECT:
+            to_return_function_jobs.append(
+                RegisteredProjectFunctionJob(
+                    uid=returned_function_job.uuid,
+                    title=returned_function_job.title,
+                    description=returned_function_job.description,
+                    function_uid=returned_function_job.function_uuid,
+                    inputs=returned_function_job.inputs,
+                    outputs=None,
+                    project_job_id=returned_function_job.class_specific_data[
+                        "project_job_id"
+                    ],
+                    created_at=returned_function_job.created,
+                )
+            )
+        elif returned_function_job.function_class == FunctionClass.SOLVER:
+            to_return_function_jobs.append(
+                RegisteredSolverFunctionJob(
+                    uid=returned_function_job.uuid,
+                    title=returned_function_job.title,
+                    description=returned_function_job.description,
+                    function_uid=returned_function_job.function_uuid,
+                    inputs=returned_function_job.inputs,
+                    outputs=None,
+                    solver_job_id=returned_function_job.class_specific_data[
+                        "solver_job_id"
+                    ],
+                    created_at=returned_function_job.created,
+                )
+            )
+        else:
+            raise UnsupportedFunctionJobClassError(
+                function_job_class=returned_function_job.function_class
+            )
 
-    raise UnsupportedFunctionJobClassError(
-        function_job_class=returned_function_job.function_class
-    )
+    return to_return_function_jobs
 
 
 @router.expose(reraise_if_error_type=(FunctionIDNotFoundError,))
@@ -430,6 +447,7 @@ def _decode_function(
             output_schema=function.output_schema,
             project_id=function.class_specific_data["project_id"],
             default_inputs=function.default_inputs,
+            created_at=function.created,
         )
 
     if function.function_class == FunctionClass.SOLVER:
@@ -442,6 +460,7 @@ def _decode_function(
             solver_key=function.class_specific_data["solver_key"],
             solver_version=function.class_specific_data["solver_version"],
             default_inputs=function.default_inputs,
+            created_at=function.created,
         )
 
     raise UnsupportedFunctionClassError(function_class=function.function_class)
@@ -518,6 +537,7 @@ def _decode_functionjob(
             inputs=functionjob_db.inputs,
             outputs=functionjob_db.outputs,
             project_job_id=functionjob_db.class_specific_data["project_job_id"],
+            created_at=functionjob_db.created,
         )
 
     if functionjob_db.function_class == FunctionClass.SOLVER:
@@ -529,6 +549,7 @@ def _decode_functionjob(
             inputs=functionjob_db.inputs,
             outputs=functionjob_db.outputs,
             solver_job_id=functionjob_db.class_specific_data["solver_job_id"],
+            created_at=functionjob_db.created,
         )
 
     raise UnsupportedFunctionJobClassError(

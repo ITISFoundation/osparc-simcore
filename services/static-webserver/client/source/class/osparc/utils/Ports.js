@@ -25,7 +25,7 @@ qx.Class.define("osparc.utils.Ports", {
 
   statics: {
     arePortsCompatible: function(node1, portId1, node2, portId2) {
-      return osparc.data.Resources.getCompatibleInputs(node1, portId1, node2)
+      return osparc.data.Resources.getInstance().getCompatibleInputs(node1, portId1, node2)
         .then(compatiblePorts => compatiblePorts.includes(portId2));
     },
 

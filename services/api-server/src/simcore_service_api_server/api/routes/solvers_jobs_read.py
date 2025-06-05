@@ -130,10 +130,10 @@ router = APIRouter()
     description=create_route_description(
         base="List of all jobs created for any released solver (paginated)",
         changelog=[
-            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.9-rc1"),
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.10-rc1"),
         ],
     ),
-    include_in_schema=False,  # TO BE RELEASED in 0.9
+    include_in_schema=False,  # TO BE RELEASED in 0.10-rc1
 )
 async def list_all_solvers_jobs(
     page_params: Annotated[PaginationParams, Depends()],

@@ -230,7 +230,7 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     // oSPARC only
-    hasExportCMisEnabled: function() {
+    showExportCMis: function() {
       const product = this.getProductName();
       return product === "osparc";
     },
@@ -284,18 +284,38 @@ qx.Class.define("osparc.product.Utils", {
       return true;
     },
 
-    showQuality: function() {
-      if (this.isProduct("osparc")) {
+    showTemplates: function() {
+      if (osparc.data.Permissions.getInstance().isTester()) {
         return true;
       }
-      return false;
-    },
 
-    showClassifiers: function() {
-      if (this.getProductName().includes("s4l")) {
+      if (this.isProduct("tis") || this.isProduct("tiplite")) {
         return false;
       }
       return true;
+    },
+
+    showPublicProjects: function() {
+      if (osparc.data.Permissions.getInstance().isTester()) {
+        return true;
+      }
+
+      if (this.isProduct("tis") || this.isProduct("tiplite")) {
+        return false;
+      }
+      return true;
+    },
+
+    showQuality: function() {
+      return this.isProduct("osparc");
+    },
+
+    showClassifiers: function() {
+      return this.isProduct("osparc");
+    },
+
+    showConvertToPipeline: function() {
+      return this.isS4LProduct() || this.isProduct("osparc");
     },
 
     showS4LStore: function() {

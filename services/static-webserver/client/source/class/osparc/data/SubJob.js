@@ -24,15 +24,9 @@ qx.Class.define("osparc.data.SubJob", {
     this.set({
       projectUuid: subJobData["projectUuid"],
       nodeId: subJobData["nodeId"],
-      nodeName: subJobData["nodeName"],
-      state: subJobData["state"],
-      progress: subJobData["progress"],
-      startedAt: subJobData["startedAt"] ? new Date(subJobData["startedAt"]) : null,
-      endedAt: subJobData["endedAt"] ? new Date(subJobData["endedAt"]) : null,
-      osparcCredits: subJobData["osparcCredits"] === null ? null : -1*parseFloat(subJobData["osparcCredits"]),
-      image: subJobData["image"] || {},
-      logDownloadLink: subJobData["logDownloadLink"] || null,
     });
+
+    this.updateSubJob(subJobData);
   },
 
   properties: {
@@ -100,11 +94,14 @@ qx.Class.define("osparc.data.SubJob", {
   members: {
     updateSubJob: function(subJobData) {
       this.set({
+        nodeName: subJobData["nodeName"],
         state: subJobData["state"],
         progress: subJobData["progress"],
         startedAt: subJobData["startedAt"] ? new Date(subJobData["startedAt"]) : null,
         endedAt: subJobData["endedAt"] ? new Date(subJobData["endedAt"]) : null,
         osparcCredits: subJobData["osparcCredits"] === null ? null : -1*parseFloat(subJobData["osparcCredits"]),
+        image: subJobData["image"] || {},
+        logDownloadLink: subJobData["logDownloadLink"] || null,
       });
     },
   },

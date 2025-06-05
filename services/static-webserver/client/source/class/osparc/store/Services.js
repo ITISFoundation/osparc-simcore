@@ -37,7 +37,7 @@ qx.Class.define("osparc.store.Services", {
             const servicesObj = osparc.service.Utils.convertArrayToObject(servicesArray);
             this.__addHits(servicesObj);
             this.__addTSRInfos(servicesObj);
-            this.__addExtraTypeInfos(servicesObj);
+            this.__addXTypeInfos(servicesObj);
 
             Object.values(servicesObj).forEach(serviceKey => {
               Object.values(serviceKey).forEach(service => this.__addServiceToCache(service));
@@ -128,9 +128,6 @@ qx.Class.define("osparc.store.Services", {
         };
         this.__servicesPromisesCached[key][version] = osparc.data.Resources.fetch("services", "getOne", params)
           .then(service => {
-            this.__addHit(service);
-            this.__addTSRInfo(service);
-            this.__addExtraTypeInfo(service);
             this.__addServiceToCache(service);
             // Resolve the promise locally before deleting it
             resolve(service);
@@ -168,6 +165,15 @@ qx.Class.define("osparc.store.Services", {
         }
       };
       this.__studyServicesPromisesCached[studyId] = osparc.data.Resources.fetch("studies", "getServices", params)
+        .then(resp => {
+          const services = resp["services"];
+          services.forEach(service => {
+            // this service information is not complete, keep it in cache anyway
+            service.version = service["release"]["version"];
+            this.__addServiceToCache(service);
+          });
+          return resp;
+        })
         .finally(() => {
           delete this.__studyServicesPromisesCached[studyId];
         });
@@ -368,6 +374,10 @@ qx.Class.define("osparc.store.Services", {
     },
 
     __addServiceToCache: function(service) {
+      this.__addHit(service);
+      this.__addTSRInfo(service);
+      this.__addXTypeInfo(service);
+
       const key = service.key;
       const version = service.version;
       service["resourceType"] = "service";
@@ -375,6 +385,15 @@ qx.Class.define("osparc.store.Services", {
     },
 
     __addToCache: function(key, version, value) {
+      // some services that go to the cache are not complete, e.g. study services
+      // if the one in the cache is the complete one, do not overwrite it
+      if (
+        this.__isInCache(key, version) &&
+        "inputs" in this.__servicesCached[key][version]
+      ) {
+        return;
+      }
+
       if (!(key in this.__servicesCached)) {
         this.__servicesCached[key] = {};
       }
@@ -414,7 +433,7 @@ qx.Class.define("osparc.store.Services", {
       });
     },
 
-    __addExtraTypeInfo: function(service) {
+    __addXTypeInfo: function(service) {
       service["xType"] = service["type"];
       if (["backend", "frontend"].includes(service["xType"])) {
         if (osparc.data.model.Node.isFilePicker(service)) {
@@ -429,10 +448,10 @@ qx.Class.define("osparc.store.Services", {
       }
     },
 
-    __addExtraTypeInfos: function(servicesObj) {
+    __addXTypeInfos: function(servicesObj) {
       Object.values(servicesObj).forEach(serviceWVersion => {
         Object.values(serviceWVersion).forEach(service => {
-          this.__addExtraTypeInfo(service);
+          this.__addXTypeInfo(service);
         });
       });
     },

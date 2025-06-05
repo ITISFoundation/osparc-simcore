@@ -303,15 +303,15 @@ async def update_function_description(
 
 
 @router.expose()
-async def find_cached_function_job(
+async def find_cached_function_jobs(
     app: web.Application,
     *,
     user_id: UserID,
     product_name: ProductName,
     function_id: FunctionID,
     inputs: FunctionInputs,
-) -> FunctionJob | None:
-    return await _functions_service.find_cached_function_job(
+) -> list[RegisteredFunctionJob] | None:
+    return await _functions_service.find_cached_function_jobs(
         app=app,
         user_id=user_id,
         product_name=product_name,

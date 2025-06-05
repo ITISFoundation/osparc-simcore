@@ -6,7 +6,7 @@ aiofiles==24.1.0
     # via
     #   -c requirements/_base.txt
     #   aioboto3
-aiohappyeyeballs==2.4.6
+aiohappyeyeballs==2.6.1
     # via
     #   -c requirements/_base.txt
     #   aiohttp

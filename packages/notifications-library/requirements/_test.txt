@@ -1,6 +1,6 @@
 aiodocker==0.24.0
     # via -r requirements/_test.in
-aiohappyeyeballs==2.4.6
+aiohappyeyeballs==2.6.1
     # via aiohttp
 aiohttp==3.11.18
     # via
