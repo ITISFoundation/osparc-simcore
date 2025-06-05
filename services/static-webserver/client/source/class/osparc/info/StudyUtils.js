@@ -182,7 +182,7 @@ qx.Class.define("osparc.info.StudyUtils", {
     createDescriptionMD: function(study, maxHeight) {
       const description = new osparc.ui.markdown.Markdown();
       study.bind("description", description, "value", {
-        converter: desc => desc ? desc : "Add description"
+        converter: desc => desc ? desc : "No description"
       });
       const scrollContainer = new qx.ui.container.Scroll();
       if (maxHeight) {
@@ -225,7 +225,7 @@ qx.Class.define("osparc.info.StudyUtils", {
 
       const addTags = model => {
         tagsContainer.removeAll();
-        const noTagsLabel = new qx.ui.basic.Label(qx.locale.Manager.tr("Add tags"));
+        const noTagsLabel = new qx.ui.basic.Label(qx.locale.Manager.tr("No tags"));
         tagsContainer.add(noTagsLabel);
         osparc.store.Tags.getInstance().getTags().filter(tag => model.getTags().includes(tag.getTagId()))
           .forEach(selectedTag => {
@@ -242,148 +242,144 @@ qx.Class.define("osparc.info.StudyUtils", {
       return tagsContainer;
     },
 
-    __titleWithEditLayout: function(data, titleWidth = 75) {
-      const titleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      const hasButton = Boolean(data.action && data.action.button);
-      // use the width for aligning the buttons
-      const title = new qx.ui.basic.Label(data.label).set({
-        allowGrowX: true,
-        maxWidth: hasButton ? titleWidth : titleWidth + 35 // spacer for the button
-      });
-      titleLayout.add(title, {
-        flex: 1
-      });
-      if (hasButton) {
-        const button = data.action.button;
-        titleLayout.add(button);
-        button.addListener("execute", () => {
-          const cb = data.action.callback;
-          if (typeof cb === "string") {
-            data.action.ctx.fireEvent(cb);
-          } else {
-            cb.call(data.action.ctx);
-          }
-        }, this);
-      }
-      return titleLayout;
-    },
-
     infoElementsToLayout: function(extraInfos) {
+      const container = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+
+      const decorateAction = action => {
+          action.button.set({
+            alignY: "middle",
+          });
+          action.button.addListener("execute", () => {
+            const cb = action.callback;
+            if (typeof cb === "string") {
+              action.ctx.fireEvent(cb);
+            } else {
+              cb.call(action.ctx);
+            }
+          }, this);
+      };
+
+      if ("TITLE" in extraInfos) {
+        const extraInfo = extraInfos["TITLE"];
+        const titleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+
+        if (extraInfo.action && extraInfo.action.button) {
+          decorateAction(extraInfo.action);
+          titleLayout.add(extraInfo.action.button);
+        }
+
+        if (extraInfo.view) {
+          titleLayout.add(extraInfo.view, {
+            flex: 1,
+          });
+        }
+
+        container.add(titleLayout);
+      }
+
+
+      const centerLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+
+      if ("THUMBNAIL" in extraInfos) {
+        const extraInfo = extraInfos["THUMBNAIL"];
+        const thumbnailLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(8));
+
+        if (extraInfo.action && extraInfo.action.button) {
+          decorateAction(extraInfo.action);
+          thumbnailLayout.add(extraInfo.action.button);
+        }
+
+        if (extraInfo.view) {
+          thumbnailLayout.add(extraInfo.view, {
+            flex: 1,
+          });
+        }
+
+        centerLayout.add(thumbnailLayout);
+      }
+
       const positions = {
-        TITLE: {
-          column: 0,
-          row: 0,
-        },
-        THUMBNAIL: {
-          column: 0,
-          row: 1,
-        },
-        DESCRIPTION: {
-          column: 0,
-          row: 2,
-        },
         AUTHOR: {
-          inline: true,
-          column: 0,
           row: 0,
-        },
-        CREATED: {
-          inline: true,
-          column: 0,
-          row: 1,
-        },
-        MODIFIED: {
-          inline: true,
-          column: 0,
-          row: 2,
         },
         ACCESS_RIGHTS: {
-          inline: true,
-          column: 0,
+          row: 1,
+        },
+        CREATED: {
+          row: 2,
+        },
+        MODIFIED: {
           row: 3,
         },
         TAGS: {
-          inline: true,
-          column: 0,
           row: 4,
         },
-        QUALITY: {
-          inline: true,
-          column: 0,
-          row: 5,
-        },
-        CLASSIFIERS: {
-          inline: true,
-          column: 0,
-          row: 6,
-        },
         LOCATION: {
-          inline: true,
-          column: 0,
-          row: 7,
+          row: 5,
         },
       };
 
-      const mainInfoGrid = new qx.ui.layout.Grid(15, 5);
-      mainInfoGrid.setColumnAlign(0, "left", "top");
-      mainInfoGrid.setColumnFlex(0, 1);
-      const mainInfoLayout = new qx.ui.container.Composite(mainInfoGrid);
+      const grid = new qx.ui.layout.Grid(6, 6);
+      grid.setColumnAlign(0, "right", "middle"); // titles
+      const gridLayout = new qx.ui.container.Composite(grid);
 
-      const extraInfoGrid = new qx.ui.layout.Grid(15, 5);
-      const extraInfoLayout = new qx.ui.container.Composite(extraInfoGrid);
-      extraInfoGrid.setColumnFlex(0, 1);
-
-      let row = 0;
-      let row2 = 0;
       Object.keys(positions).forEach(key => {
         if (key in extraInfos) {
           const extraInfo = extraInfos[key];
           const gridInfo = positions[key];
 
-          if (gridInfo.inline) {
-            const titleLayout = this.__titleWithEditLayout(extraInfo);
-            if (extraInfo.action && extraInfo.action.button) {
-              extraInfo.action.button.set({
-                marginRight: 15
-              });
-            }
-            titleLayout.add(extraInfo.view, {
-              flex: 1
+          let col = 0;
+          if (extraInfo.label) {
+            const title = new qx.ui.basic.Label(extraInfo.label).set({
+              alignX: "right",
             });
-            extraInfoLayout.add(titleLayout, {
-              row: row2,
-              column: gridInfo.column
+            gridLayout.add(title, {
+              row: gridInfo.row,
+              column: col + 0,
             });
-            row2++;
-            extraInfoGrid.setRowHeight(row2, 5); // spacer
-            row2++;
-          } else {
-            const titleLayout = this.__titleWithEditLayout(extraInfo);
-            mainInfoLayout.add(titleLayout, {
-              row,
-              column: gridInfo.column
-            });
-            row++;
-            mainInfoLayout.add(extraInfo.view, {
-              row,
-              column: gridInfo.column
-            });
-            row++;
-            mainInfoGrid.setRowHeight(row, 5); // spacer
-            row++;
           }
+          col++;
+
+          if (extraInfo.action && extraInfo.action.button) {
+            decorateAction(extraInfo.action);
+            gridLayout.add(extraInfo.action.button, {
+              row: gridInfo.row,
+              column: col + 1,
+            });
+          }
+          col++;
+
+          if (extraInfo.view) {
+            gridLayout.add(extraInfo.view, {
+              row: gridInfo.row,
+              column: col + 2,
+            });
+          }
+          col++;
         }
       });
+      centerLayout.add(gridLayout, {
+        flex: 1,
+      });
+      container.add(centerLayout);
 
+      if ("DESCRIPTION" in extraInfos) {
+        const extraInfo = extraInfos["DESCRIPTION"];
+        const descriptionLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
 
-      const container = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-      const box1 = this.__createSectionBox(qx.locale.Manager.tr("Details"));
-      box1.add(mainInfoLayout);
-      container.addAt(box1, 0);
+        if (extraInfo.action && extraInfo.action.button) {
+          decorateAction(extraInfo.action);
+          descriptionLayout.add(extraInfo.action.button);
+        }
 
-      const box2 = this.__createSectionBox(qx.locale.Manager.tr("Meta details"));
-      box2.add(extraInfoLayout);
-      container.addAt(box2, 1);
+        if (extraInfo.view) {
+          descriptionLayout.add(extraInfo.view, {
+            flex: 1,
+          });
+        }
+
+        container.add(descriptionLayout);
+      }
 
       return container;
     },

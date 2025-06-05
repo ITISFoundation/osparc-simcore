@@ -136,7 +136,7 @@
       "class": "osparc.Application",
       "theme": "osparc.theme.products.tis.ThemeDark",
       "name": "tis",
-      "title": "TIP V3.0 - IT'IS",
+      "title": "TIP V4.0 - IT'IS",
       "include": [
         "iconfont.material.Load",
         "iconfont.fontawesome5.Load",

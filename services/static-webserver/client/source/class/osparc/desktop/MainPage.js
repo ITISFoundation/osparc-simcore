@@ -115,7 +115,9 @@ qx.Class.define("osparc.desktop.MainPage", {
         const preferencesSettings = osparc.Preferences.getInstance();
         if (!isReadOnly && preferencesSettings.getConfirmBackToDashboard()) {
           const studyName = this.__studyEditor.getStudy().getName();
-          const win = new osparc.ui.window.Confirmation();
+          const win = new osparc.ui.window.Confirmation().set({
+            confirmAction: "warning",
+          });
           if (osparc.product.Utils.getProductName().includes("s4l")) {
             let msg = this.tr("Do you want to close ") + "<b>" + studyName + "</b>?";
             msg += "<br><br>";
