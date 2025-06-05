@@ -47,8 +47,6 @@ SERVER_LOG_LEVEL=$(echo "${APP_LOG_LEVEL}" | tr '[:upper:]' '[:lower:]')
 echo "$INFO" "Log-level app/server: $APP_LOG_LEVEL/$SERVER_LOG_LEVEL"
 
 if [ "${STORAGE_WORKER_MODE}" = "true" ]; then
-  NOW=$(date +%s)
-
   if [ "${SC_BOOT_MODE}" = "debug" ]; then
     exec watchmedo auto-restart \
       --directory /devel/packages \
@@ -61,7 +59,7 @@ if [ "${STORAGE_WORKER_MODE}" = "true" ]; then
       worker --pool=threads \
       --loglevel="${SERVER_LOG_LEVEL}" \
       --concurrency="${CELERY_CONCURRENCY}" \
-      --hostname=%h-"${NOW}" \
+      --hostname="${STORAGE_WORKER_NAME}" \
       --queues="${CELERY_QUEUES:-default}"
   else
     exec celery \
@@ -69,7 +67,7 @@ if [ "${STORAGE_WORKER_MODE}" = "true" ]; then
       worker --pool=threads \
       --loglevel="${SERVER_LOG_LEVEL}" \
       --concurrency="${CELERY_CONCURRENCY}" \
-      --hostname=%h-"${NOW}" \
+      --hostname="${STORAGE_WORKER_NAME}" \
       --queues="${CELERY_QUEUES:-default}"
   fi
 else
