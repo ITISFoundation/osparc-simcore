@@ -277,80 +277,91 @@ qx.Class.define("osparc.info.StudyUtils", {
         container.add(titleLayout);
       }
 
+
+      const centerLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+
+      if ("THUMBNAIL" in extraInfos) {
+        const extraInfo = extraInfos["THUMBNAIL"];
+        const thumbnailLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(8));
+
+        if (extraInfo.action && extraInfo.action.button) {
+          decorateAction(extraInfo.action);
+          thumbnailLayout.add(extraInfo.action.button);
+        }
+
+        if (extraInfo.view) {
+          thumbnailLayout.add(extraInfo.view, {
+            flex: 1,
+          });
+        }
+
+        centerLayout.add(thumbnailLayout);
+      }
+
       const positions = {
-        THUMBNAIL: {
-          column: 0,
-          row: 0,
-          rowSpan: 6,
-        },
         AUTHOR: {
-          column: 1,
           row: 0,
         },
         ACCESS_RIGHTS: {
-          column: 1,
           row: 1,
         },
         CREATED: {
-          column: 1,
           row: 2,
         },
         MODIFIED: {
-          column: 1,
           row: 3,
         },
         TAGS: {
-          column: 1,
           row: 4,
         },
         LOCATION: {
-          column: 1,
           row: 5,
         },
       };
 
-      const itemsPerProp = 3;
-      const mainInfoGrid = new qx.ui.layout.Grid(8, 8);
-      mainInfoGrid.setColumnAlign(0, "right", "middle");
-      mainInfoGrid.setColumnAlign(itemsPerProp, "right", "middle");
-      const mainInfoLayout = new qx.ui.container.Composite(mainInfoGrid);
+      const grid = new qx.ui.layout.Grid(6, 6);
+      grid.setColumnAlign(0, "right", "middle"); // titles
+      const gridLayout = new qx.ui.container.Composite(grid);
 
       Object.keys(positions).forEach(key => {
         if (key in extraInfos) {
           const extraInfo = extraInfos[key];
           const gridInfo = positions[key];
 
+          let col = 0;
           if (extraInfo.label) {
             const title = new qx.ui.basic.Label(extraInfo.label).set({
               alignX: "right",
             });
-            mainInfoLayout.add(title, {
+            gridLayout.add(title, {
               row: gridInfo.row,
-              column: gridInfo.column*itemsPerProp + 0,
-              rowSpan: gridInfo.rowSpan || 1,
+              column: col + 0,
             });
           }
+          col++;
 
           if (extraInfo.action && extraInfo.action.button) {
             decorateAction(extraInfo.action);
-            mainInfoLayout.add(extraInfo.action.button, {
+            gridLayout.add(extraInfo.action.button, {
               row: gridInfo.row,
-              column: gridInfo.column*itemsPerProp + 1,
-              rowSpan: gridInfo.rowSpan || 1,
+              column: col + 1,
             });
           }
+          col++;
 
           if (extraInfo.view) {
-            mainInfoLayout.add(extraInfo.view, {
+            gridLayout.add(extraInfo.view, {
               row: gridInfo.row,
-              column: gridInfo.column*itemsPerProp + 2,
-              rowSpan: gridInfo.rowSpan || 1,
-              colSpan: gridInfo.colSpan ? gridInfo.colSpan*itemsPerProp : 1,
+              column: col + 2,
             });
           }
+          col++;
         }
       });
-      container.add(mainInfoLayout);
+      centerLayout.add(gridLayout, {
+        flex: 1,
+      });
+      container.add(centerLayout);
 
       if ("DESCRIPTION" in extraInfos) {
         const extraInfo = extraInfos["DESCRIPTION"];
