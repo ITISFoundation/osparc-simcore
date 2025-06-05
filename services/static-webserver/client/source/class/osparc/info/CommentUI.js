@@ -113,8 +113,10 @@ qx.Class.define("osparc.info.CommentUI", {
 
     __buildLayout: function() {
       const thumbnail = this.getChildControl("thumbnail");
+      thumbnail.setSource(osparc.utils.Avatar.emailToThumbnail("", "", 32));
 
       const userName = this.getChildControl("user-name");
+      userName.setValue("Unknown");
 
       const date = new Date(this.__comment["modified"]);
       const date2 = osparc.utils.Utils.formatDateAndTime(date);
@@ -129,14 +131,7 @@ qx.Class.define("osparc.info.CommentUI", {
           if (user) {
             thumbnail.setSource(user.getThumbnail());
             userName.setValue(user.getLabel());
-          } else {
-            thumbnail.setSource(osparc.utils.Avatar.emailToThumbnail());
-            userName.setValue("Unknown user");
           }
-        })
-        .catch(() => {
-            thumbnail.setSource(osparc.utils.Avatar.emailToThumbnail());
-            userName.setValue("Unknown user");
         });
 
       this.getChildControl("spacer");

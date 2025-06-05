@@ -26,8 +26,7 @@ qx.Class.define("osparc.editor.HtmlEditor", {
 
     this.getChildControl("preview-html");
     this.getChildControl("subtitle").set({
-      value: this.tr("Supports HTML"),
-      url: "https://en.wikipedia.org/wiki/HTML",
+      value: this.tr("Supports HTML")
     });
   },
 

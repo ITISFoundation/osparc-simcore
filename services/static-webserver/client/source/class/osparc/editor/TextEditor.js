@@ -81,13 +81,15 @@ qx.Class.define("osparc.editor.TextEditor", {
           writePage.add(control, {
             flex: 1
           });
-          const subtitle = this.getChildControl("subtitle");
+          const subtitle = this.getChildControl("subtitle").set({
+            value: this.tr("Supports HTML")
+          });
           writePage.add(subtitle);
           tabs.add(writePage);
           break;
         }
         case "subtitle":
-          control = new osparc.ui.basic.LinkLabel().set({
+          control = new qx.ui.basic.Label().set({
             font: "text-12"
           });
           this._add(control);
