@@ -105,19 +105,12 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
 }
 
 
-_exceptions_handlers_map: ExceptionHandlersMap = {
+catalog_exceptions_handlers_map: ExceptionHandlersMap = {
     CatalogResponseError: _handler_catalog_client_errors,
     CatalogConnectionError: _handler_catalog_client_errors,
 }
-_exceptions_handlers_map.update(to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP))
+catalog_exceptions_handlers_map.update(to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP))
 
 handle_plugin_requests_exceptions = exception_handling_decorator(
-    _exceptions_handlers_map
-)
-
-
-__all__: tuple[str, ...] = (
-    "CatalogForbiddenError",
-    "CatalogItemNotFoundError",
-    "DefaultPricingUnitForServiceNotFoundError",
+    catalog_exceptions_handlers_map
 )
