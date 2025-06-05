@@ -21,13 +21,15 @@ from models_library.services_resources import ServiceResourcesDict
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import TypeAdapter
-from servicelib.aiohttp import status
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
+from simcore_service_webserver.catalog.errors import (
+    CatalogConnectionError,
+    CatalogResponseError,
+)
 from yarl import URL
 
 from .._meta import api_version_prefix
-from ._constants import MSG_CATALOG_SERVICE_NOT_FOUND, MSG_CATALOG_SERVICE_UNAVAILABLE
 from .settings import CatalogSettings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
@@ -51,16 +53,17 @@ def _handle_client_exceptions(app: web.Application) -> Iterator[ClientSession]:
         yield session
 
     except ClientResponseError as err:
-        if err.status == status.HTTP_404_NOT_FOUND:
-            raise web.HTTPNotFound(text=MSG_CATALOG_SERVICE_NOT_FOUND) from err
-        raise web.HTTPServiceUnavailable(
-            reason=MSG_CATALOG_SERVICE_UNAVAILABLE
+        raise CatalogResponseError(
+            status=err.status,
+            message=err.message,
+            headers=err.headers,
+            request_info=err.request_info,
         ) from err
 
     except (TimeoutError, ClientConnectionError) as err:
-        _logger.debug("Request to catalog service failed: %s", err)
-        raise web.HTTPServiceUnavailable(
-            reason=MSG_CATALOG_SERVICE_UNAVAILABLE
+        raise CatalogConnectionError(
+            message=str(err),
+            request_info=getattr(err, "request_info", None),
         ) from err
 
 
