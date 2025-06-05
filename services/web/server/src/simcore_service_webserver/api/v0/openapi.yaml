@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.68.0
+  version: 0.68.1
 servers:
 - url: ''
   description: webserver
@@ -12211,6 +12211,8 @@ components:
             minimum: 0
           - type: 'null'
           title: Trialaccountdays
+          description: Expiration time in days for trial accounts; `null` means not
+            a trial account
         extraCreditsInUsd:
           anyOf:
           - type: integer
@@ -12219,6 +12221,7 @@ components:
             maximum: 500
           - type: 'null'
           title: Extracreditsinusd
+          description: Welcome credits in USD; `null` means no welcome credits
       type: object
       required:
       - guest
@@ -17009,7 +17012,7 @@ components:
           title: Email
         invitation:
           anyOf:
-          - $ref: '#/components/schemas/InvitationGenerate'
+          - $ref: '#/components/schemas/_InvitationDetails'
           - type: 'null'
       type: object
       required:
@@ -17702,6 +17705,28 @@ components:
       - write
       - delete
       title: WorkspacesGroupsBodyParams
+    _InvitationDetails:
+      properties:
+        trialAccountDays:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
+          title: Trialaccountdays
+          description: Expiration time in days for trial accounts; `null` means not
+            a trial account
+        extraCreditsInUsd:
+          anyOf:
+          - type: integer
+            exclusiveMaximum: true
+            minimum: 0
+            maximum: 500
+          - type: 'null'
+          title: Extracreditsinusd
+          description: Welcome credits in USD; `null` means no welcome credits
+      type: object
+      title: _InvitationDetails
     _ItisVipResourceRestData:
       properties:
         source:
