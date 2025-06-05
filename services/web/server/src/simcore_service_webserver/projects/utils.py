@@ -190,7 +190,7 @@ def is_graph_equal(
 
 
 def are_project_services_available(
-    project: dict[str, Any], available_services: list[dict[str, Any]]
+    project: dict[str, Any], available_services: list[dict[str, str]]
 ) -> bool:
     if not project["workbench"]:
         # empty project

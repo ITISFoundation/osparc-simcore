@@ -15,8 +15,8 @@ from simcore_service_webserver.catalog._controller_rest_exceptions import (
 )
 from simcore_service_webserver.catalog.catalog_service import (
     get_service_access_rights,
-    get_services_for_user_in_product,
     is_catalog_service_responsive,
+    list_user_services_with_versions,
 )
 
 
@@ -62,11 +62,10 @@ async def test_get_services_for_user_in_product(
         status=backend_status_code,
     )
     assert client.app
-    _ = await get_services_for_user_in_product(
+    await list_user_services_with_versions(
         app=client.app,
         user_id=logged_user["id"],
         product_name="osparc",
-        only_key_versions=False,
     )
 
 
