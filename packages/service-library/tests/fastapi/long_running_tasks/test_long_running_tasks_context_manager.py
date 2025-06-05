@@ -11,12 +11,7 @@ from fastapi import APIRouter, Depends, FastAPI, status
 from httpx import AsyncClient
 from pydantic import AnyHttpUrl, PositiveFloat, TypeAdapter
 from servicelib.fastapi.long_running_tasks._context_manager import _ProgressManager
-from servicelib.fastapi.long_running_tasks.client import (
-    Client,
-    ProgressMessage,
-    ProgressPercent,
-    periodic_task_result,
-)
+from servicelib.fastapi.long_running_tasks.client import Client, periodic_task_result
 from servicelib.fastapi.long_running_tasks.client import setup as setup_client
 from servicelib.fastapi.long_running_tasks.server import (
     TaskId,
@@ -31,6 +26,7 @@ from servicelib.fastapi.long_running_tasks.server import (
 from servicelib.long_running_tasks.errors import (
     TaskClientTimeoutError,
 )
+from servicelib.long_running_tasks.models import ProgressMessage, ProgressPercent
 
 TASK_SLEEP_INTERVAL: Final[PositiveFloat] = 0.1
 

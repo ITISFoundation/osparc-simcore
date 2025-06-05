@@ -16,12 +16,11 @@ from rich.progress import (
 from servicelib.fastapi.http_client_thin import UnexpectedStatusError
 from servicelib.fastapi.long_running_tasks.client import (
     Client,
-    ProgressMessage,
-    ProgressPercent,
     TaskId,
     periodic_task_result,
     setup,
 )
+from servicelib.long_running_tasks.models import ProgressMessage, ProgressPercent
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt

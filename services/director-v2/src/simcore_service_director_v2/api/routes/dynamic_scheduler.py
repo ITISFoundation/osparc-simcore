@@ -4,10 +4,6 @@ from typing import Annotated, Final
 from fastapi import APIRouter, Depends, HTTPException, status
 from models_library.projects_nodes_io import NodeID
 from pydantic import BaseModel, PositiveInt
-from servicelib.fastapi.long_running_tasks.client import (
-    ProgressMessage,
-    ProgressPercent,
-)
 from servicelib.fastapi.long_running_tasks.server import (
     TaskAlreadyRunningError,
     TaskId,
@@ -15,6 +11,10 @@ from servicelib.fastapi.long_running_tasks.server import (
     TasksManager,
     get_tasks_manager,
     start_task,
+)
+from servicelib.long_running_tasks.models import (
+    ProgressMessage,
+    ProgressPercent,
 )
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log

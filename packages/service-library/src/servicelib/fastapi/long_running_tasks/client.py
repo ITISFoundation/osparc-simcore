@@ -9,12 +9,6 @@ from typing import Any
 
 import httpx
 from fastapi import status
-from models_library.api_schemas_long_running_tasks.base import TaskProgress
-from models_library.api_schemas_long_running_tasks.tasks import (
-    TaskGet,
-    TaskResult,
-    TaskStatus,
-)
 from tenacity import (
     AsyncRetrying,
     TryAgain,
@@ -28,16 +22,15 @@ from yarl import URL
 
 from ...long_running_tasks._constants import DEFAULT_POLL_INTERVAL_S, HOUR
 from ...long_running_tasks.models import (
-    ClientConfiguration,
     LRTask,
-    ProgressCallback,
-    ProgressMessage,
-    ProgressPercent,
     RequestBody,
+    TaskGet,
+    TaskProgress,
+    TaskStatus,
 )
 from ...long_running_tasks.task import TaskId
 from ...rest_responses import unwrap_envelope_if_required
-from ._client import DEFAULT_HTTP_REQUESTS_TIMEOUT, Client, setup
+from ._client import Client, setup
 from ._context_manager import periodic_task_result
 
 _logger = logging.getLogger(__name__)
@@ -151,15 +144,7 @@ async def long_running_task_request(
 
 
 __all__: tuple[str, ...] = (
-    "DEFAULT_HTTP_REQUESTS_TIMEOUT",
     "Client",
-    "ClientConfiguration",
-    "LRTask",
-    "ProgressCallback",
-    "ProgressMessage",
-    "ProgressPercent",
-    "TaskId",
-    "TaskResult",
     "periodic_task_result",
     "setup",
 )
