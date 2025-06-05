@@ -13,7 +13,13 @@ from aiohttp_security.abc import (  # type: ignore[import-untyped]
 from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.aiohttp.db_asyncpg_engine import get_async_engine
-from simcore_postgres_database.aiopg_errors import DatabaseError
+from servicelib.logging_errors import create_troubleshotting_log_kwargs
+from simcore_postgres_database.aiopg_errors import (
+    DatabaseError as AiopgDatabaseError,  # type: ignore[import-untyped]
+)
+from sqlalchemy.exc import (
+    DatabaseError as SQLAlchemyDatabaseError,  # type: ignore[import-untyped]
+)
 
 from ._authz_access_model import (
     AuthContextDict,
@@ -43,8 +49,15 @@ _AUTHZ_BURST_CACHE_TTL: Final = (
 def _handle_exceptions_as_503():
     try:
         yield
-    except DatabaseError as err:
-        _logger.exception("Auth unavailable due to database error")
+    except (AiopgDatabaseError, SQLAlchemyDatabaseError) as err:
+        _logger.exception(
+            **create_troubleshotting_log_kwargs(
+                "Auth unavailable due to database error",
+                error=err,
+                tip="Check database connection",
+            )
+        )
+
         raise web.HTTPServiceUnavailable(text=MSG_AUTH_NOT_AVAILABLE) from err
 
 
