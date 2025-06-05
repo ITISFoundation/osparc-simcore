@@ -536,8 +536,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __editSlides: function() {
-      if (this.getStudy().getUi().getMode() !== "workbench") {
-        // if the user is not in "workbench" mode, return
+      if (["app", "guided"].includes(this.getStudy().getUi().getMode())) {
+        // if the user is in "app" mode, return
         return;
       }
 
