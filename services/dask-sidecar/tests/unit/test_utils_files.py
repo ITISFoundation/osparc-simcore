@@ -4,6 +4,7 @@
 
 import asyncio
 import hashlib
+import logging
 import mimetypes
 import zipfile
 from collections.abc import AsyncIterable
@@ -21,6 +22,7 @@ from pytest_mock.plugin import MockerFixture
 from settings_library.s3 import S3Settings
 from simcore_service_dask_sidecar.utils.files import (
     _s3fs_settings_from_s3_settings,
+    log_partial_file_content,
     pull_file_from_remote,
     push_file_to_remote,
 )
@@ -511,3 +513,44 @@ async def test_push_file_to_remote_creates_reproducible_zip_archive(
     assert dst_path2.exists()
 
     assert _compute_hash(dst_path1) == _compute_hash(dst_path2)
+
+
+async def test_log_partial_file_content(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+):
+    # Create a file with known content
+    file_content = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    file_path = tmp_path / "testfile.txt"
+    file_path.write_text(file_content)
+    logger = logging.getLogger("pytest.utils.files")
+
+    # Case 1: file longer than max_chars
+    with caplog.at_level(logging.DEBUG, logger=logger.name):
+        await log_partial_file_content(file_path, logger, logging.DEBUG, max_chars=10)
+    assert any(
+        "file content (truncated): abcdefghij..." in record.getMessage()
+        for record in caplog.records
+    )
+
+    # Case 2: file shorter than max_chars
+    caplog.clear()
+    short_content = "short"
+    short_file = tmp_path / "short.txt"
+    short_file.write_text(short_content)
+    with caplog.at_level(logging.DEBUG, logger=logger.name):
+        await log_partial_file_content(short_file, logger, logging.DEBUG, max_chars=10)
+    assert any(
+        "file content: short" in record.getMessage() for record in caplog.records
+    )
+
+    # Case 3: file does not exist
+    caplog.clear()
+    non_existent = tmp_path / "doesnotexist.txt"
+    with caplog.at_level(logging.DEBUG, logger=logger.name):
+        await log_partial_file_content(
+            non_existent, logger, logging.DEBUG, max_chars=10
+        )
+    assert any(
+        f"file does not exist: {non_existent}" in record.getMessage()
+        for record in caplog.records
+    )

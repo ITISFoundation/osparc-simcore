@@ -330,3 +330,17 @@ async def push_file_to_remote(
         f"Upload of '{src_path.name}' to '{dst_url.path.strip('/')}' complete",
         logging.INFO,
     )
+
+
+async def log_partial_file_content(
+    src_path: Path, logger: logging.Logger, log_level: int, max_chars: int
+) -> None:
+    if not src_path.exists():
+        logger.log(log_level, "file does not exist: %s", src_path)
+        return
+    async with aiofiles.open(src_path, encoding="utf-8") as f:
+        content = await f.read(max_chars + 1)
+    if len(content) > max_chars:
+        logger.log(log_level, "file content (truncated): %s...", content[:max_chars])
+    else:
+        logger.log(log_level, "file content: %s", content)
