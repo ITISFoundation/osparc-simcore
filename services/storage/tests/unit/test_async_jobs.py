@@ -171,7 +171,7 @@ async def _wait_for_job(
     ):
         with attempt:
             result = await async_jobs.status(
-                storage_rabbitmq_rpc_client,
+                rpc_client,
                 rpc_namespace=STORAGE_RPC_NAMESPACE,
                 job_id=async_job_get.job_id,
                 job_id_data=job_id_data,
