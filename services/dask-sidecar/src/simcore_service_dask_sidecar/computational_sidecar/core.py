@@ -49,8 +49,8 @@ from .models import LEGACY_INTEGRATION_VERSION, ImageLabels
 from .task_shared_volume import TaskSharedVolumes
 
 _logger = logging.getLogger(__name__)
-CONTAINER_WAIT_TIME_SECS = 2
-MAX_LOGGED_FILE_CHARS = 40
+_CONTAINER_WAIT_TIME_SECS = 2
+_MAX_LOGGED_FILE_CHARS = 40
 
 
 @dataclass(kw_only=True, frozen=True, slots=True)
@@ -154,7 +154,10 @@ class ComputationalSidecar:
 
                     src_path = task_volumes.outputs_folder / output_params.file_mapping
                     await log_partial_file_content(
-                        src_path, _logger, MAX_LOGGED_FILE_CHARS
+                        src_path,
+                        logger=_logger,
+                        log_level=logging.DEBUG,
+                        max_chars=_MAX_LOGGED_FILE_CHARS,
                     )
                     upload_tasks.append(
                         push_file_to_remote(
@@ -271,7 +274,7 @@ class ComputationalSidecar:
                 )
                 # wait until the container finished, either success or fail or timeout
                 while (container_data := await container.show())["State"]["Running"]:
-                    await asyncio.sleep(CONTAINER_WAIT_TIME_SECS)
+                    await asyncio.sleep(_CONTAINER_WAIT_TIME_SECS)
                 if container_data["State"]["ExitCode"] > os.EX_OK:
                     raise ServiceRuntimeError(
                         service_key=self.task_parameters.image,

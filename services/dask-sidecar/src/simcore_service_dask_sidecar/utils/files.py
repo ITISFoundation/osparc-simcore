@@ -333,8 +333,13 @@ async def push_file_to_remote(
 
 
 async def log_partial_file_content(
-    src_path: Path, logger: logging.Logger, log_level: int, max_chars: int
+    src_path: Path, *, logger: logging.Logger, log_level: int, max_chars: int
 ) -> None:
+    if max_chars < 0:
+        msg = "max_chars must be non-negative"
+        raise ValueError(msg)
+    if max_chars == 0:
+        return
     if not src_path.exists():
         logger.log(log_level, "file does not exist: %s", src_path)
         return
