@@ -34,7 +34,8 @@ qx.Class.define("osparc.utils.Avatar", {
   type: "static",
 
   statics: {
-    emailToThumbnail: function(email = "", username = "??", size = 32) {
+    emailToThumbnail: function(email, username = "??", size = 32) {
+      email = email || "";
       // MD5 (Message-Digest Algorithm) by WebToolkit
       const MD5 = function(s) {
         function L(k, d) {
