@@ -138,13 +138,13 @@ ExtraCreditsUsdRangeInt: TypeAlias = Annotated[int, Field(ge=0, lt=500)]
 TrialAccountAnnotated: TypeAlias = Annotated[
     PositiveInt | None,
     Field(
-        description="Expiration time in days for trial accounts; None means not a trial account"
+        description="Expiration time in days for trial accounts; `null` means not a trial account"
     ),
 ]
 
 WelcomeCreditsAnnotated: TypeAlias = Annotated[
     ExtraCreditsUsdRangeInt | None,
-    Field(description="Welcome credits in USD; None means no welcome credits"),
+    Field(description="Welcome credits in USD; `null` means no welcome credits"),
 ]
 
 
