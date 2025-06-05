@@ -245,22 +245,26 @@ qx.Class.define("osparc.info.StudyUtils", {
     infoElementsToLayout: function(extraInfos) {
       const container = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
 
+      const decorateAction = action => {
+          action.button.set({
+            alignY: "middle",
+          });
+          action.button.addListener("execute", () => {
+            const cb = action.callback;
+            if (typeof cb === "string") {
+              action.ctx.fireEvent(cb);
+            } else {
+              cb.call(action.ctx);
+            }
+          }, this);
+      };
+
       if ("TITLE" in extraInfos) {
         const extraInfo = extraInfos["TITLE"];
         const titleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
 
         if (extraInfo.action && extraInfo.action.button) {
-          extraInfo.action.button.set({
-            alignY: "middle",
-          });
-          extraInfo.action.button.addListener("execute", () => {
-            const cb = extraInfo.action.callback;
-            if (typeof cb === "string") {
-              extraInfo.action.ctx.fireEvent(cb);
-            } else {
-              cb.call(extraInfo.action.ctx);
-            }
-          }, this);
+          decorateAction(extraInfo.action);
           titleLayout.add(extraInfo.action.button);
         }
 
@@ -328,17 +332,7 @@ qx.Class.define("osparc.info.StudyUtils", {
           }
 
           if (extraInfo.action && extraInfo.action.button) {
-            extraInfo.action.button.set({
-              alignY: "middle",
-            });
-            extraInfo.action.button.addListener("execute", () => {
-              const cb = extraInfo.action.callback;
-              if (typeof cb === "string") {
-                extraInfo.action.ctx.fireEvent(cb);
-              } else {
-                cb.call(extraInfo.action.ctx);
-              }
-            }, this);
+            decorateAction(extraInfo.action);
             mainInfoLayout.add(extraInfo.action.button, {
               row: gridInfo.row,
               column: gridInfo.column*itemsPerProp + 1,
@@ -363,17 +357,7 @@ qx.Class.define("osparc.info.StudyUtils", {
         const descriptionLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
 
         if (extraInfo.action && extraInfo.action.button) {
-          extraInfo.action.button.set({
-            alignY: "middle",
-          });
-          extraInfo.action.button.addListener("execute", () => {
-            const cb = extraInfo.action.callback;
-            if (typeof cb === "string") {
-              extraInfo.action.ctx.fireEvent(cb);
-            } else {
-              cb.call(extraInfo.action.ctx);
-            }
-          }, this);
+          decorateAction(extraInfo.action);
           descriptionLayout.add(extraInfo.action.button);
         }
 
