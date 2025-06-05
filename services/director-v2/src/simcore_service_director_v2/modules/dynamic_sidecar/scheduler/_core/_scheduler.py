@@ -43,8 +43,7 @@ from models_library.wallets import WalletID
 from pydantic import NonNegativeFloat
 from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task import create_periodic_task
-from servicelib.fastapi.long_running_tasks.server import TaskProgress
-from servicelib.long_running_tasks.models import ProgressCallback
+from servicelib.long_running_tasks.models import ProgressCallback, TaskProgress
 from servicelib.redis import RedisClientsManager, exclusive
 from settings_library.redis import RedisDatabase
 

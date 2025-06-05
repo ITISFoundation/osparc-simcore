@@ -20,9 +20,8 @@ from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from models_library.user_preferences import FrontendUserPreference
 from models_library.users import UserID
 from servicelib.fastapi.http_client_thin import BaseHttpClientError
-from servicelib.fastapi.long_running_tasks.server import TaskProgress
 from servicelib.logging_utils import log_context
-from servicelib.long_running_tasks.models import ProgressCallback
+from servicelib.long_running_tasks.models import ProgressCallback, TaskProgress
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from servicelib.rabbitmq._errors import RemoteMethodNotRegisteredError
