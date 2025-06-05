@@ -171,7 +171,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
       * @param maxHeight {Number} description's maxHeight
       */
     createDescription: function(serviceData) {
-      const descriptionLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
+      const descriptionLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox().set({
         alignY: "middle"
       }));
 
