@@ -27,7 +27,7 @@ from tenacity import (
 from yarl import URL
 
 from ...long_running_tasks._constants import DEFAULT_POLL_INTERVAL_S, HOUR
-from ...long_running_tasks._models import (
+from ...long_running_tasks.models import (
     ClientConfiguration,
     LRTask,
     ProgressCallback,
@@ -35,7 +35,7 @@ from ...long_running_tasks._models import (
     ProgressPercent,
     RequestBody,
 )
-from ...long_running_tasks._task import TaskId
+from ...long_running_tasks.task import TaskId
 from ...rest_responses import unwrap_envelope_if_required
 from ._client import DEFAULT_HTTP_REQUESTS_TIMEOUT, Client, setup
 from ._context_manager import periodic_task_result

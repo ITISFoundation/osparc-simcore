@@ -6,9 +6,9 @@ The server only has to return a `TaskId` in the handler creating the long
 running task.
 """
 
-from ...long_running_tasks._errors import TaskAlreadyRunningError, TaskCancelledError
-from ...long_running_tasks._models import ProgressMessage, ProgressPercent
-from ...long_running_tasks._task import (
+from ...long_running_tasks.errors import TaskAlreadyRunningError, TaskCancelledError
+from ...long_running_tasks.models import ProgressMessage, ProgressPercent
+from ...long_running_tasks.task import (
     TaskId,
     TaskProgress,
     TaskProtocol,

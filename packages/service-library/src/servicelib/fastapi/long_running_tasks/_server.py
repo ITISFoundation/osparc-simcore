@@ -3,8 +3,8 @@ from typing import Final
 from fastapi import APIRouter, FastAPI
 from pydantic import PositiveFloat
 
-from ...long_running_tasks._errors import BaseLongRunningError
-from ...long_running_tasks._task import TasksManager
+from ...long_running_tasks.errors import BaseLongRunningError
+from ...long_running_tasks.task import TasksManager
 from ._error_handlers import base_long_running_error_handler
 from ._routes import router
 
@@ -50,4 +50,4 @@ def setup(
 
     # add error handlers
     # NOTE: Exception handler can not be added during the on_startup script, otherwise not working correctly
-    app.add_exception_handler(BaseLongRunningError, base_long_running_error_handler)    # type: ignore[arg-type]
+    app.add_exception_handler(BaseLongRunningError, base_long_running_error_handler)  # type: ignore[arg-type]

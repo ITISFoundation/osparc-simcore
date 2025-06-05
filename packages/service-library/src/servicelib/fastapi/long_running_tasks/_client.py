@@ -14,8 +14,8 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_exponential
 
-from ...long_running_tasks._errors import GenericClientError
-from ...long_running_tasks._models import ClientConfiguration, TaskId, TaskStatus
+from ...long_running_tasks.errors import GenericClientError
+from ...long_running_tasks.models import ClientConfiguration, TaskId, TaskStatus
 
 DEFAULT_HTTP_REQUESTS_TIMEOUT: Final[PositiveFloat] = 15
 

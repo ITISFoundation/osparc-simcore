@@ -8,8 +8,8 @@ running task. The client will take care of recovering the result from it.
 
 from models_library.api_schemas_long_running_tasks.tasks import TaskResult
 
-from ...long_running_tasks._errors import TaskAlreadyRunningError, TaskCancelledError
-from ...long_running_tasks._task import (
+from ...long_running_tasks.errors import TaskAlreadyRunningError, TaskCancelledError
+from ...long_running_tasks.task import (
     TaskId,
     TaskProgress,
     TasksManager,

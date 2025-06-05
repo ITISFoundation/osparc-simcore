@@ -3,7 +3,7 @@ import logging
 from aiohttp import web
 from common_library.json_serialization import json_dumps
 
-from ...long_running_tasks._errors import (
+from ...long_running_tasks.errors import (
     TaskCancelledError,
     TaskNotCompletedError,
     TaskNotFoundError,

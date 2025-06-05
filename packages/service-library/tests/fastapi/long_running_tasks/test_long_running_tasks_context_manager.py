@@ -28,7 +28,7 @@ from servicelib.fastapi.long_running_tasks.server import setup as setup_server
 from servicelib.fastapi.long_running_tasks.server import (
     start_task,
 )
-from servicelib.long_running_tasks._errors import (
+from servicelib.long_running_tasks.errors import (
     TaskClientTimeoutError,
 )
 
