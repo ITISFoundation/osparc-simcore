@@ -1257,7 +1257,7 @@ services:
   sto-worker-cpu-bound:
     image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-master-github-latest}
     init: true
-    hostname: "sto-worker-{{.Node.Hostname}}-{{.Task.Slot}}"
+    hostname: "sto-worker-cpu-bound-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       <<: *storage_environment
       STORAGE_WORKER_NAME: "sto-worker-cpu-bound-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
