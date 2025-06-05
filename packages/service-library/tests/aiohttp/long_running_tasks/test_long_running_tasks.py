@@ -21,7 +21,7 @@ from pydantic import TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import long_running_tasks, status
 from servicelib.aiohttp.rest_middlewares import append_rest_middlewares
-from servicelib.long_running_tasks.models import TaskGet, TaskId
+from servicelib.long_running_tasks.models import TaskGet, TaskId, TaskStatus
 from servicelib.long_running_tasks.task import TaskContext
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -70,7 +70,7 @@ async def test_workflow(
             data, error = await assert_status(result, status.HTTP_200_OK)
             assert data
             assert not error
-            task_status = long_running_tasks.server.TaskStatus.model_validate(data)
+            task_status = TaskStatus.model_validate(data)
             assert task_status
             progress_updates.append(
                 (task_status.task_progress.message, task_status.task_progress.percent)
