@@ -12,9 +12,9 @@ from aiohttp_security.abc import (  # type: ignore[import-untyped]
 )
 from models_library.products import ProductName
 from models_library.users import UserID
+from servicelib.aiohttp.db_asyncpg_engine import get_async_engine
 from simcore_postgres_database.aiopg_errors import DatabaseError
 
-from ..db.plugin import get_database_engine
 from ._authz_access_model import (
     AuthContextDict,
     OptionalContext,
@@ -62,7 +62,9 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
             web.HTTPServiceUnavailable: if database raises an exception
         """
         with _handle_exceptions_as_503():
-            return await get_active_user_or_none(get_database_engine(self._app), email)
+            return await get_active_user_or_none(
+                get_async_engine(self._app), email=email
+            )
 
     @cached(
         ttl=_AUTHZ_BURST_CACHE_TTL,
@@ -78,7 +80,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         """
         with _handle_exceptions_as_503():
             return await is_user_in_product_name(
-                get_database_engine(self._app), user_id, product_name
+                get_async_engine(self._app), user_id=user_id, product_name=product_name
             )
 
     @property
@@ -122,11 +124,6 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         :return: True if user has permission to execute this operation within the given context
         """
         if identity is None or permission is None:
-            _logger.debug(
-                "Invalid %s of %s. Denying access.",
-                f"{identity=}",
-                f"{permission=}",
-            )
             return False
 
         auth_info = await self._get_auth_or_none(email=identity)
