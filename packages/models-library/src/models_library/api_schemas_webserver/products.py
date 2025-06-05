@@ -135,10 +135,23 @@ class ProductUIGet(OutputSchema):
 ExtraCreditsUsdRangeInt: TypeAlias = Annotated[int, Field(ge=0, lt=500)]
 
 
+TrialAccountAnnotated: TypeAlias = Annotated[
+    PositiveInt | None,
+    Field(
+        description="Expiration time in days for trial accounts; `null` means not a trial account"
+    ),
+]
+
+WelcomeCreditsAnnotated: TypeAlias = Annotated[
+    ExtraCreditsUsdRangeInt | None,
+    Field(description="Welcome credits in USD; `null` means no welcome credits"),
+]
+
+
 class InvitationGenerate(InputSchema):
     guest: LowerCaseEmailStr
-    trial_account_days: PositiveInt | None = None
-    extra_credits_in_usd: ExtraCreditsUsdRangeInt | None = None
+    trial_account_days: TrialAccountAnnotated = None
+    extra_credits_in_usd: WelcomeCreditsAnnotated = None
 
 
 class InvitationGenerated(OutputSchema):
