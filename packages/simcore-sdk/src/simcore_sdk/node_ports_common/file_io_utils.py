@@ -173,7 +173,6 @@ _TQDM_FILE_OPTIONS: dict[str, Any] = {
 
 
 async def download_link_to_file(
-    session: ClientSession,
     url: URL,
     file_path: Path,
     *,
@@ -181,13 +180,7 @@ async def download_link_to_file(
     io_log_redirect_cb: LogRedirectCB | None,
     progress_bar: ProgressBarData,
 ):
-    _ = session  # TODO: remove since using httpx
-
     _logger.debug("Downloading from %s to %s", url, file_path)
-    _logger.debug(
-        "Download timeout %s ",
-        client_request_settings.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT,
-    )
     async for attempt in AsyncRetrying(
         reraise=True,
         wait=wait_exponential(min=1, max=10),
