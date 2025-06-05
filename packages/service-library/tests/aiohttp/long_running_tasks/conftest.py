@@ -12,8 +12,8 @@ from faker import Faker
 from pydantic import BaseModel, TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import long_running_tasks, status
-from servicelib.aiohttp.long_running_tasks.server import TaskId
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
+from servicelib.long_running_tasks.models import TaskId, TaskProgress
 from servicelib.long_running_tasks.task import TaskContext
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -22,7 +22,7 @@ from tenacity.wait import wait_fixed
 
 
 async def _string_list_task(
-    task_progress: long_running_tasks.server.TaskProgress,
+    task_progress: TaskProgress,
     num_strings: int,
     sleep_time: float,
     fail: bool,

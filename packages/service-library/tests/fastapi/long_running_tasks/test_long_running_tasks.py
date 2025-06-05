@@ -20,7 +20,7 @@ from fastapi import APIRouter, Depends, FastAPI, status
 from httpx import AsyncClient
 from pydantic import TypeAdapter
 from servicelib.fastapi import long_running_tasks
-from servicelib.long_running_tasks.models import TaskGet, TaskId
+from servicelib.long_running_tasks.models import TaskGet, TaskId, TaskProgress
 from servicelib.long_running_tasks.task import TaskContext
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -32,7 +32,7 @@ ITEM_PUBLISH_SLEEP: Final[float] = 0.1
 
 
 async def _string_list_task(
-    task_progress: long_running_tasks.server.TaskProgress,
+    task_progress: TaskProgress,
     num_strings: int,
     sleep_time: float,
     fail: bool,

@@ -20,8 +20,8 @@ from aiohttp.test_utils import TestClient
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import long_running_tasks, status
-from servicelib.aiohttp.long_running_tasks.server import TaskGet, TaskId
 from servicelib.aiohttp.rest_middlewares import append_rest_middlewares
+from servicelib.long_running_tasks.models import TaskGet, TaskId
 from servicelib.long_running_tasks.task import TaskContext
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type

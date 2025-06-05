@@ -13,10 +13,16 @@ from tenacity.wait import wait_random_exponential
 from yarl import URL
 
 from ...long_running_tasks._constants import DEFAULT_POLL_INTERVAL_S, HOUR
-from ...long_running_tasks.models import LRTask, RequestBody
+from ...long_running_tasks.models import (
+    LRTask,
+    RequestBody,
+    TaskGet,
+    TaskId,
+    TaskProgress,
+    TaskStatus,
+)
 from ...rest_responses import unwrap_envelope_if_required
 from .. import status
-from .server import TaskGet, TaskId, TaskProgress, TaskStatus
 
 _logger = logging.getLogger(__name__)
 
@@ -123,6 +129,3 @@ async def long_running_task_request(
         if task:
             await _abort_task(session, URL(task.abort_href))
         raise
-
-
-__all__: tuple[str, ...] = ("LRTask",)
