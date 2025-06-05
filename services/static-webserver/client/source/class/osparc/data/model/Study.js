@@ -699,8 +699,9 @@ qx.Class.define("osparc.data.model.Study", {
     /**
      * Call patch Study, but the changes were already applied on the frontend
      * @param studyDiffs {Object} Diff Object coming from the JsonDiffPatch lib. Use only the keys, not the changes.
+     * @param sourceStudy {Object} Study object that was used to apply the diffs on the frontend.
      */
-    patchStudyDelayed: function(studyDiffs) {
+    patchStudyDelayed: function(studyDiffs, sourceStudy) {
       const promises = [];
       let workbenchDiffs = {};
       if ("workbench" in studyDiffs) {
@@ -730,12 +731,7 @@ qx.Class.define("osparc.data.model.Study", {
       }
       return Promise.all(promises)
         .then(() => {
-          // A bit hacky, but it's not sent back to the backend
-          this.set({
-            lastChangeDate: new Date()
-          });
-          const studyData = this.serialize();
-          return studyData;
+          return sourceStudy;
         });
     }
   }
