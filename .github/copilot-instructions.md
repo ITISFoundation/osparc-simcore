@@ -52,4 +52,4 @@ This document provides guidelines and best practices for using GitHub Copilot in
 - [Python Coding Conventions](../docs/coding-conventions.md)
 - [Environment Variables Guide](../docs/env-vars.md)
 - [Steps to Upgrade Python](../docs/steps-to-upgrade-python.md)
-- [Node.js Installation Script](../scripts/install_nodejs_14.bash)
+- [Pydantic Annotated fields](../docs/llm-prompts/pydantic-annotated-fields.md)

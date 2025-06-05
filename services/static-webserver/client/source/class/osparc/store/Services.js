@@ -389,12 +389,14 @@ qx.Class.define("osparc.store.Services", {
       // if the one in the cache is the complete one, do not overwrite it
       if (
         this.__isInCache(key, version) &&
+        this.__servicesCached[key][version] &&
         "history" in this.__servicesCached[key][version] // the most complete service metadata is already in cache
       ) {
         return;
       }
       if (
         this.__isInCache(key, version) &&
+        this.__servicesCached[key][version] &&
         "inputs" in this.__servicesCached[key][version] && // this is the second most complete service metadata (/latest)
         value && !("inputs" in value) // the one to be added is not more complete
       ) {
