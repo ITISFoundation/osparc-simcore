@@ -85,6 +85,7 @@ idna==3.10
     #   -c requirements/_base.txt
     #   anyio
     #   httpx
+    #   requests
 iniconfig==2.1.0
     # via pytest
 kombu==5.5.4
@@ -116,7 +117,7 @@ psutil==7.0.0
     #   pytest-celery
 py-cpuinfo==9.0.0
     # via pytest-benchmark
-pydantic==2.11.4
+pydantic==2.11.5
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -140,10 +141,8 @@ pytest==8.4.0
     #   pytest-instafail
     #   pytest-mock
     #   pytest-sugar
-pytest-asyncio==0.23.8
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -r requirements/_test.in
+pytest-asyncio==1.0.0
+    # via -r requirements/_test.in
 pytest-benchmark==5.1.0
     # via -r requirements/_test.in
 pytest-celery==1.2.0
@@ -156,7 +155,7 @@ pytest-icdiff==0.9
     # via -r requirements/_test.in
 pytest-instafail==0.5.0
     # via -r requirements/_test.in
-pytest-mock==3.14.0
+pytest-mock==3.14.1
     # via -r requirements/_test.in
 pytest-runner==6.0.1
     # via -r requirements/_test.in
@@ -217,7 +216,7 @@ typing-extensions==4.14.0
     #   pydantic
     #   pydantic-core
     #   typing-inspection
-typing-inspection==0.4.0
+typing-inspection==0.4.1
     # via
     #   -c requirements/_base.txt
     #   pydantic

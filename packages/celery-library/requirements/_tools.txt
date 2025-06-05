@@ -8,7 +8,7 @@ bump2version==1.0.1
     # via -r requirements/../../../requirements/devenv.txt
 cfgv==3.4.0
     # via pre-commit
-click==8.1.8
+click==8.2.1
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
@@ -20,7 +20,7 @@ distlib==0.3.9
     # via virtualenv
 filelock==3.18.0
     # via virtualenv
-identify==2.6.10
+identify==2.6.12
     # via pre-commit
 isort==6.0.1
     # via
