@@ -116,9 +116,9 @@ async def async_job(task: Task, task_id: TaskID, action: Action, payload: Any) -
 
 @pytest.fixture
 async def rpc_client(
-    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
+    rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
 ) -> RabbitMQRPCClient:
-    client = await rabbitmq_rpc_client("celery_test_client")
+    client = await rpc_client("celery_test_client")
     await client.register_router(router, STORAGE_RPC_NAMESPACE)
     return client
 
