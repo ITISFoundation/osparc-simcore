@@ -2,6 +2,7 @@ import logging
 
 from aiohttp import web
 from common_library.json_serialization import json_dumps
+from models_library.api_schemas_catalog.services import MyServiceGet
 from models_library.api_schemas_webserver.projects import (
     EmptyModel,
     ProjectCopyOverride,
@@ -39,7 +40,6 @@ from ...utils_aiohttp import envelope_json_response, get_api_base_url
 from .. import _crud_api_create, _crud_api_read, _projects_service
 from .._permalink_service import update_or_pop_permalink_in_project
 from ..models import ProjectDict
-from ..utils import get_project_unavailable_services, project_uses_available_services
 from . import _rest_utils
 from ._rest_exceptions import handle_plugin_requests_exceptions
 from ._rest_schemas import (
@@ -277,12 +277,6 @@ async def get_project(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
-    user_available_services: list[dict] = (
-        await catalog_service.get_services_for_user_in_product(
-            request.app, req_ctx.user_id, req_ctx.product_name, only_key_versions=True
-        )
-    )
-
     project = await _projects_service.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_id}",
@@ -290,12 +284,24 @@ async def get_project(request: web.Request):
         include_state=True,
         include_trashed_by_primary_gid=True,
     )
-    if not await project_uses_available_services(project, user_available_services):
-        unavilable_services = get_project_unavailable_services(
-            project, user_available_services
-        )
+
+    services_in_project = {
+        (srv["key"], srv["version"]) for _, srv in project.get("workbench", {}).items()
+    }
+
+    my_services: list[MyServiceGet] = await catalog_service.batch_get_my_services(
+        request.app,
+        product_name=req_ctx.product_name,
+        user_id=req_ctx.user_id,
+        services_ids=list(services_in_project),
+    )
+    not_my_services = services_in_project.difference(
+        {(srv.key, srv.release.version) for srv in my_services}
+    )
+
+    if not_my_services:
         formatted_services = ", ".join(
-            f"{service}:{version}" for service, version in unavilable_services
+            f"{service}:{version}" for service, version in not_my_services
         )
         # TODO: lack of permissions should be notified with https://httpstatuses.com/403 web.HTTPForbidden
         raise web.HTTPNotFound(
