@@ -271,7 +271,7 @@ async def get_project(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
-    user_available_services = await catalog_service.list_user_services_with_versions(
+    user_available_services = await catalog_service.get_services_for_user_in_product(
         request.app, user_id=req_ctx.user_id, product_name=req_ctx.product_name
     )
 

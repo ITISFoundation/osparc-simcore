@@ -121,7 +121,7 @@ async def list_projects(  # pylint: disable=too-many-arguments
     db = ProjectDBAPI.get_from_app_context(app)
 
     user_available_services: list[ServiceKeyVersionDict] = (
-        await catalog_service.list_user_services_with_versions(
+        await catalog_service.get_services_for_user_in_product(
             app, user_id=user_id, product_name=product_name
         )
     )
@@ -205,7 +205,7 @@ async def list_projects_full_depth(
     db = ProjectDBAPI.get_from_app_context(app)
 
     user_available_services: list[ServiceKeyVersionDict] = (
-        await catalog_service.list_user_services_with_versions(
+        await catalog_service.get_services_for_user_in_product(
             app, user_id=user_id, product_name=product_name
         )
     )
