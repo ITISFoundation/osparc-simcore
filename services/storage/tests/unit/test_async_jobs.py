@@ -30,7 +30,6 @@ from models_library.rabbitmq_basic_types import RPCMethodName, RPCNamespace
 from models_library.users import UserID
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCRouter
 from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
-from simcore_service_storage.api.rpc.routes import get_rabbitmq_rpc_server
 from tenacity import (
     AsyncRetrying,
     retry_if_exception_type,
@@ -109,9 +108,12 @@ async def async_job(task: Task, task_id: TaskID, action: Action, payload: Any) -
 
 
 @pytest.fixture
-async def register_rpc_routes(initialized_app: FastAPI) -> None:
-    rpc_server = get_rabbitmq_rpc_server(initialized_app)
-    await rpc_server.register_router(router, STORAGE_RPC_NAMESPACE, initialized_app)
+async def rpc_client(
+    rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
+) -> RabbitMQRPCClient:
+    client = await rpc_client("celery_test_client")
+    await client.register_router(router, STORAGE_RPC_NAMESPACE)
+    return client
 
 
 async def _start_task_via_rpc(
