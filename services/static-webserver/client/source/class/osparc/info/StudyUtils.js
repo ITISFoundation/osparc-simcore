@@ -182,7 +182,7 @@ qx.Class.define("osparc.info.StudyUtils", {
     createDescriptionMD: function(study, maxHeight) {
       const description = new osparc.ui.markdown.Markdown();
       study.bind("description", description, "value", {
-        converter: desc => desc ? desc : "Add description"
+        converter: desc => desc ? desc : "No description"
       });
       const scrollContainer = new qx.ui.container.Scroll();
       if (maxHeight) {
@@ -225,7 +225,7 @@ qx.Class.define("osparc.info.StudyUtils", {
 
       const addTags = model => {
         tagsContainer.removeAll();
-        const noTagsLabel = new qx.ui.basic.Label(qx.locale.Manager.tr("Add tags"));
+        const noTagsLabel = new qx.ui.basic.Label(qx.locale.Manager.tr("No tags"));
         tagsContainer.add(noTagsLabel);
         osparc.store.Tags.getInstance().getTags().filter(tag => model.getTags().includes(tag.getTagId()))
           .forEach(selectedTag => {
@@ -306,7 +306,7 @@ qx.Class.define("osparc.info.StudyUtils", {
       };
 
       const itemsPerProp = 3;
-      const mainInfoGrid = new qx.ui.layout.Grid(10, 8);
+      const mainInfoGrid = new qx.ui.layout.Grid(8, 8);
       mainInfoGrid.setColumnAlign(0, "right", "middle");
       mainInfoGrid.setColumnAlign(itemsPerProp, "right", "middle");
       const mainInfoLayout = new qx.ui.container.Composite(mainInfoGrid);
