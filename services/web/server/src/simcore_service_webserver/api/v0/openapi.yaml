@@ -12211,7 +12211,7 @@ components:
             minimum: 0
           - type: 'null'
           title: Trialaccountdays
-          description: Expiration time in days for trial accounts; None means not
+          description: Expiration time in days for trial accounts; `null` means not
             a trial account
         extraCreditsInUsd:
           anyOf:
@@ -12221,7 +12221,7 @@ components:
             maximum: 500
           - type: 'null'
           title: Extracreditsinusd
-          description: Welcome credits in USD; None means no welcome credits
+          description: Welcome credits in USD; `null` means no welcome credits
       type: object
       required:
       - guest
@@ -17714,7 +17714,7 @@ components:
             minimum: 0
           - type: 'null'
           title: Trialaccountdays
-          description: Expiration time in days for trial accounts; None means not
+          description: Expiration time in days for trial accounts; `null` means not
             a trial account
         extraCreditsInUsd:
           anyOf:
@@ -17724,7 +17724,7 @@ components:
             maximum: 500
           - type: 'null'
           title: Extracreditsinusd
-          description: Welcome credits in USD; None means no welcome credits
+          description: Welcome credits in USD; `null` means no welcome credits
       type: object
       title: _InvitationDetails
     _ItisVipResourceRestData:
