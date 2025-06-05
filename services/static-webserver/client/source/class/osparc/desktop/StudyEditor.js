@@ -857,20 +857,26 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __getStudyDiffs: function() {
-      const newObj = this.getStudy().serialize();
-      const delta = osparc.wrapper.JsonDiffPatch.getInstance().diff(this.__studyDataInBackend, newObj);
+      const sourceStudy = this.getStudy().serialize();
+      const delta = osparc.wrapper.JsonDiffPatch.getInstance().diff(this.__studyDataInBackend, sourceStudy);
       if (delta) {
         // lastChangeDate and creationDate should not be taken into account as data change
         delete delta["creationDate"];
         delete delta["lastChangeDate"];
-        return delta;
+        return {
+          sourceStudy,
+          delta,
+        };
       }
-      return {};
+      return {
+        sourceStudy,
+        delta: {},
+      };
     },
 
     didStudyChange: function() {
       const studyDiffs = this.__getStudyDiffs();
-      return Boolean(Object.keys(studyDiffs).length);
+      return Boolean(Object.keys(studyDiffs.delta).length);
     },
 
     __checkStudyChanges: function() {
@@ -893,7 +899,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       this.__updatingStudy++;
       const studyDiffs = this.__getStudyDiffs();
-      return this.getStudy().patchStudyDelayed(studyDiffs)
+      return this.getStudy().patchStudyDelayed(studyDiffs.delta, studyDiffs.sourceStudy)
         .then(studyData => this.__setStudyDataInBackend(studyData))
         .catch(error => {
           if ("status" in error && error.status === 409) {
