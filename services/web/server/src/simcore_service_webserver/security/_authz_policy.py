@@ -14,12 +14,8 @@ from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.aiohttp.db_asyncpg_engine import get_async_engine
 from servicelib.logging_errors import create_troubleshotting_log_kwargs
-from simcore_postgres_database.aiopg_errors import (
-    DatabaseError as AiopgDatabaseError,  # type: ignore[import-untyped]
-)
-from sqlalchemy.exc import (
-    DatabaseError as SQLAlchemyDatabaseError,  # type: ignore[import-untyped]
-)
+from simcore_postgres_database.aiopg_errors import DatabaseError as AiopgDatabaseError
+from sqlalchemy.exc import DatabaseError as SQLAlchemyDatabaseError
 
 from ._authz_access_model import (
     AuthContextDict,
