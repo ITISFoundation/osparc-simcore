@@ -11,7 +11,6 @@ from ._dependencies import (
     get_task_context,
     get_tasks_manager,
 )
-from ._routes import TaskGet
 from ._server import setup, start_long_running_task
 
 __all__: tuple[str, ...] = (
@@ -20,7 +19,6 @@ __all__: tuple[str, ...] = (
     "get_tasks_manager",
     "setup",
     "start_long_running_task",
-    "TaskGet",
 )
 
 # nopycln: file
