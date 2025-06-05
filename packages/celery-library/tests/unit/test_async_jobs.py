@@ -3,7 +3,7 @@
 
 import asyncio
 import pickle
-from collections.abc import Awaitable, Callable
+from collections.abc import Callable
 from datetime import timedelta
 from enum import Enum
 from typing import Any
@@ -108,19 +108,12 @@ async def async_job(task: Task, task_id: TaskID, action: Action, payload: Any) -
 
 
 @pytest.fixture
-async def register_routes(
+async def rpc_client(
     initialized_fast_api: FastAPI, rpc_namespace: RPCNamespace
-) -> None:
+) -> RabbitMQRPCClient:
     client = initialized_fast_api.state.rabbitmq_rpc_client
     assert isinstance(client, RabbitMQRPCClient)
     await client.register_router(router, rpc_namespace, initialized_fast_api)
-
-
-@pytest.fixture
-async def rpc_client(
-    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
-) -> RabbitMQRPCClient:
-    client = await rabbitmq_rpc_client("celery_test_client")
     return client
 
 
@@ -211,10 +204,9 @@ async def _wait_for_job(
     ],
 )
 async def test_async_jobs_workflow(
-    register_routes,
     rpc_client: RabbitMQRPCClient,
     rpc_namespace: RPCNamespace,
-    with_celery_worker: CeleryTaskWorker,
+    with_storage_celery_worker: CeleryTaskWorker,
     user_id: UserID,
     product_name: ProductName,
     exposed_rpc_start: str,
@@ -264,8 +256,8 @@ async def test_async_jobs_cancel(
     # initialized_app: FastAPI,
     register_routes: None,
     rpc_namespace: RPCNamespace,
-    rpc_client: RabbitMQRPCClient,
-    with_celery_worker: CeleryTaskWorker,
+    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
+    with_storage_celery_worker: CeleryTaskWorker,
     user_id: UserID,
     product_name: ProductName,
     exposed_rpc_start: str,
@@ -332,8 +324,8 @@ async def test_async_jobs_raises(
     # initialized_app: FastAPI,
     register_routes: None,
     rpc_namespace: RPCNamespace,
-    rpc_client: RabbitMQRPCClient,
-    with_celery_worker: CeleryTaskWorker,
+    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
+    with_storage_celery_worker: CeleryTaskWorker,
     user_id: UserID,
     product_name: ProductName,
     exposed_rpc_start: str,

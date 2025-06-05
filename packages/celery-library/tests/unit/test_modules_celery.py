@@ -43,7 +43,7 @@ pytest_simcore_ops_services_selection = []
 @pytest.fixture
 def celery_client(
     initialized_app: FastAPI,
-    with_celery_worker: CeleryTaskWorker,
+    with_storage_celery_worker: CeleryTaskWorker,
 ) -> CeleryTaskClient:
     return get_celery_client(initialized_app)
 
