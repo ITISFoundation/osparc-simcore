@@ -62,7 +62,7 @@ qx.Class.define("osparc.study.Utils", {
             };
             // maybe check it's dynamic
             if (!("mode" in minStudyData["ui"])) {
-              minStudyData["ui"]["mode"] = "standalone";
+              minStudyData["ui"]["mode"] = metadata["key"] && metadata["key"].includes("dynamic") ? "standalone" : "pipeline";
             }
             const inaccessibleServices = osparc.store.Services.getInaccessibleServices(minStudyData["workbench"])
             if (inaccessibleServices.length) {
