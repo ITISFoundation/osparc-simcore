@@ -19,6 +19,12 @@ qx.Class.define("osparc.store.Users", {
   extend: qx.core.Object,
   type: "singleton",
 
+  construct: function() {
+    this.base(arguments);
+
+    this.__unknowns = [];
+  },
+
   properties: {
     users: {
       check: "Array",
@@ -28,7 +34,7 @@ qx.Class.define("osparc.store.Users", {
   },
 
   members: {
-    __unknowns: [],
+    __unknowns: null,
 
     __fetchUser: function(groupId) {
       const params = {
