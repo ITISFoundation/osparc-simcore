@@ -76,7 +76,7 @@ qx.Class.define("osparc.desktop.preferences.window.ShowAPIKey", {
       const hBox = this.__createEntry(title);
       if (label) {
         // partially hide the key and secret
-        hBox.getChildren()[1].setValue(label.substring(1, 8) + "****")
+        hBox.getChildren()[1].setValue(label.substring(0, 8) + "****")
       }
       return hBox;
     },
