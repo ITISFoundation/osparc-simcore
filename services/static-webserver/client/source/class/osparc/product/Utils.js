@@ -264,6 +264,10 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     showPreferencesTokens: function() {
+      if (osparc.data.Permissions.getInstance().isTester()) {
+        return true;
+      }
+
       if (this.isProduct("s4llite") || this.isProduct("tis") || this.isProduct("tiplite")) {
         return false;
       }
