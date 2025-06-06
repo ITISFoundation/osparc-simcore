@@ -23,7 +23,7 @@ qx.Class.define("osparc.dashboard.GroupedCardContainer", {
 
     this._setLayout(new qx.ui.layout.VBox());
 
-    const showAllButton = this.__showAllButton = new qx.ui.form.Button().set({
+    const showAllButton = this.__expandButton = new qx.ui.form.Button().set({
       margin: 10,
       marginBottom: 5
     });
@@ -70,7 +70,7 @@ qx.Class.define("osparc.dashboard.GroupedCardContainer", {
   },
 
   members: {
-    __showAllButton: null,
+    __expandButton: null,
     __contentContainer: null,
 
     _createChildControlImpl: function(id) {
@@ -116,7 +116,7 @@ qx.Class.define("osparc.dashboard.GroupedCardContainer", {
     __createContentContainer: function() {
       let contentContainer = null;
       const expanded = this.isExpanded();
-      const showAllBtn = this.__showAllButton;
+      const showAllBtn = this.__expandButton;
       if (expanded) {
         contentContainer = new osparc.dashboard.CardContainer();
         showAllBtn.show();
@@ -172,6 +172,10 @@ qx.Class.define("osparc.dashboard.GroupedCardContainer", {
 
     getContentContainer: function() {
       return this.__contentContainer;
+    },
+
+    getExpandButton: function() {
+      return this.__expandButton;
     },
 
     // overridden
