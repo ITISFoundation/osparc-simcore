@@ -309,8 +309,11 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
           case "shared":
             groupTitle = "Not Shared";
             break;
+          case "groupedServices":
+            groupTitle = "Misc";
+            break;
         }
-        const noGroupContainer = this.__createGroupContainer("no-group", groupTitle, "transparent");
+        const noGroupContainer = this.__createGroupContainer("no-group", groupTitle, "text");
         this.__groupedContainers.add(noGroupContainer);
         this._add(this.__groupedContainers);
       } else {
@@ -530,40 +533,33 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       if (groupedServicesConfig == null) {
         return;
       }
-      console.log("groupedServices", groupedServicesConfig, resourceData);
 
-      // create containers
-      const containers = [];
       // create group containers for each category
       groupedServicesConfig["categories"].forEach(category => {
-        let groupContainer = this.__getGroupContainer(category["id"]);
-        if (groupContainer === null) {
-          groupContainer = this.__createGroupContainer(category["id"], category["title"], category["color"]);
+        if (this.__getGroupContainer(category["id"]) === null) {
+          this.__createGroupContainer(category["id"], category["title"], category["color"]);
         }
-        containers.push(groupContainer);
       });
-      // create the no-group (Misc) container
-      let noGroupContainer = this.__getGroupContainer("misc");
-      if (noGroupContainer === null) {
-        noGroupContainer = this.__createGroupContainer("misc", "Misc", "text");
-      }
-      containers.push(noGroupContainer);
 
-      // create card and add it to the right container
+      // get the right container
       let container = null;
-      const card = this.__createCard(resourceData);
       const serviceKey = resourceData["key"];
       if (serviceKey) {
         const groupInfo = groupedServicesConfig["services"].find(serviceInfo => serviceInfo["serviceKey"] === serviceKey);
         if (groupInfo) {
-          container = containers.find(container => container.getGroupId() === groupInfo["categoryId"]);
+          container = this.__getGroupContainer(groupInfo["category"]);
         }
       }
       if (container === null) {
-        container = noGroupContainer;
+        container = this.__getGroupContainer("no-group");;
       }
+
+      // create the card and add it to the container
+      const card = this.__createCard(resourceData);
       this.__addCardToContainer(card, container);
       cards.push(card);
+
+      this.__moveNoGroupToLast();
     },
 
     __resourceToCards: function(resourceData) {
