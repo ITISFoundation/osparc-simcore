@@ -325,9 +325,6 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _groupByChanged: function(groupBy) {
-      // if cards are grouped they need to be in grid mode
-      // this._resourcesContainer.setMode("grid");
-      // this.__viewModeLayout.setVisibility(groupBy ? "excluded" : "visible");
       this._resourcesContainer.setGroupBy(groupBy);
       this._reloadCards();
     },
