@@ -125,7 +125,7 @@
       "categories": [{
         "id": "featured",
         "title": "Featured",
-        "color": "product"
+        "color": "product-color"
       }],
       "services": [{
         "serviceKey": "simcore/services/dynamic/s4l-ui",

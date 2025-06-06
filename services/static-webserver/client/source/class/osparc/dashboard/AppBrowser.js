@@ -30,6 +30,11 @@ qx.Class.define("osparc.dashboard.AppBrowser", {
     this.base(arguments);
 
     this.__sortBy = osparc.service.SortServicesButtons.DefaultSorting;
+
+    const groupedServicesConfig = osparc.store.Products.getInstance().getGroupedServicesUiConfig();
+    if (groupedServicesConfig) {
+      console.log("groupedServices", groupedServicesConfig);
+    }
   },
 
   members: {
