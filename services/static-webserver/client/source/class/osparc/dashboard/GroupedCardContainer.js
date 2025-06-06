@@ -170,7 +170,8 @@ qx.Class.define("osparc.dashboard.GroupedCardContainer", {
         });
       }
       contentContainer.set({
-        padding: 5,
+        paddingTop: 5,
+        paddingBottom: 5,
         allowGrowX: false
       });
       this._addAt(contentContainer, 1, {
