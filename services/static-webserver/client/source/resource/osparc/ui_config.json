@@ -121,20 +121,31 @@
         "idToWidget": "emptyStudyBtn"
       }]
     },
-    "groupedApps": {
+    "groupedServices": {
       "categories": [{
         "id": "featured",
         "title": "Featured",
         "color": "product"
       }],
-      "apps": [
-        "simcore/services/dynamic/s4l-ui",
-        "simcore/services/dynamic/s4l-jupyter",
-        "simcore/services/dynamic/s4l-ui-framework",
-        "simcore/services/dynamic/iseg-web",
-        "simcore/services/comp/s4l-python-runner",
-        "simcore/services/comp/s4l-python-runner-gpu"
-      ]
+      "services": [{
+        "serviceKey": "simcore/services/dynamic/s4l-ui",
+        "category": "featured"
+      }, {
+        "serviceKey": "simcore/services/dynamic/s4l-jupyter",
+        "category": "featured"
+      }, {
+        "serviceKey": "simcore/services/dynamic/iseg-web",
+        "category": "featured"
+      }, {
+        "serviceKey": "simcore/services/dynamic/s4l-ui-framework",
+        "category": "featured"
+      }, {
+        "serviceKey": "simcore/services/comp/s4l-python-runner",
+        "category": "featured"
+      }, {
+        "serviceKey": "simcore/services/comp/s4l-python-runner-gpu",
+        "category": "featured"
+      }]
     }
   },
   "s4lacad": {
