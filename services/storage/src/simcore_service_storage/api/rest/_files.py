@@ -2,6 +2,8 @@ import logging
 from typing import Annotated, Final, cast
 from urllib.parse import quote
 
+from celery_library.models import TaskMetadata, TaskUUID
+from celery_library.task_manager import CeleryTaskManager
 from fastapi import APIRouter, Depends, Header, Request
 from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobNameData
 from models_library.api_schemas_storage.storage_schemas import (
@@ -34,8 +36,6 @@ from ...models import (
     StorageQueryParamsBase,
     UploadLinks,
 )
-from ...modules.celery.client import CeleryTaskClient
-from ...modules.celery.models import TaskMetadata, TaskUUID
 from ...simcore_s3_dsm import SimcoreS3DataManager
 from .._worker_tasks._files import complete_upload_file as remote_complete_upload_file
 from .dependencies.celery import get_celery_client
@@ -270,7 +270,7 @@ _UNDEFINED_PRODUCT_NAME_FOR_WORKER_TASKS: Final[str] = (
     status_code=status.HTTP_202_ACCEPTED,
 )
 async def complete_upload_file(
-    celery_client: Annotated[CeleryTaskClient, Depends(get_celery_client)],
+    celery_client: Annotated[CeleryTaskManager, Depends(get_celery_client)],
     query_params: Annotated[StorageQueryParamsBase, Depends()],
     location_id: LocationID,
     file_id: StorageFileID,
@@ -292,7 +292,7 @@ async def complete_upload_file(
         user_id=async_job_name_data.user_id,
         location_id=location_id,
         file_id=file_id,
-        body=body,
+        body=body.model_dump(),
     )
 
     route = (
@@ -326,7 +326,7 @@ async def complete_upload_file(
     response_model=Envelope[FileUploadCompleteFutureResponse],
 )
 async def is_completed_upload_file(
-    celery_client: Annotated[CeleryTaskClient, Depends(get_celery_client)],
+    celery_client: Annotated[CeleryTaskManager, Depends(get_celery_client)],
     query_params: Annotated[StorageQueryParamsBase, Depends()],
     location_id: LocationID,
     file_id: StorageFileID,
@@ -345,15 +345,18 @@ async def is_completed_upload_file(
     )
     # first check if the task is in the app
     if task_status.is_done:
-        task_result = await celery_client.get_task_result(
-            task_context=async_job_name_data.model_dump(), task_uuid=TaskUUID(future_id)
+        task_result = TypeAdapter(FileMetaData).validate_python(
+            await celery_client.get_task_result(
+                task_context=async_job_name_data.model_dump(),
+                task_uuid=TaskUUID(future_id),
+            )
         )
-        assert isinstance(task_result, FileMetaData), f"{task_result=}"  # nosec
         new_fmd = task_result
         assert new_fmd.location_id == location_id  # nosec
         assert new_fmd.file_id == file_id  # nosec
         response = FileUploadCompleteFutureResponse(
-            state=FileUploadCompleteState.OK, e_tag=new_fmd.entity_tag
+            state=FileUploadCompleteState.OK,
+            e_tag=FileMetaData.model_validate(new_fmd).entity_tag,
         )
     else:
         # the task is still running

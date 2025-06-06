@@ -17,7 +17,7 @@ from servicelib.async_utils import cancel_wait_task
 
 from . import get_event_loop
 from .errors import encore_celery_transferrable_error
-from .models import TaskID, TaskId
+from .models import TaskID
 from .utils import get_fastapi_app
 
 _logger = logging.getLogger(__name__)
@@ -40,11 +40,11 @@ class TaskAbortedError(Exception): ...
 def _async_task_wrapper(
     app: Celery,
 ) -> Callable[
-    [Callable[Concatenate[AbortableTask, TaskId, P], Coroutine[Any, Any, R]]],
+    [Callable[Concatenate[AbortableTask, P], Coroutine[Any, Any, R]]],
     Callable[Concatenate[AbortableTask, P], R],
 ]:
     def decorator(
-        coro: Callable[Concatenate[AbortableTask, TaskId, P], Coroutine[Any, Any, R]],
+        coro: Callable[Concatenate[AbortableTask, P], Coroutine[Any, Any, R]],
     ) -> Callable[Concatenate[AbortableTask, P], R]:
         @wraps(coro)
         def wrapper(task: AbortableTask, *args: P.args, **kwargs: P.kwargs) -> R:
@@ -56,7 +56,7 @@ def _async_task_wrapper(
                 try:
                     async with asyncio.TaskGroup() as tg:
                         main_task = tg.create_task(
-                            coro(task, task_id, *args, **kwargs),
+                            coro(task, *args, **kwargs),
                         )
 
                         async def abort_monitor():
@@ -145,7 +145,7 @@ def _error_handling(
 @overload
 def register_task(
     app: Celery,
-    fn: Callable[Concatenate[AbortableTask, TaskId, P], Coroutine[Any, Any, R]],
+    fn: Callable[Concatenate[AbortableTask, TaskID, P], Coroutine[Any, Any, R]],
     task_name: str | None = None,
     timeout: timedelta | None = _DEFAULT_TASK_TIMEOUT,
     max_retries: NonNegativeInt = _DEFAULT_MAX_RETRIES,
@@ -169,7 +169,7 @@ def register_task(
 def register_task(  # type: ignore[misc]
     app: Celery,
     fn: (
-        Callable[Concatenate[AbortableTask, TaskId, P], Coroutine[Any, Any, R]]
+        Callable[Concatenate[AbortableTask, TaskID, P], Coroutine[Any, Any, R]]
         | Callable[Concatenate[AbortableTask, P], R]
     ),
     task_name: str | None = None,
@@ -205,4 +205,5 @@ def register_task(  # type: ignore[misc]
         bind=True,
         base=AbortableTask,
         time_limit=None if timeout is None else timeout.total_seconds(),
+        pydantic=True,
     )(wrapped_fn)

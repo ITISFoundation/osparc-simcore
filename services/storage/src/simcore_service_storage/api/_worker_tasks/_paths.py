@@ -2,6 +2,8 @@ import logging
 from pathlib import Path
 
 from celery import Task  # type: ignore[import-untyped]
+from celery_library.models import TaskID
+from celery_library.utils import get_fastapi_app
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
@@ -10,14 +12,12 @@ from servicelib.utils import limited_gather
 
 from ...constants import MAX_CONCURRENT_S3_TASKS
 from ...dsm import get_dsm_provider
-from ...modules.celery.models import TaskId
-from ...modules.celery.utils import get_fastapi_app
 
 _logger = logging.getLogger(__name__)
 
 
 async def compute_path_size(
-    task: Task, task_id: TaskId, user_id: UserID, location_id: LocationID, path: Path
+    task: Task, task_id: TaskID, user_id: UserID, location_id: LocationID, path: Path
 ) -> ByteSize:
     assert task_id  # nosec
     with log_context(
@@ -31,7 +31,7 @@ async def compute_path_size(
 
 async def delete_paths(
     task: Task,
-    task_id: TaskId,
+    task_id: TaskID,
     user_id: UserID,
     location_id: LocationID,
     paths: set[Path],

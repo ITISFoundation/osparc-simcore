@@ -12,6 +12,7 @@ import logging
 import random
 import sys
 from collections.abc import AsyncIterator, Awaitable, Callable
+from functools import partial
 from pathlib import Path
 from typing import Any, Final, cast
 
@@ -24,6 +25,10 @@ from aws_library.s3 import SimcoreS3API
 from celery import Celery
 from celery.contrib.testing.worker import TestWorkController, start_worker
 from celery.signals import worker_init, worker_shutdown
+from celery.worker.worker import WorkController
+from celery_library.signals import on_worker_init, on_worker_shutdown
+from celery_library.task_manager import CeleryTaskManager
+from celery_library.utils import get_task_manager
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
@@ -71,12 +76,6 @@ from simcore_service_storage.core.settings import ApplicationSettings
 from simcore_service_storage.datcore_dsm import DatCoreDataManager
 from simcore_service_storage.dsm import get_dsm_provider
 from simcore_service_storage.models import FileMetaData, FileMetaDataAtDB, S3BucketName
-from simcore_service_storage.modules.celery.signals import (
-    on_worker_init,
-    on_worker_shutdown,
-)
-from simcore_service_storage.modules.celery.utils import get_celery_worker
-from simcore_service_storage.modules.celery.worker import CeleryTaskWorker
 from simcore_service_storage.modules.s3 import get_s3_client
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy import literal_column
@@ -365,7 +364,7 @@ def upload_file(
     create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
     create_file_of_size: Callable[[ByteSize, str | None], Path],
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
-    with_storage_celery_worker: CeleryTaskWorker,
+    with_storage_celery_worker: CeleryTaskManager,
 ) -> Callable[
     [ByteSize, str, SimcoreS3FileID | None], Awaitable[tuple[Path, SimcoreS3FileID]]
 ]:
@@ -480,7 +479,7 @@ async def create_empty_directory(
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
     create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
     client: httpx.AsyncClient,
-    with_storage_celery_worker: CeleryTaskWorker,
+    with_storage_celery_worker: CeleryTaskManager,
 ) -> Callable[[str, ProjectID, NodeID], Awaitable[SimcoreS3FileID]]:
     async def _directory_creator(
         dir_name: str, project_id: ProjectID, node_id: NodeID
@@ -977,10 +976,7 @@ def celery_config() -> dict[str, Any]:
 def mock_celery_app(mocker: MockerFixture, celery_config: dict[str, Any]) -> Celery:
     celery_app = Celery(**celery_config)
 
-    for module in (
-        "simcore_service_storage.modules.celery._common.create_app",
-        "simcore_service_storage.modules.celery.create_app",
-    ):
+    for module in ("celery_library.create_app",):
         mocker.patch(module, return_value=celery_app)
 
     return celery_app
@@ -1003,13 +999,22 @@ async def with_storage_celery_worker_controller(
     register_celery_tasks: Callable[[Celery], None],
 ) -> AsyncIterator[TestWorkController]:
     # Signals must be explicitily connected
-    worker_init.connect(on_worker_init)
+    monkeypatch.setenv("STORAGE_WORKER_MODE", "true")
+    app_settings = ApplicationSettings.create_from_envs()
+    app_factory = partial(create_app, app_settings)
+
+    def _on_worker_init_wrapper(sender: WorkController, **_kwargs) -> None:
+        assert app_settings.STORAGE_CELERY  # nosec
+        return partial(on_worker_init, app_factory, app_settings.STORAGE_CELERY)(
+            sender, **_kwargs
+        )
+
+    worker_init.connect(_on_worker_init_wrapper)
     worker_shutdown.connect(on_worker_shutdown)
 
     setup_worker_tasks(celery_app)
     register_celery_tasks(celery_app)
 
-    monkeypatch.setenv("STORAGE_WORKER_MODE", "true")
     with start_worker(
         celery_app,
         pool="threads",
@@ -1024,9 +1029,9 @@ async def with_storage_celery_worker_controller(
 @pytest.fixture
 def with_storage_celery_worker(
     with_storage_celery_worker_controller: TestWorkController,
-) -> CeleryTaskWorker:
+) -> CeleryTaskManager:
     assert isinstance(with_storage_celery_worker_controller.app, Celery)
-    return get_celery_worker(with_storage_celery_worker_controller.app)
+    return get_task_manager(with_storage_celery_worker_controller.app)
 
 
 @pytest.fixture
