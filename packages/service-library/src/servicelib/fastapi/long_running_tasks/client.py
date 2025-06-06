@@ -20,9 +20,8 @@ from tenacity import (
 )
 from yarl import URL
 
-from ...long_running_tasks._constants import DEFAULT_POLL_INTERVAL_S, HOUR
+from ...long_running_tasks._constants import DEFAULT_POLL_INTERVAL_S
 from ...long_running_tasks.models import (
-    LRTask,
     RequestBody,
     TaskGet,
     TaskProgress,
@@ -104,43 +103,6 @@ async def _task_result(session: httpx.AsyncClient, result_url: URL) -> Any:
 async def _abort_task(session: httpx.AsyncClient, abort_url: URL) -> None:
     response = await session.delete(f"{abort_url}")
     response.raise_for_status()
-
-
-async def long_running_task_request(
-    session: httpx.AsyncClient,
-    url: URL,
-    json: RequestBody | None = None,
-    client_timeout: int = 1 * HOUR,
-) -> AsyncGenerator[LRTask, None]:
-    """Will use the passed `httpx.AsyncClient` to call an oSparc long
-    running task `url` passing `json` as request body.
-    NOTE: this follows the usual aiohttp client syntax, and will raise the same errors
-
-    Raises:
-        [https://docs.aiohttp.org/en/stable/client_reference.html#hierarchy-of-exceptions]
-    """
-    task = None
-    try:
-        task = await _start(session, url, json)
-        last_progress = None
-        async for task_progress in _wait_for_completion(
-            session,
-            task.task_id,
-            URL(task.status_href),
-            client_timeout,
-        ):
-            last_progress = task_progress
-            yield LRTask(progress=task_progress)
-        assert last_progress  # nosec
-        yield LRTask(
-            progress=last_progress,
-            _result=_task_result(session, URL(task.result_href)),
-        )
-
-    except (TimeoutError, asyncio.CancelledError):
-        if task:
-            await _abort_task(session, URL(task.abort_href))
-        raise
 
 
 __all__: tuple[str, ...] = (
