@@ -32,7 +32,7 @@ from .exceptions import (
     ProjectNotFoundError,
 )
 from .models import ProjectDict
-from .utils import find_changed_node_keys, project_uses_available_services
+from .utils import are_project_services_available, find_changed_node_keys
 
 logger = logging.getLogger(__name__)
 
@@ -222,7 +222,7 @@ class BaseProjectDB:
                 filter_by_services is not None
                 # This checks only old projects that are not in the projects_to_products table.
                 and row[projects_to_products.c.product_name] is None
-                and not await project_uses_available_services(prj, filter_by_services)
+                and not are_project_services_available(prj, filter_by_services)
             ):
                 logger.warning(
                     "Project %s will not be listed for user %s since it has no access rights"
