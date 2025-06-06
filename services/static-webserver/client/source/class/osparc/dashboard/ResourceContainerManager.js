@@ -58,7 +58,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     },
 
     groupBy: {
-      check: [null, "tags", "shared"],
+      check: [null, "tags", "shared", "groupedServices"],
       init: null,
       nullable: true
     }

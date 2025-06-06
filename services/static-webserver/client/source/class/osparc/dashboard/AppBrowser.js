@@ -150,7 +150,7 @@ qx.Class.define("osparc.dashboard.AppBrowser", {
       });
       this.__addSortingButtons();
       if (osparc.product.Utils.groupServices()) {
-        this._resourcesContainer.__groupByChanged("groupedServices");
+        this._resourcesContainer.setGroupBy("groupedServices");
       }
       this._addViewModeButton();
 
