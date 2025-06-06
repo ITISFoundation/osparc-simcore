@@ -872,36 +872,16 @@ services:
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.entrypoints=http
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.priority=6
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.middlewares=${SWARM_STACK_NAME}_gzip@swarm, ${SWARM_STACK_NAME_NO_HYPHEN}_sslheader@swarm, ${SWARM_STACK_NAME}_webserver_retry
-        # Sticky cookie only for specific endpoints
-        - traefik.http.middlewares.${SWARM_STACK_NAME}_webserver_sticky_cookie.sticky.cookie=true
-        - traefik.http.middlewares.${SWARM_STACK_NAME}_webserver_sticky_cookie.sticky.cookie.samesite=lax
-        - traefik.http.middlewares.${SWARM_STACK_NAME}_webserver_sticky_cookie.sticky.cookie.httponly=true
-        - traefik.http.middlewares.${SWARM_STACK_NAME}_webserver_sticky_cookie.sticky.cookie.secure=true
-        # Per-endpoint routers for sticky cookie
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky_projects.rule=Path(`/v0/projects`)
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky_projects.entrypoints=http
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky_projects.service=${SWARM_STACK_NAME}_webserver
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky_projects.middlewares=${SWARM_STACK_NAME}_gzip@swarm, ${SWARM_STACK_NAME_NO_HYPHEN}_sslheader@swarm, ${SWARM_STACK_NAME}_webserver_sticky_cookie, ${SWARM_STACK_NAME}_webserver_retry
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky_projects_clone.rule=Path(`/v0/projects:clone`)
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky_projects_clone.entrypoints=http
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky_projects_clone.service=${SWARM_STACK_NAME}_webserver
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky_projects_clone.middlewares=${SWARM_STACK_NAME}_gzip@swarm, ${SWARM_STACK_NAME_NO_HYPHEN}_sslheader@swarm, ${SWARM_STACK_NAME}_webserver_sticky_cookie, ${SWARM_STACK_NAME}_webserver_retry
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky_project_node_stop.rule=PathRegexp(`^/v0/projects/[0-9a-fA-F-]+/nodes/[0-9a-fA-F-]+:stop`)
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky_project_node_stop.entrypoints=http
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky_project_node_stop.service=${SWARM_STACK_NAME}_webserver
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky_project_node_stop.middlewares=${SWARM_STACK_NAME}_gzip@swarm, ${SWARM_STACK_NAME_NO_HYPHEN}_sslheader@swarm, ${SWARM_STACK_NAME}_webserver_sticky_cookie, ${SWARM_STACK_NAME}_webserver_retry
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky_storage_size.rule=PathRegexp(`^/v0/storage/locations/[0-9]+/paths/.+:size`)
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky_storage_size.entrypoints=http
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky_storage_size.service=${SWARM_STACK_NAME}_webserver
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky_storage_size.middlewares=${SWARM_STACK_NAME}_gzip@swarm, ${SWARM_STACK_NAME_NO_HYPHEN}_sslheader@swarm, ${SWARM_STACK_NAME}_webserver_sticky_cookie, ${SWARM_STACK_NAME}_webserver_retry
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky_storage_batch_delete.rule=PathRegexp(`^/v0/storage/locations/[0-9]+/-/paths:batchDelete`)
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky_storage_batch_delete.entrypoints=http
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky_storage_batch_delete.service=${SWARM_STACK_NAME}_webserver
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky_storage_batch_delete.middlewares=${SWARM_STACK_NAME}_gzip@swarm, ${SWARM_STACK_NAME_NO_HYPHEN}_sslheader@swarm, ${SWARM_STACK_NAME}_webserver_sticky_cookie, ${SWARM_STACK_NAME}_webserver_retry
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky_storage_export_data.rule=PathRegexp(`^/v0/storage/locations/[0-9]+/export-data`)
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky_storage_export_data.entrypoints=http
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky_storage_export_data.service=${SWARM_STACK_NAME}_webserver
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky_storage_export_data.middlewares=${SWARM_STACK_NAME}_gzip@swarm, ${SWARM_STACK_NAME_NO_HYPHEN}_sslheader@swarm, ${SWARM_STACK_NAME}_webserver_sticky_cookie, ${SWARM_STACK_NAME}_webserver_retry
+        # Create a dedicated sticky service for specific endpoints
+        - traefik.http.services.${SWARM_STACK_NAME}_webserver_sticky.loadbalancer.server.port=8080
+        - traefik.http.services.${SWARM_STACK_NAME}_webserver_sticky.loadbalancer.sticky.cookie.secure=true
+        - traefik.http.services.${SWARM_STACK_NAME}_webserver_sticky.loadbalancer.sticky.cookie.httpOnly=true
+        - traefik.http.services.${SWARM_STACK_NAME}_webserver_sticky.loadbalancer.sticky.cookie.sameSite=lax
+        # Single consolidated router for all sticky endpoints
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky.rule=Path(`/v0/projects`) || Path(`/v0/projects:clone`) || PathRegexp(`^/v0/projects/[0-9a-fA-F-]+/nodes/[0-9a-fA-F-]+:stop`) || PathRegexp(`^/v0/storage/locations/[0-9]+/paths/.+:size`) || PathRegexp(`^/v0/storage/locations/[0-9]+/-/paths:batchDelete`) || PathRegexp(`^/v0/storage/locations/[0-9]+/export-data`)
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky.entrypoints=http
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky.service=${SWARM_STACK_NAME}_webserver_sticky
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky.middlewares=${SWARM_STACK_NAME}_gzip@swarm, ${SWARM_STACK_NAME_NO_HYPHEN}_sslheader@swarm, ${SWARM_STACK_NAME}_webserver_retry
     networks: &webserver_networks
       - default
       - interactive_services_subnet
