@@ -28,7 +28,7 @@ from celery.signals import worker_init, worker_shutdown
 from celery.worker.worker import WorkController
 from celery_library.signals import on_worker_init, on_worker_shutdown
 from celery_library.task_manager import CeleryTaskManager
-from celery_library.utils import get_celery_worker
+from celery_library.utils import get_task_manager
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
@@ -1031,7 +1031,7 @@ def with_storage_celery_worker(
     with_storage_celery_worker_controller: TestWorkController,
 ) -> CeleryTaskManager:
     assert isinstance(with_storage_celery_worker_controller.app, Celery)
-    return get_celery_worker(with_storage_celery_worker_controller.app)
+    return get_task_manager(with_storage_celery_worker_controller.app)
 
 
 @pytest.fixture

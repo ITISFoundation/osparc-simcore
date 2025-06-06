@@ -7,11 +7,11 @@ _WORKER_KEY = "celery_worker"
 _FASTAPI_APP_KEY = "fastapi_app"
 
 
-def set_celery_worker(celery_app: Celery, worker: CeleryTaskManager) -> None:
+def set_task_manager(celery_app: Celery, worker: CeleryTaskManager) -> None:
     celery_app.conf[_WORKER_KEY] = worker
 
 
-def get_celery_worker(celery_app: Celery) -> CeleryTaskManager:
+def get_task_manager(celery_app: Celery) -> CeleryTaskManager:
     worker = celery_app.conf[_WORKER_KEY]
     assert isinstance(worker, CeleryTaskManager)
     return worker

@@ -5,7 +5,7 @@ from typing import Any
 from aws_library.s3._models import S3ObjectKey
 from celery import Task  # type: ignore[import-untyped]
 from celery_library.models import TaskID
-from celery_library.utils import get_celery_worker, get_fastapi_app
+from celery_library.utils import get_fastapi_app, get_task_manager
 from models_library.api_schemas_storage.storage_schemas import FoldersBody
 from models_library.api_schemas_webserver.storage import PathToExport
 from models_library.progress_bar import ProgressReport
@@ -24,7 +24,7 @@ _logger = logging.getLogger(__name__)
 async def _task_progress_cb(
     task: Task, task_id: TaskID, report: ProgressReport
 ) -> None:
-    worker = get_celery_worker(task.app)
+    worker = get_task_manager(task.app)
     assert task.name  # nosec
     await worker.set_task_progress(
         task_id=task_id,
@@ -87,7 +87,7 @@ async def export_data(
 
         async def _progress_cb(report: ProgressReport) -> None:
             assert task.name  # nosec
-            await get_celery_worker(task.app).set_task_progress(task_id, report)
+            await get_task_manager(task.app).set_task_progress(task_id, report)
             _logger.debug("'%s' progress %s", task_id, report.percent_value)
 
         async with ProgressBarData(

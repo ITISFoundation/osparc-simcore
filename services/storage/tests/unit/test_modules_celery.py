@@ -26,7 +26,7 @@ from celery_library.task import (
     register_task,
 )
 from celery_library.task_manager import CeleryTaskManager
-from celery_library.utils import get_celery_worker, get_fastapi_app
+from celery_library.utils import get_fastapi_app, get_task_manager
 from common_library.errors_classes import OsparcErrorMixin
 from fastapi import FastAPI
 from models_library.progress_bar import ProgressReport
@@ -50,7 +50,7 @@ def celery_client(
 async def _fake_file_processor(
     celery_app: Celery, task_name: str, task_id: str, files: list[str]
 ) -> str:
-    worker = get_celery_worker(celery_app)
+    worker = get_task_manager(celery_app)
 
     def sleep_for(seconds: float) -> None:
         time.sleep(seconds)
