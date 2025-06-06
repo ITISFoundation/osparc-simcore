@@ -538,6 +538,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       groupedServicesConfig["categories"].forEach(category => {
         if (this.__getGroupContainer(category["id"]) === null) {
           const groupContainer = this.__createGroupContainer(category["id"], category["title"], category["color"]);
+          groupContainer.setHeaderIcon("@FontAwesome5Solid/tag/24");
           this.__groupedContainers.add(groupContainer);
         }
       });
@@ -553,6 +554,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       }
       if (container === null) {
         container = this.__getGroupContainer("no-group");
+        container.setHeaderIcon("@FontAwesome5Solid/tag/24");
       }
 
       // create the card and add it to the container
