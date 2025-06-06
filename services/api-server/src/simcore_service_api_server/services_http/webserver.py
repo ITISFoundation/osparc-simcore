@@ -41,11 +41,11 @@ from models_library.projects_nodes_io import NodeID
 from models_library.rest_pagination import Page, PageLimitInt, PageOffsetInt
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import PositiveInt
-from servicelib.aiohttp.long_running_tasks.server import TaskStatus
 from servicelib.common_headers import (
     X_SIMCORE_PARENT_NODE_ID,
     X_SIMCORE_PARENT_PROJECT_UUID,
 )
+from servicelib.long_running_tasks.models import TaskStatus
 from settings_library.tracing import TracingSettings
 from tenacity import TryAgain
 from tenacity.asyncio import AsyncRetrying

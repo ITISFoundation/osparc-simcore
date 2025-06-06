@@ -2,7 +2,7 @@ from typing import Any
 
 from aiohttp import web
 
-from ...long_running_tasks._task import TasksManager
+from ...long_running_tasks.task import TasksManager
 from ._constants import (
     APP_LONG_RUNNING_TASKS_MANAGER_KEY,
     RQT_LONG_RUNNING_TASKS_CONTEXT_KEY,

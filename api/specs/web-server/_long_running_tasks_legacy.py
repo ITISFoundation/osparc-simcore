@@ -9,7 +9,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 from models_library.generics import Envelope
 from servicelib.aiohttp.long_running_tasks._routes import _PathParam
-from servicelib.long_running_tasks._models import TaskGet, TaskStatus
+from servicelib.long_running_tasks.models import TaskGet, TaskStatus
 from simcore_service_webserver._meta import API_VTAG
 
 router = APIRouter(

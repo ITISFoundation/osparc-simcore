@@ -22,7 +22,7 @@ from models_library.projects import ProjectAtDB
 from models_library.projects_nodes_io import NodeID
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from servicelib.long_running_tasks._models import ProgressCallback
+from servicelib.long_running_tasks.models import ProgressCallback
 from simcore_service_director_v2.cli import DEFAULT_NODE_SAVE_ATTEMPTS, main
 from simcore_service_director_v2.cli._close_and_save_service import (
     ThinDV2LocalhostClient,

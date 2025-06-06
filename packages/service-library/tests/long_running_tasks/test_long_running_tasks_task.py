@@ -12,18 +12,18 @@ from typing import Any, Final
 
 import pytest
 from faker import Faker
-from servicelib.long_running_tasks._errors import (
+from servicelib.long_running_tasks.errors import (
     TaskAlreadyRunningError,
     TaskCancelledError,
     TaskNotCompletedError,
     TaskNotFoundError,
 )
-from servicelib.long_running_tasks._models import (
+from servicelib.long_running_tasks.models import (
     ProgressPercent,
     TaskProgress,
     TaskStatus,
 )
-from servicelib.long_running_tasks._task import TasksManager, start_task
+from servicelib.long_running_tasks.task import TasksManager, start_task
 from tenacity import TryAgain
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
