@@ -379,6 +379,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         groupByMenu.add(groupByFeatured);
         groupOptions.add(groupByFeatured);
         groupByFeatured.execute();
+        groupByButton.exclude();
       }
 
       const groupByShared = new qx.ui.menu.RadioButton(this.tr("Shared with"));
