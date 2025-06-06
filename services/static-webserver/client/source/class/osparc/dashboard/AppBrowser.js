@@ -30,11 +30,6 @@ qx.Class.define("osparc.dashboard.AppBrowser", {
     this.base(arguments);
 
     this.__sortBy = osparc.service.SortServicesButtons.DefaultSorting;
-
-    const groupedServicesConfig = osparc.store.Products.getInstance().getGroupedServicesUiConfig();
-    if (groupedServicesConfig) {
-      console.log("groupedServices", groupedServicesConfig);
-    }
   },
 
   members: {
@@ -150,7 +145,7 @@ qx.Class.define("osparc.dashboard.AppBrowser", {
       });
       this.__addSortingButtons();
       if (osparc.product.Utils.groupServices()) {
-        this._resourcesContainer.setGroupBy("groupedServices");
+        this._groupByChanged("groupedServices");
       }
       this._addViewModeButton();
 

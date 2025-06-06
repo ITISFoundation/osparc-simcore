@@ -526,6 +526,11 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     },
 
     __groupByGroupedServices: function(cards, resourceData) {
+      const groupedServicesConfig = osparc.store.Products.getInstance().getGroupedServicesUiConfig();
+      if (groupedServicesConfig) {
+        console.log("groupedServices", groupedServicesConfig);
+      }
+
       const tags = resourceData.tags ? osparc.store.Tags.getInstance().getTags().filter(tag => resourceData.tags.includes(tag.getTagId())) : [];
       if (tags.length === 0) {
         let noGroupContainer = this.__getGroupContainer("no-group");

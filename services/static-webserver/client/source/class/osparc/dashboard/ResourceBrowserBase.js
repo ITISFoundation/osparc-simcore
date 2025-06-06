@@ -324,7 +324,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       this._addToLayout(resourcesContainer);
     },
 
-    __groupByChanged: function(groupBy) {
+    _groupByChanged: function(groupBy) {
       // if cards are grouped they need to be in grid mode
       this._resourcesContainer.setMode("grid");
       this.__viewModeLayout.setVisibility(groupBy ? "excluded" : "visible");
@@ -356,14 +356,14 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
       const dontGroup = new qx.ui.menu.RadioButton(this.tr("None"));
       osparc.utils.Utils.setIdToWidget(dontGroup, "groupByNone");
-      dontGroup.addListener("execute", () => this.__groupByChanged(null));
+      dontGroup.addListener("execute", () => this._groupByChanged(null));
 
       groupByMenu.add(dontGroup);
       groupOptions.add(dontGroup);
 
       if (this._resourceType === "template") {
         const tagByGroup = new qx.ui.menu.RadioButton(this.tr("Tags"));
-        tagByGroup.addListener("execute", () => this.__groupByChanged("tags"));
+        tagByGroup.addListener("execute", () => this._groupByChanged("tags"));
         groupByMenu.add(tagByGroup);
         groupOptions.add(tagByGroup);
         if (
@@ -376,7 +376,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       }
 
       const groupByShared = new qx.ui.menu.RadioButton(this.tr("Shared with"));
-      groupByShared.addListener("execute", () => this.__groupByChanged("shared"));
+      groupByShared.addListener("execute", () => this._groupByChanged("shared"));
       groupByMenu.add(groupByShared);
       groupOptions.add(groupByShared);
 
