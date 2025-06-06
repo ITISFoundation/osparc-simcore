@@ -561,6 +561,10 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       cards.push(card);
 
       this.__moveNoGroupToLast();
+      this.__groupedContainersList.forEach(groupedContainer => {
+        groupedContainer.setExpanded(true);
+        groupedContainer.getExpandButton().exclude();
+      });
     },
 
     __resourceToCards: function(resourceData) {
