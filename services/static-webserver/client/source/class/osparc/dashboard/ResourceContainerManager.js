@@ -311,17 +311,18 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       }
     },
 
+    __modeChanged: function(container) {
+      const spacing = this.getMode() === "grid" ? osparc.dashboard.GridButtonBase.SPACING : osparc.dashboard.ListButtonBase.SPACING;
+      container.getLayout().set({
+        spacingX: spacing,
+        spacingY: spacing
+      });
+    },
+
     __createFlatList: function() {
       const flatList = new osparc.dashboard.CardContainer();
-      const setContainerSpacing = () => {
-        const spacing = this.getMode() === "grid" ? osparc.dashboard.GridButtonBase.SPACING : osparc.dashboard.ListButtonBase.SPACING;
-        flatList.getLayout().set({
-          spacingX: spacing,
-          spacingY: spacing
-        });
-      };
-      setContainerSpacing();
-      this.addListener("changeMode", () => setContainerSpacing());
+      this.__modeChanged(flatList);
+      this.addListener("changeMode", () => this.__modeChanged(flatList));
       [
         "changeSelection",
         "changeVisibility"
