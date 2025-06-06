@@ -90,11 +90,3 @@ async def cancel_and_delete_task(request: web.Request) -> web.Response:
     task_context = get_task_context(request)
     await tasks_manager.remove_task(path_params.task_id, with_task_context=task_context)
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
-
-
-__all__: tuple[str, ...] = (
-    "get_tasks_manager",
-    "TaskId",
-    "TaskGet",
-    "TaskStatus",
-)
