@@ -171,18 +171,6 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       return this.__nonGroupedContainer;
     },
 
-    __createGroupContainer: function(groupId, headerLabel, headerColor = "text") {
-      const groupContainer = new osparc.dashboard.GroupedCardContainer().set({
-        groupId: groupId.toString(),
-        headerLabel,
-        headerIcon: "",
-        headerColor,
-        visibility: "excluded"
-      });
-      this.__groupedContainersList.push(groupContainer);
-      return groupContainer;
-    },
-
     areMoreResourcesRequired: function(loadingResourcesBtn) {
       if (this.__nonGroupedContainer) {
         return this.__nonGroupedContainer.areMoreResourcesRequired(loadingResourcesBtn);
@@ -341,6 +329,18 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         flatList.addListener(signalName, e => this.fireDataEvent(signalName, e.getData()), this);
       });
       return flatList;
+    },
+
+    __createGroupContainer: function(groupId, headerLabel, headerColor = "text") {
+      const groupContainer = new osparc.dashboard.GroupedCardContainer().set({
+        groupId: groupId.toString(),
+        headerLabel,
+        headerIcon: "",
+        headerColor,
+        visibility: "excluded"
+      });
+      this.__groupedContainersList.push(groupContainer);
+      return groupContainer;
     },
 
     reloadCards: function(resourceType) {
