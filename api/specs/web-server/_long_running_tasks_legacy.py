@@ -9,7 +9,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 from models_library.generics import Envelope
 from servicelib.aiohttp.long_running_tasks._routes import _PathParam
-from servicelib.long_running_tasks.models import TaskGet, TaskStatus
+from servicelib.long_running_tasks.models import TaskGet, TaskResult, TaskStatus
 from simcore_service_webserver._meta import API_VTAG
 
 router = APIRouter(
@@ -54,6 +54,7 @@ def cancel_and_delete_task(
 @router.get(
     "/{task_id}/result",
     name="get_task_result",
+    response_model=Envelope[TaskResult],
     description="Retrieves the result of a task",
 )
 def get_task_result(
