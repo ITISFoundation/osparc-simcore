@@ -120,6 +120,32 @@
         "newStudyLabel": "New Pipeline",
         "idToWidget": "emptyStudyBtn"
       }]
+    },
+    "groupedServices": {
+      "categories": [{
+        "id": "featured",
+        "title": "Featured",
+        "color": "product-color"
+      }],
+      "services": [{
+        "serviceKey": "simcore/services/dynamic/s4l-ui",
+        "category": "featured"
+      }, {
+        "serviceKey": "simcore/services/dynamic/s4l-jupyter",
+        "category": "featured"
+      }, {
+        "serviceKey": "simcore/services/dynamic/iseg-web",
+        "category": "featured"
+      }, {
+        "serviceKey": "simcore/services/dynamic/s4l-ui-framework",
+        "category": "featured"
+      }, {
+        "serviceKey": "simcore/services/comp/s4l-python-runner",
+        "category": "featured"
+      }, {
+        "serviceKey": "simcore/services/comp/s4l-python-runner-gpu",
+        "category": "featured"
+      }]
     }
   },
   "s4lacad": {
@@ -145,6 +171,32 @@
         "title": "Pipeline",
         "newStudyLabel": "New Pipeline",
         "idToWidget": "emptyStudyBtn"
+      }]
+    },
+    "groupedServices": {
+      "categories": [{
+        "id": "featured",
+        "title": "Featured",
+        "color": "product-color"
+      }],
+      "services": [{
+        "serviceKey": "simcore/services/dynamic/s4l-ui",
+        "category": "featured"
+      }, {
+        "serviceKey": "simcore/services/dynamic/s4l-jupyter",
+        "category": "featured"
+      }, {
+        "serviceKey": "simcore/services/dynamic/iseg-web",
+        "category": "featured"
+      }, {
+        "serviceKey": "simcore/services/dynamic/s4l-ui-framework",
+        "category": "featured"
+      }, {
+        "serviceKey": "simcore/services/comp/s4l-python-runner",
+        "category": "featured"
+      }, {
+        "serviceKey": "simcore/services/comp/s4l-python-runner-gpu",
+        "category": "featured"
       }]
     }
   },

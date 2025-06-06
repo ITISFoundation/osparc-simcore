@@ -92,5 +92,9 @@ qx.Class.define("osparc.store.Products", {
     getNewStudiesUiConfig: function() {
       return this.__uiConfig["newStudies"];
     },
+
+    getGroupedServicesUiConfig: function() {
+      return this.__uiConfig["groupedServices"];
+    },
   }
 });
