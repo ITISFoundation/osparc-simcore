@@ -244,9 +244,9 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
 
       const permissions = osparc.data.Permissions.getInstance();
       if (permissions.canDo("dashboard.templates.read")) {
-        const templatesButton = this.self().createMenuButton("@FontAwesome5Solid/copy/16", this.tr("Tutorials..."));
-        templatesButton.addListener("execute", () => this.fireDataEvent("changeTab", "templatesTab"), this);
-        moreMenu.add(templatesButton);
+        const tutorialsButton = this.self().createMenuButton("@FontAwesome5Solid/copy/16", this.tr("Tutorials..."));
+        tutorialsButton.addListener("execute", () => this.fireDataEvent("changeTab", "tutorialsTab"), this);
+        moreMenu.add(tutorialsButton);
       }
 
       if (permissions.canDo("dashboard.services.read")) {
