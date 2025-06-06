@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from pprint import pformat
 from types import TracebackType
-from typing import cast
+from typing import Final, cast
 from uuid import uuid4
 
 from aiodocker import Docker
@@ -32,7 +32,6 @@ from ..settings import ApplicationSettings
 from ..utils.dask import TaskPublisher
 from ..utils.files import (
     check_need_unzipping,
-    log_partial_file_content,
     pull_file_from_remote,
     push_file_to_remote,
 )
@@ -49,8 +48,8 @@ from .models import LEGACY_INTEGRATION_VERSION, ImageLabels
 from .task_shared_volume import TaskSharedVolumes
 
 _logger = logging.getLogger(__name__)
-_CONTAINER_WAIT_TIME_SECS = 2
-_MAX_LOGGED_FILE_CHARS = 40
+CONTAINER_WAIT_TIME_SECS = 2
+_TASK_PROCESSING_PROGRESS_WEIGHT: Final[float] = 0.99
 
 
 @dataclass(kw_only=True, frozen=True, slots=True)
@@ -148,17 +147,11 @@ class ComputationalSidecar:
             upload_tasks = []
             for output_params in output_data.values():
                 if isinstance(output_params, FileUrl):
-                    assert (
+                    assert (  # nosec
                         output_params.file_mapping
                     ), f"{output_params.model_dump_json(indent=1)} expected resolved in TaskOutputData.from_task_output"
 
                     src_path = task_volumes.outputs_folder / output_params.file_mapping
-                    await log_partial_file_content(
-                        src_path,
-                        logger=_logger,
-                        log_level=logging.DEBUG,
-                        max_chars=_MAX_LOGGED_FILE_CHARS,
-                    )
                     upload_tasks.append(
                         push_file_to_remote(
                             src_path,
@@ -274,7 +267,7 @@ class ComputationalSidecar:
                 )
                 # wait until the container finished, either success or fail or timeout
                 while (container_data := await container.show())["State"]["Running"]:
-                    await asyncio.sleep(_CONTAINER_WAIT_TIME_SECS)
+                    await asyncio.sleep(CONTAINER_WAIT_TIME_SECS)
                 if container_data["State"]["ExitCode"] > os.EX_OK:
                     raise ServiceRuntimeError(
                         service_key=self.task_parameters.image,
