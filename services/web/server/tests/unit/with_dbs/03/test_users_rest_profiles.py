@@ -36,6 +36,8 @@ from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_service_webserver.users._preferences_service import (
     get_frontend_user_preferences_aggregation,
 )
+from sqlalchemy.exc import OperationalError as SQLAlchemyOperationalError
+from sqlalchemy.ext.asyncio import AsyncConnection
 
 
 @pytest.fixture
@@ -554,6 +556,14 @@ def mock_failing_database_connection(mocker: Mock) -> MagicMock:
     conn_execute.side_effect = OperationalError(
         "MOCK: server closed the connection unexpectedly"
     )
+
+    aysncpg_conn_execute = mocker.patch.object(AsyncConnection, "execute")
+    aysncpg_conn_execute.side_effect = SQLAlchemyOperationalError(
+        statement="MOCK statement",
+        params=(),
+        orig=OperationalError("MOCK: server closed the connection unexpectedly"),
+    )
+
     return conn_execute
 
 
