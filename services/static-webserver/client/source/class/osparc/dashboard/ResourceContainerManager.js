@@ -110,7 +110,15 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         }
       }
       return false;
-    }
+    },
+
+    updateSpacing: function(mode, container) {
+      const spacing = mode === "grid" ? osparc.dashboard.GridButtonBase.SPACING : osparc.dashboard.ListButtonBase.SPACING;
+      container.getLayout().set({
+        spacingX: spacing,
+        spacingY: spacing
+      });
+    },
   },
 
   members: {
@@ -311,18 +319,10 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       }
     },
 
-    __modeChanged: function(container) {
-      const spacing = this.getMode() === "grid" ? osparc.dashboard.GridButtonBase.SPACING : osparc.dashboard.ListButtonBase.SPACING;
-      container.getLayout().set({
-        spacingX: spacing,
-        spacingY: spacing
-      });
-    },
-
     __createFlatList: function() {
       const flatList = new osparc.dashboard.CardContainer();
-      this.__modeChanged(flatList);
-      this.addListener("changeMode", () => this.__modeChanged(flatList));
+      osparc.dashboard.ResourceContainerManager.updateSpacing(this.getMode(), flatList);
+      this.addListener("changeMode", () => osparc.dashboard.ResourceContainerManager.updateSpacing(this.getMode(), flatList));
       [
         "changeSelection",
         "changeVisibility"

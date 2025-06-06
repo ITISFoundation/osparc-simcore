@@ -126,11 +126,7 @@ qx.Class.define("osparc.dashboard.GroupedCardContainer", {
     },
 
     __modeChanged: function(container) {
-      const spacing = this.getMode() === "grid" ? osparc.dashboard.GridButtonBase.SPACING : osparc.dashboard.ListButtonBase.SPACING;
-      container.getLayout().set({
-        spacingX: spacing,
-        spacingY: spacing
-      });
+      osparc.dashboard.ResourceContainerManager.updateSpacing(this.getMode(), container);
       if (this.getMode() === "list") {
         this.set({
           expanded: true,
