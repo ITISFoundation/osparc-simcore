@@ -66,7 +66,19 @@ qx.Class.define("osparc.dashboard.GroupedCardContainer", {
       nullable: false,
       event: "changeExpanded",
       apply: "__applyExpanded"
-    }
+    },
+
+    mode: {
+      check: ["grid", "list"],
+      init: "grid",
+      nullable: false,
+      event: "changeMode"
+    },
+  },
+
+  events: {
+    "changeSelection": "qx.event.type.Data",
+    "changeVisibility": "qx.event.type.Data"
   },
 
   members: {
@@ -119,6 +131,23 @@ qx.Class.define("osparc.dashboard.GroupedCardContainer", {
       const showAllBtn = this.__expandButton;
       if (expanded) {
         contentContainer = new osparc.dashboard.CardContainer();
+
+        const setContainerSpacing = () => {
+          const spacing = this.getMode() === "grid" ? osparc.dashboard.GridButtonBase.SPACING : osparc.dashboard.ListButtonBase.SPACING;
+          contentContainer.getLayout().set({
+            spacingX: spacing,
+            spacingY: spacing
+          });
+        };
+        setContainerSpacing();
+        this.addListener("changeMode", () => setContainerSpacing());
+        [
+          "changeSelection",
+          "changeVisibility"
+        ].forEach(signalName => {
+          contentContainer.addListener(signalName, e => this.fireDataEvent(signalName, e.getData()), this);
+        });
+
         showAllBtn.show();
       } else {
         const spacing = osparc.dashboard.GridButtonBase.SPACING;

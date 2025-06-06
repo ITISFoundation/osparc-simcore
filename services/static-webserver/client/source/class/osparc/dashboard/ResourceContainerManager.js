@@ -339,6 +339,15 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         headerColor,
         visibility: "excluded"
       });
+
+      this.bind("mode", groupContainer, "mode");
+      [
+        "changeSelection",
+        "changeVisibility"
+      ].forEach(signalName => {
+        groupContainer.addListener(signalName, e => this.fireDataEvent(signalName, e.getData()), this);
+      });
+
       this.__groupedContainersList.push(groupContainer);
       return groupContainer;
     },
