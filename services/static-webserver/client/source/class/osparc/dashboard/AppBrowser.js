@@ -149,7 +149,6 @@ qx.Class.define("osparc.dashboard.AppBrowser", {
         flex: 1
       });
       this.__addSortingButtons();
-      this._addGroupByButton();
       this._addViewModeButton();
 
       this._addResourceFilter();
