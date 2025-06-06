@@ -7,16 +7,13 @@ from collections.abc import Awaitable, Callable
 from decimal import Decimal
 
 import pytest
-from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
-from models_library.api_schemas_webserver.products import CreditResultRpcGet
 from models_library.products import ProductName
-from models_library.rabbitmq_basic_types import RPCMethodName
-from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCServerError
+from servicelib.rabbitmq.rpc_interfaces.webserver.products import get_credit_amount
 from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.application_settings import ApplicationSettings
@@ -69,28 +66,26 @@ async def test_get_credit_amount(
     osparc_product_name: ProductName,
     logged_user: UserInfoDict,
 ):
-    result = await rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python("get_credit_amount"),
+    # Using the new client function for s4l
+    credit_result = await get_credit_amount(
+        rpc_client,
         dollar_amount=Decimal(900),
         product_name="s4l",
     )
-    credit_result = CreditResultRpcGet.model_validate(result)
     assert credit_result.credit_amount == 100
 
-    result = await rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python("get_credit_amount"),
+    # Using the new client function for tis
+    credit_result = await get_credit_amount(
+        rpc_client,
         dollar_amount=Decimal(900),
         product_name="tis",
     )
-    credit_result = CreditResultRpcGet.model_validate(result)
     assert credit_result.credit_amount == 180
 
+    # Testing the error case
     with pytest.raises(RPCServerError) as exc_info:
-        await rpc_client.request(
-            WEBSERVER_RPC_NAMESPACE,
-            TypeAdapter(RPCMethodName).validate_python("get_credit_amount"),
+        await get_credit_amount(
+            rpc_client,
             dollar_amount=Decimal(900),
             product_name="osparc",
         )

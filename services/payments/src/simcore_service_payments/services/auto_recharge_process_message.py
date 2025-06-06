@@ -4,17 +4,17 @@ from decimal import Decimal
 from typing import cast
 
 from fastapi import FastAPI
-from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.api_schemas_webserver.wallets import (
     GetWalletAutoRecharge,
     PaymentMethodID,
 )
 from models_library.basic_types import NonNegativeDecimal
-from models_library.payments import InvoiceDataGet
-from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.rabbitmq_messages import WalletCreditsMessage
 from models_library.wallets import WalletID
 from pydantic import TypeAdapter
+from servicelib.rabbitmq.rpc_interfaces.webserver import (
+    payments as webserver_payments_rpc,
+)
 from simcore_service_payments.db.auto_recharge_repo import AutoRechargeRepo
 from simcore_service_payments.db.payments_methods_repo import PaymentsMethodsRepo
 from simcore_service_payments.db.payments_transactions_repo import (
@@ -163,14 +163,12 @@ async def _perform_auto_recharge(
 ):
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(app)
 
-    result = await rabbitmq_rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python("get_invoice_data"),
+    invoice_data_get = await webserver_payments_rpc.get_invoice_data(
+        rabbitmq_rpc_client,
         user_id=payment_method_db.user_id,
         dollar_amount=wallet_auto_recharge.top_up_amount_in_usd,
         product_name=rabbit_message.product_name,
     )
-    invoice_data_get = TypeAdapter(InvoiceDataGet).validate_python(result)
 
     await pay_with_payment_method(
         gateway=PaymentsGatewayApi.get_from_app_state(app),

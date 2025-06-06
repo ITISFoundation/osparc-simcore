@@ -1,13 +1,12 @@
 import logging
 
-from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.api_schemas_webserver.licensed_items import LicensedItemRpcGetPage
 from models_library.api_schemas_webserver.licensed_items_checkouts import (
     LicensedItemCheckoutRpcGet,
 )
 from models_library.licenses import LicensedItemID
 from models_library.products import ProductName
-from models_library.rabbitmq_basic_types import RPCMethodName
+from models_library.rabbitmq_basic_types import RPCMethodName, RPCNamespace
 from models_library.resource_tracker_licensed_items_checkouts import (
     LicensedItemCheckoutID,
 )
@@ -23,14 +22,15 @@ _logger = logging.getLogger(__name__)
 
 @log_decorator(_logger, level=logging.DEBUG)
 async def get_licensed_items(
-    rabbitmq_rpc_client: RabbitMQRPCClient,
+    rpc_client: RabbitMQRPCClient,
+    rpc_namespace: RPCNamespace,
     *,
     product_name: str,
     offset: int = 0,
     limit: int = 20,
 ) -> LicensedItemRpcGetPage:
-    result: LicensedItemRpcGetPage = await rabbitmq_rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
+    result: LicensedItemRpcGetPage = await rpc_client.request(
+        rpc_namespace,
         TypeAdapter(RPCMethodName).validate_python("get_licensed_items"),
         product_name=product_name,
         offset=offset,
@@ -42,7 +42,8 @@ async def get_licensed_items(
 
 @log_decorator(_logger, level=logging.DEBUG)
 async def get_available_licensed_items_for_wallet(
-    rabbitmq_rpc_client: RabbitMQRPCClient,
+    rpc_client: RabbitMQRPCClient,
+    rpc_namespace: RPCNamespace,
     *,
     product_name: ProductName,
     wallet_id: WalletID,
@@ -50,8 +51,8 @@ async def get_available_licensed_items_for_wallet(
     offset: int = 0,
     limit: int = 20,
 ) -> LicensedItemRpcGetPage:
-    result: LicensedItemRpcGetPage = await rabbitmq_rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
+    result: LicensedItemRpcGetPage = await rpc_client.request(
+        rpc_namespace,
         TypeAdapter(RPCMethodName).validate_python(
             "get_available_licensed_items_for_wallet"
         ),
@@ -67,7 +68,8 @@ async def get_available_licensed_items_for_wallet(
 
 @log_decorator(_logger, level=logging.DEBUG)
 async def checkout_licensed_item_for_wallet(
-    rabbitmq_rpc_client: RabbitMQRPCClient,
+    rpc_client: RabbitMQRPCClient,
+    rpc_namespace: RPCNamespace,
     *,
     product_name: ProductName,
     user_id: UserID,
@@ -76,8 +78,8 @@ async def checkout_licensed_item_for_wallet(
     num_of_seats: int,
     service_run_id: ServiceRunID,
 ) -> LicensedItemCheckoutRpcGet:
-    result = await rabbitmq_rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
+    result = await rpc_client.request(
+        rpc_namespace,
         TypeAdapter(RPCMethodName).validate_python("checkout_licensed_item_for_wallet"),
         licensed_item_id=licensed_item_id,
         product_name=product_name,
@@ -92,14 +94,15 @@ async def checkout_licensed_item_for_wallet(
 
 @log_decorator(_logger, level=logging.DEBUG)
 async def release_licensed_item_for_wallet(
-    rabbitmq_rpc_client: RabbitMQRPCClient,
+    rpc_client: RabbitMQRPCClient,
+    rpc_namespace: RPCNamespace,
     *,
     product_name: ProductName,
     user_id: UserID,
     licensed_item_checkout_id: LicensedItemCheckoutID,
 ) -> LicensedItemCheckoutRpcGet:
-    result = await rabbitmq_rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
+    result = await rpc_client.request(
+        rpc_namespace,
         TypeAdapter(RPCMethodName).validate_python("release_licensed_item_for_wallet"),
         product_name=product_name,
         user_id=user_id,

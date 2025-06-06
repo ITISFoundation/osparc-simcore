@@ -1,13 +1,12 @@
 from decimal import Decimal
 
 from aiohttp import web
-from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.api_schemas_webserver.products import CreditResultRpcGet
 from models_library.products import ProductName
 from servicelib.rabbitmq import RPCRouter
 
 from ...constants import APP_SETTINGS_KEY
-from ...rabbitmq import get_rabbitmq_rpc_server, setup_rabbitmq
+from ...rabbitmq import create_register_rpc_routes_on_startup, setup_rabbitmq
 from .. import _service
 from .._models import CreditResult
 
@@ -27,9 +26,7 @@ async def get_credit_amount(
     return CreditResultRpcGet.model_validate(credit_result, from_attributes=True)
 
 
-async def _register_rpc_routes_on_startup(app: web.Application):
-    rpc_server = get_rabbitmq_rpc_server(app)
-    await rpc_server.register_router(router, WEBSERVER_RPC_NAMESPACE, app)
+_register_rpc_routes_on_startup = create_register_rpc_routes_on_startup(router)
 
 
 def setup_rpc(app: web.Application):

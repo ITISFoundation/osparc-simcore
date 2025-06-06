@@ -1,5 +1,4 @@
 from aiohttp import web
-from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.functions import (
     Function,
     FunctionID,
@@ -31,7 +30,7 @@ from models_library.rest_pagination import PageMetaInfoLimitOffset
 from models_library.users import UserID
 from servicelib.rabbitmq import RPCRouter
 
-from ...rabbitmq import get_rabbitmq_rpc_server
+from ...rabbitmq import create_register_rpc_routes_on_startup
 from .. import _functions_repository, _functions_service
 
 router = RPCRouter()
@@ -352,6 +351,4 @@ async def get_function_output_schema(
     )
 
 
-async def register_rpc_routes_on_startup(app: web.Application):
-    rpc_server = get_rabbitmq_rpc_server(app)
-    await rpc_server.register_router(router, WEBSERVER_RPC_NAMESPACE, app)
+register_rpc_routes_on_startup = create_register_rpc_routes_on_startup(router)

@@ -9,14 +9,11 @@ from decimal import Decimal
 
 import pytest
 from aiohttp.test_utils import TestClient
-from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
-from models_library.payments import InvoiceDataGet
-from models_library.rabbitmq_basic_types import RPCMethodName
-from pydantic import TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.rabbitmq import RabbitMQRPCClient
+from servicelib.rabbitmq.rpc_interfaces.webserver.payments import get_invoice_data
 from settings_library.rabbit import RabbitSettings
 from simcore_service_webserver.application_settings import ApplicationSettings
 from simcore_service_webserver.payments.settings import (
@@ -75,13 +72,11 @@ async def test_one_time_payment_worfklow(
 
     assert settings.PAYMENTS_FAKE_COMPLETION is False
 
-    result = await rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python("get_invoice_data"),
+    invoice_data_get = await get_invoice_data(
+        rpc_client,
         user_id=logged_user["id"],
         dollar_amount=Decimal(900),
         product_name="osparc",
     )
-    invoice_data_get = InvoiceDataGet.model_validate(result)
     assert invoice_data_get
     assert len(invoice_data_get.user_invoice_address.country) == 2

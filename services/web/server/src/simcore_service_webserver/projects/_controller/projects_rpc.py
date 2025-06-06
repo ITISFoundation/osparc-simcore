@@ -1,5 +1,4 @@
 from aiohttp import web
-from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.rest_pagination import PageLimitInt, PageOffsetInt
@@ -16,7 +15,7 @@ from servicelib.rabbitmq.rpc_interfaces.webserver.errors import (
     ProjectNotFoundRpcError,
 )
 
-from ...rabbitmq import get_rabbitmq_rpc_server
+from ...rabbitmq import create_register_rpc_routes_on_startup
 from .. import _jobs_service
 from ..exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 
@@ -111,6 +110,4 @@ async def list_projects_marked_as_jobs(
     return page
 
 
-async def register_rpc_routes_on_startup(app: web.Application):
-    rpc_server = get_rabbitmq_rpc_server(app)
-    await rpc_server.register_router(router, WEBSERVER_RPC_NAMESPACE, app)
+register_rpc_routes_on_startup = create_register_rpc_routes_on_startup(router)
