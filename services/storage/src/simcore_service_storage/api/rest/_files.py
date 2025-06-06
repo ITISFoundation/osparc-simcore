@@ -2,8 +2,8 @@ import logging
 from typing import Annotated, Final, cast
 from urllib.parse import quote
 
-from celery_library.client import CeleryTaskClient
 from celery_library.models import TaskMetadata, TaskUUID
+from celery_library.task_manager import CeleryTaskManager
 from fastapi import APIRouter, Depends, Header, Request
 from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobNameData
 from models_library.api_schemas_storage.storage_schemas import (
@@ -270,7 +270,7 @@ _UNDEFINED_PRODUCT_NAME_FOR_WORKER_TASKS: Final[str] = (
     status_code=status.HTTP_202_ACCEPTED,
 )
 async def complete_upload_file(
-    celery_client: Annotated[CeleryTaskClient, Depends(get_celery_client)],
+    celery_client: Annotated[CeleryTaskManager, Depends(get_celery_client)],
     query_params: Annotated[StorageQueryParamsBase, Depends()],
     location_id: LocationID,
     file_id: StorageFileID,
@@ -326,7 +326,7 @@ async def complete_upload_file(
     response_model=Envelope[FileUploadCompleteFutureResponse],
 )
 async def is_completed_upload_file(
-    celery_client: Annotated[CeleryTaskClient, Depends(get_celery_client)],
+    celery_client: Annotated[CeleryTaskManager, Depends(get_celery_client)],
     query_params: Annotated[StorageQueryParamsBase, Depends()],
     location_id: LocationID,
     file_id: StorageFileID,

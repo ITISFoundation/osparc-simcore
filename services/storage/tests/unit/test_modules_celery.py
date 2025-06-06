@@ -14,7 +14,6 @@ import pytest
 from celery import Celery, Task
 from celery.contrib.abortable import AbortableTask
 from celery_library import get_celery_client, get_event_loop
-from celery_library.client import CeleryTaskClient
 from celery_library.errors import TransferrableCeleryError
 from celery_library.models import (
     TaskContext,
@@ -26,8 +25,8 @@ from celery_library.task import (
     AbortableAsyncResult,
     register_task,
 )
+from celery_library.task_manager import CeleryTaskManager
 from celery_library.utils import get_celery_worker, get_fastapi_app
-from celery_library.worker import CeleryTaskWorker
 from common_library.errors_classes import OsparcErrorMixin
 from fastapi import FastAPI
 from models_library.progress_bar import ProgressReport
@@ -43,8 +42,8 @@ pytest_simcore_ops_services_selection = []
 @pytest.fixture
 def celery_client(
     initialized_app: FastAPI,
-    with_storage_celery_worker: CeleryTaskWorker,
-) -> CeleryTaskClient:
+    with_storage_celery_worker: CeleryTaskManager,
+) -> CeleryTaskManager:
     return get_celery_client(initialized_app)
 
 
@@ -110,7 +109,7 @@ def register_celery_tasks() -> Callable[[Celery], None]:
 
 
 async def test_submitting_task_calling_async_function_results_with_success_state(
-    celery_client: CeleryTaskClient,
+    celery_client: CeleryTaskManager,
 ):
     task_context = TaskContext(user_id=42)
 
@@ -140,7 +139,7 @@ async def test_submitting_task_calling_async_function_results_with_success_state
 
 
 async def test_submitting_task_with_failure_results_with_error(
-    celery_client: CeleryTaskClient,
+    celery_client: CeleryTaskManager,
 ):
     task_context = TaskContext(user_id=42)
 
@@ -166,7 +165,7 @@ async def test_submitting_task_with_failure_results_with_error(
 
 
 async def test_cancelling_a_running_task_aborts_and_deletes(
-    celery_client: CeleryTaskClient,
+    celery_client: CeleryTaskManager,
 ):
     task_context = TaskContext(user_id=42)
 
@@ -196,7 +195,7 @@ async def test_cancelling_a_running_task_aborts_and_deletes(
 
 
 async def test_listing_task_uuids_contains_submitted_task(
-    celery_client: CeleryTaskClient,
+    celery_client: CeleryTaskManager,
 ):
     task_context = TaskContext(user_id=42)
 

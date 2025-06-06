@@ -31,8 +31,8 @@ _MIN_PROGRESS_VALUE = 0.0
 _MAX_PROGRESS_VALUE = 1.0
 
 
-@dataclass
-class CeleryTaskClient:
+@dataclass(frozen=True)
+class CeleryTaskManager:
     _celery_app: Celery
     _celery_settings: CelerySettings
     _task_info_store: TaskInfoStore
@@ -155,3 +155,9 @@ class CeleryTaskClient:
             msg=f"Listing tasks: {task_context=}",
         ):
             return await self._task_info_store.list_tasks(task_context)
+
+    async def set_task_progress(self, task_id: TaskID, report: ProgressReport) -> None:
+        await self._task_info_store.set_task_progress(
+            task_id=task_id,
+            report=report,
+        )

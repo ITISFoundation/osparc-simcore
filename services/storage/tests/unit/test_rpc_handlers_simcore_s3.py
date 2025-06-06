@@ -20,7 +20,7 @@ import httpx
 import pytest
 import sqlalchemy as sa
 from celery.contrib.testing.worker import TestWorkController
-from celery_library.worker import CeleryTaskWorker
+from celery_library.task_manager import CeleryTaskManager
 from faker import Faker
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
@@ -113,7 +113,7 @@ async def test_copy_folders_from_non_existing_project(
     product_name: ProductName,
     create_project: Callable[..., Awaitable[dict[str, Any]]],
     faker: Faker,
-    with_storage_celery_worker: CeleryTaskWorker,
+    with_storage_celery_worker: CeleryTaskManager,
 ):
     src_project = await create_project()
     incorrect_src_project = deepcopy(src_project)
@@ -154,7 +154,7 @@ async def test_copy_folders_from_empty_project(
     product_name: ProductName,
     create_project: Callable[[], Awaitable[dict[str, Any]]],
     sqlalchemy_async_engine: AsyncEngine,
-    with_storage_celery_worker: CeleryTaskWorker,
+    with_storage_celery_worker: CeleryTaskManager,
 ):
     # we will copy from src to dst
     src_project = await create_project()
@@ -547,7 +547,7 @@ async def _request_start_export_data(
 
 @pytest.fixture
 def task_progress_spy(mocker: MockerFixture) -> Mock:
-    return mocker.spy(CeleryTaskWorker, "set_task_progress")
+    return mocker.spy(CeleryTaskManager, "set_task_progress")
 
 
 @pytest.mark.parametrize(

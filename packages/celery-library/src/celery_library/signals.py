@@ -16,12 +16,12 @@ from settings_library.redis import RedisDatabase
 
 from . import set_event_loop
 from .backends._redis import RedisTaskInfoStore
+from .task_manager import CeleryTaskManager
 from .utils import (
     get_fastapi_app,
     set_celery_worker,
     set_fastapi_app,
 )
-from .worker import CeleryTaskWorker
 
 _logger = logging.getLogger(__name__)
 
@@ -57,7 +57,9 @@ def on_worker_init(
             assert isinstance(sender.app, Celery)  # nosec
             set_celery_worker(
                 sender.app,
-                CeleryTaskWorker(
+                CeleryTaskManager(
+                    sender.app,
+                    celery_settings,
                     RedisTaskInfoStore(redis_client_sdk),
                 ),
             )

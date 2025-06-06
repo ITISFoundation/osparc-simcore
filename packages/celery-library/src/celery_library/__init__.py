@@ -7,8 +7,8 @@ from settings_library.celery import CelerySettings
 from settings_library.redis import RedisDatabase
 
 from .backends._redis import RedisTaskInfoStore
-from .client import CeleryTaskClient
 from .common import create_app
+from .task_manager import CeleryTaskManager
 from .types import register_celery_types
 
 _logger = logging.getLogger(__name__)
@@ -24,7 +24,7 @@ def setup_celery_client(app: FastAPI, celery_settings: CelerySettings) -> None:
             client_name=f"{app.title}.celery_tasks",
         )
 
-        app.state.celery_client = CeleryTaskClient(
+        app.state.celery_client = CeleryTaskManager(
             celery_app,
             celery_settings,
             RedisTaskInfoStore(redis_client_sdk),
@@ -35,10 +35,10 @@ def setup_celery_client(app: FastAPI, celery_settings: CelerySettings) -> None:
     app.add_event_handler("startup", on_startup)
 
 
-def get_celery_client(app: FastAPI) -> CeleryTaskClient:
+def get_celery_client(app: FastAPI) -> CeleryTaskManager:
     assert hasattr(app.state, "celery_client")  # nosec
     celery_client = app.state.celery_client
-    assert isinstance(celery_client, CeleryTaskClient)
+    assert isinstance(celery_client, CeleryTaskManager)
     return celery_client
 
 

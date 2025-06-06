@@ -11,10 +11,9 @@ from typing import Any
 import pytest
 from celery import Celery, Task
 from celery_library import get_celery_client
-from celery_library.client import TaskMetadata
-from celery_library.models import TaskID
+from celery_library.models import TaskID, TaskMetadata
 from celery_library.task import register_task
-from celery_library.worker import CeleryTaskWorker
+from celery_library.task_manager import CeleryTaskManager
 from fastapi import FastAPI
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobGet,
@@ -203,7 +202,7 @@ async def test_async_jobs_workflow(
     initialized_app: FastAPI,
     register_rpc_routes: None,
     storage_rabbitmq_rpc_client: RabbitMQRPCClient,
-    with_storage_celery_worker: CeleryTaskWorker,
+    with_storage_celery_worker: CeleryTaskManager,
     user_id: UserID,
     product_name: ProductName,
     exposed_rpc_start: str,
@@ -251,7 +250,7 @@ async def test_async_jobs_cancel(
     initialized_app: FastAPI,
     register_rpc_routes: None,
     storage_rabbitmq_rpc_client: RabbitMQRPCClient,
-    with_storage_celery_worker: CeleryTaskWorker,
+    with_storage_celery_worker: CeleryTaskManager,
     user_id: UserID,
     product_name: ProductName,
     exposed_rpc_start: str,
@@ -316,7 +315,7 @@ async def test_async_jobs_raises(
     initialized_app: FastAPI,
     register_rpc_routes: None,
     storage_rabbitmq_rpc_client: RabbitMQRPCClient,
-    with_storage_celery_worker: CeleryTaskWorker,
+    with_storage_celery_worker: CeleryTaskManager,
     user_id: UserID,
     product_name: ProductName,
     exposed_rpc_start: str,
