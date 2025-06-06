@@ -362,17 +362,23 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       groupOptions.add(dontGroup);
 
       if (this._resourceType === "template") {
-        const tagByGroup = new qx.ui.menu.RadioButton(this.tr("Tags"));
-        tagByGroup.addListener("execute", () => this._groupByChanged("tags"));
-        groupByMenu.add(tagByGroup);
-        groupOptions.add(tagByGroup);
+        const groupByTag = new qx.ui.menu.RadioButton(this.tr("Tags"));
+        groupByTag.addListener("execute", () => this._groupByChanged("tags"));
+        groupByMenu.add(groupByTag);
+        groupOptions.add(groupByTag);
         if (
           osparc.product.Utils.isProduct("s4l") ||
           osparc.product.Utils.isProduct("s4lacad") ||
           osparc.product.Utils.isProduct("s4llite")
         ) {
-          tagByGroup.execute();
+          groupByTag.execute();
         }
+      } else if (this._resourceType === "service" && osparc.product.Utils.groupServices()) {
+        const groupByFeatured = new qx.ui.menu.RadioButton(this.tr("Featured"));
+        groupByFeatured.addListener("execute", () => this._groupByChanged("groupedServices"));
+        groupByMenu.add(groupByFeatured);
+        groupOptions.add(groupByFeatured);
+        groupByFeatured.execute();
       }
 
       const groupByShared = new qx.ui.menu.RadioButton(this.tr("Shared with"));
