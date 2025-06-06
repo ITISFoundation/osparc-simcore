@@ -7,10 +7,10 @@ from pathlib import Path
 from typing import IO, Any, Final, Protocol, runtime_checkable
 
 import aiofiles
+import httpx
 from aiohttp import (
     ClientConnectionError,
     ClientError,
-    ClientPayloadError,
     ClientResponse,
     ClientResponseError,
     ClientSession,
@@ -39,6 +39,7 @@ from tqdm import tqdm
 from tqdm.contrib.logging import tqdm_logging_redirect
 from yarl import URL
 
+from ..config.http_clients import client_request_settings
 from . import exceptions
 from .constants import CHUNK_SIZE
 
@@ -148,13 +149,13 @@ class LogRedirectCB(Protocol):
 
 async def _file_chunk_writer(
     file: Path,
-    response: ClientResponse,
+    response: httpx.Response,
     pbar: tqdm,
     io_log_redirect_cb: LogRedirectCB | None,
     progress_bar: ProgressBarData,
 ):
     async with aiofiles.open(file, "wb") as file_pointer:
-        while chunk := await response.content.read(CHUNK_SIZE):
+        async for chunk in response.aiter_bytes(CHUNK_SIZE):
             await file_pointer.write(chunk)
             if io_log_redirect_cb and pbar.update(len(chunk)):
                 with log_catch(_logger, reraise=False):
@@ -172,7 +173,6 @@ _TQDM_FILE_OPTIONS: dict[str, Any] = {
 
 
 async def download_link_to_file(
-    session: ClientSession,
     url: URL,
     file_path: Path,
     *,
@@ -185,16 +185,25 @@ async def download_link_to_file(
         reraise=True,
         wait=wait_exponential(min=1, max=10),
         stop=stop_after_attempt(num_retries),
-        retry=retry_if_exception_type(ClientConnectionError),
+        retry=retry_if_exception_type(httpx.TransportError),
         before_sleep=before_sleep_log(_logger, logging.WARNING, exc_info=True),
         after=after_log(_logger, log_level=logging.ERROR),
     ):
         with attempt:
             async with AsyncExitStack() as stack:
-                response = await stack.enter_async_context(session.get(url))
-                if response.status == status.HTTP_404_NOT_FOUND:
+                client = await stack.enter_async_context(
+                    httpx.AsyncClient(
+                        timeout=httpx.Timeout(
+                            client_request_settings.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT
+                        )
+                    )
+                )
+                response = await stack.enter_async_context(
+                    client.stream("GET", f"{url}")
+                )
+                if response.status_code == status.HTTP_404_NOT_FOUND:
                     raise exceptions.InvalidDownloadLinkError(url)
-                if response.status > _VALID_HTTP_STATUS_CODES:
+                if response.status_code > _VALID_HTTP_STATUS_CODES:
                     raise exceptions.TransferError(url)
                 file_path.parent.mkdir(parents=True, exist_ok=True)
                 # SEE https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Length
@@ -231,7 +240,7 @@ async def download_link_to_file(
                         sub_progress,
                     )
                     _logger.debug("Download complete")
-                except ClientPayloadError as exc:
+                except httpx.HTTPError as exc:
                     raise exceptions.TransferError(url) from exc
 
 

@@ -1249,6 +1249,7 @@ services:
     hostname: "sto-worker-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       <<: *storage_environment
+      STORAGE_WORKER_NAME: "sto-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
       STORAGE_WORKER_MODE: "true"
       CELERY_CONCURRENCY: 100
     networks: *storage_networks
@@ -1259,6 +1260,7 @@ services:
     hostname: "sto-worker-cpu-bound-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       <<: *storage_environment
+      STORAGE_WORKER_NAME: "sto-worker-cpu-bound-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
       STORAGE_WORKER_MODE: "true"
       CELERY_CONCURRENCY: 1
       CELERY_QUEUES: "cpu_bound"
@@ -1385,10 +1387,12 @@ services:
       - "--metrics.prometheus.entryPoint=metrics"
       - "--entryPoints.http.address=:80"
       - "--entryPoints.http.forwardedHeaders.insecure"
-      - "--entryPoints.http.transport.respondingTimeouts.readTimeout=21600s" #6h, for https://github.com/traefik/traefik/issues/10805      - "--entryPoints.simcore_api.address=:10081"
+      - "--entryPoints.http.transport.respondingTimeouts.readTimeout=21600s" #6h, for https://github.com/traefik/traefik/issues/10805 large file uploads
+      - "--entryPoints.http.transport.respondingTimeouts.writeTimeout=21600s" #6h, for https://github.com/traefik/traefik/issues/10805 large file downloads
       - "--entryPoints.simcore_api.address=:10081"
       - "--entryPoints.simcore_api.forwardedHeaders.insecure"
-      - "--entryPoints.simcore_api.transport.respondingTimeouts.readTimeout=21600s" #6h, for https://github.com/traefik/traefik/issues/10805
+      - "--entryPoints.simcore_api.transport.respondingTimeouts.readTimeout=21600s" #6h, for https://github.com/traefik/traefik/issues/10805 large file uploads
+      - "--entryPoints.simcore_api.transport.respondingTimeouts.writeTimeout=21600s" #6h, for https://github.com/traefik/traefik/issues/10805 large file downloads
       - "--entryPoints.traefik_monitor.address=:8080"
       - "--entryPoints.traefik_monitor.forwardedHeaders.insecure"
       - "--providers.swarm.endpoint=unix:///var/run/docker.sock"
@@ -1401,6 +1405,14 @@ services:
       - "--tracing.addinternals"
       - "--tracing.otlp=true"
       - "--tracing.otlp.http=true"
+    healthcheck:
+      # NOTE: this healthcheck to check if traefik is up and running must be run on the ping entrypoint defined in command!
+      test: traefik healthcheck --ping --ping.entryPoint=ping --entryPoints.ping.address=:9082
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+      start_interval: 1s
     volumes:
       # So that Traefik can listen to the Docker events
       - /var/run/docker.sock:/var/run/docker.sock

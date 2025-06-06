@@ -1,12 +1,12 @@
 # pylint: disable=unused-argument
 # pylint: disable=redefined-outer-name
 
+import datetime
 from collections.abc import Callable
 from typing import Any
 from uuid import uuid4
 
 import httpx
-import pytest
 from httpx import AsyncClient
 from models_library.api_schemas_webserver.functions import (
     FunctionJobCollection,
@@ -16,7 +16,10 @@ from models_library.api_schemas_webserver.functions import (
     RegisteredProjectFunction,
     RegisteredProjectFunctionJob,
 )
-from models_library.functions_errors import FunctionIDNotFoundError
+from models_library.functions_errors import (
+    FunctionIDNotFoundError,
+    FunctionReadAccessDeniedError,
+)
 from models_library.rest_pagination import PageMetaInfoLimitOffset
 from servicelib.aiohttp import status
 from simcore_service_api_server._meta import API_VTAG
@@ -27,12 +30,11 @@ async def test_register_function(
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
     mock_function: ProjectFunction,
     auth: httpx.BasicAuth,
+    mock_registered_function: RegisteredProjectFunction,
 ) -> None:
-    registered_function = RegisteredProjectFunction(
-        **{**mock_function.model_dump(), "uid": str(uuid4())}
+    mock_handler_in_functions_rpc_interface(
+        "register_function", mock_registered_function
     )
-
-    mock_handler_in_functions_rpc_interface("register_function", registered_function)
     response = await client.post(
         f"{API_VTAG}/functions", json=mock_function.model_dump(mode="json"), auth=auth
     )
@@ -40,7 +42,7 @@ async def test_register_function(
     data = response.json()
     returned_function = RegisteredProjectFunction.model_validate(data)
     assert returned_function.uid is not None
-    assert returned_function == registered_function
+    assert returned_function == mock_registered_function
 
 
 async def test_register_function_invalid(
@@ -92,8 +94,35 @@ async def test_get_function_not_found(
         None,
         FunctionIDNotFoundError(function_id=non_existent_function_id),
     )
-    with pytest.raises(FunctionIDNotFoundError):
-        await client.get(f"{API_VTAG}/functions/{non_existent_function_id}", auth=auth)
+    response = await client.get(
+        f"{API_VTAG}/functions/{non_existent_function_id}", auth=auth
+    )
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+async def test_get_function_read_access_denied(
+    client: AsyncClient,
+    mock_handler_in_functions_rpc_interface: Callable[
+        [str, Any, Exception | None], None
+    ],
+    mock_registered_function: RegisteredProjectFunction,
+    auth: httpx.BasicAuth,
+) -> None:
+    unauthorized_user_id = "unauthorized user"
+    mock_handler_in_functions_rpc_interface(
+        "get_function",
+        None,
+        FunctionReadAccessDeniedError(
+            function_id=mock_registered_function.uid, user_id=unauthorized_user_id
+        ),
+    )
+    response = await client.get(
+        f"{API_VTAG}/functions/{mock_registered_function.uid}", auth=auth
+    )
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert response.json()["errors"][0] == (
+        f"Function {mock_registered_function.uid} read access denied for user {unauthorized_user_id}"
+    )
 
 
 async def test_list_functions(
@@ -391,6 +420,7 @@ async def test_register_function_job_collection(
             {
                 **mock_function_job_collection.model_dump(),
                 "uid": str(uuid4()),
+                "created_at": datetime.datetime.now(datetime.UTC),
             }
         )
     )
@@ -425,6 +455,7 @@ async def test_get_function_job_collection(
                 "title": "Test Collection",
                 "description": "A test function job collection",
                 "job_ids": [str(uuid4()), str(uuid4())],
+                "created_at": datetime.datetime.now(datetime.UTC),
             }
         )
     )
@@ -456,6 +487,7 @@ async def test_list_function_job_collections(
                 "title": "Test Collection",
                 "description": "A test function job collection",
                 "job_ids": [str(uuid4()), str(uuid4())],
+                "created_at": datetime.datetime.now(datetime.UTC),
             }
         )
     )

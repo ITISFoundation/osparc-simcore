@@ -60,9 +60,8 @@ qx.Class.define("osparc.study.Utils", {
                 "y": 100
               }
             };
-            // maybe check it's dynamic
             if (!("mode" in minStudyData["ui"])) {
-              minStudyData["ui"]["mode"] = "standalone";
+              minStudyData["ui"]["mode"] = metadata["type"] && metadata["type"] === "dynamic" ? "standalone" : "pipeline";
             }
             const inaccessibleServices = osparc.store.Services.getInaccessibleServices(minStudyData["workbench"])
             if (inaccessibleServices.length) {
@@ -294,7 +293,7 @@ qx.Class.define("osparc.study.Utils", {
       return parameters.length && probes.length;
     },
 
-    getCantExecuteServices: function(studyServices = []) {
+    getCantReadServices: function(studyServices = []) {
       return studyServices.filter(studyService => studyService["myAccessRights"]["execute"] === false);
     },
 
@@ -357,7 +356,7 @@ qx.Class.define("osparc.study.Utils", {
 
     __getBlockedState: function(studyData) {
       if (studyData["services"]) {
-        const cantReadServices = osparc.study.Utils.getCantExecuteServices(studyData["services"]);
+        const cantReadServices = osparc.study.Utils.getCantReadServices(studyData["services"]);
         const inaccessibleServices = osparc.store.Services.getInaccessibleServices(studyData["workbench"]);
         if (cantReadServices.length || inaccessibleServices.length) {
           return "UNKNOWN_SERVICES";

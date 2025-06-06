@@ -262,7 +262,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
       }
 
       extraInfo.push({
-        label: this.tr("KEY"),
+        label: this.tr("Key"),
         view: this.__createKey(),
         action: {
           button: osparc.utils.Utils.getCopyButton(),
@@ -273,14 +273,14 @@ qx.Class.define("osparc.info.ServiceLarge", {
 
       if (osparc.data.Permissions.getInstance().isTester() || osparc.service.Utils.canIWrite(this.getService()["accessRights"])) {
         extraInfo.push({
-          label: this.tr("INTEGRATION VERSION"),
+          label: this.tr("Integration Version"),
           view: this.__createIntegrationVersion(),
           action: null
         });
       }
 
       extraInfo.push({
-        label: this.tr("VERSION"),
+        label: this.tr("Version"),
         view: this.__createDisplayVersion(),
         action: {
           button: osparc.service.Utils.canIWrite(this.getService()["accessRights"]) ? osparc.utils.Utils.getEditButton() : null,
@@ -288,19 +288,19 @@ qx.Class.define("osparc.info.ServiceLarge", {
           ctx: this
         }
       }, {
-        label: this.tr("RELEASE DATE"),
+        label: this.tr("Released Date"),
         view: this.__createReleasedDate(),
         action: null
       }, {
-        label: this.tr("CONTACT"),
+        label: this.tr("Contact"),
         view: this.__createContact(),
         action: null
       }, {
-        label: this.tr("AUTHORS"),
+        label: this.tr("Authors"),
         view: this.__createAuthors(),
         action: null
       }, {
-        label: this.tr("ACCESS RIGHTS"),
+        label: this.tr("Access"),
         view: this.__createAccessRights(),
         action: {
           button: osparc.service.Utils.canIWrite(this.getService()["accessRights"]) ? osparc.utils.Utils.getEditButton() : null,
@@ -308,37 +308,6 @@ qx.Class.define("osparc.info.ServiceLarge", {
           ctx: this
         }
       });
-
-      if (
-        osparc.product.Utils.showClassifiers() &&
-        this.getService()["classifiers"]
-      ) {
-        extraInfo.push({
-          label: this.tr("CLASSIFIERS"),
-          view: this.__createClassifiers(),
-          action: {
-            button: osparc.service.Utils.canIWrite(this.getService()["accessRights"]) ? osparc.utils.Utils.getEditButton() : null,
-            callback: this.isOpenOptions() ? this.__openClassifiers : "openClassifiers",
-            ctx: this
-          }
-        });
-      }
-
-      if (
-        osparc.product.Utils.showQuality() &&
-        this.getService()["quality"] &&
-        osparc.metadata.Quality.isEnabled(this.getService()["quality"])
-      ) {
-        extraInfo.push({
-          label: this.tr("QUALITY"),
-          view: this.__createQuality(),
-          action: {
-            button: osparc.service.Utils.canIWrite(this.getService()["accessRights"]) ? osparc.utils.Utils.getEditButton() : null,
-            callback: this.isOpenOptions() ? this.__openQuality : "openQuality",
-            ctx: this
-          }
-        });
-      }
 
       return extraInfo;
     },
