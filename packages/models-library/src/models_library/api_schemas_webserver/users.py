@@ -41,7 +41,7 @@ from ._base import (
     OutputSchemaWithoutCamelCase,
 )
 from .groups import MyGroupsGet
-from .products import InvitationGenerate
+from .products import TrialAccountAnnotated, WelcomeCreditsAnnotated
 from .users_preferences import AggregatedPreferences
 
 #
@@ -255,9 +255,14 @@ class UsersForAdminListFilter(Filters):
 class UsersAccountListQueryParams(UsersForAdminListFilter, PageQueryParameters): ...
 
 
+class _InvitationDetails(InputSchema):
+    trial_account_days: TrialAccountAnnotated = None
+    extra_credits_in_usd: WelcomeCreditsAnnotated = None
+
+
 class UserAccountApprove(InputSchema):
     email: EmailStr
-    invitation: InvitationGenerate | None = None
+    invitation: _InvitationDetails | None = None
 
 
 class UserAccountReject(InputSchema):

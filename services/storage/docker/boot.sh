@@ -59,6 +59,7 @@ if [ "${STORAGE_WORKER_MODE}" = "true" ]; then
       worker --pool=threads \
       --loglevel="${SERVER_LOG_LEVEL}" \
       --concurrency="${CELERY_CONCURRENCY}" \
+      --hostname="${STORAGE_WORKER_NAME}" \
       --queues="${CELERY_QUEUES:-default}"
   else
     exec celery \
@@ -66,6 +67,7 @@ if [ "${STORAGE_WORKER_MODE}" = "true" ]; then
       worker --pool=threads \
       --loglevel="${SERVER_LOG_LEVEL}" \
       --concurrency="${CELERY_CONCURRENCY}" \
+      --hostname="${STORAGE_WORKER_NAME}" \
       --queues="${CELERY_QUEUES:-default}"
   fi
 else

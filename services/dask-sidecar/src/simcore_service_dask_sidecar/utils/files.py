@@ -20,7 +20,7 @@ from servicelib.logging_utils import LogLevelInt, LogMessageStr
 from settings_library.s3 import S3Settings
 from yarl import URL
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 HTTP_FILE_SYSTEM_SCHEMES: Final = ["http", "https"]
 S3_FILE_SYSTEM_SCHEMES: Final = ["s3", "s3a"]
@@ -208,7 +208,7 @@ async def pull_file_from_remote(
             await log_publishing_cb(
                 f"Uncompressing '{download_dst_path.name}'...", logging.INFO
             )
-            logger.debug(
+            _logger.debug(
                 "%s is a zip file and will be now uncompressed", download_dst_path
             )
             with repro_zipfile.ReproducibleZipFile(download_dst_path, "r") as zip_obj:
@@ -258,7 +258,7 @@ async def _push_file_to_remote(
     log_publishing_cb: LogPublishingCB,
     s3_settings: S3Settings | None,
 ) -> None:
-    logger.debug("Uploading %s to %s...", file_to_upload, dst_url)
+    _logger.debug("Uploading %s to %s...", file_to_upload, dst_url)
     assert dst_url.path  # nosec
 
     storage_kwargs: S3FsSettingsDict | dict[str, Any] = {}
@@ -306,7 +306,7 @@ async def push_file_to_remote(
                 await asyncio.get_event_loop().run_in_executor(
                     None, zfp.write, src_path, src_path.name
                 )
-            logger.debug("%s created.", archive_file_path)
+            _logger.debug("%s created.", archive_file_path)
             assert archive_file_path.exists()  # nosec
             file_to_upload = archive_file_path
             await log_publishing_cb(
@@ -319,7 +319,7 @@ async def push_file_to_remote(
         )
 
         if dst_url.scheme in HTTP_FILE_SYSTEM_SCHEMES:
-            logger.debug("destination is a http presigned link")
+            _logger.debug("destination is a http presigned link")
             await _push_file_to_http_link(file_to_upload, dst_url, log_publishing_cb)
         else:
             await _push_file_to_remote(
@@ -330,3 +330,22 @@ async def push_file_to_remote(
         f"Upload of '{src_path.name}' to '{dst_url.path.strip('/')}' complete",
         logging.INFO,
     )
+
+
+async def log_partial_file_content(
+    src_path: Path, *, logger: logging.Logger, log_level: int, max_chars: int
+) -> None:
+    if max_chars < 0:
+        msg = "max_chars must be non-negative"
+        raise ValueError(msg)
+    if max_chars == 0:
+        return
+    if not src_path.exists():
+        logger.log(log_level, "file does not exist: %s", src_path)
+        return
+    async with aiofiles.open(src_path, encoding="utf-8") as f:
+        content = await f.read(max_chars + 1)
+    if len(content) > max_chars:
+        logger.log(log_level, "file content (truncated): %s...", content[:max_chars])
+    else:
+        logger.log(log_level, "file content: %s", content)

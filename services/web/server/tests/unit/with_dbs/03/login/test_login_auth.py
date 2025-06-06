@@ -2,12 +2,15 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import asyncio
 import json
 import time
+from collections.abc import AsyncIterator, Callable
+from contextlib import AsyncExitStack
 from http import HTTPStatus
 
 import pytest
-from aiohttp.test_utils import TestClient
+from aiohttp.test_utils import TestClient, TestServer
 from cryptography import fernet
 from faker import Faker
 from pytest_simcore.helpers.assert_checks import assert_status
@@ -198,3 +201,73 @@ async def test_proxy_login(
 
         if not error:
             assert data["login"] == user["email"]
+
+
+@pytest.fixture
+async def multiple_users(
+    client: TestClient, num_users: int = 5
+) -> AsyncIterator[list[dict[str, str]]]:
+    """Fixture that creates multiple test users with an AsyncExitStack for cleanup."""
+    async with AsyncExitStack() as exit_stack:
+        users = []
+        for _ in range(num_users):
+            # Use enter_async_context to properly register each NewUser context manager
+            user_ctx = await exit_stack.enter_async_context(NewUser(app=client.app))
+            users.append(
+                {
+                    "email": user_ctx["email"],
+                    "password": user_ctx["raw_password"],
+                }
+            )
+
+        yield users
+        # AsyncExitStack will automatically clean up all users when exiting
+
+
+async def test_multiple_users_login_logout_concurrently(
+    web_server: TestServer,
+    client: TestClient,
+    multiple_users: list[dict[str, str]],
+    aiohttp_client: Callable,
+):
+    """Test multiple users can login concurrently and properly get logged out."""
+    assert client.app
+
+    # URLs
+    login_url = client.app.router["auth_login"].url_for().path
+    profile_url = client.app.router["get_my_profile"].url_for().path
+    logout_url = client.app.router["auth_logout"].url_for().path
+
+    async def user_session_flow(user_creds):
+        # Create a new client for each user to ensure isolated sessions
+        user_client = await aiohttp_client(web_server)
+
+        # Login
+        login_resp = await user_client.post(
+            login_url,
+            json={"email": user_creds["email"], "password": user_creds["password"]},
+        )
+        login_data, _ = await assert_status(login_resp, status.HTTP_200_OK)
+        assert MSG_LOGGED_IN in login_data["message"]
+
+        # Access profile (cookies are automatically sent by the client)
+        profile_resp = await user_client.get(profile_url)
+        profile_data, _ = await assert_status(profile_resp, status.HTTP_200_OK)
+        assert profile_data["login"] == user_creds["email"]
+
+        # Logout
+        logout_resp = await user_client.post(logout_url)
+        await assert_status(logout_resp, status.HTTP_200_OK)
+
+        # Try to access profile after logout
+        profile_after_logout_resp = await user_client.get(profile_url)
+        _, error = await assert_status(
+            profile_after_logout_resp, status.HTTP_401_UNAUTHORIZED
+        )
+
+        # No need to manually close the client as aiohttp_client fixture handles cleanup
+
+    await user_session_flow(multiple_users[0])
+
+    # Run all user flows concurrently
+    await asyncio.gather(*(user_session_flow(user) for user in multiple_users))
