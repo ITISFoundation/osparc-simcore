@@ -7,14 +7,12 @@ running task.
 """
 
 from ._dependencies import (
-    create_task_name_from_request,
     get_task_context,
     get_tasks_manager,
 )
 from ._server import setup, start_long_running_task
 
 __all__: tuple[str, ...] = (
-    "create_task_name_from_request",
     "get_task_context",
     "get_tasks_manager",
     "setup",

@@ -23,7 +23,7 @@ from ._constants import (
     MINUTE,
     RQT_LONG_RUNNING_TASKS_CONTEXT_KEY,
 )
-from ._dependencies import create_task_name_from_request, get_tasks_manager
+from ._dependencies import get_tasks_manager
 from ._error_handlers import base_long_running_error_handler
 
 _logger = logging.getLogger(__name__)
@@ -42,6 +42,10 @@ def no_task_context_decorator(handler: Handler):
     return _wrap
 
 
+def _create_task_name_from_request(request: web.Request) -> str:
+    return f"{request.method} {request.rel_url}"
+
+
 async def start_long_running_task(
     # NOTE: positional argument are suffixed with "_" to avoid name conflicts with "task_kwargs" keys
     request_: web.Request,
@@ -52,7 +56,7 @@ async def start_long_running_task(
     **task_kwargs: Any,
 ) -> web.Response:
     task_manager = get_tasks_manager(request_.app)
-    task_name = create_task_name_from_request(request_)
+    task_name = _create_task_name_from_request(request_)
     task_id = None
     try:
         task_id = start_task(

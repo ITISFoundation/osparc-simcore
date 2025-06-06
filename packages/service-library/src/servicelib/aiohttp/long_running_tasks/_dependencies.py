@@ -8,6 +8,8 @@ from ._constants import (
     RQT_LONG_RUNNING_TASKS_CONTEXT_KEY,
 )
 
+# NOTE: figure out how to remove these and expose them differently if possible
+
 
 def get_tasks_manager(app: web.Application) -> TasksManager:
     output: TasksManager = app[APP_LONG_RUNNING_TASKS_MANAGER_KEY]
@@ -17,7 +19,3 @@ def get_tasks_manager(app: web.Application) -> TasksManager:
 def get_task_context(request: web.Request) -> dict[str, Any]:
     output: dict[str, Any] = request[RQT_LONG_RUNNING_TASKS_CONTEXT_KEY]
     return output
-
-
-def create_task_name_from_request(request: web.Request) -> str:
-    return f"{request.method} {request.rel_url}"
