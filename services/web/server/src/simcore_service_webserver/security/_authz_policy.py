@@ -12,9 +12,11 @@ from aiohttp_security.abc import (  # type: ignore[import-untyped]
 )
 from models_library.products import ProductName
 from models_library.users import UserID
-from simcore_postgres_database.aiopg_errors import DatabaseError
+from servicelib.aiohttp.db_asyncpg_engine import get_async_engine
+from servicelib.logging_errors import create_troubleshotting_log_kwargs
+from simcore_postgres_database.aiopg_errors import DatabaseError as AiopgDatabaseError
+from sqlalchemy.exc import DatabaseError as SQLAlchemyDatabaseError
 
-from ..db.plugin import get_database_engine
 from ._authz_access_model import (
     AuthContextDict,
     OptionalContext,
@@ -27,17 +29,31 @@ from ._identity_api import IdentityStr
 
 _logger = logging.getLogger(__name__)
 
-# Keeps a cache during bursts to avoid stress on the database
 _SECOND = 1  # in seconds
-_AUTHZ_BURST_CACHE_TTL: Final = 5 * _SECOND
+_MINUTE: Final = 60 * _SECOND
+_AUTHZ_BURST_CACHE_TTL: Final = (
+    # WARNING: TLL=0 means it never expires
+    # Rationale:
+    #   a user's access to a product does not change that frequently
+    #   Keeps a cache during bursts to avoid stress on the database
+    30
+    * _MINUTE
+)
 
 
 @contextlib.contextmanager
 def _handle_exceptions_as_503():
     try:
         yield
-    except DatabaseError as err:
-        _logger.exception("Auth unavailable due to database error")
+    except (AiopgDatabaseError, SQLAlchemyDatabaseError) as err:
+        _logger.exception(
+            **create_troubleshotting_log_kwargs(
+                "Auth unavailable due to database error",
+                error=err,
+                tip="Check database connection",
+            )
+        )
+
         raise web.HTTPServiceUnavailable(text=MSG_AUTH_NOT_AVAILABLE) from err
 
 
@@ -57,7 +73,9 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
             web.HTTPServiceUnavailable: if database raises an exception
         """
         with _handle_exceptions_as_503():
-            return await get_active_user_or_none(get_database_engine(self._app), email)
+            return await get_active_user_or_none(
+                get_async_engine(self._app), email=email
+            )
 
     @cached(
         ttl=_AUTHZ_BURST_CACHE_TTL,
@@ -73,7 +91,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         """
         with _handle_exceptions_as_503():
             return await is_user_in_product_name(
-                get_database_engine(self._app), user_id, product_name
+                get_async_engine(self._app), user_id=user_id, product_name=product_name
             )
 
     @property
@@ -117,11 +135,6 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         :return: True if user has permission to execute this operation within the given context
         """
         if identity is None or permission is None:
-            _logger.debug(
-                "Invalid %s of %s. Denying access.",
-                f"{identity=}",
-                f"{permission=}",
-            )
             return False
 
         auth_info = await self._get_auth_or_none(email=identity)

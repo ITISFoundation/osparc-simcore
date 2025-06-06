@@ -1249,6 +1249,7 @@ services:
     hostname: "sto-worker-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       <<: *storage_environment
+      STORAGE_WORKER_NAME: "sto-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
       STORAGE_WORKER_MODE: "true"
       CELERY_CONCURRENCY: 100
     networks: *storage_networks
@@ -1259,6 +1260,7 @@ services:
     hostname: "sto-worker-cpu-bound-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       <<: *storage_environment
+      STORAGE_WORKER_NAME: "sto-worker-cpu-bound-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
       STORAGE_WORKER_MODE: "true"
       CELERY_CONCURRENCY: 1
       CELERY_QUEUES: "cpu_bound"
