@@ -37,7 +37,6 @@ from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _catalog_rest_client_service, _service
 from ._controller_rest_exceptions import (
-    DefaultPricingUnitForServiceNotFoundError,
     handle_plugin_requests_exceptions,
 )
 from ._controller_rest_schemas import (
@@ -50,6 +49,7 @@ from ._controller_rest_schemas import (
     ServiceTagPathParams,
     ToServiceInputsQueryParams,
 )
+from .errors import DefaultPricingUnitForServiceNotFoundError
 
 _logger = logging.getLogger(__name__)
 
