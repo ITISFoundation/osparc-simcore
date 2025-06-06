@@ -4,7 +4,7 @@ from typing import Any
 
 from aws_library.s3._models import S3ObjectKey
 from celery import Task  # type: ignore[import-untyped]
-from celery_library.models import TaskID, TaskId
+from celery_library.models import TaskID
 from celery_library.utils import get_celery_worker, get_fastapi_app
 from models_library.api_schemas_storage.storage_schemas import FoldersBody
 from models_library.api_schemas_webserver.storage import PathToExport
@@ -22,7 +22,7 @@ _logger = logging.getLogger(__name__)
 
 
 async def _task_progress_cb(
-    task: Task, task_id: TaskId, report: ProgressReport
+    task: Task, task_id: TaskID, report: ProgressReport
 ) -> None:
     worker = get_celery_worker(task.app)
     assert task.name  # nosec
@@ -33,7 +33,7 @@ async def _task_progress_cb(
 
 
 async def deep_copy_files_from_project(
-    task: Task, task_id: TaskId, user_id: UserID, body: FoldersBody
+    task: Task, task_id: TaskID, user_id: UserID, body: FoldersBody
 ) -> dict[str, Any]:
     with log_context(
         _logger,

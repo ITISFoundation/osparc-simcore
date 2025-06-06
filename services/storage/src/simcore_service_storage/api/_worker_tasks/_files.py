@@ -1,7 +1,7 @@
 import logging
 
 from celery import Task  # type: ignore[import-untyped]
-from celery_library.models import TaskId
+from celery_library.models import TaskID
 from celery_library.utils import get_fastapi_app
 from models_library.api_schemas_storage.storage_schemas import (
     FileUploadCompletionBody,
@@ -18,7 +18,7 @@ _logger = logging.getLogger(__name__)
 
 async def complete_upload_file(
     task: Task,
-    task_id: TaskId,
+    task_id: TaskID,
     user_id: UserID,
     location_id: LocationID,
     file_id: StorageFileID,
