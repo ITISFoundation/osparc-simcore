@@ -2,9 +2,9 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Request, status
 
-from ...long_running_tasks._errors import TaskNotCompletedError, TaskNotFoundError
-from ...long_running_tasks._models import TaskGet, TaskId, TaskResult, TaskStatus
-from ...long_running_tasks._task import TasksManager
+from ...long_running_tasks.errors import TaskNotCompletedError, TaskNotFoundError
+from ...long_running_tasks.models import TaskGet, TaskId, TaskResult, TaskStatus
+from ...long_running_tasks.task import TasksManager
 from ..requests_decorators import cancel_on_disconnect
 from ._dependencies import get_tasks_manager
 

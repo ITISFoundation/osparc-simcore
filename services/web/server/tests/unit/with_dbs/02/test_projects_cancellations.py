@@ -23,7 +23,7 @@ from pytest_simcore.helpers.webserver_parametrizations import (
     MockedStorageSubsystem,
     standard_role_response,
 )
-from servicelib.aiohttp.long_running_tasks.server import TaskGet
+from servicelib.long_running_tasks.models import TaskGet
 from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
     AsyncJobComposedResult,
 )

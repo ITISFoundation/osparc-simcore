@@ -9,12 +9,6 @@ from typing import Any
 
 import httpx
 from fastapi import status
-from models_library.api_schemas_long_running_tasks.base import TaskProgress
-from models_library.api_schemas_long_running_tasks.tasks import (
-    TaskGet,
-    TaskResult,
-    TaskStatus,
-)
 from tenacity import (
     AsyncRetrying,
     TryAgain,
@@ -26,18 +20,16 @@ from tenacity import (
 )
 from yarl import URL
 
-from ...long_running_tasks._constants import DEFAULT_POLL_INTERVAL_S, HOUR
-from ...long_running_tasks._models import (
-    ClientConfiguration,
-    LRTask,
-    ProgressCallback,
-    ProgressMessage,
-    ProgressPercent,
+from ...long_running_tasks._constants import DEFAULT_POLL_INTERVAL_S
+from ...long_running_tasks.models import (
     RequestBody,
+    TaskGet,
+    TaskProgress,
+    TaskStatus,
 )
-from ...long_running_tasks._task import TaskId
+from ...long_running_tasks.task import TaskId
 from ...rest_responses import unwrap_envelope_if_required
-from ._client import DEFAULT_HTTP_REQUESTS_TIMEOUT, Client, setup
+from ._client import Client, setup
 from ._context_manager import periodic_task_result
 
 _logger = logging.getLogger(__name__)
@@ -113,53 +105,8 @@ async def _abort_task(session: httpx.AsyncClient, abort_url: URL) -> None:
     response.raise_for_status()
 
 
-async def long_running_task_request(
-    session: httpx.AsyncClient,
-    url: URL,
-    json: RequestBody | None = None,
-    client_timeout: int = 1 * HOUR,
-) -> AsyncGenerator[LRTask, None]:
-    """Will use the passed `httpx.AsyncClient` to call an oSparc long
-    running task `url` passing `json` as request body.
-    NOTE: this follows the usual aiohttp client syntax, and will raise the same errors
-
-    Raises:
-        [https://docs.aiohttp.org/en/stable/client_reference.html#hierarchy-of-exceptions]
-    """
-    task = None
-    try:
-        task = await _start(session, url, json)
-        last_progress = None
-        async for task_progress in _wait_for_completion(
-            session,
-            task.task_id,
-            URL(task.status_href),
-            client_timeout,
-        ):
-            last_progress = task_progress
-            yield LRTask(progress=task_progress)
-        assert last_progress  # nosec
-        yield LRTask(
-            progress=last_progress,
-            _result=_task_result(session, URL(task.result_href)),
-        )
-
-    except (TimeoutError, asyncio.CancelledError):
-        if task:
-            await _abort_task(session, URL(task.abort_href))
-        raise
-
-
 __all__: tuple[str, ...] = (
-    "DEFAULT_HTTP_REQUESTS_TIMEOUT",
     "Client",
-    "ClientConfiguration",
-    "LRTask",
-    "ProgressCallback",
-    "ProgressMessage",
-    "ProgressPercent",
-    "TaskId",
-    "TaskResult",
     "periodic_task_result",
     "setup",
 )

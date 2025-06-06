@@ -7,7 +7,7 @@ from models_library.api_schemas_directorv2.dynamic_services_service import (
 )
 from models_library.projects_nodes_io import NodeID
 from models_library.services_enums import ServiceBootType, ServiceState
-from servicelib.fastapi.long_running_tasks.client import ProgressCallback
+from servicelib.long_running_tasks.models import ProgressCallback
 
 from .....core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,

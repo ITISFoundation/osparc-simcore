@@ -32,10 +32,7 @@ from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import BaseModel, Field
 from servicelib.aiohttp import status
-from servicelib.aiohttp.long_running_tasks.server import (
-    TaskProgress,
-    start_long_running_task,
-)
+from servicelib.aiohttp.long_running_tasks.server import start_long_running_task
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -45,6 +42,7 @@ from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_SIMCORE_USER_AGENT,
 )
+from servicelib.long_running_tasks.models import TaskProgress
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rabbitmq import RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (

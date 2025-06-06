@@ -6,9 +6,9 @@ from common_library.json_serialization import json_dumps
 from pydantic import BaseModel
 from servicelib.aiohttp import status
 
-from ...long_running_tasks._errors import TaskNotCompletedError, TaskNotFoundError
-from ...long_running_tasks._models import TaskGet, TaskId, TaskStatus
-from ...long_running_tasks._task import TrackedTask
+from ...long_running_tasks.errors import TaskNotCompletedError, TaskNotFoundError
+from ...long_running_tasks.models import TaskGet, TaskId, TaskStatus
+from ...long_running_tasks.task import TrackedTask
 from ..requests_validation import parse_request_path_parameters_as
 from ._dependencies import get_task_context, get_tasks_manager
 
@@ -90,11 +90,3 @@ async def cancel_and_delete_task(request: web.Request) -> web.Response:
     task_context = get_task_context(request)
     await tasks_manager.remove_task(path_params.task_id, with_task_context=task_context)
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
-
-
-__all__: tuple[str, ...] = (
-    "get_tasks_manager",
-    "TaskId",
-    "TaskGet",
-    "TaskStatus",
-)

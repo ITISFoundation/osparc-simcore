@@ -15,14 +15,14 @@ from models_library.api_schemas_long_running_tasks.base import (
 )
 from pydantic import PositiveFloat
 
-from ._errors import (
+from .errors import (
     TaskAlreadyRunningError,
     TaskCancelledError,
     TaskExceptionError,
     TaskNotCompletedError,
     TaskNotFoundError,
 )
-from ._models import TaskId, TaskName, TaskStatus, TrackedTask
+from .models import TaskId, TaskName, TaskStatus, TrackedTask
 
 logger = logging.getLogger(__name__)
 
@@ -262,7 +262,7 @@ class TasksManager:
                     await asyncio.wait_for(
                         _await_task(task), timeout=self._cancel_task_timeout_s
                     )
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     logger.warning(
                         "Timed out while awaiting for cancellation of '%s'", reference
                     )
