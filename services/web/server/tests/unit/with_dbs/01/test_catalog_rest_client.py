@@ -8,6 +8,8 @@ from common_library.users_enums import UserRole
 from models_library.api_schemas_catalog.service_access_rights import (
     ServiceAccessRightsGet,
 )
+from models_library.api_schemas_catalog.services import ServiceGet
+from pydantic import TypeAdapter
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.catalog._controller_rest_exceptions import (
@@ -38,9 +40,9 @@ async def test_server_responsive(
     assert client.app
     is_responsive = await is_catalog_service_responsive(app=client.app)
     if backend_status_code == status.HTTP_200_OK:
-        assert is_responsive == True
+        assert is_responsive is True
     else:
-        assert is_responsive == False
+        assert is_responsive is False
 
 
 @pytest.mark.parametrize(
@@ -56,10 +58,13 @@ async def test_get_services_for_user_in_product(
     aioresponses_mocker: AioResponsesMock,
     backend_status_code: int,
 ):
+    examples = ServiceGet.model_json_schema()["examples"]
+
     url_pattern = re.compile(r"http://catalog:8000/.*")
     aioresponses_mocker.get(
         url_pattern,
         status=backend_status_code,
+        payload=TypeAdapter(list[ServiceGet]).dump_python(examples, mode="json"),
     )
     assert client.app
     # tests it does not raise an exception
