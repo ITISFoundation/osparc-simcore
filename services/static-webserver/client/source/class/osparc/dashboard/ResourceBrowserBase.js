@@ -324,7 +324,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       this._addToLayout(resourcesContainer);
     },
 
-    __groupByChanged: function(groupBy) {
+    _groupByChanged: function(groupBy) {
       // if cards are grouped they need to be in grid mode
       this._resourcesContainer.setMode("grid");
       this.__viewModeLayout.setVisibility(groupBy ? "excluded" : "visible");
@@ -356,27 +356,34 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
       const dontGroup = new qx.ui.menu.RadioButton(this.tr("None"));
       osparc.utils.Utils.setIdToWidget(dontGroup, "groupByNone");
-      dontGroup.addListener("execute", () => this.__groupByChanged(null));
+      dontGroup.addListener("execute", () => this._groupByChanged(null));
 
       groupByMenu.add(dontGroup);
       groupOptions.add(dontGroup);
 
       if (this._resourceType === "template") {
-        const tagByGroup = new qx.ui.menu.RadioButton(this.tr("Tags"));
-        tagByGroup.addListener("execute", () => this.__groupByChanged("tags"));
-        groupByMenu.add(tagByGroup);
-        groupOptions.add(tagByGroup);
+        const groupByTag = new qx.ui.menu.RadioButton(this.tr("Tags"));
+        groupByTag.addListener("execute", () => this._groupByChanged("tags"));
+        groupByMenu.add(groupByTag);
+        groupOptions.add(groupByTag);
         if (
           osparc.product.Utils.isProduct("s4l") ||
           osparc.product.Utils.isProduct("s4lacad") ||
           osparc.product.Utils.isProduct("s4llite")
         ) {
-          tagByGroup.execute();
+          groupByTag.execute();
         }
+      } else if (this._resourceType === "service" && osparc.product.Utils.groupServices()) {
+        const groupByFeatured = new qx.ui.menu.RadioButton(this.tr("Featured"));
+        groupByFeatured.addListener("execute", () => this._groupByChanged("groupedServices"));
+        groupByMenu.add(groupByFeatured);
+        groupOptions.add(groupByFeatured);
+        groupByFeatured.execute();
+        groupByButton.exclude(); // don't let users change the grouping
       }
 
       const groupByShared = new qx.ui.menu.RadioButton(this.tr("Shared with"));
-      groupByShared.addListener("execute", () => this.__groupByChanged("shared"));
+      groupByShared.addListener("execute", () => this._groupByChanged("shared"));
       groupByMenu.add(groupByShared);
       groupOptions.add(groupByShared);
 
