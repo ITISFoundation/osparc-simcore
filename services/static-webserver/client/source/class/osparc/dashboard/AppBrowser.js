@@ -149,6 +149,9 @@ qx.Class.define("osparc.dashboard.AppBrowser", {
         flex: 1
       });
       this.__addSortingButtons();
+      if (osparc.product.Utils.groupServices()) {
+        this._resourcesContainer.__groupByChanged("groupedServices");
+      }
       this._addViewModeButton();
 
       this._addResourceFilter();

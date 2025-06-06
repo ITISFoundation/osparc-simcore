@@ -525,12 +525,42 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       }
     },
 
+    __groupByGroupedServices: function(cards, resourceData) {
+      const tags = resourceData.tags ? osparc.store.Tags.getInstance().getTags().filter(tag => resourceData.tags.includes(tag.getTagId())) : [];
+      if (tags.length === 0) {
+        let noGroupContainer = this.__getGroupContainer("no-group");
+        const card = this.__createCard(resourceData);
+        this.__addCardToContainer(card, noGroupContainer);
+        this.self().sortListByPriority(noGroupContainer.getContentContainer());
+        cards.push(card);
+      } else {
+        tags.forEach(tag => {
+          let groupContainer = this.__getGroupContainer(tag.getTagId());
+          if (groupContainer === null) {
+            groupContainer = this.__createGroupContainer(tag.getTagId(), tag.getName(), tag.getColor());
+            tag.bind("name", groupContainer, "headerLabel");
+            tag.bind("color", groupContainer, "headerColor");
+            groupContainer.setHeaderIcon("@FontAwesome5Solid/tag/24");
+            this.__groupedContainers.add(groupContainer);
+            this.__groupedContainers.getChildren().sort((a, b) => a.getHeaderLabel().localeCompare(b.getHeaderLabel()));
+            this.__moveNoGroupToLast();
+          }
+          const card = this.__createCard(resourceData);
+          this.__addCardToContainer(card, groupContainer);
+          this.self().sortListByPriority(groupContainer.getContentContainer());
+          cards.push(card);
+        });
+      }
+    },
+
     __resourceToCards: function(resourceData) {
       const cardsCreated = [];
       if (this.getGroupBy() === "tags") {
         this.__groupByTags(cardsCreated, resourceData);
       } else if (this.getGroupBy() === "shared") {
         this.__groupByShareWith(cardsCreated, resourceData);
+      } else if (this.getGroupBy() === "groupedServices") {
+        this.__groupByGroupedServices(cardsCreated, resourceData);
       } else {
         const card = this.__createCard(resourceData);
         this.__addCardToContainer(card, this.__nonGroupedContainer);
