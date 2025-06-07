@@ -201,7 +201,8 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
       const excludeDeprecated = true;
       osparc.store.Services.getServicesLatestList(excludeFrontend, excludeDeprecated)
         .then(servicesList => {
-          this.__servicesLatest = servicesList.filter(service => service !== null);
+          // first check metadata is complete
+          this.__servicesLatest = servicesList.filter(service => service !== null && service.inputs && service.outputs);
           this.__updateList();
         });
     },
@@ -210,19 +211,16 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
       osparc.filter.UIFilterController.getInstance().resetGroup("serviceCatalog");
       const filteredServices = [];
       this.__servicesLatest.forEach(service => {
-        // first check metadata is complete
-        if (service.inputs && service.outputs) {
-          if (this.__contextLeftNodeId === null && this.__contextRightNodeId === null) {
+        if (this.__contextLeftNodeId === null && this.__contextRightNodeId === null) {
+          filteredServices.push(service);
+        } else {
+          // filter out services that can't be connected
+          const needsInputs = this.__contextLeftNodeId !== null;
+          const needsOutputs = this.__contextRightNodeId !== null;
+          let connectable = needsInputs ? Boolean(Object.keys(service.inputs).length) : true;
+          connectable = connectable && (needsOutputs ? Boolean(Object.keys(service.outputs).length) : true);
+          if (connectable) {
             filteredServices.push(service);
-          } else {
-            // filter out services that can't be connected
-            const needsInputs = this.__contextLeftNodeId !== null;
-            const needsOutputs = this.__contextRightNodeId !== null;
-            let connectable = needsInputs ? Boolean(Object.keys(service.inputs).length) : true;
-            connectable = connectable && (needsOutputs ? Boolean(Object.keys(service.outputs).length) : true);
-            if (connectable) {
-              filteredServices.push(service);
-            }
           }
         }
       });
