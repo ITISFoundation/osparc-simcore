@@ -2,7 +2,7 @@
 
 import logging
 import urllib.parse
-from collections.abc import Callable, Iterator
+from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import Any, Final
 
@@ -30,19 +30,10 @@ from simcore_service_webserver.catalog.errors import (
 from yarl import URL
 
 from .._meta import api_version_prefix
+from ._models import ServiceKeyVersionDict
 from .settings import CatalogSettings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
-
-# Cache settings
-_SECOND = 1  # in seconds
-_MINUTE = 60 * _SECOND
-_CACHE_TTL: Final = 1 * _MINUTE
-
-
-def _create_service_cache_key(_f: Callable[..., Any], *_args, **kw):
-    assert len(_args) == 1, f"Expected only app, got {_args}"  # nosec
-    return f"get_service_{kw['user_id']}_{kw['service_key']}_{kw['service_version']}_{kw['product_name']}"
 
 
 @contextmanager
@@ -96,10 +87,27 @@ def to_backend_service(rel_url: URL, origin: URL, version_prefix: str) -> URL:
     return origin.with_path(new_path).with_query(rel_url.query)
 
 
+# Cache settings for services rest API
+_SECOND = 1  # in seconds
+_MINUTE = 60 * _SECOND
+_CACHE_TTL: Final = 1 * _MINUTE
+
+
+@cached(
+    ttl=_CACHE_TTL,
+    key_builder=lambda _f, *_args, **kw: f"get_services_for_user_in_product_{kw['user_id']}_{kw['product_name']}",
+    cache=Cache.MEMORY,
+)
 async def get_services_for_user_in_product(
-    app: web.Application, user_id: UserID, product_name: str, *, only_key_versions: bool
-) -> list[dict]:
+    app: web.Application, *, user_id: UserID, product_name: str
+) -> list[ServiceKeyVersionDict]:
+    """
+    DEPRECATED: see instead RPC interface.
+    SEE https://github.com/ITISFoundation/osparc-simcore/issues/7838
+    """
     settings: CatalogSettings = get_plugin_settings(app)
+    only_key_versions = True
+
     url = (URL(settings.api_base_url) / "services").with_query(
         {"user_id": user_id, "details": f"{not only_key_versions}"}
     )
@@ -115,13 +123,18 @@ async def get_services_for_user_in_product(
                     user_id,
                 )
                 return []
-            body: list[dict] = await response.json()
-            return body
+            services: list[dict] = await response.json()
+
+            # This reduces the size cached in the memory
+            return [
+                ServiceKeyVersionDict(key=service["key"], version=service["version"])
+                for service in services
+            ]
 
 
 @cached(
     ttl=_CACHE_TTL,
-    key_builder=_create_service_cache_key,
+    key_builder=lambda _f, *_args, **kw: f"get_service_{kw['user_id']}_{kw['service_key']}_{kw['service_version']}_{kw['product_name']}",
     cache=Cache.MEMORY,
     # SEE https://github.com/ITISFoundation/osparc-simcore/pull/7802
 )
@@ -133,6 +146,10 @@ async def get_service(
     service_version: ServiceVersion,
     product_name: ProductName,
 ) -> dict[str, Any]:
+    """
+    DEPRECATED: see instead RPC interface.
+    SEE https://github.com/ITISFoundation/osparc-simcore/issues/7838
+    """
     settings: CatalogSettings = get_plugin_settings(app)
     url = URL(
         f"{settings.api_base_url}/services/{urllib.parse.quote_plus(service_key)}/{service_version}",
@@ -144,8 +161,8 @@ async def get_service(
             url, headers={X_PRODUCT_NAME_HEADER: product_name}
         ) as response:
             response.raise_for_status()
-            body: dict[str, Any] = await response.json()
-            return body
+            service: dict[str, Any] = await response.json()
+            return service
 
 
 async def get_service_resources(

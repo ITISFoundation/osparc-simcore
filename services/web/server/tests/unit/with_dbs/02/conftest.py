@@ -324,7 +324,7 @@ def mock_catalog_service_api_responses(client, aioresponses_mocker):
 
     aioresponses_mocker.get(
         url_pattern,
-        payload={"data": {}},
+        payload={},
         repeat=True,
     )
     aioresponses_mocker.post(
