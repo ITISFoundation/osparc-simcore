@@ -212,7 +212,7 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
       this.__servicesLatest.forEach(service => {
         if (this.__contextLeftNodeId === null && this.__contextRightNodeId === null) {
           filteredServices.push(service);
-        } else {
+        } else if (service.inputs && service.outputs) {
           // filter out services that can't be connected
           const needsInputs = this.__contextLeftNodeId !== null;
           const needsOutputs = this.__contextRightNodeId !== null;
