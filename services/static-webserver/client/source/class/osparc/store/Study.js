@@ -20,6 +20,7 @@ qx.Class.define("osparc.store.Study", {
 
   statics: {
     __nodeResources: null,
+    __nodePricingUnit: null,
 
     patchStudyData: function(studyData, fieldKey, value) {
       if (osparc.data.model.Study.OwnPatch.includes(fieldKey)) {
@@ -200,6 +201,19 @@ qx.Class.define("osparc.store.Study", {
     },
 
     getSelectedPricingUnit: function(studyId, nodeId) {
+      // init nodePricingUnit if it is null
+      if (this.__nodePricingUnit === null) {
+        this.__nodePricingUnit = {};
+      }
+
+      // check if the pricing unit for this node is already fetched
+      if (
+        studyId in this.__nodePricingUnit &&
+        nodeId in this.__nodePricingUnit[studyId]
+      ) {
+        return Promise.resolve(this.__nodePricingUnit[studyId][nodeId]);
+      }
+
       const params = {
         url: {
           studyId,
