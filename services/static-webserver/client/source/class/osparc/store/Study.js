@@ -147,13 +147,38 @@ qx.Class.define("osparc.store.Study", {
     },
 
     getNodeResources: function(studyId, nodeId) {
+      // init nodeResources if it is null
+      if (this.__nodeResources === null) {
+        this.__nodeResources = {};
+      }
+
+      // check if the resources for this node are already fetched
+      if (
+        studyId in this.__nodeResources &&
+        nodeId in this.__nodeResources[studyId]
+      ) {
+        return Promise.resolve(this.__nodeResources[studyId][nodeId]);
+      }
+
       const params = {
         url: {
           studyId,
           nodeId,
         }
       };
-      return osparc.data.Resources.get("nodesInStudyResources", params);
+      return osparc.data.Resources.get("nodesInStudyResources", params)
+        .then(resources => {
+          // store the fetched resources in the cache
+          if (!(studyId in this.__nodeResources)) {
+            this.__nodeResources[studyId] = {};
+          }
+          this.__nodeResources[studyId][nodeId] = resources;
+          return resources;
+        })
+        .catch(err => {
+          console.error("Failed to fetch node resources:", err);
+          throw err;
+        });
     },
 
     updateNodeResources: function(studyId, nodeId, updatedResources) {
@@ -164,7 +189,14 @@ qx.Class.define("osparc.store.Study", {
         },
         data: updatedResources
       };
-      return osparc.data.Resources.fetch("nodesInStudyResources", "put", params);
+      return osparc.data.Resources.fetch("nodesInStudyResources", "put", params)
+        .then(() => {
+          // update the cache
+          if (!(studyId in this.__nodeResources)) {
+            this.__nodeResources[studyId] = {};
+          }
+          this.__nodeResources[studyId][nodeId] = updatedResources;
+        });
     },
   }
 });
