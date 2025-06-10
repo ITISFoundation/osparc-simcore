@@ -68,5 +68,4 @@ def map_to_scicrunch_error(rrid: str, error_code: int, message: str) -> Scicrunc
             reason="scicrunch.org cannot perform our requests"
         )
 
-    _logger.error("%s: %s", custom_error, message)
     return custom_error
