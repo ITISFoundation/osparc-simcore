@@ -19,7 +19,7 @@ from ...security.decorators import permission_required
 from ...utils_aiohttp import envelope_json_response
 from .. import _projects_service, _wallets_service
 from ._rest_exceptions import handle_plugin_requests_exceptions
-from ._rest_schemas import ProjectPathParams, RequestContext
+from ._rest_schemas import AuthenticatedRequestContext, ProjectPathParams
 
 _logger = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ routes = web.RouteTableDef()
 @permission_required("project.wallet.*")
 @handle_plugin_requests_exceptions
 async def get_project_wallet(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     # ensure the project exists
@@ -63,7 +63,7 @@ class _ProjectWalletPathParams(BaseModel):
 @permission_required("project.wallet.*")
 @handle_plugin_requests_exceptions
 async def connect_wallet_to_project(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_ProjectWalletPathParams, request)
 
     # ensure the project exists
@@ -98,7 +98,7 @@ class _PayProjectDebtBody(BaseModel):
 @permission_required("project.wallet.*")
 @handle_plugin_requests_exceptions
 async def pay_project_debt(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_ProjectWalletPathParams, request)
     body_params = await parse_request_body_as(_PayProjectDebtBody, request)
 
