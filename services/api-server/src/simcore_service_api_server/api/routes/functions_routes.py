@@ -25,7 +25,7 @@ from models_library.functions import FunctionUserAccessRights
 from models_library.functions_errors import (
     FunctionExecuteAccessDeniedError,
     FunctionInputsValidationError,
-    FunctionReadAccessDeniedError,
+    FunctionsExecuteAbilityDeniedError,
     UnsupportedFunctionClassError,
 )
 from models_library.products import ProductName
@@ -374,16 +374,23 @@ async def run_function(  # noqa: PLR0913
     job_service: Annotated[JobService, Depends(get_job_service)],
 ) -> RegisteredFunctionJob:
 
+    # Make sure the user is allowed to execute any function
+    # (read/write ability is checked in the other endpoint called in this method)
+    user_abilities = await wb_api_rpc.get_functions_user_abilities(
+        user_id=user_id, product_name=product_name
+    )
+    if not user_abilities.execute_functions:
+        raise FunctionsExecuteAbilityDeniedError(
+            user_id=user_id,
+            function_id=function_id,
+        )
+    # Make sure the user is allowed to execute this particular function
+    # (read/write ability is checked in the other endpoint called in this method)
     user_permissions: FunctionUserAccessRights = (
         await wb_api_rpc.get_function_user_permissions(
             function_id=function_id, user_id=user_id, product_name=product_name
         )
     )
-    if not user_permissions.read:
-        raise FunctionReadAccessDeniedError(
-            user_id=user_id,
-            function_id=function_id,
-        )
     if not user_permissions.execute:
         raise FunctionExecuteAccessDeniedError(
             user_id=user_id,

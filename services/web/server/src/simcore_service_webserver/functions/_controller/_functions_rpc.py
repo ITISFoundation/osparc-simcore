@@ -11,6 +11,7 @@ from models_library.functions import (
     FunctionJobCollectionsListFilters,
     FunctionJobID,
     FunctionOutputSchema,
+    FunctionUserAbilities,
     RegisteredFunction,
     RegisteredFunctionJob,
     RegisteredFunctionJobCollection,
@@ -353,7 +354,6 @@ async def get_function_output_schema(
     )
 
 
-@router.expose(reraise_if_error_type=(FunctionIDNotFoundError,))
 async def get_function_user_permissions(
     app: web.Application,
     *,
@@ -369,6 +369,23 @@ async def get_function_user_permissions(
         user_id=user_id,
         product_name=product_name,
         function_id=function_id,
+    )
+
+
+@router.expose(reraise_if_error_type=())
+async def get_functions_user_abilities(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+) -> FunctionUserAbilities:
+    """
+    Returns a dictionary with the user's abilities for all function related objects.
+    """
+    return await _functions_service.get_functions_user_abilities(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
     )
 
 

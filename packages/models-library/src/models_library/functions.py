@@ -301,6 +301,25 @@ class FunctionAccessRightsDB(BaseModel):
     )
 
 
+class FunctionUserAbilities(BaseModel):
+    user_id: UserID
+    read_functions: bool = False
+    write_functions: bool = False
+    execute_functions: bool = False
+    read_function_jobs: bool = False
+    write_function_jobs: bool = False
+    execute_function_jobs: bool = False
+    read_function_job_collections: bool = False
+    write_function_job_collections: bool = False
+    execute_function_job_collections: bool = False
+
+    model_config = ConfigDict(
+        alias_generator=snake_to_camel,
+        populate_by_name=True,
+        extra="forbid",
+    )
+
+
 FunctionJobAccessRights: TypeAlias = FunctionAccessRights
 FunctionJobAccessRightsDB: TypeAlias = FunctionAccessRightsDB
 FunctionJobUserAccessRights: TypeAlias = FunctionUserAccessRights
@@ -310,3 +329,15 @@ FunctionJobCollectionAccessRights: TypeAlias = FunctionAccessRights
 FunctionJobCollectionAccessRightsDB: TypeAlias = FunctionAccessRightsDB
 FunctionJobCollectionUserAccessRights: TypeAlias = FunctionUserAccessRights
 FunctionJobCollectionGroupAccessRights: TypeAlias = FunctionGroupAccessRights
+
+
+class FunctionsAbility(str, Enum):
+    READ_FUNCTIONS = "read_functions"
+    WRITE_FUNCTIONS = "write_functions"
+    EXECUTE_FUNCTIONS = "execute_functions"
+    READ_FUNCTION_JOBS = "read_function_jobs"
+    WRITE_FUNCTION_JOBS = "write_function_jobs"
+    EXECUTE_FUNCTION_JOBS = "execute_function_jobs"
+    READ_FUNCTION_JOB_COLLECTIONS = "read_function_job_collections"
+    WRITE_FUNCTION_JOB_COLLECTIONS = "write_function_job_collections"
+    EXECUTE_FUNCTION_JOB_COLLECTIONS = "execute_function_job_collections"

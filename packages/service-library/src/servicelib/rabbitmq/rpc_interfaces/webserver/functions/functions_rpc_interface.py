@@ -16,7 +16,7 @@ from models_library.api_schemas_webserver.functions import (
     RegisteredFunctionJob,
     RegisteredFunctionJobCollection,
 )
-from models_library.functions import FunctionUserAccessRights
+from models_library.functions import FunctionUserAbilities, FunctionUserAccessRights
 from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.rest_pagination import PageMetaInfoLimitOffset
@@ -407,3 +407,19 @@ async def get_function_user_permissions(
         product_name=product_name,
     )
     return TypeAdapter(FunctionUserAccessRights).validate_python(result)
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+async def get_functions_user_abilities(
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+) -> FunctionUserAbilities:
+    result = await rabbitmq_rpc_client.request(
+        WEBSERVER_RPC_NAMESPACE,
+        TypeAdapter(RPCMethodName).validate_python("get_functions_user_abilities"),
+        user_id=user_id,
+        product_name=product_name,
+    )
+    return TypeAdapter(FunctionUserAbilities).validate_python(result)

@@ -99,3 +99,62 @@ class FunctionJobCollectionExecuteAccessDeniedError(FunctionBaseError):
         "Function job collection {function_job_collection_id} execute access denied for user {user_id}"
     )
     status_code: int = 403  # Forbidden
+
+
+class FunctionsReadAbilityDeniedError(FunctionBaseError):
+    msg_template: str = "User {user_id} does not have the permission to read functions"
+    status_code: int = 403  # Forbidden
+
+
+class FunctionsWriteAbilityDeniedError(FunctionBaseError):
+    msg_template: str = "User {user_id} does not have the permission to write functions"
+    status_code: int = 403  # Forbidden
+
+
+class FunctionsExecuteAbilityDeniedError(FunctionBaseError):
+    msg_template: str = (
+        "User {user_id} does not have the permission to execute functions"
+    )
+    status_code: int = 403  # Forbidden
+
+
+class FunctionJobsReadAbilityDeniedError(FunctionBaseError):
+    msg_template: str = (
+        "User {user_id} does not have the permission to read function jobs"
+    )
+    status_code: int = 403  # Forbidden
+
+
+class FunctionJobsWriteAbilityDeniedError(FunctionBaseError):
+    msg_template: str = (
+        "User {user_id} does not have the permission to write function jobs"
+    )
+    status_code: int = 403  # Forbidden
+
+
+class FunctionJobsExecuteAbilityDeniedError(FunctionBaseError):
+    msg_template: str = (
+        "User {user_id} does not have the permission to execute function jobs"
+    )
+    status_code: int = 403  # Forbidden
+
+
+class FunctionJobCollectionsReadAbilityDeniedError(FunctionBaseError):
+    msg_template: str = (
+        "User {user_id} does not have the permission to read function job collections"
+    )
+    status_code: int = 403  # Forbidden
+
+
+class FunctionJobCollectionsWriteAbilityDeniedError(FunctionBaseError):
+    msg_template: str = (
+        "User {user_id} does not have the permission to write function job collections"
+    )
+    status_code: int = 403  # Forbidden
+
+
+class FunctionJobCollectionsExecuteAbilityDeniedError(FunctionBaseError):
+    msg_template: str = (
+        "User {user_id} does not have the permission to execute function job collections"
+    )
+    status_code: int = 403  # Forbidden

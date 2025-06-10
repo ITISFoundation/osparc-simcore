@@ -19,6 +19,8 @@ from models_library.functions import (
     FunctionJobID,
     FunctionOutputs,
     FunctionOutputSchema,
+    FunctionsAbility,
+    FunctionUserAbilities,
     RegisteredFunctionDB,
     RegisteredFunctionJobCollectionDB,
     RegisteredFunctionJobDB,
@@ -29,12 +31,21 @@ from models_library.functions_errors import (
     FunctionJobCollectionExecuteAccessDeniedError,
     FunctionJobCollectionIDNotFoundError,
     FunctionJobCollectionReadAccessDeniedError,
+    FunctionJobCollectionsExecuteAbilityDeniedError,
+    FunctionJobCollectionsReadAbilityDeniedError,
+    FunctionJobCollectionsWriteAbilityDeniedError,
     FunctionJobCollectionWriteAccessDeniedError,
     FunctionJobExecuteAccessDeniedError,
     FunctionJobIDNotFoundError,
     FunctionJobReadAccessDeniedError,
+    FunctionJobsExecuteAbilityDeniedError,
+    FunctionJobsReadAbilityDeniedError,
+    FunctionJobsWriteAbilityDeniedError,
     FunctionJobWriteAccessDeniedError,
     FunctionReadAccessDeniedError,
+    FunctionsExecuteAbilityDeniedError,
+    FunctionsReadAbilityDeniedError,
+    FunctionsWriteAbilityDeniedError,
     FunctionWriteAccessDeniedError,
 )
 from models_library.groups import GroupID
@@ -42,6 +53,9 @@ from models_library.products import ProductName
 from models_library.rest_pagination import PageMetaInfoLimitOffset
 from models_library.users import UserID
 from pydantic import TypeAdapter
+from simcore_postgres_database.models.funcapi_function_api_group_abilities import (
+    function_api_group_abilities_table,
+)
 from simcore_postgres_database.models.funcapi_function_job_collections_access_rights_table import (
     function_job_collections_access_rights_table,
 )
@@ -106,6 +120,15 @@ async def create_function(  # noqa: PLR0913
     default_inputs: FunctionInputs,
 ) -> RegisteredFunctionDB:
 
+    await check_user_abilities(
+        app,
+        connection=connection,
+        user_id=user_id,
+        product_name=product_name,
+        object_type="function",
+        abilities=[FunctionsAbility.READ_FUNCTIONS, FunctionsAbility.WRITE_FUNCTIONS],
+    )
+
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(
             functions_table.insert()
@@ -155,6 +178,17 @@ async def create_function_job(  # noqa: PLR0913
     class_specific_data: FunctionJobClassSpecificData,
 ) -> RegisteredFunctionJobDB:
 
+    await check_user_abilities(
+        app,
+        connection=connection,
+        user_id=user_id,
+        product_name=product_name,
+        object_type="function",
+        abilities=[
+            FunctionsAbility.READ_FUNCTION_JOBS,
+            FunctionsAbility.WRITE_FUNCTION_JOBS,
+        ],
+    )
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(
             function_jobs_table.insert()
@@ -201,6 +235,17 @@ async def create_function_job_collection(
     job_ids: list[FunctionJobID],
 ) -> tuple[RegisteredFunctionJobCollectionDB, list[FunctionJobID]]:
 
+    await check_user_abilities(
+        app,
+        connection=connection,
+        user_id=user_id,
+        product_name=product_name,
+        object_type="function",
+        abilities=[
+            FunctionsAbility.READ_FUNCTION_JOB_COLLECTIONS,
+            FunctionsAbility.WRITE_FUNCTION_JOB_COLLECTIONS,
+        ],
+    )
     for job_id in job_ids:
         await check_user_permissions(
             app,
@@ -278,6 +323,14 @@ async def get_function(
     function_id: FunctionID,
 ) -> RegisteredFunctionDB:
 
+    await check_user_abilities(
+        app,
+        connection=connection,
+        user_id=user_id,
+        product_name=product_name,
+        object_type="function",
+        abilities=[FunctionsAbility.READ_FUNCTIONS],
+    )
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(
             functions_table.select().where(functions_table.c.uuid == function_id)
@@ -311,6 +364,14 @@ async def list_functions(
     pagination_offset: int,
 ) -> tuple[list[RegisteredFunctionDB], PageMetaInfoLimitOffset]:
 
+    await check_user_abilities(
+        app,
+        connection=connection,
+        user_id=user_id,
+        product_name=product_name,
+        object_type="function",
+        abilities=[FunctionsAbility.READ_FUNCTIONS],
+    )
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         user_groups = await list_all_user_groups_ids(app, user_id=user_id)
 
@@ -363,6 +424,14 @@ async def list_function_jobs(
     filter_by_function_id: FunctionID | None = None,
 ) -> tuple[list[RegisteredFunctionJobDB], PageMetaInfoLimitOffset]:
 
+    await check_user_abilities(
+        app,
+        connection=connection,
+        user_id=user_id,
+        product_name=product_name,
+        object_type="function",
+        abilities=[FunctionsAbility.READ_FUNCTION_JOBS],
+    )
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         user_groups = await list_all_user_groups_ids(app, user_id=user_id)
 
@@ -431,6 +500,16 @@ async def list_function_job_collections(
     Returns a list of function job collections and their associated job ids.
     Filters the collections to include only those that have function jobs with the specified function id if filters.has_function_id is provided.
     """
+    await check_user_abilities(
+        app,
+        connection=connection,
+        user_id=user_id,
+        product_name=product_name,
+        object_type="function",
+        abilities=[
+            FunctionsAbility.READ_FUNCTION_JOB_COLLECTIONS,
+        ],
+    )
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         filter_condition: sqlalchemy.sql.ColumnElement = sqlalchemy.sql.true()
@@ -528,6 +607,15 @@ async def delete_function(
     function_id: FunctionID,
 ) -> None:
 
+    await check_user_abilities(
+        app,
+        connection=connection,
+        user_id=user_id,
+        product_name=product_name,
+        object_type="function",
+        abilities=[FunctionsAbility.READ_FUNCTIONS, FunctionsAbility.WRITE_FUNCTIONS],
+    )
+
     await check_user_permissions(
         app,
         connection=connection,
@@ -556,12 +644,23 @@ async def delete_function(
 
 async def update_function_title(
     app: web.Application,
+    connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
     product_name: ProductName,
     function_id: FunctionID,
     title: str,
 ) -> RegisteredFunctionDB:
+
+    await check_user_abilities(
+        app,
+        connection=connection,
+        user_id=user_id,
+        product_name=product_name,
+        object_type="function",
+        abilities=[FunctionsAbility.READ_FUNCTIONS, FunctionsAbility.WRITE_FUNCTIONS],
+    )
+
     await check_user_permissions(
         app,
         user_id=user_id,
@@ -588,12 +687,21 @@ async def update_function_title(
 
 async def update_function_description(
     app: web.Application,
+    connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
     product_name: ProductName,
     function_id: FunctionID,
     description: str,
 ) -> RegisteredFunctionDB:
+    await check_user_abilities(
+        app,
+        connection=connection,
+        user_id=user_id,
+        product_name=product_name,
+        object_type="function",
+        abilities=[FunctionsAbility.READ_FUNCTIONS, FunctionsAbility.WRITE_FUNCTIONS],
+    )
     await check_user_permissions(
         app,
         user_id=user_id,
@@ -626,6 +734,14 @@ async def get_function_job(
     product_name: ProductName,
     function_job_id: FunctionID,
 ) -> RegisteredFunctionJobDB:
+    await check_user_abilities(
+        app,
+        connection=connection,
+        user_id=user_id,
+        product_name=product_name,
+        object_type="function",
+        abilities=[FunctionsAbility.READ_FUNCTION_JOBS],
+    )
     await check_user_permissions(
         app,
         connection=connection,
@@ -658,6 +774,17 @@ async def delete_function_job(
     product_name: ProductName,
     function_job_id: FunctionID,
 ) -> None:
+    await check_user_abilities(
+        app,
+        connection=connection,
+        user_id=user_id,
+        product_name=product_name,
+        object_type="function",
+        abilities=[
+            FunctionsAbility.READ_FUNCTION_JOBS,
+            FunctionsAbility.WRITE_FUNCTION_JOBS,
+        ],
+    )
     await check_user_permissions(
         app,
         connection=connection,
@@ -696,6 +823,14 @@ async def find_cached_function_jobs(
     product_name: ProductName,
     inputs: FunctionInputs,
 ) -> list[RegisteredFunctionJobDB] | None:
+    await check_user_abilities(
+        app,
+        connection=connection,
+        user_id=user_id,
+        product_name=product_name,
+        object_type="function",
+        abilities=[FunctionsAbility.READ_FUNCTION_JOBS],
+    )
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(
@@ -741,6 +876,14 @@ async def get_function_job_collection(
     product_name: ProductName,
     function_job_collection_id: FunctionID,
 ) -> tuple[RegisteredFunctionJobCollectionDB, list[FunctionJobID]]:
+    await check_user_abilities(
+        app,
+        connection=connection,
+        user_id=user_id,
+        product_name=product_name,
+        object_type="function",
+        abilities=[FunctionsAbility.READ_FUNCTION_JOB_COLLECTIONS],
+    )
     await check_user_permissions(
         app,
         connection=connection,
@@ -790,6 +933,17 @@ async def delete_function_job_collection(
     product_name: ProductName,
     function_job_collection_id: FunctionID,
 ) -> None:
+    await check_user_abilities(
+        app,
+        connection=connection,
+        user_id=user_id,
+        product_name=product_name,
+        object_type="function",
+        abilities=[
+            FunctionsAbility.READ_FUNCTION_JOB_COLLECTIONS,
+            FunctionsAbility.WRITE_FUNCTION_JOB_COLLECTIONS,
+        ],
+    )
     await check_user_permissions(
         app,
         connection=connection,
@@ -893,6 +1047,46 @@ async def set_group_permissions(
                     )
                     .values(**update_values)
                 )
+
+
+async def get_user_abilities(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+) -> FunctionUserAbilities:
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        user_groups = await list_all_user_groups_ids(app, user_id=user_id)
+
+        result = await conn.stream(
+            function_api_group_abilities_table.select().where(
+                function_api_group_abilities_table.c.group_id.in_(user_groups),
+                function_api_group_abilities_table.c.product_name == product_name,
+            )
+        )
+        rows = await result.all()
+        if not rows:
+            return FunctionUserAbilities(user_id=user_id)
+        combined_permissions = {
+            "read_functions": any(row["read_functions"] for row in rows),
+            "write_functions": any(row["write_functions"] for row in rows),
+            "execute_functions": any(row["execute_functions"] for row in rows),
+            "read_function_jobs": any(row["read_function_jobs"] for row in rows),
+            "write_function_jobs": any(row["write_function_jobs"] for row in rows),
+            "execute_function_jobs": any(row["execute_function_jobs"] for row in rows),
+            "read_function_job_collections": any(
+                row["read_function_job_collections"] for row in rows
+            ),
+            "write_function_job_collections": any(
+                row["write_function_job_collections"] for row in rows
+            ),
+            "execute_function_job_collections": any(
+                row["execute_function_job_collections"] for row in rows
+            ),
+            user_id: user_id,
+        }
+        return FunctionUserAbilities.model_validate(combined_permissions)
 
 
 async def get_user_permissions(
@@ -1056,5 +1250,65 @@ async def check_user_permissions(
     for permission in permissions:
         if not getattr(user_permissions, permission):
             raise errors[permission]
+
+    return True
+
+
+async def check_user_abilities(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    user_id: UserID,
+    object_type: Literal["function", "function_job", "function_job_collection"],
+    product_name: ProductName,
+    abilities: list[FunctionsAbility],
+) -> bool:
+    user_abilities = await get_user_abilities(
+        app, connection=connection, user_id=user_id, product_name=product_name
+    )
+
+    match object_type:
+        case "function":
+            errors = {
+                FunctionsAbility.READ_FUNCTIONS: FunctionsReadAbilityDeniedError(
+                    user_id=user_id
+                ),
+                FunctionsAbility.WRITE_FUNCTIONS: FunctionsWriteAbilityDeniedError(
+                    user_id=user_id
+                ),
+                FunctionsAbility.EXECUTE_FUNCTIONS: FunctionsExecuteAbilityDeniedError(
+                    user_id=user_id
+                ),
+            }
+        case "function_job":
+            errors = {
+                FunctionsAbility.READ_FUNCTION_JOBS: FunctionJobsReadAbilityDeniedError(
+                    user_id=user_id
+                ),
+                FunctionsAbility.WRITE_FUNCTION_JOBS: FunctionJobsWriteAbilityDeniedError(
+                    user_id=user_id
+                ),
+                FunctionsAbility.EXECUTE_FUNCTION_JOBS: FunctionJobsExecuteAbilityDeniedError(
+                    user_id=user_id
+                ),
+            }
+        case "function_job_collection":
+            errors = {
+                FunctionsAbility.READ_FUNCTION_JOB_COLLECTIONS: FunctionJobCollectionsReadAbilityDeniedError(
+                    user_id=user_id
+                ),
+                FunctionsAbility.WRITE_FUNCTION_JOB_COLLECTIONS: FunctionJobCollectionsWriteAbilityDeniedError(
+                    user_id=user_id
+                ),
+                FunctionsAbility.EXECUTE_FUNCTION_JOB_COLLECTIONS: FunctionJobCollectionsExecuteAbilityDeniedError(
+                    user_id=user_id
+                ),
+            }
+
+    assert errors is not None, "Invalid ability type provided"  # nosec
+
+    for ability in abilities:
+        if not getattr(user_abilities, ability):
+            raise errors[ability]
 
     return True
