@@ -795,7 +795,7 @@ qx.Class.define("osparc.data.model.Workbench", {
           return;
         }
 
-        // use the source data used to check the diffs
+        // use the node data that was used to check the diffs
         const nodeData = workbenchSource[nodeId];
         let patchData = {};
         if (workbenchDiffs[nodeId] instanceof Array) {
