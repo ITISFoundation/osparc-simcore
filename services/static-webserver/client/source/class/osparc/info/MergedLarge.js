@@ -317,13 +317,7 @@ qx.Class.define("osparc.info.MergedLarge", {
       resourcesLayout.exclude();
       let promise = null;
       if (this.getNode().getNodeId()) {
-        const params = {
-          url: {
-            studyId: this.getStudy().getUuid(),
-            nodeId: this.getNode().getNodeId()
-          }
-        };
-        promise = osparc.data.Resources.get("nodesInStudyResources", params);
+        promise = osparc.store.Study.getNodeResources(this.getStudy().getUuid(), this.getNode().getNodeId());
       } else {
         promise = osparc.store.Services.getResources(this.getNode().getKey(), this.getNode().getVersion())
       }

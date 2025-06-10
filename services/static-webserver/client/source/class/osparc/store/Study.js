@@ -19,6 +19,8 @@ qx.Class.define("osparc.store.Study", {
   type: "static",
 
   statics: {
+    __nodeResources: null,
+
     patchStudyData: function(studyData, fieldKey, value) {
       if (osparc.data.model.Study.OwnPatch.includes(fieldKey)) {
         console.error(fieldKey, "has it's own PATCH path");
@@ -142,6 +144,27 @@ qx.Class.define("osparc.store.Study", {
         return osparc.data.Resources.fetch("studies", "shareWithEmail", params);
       });
       return Promise.all(promises);
+    },
+
+    getNodeResources: function(studyId, nodeId) {
+      const params = {
+        url: {
+          studyId,
+          nodeId,
+        }
+      };
+      return osparc.data.Resources.get("nodesInStudyResources", params);
+    },
+
+    updateNodeResources: function(studyId, nodeId, updatedResources) {
+      const params = {
+        url: {
+          studyId,
+          nodeId,
+        },
+        data: updatedResources
+      };
+      return osparc.data.Resources.fetch("nodesInStudyResources", "put", params);
     },
   }
 });
