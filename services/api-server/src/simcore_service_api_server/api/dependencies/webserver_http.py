@@ -79,3 +79,6 @@ def get_webserver_session(
     )
     assert isinstance(session, AuthSession)  # nosec
     return session
+
+
+__all__: tuple[str, ...] = ("AuthSession",)
