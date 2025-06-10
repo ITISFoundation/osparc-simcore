@@ -244,7 +244,21 @@ qx.Class.define("osparc.store.Study", {
           pricingUnitId: selectedUnitId
         }
       };
-      return osparc.data.Resources.fetch("studies", "putPricingUnit", params);
+      return osparc.data.Resources.fetch("studies", "putPricingUnit", params)
+        .then(() => {
+          // update the cache
+          if (!(studyId in this.__nodePricingUnit)) {
+            this.__nodePricingUnit[studyId] = {};
+          }
+          const selectedPricingUnit = osparc.store.Pricing.getInstance().getPricingUnit(planId, selectedUnitId);
+          if (selectedPricingUnit) {
+            this.__nodePricingUnit[studyId][nodeId] = selectedUnitId;
+          }
+        })
+        .catch(err => {
+          console.error("Failed to update selected pricing unit:", err);
+          throw err;
+        });
     },
   }
 });
