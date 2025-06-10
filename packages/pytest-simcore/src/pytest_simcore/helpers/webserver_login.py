@@ -17,7 +17,7 @@ from simcore_service_webserver.login._login_repository_legacy import (
     get_plugin_storage,
 )
 from simcore_service_webserver.products.products_service import list_products
-from simcore_service_webserver.security.api import clean_auth_policy_cache
+from simcore_service_webserver.security.security_service import clean_auth_policy_cache
 from yarl import URL
 
 from .assert_checks import assert_status

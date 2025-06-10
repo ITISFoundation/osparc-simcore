@@ -8,12 +8,7 @@ from servicelib.aiohttp.typing_extension import HandlerAnyReturn
 from servicelib.request_keys import RQT_USERID_KEY
 
 from ..products import products_web
-from ..security.api import (
-    PERMISSION_PRODUCT_LOGIN_KEY,
-    AuthContextDict,
-    check_user_authorized,
-    check_user_permission,
-)
+from ..security import security_service
 
 
 def login_required(handler: HandlerAnyReturn) -> HandlerAnyReturn:
@@ -56,13 +51,13 @@ def login_required(handler: HandlerAnyReturn) -> HandlerAnyReturn:
         """
         # WARNING: note that check_authorized is patched in some tests.
         # Careful when changing the function signature
-        user_id = await check_user_authorized(request)
+        user_id = await security_service.check_user_authorized(request)
         product_name = products_web.get_product_name(request)
 
-        await check_user_permission(
+        await security_service.check_user_permission(
             request,
-            PERMISSION_PRODUCT_LOGIN_KEY,
-            context=AuthContextDict(
+            security_service.PERMISSION_PRODUCT_LOGIN_KEY,
+            context=security_service.AuthContextDict(
                 product_name=product_name,
                 authorized_uid=user_id,
             ),

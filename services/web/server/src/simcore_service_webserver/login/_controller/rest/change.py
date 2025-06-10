@@ -15,7 +15,7 @@ from simcore_service_webserver.db.plugin import get_asyncpg_engine
 from ...._meta import API_VTAG
 from ....products import products_web
 from ....products.models import Product
-from ....security.api import check_password, encrypt_password
+from ....security import security_service
 from ....users import api as users_service
 from ....utils import HOUR
 from ....utils_rate_limiting import global_rate_limit_route
@@ -293,14 +293,20 @@ async def change_password(request: web.Request):
     user = await db.get_user({"id": request[RQT_USERID_KEY]})
     assert user  # nosec
 
-    if not check_password(passwords.current.get_secret_value(), user["password_hash"]):
+    if not security_service.check_password(
+        passwords.current.get_secret_value(), user["password_hash"]
+    ):
         raise web.HTTPUnprocessableEntity(
             reason=MSG_WRONG_PASSWORD, content_type=MIMETYPE_APPLICATION_JSON
         )  # 422
 
     await db.update_user(
         dict(user),
-        {"password_hash": encrypt_password(passwords.new.get_secret_value())},
+        {
+            "password_hash": security_service.encrypt_password(
+                passwords.new.get_secret_value()
+            )
+        },
     )
 
     return flash_response(MSG_PASSWORD_CHANGED)

@@ -6,7 +6,7 @@ from typing import Any
 from aiohttp import web
 from servicelib.logging_utils import get_log_record_extra, log_context
 
-from ..security import api as security_service
+from ..security import security_service
 from ._constants import MSG_LOGGED_IN
 from ._login_service import flash_response
 

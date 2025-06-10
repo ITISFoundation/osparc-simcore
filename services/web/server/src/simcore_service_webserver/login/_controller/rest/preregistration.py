@@ -20,7 +20,7 @@ from ...._meta import API_VTAG
 from ....constants import RQ_PRODUCT_KEY
 from ....products import products_web
 from ....products.models import Product
-from ....security import api as security_service
+from ....security import security_service
 from ....security.decorators import permission_required
 from ....session.api import get_session
 from ....users.api import get_user_credentials, set_user_as_deleted
