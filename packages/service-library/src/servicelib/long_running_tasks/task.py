@@ -6,7 +6,7 @@ import urllib.parse
 from collections import deque
 from contextlib import suppress
 from datetime import datetime
-from typing import Any, Protocol
+from typing import Any, Protocol, TypeAlias
 from uuid import uuid4
 
 from models_library.api_schemas_long_running_tasks.base import (
@@ -53,8 +53,8 @@ def _mark_task_to_remove_if_required(
             tasks_to_remove.append(task_id)
 
 
-TrackedTaskGroupDict = dict[TaskId, TrackedTask]
-TaskContext = dict[str, Any]
+TrackedTaskGroupDict: TypeAlias = dict[TaskId, TrackedTask]
+TaskContext: TypeAlias = dict[str, Any]
 
 
 class TasksManager:
