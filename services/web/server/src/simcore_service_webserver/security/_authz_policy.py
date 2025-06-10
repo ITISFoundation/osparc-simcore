@@ -138,7 +138,6 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         if identity is None or permission is None:
             return False
 
-        # TODO: optimize
         auth_info = await self._get_auth_or_none(email=identity)
         if auth_info is None:
             return False
