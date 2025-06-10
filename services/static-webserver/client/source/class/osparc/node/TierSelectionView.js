@@ -96,7 +96,8 @@ qx.Class.define("osparc.node.TierSelectionView", {
                   if (selection.length) {
                     tierBox.setEnabled(false);
                     const selectedUnitId = selection[0].getModel();
-                    osparc.store.Study.updateSelectedPricingUnit(studyId, nodeId, pricingPlans["pricingPlanId"], selectedUnitId)
+                    const selectedUnit = pricingUnits.find(pUnit => pUnit.getPricingUnitId() === selectedUnitId)
+                    osparc.store.Study.updateSelectedPricingUnit(studyId, nodeId, pricingPlans["pricingPlanId"], selectedUnit)
                       .finally(() => {
                         tierBox.setEnabled(true);
                         showSelectedTier(selectedUnitId);
