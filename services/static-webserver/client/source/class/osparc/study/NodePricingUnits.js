@@ -100,7 +100,7 @@ qx.Class.define("osparc.study.NodePricingUnits", {
         const studyId = this.getStudyId();
         const nodeId = this.getNodeId();
 
-        osparc.store.Services.fetchPricingPlansService(nodeKey, nodeVersion)
+        osparc.store.Services.getPricingPlan(nodeKey, nodeVersion)
           .then(pricingPlanData => {
             if (pricingPlanData) {
               const unitParams = {

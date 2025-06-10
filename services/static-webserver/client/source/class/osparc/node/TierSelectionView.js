@@ -46,7 +46,7 @@ qx.Class.define("osparc.node.TierSelectionView", {
       tiersLayout.add(tierBox);
 
       const node = this.getNode();
-      osparc.store.Services.fetchPricingPlansService(node.getKey(), node.getVersion())
+      osparc.store.Services.getPricingPlan(node.getKey(), node.getVersion())
         .then(pricingPlans => {
           if (pricingPlans && "pricingUnits" in pricingPlans && pricingPlans["pricingUnits"].length) {
             const pricingUnits = pricingPlans["pricingUnits"].map(pricingUnitData => {
