@@ -784,8 +784,9 @@ qx.Class.define("osparc.data.model.Workbench", {
     /**
      * Call patch Node, but the changes were already applied on the frontend
      * @param workbenchDiffs {Object} Diff Object coming from the JsonDiffPatch lib. Use only the keys, not the changes.
+     * @param workbenchSource {Object} Workbench object that was used to check the diffs on the frontend.
      */
-    patchWorkbenchDelayed: function(workbenchDiffs) {
+    patchWorkbenchDelayed: function(workbenchDiffs, workbenchSource) {
       const promises = [];
       Object.keys(workbenchDiffs).forEach(nodeId => {
         const node = this.getNode(nodeId);
@@ -794,11 +795,11 @@ qx.Class.define("osparc.data.model.Workbench", {
           return;
         }
 
-        const nodeData = node.serialize();
+        // use the source data used to check the diffs
+        const nodeData = workbenchSource[nodeId];
         let patchData = {};
         if (workbenchDiffs[nodeId] instanceof Array) {
-          // if workbenchDiffs is an array means that the node was either added or removed
-          // the node was added
+          // if workbenchDiffs is an array means that the node was added
           patchData = nodeData;
         } else {
           // patch only what was changed
