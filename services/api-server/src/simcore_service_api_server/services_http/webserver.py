@@ -47,7 +47,7 @@ from servicelib.common_headers import (
 )
 from servicelib.long_running_tasks.models import TaskStatus
 from settings_library.tracing import TracingSettings
-from tenacity import TryAgain
+from tenacity import TryAgain, retry_if_exception_type
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
@@ -225,13 +225,16 @@ class AuthSession:
             wait=wait_fixed(0.5),
             stop=stop_after_delay(60),
             reraise=True,
+            retry=retry_if_exception_type(TryAgain),
             before_sleep=before_sleep_log(_logger, logging.INFO),
         ):
             with attempt:
                 get_response = await self.long_running_task_client.get(
                     url=status_url, cookies=self.session_cookies
                 )
-                get_response.raise_for_status()
+                get_response.raise_for_status(
+                    # NOTE: stops retrying if the response in not 2xx
+                )
                 task_status = (
                     Envelope[TaskStatus].model_validate_json(get_response.text).data
                 )
