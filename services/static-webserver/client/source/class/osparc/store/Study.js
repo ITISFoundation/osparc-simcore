@@ -250,6 +250,7 @@ qx.Class.define("osparc.store.Study", {
           if (!(studyId in this.__nodePricingUnit)) {
             this.__nodePricingUnit[studyId] = {};
           }
+          // OM: get the pricing unit to ensure it exists
           const selectedPricingUnit = osparc.store.Pricing.getInstance().getPricingUnit(planId, selectedUnitId);
           if (selectedPricingUnit) {
             this.__nodePricingUnit[studyId][nodeId] = selectedUnitId;
