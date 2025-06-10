@@ -102,7 +102,7 @@ qx.Class.define("osparc.ui.message.Loading", {
     __buildLayout: function() {
       const maxLayout = this.__createMaximizeToolbar();
       this.bind("showToolbar", maxLayout, "visibility", {
-        converter: showToolbar => showToolbar ? "visible" : "hidden"
+        converter: showToolbar => showToolbar ? "visible" : "excluded"
       });
       this._addAt(maxLayout, this.self().GRID_POS.TOOLBAR);
 
