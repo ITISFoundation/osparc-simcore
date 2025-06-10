@@ -23,7 +23,12 @@ from servicelib.rabbitmq.rpc_interfaces.webserver.functions import (
     functions_rpc_interface as functions_rpc,
 )
 from settings_library.rabbit import RabbitSettings
+from simcore_postgres_database.models.funcapi_function_api_group_abilities import (
+    function_api_group_abilities_table,
+)
 from simcore_service_webserver.application_settings import ApplicationSettings
+from simcore_service_webserver.statics._constants import FRONTEND_APP_DEFAULT
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 
 @pytest.fixture
@@ -90,6 +95,14 @@ async def other_logged_user(
 
 
 @pytest.fixture
+async def user_without_function_abilities(
+    client: TestClient, rpc_client: RabbitMQRPCClient
+) -> AsyncIterator[UserInfoDict]:
+    async with LoggedUser(client) as user_without_function_abilities:
+        yield user_without_function_abilities
+
+
+@pytest.fixture
 async def clean_functions(
     client: TestClient,
     rpc_client: RabbitMQRPCClient,
@@ -139,3 +152,29 @@ async def clean_function_job_collections(
             user_id=logged_user["id"],
             product_name=osparc_product_name,
         )
+
+
+@pytest.fixture
+async def add_user_functions_abilities(
+    asyncpg_engine: AsyncEngine,
+    logged_user: UserInfoDict,
+    other_logged_user: UserInfoDict,
+) -> None:
+    async with asyncpg_engine.begin() as conn:
+        # create abilities for the product
+        for group_id in (logged_user["primary_gid"], other_logged_user["primary_gid"]):
+            await conn.execute(
+                function_api_group_abilities_table.insert().values(
+                    group_id=group_id,
+                    product_name=FRONTEND_APP_DEFAULT,
+                    read_functions=True,
+                    write_functions=True,
+                    execute_functions=True,
+                    read_function_jobs=True,
+                    write_function_jobs=True,
+                    execute_function_jobs=True,
+                    read_function_job_collections=True,
+                    write_function_job_collections=True,
+                    execute_function_job_collections=True,
+                )
+            )

@@ -36,6 +36,7 @@ async def test_register_get_delete_function_job(
     logged_user: UserInfoDict,
     other_logged_user: UserInfoDict,
     osparc_product_name: ProductName,
+    add_user_functions_abilities: None,
 ):
     # Register the function first
     registered_function = await functions_rpc.register_function(
@@ -139,6 +140,7 @@ async def test_get_function_job_not_found(
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
     clean_functions: None,
+    add_user_functions_abilities: None,
 ):
     # Attempt to retrieve a function job that does not exist
     with pytest.raises(FunctionJobIDNotFoundError):
@@ -211,6 +213,7 @@ async def test_list_function_jobs_for_functionid(
     mock_function: ProjectFunction,
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
+    add_user_functions_abilities: None,
 ):
     # Register the function first
     first_registered_function = await functions_rpc.register_function(
@@ -294,6 +297,7 @@ async def test_find_cached_function_jobs(
     osparc_product_name: ProductName,
     mock_function: ProjectFunction,
     clean_functions: None,
+    add_user_functions_abilities: None,
 ):
 
     # Register the function first

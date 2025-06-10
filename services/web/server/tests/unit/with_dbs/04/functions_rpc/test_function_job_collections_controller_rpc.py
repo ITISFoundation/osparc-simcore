@@ -16,6 +16,7 @@ from models_library.api_schemas_webserver.functions import (
 from models_library.functions import FunctionJobCollectionsListFilters
 from models_library.functions_errors import (
     FunctionJobCollectionReadAccessDeniedError,
+    FunctionJobCollectionsReadAbilityDeniedError,
     FunctionJobIDNotFoundError,
 )
 from models_library.products import ProductName
@@ -38,7 +39,9 @@ async def test_function_job_collection(
     rpc_client: RabbitMQRPCClient,
     logged_user: UserInfoDict,
     other_logged_user: UserInfoDict,
+    user_without_function_abilities: UserInfoDict,
     osparc_product_name: ProductName,
+    add_user_functions_abilities: None,
 ):
     # Register the function first
     registered_function = await functions_rpc.register_function(
@@ -115,8 +118,17 @@ async def test_function_job_collection(
             product_name=osparc_product_name,
         )
 
+    # Test denied access for another user
+    with pytest.raises(FunctionJobCollectionsReadAbilityDeniedError):
+        await functions_rpc.get_function_job_collection(
+            rabbitmq_rpc_client=rpc_client,
+            function_job_collection_id=registered_collection.uid,
+            user_id=user_without_function_abilities["id"],
+            product_name=osparc_product_name,
+        )
+
     # Test denied access for another product
-    with pytest.raises(FunctionJobCollectionReadAccessDeniedError):
+    with pytest.raises(FunctionJobCollectionsReadAbilityDeniedError):
         await functions_rpc.get_function_job_collection(
             rabbitmq_rpc_client=rpc_client,
             function_job_collection_id=registered_collection.uid,
@@ -161,6 +173,7 @@ async def test_list_function_job_collections(
     clean_function_job_collections: None,
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
+    add_user_functions_abilities: None,
 ):
     # List function job collections when none are registered
     collections, page_meta = await functions_rpc.list_function_job_collections(
@@ -262,6 +275,7 @@ async def test_list_function_job_collections_filtered_function_id(
     clean_function_job_collections: None,
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
+    add_user_functions_abilities: None,
 ):
     # Register the function first
     registered_function = await functions_rpc.register_function(
