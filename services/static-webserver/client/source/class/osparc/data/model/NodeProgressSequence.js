@@ -229,7 +229,9 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     },
 
     __initLayout: function() {
-      this.__mainLoadingPage = new qx.ui.container.Composite(new qx.ui.layout.VBox(8));
+      this.__mainLoadingPage = new qx.ui.container.Composite(new qx.ui.layout.VBox(8)).set({
+        maxWidth: 400,
+      });
 
       const sequenceLoadingPage = new osparc.widget.ProgressSequence(qx.locale.Manager.tr("LOADING ..."));
       const nTasks = 7;
