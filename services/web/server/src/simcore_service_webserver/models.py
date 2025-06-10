@@ -12,8 +12,8 @@ from .constants import RQ_PRODUCT_KEY
 class AuthenticatedRequestContext(RequestParameters):
     """Fields expected in the request context for authenticated endpoints"""
 
-    user_id: Annotated[UserID, Field(alias=RQT_USERID_KEY)]  # type: ignore[literal-required]
-    product_name: Annotated[ProductName, Field(alias=RQ_PRODUCT_KEY)]  # type: ignore[literal-required]
+    user_id: Annotated[UserID, Field(alias=RQT_USERID_KEY)]
+    product_name: Annotated[ProductName, Field(alias=RQ_PRODUCT_KEY)]
 
     model_config = ConfigDict(
         frozen=True  # prevents modifications after middlewares creates this model

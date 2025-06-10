@@ -161,20 +161,22 @@ class AuthSession:
     ) -> Self:
 
         # WARNING: this client lifespan is tied to the app
-        api = WebserverApi.get_instance(app)
-        assert api  # nosec
-        assert isinstance(api, WebserverApi)  # nosec
+        app_http_webserver_client = WebserverApi.get_instance(app)
+        assert app_http_webserver_client  # nosec
+        assert isinstance(app_http_webserver_client, WebserverApi)  # nosec
 
         # WARNING: this client lifespan is tied to the app
-        long_running_tasks_client = LongRunningTasksClient.get_instance(app=app)
-        assert long_running_tasks_client  # nosec
-        assert isinstance(long_running_tasks_client, LongRunningTasksClient)  # nosec
+        app_http_lrt_webserver_client = LongRunningTasksClient.get_instance(app=app)
+        assert app_http_lrt_webserver_client  # nosec
+        assert isinstance(
+            app_http_lrt_webserver_client, LongRunningTasksClient
+        )  # nosec
 
         return cls(
             _product_name=product_name,
             _user_id=user_id,
-            _api=api,
-            _long_running_task_client=long_running_tasks_client,
+            _api=app_http_webserver_client,
+            _long_running_task_client=app_http_lrt_webserver_client,
             vtag=app.state.settings.API_SERVER_WEBSERVER.WEBSERVER_VTAG,
             session_cookies=session_cookies,
         )
