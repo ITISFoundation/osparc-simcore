@@ -220,7 +220,7 @@ qx.Class.define("osparc.store.Study", {
           nodeId
         }
       };
-      return osparc.data.Resources.fetch("studies", "getPricingUnits", params)
+      return osparc.data.Resources.fetch("studies", "getPricingUnit", params)
         .then(pricingUnits => {
           if (pricingUnits && pricingUnits["pricingUnits"]) {
             return pricingUnits["pricingUnits"];
