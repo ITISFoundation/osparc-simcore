@@ -877,6 +877,9 @@ services:
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.middlewares=${SWARM_STACK_NAME}_gzip@swarm, ${SWARM_STACK_NAME_NO_HYPHEN}_sslheader@swarm, ${SWARM_STACK_NAME}_webserver_retry
         # Create a dedicated sticky service for specific endpoints
         - traefik.http.services.${SWARM_STACK_NAME}_webserver_sticky.loadbalancer.server.port=8080
+        - traefik.http.services.${SWARM_STACK_NAME}_webserver_sticky.loadbalancer.healthcheck.path=/v0/
+        - traefik.http.services.${SWARM_STACK_NAME}_webserver_sticky.loadbalancer.healthcheck.interval=2000ms
+        - traefik.http.services.${SWARM_STACK_NAME}_webserver_sticky.loadbalancer.healthcheck.timeout=1000ms
         - traefik.http.services.${SWARM_STACK_NAME}_webserver_sticky.loadbalancer.sticky.cookie=true
         - traefik.http.services.${SWARM_STACK_NAME}_webserver_sticky.loadbalancer.sticky.cookie.secure=true
         - traefik.http.services.${SWARM_STACK_NAME}_webserver_sticky.loadbalancer.sticky.cookie.httpOnly=true
