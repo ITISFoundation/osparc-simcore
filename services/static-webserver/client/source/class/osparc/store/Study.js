@@ -235,13 +235,14 @@ qx.Class.define("osparc.store.Study", {
         });
     },
 
-    updateSelectedPricingUnit: function(studyId, nodeId, planId, selectedUnit) {
+    updateSelectedPricingUnit: function(studyId, nodeId, planId, selectedPricingUnit) {
       const params = {
         url: {
           studyId,
           nodeId,
           pricingPlanId: planId,
-          pricingUnitId: selectedUnit.getPricingUnitId(),
+          pricingUnitId: selectedPricingUnit.getPricingUnitId(), // this should be just data
+          // pricingUnitId: selectedPricingUnit["pricingUnitId"],
         }
       };
       return osparc.data.Resources.fetch("studies", "putPricingUnit", params)
@@ -250,7 +251,7 @@ qx.Class.define("osparc.store.Study", {
           if (!(studyId in this.__nodePricingUnit)) {
             this.__nodePricingUnit[studyId] = {};
           }
-          this.__nodePricingUnit[studyId][nodeId] = selectedUnit;
+          this.__nodePricingUnit[studyId][nodeId] = selectedPricingUnit;
         })
         .catch(err => {
           console.error("Failed to update selected pricing unit:", err);
