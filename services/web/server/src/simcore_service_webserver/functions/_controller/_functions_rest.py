@@ -15,7 +15,7 @@ from simcore_service_webserver.utils_aiohttp import envelope_json_response
 
 from ..._meta import API_VTAG as VTAG
 from ...login.decorators import login_required
-from ...models import RequestContext
+from ...models import AuthenticatedRequestContext
 from ...security.decorators import permission_required
 from .. import _functions_service
 from ._functions_rest_exceptions import handle_rest_requests_exceptions
@@ -38,7 +38,7 @@ async def register_function(request: web.Request) -> web.Response:
             FunctionToRegister
         ).validate_python(await request.json())
 
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     registered_function: RegisteredFunction = (
         await _functions_service.register_function(
             app=request.app,
@@ -67,7 +67,7 @@ async def get_function(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(FunctionPathParams, request)
     function_id = path_params.function_id
 
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     registered_function: RegisteredFunction = await _functions_service.get_function(
         app=request.app,
         function_id=function_id,
@@ -92,7 +92,7 @@ async def get_function(request: web.Request) -> web.Response:
 async def delete_function(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(FunctionPathParams, request)
     function_id = path_params.function_id
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     await _functions_service.delete_function(
         app=request.app,
         function_id=function_id,
