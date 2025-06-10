@@ -198,5 +198,26 @@ qx.Class.define("osparc.store.Study", {
           this.__nodeResources[studyId][nodeId] = updatedResources;
         });
     },
+
+    getSelectedPricingUnit: function(studyId, nodeId) {
+      const params = {
+        url: {
+          studyId,
+          nodeId
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "getPricingUnits", params)
+        .then(pricingUnits => {
+          if (pricingUnits && pricingUnits["pricingUnits"]) {
+            return pricingUnits["pricingUnits"];
+          } else {
+            throw new Error("No pricing units found");
+          }
+        })
+        .catch(err => {
+          console.error("Failed to fetch pricing units:", err);
+          throw err;
+        });
+    }
   }
 });

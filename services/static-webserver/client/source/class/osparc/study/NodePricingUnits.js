@@ -103,20 +103,14 @@ qx.Class.define("osparc.study.NodePricingUnits", {
         osparc.store.Services.getPricingPlan(nodeKey, nodeVersion)
           .then(pricingPlanData => {
             if (pricingPlanData) {
-              const unitParams = {
-                url: {
-                  studyId,
-                  nodeId
-                }
-              };
               this.set({
                 pricingPlanId: pricingPlanData["pricingPlanId"]
               });
-              osparc.data.Resources.fetch("studies", "getPricingUnit", unitParams)
-                .then(preselectedPricingUnit => {
+              osparc.store.Study.getSelectedPricingUnit(studyId, nodeId)
+                .then(selectedPricingUnit => {
                   if (pricingPlanData && "pricingUnits" in pricingPlanData && pricingPlanData["pricingUnits"].length) {
                     const pricingUnitsData = pricingPlanData["pricingUnits"];
-                    const pricingUnitTiers = this.__pricingUnits = new osparc.study.PricingUnitTiers(pricingUnitsData, preselectedPricingUnit);
+                    const pricingUnitTiers = this.__pricingUnits = new osparc.study.PricingUnitTiers(pricingUnitsData, selectedPricingUnit);
                     if (inGroupBox) {
                       const pricingUnitsLayout = osparc.study.StudyOptions.createGroupBox(nodeLabel);
                       pricingUnitsLayout.add(pricingUnitTiers);
