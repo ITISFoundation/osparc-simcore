@@ -189,20 +189,21 @@ def is_graph_equal(
     return True
 
 
-async def project_uses_available_services(
-    project: dict[str, Any], available_services: list[dict[str, Any]]
+def are_project_services_available(
+    project: dict[str, Any], available_services: list[dict[str, str]]
 ) -> bool:
     if not project["workbench"]:
         # empty project
         return True
-    # get project services
-    needed_services: set[tuple[str, str]] = {
-        (s["key"], s["version"]) for _, s in project["workbench"].items()
+
+    # list services in project
+    needed_services = {
+        (srv["key"], srv["version"]) for _, srv in project["workbench"].items()
     }
 
-    # get available services
-    available_services_set: set[tuple[str, str]] = {
-        (s["key"], s["version"]) for s in available_services
+    # list available services
+    available_services_set = {
+        (srv["key"], srv["version"]) for srv in available_services
     }
 
     return needed_services.issubset(available_services_set)

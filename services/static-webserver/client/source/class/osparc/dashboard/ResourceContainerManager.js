@@ -58,7 +58,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     },
 
     groupBy: {
-      check: [null, "tags", "shared"],
+      check: [null, "tags", "shared", "groupedServices"],
       init: null,
       nullable: true
     }
@@ -309,8 +309,11 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
           case "shared":
             groupTitle = "Not Shared";
             break;
+          case "groupedServices":
+            groupTitle = "Misc";
+            break;
         }
-        const noGroupContainer = this.__createGroupContainer("no-group", groupTitle, "transparent");
+        const noGroupContainer = this.__createGroupContainer("no-group", groupTitle, "text");
         this.__groupedContainers.add(noGroupContainer);
         this._add(this.__groupedContainers);
       } else {
@@ -525,12 +528,55 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       }
     },
 
+    __groupByGroupedServices: function(cards, resourceData) {
+      const groupedServicesConfig = osparc.store.Products.getInstance().getGroupedServicesUiConfig();
+      if (groupedServicesConfig == null) {
+        return;
+      }
+
+      // create group containers for each category
+      groupedServicesConfig["categories"].forEach(category => {
+        if (this.__getGroupContainer(category["id"]) === null) {
+          const groupContainer = this.__createGroupContainer(category["id"], category["title"], category["color"]);
+          groupContainer.setHeaderIcon("@FontAwesome5Solid/tag/24");
+          this.__groupedContainers.add(groupContainer);
+        }
+      });
+
+      // get the right container
+      let container = null;
+      const serviceKey = resourceData["key"];
+      if (serviceKey) {
+        const groupInfo = groupedServicesConfig["services"].find(serviceInfo => serviceInfo["serviceKey"] === serviceKey);
+        if (groupInfo) {
+          container = this.__getGroupContainer(groupInfo["category"]);
+        }
+      }
+      if (container === null) {
+        container = this.__getGroupContainer("no-group");
+        container.setHeaderIcon("@FontAwesome5Solid/tag/24");
+      }
+
+      // create the card and add it to the container
+      const card = this.__createCard(resourceData);
+      this.__addCardToContainer(card, container);
+      cards.push(card);
+
+      this.__moveNoGroupToLast();
+      this.__groupedContainersList.forEach(groupedContainer => {
+        groupedContainer.setExpanded(true);
+        groupedContainer.getExpandButton().exclude();
+      });
+    },
+
     __resourceToCards: function(resourceData) {
       const cardsCreated = [];
       if (this.getGroupBy() === "tags") {
         this.__groupByTags(cardsCreated, resourceData);
       } else if (this.getGroupBy() === "shared") {
         this.__groupByShareWith(cardsCreated, resourceData);
+      } else if (this.getGroupBy() === "groupedServices") {
+        this.__groupByGroupedServices(cardsCreated, resourceData);
       } else {
         const card = this.__createCard(resourceData);
         this.__addCardToContainer(card, this.__nonGroupedContainer);

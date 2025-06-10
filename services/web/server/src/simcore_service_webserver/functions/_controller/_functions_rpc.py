@@ -2,6 +2,7 @@ from aiohttp import web
 from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.functions import (
     Function,
+    FunctionAccessRights,
     FunctionID,
     FunctionInputs,
     FunctionInputSchema,
@@ -345,6 +346,25 @@ async def get_function_output_schema(
     function_id: FunctionID,
 ) -> FunctionOutputSchema:
     return await _functions_service.get_function_output_schema(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        function_id=function_id,
+    )
+
+
+@router.expose(reraise_if_error_type=(FunctionIDNotFoundError,))
+async def get_function_user_permissions(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_id: FunctionID,
+) -> FunctionAccessRights:
+    """
+    Returns a dictionary with the user's permissions for the function.
+    """
+    return await _functions_service.get_function_user_permissions(
         app=app,
         user_id=user_id,
         product_name=product_name,
