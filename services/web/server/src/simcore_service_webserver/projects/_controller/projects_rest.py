@@ -43,8 +43,8 @@ from ..utils import are_project_services_available, get_project_unavailable_serv
 from . import _rest_utils
 from ._rest_exceptions import handle_plugin_requests_exceptions
 from ._rest_schemas import (
+    AuthenticatedRequestContext,
     ProjectPathParams,
-    RequestContext,
 )
 from .projects_rest_schemas import (
     ProjectActiveQueryParams,
@@ -70,7 +70,7 @@ async def create_project(request: web.Request):
     #
     # - Create https://google.aip.dev/133
     #
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     query_params: ProjectCreateQueryParams = parse_request_query_parameters_as(
         ProjectCreateQueryParams, request
     )
@@ -132,7 +132,7 @@ async def list_projects(request: web.Request):
         web.HTTPUnprocessableEntity: (422) if validation of request parameters fail
 
     """
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     query_params: ProjectsListQueryParams = parse_request_query_parameters_as(
         ProjectsListQueryParams, request
     )
@@ -177,7 +177,7 @@ async def list_projects(request: web.Request):
 @permission_required("project.read")
 @handle_plugin_requests_exceptions
 async def list_projects_full_search(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     query_params: ProjectsSearchQueryParams = parse_request_query_parameters_as(
         ProjectsSearchQueryParams, request
     )
@@ -224,7 +224,7 @@ async def get_active_project(request: web.Request) -> web.Response:
         web.HTTPUnprocessableEntity: (422) if validation of request parameters fail
         web.HTTPNotFound: If active project is not found
     """
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     query_params: ProjectActiveQueryParams = parse_request_query_parameters_as(
         ProjectActiveQueryParams, request
     )
@@ -268,7 +268,7 @@ async def get_project(request: web.Request):
         web.HTTPNotFound: This project was not found
     """
 
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     user_available_services = await catalog_service.get_services_for_user_in_product(
@@ -329,7 +329,7 @@ async def patch_project(request: web.Request):
     #
     # Update https://google.aip.dev/134
     #
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     project_patch = await parse_request_body_as(ProjectPatch, request)
 
@@ -362,7 +362,7 @@ async def delete_project(request: web.Request):
         web.HTTPConflict: Somethine went wrong while deleting
         web.HTTPNoContent: Sucess
     """
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     await _projects_service.get_project_for_user(
@@ -428,7 +428,7 @@ async def delete_project(request: web.Request):
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
 @handle_plugin_requests_exceptions
 async def clone_project(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     return await start_long_running_task(
