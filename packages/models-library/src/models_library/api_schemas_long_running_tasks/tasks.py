@@ -18,9 +18,12 @@ class TaskResult(BaseModel):
     error: Any | None
 
 
-class TaskGet(BaseModel):
+class TaskGetWithoutHref(BaseModel):
     task_id: TaskId
     task_name: str
+
+
+class TaskGet(TaskGetWithoutHref):
     status_href: str
     result_href: str
     abort_href: str

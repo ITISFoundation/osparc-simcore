@@ -13,6 +13,7 @@ from models_library.api_schemas_long_running_tasks.base import (
 )
 from models_library.api_schemas_long_running_tasks.tasks import (
     TaskGet,
+    TaskGetWithoutHref,
     TaskResult,
     TaskStatus,
 )
@@ -74,13 +75,8 @@ class LRTask:
         return await self._result
 
 
-# explicit export of models for api-schemas
-
-assert TaskResult  # nosec
-assert TaskGet  # nosec
-assert TaskStatus  # nosec
-
 __all__: tuple[str, ...] = (
+    "TaskGetWithoutHref",
     "ProgressMessage",
     "ProgressPercent",
     "TaskGet",
@@ -89,3 +85,5 @@ __all__: tuple[str, ...] = (
     "TaskResult",
     "TaskStatus",
 )
+
+# nopycln: file

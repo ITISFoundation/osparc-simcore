@@ -2,7 +2,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Request, status
 
-from ...long_running_tasks.errors import TaskNotCompletedError, TaskNotFoundError
+from ...long_running_tasks.expose import endpoint_responses
 from ...long_running_tasks.models import TaskGet, TaskId, TaskResult, TaskStatus
 from ...long_running_tasks.task import TasksManager
 from ..requests_decorators import cancel_on_disconnect
@@ -21,11 +21,13 @@ async def list_tasks(
         TaskGet(
             task_id=t.task_id,
             task_name=t.task_name,
-            status_href="",
-            result_href="",
-            abort_href="",
+            status_href=str(request.url_for("get_task_status", task_id=t.task_id)),
+            result_href=str(request.url_for("get_task_result", task_id=t.task_id)),
+            abort_href=str(
+                request.url_for("cancel_and_delete_task", task_id=t.task_id)
+            ),
         )
-        for t in tasks_manager.list_tasks(with_task_context=None)
+        for t in endpoint_responses.list_tasks(tasks_manager, task_context=None)
     ]
 
 
@@ -43,7 +45,9 @@ async def get_task_status(
     tasks_manager: Annotated[TasksManager, Depends(get_tasks_manager)],
 ) -> TaskStatus:
     assert request  # nosec
-    return tasks_manager.get_task_status(task_id=task_id, with_task_context=None)
+    return endpoint_responses.get_task_status(
+        tasks_manager, task_context=None, task_id=task_id
+    )
 
 
 @router.get(
@@ -62,20 +66,9 @@ async def get_task_result(
     tasks_manager: Annotated[TasksManager, Depends(get_tasks_manager)],
 ) -> TaskResult | Any:
     assert request  # nosec
-    try:
-        task_result = tasks_manager.get_task_result(task_id, with_task_context=None)
-        await tasks_manager.remove_task(
-            task_id, with_task_context=None, reraise_errors=False
-        )
-        return task_result
-    except (TaskNotFoundError, TaskNotCompletedError):
-        raise
-    except Exception:
-        # the task shall be removed in this case
-        await tasks_manager.remove_task(
-            task_id, with_task_context=None, reraise_errors=False
-        )
-        raise
+    return await endpoint_responses.get_task_result(
+        tasks_manager, task_context=None, task_id=task_id
+    )
 
 
 @router.delete(
@@ -94,4 +87,6 @@ async def cancel_and_delete_task(
     tasks_manager: Annotated[TasksManager, Depends(get_tasks_manager)],
 ) -> None:
     assert request  # nosec
-    await tasks_manager.remove_task(task_id, with_task_context=None)
+    await endpoint_responses.remove_task(
+        tasks_manager, task_context=None, task_id=task_id
+    )
