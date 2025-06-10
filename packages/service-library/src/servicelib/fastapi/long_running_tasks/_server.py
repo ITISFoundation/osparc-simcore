@@ -16,8 +16,8 @@ def setup(
     app: FastAPI,
     *,
     router_prefix: str = "",
-    stale_task_check_interval_s: datetime.timedelta = DEFAULT_STALE_TASK_CHECK_INTERVAL,
-    stale_task_detect_timeout_s: datetime.timedelta = DEFAULT_STALE_TASK_DETECT_TIMEOUT,
+    stale_task_check_interval: datetime.timedelta = DEFAULT_STALE_TASK_CHECK_INTERVAL,
+    stale_task_detect_timeout: datetime.timedelta = DEFAULT_STALE_TASK_DETECT_TIMEOUT,
 ) -> None:
     """
     - `router_prefix` APIs are mounted on `/task/...`, this
@@ -37,8 +37,8 @@ def setup(
 
         # add components to state
         app.state.long_running_task_manager = TasksManager(
-            stale_task_check_interval_s=stale_task_check_interval_s,
-            stale_task_detect_timeout_s=stale_task_detect_timeout_s,
+            stale_task_check_interval=stale_task_check_interval,
+            stale_task_detect_timeout=stale_task_detect_timeout,
         )
 
     async def on_shutdown() -> None:

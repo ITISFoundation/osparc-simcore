@@ -129,8 +129,8 @@ def setup(
     router_prefix: str,
     handler_check_decorator: Callable = no_ops_decorator,
     task_request_context_decorator: Callable = no_task_context_decorator,
-    stale_task_check_interval_s: datetime.timedelta = DEFAULT_STALE_TASK_CHECK_INTERVAL,
-    stale_task_detect_timeout_s: datetime.timedelta = DEFAULT_STALE_TASK_DETECT_TIMEOUT,
+    stale_task_check_interval: datetime.timedelta = DEFAULT_STALE_TASK_CHECK_INTERVAL,
+    stale_task_detect_timeout: datetime.timedelta = DEFAULT_STALE_TASK_DETECT_TIMEOUT,
 ) -> None:
     """
     - `router_prefix` APIs are mounted on `/...`, this
@@ -146,8 +146,8 @@ def setup(
         # add components to state
         app[APP_LONG_RUNNING_TASKS_MANAGER_KEY] = long_running_task_manager = (
             TasksManager(
-                stale_task_check_interval_s=stale_task_check_interval_s,
-                stale_task_detect_timeout_s=stale_task_detect_timeout_s,
+                stale_task_check_interval=stale_task_check_interval,
+                stale_task_detect_timeout=stale_task_detect_timeout,
             )
         )
 

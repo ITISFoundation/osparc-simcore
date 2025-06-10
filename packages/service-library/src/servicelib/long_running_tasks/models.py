@@ -2,7 +2,7 @@
 from asyncio import Task
 from collections.abc import Awaitable, Callable, Coroutine
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any, TypeAlias
 
 from models_library.api_schemas_long_running_tasks.base import (
@@ -42,7 +42,7 @@ class TrackedTask(BaseModel):
         description="if True then the task will not be auto-cancelled if no one enquires of its status",
     )
 
-    started: datetime = Field(default_factory=datetime.utcnow)
+    started: datetime = Field(default_factory=lambda: datetime.now(UTC))
     last_status_check: datetime | None = Field(
         default=None,
         description=(
@@ -76,10 +76,10 @@ class LRTask:
 
 
 __all__: tuple[str, ...] = (
-    "TaskGetWithoutHref",
     "ProgressMessage",
     "ProgressPercent",
     "TaskGet",
+    "TaskGetWithoutHref",
     "TaskId",
     "TaskProgress",
     "TaskResult",

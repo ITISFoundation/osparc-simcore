@@ -9,10 +9,7 @@ from contextlib import suppress
 from typing import Any, Final, Protocol
 from uuid import uuid4
 
-from models_library.api_schemas_long_running_tasks.base import (
-    ProgressPercent,
-    TaskProgress,
-)
+from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from pydantic import PositiveFloat
 
 from .errors import (
@@ -24,7 +21,7 @@ from .errors import (
 )
 from .models import TaskId, TaskName, TaskStatus, TrackedTask
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 _CANCEL_TASK_TIMEOUT: Final[PositiveFloat] = datetime.timedelta(
     seconds=1
@@ -68,22 +65,23 @@ class TasksManager:
 
     def __init__(
         self,
-        stale_task_check_interval_s: datetime.timedelta,
-        stale_task_detect_timeout_s: datetime.timedelta,
+        stale_task_check_interval: datetime.timedelta,
+        stale_task_detect_timeout: datetime.timedelta,
     ):
         # Task groups: Every taskname maps to multiple asyncio.Task within TrackedTask model
         self._tasks_groups: dict[TaskName, TrackedTaskGroupDict] = {}
 
         self.stale_task_check_interval_s: PositiveFloat = (
-            stale_task_check_interval_s.total_seconds()
+            stale_task_check_interval.total_seconds()
         )
         self.stale_task_detect_timeout_s: PositiveFloat = (
-            stale_task_detect_timeout_s.total_seconds()
+            stale_task_detect_timeout.total_seconds()
         )
         self._stale_tasks_monitor_task: asyncio.Task = asyncio.create_task(
             self._stale_tasks_monitor_worker(),
             name=f"{__name__}.stale_task_monitor_worker",
         )
+        # TODO: add setup and teardown and also use periodic
 
     def get_task_group(self, task_name: TaskName) -> TrackedTaskGroupDict:
         return self._tasks_groups[task_name]
@@ -126,7 +124,7 @@ class TasksManager:
                 # - finished with a result
                 # - finished with errors
                 # we just print the status from where one can infer the above
-                logger.warning(
+                _logger.warning(
                     "Removing stale task '%s' with status '%s'",
                     task_id,
                     self.get_task_status(
@@ -269,7 +267,7 @@ class TasksManager:
                         _await_task(task), timeout=_CANCEL_TASK_TIMEOUT
                     )
                 except TimeoutError:
-                    logger.warning(
+                    _logger.warning(
                         "Timed out while awaiting for cancellation of '%s'", reference
                     )
             except Exception:  # pylint:disable=broad-except
@@ -395,11 +393,11 @@ def start_task(
 
     # bind the task with progress 0 and 1
     async def _progress_task(progress: TaskProgress, handler: TaskProtocol):
-        progress.update(message="starting", percent=ProgressPercent(0))
+        progress.update(message="starting", percent=0)
         try:
             return await handler(progress, **task_kwargs)
         finally:
-            progress.update(message="finished", percent=ProgressPercent(1))
+            progress.update(message="finished", percent=1)
 
     async_task = asyncio.create_task(
         _progress_task(task_progress, task), name=f"{task_name}"
@@ -421,9 +419,9 @@ __all__: tuple[str, ...] = (
     "TaskAlreadyRunningError",
     "TaskCancelledError",
     "TaskId",
-    "TasksManager",
     "TaskProgress",
     "TaskProtocol",
     "TaskStatus",
+    "TasksManager",
     "TrackedTask",
 )
