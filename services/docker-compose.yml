@@ -854,7 +854,9 @@ services:
       WEBSERVER_FOLDERS: ${WEBSERVER_FOLDERS}
 
     deploy:
-      replicas: 5
+      # NOTE: having 2 replicas is necessary to detect early on if in-process tasks are mistakenly added to the webserver
+      # in case this cannot be done otherwise, the sticky rule below will need to be adapted
+      replicas: 2
       labels:
         - io.simcore.zone=${TRAEFIK_SIMCORE_ZONE}
         # gzip compression
