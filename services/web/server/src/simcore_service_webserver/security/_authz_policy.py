@@ -2,6 +2,7 @@
 
 import contextlib
 import logging
+from copy import deepcopy
 from typing import Final
 
 from aiocache import cached  # type: ignore[import-untyped]
@@ -141,7 +142,8 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         if auth_info is None:
             return False
 
-        context = context or AuthContextDict()
+        # make sure context is a copy to avoid side effects
+        context = deepcopy(context) if context else AuthContextDict()
 
         # product access
         if permission == PERMISSION_PRODUCT_LOGIN_KEY:

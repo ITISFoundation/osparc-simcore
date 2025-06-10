@@ -226,7 +226,7 @@ def managed_resource(
         registry = UserSessionResourcesRegistry(int(user_id), client_session_id, app)
         yield registry
     except Exception:
-        _logger.exception(
+        _logger.debug(
             "Error in web-socket for user:%s, session:%s",
             user_id,
             client_session_id,

@@ -51,7 +51,7 @@ from yarl import URL
 
 from .._meta import API_VTAG
 from ..login.decorators import login_required
-from ..models import RequestContext
+from ..models import AuthenticatedRequestContext
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..security.decorators import permission_required
 from ..tasks._exception_handlers import handle_export_data_exceptions
@@ -199,7 +199,7 @@ def _create_data_response_from_async_job(
 @login_required
 @permission_required("storage.files.*")
 async def compute_path_size(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(
         StoragePathComputeSizeParams, request
     )
@@ -223,7 +223,7 @@ async def compute_path_size(request: web.Request) -> web.Response:
 @login_required
 @permission_required("storage.files.*")
 async def batch_delete_paths(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(StorageLocationPathParams, request)
     body = await parse_request_body_as(BatchDeletePathsBodyParams, request)
 
@@ -488,7 +488,7 @@ async def export_data(request: web.Request) -> web.Response:
             return v
 
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
-    _req_ctx = RequestContext.model_validate(request)
+    _req_ctx = AuthenticatedRequestContext.model_validate(request)
     _ = parse_request_path_parameters_as(_PathParams, request)
     export_data_post = await parse_request_body_as(
         model_schema_cls=DataExportPost, request=request
