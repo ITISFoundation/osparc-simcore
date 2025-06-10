@@ -347,6 +347,16 @@ qx.Class.define("osparc.store.Services", {
       return msg;
     },
 
+    fetchPricingPlansService: function(serviceKey, serviceVersion) {
+      const plansParams = {
+        url: osparc.data.Resources.getServiceUrl(serviceKey, serviceVersion)
+      };
+      return osparc.data.Resources.fetch("services", "pricingPlans", plansParams)
+        .then(pricingPlansData => {
+          return pricingPlansData;
+        });
+    },
+
     getFilePicker: function() {
       return this.getLatest("simcore/services/frontend/file-picker");
     },
