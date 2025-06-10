@@ -12,7 +12,7 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random_exponential
 from yarl import URL
 
-from ...long_running_tasks._constants import DEFAULT_POLL_INTERVAL_S, HOUR
+from ...long_running_tasks.constants import DEFAULT_POLL_INTERVAL_S, HOUR
 from ...long_running_tasks.models import (
     LRTask,
     RequestBody,

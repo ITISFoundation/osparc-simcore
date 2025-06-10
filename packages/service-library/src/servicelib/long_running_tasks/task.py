@@ -1,12 +1,12 @@
 import asyncio
+import datetime
 import inspect
 import logging
 import traceback
 import urllib.parse
 from collections import deque
 from contextlib import suppress
-from datetime import datetime
-from typing import Any, Protocol
+from typing import Any, Final, Protocol
 from uuid import uuid4
 
 from models_library.api_schemas_long_running_tasks.base import (
@@ -26,6 +26,10 @@ from .models import TaskId, TaskName, TaskStatus, TrackedTask
 
 logger = logging.getLogger(__name__)
 
+_CANCEL_TASK_TIMEOUT: Final[PositiveFloat] = datetime.timedelta(
+    seconds=1
+).total_seconds()
+
 
 async def _await_task(task: asyncio.Task) -> None:
     await task
@@ -35,7 +39,7 @@ def _mark_task_to_remove_if_required(
     task_id: TaskId,
     tasks_to_remove: list[TaskId],
     tracked_task: TrackedTask,
-    utc_now: datetime,
+    utc_now: datetime.datetime,
     stale_timeout_s: float,
 ) -> None:
     if tracked_task.fire_and_forget:
@@ -64,16 +68,18 @@ class TasksManager:
 
     def __init__(
         self,
-        stale_task_check_interval_s: PositiveFloat,
-        stale_task_detect_timeout_s: PositiveFloat,
+        stale_task_check_interval_s: datetime.timedelta,
+        stale_task_detect_timeout_s: datetime.timedelta,
     ):
         # Task groups: Every taskname maps to multiple asyncio.Task within TrackedTask model
         self._tasks_groups: dict[TaskName, TrackedTaskGroupDict] = {}
 
-        self._cancel_task_timeout_s: PositiveFloat = 1.0
-
-        self.stale_task_check_interval_s = stale_task_check_interval_s
-        self.stale_task_detect_timeout_s = stale_task_detect_timeout_s
+        self.stale_task_check_interval_s: PositiveFloat = (
+            stale_task_check_interval_s.total_seconds()
+        )
+        self.stale_task_detect_timeout_s: PositiveFloat = (
+            stale_task_detect_timeout_s.total_seconds()
+        )
         self._stale_tasks_monitor_task: asyncio.Task = asyncio.create_task(
             self._stale_tasks_monitor_worker(),
             name=f"{__name__}.stale_task_monitor_worker",
@@ -100,7 +106,7 @@ class TasksManager:
         # will not be the case.
 
         while await asyncio.sleep(self.stale_task_check_interval_s, result=True):
-            utc_now = datetime.utcnow()
+            utc_now = datetime.datetime.now(tz=datetime.UTC)
 
             tasks_to_remove: list[TaskId] = []
             for tasks in self._tasks_groups.values():
@@ -207,7 +213,7 @@ class TasksManager:
         raises TaskNotFoundError if the task cannot be found
         """
         tracked_task: TrackedTask = self._get_tracked_task(task_id, with_task_context)
-        tracked_task.last_status_check = datetime.utcnow()
+        tracked_task.last_status_check = datetime.datetime.now(tz=datetime.UTC)
 
         task = tracked_task.task
         done = task.done()
@@ -260,7 +266,7 @@ class TasksManager:
             try:
                 try:
                     await asyncio.wait_for(
-                        _await_task(task), timeout=self._cancel_task_timeout_s
+                        _await_task(task), timeout=_CANCEL_TASK_TIMEOUT
                     )
                 except TimeoutError:
                     logger.warning(

@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 import logging
 from collections.abc import AsyncGenerator, Callable
 from functools import wraps
@@ -6,9 +7,13 @@ from typing import Any
 
 from aiohttp import web
 from common_library.json_serialization import json_dumps
-from pydantic import AnyHttpUrl, PositiveFloat, TypeAdapter
+from pydantic import AnyHttpUrl, TypeAdapter
 
 from ...aiohttp import status
+from ...long_running_tasks.constants import (
+    DEFAULT_STALE_TASK_CHECK_INTERVAL,
+    DEFAULT_STALE_TASK_DETECT_TIMEOUT,
+)
 from ...long_running_tasks.models import TaskGet
 from ...long_running_tasks.task import (
     TaskContext,
@@ -20,7 +25,6 @@ from ..typing_extension import Handler
 from . import _routes
 from ._constants import (
     APP_LONG_RUNNING_TASKS_MANAGER_KEY,
-    MINUTE,
     RQT_LONG_RUNNING_TASKS_CONTEXT_KEY,
 )
 from ._dependencies import get_tasks_manager
@@ -125,8 +129,8 @@ def setup(
     router_prefix: str,
     handler_check_decorator: Callable = no_ops_decorator,
     task_request_context_decorator: Callable = no_task_context_decorator,
-    stale_task_check_interval_s: PositiveFloat = 1 * MINUTE,
-    stale_task_detect_timeout_s: PositiveFloat = 5 * MINUTE,
+    stale_task_check_interval_s: datetime.timedelta = DEFAULT_STALE_TASK_CHECK_INTERVAL,
+    stale_task_detect_timeout_s: datetime.timedelta = DEFAULT_STALE_TASK_DETECT_TIMEOUT,
 ) -> None:
     """
     - `router_prefix` APIs are mounted on `/...`, this
