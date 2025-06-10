@@ -218,6 +218,18 @@ qx.Class.define("osparc.store.Study", {
           console.error("Failed to fetch pricing units:", err);
           throw err;
         });
-    }
+    },
+
+    updateSelectedPricingUnit: function(studyId, nodeId, planId, selectedUnitId) {
+      const params = {
+        url: {
+          studyId,
+          nodeId,
+          pricingPlanId: planId,
+          pricingUnitId: selectedUnitId
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "putPricingUnit", params);
+    },
   }
 });

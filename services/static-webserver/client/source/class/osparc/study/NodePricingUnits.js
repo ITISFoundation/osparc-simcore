@@ -74,15 +74,7 @@ qx.Class.define("osparc.study.NodePricingUnits", {
 
   statics: {
     patchPricingUnitSelection: function(studyId, nodeId, planId, selectedUnitId) {
-      const params = {
-        url: {
-          studyId,
-          nodeId,
-          pricingPlanId: planId,
-          pricingUnitId: selectedUnitId
-        }
-      };
-      return osparc.data.Resources.fetch("studies", "putPricingUnit", params);
+      return osparc.store.Study.updateSelectedPricingUnit(studyId, nodeId, planId, selectedUnitId);
     }
   },
 
