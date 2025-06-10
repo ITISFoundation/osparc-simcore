@@ -221,12 +221,13 @@ qx.Class.define("osparc.store.Study", {
         }
       };
       return osparc.data.Resources.fetch("studies", "getPricingUnit", params)
-        .then(pricingUnits => {
-          if (pricingUnits && pricingUnits["pricingUnits"]) {
-            return pricingUnits["pricingUnits"];
-          } else {
-            throw new Error("No pricing units found");
+        .then(selectedPricingUnit => {
+          // store the fetched pricing unit in the cache
+          if (!(studyId in this.__nodePricingUnit)) {
+            this.__nodePricingUnit[studyId] = {};
           }
+          this.__nodePricingUnit[studyId][nodeId] = selectedPricingUnit;
+          return selectedPricingUnit;
         })
         .catch(err => {
           console.error("Failed to fetch pricing units:", err);
