@@ -854,6 +854,7 @@ services:
       WEBSERVER_FOLDERS: ${WEBSERVER_FOLDERS}
 
     deploy:
+      replicas: 5
       labels:
         - io.simcore.zone=${TRAEFIK_SIMCORE_ZONE}
         # gzip compression
@@ -874,11 +875,18 @@ services:
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.middlewares=${SWARM_STACK_NAME}_gzip@swarm, ${SWARM_STACK_NAME_NO_HYPHEN}_sslheader@swarm, ${SWARM_STACK_NAME}_webserver_retry
         # Create a dedicated sticky service for specific endpoints
         - traefik.http.services.${SWARM_STACK_NAME}_webserver_sticky.loadbalancer.server.port=8080
+        - traefik.http.services.${SWARM_STACK_NAME}_webserver_sticky.loadbalancer.sticky.cookie=true
         - traefik.http.services.${SWARM_STACK_NAME}_webserver_sticky.loadbalancer.sticky.cookie.secure=true
         - traefik.http.services.${SWARM_STACK_NAME}_webserver_sticky.loadbalancer.sticky.cookie.httpOnly=true
         - traefik.http.services.${SWARM_STACK_NAME}_webserver_sticky.loadbalancer.sticky.cookie.sameSite=lax
         # Single consolidated router for all sticky endpoints
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky.rule=Path(`/v0/projects`) || Path(`/v0/projects:clone`) || PathRegexp(`^/v0/projects/[0-9a-fA-F-]+/nodes/[0-9a-fA-F-]+:stop`) || PathRegexp(`^/v0/storage/locations/[0-9]+/paths/.+:size`) || PathRegexp(`^/v0/storage/locations/[0-9]+/-/paths:batchDelete`) || PathRegexp(`^/v0/storage/locations/[0-9]+/export-data`)
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky.rule=Path(`/v0/projects`) ||
+          Path(`/v0/projects:clone`) ||
+          PathRegexp(`^/v0/projects/[0-9a-fA-F-]+/nodes/[0-9a-fA-F-]+:stop`) ||
+          PathRegexp(`^/v0/storage/locations/[0-9]+/paths/.+:size`) ||
+          PathRegexp(`^/v0/storage/locations/[0-9]+/-/paths:batchDelete`) ||
+          PathRegexp(`^/v0/storage/locations/[0-9]+/export-data`) ||
+          PathRegexp(`^/v0/tasks-legacy/.+`)
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky.entrypoints=http
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky.service=${SWARM_STACK_NAME}_webserver_sticky
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky.middlewares=${SWARM_STACK_NAME}_gzip@swarm, ${SWARM_STACK_NAME_NO_HYPHEN}_sslheader@swarm, ${SWARM_STACK_NAME}_webserver_retry
