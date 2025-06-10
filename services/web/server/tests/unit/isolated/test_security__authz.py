@@ -28,8 +28,8 @@ from simcore_service_webserver.security._authz_access_roles import (
     ROLES_PERMISSIONS,
     UserRole,
 )
-from simcore_service_webserver.security._authz_db import AuthInfoDict
 from simcore_service_webserver.security._authz_policy import AuthorizationPolicy
+from simcore_service_webserver.security._authz_repository import AuthInfoDict
 
 
 @pytest.fixture

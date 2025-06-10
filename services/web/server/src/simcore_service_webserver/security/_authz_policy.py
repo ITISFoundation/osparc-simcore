@@ -24,9 +24,13 @@ from ._authz_access_model import (
     RoleBasedAccessModel,
     has_access_by_role,
 )
-from ._authz_db import AuthInfoDict, get_active_user_or_none, is_user_in_product_name
+from ._authz_repository import (
+    AuthInfoDict,
+    get_active_user_or_none,
+    is_user_in_product_name,
+)
 from ._constants import MSG_AUTH_NOT_AVAILABLE, PERMISSION_PRODUCT_LOGIN_KEY
-from ._identity_api import IdentityStr
+from ._identity_service import IdentityStr
 
 _logger = logging.getLogger(__name__)
 
