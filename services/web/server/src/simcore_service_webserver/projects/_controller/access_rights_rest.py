@@ -26,7 +26,7 @@ from ...utils_aiohttp import envelope_json_response
 from .. import _groups_service
 from .._groups_service import ProjectGroupGet
 from ._rest_exceptions import handle_plugin_requests_exceptions
-from ._rest_schemas import ProjectPathParams, RequestContext
+from ._rest_schemas import AuthenticatedRequestContext, ProjectPathParams
 
 _logger = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ routes = web.RouteTableDef()
 @permission_required("project.access_rights.update")
 @handle_plugin_requests_exceptions
 async def share_project(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     body_params = await parse_request_body_as(ProjectShare, request)
 
@@ -98,7 +98,7 @@ async def share_project(request: web.Request):
 @permission_required("project.access_rights.update")
 @handle_plugin_requests_exceptions
 async def create_project_group(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectsGroupsPathParams, request)
     body_params = await parse_request_body_as(ProjectsGroupsBodyParams, request)
 
@@ -121,7 +121,7 @@ async def create_project_group(request: web.Request):
 @permission_required("project.read")
 @handle_plugin_requests_exceptions
 async def list_project_groups(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     project_groups: list[ProjectGroupGet] = (
@@ -144,7 +144,7 @@ async def list_project_groups(request: web.Request):
 @permission_required("project.access_rights.update")
 @handle_plugin_requests_exceptions
 async def replace_project_group(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectsGroupsPathParams, request)
     body_params = await parse_request_body_as(ProjectsGroupsBodyParams, request)
 
@@ -169,7 +169,7 @@ async def replace_project_group(request: web.Request):
 @permission_required("project.access_rights.update")
 @handle_plugin_requests_exceptions
 async def delete_project_group(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectsGroupsPathParams, request)
 
     await _groups_service.delete_project_group(

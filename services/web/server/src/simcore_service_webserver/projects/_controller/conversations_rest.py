@@ -33,7 +33,7 @@ from ...security.decorators import permission_required
 from ...utils_aiohttp import envelope_json_response
 from .. import _conversations_service
 from ._rest_exceptions import handle_plugin_requests_exceptions
-from ._rest_schemas import ProjectPathParams, RequestContext
+from ._rest_schemas import AuthenticatedRequestContext, ProjectPathParams
 
 _logger = logging.getLogger(__name__)
 
@@ -69,7 +69,7 @@ class _ProjectConversationsPutBodyParams(InputSchema):
 @permission_required("project.read")
 @handle_plugin_requests_exceptions
 async def create_project_conversation(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     body_params = await parse_request_body_as(
         _ProjectConversationsCreateBodyParams, request
@@ -96,7 +96,7 @@ async def create_project_conversation(request: web.Request):
 @permission_required("project.read")
 @handle_plugin_requests_exceptions
 async def list_project_conversations(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     query_params = parse_request_query_parameters_as(
         _ListProjectConversationsQueryParams, request
@@ -136,7 +136,7 @@ async def list_project_conversations(request: web.Request):
 @permission_required("project.read")
 @handle_plugin_requests_exceptions
 async def update_project_conversation(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(
         _ProjectConversationsPathParams, request
     )
@@ -165,7 +165,7 @@ async def update_project_conversation(request: web.Request):
 @permission_required("project.read")
 @handle_plugin_requests_exceptions
 async def delete_project_conversation(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(
         _ProjectConversationsPathParams, request
     )
@@ -188,7 +188,7 @@ async def delete_project_conversation(request: web.Request):
 @permission_required("project.read")
 @handle_plugin_requests_exceptions
 async def get_project_conversation(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(
         _ProjectConversationsPathParams, request
     )
@@ -238,7 +238,7 @@ class _ProjectConversationMessagesPutBodyParams(BaseModel):
 @permission_required("project.read")
 @handle_plugin_requests_exceptions
 async def create_project_conversation_message(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(
         _ProjectConversationsPathParams, request
     )
@@ -268,7 +268,7 @@ async def create_project_conversation_message(request: web.Request):
 @permission_required("project.read")
 @handle_plugin_requests_exceptions
 async def list_project_conversation_messages(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(
         _ProjectConversationsPathParams, request
     )
@@ -314,7 +314,7 @@ async def list_project_conversation_messages(request: web.Request):
 @permission_required("project.read")
 @handle_plugin_requests_exceptions
 async def update_project_conversation_message(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(
         _ProjectConversationsMessagesPathParams, request
     )
@@ -344,7 +344,7 @@ async def update_project_conversation_message(request: web.Request):
 @permission_required("project.read")
 @handle_plugin_requests_exceptions
 async def delete_project_conversation_message(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(
         _ProjectConversationsMessagesPathParams, request
     )
@@ -368,7 +368,7 @@ async def delete_project_conversation_message(request: web.Request):
 @permission_required("project.read")
 @handle_plugin_requests_exceptions
 async def get_project_conversation_message(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(
         _ProjectConversationsMessagesPathParams, request
     )

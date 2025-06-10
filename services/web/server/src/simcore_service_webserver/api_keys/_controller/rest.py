@@ -21,7 +21,7 @@ from servicelib.aiohttp.requests_validation import (
 
 from ..._meta import API_VTAG
 from ...login.decorators import login_required
-from ...models import RequestContext
+from ...models import AuthenticatedRequestContext
 from ...security.decorators import permission_required
 from ...utils_aiohttp import envelope_json_response, get_api_base_url
 from .. import _service
@@ -43,7 +43,7 @@ class ApiKeysPathParams(StrictRequestParameters):
 @permission_required("user.apikey.*")
 @handle_plugin_requests_exceptions
 async def create_api_key(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     new_api_key = await parse_request_body_as(ApiKeyCreateRequest, request)
 
     created_api_key: ApiKey = await _service.create_api_key(
@@ -69,11 +69,12 @@ async def create_api_key(request: web.Request):
 @permission_required("user.apikey.*")
 @handle_plugin_requests_exceptions
 async def list_api_keys(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
 
     query_params: ApiKeyListQueryParams = parse_request_query_parameters_as(
         ApiKeyListQueryParams, request
     )
+
     api_keys = await _service.list_api_keys(
         request.app,
         user_id=req_ctx.user_id,
@@ -90,7 +91,7 @@ async def list_api_keys(request: web.Request):
 @permission_required("user.apikey.*")
 @handle_plugin_requests_exceptions
 async def get_api_key(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ApiKeysPathParams, request)
     api_key: ApiKey = await _service.get_api_key(
         request.app,
@@ -106,7 +107,7 @@ async def get_api_key(request: web.Request):
 @permission_required("user.apikey.*")
 @handle_plugin_requests_exceptions
 async def delete_api_key(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ApiKeysPathParams, request)
 
     await _service.delete_api_key(
