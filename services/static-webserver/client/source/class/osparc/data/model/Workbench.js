@@ -794,9 +794,13 @@ qx.Class.define("osparc.data.model.Workbench", {
           // the node was removed
           return;
         }
-
         // use the node data that was used to check the diffs
         const nodeData = workbenchSource[nodeId];
+        if (!nodeData) {
+          // skip if nodeData is undefined or null
+          return;
+        }
+
         let patchData = {};
         if (workbenchDiffs[nodeId] instanceof Array) {
           // if workbenchDiffs is an array means that the node was added
