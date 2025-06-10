@@ -35,7 +35,7 @@ qx.Class.define("osparc.ui.message.Loading", {
   construct: function() {
     this.base(arguments);
 
-    const layout = new qx.ui.layout.Grid(20, 20);
+    const layout = new qx.ui.layout.Grid(10, 10);
     layout.setRowFlex(this.self().GRID_POS.SPACER_TOP, 1);
     layout.setRowFlex(this.self().GRID_POS.SPACER_BOTTOM, 1);
     layout.setColumnFlex(0, 1);
@@ -119,8 +119,11 @@ qx.Class.define("osparc.ui.message.Loading", {
         row: this.self().GRID_POS.TOOLBAR
       });
 
-      this._add(new qx.ui.core.Spacer(), {
-        column: 1,
+      const column = 1;
+
+      const topSpacer = new qx.ui.core.Spacer();
+      this._add(topSpacer, {
+        column,
         row: this.self().GRID_POS.SPACER_TOP
       });
 
@@ -142,7 +145,7 @@ qx.Class.define("osparc.ui.message.Loading", {
         });
       }
       this._add(thumbnail, {
-        column: 1,
+        column,
         row: this.self().GRID_POS.LOGO
       });
 
@@ -163,7 +166,7 @@ qx.Class.define("osparc.ui.message.Loading", {
         alignX: "center",
       });
       this._add(waitingHeader, {
-        column: 1,
+        column,
         row: this.self().GRID_POS.WAITING
       });
 
@@ -171,7 +174,7 @@ qx.Class.define("osparc.ui.message.Loading", {
         alignX: "center"
       }));
       this._add(messages, {
-        column: 1,
+        column,
         row: this.self().GRID_POS.MESSAGES
       });
 
@@ -179,12 +182,13 @@ qx.Class.define("osparc.ui.message.Loading", {
         alignX: "center"
       }));
       this._add(extraWidgets, {
-        column: 1,
+        column,
         row: this.self().GRID_POS.EXTRA_WIDGETS
       });
 
-      this._add(new qx.ui.core.Spacer(), {
-        column: 1,
+      const bottomSpacer = new qx.ui.core.Spacer();
+      this._add(bottomSpacer, {
+        column,
         row: this.self().GRID_POS.SPACER_BOTTOM
       });
     },
