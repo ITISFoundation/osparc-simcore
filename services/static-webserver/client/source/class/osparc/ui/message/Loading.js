@@ -101,9 +101,6 @@ qx.Class.define("osparc.ui.message.Loading", {
 
     __buildLayout: function() {
       const maxLayout = this.__createMaximizeToolbar();
-      this.bind("showToolbar", maxLayout, "visibility", {
-        converter: showToolbar => showToolbar ? "visible" : "excluded"
-      });
       this._addAt(maxLayout, this.self().GRID_POS.TOOLBAR);
 
       const topSpacer = new qx.ui.core.Spacer();
@@ -194,6 +191,9 @@ qx.Class.define("osparc.ui.message.Loading", {
       const toolbarLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
         alignX: "right",
       }));
+      this.bind("showToolbar", toolbarLayout, "visibility", {
+        converter: showToolbar => showToolbar ? "visible" : "excluded"
+      });
       toolbarLayout.add(maxButton);
       return toolbarLayout;
     },
