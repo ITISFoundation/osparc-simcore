@@ -17,7 +17,7 @@ from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.workspaces import UserWorkspaceWithAccessRights
 from pydantic import TypeAdapter
-from servicelib.aiohttp.long_running_tasks.server import TaskProgress
+from servicelib.long_running_tasks.models import TaskProgress
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.redis import with_project_locked
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY

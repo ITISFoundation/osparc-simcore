@@ -29,11 +29,11 @@ from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_di
 from pytest_simcore.helpers.webserver_login import LoggedUser, NewUser, UserInfoDict
 from pytest_simcore.simcore_webserver_projects_rest_api import NEW_PROJECT
 from servicelib.aiohttp import status
-from servicelib.aiohttp.long_running_tasks.server import TaskStatus
 from servicelib.common_headers import (
     X_SIMCORE_PARENT_NODE_ID,
     X_SIMCORE_PARENT_PROJECT_UUID,
 )
+from servicelib.long_running_tasks.models import TaskStatus
 from simcore_service_webserver.application_settings_utils import (
     AppConfigDict,
     convert_to_environ_vars,
