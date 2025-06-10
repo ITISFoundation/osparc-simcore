@@ -14,7 +14,6 @@ from .authentication import (
     Identity,
     get_active_user_email,
     get_current_identity,
-    get_product_name,
 )
 
 
@@ -67,17 +66,15 @@ def get_webserver_session(
     app: Annotated[FastAPI, Depends(get_app)],
     session_cookies: Annotated[dict, Depends(get_session_cookie)],
     identity: Annotated[Identity, Depends(get_current_identity)],
-    product_name: Annotated[str, Depends(get_product_name)],
 ) -> AuthSession:
     """
     Lifetime of AuthSession wrapper is one request because it needs different session cookies
     Lifetime of embedded client is attached to the app lifetime
     """
-    assert identity.product_name == product_name  # nosec
     session = AuthSession.create(
         app,
         session_cookies=session_cookies,
-        product_name=product_name,
+        product_name=identity.product_name,
         user_id=identity.user_id,
     )
     assert isinstance(session, AuthSession)  # nosec
