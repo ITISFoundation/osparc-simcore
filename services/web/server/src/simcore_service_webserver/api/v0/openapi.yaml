@@ -3299,7 +3299,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_TaskStatus_'
+                title: Response Get Async Job Status
         '404':
           content:
             application/json:
@@ -3480,7 +3480,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_TaskResult_'
+                title: Response Get Task Result
   /v0/catalog/licensed-items:
     get:
       tags:
