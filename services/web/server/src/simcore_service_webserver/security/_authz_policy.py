@@ -2,7 +2,6 @@
 
 import contextlib
 import logging
-from copy import deepcopy
 from typing import Final
 
 from aiocache import cached  # type: ignore[import-untyped]
@@ -30,7 +29,7 @@ from ._authz_repository import (
     is_user_in_product_name,
 )
 from ._constants import MSG_AUTH_NOT_AVAILABLE, PERMISSION_PRODUCT_LOGIN_KEY
-from ._identity_service import IdentityStr
+from ._identity_web import IdentityStr
 
 _logger = logging.getLogger(__name__)
 

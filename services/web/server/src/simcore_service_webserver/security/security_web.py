@@ -15,7 +15,7 @@ from ._authz_service import (
     is_anonymous,
 )
 from ._constants import PERMISSION_PRODUCT_LOGIN_KEY
-from ._identity_service import forget_identity, remember_identity
+from ._identity_web import forget_identity, remember_identity
 
 __all__: tuple[str, ...] = (
     "PERMISSION_PRODUCT_LOGIN_KEY",
