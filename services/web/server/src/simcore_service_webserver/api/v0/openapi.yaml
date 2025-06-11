@@ -3299,7 +3299,7 @@ paths:
           content:
             application/json:
               schema:
-                title: Response Get Async Job Status
+                $ref: '#/components/schemas/Envelope_TaskStatus_'
         '404':
           content:
             application/json:
@@ -3384,7 +3384,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_TaskResult_'
+                title: Response Get Async Job Result
         '404':
           content:
             application/json:
@@ -10582,19 +10582,6 @@ components:
           title: Error
       type: object
       title: Envelope[TaskGet]
-    Envelope_TaskResult_:
-      properties:
-        data:
-          anyOf:
-          - $ref: '#/components/schemas/TaskResult'
-          - type: 'null'
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[TaskResult]
     Envelope_TaskStatus_:
       properties:
         data:
@@ -16795,23 +16782,6 @@ components:
         to be
 
         defined as a float bound between 0.0 and 1.0'
-    TaskResult:
-      properties:
-        result:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Result
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      required:
-      - result
-      - error
-      title: TaskResult
     TaskStatus:
       properties:
         task_progress:
