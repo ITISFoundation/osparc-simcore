@@ -86,9 +86,8 @@ qx.Class.define("osparc.po.UsersPending", {
               },
             };
             params.data["invitation"] = {};
-            const extraCreditsInUsd = form.getItems()["credits"].getValue();
-            if (extraCreditsInUsd > 0) {
-              params.data["invitation"]["extraCreditsInUsd"] = extraCreditsInUsd;
+            if (form.getItems()["credits"].getValue() > 0) {
+              params.data["invitation"]["extraCreditsInUsd"] = form.getItems()["credits"].getValue();
             }
             if (form.getItems()["withExpiration"].getValue()) {
               params.data["invitation"]["trialAccountDays"] = form.getItems()["trialDays"].getValue();
