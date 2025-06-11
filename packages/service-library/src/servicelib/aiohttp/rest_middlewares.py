@@ -8,6 +8,7 @@ from collections.abc import Awaitable, Callable
 from typing import Any
 
 from aiohttp import web
+from aiohttp.web_exceptions import HTTPError
 from aiohttp.web_request import Request
 from aiohttp.web_response import StreamResponse
 from common_library.error_codes import create_error_code
@@ -18,6 +19,7 @@ from ..logging_errors import create_troubleshotting_log_kwargs
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 from ..rest_responses import is_enveloped_from_map, is_enveloped_from_text
 from ..utils import is_production_environ
+from . import status
 from .rest_responses import (
     create_data_response,
     create_http_error,
@@ -26,6 +28,7 @@ from .rest_responses import (
 )
 from .rest_utils import EnvelopeFactory
 from .typing_extension import Handler, Middleware
+from .web_exceptions_extension import get_http_error_class_or_none
 
 DEFAULT_API_VERSION = "v0"
 _FMSG_INTERNAL_ERROR_USER_FRIENDLY = (
@@ -79,6 +82,7 @@ def _handle_http_error(
     request: web.BaseRequest, exception: web.HTTPError
 ) -> web.HTTPError:
     """Handle standard HTTP errors by ensuring they're properly formatted."""
+    assert request  # nosec
     exception.content_type = MIMETYPE_APPLICATION_JSON
     if exception.reason:
         exception.set_status(
@@ -103,8 +107,7 @@ def _handle_http_error(
 
 
 def _handle_http_successful(
-    request: web.Request,
-    exception: web.HTTPSuccessful,
+    request: web.Request, exception: web.HTTPSuccessful
 ) -> web.HTTPSuccessful:
     """Handle successful HTTP responses, ensuring they're properly enveloped."""
     assert request  # nosec
@@ -124,35 +127,30 @@ def _handle_http_successful(
     return exception
 
 
-def _handle_not_implemented_error(
+def _handle_exception_as_http_error(
     request: web.Request,
-    exception: NotImplementedError,
+    exception: Exception,
+    status_code: int,
     *,
     skip_internal_error_details: bool,
-) -> web.HTTPNotImplemented:
-    """Handle NotImplementedError by converting to appropriate HTTP error."""
+) -> HTTPError:
+    """
+    Generic handler for exceptions that map to specific HTTP status codes.
+    Converts the status code to the appropriate HTTP error class and creates a response.
+    """
     assert request  # nosec
+
+    http_error_cls = get_http_error_class_or_none(status_code)
+    if http_error_cls is None:
+        msg = (
+            f"No HTTP error class found for status code {status_code}, falling back to 500",
+        )
+        raise ValueError(msg)
 
     return create_http_error(
         exception,
         f"{exception}",
-        web.HTTPNotImplemented,
-        skip_internal_error_details=skip_internal_error_details,
-    )
-
-
-def _handle_timeout_error(
-    request: web.Request,
-    exception: TimeoutError,
-    *,
-    skip_internal_error_details: bool,
-) -> web.HTTPGatewayTimeout:
-    """Handle TimeoutError by converting to appropriate HTTP error."""
-    assert request  # nosec
-    return create_http_error(
-        exception,
-        f"{exception}",
-        web.HTTPGatewayTimeout,
+        http_error_cls,
         skip_internal_error_details=skip_internal_error_details,
     )
 
@@ -183,17 +181,24 @@ def error_middleware_factory(api_version: str) -> Middleware:
                 result = exc
 
             except NotImplementedError as exc:
-                result = _handle_not_implemented_error(
-                    request, exc, skip_internal_error_details=_is_prod
+                result = _handle_exception_as_http_error(
+                    request,
+                    exc,
+                    status.HTTP_501_NOT_IMPLEMENTED,
+                    skip_internal_error_details=_is_prod,
                 )
+
             except TimeoutError as exc:
-                result = _handle_timeout_error(
-                    request, exc, skip_internal_error_details=_is_prod
+                result = _handle_exception_as_http_error(
+                    request,
+                    exc,
+                    status.HTTP_504_GATEWAY_TIMEOUT,
+                    skip_internal_error_details=_is_prod,
                 )
 
         except Exception as exc:  # pylint: disable=broad-except
             #
-            # Last resort for unexpected exceptions (including those in handlers!)
+            # Last resort for unexpected exceptions (including those raise by the exception handlers!)
             #
             result = _handle_unexpected_exception_as_500(
                 request, exc, skip_internal_error_details=_is_prod
