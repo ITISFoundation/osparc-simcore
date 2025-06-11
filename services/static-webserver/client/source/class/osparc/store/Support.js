@@ -151,7 +151,7 @@ qx.Class.define("osparc.store.Support", {
 
     requestAccountLink: function(centered = true) {
       const color = qx.theme.manager.Color.getInstance().resolve("text");
-      const link = window.location.origin + "/request-account";
+      const link = window.location.origin + "/#/request-account";
       let textLink = `<a href="${link}" style='color: ${color}' target='_blank'>Request Account</a>`;
       if (centered) {
         textLink = `<center>${textLink}</center>`
