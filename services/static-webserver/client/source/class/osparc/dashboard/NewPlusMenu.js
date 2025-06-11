@@ -195,7 +195,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
 
     __addHypertools: function() {
       const hypertoolsMenuButton = this.self().createMenuButton(null, this.tr("Hypertools"));
-      // hypertoolsMenuButton.exclude();
+      hypertoolsMenuButton.exclude();
       this.addAt(hypertoolsMenuButton, this.__itemIdx);
       this.__itemIdx++;
       this.self().setIcon(hypertoolsMenuButton, osparc.data.model.StudyUI.HYPERTOOL_ICON);
