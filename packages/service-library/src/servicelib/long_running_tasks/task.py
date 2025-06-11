@@ -6,7 +6,6 @@ import traceback
 import urllib.parse
 from collections import deque
 from contextlib import suppress
-from datetime import datetime
 from typing import Any, Final, Protocol, TypeAlias
 from uuid import uuid4
 
