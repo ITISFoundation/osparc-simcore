@@ -71,7 +71,7 @@ from ..exceptions import (
     ProjectNodeResourcesInvalidError,
 )
 from ._rest_exceptions import handle_plugin_requests_exceptions
-from ._rest_schemas import ProjectPathParams, RequestContext
+from ._rest_schemas import AuthenticatedRequestContext, ProjectPathParams
 
 _logger = logging.getLogger(__name__)
 
@@ -92,7 +92,7 @@ class NodePathParams(ProjectPathParams):
 @permission_required("project.node.create")
 @handle_plugin_requests_exceptions
 async def create_node(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     body = await parse_request_body_as(NodeCreate, request)
 
@@ -136,7 +136,7 @@ async def create_node(request: web.Request) -> web.Response:
 @handle_plugin_requests_exceptions
 # NOTE: Careful, this endpoint is actually "get_node_state," and it doesn't return a Node resource.
 async def get_node(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
 
     # ensure the project exists
@@ -174,7 +174,7 @@ async def get_node(request: web.Request) -> web.Response:
 @permission_required("project.node.update")
 @handle_plugin_requests_exceptions
 async def patch_project_node(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
     node_patch = await parse_request_body_as(NodePatch, request)
 
@@ -196,7 +196,7 @@ async def patch_project_node(request: web.Request) -> web.Response:
 @permission_required("project.node.delete")
 @handle_plugin_requests_exceptions
 async def delete_node(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
 
     # ensure the project exists
@@ -245,7 +245,7 @@ async def retrieve_node(request: web.Request) -> web.Response:
 @permission_required("project.node.update")
 @handle_plugin_requests_exceptions
 async def update_node_outputs(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
     node_outputs = await parse_request_body_as(NodeOutputs, request)
 
@@ -273,7 +273,7 @@ async def update_node_outputs(request: web.Request) -> web.Response:
 @handle_plugin_requests_exceptions
 async def start_node(request: web.Request) -> web.Response:
     """Has only effect on nodes associated to dynamic services"""
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
 
     await _projects_service.start_project_node(
@@ -318,7 +318,7 @@ async def _stop_dynamic_service_task(
 @handle_plugin_requests_exceptions
 async def stop_node(request: web.Request) -> web.Response:
     """Has only effect on nodes associated to dynamic services"""
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
 
     save_state = await has_user_project_access_rights(
@@ -383,7 +383,7 @@ async def restart_node(request: web.Request) -> web.Response:
 @permission_required("project.node.read")
 @handle_plugin_requests_exceptions
 async def get_node_resources(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
 
     # ensure the project exists
@@ -418,7 +418,7 @@ async def get_node_resources(request: web.Request) -> web.Response:
 @permission_required("project.node.update")
 @handle_plugin_requests_exceptions
 async def replace_node_resources(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
     body = await parse_request_body_as(ServiceResourcesDict, request)
 
@@ -477,7 +477,7 @@ class _ProjectGroupAccess(BaseModel):
 @permission_required("project.read")
 @handle_plugin_requests_exceptions
 async def get_project_services(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     await access_rights_service.check_user_project_permission(
@@ -520,7 +520,7 @@ async def get_project_services(request: web.Request) -> web.Response:
 @permission_required("project.read")
 @handle_plugin_requests_exceptions
 async def get_project_services_access_for_gid(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     query_params: _ServicesAccessQuery = parse_request_query_parameters_as(
         _ServicesAccessQuery, request
@@ -638,7 +638,7 @@ class _ProjectNodePreview(BaseModel):
 @permission_required("project.read")
 @handle_plugin_requests_exceptions
 async def list_project_nodes_previews(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     assert req_ctx  # nosec
 
@@ -678,7 +678,7 @@ async def list_project_nodes_previews(request: web.Request) -> web.Response:
 @permission_required("project.read")
 @handle_plugin_requests_exceptions
 async def get_project_node_preview(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
     assert req_ctx  # nosec
 

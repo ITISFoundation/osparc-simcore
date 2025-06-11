@@ -10,7 +10,7 @@ from servicelib.aiohttp.typing_extension import Handler
 
 from ._meta import API_VTAG
 from .login.decorators import login_required
-from .models import RequestContext
+from .models import AuthenticatedRequestContext
 
 
 def webserver_request_context_decorator(handler: Handler):
@@ -19,7 +19,7 @@ def webserver_request_context_decorator(handler: Handler):
         request: web.Request,
     ) -> web.StreamResponse:
         """this task context callback tries to get the user_id from the query if available"""
-        req_ctx = RequestContext.model_validate(request)
+        req_ctx = AuthenticatedRequestContext.model_validate(request)
         request[RQT_LONG_RUNNING_TASKS_CONTEXT_KEY] = jsonable_encoder(req_ctx)
         return await handler(request)
 

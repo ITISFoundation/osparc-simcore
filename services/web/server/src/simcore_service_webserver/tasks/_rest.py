@@ -34,7 +34,7 @@ from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
 from .._meta import API_VTAG
 from ..login.decorators import login_required
 from ..long_running_tasks import webserver_request_context_decorator
-from ..models import RequestContext
+from ..models import AuthenticatedRequestContext
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..security.decorators import permission_required
 from ._exception_handlers import handle_export_data_exceptions
@@ -60,7 +60,7 @@ async def get_async_jobs(request: web.Request) -> web.Response:
     inprocess_task_context = get_task_context(request)
     inprocess_tracked_tasks = inprocess_task_manager.list_tasks(inprocess_task_context)
 
-    _req_ctx = RequestContext.model_validate(request)
+    _req_ctx = AuthenticatedRequestContext.model_validate(request)
 
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
 
@@ -109,7 +109,7 @@ class _StorageAsyncJobId(BaseModel):
 @handle_export_data_exceptions
 async def get_async_job_status(request: web.Request) -> web.Response:
 
-    _req_ctx = RequestContext.model_validate(request)
+    _req_ctx = AuthenticatedRequestContext.model_validate(request)
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
 
     async_job_get = parse_request_path_parameters_as(_StorageAsyncJobId, request)
@@ -143,7 +143,7 @@ async def get_async_job_status(request: web.Request) -> web.Response:
 @handle_export_data_exceptions
 async def cancel_async_job(request: web.Request) -> web.Response:
 
-    _req_ctx = RequestContext.model_validate(request)
+    _req_ctx = AuthenticatedRequestContext.model_validate(request)
 
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
     async_job_get = parse_request_path_parameters_as(_StorageAsyncJobId, request)
@@ -171,7 +171,7 @@ async def get_async_job_result(request: web.Request) -> web.Response:
     class _PathParams(BaseModel):
         task_id: UUID
 
-    _req_ctx = RequestContext.model_validate(request)
+    _req_ctx = AuthenticatedRequestContext.model_validate(request)
 
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
     async_job_get = parse_request_path_parameters_as(_PathParams, request)
