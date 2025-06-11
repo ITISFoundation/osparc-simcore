@@ -35,15 +35,7 @@ qx.Class.define("osparc.ui.message.Loading", {
   construct: function() {
     this.base(arguments);
 
-    const layout = new qx.ui.layout.Grid(20, 20);
-    layout.setRowFlex(this.self().GRID_POS.SPACER_TOP, 1);
-    layout.setRowFlex(this.self().GRID_POS.SPACER_BOTTOM, 1);
-    layout.setColumnFlex(0, 1);
-    layout.setColumnMaxWidth(1, 400);
-    layout.setColumnAlign(1, "center", "middle");
-    layout.setColumnFlex(2, 1);
-    layout.setColumnAlign(2, "right", "middle");
-    this._setLayout(layout);
+    this._setLayout(new qx.ui.layout.VBox(10));
 
     this.__buildLayout();
   },
@@ -88,16 +80,6 @@ qx.Class.define("osparc.ui.message.Loading", {
     LOGO_HEIGHT: 100,
     ICON_HEIGHT: 220,
     STATUS_ICON_SIZE: 20,
-
-    GRID_POS: {
-      TOOLBAR: 0,
-      SPACER_TOP: 1,
-      LOGO: 2,
-      WAITING: 3,
-      MESSAGES: 4,
-      EXTRA_WIDGETS: 5,
-      SPACER_BOTTOM: 6,
-    }
   },
 
   members: {
@@ -108,20 +90,12 @@ qx.Class.define("osparc.ui.message.Loading", {
     __maxButton: null,
 
     __buildLayout: function() {
-      this._add(new qx.ui.core.Widget(), {
-        column: 0,
-        row: 0
-      });
-
       const maxLayout = this.__createMaximizeToolbar();
-      this._add(maxLayout, {
-        column: 2,
-        row: this.self().GRID_POS.TOOLBAR
-      });
+      this._add(maxLayout);
 
-      this._add(new qx.ui.core.Spacer(), {
-        column: 1,
-        row: this.self().GRID_POS.SPACER_TOP
+      const topSpacer = new qx.ui.core.Spacer();
+      this._add(topSpacer, {
+        flex: 1,
       });
 
       const productLogoPath = osparc.product.Utils.getLogoPath();
@@ -141,10 +115,7 @@ qx.Class.define("osparc.ui.message.Loading", {
           height: logoHeight
         });
       }
-      this._add(thumbnail, {
-        column: 1,
-        row: this.self().GRID_POS.LOGO
-      });
+      this._add(thumbnail);
 
       const waitingHeader = this.__header = new qx.ui.basic.Atom().set({
         icon: "@FontAwesome5Solid/circle-notch/"+this.self().STATUS_ICON_SIZE,
@@ -152,7 +123,7 @@ qx.Class.define("osparc.ui.message.Loading", {
         alignX: "center",
         rich: true,
         gap: 15,
-        allowGrowX: false
+        allowGrowX: false,
       });
       const icon = waitingHeader.getChildControl("icon");
       osparc.service.StatusUI.updateCircleAnimation(icon);
@@ -162,30 +133,21 @@ qx.Class.define("osparc.ui.message.Loading", {
         wrap: true,
         alignX: "center",
       });
-      this._add(waitingHeader, {
-        column: 1,
-        row: this.self().GRID_POS.WAITING
-      });
+      this._add(waitingHeader);
 
       const messages = this.__messagesContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox(10).set({
         alignX: "center"
       }));
-      this._add(messages, {
-        column: 1,
-        row: this.self().GRID_POS.MESSAGES
-      });
+      this._add(messages);
 
       const extraWidgets = this.__extraWidgets = new qx.ui.container.Composite(new qx.ui.layout.VBox(10).set({
         alignX: "center"
       }));
-      this._add(extraWidgets, {
-        column: 1,
-        row: this.self().GRID_POS.EXTRA_WIDGETS
-      });
+      this._add(extraWidgets);
 
-      this._add(new qx.ui.core.Spacer(), {
-        column: 1,
-        row: this.self().GRID_POS.SPACER_BOTTOM
+      const bottomSpacer = new qx.ui.core.Spacer();
+      this._add(bottomSpacer, {
+        flex: 1,
       });
     },
 
@@ -220,7 +182,7 @@ qx.Class.define("osparc.ui.message.Loading", {
         alignX: "right",
       }));
       this.bind("showToolbar", toolbarLayout, "visibility", {
-        converter: showToolbar => showToolbar ? "visible" : "hidden"
+        converter: showToolbar => showToolbar ? "visible" : "excluded"
       });
       toolbarLayout.add(maxButton);
       return toolbarLayout;

@@ -12,9 +12,14 @@ from faker import Faker
 from pydantic import BaseModel, TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import long_running_tasks, status
-from servicelib.aiohttp.long_running_tasks.server import TaskId
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
-from servicelib.long_running_tasks._task import TaskContext
+from servicelib.long_running_tasks.models import (
+    TaskGet,
+    TaskId,
+    TaskProgress,
+    TaskStatus,
+)
+from servicelib.long_running_tasks.task import TaskContext
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -22,7 +27,7 @@ from tenacity.wait import wait_fixed
 
 
 async def _string_list_task(
-    task_progress: long_running_tasks.server.TaskProgress,
+    task_progress: TaskProgress,
     num_strings: int,
     sleep_time: float,
     fail: bool,
@@ -93,7 +98,7 @@ def start_long_running_task(
         data, error = await assert_status(resp, status.HTTP_202_ACCEPTED)
         assert data
         assert not error
-        task_get = TypeAdapter(long_running_tasks.server.TaskGet).validate_python(data)
+        task_get = TypeAdapter(TaskGet).validate_python(data)
         return task_get.task_id
 
     return _caller
@@ -123,7 +128,7 @@ def wait_for_task() -> Callable[[TestClient, TaskId, TaskContext], Awaitable[Non
                 data, error = await assert_status(result, status.HTTP_200_OK)
                 assert data
                 assert not error
-                task_status = long_running_tasks.server.TaskStatus.model_validate(data)
+                task_status = TaskStatus.model_validate(data)
                 assert task_status
                 assert task_status.done
 

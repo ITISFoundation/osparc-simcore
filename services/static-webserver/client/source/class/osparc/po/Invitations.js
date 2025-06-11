@@ -61,35 +61,7 @@ qx.Class.define("osparc.po.Invitations", {
     },
 
     __createInvitationForm: function() {
-      const form = new qx.ui.form.Form();
-
-      const userEmail = new qx.ui.form.TextField().set({
-        required: true,
-        placeholder: this.tr("new.user@email.address")
-      });
-      form.add(userEmail, this.tr("User Email"));
-
-      const extraCreditsInUsd = new qx.ui.form.Spinner().set({
-        minimum: 0,
-        maximum: 1000,
-        value: 100
-      });
-      form.add(extraCreditsInUsd, this.tr("Welcome Credits (USD)"));
-
-      const withExpiration = new qx.ui.form.CheckBox().set({
-        value: false
-      });
-      form.add(withExpiration, this.tr("With expiration"));
-
-      const trialDays = new qx.ui.form.Spinner().set({
-        minimum: 1,
-        maximum: 1000,
-        value: 1
-      });
-      withExpiration.bind("value", trialDays, "visibility", {
-        converter: val => val ? "visible" : "excluded"
-      });
-      form.add(trialDays, this.tr("Trial Days"));
+      const form = osparc.po.UsersPending.createInvitationForm(true);
 
       const generateInvitationBtn = new osparc.ui.form.FetchButton(this.tr("Generate"));
       generateInvitationBtn.set({
@@ -103,14 +75,14 @@ qx.Class.define("osparc.po.Invitations", {
           generateInvitationBtn.setFetching(true);
           const params = {
             data: {
-              "guest": userEmail.getValue()
+              "guest": form.getItems()["email"].getValue()
             }
           };
-          if (extraCreditsInUsd.getValue() > 0) {
-            params.data["extraCreditsInUsd"] = extraCreditsInUsd.getValue();
+          if (form.getItems()["credits"] > 0) {
+            params.data["extraCreditsInUsd"] = extraCreditsInUsd;
           }
-          if (withExpiration.getValue()) {
-            params.data["trialAccountDays"] = trialDays.getValue();
+          if (form.getItems()["withExpiration"].getValue()) {
+            params.data["trialAccountDays"] = form.getItems()["trialDays"].getValue();
           }
           osparc.data.Resources.fetch("invitations", "post", params)
             .then(data => {

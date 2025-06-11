@@ -29,7 +29,7 @@ from ...security.decorators import permission_required
 from ...utils_aiohttp import envelope_json_response
 from .. import _metadata_service
 from ._rest_exceptions import handle_plugin_requests_exceptions
-from ._rest_schemas import ProjectPathParams, RequestContext
+from ._rest_schemas import AuthenticatedRequestContext, ProjectPathParams
 
 routes = web.RouteTableDef()
 
@@ -44,7 +44,7 @@ _logger = logging.getLogger(__name__)
 @permission_required("project.read")
 @handle_plugin_requests_exceptions
 async def get_project_metadata(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     custom_metadata = await _metadata_service.get_project_custom_metadata_for_user(
@@ -64,7 +64,7 @@ async def get_project_metadata(request: web.Request) -> web.Response:
 @permission_required("project.update")
 @handle_plugin_requests_exceptions
 async def update_project_metadata(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     update = await parse_request_body_as(ProjectMetadataUpdate, request)
 

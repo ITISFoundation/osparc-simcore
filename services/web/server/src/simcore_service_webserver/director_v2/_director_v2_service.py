@@ -15,6 +15,7 @@ from models_library.wallets import WalletID, WalletInfo
 from pydantic import TypeAdapter
 from pydantic.types import PositiveInt
 from servicelib.aiohttp import status
+from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from servicelib.logging_utils import log_decorator
 from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraProperties,
@@ -76,10 +77,12 @@ async def create_or_update_pipeline(
         return computation_task_out
 
     except DirectorV2ServiceError as exc:
-        _logger.error(  # noqa: TRY400
-            "could not create pipeline from project %s: %s",
-            project_id,
-            exc,
+        _logger.exception(
+            **create_troubleshotting_log_kwargs(
+                f"Could not create pipeline from project {project_id}",
+                error=exc,
+                error_context={**body, "backend_url": backend_url},
+            )
         )
     return None
 

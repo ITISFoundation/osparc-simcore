@@ -1,4 +1,4 @@
-from servicelib.long_running_tasks._models import TaskProgress
+from servicelib.long_running_tasks.models import TaskProgress
 
 
 def test_progress_has_no_more_than_3_digits():
