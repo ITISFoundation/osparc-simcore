@@ -968,7 +968,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               if (hypertools) {
                 const newPlans = new osparc.dashboard.NewPlans(newStudiesConfig);
                 const winTitle = this.tr("New Plan");
-                const win = osparc.ui.window.Window.popUpInWindow(newPlans, winTitle, osparc.dashboard.NewStudies.WIDTH+40, 300).set({
+                const win = osparc.ui.window.Window.popUpInWindow(newPlans, winTitle, osparc.dashboard.NewPlans.WIDTH+40, 300).set({
                   clickAwayClose: false,
                   resizable: true
                 });
