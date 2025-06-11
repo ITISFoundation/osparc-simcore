@@ -32,7 +32,7 @@ from simcore_service_webserver.groups._groups_service import (
     delete_standard_group,
 )
 from simcore_service_webserver.groups.api import auto_add_user_to_groups
-from simcore_service_webserver.security import security_service
+from simcore_service_webserver.security import security_web
 
 
 def _assert_group(group: dict[str, str]):
@@ -458,7 +458,7 @@ async def test_add_user_gets_added_to_group(
                 assert len(data["organizations"]) == (0 if "bad" in email else 1)
 
     # NOTE: here same email are used for different users! Therefore sessions get mixed!
-    await security_service.clean_auth_policy_cache(client.app)
+    await security_web.clean_auth_policy_cache(client.app)
 
 
 @pytest.fixture

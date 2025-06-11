@@ -15,7 +15,7 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.wait import wait_exponential
 
 from ..login import login_service
-from ..security import security_service
+from ..security import security_web
 from ..users.api import update_expired_users
 
 _logger = logging.getLogger(__name__)
@@ -62,7 +62,7 @@ async def _update_expired_users(app: web.Application):
     if updated := await update_expired_users(app):
         # expired users might be cached in the auth. If so, any request
         # with this user-id will get thru producing unexpected side-effects
-        await security_service.clean_auth_policy_cache(app)
+        await security_web.clean_auth_policy_cache(app)
 
         # broadcast force logout of user_id
         for user_id in updated:

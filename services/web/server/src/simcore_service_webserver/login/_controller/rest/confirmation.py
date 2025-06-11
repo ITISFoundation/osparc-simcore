@@ -28,7 +28,7 @@ from yarl import URL
 
 from ....products import products_web
 from ....products.models import Product
-from ....security import security_service
+from ....security import security_web
 from ....session.access_policies import session_access_required
 from ....utils import HOUR, MINUTE
 from ....utils_aiohttp import create_redirect_to_page_response
@@ -302,7 +302,7 @@ async def complete_reset_password(request: web.Request):
         await db.update_user(
             user={"id": user["id"]},
             updates={
-                "password_hash": security_service.encrypt_password(
+                "password_hash": security_web.encrypt_password(
                     request_body.password.get_secret_value()
                 )
             },

@@ -10,7 +10,7 @@ from simcore_service_webserver.db.plugin import get_asyncpg_engine
 
 from ..groups import api as groups_service
 from ..products.models import Product
-from ..security import security_service
+from ..security import security_web
 from . import _login_service
 from ._constants import MSG_UNKNOWN_EMAIL, MSG_WRONG_PASSWORD
 from ._login_repository_legacy import AsyncpgStorage, get_plugin_storage
@@ -35,7 +35,7 @@ async def create_user(
         user = await UsersRepo.new_user(
             conn,
             email=email,
-            password_hash=security_service.encrypt_password(password),
+            password_hash=security_web.encrypt_password(password),
             status=status_upon_creation,
             expires_at=expires_at,
         )
@@ -58,7 +58,7 @@ async def check_authorized_user_credentials_or_raise(
 
     _login_service.validate_user_status(user=user, support_email=product.support_email)
 
-    if not security_service.check_password(password, user["password_hash"]):
+    if not security_web.check_password(password, user["password_hash"]):
         raise web.HTTPUnauthorized(
             reason=MSG_WRONG_PASSWORD, content_type=MIMETYPE_APPLICATION_JSON
         )
