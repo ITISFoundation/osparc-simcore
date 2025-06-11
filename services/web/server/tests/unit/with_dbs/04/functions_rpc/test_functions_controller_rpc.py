@@ -14,6 +14,7 @@ from models_library.api_schemas_webserver.functions import (
 )
 
 # import simcore_service_webserver.functions._functions_controller_rpc as functions_rpc
+from models_library.functions import FunctionUserAccessRights
 from models_library.functions_errors import (
     FunctionIDNotFoundError,
     FunctionReadAccessDeniedError,
@@ -497,3 +498,40 @@ async def test_delete_function(
         product_name=osparc_product_name,
     )
     assert registered_function.uid is not None
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+async def test_get_function_user_permissions(
+    client: TestClient,
+    rpc_client: RabbitMQRPCClient,
+    mock_function: ProjectFunction,
+    logged_user: UserInfoDict,
+    osparc_product_name: ProductName,
+):
+    # Register the function first
+    registered_function = await functions_rpc.register_function(
+        rabbitmq_rpc_client=rpc_client,
+        function=mock_function,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+    )
+    assert registered_function.uid is not None
+
+    # Retrieve the user permissions for the function
+    user_permissions = await functions_rpc.get_function_user_permissions(
+        rabbitmq_rpc_client=rpc_client,
+        function_id=registered_function.uid,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+    )
+
+    # Assert the user permissions match the expected permissions
+    assert user_permissions == FunctionUserAccessRights(
+        user_id=logged_user["id"],
+        read=True,
+        write=True,
+        execute=True,
+    )

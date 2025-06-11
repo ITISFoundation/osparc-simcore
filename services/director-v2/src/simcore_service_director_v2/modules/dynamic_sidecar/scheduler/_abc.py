@@ -15,8 +15,7 @@ from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services_types import ServicePortKey
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from servicelib.fastapi.long_running_tasks.client import ProgressCallback
-from servicelib.fastapi.long_running_tasks.server import TaskProgress
+from servicelib.long_running_tasks.models import ProgressCallback, TaskProgress
 
 
 class SchedulerInternalsInterface(ABC):

@@ -7,6 +7,7 @@ from typing import Any
 from uuid import uuid4
 
 import httpx
+import respx
 from httpx import AsyncClient
 from models_library.api_schemas_webserver.functions import (
     FunctionJobCollection,
@@ -16,11 +17,14 @@ from models_library.api_schemas_webserver.functions import (
     RegisteredProjectFunction,
     RegisteredProjectFunctionJob,
 )
+from models_library.functions import FunctionUserAccessRights
 from models_library.functions_errors import (
     FunctionIDNotFoundError,
     FunctionReadAccessDeniedError,
 )
 from models_library.rest_pagination import PageMetaInfoLimitOffset
+from models_library.users import UserID
+from pytest_mock import MockType
 from servicelib.aiohttp import status
 from simcore_service_api_server._meta import API_VTAG
 
@@ -579,4 +583,35 @@ async def test_list_function_job_collections_with_function_filter(
     assert (
         RegisteredFunctionJobCollection.model_validate(data["items"][0])
         == mock_registered_function_job_collection
+    )
+
+
+async def test_run_function_not_allowed(
+    client: AsyncClient,
+    mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
+    mock_registered_function: RegisteredProjectFunction,
+    auth: httpx.BasicAuth,
+    user_id: UserID,
+    mocked_webserver_rest_api_base: respx.MockRouter,
+    mocked_webserver_rpc_api: dict[str, MockType],
+) -> None:
+    """Test that running a function is not allowed."""
+    mock_handler_in_functions_rpc_interface(
+        "get_function_user_permissions",
+        FunctionUserAccessRights(
+            user_id=user_id,
+            execute=False,
+            read=True,
+            write=True,
+        ),
+    )
+
+    response = await client.post(
+        f"{API_VTAG}/functions/{mock_registered_function.uid}:run",
+        json={},
+        auth=auth,
+    )
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert response.json()["errors"][0] == (
+        f"Function {mock_registered_function.uid} execute access denied for user {user_id}"
     )
