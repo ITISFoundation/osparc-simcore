@@ -1,4 +1,5 @@
 import asyncio
+import threading
 from datetime import timedelta
 from typing import Final
 
@@ -22,7 +23,7 @@ class FastAPIAppServer(BaseAppServer):
         assert isinstance(self._app, FastAPI)  # nosec
         return self._app
 
-    async def startup(self, completed: asyncio.Event):
+    async def startup(self, completed: threading.Event):
         self._lifespan_manager = LifespanManager(
             self.fastapi_app,
             startup_timeout=_STARTUP_TIMEOUT,
