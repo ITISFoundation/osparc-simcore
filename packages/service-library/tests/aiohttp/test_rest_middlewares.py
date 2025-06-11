@@ -14,6 +14,7 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from common_library.json_serialization import json_dumps
+from pytest_mock import MockerFixture
 from servicelib.aiohttp import status
 from servicelib.aiohttp.rest_middlewares import (
     envelope_middleware_factory,
@@ -339,3 +340,41 @@ async def test_http_ok_with_text_is_enveloped(client: TestClient):
     assert not error
     assert data
     assert data.get("ok") is True
+
+
+async def test_exception_in_handler_returns_500(
+    client: TestClient, mocker: MockerFixture
+):
+    """Test that exceptions in the handler functions are caught and return 500."""
+
+    # Mock _handle_http_successful to raise an exception
+    def mocked_handler(*args, **kwargs):
+        msg = "Simulated error in handler"
+        raise ValueError(msg)
+
+    mocker.patch(
+        "servicelib.aiohttp.rest_middlewares._handle_http_successful",
+        side_effect=mocked_handler,
+    )
+
+    # Trigger a successful HTTP response that will be processed by our mocked handler
+    response = await client.get(
+        "/v1/raise_exception", params={"exc": web.HTTPOk.__name__}
+    )
+
+    # Should return 500 since our handler raised an exception
+    assert response.status == status.HTTP_500_INTERNAL_SERVER_ERROR
+
+    # Check that the response is properly enveloped
+    payload = await response.json()
+    assert is_enveloped(payload)
+
+    # Verify error details
+    data, error = unwrap_envelope(payload)
+    assert not data
+    assert error
+    assert error.get("status") == status.HTTP_500_INTERNAL_SERVER_ERROR
+
+    # Make sure there are no detailed error logs in production mode
+    assert not error.get("errors")
+    assert not error.get("logs")

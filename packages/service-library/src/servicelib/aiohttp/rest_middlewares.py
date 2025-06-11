@@ -51,7 +51,10 @@ def _handle_unexpected_exception_as_500(
     *,
     skip_internal_error_details: bool,
 ) -> web.HTTPInternalServerError:
-    """Process unexpected exceptions and return them as HTTP errors with proper formatting."""
+    """Process unexpected exceptions and return them as HTTP errors with proper formatting.
+
+    IMPORTANT: this function cannot throw exceptions, as it is called
+    """
     error_code = create_error_code(exception)
     error_context: dict[str, Any] = {
         "request.remote": f"{request.remote}",
@@ -60,6 +63,7 @@ def _handle_unexpected_exception_as_500(
     }
 
     user_error_msg = _FMSG_INTERNAL_ERROR_USER_FRIENDLY
+
     http_error = create_http_error(
         exception,
         user_error_msg,
@@ -67,6 +71,9 @@ def _handle_unexpected_exception_as_500(
         skip_internal_error_details=skip_internal_error_details,
         error_code=error_code,
     )
+
+    error_context["http_error"] = http_error
+
     _logger.exception(
         **create_troubleshotting_log_kwargs(
             user_error_msg,
@@ -177,7 +184,6 @@ def error_middleware_factory(api_version: str) -> Middleware:
                 result = _handle_http_successful(request, exc)
 
             except web.HTTPRedirection as exc:  # 3XX raised as exceptions
-                _logger.debug("Redirected to %s", exc)
                 result = exc
 
             except NotImplementedError as exc:
