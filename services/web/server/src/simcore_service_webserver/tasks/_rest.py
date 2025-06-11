@@ -29,6 +29,7 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
 )
 from servicelib.aiohttp.rest_responses import create_data_response
+from servicelib.long_running_tasks import http_endpoint_responses
 from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
 
 from .._meta import API_VTAG
@@ -58,7 +59,9 @@ _task_prefix: Final[str] = f"/{API_VTAG}/tasks"
 async def get_async_jobs(request: web.Request) -> web.Response:
     inprocess_task_manager = get_tasks_manager(request.app)
     inprocess_task_context = get_task_context(request)
-    inprocess_tracked_tasks = inprocess_task_manager.list_tasks(inprocess_task_context)
+    inprocess_tracked_tasks = http_endpoint_responses.list_tasks(
+        inprocess_task_manager, inprocess_task_context
+    )
 
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
 
