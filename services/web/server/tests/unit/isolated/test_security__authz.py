@@ -90,6 +90,38 @@ def access_model() -> RoleBasedAccessModel:
     return RoleBasedAccessModel.from_rawdata(fake_roles_permissions)
 
 
+async def test_operation_in_role_check(access_model: RoleBasedAccessModel):
+    """Tests the branch where operation is in role_access.check in the can method"""
+    R = UserRole  # alias
+
+    # The "study.pipeline.node.inputs.update" operation has a check function in ANONYMOUS role
+
+    # Test with proper context
+    current_data = {"workbench": {}}
+    candidate_data = {"workbench": {}}  # no changes
+    context = {"current": current_data, "candidate": candidate_data}
+
+    assert await access_model.can(
+        R.ANONYMOUS, "study.pipeline.node.inputs.update", context=context
+    )
+
+    # Test with invalid context that would make the check function fail
+    invalid_context = {"wrong_key": "value"}  # missing expected keys
+    assert not await access_model.can(
+        R.ANONYMOUS, "study.pipeline.node.inputs.update", context=invalid_context
+    )
+
+    # Test with None context (should fail safely)
+    assert not await access_model.can(
+        R.ANONYMOUS, "study.pipeline.node.inputs.update", context=None
+    )
+
+    # Test inheritance - USER role inherits ANONYMOUS role's check function
+    assert await access_model.can(
+        R.USER, "study.pipeline.node.inputs.update", context=context
+    )
+
+
 def test_unique_permissions():
     used = []
     for role in ROLES_PERMISSIONS:
@@ -292,7 +324,8 @@ async def test_authorization_policy_cache(mocker: MockerFixture, mock_db: MagicM
 
     # new value in db
     mock_db.users_db["foo@email.com"]["id"] = 2
-    assert (await autz_cache.get("_get_auth_or_none/foo@email.com"))["id"] == 1
+    got = await autz_cache.get("_get_auth_or_none/foo@email.com")
+    assert got["id"] == 1
 
     # gets cache, db is NOT called
     got = await authz_policy._get_authorized_user_or_none(email="foo@email.com")
@@ -319,3 +352,63 @@ async def test_authorization_policy_cache(mocker: MockerFixture, mock_db: MagicM
     # should raise web.HTTPServiceUnavailable on db failure
     with pytest.raises(web.HTTPServiceUnavailable):
         await authz_policy._get_authorized_user_or_none(email="db-failure@email.com")
+
+
+async def test_operation_with_check_callbacks(access_model: RoleBasedAccessModel):
+    """Tests operations with different types of check callbacks"""
+    R = UserRole  # alias
+
+    # Add a synchronous check callback
+    def sync_check(context) -> bool:
+        return context.get("allowed", False) if context else False
+
+    # Add an async check callback
+    async def async_check(context) -> bool:
+        return context.get("allowed", False) if context else False
+
+    # Add a callback that raises an exception
+    def failing_check(context) -> bool:
+        raise ValueError("This check always fails")
+
+    # Register the callbacks for different operations
+    access_model.roles[R.USER].check["operation.sync.check"] = sync_check
+    access_model.roles[R.USER].check["operation.async.check"] = async_check
+    access_model.roles[R.USER].check["operation.failing.check"] = failing_check
+
+    # Test synchronous check callback
+    assert await access_model.can(
+        R.USER, "operation.sync.check", context={"allowed": True}
+    )
+    assert not await access_model.can(
+        R.USER, "operation.sync.check", context={"allowed": False}
+    )
+    assert not await access_model.can(R.USER, "operation.sync.check", context=None)
+
+    # Test asynchronous check callback
+    assert await access_model.can(
+        R.USER, "operation.async.check", context={"allowed": True}
+    )
+    assert not await access_model.can(
+        R.USER, "operation.async.check", context={"allowed": False}
+    )
+
+    # Test exception handling in check callback
+    assert not await access_model.can(
+        R.USER, "operation.failing.check", context={"allowed": True}
+    )
+
+    # Test inheritance of checked operations
+    assert await access_model.can(
+        R.TESTER, "operation.sync.check", context={"allowed": True}
+    )
+    assert not await access_model.can(
+        R.ANONYMOUS, "operation.sync.check", context={"allowed": True}
+    )
+
+    # Test who_can with checked operations
+    who_can = await access_model.who_can(
+        "operation.sync.check", context={"allowed": True}
+    )
+    assert R.USER in who_can
+    assert R.TESTER in who_can
+    assert R.ANONYMOUS not in who_can

@@ -1,14 +1,14 @@
-""" hierarchical role-based access control (HRBAC)
+"""hierarchical role-based access control (HRBAC)
 
 
-   References:
-    https://b_logger.nodeswat.com/implement-access-control-in-node-js-8567e7b484d1
+References:
+ https://b_logger.nodeswat.com/implement-access-control-in-node-js-8567e7b484d1
 """
 
 import inspect
 import logging
 import re
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from typing import TypeAlias, TypedDict
 
@@ -27,16 +27,32 @@ class AuthContextDict(TypedDict, total=False):
 
 OptionalContext: TypeAlias = AuthContextDict | dict | None
 
+CheckFunction: TypeAlias = (
+    # Type for check functions that can be either sync or async
+    Callable[[OptionalContext], bool]
+    | Callable[[OptionalContext], Awaitable[bool]]
+)
+
 
 @dataclass
 class _RolePermissions:
     role: UserRole
-    # named permissions allowed
-    allowed: list[str] = field(default_factory=list)
-    # checked permissions: permissions with conditions
-    check: dict[str, Callable[[OptionalContext], bool]] = field(default_factory=dict)
-    # inherited permission
-    inherits: list[UserRole] = field(default_factory=list)
+
+    allowed: list[str] = field(
+        default_factory=list, metadata={"description": "list of allowed operations"}
+    )
+    check: dict[str, CheckFunction] = field(
+        default_factory=dict,
+        metadata={
+            "description": "checked permissions: dict of operations with conditions"
+        },
+    )
+    inherits: list[UserRole] = field(
+        default_factory=list,
+        metadata={
+            "description": "list of parent roles that inherit permissions from this role"
+        },
+    )
 
     @classmethod
     def from_rawdata(cls, role: str | UserRole, value: dict) -> "_RolePermissions":
