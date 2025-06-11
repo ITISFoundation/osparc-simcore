@@ -34,7 +34,7 @@ qx.Class.define("osparc.po.UsersPending", {
       const extraCreditsInUsd = new qx.ui.form.Spinner().set({
         minimum: 0,
         maximum: 1000,
-        value: 100
+        value: osparc.product.Utils.getDefaultWelcomeCredits(),
       });
       form.add(extraCreditsInUsd, qx.locale.Manager.tr("Welcome Credits (USD)"), null, "credits");
 
