@@ -645,7 +645,8 @@ qx.Class.define("osparc.utils.Utils", {
       const manuals = osparc.store.Support.getManuals();
       const manualLink = (manuals && manuals.length) ? manuals[0].url : "";
       let msg = "";
-      msg += qx.locale.Manager.tr("To use all ") + this.createHTMLLink(productName + " features", manualLink);
+      msg += qx.locale.Manager.tr("To use all ");
+      msg += this.createHTMLLink(productName + " features", manualLink);
 
       if (osparc.product.Utils.getCreateAccountAction() === "REQUEST_ACCOUNT_FORM") {
         // if the product is configured to show a form to request an account,
