@@ -86,17 +86,18 @@ def create_http_error(
     - Can skip internal details when 500 status e.g. to avoid transmitting server
     exceptions to the client in production
     """
-    if not isinstance(errors, list):
-        errors = [errors]
-
-    is_internal_error = bool(http_error_cls == web.HTTPInternalServerError)
-
     status_reason = status_reason or get_code_display_name(http_error_cls.status_code)
     error_message = error_message or get_code_description(http_error_cls.status_code)
+
     assert len(status_reason) < MAX_STATUS_MESSAGE_LENGTH  # nosec
 
+    # WARNING: do not refactor too much this function withouth considering how
+    # front-end handle errors. i.e. please sync with front-end developers before
+    # changing the workflows in this function
+
+    is_internal_error = bool(http_error_cls == web.HTTPInternalServerError)
     if is_internal_error and skip_internal_error_details:
-        error = ErrorGet.model_validate(
+        error_model = ErrorGet.model_validate(
             {
                 "status": http_error_cls.status_code,
                 "message": error_message,
@@ -104,8 +105,11 @@ def create_http_error(
             }
         )
     else:
+        if not isinstance(errors, list):
+            errors = [errors]
+
         items = [ErrorItemType.from_error(err) for err in errors]
-        error = ErrorGet.model_validate(
+        error_model = ErrorGet.model_validate(
             {
                 "errors": items,  # NOTE: deprecated!
                 "status": http_error_cls.status_code,
@@ -115,15 +119,14 @@ def create_http_error(
         )
 
     assert not http_error_cls.empty_body  # nosec
+
     payload = wrap_as_envelope(
-        error=error.model_dump(mode="json", **RESPONSE_MODEL_POLICY)
+        error=error_model.model_dump(mode="json", **RESPONSE_MODEL_POLICY)
     )
 
     return http_error_cls(
         reason=safe_status_message(status_reason),
-        text=json_dumps(
-            payload,
-        ),
+        text=json_dumps(payload),
         content_type=MIMETYPE_APPLICATION_JSON,
     )
 
