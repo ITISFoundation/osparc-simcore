@@ -115,10 +115,11 @@ class RoleBasedAccessModel:
             check = role_access.check[operation]
             try:
                 ok: bool
-                if inspect.iscoroutinefunction(check):
-                    ok = await check(context)
+                coro_or_result = check(context)
+                if inspect.isawaitable(coro_or_result):
+                    ok = await coro_or_result
                 else:
-                    ok = check(context)
+                    ok = coro_or_result
                 return ok
 
             except Exception:  # pylint: disable=broad-except
