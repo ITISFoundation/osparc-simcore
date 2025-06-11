@@ -60,9 +60,12 @@ async def check_user_permission(
 
     allowed = await aiohttp_security.api.permits(request, permission, context)
     if not allowed:
-        raise web.HTTPForbidden(
-            reason=f"You do not have sufficient access rights for {permission}"
-        )
+        msg = "You do not have sufficient access rights for"
+        if permission == PERMISSION_PRODUCT_LOGIN_KEY:
+            msg += f" {context.get('product_name')}"
+        else:
+            msg += f" {permission}"
+        raise web.HTTPForbidden(reason=msg)
 
 
 #
