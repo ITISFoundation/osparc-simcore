@@ -1,4 +1,4 @@
-from typing import Any, Final, TypedDict
+from typing import Any, Final, TypedDict, TypeVar
 
 from aiohttp import web
 from aiohttp.web_exceptions import HTTPError
@@ -69,15 +69,18 @@ def safe_status_message(
     return flat_message[: max_length - 3] + "..."
 
 
+T_HTTPError = TypeVar("T_HTTPError", bound=HTTPError)
+
+
 def create_http_error(
     errors: list[Exception] | Exception,
     error_message: str | None = None,
-    http_error_cls: type[HTTPError] = web.HTTPInternalServerError,
+    http_error_cls: type[T_HTTPError] = web.HTTPInternalServerError,
     *,
     status_reason: str | None = None,
     skip_internal_error_details: bool = False,
     error_code: ErrorCodeStr | None = None,
-) -> HTTPError:
+) -> T_HTTPError:
     """
     - Response body conforms OAS schema model
     - Can skip internal details when 500 status e.g. to avoid transmitting server
