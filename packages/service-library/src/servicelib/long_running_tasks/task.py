@@ -74,7 +74,7 @@ class TasksManager:
         # Task groups: Every taskname maps to multiple asyncio.Task within TrackedTask model
         self._tasks_groups: dict[TaskName, TrackedTaskGroupDict] = {}
 
-        self.stale_task_check_interval: datetime.timedelta = stale_task_check_interval
+        self.stale_task_check_interval = stale_task_check_interval
         self.stale_task_detect_timeout_s: PositiveFloat = (
             stale_task_detect_timeout.total_seconds()
         )
@@ -85,7 +85,7 @@ class TasksManager:
         self._stale_tasks_monitor_task = create_periodic_task(
             task=self._stale_tasks_monitor_worker,
             interval=self.stale_task_check_interval,
-            task_name=f"{__name__}.stale_task_monitor_worker",
+            task_name=f"{__name__}.{self._stale_tasks_monitor_worker.__name__}",
         )
 
     async def teardown(self) -> None:
