@@ -11,6 +11,9 @@ from uuid import uuid4
 
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from pydantic import PositiveFloat
+from servicelib.async_utils import cancel_wait_task
+from servicelib.background_task import create_periodic_task
+from servicelib.logging_utils import log_catch
 
 from .errors import (
     TaskAlreadyRunningError,
@@ -71,17 +74,36 @@ class TasksManager:
         # Task groups: Every taskname maps to multiple asyncio.Task within TrackedTask model
         self._tasks_groups: dict[TaskName, TrackedTaskGroupDict] = {}
 
-        self.stale_task_check_interval_s: PositiveFloat = (
-            stale_task_check_interval.total_seconds()
-        )
+        self.stale_task_check_interval: datetime.timedelta = stale_task_check_interval
         self.stale_task_detect_timeout_s: PositiveFloat = (
             stale_task_detect_timeout.total_seconds()
         )
-        self._stale_tasks_monitor_task: asyncio.Task = asyncio.create_task(
-            self._stale_tasks_monitor_worker(),
-            name=f"{__name__}.stale_task_monitor_worker",
+
+        self._stale_tasks_monitor_task: asyncio.Task | None = None
+
+    async def setup(self) -> None:
+        self._stale_tasks_monitor_task = create_periodic_task(
+            task=self._stale_tasks_monitor_worker,
+            interval=self.stale_task_check_interval,
+            task_name=f"{__name__}.stale_task_monitor_worker",
         )
-        # TODO: add setup and teardown and also use periodic
+
+    async def teardown(self) -> None:
+        task_ids_to_remove: deque[TaskId] = deque()
+
+        for tasks_dict in self._tasks_groups.values():
+            for tracked_task in tasks_dict.values():
+                task_ids_to_remove.append(tracked_task.task_id)
+
+        for task_id in task_ids_to_remove:
+            # when closing we do not care about pending errors
+            await self.remove_task(task_id, None, reraise_errors=False)
+
+        if self._stale_tasks_monitor_task:
+            with log_catch(_logger, reraise=False):
+                await cancel_wait_task(
+                    self._stale_tasks_monitor_task, max_delay=_CANCEL_TASK_TIMEOUT
+                )
 
     def get_task_group(self, task_name: TaskName) -> TrackedTaskGroupDict:
         return self._tasks_groups[task_name]
@@ -103,37 +125,34 @@ class TasksManager:
         # Since we own the client, we assume (for now) this
         # will not be the case.
 
-        while await asyncio.sleep(self.stale_task_check_interval_s, result=True):
-            utc_now = datetime.datetime.now(tz=datetime.UTC)
+        utc_now = datetime.datetime.now(tz=datetime.UTC)
 
-            tasks_to_remove: list[TaskId] = []
-            for tasks in self._tasks_groups.values():
-                for task_id, tracked_task in tasks.items():
-                    _mark_task_to_remove_if_required(
-                        task_id,
-                        tasks_to_remove,
-                        tracked_task,
-                        utc_now,
-                        self.stale_task_detect_timeout_s,
-                    )
-
-            # finally remove tasks and warn
-            for task_id in tasks_to_remove:
-                # NOTE: task can be in the following cases:
-                # - still ongoing
-                # - finished with a result
-                # - finished with errors
-                # we just print the status from where one can infer the above
-                _logger.warning(
-                    "Removing stale task '%s' with status '%s'",
+        tasks_to_remove: list[TaskId] = []
+        for tasks in self._tasks_groups.values():
+            for task_id, tracked_task in tasks.items():
+                _mark_task_to_remove_if_required(
                     task_id,
-                    self.get_task_status(
-                        task_id, with_task_context=None
-                    ).model_dump_json(),
+                    tasks_to_remove,
+                    tracked_task,
+                    utc_now,
+                    self.stale_task_detect_timeout_s,
                 )
-                await self.remove_task(
-                    task_id, with_task_context=None, reraise_errors=False
-                )
+
+        # finally remove tasks and warn
+        for task_id in tasks_to_remove:
+            # NOTE: task can be in the following cases:
+            # - still ongoing
+            # - finished with a result
+            # - finished with errors
+            # we just print the status from where one can infer the above
+            _logger.warning(
+                "Removing stale task '%s' with status '%s'",
+                task_id,
+                self.get_task_status(task_id, with_task_context=None).model_dump_json(),
+            )
+            await self.remove_task(
+                task_id, with_task_context=None, reraise_errors=False
+            )
 
     @staticmethod
     def create_task_id(task_name: TaskName) -> str:
@@ -307,24 +326,6 @@ class TasksManager:
             )
         finally:
             del self._tasks_groups[tracked_task.task_name][task_id]
-
-    async def close(self) -> None:
-        """
-        cancels all pending tasks and removes them before closing
-        """
-        task_ids_to_remove: deque[TaskId] = deque()
-
-        for tasks_dict in self._tasks_groups.values():
-            for tracked_task in tasks_dict.values():
-                task_ids_to_remove.append(tracked_task.task_id)
-
-        for task_id in task_ids_to_remove:
-            # when closing we do not care about pending errors
-            await self.remove_task(task_id, None, reraise_errors=False)
-
-        await self._cancel_asyncio_task(
-            self._stale_tasks_monitor_task, "stale_monitor", reraise_errors=False
-        )
 
 
 class TaskProtocol(Protocol):

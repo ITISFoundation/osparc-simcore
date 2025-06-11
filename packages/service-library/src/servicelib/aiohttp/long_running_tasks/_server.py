@@ -143,6 +143,9 @@ def setup(
     """
 
     async def on_cleanup_ctx(app: web.Application) -> AsyncGenerator[None, None]:
+        # add error handlers
+        app.middlewares.append(base_long_running_error_handler)
+
         # add components to state
         app[APP_LONG_RUNNING_TASKS_MANAGER_KEY] = long_running_task_manager = (
             TasksManager(
@@ -151,13 +154,12 @@ def setup(
             )
         )
 
-        # add error handlers
-        app.middlewares.append(base_long_running_error_handler)
+        await long_running_task_manager.setup()
 
         yield
 
         # cleanup
-        await long_running_task_manager.close()
+        await long_running_task_manager.teardown()
 
     # add routing (done at setup-time)
     _wrap_and_add_routes(
