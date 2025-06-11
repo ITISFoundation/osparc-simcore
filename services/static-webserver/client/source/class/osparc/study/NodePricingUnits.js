@@ -105,12 +105,12 @@ qx.Class.define("osparc.study.NodePricingUnits", {
                       this._add(pricingUnitTiers);
                     }
                     pricingUnitTiers.addListener("selectPricingUnitRequested", e => {
-                      const selectedPricingUnitId = e.getData();
+                      const newSelectedPricingUnit = e.getData();
                       if (this.isPatchNode()) {
                         pricingUnitTiers.setEnabled(false);
                         const pricingPlanId = this.getPricingPlanId();
-                        osparc.store.Study.updateSelectedPricingUnit(studyId, nodeId, pricingPlanId, selectedPricingUnitId)
-                          .then(() => pricingUnitTiers.setSelectedUnitId(selectedPricingUnitId))
+                        osparc.store.Study.updateSelectedPricingUnit(studyId, nodeId, pricingPlanId, newSelectedPricingUnit)
+                          .then(() => pricingUnitTiers.setSelectedUnitId(newSelectedPricingUnit.getPricingUnitId()))
                           .catch(err => osparc.FlashMessenger.logError(err, this.tr("Cannot change Tier")))
                           .finally(() => pricingUnitTiers.setEnabled(true));
                       }

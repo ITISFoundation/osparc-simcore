@@ -74,7 +74,7 @@ qx.Class.define("osparc.study.PricingUnitTiers", {
       pricingUnitTiers.forEach(pricingUnitTier => {
         pricingUnitTier.addListener("selectPricingUnit", () => {
           if (changeSelectionAllowed) {
-            this.fireDataEvent("selectPricingUnitRequested", pricingUnitTier.getUnitData().getPricingUnitId());
+            this.fireDataEvent("selectPricingUnitRequested", pricingUnitTier.getUnitData());
           }
         });
       });

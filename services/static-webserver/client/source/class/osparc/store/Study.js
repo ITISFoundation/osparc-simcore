@@ -236,13 +236,19 @@ qx.Class.define("osparc.store.Study", {
     },
 
     updateSelectedPricingUnit: function(studyId, nodeId, planId, selectedPricingUnit) {
+      let pricingUnit = null;
+      if (selectedPricingUnit instanceof osparc.data.model.PricingUnit) {
+        // convert to JSON if it's a model instance
+        pricingUnit = JSON.parse(qx.util.Serializer.toJson(selectedPricingUnit));
+      } else {
+        pricingUnit = osparc.utils.Utils.deepCloneObject(selectedPricingUnit);
+      }
       const params = {
         url: {
           studyId,
           nodeId,
           pricingPlanId: planId,
-          pricingUnitId: selectedPricingUnit.getPricingUnitId(), // this should be just data
-          // pricingUnitId: selectedPricingUnit["pricingUnitId"],
+          pricingUnitId: pricingUnit["pricingUnitId"],
         }
       };
       return osparc.data.Resources.fetch("studies", "putPricingUnit", params)
@@ -251,7 +257,7 @@ qx.Class.define("osparc.store.Study", {
           if (!(studyId in this.__nodePricingUnit)) {
             this.__nodePricingUnit[studyId] = {};
           }
-          this.__nodePricingUnit[studyId][nodeId] = selectedPricingUnit;
+          this.__nodePricingUnit[studyId][nodeId] = pricingUnit;
         })
         .catch(err => {
           console.error("Failed to update selected pricing unit:", err);
