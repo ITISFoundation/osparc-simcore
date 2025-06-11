@@ -113,6 +113,9 @@ qx.Class.define("osparc.study.NodePricingUnits", {
                           .then(() => pricingUnitTiers.setSelectedUnitId(newSelectedPricingUnit.getPricingUnitId()))
                           .catch(err => osparc.FlashMessenger.logError(err, this.tr("Cannot change Tier")))
                           .finally(() => pricingUnitTiers.setEnabled(true));
+                      } else {
+                        // do not patch node, just update the selected unit (the parent widget will handle the patching)
+                        pricingUnitTiers.setSelectedUnitId(newSelectedPricingUnit.getPricingUnitId());
                       }
                     });
                   }
