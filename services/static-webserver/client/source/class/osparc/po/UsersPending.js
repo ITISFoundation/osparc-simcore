@@ -20,13 +20,21 @@ qx.Class.define("osparc.po.UsersPending", {
   extend: osparc.po.BaseView,
 
   statics: {
-    createInvitationForm: function() {
+    createInvitationForm: function(withEmail = false) {
       const form = new qx.ui.form.Form();
+
+      if (withEmail) {
+        const userEmail = new qx.ui.form.TextField().set({
+          required: true,
+          placeholder: "new.user@email.address"
+        });
+        form.add(userEmail, qx.locale.Manager.tr("User Email"), null, "email");
+      }
 
       const extraCreditsInUsd = new qx.ui.form.Spinner().set({
         minimum: 0,
         maximum: 1000,
-        value: 100
+        value: osparc.product.Utils.getDefaultWelcomeCredits(),
       });
       form.add(extraCreditsInUsd, qx.locale.Manager.tr("Welcome Credits (USD)"), null, "credits");
 
@@ -51,7 +59,7 @@ qx.Class.define("osparc.po.UsersPending", {
     createApproveButton: function(email) {
       const button = new qx.ui.form.Button(qx.locale.Manager.tr("Approve"));
       button.addListener("execute", () => {
-        const form = this.createInvitationForm();
+        const form = this.createInvitationForm(false);
         const approveBtn = new osparc.ui.form.FetchButton(qx.locale.Manager.tr("Approve"));
         approveBtn.set({
           appearance: "form-button"
@@ -78,9 +86,8 @@ qx.Class.define("osparc.po.UsersPending", {
               },
             };
             params.data["invitation"] = {};
-            const extraCreditsInUsd = form.getItems()["credits"].getValue();
-            if (extraCreditsInUsd > 0) {
-              params.data["invitation"]["extraCreditsInUsd"] = extraCreditsInUsd;
+            if (form.getItems()["credits"].getValue() > 0) {
+              params.data["invitation"]["extraCreditsInUsd"] = form.getItems()["credits"].getValue();
             }
             if (form.getItems()["withExpiration"].getValue()) {
               params.data["invitation"]["trialAccountDays"] = form.getItems()["trialDays"].getValue();
