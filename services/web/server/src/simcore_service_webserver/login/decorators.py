@@ -57,12 +57,13 @@ def login_required(handler: HandlerAnyReturn) -> HandlerAnyReturn:
         # WARNING: note that check_authorized is patched in some tests.
         # Careful when changing the function signature
         user_id = await check_user_authorized(request)
+        product_name = products_web.get_product_name(request)
 
         await check_user_permission(
             request,
             PERMISSION_PRODUCT_LOGIN_KEY,
             context=AuthContextDict(
-                product_name=products_web.get_product_name(request),
+                product_name=product_name,
                 authorized_uid=user_id,
             ),
         )

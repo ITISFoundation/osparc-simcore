@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 import typer
 from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
-from servicelib.fastapi.long_running_tasks.server import TaskProgress
+from servicelib.long_running_tasks.models import TaskProgress
 from settings_library.utils_cli import create_settings_command
 
 from ._meta import PROJECT_NAME

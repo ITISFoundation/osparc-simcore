@@ -5,9 +5,9 @@ from pydantic import (
     Field,
 )
 
-from ...models import RequestContext
+from ...models import AuthenticatedRequestContext
 
-assert RequestContext.__name__  # nosec
+assert AuthenticatedRequestContext.__name__  # nosec
 
 
 class ProjectPathParams(BaseModel):
@@ -21,4 +21,4 @@ class RemoveQueryParams(BaseModel):
     )
 
 
-__all__: tuple[str, ...] = ("RequestContext",)
+__all__: tuple[str, ...] = ("AuthenticatedRequestContext",)

@@ -1,11 +1,11 @@
 """
-    - Every group has a set of "official" classifiers and its users tag studies with them
-    - Classifiers can be defined in two ways:
-        1. a static bundle that is stored in group_classifiers.c.bundle
-        2. using research resources from scicrunch.org (see group_classifiers.c.uses_scicrunch )
-    - The API Classifiers model returned in
-        1. is the bundle
-        2. a dynamic tree built from validated RRIDs (in ResearchResourceRepository)
+- Every group has a set of "official" classifiers and its users tag studies with them
+- Classifiers can be defined in two ways:
+    1. a static bundle that is stored in group_classifiers.c.bundle
+    2. using research resources from scicrunch.org (see group_classifiers.c.uses_scicrunch )
+- The API Classifiers model returned in
+    1. is the bundle
+    2. a dynamic tree built from validated RRIDs (in ResearchResourceRepository)
 """
 
 import logging
@@ -23,6 +23,7 @@ from pydantic import (
     ValidationError,
     field_validator,
 )
+from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from simcore_postgres_database.models.classifiers import group_classifiers
 
 from ..db.plugin import get_database_engine
@@ -97,12 +98,15 @@ class GroupClassifierRepository:
                     exclude_unset=True, exclude_none=True
                 )
             except ValidationError as err:
-                _logger.error(
-                    "DB corrupt data in 'groups_classifiers' table. "
-                    "Invalid classifier for gid=%d: %s. "
-                    "Returning empty bundle.",
-                    gid,
-                    err,
+                _logger.exception(
+                    **create_troubleshotting_log_kwargs(
+                        f"DB corrupt data in 'groups_classifiers' table. Invalid classifier for gid={gid}. Returning empty bundle.",
+                        error=err,
+                        error_context={
+                            "gid": gid,
+                            "bundle": bundle,
+                        },
+                    )
                 )
         return {}
 
