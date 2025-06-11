@@ -72,7 +72,7 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
       osparc.data.Resources.fetch("studies", "getOne", params)
         .then(studyData => {
           if (!studyData) {
-            const msg = qx.locale.Manager.tr("Study not found");
+            const msg = qx.locale.Manager.tr("Project not found");
             throw new Error(msg);
           }
           this.loadStudy(studyData);
