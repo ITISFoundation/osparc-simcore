@@ -24,16 +24,19 @@ def on_worker_init(
     sender: WorkController,
     **_kwargs,
 ) -> None:
-    def _init() -> None:
+    startup_complete_event = threading.Event()
+
+    def _init(startup_complete_event: threading.Event) -> None:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
         app_server.event_loop = loop
 
-        async def setup_task_manager():
+        async def _setup():
             assert sender.app  # nosec
             assert isinstance(sender.app, Celery)  # nosec
 
+            set_app_server(sender.app, app_server)
             set_task_manager(
                 sender.app,
                 create_task_manager(
@@ -42,17 +45,19 @@ def on_worker_init(
                 ),
             )
 
-        set_app_server(sender.app, app_server)
-        loop.run_until_complete(setup_task_manager())
-        loop.run_until_complete(app_server.startup())
+        loop.run_until_complete(_setup())
+        loop.run_until_complete(app_server.startup(startup_complete_event))
 
     thread = threading.Thread(
         group=None,
         target=_init,
         name="app_server_init",
+        args=(startup_complete_event,),
         daemon=True,
     )
     thread.start()
+
+    startup_complete_event.wait()
 
 
 def on_worker_shutdown(sender, **_kwargs) -> None:

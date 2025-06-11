@@ -1,3 +1,4 @@
+import threading
 from abc import ABC, abstractmethod
 from asyncio import AbstractEventLoop
 from contextlib import suppress
@@ -20,7 +21,7 @@ class BaseAppServer(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def startup(self):
+    async def startup(self, completed: threading.Event):
         pass
 
     @property

@@ -22,13 +22,14 @@ class FastAPIAppServer(BaseAppServer):
         assert isinstance(self._app, FastAPI)  # nosec
         return self._app
 
-    async def startup(self):
+    async def startup(self, completed: asyncio.Event):
         self._lifespan_manager = LifespanManager(
             self.fastapi_app,
             startup_timeout=_STARTUP_TIMEOUT,
             shutdown_timeout=_SHUTDOWN_TIMEOUT,
         )
         await self._lifespan_manager.__aenter__()
+        completed.set()
         await self._shutdown_event.wait()
 
     async def shutdown(self):
