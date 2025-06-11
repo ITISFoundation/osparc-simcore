@@ -650,9 +650,9 @@ qx.Class.define("osparc.utils.Utils", {
       if (osparc.product.Utils.getCreateAccountAction() === "REQUEST_ACCOUNT_FORM") {
         // if the product is configured to show a form to request an account,
         // then show a link to it in the message
-        msg += qx.locale.Manager.tr(", please send us an e-mail to create an account:");
+        msg += qx.locale.Manager.tr(", please request an account in the following link:");
         msg += "</br>";
-        msg += mailto;
+        msg += osparc.store.Support.requestAccountLink();
         return msg;
       }
       msg += qx.locale.Manager.tr(", please send us an e-mail to create an account:");
