@@ -275,8 +275,9 @@ class TasksManager:
         tracked_task = self._get_tracked_task(task_id, with_task_context)
         await self._cancel_tracked_task(tracked_task.task, task_id, reraise_errors=True)
 
+    @staticmethod
     async def _cancel_asyncio_task(
-        self, task: asyncio.Task, reference: str, *, reraise_errors: bool
+        task: asyncio.Task, reference: str, *, reraise_errors: bool
     ) -> None:
         task.cancel()
         with suppress(asyncio.CancelledError):
