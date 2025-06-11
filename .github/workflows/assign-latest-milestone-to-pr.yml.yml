@@ -1,0 +1,39 @@
+name: Assign latest milestone to new PRs
+
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  assign-latest-milestone:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Assign latest milestone to PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+
+            const milestones = await github.rest.issues.listMilestones({
+              owner,
+              repo,
+              state: 'open',
+              sort: 'due_on', // or 'number' if you prefer
+              direction: 'asc'
+            });
+
+            if (milestones.data.length === 0) {
+              console.log('No open milestones found.');
+              return;
+            }
+
+            const latestMilestone = milestones.data[0]; // earliest due date
+
+            await github.rest.pulls.update({
+              owner,
+              repo,
+              pull_number: context.payload.pull_request.number,
+              milestone: latestMilestone.number
+            });
