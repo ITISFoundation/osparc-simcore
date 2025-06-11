@@ -42,36 +42,107 @@ def is_api_request(request: web.Request, api_version: str) -> bool:
     return bool(request.path.startswith(base_path))
 
 
+def _process_and_raise_unexpected_error(
+    request: web.BaseRequest, err: Exception, *, skip_internal_error_details: bool
+):
+    """Process unexpected exceptions and raise them as HTTP errors with proper formatting."""
+    error_code = create_error_code(err)
+    error_context: dict[str, Any] = {
+        "request.remote": f"{request.remote}",
+        "request.method": f"{request.method}",
+        "request.path": f"{request.path}",
+    }
+
+    user_error_msg = _FMSG_INTERNAL_ERROR_USER_FRIENDLY
+    http_error = create_http_error(
+        err,
+        user_error_msg,
+        web.HTTPInternalServerError,
+        skip_internal_error_details=skip_internal_error_details,
+        error_code=error_code,
+    )
+    _logger.exception(
+        **create_troubleshotting_log_kwargs(
+            user_error_msg,
+            error=err,
+            error_context=error_context,
+            error_code=error_code,
+        )
+    )
+    raise http_error
+
+
+def _handle_http_error(err: web.HTTPError) -> None:
+    """Handle standard HTTP errors by ensuring they're properly formatted."""
+    err.content_type = MIMETYPE_APPLICATION_JSON
+    if err.reason:
+        err.set_status(err.status, safe_status_message(message=err.reason))
+
+    if not err.text or not is_enveloped_from_text(err.text):
+        error_message = err.text or err.reason or "Unexpected error"
+        error_model = ErrorGet(
+            errors=[
+                ErrorItemType.from_error(err),
+            ],
+            status=err.status,
+            logs=[
+                LogMessageType(message=error_message, level="ERROR"),
+            ],
+            message=error_message,
+        )
+        err.text = EnvelopeFactory(error=error_model).as_text()
+
+
+def _handle_http_successful(
+    err: web.HTTPSuccessful, request: web.Request, *, skip_internal_error_details: bool
+) -> None:
+    """Handle successful HTTP responses, ensuring they're properly enveloped."""
+    err.content_type = MIMETYPE_APPLICATION_JSON
+    if err.reason:
+        err.set_status(err.status, safe_status_message(message=err.reason))
+
+    if err.text:
+        try:
+            payload = json_loads(err.text)
+            if not is_enveloped_from_map(payload):
+                payload = wrap_as_envelope(data=payload)
+                err.text = json_dumps(payload)
+        except Exception as other_error:  # pylint: disable=broad-except
+            _process_and_raise_unexpected_error(
+                request,
+                other_error,
+                skip_internal_error_details=skip_internal_error_details,
+            )
+
+
+def _handle_not_implemented(
+    err: NotImplementedError, *, skip_internal_error_details: bool
+) -> None:
+    """Handle NotImplementedError by converting to appropriate HTTP error."""
+    http_error = create_http_error(
+        err,
+        f"{err}",
+        web.HTTPNotImplemented,
+        skip_internal_error_details=skip_internal_error_details,
+    )
+    raise http_error from err
+
+
+def _handle_timeout(err: TimeoutError, *, skip_internal_error_details: bool) -> None:
+    """Handle TimeoutError by converting to appropriate HTTP error."""
+    http_error = create_http_error(
+        err,
+        f"{err}",
+        web.HTTPGatewayTimeout,
+        skip_internal_error_details=skip_internal_error_details,
+    )
+    raise http_error from err
+
+
 def error_middleware_factory(  # noqa: C901
     api_version: str,
 ) -> Middleware:
     _is_prod: bool = is_production_environ()
-
-    def _process_and_raise_unexpected_error(request: web.BaseRequest, err: Exception):
-        error_code = create_error_code(err)
-        error_context: dict[str, Any] = {
-            "request.remote": f"{request.remote}",
-            "request.method": f"{request.method}",
-            "request.path": f"{request.path}",
-        }
-
-        user_error_msg = _FMSG_INTERNAL_ERROR_USER_FRIENDLY
-        http_error = create_http_error(
-            err,
-            user_error_msg,
-            web.HTTPInternalServerError,
-            skip_internal_error_details=_is_prod,
-            error_code=error_code,
-        )
-        _logger.exception(
-            **create_troubleshotting_log_kwargs(
-                user_error_msg,
-                error=err,
-                error_context=error_context,
-                error_code=error_code,
-            )
-        )
-        raise http_error
 
     @web.middleware
     async def _middleware_handler(request: web.Request, handler: Handler):  # noqa: C901
@@ -86,40 +157,11 @@ def error_middleware_factory(  # noqa: C901
             return await handler(request)
 
         except web.HTTPError as err:
-
-            err.content_type = MIMETYPE_APPLICATION_JSON
-            if err.reason:
-                err.set_status(err.status, safe_status_message(message=err.reason))
-
-            if not err.text or not is_enveloped_from_text(err.text):
-                error_message = err.text or err.reason or "Unexpected error"
-                error_model = ErrorGet(
-                    errors=[
-                        ErrorItemType.from_error(err),
-                    ],
-                    status=err.status,
-                    logs=[
-                        LogMessageType(message=error_message, level="ERROR"),
-                    ],
-                    message=error_message,
-                )
-                err.text = EnvelopeFactory(error=error_model).as_text()
-
+            _handle_http_error(err)
             raise
 
         except web.HTTPSuccessful as err:
-            err.content_type = MIMETYPE_APPLICATION_JSON
-            if err.reason:
-                err.set_status(err.status, safe_status_message(message=err.reason))
-
-            if err.text:
-                try:
-                    payload = json_loads(err.text)
-                    if not is_enveloped_from_map(payload):
-                        payload = wrap_as_envelope(data=payload)
-                        err.text = json_dumps(payload)
-                except Exception as other_error:  # pylint: disable=broad-except
-                    _process_and_raise_unexpected_error(request, other_error)
+            _handle_http_successful(err, request, skip_internal_error_details=_is_prod)
             raise
 
         except web.HTTPRedirection as err:
@@ -127,30 +169,18 @@ def error_middleware_factory(  # noqa: C901
             raise
 
         except NotImplementedError as err:
-            http_error = create_http_error(
-                err,
-                f"{err}",
-                web.HTTPNotImplemented,
-                skip_internal_error_details=_is_prod,
-            )
-            raise http_error from err
+            _handle_not_implemented(err, skip_internal_error_details=_is_prod)
 
         except TimeoutError as err:
-            http_error = create_http_error(
-                err,
-                f"{err}",
-                web.HTTPGatewayTimeout,
-                skip_internal_error_details=_is_prod,
-            )
-            raise http_error from err
+            _handle_timeout(err, skip_internal_error_details=_is_prod)
 
         except Exception as err:  # pylint: disable=broad-except
-            _process_and_raise_unexpected_error(request, err)
+            _process_and_raise_unexpected_error(
+                request, err, skip_internal_error_details=_is_prod
+            )
 
     # adds identifier (mostly for debugging)
-    setattr(  # noqa: B010
-        _middleware_handler, "__middleware_name__", f"{__name__}.error_{api_version}"
-    )
+    _middleware_handler.__middleware_name__ = f"{__name__}.error_{api_version}"
 
     return _middleware_handler
 
