@@ -2,7 +2,7 @@ import logging
 
 from celery import Task  # type: ignore[import-untyped]
 from celery_library.models import TaskID
-from celery_library.utils import get_fastapi_app
+from celery_library.utils import get_app_server
 from models_library.api_schemas_storage.storage_schemas import (
     FileUploadCompletionBody,
 )
@@ -30,7 +30,7 @@ async def complete_upload_file(
         logging.INFO,
         msg=f"completing upload of file {user_id=}, {location_id=}, {file_id=}",
     ):
-        dsm = get_dsm_provider(get_fastapi_app(task.app)).get(location_id)
+        dsm = get_dsm_provider(get_app_server(task.app).fastapi_app).get(location_id)
         # NOTE: completing a multipart upload on AWS can take up to several minutes
         # if it returns slow we return a 202 - Accepted, the client will have to check later
         # for completeness

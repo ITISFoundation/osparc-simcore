@@ -3,7 +3,7 @@ from pathlib import Path
 
 from celery import Task  # type: ignore[import-untyped]
 from celery_library.models import TaskID
-from celery_library.utils import get_fastapi_app
+from celery_library.utils import get_app_server
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
@@ -25,7 +25,7 @@ async def compute_path_size(
         logging.INFO,
         msg=f"computing path size {user_id=}, {location_id=}, {path=}",
     ):
-        dsm = get_dsm_provider(get_fastapi_app(task.app)).get(location_id)
+        dsm = get_dsm_provider(get_app_server(task.app).fastapi_app).get(location_id)
         return await dsm.compute_path_size(user_id, path=Path(path))
 
 
@@ -42,7 +42,7 @@ async def delete_paths(
         logging.INFO,
         msg=f"delete {paths=} in {location_id=} for {user_id=}",
     ):
-        dsm = get_dsm_provider(get_fastapi_app(task.app)).get(location_id)
+        dsm = get_dsm_provider(get_app_server(task.app).fastapi_app).get(location_id)
         files_ids: set[StorageFileID] = {
             TypeAdapter(StorageFileID).validate_python(f"{path}") for path in paths
         }

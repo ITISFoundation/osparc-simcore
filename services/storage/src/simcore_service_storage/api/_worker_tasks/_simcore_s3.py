@@ -5,7 +5,7 @@ from typing import Any
 from aws_library.s3._models import S3ObjectKey
 from celery import Task  # type: ignore[import-untyped]
 from celery_library.models import TaskID
-from celery_library.utils import get_fastapi_app, get_task_manager
+from celery_library.utils import get_app_server, get_task_manager
 from models_library.api_schemas_storage.storage_schemas import FoldersBody
 from models_library.api_schemas_webserver.storage import PathToExport
 from models_library.progress_bar import ProgressReport
@@ -40,7 +40,7 @@ async def deep_copy_files_from_project(
         logging.INFO,
         msg=f"copying {body.source['uuid']} -> {body.destination['uuid']} with {task.request.id}",
     ):
-        dsm = get_dsm_provider(get_fastapi_app(task.app)).get(
+        dsm = get_dsm_provider(get_app_server(task.app).fastapi_app).get(
             SimcoreS3DataManager.get_location_id()
         )
         assert isinstance(dsm, SimcoreS3DataManager)  # nosec
@@ -75,7 +75,7 @@ async def export_data(
         logging.INFO,
         f"'{task_id}' export data (for {user_id=}) fom selection: {paths_to_export}",
     ):
-        dsm = get_dsm_provider(get_fastapi_app(task.app)).get(
+        dsm = get_dsm_provider(get_app_server(task.app).fastapi_app).get(
             SimcoreS3DataManager.get_location_id()
         )
         assert isinstance(dsm, SimcoreS3DataManager)  # nosec

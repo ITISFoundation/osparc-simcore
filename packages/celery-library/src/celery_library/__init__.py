@@ -1,5 +1,4 @@
 import logging
-from asyncio import AbstractEventLoop
 
 from fastapi import FastAPI
 from settings_library.celery import CelerySettings
@@ -27,13 +26,3 @@ def get_celery_client(app: FastAPI) -> CeleryTaskManager:
     celery_client = app.state.celery_client
     assert isinstance(celery_client, CeleryTaskManager)
     return celery_client
-
-
-def get_event_loop(app: FastAPI) -> AbstractEventLoop:
-    event_loop = app.state.event_loop
-    assert isinstance(event_loop, AbstractEventLoop)
-    return event_loop
-
-
-def set_event_loop(app: FastAPI, event_loop: AbstractEventLoop) -> None:
-    app.state.event_loop = event_loop

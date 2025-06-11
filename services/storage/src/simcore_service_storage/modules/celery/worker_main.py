@@ -9,6 +9,7 @@ from celery_library.signals import (
     on_worker_init,
     on_worker_shutdown,
 )
+from servicelib.fastapi.app_server import FastAPIAppServer
 from servicelib.logging_utils import config_all_loggers
 from simcore_service_storage.api._worker_tasks.tasks import setup_worker_tasks
 
@@ -28,11 +29,12 @@ config_all_loggers(
 
 assert _settings.STORAGE_CELERY  # nosec
 app = create_celery_app(_settings.STORAGE_CELERY)
-app_factory = partial(create_app, _settings)
+
+app_server = FastAPIAppServer(app=create_app(_settings))
 
 
 def worker_init_wrapper(sender, **_kwargs):
-    return partial(on_worker_init, app_factory, _settings.STORAGE_CELERY)(
+    return partial(on_worker_init, app_server, _settings.STORAGE_CELERY)(
         sender, **_kwargs
     )
 

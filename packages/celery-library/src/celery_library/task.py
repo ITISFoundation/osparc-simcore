@@ -15,10 +15,9 @@ from celery.exceptions import Ignore  # type: ignore[import-untyped]
 from pydantic import NonNegativeInt
 from servicelib.async_utils import cancel_wait_task
 
-from . import get_event_loop
 from .errors import encode_celery_transferrable_error
 from .models import TaskID
-from .utils import get_fastapi_app
+from .utils import get_app_server
 
 _logger = logging.getLogger(__name__)
 
@@ -48,7 +47,7 @@ def _async_task_wrapper(
     ) -> Callable[Concatenate[AbortableTask, P], R]:
         @wraps(coro)
         def wrapper(task: AbortableTask, *args: P.args, **kwargs: P.kwargs) -> R:
-            fastapi_app = get_fastapi_app(app)
+            app_server = get_app_server(app)
             # NOTE: task.request is a thread local object, so we need to pass the id explicitly
             assert task.request.id is not None  # nosec
 
@@ -90,7 +89,7 @@ def _async_task_wrapper(
 
             return asyncio.run_coroutine_threadsafe(
                 run_task(task.request.id),
-                get_event_loop(fastapi_app),
+                app_server.event_loop,
             ).result()
 
         return wrapper
