@@ -2,7 +2,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Request, status
 
-from ...long_running_tasks.expose import endpoint_responses
+from ...long_running_tasks import endpoint_responses
 from ...long_running_tasks.models import TaskGet, TaskId, TaskResult, TaskStatus
 from ...long_running_tasks.task import TasksManager
 from ..requests_decorators import cancel_on_disconnect

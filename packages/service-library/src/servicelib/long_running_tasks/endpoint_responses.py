@@ -1,7 +1,7 @@
 from typing import Any
 
-from ..models import TaskGetWithoutHref, TaskId, TaskStatus
-from ..task import TaskContext, TasksManager, TrackedTask
+from .models import TaskGetWithoutHref, TaskId, TaskStatus
+from .task import TaskContext, TasksManager, TrackedTask
 
 
 def list_tasks(

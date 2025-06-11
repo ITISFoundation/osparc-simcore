@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from servicelib.aiohttp import status
 from servicelib.aiohttp.rest_responses import create_data_response
 
-from ...long_running_tasks.expose import endpoint_responses
+from ...long_running_tasks import endpoint_responses
 from ...long_running_tasks.models import TaskGet, TaskId, TaskStatus
 from ..requests_validation import parse_request_path_parameters_as
 from ._dependencies import get_task_context, get_tasks_manager
