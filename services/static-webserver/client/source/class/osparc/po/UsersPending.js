@@ -20,8 +20,16 @@ qx.Class.define("osparc.po.UsersPending", {
   extend: osparc.po.BaseView,
 
   statics: {
-    createInvitationForm: function() {
+    createInvitationForm: function(withEmail = false) {
       const form = new qx.ui.form.Form();
+
+      if (withEmail) {
+        const userEmail = new qx.ui.form.TextField().set({
+          required: true,
+          placeholder: "new.user@email.address"
+        });
+        form.add(userEmail, qx.locale.Manager.tr("User Email"), null, "email");
+      }
 
       const extraCreditsInUsd = new qx.ui.form.Spinner().set({
         minimum: 0,
@@ -51,7 +59,7 @@ qx.Class.define("osparc.po.UsersPending", {
     createApproveButton: function(email) {
       const button = new qx.ui.form.Button(qx.locale.Manager.tr("Approve"));
       button.addListener("execute", () => {
-        const form = this.createInvitationForm();
+        const form = this.createInvitationForm(false);
         const approveBtn = new osparc.ui.form.FetchButton(qx.locale.Manager.tr("Approve"));
         approveBtn.set({
           appearance: "form-button"
