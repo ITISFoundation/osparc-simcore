@@ -84,5 +84,13 @@ qx.Class.define("osparc.study.PricingUnitTiers", {
       // select and unselect the rest
       this.__pricingUnitTiers.forEach(puTIer => puTIer.setSelected(puTIer.getUnitData().getPricingUnitId() === selectedUnitId));
     },
+
+    getSelectedUnit: function() {
+      const selectedUnitTier = this.__pricingUnitTiers.find(puTier => puTier.isSelected());
+      if (selectedUnitTier) {
+        return selectedUnitTier.getUnitData();
+      }
+      return null;
+    },
   }
 });
