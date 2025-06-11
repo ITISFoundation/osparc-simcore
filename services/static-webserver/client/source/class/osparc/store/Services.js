@@ -349,11 +349,6 @@ qx.Class.define("osparc.store.Services", {
     },
 
     getPricingPlan: function(serviceKey, serviceVersion) {
-      // init the cache
-      if (this.__pricingPlansCached === null) {
-        this.__pricingPlansCached = {};
-      }
-
       const serviceUrl = osparc.data.Resources.getServiceUrl(serviceKey, serviceVersion)
       // check if the service is already cached
       if (serviceUrl in this.__pricingPlansCached) {
