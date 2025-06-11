@@ -4,6 +4,7 @@ from typing import Annotated
 from common_library.basic_types import DEFAULT_FACTORY
 from models_library.generics import Envelope
 from pydantic import BaseModel, ConfigDict, Field
+from pydantic.config import JsonDict
 
 from .basic_types import IDStr, LogLevel
 
@@ -72,39 +73,55 @@ class ErrorGet(BaseModel):
             description="Message displayed to the user",
         ),
     ]
+
     support_id: Annotated[
         IDStr | None,
         Field(description="ID to track the incident during support", alias="supportId"),
     ] = None
-    status: int
 
-    # NOTE: The fields blow are DEPRECATED. Still here to keep compatibilty with front-end until updated
+    status: Annotated[
+        int,
+        Field(
+            description="Redundant HTTP status code of the error."
+            "Must be the same as in the HTTP response"
+        ),
+    ]
+
+    # NOTE: The fields below are DEPRECATED.
+    #  Still here to keep compatibilty with front-end until updated
     errors: Annotated[
         list[ErrorItemType],
         Field(deprecated=True, default_factory=list, json_schema_extra={"default": []}),
     ] = DEFAULT_FACTORY
+
     logs: Annotated[
         list[LogMessageType],
         Field(deprecated=True, default_factory=list, json_schema_extra={"default": []}),
     ] = DEFAULT_FACTORY
 
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "message": "Sorry you do not have sufficient access rights for product",
+                        "status": 401,
+                    },
+                    {
+                        "message": "Opps this error was unexpected. We are working on that!",
+                        "supportId": "OEC:12346789",
+                        "status": 500,
+                    },
+                ]
+            }
+        )
+
     model_config = ConfigDict(
         populate_by_name=True,
         extra="ignore",  # Used to prune extra fields from internal data
         frozen=True,
-        json_schema_extra={
-            "examples": [
-                {
-                    "message": "Sorry you do not have sufficient access rights for product",
-                    "status": 401,
-                },
-                {
-                    "message": "Opps this error was unexpected. We are working on that!",
-                    "supportId": "OEC:12346789",
-                    "status": 500,
-                },
-            ]
-        },
+        json_schema_extra=_update_json_schema_extra,
     )
 
 
