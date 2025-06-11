@@ -34,6 +34,7 @@ app_server = FastAPIAppServer(app=create_app(_settings))
 
 
 def worker_init_wrapper(sender, **_kwargs):
+    assert _settings.STORAGE_CELERY  # nosec
     return partial(on_worker_init, app_server, _settings.STORAGE_CELERY)(
         sender, **_kwargs
     )
