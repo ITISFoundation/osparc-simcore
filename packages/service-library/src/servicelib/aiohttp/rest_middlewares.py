@@ -42,11 +42,11 @@ def is_api_request(request: web.Request, api_version: str) -> bool:
     return bool(request.path.startswith(base_path))
 
 
-def _process_and_raise_unexpected_error(
-    request: web.BaseRequest, err: Exception, *, skip_internal_error_details: bool
-):
-    """Process unexpected exceptions and raise them as HTTP errors with proper formatting."""
-    error_code = create_error_code(err)
+def _handle_unexpected_error(
+    request: web.BaseRequest, exception: Exception, *, skip_internal_error_details: bool
+) -> web.HTTPInternalServerError:
+    """Process unexpected exceptions and return them as HTTP errors with proper formatting."""
+    error_code = create_error_code(exception)
     error_context: dict[str, Any] = {
         "request.remote": f"{request.remote}",
         "request.method": f"{request.method}",
@@ -55,7 +55,7 @@ def _process_and_raise_unexpected_error(
 
     user_error_msg = _FMSG_INTERNAL_ERROR_USER_FRIENDLY
     http_error = create_http_error(
-        err,
+        exception,
         user_error_msg,
         web.HTTPInternalServerError,
         skip_internal_error_details=skip_internal_error_details,
@@ -64,79 +64,97 @@ def _process_and_raise_unexpected_error(
     _logger.exception(
         **create_troubleshotting_log_kwargs(
             user_error_msg,
-            error=err,
+            error=exception,
             error_context=error_context,
             error_code=error_code,
         )
     )
-    raise http_error
+    return http_error
 
 
-def _handle_http_error(err: web.HTTPError) -> None:
+def _handle_http_error(
+    request: web.BaseRequest, exception: web.HTTPError
+) -> web.HTTPError:
     """Handle standard HTTP errors by ensuring they're properly formatted."""
-    err.content_type = MIMETYPE_APPLICATION_JSON
-    if err.reason:
-        err.set_status(err.status, safe_status_message(message=err.reason))
+    exception.content_type = MIMETYPE_APPLICATION_JSON
+    if exception.reason:
+        exception.set_status(
+            exception.status, safe_status_message(message=exception.reason)
+        )
 
-    if not err.text or not is_enveloped_from_text(err.text):
-        error_message = err.text or err.reason or "Unexpected error"
+    if not exception.text or not is_enveloped_from_text(exception.text):
+        error_message = exception.text or exception.reason or "Unexpected error"
         error_model = ErrorGet(
             errors=[
-                ErrorItemType.from_error(err),
+                ErrorItemType.from_error(exception),
             ],
-            status=err.status,
+            status=exception.status,
             logs=[
                 LogMessageType(message=error_message, level="ERROR"),
             ],
             message=error_message,
         )
-        err.text = EnvelopeFactory(error=error_model).as_text()
+        exception.text = EnvelopeFactory(error=error_model).as_text()
+
+    return exception
 
 
 def _handle_http_successful(
-    err: web.HTTPSuccessful, request: web.Request, *, skip_internal_error_details: bool
-) -> None:
+    request: web.Request,
+    exception: web.HTTPSuccessful,
+    *,
+    skip_internal_error_details: bool,
+) -> web.HTTPSuccessful:
     """Handle successful HTTP responses, ensuring they're properly enveloped."""
-    err.content_type = MIMETYPE_APPLICATION_JSON
-    if err.reason:
-        err.set_status(err.status, safe_status_message(message=err.reason))
+    exception.content_type = MIMETYPE_APPLICATION_JSON
+    if exception.reason:
+        exception.set_status(
+            exception.status, safe_status_message(message=exception.reason)
+        )
 
-    if err.text:
+    if exception.text:
         try:
-            payload = json_loads(err.text)
+            payload = json_loads(exception.text)
             if not is_enveloped_from_map(payload):
                 payload = wrap_as_envelope(data=payload)
-                err.text = json_dumps(payload)
+                exception.text = json_dumps(payload)
         except Exception as other_error:  # pylint: disable=broad-except
-            _process_and_raise_unexpected_error(
+            return _handle_unexpected_error(
                 request,
                 other_error,
                 skip_internal_error_details=skip_internal_error_details,
             )
 
+    return exception
+
 
 def _handle_not_implemented(
-    err: NotImplementedError, *, skip_internal_error_details: bool
-) -> None:
+    request: web.Request,
+    exception: NotImplementedError,
+    *,
+    skip_internal_error_details: bool,
+) -> web.HTTPNotImplemented:
     """Handle NotImplementedError by converting to appropriate HTTP error."""
     http_error = create_http_error(
-        err,
-        f"{err}",
+        exception,
+        f"{exception}",
         web.HTTPNotImplemented,
         skip_internal_error_details=skip_internal_error_details,
     )
-    raise http_error from err
+    return http_error
 
 
-def _handle_timeout(err: TimeoutError, *, skip_internal_error_details: bool) -> None:
+def _handle_timeout(
+    request: web.Request, exception: TimeoutError, *, skip_internal_error_details: bool
+) -> web.HTTPGatewayTimeout:
     """Handle TimeoutError by converting to appropriate HTTP error."""
     http_error = create_http_error(
-        err,
-        f"{err}",
+        exception,
+        f"{exception}",
         web.HTTPGatewayTimeout,
         skip_internal_error_details=skip_internal_error_details,
     )
-    raise http_error from err
+    return http_error
 
 
 def error_middleware_factory(  # noqa: C901
@@ -154,30 +172,31 @@ def error_middleware_factory(  # noqa: C901
 
         # FIXME: review when to send info to client and when not!
         try:
-            return await handler(request)
-
-        except web.HTTPError as err:
-            _handle_http_error(err)
-            raise
-
-        except web.HTTPSuccessful as err:
-            _handle_http_successful(err, request, skip_internal_error_details=_is_prod)
-            raise
-
-        except web.HTTPRedirection as err:
-            _logger.debug("Redirected to %s", err)
-            raise
-
-        except NotImplementedError as err:
-            _handle_not_implemented(err, skip_internal_error_details=_is_prod)
-
-        except TimeoutError as err:
-            _handle_timeout(err, skip_internal_error_details=_is_prod)
-
-        except Exception as err:  # pylint: disable=broad-except
-            _process_and_raise_unexpected_error(
-                request, err, skip_internal_error_details=_is_prod
+            result = await handler(request)
+        except web.HTTPError as exc:
+            result = _handle_http_error(request, exc)
+        except web.HTTPSuccessful as exc:
+            result = _handle_http_successful(
+                request, exc, skip_internal_error_details=_is_prod
             )
+        except web.HTTPRedirection as exc:
+            _logger.debug("Redirected to %s", exc)
+            raise  # We still raise redirection exceptions directly
+
+        except NotImplementedError as exc:
+            result = _handle_not_implemented(
+                request, exc, skip_internal_error_details=_is_prod
+            )
+
+        except TimeoutError as exc:
+            result = _handle_timeout(request, exc, skip_internal_error_details=_is_prod)
+
+        except Exception as exc:  # pylint: disable=broad-except
+            result = _handle_unexpected_error(
+                request, exc, skip_internal_error_details=_is_prod
+            )
+
+        return result
 
     # adds identifier (mostly for debugging)
     _middleware_handler.__middleware_name__ = f"{__name__}.error_{api_version}"
