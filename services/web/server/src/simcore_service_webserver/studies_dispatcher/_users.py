@@ -24,7 +24,6 @@ from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.logging_utils import log_decorator
 from servicelib.utils import fire_and_forget_task
 from servicelib.utils_secrets import generate_password
-from simcore_service_webserver.security import security_service
 
 from ..garbage_collector.settings import GUEST_USER_RC_LOCK_FORMAT
 from ..groups.api import auto_add_user_to_product_group
@@ -32,7 +31,7 @@ from ..login._login_service import ACTIVE, GUEST
 from ..login.login_repository_legacy import AsyncpgStorage, get_plugin_storage
 from ..products import products_web
 from ..redis import get_redis_lock_manager_client
-from ..security import security_web
+from ..security import security_service, security_web
 from ..users.api import get_user
 from ..users.exceptions import UserNotFoundError
 from ._constants import MSG_GUESTS_NOT_ALLOWED

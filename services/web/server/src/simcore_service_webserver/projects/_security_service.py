@@ -1,8 +1,8 @@
 import jsondiff  # type: ignore[import-untyped]
 from aiohttp import web
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_webserver.security import security_service
 
+from ..security import security_service
 from ._projects_repository_legacy import ProjectDBAPI
 from .api import check_user_project_permission
 

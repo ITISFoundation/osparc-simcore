@@ -10,9 +10,9 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 from simcore_postgres_database.utils_users import UsersRepo
-from simcore_service_webserver.db.plugin import get_asyncpg_engine
 
 from ...._meta import API_VTAG
+from ....db.plugin import get_asyncpg_engine
 from ....products import products_web
 from ....products.models import Product
 from ....security import security_service
