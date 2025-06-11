@@ -10,7 +10,7 @@ from ..aiohttp.status import HTTP_200_OK
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 from ..rest_constants import RESPONSE_MODEL_POLICY
 from ..rest_responses import is_enveloped
-from ..status_codes_utils import get_code_description, is_error
+from ..status_codes_utils import get_code_description, get_code_display_name, is_error
 
 
 class EnvelopeDict(TypedDict):
@@ -91,9 +91,8 @@ def create_http_error(
 
     is_internal_error = bool(http_error_cls == web.HTTPInternalServerError)
 
-    status_reason = status_reason or get_code_description(http_error_cls.status_code)
+    status_reason = status_reason or get_code_display_name(http_error_cls.status_code)
     error_message = error_message or get_code_description(http_error_cls.status_code)
-
     assert len(status_reason) < MAX_STATUS_MESSAGE_LENGTH  # nosec
 
     if is_internal_error and skip_internal_error_details:

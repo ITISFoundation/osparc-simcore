@@ -269,3 +269,73 @@ async def test_raised_unhandled_exception(
 
         # log OEC
         assert "OEC:" in caplog.text
+
+
+async def test_not_implemented_error_is_501(client: TestClient):
+    """Test that NotImplementedError is correctly mapped to HTTP 501 NOT IMPLEMENTED."""
+    response = await client.get(
+        "/v1/raise_exception", params={"exc": NotImplementedError.__name__}
+    )
+    assert response.status == status.HTTP_501_NOT_IMPLEMENTED
+
+    # Check that the response is properly enveloped
+    payload = await response.json()
+    assert is_enveloped(payload)
+
+    # Verify error details
+    data, error = unwrap_envelope(payload)
+    assert not data
+    assert error
+    assert error.get("status") == status.HTTP_501_NOT_IMPLEMENTED
+
+
+async def test_timeout_error_is_504(client: TestClient):
+    """Test that TimeoutError is correctly mapped to HTTP 504 GATEWAY TIMEOUT."""
+    response = await client.get(
+        "/v1/raise_exception", params={"exc": asyncio.TimeoutError.__name__}
+    )
+    assert response.status == status.HTTP_504_GATEWAY_TIMEOUT
+
+    # Check that the response is properly enveloped
+    payload = await response.json()
+    assert is_enveloped(payload)
+
+    # Verify error details
+    data, error = unwrap_envelope(payload)
+    assert not data
+    assert error
+    assert error.get("status") == status.HTTP_504_GATEWAY_TIMEOUT
+
+
+async def test_exception_in_non_api_route(client: TestClient):
+    """Test how exceptions are handled in routes not under the API path."""
+    response = await client.get("/free/raise_exception")
+
+    # This should be a raw exception, not processed by our middleware
+    assert response.status == status.HTTP_500_INTERNAL_SERVER_ERROR
+
+    # Should not be enveloped since it's outside the API path
+    text = await response.text()
+    try:
+        # If it happens to be JSON, check it's not enveloped
+        payload = json.loads(text)
+        assert not is_enveloped(payload)
+    except json.JSONDecodeError:
+        # If it's not JSON, that's expected too
+        pass
+
+
+async def test_http_ok_with_text_is_enveloped(client: TestClient):
+    """Test that HTTPOk with text is properly enveloped."""
+    response = await client.get("/v1/raise_success_with_text")
+    assert response.status == status.HTTP_200_OK
+
+    # Should be enveloped
+    payload = await response.json()
+    assert is_enveloped(payload)
+
+    # Check the content was preserved
+    data, error = unwrap_envelope(payload)
+    assert not error
+    assert data
+    assert data.get("ok") is True
