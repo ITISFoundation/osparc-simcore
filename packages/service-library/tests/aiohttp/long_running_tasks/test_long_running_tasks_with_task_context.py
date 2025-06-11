@@ -22,11 +22,11 @@ from servicelib.aiohttp import long_running_tasks, status
 from servicelib.aiohttp.long_running_tasks._server import (
     RQT_LONG_RUNNING_TASKS_CONTEXT_KEY,
 )
-from servicelib.aiohttp.long_running_tasks.server import TaskGet, TaskId
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 from servicelib.aiohttp.rest_middlewares import append_rest_middlewares
 from servicelib.aiohttp.typing_extension import Handler
-from servicelib.long_running_tasks._task import TaskContext
+from servicelib.long_running_tasks.models import TaskGet, TaskId
+from servicelib.long_running_tasks.task import TaskContext
 
 # WITH TASK CONTEXT
 # NOTE: as the long running task framework may be used in any number of services

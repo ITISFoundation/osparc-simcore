@@ -1333,7 +1333,21 @@ services:
     #   - net.ipv4.tcp_keepalive_intvl=600
     #   - net.ipv4.tcp_keepalive_probes=9
     #   - net.ipv4.tcp_keepalive_time=600
-    command: [ "postgres", "-c", "tcp_keepalives_idle=600", "-c", "tcp_keepalives_interval=600", "-c", "tcp_keepalives_count=5", "-c", "max_connections=413", "-c", "shared_buffers=256MB" ]
+    #
+    command:
+      [
+        "postgres",
+        "-c", "tcp_keepalives_idle=600",
+        "-c", "tcp_keepalives_interval=600",
+        "-c", "tcp_keepalives_count=5",
+        "-c", "max_connections=413",
+        "-c", "shared_buffers=256MB",
+        # statement_timeout is set to 120 seconds (120_000 in ms), so that long running queries
+        # are killed after 2 minutes. Since simcore services have timeout of 1 minute, so longer
+        # queries will not be used. Setting >1 minutes to be safe
+        # https://github.com/ITISFoundation/osparc-simcore/issues/7682#issuecomment-2923048445
+        "-c", "statement_timeout=120000"
+      ]
 
   redis:
     image: "redis:6.2.6@sha256:4bed291aa5efb9f0d77b76ff7d4ab71eee410962965d052552db1fb80576431d"
