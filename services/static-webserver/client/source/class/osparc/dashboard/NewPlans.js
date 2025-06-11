@@ -39,7 +39,7 @@ qx.Class.define("osparc.dashboard.NewPlans", {
     osparc.store.Templates.getHypertools()
       .then(hypertools => {
         // TIP and TIP list templates are template_type: "hypertool"
-        this.__newStudies = newButtonsInfo.filter(newButtonInfo => {
+        this.__newPlans = newButtonsInfo.filter(newButtonInfo => {
           if (newButtonInfo.showDisabled) {
             return true;
           }
@@ -68,7 +68,7 @@ qx.Class.define("osparc.dashboard.NewPlans", {
   },
 
   members: {
-    __newStudies: null,
+    __newPlans: null,
     __groups: null,
     __flatList: null,
     __groupedContainers: null,
@@ -104,7 +104,7 @@ qx.Class.define("osparc.dashboard.NewPlans", {
       }
 
       const newCards = [];
-      this.__newStudies.forEach(resourceData => {
+      this.__newPlans.forEach(resourceData => {
         const cards = this.__resourceToCards(resourceData);
         cards.forEach(newCard => {
           if (resourceData.showDisabled) {
@@ -176,7 +176,7 @@ qx.Class.define("osparc.dashboard.NewPlans", {
     },
 
     __createCard: function(templateInfo) {
-      const newStudyClicked = () => this.fireDataEvent("newPlanClicked", templateInfo);
+      const newPlanClicked = () => this.fireDataEvent("newPlanClicked", templateInfo);
 
       const title = templateInfo.title;
       const desc = templateInfo.description;
@@ -185,7 +185,7 @@ qx.Class.define("osparc.dashboard.NewPlans", {
         newPlanButton.setCardKey(templateInfo["idToWidget"]);
         osparc.utils.Utils.setIdToWidget(newPlanButton, templateInfo["idToWidget"]);
       }
-      newPlanButton.addListener("tap", () => newStudyClicked());
+      newPlanButton.addListener("tap", () => newPlanClicked());
       return newPlanButton;
     },
 
