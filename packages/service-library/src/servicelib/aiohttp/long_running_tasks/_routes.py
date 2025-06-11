@@ -8,9 +8,15 @@ from servicelib.aiohttp.rest_responses import create_data_response
 from ...long_running_tasks import http_endpoint_responses
 from ...long_running_tasks.models import TaskGet, TaskId, TaskStatus
 from ..requests_validation import parse_request_path_parameters_as
-from ._dependencies import get_task_context, get_tasks_manager
+from ._constants import RQT_LONG_RUNNING_TASKS_CONTEXT_KEY
+from ._dependencies import get_tasks_manager
 
 routes = web.RouteTableDef()
+
+
+def get_task_context(request: web.Request) -> dict[str, Any]:
+    output: dict[str, Any] = request[RQT_LONG_RUNNING_TASKS_CONTEXT_KEY]
+    return output
 
 
 class _PathParam(BaseModel):
