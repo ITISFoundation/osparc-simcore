@@ -65,6 +65,7 @@ from pytest_simcore.helpers.storage_utils_file_meta_data import (
 )
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
+from servicelib.fastapi.app_server import FastAPIAppServer
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from servicelib.utils import limited_gather
 from settings_library.rabbit import RabbitSettings
@@ -1001,11 +1002,11 @@ async def with_storage_celery_worker_controller(
     # Signals must be explicitily connected
     monkeypatch.setenv("STORAGE_WORKER_MODE", "true")
     app_settings = ApplicationSettings.create_from_envs()
-    app_factory = partial(create_app, app_settings)
 
-    def _on_worker_init_wrapper(sender: WorkController, **_kwargs) -> None:
-        assert app_settings.STORAGE_CELERY  # nosec
-        return partial(on_worker_init, app_factory, app_settings.STORAGE_CELERY)(
+    app_server = FastAPIAppServer(app=create_app(app_settings))
+
+    def _on_worker_init_wrapper(sender: WorkController, **_kwargs):
+        return partial(on_worker_init, app_server, app_settings.STORAGE_CELERY)(
             sender, **_kwargs
         )
 

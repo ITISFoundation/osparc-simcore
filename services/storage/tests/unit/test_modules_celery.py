@@ -13,7 +13,7 @@ from random import randint
 import pytest
 from celery import Celery, Task
 from celery.contrib.abortable import AbortableTask
-from celery_library import get_celery_client, get_event_loop
+from celery_library import get_celery_client
 from celery_library.errors import TransferrableCeleryError
 from celery_library.models import (
     TaskContext,
@@ -26,7 +26,7 @@ from celery_library.task import (
     register_task,
 )
 from celery_library.task_manager import CeleryTaskManager
-from celery_library.utils import get_fastapi_app, get_task_manager
+from celery_library.utils import get_app_server, get_task_manager
 from common_library.errors_classes import OsparcErrorMixin
 from fastapi import FastAPI
 from models_library.progress_bar import ProgressReport
@@ -72,7 +72,7 @@ def fake_file_processor(task: Task, task_id: TaskID, files: list[str]) -> str:
     _logger.info("Calling _fake_file_processor")
     return asyncio.run_coroutine_threadsafe(
         _fake_file_processor(task.app, task.name, task.request.id, files),
-        get_event_loop(get_fastapi_app(task.app)),
+        get_app_server(task.app).event_loop,
     ).result()
 
 
