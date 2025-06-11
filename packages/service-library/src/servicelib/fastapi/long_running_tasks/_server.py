@@ -44,7 +44,7 @@ def setup(
     async def on_shutdown() -> None:
         if app.state.long_running_task_manager:
             task_manager: TasksManager = app.state.long_running_task_manager
-            await task_manager.close()
+            await task_manager.teardown()
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
