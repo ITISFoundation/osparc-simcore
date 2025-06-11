@@ -195,21 +195,20 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
 
     __addHypertools: function() {
       const hypertoolsMenuButton = this.self().createMenuButton(null, this.tr("Hypertools"));
-      // OM review
       // hypertoolsMenuButton.exclude();
       this.addAt(hypertoolsMenuButton, this.__itemIdx);
       this.__itemIdx++;
+      this.self().setIcon(hypertoolsMenuButton, osparc.data.model.StudyUI.HYPERTOOL_ICON);
 
       osparc.store.Templates.getHypertools()
         .then(hypertools => {
-          hypertoolTypeButton.setVisibility(hypertools.length > 0 ? "visible" : "excluded");
+          hypertoolsMenuButton.setVisibility(hypertools.length > 0 ? "visible" : "excluded");
           // add entry for hypertools if there are any
           if (hypertools.length) {
             const hypertoolsMenu = new qx.ui.menu.Menu().set({
               appearance: "menu-wider",
             });
             hypertoolsMenuButton.setMenu(hypertoolsMenu);
-            this.self().setIcon(hypertoolsMenuButton, osparc.data.model.StudyUI.HYPERTOOL_ICON);
 
             hypertools.forEach(templateData => {
               const hypertoolButton = this.self().createMenuButton(null, templateData["name"]);
