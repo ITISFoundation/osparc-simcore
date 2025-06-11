@@ -618,10 +618,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
                 this.__requestStartPipeline(studyId, partialPipeline, true);
               }
             }, this);
-          } else if (err.status == "402") {
-            osparc.FlashMessenger.logAs(msg, "WARNING");
           } else {
-            osparc.FlashMessenger.logAs(msg, "WARNING");
+            osparc.FlashMessenger.logError(err);
             this.getStudyLogger().error(null, "Unsuccessful pipeline submission");
           }
           this.getStudy().setPipelineRunning(false);
