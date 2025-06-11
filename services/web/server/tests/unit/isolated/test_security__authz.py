@@ -258,18 +258,6 @@ async def test_check_access_expressions(access_model: RoleBasedAccessModel):
 
     assert await has_access_by_role(access_model, R.ANONYMOUS, "study.stop")
 
-    assert await has_access_by_role(
-        access_model, R.ANONYMOUS, "study.stop |study.node.create"
-    )
-
-    assert not await has_access_by_role(
-        access_model, R.ANONYMOUS, "study.stop & study.node.create"
-    )
-
-    assert await has_access_by_role(
-        access_model, R.USER, "study.stop & study.node.create"
-    )
-
 
 @pytest.fixture
 def mock_db(mocker: MockerFixture) -> MagicMock:
@@ -314,17 +302,17 @@ async def test_authorization_policy_cache(mocker: MockerFixture, mock_db: MagicM
     # pylint: disable=no-member
     autz_cache: BaseCache = authz_policy._get_authorized_user_or_none.cache
 
-    assert not (await autz_cache.exists("_get_auth_or_none/foo@email.com"))
+    assert not (await autz_cache.exists("_get_authorized_user_or_none/foo@email.com"))
     for _ in range(3):
         got = await authz_policy._get_authorized_user_or_none(email="foo@email.com")
         assert mock_db.call_count == 1
         assert got["id"] == 1
 
-    assert await autz_cache.exists("_get_auth_or_none/foo@email.com")
+    assert await autz_cache.exists("_get_authorized_user_or_none/foo@email.com")
 
     # new value in db
     mock_db.users_db["foo@email.com"]["id"] = 2
-    got = await autz_cache.get("_get_auth_or_none/foo@email.com")
+    got = await autz_cache.get("_get_authorized_user_or_none/foo@email.com")
     assert got["id"] == 1
 
     # gets cache, db is NOT called
@@ -341,12 +329,12 @@ async def test_authorization_policy_cache(mocker: MockerFixture, mock_db: MagicM
     assert got["id"] == 2
 
     # other email has other key
-    assert not (await autz_cache.exists("_get_auth_or_none/bar@email.com"))
+    assert not (await autz_cache.exists("_get_authorized_user_or_none/bar@email.com"))
 
     for _ in range(4):
         # NOTE: None
         assert await authz_policy._get_authorized_user_or_none(email="bar@email.com")
-        assert await autz_cache.exists("_get_auth_or_none/bar@email.com")
+        assert await autz_cache.exists("_get_authorized_user_or_none/bar@email.com")
         assert mock_db.call_count == 3
 
     # should raise web.HTTPServiceUnavailable on db failure

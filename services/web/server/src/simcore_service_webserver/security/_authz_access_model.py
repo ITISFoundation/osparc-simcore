@@ -7,7 +7,6 @@ References:
 
 import inspect
 import logging
-import re
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from typing import TypeAlias, TypedDict
@@ -148,32 +147,10 @@ class RoleBasedAccessModel:
         return RoleBasedAccessModel(roles)
 
 
-_OPERATORS_REGEX_PATTERN = re.compile(r"(&|\||\bAND\b|\bOR\b)")
-
-
 async def has_access_by_role(
     model: RoleBasedAccessModel,
     role: UserRole,
-    operations: str,
+    operation: str,
     context: OptionalContext = None,
 ) -> bool:
-    """Extends `RoleBasedAccessModel.can` to check access to boolean expressions of operations
-
-    Returns True if a user with a role has permission on a given context
-    """
-    tokens = _OPERATORS_REGEX_PATTERN.split(operations)
-    if len(tokens) == 1:
-        return await model.can(role, tokens[0], context)
-
-    if len(tokens) == 3:
-        tokens = [t.strip() for t in tokens if t.strip() != ""]
-        lhs, op, rhs = tokens
-        can_lhs = await model.can(role, lhs, context)
-        if op in ["AND", "&"]:
-            if can_lhs:
-                return await model.can(role, rhs, context)
-            return False
-        return can_lhs or (await model.can(role, rhs, context))
-
-    msg = f"Invalid expression '{operations}': only supports at most two operands"
-    raise NotImplementedError(msg)
+    return await model.can(role=role, operation=operation, context=context)

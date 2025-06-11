@@ -172,6 +172,6 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         return await has_access_by_role(
             self._access_model,
             role=user_role,
-            operations=permission,
+            operation=permission,
             context=context,
         )
