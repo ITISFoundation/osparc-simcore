@@ -16,7 +16,7 @@ from pydantic import NonNegativeInt
 from servicelib.async_utils import cancel_wait_task
 
 from . import get_event_loop
-from .errors import encore_celery_transferrable_error
+from .errors import encode_celery_transferrable_error
 from .models import TaskID
 from .utils import get_fastapi_app
 
@@ -120,7 +120,7 @@ def _error_handling(
                 if isinstance(exc, dont_autoretry_for):
                     _logger.debug("Not retrying for exception %s", type(exc).__name__)
                     # propagate without retry
-                    raise encore_celery_transferrable_error(exc) from exc
+                    raise encode_celery_transferrable_error(exc) from exc
 
                 exc_type = type(exc).__name__
                 exc_message = f"{exc}"
@@ -134,7 +134,7 @@ def _error_handling(
                 raise task.retry(
                     max_retries=max_retries,
                     countdown=delay_between_retries.total_seconds(),
-                    exc=encore_celery_transferrable_error(exc),
+                    exc=encode_celery_transferrable_error(exc),
                 ) from exc
 
         return wrapper
