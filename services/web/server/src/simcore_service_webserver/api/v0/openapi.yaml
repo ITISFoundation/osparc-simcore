@@ -11403,6 +11403,8 @@ components:
         status:
           type: integer
           title: Status
+          description: Redundant HTTP status code of the error.Must be the same as
+            in the HTTP response
         errors:
           items:
             $ref: '#/components/schemas/ErrorItemType'
