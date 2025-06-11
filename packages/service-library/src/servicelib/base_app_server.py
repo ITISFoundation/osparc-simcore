@@ -21,7 +21,7 @@ class BaseAppServer(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def startup(self, completed: threading.Event):
+    async def startup(self, completed_event: threading.Event):
         pass
 
     @property
