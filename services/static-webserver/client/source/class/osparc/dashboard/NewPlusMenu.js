@@ -168,9 +168,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
 
     __addItems: function() {
       this.__addUIConfigItems();
-      if (osparc.product.Utils.isS4LProduct()) {
-        this.__addHypertools();
-      }
+      this.__addHypertools();
       this.__addMoreMenu();
       this.getChildControl("new-folder");
     },
@@ -198,6 +196,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
     __addHypertools: function() {
       osparc.store.Templates.getHypertools()
         .then(hypertools => {
+          // add entry for hypertools if there are any
           if (hypertools.length) {
             const hypertoolsMenuButton = this.self().createMenuButton(null, this.tr("Hypertools"));
             this.addAt(hypertoolsMenuButton, this.__itemIdx);
