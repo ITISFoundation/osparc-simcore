@@ -1,5 +1,5 @@
 name: Assign latest milestone to new PRs
-
+# This workflow assigns the latest open milestone to a newly opened pull request.
 on:
   pull_request:
     types: [opened]
