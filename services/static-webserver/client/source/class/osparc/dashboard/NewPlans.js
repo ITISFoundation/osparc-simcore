@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.dashboard.NewStudies", {
+qx.Class.define("osparc.dashboard.NewPlans", {
   extend: qx.ui.core.Widget,
 
   construct: function(newStudiesData) {
@@ -60,7 +60,7 @@ qx.Class.define("osparc.dashboard.NewStudies", {
   },
 
   events: {
-    "newStudyClicked": "qx.event.type.Data",
+    "newPlanClicked": "qx.event.type.Data",
   },
 
   statics: {
@@ -176,7 +176,7 @@ qx.Class.define("osparc.dashboard.NewStudies", {
     },
 
     __createCard: function(templateInfo) {
-      const newStudyClicked = () => this.fireDataEvent("newStudyClicked", templateInfo);
+      const newStudyClicked = () => this.fireDataEvent("newPlanClicked", templateInfo);
 
       const title = templateInfo.title;
       const desc = templateInfo.description;
