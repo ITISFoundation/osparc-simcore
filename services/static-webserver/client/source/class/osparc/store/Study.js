@@ -19,6 +19,9 @@ qx.Class.define("osparc.store.Study", {
   type: "static",
 
   statics: {
+    __nodeResources: null,
+    __nodePricingUnit: null,
+
     patchStudyData: function(studyData, fieldKey, value) {
       if (osparc.data.model.Study.OwnPatch.includes(fieldKey)) {
         console.error(fieldKey, "has it's own PATCH path");
@@ -142,6 +145,124 @@ qx.Class.define("osparc.store.Study", {
         return osparc.data.Resources.fetch("studies", "shareWithEmail", params);
       });
       return Promise.all(promises);
+    },
+
+    getNodeResources: function(studyId, nodeId) {
+      // init nodeResources if it is null
+      if (this.__nodeResources === null) {
+        this.__nodeResources = {};
+      }
+
+      // check if the resources for this node are already fetched
+      if (
+        studyId in this.__nodeResources &&
+        nodeId in this.__nodeResources[studyId]
+      ) {
+        return Promise.resolve(this.__nodeResources[studyId][nodeId]);
+      }
+
+      const params = {
+        url: {
+          studyId,
+          nodeId,
+        }
+      };
+      return osparc.data.Resources.get("nodesInStudyResources", params)
+        .then(resources => {
+          // store the fetched resources in the cache
+          if (!(studyId in this.__nodeResources)) {
+            this.__nodeResources[studyId] = {};
+          }
+          this.__nodeResources[studyId][nodeId] = resources;
+          return resources;
+        })
+        .catch(err => {
+          console.error("Failed to fetch node resources:", err);
+          throw err;
+        });
+    },
+
+    updateNodeResources: function(studyId, nodeId, updatedResources) {
+      const params = {
+        url: {
+          studyId,
+          nodeId,
+        },
+        data: updatedResources
+      };
+      return osparc.data.Resources.fetch("nodesInStudyResources", "put", params)
+        .then(() => {
+          // update the cache
+          if (!(studyId in this.__nodeResources)) {
+            this.__nodeResources[studyId] = {};
+          }
+          this.__nodeResources[studyId][nodeId] = updatedResources;
+        });
+    },
+
+    getSelectedPricingUnit: function(studyId, nodeId) {
+      // init nodePricingUnit if it is null
+      if (this.__nodePricingUnit === null) {
+        this.__nodePricingUnit = {};
+      }
+
+      // check if the pricing unit for this node is already fetched
+      if (
+        studyId in this.__nodePricingUnit &&
+        nodeId in this.__nodePricingUnit[studyId]
+      ) {
+        return Promise.resolve(this.__nodePricingUnit[studyId][nodeId]);
+      }
+
+      const params = {
+        url: {
+          studyId,
+          nodeId
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "getPricingUnit", params)
+        .then(selectedPricingUnit => {
+          // store the fetched pricing unit in the cache
+          if (!(studyId in this.__nodePricingUnit)) {
+            this.__nodePricingUnit[studyId] = {};
+          }
+          this.__nodePricingUnit[studyId][nodeId] = selectedPricingUnit;
+          return selectedPricingUnit;
+        })
+        .catch(err => {
+          console.error("Failed to fetch pricing units:", err);
+          throw err;
+        });
+    },
+
+    updateSelectedPricingUnit: function(studyId, nodeId, planId, selectedPricingUnit) {
+      let pricingUnit = null;
+      if (selectedPricingUnit instanceof osparc.data.model.PricingUnit) {
+        // convert to JSON if it's a model instance
+        pricingUnit = JSON.parse(qx.util.Serializer.toJson(selectedPricingUnit));
+      } else {
+        pricingUnit = osparc.utils.Utils.deepCloneObject(selectedPricingUnit);
+      }
+      const params = {
+        url: {
+          studyId,
+          nodeId,
+          pricingPlanId: planId,
+          pricingUnitId: pricingUnit["pricingUnitId"],
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "putPricingUnit", params)
+        .then(() => {
+          // update the cache
+          if (!(studyId in this.__nodePricingUnit)) {
+            this.__nodePricingUnit[studyId] = {};
+          }
+          this.__nodePricingUnit[studyId][nodeId] = pricingUnit;
+        })
+        .catch(err => {
+          console.error("Failed to update selected pricing unit:", err);
+          throw err;
+        });
     },
   }
 });
