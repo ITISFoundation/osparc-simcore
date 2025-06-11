@@ -24,6 +24,7 @@ from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.logging_utils import log_decorator
 from servicelib.utils import fire_and_forget_task
 from servicelib.utils_secrets import generate_password
+from simcore_service_webserver.security import security_service
 
 from ..garbage_collector.settings import GUEST_USER_RC_LOCK_FORMAT
 from ..groups.api import auto_add_user_to_product_group
@@ -120,7 +121,7 @@ async def create_temporary_guest_user(request: web.Request):
                 {
                     "name": random_user_name,
                     "email": email,
-                    "password_hash": security_web.encrypt_password(password),
+                    "password_hash": security_service.encrypt_password(password),
                     "status": ACTIVE,
                     "role": GUEST,
                     "expires_at": expires_at,

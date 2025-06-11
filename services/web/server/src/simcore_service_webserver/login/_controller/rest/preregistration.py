@@ -20,7 +20,7 @@ from ...._meta import API_VTAG
 from ....constants import RQ_PRODUCT_KEY
 from ....products import products_web
 from ....products.models import Product
-from ....security import security_web
+from ....security import security_service, security_web
 from ....security.decorators import permission_required
 from ....session.api import get_session
 from ....users.api import get_user_credentials, set_user_as_deleted
@@ -109,7 +109,7 @@ async def unregister_account(request: web.Request):
 
     # checks before deleting
     credentials = await get_user_credentials(request.app, user_id=req_ctx.user_id)
-    if body.email != credentials.email.lower() or not security_web.check_password(
+    if body.email != credentials.email.lower() or not security_service.check_password(
         body.password.get_secret_value(), credentials.password_hash
     ):
         raise web.HTTPConflict(

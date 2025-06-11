@@ -32,9 +32,9 @@ from simcore_service_webserver.products._web_middlewares import (
 from simcore_service_webserver.products.models import Product
 from simcore_service_webserver.security.decorators import permission_required
 from simcore_service_webserver.security.plugin import setup_security
+from simcore_service_webserver.security.security_service import clean_auth_policy_cache
 from simcore_service_webserver.security.security_web import (
     check_user_authorized,
-    clean_auth_policy_cache,
     forget_identity,
     remember_identity,
 )

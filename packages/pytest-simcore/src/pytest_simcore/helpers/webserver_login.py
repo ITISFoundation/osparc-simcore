@@ -17,7 +17,7 @@ from simcore_service_webserver.login._login_repository_legacy import (
     get_plugin_storage,
 )
 from simcore_service_webserver.products.products_service import list_products
-from simcore_service_webserver.security import security_web
+from simcore_service_webserver.security import security_service
 from yarl import URL
 
 from .assert_checks import assert_status
@@ -187,7 +187,7 @@ class LoggedUser(NewUser):
         assert self.client.app
         # NOTE: cache key is based on an email. If the email is
         # reused during the test, then it creates quite some noise
-        await security_web.clean_auth_policy_cache(self.client.app)
+        await security_service.clean_auth_policy_cache(self.client.app)
         return await super().__aexit__(*args)
 
 
