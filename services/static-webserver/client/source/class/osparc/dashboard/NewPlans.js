@@ -38,7 +38,7 @@ qx.Class.define("osparc.dashboard.NewPlans", {
 
     osparc.store.Templates.getHypertools()
       .then(hypertools => {
-        // TIP and TIP list templates are template_type: "hypertool"
+        // TIP and TIP lite templates are template_type: "hypertool"
         this.__newPlans = newButtonsInfo.filter(newButtonInfo => {
           if (newButtonInfo.showDisabled) {
             return true;
