@@ -14,7 +14,7 @@ _STARTUP_TIMEOUT: Final[float] = timedelta(minutes=1).total_seconds()
 class FastAPIAppServer(BaseAppServer):
     def __init__(self, app: FastAPI):
         self._app = app
-        self._lifespan_manager = None
+        self._lifespan_manager: LifespanManager | None = None
         self._shutdown_event = asyncio.Event()
 
     @property
