@@ -7,7 +7,7 @@
 import asyncio
 import urllib.parse
 from collections.abc import AsyncIterator
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Final
 
 import pytest
@@ -71,11 +71,12 @@ TEST_CHECK_STALE_INTERVAL_S: Final[float] = 1
 @pytest.fixture
 async def tasks_manager() -> AsyncIterator[TasksManager]:
     tasks_manager = TasksManager(
-        stale_task_check_interval_s=TEST_CHECK_STALE_INTERVAL_S,
-        stale_task_detect_timeout_s=TEST_CHECK_STALE_INTERVAL_S,
+        stale_task_check_interval=timedelta(seconds=TEST_CHECK_STALE_INTERVAL_S),
+        stale_task_detect_timeout=timedelta(seconds=TEST_CHECK_STALE_INTERVAL_S),
     )
+    await tasks_manager.setup()
     yield tasks_manager
-    await tasks_manager.close()
+    await tasks_manager.teardown()
 
 
 @pytest.mark.parametrize("check_task_presence_before", [True, False])
