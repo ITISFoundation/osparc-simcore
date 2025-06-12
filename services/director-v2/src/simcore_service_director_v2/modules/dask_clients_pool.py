@@ -36,9 +36,10 @@ class DaskClientsPool:
     _cluster_to_client_map: dict[_ClusterUrl, DaskClient] = field(default_factory=dict)
     _task_handlers: TaskHandlers | None = None
     # Track references to each client by endpoint
-    _client_refs: defaultdict[_ClusterUrl, set[str]] = field(
+    _client_to_refs: defaultdict[_ClusterUrl, set[ClientRef]] = field(
         default_factory=lambda: defaultdict(set)
     )
+    _ref_to_clients: dict[ClientRef, _ClusterUrl] = field(default_factory=dict)
 
     def __post_init__(self):
         # NOTE: to ensure the correct loop is used
@@ -67,7 +68,8 @@ class DaskClientsPool:
             return_exceptions=True,
         )
         self._cluster_to_client_map.clear()
-        self._client_refs.clear()
+        self._client_to_refs.clear()
+        self._ref_to_clients.clear()
 
     async def release_client_ref(self, ref: ClientRef) -> None:
         """Release a dask client reference by its ref.
@@ -78,30 +80,26 @@ class DaskClientsPool:
         """
         async with self._client_acquisition_lock:
             # Find which endpoint this ref belongs to
-            endpoint_to_remove = None
-            for endpoint, refs in self._client_refs.items():
-                if ref in refs:
-                    refs.remove(ref)
-                    _logger.debug("Released reference %s for client %s", ref, endpoint)
-                    if not refs:  # No more references to this client
-                        endpoint_to_remove = endpoint
-                    break
+            if cluster_endpoint := self._ref_to_clients.pop(ref, None):
+                # we have a client, remove our reference and check if there are any more references
+                assert ref in self._client_to_refs[cluster_endpoint]  # nosec
+                self._client_to_refs[cluster_endpoint].discard(ref)
 
-            # If we found an endpoint with no more refs, clean it up
-            if endpoint_to_remove and (
-                dask_client := self._cluster_to_client_map.pop(endpoint_to_remove, None)
-            ):
-                _logger.info(
-                    "Last reference to client %s released, deleting client",
-                    endpoint_to_remove,
-                )
-                await dask_client.delete()
-                # Clean up the empty refs set
-                del self._client_refs[endpoint_to_remove]
-                _logger.debug(
-                    "Remaining clients: %s",
-                    [f"{k}" for k in self._cluster_to_client_map],
-                )
+                # If we found an endpoint with no more refs, clean it up
+                if not self._client_to_refs[cluster_endpoint] and (
+                    dask_client := self._cluster_to_client_map.pop(
+                        cluster_endpoint, None
+                    )
+                ):
+                    _logger.info(
+                        "Last reference to client %s released, deleting client",
+                        cluster_endpoint,
+                    )
+                    await dask_client.delete()
+                    _logger.debug(
+                        "Remaining clients: %s",
+                        [f"{k}" for k in self._cluster_to_client_map],
+                    )
 
     @asynccontextmanager
     async def acquire(
@@ -150,12 +148,13 @@ class DaskClientsPool:
                             dask_client.register_handlers(self._task_handlers)
 
                     # Track the reference
-                    self._client_refs[cluster.endpoint].add(ref)
+                    self._client_to_refs[cluster.endpoint].add(ref)
+                    self._ref_to_clients[ref] = cluster.endpoint
 
                     _logger.debug(
                         "Client %s now has %d references",
                         cluster.endpoint,
-                        len(self._client_refs[cluster.endpoint]),
+                        len(self._client_to_refs[cluster.endpoint]),
                     )
 
                     assert dask_client  # nosec

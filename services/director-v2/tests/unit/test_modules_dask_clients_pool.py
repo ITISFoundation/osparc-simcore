@@ -284,8 +284,15 @@ async def test_dask_clients_pool_reference_counting(
         mocked_dask_client.create.assert_called_once()
         # Reset the mock to check the next call
         mocked_dask_client.create.reset_mock()
+    mocked_dask_client.delete.assert_not_called()
+
+    # calling again with the same reference should not create a new client
+    async with clients_pool.acquire(cluster, ref=ref1):
+        # Client should NOT be re-created
+        mocked_dask_client.create.assert_not_called()
 
     mocked_dask_client.delete.assert_not_called()
+
     # Acquire the same client with second reference
     ref2 = "test-ref-2"
     async with clients_pool.acquire(cluster, ref=ref2):
