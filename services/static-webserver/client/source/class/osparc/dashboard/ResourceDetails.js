@@ -847,6 +847,10 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         return null;
       }
 
+      if (!osparc.data.Permissions.getInstance().checkMyGroupCanDo("functions")) {
+        return null;
+      }
+
       if (!osparc.utils.Resources.isStudy(this.__resourceData)) {
         return null;
       }
