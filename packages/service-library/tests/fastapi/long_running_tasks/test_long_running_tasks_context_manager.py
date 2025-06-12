@@ -60,8 +60,7 @@ def user_routes() -> APIRouter:
             FastAPILongRunningManager, Depends(get_long_running_manager)
         ],
     ) -> TaskId:
-        task_id = start_task(long_running_manager.tasks_manager, task=a_test_task)
-        return task_id
+        return start_task(long_running_manager.tasks_manager, task=a_test_task)
 
     @router.get("/api/failing", status_code=status.HTTP_200_OK)
     async def create_task_which_fails(
@@ -69,10 +68,7 @@ def user_routes() -> APIRouter:
             FastAPILongRunningManager, Depends(get_long_running_manager)
         ],
     ) -> TaskId:
-        task_id = start_task(
-            long_running_manager.tasks_manager, task=a_failing_test_task
-        )
-        return task_id
+        return start_task(long_running_manager.tasks_manager, task=a_failing_test_task)
 
     return router
 
