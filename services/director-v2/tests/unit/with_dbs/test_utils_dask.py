@@ -520,7 +520,9 @@ async def test_check_if_cluster_is_able_to_run_pipeline(
     )
     default_cluster = dask_scheduler_settings.default_cluster
     dask_clients_pool = DaskClientsPool.instance(initialized_app)
-    async with dask_clients_pool.acquire(default_cluster) as dask_client:
+    async with dask_clients_pool.acquire(
+        default_cluster, ref="test-utils-dask-ref"
+    ) as dask_client:
         check_if_cluster_is_able_to_run_pipeline(
             project_id=project_id,
             node_id=node_id,
