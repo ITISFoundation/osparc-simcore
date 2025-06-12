@@ -282,11 +282,12 @@ qx.Class.define("osparc.study.CreateFunction", {
     __createFunction: function(exposedInputs, exposedOutputs) {
       this.__createFunctionBtn.setFetching(true);
 
-      // first publish it as a template
+      // first publish it as a hidden template
       const params = {
         url: {
           "study_id": this.__studyData["uuid"],
           "copy_data": true,
+          "hidden": true,
         },
       };
       const options = {
@@ -298,7 +299,7 @@ qx.Class.define("osparc.study.CreateFunction", {
         .then(task => {
           task.addListener("resultReceived", e => {
             const templateData = e.getData();
-            this.__doCreateFunction(templateData, exposedInputs, exposedOutputs);
+            this.__registerFunction(templateData, exposedInputs, exposedOutputs);
           });
         })
         .catch(err => {
@@ -307,13 +308,11 @@ qx.Class.define("osparc.study.CreateFunction", {
         });
     },
 
-    __doCreateFunction: function(templateData, exposedInputs, exposedOutputs) {
+    __registerFunction: function(templateData, exposedInputs, exposedOutputs) {
       const nameField = this.__form.getItem("name");
       const descriptionField = this.__form.getItem("description");
 
       const functionData = this.self().createFunctionData(templateData, nameField.getValue(), descriptionField.getValue(), exposedInputs, exposedOutputs);
-      console.log("functionData", functionData);
-
       const params = {
         data: functionData,
       };
