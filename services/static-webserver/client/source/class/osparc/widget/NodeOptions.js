@@ -83,7 +83,7 @@ qx.Class.define("osparc.widget.NodeOptions", {
 
       // Update Resource Limits
       if (
-        await osparc.data.Permissions.getInstance().checkCanDo("override_services_specifications") &&
+        await osparc.data.Permissions.getInstance().checkMyGroupCanDo("override_services_specifications") &&
         (node.isComputational() || node.isDynamic())
       ) {
         const updateResourceLimitsView = new osparc.node.UpdateResourceLimitsView(node);

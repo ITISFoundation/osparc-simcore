@@ -276,7 +276,7 @@ qx.Class.define("osparc.data.Permissions", {
       return canDo;
     },
 
-    checkCanDo: function(action) {
+    checkMyGroupCanDo: function(action) {
       return new Promise((resolve, reject) => {
         osparc.data.Resources.get("permissions")
           .then(permissions => {
