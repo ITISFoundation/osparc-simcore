@@ -5,12 +5,12 @@ References:
  https://b_logger.nodeswat.com/implement-access-control-in-node-js-8567e7b484d1
 """
 
-import inspect
 import logging
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from typing import TypeAlias, TypedDict
 
+from common_library.async_tools import maybe_await
 from models_library.products import ProductName
 from models_library.users import UserID
 
@@ -114,13 +114,7 @@ class RoleBasedAccessModel:
         if operation in role_access.check:
             check = role_access.check[operation]
             try:
-                ok: bool
-                coro_or_result = check(context)
-                if inspect.isawaitable(coro_or_result):
-                    ok = await coro_or_result
-                else:
-                    ok = coro_or_result
-                return ok
+                return await maybe_await(check(context))
 
             except Exception:  # pylint: disable=broad-except
                 _logger.debug(
