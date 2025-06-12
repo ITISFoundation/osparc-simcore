@@ -311,7 +311,9 @@ qx.Class.define("osparc.study.CreateFunction", {
 
     __updateTemplateMetadata: function(templateData) {
       const patchData = {
-        "hidden": "Base template for function",
+        "custom" : {
+          "hidden": "Base template for function",
+        }
       };
       const params = {
         url: {
