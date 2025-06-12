@@ -19,9 +19,10 @@ from asgi_lifespan import LifespanManager
 from fastapi import APIRouter, Depends, FastAPI, status
 from httpx import AsyncClient
 from pydantic import TypeAdapter
+from servicelib.fastapi.long_running_tasks._manager import FastAPILongRunningManager
 from servicelib.fastapi.long_running_tasks.client import setup as setup_client
 from servicelib.fastapi.long_running_tasks.server import (
-    get_tasks_manager,
+    get_long_running_manager,
 )
 from servicelib.fastapi.long_running_tasks.server import setup as setup_server
 from servicelib.long_running_tasks.models import (
@@ -30,7 +31,7 @@ from servicelib.long_running_tasks.models import (
     TaskProgress,
     TaskStatus,
 )
-from servicelib.long_running_tasks.task import TaskContext, TasksManager, start_task
+from servicelib.long_running_tasks.task import TaskContext, start_task
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -69,10 +70,12 @@ def server_routes() -> APIRouter:
         num_strings: int,
         sleep_time: float,
         fail: bool = False,
-        task_manager: TasksManager = Depends(get_tasks_manager),
+        long_running_manager: FastAPILongRunningManager = Depends(
+            get_long_running_manager
+        ),
     ) -> TaskId:
         task_id = start_task(
-            task_manager,
+            long_running_manager.tasks_manager,
             _string_list_task,
             num_strings=num_strings,
             sleep_time=sleep_time,
