@@ -405,7 +405,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     services: {
       check: "Array",
       init: true,
-      nullable: false,
+      nullable: true,
       apply: "__applyServices",
       event: "changeServices",
     },
@@ -567,7 +567,11 @@ qx.Class.define("osparc.dashboard.CardBase", {
             resourceData["services"] = services;
             this.setServices(services);
           })
-          .catch(err => console.error(err));
+          .catch(err => {
+            resourceData["services"] = null;
+            this.setServices(null);
+            console.error(err);
+          });
 
         osparc.study.Utils.guessIcon(resourceData)
           .then(iconSource => this.setIcon(iconSource));
@@ -688,27 +692,38 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     __applyServices: function(services) {
-      this.setEmptyWorkbench(services.length === 0);
-
-      // Updatable study
-      if (osparc.study.Utils.anyServiceRetired(services)) {
-        this.setUpdatable("retired");
-      } else if (osparc.study.Utils.anyServiceDeprecated(services)) {
-        this.setUpdatable("deprecated");
-      } else if (osparc.study.Utils.anyServiceUpdatable(services)) {
-        this.setUpdatable("updatable");
-      }
-
-      // Block card
-      const cantReadServices = osparc.study.Utils.getCantReadServices(services);
-      if (cantReadServices.length) {
+      const unknownServices = cantReadServices => {
+        // Block card
         this.setBlocked("UNKNOWN_SERVICES");
         const image = "@FontAwesome5Solid/ban/";
-        let toolTipText = this.tr("Inaccessible service(s):");
-        cantReadServices.forEach(unSrv => {
-          toolTipText += "<br>" + unSrv.key + ":" + osparc.service.Utils.extractVersionDisplay(unSrv.release);
-        });
+        let toolTipText = this.tr("Unknown service(s)");
+        if (cantReadServices && cantReadServices.length) {
+          toolTipText = this.tr("Inaccessible service(s)");
+          cantReadServices.forEach(unSrv => {
+            toolTipText += "<br>" + unSrv.key + ":" + osparc.service.Utils.extractVersionDisplay(unSrv.release);
+          });
+        }
         this.__showBlockedCard(image, toolTipText);
+      };
+
+      if (services) {
+        this.setEmptyWorkbench(services.length === 0);
+
+        // Updatable study
+        if (osparc.study.Utils.anyServiceRetired(services)) {
+          this.setUpdatable("retired");
+        } else if (osparc.study.Utils.anyServiceDeprecated(services)) {
+          this.setUpdatable("deprecated");
+        } else if (osparc.study.Utils.anyServiceUpdatable(services)) {
+          this.setUpdatable("updatable");
+        }
+
+        const cantReadServices = osparc.study.Utils.getCantReadServices(services);
+        if (cantReadServices.length) {
+          unknownServices(cantReadServices);
+        }
+      } else {
+        unknownServices();
       }
 
       this.evaluateMenuButtons();
