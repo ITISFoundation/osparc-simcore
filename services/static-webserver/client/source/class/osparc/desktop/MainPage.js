@@ -240,7 +240,8 @@ qx.Class.define("osparc.desktop.MainPage", {
       const params = {
         url: {
           "study_id": studyId,
-          "copy_data": copyData
+          "copy_data": copyData,
+          "hidden": false,
         },
       };
       const options = {
