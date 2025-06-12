@@ -28,7 +28,7 @@ from pydantic import TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
-from servicelib.fastapi.long_running_tasks.client import TaskId
+from servicelib.long_running_tasks.models import TaskId
 from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.api.rest.containers import _INACTIVE_FOR_LONG_TIME
 from simcore_service_dynamic_sidecar.core.application import AppState

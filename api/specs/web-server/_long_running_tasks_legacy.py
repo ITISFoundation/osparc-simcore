@@ -4,7 +4,7 @@
 # pylint: disable=too-many-arguments
 
 
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, status
 from models_library.generics import Envelope
@@ -54,6 +54,7 @@ def cancel_and_delete_task(
 @router.get(
     "/{task_id}/result",
     name="get_task_result",
+    response_model=Any,
     description="Retrieves the result of a task",
 )
 def get_task_result(

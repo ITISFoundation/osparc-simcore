@@ -28,12 +28,9 @@ from models_library.services_creation import CreateServiceMetricsAdditionalParam
 from pydantic import AnyHttpUrl, TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
-from servicelib.fastapi.long_running_tasks.client import (
-    Client,
-    TaskId,
-    periodic_task_result,
-)
+from servicelib.fastapi.long_running_tasks.client import Client, periodic_task_result
 from servicelib.fastapi.long_running_tasks.client import setup as client_setup
+from servicelib.long_running_tasks.models import TaskId
 from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.api.rest import containers_long_running_tasks
