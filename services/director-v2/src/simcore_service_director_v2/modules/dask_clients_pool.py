@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from collections import defaultdict
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
@@ -24,6 +25,7 @@ _logger = logging.getLogger(__name__)
 
 
 _ClusterUrl: TypeAlias = AnyUrl
+ClientRef: TypeAlias = str
 
 
 @dataclass
@@ -33,6 +35,10 @@ class DaskClientsPool:
     _client_acquisition_lock: asyncio.Lock = field(init=False)
     _cluster_to_client_map: dict[_ClusterUrl, DaskClient] = field(default_factory=dict)
     _task_handlers: TaskHandlers | None = None
+    # Track references to each client by endpoint
+    _client_refs: defaultdict[_ClusterUrl, set[str]] = field(
+        default_factory=lambda: defaultdict(set)
+    )
 
     def __post_init__(self):
         # NOTE: to ensure the correct loop is used
@@ -60,13 +66,54 @@ class DaskClientsPool:
             *[client.delete() for client in self._cluster_to_client_map.values()],
             return_exceptions=True,
         )
+        self._cluster_to_client_map.clear()
+        self._client_refs.clear()
+
+    async def release_client_ref(self, ref: ClientRef) -> None:
+        """Release a dask client reference by its ref.
+
+        If all the references to the client are released,
+        the client will be deleted from the pool.
+        This method is thread-safe and can be called concurrently.
+        """
+        async with self._client_acquisition_lock:
+            # Find which endpoint this ref belongs to
+            endpoint_to_remove = None
+            for endpoint, refs in self._client_refs.items():
+                if ref in refs:
+                    refs.remove(ref)
+                    _logger.debug("Released reference %s for client %s", ref, endpoint)
+                    if not refs:  # No more references to this client
+                        endpoint_to_remove = endpoint
+                    break
+
+            # If we found an endpoint with no more refs, clean it up
+            if endpoint_to_remove and (
+                dask_client := self._cluster_to_client_map.pop(endpoint_to_remove, None)
+            ):
+                _logger.info(
+                    "Last reference to client %s released, deleting client",
+                    endpoint_to_remove,
+                )
+                await dask_client.delete()
+                # Clean up the empty refs set
+                del self._client_refs[endpoint_to_remove]
+                _logger.debug(
+                    "Remaining clients: %s",
+                    [f"{k}" for k in self._cluster_to_client_map],
+                )
 
     @asynccontextmanager
-    async def acquire(self, cluster: BaseCluster) -> AsyncIterator[DaskClient]:
-        """returns a dask client for the given cluster
+    async def acquire(
+        self, cluster: BaseCluster, *, ref: ClientRef
+    ) -> AsyncIterator[DaskClient]:
+        """Returns a dask client for the given cluster.
+
         This method is thread-safe and can be called concurrently.
         If the cluster is not found in the pool, it will create a new dask client for it.
 
+        The passed reference is used to track the client usage, user should call
+        `release_client_ref` to release the client reference when done.
         """
 
         async def _concurently_safe_acquire_client() -> DaskClient:
@@ -102,15 +149,21 @@ class DaskClientsPool:
                         if self._task_handlers:
                             dask_client.register_handlers(self._task_handlers)
 
-                        _logger.debug(
-                            "list of clients: %s", f"{self._cluster_to_client_map=}"
-                        )
+                    # Track the reference
+                    self._client_refs[cluster.endpoint].add(ref)
+
+                    _logger.debug(
+                        "Client %s now has %d references",
+                        cluster.endpoint,
+                        len(self._client_refs[cluster.endpoint]),
+                    )
 
                     assert dask_client  # nosec
                     return dask_client
 
         try:
             dask_client = await _concurently_safe_acquire_client()
+
         except Exception as exc:
             raise DaskClientAcquisisitonError(cluster=cluster, error=exc) from exc
 
