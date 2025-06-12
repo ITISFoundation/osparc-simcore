@@ -695,8 +695,9 @@ qx.Class.define("osparc.dashboard.CardBase", {
         // Block card
         this.setBlocked("UNKNOWN_SERVICES");
         const image = "@FontAwesome5Solid/ban/";
+        let toolTipText = this.tr("Unknown service(s)");
         if (cantReadServices && cantReadServices.length) {
-          let toolTipText = this.tr("Inaccessible service(s):");
+          toolTipText = this.tr("Inaccessible service(s)");
           cantReadServices.forEach(unSrv => {
             toolTipText += "<br>" + unSrv.key + ":" + osparc.service.Utils.extractVersionDisplay(unSrv.release);
           });
