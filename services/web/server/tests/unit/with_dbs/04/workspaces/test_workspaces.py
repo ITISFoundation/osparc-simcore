@@ -11,7 +11,6 @@ import pytest
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver.workspaces import WorkspaceGet
 from models_library.rest_ordering import OrderDirection
-from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_parametrizations import (
@@ -64,7 +63,6 @@ async def test_workspaces_workflow(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     expected: HTTPStatus,
-    mock_catalog_api_get_services_for_user_in_product: MockerFixture,
     workspaces_clean_db: AsyncIterator[None],
 ):
     assert client.app
