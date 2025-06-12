@@ -303,6 +303,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "POST",
             url: statics.API + "/projects/{studyId}/workspaces/{workspaceId}:move"
           },
+          updateMetadata: {
+            method: "PATCH",
+            url: statics.API + "/projects/{studyId}/metadata"
+          },
         }
       },
       "conversations": {

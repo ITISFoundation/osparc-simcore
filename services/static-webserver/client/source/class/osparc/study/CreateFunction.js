@@ -299,6 +299,7 @@ qx.Class.define("osparc.study.CreateFunction", {
         .then(task => {
           task.addListener("resultReceived", e => {
             const templateData = e.getData();
+            this.__updateTemplateMetadata(templateData);
             this.__registerFunction(templateData, exposedInputs, exposedOutputs);
           });
         })
@@ -306,6 +307,20 @@ qx.Class.define("osparc.study.CreateFunction", {
           this.__createFunctionBtn.setFetching(false);
           osparc.FlashMessenger.logError(err);
         });
+    },
+
+    __updateTemplateMetadata: function(templateData) {
+      const patchData = {
+        "hidden": "Base template for function",
+      };
+      const params = {
+        url: {
+          "studyId": templateData["uuid"],
+        },
+        data: patchData
+      };
+      osparc.data.Resources.fetch("studies", "updateMetadata", params)
+        .catch(err => console.error(err));
     },
 
     __registerFunction: function(templateData, exposedInputs, exposedOutputs) {
