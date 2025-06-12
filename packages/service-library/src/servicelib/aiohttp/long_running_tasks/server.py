@@ -6,17 +6,11 @@ The server only has to return a `TaskId` in the handler creating the long
 running task.
 """
 
-from ._dependencies import (
-    create_task_name_from_request,
-    get_task_context,
-    get_tasks_manager,
-)
+from ._manager import get_long_running_manager
 from ._server import setup, start_long_running_task
 
 __all__: tuple[str, ...] = (
-    "create_task_name_from_request",
-    "get_task_context",
-    "get_tasks_manager",
+    "get_long_running_manager",
     "setup",
     "start_long_running_task",
 )
