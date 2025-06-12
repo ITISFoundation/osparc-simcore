@@ -98,10 +98,9 @@ async def test_task_is_auto_removed(
     # meaning no calls via the manager methods are received
     async for attempt in AsyncRetrying(**_RETRY_PARAMS):
         with attempt:
-            for tasks in tasks_manager._tasks_groups.values():  # noqa: SLF001
-                if task_id in tasks:
-                    msg = "wait till no element is found any longer"
-                    raise TryAgain(msg)
+            if task_id in tasks_manager._tracked_tasks:  # noqa: SLF001
+                msg = "wait till no element is found any longer"
+                raise TryAgain(msg)
 
     with pytest.raises(TaskNotFoundError):
         tasks_manager.get_task_status(task_id, with_task_context=None)
@@ -171,9 +170,10 @@ async def test_start_multiple_not_unique_tasks(tasks_manager: TasksManager):
         tasks_manager.start_task(task=not_unique_task)
 
 
-def test_get_task_id(faker):
-    obj1 = TasksManager.create_task_id(faker.word())  # noqa: SLF001
-    obj2 = TasksManager.create_task_id(faker.word())  # noqa: SLF001
+@pytest.mark.parametrize("is_unique", [True, False])
+def test_get_task_id(tasks_manager: TasksManager, faker: Faker, is_unique: bool):
+    obj1 = tasks_manager._get_task_id(faker.word(), is_unique=is_unique)  # noqa: SLF001
+    obj2 = tasks_manager._get_task_id(faker.word(), is_unique=is_unique)  # noqa: SLF001
     assert obj1 != obj2
 
 
@@ -187,7 +187,7 @@ async def test_get_status(tasks_manager: TasksManager):
     assert isinstance(task_status, TaskStatus)
     assert task_status.task_progress.message == ""
     assert task_status.task_progress.percent == 0.0
-    assert task_status.done == False
+    assert task_status.done is False
     assert isinstance(task_status.started, datetime)
 
 
@@ -372,4 +372,4 @@ async def test_define_task_name(tasks_manager: TasksManager, faker: Faker):
         total_sleep=10,
         task_name=task_name,
     )
-    assert task_id.startswith(urllib.parse.quote(task_name, safe=""))
+    assert urllib.parse.quote(task_name, safe="") in task_id

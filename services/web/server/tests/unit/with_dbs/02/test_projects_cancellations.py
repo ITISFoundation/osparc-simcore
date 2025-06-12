@@ -174,8 +174,6 @@ async def test_copying_large_project_and_retrieving_copy_task(
     assert not error
     list_of_tasks = TypeAdapter(list[TaskGet]).validate_python(data)
     assert len(list_of_tasks) == 1
-    task = list_of_tasks[0]
-    assert task.task_name == f"POST {create_url}"
     # let the copy start
     await asyncio.sleep(2)
     # now abort the copy

@@ -23,7 +23,6 @@ async def list_tasks(
     return [
         TaskGet(
             task_id=t.task_id,
-            task_name=t.task_name,
             status_href=str(request.url_for("get_task_status", task_id=t.task_id)),
             result_href=str(request.url_for("get_task_result", task_id=t.task_id)),
             abort_href=str(

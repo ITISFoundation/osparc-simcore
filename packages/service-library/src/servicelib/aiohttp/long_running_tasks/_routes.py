@@ -24,7 +24,6 @@ async def list_tasks(request: web.Request) -> web.Response:
         [
             TaskGet(
                 task_id=t.task_id,
-                task_name=t.task_name,
                 status_href=f"{request.app.router['get_task_status'].url_for(task_id=t.task_id)}",
                 result_href=f"{request.app.router['get_task_result'].url_for(task_id=t.task_id)}",
                 abort_href=f"{request.app.router['cancel_and_delete_task'].url_for(task_id=t.task_id)}",
