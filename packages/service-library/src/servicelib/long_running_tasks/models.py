@@ -12,8 +12,8 @@ from models_library.api_schemas_long_running_tasks.base import (
     TaskProgress,
 )
 from models_library.api_schemas_long_running_tasks.tasks import (
+    TaskBase,
     TaskGet,
-    TaskGetWithoutHref,
     TaskResult,
     TaskStatus,
 )
@@ -79,7 +79,7 @@ __all__: tuple[str, ...] = (
     "ProgressMessage",
     "ProgressPercent",
     "TaskGet",
-    "TaskGetWithoutHref",
+    "TaskBase",
     "TaskId",
     "TaskProgress",
     "TaskResult",

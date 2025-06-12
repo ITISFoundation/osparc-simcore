@@ -1,19 +1,16 @@
 from typing import Any
 
-from .models import TaskGetWithoutHref, TaskId, TaskStatus
+from .models import TaskBase, TaskId, TaskStatus
 from .task import TaskContext, TasksManager, TrackedTask
 
 
 def list_tasks(
     tasks_manager: TasksManager, task_context: TaskContext | None
-) -> list[TaskGetWithoutHref]:
+) -> list[TaskBase]:
     tracked_tasks: list[TrackedTask] = tasks_manager.list_tasks(
         with_task_context=task_context
     )
-    return [
-        TaskGetWithoutHref(task_id=t.task_id, task_name=t.task_name)
-        for t in tracked_tasks
-    ]
+    return [TaskBase(task_id=t.task_id, task_name=t.task_name) for t in tracked_tasks]
 
 
 def get_task_status(

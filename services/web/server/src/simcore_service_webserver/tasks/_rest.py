@@ -22,8 +22,7 @@ from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from pydantic import BaseModel
 from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.server import (
-    get_task_context,
-    get_tasks_manager,
+    get_long_running_manager,
 )
 from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
@@ -57,10 +56,10 @@ _task_prefix: Final[str] = f"/{API_VTAG}/tasks"
 @handle_export_data_exceptions
 @webserver_request_context_decorator
 async def get_async_jobs(request: web.Request) -> web.Response:
-    inprocess_task_manager = get_tasks_manager(request.app)
-    inprocess_task_context = get_task_context(request)
+    inprocess_long_running_manager = get_long_running_manager(request.app)
     inprocess_tracked_tasks = http_endpoint_responses.list_tasks(
-        inprocess_task_manager, inprocess_task_context
+        inprocess_long_running_manager.tasks_manager,
+        inprocess_long_running_manager.get_task_context(request),
     )
 
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
