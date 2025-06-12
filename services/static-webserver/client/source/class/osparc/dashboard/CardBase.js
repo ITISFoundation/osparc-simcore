@@ -568,6 +568,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
             this.setServices(services);
           })
           .catch(err => {
+            resourceData["services"] = null;
             this.setServices(null);
             console.error(err);
           });
