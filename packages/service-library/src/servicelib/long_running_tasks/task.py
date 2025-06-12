@@ -1,19 +1,19 @@
 import asyncio
+import datetime
 import inspect
 import logging
 import traceback
 import urllib.parse
 from collections import deque
 from contextlib import suppress
-from datetime import datetime
-from typing import Any, Protocol, TypeAlias
+from typing import Any, Final, Protocol, TypeAlias
 from uuid import uuid4
 
-from models_library.api_schemas_long_running_tasks.base import (
-    ProgressPercent,
-    TaskProgress,
-)
+from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from pydantic import PositiveFloat
+from servicelib.async_utils import cancel_wait_task
+from servicelib.background_task import create_periodic_task
+from servicelib.logging_utils import log_catch
 
 from .errors import (
     TaskAlreadyRunningError,
@@ -24,37 +24,45 @@ from .errors import (
 )
 from .models import TaskId, TaskName, TaskStatus, TrackedTask
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
+
+_CANCEL_TASK_TIMEOUT: Final[PositiveFloat] = datetime.timedelta(
+    seconds=1
+).total_seconds()
+
+TrackedTaskGroupDict: TypeAlias = dict[TaskId, TrackedTask]
+TaskContext: TypeAlias = dict[str, Any]
 
 
 async def _await_task(task: asyncio.Task) -> None:
     await task
 
 
-def _mark_task_to_remove_if_required(
-    task_id: TaskId,
-    tasks_to_remove: list[TaskId],
-    tracked_task: TrackedTask,
-    utc_now: datetime,
-    stale_timeout_s: float,
-) -> None:
-    if tracked_task.fire_and_forget:
-        return
+def _get_tasks_to_remove(
+    tasks_groups: dict[TaskName, TrackedTaskGroupDict],
+    stale_task_detect_timeout_s: PositiveFloat,
+) -> list[TaskId]:
+    utc_now = datetime.datetime.now(tz=datetime.UTC)
 
-    if tracked_task.last_status_check is None:
-        # the task just added or never received a poll request
-        elapsed_from_start = (utc_now - tracked_task.started).seconds
-        if elapsed_from_start > stale_timeout_s:
-            tasks_to_remove.append(task_id)
-    else:
-        # the task status was already queried by the client
-        elapsed_from_last_poll = (utc_now - tracked_task.last_status_check).seconds
-        if elapsed_from_last_poll > stale_timeout_s:
-            tasks_to_remove.append(task_id)
+    tasks_to_remove: list[TaskId] = []
+    for tasks in tasks_groups.values():
+        for task_id, tracked_task in tasks.items():
+            if tracked_task.fire_and_forget:
+                continue
 
-
-TrackedTaskGroupDict: TypeAlias = dict[TaskId, TrackedTask]
-TaskContext: TypeAlias = dict[str, Any]
+            if tracked_task.last_status_check is None:
+                # the task just added or never received a poll request
+                elapsed_from_start = (utc_now - tracked_task.started).seconds
+                if elapsed_from_start > stale_task_detect_timeout_s:
+                    tasks_to_remove.append(task_id)
+            else:
+                # the task status was already queried by the client
+                elapsed_from_last_poll = (
+                    utc_now - tracked_task.last_status_check
+                ).seconds
+                if elapsed_from_last_poll > stale_task_detect_timeout_s:
+                    tasks_to_remove.append(task_id)
+    return tasks_to_remove
 
 
 class TasksManager:
@@ -64,20 +72,42 @@ class TasksManager:
 
     def __init__(
         self,
-        stale_task_check_interval_s: PositiveFloat,
-        stale_task_detect_timeout_s: PositiveFloat,
+        stale_task_check_interval: datetime.timedelta,
+        stale_task_detect_timeout: datetime.timedelta,
     ):
         # Task groups: Every taskname maps to multiple asyncio.Task within TrackedTask model
         self._tasks_groups: dict[TaskName, TrackedTaskGroupDict] = {}
 
-        self._cancel_task_timeout_s: PositiveFloat = 1.0
-
-        self.stale_task_check_interval_s = stale_task_check_interval_s
-        self.stale_task_detect_timeout_s = stale_task_detect_timeout_s
-        self._stale_tasks_monitor_task: asyncio.Task = asyncio.create_task(
-            self._stale_tasks_monitor_worker(),
-            name=f"{__name__}.stale_task_monitor_worker",
+        self.stale_task_check_interval = stale_task_check_interval
+        self.stale_task_detect_timeout_s: PositiveFloat = (
+            stale_task_detect_timeout.total_seconds()
         )
+
+        self._stale_tasks_monitor_task: asyncio.Task | None = None
+
+    async def setup(self) -> None:
+        self._stale_tasks_monitor_task = create_periodic_task(
+            task=self._stale_tasks_monitor_worker,
+            interval=self.stale_task_check_interval,
+            task_name=f"{__name__}.{self._stale_tasks_monitor_worker.__name__}",
+        )
+
+    async def teardown(self) -> None:
+        task_ids_to_remove: deque[TaskId] = deque()
+
+        for tasks_dict in self._tasks_groups.values():
+            for tracked_task in tasks_dict.values():
+                task_ids_to_remove.append(tracked_task.task_id)
+
+        for task_id in task_ids_to_remove:
+            # when closing we do not care about pending errors
+            await self.remove_task(task_id, None, reraise_errors=False)
+
+        if self._stale_tasks_monitor_task:
+            with log_catch(_logger, reraise=False):
+                await cancel_wait_task(
+                    self._stale_tasks_monitor_task, max_delay=_CANCEL_TASK_TIMEOUT
+                )
 
     def get_task_group(self, task_name: TaskName) -> TrackedTaskGroupDict:
         return self._tasks_groups[task_name]
@@ -99,37 +129,25 @@ class TasksManager:
         # Since we own the client, we assume (for now) this
         # will not be the case.
 
-        while await asyncio.sleep(self.stale_task_check_interval_s, result=True):
-            utc_now = datetime.utcnow()
+        tasks_to_remove = _get_tasks_to_remove(
+            self._tasks_groups, self.stale_task_detect_timeout_s
+        )
 
-            tasks_to_remove: list[TaskId] = []
-            for tasks in self._tasks_groups.values():
-                for task_id, tracked_task in tasks.items():
-                    _mark_task_to_remove_if_required(
-                        task_id,
-                        tasks_to_remove,
-                        tracked_task,
-                        utc_now,
-                        self.stale_task_detect_timeout_s,
-                    )
-
-            # finally remove tasks and warn
-            for task_id in tasks_to_remove:
-                # NOTE: task can be in the following cases:
-                # - still ongoing
-                # - finished with a result
-                # - finished with errors
-                # we just print the status from where one can infer the above
-                logger.warning(
-                    "Removing stale task '%s' with status '%s'",
-                    task_id,
-                    self.get_task_status(
-                        task_id, with_task_context=None
-                    ).model_dump_json(),
-                )
-                await self.remove_task(
-                    task_id, with_task_context=None, reraise_errors=False
-                )
+        # finally remove tasks and warn
+        for task_id in tasks_to_remove:
+            # NOTE: task can be in the following cases:
+            # - still ongoing
+            # - finished with a result
+            # - finished with errors
+            # we just print the status from where one can infer the above
+            _logger.warning(
+                "Removing stale task '%s' with status '%s'",
+                task_id,
+                self.get_task_status(task_id, with_task_context=None).model_dump_json(),
+            )
+            await self.remove_task(
+                task_id, with_task_context=None, reraise_errors=False
+            )
 
     @staticmethod
     def create_task_id(task_name: TaskName) -> str:
@@ -207,7 +225,7 @@ class TasksManager:
         raises TaskNotFoundError if the task cannot be found
         """
         tracked_task: TrackedTask = self._get_tracked_task(task_id, with_task_context)
-        tracked_task.last_status_check = datetime.utcnow()
+        tracked_task.last_status_check = datetime.datetime.now(tz=datetime.UTC)
 
         task = tracked_task.task
         done = task.done()
@@ -252,18 +270,19 @@ class TasksManager:
         tracked_task = self._get_tracked_task(task_id, with_task_context)
         await self._cancel_tracked_task(tracked_task.task, task_id, reraise_errors=True)
 
+    @staticmethod
     async def _cancel_asyncio_task(
-        self, task: asyncio.Task, reference: str, *, reraise_errors: bool
+        task: asyncio.Task, reference: str, *, reraise_errors: bool
     ) -> None:
         task.cancel()
         with suppress(asyncio.CancelledError):
             try:
                 try:
                     await asyncio.wait_for(
-                        _await_task(task), timeout=self._cancel_task_timeout_s
+                        _await_task(task), timeout=_CANCEL_TASK_TIMEOUT
                     )
                 except TimeoutError:
-                    logger.warning(
+                    _logger.warning(
                         "Timed out while awaiting for cancellation of '%s'", reference
                     )
             except Exception:  # pylint:disable=broad-except
@@ -303,24 +322,6 @@ class TasksManager:
             )
         finally:
             del self._tasks_groups[tracked_task.task_name][task_id]
-
-    async def close(self) -> None:
-        """
-        cancels all pending tasks and removes them before closing
-        """
-        task_ids_to_remove: deque[TaskId] = deque()
-
-        for tasks_dict in self._tasks_groups.values():
-            for tracked_task in tasks_dict.values():
-                task_ids_to_remove.append(tracked_task.task_id)
-
-        for task_id in task_ids_to_remove:
-            # when closing we do not care about pending errors
-            await self.remove_task(task_id, None, reraise_errors=False)
-
-        await self._cancel_asyncio_task(
-            self._stale_tasks_monitor_task, "stale_monitor", reraise_errors=False
-        )
 
 
 class TaskProtocol(Protocol):
@@ -389,11 +390,11 @@ def start_task(
 
     # bind the task with progress 0 and 1
     async def _progress_task(progress: TaskProgress, handler: TaskProtocol):
-        progress.update(message="starting", percent=ProgressPercent(0))
+        progress.update(message="starting", percent=0)
         try:
             return await handler(progress, **task_kwargs)
         finally:
-            progress.update(message="finished", percent=ProgressPercent(1))
+            progress.update(message="finished", percent=1)
 
     async_task = asyncio.create_task(
         _progress_task(task_progress, task), name=f"{task_name}"
@@ -415,9 +416,9 @@ __all__: tuple[str, ...] = (
     "TaskAlreadyRunningError",
     "TaskCancelledError",
     "TaskId",
-    "TasksManager",
     "TaskProgress",
     "TaskProtocol",
     "TaskStatus",
+    "TasksManager",
     "TrackedTask",
 )
