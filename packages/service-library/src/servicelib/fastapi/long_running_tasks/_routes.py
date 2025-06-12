@@ -4,9 +4,9 @@ from fastapi import APIRouter, Depends, Request, status
 
 from ...long_running_tasks import http_endpoint_responses
 from ...long_running_tasks.models import TaskGet, TaskId, TaskResult, TaskStatus
-from ...long_running_tasks.task import TasksManager
 from ..requests_decorators import cancel_on_disconnect
-from ._dependencies import get_tasks_manager
+from ._dependencies import get_long_running_manager
+from ._manager import FastAPILongRunningManager
 
 router = APIRouter(prefix="/task")
 
@@ -14,7 +14,10 @@ router = APIRouter(prefix="/task")
 @router.get("", response_model=list[TaskGet])
 @cancel_on_disconnect
 async def list_tasks(
-    request: Request, tasks_manager: Annotated[TasksManager, Depends(get_tasks_manager)]
+    request: Request,
+    long_running_manager: Annotated[
+        FastAPILongRunningManager, Depends(get_long_running_manager)
+    ],
 ) -> list[TaskGet]:
     assert request  # nosec
     return [
@@ -27,7 +30,9 @@ async def list_tasks(
                 request.url_for("cancel_and_delete_task", task_id=t.task_id)
             ),
         )
-        for t in http_endpoint_responses.list_tasks(tasks_manager, task_context=None)
+        for t in http_endpoint_responses.list_tasks(
+            long_running_manager.tasks_manager, task_context=None
+        )
     ]
 
 
@@ -42,11 +47,13 @@ async def list_tasks(
 async def get_task_status(
     request: Request,
     task_id: TaskId,
-    tasks_manager: Annotated[TasksManager, Depends(get_tasks_manager)],
+    long_running_manager: Annotated[
+        FastAPILongRunningManager, Depends(get_long_running_manager)
+    ],
 ) -> TaskStatus:
     assert request  # nosec
     return http_endpoint_responses.get_task_status(
-        tasks_manager, task_context=None, task_id=task_id
+        long_running_manager.tasks_manager, task_context=None, task_id=task_id
     )
 
 
@@ -63,11 +70,13 @@ async def get_task_status(
 async def get_task_result(
     request: Request,
     task_id: TaskId,
-    tasks_manager: Annotated[TasksManager, Depends(get_tasks_manager)],
+    long_running_manager: Annotated[
+        FastAPILongRunningManager, Depends(get_long_running_manager)
+    ],
 ) -> TaskResult | Any:
     assert request  # nosec
     return await http_endpoint_responses.get_task_result(
-        tasks_manager, task_context=None, task_id=task_id
+        long_running_manager.tasks_manager, task_context=None, task_id=task_id
     )
 
 
@@ -84,9 +93,11 @@ async def get_task_result(
 async def cancel_and_delete_task(
     request: Request,
     task_id: TaskId,
-    tasks_manager: Annotated[TasksManager, Depends(get_tasks_manager)],
+    long_running_manager: Annotated[
+        FastAPILongRunningManager, Depends(get_long_running_manager)
+    ],
 ) -> None:
     assert request  # nosec
     await http_endpoint_responses.remove_task(
-        tasks_manager, task_context=None, task_id=task_id
+        long_running_manager.tasks_manager, task_context=None, task_id=task_id
     )
