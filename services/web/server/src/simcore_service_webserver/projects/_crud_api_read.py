@@ -95,6 +95,24 @@ async def _aggregate_data_to_projects_from_other_sources(
     return updated_projects
 
 
+async def _convert_db_projects_to_api_projects(
+    app: web.Application,
+    db,
+    db_projects: list,
+) -> list[dict]:
+    """
+    Converts db schema projects to API schema (legacy postprocessing).
+    """
+    api_projects: list[dict] = []
+    for db_prj in db_projects:
+        db_prj_dict = db_prj.model_dump()
+        db_prj_dict.pop("product_name", None)
+        db_prj_dict["tags"] = await db.get_tags_by_project(project_id=f"{db_prj.id}")
+        user_email = await get_user_email_legacy(app, db_prj.prj_owner)
+        api_projects.append(convert_to_schema_names(db_prj_dict, user_email))
+    return api_projects
+
+
 async def list_projects(  # pylint: disable=too-many-arguments
     app: web.Application,
     user_id: UserID,
@@ -172,14 +190,7 @@ async def list_projects(  # pylint: disable=too-many-arguments
         order_by=order_by,
     )
 
-    # This is a legacy postprocessing step to convert db schema to API schema (to be backwards compatible)
-    api_projects: list[dict] = []
-    for db_prj in db_projects:
-        db_prj_dict = db_prj.model_dump()
-        db_prj_dict.pop("product_name", None)
-        db_prj_dict["tags"] = await db.get_tags_by_project(project_id=f"{db_prj.id}")
-        user_email = await get_user_email_legacy(app, db_prj.prj_owner)
-        api_projects.append(convert_to_schema_names(db_prj_dict, user_email))
+    api_projects = await _convert_db_projects_to_api_projects(app, db, db_projects)
 
     final_projects = await _aggregate_data_to_projects_from_other_sources(
         app, db_projects=api_projects, user_id=user_id
@@ -219,14 +230,7 @@ async def list_projects_full_depth(
         order_by=order_by,
     )
 
-    # This is a legacy postprocessing step to convert db schema to API schema (to be backwards compatible)
-    api_projects: list[dict] = []
-    for db_prj in db_projects:
-        db_prj_dict = db_prj.model_dump()
-        db_prj_dict.pop("product_name", None)
-        db_prj_dict["tags"] = await db.get_tags_by_project(project_id=f"{db_prj.id}")
-        user_email = await get_user_email_legacy(app, db_prj.prj_owner)
-        api_projects.append(convert_to_schema_names(db_prj_dict, user_email))
+    api_projects = await _convert_db_projects_to_api_projects(app, db, db_projects)
 
     final_projects = await _aggregate_data_to_projects_from_other_sources(
         app, db_projects=api_projects, user_id=user_id
