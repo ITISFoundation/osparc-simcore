@@ -47,26 +47,30 @@ def map_to_scicrunch_error(rrid: str, error_code: int, message: str) -> Scicrunc
         <= status.HTTP_511_NETWORK_AUTHENTICATION_REQUIRED
     ), error_code  # nosec
 
-    custom_error = ScicrunchError(reason="Unexpected error in scicrunch.org")
+    custom_error = ScicrunchError(
+        reason="Unexpected error in scicrunch.org", original_message=message
+    )
 
     if error_code == web_exceptions.HTTPBadRequest.status_code:
-        custom_error = InvalidRRIDError(rrid=rrid)
+        custom_error = InvalidRRIDError(rrid=rrid, original_message=message)
 
     elif error_code == web_exceptions.HTTPNotFound.status_code:
-        custom_error = InvalidRRIDError(msg_template=f"Did not find any '{rrid}'")
+        custom_error = InvalidRRIDError(
+            msg_template=f"Did not find any '{rrid}'", original_message=message
+        )
 
     elif error_code == web_exceptions.HTTPUnauthorized.status_code:
         custom_error = ScicrunchConfigError(
             reason="osparc was not authorized to access scicrunch.org."
-            "Please check API access tokens."
+            "Please check API access tokens.",
+            original_message=message,
         )
 
     elif (
         error_code >= status.HTTP_500_INTERNAL_SERVER_ERROR
     ):  # scicrunch.org server error
         custom_error = ScicrunchServiceError(
-            reason="scicrunch.org cannot perform our requests"
+            reason="scicrunch.org cannot perform our requests", original_message=message
         )
 
-    _logger.error("%s: %s", custom_error, message)
     return custom_error

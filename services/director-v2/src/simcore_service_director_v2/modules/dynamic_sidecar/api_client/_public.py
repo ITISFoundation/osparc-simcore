@@ -22,15 +22,14 @@ from servicelib.fastapi.http_client_thin import (
     BaseHttpClientError,
     UnexpectedStatusError,
 )
-from servicelib.fastapi.long_running_tasks.client import (
-    Client,
+from servicelib.fastapi.long_running_tasks.client import Client, periodic_task_result
+from servicelib.logging_utils import log_context, log_decorator
+from servicelib.long_running_tasks.models import (
     ProgressCallback,
     ProgressMessage,
     ProgressPercent,
     TaskId,
-    periodic_task_result,
 )
-from servicelib.logging_utils import log_context, log_decorator
 from servicelib.utils import logged_gather
 
 from ....core.dynamic_services_settings.scheduler import (

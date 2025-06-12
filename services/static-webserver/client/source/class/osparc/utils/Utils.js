@@ -644,13 +644,22 @@ qx.Class.define("osparc.utils.Utils", {
       const productName = osparc.store.StaticInfo.getInstance().getDisplayName();
       const manuals = osparc.store.Support.getManuals();
       const manualLink = (manuals && manuals.length) ? manuals[0].url : "";
-      const supportEmail = osparc.store.VendorInfo.getInstance().getSupportEmail();
-      const mailto = osparc.store.Support.mailToLink(supportEmail, "Request Account " + productName);
       let msg = "";
       msg += qx.locale.Manager.tr("To use all ");
       msg += this.createHTMLLink(productName + " features", manualLink);
+
+      if (osparc.product.Utils.getCreateAccountAction() === "REQUEST_ACCOUNT_FORM") {
+        // if the product is configured to show a form to request an account,
+        // then show a link to it in the message
+        msg += qx.locale.Manager.tr(", please request an account in the following link:");
+        msg += "</br>";
+        msg += osparc.store.Support.requestAccountLink();
+        return msg;
+      }
       msg += qx.locale.Manager.tr(", please send us an e-mail to create an account:");
       msg += "</br>";
+      const supportEmail = osparc.store.VendorInfo.getInstance().getSupportEmail();
+      const mailto = osparc.store.Support.mailToLink(supportEmail, "Request Account " + productName);
       msg += mailto;
       return msg;
     },

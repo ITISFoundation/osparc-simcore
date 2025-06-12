@@ -33,9 +33,9 @@ def mock_catalog_api_get_services_for_user_in_product(
 
 
 @pytest.fixture
-def mock_project_uses_available_services(mocker: MockerFixture) -> MockType:
+def mock_are_project_services_available(mocker: MockerFixture) -> MockType:
     return mocker.patch(
-        "simcore_service_webserver.projects._controller.projects_rest.project_uses_available_services",
+        "simcore_service_webserver.projects._controller.projects_rest.are_project_services_available",
         spec=True,
         return_value=True,
     )
@@ -51,7 +51,7 @@ async def test_projects_groups_full_workflow(  # noqa: PLR0915
     user_project: ProjectDict,
     expected: HTTPStatus,
     mock_catalog_api_get_services_for_user_in_product: MockType,
-    mock_project_uses_available_services: MockType,
+    mock_are_project_services_available: MockType,
 ):
     assert client.app
     # check the default project permissions
@@ -265,7 +265,7 @@ async def test_share_project(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     mock_catalog_api_get_services_for_user_in_product: MockType,
-    mock_project_uses_available_services: MockType,
+    mock_are_project_services_available: MockType,
 ):
     assert client.app
 
@@ -333,7 +333,7 @@ async def test_share_project_with_roles(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     mock_catalog_api_get_services_for_user_in_product: MockType,
-    mock_project_uses_available_services: MockType,
+    mock_are_project_services_available: MockType,
     user_role: UserRole,
     expected_status: HTTPStatus,
 ):

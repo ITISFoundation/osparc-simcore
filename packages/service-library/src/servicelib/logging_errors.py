@@ -27,12 +27,22 @@ def create_troubleshotting_log_message(
         error_context -- Additional context surrounding the exception, such as environment variables or function-specific data. This can be derived from exc.error_context() (relevant when using the OsparcErrorMixin)
         tip -- Helpful suggestions or possible solutions explaining why the error may have occurred and how it could potentially be resolved
     """
+
+    def _collect_causes(exc: BaseException) -> str:
+        causes = []
+        current = exc.__cause__
+        while current is not None:
+            causes.append(f"[{type(current).__name__}]'{current}'")
+            current = getattr(current, "__cause__", None)
+        return " <- ".join(causes)
+
     debug_data = json_dumps(
         {
             "exception_type": f"{type(error)}",
             "exception_details": f"{error}",
             "error_code": error_code,
             "context": error_context,
+            "causes": _collect_causes(error),
             "tip": tip,
         },
         default=representation_encoder,

@@ -1,1 +1,6 @@
-# NOTE: missing. @bisgaard-itis will follow up here
+from typing import TypedDict
+
+
+class ServiceKeyVersionDict(TypedDict):
+    key: str
+    version: str

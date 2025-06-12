@@ -5,13 +5,16 @@ from common_library.json_serialization import json_dumps
 from cryptography.fernet import Fernet
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.requests import Request
-from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 
 from ..._constants import MSG_BACKEND_SERVICE_UNAVAILABLE
 from ...core.settings import ApplicationSettings, WebServerSettings
 from ...services_http.webserver import AuthSession
 from .application import get_app, get_settings
-from .authentication import Identity, get_active_user_email, get_current_identity
+from .authentication import (
+    Identity,
+    get_active_user_email,
+    get_current_identity,
+)
 
 
 def _get_settings(
@@ -68,14 +71,14 @@ def get_webserver_session(
     Lifetime of AuthSession wrapper is one request because it needs different session cookies
     Lifetime of embedded client is attached to the app lifetime
     """
-    product_header: dict[str, str] = {X_PRODUCT_NAME_HEADER: f"{identity.product_name}"}
-    session = AuthSession.create(app, session_cookies, product_header)
+    session = AuthSession.create(
+        app,
+        session_cookies=session_cookies,
+        product_name=identity.product_name,
+        user_id=identity.user_id,
+    )
     assert isinstance(session, AuthSession)  # nosec
     return session
 
 
-__all__: tuple[str, ...] = (
-    "AuthSession",
-    "get_session_cookie",
-    "get_webserver_session",
-)
+__all__: tuple[str, ...] = ("AuthSession",)

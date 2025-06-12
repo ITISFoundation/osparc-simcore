@@ -30,7 +30,7 @@ from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
-from ..models import RequestContext
+from ..models import AuthenticatedRequestContext
 from ..security.decorators import permission_required
 from ..wallets.errors import WalletAccessForbiddenError
 from . import _service_runs_service as api
@@ -123,7 +123,7 @@ routes = web.RouteTableDef()
 @permission_required("resource-usage.read")
 @_handle_resource_usage_exceptions
 async def list_resource_usage_services(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     query_params: ServicesResourceUsagesListQueryParams = (
         parse_request_query_parameters_as(
             ServicesResourceUsagesListQueryParams, request
@@ -166,7 +166,7 @@ async def list_resource_usage_services(request: web.Request):
 @permission_required("resource-usage.read")
 @_handle_resource_usage_exceptions
 async def list_osparc_credits_aggregated_usages(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     query_params: ServicesAggregatedUsagesListQueryParams = (
         parse_request_query_parameters_as(
             ServicesAggregatedUsagesListQueryParams, request
@@ -206,7 +206,7 @@ async def list_osparc_credits_aggregated_usages(request: web.Request):
 @permission_required("resource-usage.read")
 @_handle_resource_usage_exceptions
 async def export_resource_usage_services(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     query_params: ServicesResourceUsagesReportQueryParams = (
         parse_request_query_parameters_as(
             ServicesResourceUsagesReportQueryParams, request

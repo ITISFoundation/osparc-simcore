@@ -1,9 +1,11 @@
 import asyncio
 import logging
 from collections.abc import AsyncGenerator
-from typing import Any
+from datetime import timedelta
+from typing import Any, Final
 
 from aiohttp import ClientConnectionError, ClientSession
+from pydantic import PositiveFloat
 from tenacity import TryAgain, retry
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -12,14 +14,21 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random_exponential
 from yarl import URL
 
-from ...long_running_tasks._constants import DEFAULT_POLL_INTERVAL_S, HOUR
-from ...long_running_tasks._models import LRTask, RequestBody
+from ...long_running_tasks.constants import DEFAULT_POLL_INTERVAL_S
+from ...long_running_tasks.models import (
+    LRTask,
+    RequestBody,
+    TaskGet,
+    TaskId,
+    TaskProgress,
+    TaskStatus,
+)
 from ...rest_responses import unwrap_envelope_if_required
 from .. import status
-from .server import TaskGet, TaskId, TaskProgress, TaskStatus
 
 _logger = logging.getLogger(__name__)
 
+_DEFAULT_CLIENT_TIMEOUT_S: Final[PositiveFloat] = timedelta(hours=1).total_seconds()
 
 _DEFAULT_AIOHTTP_RETRY_POLICY: dict[str, Any] = {
     "retry": retry_if_exception_type(ClientConnectionError),
@@ -43,7 +52,7 @@ async def _wait_for_completion(
     session: ClientSession,
     task_id: TaskId,
     status_url: URL,
-    client_timeout: int,
+    client_timeout: PositiveFloat,
 ) -> AsyncGenerator[TaskProgress, None]:
     try:
         async for attempt in AsyncRetrying(
@@ -92,7 +101,7 @@ async def long_running_task_request(
     session: ClientSession,
     url: URL,
     json: RequestBody | None = None,
-    client_timeout: int = 1 * HOUR,
+    client_timeout: PositiveFloat = _DEFAULT_CLIENT_TIMEOUT_S,
 ) -> AsyncGenerator[LRTask, None]:
     """Will use the passed `ClientSession` to call an oSparc long
     running task `url` passing `json` as request body.
@@ -123,6 +132,3 @@ async def long_running_task_request(
         if task:
             await _abort_task(session, URL(task.abort_href))
         raise
-
-
-__all__: tuple[str, ...] = ("LRTask",)

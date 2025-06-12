@@ -201,7 +201,8 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
       const excludeDeprecated = true;
       osparc.store.Services.getServicesLatestList(excludeFrontend, excludeDeprecated)
         .then(servicesList => {
-          this.__servicesLatest = servicesList.filter(service => service !== null);
+          // first check metadata is complete
+          this.__servicesLatest = servicesList.filter(service => service !== null && service.inputs && service.outputs);
           this.__updateList();
         });
     },

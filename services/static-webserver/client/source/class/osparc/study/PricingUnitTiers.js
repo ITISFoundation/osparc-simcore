@@ -74,7 +74,7 @@ qx.Class.define("osparc.study.PricingUnitTiers", {
       pricingUnitTiers.forEach(pricingUnitTier => {
         pricingUnitTier.addListener("selectPricingUnit", () => {
           if (changeSelectionAllowed) {
-            this.fireDataEvent("selectPricingUnitRequested", pricingUnitTier.getUnitData().getPricingUnitId());
+            this.fireDataEvent("selectPricingUnitRequested", pricingUnitTier.getUnitData());
           }
         });
       });
@@ -83,6 +83,14 @@ qx.Class.define("osparc.study.PricingUnitTiers", {
     __applySelectedUnitId: function(selectedUnitId) {
       // select and unselect the rest
       this.__pricingUnitTiers.forEach(puTIer => puTIer.setSelected(puTIer.getUnitData().getPricingUnitId() === selectedUnitId));
+    },
+
+    getSelectedUnit: function() {
+      const selectedUnitTier = this.__pricingUnitTiers.find(puTier => puTier.isSelected());
+      if (selectedUnitTier) {
+        return selectedUnitTier.getUnitData();
+      }
+      return null;
     },
   }
 });

@@ -17,7 +17,7 @@ from simcore_postgres_database.utils_user_preferences import (
 
 from .._meta import API_VTAG
 from ..login.decorators import login_required
-from ..models import RequestContext
+from ..models import AuthenticatedRequestContext
 from . import _preferences_service
 from .exceptions import FrontendUserPreferenceIsNotDefinedError
 
@@ -46,7 +46,7 @@ def _handle_users_exceptions(handler: Handler):
 @login_required
 @_handle_users_exceptions
 async def set_frontend_preference(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     req_body = await parse_request_body_as(PatchRequestBody, request)
     req_path_params = parse_request_path_parameters_as(PatchPathParams, request)
 

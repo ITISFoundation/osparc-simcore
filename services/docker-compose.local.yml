@@ -158,7 +158,8 @@ services:
       - "3001:3000"
     deploy:
       labels:
-        - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.sticky.cookie.secure=false
+        # locally webserver is accessible through http://
+        - traefik.http.services.${SWARM_STACK_NAME}_webserver_sticky.loadbalancer.sticky.cookie.secure=false
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver_local.service=${SWARM_STACK_NAME}_webserver
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver_local.entrypoints=http
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver_local.rule=PathPrefix(`/dev/`)

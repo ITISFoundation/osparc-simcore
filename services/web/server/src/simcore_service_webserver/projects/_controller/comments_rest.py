@@ -26,7 +26,7 @@ from ...security.decorators import permission_required
 from ...utils_aiohttp import envelope_json_response
 from .. import _comments_service, _projects_service
 from ._rest_exceptions import handle_plugin_requests_exceptions
-from ._rest_schemas import RequestContext
+from ._rest_schemas import AuthenticatedRequestContext
 
 _logger = logging.getLogger(__name__)
 
@@ -60,7 +60,7 @@ class _ProjectCommentsBodyParams(BaseModel):
 @permission_required("project.read")
 @handle_plugin_requests_exceptions
 async def create_project_comment(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_ProjectCommentsPathParams, request)
     body_params = await parse_request_body_as(_ProjectCommentsBodyParams, request)
 
@@ -100,7 +100,7 @@ class _ListProjectCommentsQueryParams(BaseModel):
 @permission_required("project.read")
 @handle_plugin_requests_exceptions
 async def list_project_comments(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_ProjectCommentsPathParams, request)
     query_params: _ListProjectCommentsQueryParams = parse_request_query_parameters_as(
         _ListProjectCommentsQueryParams, request
@@ -149,7 +149,7 @@ async def list_project_comments(request: web.Request):
 @permission_required("project.read")
 @handle_plugin_requests_exceptions
 async def update_project_comment(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(
         _ProjectCommentsWithCommentPathParams, request
     )
@@ -180,7 +180,7 @@ async def update_project_comment(request: web.Request):
 @permission_required("project.read")
 @handle_plugin_requests_exceptions
 async def delete_project_comment(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(
         _ProjectCommentsWithCommentPathParams, request
     )
@@ -208,7 +208,7 @@ async def delete_project_comment(request: web.Request):
 @permission_required("project.read")
 @handle_plugin_requests_exceptions
 async def get_project_comment(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(
         _ProjectCommentsWithCommentPathParams, request
     )

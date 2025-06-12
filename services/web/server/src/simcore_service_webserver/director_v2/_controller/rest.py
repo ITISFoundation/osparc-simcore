@@ -23,7 +23,7 @@ from servicelib.request_keys import RQT_USERID_KEY
 
 from ..._meta import API_VTAG as VTAG
 from ...login.decorators import login_required
-from ...models import RequestContext
+from ...models import AuthenticatedRequestContext
 from ...products import products_web
 from ...security.decorators import permission_required
 from ...utils_aiohttp import envelope_json_response, get_api_base_url
@@ -47,7 +47,7 @@ async def start_computation(request: web.Request) -> web.Response:
     simcore_user_agent = request.headers.get(
         X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
     )
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ComputationPathParams, request)
 
     subgraph: set[str] = set()
@@ -140,7 +140,7 @@ async def start_computation(request: web.Request) -> web.Response:
 @permission_required("project.read")
 @handle_rest_requests_exceptions
 async def stop_computation(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     computations = DirectorV2RestClient(request.app)
     run_policy = get_project_run_policy(request.app)
     assert run_policy  # nosec

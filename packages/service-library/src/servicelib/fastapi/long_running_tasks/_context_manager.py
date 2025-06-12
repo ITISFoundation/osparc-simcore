@@ -6,8 +6,8 @@ from typing import Any, Final
 
 from pydantic import PositiveFloat
 
-from ...long_running_tasks._errors import TaskClientTimeoutError
-from ...long_running_tasks._models import (
+from ...long_running_tasks.errors import TaskClientTimeoutError
+from ...long_running_tasks.models import (
     ProgressCallback,
     ProgressMessage,
     ProgressPercent,

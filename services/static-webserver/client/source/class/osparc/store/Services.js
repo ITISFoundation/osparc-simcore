@@ -22,6 +22,7 @@ qx.Class.define("osparc.store.Services", {
     __servicesCached: {},
     __servicesPromisesCached: {},
     __studyServicesPromisesCached: {},
+    __pricingPlansCached: {},
 
     getServicesLatest: function(useCache = true) {
       return new Promise(resolve => {
@@ -345,6 +346,24 @@ qx.Class.define("osparc.store.Services", {
         }
       });
       return msg;
+    },
+
+    getPricingPlan: function(serviceKey, serviceVersion) {
+      const serviceUrl = osparc.data.Resources.getServiceUrl(serviceKey, serviceVersion)
+      // check if the service is already cached
+      if (serviceUrl in this.__pricingPlansCached) {
+        return Promise.resolve(this.__pricingPlansCached[serviceUrl]);
+      }
+
+      const plansParams = {
+        url: serviceUrl,
+      };
+      return osparc.data.Resources.fetch("services", "pricingPlans", plansParams)
+        .then(pricingPlansData => {
+          // store the fetched pricing plans in the cache
+          this.__pricingPlansCached[serviceUrl] = pricingPlansData;
+          return pricingPlansData;
+        });
     },
 
     getFilePicker: function() {

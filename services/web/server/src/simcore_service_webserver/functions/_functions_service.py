@@ -14,6 +14,7 @@ from models_library.functions import (
     FunctionJobDB,
     FunctionJobID,
     FunctionOutputSchema,
+    FunctionUserAccessRights,
     RegisteredFunction,
     RegisteredFunctionDB,
     RegisteredFunctionJob,
@@ -433,6 +434,38 @@ async def get_function_output_schema(
         function_id=function_id,
     )
     return _decode_function(returned_function).output_schema
+
+
+@router.expose(reraise_if_error_type=(FunctionIDNotFoundError,))
+async def get_function_user_permissions(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_id: FunctionID,
+) -> FunctionUserAccessRights:
+    user_permissions = await _functions_repository.get_user_permissions(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        object_id=function_id,
+        object_type="function",
+    )
+    return (
+        FunctionUserAccessRights(
+            user_id=user_id,
+            read=user_permissions.read,
+            write=user_permissions.write,
+            execute=user_permissions.execute,
+        )
+        if user_permissions
+        else FunctionUserAccessRights(
+            user_id=user_id,
+            read=False,
+            write=False,
+            execute=False,
+        )
+    )
 
 
 def _decode_function(

@@ -168,9 +168,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
 
     __addItems: function() {
       this.__addUIConfigItems();
-      if (osparc.product.Utils.isS4LProduct()) {
-        this.__addHypertools();
-      }
+      this.__addHypertools();
       this.__addMoreMenu();
       this.getChildControl("new-folder");
     },
@@ -196,18 +194,21 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
     },
 
     __addHypertools: function() {
+      const hypertoolsMenuButton = this.self().createMenuButton(null, this.tr("Hypertools"));
+      hypertoolsMenuButton.exclude();
+      this.addAt(hypertoolsMenuButton, this.__itemIdx);
+      this.__itemIdx++;
+      this.self().setIcon(hypertoolsMenuButton, osparc.data.model.StudyUI.HYPERTOOL_ICON);
+
       osparc.store.Templates.getHypertools()
         .then(hypertools => {
+          hypertoolsMenuButton.setVisibility(hypertools.length > 0 ? "visible" : "excluded");
+          // add entry for hypertools if there are any
           if (hypertools.length) {
-            const hypertoolsMenuButton = this.self().createMenuButton(null, this.tr("Hypertools"));
-            this.addAt(hypertoolsMenuButton, this.__itemIdx);
-            this.__itemIdx++;
-
             const hypertoolsMenu = new qx.ui.menu.Menu().set({
               appearance: "menu-wider",
             });
             hypertoolsMenuButton.setMenu(hypertoolsMenu);
-            this.self().setIcon(hypertoolsMenuButton, osparc.data.model.StudyUI.HYPERTOOL_ICON);
 
             hypertools.forEach(templateData => {
               const hypertoolButton = this.self().createMenuButton(null, templateData["name"]);
@@ -244,9 +245,9 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
 
       const permissions = osparc.data.Permissions.getInstance();
       if (permissions.canDo("dashboard.templates.read")) {
-        const templatesButton = this.self().createMenuButton("@FontAwesome5Solid/copy/16", this.tr("Tutorials..."));
-        templatesButton.addListener("execute", () => this.fireDataEvent("changeTab", "templatesTab"), this);
-        moreMenu.add(templatesButton);
+        const tutorialsButton = this.self().createMenuButton("@FontAwesome5Solid/copy/16", this.tr("Tutorials..."));
+        tutorialsButton.addListener("execute", () => this.fireDataEvent("changeTab", "tutorialsTab"), this);
+        moreMenu.add(tutorialsButton);
       }
 
       if (permissions.canDo("dashboard.services.read")) {

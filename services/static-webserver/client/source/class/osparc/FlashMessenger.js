@@ -105,13 +105,14 @@ qx.Class.define("osparc.FlashMessenger", {
         allowGrowX: false,
       });
       errorLabel.addListener("tap", () => {
+        const currentStudy = osparc.store.Store.getInstance().getCurrentStudy();
         const dataToClipboard = {
           message,
           supportId,
           timestamp: new Date().toString(),
           url: window.location.href,
           releaseTag: osparc.utils.Utils.getReleaseTag(),
-          studyId: osparc.store.Store.getInstance().getCurrentStudy() || "",
+          studyId: currentStudy ? currentStudy.getUuid() : "",
         }
         osparc.utils.Utils.copyTextToClipboard(osparc.utils.Utils.prettifyJson(dataToClipboard));
       });

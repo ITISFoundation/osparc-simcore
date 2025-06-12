@@ -45,7 +45,7 @@ qx.Class.define("osparc.widget.StudyTitleOnlyTree", {
 
     __openStudyInfo: function() {
       const studyDetails = new osparc.info.StudyLarge(this.getStudy());
-      const title = this.tr("Study Information");
+      const title = this.tr("Project Information");
       const width = osparc.info.CardLarge.WIDTH;
       const height = osparc.info.CardLarge.HEIGHT;
       osparc.ui.window.Window.popUpInWindow(studyDetails, title, width, height).set({

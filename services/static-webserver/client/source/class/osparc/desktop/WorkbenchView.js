@@ -387,7 +387,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       });
       this.__addTopBarSpacer(topBar);
 
-      const studyOptionsPage = this.__studyOptionsPage = this.__createTabPage("@FontAwesome5Solid/book", this.tr("Study options"));
+      const studyOptionsPage = this.__studyOptionsPage = this.__createTabPage("@FontAwesome5Solid/book", this.tr("Project options"));
       studyOptionsPage.getLayout().set({
         separator: "separator-vertical",
         spacing: 10

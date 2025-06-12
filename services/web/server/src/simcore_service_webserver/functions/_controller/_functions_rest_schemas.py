@@ -1,9 +1,9 @@
 from models_library.functions import FunctionID
 from pydantic import BaseModel, ConfigDict
 
-from ...models import RequestContext
+from ...models import AuthenticatedRequestContext
 
-assert RequestContext.__name__  # nosec
+assert AuthenticatedRequestContext.__name__  # nosec
 
 
 class FunctionPathParams(BaseModel):
@@ -11,4 +11,4 @@ class FunctionPathParams(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
 
-__all__: tuple[str, ...] = ("RequestContext",)
+__all__: tuple[str, ...] = ("AuthenticatedRequestContext",)

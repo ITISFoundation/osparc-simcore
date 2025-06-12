@@ -31,7 +31,7 @@ from ...utils_aiohttp import envelope_json_response, get_api_base_url
 from .. import _projects_service, projects_wallets_service
 from ..exceptions import ProjectStartsTooManyDynamicNodesError
 from ._rest_exceptions import handle_plugin_requests_exceptions
-from ._rest_schemas import ProjectPathParams, RequestContext
+from ._rest_schemas import AuthenticatedRequestContext, ProjectPathParams
 
 _logger = logging.getLogger(__name__)
 
@@ -53,7 +53,7 @@ class _OpenProjectQuery(BaseModel):
 @permission_required("project.open")
 @handle_plugin_requests_exceptions
 async def open_project(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     query_params: _OpenProjectQuery = parse_request_query_parameters_as(
         _OpenProjectQuery, request
@@ -168,7 +168,7 @@ async def open_project(request: web.Request) -> web.Response:
 @permission_required("project.close")
 @handle_plugin_requests_exceptions
 async def close_project(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     try:
@@ -207,7 +207,7 @@ async def close_project(request: web.Request) -> web.Response:
 @permission_required("project.read")
 @handle_plugin_requests_exceptions
 async def get_project_state(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     # check that project exists and queries state

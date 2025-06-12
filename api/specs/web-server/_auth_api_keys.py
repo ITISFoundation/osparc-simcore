@@ -1,10 +1,12 @@
 from typing import Annotated
 
+from _common import as_query
 from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.auth import (
     ApiKeyCreateRequest,
     ApiKeyCreateResponse,
     ApiKeyGet,
+    ApiKeyListQueryParams,
 )
 from models_library.generics import Envelope
 from models_library.rest_error import EnvelopedError
@@ -39,7 +41,9 @@ async def create_api_key(_body: ApiKeyCreateRequest):
     response_model=Envelope[list[ApiKeyGet]],
     status_code=status.HTTP_200_OK,
 )
-async def list_api_keys():
+async def list_api_keys(
+    _query: Annotated[as_query(ApiKeyListQueryParams), Depends()],
+):
     """lists API keys by this user"""
 
 

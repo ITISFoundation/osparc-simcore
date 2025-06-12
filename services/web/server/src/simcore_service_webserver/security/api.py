@@ -1,10 +1,12 @@
 # mypy: disable-error-code=truthy-function
 
-""" API for security subsystem.
+"""API for security subsystem.
 
 
 NOTE: DO NOT USE aiohttp_security.api directly but use this interface instead
 """
+
+import logging
 
 import aiohttp_security.api  # type: ignore[import-untyped]
 import passlib.hash
@@ -15,6 +17,8 @@ from ._authz_access_model import AuthContextDict, OptionalContext, RoleBasedAcce
 from ._authz_policy import AuthorizationPolicy
 from ._constants import PERMISSION_PRODUCT_LOGIN_KEY
 from ._identity_api import forget_identity, remember_identity
+
+_logger = logging.getLogger(__name__)
 
 assert PERMISSION_PRODUCT_LOGIN_KEY  # nosec
 
@@ -66,9 +70,12 @@ async def check_user_permission(
 
     allowed = await aiohttp_security.api.permits(request, permission, context)
     if not allowed:
-        raise web.HTTPForbidden(
-            reason=f"You do not have sufficient access rights for {permission}"
-        )
+        msg = "You do not have sufficient access rights for"
+        if permission == PERMISSION_PRODUCT_LOGIN_KEY:
+            msg += f" {context.get('product_name')}"
+        else:
+            msg += f" {permission}"
+        raise web.HTTPForbidden(reason=msg)
 
 
 #

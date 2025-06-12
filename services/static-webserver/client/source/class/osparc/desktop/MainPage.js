@@ -341,7 +341,7 @@ qx.Class.define("osparc.desktop.MainPage", {
           osparc.data.Resources.fetch("studies", "getOne", params2)
             .then(studyData => {
               if (!studyData) {
-                const msg = this.tr("Study not found");
+                const msg = this.tr("Project not found");
                 throw new Error(msg);
               }
               osparc.desktop.MainPageHandler.getInstance().loadStudy(studyData);

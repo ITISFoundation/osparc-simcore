@@ -21,8 +21,11 @@ from models_library.api_schemas_api_server.functions import (
     RegisteredFunctionJobCollection,
     SolverFunctionJob,
 )
+from models_library.functions import FunctionUserAccessRights
 from models_library.functions_errors import (
+    FunctionExecuteAccessDeniedError,
     FunctionInputsValidationError,
+    FunctionReadAccessDeniedError,
     UnsupportedFunctionClassError,
 )
 from models_library.products import ProductName
@@ -370,6 +373,22 @@ async def run_function(  # noqa: PLR0913
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
     job_service: Annotated[JobService, Depends(get_job_service)],
 ) -> RegisteredFunctionJob:
+
+    user_permissions: FunctionUserAccessRights = (
+        await wb_api_rpc.get_function_user_permissions(
+            function_id=function_id, user_id=user_id, product_name=product_name
+        )
+    )
+    if not user_permissions.read:
+        raise FunctionReadAccessDeniedError(
+            user_id=user_id,
+            function_id=function_id,
+        )
+    if not user_permissions.execute:
+        raise FunctionExecuteAccessDeniedError(
+            user_id=user_id,
+            function_id=function_id,
+        )
 
     from .function_jobs_routes import function_job_status
 

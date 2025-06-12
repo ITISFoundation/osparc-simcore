@@ -1,7 +1,6 @@
 import asyncio
 import functools
 import logging
-import warnings
 from collections.abc import Awaitable, Callable
 from typing import Any, Final
 
@@ -14,10 +13,10 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_exponential
 
-from ...long_running_tasks._errors import GenericClientError
-from ...long_running_tasks._models import ClientConfiguration, TaskId, TaskStatus
+from ...long_running_tasks.errors import GenericClientError
+from ...long_running_tasks.models import ClientConfiguration, TaskId, TaskStatus
 
-DEFAULT_HTTP_REQUESTS_TIMEOUT: Final[PositiveFloat] = 15
+_DEFAULT_HTTP_REQUESTS_TIMEOUT: Final[PositiveFloat] = 15
 
 
 logger = logging.getLogger(__name__)
@@ -181,16 +180,6 @@ class Client:
             timeout=timeout,
         )
 
-        if result.status_code == status.HTTP_200_OK:
-            warnings.warn(
-                "returning a 200 when cancelling a task has been deprecated with PR#3236"
-                "and will be removed after 11.2022"
-                "please do close your studies at least once before that date, so that the dy-sidecar"
-                "get replaced",
-                category=DeprecationWarning,
-            )
-            return
-
         if result.status_code not in (
             status.HTTP_204_NO_CONTENT,
             status.HTTP_404_NOT_FOUND,
@@ -207,7 +196,7 @@ def setup(
     app: FastAPI,
     *,
     router_prefix: str = "",
-    http_requests_timeout: PositiveFloat = DEFAULT_HTTP_REQUESTS_TIMEOUT,
+    http_requests_timeout: PositiveFloat = _DEFAULT_HTTP_REQUESTS_TIMEOUT,
 ):
     """
     - `router_prefix` by default it is assumed the server mounts the APIs on

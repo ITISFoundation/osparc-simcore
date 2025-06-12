@@ -16,8 +16,12 @@ _KEY_LEN: Final = 10
 _SECRET_LEN: Final = 20
 
 
+def generate_api_key_prefix(name: str) -> str:
+    return _PUNCTUATION_REGEX.sub("_", name[:5])
+
+
 def generate_unique_api_key(name: str, length: int = _KEY_LEN) -> str:
-    prefix = _PUNCTUATION_REGEX.sub("_", name[:5])
+    prefix = generate_api_key_prefix(name)
     hashed = hashlib.sha256(name.encode()).hexdigest()
     return f"{prefix}_{hashed[:length]}"
 

@@ -36,9 +36,9 @@ def mock_catalog_api_get_services_for_user_in_product(mocker: MockerFixture):
 
 
 @pytest.fixture
-def mock_project_uses_available_services(mocker: MockerFixture):
+def mock_are_project_services_available(mocker: MockerFixture):
     mocker.patch(
-        "simcore_service_webserver.projects._controller.projects_rest.project_uses_available_services",
+        "simcore_service_webserver.projects._controller.projects_rest.are_project_services_available",
         spec=True,
         return_value=True,
     )
@@ -100,7 +100,7 @@ async def test_patch_project_node(
     user_project: ProjectDict,
     expected: HTTPStatus,
     mock_catalog_api_get_services_for_user_in_product: None,
-    mock_project_uses_available_services: None,
+    mock_are_project_services_available: None,
     mock_catalog_rpc_check_for_service: None,
 ):
     node_id = next(iter(user_project["workbench"]))
@@ -222,7 +222,7 @@ async def test_patch_project_node_notifies(
     user_project: ProjectDict,
     expected: HTTPStatus,
     mock_catalog_api_get_services_for_user_in_product,
-    mock_project_uses_available_services,
+    mock_are_project_services_available,
     mock_catalog_rpc_check_for_service,
     mocked_notify_project_node_update,
 ):
@@ -258,7 +258,7 @@ async def test_patch_project_node_inputs_notifies(
     user_project: ProjectDict,
     expected: HTTPStatus,
     mock_catalog_api_get_services_for_user_in_product,
-    mock_project_uses_available_services,
+    mock_are_project_services_available,
     mocked_notify_project_node_update,
 ):
     node_id = next(iter(user_project["workbench"]))
@@ -298,7 +298,7 @@ async def test_patch_project_node_inputs_with_data_type_change(
     user_project: ProjectDict,
     expected: HTTPStatus,
     mock_catalog_api_get_services_for_user_in_product,
-    mock_project_uses_available_services,
+    mock_are_project_services_available,
 ):
     node_id = next(iter(user_project["workbench"]))
     assert client.app
@@ -351,7 +351,7 @@ async def test_patch_project_node_service_key_with_error(
     user_project: ProjectDict,
     expected: HTTPStatus,
     mock_catalog_api_get_services_for_user_in_product,
-    mock_project_uses_available_services,
+    mock_are_project_services_available,
     mocker: MockerFixture,
 ):
     node_id = next(iter(user_project["workbench"]))

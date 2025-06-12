@@ -19,7 +19,7 @@ from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
-from ..models import RequestContext
+from ..models import AuthenticatedRequestContext
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from ..wallets.errors import WalletAccessForbiddenError
@@ -60,7 +60,7 @@ class PricingPlanUnitGetPathParams(StrictRequestParameters):
 @permission_required("resource-usage.read")
 @_handle_resource_usage_exceptions
 async def get_pricing_plan_unit(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(
         PricingPlanUnitGetPathParams, request
     )
@@ -91,7 +91,7 @@ async def get_pricing_plan_unit(request: web.Request):
 @permission_required("resource-usage.read")
 @_handle_resource_usage_exceptions
 async def list_pricing_plans(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     query_params: PageQueryParameters = parse_request_query_parameters_as(
         PageQueryParameters, request
     )
@@ -142,7 +142,7 @@ async def list_pricing_plans(request: web.Request):
 @permission_required("resource-usage.read")
 @_handle_resource_usage_exceptions
 async def get_pricing_plan(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(PricingPlanGetPathParams, request)
 
     pricing_plan_get = await pricing_plans_admin_service.get_pricing_plan(

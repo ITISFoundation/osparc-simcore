@@ -7,23 +7,23 @@
 import asyncio
 import urllib.parse
 from collections.abc import AsyncIterator
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Final
 
 import pytest
 from faker import Faker
-from servicelib.long_running_tasks._errors import (
+from servicelib.long_running_tasks.errors import (
     TaskAlreadyRunningError,
     TaskCancelledError,
     TaskNotCompletedError,
     TaskNotFoundError,
 )
-from servicelib.long_running_tasks._models import (
+from servicelib.long_running_tasks.models import (
     ProgressPercent,
     TaskProgress,
     TaskStatus,
 )
-from servicelib.long_running_tasks._task import TasksManager, start_task
+from servicelib.long_running_tasks.task import TasksManager, start_task
 from tenacity import TryAgain
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -71,11 +71,12 @@ TEST_CHECK_STALE_INTERVAL_S: Final[float] = 1
 @pytest.fixture
 async def tasks_manager() -> AsyncIterator[TasksManager]:
     tasks_manager = TasksManager(
-        stale_task_check_interval_s=TEST_CHECK_STALE_INTERVAL_S,
-        stale_task_detect_timeout_s=TEST_CHECK_STALE_INTERVAL_S,
+        stale_task_check_interval=timedelta(seconds=TEST_CHECK_STALE_INTERVAL_S),
+        stale_task_detect_timeout=timedelta(seconds=TEST_CHECK_STALE_INTERVAL_S),
     )
+    await tasks_manager.setup()
     yield tasks_manager
-    await tasks_manager.close()
+    await tasks_manager.teardown()
 
 
 @pytest.mark.parametrize("check_task_presence_before", [True, False])

@@ -13,7 +13,7 @@ from ...login.decorators import login_required
 from ...security.decorators import permission_required
 from .. import _folders_service
 from ._rest_exceptions import handle_plugin_requests_exceptions
-from ._rest_schemas import RequestContext
+from ._rest_schemas import AuthenticatedRequestContext
 
 _logger = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ class _ProjectsFoldersPathParams(BaseModel):
 @permission_required("project.folders.*")
 @handle_plugin_requests_exceptions
 async def replace_project_folder(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_ProjectsFoldersPathParams, request)
 
     await _folders_service.move_project_into_folder(

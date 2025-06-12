@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.dashboard.NewStudies", {
+qx.Class.define("osparc.dashboard.NewPlans", {
   extend: qx.ui.core.Widget,
 
   construct: function(newStudiesData) {
@@ -38,7 +38,8 @@ qx.Class.define("osparc.dashboard.NewStudies", {
 
     osparc.store.Templates.getHypertools()
       .then(hypertools => {
-        this.__newStudies = newButtonsInfo.filter(newButtonInfo => {
+        // TIP and TIP lite templates are template_type: "hypertool"
+        this.__newPlans = newButtonsInfo.filter(newButtonInfo => {
           if (newButtonInfo.showDisabled) {
             return true;
           }
@@ -59,7 +60,7 @@ qx.Class.define("osparc.dashboard.NewStudies", {
   },
 
   events: {
-    "newStudyClicked": "qx.event.type.Data",
+    "newPlanClicked": "qx.event.type.Data",
   },
 
   statics: {
@@ -67,7 +68,7 @@ qx.Class.define("osparc.dashboard.NewStudies", {
   },
 
   members: {
-    __newStudies: null,
+    __newPlans: null,
     __groups: null,
     __flatList: null,
     __groupedContainers: null,
@@ -103,7 +104,7 @@ qx.Class.define("osparc.dashboard.NewStudies", {
       }
 
       const newCards = [];
-      this.__newStudies.forEach(resourceData => {
+      this.__newPlans.forEach(resourceData => {
         const cards = this.__resourceToCards(resourceData);
         cards.forEach(newCard => {
           if (resourceData.showDisabled) {
@@ -175,7 +176,7 @@ qx.Class.define("osparc.dashboard.NewStudies", {
     },
 
     __createCard: function(templateInfo) {
-      const newStudyClicked = () => this.fireDataEvent("newStudyClicked", templateInfo);
+      const newPlanClicked = () => this.fireDataEvent("newPlanClicked", templateInfo);
 
       const title = templateInfo.title;
       const desc = templateInfo.description;
@@ -184,7 +185,7 @@ qx.Class.define("osparc.dashboard.NewStudies", {
         newPlanButton.setCardKey(templateInfo["idToWidget"]);
         osparc.utils.Utils.setIdToWidget(newPlanButton, templateInfo["idToWidget"]);
       }
-      newPlanButton.addListener("tap", () => newStudyClicked());
+      newPlanButton.addListener("tap", () => newPlanClicked());
       return newPlanButton;
     },
 

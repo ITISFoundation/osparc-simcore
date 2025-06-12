@@ -1426,7 +1426,10 @@ async def try_open_project_for_user(
                     >= max_number_of_studies_per_user
                 ):
                     raise ProjectTooManyProjectOpenedError(
-                        max_num_projects=max_number_of_studies_per_user
+                        max_num_projects=max_number_of_studies_per_user,
+                        user_id=user_id,
+                        project_uuid=project_uuid,
+                        client_session_id=client_session_id,
                     )
 
                 # Assign project_id to current_session

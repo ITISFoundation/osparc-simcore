@@ -149,6 +149,16 @@ qx.Class.define("osparc.store.Support", {
       return textLink;
     },
 
+    requestAccountLink: function(centered = true) {
+      const color = qx.theme.manager.Color.getInstance().resolve("text");
+      const link = window.location.origin + "/#/request-account";
+      let textLink = `<a href="${link}" style='color: ${color}' target='_blank'>Request Account</a>`;
+      if (centered) {
+        textLink = `<center>${textLink}</center>`
+      }
+      return textLink;
+    },
+
     getMailToLabel: function(email, subject) {
       const mailto = new qx.ui.basic.Label(this.mailToLink(email, subject, false)).set({
         font: "text-14",

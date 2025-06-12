@@ -26,7 +26,7 @@ qx.Class.define("osparc.data.Roles", {
         label: qx.locale.Manager.tr("Restricted Member"),
         longLabel: qx.locale.Manager.tr("Restricted member: no Read access"),
         canDo: [
-          qx.locale.Manager.tr("- can access content shared within the Organization")
+          qx.locale.Manager.tr("- Can access content shared within the Organization")
         ],
         accessRights: {
           "read": false,
@@ -39,8 +39,8 @@ qx.Class.define("osparc.data.Roles", {
         label: qx.locale.Manager.tr("Member"),
         longLabel: qx.locale.Manager.tr("Member: Read access"),
         canDo: [
-          qx.locale.Manager.tr("- can see other members"),
-          qx.locale.Manager.tr("- can share with other members")
+          qx.locale.Manager.tr("- Can see other members"),
+          qx.locale.Manager.tr("- Can share with other members")
         ],
         accessRights: {
           "read": true,
@@ -53,9 +53,9 @@ qx.Class.define("osparc.data.Roles", {
         label: qx.locale.Manager.tr("Manager"),
         longLabel: qx.locale.Manager.tr("Manager: Read/Write access"),
         canDo: [
-          qx.locale.Manager.tr("- can Add/Delete members"),
-          qx.locale.Manager.tr("- can Promote/Demote members"),
-          qx.locale.Manager.tr("- can Edit Organization details")
+          qx.locale.Manager.tr("- Can Add/Delete members"),
+          qx.locale.Manager.tr("- Can Promote/Demote members"),
+          qx.locale.Manager.tr("- Can Edit Organization details")
         ],
         accessRights: {
           "read": true,
@@ -68,7 +68,7 @@ qx.Class.define("osparc.data.Roles", {
         label: qx.locale.Manager.tr("Administrator"),
         longLabel: qx.locale.Manager.tr("Admin: Read/Write/Delete access"),
         canDo: [
-          qx.locale.Manager.tr("- can Delete the Organization")
+          qx.locale.Manager.tr("- Can Delete the Organization")
         ],
         accessRights: {
           "read": true,
@@ -84,7 +84,7 @@ qx.Class.define("osparc.data.Roles", {
         label: qx.locale.Manager.tr("User"),
         longLabel: qx.locale.Manager.tr("User: Read access"),
         canDo: [
-          qx.locale.Manager.tr("- can open it without making changes")
+          qx.locale.Manager.tr("- Can open it without making changes")
         ],
         accessRights: {
           "read": true,
@@ -97,8 +97,8 @@ qx.Class.define("osparc.data.Roles", {
         label: qx.locale.Manager.tr("Editor"),
         longLabel: qx.locale.Manager.tr("Editor: Read/Write access"),
         canDo: [
-          qx.locale.Manager.tr("- can make changes"),
-          qx.locale.Manager.tr("- can share it")
+          qx.locale.Manager.tr("- Can make changes"),
+          qx.locale.Manager.tr("- Can share it")
         ],
         accessRights: {
           "read": true,
@@ -111,7 +111,7 @@ qx.Class.define("osparc.data.Roles", {
         label: qx.locale.Manager.tr("Owner"),
         longLabel: qx.locale.Manager.tr("Owner: Read/Write/Delete access"),
         canDo: [
-          qx.locale.Manager.tr("- can delete it")
+          qx.locale.Manager.tr("- Can delete it")
         ],
         accessRights: {
           "read": true,
@@ -126,7 +126,7 @@ qx.Class.define("osparc.data.Roles", {
         label: qx.locale.Manager.tr("User"),
         longLabel: qx.locale.Manager.tr("User: Read access"),
         canDo: [
-          qx.locale.Manager.tr("- can use it")
+          qx.locale.Manager.tr("- Can use it")
         ],
         accessRights: {
           "execute": true,
@@ -138,8 +138,8 @@ qx.Class.define("osparc.data.Roles", {
         label: qx.locale.Manager.tr("Editor"),
         longLabel: qx.locale.Manager.tr("Editor: Read/Write access"),
         canDo: [
-          qx.locale.Manager.tr("- can make changes"),
-          qx.locale.Manager.tr("- can share it")
+          qx.locale.Manager.tr("- Can make changes"),
+          qx.locale.Manager.tr("- Can share it")
         ],
         accessRights: {
           "execute": true,
@@ -153,7 +153,7 @@ qx.Class.define("osparc.data.Roles", {
         label: qx.locale.Manager.tr("User"),
         longLabel: qx.locale.Manager.tr("User: Read access"),
         canDo: [
-          qx.locale.Manager.tr("- can use the credits")
+          qx.locale.Manager.tr("- Can use the credits")
         ],
         accessRights: {
           "read": true,
@@ -166,8 +166,8 @@ qx.Class.define("osparc.data.Roles", {
         label: qx.locale.Manager.tr("Accountant"),
         longLabel: qx.locale.Manager.tr("Accountant: Read/Write access"),
         canDo: [
-          qx.locale.Manager.tr("- can Add/Delete members"),
-          qx.locale.Manager.tr("- can Edit Credit Account details")
+          qx.locale.Manager.tr("- Can Add/Delete members"),
+          qx.locale.Manager.tr("- Can Edit Credit Account details")
         ],
         accessRights: {
           "read": true,
@@ -182,7 +182,7 @@ qx.Class.define("osparc.data.Roles", {
         label: qx.locale.Manager.tr("Viewer"),
         longLabel: qx.locale.Manager.tr("Viewer: Read access"),
         canDo: [
-          qx.locale.Manager.tr("- can inspect the content and open ") + osparc.product.Utils.getStudyAlias({plural: true}) + qx.locale.Manager.tr(" without making changes")
+          qx.locale.Manager.tr("- Can inspect the content and open ") + osparc.product.Utils.getStudyAlias({plural: true}) + qx.locale.Manager.tr(" without making changes")
         ]
       },
       "write": {
@@ -190,8 +190,8 @@ qx.Class.define("osparc.data.Roles", {
         label: qx.locale.Manager.tr("Editor"),
         longLabel: qx.locale.Manager.tr("Editor: Read/Write access"),
         canDo: [
-          qx.locale.Manager.tr("- can add ") + osparc.product.Utils.getStudyAlias({plural: true}),
-          qx.locale.Manager.tr("- can add folders"),
+          qx.locale.Manager.tr("- Can add ") + osparc.product.Utils.getStudyAlias({plural: true}),
+          qx.locale.Manager.tr("- Can add folders"),
         ]
       },
       "delete": {
@@ -199,9 +199,9 @@ qx.Class.define("osparc.data.Roles", {
         label: qx.locale.Manager.tr("Owner"),
         longLabel: qx.locale.Manager.tr("Owner: Read/Write/Delete access"),
         canDo: [
-          qx.locale.Manager.tr("- can rename workspace"),
-          qx.locale.Manager.tr("- can share it"),
-          qx.locale.Manager.tr("- can delete it")
+          qx.locale.Manager.tr("- Can rename workspace"),
+          qx.locale.Manager.tr("- Can share it"),
+          qx.locale.Manager.tr("- Can delete it")
         ]
       }
     },

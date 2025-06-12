@@ -22,15 +22,11 @@ qx.Class.define("osparc.store.Pricing", {
   construct: function() {
     this.base(arguments);
 
-    this.pricingPlansCached = [];
-  },
-
-  events: {
-    "pricingPlansChanged": "qx.event.type.Data",
+    this.__pricingPlansCached = [];
   },
 
   members: {
-    pricingPlansCached: null,
+    __pricingPlansCached: null,
 
     fetchPricingPlans: function() {
       const resourceName = osparc.data.Permissions.getInstance().isAdmin() ? "adminPricingPlans" : "pricingPlans";
@@ -69,16 +65,6 @@ qx.Class.define("osparc.store.Pricing", {
           return this.__addToCache(pricingPlanData);
         })
         .catch(console.error);
-    },
-
-    fetchPricingPlansService: function(serviceKey, serviceVersion) {
-      const plansParams = {
-        url: osparc.data.Resources.getServiceUrl(serviceKey, serviceVersion)
-      };
-      return osparc.data.Resources.fetch("services", "pricingPlans", plansParams)
-        .then(pricingPlansData => {
-          return pricingPlansData;
-        });
     },
 
     fetchPricingUnits: function(pricingPlanId) {
@@ -136,11 +122,11 @@ qx.Class.define("osparc.store.Pricing", {
     },
 
     getPricingPlans: function() {
-      return this.pricingPlansCached;
+      return this.__pricingPlansCached;
     },
 
     getPricingPlan: function(pricingPlanId = null) {
-      return this.pricingPlansCached.find(f => f.getPricingPlanId() === pricingPlanId);
+      return this.__pricingPlansCached.find(f => f.getPricingPlanId() === pricingPlanId);
     },
 
     getPricingUnits: function(pricingPlanId) {
@@ -160,7 +146,7 @@ qx.Class.define("osparc.store.Pricing", {
     },
 
     __addToCache: function(pricingPlanData) {
-      let pricingPlan = this.pricingPlansCached.find(f => f.getPricingPlanId() === pricingPlanData["pricingPlanId"]);
+      let pricingPlan = this.__pricingPlansCached.find(f => f.getPricingPlanId() === pricingPlanData["pricingPlanId"]);
       if (pricingPlan) {
         // put
         pricingPlan.set({
@@ -173,7 +159,7 @@ qx.Class.define("osparc.store.Pricing", {
       } else {
         // get and post
         pricingPlan = new osparc.data.model.PricingPlan(pricingPlanData);
-        this.pricingPlansCached.unshift(pricingPlan);
+        this.__pricingPlansCached.unshift(pricingPlan);
       }
       return pricingPlan;
     },

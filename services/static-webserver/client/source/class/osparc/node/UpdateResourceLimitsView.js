@@ -43,13 +43,7 @@ qx.Class.define("osparc.node.UpdateResourceLimitsView", {
       this._add(resourcesLayout);
 
       const node = this.getNode();
-      const params = {
-        url: {
-          studyId: node.getStudy().getUuid(),
-          nodeId: node.getNodeId()
-        }
-      };
-      osparc.data.Resources.get("nodesInStudyResources", params)
+      osparc.store.Study.getNodeResources(node.getStudy().getUuid(), node.getNodeId())
         .then(serviceResources => {
           resourcesLayout.show();
           const gridLayout = resourcesLayout.getChildren()[1];
@@ -145,17 +139,8 @@ qx.Class.define("osparc.node.UpdateResourceLimitsView", {
         }
       });
       const node = this.getNode();
-      const params = {
-        url: {
-          studyId: node.getStudy().getUuid(),
-          nodeId: node.getNodeId()
-        },
-        data: updatedResources
-      };
-      osparc.data.Resources.fetch("nodesInStudyResources", "put", params)
-        .then(() => {
-          osparc.FlashMessenger.logAs(this.tr("Limits have been successfully updated"));
-        })
+      osparc.store.Study.updateNodeResources(node.getStudy().getUuid(), node.getNodeId(), updatedResources)
+        .then(() => osparc.FlashMessenger.logAs(this.tr("Limits have been successfully updated")))
         .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while updating the limits")))
         .finally(() => {
           this.__saveBtn.setFetching(false);

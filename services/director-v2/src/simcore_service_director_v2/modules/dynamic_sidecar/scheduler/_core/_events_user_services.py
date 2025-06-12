@@ -8,7 +8,7 @@ from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceVersion
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from pydantic import TypeAdapter
-from servicelib.fastapi.long_running_tasks.client import TaskId
+from servicelib.long_running_tasks.models import TaskId
 from tenacity import RetryError
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log

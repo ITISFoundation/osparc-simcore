@@ -29,7 +29,7 @@ from pytest_simcore.helpers.faker_factories import random_project
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.postgres_tools import PostgresTestConfig
 from pytest_simcore.helpers.storage import replace_storage_endpoint
-from servicelib.fastapi.long_running_tasks.server import TaskProgress
+from servicelib.long_running_tasks.models import TaskProgress
 from servicelib.utils import logged_gather
 from settings_library.s3 import S3Settings
 from simcore_postgres_database.models.projects import projects

@@ -32,9 +32,9 @@ def mock_catalog_api_get_services_for_user_in_product(mocker: MockerFixture):
 
 
 @pytest.fixture
-def mock_project_uses_available_services(mocker: MockerFixture):
+def mock_are_project_services_available(mocker: MockerFixture):
     mocker.patch(
-        "simcore_service_webserver.projects._controller.projects_rest.project_uses_available_services",
+        "simcore_service_webserver.projects._controller.projects_rest.are_project_services_available",
         spec=True,
         return_value=True,
     )
@@ -82,7 +82,7 @@ async def test_patch_project(
     user_project: ProjectDict,
     expected: HTTPStatus,
     mock_catalog_api_get_services_for_user_in_product,
-    mock_project_uses_available_services,
+    mock_are_project_services_available,
 ):
     assert client.app
     base_url = client.app.router["patch_project"].url_for(

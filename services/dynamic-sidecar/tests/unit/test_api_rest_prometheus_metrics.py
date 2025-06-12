@@ -17,12 +17,9 @@ from models_library.callbacks_mapping import CallbacksMapping
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from pydantic import AnyHttpUrl, TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
-from servicelib.fastapi.long_running_tasks.client import (
-    Client,
-    TaskId,
-    periodic_task_result,
-)
+from servicelib.fastapi.long_running_tasks.client import Client, periodic_task_result
 from servicelib.fastapi.long_running_tasks.client import setup as client_setup
+from servicelib.long_running_tasks.models import TaskId
 from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.models.schemas.containers import (
     ContainersComposeSpec,

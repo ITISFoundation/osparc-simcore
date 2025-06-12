@@ -43,8 +43,7 @@ from models_library.wallets import WalletID
 from pydantic import NonNegativeFloat
 from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task import create_periodic_task
-from servicelib.fastapi.long_running_tasks.client import ProgressCallback
-from servicelib.fastapi.long_running_tasks.server import TaskProgress
+from servicelib.long_running_tasks.models import ProgressCallback, TaskProgress
 from servicelib.redis import RedisClientsManager, exclusive
 from settings_library.redis import RedisDatabase
 
@@ -272,9 +271,9 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
                 )
                 raise DynamicSidecarError(msg=msg)
 
-            self._inverse_search_mapping[
-                scheduler_data.node_uuid
-            ] = scheduler_data.service_name
+            self._inverse_search_mapping[scheduler_data.node_uuid] = (
+                scheduler_data.service_name
+            )
             self._to_observe[scheduler_data.service_name] = scheduler_data
             self._enqueue_observation_from_service_name(scheduler_data.service_name)
             logger.debug("Added service '%s' to observe", scheduler_data.service_name)
@@ -374,9 +373,9 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
             dynamic_scheduler: DynamicServicesSchedulerSettings = (
                 self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
             )
-            self._service_observation_task[
-                service_name
-            ] = self.__create_observation_task(dynamic_scheduler, service_name)
+            self._service_observation_task[service_name] = (
+                self.__create_observation_task(dynamic_scheduler, service_name)
+            )
 
         logger.debug("Service '%s' marked for removal from scheduler", service_name)
 
@@ -575,9 +574,9 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
 
             if self._service_observation_task.get(service_name) is None:
                 logger.info("Create observation task for service %s", service_name)
-                self._service_observation_task[
-                    service_name
-                ] = self.__create_observation_task(dynamic_scheduler, service_name)
+                self._service_observation_task[service_name] = (
+                    self.__create_observation_task(dynamic_scheduler, service_name)
+                )
 
         logger.info("Scheduler 'trigger observation queue task' was shut down")
 

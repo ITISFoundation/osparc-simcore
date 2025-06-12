@@ -6,6 +6,7 @@
 # pylint: disable=no-self-argument
 
 from typing import Any
+from unittest.mock import Mock
 
 import pytest
 from aiohttp.test_utils import TestClient
@@ -77,11 +78,14 @@ async def test_listing_tasks_with_list_inprocess_tasks_error(
 
     class _DummyTaskManager:
         def list_tasks(self, *args, **kwargs):
-            raise Exception()  # pylint: disable=broad-exception-raised
+            raise Exception  # pylint: disable=broad-exception-raised  # noqa: TRY002
+
+    mock = Mock()
+    mock.tasks_manager = _DummyTaskManager()
 
     mocker.patch(
-        "servicelib.aiohttp.long_running_tasks._routes.get_tasks_manager",
-        return_value=_DummyTaskManager(),
+        "servicelib.aiohttp.long_running_tasks._routes.get_long_running_manager",
+        return_value=mock,
     )
 
     _async_jobs_listing_path = client.app.router["get_async_jobs"].url_for()
