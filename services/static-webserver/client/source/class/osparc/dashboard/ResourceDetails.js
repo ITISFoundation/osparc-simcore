@@ -843,11 +843,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     },
 
     __getCreateFunctionsPage: function() {
-      if (osparc.utils.DisabledPlugins.isFunctionsDisabled()) {
-        return null;
-      }
-
-      if (!osparc.data.Permissions.getInstance().checkMyGroupCanDo("functions")) {
+      if (!osparc.data.Permissions.getInstance().checkFunctionPermissions("write_functions")) {
         return null;
       }
 

@@ -277,16 +277,30 @@ qx.Class.define("osparc.data.Permissions", {
     },
 
     checkMyGroupCanDo: function(action) {
-      if (action === "functions") {
-        return true;
-      }
-
       return new Promise((resolve, reject) => {
         osparc.data.Resources.get("permissions")
           .then(permissions => {
             const found = permissions.find(permission => permission["name"] === action);
             if (found) {
               resolve(found["allowed"]);
+            } else {
+              resolve(false);
+            }
+          })
+          .catch(err => reject(err));
+      });
+    },
+
+    checkFunctionPermissions: function(action) {
+      if (osparc.utils.DisabledPlugins.isFunctionsDisabled()) {
+        return Promise.resolve(false);
+      }
+
+      return new Promise((resolve, reject) => {
+        osparc.data.Resources.get("functionPermissions")
+          .then(functionPermissions => {
+            if (action in functionPermissions) {
+              resolve(functionPermissions[action]);
             } else {
               resolve(false);
             }
