@@ -97,13 +97,11 @@ async def test_copying_large_project_and_aborting_correctly_removes_new_project(
     standard_groups: list[dict[str, str]],
     user_project: dict[str, Any],
     expected: ExpectedResponse,
-    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     slow_storage_subsystem_mock: MockedStorageSubsystem,
     project_db_cleaner: None,
     mocked_dynamic_services_interface: dict[str, MagicMock],
 ):
     assert client.app
-    catalog_subsystem_mock([user_project])
     # initiate a project copy that will last long (simulated by a long running storage)
     # POST /v0/projects
     create_url = client.app.router["create_project"].url_for()
@@ -150,13 +148,11 @@ async def test_copying_large_project_and_retrieving_copy_task(
     standard_groups: list[dict[str, str]],
     user_project: dict[str, Any],
     expected: ExpectedResponse,
-    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     slow_storage_subsystem_mock: MockedStorageSubsystem,
     project_db_cleaner: None,
     mocked_dynamic_services_interface: dict[str, MagicMock],
 ):
     assert client.app
-    catalog_subsystem_mock([user_project])
 
     # initiate a project copy that will last long (simulated by a long running storage)
     # POST /v0/projects
@@ -196,13 +192,11 @@ async def test_creating_new_project_from_template_without_copying_data_creates_s
     standard_groups: list[dict[str, str]],
     template_project: dict[str, Any],
     expected: ExpectedResponse,
-    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     slow_storage_subsystem_mock: MockedStorageSubsystem,
     project_db_cleaner: None,
     request_create_project: Callable[..., Awaitable[ProjectDict]],
 ):
     assert client.app
-    catalog_subsystem_mock([template_project])
     # create a project from another without copying data shall not call in the storage API
     # POST /v0/projects
     await request_create_project(
@@ -247,13 +241,11 @@ async def test_creating_new_project_as_template_without_copying_data_creates_ske
     standard_groups: list[dict[str, str]],
     user_project: dict[str, Any],
     expected: ExpectedResponse,
-    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     slow_storage_subsystem_mock: MockedStorageSubsystem,
     project_db_cleaner: None,
     request_create_project: Callable[..., Awaitable[ProjectDict]],
 ):
     assert client.app
-    catalog_subsystem_mock([user_project])
     # create a project from another without copying data shall not call in the storage API
     # POST /v0/projects
     await request_create_project(
