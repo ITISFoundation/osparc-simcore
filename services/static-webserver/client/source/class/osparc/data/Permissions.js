@@ -192,6 +192,9 @@ qx.Class.define("osparc.data.Permissions", {
   },
 
   members: {
+    __permissions: null,
+    __functionPermissions: null,
+
     arePermissionsReady() {
       return this.getRole() !== null;
     },
@@ -276,37 +279,44 @@ qx.Class.define("osparc.data.Permissions", {
       return canDo;
     },
 
+    fetchPermissions: function() {
+      osparc.data.Resources.get("permissions")
+        .then(permissions => {
+          this.__permissions = permissions;
+        })
+        .catch(err => console.error(err));
+    },
+
     checkMyGroupCanDo: function(action) {
-      return new Promise((resolve, reject) => {
-        osparc.data.Resources.get("permissions")
-          .then(permissions => {
-            const found = permissions.find(permission => permission["name"] === action);
-            if (found) {
-              resolve(found["allowed"]);
-            } else {
-              resolve(false);
-            }
-          })
-          .catch(err => reject(err));
-      });
+      if (this.__permissions) {
+        const found = this.__permissions.find(permission => permission["name"] === action);
+        if (found) {
+          return found["allowed"];
+        }
+      }
+      return false;
+    },
+
+    fetchFunctionPermissions: function() {
+      osparc.data.Resources.get("functionPermissions")
+        .then(functionPermissions => {
+          this.__functionPermissions = functionPermissions;
+        })
+        .catch(err => console.error(err));
     },
 
     checkFunctionPermissions: function(action) {
       if (osparc.utils.DisabledPlugins.isFunctionsDisabled()) {
-        return Promise.resolve(false);
+        return false;
       }
 
-      return new Promise((resolve, reject) => {
-        osparc.data.Resources.get("functionPermissions")
-          .then(functionPermissions => {
-            if (action in functionPermissions) {
-              resolve(functionPermissions[action]);
-            } else {
-              resolve(false);
-            }
-          })
-          .catch(err => reject(err));
-      });
+      if (
+        this.__functionPermissions &&
+        action in this.__functionPermissions
+      ) {
+        return functionPermissions[action];
+      }
+      return false;
     },
 
     isTester: function() {
