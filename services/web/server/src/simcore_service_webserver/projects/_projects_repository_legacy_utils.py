@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from collections.abc import Mapping
 from copy import deepcopy
@@ -9,7 +8,7 @@ from typing import Any, Literal, cast
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
-from models_library.projects import ProjectAtDB, ProjectID, ProjectTemplateType
+from models_library.projects import ProjectID, ProjectTemplateType
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.utils.change_case import camel_to_snake, snake_to_camel
@@ -17,7 +16,6 @@ from pydantic import ValidationError
 from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.webserver_models import ProjectType, projects
 from sqlalchemy.dialects.postgresql import insert as pg_insert
-from sqlalchemy.sql.selectable import CompoundSelect, Select
 
 from ..db.models import GroupType, groups, projects_tags, user_to_groups, users
 from ..users.exceptions import UserNotFoundError
@@ -25,7 +23,6 @@ from ..utils import format_datetime
 from ._projects_repository import PROJECT_DB_COLS
 from .exceptions import (
     NodeNotFoundError,
-    ProjectInvalidRightsError,
     ProjectInvalidUsageError,
     ProjectNotFoundError,
 )
@@ -183,50 +180,6 @@ class BaseProjectDB:
                 )
                 .on_conflict_do_nothing()
             )
-
-    async def _execute_without_permission_check(
-        self,
-        conn: SAConnection,
-        *,
-        select_projects_query: Select | CompoundSelect,
-    ) -> tuple[list[dict[str, Any]], list[ProjectType]]:
-        api_projects: list[dict] = []  # API model-compatible projects
-        db_projects: list[dict] = []  # DB model-compatible projects
-        project_types: list[ProjectType] = []
-        async for row in conn.execute(select_projects_query):
-            assert isinstance(row, RowProxy)  # nosec
-            try:
-                await asyncio.get_event_loop().run_in_executor(
-                    None, ProjectAtDB.model_validate, row
-                )
-
-            except ProjectInvalidRightsError:
-                continue
-
-            except ValidationError as exc:
-                logger.warning(
-                    "project  %s  failed validation, please check. error: %s",
-                    f"{row.id=}",
-                    exc,
-                )
-                continue
-
-            prj: dict[str, Any] = dict(row.items())
-            prj.pop("product_name", None)
-
-            db_projects.append(prj)
-
-        # NOTE: DO NOT nest _get_tags_by_project in async loop above !!!
-        # FIXME: temporary avoids inner async loops issue https://github.com/aio-libs/aiopg/issues/535
-        for db_prj in db_projects:
-            db_prj["tags"] = await self._get_tags_by_project(
-                conn, project_id=db_prj["id"]
-            )
-            user_email = await self._get_user_email(conn, db_prj["prj_owner"])
-            api_projects.append(convert_to_schema_names(db_prj, user_email))
-            project_types.append(db_prj["type"])
-
-        return (api_projects, project_types)
 
     async def _get_project(
         self,

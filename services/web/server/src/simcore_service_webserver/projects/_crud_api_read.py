@@ -21,13 +21,14 @@ from simcore_postgres_database.webserver_models import (
     ProjectTemplateType as ProjectTemplateTypeDB,
 )
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
+from simcore_service_webserver.users.api import get_user_email_legacy
 
 from ..folders import _folders_repository
 from ..workspaces.api import check_user_workspace_access
 from . import _projects_service
 from ._access_rights_repository import batch_get_project_access_rights
 from ._projects_repository import batch_get_trashed_by_primary_gid
-from ._projects_repository_legacy import ProjectDBAPI
+from ._projects_repository_legacy import ProjectDBAPI, convert_to_schema_names
 from .models import ProjectDict, ProjectTypeAPI
 
 
@@ -53,7 +54,6 @@ async def _aggregate_data_to_projects_from_other_sources(
     app: web.Application,
     *,
     db_projects: list[ProjectDict],
-    db_project_types: list[ProjectTypeDB],
     user_id: UserID,
 ) -> list[ProjectDict]:
     """
@@ -79,10 +79,10 @@ async def _aggregate_data_to_projects_from_other_sources(
         _projects_service.add_project_states_for_user(
             user_id=user_id,
             project=prj,
-            is_template=prj_type == ProjectTypeDB.TEMPLATE,
+            is_template=prj["type"] == ProjectTypeDB.TEMPLATE,
             app=app,
         )
-        for prj, prj_type in zip(db_projects, db_project_types, strict=False)
+        for prj in db_projects
     ]
 
     updated_projects: list[ProjectDict] = await _paralell_update(
@@ -140,7 +140,7 @@ async def list_projects(  # pylint: disable=too-many-arguments
             workspace_id=workspace_id,
         )
 
-    db_projects, db_project_types, total_number_projects = await db.list_projects_dicts(
+    db_projects, total_number_projects = await db.list_projects_dicts(
         product_name=product_name,
         user_id=user_id,
         workspace_query=(
@@ -172,11 +172,21 @@ async def list_projects(  # pylint: disable=too-many-arguments
         order_by=order_by,
     )
 
-    projects = await _aggregate_data_to_projects_from_other_sources(
-        app, db_projects=db_projects, db_project_types=db_project_types, user_id=user_id
+    # This is a legacy postprocessing step to convert db schema to API schema (to be backwards compatible)
+    api_projects: list[dict] = []
+
+    for db_prj in db_projects:
+        db_prj_dict = db_prj.model_dump()
+        db_prj_dict.pop("product_name", None)
+        db_prj_dict["tags"] = await db.get_tags_by_project(project_id=f"{db_prj.id}")
+        user_email = await get_user_email_legacy(app, db_prj.prj_owner)
+        api_projects.append(convert_to_schema_names(db_prj_dict, user_email))
+
+    final_projects = await _aggregate_data_to_projects_from_other_sources(
+        app, db_projects=api_projects, user_id=user_id
     )
 
-    return projects, total_number_projects
+    return final_projects, total_number_projects
 
 
 async def list_projects_full_depth(
@@ -196,7 +206,7 @@ async def list_projects_full_depth(
 ) -> tuple[list[ProjectDict], int]:
     db = ProjectDBAPI.get_from_app_context(app)
 
-    db_projects, db_project_types, total_number_projects = await db.list_projects_dicts(
+    db_projects, total_number_projects = await db.list_projects_dicts(
         product_name=product_name,
         user_id=user_id,
         workspace_query=WorkspaceQuery(workspace_scope=WorkspaceScope.ALL),
@@ -211,7 +221,7 @@ async def list_projects_full_depth(
     )
 
     projects = await _aggregate_data_to_projects_from_other_sources(
-        app, db_projects=db_projects, db_project_types=db_project_types, user_id=user_id
+        app, db_projects=db_projects, user_id=user_id
     )
 
     return projects, total_number_projects
