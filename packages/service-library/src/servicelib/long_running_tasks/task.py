@@ -30,35 +30,39 @@ _CANCEL_TASK_TIMEOUT: Final[PositiveFloat] = datetime.timedelta(
     seconds=1
 ).total_seconds()
 
+TrackedTaskGroupDict: TypeAlias = dict[TaskId, TrackedTask]
+TaskContext: TypeAlias = dict[str, Any]
+
 
 async def _await_task(task: asyncio.Task) -> None:
     await task
 
 
-def _mark_task_to_remove_if_required(
-    task_id: TaskId,
-    tasks_to_remove: list[TaskId],
-    tracked_task: TrackedTask,
-    utc_now: datetime.datetime,
-    stale_timeout_s: float,
-) -> None:
-    if tracked_task.fire_and_forget:
-        return
+def _get_tasks_to_remove(
+    tasks_groups: dict[TaskName, TrackedTaskGroupDict],
+    stale_task_detect_timeout_s: PositiveFloat,
+) -> list[TaskId]:
+    utc_now = datetime.datetime.now(tz=datetime.UTC)
 
-    if tracked_task.last_status_check is None:
-        # the task just added or never received a poll request
-        elapsed_from_start = (utc_now - tracked_task.started).seconds
-        if elapsed_from_start > stale_timeout_s:
-            tasks_to_remove.append(task_id)
-    else:
-        # the task status was already queried by the client
-        elapsed_from_last_poll = (utc_now - tracked_task.last_status_check).seconds
-        if elapsed_from_last_poll > stale_timeout_s:
-            tasks_to_remove.append(task_id)
+    tasks_to_remove: list[TaskId] = []
+    for tasks in tasks_groups.values():
+        for task_id, tracked_task in tasks.items():
+            if tracked_task.fire_and_forget:
+                continue
 
-
-TrackedTaskGroupDict: TypeAlias = dict[TaskId, TrackedTask]
-TaskContext: TypeAlias = dict[str, Any]
+            if tracked_task.last_status_check is None:
+                # the task just added or never received a poll request
+                elapsed_from_start = (utc_now - tracked_task.started).seconds
+                if elapsed_from_start > stale_task_detect_timeout_s:
+                    tasks_to_remove.append(task_id)
+            else:
+                # the task status was already queried by the client
+                elapsed_from_last_poll = (
+                    utc_now - tracked_task.last_status_check
+                ).seconds
+                if elapsed_from_last_poll > stale_task_detect_timeout_s:
+                    tasks_to_remove.append(task_id)
+    return tasks_to_remove
 
 
 class TasksManager:
@@ -125,18 +129,9 @@ class TasksManager:
         # Since we own the client, we assume (for now) this
         # will not be the case.
 
-        utc_now = datetime.datetime.now(tz=datetime.UTC)
-
-        tasks_to_remove: list[TaskId] = []
-        for tasks in self._tasks_groups.values():
-            for task_id, tracked_task in tasks.items():
-                _mark_task_to_remove_if_required(
-                    task_id,
-                    tasks_to_remove,
-                    tracked_task,
-                    utc_now,
-                    self.stale_task_detect_timeout_s,
-                )
+        tasks_to_remove = _get_tasks_to_remove(
+            self._tasks_groups, self.stale_task_detect_timeout_s
+        )
 
         # finally remove tasks and warn
         for task_id in tasks_to_remove:
