@@ -3,7 +3,7 @@
 
 import asyncio
 from collections.abc import AsyncIterable
-from typing import Final
+from typing import Annotated, Final
 
 import pytest
 from asgi_lifespan import LifespanManager
@@ -56,18 +56,18 @@ def user_routes() -> APIRouter:
 
     @router.get("/api/success", status_code=status.HTTP_200_OK)
     async def create_task_user_defined_route(
-        long_running_manager: FastAPILongRunningManager = Depends(
-            get_long_running_manager
-        ),
+        long_running_manager: Annotated[
+            FastAPILongRunningManager, Depends(get_long_running_manager)
+        ],
     ) -> TaskId:
         task_id = start_task(long_running_manager.tasks_manager, task=a_test_task)
         return task_id
 
     @router.get("/api/failing", status_code=status.HTTP_200_OK)
     async def create_task_which_fails(
-        long_running_manager: FastAPILongRunningManager = Depends(
-            get_long_running_manager
-        ),
+        long_running_manager: Annotated[
+            FastAPILongRunningManager, Depends(get_long_running_manager)
+        ],
     ) -> TaskId:
         task_id = start_task(
             long_running_manager.tasks_manager, task=a_failing_test_task
