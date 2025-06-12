@@ -174,7 +174,6 @@ async def list_projects(  # pylint: disable=too-many-arguments
 
     # This is a legacy postprocessing step to convert db schema to API schema (to be backwards compatible)
     api_projects: list[dict] = []
-
     for db_prj in db_projects:
         db_prj_dict = db_prj.model_dump()
         db_prj_dict.pop("product_name", None)
@@ -220,8 +219,17 @@ async def list_projects_full_depth(
         order_by=order_by,
     )
 
-    projects = await _aggregate_data_to_projects_from_other_sources(
-        app, db_projects=db_projects, user_id=user_id
+    # This is a legacy postprocessing step to convert db schema to API schema (to be backwards compatible)
+    api_projects: list[dict] = []
+    for db_prj in db_projects:
+        db_prj_dict = db_prj.model_dump()
+        db_prj_dict.pop("product_name", None)
+        db_prj_dict["tags"] = await db.get_tags_by_project(project_id=f"{db_prj.id}")
+        user_email = await get_user_email_legacy(app, db_prj.prj_owner)
+        api_projects.append(convert_to_schema_names(db_prj_dict, user_email))
+
+    final_projects = await _aggregate_data_to_projects_from_other_sources(
+        app, db_projects=api_projects, user_id=user_id
     )
 
-    return projects, total_number_projects
+    return final_projects, total_number_projects
