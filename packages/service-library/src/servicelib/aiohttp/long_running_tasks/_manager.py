@@ -5,7 +5,7 @@ from aiohttp import web
 from ...long_running_tasks.base_long_running_manager import BaseLongRunningManager
 from ...long_running_tasks.task import TaskContext, TasksManager
 from ._constants import APP_LONG_RUNNING_MANAGER_KEY
-from ._dependencies import get_task_context
+from ._request import get_task_context
 
 
 class AiohttpLongRunningManager(BaseLongRunningManager):
