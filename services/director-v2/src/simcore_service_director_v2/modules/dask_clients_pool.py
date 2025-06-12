@@ -8,6 +8,7 @@ from typing import TypeAlias
 from fastapi import FastAPI
 from models_library.clusters import BaseCluster, ClusterTypeInModel
 from pydantic import AnyUrl
+from servicelib.logging_utils import log_context
 
 from ..core.errors import (
     ComputationalBackendNotConnectedError,
@@ -19,7 +20,7 @@ from ..core.settings import ComputationalBackendSettings
 from ..utils.dask_client_utils import TaskHandlers
 from .dask_client import DaskClient
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 _ClusterUrl: TypeAlias = AnyUrl
@@ -62,48 +63,51 @@ class DaskClientsPool:
 
     @asynccontextmanager
     async def acquire(self, cluster: BaseCluster) -> AsyncIterator[DaskClient]:
+        """returns a dask client for the given cluster
+        This method is thread-safe and can be called concurrently.
+        If the cluster is not found in the pool, it will create a new dask client for it.
+
+        """
+
         async def _concurently_safe_acquire_client() -> DaskClient:
             async with self._client_acquisition_lock:
-                dask_client = self._cluster_to_client_map.get(cluster.endpoint)
-
-                # we create a new client if that cluster was never used before
-                logger.debug(
-                    "acquiring connection to cluster %s:%s",
-                    cluster.endpoint,
-                    cluster.name,
-                )
-                if not dask_client:
-                    tasks_file_link_type = (
-                        self.settings.COMPUTATIONAL_BACKEND_DEFAULT_FILE_LINK_TYPE
-                    )
-                    if cluster == self.settings.default_cluster:
+                with log_context(
+                    _logger,
+                    logging.DEBUG,
+                    f"acquire dask client for {cluster.name=}:{cluster.endpoint}",
+                ):
+                    dask_client = self._cluster_to_client_map.get(cluster.endpoint)
+                    if not dask_client:
                         tasks_file_link_type = (
-                            self.settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_FILE_LINK_TYPE
+                            self.settings.COMPUTATIONAL_BACKEND_DEFAULT_FILE_LINK_TYPE
                         )
-                    if cluster.type == ClusterTypeInModel.ON_DEMAND.value:
-                        tasks_file_link_type = (
-                            self.settings.COMPUTATIONAL_BACKEND_ON_DEMAND_CLUSTERS_FILE_LINK_TYPE
+                        if cluster == self.settings.default_cluster:
+                            tasks_file_link_type = (
+                                self.settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_FILE_LINK_TYPE
+                            )
+                        if cluster.type == ClusterTypeInModel.ON_DEMAND.value:
+                            tasks_file_link_type = (
+                                self.settings.COMPUTATIONAL_BACKEND_ON_DEMAND_CLUSTERS_FILE_LINK_TYPE
+                            )
+                        self._cluster_to_client_map[cluster.endpoint] = dask_client = (
+                            await DaskClient.create(
+                                app=self.app,
+                                settings=self.settings,
+                                endpoint=cluster.endpoint,
+                                authentication=cluster.authentication,
+                                tasks_file_link_type=tasks_file_link_type,
+                                cluster_type=cluster.type,
+                            )
                         )
-                    self._cluster_to_client_map[
-                        cluster.endpoint
-                    ] = dask_client = await DaskClient.create(
-                        app=self.app,
-                        settings=self.settings,
-                        endpoint=cluster.endpoint,
-                        authentication=cluster.authentication,
-                        tasks_file_link_type=tasks_file_link_type,
-                        cluster_type=cluster.type,
-                    )
-                    if self._task_handlers:
-                        dask_client.register_handlers(self._task_handlers)
+                        if self._task_handlers:
+                            dask_client.register_handlers(self._task_handlers)
 
-                    logger.debug("created new client to cluster %s", f"{cluster=}")
-                    logger.debug(
-                        "list of clients: %s", f"{self._cluster_to_client_map=}"
-                    )
+                        _logger.debug(
+                            "list of clients: %s", f"{self._cluster_to_client_map=}"
+                        )
 
-                assert dask_client  # nosec
-                return dask_client
+                    assert dask_client  # nosec
+                    return dask_client
 
         try:
             dask_client = await _concurently_safe_acquire_client()
@@ -129,7 +133,7 @@ def setup(app: FastAPI, settings: ComputationalBackendSettings) -> None:
             app=app, settings=settings
         )
 
-        logger.info(
+        _logger.info(
             "Default cluster is set to %s",
             f"{settings.default_cluster!r}",
         )
