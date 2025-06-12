@@ -31,7 +31,7 @@ from servicelib.long_running_tasks.models import (
     TaskProgress,
     TaskStatus,
 )
-from servicelib.long_running_tasks.task import TaskContext, start_task
+from servicelib.long_running_tasks.task import TaskContext
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -74,8 +74,7 @@ def server_routes() -> APIRouter:
             get_long_running_manager
         ),
     ) -> TaskId:
-        task_id = start_task(
-            long_running_manager.tasks_manager,
+        task_id = long_running_manager.tasks_manager.start_task(
             _string_list_task,
             num_strings=num_strings,
             sleep_time=sleep_time,

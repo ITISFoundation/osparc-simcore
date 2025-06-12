@@ -13,7 +13,6 @@ from servicelib.long_running_tasks.models import (
     TaskId,
     TaskProgress,
 )
-from servicelib.long_running_tasks.task import start_task
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_result
@@ -112,8 +111,7 @@ async def delete_service_containers(
         )
 
     try:
-        return start_task(
-            long_running_manager.tasks_manager,
+        return long_running_manager.tasks_manager.start_task(
             task=_task_remove_service_containers,  # type: ignore[arg-type]
             unique=True,
             node_uuid=node_uuid,
@@ -173,8 +171,7 @@ async def save_service_state(
         )
 
     try:
-        return start_task(
-            long_running_manager.tasks_manager,
+        return long_running_manager.tasks_manager.start_task(
             task=_task_save_service_state,  # type: ignore[arg-type]
             unique=True,
             node_uuid=node_uuid,
@@ -216,8 +213,7 @@ async def push_service_outputs(
         )
 
     try:
-        return start_task(
-            long_running_manager.tasks_manager,
+        return long_running_manager.tasks_manager.start_task(
             task=_task_push_service_outputs,  # type: ignore[arg-type]
             unique=True,
             node_uuid=node_uuid,
@@ -254,8 +250,7 @@ async def delete_service_docker_resources(
         )
 
     try:
-        return start_task(
-            long_running_manager.tasks_manager,
+        return long_running_manager.tasks_manager.start_task(
             task=_task_cleanup_service_docker_resources,  # type: ignore[arg-type]
             unique=True,
             node_uuid=node_uuid,

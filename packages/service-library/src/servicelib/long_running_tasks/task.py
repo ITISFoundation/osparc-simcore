@@ -34,6 +34,15 @@ TrackedTaskGroupDict: TypeAlias = dict[TaskId, TrackedTask]
 TaskContext: TypeAlias = dict[str, Any]
 
 
+class TaskProtocol(Protocol):
+    async def __call__(
+        self, progress: TaskProgress, *args: Any, **kwargs: Any
+    ) -> Any: ...
+
+    @property
+    def __name__(self) -> str: ...
+
+
 async def _await_task(task: asyncio.Task) -> None:
     await task
 
@@ -177,7 +186,7 @@ class TasksManager:
                 )
         return tasks
 
-    def add_task(
+    def _add_task(
         self,
         task_name: TaskName,
         task: asyncio.Task,
@@ -323,93 +332,85 @@ class TasksManager:
         finally:
             del self._tasks_groups[tracked_task.task_name][task_id]
 
+    def start_task(
+        self,
+        task: TaskProtocol,
+        *,
+        unique: bool = False,
+        task_context: TaskContext | None = None,
+        task_name: str | None = None,
+        fire_and_forget: bool = False,
+        **task_kwargs: Any,
+    ) -> TaskId:
+        """
+        Creates a background task from an async function.
 
-class TaskProtocol(Protocol):
-    async def __call__(
-        self, progress: TaskProgress, *args: Any, **kwargs: Any
-    ) -> Any: ...
+        An asyncio task will be created out of it by injecting a `TaskProgress` as the first
+        positional argument and adding all `handler_kwargs` as named parameters.
 
-    @property
-    def __name__(self) -> str: ...
+        NOTE: the progress is automatically bounded between 0 and 1
+        NOTE: the `task` name must be unique in the module, otherwise when using
+            the unique parameter is True, it will not be able to distinguish between
+            them.
 
+        Args:
+            tasks_manager (TasksManager): the tasks manager
+            task (TaskProtocol): the tasks to be run in the background
+            unique (bool, optional): If True, then only one such named task may be run. Defaults to False.
+            task_context (Optional[TaskContext], optional): a task context storage can be retrieved during the task lifetime. Defaults to None.
+            task_name (Optional[str], optional): optional task name. Defaults to None.
+            fire_and_forget: if True, then the task will not be cancelled if the status is never called
 
-def start_task(
-    tasks_manager: TasksManager,
-    task: TaskProtocol,
-    *,
-    unique: bool = False,
-    task_context: TaskContext | None = None,
-    task_name: str | None = None,
-    fire_and_forget: bool = False,
-    **task_kwargs: Any,
-) -> TaskId:
-    """
-    Creates a background task from an async function.
+        Raises:
+            TaskAlreadyRunningError: if unique is True, will raise if more than 1 such named task is started
 
-    An asyncio task will be created out of it by injecting a `TaskProgress` as the first
-    positional argument and adding all `handler_kwargs` as named parameters.
+        Returns:
+            TaskId: the task unique identifier
+        """
 
-    NOTE: the progress is automatically bounded between 0 and 1
-    NOTE: the `task` name must be unique in the module, otherwise when using
-        the unique parameter is True, it will not be able to distinguish between
-        them.
+        # NOTE: If not task name is given, it will be composed of the handler's module and it's name
+        # to keep the urls shorter and more meaningful.
+        handler_module = inspect.getmodule(task)
+        handler_module_name = handler_module.__name__ if handler_module else ""
+        task_name = task_name or f"{handler_module_name}.{task.__name__}"
+        task_name = urllib.parse.quote(task_name, safe="")
 
-    Args:
-        tasks_manager (TasksManager): the tasks manager
-        task (TaskProtocol): the tasks to be run in the background
-        unique (bool, optional): If True, then only one such named task may be run. Defaults to False.
-        task_context (Optional[TaskContext], optional): a task context storage can be retrieved during the task lifetime. Defaults to None.
-        task_name (Optional[str], optional): optional task name. Defaults to None.
-        fire_and_forget: if True, then the task will not be cancelled if the status is never called
+        # only one unique task can be running
+        if unique and self.is_task_running(task_name):
+            managed_tasks_ids = list(self.get_task_group(task_name).keys())
+            assert len(managed_tasks_ids) == 1  # nosec
+            managed_task: TrackedTask = self.get_task_group(task_name)[
+                managed_tasks_ids[0]
+            ]
+            raise TaskAlreadyRunningError(
+                task_name=task_name, managed_task=managed_task
+            )
 
-    Raises:
-        TaskAlreadyRunningError: if unique is True, will raise if more than 1 such named task is started
+        task_id = self.create_task_id(task_name=task_name)
+        task_progress = TaskProgress.create(task_id=task_id)
 
-    Returns:
-        TaskId: the task unique identifier
-    """
+        # bind the task with progress 0 and 1
+        async def _progress_task(progress: TaskProgress, handler: TaskProtocol):
+            progress.update(message="starting", percent=0)
+            try:
+                return await handler(progress, **task_kwargs)
+            finally:
+                progress.update(message="finished", percent=1)
 
-    # NOTE: If not task name is given, it will be composed of the handler's module and it's name
-    # to keep the urls shorter and more meaningful.
-    handler_module = inspect.getmodule(task)
-    handler_module_name = handler_module.__name__ if handler_module else ""
-    task_name = task_name or f"{handler_module_name}.{task.__name__}"
-    task_name = urllib.parse.quote(task_name, safe="")
+        async_task = asyncio.create_task(
+            _progress_task(task_progress, task), name=task_name
+        )
 
-    # only one unique task can be running
-    if unique and tasks_manager.is_task_running(task_name):
-        managed_tasks_ids = list(tasks_manager.get_task_group(task_name).keys())
-        assert len(managed_tasks_ids) == 1  # nosec
-        managed_task: TrackedTask = tasks_manager.get_task_group(task_name)[
-            managed_tasks_ids[0]
-        ]
-        raise TaskAlreadyRunningError(task_name=task_name, managed_task=managed_task)
+        tracked_task = self._add_task(
+            task_name=task_name,
+            task=async_task,
+            task_progress=task_progress,
+            task_context=task_context or {},
+            fire_and_forget=fire_and_forget,
+            task_id=task_id,
+        )
 
-    task_id = tasks_manager.create_task_id(task_name=task_name)
-    task_progress = TaskProgress.create(task_id=task_id)
-
-    # bind the task with progress 0 and 1
-    async def _progress_task(progress: TaskProgress, handler: TaskProtocol):
-        progress.update(message="starting", percent=0)
-        try:
-            return await handler(progress, **task_kwargs)
-        finally:
-            progress.update(message="finished", percent=1)
-
-    async_task = asyncio.create_task(
-        _progress_task(task_progress, task), name=f"{task_name}"
-    )
-
-    tracked_task = tasks_manager.add_task(
-        task_name=task_name,
-        task=async_task,
-        task_progress=task_progress,
-        task_context=task_context or {},
-        fire_and_forget=fire_and_forget,
-        task_id=task_id,
-    )
-
-    return tracked_task.task_id
+        return tracked_task.task_id
 
 
 __all__: tuple[str, ...] = (

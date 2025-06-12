@@ -25,7 +25,6 @@ from servicelib.long_running_tasks.models import (
     TaskId,
     TaskProgress,
 )
-from servicelib.long_running_tasks.task import start_task
 
 TASK_SLEEP_INTERVAL: Final[PositiveFloat] = 0.1
 
@@ -60,7 +59,7 @@ def user_routes() -> APIRouter:
             FastAPILongRunningManager, Depends(get_long_running_manager)
         ],
     ) -> TaskId:
-        return start_task(long_running_manager.tasks_manager, task=a_test_task)
+        return long_running_manager.tasks_manager.start_task(task=a_test_task)
 
     @router.get("/api/failing", status_code=status.HTTP_200_OK)
     async def create_task_which_fails(
@@ -68,7 +67,7 @@ def user_routes() -> APIRouter:
             FastAPILongRunningManager, Depends(get_long_running_manager)
         ],
     ) -> TaskId:
-        return start_task(long_running_manager.tasks_manager, task=a_failing_test_task)
+        return long_running_manager.tasks_manager.start_task(task=a_failing_test_task)
 
     return router
 

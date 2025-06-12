@@ -14,7 +14,7 @@ from ...long_running_tasks.constants import (
     DEFAULT_STALE_TASK_DETECT_TIMEOUT,
 )
 from ...long_running_tasks.models import TaskGet
-from ...long_running_tasks.task import TaskContext, TaskProtocol, start_task
+from ...long_running_tasks.task import TaskContext, TaskProtocol
 from ..typing_extension import Handler
 from . import _routes
 from ._constants import (
@@ -25,11 +25,11 @@ from ._error_handlers import base_long_running_error_handler
 from ._manager import AiohttpLongRunningManager, get_long_running_manager
 
 
-def no_ops_decorator(handler: Handler):
+def _no_ops_decorator(handler: Handler):
     return handler
 
 
-def no_task_context_decorator(handler: Handler):
+def _no_task_context_decorator(handler: Handler):
     @wraps(handler)
     async def _wrap(request: web.Request):
         request[RQT_LONG_RUNNING_TASKS_CONTEXT_KEY] = {}
@@ -55,8 +55,7 @@ async def start_long_running_task(
     task_name = _create_task_name_from_request(request_)
     task_id = None
     try:
-        task_id = start_task(
-            long_running_manager.tasks_manager,
+        task_id = long_running_manager.tasks_manager.start_task(
             task_,
             fire_and_forget=fire_and_forget,
             task_context=task_context,
@@ -121,8 +120,8 @@ def setup(
     app: web.Application,
     *,
     router_prefix: str,
-    handler_check_decorator: Callable = no_ops_decorator,
-    task_request_context_decorator: Callable = no_task_context_decorator,
+    handler_check_decorator: Callable = _no_ops_decorator,
+    task_request_context_decorator: Callable = _no_task_context_decorator,
     stale_task_check_interval: datetime.timedelta = DEFAULT_STALE_TASK_CHECK_INTERVAL,
     stale_task_detect_timeout: datetime.timedelta = DEFAULT_STALE_TASK_DETECT_TIMEOUT,
 ) -> None:
