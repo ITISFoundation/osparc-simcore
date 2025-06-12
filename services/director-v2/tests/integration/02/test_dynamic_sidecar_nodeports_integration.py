@@ -50,12 +50,12 @@ from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.host import get_localhost_ip
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from servicelib.fastapi.long_running_tasks.client import (
-    Client,
+from servicelib.fastapi.long_running_tasks.client import Client, periodic_task_result
+from servicelib.long_running_tasks.models import (
+    ProgressMessage,
+    ProgressPercent,
     TaskId,
-    periodic_task_result,
 )
-from servicelib.long_running_tasks.models import ProgressMessage, ProgressPercent
 from servicelib.progress_bar import ProgressBarData
 from servicelib.sequences_utils import pairwise
 from settings_library.rabbit import RabbitSettings
