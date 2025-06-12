@@ -443,7 +443,7 @@ async def test_clean_task_output_and_log_files_if_invalid(
     ]
 
     def _add_is_directory(entry: mock._Call) -> mock._Call:
-        new_kwargs: dict[str, Any] = deepcopy(entry.kwargs)
+        new_kwargs = dict(deepcopy(entry.kwargs))
         new_kwargs["is_directory"] = False
         return mock.call(**new_kwargs)
 
