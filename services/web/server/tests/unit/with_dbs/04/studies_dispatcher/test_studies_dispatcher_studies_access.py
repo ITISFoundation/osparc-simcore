@@ -299,15 +299,12 @@ async def test_access_study_anonymously(
     client: TestClient,
     published_project: ProjectDict,
     storage_subsystem_mock_override: None,
-    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     mock_dynamic_scheduler: None,
     director_v2_service_mock: AioResponsesMock,
     mocks_on_projects_api: None,
     # needed to cleanup the locks between parametrizations
     redis_locks_client: AsyncIterator[aioredis.Redis],
 ):
-    catalog_subsystem_mock([published_project])
-
     assert not _is_user_authenticated(client.session), "Is anonymous"
     assert client.app
     study_url = client.app.router["get_redirection_to_study_page"].url_for(
@@ -350,7 +347,6 @@ async def test_access_study_by_logged_user(
     logged_user: UserInfoDict,
     published_project: ProjectDict,
     storage_subsystem_mock_override: None,
-    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     mock_dynamic_scheduler: None,
     director_v2_service_mock: AioResponsesMock,
     mocks_on_projects_api: None,
@@ -359,7 +355,6 @@ async def test_access_study_by_logged_user(
     redis_locks_client: AsyncIterator[aioredis.Redis],
 ):
     assert client.app
-    catalog_subsystem_mock([published_project])
     assert _is_user_authenticated(client.session), "Is already logged-in"
 
     study_url = client.app.router["get_redirection_to_study_page"].url_for(
@@ -384,14 +379,12 @@ async def test_access_cookie_of_expired_user(
     client: TestClient,
     published_project: ProjectDict,
     storage_subsystem_mock_override: None,
-    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     director_v2_service_mock: AioResponsesMock,
     mock_dynamic_scheduler: None,
     mocks_on_projects_api: None,
     # needed to cleanup the locks between parametrizations
     redis_locks_client: AsyncIterator[aioredis.Redis],
 ):
-    catalog_subsystem_mock([published_project])
     # emulates issue #1570
     assert client.app  # nosec
     app: web.Application = client.app
@@ -469,14 +462,12 @@ async def test_guest_user_is_not_garbage_collected(
     aiohttp_client: Callable,
     published_project: ProjectDict,
     storage_subsystem_mock_override: None,
-    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     mock_dynamic_scheduler: None,
     director_v2_service_mock: AioResponsesMock,
     mocks_on_projects_api: None,
     # needed to cleanup the locks between parametrizations
     redis_locks_client: AsyncIterator[aioredis.Redis],
 ):
-    catalog_subsystem_mock([published_project])
     ## NOTE: use pytest -s --log-cli-level=DEBUG  to see GC logs
 
     async def _test_guest_user_workflow(request_index):
