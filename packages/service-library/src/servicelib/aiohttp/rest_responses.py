@@ -75,7 +75,9 @@ T_HTTPError = TypeVar("T_HTTPError", bound=HTTPError)
 def create_http_error(
     errors: list[Exception] | Exception,
     error_message: str | None = None,
-    http_error_cls: type[T_HTTPError] = web.HTTPInternalServerError,
+    http_error_cls: type[
+        T_HTTPError
+    ] = web.HTTPInternalServerError,  # type: ignore[assignment]
     *,
     status_reason: str | None = None,
     skip_internal_error_details: bool = False,
@@ -86,6 +88,7 @@ def create_http_error(
     - Can skip internal details when 500 status e.g. to avoid transmitting server
     exceptions to the client in production
     """
+
     status_reason = status_reason or get_code_display_name(http_error_cls.status_code)
     error_message = error_message or get_code_description(http_error_cls.status_code)
 

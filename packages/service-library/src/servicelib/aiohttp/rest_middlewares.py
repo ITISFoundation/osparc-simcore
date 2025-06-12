@@ -213,7 +213,9 @@ def error_middleware_factory(api_version: str) -> Middleware:
         return result
 
     # adds identifier (mostly for debugging)
-    _middleware_handler.__middleware_name__ = f"{__name__}.error_{api_version}"
+    setattr(  # noqa: B010
+        _middleware_handler, "__middleware_name__", f"{__name__}.error_{api_version}"
+    )
 
     return _middleware_handler
 
