@@ -110,7 +110,15 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         }
       }
       return false;
-    }
+    },
+
+    updateSpacing: function(mode, container) {
+      const spacing = mode === "grid" ? osparc.dashboard.GridButtonBase.SPACING : osparc.dashboard.ListButtonBase.SPACING;
+      container.getLayout().set({
+        spacingX: spacing,
+        spacingY: spacing
+      });
+    },
   },
 
   members: {
@@ -169,18 +177,6 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
     getFlatList: function() {
       return this.__nonGroupedContainer;
-    },
-
-    __createGroupContainer: function(groupId, headerLabel, headerColor = "text") {
-      const groupContainer = new osparc.dashboard.GroupedCardContainer().set({
-        groupId: groupId.toString(),
-        headerLabel,
-        headerIcon: "",
-        headerColor,
-        visibility: "excluded"
-      });
-      this.__groupedContainersList.push(groupContainer);
-      return groupContainer;
     },
 
     areMoreResourcesRequired: function(loadingResourcesBtn) {
@@ -325,15 +321,8 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
     __createFlatList: function() {
       const flatList = new osparc.dashboard.CardContainer();
-      const setContainerSpacing = () => {
-        const spacing = this.getMode() === "grid" ? osparc.dashboard.GridButtonBase.SPACING : osparc.dashboard.ListButtonBase.SPACING;
-        flatList.getLayout().set({
-          spacingX: spacing,
-          spacingY: spacing
-        });
-      };
-      setContainerSpacing();
-      this.addListener("changeMode", () => setContainerSpacing());
+      osparc.dashboard.ResourceContainerManager.updateSpacing(this.getMode(), flatList);
+      this.addListener("changeMode", () => osparc.dashboard.ResourceContainerManager.updateSpacing(this.getMode(), flatList));
       [
         "changeSelection",
         "changeVisibility"
@@ -341,6 +330,27 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         flatList.addListener(signalName, e => this.fireDataEvent(signalName, e.getData()), this);
       });
       return flatList;
+    },
+
+    __createGroupContainer: function(groupId, headerLabel, headerColor = "text") {
+      const groupContainer = new osparc.dashboard.GroupedCardContainer().set({
+        groupId: groupId.toString(),
+        headerLabel,
+        headerIcon: "",
+        headerColor,
+        visibility: "excluded"
+      });
+
+      this.bind("mode", groupContainer, "mode");
+      [
+        "changeSelection",
+        "changeVisibility"
+      ].forEach(signalName => {
+        groupContainer.addListener(signalName, e => this.fireDataEvent(signalName, e.getData()), this);
+      });
+
+      this.__groupedContainersList.push(groupContainer);
+      return groupContainer;
     },
 
     reloadCards: function(resourceType) {

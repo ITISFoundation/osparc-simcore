@@ -166,9 +166,11 @@ def main_changes_stats() -> None:
                 f'{",".join(to_versions) if to_versions else "🗑️ removed":10s}',
                 "|",
                 # how big the version change is
-                f"{tag_upgrade(sorted(set(before[name]))[-1], sorted(set(after[name]))[-1]):10s}"
-                if to_versions
-                else "",
+                (
+                    f"{tag_upgrade(sorted(set(before[name]))[-1], sorted(set(after[name]))[-1]):10s}"
+                    if to_versions
+                    else ""
+                ),
                 "|",
                 counts[name],
                 "|",
@@ -279,7 +281,7 @@ def main() -> None:
     if args.changed_reqs:
         main_changes_stats()
     else:
-        repo_wide_changes(exclude={"*/director/*"})
+        repo_wide_changes(exclude={"*/director/*", "*/.cache/uv/*"})
 
 
 if __name__ == "__main__":

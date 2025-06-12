@@ -327,6 +327,16 @@ qx.Class.define("osparc.product.Utils", {
       return this.isS4LProduct() && licensesEnabled;
     },
 
+    getDefaultWelcomeCredits: function() {
+      switch (osparc.product.Utils.getProductName()) {
+        case "s4l":
+        case "s4lacad":
+          return 100;
+        default:
+          return 0;
+      }
+    },
+
     getIconUrl: function(asset = "Default.png") {
       const base = "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/icons"
       let url;
