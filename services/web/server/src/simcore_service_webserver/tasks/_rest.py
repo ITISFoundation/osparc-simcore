@@ -78,6 +78,7 @@ async def get_async_jobs(request: web.Request) -> web.Response:
         [
             TaskGet(
                 task_id=f"{job.job_id}",
+                task_name=job.job_name,
                 status_href=f"{request.url.with_path(str(request.app.router['get_async_job_status'].url_for(task_id=str(job.job_id))))}",
                 abort_href=f"{request.url.with_path(str(request.app.router['cancel_async_job'].url_for(task_id=str(job.job_id))))}",
                 result_href=f"{request.url.with_path(str(request.app.router['get_async_job_result'].url_for(task_id=str(job.job_id))))}",
