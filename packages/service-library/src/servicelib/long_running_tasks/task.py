@@ -314,7 +314,7 @@ class TasksManager:
 
     def _get_task_id(self, task_name: str, *, is_unique: bool) -> TaskId:
         unique_part = "unique" if is_unique else f"{uuid4()}"
-        return f"{self.namespace}_{task_name}_{unique_part}"
+        return f"{self.namespace}.{task_name}.{unique_part}"
 
     def start_task(
         self,
