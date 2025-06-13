@@ -12,7 +12,7 @@ How these tests works:
 import asyncio
 import json
 from collections.abc import AsyncIterator, Awaitable, Callable
-from typing import Final
+from typing import Annotated, Final
 
 import pytest
 from asgi_lifespan import LifespanManager
@@ -31,7 +31,7 @@ from servicelib.long_running_tasks.models import (
     TaskProgress,
     TaskStatus,
 )
-from servicelib.long_running_tasks.task import TaskContext
+from servicelib.long_running_tasks.task import TaskContext, TaskRegistry
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -42,7 +42,7 @@ ITEM_PUBLISH_SLEEP: Final[float] = 0.1
 
 
 async def _string_list_task(
-    task_progress: TaskProgress,
+    progress: TaskProgress,
     num_strings: int,
     sleep_time: float,
     fail: bool,
@@ -51,12 +51,15 @@ async def _string_list_task(
     for index in range(num_strings):
         generated_strings.append(f"{index}")
         await asyncio.sleep(sleep_time)
-        task_progress.update(message="generated item", percent=index / num_strings)
+        progress.update(message="generated item", percent=index / num_strings)
         if fail:
             msg = "We were asked to fail!!"
             raise RuntimeError(msg)
 
     return generated_strings
+
+
+TaskRegistry.register(_string_list_task)
 
 
 @pytest.fixture
@@ -69,18 +72,18 @@ def server_routes() -> APIRouter:
     async def create_string_list_task(
         num_strings: int,
         sleep_time: float,
+        long_running_manager: Annotated[
+            FastAPILongRunningManager, Depends(get_long_running_manager)
+        ],
+        *,
         fail: bool = False,
-        long_running_manager: FastAPILongRunningManager = Depends(
-            get_long_running_manager
-        ),
     ) -> TaskId:
-        task_id = long_running_manager.tasks_manager.start_task(
-            _string_list_task,
+        return long_running_manager.tasks_manager.start_task(
+            _string_list_task.__name__,
             num_strings=num_strings,
             sleep_time=sleep_time,
             fail=fail,
         )
-        return task_id
 
     return routes
 

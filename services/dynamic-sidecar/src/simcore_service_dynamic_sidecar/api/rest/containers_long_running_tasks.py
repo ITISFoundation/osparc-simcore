@@ -58,7 +58,7 @@ async def pull_user_servcices_docker_images(
 
     try:
         return long_running_manager.tasks_manager.start_task(
-            task=task_pull_user_servcices_docker_images,
+            task_pull_user_servcices_docker_images.__name__,
             unique=True,
             app=app,
             shared_store=shared_store,
@@ -98,7 +98,7 @@ async def create_service_containers_task(  # pylint: disable=too-many-arguments
 
     try:
         return long_running_manager.tasks_manager.start_task(
-            task=task_create_service_containers,
+            task_create_service_containers.__name__,
             unique=True,
             settings=settings,
             containers_create=containers_create,
@@ -131,7 +131,7 @@ async def runs_docker_compose_down_task(
 
     try:
         return long_running_manager.tasks_manager.start_task(
-            task=task_runs_docker_compose_down,
+            task_runs_docker_compose_down.__name__,
             unique=True,
             app=app,
             shared_store=shared_store,
@@ -162,7 +162,7 @@ async def state_restore_task(
 
     try:
         return long_running_manager.tasks_manager.start_task(
-            task=task_restore_state,
+            task_restore_state.__name__,
             unique=True,
             settings=settings,
             mounted_volumes=mounted_volumes,
@@ -192,7 +192,7 @@ async def state_save_task(
 
     try:
         return long_running_manager.tasks_manager.start_task(
-            task=task_save_state,
+            task_save_state.__name__,
             unique=True,
             settings=settings,
             mounted_volumes=mounted_volumes,
@@ -224,7 +224,7 @@ async def ports_inputs_pull_task(
 
     try:
         return long_running_manager.tasks_manager.start_task(
-            task=task_ports_inputs_pull,
+            task_ports_inputs_pull.__name__,
             unique=True,
             port_keys=port_keys,
             mounted_volumes=mounted_volumes,
@@ -256,7 +256,7 @@ async def ports_outputs_pull_task(
 
     try:
         return long_running_manager.tasks_manager.start_task(
-            task=task_ports_outputs_pull,
+            task_ports_outputs_pull.__name__,
             unique=True,
             port_keys=port_keys,
             mounted_volumes=mounted_volumes,
@@ -285,7 +285,7 @@ async def ports_outputs_push_task(
 
     try:
         return long_running_manager.tasks_manager.start_task(
-            task=task_ports_outputs_push,
+            task_ports_outputs_push.__name__,
             unique=True,
             outputs_manager=outputs_manager,
             app=app,
@@ -314,7 +314,7 @@ async def containers_restart_task(
 
     try:
         return long_running_manager.tasks_manager.start_task(
-            task=task_containers_restart,
+            task_containers_restart.__name__,
             unique=True,
             app=app,
             settings=settings,

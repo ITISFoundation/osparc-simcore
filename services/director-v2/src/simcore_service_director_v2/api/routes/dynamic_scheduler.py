@@ -13,6 +13,7 @@ from servicelib.long_running_tasks.models import (
     TaskId,
     TaskProgress,
 )
+from servicelib.long_running_tasks.task import TaskRegistry
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_result
@@ -99,25 +100,29 @@ async def delete_service_containers(
     ],
 ):
     async def _task_remove_service_containers(
-        task_progress: TaskProgress, node_uuid: NodeID
+        progress: TaskProgress, node_uuid: NodeID
     ) -> None:
         async def _progress_callback(
             message: ProgressMessage, percent: ProgressPercent | None, _: TaskId
         ) -> None:
-            task_progress.update(message=message, percent=percent)
+            progress.update(message=message, percent=percent)
 
         await dynamic_sidecars_scheduler.remove_service_containers(
             node_uuid=node_uuid, progress_callback=_progress_callback
         )
 
+    TaskRegistry.register(_task_remove_service_containers)
+
     try:
         return long_running_manager.tasks_manager.start_task(
-            task=_task_remove_service_containers,  # type: ignore[arg-type]
+            _task_remove_service_containers.__name__,
             unique=True,
             node_uuid=node_uuid,
         )
     except TaskAlreadyRunningError as e:
         raise HTTPException(status.HTTP_409_CONFLICT, detail=f"{e}") from e
+    finally:
+        TaskRegistry.unregister(_task_remove_service_containers)
 
 
 @router.get(
@@ -158,26 +163,30 @@ async def save_service_state(
     ],
 ):
     async def _task_save_service_state(
-        task_progress: TaskProgress,
+        progress: TaskProgress,
         node_uuid: NodeID,
     ) -> None:
         async def _progress_callback(
             message: ProgressMessage, percent: ProgressPercent | None, _: TaskId
         ) -> None:
-            task_progress.update(message=message, percent=percent)
+            progress.update(message=message, percent=percent)
 
         await dynamic_sidecars_scheduler.save_service_state(
             node_uuid=node_uuid, progress_callback=_progress_callback
         )
 
+    TaskRegistry.register(_task_save_service_state)
+
     try:
         return long_running_manager.tasks_manager.start_task(
-            task=_task_save_service_state,  # type: ignore[arg-type]
+            _task_save_service_state.__name__,
             unique=True,
             node_uuid=node_uuid,
         )
     except TaskAlreadyRunningError as e:
         raise HTTPException(status.HTTP_409_CONFLICT, detail=f"{e}") from e
+    finally:
+        TaskRegistry.unregister(_task_save_service_state)
 
 
 @router.post(
@@ -201,16 +210,18 @@ async def push_service_outputs(
     ],
 ):
     async def _task_push_service_outputs(
-        task_progress: TaskProgress, node_uuid: NodeID
+        progress: TaskProgress, node_uuid: NodeID
     ) -> None:
         async def _progress_callback(
             message: ProgressMessage, percent: ProgressPercent | None, _: TaskId
         ) -> None:
-            task_progress.update(message=message, percent=percent)
+            progress.update(message=message, percent=percent)
 
         await dynamic_sidecars_scheduler.push_service_outputs(
             node_uuid=node_uuid, progress_callback=_progress_callback
         )
+
+    TaskRegistry.register(_task_push_service_outputs)
 
     try:
         return long_running_manager.tasks_manager.start_task(
@@ -220,6 +231,8 @@ async def push_service_outputs(
         )
     except TaskAlreadyRunningError as e:
         raise HTTPException(status.HTTP_409_CONFLICT, detail=f"{e}") from e
+    finally:
+        TaskRegistry.unregister(_task_push_service_outputs)
 
 
 @router.delete(
@@ -243,11 +256,13 @@ async def delete_service_docker_resources(
     ],
 ):
     async def _task_cleanup_service_docker_resources(
-        task_progress: TaskProgress, node_uuid: NodeID
+        progress: TaskProgress, node_uuid: NodeID
     ) -> None:
         await dynamic_sidecars_scheduler.remove_service_sidecar_proxy_docker_networks_and_volumes(
-            task_progress=task_progress, node_uuid=node_uuid
+            task_progress=progress, node_uuid=node_uuid
         )
+
+    TaskRegistry.register(_task_cleanup_service_docker_resources)
 
     try:
         return long_running_manager.tasks_manager.start_task(
@@ -257,6 +272,8 @@ async def delete_service_docker_resources(
         )
     except TaskAlreadyRunningError as e:
         raise HTTPException(status.HTTP_409_CONFLICT, detail=f"{e}") from e
+    finally:
+        TaskRegistry.unregister(_task_cleanup_service_docker_resources)
 
 
 @router.post(

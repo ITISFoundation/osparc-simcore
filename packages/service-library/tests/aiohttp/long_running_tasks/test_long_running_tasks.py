@@ -97,7 +97,7 @@ async def test_workflow(
     # now get the result
     result_url = client.app.router["get_task_result"].url_for(task_id=task_id)
     result = await client.get(f"{result_url}")
-    task_result, error = await assert_status(result, status.HTTP_201_CREATED)
+    task_result, error = await assert_status(result, status.HTTP_200_OK)
     assert task_result
     assert not error
     assert task_result == [f"{x}" for x in range(10)]

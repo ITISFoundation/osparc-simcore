@@ -43,6 +43,7 @@ from servicelib.common_headers import (
     X_SIMCORE_USER_AGENT,
 )
 from servicelib.long_running_tasks.models import TaskProgress
+from servicelib.long_running_tasks.task import TaskRegistry
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rabbitmq import RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
@@ -289,11 +290,12 @@ async def start_node(request: web.Request) -> web.Response:
 
 
 async def _stop_dynamic_service_task(
-    _task_progress: TaskProgress,
+    progress: TaskProgress,
     *,
     app: web.Application,
     dynamic_service_stop: DynamicServiceStop,
 ):
+    _ = progress
     # NOTE: _handle_project_nodes_exceptions only decorate handlers
     try:
         await dynamic_scheduler_service.stop_dynamic_service(
@@ -308,6 +310,9 @@ async def _stop_dynamic_service_task(
     except ServiceWasNotFoundError:
         # in case the service is not found reply as all OK
         return web.json_response(status=status.HTTP_204_NO_CONTENT)
+
+
+TaskRegistry.register(_stop_dynamic_service_task)
 
 
 @routes.post(
@@ -334,7 +339,7 @@ async def stop_node(request: web.Request) -> web.Response:
 
     return await start_long_running_task(
         request,
-        _stop_dynamic_service_task,  # type: ignore[arg-type] # @GitHK, @pcrespov this one I don't know how to fix
+        _stop_dynamic_service_task.__name__,
         task_context=jsonable_encoder(req_ctx),
         # task arguments from here on ---
         app=request.app,

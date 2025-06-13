@@ -14,7 +14,7 @@ from ...long_running_tasks.constants import (
     DEFAULT_STALE_TASK_DETECT_TIMEOUT,
 )
 from ...long_running_tasks.models import TaskGet
-from ...long_running_tasks.task import TaskContext, TaskProtocol
+from ...long_running_tasks.task import RegisteredTaskName, TaskContext
 from ..typing_extension import Handler
 from . import _routes
 from ._constants import (
@@ -45,7 +45,7 @@ def _create_task_name_from_request(request: web.Request) -> str:
 async def start_long_running_task(
     # NOTE: positional argument are suffixed with "_" to avoid name conflicts with "task_kwargs" keys
     request_: web.Request,
-    task_: TaskProtocol,
+    registerd_task_name: RegisteredTaskName,
     *,
     fire_and_forget: bool = False,
     task_context: TaskContext,
@@ -56,7 +56,7 @@ async def start_long_running_task(
     task_id = None
     try:
         task_id = long_running_manager.tasks_manager.start_task(
-            task_,
+            registerd_task_name,
             fire_and_forget=fire_and_forget,
             task_context=task_context,
             task_name=task_name,

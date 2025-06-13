@@ -25,6 +25,7 @@ from servicelib.long_running_tasks.models import (
     TaskId,
     TaskProgress,
 )
+from servicelib.long_running_tasks.task import TaskRegistry
 
 TASK_SLEEP_INTERVAL: Final[PositiveFloat] = 0.1
 
@@ -38,15 +39,23 @@ async def _assert_task_removed(
     assert result.status_code == status.HTTP_404_NOT_FOUND
 
 
-async def a_test_task(task_progress: TaskProgress) -> int:
+async def a_test_task(progress: TaskProgress) -> int:
+    _ = progress
     await asyncio.sleep(TASK_SLEEP_INTERVAL)
     return 42
 
 
-async def a_failing_test_task(task_progress: TaskProgress) -> None:
+TaskRegistry.register(a_test_task)
+
+
+async def a_failing_test_task(progress: TaskProgress) -> None:
+    _ = progress
     await asyncio.sleep(TASK_SLEEP_INTERVAL)
     msg = "I am failing as requested"
     raise RuntimeError(msg)
+
+
+TaskRegistry.register(a_failing_test_task)
 
 
 @pytest.fixture
@@ -59,7 +68,7 @@ def user_routes() -> APIRouter:
             FastAPILongRunningManager, Depends(get_long_running_manager)
         ],
     ) -> TaskId:
-        return long_running_manager.tasks_manager.start_task(task=a_test_task)
+        return long_running_manager.tasks_manager.start_task(a_test_task.__name__)
 
     @router.get("/api/failing", status_code=status.HTTP_200_OK)
     async def create_task_which_fails(
@@ -67,7 +76,9 @@ def user_routes() -> APIRouter:
             FastAPILongRunningManager, Depends(get_long_running_manager)
         ],
     ) -> TaskId:
-        return long_running_manager.tasks_manager.start_task(task=a_failing_test_task)
+        return long_running_manager.tasks_manager.start_task(
+            a_failing_test_task.__name__
+        )
 
     return router
 

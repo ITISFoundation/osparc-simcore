@@ -6,7 +6,7 @@ import traceback
 import urllib.parse
 from collections import deque
 from contextlib import suppress
-from typing import Any, Final, Protocol, TypeAlias
+from typing import Any, ClassVar, Final, Protocol, TypeAlias
 from uuid import uuid4
 
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
@@ -21,6 +21,7 @@ from .errors import (
     TaskExceptionError,
     TaskNotCompletedError,
     TaskNotFoundError,
+    TaskNotRegisteredError,
 )
 from .models import TaskId, TaskStatus, TrackedTask
 
@@ -35,6 +36,7 @@ _CANCEL_TASK_TIMEOUT: Final[PositiveFloat] = datetime.timedelta(
     seconds=1
 ).total_seconds()
 
+RegisteredTaskName: TypeAlias = str
 Namespace: TypeAlias = str
 TrackedTaskGroupDict: TypeAlias = dict[TaskId, TrackedTask]
 TaskContext: TypeAlias = dict[str, Any]
@@ -47,6 +49,19 @@ class TaskProtocol(Protocol):
 
     @property
     def __name__(self) -> str: ...
+
+
+class TaskRegistry:
+    REGISTERED_TASKS: ClassVar[dict[RegisteredTaskName, TaskProtocol]] = {}
+
+    @classmethod
+    def register(cls, task: TaskProtocol) -> None:
+        cls.REGISTERED_TASKS[task.__name__] = task
+
+    @classmethod
+    def unregister(cls, task: TaskProtocol) -> None:
+        if task.__name__ in cls.REGISTERED_TASKS:
+            del cls.REGISTERED_TASKS[task.__name__]
 
 
 async def _await_task(task: asyncio.Task) -> None:
@@ -318,7 +333,7 @@ class TasksManager:
 
     def start_task(
         self,
-        task: TaskProtocol,
+        registered_task_name: RegisteredTaskName,
         *,
         unique: bool = False,
         task_context: TaskContext | None = None,
@@ -351,6 +366,10 @@ class TasksManager:
         Returns:
             TaskId: the task unique identifier
         """
+        if registered_task_name not in TaskRegistry.REGISTERED_TASKS:
+            raise TaskNotRegisteredError(task_name=registered_task_name)
+
+        task = TaskRegistry.REGISTERED_TASKS[registered_task_name]
 
         # NOTE: If not task name is given, it will be composed of the handler's module and it's name
         # to keep the urls shorter and more meaningful.
