@@ -1,4 +1,4 @@
-""" Application's command line .
+"""Application's command line .
 
 Why does this file exist, and why not put this in __main__?
 
@@ -15,13 +15,12 @@ Why does this file exist, and why not put this in __main__?
 
 import logging
 import os
-from typing import Final
+from typing import Annotated, Final
 
 import typer
 from aiohttp import web
 from common_library.json_serialization import json_dumps
 from settings_library.utils_cli import create_settings_command
-from typing_extensions import Annotated
 
 from .application_settings import ApplicationSettings
 from .login import cli as login_cli
@@ -67,14 +66,22 @@ def _setup_app_from_settings(
 async def app_factory() -> web.Application:
     """Created to launch app from gunicorn (see docker/boot.sh)"""
     app_settings = ApplicationSettings.create_from_envs()
-    assert app_settings.SC_BUILD_TARGET  # nosec
 
     _logger.info(
         "Application settings: %s",
         json_dumps(app_settings, indent=2, sort_keys=True),
     )
 
-    app, _ = _setup_app_from_settings(app_settings)
+    _logger.info(
+        "Using application factory: %s", app_settings.WEBSERVER_APP_FACTORY_NAME
+    )
+
+    if app_settings.WEBSERVER_APP_FACTORY_NAME == "WEBSERVER_AUTHZ_APP_FACTORY":
+        from .application import create_application_authz
+
+        app = create_application_authz()
+    else:
+        app, _ = _setup_app_from_settings(app_settings)
 
     return app
 
