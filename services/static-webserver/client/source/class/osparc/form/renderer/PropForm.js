@@ -138,12 +138,14 @@ qx.Class.define("osparc.form.renderer.PropForm", {
     //
     __getHideablePorts: function() {
       const hideablePorts = [];
-      const portIds = this.getPortIds();
-      // if there is no minVisibleInputs defined, make at least 4 visible
-      const minVisibleInputs = this.getNode().getMinVisibleInputs() || 4;
+      const minVisibleInputs = this.getNode().getMinVisibleInputs();
+      if (minVisibleInputs === null) {
+        return hideablePorts;
+      }
       // start from the last port and check the port types
       // if all last ports are the same type, then mark them as hideable
       let hideablePortType = null;
+      const portIds = this.getPortIds();
       for (let i=portIds.length-1; i>=minVisibleInputs; i--) {
         const portId = portIds[i];
         const ctrl = this._form.getControl(portId);
