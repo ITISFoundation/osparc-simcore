@@ -13,6 +13,7 @@ Makefile                                           @pcrespov @sanderegg
 /api/                                              @sanderegg @pcrespov @matusdrobuliak66
 /ci/                                               @sanderegg @pcrespov
 /docs/                                             @pcrespov
+/packages/celery-library/                          @giancarloromeo
 /packages/common-library/                          @giancarloromeo
 /packages/models-library/                          @sanderegg @pcrespov @matusdrobuliak66 @giancarloromeo
 /packages/postgres-database/                       @matusdrobuliak66

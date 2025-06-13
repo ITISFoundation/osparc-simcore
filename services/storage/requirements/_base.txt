@@ -1,6 +1,7 @@
 aio-pika==9.5.4
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 aioboto3==14.3.0
     # via
@@ -12,18 +13,22 @@ aiocache==0.12.3
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 aiodebug==2.3.0
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 aiodocker==0.24.0
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 aiofiles==24.1.0
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/_base.in
     #   aioboto3
@@ -43,6 +48,18 @@ aiohttp==3.12.12
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -84,6 +101,9 @@ arrow==1.3.0
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
@@ -111,8 +131,8 @@ botocore==1.37.3
     #   s3transfer
 botocore-stubs==1.36.17
     # via types-aiobotocore
-celery==5.4.0
-    # via -r requirements/_base.in
+celery==5.5.2
+    # via -r requirements/../../../packages/celery-library/requirements/_base.in
 certifi==2025.1.31
     # via
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -127,6 +147,18 @@ certifi==2025.1.31
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -190,6 +222,7 @@ fastapi-pagination==0.12.34
 faststream==0.5.34
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 frozenlist==1.5.0
     # via
@@ -229,6 +262,18 @@ httpx==0.28.1
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -270,6 +315,18 @@ jinja2==3.1.5
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -294,11 +351,13 @@ jsonschema==4.23.0
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
 jsonschema-specifications==2024.10.1
     # via jsonschema
-kombu==5.4.2
+kombu==5.5.3
     # via celery
 mako==1.3.9
     # via
@@ -314,6 +373,18 @@ mako==1.3.9
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -345,6 +416,7 @@ multidict==6.1.0
 opentelemetry-api==1.30.0
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
@@ -365,6 +437,7 @@ opentelemetry-api==1.30.0
 opentelemetry-exporter-otlp==1.30.0
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-exporter-otlp-proto-common==1.30.0
     # via
@@ -407,14 +480,17 @@ opentelemetry-instrumentation-httpx==0.51b0
 opentelemetry-instrumentation-logging==0.51b0
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-redis==0.51b0
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-requests==0.51b0
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-propagator-aws-xray==1.0.2
     # via opentelemetry-instrumentation-botocore
@@ -426,6 +502,7 @@ opentelemetry-proto==1.30.0
 opentelemetry-sdk==1.30.0
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
@@ -461,6 +538,18 @@ orjson==3.10.15
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -483,6 +572,14 @@ orjson==3.10.15
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
@@ -514,6 +611,7 @@ protobuf==5.29.3
 psutil==6.1.1
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 psycopg2-binary==2.9.10
     # via sqlalchemy
@@ -533,6 +631,18 @@ pydantic==2.10.6
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -559,6 +669,17 @@ pydantic==2.10.6
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
@@ -590,6 +711,14 @@ pydantic-extra-types==2.10.2
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
@@ -613,6 +742,18 @@ pydantic-settings==2.7.0
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -631,6 +772,10 @@ pydantic-settings==2.7.0
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
@@ -640,6 +785,7 @@ pygments==2.19.1
 pyinstrument==5.0.1
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 python-dateutil==2.9.0.post0
     # via
@@ -667,6 +813,18 @@ pyyaml==6.0.2
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -682,6 +840,7 @@ pyyaml==6.0.2
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   uvicorn
 redis==5.2.1
@@ -698,6 +857,18 @@ redis==5.2.1
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -713,6 +884,7 @@ redis==5.2.1
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   celery
 referencing==0.35.1
@@ -729,6 +901,18 @@ referencing==0.35.1
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -751,6 +935,8 @@ rich==13.9.4
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   rich-toolkit
@@ -787,6 +973,18 @@ sqlalchemy==1.4.54
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -817,6 +1015,18 @@ starlette==0.45.3
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -835,24 +1045,30 @@ starlette==0.45.3
 stream-zip==0.0.83
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 tenacity==9.0.0
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/_base.in
 toolz==1.0.0
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 tqdm==4.67.1
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 typer==0.15.1
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/_base.in
@@ -889,10 +1105,49 @@ typing-extensions==4.12.2
     #   types-aiobotocore-ec2
     #   types-aiobotocore-s3
     #   types-aiobotocore-ssm
-tzdata==2025.1
+tzdata==2025.2
+    # via kombu
+ujson==5.10.0
     # via
-    #   celery
-    #   kombu
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   fastapi
 urllib3==2.3.0
     # via
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -907,6 +1162,18 @@ urllib3==2.3.0
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/celery-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -953,6 +1220,7 @@ wrapt==1.17.2
 yarl==1.18.3
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   aio-pika

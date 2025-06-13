@@ -87,6 +87,3 @@ class TaskStatus(BaseModel):
     @property
     def is_done(self) -> bool:
         return self.task_state in _TASK_DONE
-
-
-TaskId: TypeAlias = str
