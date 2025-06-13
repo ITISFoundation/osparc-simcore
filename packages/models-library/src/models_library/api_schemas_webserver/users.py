@@ -377,3 +377,7 @@ class MyPermissionGet(OutputSchema):
     @classmethod
     def from_domain_model(cls, permission: UserPermission) -> Self:
         return cls(name=permission.name, allowed=permission.allowed)
+
+
+class MyFunctionPermissionsGet(OutputSchema):
+    write_functions: bool
