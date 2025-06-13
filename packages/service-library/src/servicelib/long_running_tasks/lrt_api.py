@@ -1,7 +1,7 @@
 from typing import Any
 
 from .models import TaskBase, TaskId, TaskStatus
-from .task import RegisteredTaskName, TaskContext, TasksManager, TrackedTask
+from .task import RegisteredTaskName, TaskContext, TasksManager
 
 
 async def start_task(
@@ -52,10 +52,7 @@ async def start_task(
 def list_tasks(
     tasks_manager: TasksManager, task_context: TaskContext | None
 ) -> list[TaskBase]:
-    tracked_tasks: list[TrackedTask] = tasks_manager.list_tasks(
-        with_task_context=task_context
-    )
-    return [TaskBase(task_id=t.task_id) for t in tracked_tasks]
+    return tasks_manager.list_tasks(with_task_context=task_context)
 
 
 def get_task_status(

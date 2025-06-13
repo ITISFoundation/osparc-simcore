@@ -23,7 +23,7 @@ from .errors import (
     TaskNotFoundError,
     TaskNotRegisteredError,
 )
-from .models import TaskId, TaskStatus, TrackedTask
+from .models import TaskBase, TaskId, TaskStatus, TrackedTask
 
 _logger = logging.getLogger(__name__)
 
@@ -175,12 +175,14 @@ class TasksManager:
                 task_id, with_task_context=None, reraise_errors=False
             )
 
-    def list_tasks(self, with_task_context: TaskContext | None) -> list[TrackedTask]:
+    def list_tasks(self, with_task_context: TaskContext | None) -> list[TaskBase]:
         if not with_task_context:
-            return list(self._tracked_tasks.values())
+            return [
+                TaskBase(task_id=task.task_id) for task in self._tracked_tasks.values()
+            ]
 
         return [
-            task
+            TaskBase(task_id=task.task_id)
             for task in self._tracked_tasks.values()
             if task.task_context == with_task_context
         ]
