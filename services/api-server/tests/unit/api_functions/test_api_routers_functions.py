@@ -591,7 +591,7 @@ async def test_list_function_job_collections_with_function_filter(
     )
 
 
-@pytest.mark.parametrize("user_has_execute_ability", [False, True])
+@pytest.mark.parametrize("user_has_execute_right", [False, True])
 @pytest.mark.parametrize(
     "funcapi_endpoint,endpoint_inputs", [("run", {}), ("map", [{}, {}])]
 )
@@ -603,13 +603,12 @@ async def test_run_map_function_not_allowed(
     user_id: UserID,
     mocked_webserver_rest_api_base: respx.MockRouter,
     mocked_webserver_rpc_api: dict[str, MockType],
-    user_has_execute_ability: bool,
+    user_has_execute_right: bool,
     funcapi_endpoint: str,
     endpoint_inputs: dict | list[dict],
 ) -> None:
     """Test that running a function is not allowed."""
 
-    # Mock the function's user permissions and abilities
     mock_handler_in_functions_rpc_interface(
         "get_function_user_permissions",
         FunctionUserAccessRights(
@@ -620,10 +619,10 @@ async def test_run_map_function_not_allowed(
         ),
     )
     mock_handler_in_functions_rpc_interface(
-        "get_functions_user_abilities",
+        "get_functions_user_api_access_rights",
         FunctionUserApiAccessRights(
             user_id=user_id,
-            execute_functions=user_has_execute_ability,
+            execute_functions=user_has_execute_right,
             write_functions=True,
             read_functions=True,
         ),
@@ -640,7 +639,7 @@ async def test_run_map_function_not_allowed(
         json=endpoint_inputs,
         auth=auth,
     )
-    if user_has_execute_ability:
+    if user_has_execute_right:
         assert response.status_code == status.HTTP_403_FORBIDDEN
         assert response.json()["errors"][0] == (
             f"Function {mock_registered_function.uid} execute access denied for user {user_id}"

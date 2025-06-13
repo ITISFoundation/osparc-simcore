@@ -413,7 +413,7 @@ async def get_function_user_permissions(
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def get_functions_user_abilities(
+async def get_functions_user_api_access_rights(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     user_id: UserID,
@@ -421,7 +421,9 @@ async def get_functions_user_abilities(
 ) -> FunctionUserApiAccessRights:
     result = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python("get_functions_user_abilities"),
+        TypeAdapter(RPCMethodName).validate_python(
+            "get_functions_user_api_access_rights"
+        ),
         user_id=user_id,
         product_name=product_name,
     )

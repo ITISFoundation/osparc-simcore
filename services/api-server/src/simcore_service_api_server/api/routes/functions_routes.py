@@ -375,17 +375,17 @@ async def run_function(  # noqa: PLR0913
 ) -> RegisteredFunctionJob:
 
     # Make sure the user is allowed to execute any function
-    # (read/write ability is checked in the other endpoint called in this method)
-    user_abilities = await wb_api_rpc.get_functions_user_abilities(
+    # (read/write right is checked in the other endpoint called in this method)
+    user_api_access_rights = await wb_api_rpc.get_functions_user_api_access_rights(
         user_id=user_id, product_name=product_name
     )
-    if not user_abilities.execute_functions:
+    if not user_api_access_rights.execute_functions:
         raise FunctionsExecuteApiAccessDeniedError(
             user_id=user_id,
             function_id=function_id,
         )
     # Make sure the user is allowed to execute this particular function
-    # (read/write ability is checked in the other endpoint called in this method)
+    # (read/write right is checked in the other endpoint called in this method)
     user_permissions: FunctionUserAccessRights = (
         await wb_api_rpc.get_function_user_permissions(
             function_id=function_id, user_id=user_id, product_name=product_name

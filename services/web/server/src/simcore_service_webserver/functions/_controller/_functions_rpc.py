@@ -414,7 +414,7 @@ async def get_function_user_permissions(
 
 
 @router.expose(reraise_if_error_type=())
-async def get_functions_user_abilities(
+async def get_functions_user_api_access_rights(
     app: web.Application,
     *,
     user_id: UserID,
@@ -423,7 +423,7 @@ async def get_functions_user_abilities(
     """
     Returns a dictionary with the user's abilities for all function related objects.
     """
-    return await _functions_service.get_functions_user_abilities(
+    return await _functions_service.get_functions_user_api_access_rights(
         app=app,
         user_id=user_id,
         product_name=product_name,

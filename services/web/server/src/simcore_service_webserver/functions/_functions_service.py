@@ -448,7 +448,7 @@ async def get_function_user_permissions(
     )
 
 
-async def get_functions_user_abilities(
+async def get_functions_user_api_access_rights(
     app: web.Application,
     *,
     user_id: UserID,

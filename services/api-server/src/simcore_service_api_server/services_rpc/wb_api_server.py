@@ -544,13 +544,13 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             function_id=function_id,
         )
 
-    async def get_functions_user_abilities(
+    async def get_functions_user_api_access_rights(
         self,
         *,
         user_id: UserID,
         product_name: ProductName,
     ) -> FunctionUserApiAccessRights:
-        return await functions_rpc_interface.get_functions_user_abilities(
+        return await functions_rpc_interface.get_functions_user_api_access_rights(
             self._client,
             user_id=user_id,
             product_name=product_name,
