@@ -25,7 +25,7 @@ from servicelib.fastapi.long_running_tasks.server import (
     get_long_running_manager,
 )
 from servicelib.fastapi.long_running_tasks.server import setup as setup_server
-from servicelib.long_running_tasks import http_endpoint_responses
+from servicelib.long_running_tasks import lrt_api
 from servicelib.long_running_tasks.models import (
     TaskGet,
     TaskId,
@@ -79,7 +79,7 @@ def server_routes() -> APIRouter:
         *,
         fail: bool = False,
     ) -> TaskId:
-        return await http_endpoint_responses.start_task(
+        return await lrt_api.start_task(
             long_running_manager.tasks_manager,
             _string_list_task.__name__,
             num_strings=num_strings,

@@ -28,7 +28,7 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
 )
 from servicelib.aiohttp.rest_responses import create_data_response
-from servicelib.long_running_tasks import http_endpoint_responses
+from servicelib.long_running_tasks import lrt_api
 from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
 
 from .._meta import API_VTAG
@@ -57,7 +57,7 @@ _task_prefix: Final[str] = f"/{API_VTAG}/tasks"
 @webserver_request_context_decorator
 async def get_async_jobs(request: web.Request) -> web.Response:
     inprocess_long_running_manager = get_long_running_manager(request.app)
-    inprocess_tracked_tasks = http_endpoint_responses.list_tasks(
+    inprocess_tracked_tasks = lrt_api.list_tasks(
         inprocess_long_running_manager.tasks_manager,
         inprocess_long_running_manager.get_task_context(request),
     )

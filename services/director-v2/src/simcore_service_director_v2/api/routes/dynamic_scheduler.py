@@ -6,7 +6,7 @@ from models_library.projects_nodes_io import NodeID
 from pydantic import BaseModel, PositiveInt
 from servicelib.fastapi.long_running_tasks._manager import FastAPILongRunningManager
 from servicelib.fastapi.long_running_tasks.server import get_long_running_manager
-from servicelib.long_running_tasks import http_endpoint_responses
+from servicelib.long_running_tasks import lrt_api
 from servicelib.long_running_tasks.errors import TaskAlreadyRunningError
 from servicelib.long_running_tasks.models import (
     ProgressMessage,
@@ -115,7 +115,7 @@ async def delete_service_containers(
     TaskRegistry.register(_task_remove_service_containers)
 
     try:
-        return await http_endpoint_responses.start_task(
+        return await lrt_api.start_task(
             long_running_manager.tasks_manager,
             _task_remove_service_containers.__name__,
             unique=True,
@@ -180,7 +180,7 @@ async def save_service_state(
     TaskRegistry.register(_task_save_service_state)
 
     try:
-        return await http_endpoint_responses.start_task(
+        return await lrt_api.start_task(
             long_running_manager.tasks_manager,
             _task_save_service_state.__name__,
             unique=True,
@@ -227,7 +227,7 @@ async def push_service_outputs(
     TaskRegistry.register(_task_push_service_outputs)
 
     try:
-        return await http_endpoint_responses.start_task(
+        return await lrt_api.start_task(
             long_running_manager.tasks_manager,
             _task_push_service_outputs.__name__,
             unique=True,
@@ -269,7 +269,7 @@ async def delete_service_docker_resources(
     TaskRegistry.register(_task_cleanup_service_docker_resources)
 
     try:
-        return await http_endpoint_responses.start_task(
+        return await lrt_api.start_task(
             long_running_manager.tasks_manager,
             _task_cleanup_service_docker_resources.__name__,
             unique=True,

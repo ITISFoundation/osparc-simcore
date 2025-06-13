@@ -16,7 +16,7 @@ from servicelib.fastapi.long_running_tasks.client import Client, periodic_task_r
 from servicelib.fastapi.long_running_tasks.client import setup as setup_client
 from servicelib.fastapi.long_running_tasks.server import get_long_running_manager
 from servicelib.fastapi.long_running_tasks.server import setup as setup_server
-from servicelib.long_running_tasks import http_endpoint_responses
+from servicelib.long_running_tasks import lrt_api
 from servicelib.long_running_tasks.errors import (
     TaskClientTimeoutError,
 )
@@ -69,7 +69,7 @@ def user_routes() -> APIRouter:
             FastAPILongRunningManager, Depends(get_long_running_manager)
         ],
     ) -> TaskId:
-        return await http_endpoint_responses.start_task(
+        return await lrt_api.start_task(
             long_running_manager.tasks_manager, a_test_task.__name__
         )
 
@@ -79,7 +79,7 @@ def user_routes() -> APIRouter:
             FastAPILongRunningManager, Depends(get_long_running_manager)
         ],
     ) -> TaskId:
-        return await http_endpoint_responses.start_task(
+        return await lrt_api.start_task(
             long_running_manager.tasks_manager, a_failing_test_task.__name__
         )
 

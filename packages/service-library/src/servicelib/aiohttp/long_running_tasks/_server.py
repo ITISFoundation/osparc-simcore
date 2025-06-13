@@ -9,7 +9,7 @@ from common_library.json_serialization import json_dumps
 from pydantic import AnyHttpUrl, TypeAdapter
 
 from ...aiohttp import status
-from ...long_running_tasks import http_endpoint_responses
+from ...long_running_tasks import lrt_api
 from ...long_running_tasks.constants import (
     DEFAULT_STALE_TASK_CHECK_INTERVAL,
     DEFAULT_STALE_TASK_DETECT_TIMEOUT,
@@ -56,7 +56,7 @@ async def start_long_running_task(
     task_name = _create_task_name_from_request(request_)
     task_id = None
     try:
-        task_id = await http_endpoint_responses.start_task(
+        task_id = await lrt_api.start_task(
             long_running_manager.tasks_manager,
             registerd_task_name,
             fire_and_forget=fire_and_forget,

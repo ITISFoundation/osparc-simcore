@@ -12,7 +12,7 @@ from typing import Any, Final
 
 import pytest
 from faker import Faker
-from servicelib.long_running_tasks import http_endpoint_responses
+from servicelib.long_running_tasks import lrt_api
 from servicelib.long_running_tasks.errors import (
     TaskAlreadyRunningError,
     TaskCancelledError,
@@ -85,7 +85,7 @@ async def tasks_manager() -> AsyncIterator[TasksManager]:
 async def test_task_is_auto_removed(
     tasks_manager: TasksManager, check_task_presence_before: bool
 ):
-    task_id = await http_endpoint_responses.start_task(
+    task_id = await lrt_api.start_task(
         tasks_manager,
         a_background_task.__name__,
         raise_when_finished=False,
@@ -112,7 +112,7 @@ async def test_task_is_auto_removed(
 
 
 async def test_checked_task_is_not_auto_removed(tasks_manager: TasksManager):
-    task_id = await http_endpoint_responses.start_task(
+    task_id = await lrt_api.start_task(
         tasks_manager,
         a_background_task.__name__,
         raise_when_finished=False,
@@ -127,7 +127,7 @@ async def test_checked_task_is_not_auto_removed(tasks_manager: TasksManager):
 
 
 async def test_fire_and_forget_task_is_not_auto_removed(tasks_manager: TasksManager):
-    task_id = await http_endpoint_responses.start_task(
+    task_id = await lrt_api.start_task(
         tasks_manager,
         a_background_task.__name__,
         raise_when_finished=False,
@@ -146,7 +146,7 @@ async def test_fire_and_forget_task_is_not_auto_removed(tasks_manager: TasksMana
 
 
 async def test_get_result_of_unfinished_task_raises(tasks_manager: TasksManager):
-    task_id = await http_endpoint_responses.start_task(
+    task_id = await lrt_api.start_task(
         tasks_manager,
         a_background_task.__name__,
         raise_when_finished=False,
@@ -163,15 +163,11 @@ async def test_unique_task_already_running(tasks_manager: TasksManager):
 
     TaskRegistry.register(unique_task)
 
-    await http_endpoint_responses.start_task(
-        tasks_manager, unique_task.__name__, unique=True
-    )
+    await lrt_api.start_task(tasks_manager, unique_task.__name__, unique=True)
 
     # ensure unique running task regardless of how many times it gets started
     with pytest.raises(TaskAlreadyRunningError) as exec_info:
-        await http_endpoint_responses.start_task(
-            tasks_manager, unique_task.__name__, unique=True
-        )
+        await lrt_api.start_task(tasks_manager, unique_task.__name__, unique=True)
     assert "must be unique, found: " in f"{exec_info.value}"
 
     TaskRegistry.unregister(unique_task)
@@ -184,9 +180,7 @@ async def test_start_multiple_not_unique_tasks(tasks_manager: TasksManager):
     TaskRegistry.register(not_unique_task)
 
     for _ in range(5):
-        await http_endpoint_responses.start_task(
-            tasks_manager, not_unique_task.__name__
-        )
+        await lrt_api.start_task(tasks_manager, not_unique_task.__name__)
 
     TaskRegistry.unregister(not_unique_task)
 
@@ -199,7 +193,7 @@ def test_get_task_id(tasks_manager: TasksManager, faker: Faker, is_unique: bool)
 
 
 async def test_get_status(tasks_manager: TasksManager):
-    task_id = await http_endpoint_responses.start_task(
+    task_id = await lrt_api.start_task(
         tasks_manager,
         a_background_task.__name__,
         raise_when_finished=False,
@@ -220,9 +214,7 @@ async def test_get_status_missing(tasks_manager: TasksManager):
 
 
 async def test_get_result(tasks_manager: TasksManager):
-    task_id = await http_endpoint_responses.start_task(
-        tasks_manager, fast_background_task.__name__
-    )
+    task_id = await lrt_api.start_task(tasks_manager, fast_background_task.__name__)
     await asyncio.sleep(0.1)
     result = tasks_manager.get_task_result(task_id, with_task_context=None)
     assert result == 42
@@ -235,9 +227,7 @@ async def test_get_result_missing(tasks_manager: TasksManager):
 
 
 async def test_get_result_finished_with_error(tasks_manager: TasksManager):
-    task_id = await http_endpoint_responses.start_task(
-        tasks_manager, failing_background_task.__name__
-    )
+    task_id = await lrt_api.start_task(tasks_manager, failing_background_task.__name__)
     # wait for result
     async for attempt in AsyncRetrying(**_RETRY_PARAMS):
         with attempt:
@@ -250,7 +240,7 @@ async def test_get_result_finished_with_error(tasks_manager: TasksManager):
 async def test_get_result_task_was_cancelled_multiple_times(
     tasks_manager: TasksManager,
 ):
-    task_id = await http_endpoint_responses.start_task(
+    task_id = await lrt_api.start_task(
         tasks_manager,
         a_background_task.__name__,
         raise_when_finished=False,
@@ -266,7 +256,7 @@ async def test_get_result_task_was_cancelled_multiple_times(
 
 
 async def test_remove_task(tasks_manager: TasksManager):
-    task_id = await http_endpoint_responses.start_task(
+    task_id = await lrt_api.start_task(
         tasks_manager,
         a_background_task.__name__,
         raise_when_finished=False,
@@ -282,7 +272,7 @@ async def test_remove_task(tasks_manager: TasksManager):
 
 async def test_remove_task_with_task_context(tasks_manager: TasksManager):
     TASK_CONTEXT = {"some_context": "some_value"}
-    task_id = await http_endpoint_responses.start_task(
+    task_id = await lrt_api.start_task(
         tasks_manager,
         a_background_task.__name__,
         raise_when_finished=False,
@@ -315,7 +305,7 @@ async def test_remove_unknown_task(tasks_manager: TasksManager):
 
 async def test_cancel_task_with_task_context(tasks_manager: TasksManager):
     TASK_CONTEXT = {"some_context": "some_value"}
-    task_id = await http_endpoint_responses.start_task(
+    task_id = await lrt_api.start_task(
         tasks_manager,
         a_background_task.__name__,
         raise_when_finished=False,
@@ -342,7 +332,7 @@ async def test_list_tasks(tasks_manager: TasksManager):
     task_ids = []
     for _ in range(NUM_TASKS):
         task_ids.append(  # noqa: PERF401
-            await http_endpoint_responses.start_task(
+            await lrt_api.start_task(
                 tasks_manager,
                 a_background_task.__name__,
                 raise_when_finished=False,
@@ -358,20 +348,20 @@ async def test_list_tasks(tasks_manager: TasksManager):
 
 
 async def test_list_tasks_filtering(tasks_manager: TasksManager):
-    await http_endpoint_responses.start_task(
+    await lrt_api.start_task(
         tasks_manager,
         a_background_task.__name__,
         raise_when_finished=False,
         total_sleep=10,
     )
-    await http_endpoint_responses.start_task(
+    await lrt_api.start_task(
         tasks_manager,
         a_background_task.__name__,
         raise_when_finished=False,
         total_sleep=10,
         task_context={"user_id": 213},
     )
-    await http_endpoint_responses.start_task(
+    await lrt_api.start_task(
         tasks_manager,
         a_background_task.__name__,
         raise_when_finished=False,
@@ -400,7 +390,7 @@ async def test_list_tasks_filtering(tasks_manager: TasksManager):
 
 async def test_define_task_name(tasks_manager: TasksManager, faker: Faker):
     task_name = faker.name()
-    task_id = await http_endpoint_responses.start_task(
+    task_id = await lrt_api.start_task(
         tasks_manager,
         a_background_task.__name__,
         raise_when_finished=False,
@@ -412,4 +402,4 @@ async def test_define_task_name(tasks_manager: TasksManager, faker: Faker):
 
 async def test_start_not_registered_task(tasks_manager: TasksManager):
     with pytest.raises(TaskNotRegisteredError):
-        await http_endpoint_responses.start_task(tasks_manager, "not_registered_task")
+        await lrt_api.start_task(tasks_manager, "not_registered_task")
