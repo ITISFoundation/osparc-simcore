@@ -27,9 +27,9 @@ from .models import TaskId, TaskStatus, TrackedTask
 _logger = logging.getLogger(__name__)
 
 
-_DEFAULT_NAMESPACE: Final = (
-    "lrt"  # NOTE: for now only one is used, will change in future PRs
-)
+# NOTE: for now only this one is used, in future it will be unqiue per service
+# and this default will be removed and become mandatory
+_DEFAULT_NAMESPACE: Final = "lrt"
 
 _CANCEL_TASK_TIMEOUT: Final[PositiveFloat] = datetime.timedelta(
     seconds=1
