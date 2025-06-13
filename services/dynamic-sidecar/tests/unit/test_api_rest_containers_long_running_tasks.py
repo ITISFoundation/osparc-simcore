@@ -508,13 +508,15 @@ async def test_same_task_id_is_returned_if_task_exists(
 
     with mock_tasks(mocker):
         task_id = await _get_awaitable()
+        assert task_id.endswith("unique")
         async with auto_remove_task(client, task_id):
             assert await _get_awaitable() == task_id
 
         # since the previous task was already removed it is again possible
-        # to create a task
+        # to create a task and it will share the same task_id
         new_task_id = await _get_awaitable()
-        assert new_task_id != task_id
+        assert new_task_id.endswith("unique")
+        assert new_task_id == task_id
         async with auto_remove_task(client, task_id):
             pass
 
