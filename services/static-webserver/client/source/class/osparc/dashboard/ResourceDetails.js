@@ -147,17 +147,15 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       const toolbar = this.self().createToolbar();
       page.addToHeader(toolbar);
 
-      if (this.__resourceData["resourceType"] === "study") {
+      if (["study", "template"].includes(this.__resourceData["resourceType"])) {
         const payDebtButton = new qx.ui.form.Button(this.tr("Credits required"));
         page.payDebtButton = payDebtButton;
         osparc.dashboard.resources.pages.BasePage.decorateHeaderButton(payDebtButton);
         payDebtButton.addListener("execute", () => this.openBillingSettings());
-        if (this.__resourceData["resourceType"] === "study") {
-          const studyData = this.__resourceData;
-          payDebtButton.set({
-            visibility: osparc.study.Utils.isInDebt(studyData) ? "visible" : "excluded"
-          });
-        }
+        const studyData = this.__resourceData;
+        payDebtButton.set({
+          visibility: osparc.study.Utils.isInDebt(studyData) ? "visible" : "excluded"
+        });
         toolbar.add(payDebtButton);
       }
 
@@ -183,10 +181,10 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       });
       openButton.addListener("execute", () => this.__openTapped(openButton));
 
-      if (this.__resourceData["resourceType"] === "study") {
+      if (["study", "template"].includes(this.__resourceData["resourceType"])) {
         const studyData = this.__resourceData;
-        const canBeOpened = osparc.study.Utils.canBeOpened(studyData);
-        openButton.setEnabled(canBeOpened);
+        const enabled = osparc.study.Utils.canBeOpened(studyData);
+        openButton.setEnabled(enabled);
       }
 
       toolbar.add(openButton);
@@ -458,13 +456,11 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         const lazyLoadContent = () => {
           const billingSettings = new osparc.study.BillingSettings(resourceData);
           billingSettings.addListener("debtPayed", () => {
-            if (resourceData["resourceType"] === "study") {
-              page.payDebtButton.set({
-                visibility: osparc.study.Utils.isInDebt(resourceData) ? "visible" : "excluded"
-              });
-              const canBeOpened = osparc.study.Utils.canBeOpened(resourceData);
-              page.openButton.setEnabled(canBeOpened);
-            }
+            page.payDebtButton.set({
+              visibility: osparc.study.Utils.isInDebt(resourceData) ? "visible" : "excluded"
+            });
+            const enabled = osparc.study.Utils.canBeOpened(resourceData);
+            page.openButton.setEnabled(enabled);
           })
           const billingScroll = new qx.ui.container.Scroll(billingSettings);
           page.addToContent(billingScroll);
@@ -508,11 +504,9 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
       this.__addOpenButton(page);
 
-      if (this.__resourceData["resourceType"] === "study") {
-        const studyData = this.__resourceData;
-        const canBeOpened = osparc.study.Utils.canShowPreview(studyData);
-        page.setEnabled(canBeOpened);
-      }
+      const studyData = this.__resourceData;
+      const enabled = osparc.study.Utils.canShowPreview(studyData);
+      page.setEnabled(enabled);
 
       const lazyLoadContent = () => {
         const resourceModel = this.__resourceModel;
@@ -689,11 +683,9 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       const page = this.__servicesUpdatePage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
       this.__addOpenButton(page);
 
-      if (this.__resourceData["resourceType"] === "study") {
-        const studyData = this.__resourceData;
-        const canBeOpened = osparc.study.Utils.canShowServiceUpdates(studyData);
-        page.setEnabled(canBeOpened);
-      }
+      const studyData = this.__resourceData;
+      const enabled = osparc.study.Utils.canShowServiceUpdates(studyData);
+      page.setEnabled(enabled);
 
       const lazyLoadContent = () => {
         const servicesUpdate = new osparc.metadata.ServicesInStudyUpdate(resourceData);
@@ -723,11 +715,9 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
       this.__addOpenButton(page);
 
-      if (this.__resourceData["resourceType"] === "study") {
-        const studyData = this.__resourceData;
-        const canBeOpened = osparc.study.Utils.canShowServiceBootOptions(studyData);
-        page.setEnabled(canBeOpened);
-      }
+      const studyData = this.__resourceData;
+      const enabled = osparc.study.Utils.canShowServiceBootOptions(studyData);
+      page.setEnabled(enabled);
 
       const lazyLoadContent = () => {
         const servicesBootOpts = new osparc.metadata.ServicesInStudyBootOpts(resourceData);
@@ -776,11 +766,9 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         const title = this.tr("Publish");
         const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
 
-        if (this.__resourceData["resourceType"] === "study") {
-          const studyData = this.__resourceData;
-          const canBeOpened = osparc.study.Utils.canBeDuplicated(studyData);
-          page.setEnabled(canBeOpened);
-        }
+        const studyData = this.__resourceData;
+        const enabled = osparc.study.Utils.canBeDuplicated(studyData);
+        page.setEnabled(enabled);
 
         const lazyLoadContent = () => {
           const makeItPublic = true;
@@ -804,7 +792,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     __getCreateTemplatePage: function() {
       if (
         !osparc.utils.Resources.isStudy(this.__resourceData) ||
-        osparc.product.Utils.showTemplates()
+        !osparc.product.Utils.showTemplates()
       ) {
         return null;
       }
@@ -817,11 +805,9 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         const title = this.tr("Template");
         const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
 
-        if (this.__resourceData["resourceType"] === "study") {
-          const studyData = this.__resourceData;
-          const canBeOpened = osparc.study.Utils.canBeDuplicated(studyData);
-          page.setEnabled(canBeOpened);
-        }
+        const studyData = this.__resourceData;
+        const enabled = osparc.study.Utils.canBeDuplicated(studyData);
+        page.setEnabled(enabled);
 
         const lazyLoadContent = () => {
           const makeItPublic = false;

@@ -65,6 +65,7 @@ def cancel_async_job(
 
 @router.get(
     "/tasks/{task_id}/result",
+    response_model=Any,
     name="get_task_result",
     description="Retrieves the result of a task",
     responses=_export_data_responses,

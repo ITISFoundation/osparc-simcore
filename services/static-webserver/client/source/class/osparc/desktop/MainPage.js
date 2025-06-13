@@ -240,7 +240,8 @@ qx.Class.define("osparc.desktop.MainPage", {
       const params = {
         url: {
           "study_id": studyId,
-          "copy_data": copyData
+          "copy_data": copyData,
+          "hidden": false,
         },
       };
       const options = {
@@ -341,7 +342,7 @@ qx.Class.define("osparc.desktop.MainPage", {
           osparc.data.Resources.fetch("studies", "getOne", params2)
             .then(studyData => {
               if (!studyData) {
-                const msg = this.tr("Study not found");
+                const msg = this.tr("Project not found");
                 throw new Error(msg);
               }
               osparc.desktop.MainPageHandler.getInstance().loadStudy(studyData);

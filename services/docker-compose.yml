@@ -14,7 +14,7 @@ services:
     environment:
       API_SERVER_DEV_FEATURES_ENABLED: ${API_SERVER_DEV_FEATURES_ENABLED}
       API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
-      API_SERVER_LOG_FILTER_MAPPING : ${LOG_FILTER_MAPPING}
+      API_SERVER_LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
       API_SERVER_LOGLEVEL: ${API_SERVER_LOGLEVEL}
       API_SERVER_PROFILING: ${API_SERVER_PROFILING}
 
@@ -113,7 +113,7 @@ services:
       SSM_REGION_NAME: ${SSM_REGION_NAME}
 
       LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
-      LOG_FILTER_MAPPING : ${LOG_FILTER_MAPPING}
+      LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
       RABBIT_HOST: ${RABBIT_HOST}
       RABBIT_PASSWORD: ${RABBIT_PASSWORD}
       RABBIT_PORT: ${RABBIT_PORT}
@@ -162,7 +162,7 @@ services:
       DIRECTOR_HOST: ${DIRECTOR_HOST:-director}
       DIRECTOR_PORT: ${DIRECTOR_PORT:-8080}
       LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
-      LOG_FILTER_MAPPING : ${LOG_FILTER_MAPPING}
+      LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_HOST: ${POSTGRES_HOST}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -205,7 +205,7 @@ services:
       CLUSTERS_KEEPER_SSM_SECRET_ACCESS_KEY: ${CLUSTERS_KEEPER_SSM_SECRET_ACCESS_KEY}
       CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX: ${CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}
       LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
-      LOG_FILTER_MAPPING : ${LOG_FILTER_MAPPING}
+      LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
       CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES: ${CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES}
       PRIMARY_EC2_INSTANCES_ALLOWED_TYPES: ${PRIMARY_EC2_INSTANCES_ALLOWED_TYPES}
       PRIMARY_EC2_INSTANCES_KEY_NAME: ${PRIMARY_EC2_INSTANCES_KEY_NAME}
@@ -331,7 +331,7 @@ services:
       DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT: ${DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT}
 
       LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
-      LOG_FILTER_MAPPING : ${LOG_FILTER_MAPPING}
+      LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
       DIRECTOR_V2_LOGLEVEL: ${DIRECTOR_V2_LOGLEVEL}
       MONITORING_ENABLED: ${MONITORING_ENABLED}
 
@@ -412,7 +412,7 @@ services:
       - default
     environment:
       LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
-      LOG_FILTER_MAPPING : ${LOG_FILTER_MAPPING}
+      LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
       RABBIT_HOST: ${RABBIT_HOST}
       RABBIT_PASSWORD: ${RABBIT_PASSWORD}
       RABBIT_PORT: ${RABBIT_PORT}
@@ -456,7 +456,7 @@ services:
       INVITATIONS_SWAGGER_API_DOC_ENABLED: ${INVITATIONS_SWAGGER_API_DOC_ENABLED}
       INVITATIONS_USERNAME: ${INVITATIONS_USERNAME}
       LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
-      LOG_FILTER_MAPPING : ${LOG_FILTER_MAPPING}
+      LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
       INVITATIONS_TRACING: ${INVITATIONS_TRACING}
       TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT: ${TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT}
       TRACING_OPENTELEMETRY_COLLECTOR_PORT: ${TRACING_OPENTELEMETRY_COLLECTOR_PORT}
@@ -468,7 +468,7 @@ services:
       - default
     environment:
       LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
-      LOG_FILTER_MAPPING : ${LOG_FILTER_MAPPING}
+      LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
       PAYMENTS_ACCESS_TOKEN_EXPIRE_MINUTES: ${PAYMENTS_ACCESS_TOKEN_EXPIRE_MINUTES}
       PAYMENTS_ACCESS_TOKEN_SECRET_KEY: ${PAYMENTS_ACCESS_TOKEN_SECRET_KEY}
       PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT: ${PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT}
@@ -514,7 +514,7 @@ services:
       - default
     environment:
       LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
-      LOG_FILTER_MAPPING : ${LOG_FILTER_MAPPING}
+      LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_ENDPOINT: ${POSTGRES_ENDPOINT}
       POSTGRES_HOST: ${POSTGRES_HOST}
@@ -571,7 +571,7 @@ services:
       DYNAMIC_SCHEDULER_USE_INTERNAL_SCHEDULER: ${DYNAMIC_SCHEDULER_USE_INTERNAL_SCHEDULER}
       DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT: ${DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT}
 
-      LOG_FILTER_MAPPING : ${LOG_FILTER_MAPPING}
+      LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
       LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
 
       POSTGRES_DB: ${POSTGRES_DB}
@@ -599,7 +599,7 @@ services:
     init: true
     environment:
       DOCKER_API_PROXY_PASSWORD: ${DOCKER_API_PROXY_PASSWORD}
-      DOCKER_API_PROXY_USER : ${DOCKER_API_PROXY_USER}
+      DOCKER_API_PROXY_USER: ${DOCKER_API_PROXY_USER}
     deploy:
       placement:
         constraints:
@@ -608,7 +608,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
-     - docker-api-network
+      - docker-api-network
 
   static-webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:${DOCKER_IMAGE_TAG:-latest}
@@ -678,7 +678,7 @@ services:
       WEBSERVER_PROFILING: ${WEBSERVER_PROFILING}
 
       WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
-      WEBSERVER_LOG_FILTER_MAPPING : ${LOG_FILTER_MAPPING}
+      WEBSERVER_LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
 
       # WEBSERVER_SERVER_HOST
 
@@ -743,13 +743,12 @@ services:
       INVITATIONS_USERNAME: ${INVITATIONS_USERNAME}
 
       WEBSERVER_LICENSES: ${WEBSERVER_LICENSES}
-      LICENSES_ITIS_VIP_SYNCER_ENABLED : ${LICENSES_ITIS_VIP_SYNCER_ENABLED}
+      LICENSES_ITIS_VIP_SYNCER_ENABLED: ${LICENSES_ITIS_VIP_SYNCER_ENABLED}
       LICENSES_ITIS_VIP_SYNCER_PERIODICITY: ${LICENSES_ITIS_VIP_SYNCER_PERIODICITY}
       LICENSES_ITIS_VIP_API_URL: ${LICENSES_ITIS_VIP_API_URL}
       LICENSES_ITIS_VIP_CATEGORIES: ${LICENSES_ITIS_VIP_CATEGORIES}
       LICENSES_SPEAG_PHANTOMS_API_URL: ${LICENSES_SPEAG_PHANTOMS_API_URL}
       LICENSES_SPEAG_PHANTOMS_CATEGORIES: ${LICENSES_SPEAG_PHANTOMS_CATEGORIES}
-
 
       WEBSERVER_LOGIN: ${WEBSERVER_LOGIN}
       LOGIN_ACCOUNT_DELETION_RETENTION_DAYS: ${LOGIN_ACCOUNT_DELETION_RETENTION_DAYS}
@@ -828,7 +827,6 @@ services:
       PROJECTS_MAX_COPY_SIZE_BYTES: ${PROJECTS_MAX_COPY_SIZE_BYTES}
       PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES: ${PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES}
 
-
       # WEBSERVER_RABBITMQ
       RABBIT_HOST: ${RABBIT_HOST}
       RABBIT_PASSWORD: ${RABBIT_PASSWORD}
@@ -838,7 +836,6 @@ services:
 
       # WEBSERVER_TRASH
       TRASH_RETENTION_DAYS: ${TRASH_RETENTION_DAYS}
-
 
       # ARBITRARY ENV VARS
 
@@ -859,6 +856,9 @@ services:
       WEBSERVER_FOLDERS: ${WEBSERVER_FOLDERS}
 
     deploy:
+      # NOTE: having 2 replicas is necessary to detect early on if in-process tasks are mistakenly added to the webserver
+      # in case this cannot be done otherwise, the sticky rule below will need to be adapted
+      replicas: 2
       labels:
         - io.simcore.zone=${TRAEFIK_SIMCORE_ZONE}
         # gzip compression
@@ -870,12 +870,7 @@ services:
         - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.healthcheck.path=/v0/
         - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.healthcheck.interval=2000ms
         - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.healthcheck.timeout=1000ms
-        # NOTE: stickyness must remain until the long running tasks in the webserver are removed
-        # and also https://github.com/ITISFoundation/osparc-simcore/pull/4180 is resolved.
-        - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.sticky.cookie=true
-        - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.sticky.cookie.samesite=lax
-        - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.sticky.cookie.httponly=true
-        - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.sticky.cookie.secure=true
+        # NOTE: stickyness must remain only for specific endpoints, see https://github.com/ITISFoundation/osparc-simcore/pull/4180
         - traefik.http.middlewares.${SWARM_STACK_NAME}_webserver_retry.retry.attempts=2
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.service=${SWARM_STACK_NAME}_webserver
         # NOTE: keep in sync with fallback router (rule and entrypoint)
@@ -883,6 +878,26 @@ services:
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.entrypoints=http
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.priority=6
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.middlewares=${SWARM_STACK_NAME}_gzip@swarm, ${SWARM_STACK_NAME_NO_HYPHEN}_sslheader@swarm, ${SWARM_STACK_NAME}_webserver_retry
+        # Create a dedicated sticky service for specific endpoints
+        - traefik.http.services.${SWARM_STACK_NAME}_webserver_sticky.loadbalancer.server.port=8080
+        - traefik.http.services.${SWARM_STACK_NAME}_webserver_sticky.loadbalancer.healthcheck.path=/v0/
+        - traefik.http.services.${SWARM_STACK_NAME}_webserver_sticky.loadbalancer.healthcheck.interval=2000ms
+        - traefik.http.services.${SWARM_STACK_NAME}_webserver_sticky.loadbalancer.healthcheck.timeout=1000ms
+        - traefik.http.services.${SWARM_STACK_NAME}_webserver_sticky.loadbalancer.sticky.cookie=true
+        - traefik.http.services.${SWARM_STACK_NAME}_webserver_sticky.loadbalancer.sticky.cookie.secure=true
+        - traefik.http.services.${SWARM_STACK_NAME}_webserver_sticky.loadbalancer.sticky.cookie.httpOnly=true
+        - traefik.http.services.${SWARM_STACK_NAME}_webserver_sticky.loadbalancer.sticky.cookie.sameSite=lax
+        # Single consolidated router for all sticky endpoints
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky.rule=Path(`/v0/projects`) ||
+          Path(`/v0/projects:clone`) ||
+          PathRegexp(`^/v0/projects/[0-9a-fA-F-]+/nodes/[0-9a-fA-F-]+:stop`) ||
+          PathRegexp(`^/v0/storage/locations/[0-9]+/paths/.+:size`) ||
+          PathRegexp(`^/v0/storage/locations/[0-9]+/-/paths:batchDelete`) ||
+          PathRegexp(`^/v0/storage/locations/[0-9]+/export-data`) ||
+          PathRegexp(`^/v0/tasks-legacy/.+`)
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky.entrypoints=http
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky.service=${SWARM_STACK_NAME}_webserver_sticky
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky.middlewares=${SWARM_STACK_NAME}_gzip@swarm, ${SWARM_STACK_NAME_NO_HYPHEN}_sslheader@swarm, ${SWARM_STACK_NAME}_webserver_retry
     networks: &webserver_networks
       - default
       - interactive_services_subnet
@@ -897,7 +912,6 @@ services:
       WEBSERVER_PORT: ${WB_API_WEBSERVER_PORT}
       WEBSERVER_STATICWEB: "null"
       WEBSERVER_FUNCTIONS: ${WEBSERVER_FUNCTIONS} # needed for api-server
-
 
     networks: *webserver_networks
 
@@ -930,7 +944,7 @@ services:
 
       GUNICORN_CMD_ARGS: ${WEBSERVER_GUNICORN_CMD_ARGS}
       LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
-      LOG_FILTER_MAPPING : ${LOG_FILTER_MAPPING}
+      LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
       SWARM_STACK_NAME: ${SWARM_STACK_NAME}
       SESSION_SECRET_KEY: ${WEBSERVER_SESSION_SECRET_KEY}
       WEBSERVER_ACTIVITY: ${WB_DB_EL_ACTIVITY}
@@ -1000,7 +1014,7 @@ services:
 
       GUNICORN_CMD_ARGS: ${WEBSERVER_GUNICORN_CMD_ARGS}
 
-      LOG_FILTER_MAPPING : ${LOG_FILTER_MAPPING}
+      LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
       LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
 
       # WEBSERVER_DB
@@ -1079,7 +1093,6 @@ services:
       WEBSERVER_USERS: ${WB_GC_USERS}
       WEBSERVER_WALLETS: ${WB_GC_WALLETS}
 
-
     networks:
       - default
       - interactive_services_subnet
@@ -1100,7 +1113,7 @@ services:
     environment:
       AGENT_LOGLEVEL: ${AGENT_LOGLEVEL}
       LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
-      LOG_FILTER_MAPPING : ${LOG_FILTER_MAPPING}
+      LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
       AGENT_VOLUMES_CLEANUP_S3_ENDPOINT: ${AGENT_VOLUMES_CLEANUP_S3_ENDPOINT}
       AGENT_VOLUMES_CLEANUP_S3_REGION: ${AGENT_VOLUMES_CLEANUP_S3_REGION}
       AGENT_VOLUMES_CLEANUP_S3_ACCESS_KEY: ${AGENT_VOLUMES_CLEANUP_S3_ACCESS_KEY}
@@ -1124,7 +1137,7 @@ services:
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
 
     environment:
-      LOG_FILTER_MAPPING : ${LOG_FILTER_MAPPING}
+      LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
       LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
 
       NOTIFICATIONS_LOGLEVEL: ${NOTIFICATIONS_LOGLEVEL}
@@ -1146,7 +1159,6 @@ services:
       TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT: ${TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT}
       TRACING_OPENTELEMETRY_COLLECTOR_PORT: ${TRACING_OPENTELEMETRY_COLLECTOR_PORT}
 
-
   dask-sidecar:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
     init: true
@@ -1167,7 +1179,7 @@ services:
       DASK_TLS_CERT: ${DASK_TLS_CERT}
       DASK_SCHEDULER_HOST: ${DASK_SCHEDULER_HOST:-dask-scheduler}
       DASK_LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
-      DASK_LOG_FILTER_MAPPING : ${LOG_FILTER_MAPPING}
+      DASK_LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
       DASK_SIDECAR_LOGLEVEL: ${DASK_SIDECAR_LOGLEVEL}
       SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME: ${SWARM_STACK_NAME}_computational_shared_data
       SIDECAR_COMP_SERVICES_SHARED_FOLDER: ${SIDECAR_COMP_SERVICES_SHARED_FOLDER:-/home/scu/computational_shared_data}
@@ -1199,7 +1211,7 @@ services:
     networks:
       - storage_subnet
     environment:
-      DATCORE_ADAPTER_LOG_FILTER_MAPPING : ${LOG_FILTER_MAPPING}
+      DATCORE_ADAPTER_LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
       DATCORE_ADAPTER_LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
       DATCORE_ADAPTER_TRACING: ${DATCORE_ADAPTER_TRACING}
       TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT: ${TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT}
@@ -1212,7 +1224,7 @@ services:
     environment: &storage_environment
       DATCORE_ADAPTER_HOST: ${DATCORE_ADAPTER_HOST:-datcore-adapter}
       LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
-      LOG_FILTER_MAPPING : ${LOG_FILTER_MAPPING}
+      LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_ENDPOINT: ${POSTGRES_ENDPOINT}
       POSTGRES_HOST: ${POSTGRES_HOST}
@@ -1361,19 +1373,7 @@ services:
       # also aof (append only) is also enabled such that we get full durability at the expense
       # of backup size. The backup is written into /data.
       # https://redis.io/topics/persistence
-      [
-        "redis-server",
-        "--save",
-        "60 1",
-        "--loglevel",
-        "verbose",
-        "--databases",
-        "10",
-        "--appendonly",
-        "yes",
-        "--requirepass",
-        "${REDIS_PASSWORD}"
-      ]
+      [ "redis-server", "--save", "60 1", "--loglevel", "verbose", "--databases", "10", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}" ]
     networks:
       - default
       - autoscaling_subnet
