@@ -141,13 +141,25 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     __classifiersPage: null,
     __qualityPage: null,
 
-    __addOpenButton: function(page) {
+    __addToolbarButtons: function(page) {
       const resourceData = this.__resourceData;
 
       const toolbar = this.self().createToolbar();
       page.addToHeader(toolbar);
 
-      if (["study", "template"].includes(this.__resourceData["resourceType"])) {
+      if (["study", "template", "tutorial"].includes(resourceData["resourceType"])) {
+        const cantReadServices = osparc.study.Utils.getCantReadServices(resourceData["services"]);
+        if (cantReadServices.length) {
+          const requestAccessButton = new qx.ui.form.Button(this.tr("Request Access"));
+          osparc.dashboard.resources.pages.BasePage.decorateHeaderButton(requestAccessButton);
+          requestAccessButton.addListener("execute", () => {
+            console.log("cantReadServices", cantReadServices);
+          });
+          toolbar.add(requestAccessButton);
+        }
+      }
+
+      if (this.__resourceData["resourceType"] === "study") {
         const payDebtButton = new qx.ui.form.Button(this.tr("Credits required"));
         page.payDebtButton = payDebtButton;
         osparc.dashboard.resources.pages.BasePage.decorateHeaderButton(payDebtButton);
@@ -405,7 +417,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       const title = this.tr("Overview");
       const iconSrc = "@FontAwesome5Solid/info/22";
       const page = this.__infoPage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
-      this.__addOpenButton(page);
+      this.__addToolbarButtons(page);
 
       const lazyLoadContent = () => {
         const resourceData = this.__resourceData;
@@ -446,7 +458,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         const title = this.tr("Billing Settings");
         const iconSrc = "@FontAwesome5Solid/cogs/22";
         const page = this.__billingSettings = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
-        this.__addOpenButton(page);
+        this.__addToolbarButtons(page);
 
         if (resourceData["resourceType"] === "study") {
           const canBeOpened = osparc.study.Utils.canShowBillingOptions(resourceData);
@@ -473,7 +485,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         const title = this.tr("Tiers");
         const iconSrc = "@FontAwesome5Solid/server/22";
         const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
-        this.__addOpenButton(page);
+        this.__addToolbarButtons(page);
 
         const lazyLoadContent = () => {
           const pricingUnitsList = new osparc.service.PricingUnitsList(resourceData);
@@ -502,7 +514,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       const title = this.tr("Pipeline View");
       const iconSrc = "@FontAwesome5Solid/eye/22";
       const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
-      this.__addOpenButton(page);
+      this.__addToolbarButtons(page);
 
       const studyData = this.__resourceData;
       const enabled = osparc.study.Utils.canShowPreview(studyData);
@@ -528,7 +540,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       const title = this.tr("Conversations");
       const iconSrc = "@FontAwesome5Solid/comments/22";
       const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
-      this.__addOpenButton(page);
+      this.__addToolbarButtons(page);
 
       const lazyLoadContent = () => {
         const conversations = new osparc.study.Conversations(resourceData);
@@ -544,7 +556,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       const title = this.tr("Sharing");
       const iconSrc = "@FontAwesome5Solid/share-alt/22";
       const page = this.__permissionsPage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
-      this.__addOpenButton(page);
+      this.__addToolbarButtons(page);
 
       const lazyLoadContent = () => {
         const resourceData = this.__resourceData;
@@ -587,7 +599,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       const title = this.tr("Classifiers");
       const iconSrc = "@FontAwesome5Solid/search/22";
       const page = this.__classifiersPage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
-      this.__addOpenButton(page);
+      this.__addToolbarButtons(page);
 
       const lazyLoadContent = () => {
         const resourceData = this.__resourceData;
@@ -625,7 +637,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         const title = this.tr("Quality");
         const iconSrc = "@FontAwesome5Solid/star-half/22";
         const page = this.__qualityPage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
-        this.__addOpenButton(page);
+        this.__addToolbarButtons(page);
 
         const lazyLoadContent = () => {
           const qualityEditor = new osparc.metadata.QualityEditor(resourceData);
@@ -655,7 +667,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       const title = this.tr("Tags");
       const iconSrc = "@FontAwesome5Solid/tags/22";
       const page = this.__tagsPage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
-      this.__addOpenButton(page);
+      this.__addToolbarButtons(page);
 
       const lazyLoadContent = () => {
         const tagManager = new osparc.form.tag.TagManager(resourceData);
@@ -681,7 +693,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       const title = this.tr("Services Updates");
       const iconSrc = "@MaterialIcons/update/24";
       const page = this.__servicesUpdatePage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
-      this.__addOpenButton(page);
+      this.__addToolbarButtons(page);
 
       const studyData = this.__resourceData;
       const enabled = osparc.study.Utils.canShowServiceUpdates(studyData);
@@ -713,7 +725,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       const title = this.tr("Boot Options");
       const iconSrc = "@FontAwesome5Solid/play-circle/22";
       const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
-      this.__addOpenButton(page);
+      this.__addToolbarButtons(page);
 
       const studyData = this.__resourceData;
       const enabled = osparc.study.Utils.canShowServiceBootOptions(studyData);
