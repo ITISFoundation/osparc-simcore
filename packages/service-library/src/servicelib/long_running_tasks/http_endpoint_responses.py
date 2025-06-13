@@ -4,46 +4,6 @@ from .models import TaskBase, TaskId, TaskStatus
 from .task import RegisteredTaskName, TaskContext, TasksManager, TrackedTask
 
 
-def list_tasks(
-    tasks_manager: TasksManager, task_context: TaskContext | None
-) -> list[TaskBase]:
-    tracked_tasks: list[TrackedTask] = tasks_manager.list_tasks(
-        with_task_context=task_context
-    )
-    return [TaskBase(task_id=t.task_id) for t in tracked_tasks]
-
-
-def get_task_status(
-    tasks_manager: TasksManager, task_context: TaskContext | None, task_id: TaskId
-) -> TaskStatus:
-    """returns the status of a task"""
-    return tasks_manager.get_task_status(
-        task_id=task_id, with_task_context=task_context
-    )
-
-
-async def get_task_result(
-    tasks_manager: TasksManager, task_context: TaskContext | None, task_id: TaskId
-) -> Any:
-    """retruns the result of a task, which is directly whatever the remove hanlder returned"""
-    try:
-        return tasks_manager.get_task_result(
-            task_id=task_id, with_task_context=task_context
-        )
-    finally:
-        # the task is always removed even if an error occurs
-        await tasks_manager.remove_task(
-            task_id, with_task_context=task_context, reraise_errors=False
-        )
-
-
-async def remove_task(
-    tasks_manager: TasksManager, task_context: TaskContext | None, task_id: TaskId
-) -> None:
-    """removes / cancels a task"""
-    await tasks_manager.remove_task(task_id, with_task_context=task_context)
-
-
 async def start_task(
     tasks_manager: TasksManager,
     registered_task_name: RegisteredTaskName,
@@ -87,3 +47,43 @@ async def start_task(
         fire_and_forget=fire_and_forget,
         **task_kwargs,
     )
+
+
+def list_tasks(
+    tasks_manager: TasksManager, task_context: TaskContext | None
+) -> list[TaskBase]:
+    tracked_tasks: list[TrackedTask] = tasks_manager.list_tasks(
+        with_task_context=task_context
+    )
+    return [TaskBase(task_id=t.task_id) for t in tracked_tasks]
+
+
+def get_task_status(
+    tasks_manager: TasksManager, task_context: TaskContext | None, task_id: TaskId
+) -> TaskStatus:
+    """returns the status of a task"""
+    return tasks_manager.get_task_status(
+        task_id=task_id, with_task_context=task_context
+    )
+
+
+async def get_task_result(
+    tasks_manager: TasksManager, task_context: TaskContext | None, task_id: TaskId
+) -> Any:
+    """retruns the result of a task, which is directly whatever the remove hanlder returned"""
+    try:
+        return tasks_manager.get_task_result(
+            task_id=task_id, with_task_context=task_context
+        )
+    finally:
+        # the task is always removed even if an error occurs
+        await tasks_manager.remove_task(
+            task_id, with_task_context=task_context, reraise_errors=False
+        )
+
+
+async def remove_task(
+    tasks_manager: TasksManager, task_context: TaskContext | None, task_id: TaskId
+) -> None:
+    """removes / cancels a task"""
+    await tasks_manager.remove_task(task_id, with_task_context=task_context)
