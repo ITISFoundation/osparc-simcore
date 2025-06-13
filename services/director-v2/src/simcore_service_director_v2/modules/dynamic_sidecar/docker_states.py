@@ -1,6 +1,7 @@
 """
 States from Docker Tasks and docker Containers are mapped to ServiceState.
 """
+
 import logging
 
 from models_library.generated_models.docker_rest_api import ContainerState
@@ -89,7 +90,7 @@ def extract_containers_minimum_statuses(
     the lowest (considered worst) state will be forwarded to the frontend.
     `ServiceState` defines the order of the states.
     """
-    logger.info("containers_inspect=%s", containers_inspect)
+    logger.debug("containers_inspect=%s", containers_inspect)
     remapped_service_statuses = {
         index: _extract_container_status(value.container_state)
         for index, value in enumerate(containers_inspect)
