@@ -4460,6 +4460,16 @@
             }
           },
           {
+            "name": "hidden",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Hidden"
+            }
+          },
+          {
             "name": "x-simcore-parent-project-uuid",
             "in": "header",
             "required": false,
@@ -7773,11 +7783,6 @@
       },
       "Body_clone_study_v0_studies__study_id__clone_post": {
         "properties": {
-          "hidden": {
-            "type": "boolean",
-            "title": "Hidden",
-            "default": false
-          },
           "title": {
             "anyOf": [
               {
