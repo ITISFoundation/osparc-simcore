@@ -1,36 +1,14 @@
 # mypy: disable-error-code=truthy-function
 
-"""API for security subsystem.
-
-
-NOTE: DO NOT USE aiohttp_security.api directly but use this interface instead
-"""
-
-import logging
 
 import aiohttp_security.api  # type: ignore[import-untyped]
-import passlib.hash
 from aiohttp import web
 from models_library.users import UserID
 
-from ._authz_access_model import AuthContextDict, OptionalContext, RoleBasedAccessModel
-from ._authz_policy import AuthorizationPolicy
+from ._authz_access_model import AuthContextDict, OptionalContext
 from ._constants import PERMISSION_PRODUCT_LOGIN_KEY
-from ._identity_api import forget_identity, remember_identity
-
-_logger = logging.getLogger(__name__)
 
 assert PERMISSION_PRODUCT_LOGIN_KEY  # nosec
-
-
-def get_access_model(app: web.Application) -> RoleBasedAccessModel:
-    autz_policy: AuthorizationPolicy = app[aiohttp_security.api.AUTZ_KEY]
-    return autz_policy.access_model
-
-
-async def clean_auth_policy_cache(app: web.Application) -> None:
-    autz_policy: AuthorizationPolicy = app[aiohttp_security.api.AUTZ_KEY]
-    await autz_policy.clear_cache()
 
 
 async def is_anonymous(request: web.Request) -> bool:
@@ -76,34 +54,3 @@ async def check_user_permission(
         else:
             msg += f" {permission}"
         raise web.HTTPForbidden(reason=msg)
-
-
-#
-# utils (i.e. independent from setup)
-#
-
-
-def encrypt_password(password: str) -> str:
-    hashed: str = passlib.hash.sha256_crypt.using(rounds=1000).hash(password)
-    return hashed
-
-
-def check_password(password: str, password_hash: str) -> bool:
-    is_valid: bool = passlib.hash.sha256_crypt.verify(password, password_hash)
-    return is_valid
-
-
-assert forget_identity  # nosec
-assert remember_identity  # nosec
-
-
-__all__: tuple[str, ...] = (
-    "AuthContextDict",
-    "check_user_permission",
-    "encrypt_password",
-    "forget_identity",
-    "get_access_model",
-    "is_anonymous",
-    "PERMISSION_PRODUCT_LOGIN_KEY",
-    "remember_identity",
-)

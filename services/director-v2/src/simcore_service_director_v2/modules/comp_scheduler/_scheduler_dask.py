@@ -4,7 +4,7 @@ import logging
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Final
 
 import arrow
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
@@ -23,7 +23,7 @@ from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from pydantic import PositiveInt
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
-from servicelib.logging_utils import log_catch
+from servicelib.logging_utils import log_catch, log_context
 
 from ...core.errors import (
     ComputationalBackendNotConnectedError,
@@ -56,6 +56,8 @@ from ._utils import (
 
 _logger = logging.getLogger(__name__)
 
+_DASK_CLIENT_RUN_REF: Final[str] = "{user_id}:{run_id}"
+
 
 @asynccontextmanager
 async def _cluster_dask_client(
@@ -63,6 +65,7 @@ async def _cluster_dask_client(
     scheduler: "DaskScheduler",
     *,
     use_on_demand_clusters: bool,
+    run_id: PositiveInt,
     run_metadata: RunMetadataDict,
 ) -> AsyncIterator[DaskClient]:
     cluster: BaseCluster = scheduler.settings.default_cluster
@@ -72,7 +75,9 @@ async def _cluster_dask_client(
             user_id=user_id,
             wallet_id=run_metadata.get("wallet_id"),
         )
-    async with scheduler.dask_clients_pool.acquire(cluster) as client:
+    async with scheduler.dask_clients_pool.acquire(
+        cluster, ref=_DASK_CLIENT_RUN_REF.format(user_id=user_id, run_id=run_id)
+    ) as client:
         yield client
 
 
@@ -101,6 +106,7 @@ class DaskScheduler(BaseCompScheduler):
             user_id,
             self,
             use_on_demand_clusters=comp_run.use_on_demand_clusters,
+            run_id=comp_run.run_id,
             run_metadata=comp_run.metadata,
         ) as client:
             # Change the tasks state to PENDING
@@ -151,6 +157,7 @@ class DaskScheduler(BaseCompScheduler):
                 user_id,
                 self,
                 use_on_demand_clusters=comp_run.use_on_demand_clusters,
+                run_id=comp_run.run_id,
                 run_metadata=comp_run.metadata,
             ) as client:
                 return await client.get_tasks_status([f"{t.job_id}" for t in tasks])
@@ -171,6 +178,7 @@ class DaskScheduler(BaseCompScheduler):
                 user_id,
                 self,
                 use_on_demand_clusters=comp_run.use_on_demand_clusters,
+                run_id=comp_run.run_id,
                 run_metadata=comp_run.metadata,
             ) as client:
                 task_progresses = await client.get_tasks_progress(
@@ -217,6 +225,22 @@ class DaskScheduler(BaseCompScheduler):
             )
         )
 
+    async def _release_resources(
+        self, user_id: UserID, project_id: ProjectID, comp_run: CompRunsAtDB
+    ) -> None:
+        """release resources used by the scheduler for a given user and project"""
+        with (
+            log_catch(_logger, reraise=False),
+            log_context(
+                _logger,
+                logging.INFO,
+                msg=f"releasing resources for {user_id=}, {project_id=}, {comp_run.run_id=}",
+            ),
+        ):
+            await self.dask_clients_pool.release_client_ref(
+                ref=_DASK_CLIENT_RUN_REF.format(user_id=user_id, run_id=comp_run.run_id)
+            )
+
     async def _stop_tasks(
         self, user_id: UserID, tasks: list[CompTaskAtDB], comp_run: CompRunsAtDB
     ) -> None:
@@ -226,6 +250,7 @@ class DaskScheduler(BaseCompScheduler):
                 user_id,
                 self,
                 use_on_demand_clusters=comp_run.use_on_demand_clusters,
+                run_id=comp_run.run_id,
                 run_metadata=comp_run.metadata,
             ) as client:
                 await asyncio.gather(
@@ -259,6 +284,7 @@ class DaskScheduler(BaseCompScheduler):
                 user_id,
                 self,
                 use_on_demand_clusters=comp_run.use_on_demand_clusters,
+                run_id=comp_run.run_id,
                 run_metadata=comp_run.metadata,
             ) as client:
                 tasks_results = await asyncio.gather(
@@ -278,6 +304,7 @@ class DaskScheduler(BaseCompScheduler):
                 user_id,
                 self,
                 use_on_demand_clusters=comp_run.use_on_demand_clusters,
+                run_id=comp_run.run_id,
                 run_metadata=comp_run.metadata,
             ) as client:
                 await asyncio.gather(

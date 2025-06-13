@@ -1,17 +1,16 @@
-""" hierarchical role-based access control (HRBAC)
+"""hierarchical role-based access control (HRBAC)
 
 
-   References:
-    https://b_logger.nodeswat.com/implement-access-control-in-node-js-8567e7b484d1
+References:
+ https://b_logger.nodeswat.com/implement-access-control-in-node-js-8567e7b484d1
 """
 
-import inspect
 import logging
-import re
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from typing import TypeAlias, TypedDict
 
+from common_library.async_tools import maybe_await
 from models_library.products import ProductName
 from models_library.users import UserID
 
@@ -27,16 +26,32 @@ class AuthContextDict(TypedDict, total=False):
 
 OptionalContext: TypeAlias = AuthContextDict | dict | None
 
+CheckFunction: TypeAlias = (
+    # Type for check functions that can be either sync or async
+    Callable[[OptionalContext], bool]
+    | Callable[[OptionalContext], Awaitable[bool]]
+)
+
 
 @dataclass
 class _RolePermissions:
     role: UserRole
-    # named permissions allowed
-    allowed: list[str] = field(default_factory=list)
-    # checked permissions: permissions with conditions
-    check: dict[str, Callable[[OptionalContext], bool]] = field(default_factory=dict)
-    # inherited permission
-    inherits: list[UserRole] = field(default_factory=list)
+
+    allowed: list[str] = field(
+        default_factory=list, metadata={"description": "list of allowed operations"}
+    )
+    check: dict[str, CheckFunction] = field(
+        default_factory=dict,
+        metadata={
+            "description": "checked permissions: dict of operations with conditions"
+        },
+    )
+    inherits: list[UserRole] = field(
+        default_factory=list,
+        metadata={
+            "description": "list of parent roles that inherit permissions from this role"
+        },
+    )
 
     @classmethod
     def from_rawdata(cls, role: str | UserRole, value: dict) -> "_RolePermissions":
@@ -99,12 +114,7 @@ class RoleBasedAccessModel:
         if operation in role_access.check:
             check = role_access.check[operation]
             try:
-                ok: bool
-                if inspect.iscoroutinefunction(check):
-                    ok = await check(context)
-                else:
-                    ok = check(context)
-                return ok
+                return await maybe_await(check(context))
 
             except Exception:  # pylint: disable=broad-except
                 _logger.debug(
@@ -132,32 +142,10 @@ class RoleBasedAccessModel:
         return RoleBasedAccessModel(roles)
 
 
-_OPERATORS_REGEX_PATTERN = re.compile(r"(&|\||\bAND\b|\bOR\b)")
-
-
 async def has_access_by_role(
     model: RoleBasedAccessModel,
     role: UserRole,
-    operations: str,
+    operation: str,
     context: OptionalContext = None,
 ) -> bool:
-    """Extends `RoleBasedAccessModel.can` to check access to boolean expressions of operations
-
-    Returns True if a user with a role has permission on a given context
-    """
-    tokens = _OPERATORS_REGEX_PATTERN.split(operations)
-    if len(tokens) == 1:
-        return await model.can(role, tokens[0], context)
-
-    if len(tokens) == 3:
-        tokens = [t.strip() for t in tokens if t.strip() != ""]
-        lhs, op, rhs = tokens
-        can_lhs = await model.can(role, lhs, context)
-        if op in ["AND", "&"]:
-            if can_lhs:
-                return await model.can(role, rhs, context)
-            return False
-        return can_lhs or (await model.can(role, rhs, context))
-
-    msg = f"Invalid expression '{operations}': only supports at most two operands"
-    raise NotImplementedError(msg)
+    return await model.can(role=role, operation=operation, context=context)

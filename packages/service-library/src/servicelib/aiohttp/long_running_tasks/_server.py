@@ -1,32 +1,28 @@
 import asyncio
-import logging
+import datetime
 from collections.abc import AsyncGenerator, Callable
 from functools import wraps
 from typing import Any
 
 from aiohttp import web
 from common_library.json_serialization import json_dumps
-from pydantic import AnyHttpUrl, PositiveFloat, TypeAdapter
+from pydantic import AnyHttpUrl, TypeAdapter
 
 from ...aiohttp import status
-from ...long_running_tasks.models import TaskGet
-from ...long_running_tasks.task import (
-    TaskContext,
-    TaskProtocol,
-    TasksManager,
-    start_task,
+from ...long_running_tasks.constants import (
+    DEFAULT_STALE_TASK_CHECK_INTERVAL,
+    DEFAULT_STALE_TASK_DETECT_TIMEOUT,
 )
+from ...long_running_tasks.models import TaskGet
+from ...long_running_tasks.task import TaskContext, TaskProtocol, start_task
 from ..typing_extension import Handler
 from . import _routes
 from ._constants import (
-    APP_LONG_RUNNING_TASKS_MANAGER_KEY,
-    MINUTE,
+    APP_LONG_RUNNING_MANAGER_KEY,
     RQT_LONG_RUNNING_TASKS_CONTEXT_KEY,
 )
-from ._dependencies import create_task_name_from_request, get_tasks_manager
 from ._error_handlers import base_long_running_error_handler
-
-_logger = logging.getLogger(__name__)
+from ._manager import AiohttpLongRunningManager, get_long_running_manager
 
 
 def no_ops_decorator(handler: Handler):
@@ -42,6 +38,10 @@ def no_task_context_decorator(handler: Handler):
     return _wrap
 
 
+def _create_task_name_from_request(request: web.Request) -> str:
+    return f"{request.method} {request.rel_url}"
+
+
 async def start_long_running_task(
     # NOTE: positional argument are suffixed with "_" to avoid name conflicts with "task_kwargs" keys
     request_: web.Request,
@@ -51,12 +51,12 @@ async def start_long_running_task(
     task_context: TaskContext,
     **task_kwargs: Any,
 ) -> web.Response:
-    task_manager = get_tasks_manager(request_.app)
-    task_name = create_task_name_from_request(request_)
+    long_running_manager = get_long_running_manager(request_.app)
+    task_name = _create_task_name_from_request(request_)
     task_id = None
     try:
         task_id = start_task(
-            task_manager,
+            long_running_manager.tasks_manager,
             task_,
             fire_and_forget=fire_and_forget,
             task_context=task_context,
@@ -91,8 +91,10 @@ async def start_long_running_task(
     except asyncio.CancelledError:
         # cancel the task, the client has disconnected
         if task_id:
-            task_manager = get_tasks_manager(request_.app)
-            await task_manager.cancel_task(task_id, with_task_context=None)
+            long_running_manager = get_long_running_manager(request_.app)
+            await long_running_manager.tasks_manager.cancel_task(
+                task_id, with_task_context=None
+            )
         raise
 
 
@@ -121,8 +123,8 @@ def setup(
     router_prefix: str,
     handler_check_decorator: Callable = no_ops_decorator,
     task_request_context_decorator: Callable = no_task_context_decorator,
-    stale_task_check_interval_s: PositiveFloat = 1 * MINUTE,
-    stale_task_detect_timeout_s: PositiveFloat = 5 * MINUTE,
+    stale_task_check_interval: datetime.timedelta = DEFAULT_STALE_TASK_CHECK_INTERVAL,
+    stale_task_detect_timeout: datetime.timedelta = DEFAULT_STALE_TASK_DETECT_TIMEOUT,
 ) -> None:
     """
     - `router_prefix` APIs are mounted on `/...`, this
@@ -135,21 +137,24 @@ def setup(
     """
 
     async def on_cleanup_ctx(app: web.Application) -> AsyncGenerator[None, None]:
+        # add error handlers
+        app.middlewares.append(base_long_running_error_handler)
+
         # add components to state
-        app[APP_LONG_RUNNING_TASKS_MANAGER_KEY] = long_running_task_manager = (
-            TasksManager(
-                stale_task_check_interval_s=stale_task_check_interval_s,
-                stale_task_detect_timeout_s=stale_task_detect_timeout_s,
+        app[APP_LONG_RUNNING_MANAGER_KEY] = long_running_manager = (
+            AiohttpLongRunningManager(
+                app=app,
+                stale_task_check_interval=stale_task_check_interval,
+                stale_task_detect_timeout=stale_task_detect_timeout,
             )
         )
 
-        # add error handlers
-        app.middlewares.append(base_long_running_error_handler)
+        await long_running_manager.setup()
 
         yield
 
         # cleanup
-        await long_running_task_manager.close()
+        await long_running_manager.teardown()
 
     # add routing (done at setup-time)
     _wrap_and_add_routes(

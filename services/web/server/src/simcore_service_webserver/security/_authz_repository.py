@@ -16,14 +16,14 @@ from ..db.models import UserStatus, users
 _logger = logging.getLogger(__name__)
 
 
-class AuthInfoDict(TypedDict, total=True):
+class ActiveUserIdAndRole(TypedDict, total=True):
     id: IdInt
     role: UserRole
 
 
 async def get_active_user_or_none(
     engine: AsyncEngine, *, email: str
-) -> AuthInfoDict | None:
+) -> ActiveUserIdAndRole | None:
     """Gets a user with email if ACTIVE othewise return None
 
     Raises:
@@ -46,7 +46,7 @@ async def get_active_user_or_none(
             row is None or TypeAdapter(UserRole).validate_python(row.role) is not None
         )
 
-        return AuthInfoDict(id=row.id, role=row.role) if row else None
+        return ActiveUserIdAndRole(id=row.id, role=row.role) if row else None
 
 
 async def is_user_in_product_name(

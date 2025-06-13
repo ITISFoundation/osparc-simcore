@@ -194,10 +194,8 @@ async def test_list_projects(
     user_project: dict[str, Any],
     template_project: dict[str, Any],
     expected: HTTPStatus,
-    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     director_v2_service_mock: aioresponses,
 ):
-    catalog_subsystem_mock([user_project, template_project])
     data, *_ = await _list_and_assert_projects(client, expected)
 
     if data:
@@ -344,7 +342,6 @@ async def test_list_projects_with_innaccessible_services(
     user_project: dict[str, Any],
     template_project: dict[str, Any],
     expected: HTTPStatus,
-    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     director_v2_service_mock: aioresponses,
     postgres_db: sa.engine.Engine,
     s4l_product_headers: dict[str, Any],
@@ -374,7 +371,6 @@ async def test_list_projects_with_innaccessible_services(
 
     # use-case 4: give user access to services
     # shall return the projects for any product
-    catalog_subsystem_mock([user_project, template_project])
     data, *_ = await _list_and_assert_projects(
         client, expected, headers=s4l_product_headers
     )
@@ -403,10 +399,7 @@ async def test_get_project(
     user_project: ProjectDict,
     template_project: ProjectDict,
     expected,
-    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
 ):
-    catalog_subsystem_mock([user_project, template_project])
-
     # standard project
     await _assert_get_same_project(client, user_project, expected)
 
@@ -444,7 +437,6 @@ async def test_create_get_and_patch_project_ui_field(
     logged_user: UserInfoDict,
     primary_group: dict[str, str],
     request_create_project: Callable[..., Awaitable[ProjectDict]],
-    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     project_db_cleaner,
 ):
     assert client.app
@@ -461,8 +453,6 @@ async def test_create_get_and_patch_project_ui_field(
         primary_group,
     )
     project_id = new_project["uuid"]
-
-    catalog_subsystem_mock([new_project])
 
     # Step 2: Get the project and check the ui.icon
     url = client.app.router["get_project"].url_for(project_id=project_id)
@@ -522,11 +512,9 @@ async def test_new_project_from_other_study(
     user_project: ProjectDict,
     expected: ExpectedResponse,
     storage_subsystem_mock,
-    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     project_db_cleaner,
     request_create_project: Callable[..., Awaitable[ProjectDict]],
 ):
-    catalog_subsystem_mock([user_project])
     new_project = await request_create_project(
         client,
         expected.accepted,
@@ -608,7 +596,6 @@ async def test_new_template_from_project(
     user_project: dict[str, Any],
     expected: ExpectedResponse,
     storage_subsystem_mock: MockedStorageSubsystem,
-    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     project_db_cleaner: None,
     request_create_project: Callable[..., Awaitable[ProjectDict]],
 ):
@@ -625,7 +612,6 @@ async def test_new_template_from_project(
 
     if new_template_prj:
         template_project = new_template_prj
-        catalog_subsystem_mock([template_project])
 
         templates, *_ = await _list_and_assert_projects(
             client, status.HTTP_200_OK, {"type": "template"}

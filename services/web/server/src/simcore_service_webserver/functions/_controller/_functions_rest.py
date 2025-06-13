@@ -11,12 +11,12 @@ from servicelib.aiohttp.requests_validation import (
     handle_validation_as_http_error,
     parse_request_path_parameters_as,
 )
-from simcore_service_webserver.utils_aiohttp import envelope_json_response
 
 from ..._meta import API_VTAG as VTAG
 from ...login.decorators import login_required
 from ...models import AuthenticatedRequestContext
 from ...security.decorators import permission_required
+from ...utils_aiohttp import envelope_json_response
 from .. import _functions_service
 from ._functions_rest_exceptions import handle_rest_requests_exceptions
 from ._functions_rest_schemas import FunctionPathParams

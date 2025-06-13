@@ -13,9 +13,9 @@ __all__: tuple[str, ...] = (
     "get_product",
     "get_product_stripe_info",
     "get_product_ui",
+    "is_product_billable",
     "list_products",
     "list_products_names",
-    "is_product_billable",
 )
 
 # nopycln: file

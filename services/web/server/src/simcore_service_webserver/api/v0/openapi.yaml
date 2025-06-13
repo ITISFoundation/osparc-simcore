@@ -3391,7 +3391,8 @@ paths:
           description: Successful Response
           content:
             application/json:
-              schema: {}
+              schema:
+                title: Response Get Async Job Result
         '404':
           content:
             application/json:
@@ -3486,7 +3487,8 @@ paths:
           description: Successful Response
           content:
             application/json:
-              schema: {}
+              schema:
+                title: Response Get Task Result
   /v0/catalog/licensed-items:
     get:
       tags:
@@ -11403,6 +11405,8 @@ components:
         status:
           type: integer
           title: Status
+          description: Redundant HTTP status code of the error.Must be the same as
+            in the HTTP response
         errors:
           items:
             $ref: '#/components/schemas/ErrorItemType'

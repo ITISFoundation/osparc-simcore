@@ -526,7 +526,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       });
       task.addListener("taskAborted", () => {
         finished();
-        const msg = this.tr("Study to Template cancelled");
+        const msg = this.tr("Project to Template cancelled");
         osparc.FlashMessenger.logAs(msg, "WARNING");
       });
       task.addListener("pollingError", e => {
