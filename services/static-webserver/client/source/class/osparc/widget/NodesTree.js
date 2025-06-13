@@ -284,7 +284,7 @@ qx.Class.define("osparc.widget.NodesTree", {
         const height = osparc.info.CardLarge.HEIGHT;
         if (nodeId === study.getUuid()) {
           const studyDetails = new osparc.info.StudyLarge(study);
-          const title = this.tr("Study Information");
+          const title = this.tr("Project Information");
           osparc.ui.window.Window.popUpInWindow(studyDetails, title, width, height).set({
             maxHeight: height
           });

@@ -72,7 +72,7 @@ async def _handler_director_service_error_as_503_or_4xx(
             exception.status
         ), f"DirectorV2ServiceError must be a client error, got {exception=}"  # nosec
 
-        error = ErrorGet(status=exception.status, message="{exception}")
+        error = ErrorGet(status=exception.status, message=f"{exception}")
 
     return create_error_response(error, status_code=error.status)
 

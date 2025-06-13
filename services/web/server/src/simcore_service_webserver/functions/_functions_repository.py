@@ -79,13 +79,13 @@ from simcore_postgres_database.utils_repos import (
     get_columns_from_db_model,
     transaction_context,
 )
-from simcore_service_webserver.groups.api import list_all_user_groups_ids
-from simcore_service_webserver.users.api import get_user_primary_group_id
 from sqlalchemy import Text, cast
 from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.sql import func
 
 from ..db.plugin import get_asyncpg_engine
+from ..groups.api import list_all_user_groups_ids
+from ..users.api import get_user_primary_group_id
 
 _FUNCTIONS_TABLE_COLS = get_columns_from_db_model(functions_table, RegisteredFunctionDB)
 _FUNCTION_JOBS_TABLE_COLS = get_columns_from_db_model(

@@ -72,20 +72,6 @@ qx.Class.define("osparc.study.NodePricingUnits", {
     },
   },
 
-  statics: {
-    patchPricingUnitSelection: function(studyId, nodeId, planId, selectedUnitId) {
-      const params = {
-        url: {
-          studyId,
-          nodeId,
-          pricingPlanId: planId,
-          pricingUnitId: selectedUnitId
-        }
-      };
-      return osparc.data.Resources.fetch("studies", "putPricingUnit", params);
-    }
-  },
-
   members: {
     __nodeKey: null,
     __nodeVersion: null,
@@ -100,23 +86,17 @@ qx.Class.define("osparc.study.NodePricingUnits", {
         const studyId = this.getStudyId();
         const nodeId = this.getNodeId();
 
-        osparc.store.Pricing.getInstance().fetchPricingPlansService(nodeKey, nodeVersion)
+        osparc.store.Services.getPricingPlan(nodeKey, nodeVersion)
           .then(pricingPlanData => {
             if (pricingPlanData) {
-              const unitParams = {
-                url: {
-                  studyId,
-                  nodeId
-                }
-              };
               this.set({
                 pricingPlanId: pricingPlanData["pricingPlanId"]
               });
-              osparc.data.Resources.fetch("studies", "getPricingUnit", unitParams)
-                .then(preselectedPricingUnit => {
+              osparc.store.Study.getSelectedPricingUnit(studyId, nodeId)
+                .then(selectedPricingUnit => {
                   if (pricingPlanData && "pricingUnits" in pricingPlanData && pricingPlanData["pricingUnits"].length) {
                     const pricingUnitsData = pricingPlanData["pricingUnits"];
-                    const pricingUnitTiers = this.__pricingUnits = new osparc.study.PricingUnitTiers(pricingUnitsData, preselectedPricingUnit);
+                    const pricingUnitTiers = this.__pricingUnits = new osparc.study.PricingUnitTiers(pricingUnitsData, selectedPricingUnit);
                     if (inGroupBox) {
                       const pricingUnitsLayout = osparc.study.StudyOptions.createGroupBox(nodeLabel);
                       pricingUnitsLayout.add(pricingUnitTiers);
@@ -125,14 +105,17 @@ qx.Class.define("osparc.study.NodePricingUnits", {
                       this._add(pricingUnitTiers);
                     }
                     pricingUnitTiers.addListener("selectPricingUnitRequested", e => {
-                      const selectedPricingUnitId = e.getData();
+                      const newSelectedPricingUnit = e.getData();
                       if (this.isPatchNode()) {
                         pricingUnitTiers.setEnabled(false);
                         const pricingPlanId = this.getPricingPlanId();
-                        this.self().patchPricingUnitSelection(studyId, nodeId, pricingPlanId, selectedPricingUnitId)
-                          .then(() => pricingUnitTiers.setSelectedUnitId(selectedPricingUnitId))
+                        osparc.store.Study.updateSelectedPricingUnit(studyId, nodeId, pricingPlanId, newSelectedPricingUnit)
+                          .then(() => pricingUnitTiers.setSelectedUnitId(newSelectedPricingUnit.getPricingUnitId()))
                           .catch(err => osparc.FlashMessenger.logError(err, this.tr("Cannot change Tier")))
                           .finally(() => pricingUnitTiers.setEnabled(true));
+                      } else {
+                        // do not patch node, just update the selected unit (the parent widget will handle the patching)
+                        pricingUnitTiers.setSelectedUnitId(newSelectedPricingUnit.getPricingUnitId());
                       }
                     });
                   }
