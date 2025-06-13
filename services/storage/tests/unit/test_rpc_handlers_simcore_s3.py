@@ -575,7 +575,7 @@ def task_progress_spy(mocker: MockerFixture) -> Mock:
 async def test_start_export_data(
     initialized_app: FastAPI,
     short_dsm_cleaner_interval: int,
-    with_storage_celery_worker_controller: TestWorkController,
+    with_storage_celery_worker: TestWorkController,
     storage_rabbitmq_rpc_client: RabbitMQRPCClient,
     user_id: UserID,
     product_name: ProductName,
@@ -621,7 +621,7 @@ async def test_start_export_data(
 async def test_start_export_data_access_error(
     initialized_app: FastAPI,
     short_dsm_cleaner_interval: int,
-    with_storage_celery_worker_controller: TestWorkController,
+    with_storage_celery_worker: TestWorkController,
     storage_rabbitmq_rpc_client: RabbitMQRPCClient,
     user_id: UserID,
     product_name: ProductName,
