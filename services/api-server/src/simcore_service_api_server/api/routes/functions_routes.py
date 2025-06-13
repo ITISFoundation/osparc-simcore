@@ -2,7 +2,7 @@ from collections.abc import Callable
 from typing import Annotated, Final
 
 import jsonschema
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, Header, Request, status
 from fastapi_pagination.api import create_page
 from jsonschema import ValidationError
 from models_library.api_schemas_api_server.functions import (
@@ -29,6 +29,8 @@ from models_library.functions_errors import (
     UnsupportedFunctionClassError,
 )
 from models_library.products import ProductName
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.users import UserID
 from servicelib.fastapi.dependencies import get_reverse_url_mapper
@@ -372,6 +374,8 @@ async def run_function(  # noqa: PLR0913
     product_name: Annotated[str, Depends(get_product_name)],
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
     job_service: Annotated[JobService, Depends(get_job_service)],
+    x_simcore_parent_project_uuid: Annotated[ProjectID | None, Header()],
+    x_simcore_parent_node_id: Annotated[NodeID | None, Header()],
 ) -> RegisteredFunctionJob:
 
     user_permissions: FunctionUserAccessRights = (
@@ -436,8 +440,8 @@ async def run_function(  # noqa: PLR0913
             webserver_api=webserver_api,
             wb_api_rpc=wb_api_rpc,
             url_for=url_for,
-            x_simcore_parent_project_uuid=None,
-            x_simcore_parent_node_id=None,
+            x_simcore_parent_project_uuid=x_simcore_parent_project_uuid,
+            x_simcore_parent_node_id=x_simcore_parent_node_id,
             user_id=user_id,
             product_name=product_name,
         )
@@ -471,8 +475,8 @@ async def run_function(  # noqa: PLR0913
             solver_service=solver_service,
             job_service=job_service,
             url_for=url_for,
-            x_simcore_parent_project_uuid=None,
-            x_simcore_parent_node_id=None,
+            x_simcore_parent_project_uuid=x_simcore_parent_project_uuid,
+            x_simcore_parent_node_id=x_simcore_parent_node_id,
         )
         await solvers_jobs.start_job(
             request=request,

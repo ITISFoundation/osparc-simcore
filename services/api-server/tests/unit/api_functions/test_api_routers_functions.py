@@ -8,7 +8,9 @@ from typing import Any
 from uuid import uuid4
 
 import httpx
+import pytest
 import respx
+from faker import Faker
 from httpx import AsyncClient
 from models_library.api_schemas_webserver.functions import (
     FunctionJobCollection,
@@ -26,8 +28,15 @@ from models_library.functions_errors import (
 from models_library.rest_pagination import PageMetaInfoLimitOffset
 from models_library.users import UserID
 from pytest_mock import MockType
+from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
 from servicelib.aiohttp import status
+from servicelib.common_headers import (
+    X_SIMCORE_PARENT_NODE_ID,
+    X_SIMCORE_PARENT_PROJECT_UUID,
+)
 from simcore_service_api_server._meta import API_VTAG
+
+_faker = Faker()
 
 
 async def test_register_function(
@@ -618,6 +627,15 @@ async def test_run_function_not_allowed(
     )
 
 
+@pytest.mark.parametrize(
+    "parent_project_uuid, parent_node_uuid, expected_status_code",
+    [
+        (None, None, status.HTTP_422_UNPROCESSABLE_ENTITY),
+        (f"{_faker.uuid4()}", None, status.HTTP_422_UNPROCESSABLE_ENTITY),
+        (None, f"{_faker.uuid4()}", status.HTTP_422_UNPROCESSABLE_ENTITY),
+        (f"{_faker.uuid4()}", f"{_faker.uuid4()}", status.HTTP_200_OK),
+    ],
+)
 async def test_run_function_parent_info(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
@@ -630,13 +648,33 @@ async def test_run_function_parent_info(
     mocked_webserver_rpc_api: dict[str, MockType],
     create_respx_mock_from_capture,
     project_tests_dir: Path,
+    parent_project_uuid: str | None,
+    parent_node_uuid: str | None,
+    expected_status_code: int,
 ) -> None:
 
     capture = "run_function_parent_info.json"
+
+    def _default_side_effect(
+        request: httpx.Request,
+        path_params: dict[str, Any],
+        capture: HttpApiCallCaptureModel,
+    ) -> Any:
+        if request.method == "POST" and request.url.path.endswith("/projects"):
+            if parent_project_uuid:
+                _parent_uuid = request.headers.get(X_SIMCORE_PARENT_PROJECT_UUID)
+                assert _parent_uuid is not None
+                assert parent_project_uuid == _parent_uuid
+            if parent_node_uuid:
+                _parent_node_uuid = request.headers.get(X_SIMCORE_PARENT_NODE_ID)
+                assert _parent_node_uuid is not None
+                assert parent_node_uuid == _parent_node_uuid
+        return capture.response_body
+
     create_respx_mock_from_capture(
         respx_mocks=[mocked_webserver_rest_api_base, mocked_directorv2_rest_api_base],
         capture_path=project_tests_dir / "mocks" / capture,
-        side_effects_callbacks=[],
+        side_effects_callbacks=[_default_side_effect] * 50,
     )
 
     mock_handler_in_functions_rpc_interface(
@@ -654,9 +692,15 @@ async def test_run_function_parent_info(
         "register_function_job", mock_registered_function_job
     )
 
+    headers = dict()
+    if parent_project_uuid:
+        headers[X_SIMCORE_PARENT_PROJECT_UUID] = parent_project_uuid
+    if parent_node_uuid:
+        headers[X_SIMCORE_PARENT_NODE_ID] = parent_node_uuid
     response = await client.post(
         f"{API_VTAG}/functions/{mock_registered_function.uid}:run",
         json={},
         auth=auth,
+        headers=headers,
     )
-    assert response.status_code == status.HTTP_200_OK
+    assert response.status_code == expected_status_code
