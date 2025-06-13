@@ -29,7 +29,6 @@ class TaskBase(BaseModel):
     @field_validator("task_name", mode="before")
     @classmethod
     def populate_task_name(cls, task_id, info):
-        task_name = task_id
 
         # attempt to extract the task name from the task_id
         # if this is coming form a long_running_task
