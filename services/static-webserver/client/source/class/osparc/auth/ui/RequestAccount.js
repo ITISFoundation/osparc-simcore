@@ -158,6 +158,9 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         case "s4ldesktopacad": {
           const application = new qx.ui.form.SelectBox();
           [{
+            id: "other",
+            label: "Other"
+          }, {
             id: "Antenna_Design_for_Wireless_Communication",
             label: "Antenna Design for Wireless Communication"
           }, {
@@ -284,6 +287,9 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
           break;
         default:
           hearOptions = [{
+            id: "Other",
+            label: "Other"
+          }, {
             id: "Search_Engine",
             label: "Search Engine"
           }, {
@@ -295,9 +301,6 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
           }, {
             id: "Social_Media",
             label: "Social Media"
-          }, {
-            id: "Other",
-            label: "Other"
           }];
           break;
       }
