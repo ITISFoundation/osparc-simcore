@@ -3,6 +3,7 @@
 
 import datetime
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
@@ -17,7 +18,7 @@ from models_library.api_schemas_webserver.functions import (
     RegisteredProjectFunction,
     RegisteredProjectFunctionJob,
 )
-from models_library.functions import FunctionUserAccessRights
+from models_library.functions import FunctionUserAccessRights, RegisteredFunctionJob
 from models_library.functions_errors import (
     FunctionIDNotFoundError,
     FunctionReadAccessDeniedError,
@@ -615,3 +616,47 @@ async def test_run_function_not_allowed(
     assert response.json()["errors"][0] == (
         f"Function {mock_registered_function.uid} execute access denied for user {user_id}"
     )
+
+
+async def test_run_function_parent_info(
+    client: AsyncClient,
+    mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
+    mock_registered_function: RegisteredProjectFunction,
+    mock_registered_function_job: RegisteredFunctionJob,
+    auth: httpx.BasicAuth,
+    user_id: UserID,
+    mocked_webserver_rest_api_base: respx.MockRouter,
+    mocked_directorv2_rest_api_base: respx.MockRouter,
+    mocked_webserver_rpc_api: dict[str, MockType],
+    create_respx_mock_from_capture,
+    project_tests_dir: Path,
+) -> None:
+
+    capture = "run_function_parent_info.json"
+    create_respx_mock_from_capture(
+        respx_mocks=[mocked_webserver_rest_api_base, mocked_directorv2_rest_api_base],
+        capture_path=project_tests_dir / "mocks" / capture,
+        side_effects_callbacks=[],
+    )
+
+    mock_handler_in_functions_rpc_interface(
+        "get_function_user_permissions",
+        FunctionUserAccessRights(
+            user_id=user_id,
+            execute=True,
+            read=True,
+            write=True,
+        ),
+    )
+    mock_handler_in_functions_rpc_interface("get_function", mock_registered_function)
+    mock_handler_in_functions_rpc_interface("find_cached_function_jobs", [])
+    mock_handler_in_functions_rpc_interface(
+        "register_function_job", mock_registered_function_job
+    )
+
+    response = await client.post(
+        f"{API_VTAG}/functions/{mock_registered_function.uid}:run",
+        json={},
+        auth=auth,
+    )
+    assert response.status_code == status.HTTP_200_OK
