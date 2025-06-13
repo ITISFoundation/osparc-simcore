@@ -28,13 +28,13 @@ class TaskBase(BaseModel):
 
     @field_validator("task_name", mode="before")
     @classmethod
-    def populate_task_name(cls, task_name: str, info):
+    def populate_task_name_if_not_provided(cls, task_name: str, info):
         # attempt to extract the task name from the task_id
         # if this is coming form a long_running_task
-        task_id = info.data.get("task_id")
-        if task_id:
+        task_id = info.data["task_id"]
+        if task_id and task_name == "":
             parts = task_id.split(".")
-            if len(parts) >= 2:
+            if len(parts) > 1:
                 task_name = urllib.parse.unquote(parts[1])
 
         return task_name
