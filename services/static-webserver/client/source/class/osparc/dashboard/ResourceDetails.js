@@ -147,7 +147,18 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       const toolbar = this.self().createToolbar();
       page.addToHeader(toolbar);
 
-      if (["study", "template"].includes(this.__resourceData["resourceType"])) {
+      if (["study", "template", "tutorial"].includes(resourceData["resourceType"])) {
+        const cantReadServices = osparc.study.Utils.getCantReadServices(resourceData["services"]);
+        if (cantReadServices.length) {
+          const requestAccessButton = new qx.ui.form.Button(this.tr("Request Access"));
+          requestAccessButton.addListener("execute", () => {
+            console.log("cantReadServices", cantReadServices);
+          });
+          toolbar.add(requestAccessButton);
+        }
+      }
+
+      if (this.__resourceData["resourceType"] === "study") {
         const payDebtButton = new qx.ui.form.Button(this.tr("Credits required"));
         page.payDebtButton = payDebtButton;
         osparc.dashboard.resources.pages.BasePage.decorateHeaderButton(payDebtButton);
