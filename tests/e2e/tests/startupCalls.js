@@ -20,7 +20,7 @@ module.exports = {
       };
 
       beforeAll(async () => {
-        console.log("Start:", new Date().toUTCString(), 120000);
+        console.log("Start:", new Date().toUTCString());
 
         page.on('response', response => {
           const url = response.url();
@@ -39,7 +39,7 @@ module.exports = {
           } else if (url.includes('catalog/services/-/latest')) {
             responses.services = response.json();
           }
-        });
+        }, 120000);
 
         await page.goto(url);
 
