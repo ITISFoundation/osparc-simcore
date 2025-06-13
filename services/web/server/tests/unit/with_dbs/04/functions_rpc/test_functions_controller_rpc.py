@@ -36,13 +36,13 @@ pytest_simcore_core_services_selection = ["rabbit"]
 )
 async def test_register_get_delete_function(
     client: TestClient,
+    add_user_functions_abilities: None,
     rpc_client: RabbitMQRPCClient,
     mock_function: ProjectFunction,
     logged_user: UserInfoDict,
     user_role: UserRole,
     osparc_product_name: ProductName,
     other_logged_user: UserInfoDict,
-    add_user_functions_abilities: None,
 ):
     # Register the function
     registered_function = await functions_rpc.register_function(
@@ -124,26 +124,26 @@ async def test_register_get_delete_function(
         )
 
 
-# @pytest.mark.parametrize(
-#     "user_role",
-#     [UserRole.USER],
-# )
-# async def test_get_function_not_found(
-#     client: TestClient,
-#     rpc_client: RabbitMQRPCClient,
-#     logged_user: UserInfoDict,
-#     osparc_product_name: ProductName,
-#     clean_functions: None,
-#     add_user_functions_abilities: None,
-# ):
-#     # Attempt to retrieve a function that does not exist
-#     with pytest.raises(FunctionIDNotFoundError):
-#         await functions_rpc.get_function(
-#             rabbitmq_rpc_client=rpc_client,
-#             function_id=uuid4(),
-#             user_id=logged_user["id"],
-#             product_name=osparc_product_name,
-#         )
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+async def test_get_function_not_found(
+    client: TestClient,
+    add_user_functions_abilities: None,
+    rpc_client: RabbitMQRPCClient,
+    logged_user: UserInfoDict,
+    osparc_product_name: ProductName,
+    clean_functions: None,
+):
+    # Attempt to retrieve a function that does not exist
+    with pytest.raises(FunctionIDNotFoundError):
+        await functions_rpc.get_function(
+            rabbitmq_rpc_client=rpc_client,
+            function_id=uuid4(),
+            user_id=logged_user["id"],
+            product_name=osparc_product_name,
+        )
 
 
 @pytest.mark.parametrize(
@@ -152,6 +152,7 @@ async def test_register_get_delete_function(
 )
 async def test_list_functions(
     client: TestClient,
+    add_user_functions_abilities: None,
     rpc_client: RabbitMQRPCClient,
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
@@ -278,12 +279,12 @@ async def test_list_functions_mixed_user(
 )
 async def test_list_functions_with_pagination(
     client: TestClient,
+    add_user_functions_abilities: None,
     rpc_client: RabbitMQRPCClient,
     mock_function: ProjectFunction,
     clean_functions: None,
     osparc_product_name: ProductName,
     logged_user: UserInfoDict,
-    add_user_functions_abilities: None,
 ):
     # Register multiple functions
     TOTAL_FUNCTIONS = 3
@@ -516,11 +517,11 @@ async def test_delete_function(
 )
 async def test_get_function_user_permissions(
     client: TestClient,
+    add_user_functions_abilities: None,
     rpc_client: RabbitMQRPCClient,
     mock_function: ProjectFunction,
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
-    add_user_functions_abilities: None,
 ):
     # Register the function first
     registered_function = await functions_rpc.register_function(

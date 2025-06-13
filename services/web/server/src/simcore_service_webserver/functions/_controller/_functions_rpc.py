@@ -394,6 +394,7 @@ async def get_function_output_schema(
     )
 
 
+@router.expose(reraise_if_error_type=())
 async def get_function_user_permissions(
     app: web.Application,
     *,

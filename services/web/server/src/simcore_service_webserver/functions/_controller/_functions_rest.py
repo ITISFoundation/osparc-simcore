@@ -26,7 +26,6 @@ routes = web.RouteTableDef()
 
 @routes.post(f"/{VTAG}/functions", name="register_function")
 @login_required
-@permission_required("function.create")
 @handle_rest_requests_exceptions
 async def register_function(request: web.Request) -> web.Response:
     with handle_validation_as_http_error(

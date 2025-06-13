@@ -14,6 +14,7 @@ from models_library.api_schemas_webserver.functions import (
 from models_library.functions_errors import (
     FunctionJobIDNotFoundError,
     FunctionJobReadAccessDeniedError,
+    FunctionJobsReadAbilityDeniedError,
 )
 from models_library.products import ProductName
 from pytest_simcore.helpers.webserver_login import UserInfoDict
@@ -31,12 +32,12 @@ pytest_simcore_core_services_selection = ["rabbit"]
 )
 async def test_register_get_delete_function_job(
     client: TestClient,
+    add_user_functions_abilities: None,
     rpc_client: RabbitMQRPCClient,
     mock_function: ProjectFunction,
     logged_user: UserInfoDict,
     other_logged_user: UserInfoDict,
     osparc_product_name: ProductName,
-    add_user_functions_abilities: None,
 ):
     # Register the function first
     registered_function = await functions_rpc.register_function(
@@ -94,8 +95,8 @@ async def test_register_get_delete_function_job(
             product_name=osparc_product_name,
         )
 
-    # Test denied access for anothe product
-    with pytest.raises(FunctionJobReadAccessDeniedError):
+    # Test denied access for another product
+    with pytest.raises(FunctionJobsReadAbilityDeniedError):
         await functions_rpc.get_function_job(
             rabbitmq_rpc_client=rpc_client,
             function_job_id=registered_job.uid,
@@ -136,11 +137,11 @@ async def test_register_get_delete_function_job(
 )
 async def test_get_function_job_not_found(
     client: TestClient,
+    add_user_functions_abilities: None,
     rpc_client: RabbitMQRPCClient,
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
     clean_functions: None,
-    add_user_functions_abilities: None,
 ):
     # Attempt to retrieve a function job that does not exist
     with pytest.raises(FunctionJobIDNotFoundError):
@@ -158,6 +159,7 @@ async def test_get_function_job_not_found(
 )
 async def test_list_function_jobs(
     client: TestClient,
+    add_user_functions_abilities: None,
     rpc_client: RabbitMQRPCClient,
     mock_function: ProjectFunction,
     logged_user: UserInfoDict,
@@ -292,12 +294,12 @@ async def test_list_function_jobs_for_functionid(
 async def test_find_cached_function_jobs(
     client: TestClient,
     rpc_client: RabbitMQRPCClient,
+    add_user_functions_abilities: None,
     logged_user: UserInfoDict,
     other_logged_user: UserInfoDict,
     osparc_product_name: ProductName,
     mock_function: ProjectFunction,
     clean_functions: None,
-    add_user_functions_abilities: None,
 ):
 
     # Register the function first

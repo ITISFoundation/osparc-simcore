@@ -159,7 +159,11 @@ async def add_user_functions_abilities(
     asyncpg_engine: AsyncEngine,
     logged_user: UserInfoDict,
     other_logged_user: UserInfoDict,
-) -> None:
+    request: pytest.FixtureRequest,
+) -> AsyncIterator[None]:
+    if hasattr(request, "param") and not request.param:
+        yield
+        return
     async with asyncpg_engine.begin() as conn:
         # create abilities for the product
         for group_id in (logged_user["primary_gid"], other_logged_user["primary_gid"]):
@@ -176,5 +180,14 @@ async def add_user_functions_abilities(
                     read_function_job_collections=True,
                     write_function_job_collections=True,
                     execute_function_job_collections=True,
+                )
+            )
+    yield
+    async with asyncpg_engine.begin() as conn:
+        # create abilities for the product
+        for group_id in (logged_user["primary_gid"], other_logged_user["primary_gid"]):
+            await conn.execute(
+                function_api_group_abilities_table.delete(  # type: ignore[union-attr]
+                    function_api_group_abilities_table.c.group_id == group_id
                 )
             )

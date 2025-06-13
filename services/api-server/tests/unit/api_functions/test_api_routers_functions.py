@@ -4,9 +4,11 @@
 import datetime
 from collections.abc import Callable
 from typing import Any
+from unittest.mock import MagicMock
 from uuid import uuid4
 
 import httpx
+import pytest
 import respx
 from httpx import AsyncClient
 from models_library.api_schemas_webserver.functions import (
@@ -17,7 +19,7 @@ from models_library.api_schemas_webserver.functions import (
     RegisteredProjectFunction,
     RegisteredProjectFunctionJob,
 )
-from models_library.functions import FunctionUserAccessRights
+from models_library.functions import FunctionUserAbilities, FunctionUserAccessRights
 from models_library.functions_errors import (
     FunctionIDNotFoundError,
     FunctionReadAccessDeniedError,
@@ -586,6 +588,7 @@ async def test_list_function_job_collections_with_function_filter(
     )
 
 
+@pytest.mark.parametrize("user_has_execute_ability", [False, True])
 async def test_run_function_not_allowed(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
@@ -594,8 +597,11 @@ async def test_run_function_not_allowed(
     user_id: UserID,
     mocked_webserver_rest_api_base: respx.MockRouter,
     mocked_webserver_rpc_api: dict[str, MockType],
+    user_has_execute_ability: bool,
 ) -> None:
     """Test that running a function is not allowed."""
+
+    # Mock the function's user permissions and abilities
     mock_handler_in_functions_rpc_interface(
         "get_function_user_permissions",
         FunctionUserAccessRights(
@@ -605,13 +611,34 @@ async def test_run_function_not_allowed(
             write=True,
         ),
     )
+    mock_handler_in_functions_rpc_interface(
+        "get_functions_user_abilities",
+        FunctionUserAbilities(
+            user_id=user_id,
+            execute_functions=user_has_execute_ability,
+            write_functions=True,
+            read_functions=True,
+        ),
+    )
+
+    # Monkeypatching MagicMock because otherwise it refuse to be used in an await statement
+    async def async_magic():
+        pass
+
+    MagicMock.__await__ = lambda x: async_magic().__await__()
 
     response = await client.post(
         f"{API_VTAG}/functions/{mock_registered_function.uid}:run",
         json={},
         auth=auth,
     )
-    assert response.status_code == status.HTTP_403_FORBIDDEN
-    assert response.json()["errors"][0] == (
-        f"Function {mock_registered_function.uid} execute access denied for user {user_id}"
-    )
+    if user_has_execute_ability:
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.json()["errors"][0] == (
+            f"Function {mock_registered_function.uid} execute access denied for user {user_id}"
+        )
+    else:
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.json()["errors"][0] == (
+            f"User {user_id} does not have the permission to execute functions"
+        )

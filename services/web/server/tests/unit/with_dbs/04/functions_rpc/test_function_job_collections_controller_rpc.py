@@ -35,13 +35,13 @@ pytest_simcore_core_services_selection = ["rabbit"]
 )
 async def test_function_job_collection(
     client: TestClient,
+    add_user_functions_abilities: None,
     mock_function: ProjectFunction,
     rpc_client: RabbitMQRPCClient,
     logged_user: UserInfoDict,
     other_logged_user: UserInfoDict,
     user_without_function_abilities: UserInfoDict,
     osparc_product_name: ProductName,
-    add_user_functions_abilities: None,
 ):
     # Register the function first
     registered_function = await functions_rpc.register_function(
@@ -167,13 +167,13 @@ async def test_function_job_collection(
 )
 async def test_list_function_job_collections(
     client: TestClient,
+    add_user_functions_abilities: None,
     mock_function: ProjectFunction,
     rpc_client: RabbitMQRPCClient,
     clean_functions: None,
     clean_function_job_collections: None,
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
-    add_user_functions_abilities: None,
 ):
     # List function job collections when none are registered
     collections, page_meta = await functions_rpc.list_function_job_collections(
@@ -269,13 +269,13 @@ async def test_list_function_job_collections(
 )
 async def test_list_function_job_collections_filtered_function_id(
     client: TestClient,
+    add_user_functions_abilities: None,
     rpc_client: RabbitMQRPCClient,
     mock_function: ProjectFunction,
     clean_functions: None,
     clean_function_job_collections: None,
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
-    add_user_functions_abilities: None,
 ):
     # Register the function first
     registered_function = await functions_rpc.register_function(
