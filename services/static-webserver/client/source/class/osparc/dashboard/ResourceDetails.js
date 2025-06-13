@@ -151,6 +151,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         const cantReadServices = osparc.study.Utils.getCantReadServices(resourceData["services"]);
         if (cantReadServices.length) {
           const requestAccessButton = new qx.ui.form.Button(this.tr("Request Access"));
+          osparc.dashboard.resources.pages.BasePage.decorateHeaderButton(requestAccessButton);
           requestAccessButton.addListener("execute", () => {
             console.log("cantReadServices", cantReadServices);
           });
