@@ -113,11 +113,16 @@ async def delete_function(request: web.Request) -> web.Response:
 @handle_rest_requests_exceptions
 async def list_user_functions_permissions(request: web.Request) -> web.Response:
     req_ctx = AuthenticatedRequestContext.model_validate(request)
-    function_permissions = await _functions_service.get_functions_user_abilities(
-        app=request.app,
-        user_id=req_ctx.user_id,
-        product_name=req_ctx.product_name,
+
+    function_permissions = (
+        await _functions_service.get_functions_user_api_access_rights(
+            app=request.app,
+            user_id=req_ctx.user_id,
+            product_name=req_ctx.product_name,
+        )
     )
+
+    assert function_permissions.user_id == req_ctx.user_id  # nosec
 
     return envelope_json_response(
         MyFunctionPermissionsGet(write_functions=function_permissions.write_functions)
