@@ -14,8 +14,8 @@ from models_library.functions import (
     FunctionJobDB,
     FunctionJobID,
     FunctionOutputSchema,
-    FunctionUserAbilities,
     FunctionUserAccessRights,
+    FunctionUserApiAccessRights,
     RegisteredFunction,
     RegisteredFunctionDB,
     RegisteredFunctionJob,
@@ -453,8 +453,8 @@ async def get_functions_user_abilities(
     *,
     user_id: UserID,
     product_name: ProductName,
-) -> FunctionUserAbilities:
-    return await _functions_repository.get_user_abilities(
+) -> FunctionUserApiAccessRights:
+    return await _functions_repository.get_user_api_access_rights(
         app=app,
         user_id=user_id,
         product_name=product_name,

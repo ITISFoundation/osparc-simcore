@@ -23,7 +23,10 @@ from models_library.api_schemas_api_server.functions import (
     RegisteredFunctionJobCollection,
 )
 from models_library.api_schemas_webserver.licensed_items import LicensedItemRpcGetPage
-from models_library.functions import FunctionUserAbilities, FunctionUserAccessRights
+from models_library.functions import (
+    FunctionUserAccessRights,
+    FunctionUserApiAccessRights,
+)
 from models_library.licenses import LicensedItemID
 from models_library.products import ProductName
 from models_library.projects import ProjectID
@@ -546,7 +549,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         *,
         user_id: UserID,
         product_name: ProductName,
-    ) -> FunctionUserAbilities:
+    ) -> FunctionUserApiAccessRights:
         return await functions_rpc_interface.get_functions_user_abilities(
             self._client,
             user_id=user_id,

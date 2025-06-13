@@ -302,7 +302,7 @@ class FunctionAccessRightsDB(BaseModel):
     )
 
 
-class FunctionUserAbilities(BaseModel):
+class FunctionUserApiAccessRights(BaseModel):
     user_id: UserID
     read_functions: bool = False
     write_functions: bool = False
@@ -332,7 +332,7 @@ FunctionJobCollectionUserAccessRights: TypeAlias = FunctionUserAccessRights
 FunctionJobCollectionGroupAccessRights: TypeAlias = FunctionGroupAccessRights
 
 
-class FunctionsAbility(StrAutoEnum):
+class FunctionsApiAccessRights(StrAutoEnum):
     READ_FUNCTIONS = "read_functions"
     WRITE_FUNCTIONS = "write_functions"
     EXECUTE_FUNCTIONS = "execute_functions"

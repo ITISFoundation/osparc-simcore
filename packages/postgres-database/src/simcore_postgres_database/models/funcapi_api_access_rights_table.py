@@ -1,4 +1,4 @@
-"""Function related abilities of groups (read, write, execute)"""
+"""Function api access rights of groups (read, write, execute)"""
 
 import sqlalchemy as sa
 from simcore_postgres_database.models._common import (
@@ -9,8 +9,8 @@ from simcore_postgres_database.models._common import (
 
 from .base import metadata
 
-function_api_group_abilities_table = sa.Table(
-    "funcapi_function_api_group_abilities",
+funcapi_api_access_rights_table = sa.Table(
+    "funcapi_group_api_access_rights",
     metadata,
     sa.Column(
         "group_id",
@@ -82,6 +82,6 @@ function_api_group_abilities_table = sa.Table(
     sa.PrimaryKeyConstraint(
         "group_id",
         "product_name",
-        name="pk_func_group_product_name_to_abilities",
+        name="pk_func_group_product_name_to_api_access_rights",
     ),
 )

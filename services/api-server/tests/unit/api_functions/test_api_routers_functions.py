@@ -19,7 +19,10 @@ from models_library.api_schemas_webserver.functions import (
     RegisteredProjectFunction,
     RegisteredProjectFunctionJob,
 )
-from models_library.functions import FunctionUserAbilities, FunctionUserAccessRights
+from models_library.functions import (
+    FunctionUserAccessRights,
+    FunctionUserApiAccessRights,
+)
 from models_library.functions_errors import (
     FunctionIDNotFoundError,
     FunctionReadAccessDeniedError,
@@ -613,7 +616,7 @@ async def test_run_function_not_allowed(
     )
     mock_handler_in_functions_rpc_interface(
         "get_functions_user_abilities",
-        FunctionUserAbilities(
+        FunctionUserApiAccessRights(
             user_id=user_id,
             execute_functions=user_has_execute_ability,
             write_functions=True,

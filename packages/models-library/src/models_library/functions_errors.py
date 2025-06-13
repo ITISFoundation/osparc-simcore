@@ -101,59 +101,59 @@ class FunctionJobCollectionExecuteAccessDeniedError(FunctionBaseError):
     status_code: int = 403  # Forbidden
 
 
-class FunctionsReadAbilityDeniedError(FunctionBaseError):
+class FunctionsReadApiAccessDeniedError(FunctionBaseError):
     msg_template: str = "User {user_id} does not have the permission to read functions"
     status_code: int = 403  # Forbidden
 
 
-class FunctionsWriteAbilityDeniedError(FunctionBaseError):
+class FunctionsWriteApiAccessDeniedError(FunctionBaseError):
     msg_template: str = "User {user_id} does not have the permission to write functions"
     status_code: int = 403  # Forbidden
 
 
-class FunctionsExecuteAbilityDeniedError(FunctionBaseError):
+class FunctionsExecuteApiAccessDeniedError(FunctionBaseError):
     msg_template: str = (
         "User {user_id} does not have the permission to execute functions"
     )
     status_code: int = 403  # Forbidden
 
 
-class FunctionJobsReadAbilityDeniedError(FunctionBaseError):
+class FunctionJobsReadApiAccessDeniedError(FunctionBaseError):
     msg_template: str = (
         "User {user_id} does not have the permission to read function jobs"
     )
     status_code: int = 403  # Forbidden
 
 
-class FunctionJobsWriteAbilityDeniedError(FunctionBaseError):
+class FunctionJobsWriteApiAccessDeniedError(FunctionBaseError):
     msg_template: str = (
         "User {user_id} does not have the permission to write function jobs"
     )
     status_code: int = 403  # Forbidden
 
 
-class FunctionJobsExecuteAbilityDeniedError(FunctionBaseError):
+class FunctionJobsExecuteApiAccessDeniedError(FunctionBaseError):
     msg_template: str = (
         "User {user_id} does not have the permission to execute function jobs"
     )
     status_code: int = 403  # Forbidden
 
 
-class FunctionJobCollectionsReadAbilityDeniedError(FunctionBaseError):
+class FunctionJobCollectionsReadApiAccessDeniedError(FunctionBaseError):
     msg_template: str = (
         "User {user_id} does not have the permission to read function job collections"
     )
     status_code: int = 403  # Forbidden
 
 
-class FunctionJobCollectionsWriteAbilityDeniedError(FunctionBaseError):
+class FunctionJobCollectionsWriteApiAccessDeniedError(FunctionBaseError):
     msg_template: str = (
         "User {user_id} does not have the permission to write function job collections"
     )
     status_code: int = 403  # Forbidden
 
 
-class FunctionJobCollectionsExecuteAbilityDeniedError(FunctionBaseError):
+class FunctionJobCollectionsExecuteApiAccessDeniedError(FunctionBaseError):
     msg_template: str = (
         "User {user_id} does not have the permission to execute function job collections"
     )

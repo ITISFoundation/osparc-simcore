@@ -11,7 +11,7 @@ from models_library.functions import (
     FunctionJobCollectionsListFilters,
     FunctionJobID,
     FunctionOutputSchema,
-    FunctionUserAbilities,
+    FunctionUserApiAccessRights,
     RegisteredFunction,
     RegisteredFunctionJob,
     RegisteredFunctionJobCollection,
@@ -20,16 +20,16 @@ from models_library.functions_errors import (
     FunctionIDNotFoundError,
     FunctionJobCollectionIDNotFoundError,
     FunctionJobCollectionReadAccessDeniedError,
-    FunctionJobCollectionsReadAbilityDeniedError,
-    FunctionJobCollectionsWriteAbilityDeniedError,
+    FunctionJobCollectionsReadApiAccessDeniedError,
+    FunctionJobCollectionsWriteApiAccessDeniedError,
     FunctionJobIDNotFoundError,
     FunctionJobReadAccessDeniedError,
-    FunctionJobsReadAbilityDeniedError,
-    FunctionJobsWriteAbilityDeniedError,
+    FunctionJobsReadApiAccessDeniedError,
+    FunctionJobsWriteApiAccessDeniedError,
     FunctionJobWriteAccessDeniedError,
     FunctionReadAccessDeniedError,
-    FunctionsReadAbilityDeniedError,
-    FunctionsWriteAbilityDeniedError,
+    FunctionsReadApiAccessDeniedError,
+    FunctionsWriteApiAccessDeniedError,
     FunctionWriteAccessDeniedError,
     UnsupportedFunctionClassError,
     UnsupportedFunctionJobClassError,
@@ -48,7 +48,7 @@ router = RPCRouter()
 @router.expose(
     reraise_if_error_type=(
         UnsupportedFunctionClassError,
-        FunctionsWriteAbilityDeniedError,
+        FunctionsWriteApiAccessDeniedError,
     )
 )
 async def register_function(
@@ -66,7 +66,7 @@ async def register_function(
 @router.expose(
     reraise_if_error_type=(
         UnsupportedFunctionJobClassError,
-        FunctionJobsWriteAbilityDeniedError,
+        FunctionJobsWriteApiAccessDeniedError,
     )
 )
 async def register_function_job(
@@ -81,7 +81,7 @@ async def register_function_job(
     )
 
 
-@router.expose(reraise_if_error_type=(FunctionJobCollectionsWriteAbilityDeniedError,))
+@router.expose(reraise_if_error_type=(FunctionJobCollectionsWriteApiAccessDeniedError,))
 async def register_function_job_collection(
     app: web.Application,
     *,
@@ -101,7 +101,7 @@ async def register_function_job_collection(
     reraise_if_error_type=(
         FunctionIDNotFoundError,
         FunctionReadAccessDeniedError,
-        FunctionsReadAbilityDeniedError,
+        FunctionsReadApiAccessDeniedError,
     )
 )
 async def get_function(
@@ -123,7 +123,7 @@ async def get_function(
     reraise_if_error_type=(
         FunctionJobIDNotFoundError,
         FunctionJobReadAccessDeniedError,
-        FunctionJobsReadAbilityDeniedError,
+        FunctionJobsReadApiAccessDeniedError,
     )
 )
 async def get_function_job(
@@ -145,7 +145,7 @@ async def get_function_job(
     reraise_if_error_type=(
         FunctionJobCollectionIDNotFoundError,
         FunctionJobCollectionReadAccessDeniedError,
-        FunctionJobCollectionsReadAbilityDeniedError,
+        FunctionJobCollectionsReadApiAccessDeniedError,
     )
 )
 async def get_function_job_collection(
@@ -163,7 +163,7 @@ async def get_function_job_collection(
     )
 
 
-@router.expose(reraise_if_error_type=(FunctionsReadAbilityDeniedError,))
+@router.expose(reraise_if_error_type=(FunctionsReadApiAccessDeniedError,))
 async def list_functions(
     app: web.Application,
     *,
@@ -183,8 +183,8 @@ async def list_functions(
 
 @router.expose(
     reraise_if_error_type=(
-        FunctionJobsReadAbilityDeniedError,
-        FunctionsReadAbilityDeniedError,
+        FunctionJobsReadApiAccessDeniedError,
+        FunctionsReadApiAccessDeniedError,
     )
 )
 async def list_function_jobs(
@@ -208,9 +208,9 @@ async def list_function_jobs(
 
 @router.expose(
     reraise_if_error_type=(
-        FunctionJobCollectionsReadAbilityDeniedError,
-        FunctionJobsReadAbilityDeniedError,
-        FunctionsReadAbilityDeniedError,
+        FunctionJobCollectionsReadApiAccessDeniedError,
+        FunctionJobsReadApiAccessDeniedError,
+        FunctionsReadApiAccessDeniedError,
     )
 )
 async def list_function_job_collections(
@@ -237,8 +237,8 @@ async def list_function_job_collections(
         FunctionIDNotFoundError,
         FunctionReadAccessDeniedError,
         FunctionWriteAccessDeniedError,
-        FunctionsWriteAbilityDeniedError,
-        FunctionsReadAbilityDeniedError,
+        FunctionsWriteApiAccessDeniedError,
+        FunctionsReadApiAccessDeniedError,
     )
 )
 async def delete_function(
@@ -261,7 +261,7 @@ async def delete_function(
         FunctionJobIDNotFoundError,
         FunctionJobReadAccessDeniedError,
         FunctionJobWriteAccessDeniedError,
-        FunctionJobsWriteAbilityDeniedError,
+        FunctionJobsWriteApiAccessDeniedError,
     )
 )
 async def delete_function_job(
@@ -283,7 +283,7 @@ async def delete_function_job(
     reraise_if_error_type=(
         FunctionJobCollectionIDNotFoundError,
         FunctionJobCollectionReadAccessDeniedError,
-        FunctionJobCollectionsWriteAbilityDeniedError,
+        FunctionJobCollectionsWriteApiAccessDeniedError,
     )
 )
 async def delete_function_job_collection(
@@ -419,7 +419,7 @@ async def get_functions_user_abilities(
     *,
     user_id: UserID,
     product_name: ProductName,
-) -> FunctionUserAbilities:
+) -> FunctionUserApiAccessRights:
     """
     Returns a dictionary with the user's abilities for all function related objects.
     """

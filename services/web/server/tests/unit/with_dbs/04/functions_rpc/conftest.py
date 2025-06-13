@@ -23,8 +23,8 @@ from servicelib.rabbitmq.rpc_interfaces.webserver.functions import (
     functions_rpc_interface as functions_rpc,
 )
 from settings_library.rabbit import RabbitSettings
-from simcore_postgres_database.models.funcapi_function_api_group_abilities import (
-    function_api_group_abilities_table,
+from simcore_postgres_database.models.funcapi_api_access_rights_table import (
+    funcapi_api_access_rights_table,
 )
 from simcore_service_webserver.application_settings import ApplicationSettings
 from simcore_service_webserver.statics._constants import FRONTEND_APP_DEFAULT
@@ -95,11 +95,11 @@ async def other_logged_user(
 
 
 @pytest.fixture
-async def user_without_function_abilities(
+async def user_without_function_api_access_rights(
     client: TestClient, rpc_client: RabbitMQRPCClient
 ) -> AsyncIterator[UserInfoDict]:
-    async with LoggedUser(client) as user_without_function_abilities:
-        yield user_without_function_abilities
+    async with LoggedUser(client) as user_without_function_api_access_rights:
+        yield user_without_function_api_access_rights
 
 
 @pytest.fixture
@@ -155,7 +155,7 @@ async def clean_function_job_collections(
 
 
 @pytest.fixture
-async def add_user_functions_abilities(
+async def add_user_function_api_access_rights(
     asyncpg_engine: AsyncEngine,
     logged_user: UserInfoDict,
     other_logged_user: UserInfoDict,
@@ -165,10 +165,9 @@ async def add_user_functions_abilities(
         yield
         return
     async with asyncpg_engine.begin() as conn:
-        # create abilities for the product
         for group_id in (logged_user["primary_gid"], other_logged_user["primary_gid"]):
             await conn.execute(
-                function_api_group_abilities_table.insert().values(
+                funcapi_api_access_rights_table.insert().values(
                     group_id=group_id,
                     product_name=FRONTEND_APP_DEFAULT,
                     read_functions=True,
@@ -184,10 +183,9 @@ async def add_user_functions_abilities(
             )
     yield
     async with asyncpg_engine.begin() as conn:
-        # create abilities for the product
         for group_id in (logged_user["primary_gid"], other_logged_user["primary_gid"]):
             await conn.execute(
-                function_api_group_abilities_table.delete(  # type: ignore[union-attr]
-                    function_api_group_abilities_table.c.group_id == group_id
+                funcapi_api_access_rights_table.delete(  # type: ignore[union-attr]
+                    funcapi_api_access_rights_table.c.group_id == group_id
                 )
             )
