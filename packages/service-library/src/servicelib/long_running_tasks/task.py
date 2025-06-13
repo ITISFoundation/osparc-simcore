@@ -335,37 +335,12 @@ class TasksManager:
         self,
         registered_task_name: RegisteredTaskName,
         *,
-        unique: bool = False,
-        task_context: TaskContext | None = None,
-        task_name: str | None = None,
-        fire_and_forget: bool = False,
+        unique: bool,
+        task_context: TaskContext | None,
+        task_name: str | None,
+        fire_and_forget: bool,
         **task_kwargs: Any,
     ) -> TaskId:
-        """
-        Creates a background task from an async function.
-
-        An asyncio task will be created out of it by injecting a `TaskProgress` as the first
-        positional argument and adding all `handler_kwargs` as named parameters.
-
-        NOTE: the progress is automatically bounded between 0 and 1
-        NOTE: the `task` name must be unique in the module, otherwise when using
-            the unique parameter is True, it will not be able to distinguish between
-            them.
-
-        Args:
-            tasks_manager (TasksManager): the tasks manager
-            task (TaskProtocol): the tasks to be run in the background
-            unique (bool, optional): If True, then only one such named task may be run. Defaults to False.
-            task_context (Optional[TaskContext], optional): a task context storage can be retrieved during the task lifetime. Defaults to None.
-            task_name (Optional[str], optional): optional task name. Defaults to None.
-            fire_and_forget: if True, then the task will not be cancelled if the status is never called
-
-        Raises:
-            TaskAlreadyRunningError: if unique is True, will raise if more than 1 such named task is started
-
-        Returns:
-            TaskId: the task unique identifier
-        """
         if registered_task_name not in TaskRegistry.REGISTERED_TASKS:
             raise TaskNotRegisteredError(task_name=registered_task_name)
 

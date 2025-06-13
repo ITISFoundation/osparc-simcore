@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, FastAPI, Request, status
 from servicelib.fastapi.long_running_tasks._manager import FastAPILongRunningManager
 from servicelib.fastapi.long_running_tasks.server import get_long_running_manager
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
+from servicelib.long_running_tasks import http_endpoint_responses
 from servicelib.long_running_tasks.errors import TaskAlreadyRunningError
 from servicelib.long_running_tasks.models import TaskId
 
@@ -57,7 +58,8 @@ async def pull_user_servcices_docker_images(
     assert request  # nosec
 
     try:
-        return long_running_manager.tasks_manager.start_task(
+        return await http_endpoint_responses.start_task(
+            long_running_manager.tasks_manager,
             task_pull_user_servcices_docker_images.__name__,
             unique=True,
             app=app,
@@ -97,7 +99,8 @@ async def create_service_containers_task(  # pylint: disable=too-many-arguments
     assert request  # nosec
 
     try:
-        return long_running_manager.tasks_manager.start_task(
+        return await http_endpoint_responses.start_task(
+            long_running_manager.tasks_manager,
             task_create_service_containers.__name__,
             unique=True,
             settings=settings,
@@ -130,7 +133,8 @@ async def runs_docker_compose_down_task(
     assert request  # nosec
 
     try:
-        return long_running_manager.tasks_manager.start_task(
+        return await http_endpoint_responses.start_task(
+            long_running_manager.tasks_manager,
             task_runs_docker_compose_down.__name__,
             unique=True,
             app=app,
@@ -161,7 +165,8 @@ async def state_restore_task(
     assert request  # nosec
 
     try:
-        return long_running_manager.tasks_manager.start_task(
+        return await http_endpoint_responses.start_task(
+            long_running_manager.tasks_manager,
             task_restore_state.__name__,
             unique=True,
             settings=settings,
@@ -191,7 +196,8 @@ async def state_save_task(
     assert request  # nosec
 
     try:
-        return long_running_manager.tasks_manager.start_task(
+        return await http_endpoint_responses.start_task(
+            long_running_manager.tasks_manager,
             task_save_state.__name__,
             unique=True,
             settings=settings,
@@ -223,7 +229,8 @@ async def ports_inputs_pull_task(
     assert request  # nosec
 
     try:
-        return long_running_manager.tasks_manager.start_task(
+        return await http_endpoint_responses.start_task(
+            long_running_manager.tasks_manager,
             task_ports_inputs_pull.__name__,
             unique=True,
             port_keys=port_keys,
@@ -255,7 +262,8 @@ async def ports_outputs_pull_task(
     assert request  # nosec
 
     try:
-        return long_running_manager.tasks_manager.start_task(
+        return await http_endpoint_responses.start_task(
+            long_running_manager.tasks_manager,
             task_ports_outputs_pull.__name__,
             unique=True,
             port_keys=port_keys,
@@ -284,7 +292,8 @@ async def ports_outputs_push_task(
     assert request  # nosec
 
     try:
-        return long_running_manager.tasks_manager.start_task(
+        return await http_endpoint_responses.start_task(
+            long_running_manager.tasks_manager,
             task_ports_outputs_push.__name__,
             unique=True,
             outputs_manager=outputs_manager,
@@ -313,7 +322,8 @@ async def containers_restart_task(
     assert request  # nosec
 
     try:
-        return long_running_manager.tasks_manager.start_task(
+        return await http_endpoint_responses.start_task(
+            long_running_manager.tasks_manager,
             task_containers_restart.__name__,
             unique=True,
             app=app,
