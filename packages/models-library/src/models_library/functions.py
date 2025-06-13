@@ -11,6 +11,7 @@ from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
+from models_library.utils.enums import StrAutoEnum
 from pydantic import BaseModel, ConfigDict, Field
 
 from .projects import ProjectID
@@ -331,7 +332,7 @@ FunctionJobCollectionUserAccessRights: TypeAlias = FunctionUserAccessRights
 FunctionJobCollectionGroupAccessRights: TypeAlias = FunctionGroupAccessRights
 
 
-class FunctionsAbility(str, Enum):
+class FunctionsAbility(StrAutoEnum):
     READ_FUNCTIONS = "read_functions"
     WRITE_FUNCTIONS = "write_functions"
     EXECUTE_FUNCTIONS = "execute_functions"

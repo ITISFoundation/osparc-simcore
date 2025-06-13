@@ -625,7 +625,7 @@ async def test_run_function_not_allowed(
     async def async_magic():
         pass
 
-    MagicMock.__await__ = lambda x: async_magic().__await__()
+    MagicMock.__await__ = lambda _: async_magic().__await__()
 
     response = await client.post(
         f"{API_VTAG}/functions/{mock_registered_function.uid}:run",
