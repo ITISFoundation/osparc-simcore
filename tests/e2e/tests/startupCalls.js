@@ -20,7 +20,7 @@ module.exports = {
       };
 
       beforeAll(async () => {
-        console.log("Start:", new Date().toUTCString());
+        console.log("Start:", new Date().toUTCString(), 120000);
 
         page.on('response', response => {
           const url = response.url();
