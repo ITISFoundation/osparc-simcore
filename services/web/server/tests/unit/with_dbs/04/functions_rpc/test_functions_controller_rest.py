@@ -49,7 +49,7 @@ def mock_function() -> dict[str, Any]:
 
 
 @pytest.mark.parametrize(
-    "user_role,add_user_functions_abilities,expected_register,expected_get,expected_delete,expected_get2",
+    "user_role,add_user_function_api_access_rights,expected_register,expected_get,expected_delete,expected_get2",
     [
         (
             UserRole.USER,
@@ -68,7 +68,7 @@ def mock_function() -> dict[str, Any]:
             status.HTTP_403_FORBIDDEN,
         ),
     ],
-    indirect=["add_user_functions_abilities"],
+    indirect=["add_user_function_api_access_rights"],
 )
 async def test_register_get_delete_function(
     client: TestClient,
@@ -78,7 +78,7 @@ async def test_register_get_delete_function(
     expected_get: HTTPStatus,
     expected_delete: HTTPStatus,
     expected_get2: HTTPStatus,
-    add_user_functions_abilities: AsyncIterator[None],
+    add_user_function_api_access_rights: AsyncIterator[None],
     request: pytest.FixtureRequest,
 ) -> None:
     url = client.app.router["register_function"].url_for()

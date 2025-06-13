@@ -25,7 +25,7 @@ from models_library.functions import FunctionUserAccessRights
 from models_library.functions_errors import (
     FunctionExecuteAccessDeniedError,
     FunctionInputsValidationError,
-    FunctionsExecuteAbilityDeniedError,
+    FunctionsExecuteApiAccessDeniedError,
     UnsupportedFunctionClassError,
 )
 from models_library.products import ProductName
@@ -380,7 +380,7 @@ async def run_function(  # noqa: PLR0913
         user_id=user_id, product_name=product_name
     )
     if not user_abilities.execute_functions:
-        raise FunctionsExecuteAbilityDeniedError(
+        raise FunctionsExecuteApiAccessDeniedError(
             user_id=user_id,
             function_id=function_id,
         )

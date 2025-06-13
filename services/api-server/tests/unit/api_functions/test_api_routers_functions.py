@@ -592,7 +592,10 @@ async def test_list_function_job_collections_with_function_filter(
 
 
 @pytest.mark.parametrize("user_has_execute_ability", [False, True])
-async def test_run_function_not_allowed(
+@pytest.mark.parametrize(
+    "funcapi_endpoint,endpoint_inputs", [("run", {}), ("map", [{}, {}])]
+)
+async def test_run_map_function_not_allowed(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
     mock_registered_function: RegisteredProjectFunction,
@@ -601,6 +604,8 @@ async def test_run_function_not_allowed(
     mocked_webserver_rest_api_base: respx.MockRouter,
     mocked_webserver_rpc_api: dict[str, MockType],
     user_has_execute_ability: bool,
+    funcapi_endpoint: str,
+    endpoint_inputs: dict | list[dict],
 ) -> None:
     """Test that running a function is not allowed."""
 
@@ -631,8 +636,8 @@ async def test_run_function_not_allowed(
     MagicMock.__await__ = lambda _: async_magic().__await__()
 
     response = await client.post(
-        f"{API_VTAG}/functions/{mock_registered_function.uid}:run",
-        json={},
+        f"{API_VTAG}/functions/{mock_registered_function.uid}:{funcapi_endpoint}",
+        json=endpoint_inputs,
         auth=auth,
     )
     if user_has_execute_ability:
