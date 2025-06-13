@@ -2,7 +2,6 @@
 
 import contextlib
 import logging
-from copy import deepcopy
 from typing import Final
 
 from aiocache import cached  # type: ignore[import-untyped]
@@ -24,9 +23,13 @@ from ._authz_access_model import (
     RoleBasedAccessModel,
     has_access_by_role,
 )
-from ._authz_db import AuthInfoDict, get_active_user_or_none, is_user_in_product_name
+from ._authz_repository import (
+    ActiveUserIdAndRole,
+    get_active_user_or_none,
+    is_user_in_product_name,
+)
 from ._constants import MSG_AUTH_NOT_AVAILABLE, PERMISSION_PRODUCT_LOGIN_KEY
-from ._identity_api import IdentityStr
+from ._identity_web import IdentityStr
 
 _logger = logging.getLogger(__name__)
 
@@ -68,7 +71,9 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         namespace=__name__,
         key_builder=lambda f, *ag, **kw: f"{f.__name__}/{kw['email']}",
     )
-    async def _get_auth_or_none(self, *, email: str) -> AuthInfoDict | None:
+    async def _get_authorized_user_or_none(
+        self, *, email: str
+    ) -> ActiveUserIdAndRole | None:
         """
         Raises:
             web.HTTPServiceUnavailable: if database raises an exception
@@ -101,7 +106,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
 
     async def clear_cache(self):
         # pylint: disable=no-member
-        for fun in (self._get_auth_or_none, self._has_access_to_product):
+        for fun in (self._get_authorized_user_or_none, self._has_access_to_product):
             autz_cache: BaseCache = fun.cache
             await autz_cache.clear()
 
@@ -115,7 +120,9 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         Return the user_id of the user identified by the identity
         or "None" if no user exists related to the identity.
         """
-        user_info: AuthInfoDict | None = await self._get_auth_or_none(email=identity)
+        user_info: ActiveUserIdAndRole | None = await self._get_authorized_user_or_none(
+            email=identity
+        )
         if user_info is None:
             return None
 
@@ -138,25 +145,33 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         if identity is None or permission is None:
             return False
 
-        auth_info = await self._get_auth_or_none(email=identity)
-        if auth_info is None:
+        # authorized user info
+        authorized_user_info = await self._get_authorized_user_or_none(email=identity)
+        if authorized_user_info is None:
             return False
 
-        # make sure context is a copy to avoid side effects
-        context = deepcopy(context) if context else AuthContextDict()
+        user_id = authorized_user_info["id"]
+        user_role = authorized_user_info["role"]
+
+        # context info: product_name
+        context = context or AuthContextDict()
+        product_name = context.get("product_name")
+
+        assert user_id == context.get(  # nosec
+            "authorized_uid"
+        ), f"{user_id}!={context.get('authorized_uid')}"
 
         # product access
         if permission == PERMISSION_PRODUCT_LOGIN_KEY:
-            product_name = context.get("product_name")
             ok: bool = product_name is not None and await self._has_access_to_product(
-                user_id=auth_info["id"], product_name=product_name
+                user_id=user_id, product_name=product_name
             )
             return ok
 
         # role-based access
         return await has_access_by_role(
             self._access_model,
-            role=auth_info["role"],
-            operations=permission,
+            role=user_role,
+            operation=permission,
             context=context,
         )

@@ -61,7 +61,6 @@ async def test_delete_project(
     expected: ExpectedResponse,
     storage_subsystem_mock: MockedStorageSubsystem,
     mocked_dynamic_services_interface: dict[str, MagicMock],
-    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     fake_services: Callable[..., Awaitable[list[DynamicServiceGet]]],
     assert_get_same_project_caller: Callable,
     mock_dynamic_scheduler_rabbitmq: None,

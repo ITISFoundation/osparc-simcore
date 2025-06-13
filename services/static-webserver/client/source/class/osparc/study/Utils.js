@@ -355,7 +355,9 @@ qx.Class.define("osparc.study.Utils", {
     },
 
     __getBlockedState: function(studyData) {
-      if (studyData["services"]) {
+      if (studyData["services"] === null) {
+        return "UNKNOWN_SERVICES";
+      } else if (studyData["services"]) {
         const cantReadServices = osparc.study.Utils.getCantReadServices(studyData["services"]);
         const inaccessibleServices = osparc.store.Services.getInaccessibleServices(studyData["workbench"]);
         if (cantReadServices.length || inaccessibleServices.length) {

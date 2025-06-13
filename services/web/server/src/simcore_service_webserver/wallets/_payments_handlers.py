@@ -23,7 +23,6 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.utils import fire_and_forget_task
-from simcore_service_webserver.products._models import CreditResult
 
 from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
@@ -43,6 +42,7 @@ from ..payments.api import (
     replace_wallet_payment_autorecharge,
 )
 from ..products import products_service
+from ..products._models import CreditResult
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from ._handlers import (

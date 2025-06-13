@@ -804,7 +804,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     __getCreateTemplatePage: function() {
       if (
         !osparc.utils.Resources.isStudy(this.__resourceData) ||
-        osparc.product.Utils.showTemplates()
+        !osparc.product.Utils.showTemplates()
       ) {
         return null;
       }
