@@ -162,7 +162,6 @@ qx.Class.define("osparc.form.renderer.PropForm", {
           break;
         }
       }
-      console.log("hideablePorts", hideablePorts);
       return hideablePorts;
     },
 
