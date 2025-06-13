@@ -22,7 +22,6 @@ from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
 )
-from simcore_service_webserver.constants import FRONTEND_APPS_AVAILABLE
 from sqlalchemy.engine import Row
 from sqlalchemy.ext.asyncio import AsyncConnection
 

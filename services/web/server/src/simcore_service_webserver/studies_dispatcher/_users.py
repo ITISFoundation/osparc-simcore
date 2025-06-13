@@ -31,12 +31,7 @@ from ..login._login_service import ACTIVE, GUEST
 from ..login.login_repository_legacy import AsyncpgStorage, get_plugin_storage
 from ..products import products_web
 from ..redis import get_redis_lock_manager_client
-from ..security.api import (
-    check_user_authorized,
-    encrypt_password,
-    is_anonymous,
-    remember_identity,
-)
+from ..security import security_service, security_web
 from ..users.api import get_user
 from ..users.exceptions import UserNotFoundError
 from ._constants import MSG_GUESTS_NOT_ALLOWED
@@ -60,7 +55,7 @@ async def get_authorized_user(request: web.Request) -> dict:
     and logged in (valid cookie)?
     """
     with suppress(web.HTTPUnauthorized, UserNotFoundError):
-        user_id = await check_user_authorized(request)
+        user_id = await security_web.check_user_authorized(request)
         user: dict = await get_user(request.app, user_id)
         return user
     return {}
@@ -125,7 +120,7 @@ async def create_temporary_guest_user(request: web.Request):
                 {
                     "name": random_user_name,
                     "email": email,
-                    "password_hash": encrypt_password(password),
+                    "password_hash": security_service.encrypt_password(password),
                     "status": ACTIVE,
                     "role": GUEST,
                     "expires_at": expires_at,
@@ -192,7 +187,7 @@ async def get_or_create_guest_user(
     user = None
 
     # anonymous = no identity in request
-    is_anonymous_user = await is_anonymous(request)
+    is_anonymous_user = await security_web.is_anonymous(request)
     if not is_anonymous_user:
         # NOTE: covers valid cookie with unauthorized user (e.g. expired guest/banned)
         user = await get_authorized_user(request)
@@ -223,7 +218,7 @@ async def ensure_authentication(
 ):
     if user.needs_login:
         _logger.debug("Auto login for anonymous user %s", user.name)
-        await remember_identity(
+        await security_web.remember_identity(
             request,
             response,
             user_email=user.email,
