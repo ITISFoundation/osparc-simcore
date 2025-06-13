@@ -124,6 +124,15 @@ async def get_user(app: web.Application, user_id: UserID) -> dict[str, Any]:
     )
 
 
+async def get_user_email_legacy(app: web.Application, user_id: UserID | None) -> str:
+    """
+    :raises UserNotFoundError: if missing but NOT if marked for deletion!
+    """
+    return await _users_repository.get_user_email_legacy(
+        engine=get_asyncpg_engine(app), user_id=user_id
+    )
+
+
 async def get_user_primary_group_id(app: web.Application, user_id: UserID) -> GroupID:
     return await _users_repository.get_user_primary_group_id(
         engine=get_asyncpg_engine(app), user_id=user_id

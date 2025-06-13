@@ -199,6 +199,18 @@ async def get_user_id_from_pgid(app: web.Application, *, primary_gid: int) -> Us
         return user_id
 
 
+async def get_user_email_legacy(engine: AsyncEngine, *, user_id: UserID | None) -> str:
+    if not user_id:
+        return "not_a_user@unknown.com"
+    async with pass_or_acquire_connection(engine=engine) as conn:
+        email: str | None = await conn.scalar(
+            sa.select(
+                users.c.email,
+            ).where(users.c.id == user_id)
+        )
+        return email or "Unknown"
+
+
 async def get_user_fullname(app: web.Application, *, user_id: UserID) -> FullNameDict:
     """
     :raises UserNotFoundError:
