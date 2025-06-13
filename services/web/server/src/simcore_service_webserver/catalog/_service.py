@@ -106,10 +106,12 @@ async def batch_get_my_services(
             product_name=product_name,
             ids=services_ids,
         )
+
     except RPCServerError as err:
         raise CatalogNotAvailableError(
             user_id=user_id,
             product_name=product_name,
+            services_ids=services_ids,
         ) from err
 
 

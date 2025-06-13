@@ -5,7 +5,7 @@ from fastapi.encoders import jsonable_encoder
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from ...long_running_tasks._errors import (
+from ...long_running_tasks.errors import (
     BaseLongRunningError,
     TaskNotCompletedError,
     TaskNotFoundError,

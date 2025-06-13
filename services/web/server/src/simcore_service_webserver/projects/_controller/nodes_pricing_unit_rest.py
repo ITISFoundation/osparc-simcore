@@ -17,7 +17,7 @@ from ...utils_aiohttp import envelope_json_response
 from .. import _projects_service
 from .._projects_repository_legacy import ProjectDBAPI
 from ._rest_exceptions import handle_plugin_requests_exceptions
-from ._rest_schemas import RequestContext
+from ._rest_schemas import AuthenticatedRequestContext
 from .nodes_rest import NodePathParams
 
 _logger = logging.getLogger(__name__)
@@ -42,7 +42,7 @@ routes = web.RouteTableDef()
 @handle_plugin_requests_exceptions
 async def get_project_node_pricing_unit(request: web.Request):
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
 
     # ensure the project exists
@@ -89,7 +89,7 @@ class _ProjectNodePricingUnitPathParams(BaseModel):
 @handle_plugin_requests_exceptions
 async def connect_pricing_unit_to_project_node(request: web.Request):
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(
         _ProjectNodePricingUnitPathParams, request
     )
