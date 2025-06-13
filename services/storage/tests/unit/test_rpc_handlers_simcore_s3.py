@@ -113,7 +113,7 @@ async def test_copy_folders_from_non_existing_project(
     product_name: ProductName,
     create_project: Callable[..., Awaitable[dict[str, Any]]],
     faker: Faker,
-    with_storage_celery_worker: CeleryTaskManager,
+    with_storage_celery_worker: TestWorkController,
 ):
     src_project = await create_project()
     incorrect_src_project = deepcopy(src_project)
@@ -154,7 +154,7 @@ async def test_copy_folders_from_empty_project(
     product_name: ProductName,
     create_project: Callable[[], Awaitable[dict[str, Any]]],
     sqlalchemy_async_engine: AsyncEngine,
-    with_storage_celery_worker: CeleryTaskManager,
+    with_storage_celery_worker: TestWorkController,
 ):
     # we will copy from src to dst
     src_project = await create_project()

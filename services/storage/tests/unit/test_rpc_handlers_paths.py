@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any, TypeAlias
 
 import pytest
-from celery_library.task_manager import CeleryTaskManager
+from celery.contrib.testing.worker import TestWorkController
 from faker import Faker
 from fastapi import FastAPI
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
@@ -265,7 +265,7 @@ async def test_path_compute_size_inexistent_path(
     mock_celery_app: None,
     initialized_app: FastAPI,
     storage_rabbitmq_rpc_client: RabbitMQRPCClient,
-    with_storage_celery_worker: CeleryTaskManager,
+    with_storage_celery_worker: TestWorkController,
     location_id: LocationID,
     user_id: UserID,
     faker: Faker,
@@ -294,7 +294,7 @@ async def test_delete_paths_empty_set(
     user_id: UserID,
     location_id: LocationID,
     product_name: ProductName,
-    with_storage_celery_worker: CeleryTaskManager,
+    with_storage_celery_worker: TestWorkController,
 ):
     await _assert_delete_paths(
         storage_rabbitmq_rpc_client,
@@ -333,7 +333,7 @@ async def test_delete_paths(
     ],
     project_params: ProjectWithFilesParams,
     product_name: ProductName,
-    with_storage_celery_worker: CeleryTaskManager,
+    with_storage_celery_worker: TestWorkController,
 ):
     assert (
         len(project_params.allowed_file_sizes) == 1

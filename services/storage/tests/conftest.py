@@ -27,8 +27,6 @@ from celery.contrib.testing.worker import TestWorkController, start_worker
 from celery.signals import worker_init, worker_shutdown
 from celery.worker.worker import WorkController
 from celery_library.signals import on_worker_init, on_worker_shutdown
-from celery_library.task_manager import CeleryTaskManager
-from celery_library.utils import get_task_manager
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
@@ -365,7 +363,7 @@ def upload_file(
     create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
     create_file_of_size: Callable[[ByteSize, str | None], Path],
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
-    with_storage_celery_worker: CeleryTaskManager,
+    with_storage_celery_worker: TestWorkController,
 ) -> Callable[
     [ByteSize, str, SimcoreS3FileID | None], Awaitable[tuple[Path, SimcoreS3FileID]]
 ]:
@@ -480,7 +478,7 @@ async def create_empty_directory(
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
     create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
     client: httpx.AsyncClient,
-    with_storage_celery_worker: CeleryTaskManager,
+    with_storage_celery_worker: TestWorkController,
 ) -> Callable[[str, ProjectID, NodeID], Awaitable[SimcoreS3FileID]]:
     async def _directory_creator(
         dir_name: str, project_id: ProjectID, node_id: NodeID
@@ -993,7 +991,7 @@ def register_celery_tasks() -> Callable[[Celery], None]:
 
 
 @pytest.fixture
-async def with_storage_celery_worker_controller(
+async def with_storage_celery_worker(
     app_environment: EnvVarsDict,
     celery_app: Celery,
     monkeypatch: pytest.MonkeyPatch,
@@ -1026,14 +1024,6 @@ async def with_storage_celery_worker_controller(
         queues="default,cpu_bound",
     ) as worker:
         yield worker
-
-
-@pytest.fixture
-def with_storage_celery_worker(
-    with_storage_celery_worker_controller: TestWorkController,
-) -> CeleryTaskManager:
-    assert isinstance(with_storage_celery_worker_controller.app, Celery)
-    return get_task_manager(with_storage_celery_worker_controller.app)
 
 
 @pytest.fixture

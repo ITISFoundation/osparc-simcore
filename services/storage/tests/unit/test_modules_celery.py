@@ -13,6 +13,7 @@ from random import randint
 import pytest
 from celery import Celery, Task
 from celery.contrib.abortable import AbortableTask
+from celery.contrib.testing.worker import TestWorkController
 from celery_library.errors import TransferrableCeleryError
 from celery_library.models import (
     TaskContext,
@@ -42,7 +43,7 @@ pytest_simcore_ops_services_selection = []
 @pytest.fixture
 def celery_client(
     initialized_app: FastAPI,
-    with_storage_celery_worker: CeleryTaskManager,
+    with_storage_celery_worker: TestWorkController,
 ) -> CeleryTaskManager:
     return get_task_manager_from_app(initialized_app)
 

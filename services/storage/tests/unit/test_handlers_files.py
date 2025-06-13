@@ -23,7 +23,7 @@ import pytest
 from aiohttp import ClientSession
 from aws_library.s3 import S3KeyNotFoundError, S3ObjectKey, SimcoreS3API
 from aws_library.s3._constants import MULTIPART_UPLOADS_MIN_TOTAL_SIZE
-from celery_library.task_manager import CeleryTaskManager
+from celery.contrib.testing.worker import TestWorkController
 from faker import Faker
 from fastapi import FastAPI
 from models_library.api_schemas_storage.storage_schemas import (
@@ -683,7 +683,7 @@ async def test_upload_real_file_with_s3_client(
     node_id: NodeID,
     faker: Faker,
     s3_client: S3Client,
-    with_storage_celery_worker: CeleryTaskManager,
+    with_storage_celery_worker: TestWorkController,
 ):
     file_size = TypeAdapter(ByteSize).validate_python("500Mib")
     file_name = faker.file_name()
