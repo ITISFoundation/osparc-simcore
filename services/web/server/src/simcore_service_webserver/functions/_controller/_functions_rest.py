@@ -5,6 +5,7 @@ from models_library.api_schemas_webserver.functions import (
     RegisteredFunction,
     RegisteredFunctionGet,
 )
+from models_library.api_schemas_webserver.users import MyFunctionPermissionsGet
 from pydantic import TypeAdapter
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
@@ -100,3 +101,24 @@ async def delete_function(request: web.Request) -> web.Response:
     )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
+
+
+#
+# /me/* endpoints
+#
+
+
+@routes.get(f"/{VTAG}/me/function-permissions", name="list_user_functions_permissions")
+@login_required
+@handle_rest_requests_exceptions
+async def list_user_functions_permissions(request: web.Request) -> web.Response:
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
+    function_permissions = await _functions_service.get_functions_user_abilities(
+        app=request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+    )
+
+    return envelope_json_response(
+        MyFunctionPermissionsGet(write_functions=function_permissions.write_functions)
+    )
