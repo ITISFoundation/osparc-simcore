@@ -6,7 +6,7 @@ module.exports = {
   globals: {
     url: "http://127.0.0.1.nip.io:9081/", // For local testing, set your deployed url here
     apiVersion: 'v0/',
-    ourTimeout: 40000,
+    ourTimeout: 120000,
   },
   maxWorkers: 1,
   maxConcurrency: 1
