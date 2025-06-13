@@ -1,7 +1,6 @@
 import logging
 from pathlib import Path
 
-from celery_library import get_celery_client
 from celery_library.models import TaskMetadata
 from fastapi import FastAPI
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
@@ -11,6 +10,7 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import (
 from models_library.projects_nodes_io import LocationID
 from servicelib.rabbitmq import RPCRouter
 
+from ...modules.celery import get_task_manager_from_app
 from .._worker_tasks._paths import compute_path_size as remote_compute_path_size
 from .._worker_tasks._paths import delete_paths as remote_delete_paths
 
@@ -26,7 +26,7 @@ async def compute_path_size(
     path: Path,
 ) -> AsyncJobGet:
     task_name = remote_compute_path_size.__name__
-    task_uuid = await get_celery_client(app).submit_task(
+    task_uuid = await get_task_manager_from_app(app).submit_task(
         task_metadata=TaskMetadata(
             name=task_name,
         ),
@@ -47,7 +47,7 @@ async def delete_paths(
     paths: set[Path],
 ) -> AsyncJobGet:
     task_name = remote_delete_paths.__name__
-    task_uuid = await get_celery_client(app).submit_task(
+    task_uuid = await get_task_manager_from_app(app).submit_task(
         task_metadata=TaskMetadata(
             name=task_name,
         ),

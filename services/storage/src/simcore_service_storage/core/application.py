@@ -5,7 +5,6 @@ Functions to create, setup and run an aiohttp application provided a settingsura
 
 import logging
 
-from celery_library import setup_celery_client
 from common_library.basic_types import BootModeEnum
 from fastapi import FastAPI
 from fastapi.middleware.gzip import GZipMiddleware
@@ -37,6 +36,7 @@ from ..api.rpc.routes import setup_rpc_api_routes
 from ..dsm import setup_dsm
 from ..dsm_cleaner import setup_dsm_cleaner
 from ..exceptions.handlers import set_exception_handlers
+from ..modules.celery import setup_task_manager
 from ..modules.db import setup_db
 from ..modules.long_running_tasks import setup_rest_api_long_running_tasks_for_uploads
 from ..modules.rabbitmq import setup as setup_rabbitmq
@@ -95,7 +95,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:  # noqa: C901
         setup_rpc_api_routes(app)
 
         assert settings.STORAGE_CELERY  # nosec
-        setup_celery_client(app, celery_settings=settings.STORAGE_CELERY)
+        setup_task_manager(app, celery_settings=settings.STORAGE_CELERY)
     setup_rest_api_long_running_tasks_for_uploads(app)
     setup_rest_api_routes(app, API_VTAG)
     set_exception_handlers(app)

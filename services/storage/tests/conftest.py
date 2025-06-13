@@ -977,7 +977,7 @@ def celery_config() -> dict[str, Any]:
 def mock_celery_app(mocker: MockerFixture, celery_config: dict[str, Any]) -> Celery:
     celery_app = Celery(**celery_config)
 
-    for module in ("celery_library.create_app",):
+    for module in ("celery_library.common.create_app",):
         mocker.patch(module, return_value=celery_app)
 
     return celery_app

@@ -13,7 +13,6 @@ from random import randint
 import pytest
 from celery import Celery, Task
 from celery.contrib.abortable import AbortableTask
-from celery_library import get_celery_client
 from celery_library.errors import TransferrableCeleryError
 from celery_library.models import (
     TaskContext,
@@ -31,6 +30,7 @@ from common_library.errors_classes import OsparcErrorMixin
 from fastapi import FastAPI
 from models_library.progress_bar import ProgressReport
 from servicelib.logging_utils import log_context
+from simcore_service_storage.modules.celery import get_task_manager_from_app
 from tenacity import Retrying, retry_if_exception_type, stop_after_delay, wait_fixed
 
 _logger = logging.getLogger(__name__)
@@ -44,7 +44,7 @@ def celery_client(
     initialized_app: FastAPI,
     with_storage_celery_worker: CeleryTaskManager,
 ) -> CeleryTaskManager:
-    return get_celery_client(initialized_app)
+    return get_task_manager_from_app(initialized_app)
 
 
 async def _fake_file_processor(

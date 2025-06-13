@@ -10,7 +10,6 @@ from typing import Any
 
 import pytest
 from celery import Celery, Task
-from celery_library import get_celery_client
 from celery_library.models import TaskID, TaskMetadata
 from celery_library.task import register_task
 from celery_library.task_manager import CeleryTaskManager
@@ -31,6 +30,7 @@ from models_library.users import UserID
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCRouter
 from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
 from simcore_service_storage.api.rpc.routes import get_rabbitmq_rpc_server
+from simcore_service_storage.modules.celery import get_task_manager_from_app
 from tenacity import (
     AsyncRetrying,
     retry_if_exception_type,
@@ -53,7 +53,7 @@ async def rpc_sync_job(
     app: FastAPI, *, job_id_data: AsyncJobNameData, **kwargs: Any
 ) -> AsyncJobGet:
     task_name = sync_job.__name__
-    task_uuid = await get_celery_client(app).submit_task(
+    task_uuid = await get_task_manager_from_app(app).submit_task(
         TaskMetadata(name=task_name), task_context=job_id_data.model_dump(), **kwargs
     )
 
@@ -65,7 +65,7 @@ async def rpc_async_job(
     app: FastAPI, *, job_id_data: AsyncJobNameData, **kwargs: Any
 ) -> AsyncJobGet:
     task_name = async_job.__name__
-    task_uuid = await get_celery_client(app).submit_task(
+    task_uuid = await get_task_manager_from_app(app).submit_task(
         TaskMetadata(name=task_name), task_context=job_id_data.model_dump(), **kwargs
     )
 
