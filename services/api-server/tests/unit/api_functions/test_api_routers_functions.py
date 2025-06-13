@@ -636,6 +636,7 @@ async def test_run_function_not_allowed(
         (f"{_faker.uuid4()}", f"{_faker.uuid4()}", status.HTTP_200_OK),
     ],
 )
+@pytest.mark.parametrize("capture", ["run_study_function_parent_info.json"])
 async def test_run_function_parent_info(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
@@ -651,9 +652,8 @@ async def test_run_function_parent_info(
     parent_project_uuid: str | None,
     parent_node_uuid: str | None,
     expected_status_code: int,
+    capture: str,
 ) -> None:
-
-    capture = "run_function_parent_info.json"
 
     def _default_side_effect(
         request: httpx.Request,
@@ -697,6 +697,7 @@ async def test_run_function_parent_info(
         headers[X_SIMCORE_PARENT_PROJECT_UUID] = parent_project_uuid
     if parent_node_uuid:
         headers[X_SIMCORE_PARENT_NODE_ID] = parent_node_uuid
+
     response = await client.post(
         f"{API_VTAG}/functions/{mock_registered_function.uid}:run",
         json={},
