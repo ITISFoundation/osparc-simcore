@@ -77,7 +77,6 @@ async def start_long_running_task(
         )
         task_get = TaskGet(
             task_id=task_id,
-            task_name=task_name,
             status_href=f"{status_url}",
             result_href=f"{result_url}",
             abort_href=f"{abort_url}",
