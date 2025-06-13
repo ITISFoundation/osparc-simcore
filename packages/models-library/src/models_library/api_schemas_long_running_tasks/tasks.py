@@ -22,7 +22,8 @@ class TaskBase(BaseModel):
     task_id: TaskId
 
     # NOTE: task name can always be extraced from the task_id
-    # since it'e encoded inside it
+    # since it'e encoded inside it (expect when this is ued
+    # with data coming form the celery tasks)
     task_name: str = ""
 
     @field_validator("task_name", mode="before")
@@ -30,15 +31,15 @@ class TaskBase(BaseModel):
     def populate_task_name(cls, task_id, info):
         task_name = task_id
 
-        # attempt to solve the task name from the task_id
+        # attempt to extract the task name from the task_id
         # if this is coming form a long_running_task
         task_id = info.data.get("task_id")
         if task_id:
             parts = task_id.split(".")
             if len(parts) >= 2:
-                task_name = parts[1]
+                task_name = urllib.parse.unquote(parts[1])
 
-        return urllib.parse.unquote(task_name)
+        return task_name
 
 
 class TaskGet(TaskBase):
