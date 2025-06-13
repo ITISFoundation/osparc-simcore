@@ -282,7 +282,7 @@ class CompRunsRepository(BaseRepository):
                 ComputationRunRpcGet.model_validate(
                     {
                         **row,
-                        "state": DB_TO_RUNNING_STATE[row["state"]],
+                        "state": DB_TO_RUNNING_STATE[row.state],
                     }
                 )
                 async for row in await conn.stream(list_query)

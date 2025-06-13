@@ -573,7 +573,6 @@ class ProjectDBAPI(BaseProjectDB):
         # attribute filters
         filter_by_project_type: ProjectType | None = None,
         filter_by_template_type: ProjectTemplateType | None = None,
-        filter_by_services: list[dict] | None = None,
         filter_published: bool | None = None,
         filter_hidden: bool | None = False,
         filter_trashed: bool | None = False,
@@ -670,9 +669,7 @@ class ProjectDBAPI(BaseProjectDB):
 
             prjs, prj_types = await self._execute_without_permission_check(
                 conn,
-                user_id=user_id,
                 select_projects_query=combined_query.offset(offset).limit(limit),
-                filter_by_services=filter_by_services,
             )
 
             return (

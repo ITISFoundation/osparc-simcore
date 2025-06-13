@@ -9,12 +9,12 @@ from models_library.licenses import LicensedResourceType
 from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task_utils import exclusive_periodic
 from servicelib.logging_utils import log_catch, log_context
-from simcore_service_webserver.licenses import (
+
+from ..redis import get_redis_lock_manager_client_sdk, setup_redis
+from . import (
     _itis_vip_service,
     _licensed_resources_service,
 )
-
-from ..redis import get_redis_lock_manager_client_sdk, setup_redis
 from ._itis_vip_models import CategoryTuple, ItisVipData, ItisVipResourceData
 from ._licensed_resources_service import RegistrationState
 
@@ -32,10 +32,10 @@ async def sync_licensed_resources(
             with log_context(
                 _logger, logging.INFO, "Fetching %s and validating", category_url
             ), log_catch(_logger, reraise=True):
-                vip_data_items: list[
-                    ItisVipData
-                ] = await _itis_vip_service.get_category_items(
-                    http_client, category_url
+                vip_data_items: list[ItisVipData] = (
+                    await _itis_vip_service.get_category_items(
+                        http_client, category_url
+                    )
                 )
 
             # REGISTRATION

@@ -587,7 +587,6 @@ async def test_trash_workspace(
     workspace: WorkspaceGet,
     user_project: ProjectDict,
     fake_project: ProjectDict,
-    mocked_catalog: None,
     mocked_dynamic_services_interface: dict[str, MagicMock],
     postgres_db: sa.engine.Engine,
 ):
@@ -843,7 +842,6 @@ async def test_trash_subfolder(
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
-    mocked_catalog: None,
     mocked_dynamic_services_interface: dict[str, MagicMock],
 ):
     assert client.app
@@ -941,7 +939,6 @@ async def test_trash_project_in_subfolder(
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
-    mocked_catalog: None,
     mocked_dynamic_services_interface: dict[str, MagicMock],
 ):
     assert client.app
@@ -1030,7 +1027,6 @@ async def test_trash_project_explitictly_and_empty_trash_bin(
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
-    mocked_catalog: None,
     mocked_director_v2: None,
     mocked_dynamic_services_interface: dict[str, MagicMock],
     mocked_storage: None,
@@ -1088,7 +1084,6 @@ async def test_trash_folder_with_subfolder_and_project_and_empty_bin(
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
-    mocked_catalog: None,
     mocked_director_v2: None,
     mocked_dynamic_services_interface: dict[str, MagicMock],
     mocked_storage: None,
