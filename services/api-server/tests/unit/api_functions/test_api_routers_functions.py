@@ -741,6 +741,7 @@ async def test_run_solver_function_parent_info(
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
     mock_registered_solver_function: RegisteredSolverFunction,
     mock_registered_function_job: RegisteredFunctionJob,
+    mocked_catalog_rpc_api: dict[str, MockType],
     auth: httpx.BasicAuth,
     user_id: UserID,
     mocked_webserver_rest_api_base: respx.MockRouter,
