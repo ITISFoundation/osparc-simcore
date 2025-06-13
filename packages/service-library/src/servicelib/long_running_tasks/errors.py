@@ -5,6 +5,13 @@ class BaseLongRunningError(OsparcErrorMixin, Exception):
     """base exception for this module"""
 
 
+class TaskNotRegisteredError(BaseLongRunningError):
+    msg_template: str = (
+        "notask with task_name='{task_name}' was found in the task registry. "
+        "Make sure it's registered before starting it."
+    )
+
+
 class TaskAlreadyRunningError(BaseLongRunningError):
     msg_template: str = "{task_name} must be unique, found: '{managed_task}'"
 

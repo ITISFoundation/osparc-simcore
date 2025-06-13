@@ -16719,6 +16719,7 @@ components:
         task_name:
           type: string
           title: Task Name
+          default: ''
         status_href:
           type: string
           title: Status Href
@@ -16731,7 +16732,6 @@ components:
       type: object
       required:
       - task_id
-      - task_name
       - status_href
       - result_href
       - abort_href
