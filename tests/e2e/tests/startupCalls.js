@@ -39,7 +39,7 @@ module.exports = {
           } else if (url.includes('catalog/services/-/latest')) {
             responses.services = response.json();
           }
-        }, 120000);
+        });
 
         await page.goto(url);
 
