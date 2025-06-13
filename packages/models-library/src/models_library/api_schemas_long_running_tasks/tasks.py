@@ -1,7 +1,8 @@
+import urllib.parse
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 from .base import TaskId, TaskProgress
 
@@ -19,6 +20,22 @@ class TaskResult(BaseModel):
 
 class TaskBase(BaseModel):
     task_id: TaskId
+
+    # NOTE: task name can always be extraced from the task_id
+    # since it'e encoded inside it
+    task_name: str = ""
+
+    @field_validator("task_name", mode="before")
+    @classmethod
+    def populate_task_name(cls, _, info):
+        task_name = ""
+        task_id = info.data.get("task_id")
+        if task_id:
+            parts = task_id.split(".")
+            if len(parts) >= 1:
+                task_name = parts[1]
+
+        return urllib.parse.unquote(task_name)
 
 
 class TaskGet(TaskBase):
