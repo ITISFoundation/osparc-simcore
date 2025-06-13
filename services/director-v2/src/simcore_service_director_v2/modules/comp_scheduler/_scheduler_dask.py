@@ -56,7 +56,7 @@ from ._utils import (
 
 _logger = logging.getLogger(__name__)
 
-_DASK_CLIENT_RUN_REF: Final[str] = "{user_id}:{comp_run.run_id}"
+_DASK_CLIENT_RUN_REF: Final[str] = "{user_id}:{run_id}"
 
 
 @asynccontextmanager
