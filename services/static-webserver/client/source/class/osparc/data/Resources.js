@@ -838,6 +838,18 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
+       * FUNCTION PERMISSIONS
+       */
+      "functionPermissions": {
+        useCache: true,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/me/function-permissions"
+          }
+        }
+      },
+      /*
        * API-KEYS
        */
       "apiKeys": {
