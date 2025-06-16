@@ -30,7 +30,7 @@ qx.Class.define("osparc.share.RequestServiceAccess", {
 
   members: {
     __populateLayout: function(cantReadServicesData) {
-      const text = this.tr("In order to open the Project, the following users/groups need to give you access to some apps. Please contact the app owner:");
+      const text = this.tr("In order to open the project, the following users/groups need to give you access to some apps. Please contact the app owner:");
       this._add(new qx.ui.basic.Label().set({
         value: text,
         font: "text-14",
