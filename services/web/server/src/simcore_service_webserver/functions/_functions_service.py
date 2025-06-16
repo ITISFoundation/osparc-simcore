@@ -15,6 +15,7 @@ from models_library.functions import (
     FunctionJobID,
     FunctionOutputSchema,
     FunctionUserAccessRights,
+    FunctionUserApiAccessRights,
     RegisteredFunction,
     RegisteredFunctionDB,
     RegisteredFunctionJob,
@@ -26,9 +27,6 @@ from models_library.functions import (
     RegisteredSolverFunctionJob,
 )
 from models_library.functions_errors import (
-    FunctionIDNotFoundError,
-    FunctionJobCollectionIDNotFoundError,
-    FunctionJobIDNotFoundError,
     UnsupportedFunctionClassError,
     UnsupportedFunctionJobClassError,
 )
@@ -42,7 +40,6 @@ from . import _functions_repository
 router = RPCRouter()
 
 
-@router.expose(reraise_if_error_type=(UnsupportedFunctionClassError,))
 async def register_function(
     app: web.Application,
     *,
@@ -66,7 +63,6 @@ async def register_function(
     return _decode_function(saved_function)
 
 
-@router.expose(reraise_if_error_type=(UnsupportedFunctionJobClassError,))
 async def register_function_job(
     app: web.Application,
     *,
@@ -90,7 +86,6 @@ async def register_function_job(
     return _decode_functionjob(created_function_job_db)
 
 
-@router.expose(reraise_if_error_type=())
 async def register_function_job_collection(
     app: web.Application,
     *,
@@ -117,7 +112,6 @@ async def register_function_job_collection(
     )
 
 
-@router.expose(reraise_if_error_type=(FunctionIDNotFoundError,))
 async def get_function(
     app: web.Application,
     *,
@@ -136,7 +130,6 @@ async def get_function(
     )
 
 
-@router.expose(reraise_if_error_type=(FunctionJobIDNotFoundError,))
 async def get_function_job(
     app: web.Application,
     *,
@@ -155,7 +148,6 @@ async def get_function_job(
     return _decode_functionjob(returned_function_job)
 
 
-@router.expose(reraise_if_error_type=(FunctionJobCollectionIDNotFoundError,))
 async def get_function_job_collection(
     app: web.Application,
     *,
@@ -180,7 +172,6 @@ async def get_function_job_collection(
     )
 
 
-@router.expose()
 async def list_functions(
     app: web.Application,
     *,
@@ -201,7 +192,6 @@ async def list_functions(
     ], page
 
 
-@router.expose()
 async def list_function_jobs(
     app: web.Application,
     *,
@@ -225,7 +215,6 @@ async def list_function_jobs(
     ], page
 
 
-@router.expose()
 async def list_function_job_collections(
     app: web.Application,
     *,
@@ -257,7 +246,6 @@ async def list_function_job_collections(
     ], page
 
 
-@router.expose(reraise_if_error_type=(FunctionIDNotFoundError,))
 async def delete_function(
     app: web.Application,
     *,
@@ -273,7 +261,6 @@ async def delete_function(
     )
 
 
-@router.expose(reraise_if_error_type=(FunctionJobIDNotFoundError,))
 async def delete_function_job(
     app: web.Application,
     *,
@@ -289,7 +276,6 @@ async def delete_function_job(
     )
 
 
-@router.expose(reraise_if_error_type=(FunctionJobCollectionIDNotFoundError,))
 async def delete_function_job_collection(
     app: web.Application,
     *,
@@ -305,7 +291,6 @@ async def delete_function_job_collection(
     )
 
 
-@router.expose()
 async def update_function_title(
     app: web.Application,
     *,
@@ -324,7 +309,6 @@ async def update_function_title(
     return _decode_function(updated_function)
 
 
-@router.expose(reraise_if_error_type=(FunctionIDNotFoundError,))
 async def update_function_description(
     app: web.Application,
     *,
@@ -343,7 +327,6 @@ async def update_function_description(
     return _decode_function(updated_function)
 
 
-@router.expose()
 async def find_cached_function_jobs(
     app: web.Application,
     *,
@@ -402,7 +385,6 @@ async def find_cached_function_jobs(
     return to_return_function_jobs
 
 
-@router.expose(reraise_if_error_type=(FunctionIDNotFoundError,))
 async def get_function_input_schema(
     app: web.Application,
     *,
@@ -419,7 +401,6 @@ async def get_function_input_schema(
     return _decode_function(returned_function).input_schema
 
 
-@router.expose(reraise_if_error_type=(FunctionIDNotFoundError,))
 async def get_function_output_schema(
     app: web.Application,
     *,
@@ -436,7 +417,6 @@ async def get_function_output_schema(
     return _decode_function(returned_function).output_schema
 
 
-@router.expose(reraise_if_error_type=(FunctionIDNotFoundError,))
 async def get_function_user_permissions(
     app: web.Application,
     *,
@@ -465,6 +445,19 @@ async def get_function_user_permissions(
             write=False,
             execute=False,
         )
+    )
+
+
+async def get_functions_user_api_access_rights(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+) -> FunctionUserApiAccessRights:
+    return await _functions_repository.get_user_api_access_rights(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
     )
 
 
