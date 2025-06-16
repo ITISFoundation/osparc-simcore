@@ -5,18 +5,19 @@ from models_library.api_schemas_webserver.functions import (
     RegisteredFunction,
     RegisteredFunctionGet,
 )
+from models_library.api_schemas_webserver.users import MyFunctionPermissionsGet
 from pydantic import TypeAdapter
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     handle_validation_as_http_error,
     parse_request_path_parameters_as,
 )
-from simcore_service_webserver.utils_aiohttp import envelope_json_response
 
 from ..._meta import API_VTAG as VTAG
 from ...login.decorators import login_required
 from ...models import AuthenticatedRequestContext
 from ...security.decorators import permission_required
+from ...utils_aiohttp import envelope_json_response
 from .. import _functions_service
 from ._functions_rest_exceptions import handle_rest_requests_exceptions
 from ._functions_rest_schemas import FunctionPathParams
@@ -26,7 +27,6 @@ routes = web.RouteTableDef()
 
 @routes.post(f"/{VTAG}/functions", name="register_function")
 @login_required
-@permission_required("function.create")
 @handle_rest_requests_exceptions
 async def register_function(request: web.Request) -> web.Response:
     with handle_validation_as_http_error(
@@ -101,3 +101,29 @@ async def delete_function(request: web.Request) -> web.Response:
     )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
+
+
+#
+# /me/* endpoints
+#
+
+
+@routes.get(f"/{VTAG}/me/function-permissions", name="list_user_functions_permissions")
+@login_required
+@handle_rest_requests_exceptions
+async def list_user_functions_permissions(request: web.Request) -> web.Response:
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
+
+    function_permissions = (
+        await _functions_service.get_functions_user_api_access_rights(
+            app=request.app,
+            user_id=req_ctx.user_id,
+            product_name=req_ctx.product_name,
+        )
+    )
+
+    assert function_permissions.user_id == req_ctx.user_id  # nosec
+
+    return envelope_json_response(
+        MyFunctionPermissionsGet(write_functions=function_permissions.write_functions)
+    )

@@ -11,22 +11,22 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 from passlib.hash import sha256_crypt
-from simcore_service_webserver.security.api import check_password, encrypt_password
+from simcore_service_webserver.security import security_service
 
 
 def test_encrypt_password_returns_string():
-    assert isinstance(encrypt_password("password"), str)
+    assert isinstance(security_service.encrypt_password("password"), str)
 
 
 def test_encrypt_password_returns_valid_sha256_hash():
     password = "password"
-    hashed_password = encrypt_password(password)
-    assert check_password(password, hashed_password)
+    hashed_password = security_service.encrypt_password(password)
+    assert security_service.check_password(password, hashed_password)
 
 
 def test_encrypt_password_raises_type_error_for_non_string_input():
     with pytest.raises(TypeError):
-        encrypt_password(123)
+        security_service.encrypt_password(123)
 
 
 @given(
@@ -44,4 +44,4 @@ def test_encrypt_decrypt_deprecated_and_new_method_return_same_values(password: 
     hashed_password_old = sha256_crypt.hash(password, rounds=1000, salt=salt)
     assert hashed_password_new == hashed_password_old
 
-    assert check_password(password, hashed_password_new)
+    assert security_service.check_password(password, hashed_password_new)

@@ -31,7 +31,7 @@ from ..._meta import API_VTAG as VTAG
 from ...login.decorators import login_required
 from ...redis import get_redis_lock_manager_client_sdk
 from ...resource_manager.user_sessions import PROJECT_ID_KEY, managed_resource
-from ...security.api import check_user_permission
+from ...security import security_web
 from ...security.decorators import permission_required
 from ...users.api import get_user_fullname
 from ...utils_aiohttp import envelope_json_response, get_api_base_url
@@ -74,7 +74,7 @@ async def create_project(request: web.Request):
     )
     header_params = parse_request_headers_as(ProjectCreateHeaders, request)
     if query_params.as_template:  # create template from
-        await check_user_permission(request, "project.template.create")
+        await security_web.check_user_permission(request, "project.template.create")
 
     # NOTE: Having so many different types of bodys is an indication that
     # this entrypoint are in reality multiple entrypoints in one, namely
