@@ -659,14 +659,18 @@ async def test_run_map_function_not_allowed(
     MagicMock.__await__ = lambda _: async_magic().__await__()
 
     response = await client.post(
-        f"{API_VTAG}/functions/{mock_registered_function.uid}:{funcapi_endpoint}",
+        f"{API_VTAG}/functions/{mock_registered_project_function.uid}:{funcapi_endpoint}",
         json=endpoint_inputs,
         auth=auth,
+        headers={
+            X_SIMCORE_PARENT_PROJECT_UUID: "null",
+            X_SIMCORE_PARENT_NODE_ID: "null",
+        },
     )
     if user_has_execute_right:
         assert response.status_code == status.HTTP_403_FORBIDDEN
         assert response.json()["errors"][0] == (
-            f"Function {mock_registered_function.uid} execute access denied for user {user_id}"
+            f"Function {mock_registered_project_function.uid} execute access denied for user {user_id}"
         )
     else:
         assert response.status_code == status.HTTP_403_FORBIDDEN
@@ -740,6 +744,15 @@ async def test_run_project_function_parent_info(
     mock_handler_in_functions_rpc_interface("find_cached_function_jobs", [])
     mock_handler_in_functions_rpc_interface(
         "register_function_job", mock_registered_function_job
+    )
+    mock_handler_in_functions_rpc_interface(
+        "get_functions_user_api_access_rights",
+        FunctionUserApiAccessRights(
+            user_id=user_id,
+            execute_functions=True,
+            write_functions=True,
+            read_functions=True,
+        ),
     )
 
     headers = dict()
@@ -825,6 +838,15 @@ async def test_run_solver_function_parent_info(
     mock_handler_in_functions_rpc_interface("find_cached_function_jobs", [])
     mock_handler_in_functions_rpc_interface(
         "register_function_job", mock_registered_function_job
+    )
+    mock_handler_in_functions_rpc_interface(
+        "get_functions_user_api_access_rights",
+        FunctionUserApiAccessRights(
+            user_id=user_id,
+            execute_functions=True,
+            write_functions=True,
+            read_functions=True,
+        ),
     )
 
     headers = dict()

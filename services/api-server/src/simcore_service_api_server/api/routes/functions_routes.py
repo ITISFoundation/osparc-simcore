@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import Annotated, Final
+from typing import Annotated, Final, TypeAlias
 
 import jsonschema
 from fastapi import APIRouter, Depends, Header, Request, status
@@ -33,6 +33,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.users import UserID
+from pydantic import StringConstraints
 from servicelib.fastapi.dependencies import get_reverse_url_mapper
 from simcore_service_api_server._service_jobs import JobService
 
@@ -57,6 +58,8 @@ from .function_jobs_routes import register_function_job
 
 # pylint: disable=too-many-arguments
 # pylint: disable=cyclic-import
+
+NullString: TypeAlias = Annotated[str, StringConstraints(pattern="^null$")]
 
 function_router = APIRouter()
 
@@ -374,9 +377,14 @@ async def run_function(  # noqa: PLR0913
     product_name: Annotated[str, Depends(get_product_name)],
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
     job_service: Annotated[JobService, Depends(get_job_service)],
-    x_simcore_parent_project_uuid: Annotated[ProjectID | None, Header()],
-    x_simcore_parent_node_id: Annotated[NodeID | None, Header()],
+    x_simcore_parent_project_uuid: Annotated[ProjectID | NullString | None, Header()],
+    x_simcore_parent_node_id: Annotated[NodeID | NullString | None, Header()],
 ) -> RegisteredFunctionJob:
+
+    if not isinstance(x_simcore_parent_project_uuid, ProjectID):
+        x_simcore_parent_project_uuid = None
+    if not isinstance(x_simcore_parent_node_id, NodeID):
+        x_simcore_parent_node_id = None
 
     # Make sure the user is allowed to execute any function
     # (read/write right is checked in the other endpoint called in this method)
@@ -562,6 +570,8 @@ async def map_function(  # noqa: PLR0913
     product_name: Annotated[str, Depends(get_product_name)],
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
     job_service: Annotated[JobService, Depends(get_job_service)],
+    x_simcore_parent_project_uuid: Annotated[ProjectID | NullString | None, Header()],
+    x_simcore_parent_node_id: Annotated[NodeID | NullString, Header()],
 ) -> RegisteredFunctionJobCollection:
     function_jobs = []
     function_jobs = [
@@ -577,6 +587,8 @@ async def map_function(  # noqa: PLR0913
             request=request,
             solver_service=solver_service,
             job_service=job_service,
+            x_simcore_parent_project_uuid=x_simcore_parent_project_uuid,
+            x_simcore_parent_node_id=x_simcore_parent_node_id,
         )
         for function_inputs in function_inputs_list
     ]
