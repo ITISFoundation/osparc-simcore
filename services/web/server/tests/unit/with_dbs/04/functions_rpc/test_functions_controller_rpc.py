@@ -18,6 +18,7 @@ from models_library.functions import FunctionUserAccessRights
 from models_library.functions_errors import (
     FunctionIDNotFoundError,
     FunctionReadAccessDeniedError,
+    FunctionsReadApiAccessDeniedError,
 )
 from models_library.products import ProductName
 from pytest_simcore.helpers.webserver_login import UserInfoDict
@@ -35,6 +36,7 @@ pytest_simcore_core_services_selection = ["rabbit"]
 )
 async def test_register_get_delete_function(
     client: TestClient,
+    add_user_function_api_access_rights: None,
     rpc_client: RabbitMQRPCClient,
     mock_function: ProjectFunction,
     logged_user: UserInfoDict,
@@ -95,8 +97,8 @@ async def test_register_get_delete_function(
             product_name=osparc_product_name,
         )
 
-    with pytest.raises(FunctionReadAccessDeniedError):
-        # Attempt to delete the function by another user
+    with pytest.raises(FunctionsReadApiAccessDeniedError):
+        # Attempt to delete the function in another product
         await functions_rpc.delete_function(
             rabbitmq_rpc_client=rpc_client,
             function_id=registered_function.uid,
@@ -128,6 +130,7 @@ async def test_register_get_delete_function(
 )
 async def test_get_function_not_found(
     client: TestClient,
+    add_user_function_api_access_rights: None,
     rpc_client: RabbitMQRPCClient,
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
@@ -149,6 +152,7 @@ async def test_get_function_not_found(
 )
 async def test_list_functions(
     client: TestClient,
+    add_user_function_api_access_rights: None,
     rpc_client: RabbitMQRPCClient,
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
@@ -208,6 +212,7 @@ async def test_list_functions_mixed_user(
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
     other_logged_user: UserInfoDict,
+    add_user_function_api_access_rights: None,
 ):
     # Register a function for the logged user
     registered_functions = [
@@ -274,6 +279,7 @@ async def test_list_functions_mixed_user(
 )
 async def test_list_functions_with_pagination(
     client: TestClient,
+    add_user_function_api_access_rights: None,
     rpc_client: RabbitMQRPCClient,
     mock_function: ProjectFunction,
     clean_functions: None,
@@ -338,6 +344,7 @@ async def test_update_function_title(
     logged_user: UserInfoDict,
     other_logged_user: UserInfoDict,
     osparc_product_name: ProductName,
+    add_user_function_api_access_rights: None,
 ):
     # Register the function first
     registered_function = await functions_rpc.register_function(
@@ -387,6 +394,7 @@ async def test_update_function_description(
     mock_function: ProjectFunction,
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
+    add_user_function_api_access_rights: None,
 ):
     # Register the function first
     registered_function = await functions_rpc.register_function(
@@ -424,6 +432,7 @@ async def test_get_function_input_schema(
     mock_function: ProjectFunction,
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
+    add_user_function_api_access_rights: None,
 ):
     # Register the function first
     registered_function = await functions_rpc.register_function(
@@ -456,6 +465,7 @@ async def test_get_function_output_schema(
     mock_function: ProjectFunction,
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
+    add_user_function_api_access_rights: None,
 ):
     # Register the function first
     registered_function = await functions_rpc.register_function(
@@ -489,6 +499,7 @@ async def test_delete_function(
     logged_user: UserInfoDict,
     other_logged_user: UserInfoDict,
     osparc_product_name: ProductName,
+    add_user_function_api_access_rights: None,
 ):
     # Register the function first
     registered_function = await functions_rpc.register_function(
@@ -506,6 +517,7 @@ async def test_delete_function(
 )
 async def test_get_function_user_permissions(
     client: TestClient,
+    add_user_function_api_access_rights: None,
     rpc_client: RabbitMQRPCClient,
     mock_function: ProjectFunction,
     logged_user: UserInfoDict,
