@@ -111,7 +111,7 @@
       },
       "anchorEl": "osparc-test-id=creditsSummary",
       "title": "Credits Indicator",
-      "text": "By clicking on the Credits indicator, you will you see the number of available Credits. Click the three dots to access the Billing Center.",
+      "text": "By clicking on the Credits indicator, you will see the number of available Credits. Click the three dots to access the Billing Center.",
       "placement": "left"
     }, {
       "beforeClick": {

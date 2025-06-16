@@ -99,7 +99,7 @@
         "event": "tap"
       },
       "anchorEl": "osparc-test-id=notificationsContainer",
-      "text": "By clicking on the Bell, you will you see notifications about which Projects, Credits and Organizations have been shared with you.",
+      "text": "By clicking on the Bell, you will see notifications about which Projects, Credits and Organizations have been shared with you.",
       "placement": "bottom"
     }, {
       "beforeClick": {
