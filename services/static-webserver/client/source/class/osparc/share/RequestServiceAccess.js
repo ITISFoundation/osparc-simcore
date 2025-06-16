@@ -20,7 +20,7 @@ qx.Class.define("osparc.share.RequestServiceAccess", {
     openRequestAccess: function(cantReadServicesData) {
       const requestServiceAccess = new osparc.share.RequestServiceAccess(cantReadServicesData);
       const caption = qx.locale.Manager.tr("Request Apps Access");
-      osparc.ui.window.Window.popUpInWindow(requestServiceAccess, caption, 500, 500).set({
+      osparc.ui.window.Window.popUpInWindow(requestServiceAccess, caption, 600, 400).set({
         clickAwayClose: false,
         resizable: true,
         showClose: true
@@ -30,7 +30,7 @@ qx.Class.define("osparc.share.RequestServiceAccess", {
 
   members: {
     __populateLayout: function(cantReadServicesData) {
-      const text = this.tr("In order to open the Project, the following users/groups need to give you access to some apps. Please contact the app owner(s):");
+      const text = this.tr("In order to open the Project, the following users/groups need to give you access to some apps. Please contact the app owner:");
       this._add(new qx.ui.basic.Label().set({
         value: text,
         font: "text-14",
@@ -39,8 +39,6 @@ qx.Class.define("osparc.share.RequestServiceAccess", {
       }));
 
       const grid = new qx.ui.layout.Grid(20, 10);
-      grid.setColumnAlign(0, "center", "middle");
-      grid.setColumnAlign(1, "center", "middle");
       const layout = new qx.ui.container.Composite(grid);
       this._add(layout);
 
