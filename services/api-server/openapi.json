@@ -7731,9 +7731,6 @@
                 {
                   "type": "string",
                   "pattern": "^null$"
-                },
-                {
-                  "type": "null"
                 }
               ],
               "title": "X-Simcore-Parent-Project-Uuid"

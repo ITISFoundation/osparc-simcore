@@ -576,7 +576,7 @@ async def map_function(  # noqa: PLR0913
     product_name: Annotated[str, Depends(get_product_name)],
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
     job_service: Annotated[JobService, Depends(get_job_service)],
-    x_simcore_parent_project_uuid: Annotated[ProjectID | NullString | None, Header()],
+    x_simcore_parent_project_uuid: Annotated[ProjectID | NullString, Header()],
     x_simcore_parent_node_id: Annotated[NodeID | NullString, Header()],
 ) -> RegisteredFunctionJobCollection:
     function_jobs = []
