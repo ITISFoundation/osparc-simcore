@@ -314,7 +314,7 @@ qx.Class.define("osparc.data.Permissions", {
         this.__functionPermissions &&
         action in this.__functionPermissions
       ) {
-        return functionPermissions[action];
+        return this.__functionPermissions[action];
       }
       return false;
     },
