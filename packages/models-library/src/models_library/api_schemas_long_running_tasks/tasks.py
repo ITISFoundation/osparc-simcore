@@ -2,7 +2,7 @@ import urllib.parse
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, model_validator
 
 from .base import TaskId, TaskProgress
 
@@ -20,24 +20,22 @@ class TaskResult(BaseModel):
 
 class TaskBase(BaseModel):
     task_id: TaskId
-
-    # NOTE: task name can always be extraced from the task_id
-    # since it'e encoded inside it (expect when this is ued
-    # with data coming form the celery tasks)
     task_name: str = ""
 
-    @field_validator("task_name", mode="before")
-    @classmethod
-    def populate_task_name_if_not_provided(cls, task_name: str, info):
-        # attempt to extract the task name from the task_id
-        # if this is coming form a long_running_task
-        task_id = info.data["task_id"]
-        if task_id and task_name == "":
-            parts = task_id.split(".")
-            if len(parts) > 1:
-                task_name = urllib.parse.unquote(parts[1])
+    @model_validator(mode="after")
+    def try_populate_task_name_from_task_id(self) -> "TaskBase":
+        # NOTE: currently this model is used to validate tasks coming from
+        # the celery backend and form long_running_tasks
+        # 1. if a task comes from Celery, it will keep it's given name
+        # 2. if a task comes from long_running_tasks, it will extract it form
+        #   the task_id, which looks like "{PREFIX}.{TASK_NAME}.UNIQUE|{UUID}"
 
-        return task_name
+        if self.task_id and self.task_name == "":
+            parts = self.task_id.split(".")
+            if len(parts) > 1:
+                self.task_name = urllib.parse.unquote(parts[1])
+
+        return self
 
 
 class TaskGet(TaskBase):
