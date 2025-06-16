@@ -1,4 +1,6 @@
+import asyncio
 import logging
+from collections import defaultdict
 from collections.abc import AsyncIterator, Generator
 from typing import Final
 
@@ -192,6 +194,10 @@ async def on_cleanup_ctx_rabbitmq_consumers(
     app[_APP_RABBITMQ_CONSUMERS_KEY] = await subscribe_to_rabbitmq(
         app, _EXCHANGE_TO_PARSER_CONFIG
     )
+
+    app["wallet_subscriptions"] = defaultdict(int)  # wallet_id -> subscriber count
+    app["wallet_subscription_lock"] = asyncio.Lock()  # For thread-safe operations
+
     yield
 
     # cleanup
