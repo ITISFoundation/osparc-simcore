@@ -1,5 +1,6 @@
 from typing import Any
 
+from .errors import TaskNotCompletedError, TaskNotFoundError
 from .models import TaskBase, TaskId, TaskStatus
 from .task import TaskContext, TasksManager, TrackedTask
 
@@ -25,14 +26,21 @@ async def get_task_result(
     tasks_manager: TasksManager, task_context: TaskContext | None, task_id: TaskId
 ) -> Any:
     try:
-        return tasks_manager.get_task_result(
-            task_id=task_id, with_task_context=task_context
+        task_result = tasks_manager.get_task_result(
+            task_id, with_task_context=task_context
         )
-    finally:
-        # the task is always removed even if an error occurs
         await tasks_manager.remove_task(
             task_id, with_task_context=task_context, reraise_errors=False
         )
+        return task_result
+    except (TaskNotFoundError, TaskNotCompletedError):
+        raise
+    except Exception:
+        # the task shall be removed in this case
+        await tasks_manager.remove_task(
+            task_id, with_task_context=task_context, reraise_errors=False
+        )
+        raise
 
 
 async def remove_task(
