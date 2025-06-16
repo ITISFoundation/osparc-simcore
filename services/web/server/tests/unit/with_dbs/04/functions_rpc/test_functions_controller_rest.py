@@ -17,6 +17,7 @@ from models_library.api_schemas_webserver.functions import (
     JSONFunctionOutputSchema,
     RegisteredProjectFunctionGet,
 )
+from models_library.api_schemas_webserver.users import MyFunctionPermissionsGet
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
@@ -111,3 +112,25 @@ async def test_register_get_delete_function(
     )
     response = await client.get(url)
     data, error = await assert_status(response, expected_get2)
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+@pytest.mark.parametrize("expected_write_functions", [True, False])
+async def test_list_user_functions_permissions(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    expected_write_functions: bool,
+    logged_user_function_api_access_rights: dict[str, Any],
+):
+    assert (
+        logged_user_function_api_access_rights["write_functions"]
+        == expected_write_functions
+    )
+
+    url = client.app.router["list_user_functions_permissions"].url_for()
+    response = await client.get(url)
+    data, error = await assert_status(response, expected_status_code=status.HTTP_200_OK)
+
+    assert not error
+    function_permissions = MyFunctionPermissionsGet.model_validate(data)
+    assert function_permissions.write_functions == expected_write_functions
