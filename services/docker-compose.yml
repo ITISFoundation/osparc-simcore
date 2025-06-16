@@ -1509,7 +1509,7 @@ services:
       interval: 10s
       timeout: 1s
       start_period: 1s
-      retries: 1
+      retries: 3
 
 volumes:
   postgres_data:
