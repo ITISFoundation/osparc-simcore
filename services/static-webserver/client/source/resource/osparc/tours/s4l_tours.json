@@ -65,7 +65,7 @@
         "selector": "osparc-test-id=studiesTabBtn"
       },
       "anchorEl": "osparc-test-id=studiesTabBtn",
-      "text": "Any Project is accessible via the Dashboard. The Projects, which belong to or are shared with you, can be found here.e. You can also create Folders to help you organize the Projects. Also, the Templates you have access to and Public Projects can be found in their own sections.",
+      "text": "Any Project is accessible via the Dashboard. The Projects, which belong to or are shared with you, can be found here. You can also create Folders to help you organize the Projects. Also, the Templates you have access to and Public Projects can be found in their own sections.",
       "placement": "bottom"
     }, {
       "beforeClick": {
