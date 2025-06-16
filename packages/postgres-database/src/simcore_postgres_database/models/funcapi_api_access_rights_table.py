@@ -1,4 +1,4 @@
-"""Functions access rights table"""
+"""Function api access rights of groups (read, write, execute)"""
 
 import sqlalchemy as sa
 from simcore_postgres_database.models._common import (
@@ -8,21 +8,10 @@ from simcore_postgres_database.models._common import (
 )
 
 from .base import metadata
-from .funcapi_functions_table import functions_table
 
-functions_access_rights_table = sa.Table(
-    "funcapi_functions_access_rights",
+funcapi_api_access_rights_table = sa.Table(
+    "funcapi_group_api_access_rights",
     metadata,
-    sa.Column(
-        "function_uuid",
-        sa.ForeignKey(
-            functions_table.c.uuid,
-            name="fk_func_access_to_func_to_func_uuid",
-            onupdate=RefActions.CASCADE,
-            ondelete=RefActions.CASCADE,
-        ),
-        nullable=False,
-    ),
     sa.Column(
         "group_id",
         sa.ForeignKey(
@@ -44,23 +33,55 @@ functions_access_rights_table = sa.Table(
         nullable=False,
     ),
     sa.Column(
-        "read",
+        "read_functions",
         sa.Boolean,
         default=False,
     ),
     sa.Column(
-        "write",
+        "write_functions",
         sa.Boolean,
         default=False,
     ),
     sa.Column(
-        "execute",
+        "execute_functions",
+        sa.Boolean,
+        default=False,
+    ),
+    sa.Column(
+        "read_function_jobs",
+        sa.Boolean,
+        default=False,
+    ),
+    sa.Column(
+        "write_function_jobs",
+        sa.Boolean,
+        default=False,
+    ),
+    sa.Column(
+        "execute_function_jobs",
+        sa.Boolean,
+        default=False,
+    ),
+    sa.Column(
+        "read_function_job_collections",
+        sa.Boolean,
+        default=False,
+    ),
+    sa.Column(
+        "write_function_job_collections",
+        sa.Boolean,
+        default=False,
+    ),
+    sa.Column(
+        "execute_function_job_collections",
         sa.Boolean,
         default=False,
     ),
     column_created_datetime(),
     column_modified_datetime(),
     sa.PrimaryKeyConstraint(
-        "function_uuid", "group_id", "product_name", name="pk_func_access_to_func_group"
+        "group_id",
+        "product_name",
+        name="pk_func_group_product_name_to_api_access_rights",
     ),
 )
