@@ -5,12 +5,17 @@
     "description": "Introduction to the Navigation Bar",
     "context": "osparc-test-id=navigationBar",
     "steps": [{
+      "anchorEl": "osparc-test-id=jobsButton",
+      "title": "Activity Center",
+      "text": "Here you can track all your running simulations, recent activity, and completed tasks. If you want to check the results once these are ready, you will find more details in the Activity Overview on the Project card.",
+      "placement": "bottom"
+    },{
       "beforeClick": {
         "selector": "osparc-test-id=notificationsButton",
         "event": "tap"
       },
       "anchorEl": "osparc-test-id=notificationsContainer",
-      "text": "By clicking on the Bell, you will you see notifications about which Studies, Credits and Organizations have been shared with you.",
+      "text": "By clicking on the Bell, you will you see notifications about which Projects, Credits and Organizations have been shared with you.",
       "placement": "bottom"
     }, {
       "beforeClick": {
@@ -73,7 +78,7 @@
     }, {
       "anchorEl": "osparc-test-id=searchBarFilter-textField-study",
       "title": "Filters and Search",
-      "text": "This tool allows you to search and filter Plans, Tutorials and Services.<br>You can search and filter by:<br>- Title, description, owner, id...<br>- Tags<br>- Shared with",
+      "text": "This tool allows you to search and filter Plans.<br>You can search and filter by:<br>- Title, description, owner, id...<br>- Tags<br>- Shared with",
       "placement": "bottom"
     }, {
       "beforeClick": {
