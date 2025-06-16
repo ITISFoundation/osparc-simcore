@@ -178,6 +178,10 @@ qx.Class.define("osparc.store.Store", {
       check: "Array",
       init: []
     },
+    functionPermissions: {
+      check: "Object",
+      init: {}
+    },
     apiKeys: {
       check: "Array",
       init: []
