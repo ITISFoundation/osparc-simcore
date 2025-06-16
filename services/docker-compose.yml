@@ -1504,6 +1504,12 @@ services:
         - traefik.http.services.${SWARM_STACK_NAME}_static_webserver_fallback.loadbalancer.healthcheck.path=/some/invalid/path/to/generate/a/503
         - traefik.http.services.${SWARM_STACK_NAME}_static_webserver_fallback.loadbalancer.healthcheck.interval=10s
         - traefik.http.services.${SWARM_STACK_NAME}_static_webserver_fallback.loadbalancer.healthcheck.timeout=1ms
+    healthcheck:
+      test: command -v sleep
+      interval: 10s
+      timeout: 1s
+      start_period: 1s
+      retries: 1
 
 volumes:
   postgres_data:
