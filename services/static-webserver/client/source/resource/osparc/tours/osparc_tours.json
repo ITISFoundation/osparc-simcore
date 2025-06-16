@@ -86,7 +86,7 @@
         "selector": "osparc-test-id=dataTabBtn"
       },
       "anchorEl": "osparc-test-id=dataTabBtn",
-      "text": "All the Data of the Projects you have access to can bre explored here.",
+      "text": "All the Data of the Projects you have access to can be explored here.",
       "placement": "bottom"
     }]
   },
