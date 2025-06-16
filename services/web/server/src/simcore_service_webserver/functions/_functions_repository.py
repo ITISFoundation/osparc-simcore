@@ -467,7 +467,7 @@ async def list_function_jobs(
             )
 
         return [
-            RegisteredFunctionJobDB.model_validate(dict(row)) for row in rows
+            RegisteredFunctionJobDB.model_validate(row) for row in rows
         ], PageMetaInfoLimitOffset(
             total=total_count_result,
             offset=pagination_offset,
@@ -568,7 +568,7 @@ async def list_function_job_collections(
 
         collections = []
         for row in rows:
-            collection = RegisteredFunctionJobCollectionDB.model_validate(dict(row))
+            collection = RegisteredFunctionJobCollectionDB.model_validate(row)
             job_result = await conn.stream(
                 function_job_collections_to_function_jobs_table.select().where(
                     function_job_collections_to_function_jobs_table.c.function_job_collection_uuid
@@ -678,7 +678,7 @@ async def update_function_title(
             if row is None:
                 raise FunctionIDNotFoundError(function_id=function_id)
 
-            return RegisteredFunctionDB.model_validate(dict(row))
+            return RegisteredFunctionDB.model_validate(row)
 
 
 async def update_function_description(
@@ -763,7 +763,7 @@ async def get_function_job(
             if row is None:
                 raise FunctionJobIDNotFoundError(function_job_id=function_job_id)
 
-            return RegisteredFunctionJobDB.model_validate(dict(row))
+            return RegisteredFunctionJobDB.model_validate(row)
 
 
 async def delete_function_job(
@@ -919,7 +919,7 @@ async def get_function_job_collection(
             [job_row["function_job_uuid"] for job_row in job_rows] if job_rows else []
         )
 
-        job_collection = RegisteredFunctionJobCollectionDB.model_validate(dict(row))
+        job_collection = RegisteredFunctionJobCollectionDB.model_validate(row)
 
     return job_collection, job_ids
 
