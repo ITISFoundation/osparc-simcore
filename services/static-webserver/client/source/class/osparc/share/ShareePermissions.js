@@ -5,6 +5,12 @@
  * Authors: Odei Maiz (odeimaiz)
  */
 
+/**
+ * Data structure for showing sharee permissions
+ * - accessible: boolean
+ * - gid: string // sharee group id
+ * - inaccessible_services: Array of objects with keys "key" and "version"
+ */
 qx.Class.define("osparc.share.ShareePermissions", {
   extend: qx.ui.core.Widget,
 
