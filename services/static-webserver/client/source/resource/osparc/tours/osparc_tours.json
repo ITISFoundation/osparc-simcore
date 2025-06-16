@@ -1,8 +1,8 @@
 {
-  "studies": {
-    "id": "studies",
-    "name": "Studies",
-    "description": "All you need to know about Study handling",
+  "projects": {
+    "id": "projects",
+    "name": "Projects",
+    "description": "All you need to know about Project handling",
     "context": "osparc-test-id=newPlusBtn",
     "steps": [{
       "beforeClick": {
@@ -25,12 +25,12 @@
       },
       "anchorEl": "osparc-test-id=studyItemMenuMenu",
       "title": "More options button",
-      "text": "On the Study card, you can use the three dots button to access more information and operation on the Study.",
+      "text": "On the Project card, you can use the three dots button to access more information and operation on the Project.",
       "placement": "left"
     }, {
       "anchorEl": "osparc-test-id=updateStudyBtn",
       "title": "Update Services",
-      "text": "On the Study card, you can use the Update button to update the corresponding service to the latest version.",
+      "text": "On the Project card, you can use the Update button to update the corresponding service to the latest version.",
       "placement": "bottom"
     }]
   },
@@ -49,21 +49,21 @@
         "selector": "osparc-test-id=studiesTabBtn"
       },
       "anchorEl": "osparc-test-id=studiesTabBtn",
-      "text": "Any Study is accessible via the Dashboard. The Studies, which belong to or are shared with you, can be found here. You can also create Folders to help you organize the Studies",
+      "text": "Any Project is accessible via the Dashboard. The Studies, which belong to or are shared with you, can be found here. You can also create Folders to help you organize the Studies",
       "placement": "bottom"
     }, {
       "beforeClick": {
         "selector": "osparc-test-id=tutorialsTabBtn"
       },
       "anchorEl": "osparc-test-id=tutorialsTabBtn",
-      "text": "Clicking on a Template will create a copy of that Study, which will appear in your own Studies tab with the same name as the Template. Any changes you make to this copy will not affect the original Template.",
+      "text": "Clicking on a Template will create a copy of that Project, which will appear in your own Studies tab with the same name as the Template. Any changes you make to this copy will not affect the original Template.",
       "placement": "bottom"
     }, {
       "beforeClick": {
         "selector": "osparc-test-id=appsTabBtn"
       },
       "anchorEl": "osparc-test-id=appsTabBtn",
-      "text": "Every Study in oSparc is composed of so-called Services.<br>These are building blocks for Studies and can provide data/files, visualize results (2D, 3D), implement code in Jupyter notebooks or perform computations to execute simulations within a Study.",
+      "text": "Every Project in oSparc is composed of so-called Services.<br>These are building blocks for Studies and can provide data/files, visualize results (2D, 3D), implement code in Jupyter notebooks or perform computations to execute simulations within a Study.",
       "placement": "bottom"
     }, {
       "beforeClick": {
