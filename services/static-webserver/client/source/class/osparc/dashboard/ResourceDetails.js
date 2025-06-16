@@ -150,10 +150,10 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       if (["study", "template", "tutorial"].includes(resourceData["resourceType"])) {
         const cantReadServices = osparc.study.Utils.getCantReadServices(resourceData["services"]);
         if (cantReadServices.length) {
-          const requestAccessButton = new qx.ui.form.Button(this.tr("Request Access"));
+          const requestAccessButton = new qx.ui.form.Button(this.tr("Request Apps Access"));
           osparc.dashboard.resources.pages.BasePage.decorateHeaderButton(requestAccessButton);
           requestAccessButton.addListener("execute", () => {
-            console.log("cantReadServices", cantReadServices);
+            osparc.share.RequestServiceAccess.openRequestAccess(cantReadServices);
           });
           toolbar.add(requestAccessButton);
         }
