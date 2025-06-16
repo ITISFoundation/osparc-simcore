@@ -1,8 +1,12 @@
+import logging
+import traceback
 from typing import Any
 
 from .errors import TaskNotCompletedError, TaskNotFoundError
 from .models import TaskBase, TaskId, TaskStatus
 from .task import TaskContext, TasksManager, TrackedTask
+
+_logger = logging.getLogger(__name__)
 
 
 def list_tasks(
@@ -35,7 +39,11 @@ async def get_task_result(
         return task_result
     except (TaskNotFoundError, TaskNotCompletedError):
         raise
-    except Exception:
+    except Exception as exc:
+        # the task raised an exception
+        formatted_traceback = "".join(traceback.format_exception(exc))
+        _logger.info("Task '%s' raised an exception: %s", task_id, formatted_traceback)
+
         # the task shall be removed in this case
         await tasks_manager.remove_task(
             task_id, with_task_context=task_context, reraise_errors=False
