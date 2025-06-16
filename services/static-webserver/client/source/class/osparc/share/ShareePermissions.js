@@ -6,7 +6,7 @@
  */
 
 /**
- * Data structure for showing sharee permissions
+ * Data structure for showing sharee permissions. Array of objects with the following keys
  * - accessible: boolean
  * - gid: string // sharee group id
  * - inaccessible_services: Array of objects with keys "key" and "version"
@@ -35,10 +35,10 @@ qx.Class.define("osparc.share.ShareePermissions", {
         promises.push(osparc.data.Resources.fetch("studies", "checkShareePermissions", params));
       });
       Promise.all(promises)
-        .then(values => {
-          const noAccessible = values.filter(value => value["accessible"] === false);
-          if (noAccessible.length) {
-            const shareePermissions = new osparc.share.ShareePermissions(noAccessible);
+        .then(shareesData => {
+          const inaccessibleShareesData = shareesData.filter(value => value["accessible"] === false);
+          if (inaccessibleShareesData.length) {
+            const shareePermissions = new osparc.share.ShareePermissions(inaccessibleShareesData);
             const caption = qx.locale.Manager.tr("Sharee permissions");
             const win = osparc.ui.window.Window.popUpInWindow(shareePermissions, caption, 500, 500, "@FontAwesome5Solid/exclamation-triangle/14").set({
               clickAwayClose: false,
@@ -70,7 +70,7 @@ qx.Class.define("osparc.share.ShareePermissions", {
       this._add(layout);
       for (let i=0; i<shareesData.length; i++) {
         const shareeData = shareesData[i];
-        const group = osparc.store.Groups.getInstance().getGroup(shareeData.gid);
+        const group = osparc.store.Groups.getInstance().getGroup(shareeData["gid"]);
         if (group) {
           layout.add(new qx.ui.basic.Label(group.getLabel()), {
             row: i,
