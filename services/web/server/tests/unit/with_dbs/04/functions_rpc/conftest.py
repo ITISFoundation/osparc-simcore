@@ -4,6 +4,8 @@
 
 
 from collections.abc import AsyncIterator, Awaitable, Callable
+from contextlib import AsyncExitStack
+from typing import Any
 from uuid import uuid4
 
 import pytest
@@ -16,6 +18,7 @@ from models_library.api_schemas_webserver.functions import (
 )
 from models_library.products import ProductName
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.postgres_tools import insert_and_get_row_lifespan
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import LoggedUser, UserInfoDict
 from servicelib.rabbitmq import RabbitMQRPCClient
@@ -189,3 +192,35 @@ async def add_user_function_api_access_rights(
                     funcapi_api_access_rights_table.c.group_id == group_id
                 )
             )
+
+
+@pytest.fixture
+async def logged_user_function_api_access_rights(
+    asyncpg_engine: AsyncEngine,
+    logged_user: UserInfoDict,
+    *,
+    expected_write_functions: bool,
+) -> AsyncIterator[dict[str, Any]]:
+    cm = insert_and_get_row_lifespan(
+        asyncpg_engine,
+        table=funcapi_api_access_rights_table,
+        values={
+            "group_id": logged_user["primary_gid"],
+            "product_name": FRONTEND_APP_DEFAULT,
+            "read_functions": True,
+            "write_functions": expected_write_functions,
+            "execute_functions": True,
+            "read_function_jobs": True,
+            "write_function_jobs": True,
+            "execute_function_jobs": True,
+            "read_function_job_collections": True,
+            "write_function_job_collections": True,
+            "execute_function_job_collections": True,
+        },
+        pk_col=funcapi_api_access_rights_table.c.group_id,
+        pk_value=logged_user["primary_gid"],
+    )
+
+    async with AsyncExitStack() as stack:
+        row = await stack.enter_async_context(cm)
+        yield row
