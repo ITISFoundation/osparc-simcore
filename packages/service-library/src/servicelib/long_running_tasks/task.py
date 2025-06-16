@@ -35,7 +35,8 @@ TaskContext: TypeAlias = dict[str, Any]
 
 
 async def _await_task(task: asyncio.Task) -> None:
-    await task
+    with log_catch(_logger):
+        await task
 
 
 def _get_tasks_to_remove(
