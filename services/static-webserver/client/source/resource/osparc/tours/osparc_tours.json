@@ -65,28 +65,28 @@
         "selector": "osparc-test-id=studiesTabBtn"
       },
       "anchorEl": "osparc-test-id=studiesTabBtn",
-      "text": "Any Project is accessible via the Dashboard. The Studies, which belong to or are shared with you, can be found here. You can also create Folders to help you organize the Studies",
+      "text": "Any Project is accessible via the Dashboard. The Projects, which belong to or are shared with you, can be found here. You can also create Folders to help you organize the Projects. Also, the Templates you have access to and Public Projects can be found in their own sections.",
       "placement": "bottom"
     }, {
       "beforeClick": {
         "selector": "osparc-test-id=tutorialsTabBtn"
       },
       "anchorEl": "osparc-test-id=tutorialsTabBtn",
-      "text": "Clicking on a Template will create a copy of that Project, which will appear in your own Studies tab with the same name as the Template. Any changes you make to this copy will not affect the original Template.",
+      "text": "Clicking on a Tutorial will create a copy of that Project, which will appear in your own Projects tab with the same name as the Tutorial. Any changes you make to this copy will not affect the original Tutorial.",
       "placement": "bottom"
     }, {
       "beforeClick": {
         "selector": "osparc-test-id=appsTabBtn"
       },
       "anchorEl": "osparc-test-id=appsTabBtn",
-      "text": "Every Project in oSparc is composed of so-called Services.<br>These are building blocks for Studies and can provide data/files, visualize results (2D, 3D), implement code in Jupyter notebooks or perform computations to execute simulations within a Study.",
+      "text": "Every Project in oSparc is composed of so-called Apps.<br>These are building blocks for Projects and can provide data/files, visualize results (2D, 3D), implement code in Jupyter notebooks or perform computations to execute simulations within a Project.",
       "placement": "bottom"
     }, {
       "beforeClick": {
         "selector": "osparc-test-id=dataTabBtn"
       },
       "anchorEl": "osparc-test-id=dataTabBtn",
-      "text": "All the Data of the Studies you have access to can bre explored here.",
+      "text": "All the Data of the Projects you have access to can bre explored here.",
       "placement": "bottom"
     }]
   },
@@ -96,13 +96,18 @@
     "description": "Introduction to the Navigation Bar",
     "context": "osparc-test-id=navigationBar",
     "steps": [{
+      "anchorEl": "osparc-test-id=jobsButton",
+      "title": "Activity Center",
+      "text": "Here you can track all your running jobs, recent activity, and completed tasks. If you want to check the results once these are ready, you will find more details in the Activity Overview on the Project card.",
+      "placement": "bottom"
+    }, {
       "beforeClick": {
         "selector": "osparc-test-id=notificationsButton",
         "event": "tap"
       },
       "anchorEl": "osparc-test-id=notificationsContainer",
-      "text": "By clicking on the Bell, you will you see notifications about which Studies, Templates and Organizations have been shared with you.",
-      "placement": "bottom"
+      "text": "By clicking on the Bell, you will you see notifications about which Projects, Templates and Organizations have been shared with you.",
+      "placement": "left"
     }, {
       "beforeClick": {
         "selector": "osparc-test-id=helpNavigationBtn",
