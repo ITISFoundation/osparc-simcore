@@ -11,12 +11,12 @@
       },
       "anchorEl": "osparc-test-id=newPlusMenu",
       "title": "Start Sim4Life and more",
-      "text": "Clicking on the (+) New button, allows you to create new Sim4Life projects or new Folders to organize the projects",
+      "text": "Clicking on the (+) New button, allows you to create new Sim4Life projects, start other featured Apps or create new Folders to organize the projects",
       "placement": "right"
     }, {
       "anchorEl": "osparc-test-id=searchBarFilter-textField-study",
       "title": "Filter and Search",
-      "text": "This tool allows you to search Projects, Tutorials and Services.<br>You can search and filter by:<br>- Title, description, owner, id...<br>- Tags<br>- Shared with",
+      "text": "This tool allows you to search Projects, Templates or Public Projects.<br>You can search and filter by:<br>- Title, description, owner, id...<br>- Tags<br>- Shared with",
       "placement": "bottom"
     }, {
       "beforeClick": {
@@ -32,6 +32,22 @@
       "title": "Update Services",
       "text": "On the Project card, you can use the Update button to update the corresponding service to the latest version.",
       "placement": "bottom"
+    }, {
+      "beforeClick": {
+        "selector": "osparc-test-id=templatesFilterItem"
+      },
+      "anchorEl": "osparc-test-id=templatesFilterItem",
+      "title": "Templates",
+      "text": "Templates let you freeze a project and reuse it anytime. When you create a template, it saves a snapshot of your project. Later, you can click on it to start a fresh, independent copy.<br>Templates shared with you by others will also appear here, so you can build on their work too.",
+      "placement": "right"
+    }, {
+      "beforeClick": {
+        "selector": "osparc-test-id=publicProjectsFilterItem"
+      },
+      "anchorEl": "osparc-test-id=publicProjectsFilterItem",
+      "title": "Public Projects",
+      "text": "Just like templates, Public Projects are frozen snapshots—but they’re shared with the entire scientific community. Anyone can browse them and create their own copy and build upon.",
+      "placement": "right"
     }]
   },
   "dashboard": {
@@ -42,14 +58,14 @@
     "steps": [{
       "anchorEl": "osparc-test-id=dashboardTabs",
       "title": "Dashboard Menu",
-      "text": "The menu tabs give you quick access to a set of core elements of the platform, namely Projects, Tutorials and Services.",
+      "text": "The menu tabs give you quick access to a set of core elements of the platform, namely Projects, Tutorials and Apps.",
       "placement": "bottom"
     }, {
       "beforeClick": {
         "selector": "osparc-test-id=studiesTabBtn"
       },
       "anchorEl": "osparc-test-id=studiesTabBtn",
-      "text": "Any Project is accessible via the Dashboard. The Projects, which belong to or are shared with you, can be found here.",
+      "text": "Any Project is accessible via the Dashboard. The Projects, which belong to or are shared with you, can be found here.e. You can also create Folders to help you organize the Projects. Also, the Templates you have access to and Public Projects can be found in their own sections.",
       "placement": "bottom"
     }, {
       "beforeClick": {
@@ -63,7 +79,7 @@
         "selector": "osparc-test-id=appsTabBtn"
       },
       "anchorEl": "osparc-test-id=appsTabBtn",
-      "text": "Every Project in Sim4Life is composed of at least one so-called Service.<br>Services are building blocks for Projects and can provide data/files, visualize results (2D, 3D), implement code in Jupyter notebooks or perform computations to execute simulations within a Project.",
+      "text": "Every Project in Sim4Life is composed of at least one so-called Apps.<br>Apps are building blocks for Projects and can provide data/files, visualize results (2D, 3D), implement code in Jupyter notebooks or perform computations to execute simulations within a Project.",
       "placement": "bottom"
     }]
   },
@@ -73,6 +89,11 @@
     "description": "Introduction to the Navigation Bar",
     "context": "osparc-test-id=navigationBar",
     "steps": [{
+      "anchorEl": "osparc-test-id=jobsButton",
+      "title": "Activity Center",
+      "text": "Here you can track all your running jobs, recent activity, and completed tasks. If you want to check the results once these are ready, you will find more details in the Activity Overview on the Project card.",
+      "placement": "bottom"
+    }, {
       "beforeClick": {
         "selector": "osparc-test-id=notificationsButton",
         "event": "tap"
