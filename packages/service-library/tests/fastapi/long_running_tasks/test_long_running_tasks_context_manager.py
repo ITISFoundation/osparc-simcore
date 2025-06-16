@@ -17,6 +17,7 @@ from servicelib.fastapi.long_running_tasks.client import setup as setup_client
 from servicelib.fastapi.long_running_tasks.server import get_long_running_manager
 from servicelib.fastapi.long_running_tasks.server import setup as setup_server
 from servicelib.long_running_tasks.errors import (
+    TaskClientResultError,
     TaskClientTimeoutError,
 )
 from servicelib.long_running_tasks.models import (
@@ -148,7 +149,7 @@ async def test_task_result_task_result_is_an_error(
 
     url = TypeAdapter(AnyHttpUrl).validate_python("http://backgroud.testserver.io/")
     client = Client(app=bg_task_app, async_client=async_client, base_url=url)
-    with pytest.raises(RuntimeError, match="I am failing as requested"):
+    with pytest.raises(TaskClientResultError) as exec_info:
         async with periodic_task_result(
             client,
             task_id,
@@ -156,6 +157,8 @@ async def test_task_result_task_result_is_an_error(
             status_poll_interval=TASK_SLEEP_INTERVAL / 3,
         ):
             pass
+    assert f"{exec_info.value}".startswith(f"Task {task_id} finished with exception:")
+    assert "I am failing as requested" in f"{exec_info.value}"
     await _assert_task_removed(async_client, task_id, router_prefix)
 
 

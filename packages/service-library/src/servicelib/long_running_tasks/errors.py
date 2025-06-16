@@ -37,3 +37,8 @@ class GenericClientError(BaseLongRunningError):
     msg_template: str = (
         "Unexpected error while '{action}' for '{task_id}': status={status} body={body}"
     )
+
+
+class TaskClientResultError(BaseLongRunningError):
+    code: str = "long_running_task.client.task_raised_error"
+    msg_template: str = "{message}"

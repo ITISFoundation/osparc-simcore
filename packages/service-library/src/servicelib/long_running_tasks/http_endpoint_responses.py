@@ -27,12 +27,21 @@ def get_task_status(
 
 
 async def get_task_result(
-    tasks_manager: TasksManager, task_context: TaskContext | None, task_id: TaskId
+    tasks_manager: TasksManager,
+    task_context: TaskContext | None,
+    task_id: TaskId,
+    *,
+    is_fasapi: bool,
 ) -> Any:
     try:
-        task_result = tasks_manager.get_task_result(
-            task_id, with_task_context=task_context
-        )
+        if is_fasapi:
+            task_result = tasks_manager.get_task_result_old(
+                task_id, with_task_context=task_context
+            )
+        else:
+            task_result = tasks_manager.get_task_result(
+                task_id, with_task_context=task_context
+            )
         await tasks_manager.remove_task(
             task_id, with_task_context=task_context, reraise_errors=False
         )

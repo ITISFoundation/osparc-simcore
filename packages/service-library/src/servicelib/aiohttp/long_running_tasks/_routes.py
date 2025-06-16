@@ -60,6 +60,7 @@ async def get_task_result(request: web.Request) -> web.Response | Any:
         long_running_manager.tasks_manager,
         long_running_manager.get_task_context(request),
         path_params.task_id,
+        is_fasapi=False,
     )
 
 

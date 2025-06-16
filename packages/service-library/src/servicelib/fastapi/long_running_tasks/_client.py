@@ -13,8 +13,13 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_exponential
 
-from ...long_running_tasks.errors import GenericClientError
-from ...long_running_tasks.models import ClientConfiguration, TaskId, TaskStatus
+from ...long_running_tasks.errors import GenericClientError, TaskClientResultError
+from ...long_running_tasks.models import (
+    ClientConfiguration,
+    TaskId,
+    TaskResult,
+    TaskStatus,
+)
 
 _DEFAULT_HTTP_REQUESTS_TIMEOUT: Final[PositiveFloat] = 15
 
@@ -168,7 +173,10 @@ class Client:
                 body=result.text,
             )
 
-        return result.json()
+        task_result = TaskResult.model_validate(result.json())
+        if task_result.error is not None:
+            raise TaskClientResultError(message=task_result.error)
+        return task_result.result
 
     @retry_on_http_errors
     async def cancel_and_delete_task(

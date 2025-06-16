@@ -10,6 +10,7 @@ from typing import Any, Final, Protocol, TypeAlias
 from uuid import uuid4
 
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
+from models_library.api_schemas_long_running_tasks.tasks import TaskResult
 from pydantic import PositiveFloat
 from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task import create_periodic_task
@@ -258,6 +259,38 @@ class TasksManager:
         except asyncio.CancelledError as exc:
             # the task was cancelled
             raise TaskCancelledError(task_id=task_id) from exc
+
+    def get_task_result_old(
+        self, task_id: TaskId, with_task_context: TaskContext | None
+    ) -> TaskResult:
+        """
+        returns: the result of the task
+
+        raises TaskNotFoundError if the task cannot be found
+        """
+        tracked_task = self._get_tracked_task(task_id, with_task_context)
+
+        if not tracked_task.task.done():
+            raise TaskNotCompletedError(task_id=task_id)
+
+        error: TaskExceptionError | TaskCancelledError
+        try:
+            exception = tracked_task.task.exception()
+            if exception is not None:
+                formatted_traceback = "\n".join(
+                    traceback.format_tb(exception.__traceback__)
+                )
+                error = TaskExceptionError(
+                    task_id=task_id, exception=exception, traceback=formatted_traceback
+                )
+                _logger.warning("Task %s finished with error: %s", task_id, f"{error}")
+                return TaskResult(result=None, error=f"{error}")
+        except asyncio.CancelledError:
+            error = TaskCancelledError(task_id=task_id)
+            _logger.warning("Task %s was cancelled", task_id)
+            return TaskResult(result=None, error=f"{error}")
+
+        return TaskResult(result=tracked_task.task.result(), error=None)
 
     async def cancel_task(
         self, task_id: TaskId, with_task_context: TaskContext | None

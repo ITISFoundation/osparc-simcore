@@ -76,7 +76,10 @@ async def get_task_result(
 ) -> TaskResult | Any:
     assert request  # nosec
     return await http_endpoint_responses.get_task_result(
-        long_running_manager.tasks_manager, task_context=None, task_id=task_id
+        long_running_manager.tasks_manager,
+        task_context=None,
+        task_id=task_id,
+        is_fasapi=True,
     )
 
 
