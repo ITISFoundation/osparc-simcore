@@ -3,7 +3,7 @@
 # pylint: disable=unused-variable
 
 import socket
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterator, Callable, Iterator
 from typing import cast
 
 import arrow
@@ -11,7 +11,10 @@ import pytest
 from fastapi import APIRouter, FastAPI
 from fastapi.params import Query
 from httpx import ASGITransport, AsyncClient
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from pydantic.types import PositiveFloat
+from pytest_mock import MockerFixture
 
 
 @pytest.fixture
@@ -55,3 +58,13 @@ def get_unused_port() -> Callable[[], int]:
             return cast(int, s.getsockname()[1])
 
     return go
+
+
+@pytest.fixture
+def mock_otel_collector(mocker: MockerFixture) -> Iterator[InMemorySpanExporter]:
+    memory_exporter = InMemorySpanExporter()
+    span_processor = SimpleSpanProcessor(memory_exporter)
+    mocker.patch(
+        "servicelib.fastapi.tracing._create_span_processor", return_value=span_processor
+    )
+    yield memory_exporter
