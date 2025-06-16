@@ -26,6 +26,7 @@ openapi_modules = [
         "_tags_groups",  # after _tags
         "_products",
         "_users",
+        "_users_admin",  # after _users
         "_wallets",
         # add-ons ---
         "_activity",
