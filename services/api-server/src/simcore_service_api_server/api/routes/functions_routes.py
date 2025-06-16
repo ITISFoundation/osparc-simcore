@@ -1,3 +1,4 @@
+# pylint: disable=too-many-positional-arguments
 from collections.abc import Callable
 from typing import Annotated, Final, TypeAlias
 
