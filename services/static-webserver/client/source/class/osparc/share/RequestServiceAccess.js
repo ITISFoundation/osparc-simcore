@@ -45,28 +45,47 @@ qx.Class.define("osparc.share.RequestServiceAccess", {
       this._add(layout);
 
       // Header
-      layout.add(new qx.ui.basic.Label(this.tr("Owner"), {
-        row: idx+1,
+      layout.add(new qx.ui.basic.Label(this.tr("Owner")), {
+        row: 0,
         column: 0
-      }));
-      layout.add(new qx.ui.basic.Label(this.tr("App"), {
-        row: idx+1,
+      });
+      layout.add(new qx.ui.basic.Label(this.tr("Email")), {
+        row: 0,
         column: 1
-      }));
+      });
+      layout.add(new qx.ui.basic.Label(this.tr("App")), {
+        row: 0,
+        column: 2
+      });
 
+      // Populate the grid with the cantReadServicesData
       cantReadServicesData.forEach((cantReadServiceData, idx) => {
         const group = osparc.store.Groups.getInstance().getGroup(cantReadServiceData["owner"]);
         if (group) {
-          layout.add(new qx.ui.basic.Label(group.getLabel()), {
+          const username = new qx.ui.basic.Label(group.getLabel()).set({
+            rich: true,
+            selectable: true,
+          });
+          layout.add(username, {
             row: idx+1,
             column: 0
           });
+          const email = new qx.ui.basic.Label(group.getEmail()).set({
+            rich: true,
+            selectable: true,
+          });
+          layout.add(email, {
+            row: idx+1,
+            column: 1
+          });
           const appLabel = new qx.ui.basic.Label().set({
-            value: `${cantReadServiceData["key"]} : ${osparc.service.Utils.extractVersionDisplay(cantReadServiceData["release"])}`,
+            value: `${cantReadServiceData["key"]}:${osparc.service.Utils.extractVersionDisplay(cantReadServiceData["release"])}`,
+            rich: true,
+            selectable: true,
           });
           layout.add(appLabel, {
-            row: i,
-            column: 1
+            row: idx+1,
+            column: 2
           });
         }
       });
