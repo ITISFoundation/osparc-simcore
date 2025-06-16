@@ -114,6 +114,7 @@ async def test_register_get_delete_function(
     data, error = await assert_status(response, expected_get2)
 
 
+@pytest.mark.parametrize("user_role", [UserRole.USER])
 @pytest.mark.parametrize("expected_write_functions", [True, False])
 async def test_list_user_functions_permissions(
     client: TestClient,
