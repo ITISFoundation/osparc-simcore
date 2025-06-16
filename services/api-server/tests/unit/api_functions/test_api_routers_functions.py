@@ -26,7 +26,6 @@ from models_library.functions import (
     FunctionUserAccessRights,
     FunctionUserApiAccessRights,
     RegisteredFunctionJob,
-    RegisteredSolverFunction,
 )
 from models_library.functions_errors import (
     FunctionIDNotFoundError,
@@ -687,6 +686,7 @@ async def test_run_map_function_not_allowed(
         (f"{_faker.uuid4()}", None, status.HTTP_422_UNPROCESSABLE_ENTITY),
         (None, f"{_faker.uuid4()}", status.HTTP_422_UNPROCESSABLE_ENTITY),
         (f"{_faker.uuid4()}", f"{_faker.uuid4()}", status.HTTP_200_OK),
+        ("null", "null", status.HTTP_200_OK),
     ],
 )
 @pytest.mark.parametrize("capture", ["run_study_function_parent_info.json"])
@@ -714,11 +714,11 @@ async def test_run_project_function_parent_info(
         capture: HttpApiCallCaptureModel,
     ) -> Any:
         if request.method == "POST" and request.url.path.endswith("/projects"):
-            if parent_project_uuid:
+            if parent_project_uuid and parent_project_uuid != "null":
                 _parent_uuid = request.headers.get(X_SIMCORE_PARENT_PROJECT_UUID)
                 assert _parent_uuid is not None
                 assert parent_project_uuid == _parent_uuid
-            if parent_node_uuid:
+            if parent_node_uuid and parent_node_uuid != "null":
                 _parent_node_uuid = request.headers.get(X_SIMCORE_PARENT_NODE_ID)
                 assert _parent_node_uuid is not None
                 assert parent_node_uuid == _parent_node_uuid
@@ -778,100 +778,7 @@ async def test_run_project_function_parent_info(
         (f"{_faker.uuid4()}", None, status.HTTP_422_UNPROCESSABLE_ENTITY),
         (None, f"{_faker.uuid4()}", status.HTTP_422_UNPROCESSABLE_ENTITY),
         (f"{_faker.uuid4()}", f"{_faker.uuid4()}", status.HTTP_200_OK),
-    ],
-)
-@pytest.mark.parametrize("capture", ["run_study_function_parent_info.json"])
-async def test_run_solver_function_parent_info(
-    client: AsyncClient,
-    mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
-    mock_registered_solver_function: RegisteredSolverFunction,
-    mock_registered_function_job: RegisteredFunctionJob,
-    mocked_catalog_rpc_api: dict[str, MockType],
-    auth: httpx.BasicAuth,
-    user_id: UserID,
-    mocked_webserver_rest_api_base: respx.MockRouter,
-    mocked_directorv2_rest_api_base: respx.MockRouter,
-    mocked_webserver_rpc_api: dict[str, MockType],
-    create_respx_mock_from_capture,
-    project_tests_dir: Path,
-    parent_project_uuid: str | None,
-    parent_node_uuid: str | None,
-    expected_status_code: int,
-    capture: str,
-) -> None:
-
-    mock_registered_solver_function.uid = UUID("bf27b3f2-34c1-4b26-a3cb-a5c259e6489c")
-
-    def _default_side_effect(
-        request: httpx.Request,
-        path_params: dict[str, Any],
-        capture: HttpApiCallCaptureModel,
-    ) -> Any:
-        if request.method == "POST" and request.url.path.endswith("/projects"):
-            if parent_project_uuid:
-                _parent_uuid = request.headers.get(X_SIMCORE_PARENT_PROJECT_UUID)
-                assert _parent_uuid is not None
-                assert parent_project_uuid == _parent_uuid
-            if parent_node_uuid:
-                _parent_node_uuid = request.headers.get(X_SIMCORE_PARENT_NODE_ID)
-                assert _parent_node_uuid is not None
-                assert parent_node_uuid == _parent_node_uuid
-        return capture.response_body
-
-    create_respx_mock_from_capture(
-        respx_mocks=[mocked_webserver_rest_api_base, mocked_directorv2_rest_api_base],
-        capture_path=project_tests_dir / "mocks" / capture,
-        side_effects_callbacks=[_default_side_effect] * 50,
-    )
-
-    mock_handler_in_functions_rpc_interface(
-        "get_function_user_permissions",
-        FunctionUserAccessRights(
-            user_id=user_id,
-            execute=True,
-            read=True,
-            write=True,
-        ),
-    )
-    mock_handler_in_functions_rpc_interface(
-        "get_function", mock_registered_solver_function
-    )
-    mock_handler_in_functions_rpc_interface("find_cached_function_jobs", [])
-    mock_handler_in_functions_rpc_interface(
-        "register_function_job", mock_registered_function_job
-    )
-    mock_handler_in_functions_rpc_interface(
-        "get_functions_user_api_access_rights",
-        FunctionUserApiAccessRights(
-            user_id=user_id,
-            execute_functions=True,
-            write_functions=True,
-            read_functions=True,
-        ),
-    )
-
-    headers = dict()
-    if parent_project_uuid:
-        headers[X_SIMCORE_PARENT_PROJECT_UUID] = parent_project_uuid
-    if parent_node_uuid:
-        headers[X_SIMCORE_PARENT_NODE_ID] = parent_node_uuid
-
-    response = await client.post(
-        f"{API_VTAG}/functions/{mock_registered_solver_function.uid}:run",
-        json={},
-        auth=auth,
-        headers=headers,
-    )
-    assert response.status_code == expected_status_code
-
-
-@pytest.mark.parametrize(
-    "parent_project_uuid, parent_node_uuid, expected_status_code",
-    [
-        (None, None, status.HTTP_422_UNPROCESSABLE_ENTITY),
-        (f"{_faker.uuid4()}", None, status.HTTP_422_UNPROCESSABLE_ENTITY),
-        (None, f"{_faker.uuid4()}", status.HTTP_422_UNPROCESSABLE_ENTITY),
-        (f"{_faker.uuid4()}", f"{_faker.uuid4()}", status.HTTP_200_OK),
+        ("null", "null", status.HTTP_200_OK),
     ],
 )
 @pytest.mark.parametrize("capture", ["run_study_function_parent_info.json"])
@@ -903,11 +810,11 @@ async def test_map_function_parent_info(
     ) -> Any:
         if request.method == "POST" and request.url.path.endswith("/projects"):
             side_effect_checks["headers_checked"] = True
-            if parent_project_uuid:
+            if parent_project_uuid and parent_project_uuid != "null":
                 _parent_uuid = request.headers.get(X_SIMCORE_PARENT_PROJECT_UUID)
                 assert _parent_uuid is not None
                 assert parent_project_uuid == _parent_uuid
-            if parent_node_uuid:
+            if parent_node_uuid and parent_node_uuid != "null":
                 _parent_node_uuid = request.headers.get(X_SIMCORE_PARENT_NODE_ID)
                 assert _parent_node_uuid is not None
                 assert parent_node_uuid == _parent_node_uuid
