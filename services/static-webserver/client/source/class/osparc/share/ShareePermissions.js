@@ -16,6 +16,37 @@ qx.Class.define("osparc.share.ShareePermissions", {
     this.__populateLayout(shareesData);
   },
 
+  statics: {
+    checkShareePermissions: function(studyId, gids) {
+      const promises = [];
+      gids.forEach(gid => {
+        const params = {
+          url: {
+            studyId,
+            gid,
+          }
+        };
+        promises.push(osparc.data.Resources.fetch("studies", "checkShareePermissions", params));
+      });
+      Promise.all(promises)
+        .then(values => {
+          const noAccessible = values.filter(value => value["accessible"] === false);
+          if (noAccessible.length) {
+            const shareePermissions = new osparc.share.ShareePermissions(noAccessible);
+            const caption = qx.locale.Manager.tr("Sharee permissions");
+            const win = osparc.ui.window.Window.popUpInWindow(shareePermissions, caption, 500, 500, "@FontAwesome5Solid/exclamation-triangle/14").set({
+              clickAwayClose: false,
+              resizable: true,
+              showClose: true
+            });
+            win.getChildControl("icon").set({
+              textColor: "warning-yellow"
+            });
+          }
+        });
+    },
+  },
+
   members: {
     __populateLayout: function(shareesData) {
       const text = this.tr("The following users/groups will not be able to open the shared study, because they don't have access to some services. Please contact the service owner(s) to give permission.");
