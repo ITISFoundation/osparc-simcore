@@ -7597,7 +7597,8 @@
                   "format": "uuid"
                 },
                 {
-                  "type": "null"
+                  "type": "string",
+                  "pattern": "^null$"
                 }
               ],
               "title": "X-Simcore-Parent-Project-Uuid"
@@ -7614,7 +7615,8 @@
                   "format": "uuid"
                 },
                 {
-                  "type": "null"
+                  "type": "string",
+                  "pattern": "^null$"
                 }
               ],
               "title": "X-Simcore-Parent-Node-Id"
@@ -7727,6 +7729,10 @@
                   "format": "uuid"
                 },
                 {
+                  "type": "string",
+                  "pattern": "^null$"
+                },
+                {
                   "type": "null"
                 }
               ],
@@ -7744,7 +7750,8 @@
                   "format": "uuid"
                 },
                 {
-                  "type": "null"
+                  "type": "string",
+                  "pattern": "^null$"
                 }
               ],
               "title": "X-Simcore-Parent-Node-Id"

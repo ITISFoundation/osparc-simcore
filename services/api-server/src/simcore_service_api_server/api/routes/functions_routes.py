@@ -377,14 +377,20 @@ async def run_function(  # noqa: PLR0913
     product_name: Annotated[str, Depends(get_product_name)],
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
     job_service: Annotated[JobService, Depends(get_job_service)],
-    x_simcore_parent_project_uuid: Annotated[ProjectID | NullString | None, Header()],
-    x_simcore_parent_node_id: Annotated[NodeID | NullString | None, Header()],
+    x_simcore_parent_project_uuid: Annotated[ProjectID | NullString, Header()],
+    x_simcore_parent_node_id: Annotated[NodeID | NullString, Header()],
 ) -> RegisteredFunctionJob:
 
-    if not isinstance(x_simcore_parent_project_uuid, ProjectID):
-        x_simcore_parent_project_uuid = None
-    if not isinstance(x_simcore_parent_node_id, NodeID):
-        x_simcore_parent_node_id = None
+    parent_project_uuid = (
+        x_simcore_parent_project_uuid
+        if isinstance(x_simcore_parent_project_uuid, ProjectID)
+        else None
+    )
+    parent_node_id = (
+        x_simcore_parent_node_id
+        if isinstance(x_simcore_parent_node_id, NodeID)
+        else None
+    )
 
     # Make sure the user is allowed to execute any function
     # (read/write right is checked in the other endpoint called in this method)
@@ -455,8 +461,8 @@ async def run_function(  # noqa: PLR0913
             webserver_api=webserver_api,
             wb_api_rpc=wb_api_rpc,
             url_for=url_for,
-            x_simcore_parent_project_uuid=x_simcore_parent_project_uuid,
-            x_simcore_parent_node_id=x_simcore_parent_node_id,
+            x_simcore_parent_project_uuid=parent_project_uuid,
+            x_simcore_parent_node_id=parent_node_id,
             user_id=user_id,
             product_name=product_name,
         )
@@ -490,8 +496,8 @@ async def run_function(  # noqa: PLR0913
             solver_service=solver_service,
             job_service=job_service,
             url_for=url_for,
-            x_simcore_parent_project_uuid=x_simcore_parent_project_uuid,
-            x_simcore_parent_node_id=x_simcore_parent_node_id,
+            x_simcore_parent_project_uuid=parent_project_uuid,
+            x_simcore_parent_node_id=parent_node_id,
         )
         await solvers_jobs.start_job(
             request=request,
