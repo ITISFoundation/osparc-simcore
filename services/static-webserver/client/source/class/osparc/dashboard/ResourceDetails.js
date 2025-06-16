@@ -152,6 +152,10 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         if (cantReadServices.length) {
           const requestAccessButton = new qx.ui.form.Button(this.tr("Request Apps Access"));
           osparc.dashboard.resources.pages.BasePage.decorateHeaderButton(requestAccessButton);
+          requestAccessButton.set({
+            minWidth: 170,
+            maxWidth: 170,
+          });
           requestAccessButton.addListener("execute", () => {
             osparc.share.RequestServiceAccess.openRequestAccess(cantReadServices);
           });
