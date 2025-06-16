@@ -235,32 +235,7 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
       if (gids.length === 0) {
         return;
       }
-
-      const promises = [];
-      gids.forEach(gid => {
-        const params = {
-          url: {
-            "studyId": this._serializedDataCopy["uuid"],
-            "gid": gid
-          }
-        };
-        promises.push(osparc.data.Resources.fetch("studies", "checkShareePermissions", params));
-      });
-      Promise.all(promises)
-        .then(values => {
-          const noAccessible = values.filter(value => value["accessible"] === false);
-          if (noAccessible.length) {
-            const shareePermissions = new osparc.share.ShareePermissions(noAccessible);
-            const win = osparc.ui.window.Window.popUpInWindow(shareePermissions, this.tr("Sharee permissions"), 500, 500, "@FontAwesome5Solid/exclamation-triangle/14").set({
-              clickAwayClose: false,
-              resizable: true,
-              showClose: true
-            });
-            win.getChildControl("icon").set({
-              textColor: "warning-yellow"
-            });
-          }
-        });
+      osparc.share.ShareePermissions.checkShareePermissions(this._serializedDataCopy["uuid"], gids);
     }
   }
 });
