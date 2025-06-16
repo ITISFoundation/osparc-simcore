@@ -4,7 +4,7 @@ import threading
 
 from celery import Celery  # type: ignore[import-untyped]
 from celery.worker.worker import WorkController  # type: ignore[import-untyped]
-from servicelib.base_app_server import BaseAppServer
+from servicelib.base_app_server import STARTUP_TIMEOUT, BaseAppServer
 from servicelib.logging_utils import log_context
 from settings_library.celery import CelerySettings
 
@@ -30,6 +30,8 @@ def on_worker_init(
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
+        shutdown_event = asyncio.Event()
+
         app_server.event_loop = loop
 
         async def _setup():
@@ -46,7 +48,9 @@ def on_worker_init(
             )
 
         loop.run_until_complete(_setup())
-        loop.run_until_complete(app_server.startup(startup_complete_event))
+        loop.run_until_complete(
+            app_server.startup(startup_complete_event, shutdown_event)
+        )
 
     thread = threading.Thread(
         group=None,
@@ -57,7 +61,7 @@ def on_worker_init(
     )
     thread.start()
 
-    startup_complete_event.wait()
+    startup_complete_event.wait(STARTUP_TIMEOUT * 1.1)
 
 
 def on_worker_shutdown(sender, **_kwargs) -> None:

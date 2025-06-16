@@ -13,7 +13,6 @@ from random import randint
 import pytest
 from celery import Celery, Task
 from celery.contrib.abortable import AbortableTask
-from celery.contrib.testing.worker import TestWorkController
 from celery_library.errors import TransferrableCeleryError
 from celery_library.models import (
     TaskContext,
@@ -28,24 +27,11 @@ from celery_library.task import (
 from celery_library.task_manager import CeleryTaskManager
 from celery_library.utils import get_app_server, get_task_manager
 from common_library.errors_classes import OsparcErrorMixin
-from fastapi import FastAPI
 from models_library.progress_bar import ProgressReport
 from servicelib.logging_utils import log_context
-from simcore_service_storage.modules.celery import get_task_manager_from_app
 from tenacity import Retrying, retry_if_exception_type, stop_after_delay, wait_fixed
 
 _logger = logging.getLogger(__name__)
-
-pytest_simcore_core_services_selection = ["postgres", "rabbit"]
-pytest_simcore_ops_services_selection = []
-
-
-@pytest.fixture
-def celery_client(
-    initialized_app: FastAPI,
-    with_storage_celery_worker: TestWorkController,
-) -> CeleryTaskManager:
-    return get_task_manager_from_app(initialized_app)
 
 
 async def _fake_file_processor(
@@ -110,11 +96,11 @@ def register_celery_tasks() -> Callable[[Celery], None]:
 
 
 async def test_submitting_task_calling_async_function_results_with_success_state(
-    celery_client: CeleryTaskManager,
+    celery_task_manager: CeleryTaskManager,
 ):
     task_context = TaskContext(user_id=42)
 
-    task_uuid = await celery_client.submit_task(
+    task_uuid = await celery_task_manager.submit_task(
         TaskMetadata(
             name=fake_file_processor.__name__,
         ),
@@ -128,23 +114,23 @@ async def test_submitting_task_calling_async_function_results_with_success_state
         stop=stop_after_delay(30),
     ):
         with attempt:
-            status = await celery_client.get_task_status(task_context, task_uuid)
+            status = await celery_task_manager.get_task_status(task_context, task_uuid)
             assert status.task_state == TaskState.SUCCESS
 
     assert (
-        await celery_client.get_task_status(task_context, task_uuid)
+        await celery_task_manager.get_task_status(task_context, task_uuid)
     ).task_state == TaskState.SUCCESS
     assert (
-        await celery_client.get_task_result(task_context, task_uuid)
+        await celery_task_manager.get_task_result(task_context, task_uuid)
     ) == "archive.zip"
 
 
 async def test_submitting_task_with_failure_results_with_error(
-    celery_client: CeleryTaskManager,
+    celery_task_manager: CeleryTaskManager,
 ):
     task_context = TaskContext(user_id=42)
 
-    task_uuid = await celery_client.submit_task(
+    task_uuid = await celery_task_manager.submit_task(
         TaskMetadata(
             name=failure_task.__name__,
         ),
@@ -158,26 +144,28 @@ async def test_submitting_task_with_failure_results_with_error(
     ):
 
         with attempt:
-            raw_result = await celery_client.get_task_result(task_context, task_uuid)
+            raw_result = await celery_task_manager.get_task_result(
+                task_context, task_uuid
+            )
             assert isinstance(raw_result, TransferrableCeleryError)
 
-    raw_result = await celery_client.get_task_result(task_context, task_uuid)
+    raw_result = await celery_task_manager.get_task_result(task_context, task_uuid)
     assert f"{raw_result}" == "Something strange happened: BOOM!"
 
 
 async def test_cancelling_a_running_task_aborts_and_deletes(
-    celery_client: CeleryTaskManager,
+    celery_task_manager: CeleryTaskManager,
 ):
     task_context = TaskContext(user_id=42)
 
-    task_uuid = await celery_client.submit_task(
+    task_uuid = await celery_task_manager.submit_task(
         TaskMetadata(
             name=dreamer_task.__name__,
         ),
         task_context=task_context,
     )
 
-    await celery_client.cancel_task(task_context, task_uuid)
+    await celery_task_manager.cancel_task(task_context, task_uuid)
 
     for attempt in Retrying(
         retry=retry_if_exception_type(AssertionError),
@@ -185,22 +173,24 @@ async def test_cancelling_a_running_task_aborts_and_deletes(
         stop=stop_after_delay(30),
     ):
         with attempt:
-            progress = await celery_client.get_task_status(task_context, task_uuid)
+            progress = await celery_task_manager.get_task_status(
+                task_context, task_uuid
+            )
             assert progress.task_state == TaskState.ABORTED
 
     assert (
-        await celery_client.get_task_status(task_context, task_uuid)
+        await celery_task_manager.get_task_status(task_context, task_uuid)
     ).task_state == TaskState.ABORTED
 
-    assert task_uuid not in await celery_client.list_tasks(task_context)
+    assert task_uuid not in await celery_task_manager.list_tasks(task_context)
 
 
 async def test_listing_task_uuids_contains_submitted_task(
-    celery_client: CeleryTaskManager,
+    celery_task_manager: CeleryTaskManager,
 ):
     task_context = TaskContext(user_id=42)
 
-    task_uuid = await celery_client.submit_task(
+    task_uuid = await celery_task_manager.submit_task(
         TaskMetadata(
             name=dreamer_task.__name__,
         ),
@@ -213,10 +203,10 @@ async def test_listing_task_uuids_contains_submitted_task(
         stop=stop_after_delay(10),
     ):
         with attempt:
-            tasks = await celery_client.list_tasks(task_context)
+            tasks = await celery_task_manager.list_tasks(task_context)
             assert len(tasks) == 1
             assert task_uuid == tasks[0].uuid
 
-        tasks = await celery_client.list_tasks(task_context)
+        tasks = await celery_task_manager.list_tasks(task_context)
         assert len(tasks) == 1
         assert task_uuid == tasks[0].uuid

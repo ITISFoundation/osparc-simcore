@@ -1,14 +1,19 @@
+import asyncio
+import datetime
 import threading
 from abc import ABC, abstractmethod
 from asyncio import AbstractEventLoop
 from contextlib import suppress
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 if TYPE_CHECKING:
     with suppress(ImportError):
         from fastapi import FastAPI
     with suppress(ImportError):
         from aiohttp.web import Application
+
+
+STARTUP_TIMEOUT: Final[float] = datetime.timedelta(minutes=1).total_seconds()
 
 
 class BaseAppServer(ABC):
@@ -21,7 +26,9 @@ class BaseAppServer(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def startup(self, completed_event: threading.Event):
+    async def startup(
+        self, completed_event: threading.Event, shutdown_event: asyncio.Event
+    ) -> None:
         pass
 
     @property
