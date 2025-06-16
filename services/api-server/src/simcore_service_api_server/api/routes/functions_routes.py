@@ -1,6 +1,6 @@
 # pylint: disable=too-many-positional-arguments
 from collections.abc import Callable
-from typing import Annotated, Final, TypeAlias
+from typing import Annotated, Final, Literal
 
 import jsonschema
 from fastapi import APIRouter, Depends, Header, Request, status
@@ -34,7 +34,6 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.users import UserID
-from pydantic import StringConstraints
 from servicelib.fastapi.dependencies import get_reverse_url_mapper
 from simcore_service_api_server._service_jobs import JobService
 
@@ -59,8 +58,6 @@ from .function_jobs_routes import register_function_job
 
 # pylint: disable=too-many-arguments
 # pylint: disable=cyclic-import
-
-NullString: TypeAlias = Annotated[str, StringConstraints(pattern="^null$")]
 
 function_router = APIRouter()
 
@@ -378,8 +375,8 @@ async def run_function(  # noqa: PLR0913
     product_name: Annotated[str, Depends(get_product_name)],
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
     job_service: Annotated[JobService, Depends(get_job_service)],
-    x_simcore_parent_project_uuid: Annotated[ProjectID | NullString, Header()],
-    x_simcore_parent_node_id: Annotated[NodeID | NullString, Header()],
+    x_simcore_parent_project_uuid: Annotated[ProjectID | Literal["null"], Header()],
+    x_simcore_parent_node_id: Annotated[NodeID | Literal["null"], Header()],
 ) -> RegisteredFunctionJob:
 
     parent_project_uuid = (
@@ -577,8 +574,8 @@ async def map_function(  # noqa: PLR0913
     product_name: Annotated[str, Depends(get_product_name)],
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
     job_service: Annotated[JobService, Depends(get_job_service)],
-    x_simcore_parent_project_uuid: Annotated[ProjectID | NullString, Header()],
-    x_simcore_parent_node_id: Annotated[NodeID | NullString, Header()],
+    x_simcore_parent_project_uuid: Annotated[ProjectID | Literal["null"], Header()],
+    x_simcore_parent_node_id: Annotated[NodeID | Literal["null"], Header()],
 ) -> RegisteredFunctionJobCollection:
     function_jobs = []
     function_jobs = [
