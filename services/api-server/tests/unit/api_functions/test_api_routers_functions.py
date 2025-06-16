@@ -5,6 +5,7 @@ import datetime
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
+from unittest.mock import MagicMock
 from uuid import UUID, uuid4
 
 import httpx
@@ -22,6 +23,7 @@ from models_library.api_schemas_webserver.functions import (
 )
 from models_library.functions import (
     FunctionUserAccessRights,
+    FunctionUserApiAccessRights,
     RegisteredFunctionJob,
     RegisteredSolverFunction,
 )
@@ -613,7 +615,11 @@ async def test_list_function_job_collections_with_function_filter(
     )
 
 
-async def test_run_function_not_allowed(
+@pytest.mark.parametrize("user_has_execute_right", [False, True])
+@pytest.mark.parametrize(
+    "funcapi_endpoint,endpoint_inputs", [("run", {}), ("map", [{}, {}])]
+)
+async def test_run_map_function_not_allowed(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
     mock_registered_project_function: RegisteredProjectFunction,
@@ -621,8 +627,12 @@ async def test_run_function_not_allowed(
     user_id: UserID,
     mocked_webserver_rest_api_base: respx.MockRouter,
     mocked_webserver_rpc_api: dict[str, MockType],
+    user_has_execute_right: bool,
+    funcapi_endpoint: str,
+    endpoint_inputs: dict | list[dict],
 ) -> None:
     """Test that running a function is not allowed."""
+
     mock_handler_in_functions_rpc_interface(
         "get_function_user_permissions",
         FunctionUserAccessRights(
@@ -632,16 +642,37 @@ async def test_run_function_not_allowed(
             write=True,
         ),
     )
+    mock_handler_in_functions_rpc_interface(
+        "get_functions_user_api_access_rights",
+        FunctionUserApiAccessRights(
+            user_id=user_id,
+            execute_functions=user_has_execute_right,
+            write_functions=True,
+            read_functions=True,
+        ),
+    )
+
+    # Monkeypatching MagicMock because otherwise it refuse to be used in an await statement
+    async def async_magic():
+        pass
+
+    MagicMock.__await__ = lambda _: async_magic().__await__()
 
     response = await client.post(
-        f"{API_VTAG}/functions/{mock_registered_project_function.uid}:run",
-        json={},
+        f"{API_VTAG}/functions/{mock_registered_function.uid}:{funcapi_endpoint}",
+        json=endpoint_inputs,
         auth=auth,
     )
-    assert response.status_code == status.HTTP_403_FORBIDDEN
-    assert response.json()["errors"][0] == (
-        f"Function {mock_registered_project_function.uid} execute access denied for user {user_id}"
-    )
+    if user_has_execute_right:
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.json()["errors"][0] == (
+            f"Function {mock_registered_function.uid} execute access denied for user {user_id}"
+        )
+    else:
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.json()["errors"][0] == (
+            f"User {user_id} does not have the permission to execute functions"
+        )
 
 
 @pytest.mark.parametrize(
