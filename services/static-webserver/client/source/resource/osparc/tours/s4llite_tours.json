@@ -16,7 +16,7 @@
     }, {
       "anchorEl": "osparc-test-id=searchBarFilter-textField-study",
       "title": "Filter and Search",
-      "text": "This tool allows you to filter Projects and Tutorials.<br>You can search and filter by:<br>- Title, description, owner, id...<br>- Tags<br>- Shared with",
+      "text": "This tool allows you to filter Projects, Templates or Public Projects.<br>You can search and filter by:<br>- Title, description, owner, id...<br>- Tags<br>- Shared with",
       "placement": "bottom"
     }, {
       "beforeClick": {
@@ -32,6 +32,22 @@
       "title": "Update Services",
       "text": "On the Project card, you can use the Update button to update the corresponding service to the latest version.",
       "placement": "bottom"
+    }, {
+      "beforeClick": {
+        "selector": "osparc-test-id=templatesFilterItem"
+      },
+      "anchorEl": "osparc-test-id=templatesFilterItem",
+      "title": "Templates",
+      "text": "Templates let you freeze a project and reuse it anytime. When you create a template, it saves a snapshot of your project. Later, you can click on it to start a fresh, independent copy.<br>Templates shared with you by others will also appear here, so you can build on their work too.",
+      "placement": "right"
+    }, {
+      "beforeClick": {
+        "selector": "osparc-test-id=publicProjectsFilterItem"
+      },
+      "anchorEl": "osparc-test-id=publicProjectsFilterItem",
+      "title": "Public Projects",
+      "text": "Just like templates, Public Projects are frozen snapshots—but they’re shared with the entire scientific community. Anyone can browse them and create their own copy and build upon.",
+      "placement": "right"
     }]
   },
   "dashboard": {
