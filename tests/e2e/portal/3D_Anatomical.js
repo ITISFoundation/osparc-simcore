@@ -36,13 +36,14 @@ async function runTutorial () {
     await tutorial.waitFor(10000, 'Some time for starting the service');
     await utils.takeScreenshot(page, screenshotPrefix + 'service_started');
 
+    const iframe = await tutorial.getIframe(vtkNodeId);
     const entitiesListed = [
       "Vein.vtk",
       "Artery.vtk",
       "Bones.e",
     ];
     for (const text of entitiesListed) {
-      const found = await utils.waitForLabelText(page, text);
+      const found = await utils.waitForLabelText(iframe, text);
       if (!found) {
         throw new Error(`Text "${text}" not visible on the page within timeout.`);
       }
