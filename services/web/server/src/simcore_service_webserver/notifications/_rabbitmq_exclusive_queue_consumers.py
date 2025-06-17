@@ -200,7 +200,7 @@ async def on_cleanup_ctx_rabbitmq_consumers(
     app[APP_WALLET_SUBSCRIPTIONS_KEY] = defaultdict(
         int
     )  # wallet_id -> subscriber count
-    app[APP_WALLET_SUBSCRIPTION_LOCK_KEY] = asyncio.Lock()  # For thread-safe operations
+    app[APP_WALLET_SUBSCRIPTION_LOCK_KEY] = asyncio.Lock()  # Ensures exclusive access
 
     yield
 
