@@ -1,7 +1,8 @@
 from typing import Any, Protocol
 
+from models_library.progress_bar import ProgressReport
+
 from ..queued_tasks.models import (
-    ProgressReport,
     Task,
     TaskContext,
     TaskID,
