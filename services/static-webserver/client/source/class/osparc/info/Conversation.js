@@ -231,21 +231,8 @@ qx.Class.define("osparc.info.Conversation", {
       }
 
       messages.forEach(message => {
-        switch (message["type"]) {
-          case "NOTIFICATION": {
-            const notificationUi = new qx.ui.basic.Label().set({
-              value: `${message["userGroupId"]} notified ${message["content"]}`
-            });
-            this.__messagesList.add(notificationUi);
-            break;
-          }
-          case "MESSAGE": {
-            const messageUi = new osparc.info.CommentUI(message);
-            this.__messagesList.add(messageUi);
-            break;
-          }
-        }
-
+        const messageUi = new osparc.info.CommentUI(message);
+        this.__messagesList.add(messageUi);
       });
     },
   }

@@ -122,7 +122,11 @@ qx.Class.define("osparc.info.CommentUI", {
       lastUpdate.setValue(date2);
 
       const commentContent = this.getChildControl("comment-content");
-      commentContent.setValue(this.__comment["content"]);
+      if (this.__comment["type"] === "NOTIFICATION") {
+        commentContent.setValue(this.__comment["content"] + " was notified");
+      } else if (this.__comment["type"] === "MESSAGE") {
+        commentContent.setValue(this.__comment["content"]);
+      }
 
       osparc.store.Users.getInstance().getUser(this.__comment["userGroupId"])
         .then(user => {
