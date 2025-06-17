@@ -31,7 +31,7 @@ async def subscribe(app: web.Application, wallet_id: WalletID) -> None:
 async def unsubscribe(app: web.Application, wallet_id: WalletID) -> None:
 
     async with app[APP_WALLET_SUBSCRIPTION_LOCK_KEY]:
-        counter = app[APP_WALLET_SUBSCRIPTIONS_KEY][wallet_id]
+        counter = app[APP_WALLET_SUBSCRIPTIONS_KEY].get(wallet_id, 0)
         if counter > 0:
             app[APP_WALLET_SUBSCRIPTIONS_KEY][wallet_id] -= 1
 
