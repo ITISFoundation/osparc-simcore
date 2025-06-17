@@ -4,8 +4,7 @@ from typing import Any
 
 from aws_library.s3._models import S3ObjectKey
 from celery import Task  # type: ignore[import-untyped]
-from celery_library.models import TaskID
-from celery_library.utils import get_app_server, get_task_manager
+from celery_library.utils import get_app_server
 from models_library.api_schemas_storage.storage_schemas import FoldersBody
 from models_library.api_schemas_webserver.storage import PathToExport
 from models_library.progress_bar import ProgressReport
@@ -14,6 +13,7 @@ from models_library.users import UserID
 from pydantic import TypeAdapter
 from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
+from servicelib.queued_tasks.models import TaskID
 
 from ...dsm import get_dsm_provider
 from ...simcore_s3_dsm import SimcoreS3DataManager
@@ -24,7 +24,7 @@ _logger = logging.getLogger(__name__)
 async def _task_progress_cb(
     task: Task, task_id: TaskID, report: ProgressReport
 ) -> None:
-    worker = get_task_manager(task.app)
+    worker = get_app_server(task.app).task_manager
     assert task.name  # nosec
     await worker.set_task_progress(
         task_id=task_id,
@@ -87,7 +87,9 @@ async def export_data(
 
         async def _progress_cb(report: ProgressReport) -> None:
             assert task.name  # nosec
-            await get_task_manager(task.app).set_task_progress(task_id, report)
+            await get_app_server(task.app).task_manager.set_task_progress(
+                task_id, report
+            )
             _logger.debug("'%s' progress %s", task_id, report.percent_value)
 
         async with ProgressBarData(

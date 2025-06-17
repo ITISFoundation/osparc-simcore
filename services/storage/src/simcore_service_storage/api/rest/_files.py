@@ -2,8 +2,6 @@ import logging
 from typing import Annotated, Final, cast
 from urllib.parse import quote
 
-from celery_library.models import TaskMetadata, TaskUUID
-from celery_library.task_manager import CeleryTaskManager
 from fastapi import APIRouter, Depends, Header, Request
 from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobNameData
 from models_library.api_schemas_storage.storage_schemas import (
@@ -22,6 +20,8 @@ from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.aiohttp import status
+from servicelib.queued_tasks.app_server import TaskManager
+from servicelib.queued_tasks.models import TaskMetadata, TaskUUID
 from yarl import URL
 
 from ...dsm import get_dsm_provider
@@ -270,7 +270,7 @@ _UNDEFINED_PRODUCT_NAME_FOR_WORKER_TASKS: Final[str] = (
     status_code=status.HTTP_202_ACCEPTED,
 )
 async def complete_upload_file(
-    celery_client: Annotated[CeleryTaskManager, Depends(get_task_manager)],
+    task_manager: Annotated[TaskManager, Depends(get_task_manager)],
     query_params: Annotated[StorageQueryParamsBase, Depends()],
     location_id: LocationID,
     file_id: StorageFileID,
@@ -284,7 +284,7 @@ async def complete_upload_file(
         user_id=query_params.user_id,
         product_name=_UNDEFINED_PRODUCT_NAME_FOR_WORKER_TASKS,  # NOTE: I would need to change the API here
     )
-    task_uuid = await celery_client.submit_task(
+    task_uuid = await task_manager.submit_task(
         TaskMetadata(
             name=remote_complete_upload_file.__name__,
         ),
@@ -326,7 +326,7 @@ async def complete_upload_file(
     response_model=Envelope[FileUploadCompleteFutureResponse],
 )
 async def is_completed_upload_file(
-    celery_client: Annotated[CeleryTaskManager, Depends(get_task_manager)],
+    task_manager: Annotated[TaskManager, Depends(get_task_manager)],
     query_params: Annotated[StorageQueryParamsBase, Depends()],
     location_id: LocationID,
     file_id: StorageFileID,
@@ -340,13 +340,13 @@ async def is_completed_upload_file(
         user_id=query_params.user_id,
         product_name=_UNDEFINED_PRODUCT_NAME_FOR_WORKER_TASKS,  # NOTE: I would need to change the API here
     )
-    task_status = await celery_client.get_task_status(
+    task_status = await task_manager.get_task_status(
         task_context=async_job_name_data.model_dump(), task_uuid=TaskUUID(future_id)
     )
     # first check if the task is in the app
     if task_status.is_done:
         task_result = TypeAdapter(FileMetaData).validate_python(
-            await celery_client.get_task_result(
+            await task_manager.get_task_result(
                 task_context=async_job_name_data.model_dump(),
                 task_uuid=TaskUUID(future_id),
             )

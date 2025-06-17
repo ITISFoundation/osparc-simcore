@@ -1,10 +1,24 @@
-from celery import Celery  # type: ignore[import-untyped]
-from servicelib.celery.app_server import BaseAppServer
+from typing import Final
 
-from .task_manager import CeleryTaskManager
+from celery import Celery  # type: ignore[import-untyped]
+from servicelib.queued_tasks.app_server import BaseAppServer
+from servicelib.queued_tasks.models import TaskContext, TaskID, TaskUUID
 
 _APP_SERVER_KEY = "app_server"
-_TASK_MANAGER_KEY = "task_manager"
+
+_TASK_ID_KEY_DELIMITATOR: Final[str] = ":"
+
+
+def build_task_id_prefix(task_context: TaskContext) -> str:
+    return _TASK_ID_KEY_DELIMITATOR.join(
+        [f"{task_context[key]}" for key in sorted(task_context)]
+    )
+
+
+def build_task_id(task_context: TaskContext, task_uuid: TaskUUID) -> TaskID:
+    return _TASK_ID_KEY_DELIMITATOR.join(
+        [build_task_id_prefix(task_context), f"{task_uuid}"]
+    )
 
 
 def get_app_server(app: Celery) -> BaseAppServer:
@@ -15,13 +29,3 @@ def get_app_server(app: Celery) -> BaseAppServer:
 
 def set_app_server(app: Celery, app_server: BaseAppServer) -> None:
     app.conf[_APP_SERVER_KEY] = app_server
-
-
-def get_task_manager(celery_app: Celery) -> CeleryTaskManager:
-    worker = celery_app.conf[_TASK_MANAGER_KEY]
-    assert isinstance(worker, CeleryTaskManager)
-    return worker
-
-
-def set_task_manager(celery_app: Celery, worker: CeleryTaskManager) -> None:
-    celery_app.conf[_TASK_MANAGER_KEY] = worker

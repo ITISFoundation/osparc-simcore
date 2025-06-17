@@ -14,9 +14,9 @@ from celery.contrib.abortable import (  # type: ignore[import-untyped]
 from celery.exceptions import Ignore  # type: ignore[import-untyped]
 from pydantic import NonNegativeInt
 from servicelib.async_utils import cancel_wait_task
+from servicelib.queued_tasks.models import TaskID
 
 from .errors import encode_celery_transferrable_error
-from .models import TaskID
 from .utils import get_app_server
 
 _logger = logging.getLogger(__name__)

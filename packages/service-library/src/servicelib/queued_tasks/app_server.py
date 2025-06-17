@@ -6,6 +6,8 @@ from asyncio import AbstractEventLoop
 from contextlib import suppress
 from typing import TYPE_CHECKING, Final
 
+from servicelib.queued_tasks.task_manager import TaskManager
+
 if TYPE_CHECKING:
     with suppress(ImportError):
         from fastapi import FastAPI
@@ -35,6 +37,14 @@ class BaseAppServer(ABC):
     @event_loop.setter
     def event_loop(self, loop: AbstractEventLoop) -> None:
         self._event_loop = loop
+
+    @property
+    def task_manager(self) -> TaskManager:
+        return self._task_manager
+
+    @task_manager.setter
+    def task_manager(self, manager: TaskManager) -> None:
+        self._task_manager = manager
 
     @abstractmethod
     async def on_startup(self) -> None:

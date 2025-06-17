@@ -2,12 +2,12 @@ import logging
 from pathlib import Path
 
 from celery import Task  # type: ignore[import-untyped]
-from celery_library.models import TaskID
 from celery_library.utils import get_app_server
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
 from servicelib.logging_utils import log_context
+from servicelib.queued_tasks.models import TaskID
 from servicelib.utils import limited_gather
 
 from ...constants import MAX_CONCURRENT_S3_TASKS

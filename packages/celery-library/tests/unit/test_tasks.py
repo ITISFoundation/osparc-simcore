@@ -14,21 +14,21 @@ import pytest
 from celery import Celery, Task
 from celery.contrib.abortable import AbortableTask
 from celery_library.errors import TransferrableCeleryError
-from celery_library.models import (
-    TaskContext,
-    TaskID,
-    TaskMetadata,
-    TaskState,
-)
 from celery_library.task import (
     AbortableAsyncResult,
     register_task,
 )
 from celery_library.task_manager import CeleryTaskManager
-from celery_library.utils import get_app_server, get_task_manager
+from celery_library.utils import get_app_server
 from common_library.errors_classes import OsparcErrorMixin
 from models_library.progress_bar import ProgressReport
 from servicelib.logging_utils import log_context
+from servicelib.queued_tasks.models import (
+    TaskContext,
+    TaskID,
+    TaskMetadata,
+    TaskState,
+)
 from tenacity import Retrying, retry_if_exception_type, stop_after_delay, wait_fixed
 
 _logger = logging.getLogger(__name__)
@@ -40,14 +40,12 @@ pytest_simcore_ops_services_selection = []
 async def _fake_file_processor(
     celery_app: Celery, task_name: str, task_id: str, files: list[str]
 ) -> str:
-    worker = get_task_manager(celery_app)
-
     def sleep_for(seconds: float) -> None:
         time.sleep(seconds)
 
     for n, file in enumerate(files, start=1):
         with log_context(_logger, logging.INFO, msg=f"Processing file {file}"):
-            await worker.set_task_progress(
+            await get_app_server(celery_app).task_manager.set_task_progress(
                 task_id=task_id,
                 report=ProgressReport(actual_value=n / len(files)),
             )

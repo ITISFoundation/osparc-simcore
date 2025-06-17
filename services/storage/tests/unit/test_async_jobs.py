@@ -11,7 +11,6 @@ from typing import Any
 import pytest
 from celery import Celery, Task
 from celery.contrib.testing.worker import TestWorkController
-from celery_library.models import TaskID, TaskMetadata
 from celery_library.task import register_task
 from fastapi import FastAPI
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
@@ -25,8 +24,8 @@ from models_library.api_schemas_rpc_async_jobs.exceptions import (
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from models_library.api_schemas_storage.export_data_async_jobs import AccessRightError
 from models_library.products import ProductName
-from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.users import UserID
+from servicelib.queued_tasks.models import TaskID, TaskMetadata
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCRouter
 from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
 from simcore_service_storage.api.rpc.routes import get_rabbitmq_rpc_server
@@ -126,7 +125,7 @@ async def _start_task_via_rpc(
     async_job_get = await async_jobs.submit(
         rabbitmq_rpc_client=client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
-        method_name=RPCMethodName(rpc_task_name),
+        method_name=rpc_task_name,
         job_id_data=job_id_data,
         **kwargs,
     )

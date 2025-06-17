@@ -1,13 +1,13 @@
 import logging
 from pathlib import Path
 
-from celery_library.models import TaskMetadata
 from fastapi import FastAPI
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobGet,
     AsyncJobNameData,
 )
 from models_library.projects_nodes_io import LocationID
+from servicelib.queued_tasks.models import TaskMetadata
 from servicelib.rabbitmq import RPCRouter
 
 from ...modules.celery import get_task_manager_from_app

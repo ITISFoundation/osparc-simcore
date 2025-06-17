@@ -9,7 +9,7 @@ from celery_library.signals import (
     on_worker_init,
     on_worker_shutdown,
 )
-from servicelib.fastapi.celery.app_server import FastAPIAppServer
+from servicelib.fastapi.queued_tasks.app_server import FastAPIAppServer
 from servicelib.logging_utils import config_all_loggers
 
 from ...api._worker_tasks.tasks import setup_worker_tasks

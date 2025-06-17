@@ -13,10 +13,10 @@ from celery.signals import worker_init, worker_shutdown
 from celery.worker.worker import WorkController
 from celery_library.common import create_task_manager
 from celery_library.signals import on_worker_init, on_worker_shutdown
-from celery_library.utils import CeleryTaskManager
+from celery_library.task_manager import CeleryTaskManager
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from servicelib.celery.app_server import BaseAppServer
+from servicelib.queued_tasks.app_server import BaseAppServer
 from settings_library.celery import CelerySettings
 from settings_library.redis import RedisSettings
 

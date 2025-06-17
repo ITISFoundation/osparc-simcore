@@ -7,7 +7,6 @@ from celery_library.errors import (
     TransferrableCeleryError,
     decode_celery_transferrable_error,
 )
-from celery_library.models import TaskState
 from fastapi import FastAPI
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobGet,
@@ -23,6 +22,7 @@ from models_library.api_schemas_rpc_async_jobs.exceptions import (
     JobSchedulerError,
 )
 from servicelib.logging_utils import log_catch
+from servicelib.queued_tasks.models import TaskState
 from servicelib.rabbitmq import RPCRouter
 
 from ...modules.celery import get_task_manager_from_app

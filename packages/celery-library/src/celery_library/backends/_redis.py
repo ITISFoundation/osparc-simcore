@@ -5,16 +5,16 @@ from typing import Final
 
 from models_library.progress_bar import ProgressReport
 from pydantic import ValidationError
-from servicelib.redis._client import RedisClientSDK
-
-from ..models import (
+from servicelib.queued_tasks.models import (
     Task,
     TaskContext,
     TaskID,
     TaskMetadata,
     TaskUUID,
-    build_task_id_prefix,
 )
+from servicelib.redis._client import RedisClientSDK
+
+from ..utils import build_task_id_prefix
 
 _CELERY_TASK_INFO_PREFIX: Final[str] = "celery-task-info-"
 _CELERY_TASK_ID_KEY_ENCODING = "utf-8"
