@@ -93,6 +93,23 @@ qx.Class.define("osparc.study.Conversations", {
       return osparc.data.Resources.fetch("conversations", "addMessage", params)
         .catch(err => osparc.FlashMessenger.logError(err));
     },
+
+    notifyUser: function(studyId, conversationId, userGroupId) {
+      const params = {
+        url: {
+          studyId,
+          conversationId,
+        },
+        data: {
+          "content": {
+            "userGroupId": userGroupId,
+          },
+          "type": "NOTIFICATION",
+        }
+      };
+      return osparc.data.Resources.fetch("conversations", "addMessage", params)
+        .catch(err => osparc.FlashMessenger.logError(err));
+    },
   },
 
   members: {
