@@ -3,7 +3,7 @@ import logging
 import threading
 
 from celery import Celery  # type: ignore[import-untyped]
-from celery.worker.worker import WorkController
+from celery.worker.worker import WorkController  # type: ignore[import-untyped]
 from servicelib.celery.app_server import STARTUP_TIMEOUT, BaseAppServer
 from servicelib.logging_utils import log_context
 from settings_library.celery import CelerySettings
