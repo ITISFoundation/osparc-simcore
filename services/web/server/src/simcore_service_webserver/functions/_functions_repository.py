@@ -1032,16 +1032,18 @@ async def get_user_api_access_rights(
     user_id: UserID,
     product_name: ProductName,
 ) -> FunctionUserApiAccessRights:
-    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         user_groups = await list_all_user_groups_ids(app, user_id=user_id)
 
-        result = await conn.stream(
-            funcapi_api_access_rights_table.select().where(
-                funcapi_api_access_rights_table.c.group_id.in_(user_groups),
-                funcapi_api_access_rights_table.c.product_name == product_name,
+        rows = [
+            row
+            async for row in await conn.stream(
+                funcapi_api_access_rights_table.select().where(
+                    funcapi_api_access_rights_table.c.group_id.in_(user_groups),
+                    funcapi_api_access_rights_table.c.product_name == product_name,
+                )
             )
-        )
-        rows = await result.all()
+        ]
         if not rows:
             return FunctionUserApiAccessRights(user_id=user_id)
         combined_permissions = {
@@ -1074,7 +1076,7 @@ async def get_user_permissions(
     object_id: UUID,
     object_type: Literal["function", "function_job", "function_job_collection"],
 ) -> FunctionAccessRightsDB | None:
-    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         await check_exists(
             app,
             conn,
@@ -1097,7 +1099,7 @@ async def get_user_permissions(
 
         user_groups = await list_all_user_groups_ids(app, user_id=user_id)
 
-        # Combine permissions for all groups the user belongs to
+        # Collect rows using streaming to efficiently handle permissions
         result = await conn.stream(
             access_rights_table.select()
             .with_only_columns(*cols)
@@ -1107,7 +1109,7 @@ async def get_user_permissions(
                 access_rights_table.c.group_id.in_(user_groups),
             )
         )
-        rows = await result.all()
+        rows = [row async for row in result]
 
         if not rows:
             return None
