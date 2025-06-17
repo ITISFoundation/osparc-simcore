@@ -212,6 +212,11 @@ async def test_clone_study(
         ("a" * 999, "b" * 99999, status.HTTP_201_CREATED),
         (None, None, status.HTTP_201_CREATED),
     ],
+    ids=[
+        "valid_title_and_description",
+        "very_long_title_and_description",
+        "no_title_or_description",
+    ],
 )
 async def test_clone_study_with_title(
     client: httpx.AsyncClient,
