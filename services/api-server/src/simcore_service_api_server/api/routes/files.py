@@ -309,7 +309,7 @@ async def get_upload_links(
     )
 
     try:
-        client_session = ClientSession(
+        async with ClientSession(
             connector=TCPConnector(force_close=True),
             timeout=ClientTimeout(
                 total=_AIOHTTP_CLIENT_SESSION_TIMEOUT_SECONDS,
@@ -317,8 +317,7 @@ async def get_upload_links(
                 sock_connect=_AIOHTTP_CLIENT_SESSION_TIMEOUT_SECONDS,
                 sock_read=_AIOHTTP_CLIENT_SESSION_TIMEOUT_SECONDS,
             ),
-        )
-        async with client_session:
+        ) as client_session:
             _, upload_links = await get_upload_links_from_s3(
                 user_id=user_id,
                 store_name=None,
