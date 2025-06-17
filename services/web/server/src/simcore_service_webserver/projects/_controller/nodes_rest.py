@@ -178,6 +178,7 @@ async def patch_project_node(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(NodePathParams, request)
     node_patch = await parse_request_body_as(NodePatch, request)
 
+    # MD: Here is the issue
     await _projects_service.patch_project_node(
         request.app,
         product_name=req_ctx.product_name,

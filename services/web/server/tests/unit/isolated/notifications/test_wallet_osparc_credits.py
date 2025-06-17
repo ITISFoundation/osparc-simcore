@@ -1,5 +1,6 @@
-# Unit tests for wallet_osparc_credits.py subscribe and unsubscribe functions
-import asyncio
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-importimport asyncio
 from unittest.mock import AsyncMock, patch
 
 import pytest
