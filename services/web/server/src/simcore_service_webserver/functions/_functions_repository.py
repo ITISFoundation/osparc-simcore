@@ -1032,39 +1032,47 @@ async def get_user_api_access_rights(
     user_id: UserID,
     product_name: ProductName,
 ) -> FunctionUserApiAccessRights:
-    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         user_groups = await list_all_user_groups_ids(app, user_id=user_id)
 
-        rows = [
-            row
-            async for row in await conn.stream(
-                funcapi_api_access_rights_table.select().where(
-                    funcapi_api_access_rights_table.c.group_id.in_(user_groups),
-                    funcapi_api_access_rights_table.c.product_name == product_name,
-                )
+        # Initialize combined permissions with False values
+        combined_permissions = FunctionUserApiAccessRights(
+            user_id=user_id,
+            read_functions=False,
+            write_functions=False,
+            execute_functions=False,
+            read_function_jobs=False,
+            write_function_jobs=False,
+            execute_function_jobs=False,
+            read_function_job_collections=False,
+            write_function_job_collections=False,
+            execute_function_job_collections=False,
+        )
+
+        # Process each row only once and combine permissions
+        async for row in await conn.stream(
+            funcapi_api_access_rights_table.select().where(
+                funcapi_api_access_rights_table.c.group_id.in_(user_groups),
+                funcapi_api_access_rights_table.c.product_name == product_name,
             )
-        ]
-        if not rows:
-            return FunctionUserApiAccessRights(user_id=user_id)
-        combined_permissions = {
-            "read_functions": any(row.read_functions for row in rows),
-            "write_functions": any(row.write_functions for row in rows),
-            "execute_functions": any(row.execute_functions for row in rows),
-            "read_function_jobs": any(row.read_function_jobs for row in rows),
-            "write_function_jobs": any(row.write_function_jobs for row in rows),
-            "execute_function_jobs": any(row.execute_function_jobs for row in rows),
-            "read_function_job_collections": any(
-                row.read_function_job_collections for row in rows
-            ),
-            "write_function_job_collections": any(
-                row.write_function_job_collections for row in rows
-            ),
-            "execute_function_job_collections": any(
-                row.execute_function_job_collections for row in rows
-            ),
-            "user_id": user_id,
-        }
-        return FunctionUserApiAccessRights.model_validate(combined_permissions)
+        ):
+            combined_permissions.read_functions |= row.read_functions
+            combined_permissions.write_functions |= row.write_functions
+            combined_permissions.execute_functions |= row.execute_functions
+            combined_permissions.read_function_jobs |= row.read_function_jobs
+            combined_permissions.write_function_jobs |= row.write_function_jobs
+            combined_permissions.execute_function_jobs |= row.execute_function_jobs
+            combined_permissions.read_function_job_collections |= (
+                row.read_function_job_collections
+            )
+            combined_permissions.write_function_job_collections |= (
+                row.write_function_job_collections
+            )
+            combined_permissions.execute_function_job_collections |= (
+                row.execute_function_job_collections
+            )
+
+        return combined_permissions
 
 
 async def get_user_permissions(
@@ -1076,7 +1084,7 @@ async def get_user_permissions(
     object_id: UUID,
     object_type: Literal["function", "function_job", "function_job_collection"],
 ) -> FunctionAccessRightsDB | None:
-    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         await check_exists(
             app,
             conn,
@@ -1099,8 +1107,13 @@ async def get_user_permissions(
 
         user_groups = await list_all_user_groups_ids(app, user_id=user_id)
 
-        # Collect rows using streaming to efficiently handle permissions
-        result = await conn.stream(
+        # Initialize combined permissions with False values
+        combined_permissions = FunctionAccessRightsDB(
+            read=False, write=False, execute=False
+        )
+
+        # Process each row only once and combine permissions
+        async for row in await conn.stream(
             access_rights_table.select()
             .with_only_columns(*cols)
             .where(
@@ -1108,20 +1121,12 @@ async def get_user_permissions(
                 access_rights_table.c.product_name == product_name,
                 access_rights_table.c.group_id.in_(user_groups),
             )
-        )
-        rows = [row async for row in result]
+        ):
+            combined_permissions.read |= row.read
+            combined_permissions.write |= row.write
+            combined_permissions.execute |= row.execute
 
-        if not rows:
-            return None
-
-        # Combine permissions across all rows
-        combined_permissions = {
-            "read": any(row.read for row in rows),
-            "write": any(row.write for row in rows),
-            "execute": any(row.execute for row in rows),
-        }
-
-        return FunctionAccessRightsDB.model_validate(combined_permissions)
+        return combined_permissions
 
 
 async def check_exists(
