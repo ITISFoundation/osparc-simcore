@@ -382,8 +382,9 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         }
       });
 
-
-      this.__getActivityOverviewPopUp();
+      if (osparc.product.Utils.showComputationalActivity()) {
+        this.__getActivityOverviewPopUp();
+      }
       this.__getProjectFilesPopUp();
 
       if (selectedTabId) {

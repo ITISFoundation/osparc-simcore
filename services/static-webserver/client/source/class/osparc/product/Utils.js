@@ -327,6 +327,13 @@ qx.Class.define("osparc.product.Utils", {
       return this.isS4LProduct() && licensesEnabled;
     },
 
+    showComputationalActivity: function() {
+      if (this.isProduct("s4llite") || this.isProduct("tiplite")) {
+        return false;
+      }
+      return true;
+    },
+
     getDefaultWelcomeCredits: function() {
       switch (osparc.product.Utils.getProductName()) {
         case "s4l":
