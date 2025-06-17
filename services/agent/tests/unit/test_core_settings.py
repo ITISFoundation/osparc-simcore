@@ -9,8 +9,8 @@ from pytest_simcore.helpers.monkeypatch_envs import (
 from simcore_service_agent.core.settings import ApplicationSettings
 
 
-def test_valid_application_settings(service_env: EnvVarsDict):
-    assert service_env
+def test_valid_application_settings(mock_environment: EnvVarsDict):
+    assert mock_environment
 
     settings = ApplicationSettings()  # type: ignore
     assert settings
