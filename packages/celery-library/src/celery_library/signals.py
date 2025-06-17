@@ -3,8 +3,8 @@ import logging
 import threading
 
 from celery import Celery  # type: ignore[import-untyped]
-from celery.worker.worker import WorkController  # type: ignore[import-untyped]
-from servicelib.base_app_server import STARTUP_TIMEOUT, BaseAppServer
+from celery.worker.worker import WorkController
+from servicelib.celery.app_server import STARTUP_TIMEOUT, BaseAppServer
 from servicelib.logging_utils import log_context
 from settings_library.celery import CelerySettings
 
@@ -32,25 +32,26 @@ def on_worker_init(
 
         shutdown_event = asyncio.Event()
 
-        app_server.event_loop = loop
-
-        async def _setup():
+        async def _setup_task_manager():
             assert sender.app  # nosec
             assert isinstance(sender.app, Celery)  # nosec
 
             set_app_server(sender.app, app_server)
             set_task_manager(
                 sender.app,
-                create_task_manager(
+                await create_task_manager(
                     sender.app,
                     celery_settings,
                 ),
             )
 
-        loop.run_until_complete(_setup())
-        loop.run_until_complete(
-            app_server.startup(startup_complete_event, shutdown_event)
-        )
+        async def _setup_app_server():
+            await app_server.startup(startup_complete_event, shutdown_event)
+
+        app_server.event_loop = loop
+
+        loop.run_until_complete(_setup_task_manager())
+        loop.run_until_complete(_setup_app_server())
 
     thread = threading.Thread(
         group=None,

@@ -6,7 +6,7 @@ from typing import Final
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 
-from ..base_app_server import BaseAppServer
+from ...celery.app_server import BaseAppServer
 
 _SHUTDOWN_TIMEOUT: Final[float] = timedelta(seconds=10).total_seconds()
 _STARTUP_TIMEOUT: Final[float] = timedelta(minutes=1).total_seconds()
@@ -31,9 +31,10 @@ class FastAPIAppServer(BaseAppServer):
             startup_timeout=_STARTUP_TIMEOUT,
             shutdown_timeout=_SHUTDOWN_TIMEOUT,
         )
+        self._shutdown_event = shutdown_event
         await self._lifespan_manager.__aenter__()
         completed_event.set()
-        await shutdown_event.wait()
+        await self._shutdown_event.wait()
 
     async def shutdown(self):
         if self._shutdown_event is not None:

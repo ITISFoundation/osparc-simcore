@@ -25,12 +25,6 @@ class BaseAppServer(ABC):
     def aiohttp_app(self) -> "Application":
         raise NotImplementedError
 
-    @abstractmethod
-    async def startup(
-        self, completed_event: threading.Event, shutdown_event: asyncio.Event
-    ) -> None:
-        pass
-
     @property
     def event_loop(self) -> AbstractEventLoop:
         return self._event_loop
@@ -38,6 +32,12 @@ class BaseAppServer(ABC):
     @event_loop.setter
     def event_loop(self, loop: AbstractEventLoop) -> None:
         self._event_loop = loop
+
+    @abstractmethod
+    async def startup(
+        self, completed_event: threading.Event, shutdown_event: asyncio.Event
+    ) -> None:
+        pass
 
     @abstractmethod
     async def shutdown(self):

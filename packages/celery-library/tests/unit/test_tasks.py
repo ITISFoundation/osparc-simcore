@@ -33,6 +33,9 @@ from tenacity import Retrying, retry_if_exception_type, stop_after_delay, wait_f
 
 _logger = logging.getLogger(__name__)
 
+pytest_simcore_core_services_selection = ["redis"]
+pytest_simcore_ops_services_selection = []
+
 
 async def _fake_file_processor(
     celery_app: Celery, task_name: str, task_id: str, files: list[str]

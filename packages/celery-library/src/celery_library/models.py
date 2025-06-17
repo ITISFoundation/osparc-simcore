@@ -13,17 +13,17 @@ TaskName: TypeAlias = Annotated[
 ]
 TaskUUID: TypeAlias = UUID
 
-_CELERY_TASK_ID_KEY_SEPARATOR: Final[str] = ":"
+_TASK_ID_KEY_DELIMITATOR: Final[str] = ":"
 
 
 def build_task_id_prefix(task_context: TaskContext) -> str:
-    return _CELERY_TASK_ID_KEY_SEPARATOR.join(
+    return _TASK_ID_KEY_DELIMITATOR.join(
         [f"{task_context[key]}" for key in sorted(task_context)]
     )
 
 
 def build_task_id(task_context: TaskContext, task_uuid: TaskUUID) -> TaskID:
-    return _CELERY_TASK_ID_KEY_SEPARATOR.join(
+    return _TASK_ID_KEY_DELIMITATOR.join(
         [build_task_id_prefix(task_context), f"{task_uuid}"]
     )
 

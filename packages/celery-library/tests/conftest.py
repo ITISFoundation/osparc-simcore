@@ -10,17 +10,20 @@ from celery import Celery  # type: ignore[import-untyped]
 from celery.contrib.testing.worker import TestWorkController, start_worker
 from celery.signals import worker_init, worker_shutdown
 from celery.worker.worker import WorkController
-from celery_library.backends._memory import MemoryTaskInfoStore
+from celery_library.common import create_task_manager
 from celery_library.signals import on_worker_init, on_worker_shutdown
-from celery_library.utils import CeleryTaskManager, get_task_manager
-from pytest_mock import MockerFixture
+from celery_library.utils import CeleryTaskManager
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from servicelib.base_app_server import BaseAppServer
+from servicelib.celery.app_server import BaseAppServer
 from settings_library.celery import CelerySettings
+from settings_library.redis import RedisSettings
 
 pytest_plugins = [
+    "pytest_simcore.docker_compose",
+    "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
+    "pytest_simcore.redis_service",
     "pytest_simcore.repository_paths",
 ]
 
@@ -32,28 +35,13 @@ class FakeAppServer(BaseAppServer):
     async def startup(
         self, completed_event: Event, shutdown_event: asyncio.Event
     ) -> None:
+        self._shutdown_event = shutdown_event
         completed_event.set()
-        await shutdown_event.wait()
+        await self._shutdown_event.wait()
 
     async def shutdown(self) -> None:
         if self._shutdown_event is not None:
             self._shutdown_event.set()
-
-
-@pytest.fixture
-def celery_config() -> dict[str, Any]:
-    return {
-        "broker_connection_retry_on_startup": True,
-        "broker_url": "memory://localhost//",
-        "result_backend": "cache+memory://localhost//",
-        "result_expires": datetime.timedelta(days=7),
-        "result_extended": True,
-        "pool": "threads",
-        "task_default_queue": "default",
-        "task_send_sent_event": True,
-        "task_track_started": True,
-        "worker_send_task_events": True,
-    }
 
 
 @pytest.fixture
@@ -68,12 +56,16 @@ def register_celery_tasks() -> Callable[[Celery], None]:
 @pytest.fixture
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
+    redis_service: RedisSettings,
     env_devel_dict: EnvVarsDict,
 ) -> EnvVarsDict:
     return setenvs_from_dict(
         monkeypatch,
         {
             **env_devel_dict,
+            "REDIS_HOST": redis_service.REDIS_HOST,
+            "REDIS_PORT": f"{redis_service.REDIS_PORT}",
+            "REDIS_PASSWORD": redis_service.REDIS_PASSWORD.get_secret_value(),
         },
     )
 
@@ -85,20 +77,29 @@ def celery_settings(
     return CelerySettings.create_from_envs()
 
 
+@pytest.fixture(scope="session")
+def celery_config() -> dict[str, Any]:
+    return {
+        "broker_connection_retry_on_startup": True,
+        "broker_url": "memory://localhost//",
+        "result_backend": "cache+memory://localhost//",
+        # "result_backend": celery_settings.CELERY_REDIS_RESULT_BACKEND.build_redis_dsn(RedisDatabase.CELERY_TASKS),
+        "result_expires": datetime.timedelta(days=7),
+        "result_extended": True,
+        "pool": "threads",
+        "task_default_queue": "default",
+        "task_send_sent_event": True,
+        "task_track_started": True,
+        "worker_send_task_events": True,
+    }
+
+
 @pytest.fixture
 async def with_storage_celery_worker(
     celery_app: Celery,
     celery_settings: CelerySettings,
     register_celery_tasks: Callable[[Celery], None],
-    mocker: MockerFixture,
 ) -> AsyncIterator[TestWorkController]:
-    mocker.patch(
-        "celery_library.signals.create_task_manager",
-        return_value=CeleryTaskManager(
-            celery_app, celery_settings, MemoryTaskInfoStore()
-        ),
-    )
-
     def _on_worker_init_wrapper(sender: WorkController, **_kwargs):
         return partial(on_worker_init, FakeAppServer(), celery_settings)(
             sender, **_kwargs
@@ -121,10 +122,12 @@ async def with_storage_celery_worker(
 
 
 @pytest.fixture
-def celery_task_manager(
+async def celery_task_manager(
+    celery_app: Celery,
+    celery_settings: CelerySettings,
     with_storage_celery_worker: TestWorkController,
 ) -> CeleryTaskManager:
-    assert with_storage_celery_worker.app  # nosec
-    assert isinstance(with_storage_celery_worker.app, Celery)  # nosec
-
-    return get_task_manager(with_storage_celery_worker.app)
+    return await create_task_manager(
+        celery_app,
+        celery_settings,
+    )

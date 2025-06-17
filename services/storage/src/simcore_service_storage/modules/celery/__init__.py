@@ -7,7 +7,7 @@ from settings_library.celery import CelerySettings
 
 def setup_task_manager(app: FastAPI, celery_settings: CelerySettings) -> None:
     async def on_startup() -> None:
-        app.state.celery_client = create_task_manager(
+        app.state.celery_client = await create_task_manager(
             create_app(celery_settings), celery_settings
         )
 

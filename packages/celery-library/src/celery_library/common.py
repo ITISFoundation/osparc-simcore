@@ -38,7 +38,9 @@ def create_app(settings: CelerySettings) -> Celery:
     )
 
 
-def create_task_manager(app: Celery, settings: CelerySettings) -> CeleryTaskManager:
+async def create_task_manager(
+    app: Celery, settings: CelerySettings
+) -> CeleryTaskManager:
     redis_client_sdk = RedisClientSDK(
         settings.CELERY_REDIS_RESULT_BACKEND.build_redis_dsn(
             RedisDatabase.CELERY_TASKS

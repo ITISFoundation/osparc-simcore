@@ -1,5 +1,5 @@
 from celery import Celery  # type: ignore[import-untyped]
-from servicelib.base_app_server import BaseAppServer
+from servicelib.celery.app_server import BaseAppServer
 
 from .task_manager import CeleryTaskManager
 
