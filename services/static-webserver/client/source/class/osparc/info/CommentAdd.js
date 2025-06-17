@@ -20,13 +20,13 @@ qx.Class.define("osparc.info.CommentAdd", {
   extend: qx.ui.core.Widget,
 
   /**
-    * @param studyId {String} Study Id
+    * @param studyData {Object} serialized Study Data
     * @param conversationId {String} Conversation Id
     */
-  construct: function(studyId, conversationId = null) {
+  construct: function(studyData, conversationId = null) {
     this.base(arguments);
 
-    this.__studyId = studyId;
+    this.__studyData = studyData;
     this.__conversationId = conversationId;
 
     this._setLayout(new qx.ui.layout.VBox(5));
@@ -39,7 +39,7 @@ qx.Class.define("osparc.info.CommentAdd", {
   },
 
   members: {
-    __studyId: null,
+    __studyData: null,
     __conversationId: null,
 
     _createChildControlImpl: function(id) {
@@ -134,8 +134,9 @@ qx.Class.define("osparc.info.CommentAdd", {
     __notifyUserTapped: function() {
       const showOrganizations = false;
       const showAccessRights = false;
-      const recipientsManager = new osparc.share.NewCollaboratorsManager(currentStudy, showOrganizations, showAccessRights);
-      // OM: extend NewCollaboratorsManager to only allow one user selected
+      const recipientsManager = new osparc.share.NewCollaboratorsManager(this.__studyData, showOrganizations, showAccessRights).set({
+        acceptOnlyOne: true,
+      });
       recipientsManager.setCaption(this.tr("Notify user"));
       recipientsManager.getActionButton().setLabel(this.tr("Notify"));
       recipientsManager.addListener("addCollaborators", e => {
@@ -147,7 +148,7 @@ qx.Class.define("osparc.info.CommentAdd", {
             this.__postNotify(userGid);
           } else {
             // create new conversation first
-            osparc.study.Conversations.addConversation(this.__studyId)
+            osparc.study.Conversations.addConversation(this.__studyData["uuid"])
               .then(data => {
                 this.__conversationId = data["conversationId"];
                 this.__postNotify(userGid);
@@ -162,7 +163,7 @@ qx.Class.define("osparc.info.CommentAdd", {
         this.__postMessage();
       } else {
         // create new conversation first
-        osparc.study.Conversations.addConversation(this.__studyId)
+        osparc.study.Conversations.addConversation(this.__studyData["uuid"])
           .then(data => {
             this.__conversationId = data["conversationId"];
             this.__postMessage();
@@ -174,7 +175,7 @@ qx.Class.define("osparc.info.CommentAdd", {
       const commentField = this.getChildControl("comment-field");
       const comment = commentField.getChildControl("text-area").getValue();
       if (comment) {
-        osparc.study.Conversations.addMessage(this.__studyId, this.__conversationId, comment)
+        osparc.study.Conversations.addMessage(this.__studyData["uuid"], this.__conversationId, comment)
           .then(data => {
             this.fireDataEvent("commentAdded", data);
             commentField.getChildControl("text-area").setValue("");
@@ -184,7 +185,7 @@ qx.Class.define("osparc.info.CommentAdd", {
 
     __postNotify: function(userGroupId = 10) {
       if (userGroupId) {
-        osparc.study.Conversations.notifyUser(this.__studyId, this.__conversationId, userGroupId)
+        osparc.study.Conversations.notifyUser(this.__studyData["uuid"], this.__conversationId, userGroupId)
           .then(data => {
             console.log(data);
           });

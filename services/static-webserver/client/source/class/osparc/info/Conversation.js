@@ -161,7 +161,7 @@ qx.Class.define("osparc.info.Conversation", {
       this._add(this.__loadMoreMessages);
 
       if (osparc.data.model.Study.canIWrite(this.__studyData["accessRights"])) {
-        const addMessages = new osparc.info.CommentAdd(this.__studyData["uuid"], this.getConversationId());
+        const addMessages = new osparc.info.CommentAdd(this.__studyData, this.getConversationId());
         addMessages.setPaddingLeft(10);
         addMessages.addListener("commentAdded", e => {
           const data = e.getData();
