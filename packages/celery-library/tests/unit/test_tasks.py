@@ -14,10 +14,7 @@ import pytest
 from celery import Celery, Task
 from celery.contrib.abortable import AbortableTask
 from celery_library.errors import TransferrableCeleryError
-from celery_library.task import (
-    AbortableAsyncResult,
-    register_task,
-)
+from celery_library.task import register_task
 from celery_library.task_manager import CeleryTaskManager
 from celery_library.utils import get_app_server
 from common_library.errors_classes import OsparcErrorMixin
@@ -78,11 +75,8 @@ def failure_task(task: Task, task_id: TaskID) -> None:
 async def dreamer_task(task: AbortableTask, task_id: TaskID) -> list[int]:
     numbers = []
     for _ in range(30):
-        if AbortableAsyncResult(task_id, app=task.app).is_aborted():
-            _logger.warning("Alarm clock")
-            return numbers
         numbers.append(randint(1, 90))  # noqa: S311
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(0.5)
     return numbers
 
 
@@ -165,6 +159,8 @@ async def test_cancelling_a_running_task_aborts_and_deletes(
         ),
         task_context=task_context,
     )
+
+    await asyncio.sleep(3.0)
 
     await celery_task_manager.cancel_task(task_context, task_uuid)
 
