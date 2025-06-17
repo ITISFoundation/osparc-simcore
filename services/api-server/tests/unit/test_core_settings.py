@@ -3,33 +3,10 @@
 # pylint: disable=redefined-outer-name
 
 
-import pytest
 from pytest_simcore.helpers.monkeypatch_envs import (
     EnvVarsDict,
-    delenvs_from_dict,
-    setenvs_from_dict,
 )
 from simcore_service_api_server.core.settings import ApplicationSettings
-
-
-@pytest.fixture
-def app_environment(
-    monkeypatch: pytest.MonkeyPatch,
-    app_environment: EnvVarsDict,
-    external_envfile_dict: EnvVarsDict,
-) -> EnvVarsDict:
-    """OVERRIDES app_environment fixture:
-
-    Enables using external envfiles (e.g. repo.config files) to run tests against
-    within this test module.
-    """
-    if external_envfile_dict:
-        delenvs_from_dict(monkeypatch, app_environment, raising=False)
-        return setenvs_from_dict(
-            monkeypatch,
-            {**external_envfile_dict},
-        )
-    return app_environment
 
 
 def test_valid_application_settings(app_environment: EnvVarsDict):
