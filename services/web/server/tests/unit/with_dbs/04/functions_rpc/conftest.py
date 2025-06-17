@@ -9,6 +9,7 @@ from typing import Any
 from uuid import uuid4
 
 import pytest
+import sqlalchemy
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver.functions import (
     Function,
@@ -188,7 +189,7 @@ async def add_user_function_api_access_rights(
     async with asyncpg_engine.begin() as conn:
         for group_id in (logged_user["primary_gid"], other_logged_user["primary_gid"]):
             await conn.execute(
-                funcapi_api_access_rights_table.delete(  # type: ignore[union-attr]
+                sqlalchemy.delete(funcapi_api_access_rights_table).where(
                     funcapi_api_access_rights_table.c.group_id == group_id
                 )
             )
