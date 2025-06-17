@@ -227,6 +227,8 @@ class FunctionJobDB(BaseModel):
     class_specific_data: FunctionJobClassSpecificData
     function_class: FunctionClass
 
+    model_config = ConfigDict(from_attributes=True)
+
 
 class RegisteredFunctionJobDB(FunctionJobDB):
     uuid: FunctionJobID
@@ -242,6 +244,8 @@ class FunctionDB(BaseModel):
     default_inputs: FunctionInputs
     class_specific_data: FunctionClassSpecificData
 
+    model_config = ConfigDict(from_attributes=True)
+
 
 class RegisteredFunctionDB(FunctionDB):
     uuid: FunctionID
@@ -251,6 +255,8 @@ class RegisteredFunctionDB(FunctionDB):
 class FunctionJobCollectionDB(BaseModel):
     title: str = ""
     description: str = ""
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class RegisteredFunctionJobCollectionDB(FunctionJobCollectionDB):

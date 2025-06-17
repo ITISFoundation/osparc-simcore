@@ -19,6 +19,7 @@ from models_library.functions_errors import (
     FunctionIDNotFoundError,
     FunctionReadAccessDeniedError,
     FunctionsReadApiAccessDeniedError,
+    FunctionWriteAccessDeniedError,
 )
 from models_library.products import ProductName
 from pytest_simcore.helpers.webserver_login import UserInfoDict
@@ -88,7 +89,7 @@ async def test_register_get_delete_function(
             product_name=osparc_product_name,
         )
 
-    with pytest.raises(FunctionReadAccessDeniedError):
+    with pytest.raises(FunctionWriteAccessDeniedError):
         # Attempt to delete the function by another user
         await functions_rpc.delete_function(
             rabbitmq_rpc_client=rpc_client,
@@ -374,7 +375,7 @@ async def test_update_function_title(
     # Update the function's title by other user
     updated_title = "Updated Function Title by Other User"
     registered_function.title = updated_title
-    with pytest.raises(FunctionReadAccessDeniedError):
+    with pytest.raises(FunctionWriteAccessDeniedError):
         updated_function = await functions_rpc.update_function_title(
             rabbitmq_rpc_client=rpc_client,
             function_id=registered_function.uid,
