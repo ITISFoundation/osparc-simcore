@@ -95,25 +95,21 @@ qx.Class.define("osparc.info.CommentAdd", {
             column: 1
           });
           break;
-        case "buttons-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
-            alignX: "right"
-          }));
-          this._add(control);
-          break;
-        case "notify-user-button":
-          control = new qx.ui.form.Button(this.tr("Notify user")).set({
-            appearance: "form-button",
-            allowGrowX: false,
-          });
-          this.getChildControl("buttons-layout").add(control);
-          break;
         case "add-comment-button":
           control = new qx.ui.form.Button(this.tr("Add message")).set({
             appearance: "form-button",
             allowGrowX: false,
+            alignX: "right"
           });
-          this.getChildControl("buttons-layout").add(control);
+          this._add(control);
+          break;
+        case "notify-user-button":
+          control = new qx.ui.form.Button("🔔 " + this.tr("Notify user")).set({
+            appearance: "form-button",
+            allowGrowX: false,
+            alignX: "right"
+          });
+          this._add(control);
           break;
       }
 
@@ -124,11 +120,11 @@ qx.Class.define("osparc.info.CommentAdd", {
       this.getChildControl("thumbnail");
       this.getChildControl("comment-field");
 
-      const notifyUserButton = this.getChildControl("notify-user-button");
-      notifyUserButton.addListener("execute", () => this.__notifyUserTapped());
-
       const addMessageButton = this.getChildControl("add-comment-button");
       addMessageButton.addListener("execute", () => this.__addComment());
+
+      const notifyUserButton = this.getChildControl("notify-user-button");
+      notifyUserButton.addListener("execute", () => this.__notifyUserTapped());
     },
 
     __notifyUserTapped: function() {
