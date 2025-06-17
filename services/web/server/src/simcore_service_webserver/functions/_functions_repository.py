@@ -131,7 +131,7 @@ async def create_function(  # noqa: PLR0913
             api_access_rights=[FunctionsApiAccessRights.WRITE_FUNCTIONS],
         )
 
-        result = await transaction.stream(
+        result = await transaction.execute(
             functions_table.insert()
             .values(
                 title=title,
@@ -144,7 +144,7 @@ async def create_function(  # noqa: PLR0913
             )
             .returning(*_FUNCTIONS_TABLE_COLS)
         )
-        row = await result.one()
+        row = result.one()
 
         registered_function = RegisteredFunctionDB.model_validate(row)
 
@@ -273,7 +273,7 @@ async def create_function_job_collection(
         )
         job_collection_entries: list[Row] = []
         for job_id in job_ids:
-            result = await transaction.stream(
+            result = await transaction.execute(
                 function_job_collections_to_function_jobs_table.insert()
                 .values(
                     function_job_collection_uuid=function_job_collection_db.uuid,
@@ -284,7 +284,7 @@ async def create_function_job_collection(
                     function_job_collections_to_function_jobs_table.c.function_job_uuid,
                 )
             )
-            entry = await result.one_or_none()
+            entry = result.one_or_none()
             assert entry is not None, (
                 f"No row was returned from the database after creating function job collection entry {title}."
                 f" Job ID: {job_id}"
@@ -383,25 +383,25 @@ async def list_functions(
             .select_from(functions_table)
             .where(functions_table.c.uuid.in_(subquery))
         )
-        result = await conn.stream(
-            functions_table.select()
-            .where(functions_table.c.uuid.in_(subquery))
-            .offset(pagination_offset)
-            .limit(pagination_limit)
-        )
-        rows = await result.all()
-        if rows is None:
+        if total_count_result == 0:
             return [], PageMetaInfoLimitOffset(
                 total=0, offset=pagination_offset, limit=pagination_limit, count=0
             )
+        function_rows = [
+            RegisteredFunctionDB.model_validate(row)
+            async for row in await conn.stream(
+                functions_table.select()
+                .where(functions_table.c.uuid.in_(subquery))
+                .offset(pagination_offset)
+                .limit(pagination_limit)
+            )
+        ]
 
-        return [
-            RegisteredFunctionDB.model_validate(row) for row in rows
-        ], PageMetaInfoLimitOffset(
+        return function_rows, PageMetaInfoLimitOffset(
             total=total_count_result,
             offset=pagination_offset,
             limit=pagination_limit,
-            count=len(rows),
+            count=len(function_rows),
         )
 
 
@@ -446,30 +446,30 @@ async def list_function_jobs(
                 else sqlalchemy.sql.true()
             )
         )
-        result = await conn.stream(
-            function_jobs_table.select()
-            .where(function_jobs_table.c.uuid.in_(access_subquery))
-            .where(
-                function_jobs_table.c.function_uuid == filter_by_function_id
-                if filter_by_function_id
-                else sqlalchemy.sql.true()
-            )
-            .offset(pagination_offset)
-            .limit(pagination_limit)
-        )
-        rows = await result.all()
-        if rows is None:
+        if total_count_result == 0:
             return [], PageMetaInfoLimitOffset(
                 total=0, offset=pagination_offset, limit=pagination_limit, count=0
             )
+        results = [
+            RegisteredFunctionJobDB.model_validate(row)
+            async for row in await conn.stream(
+                function_jobs_table.select()
+                .where(function_jobs_table.c.uuid.in_(access_subquery))
+                .where(
+                    function_jobs_table.c.function_uuid == filter_by_function_id
+                    if filter_by_function_id
+                    else sqlalchemy.sql.true()
+                )
+                .offset(pagination_offset)
+                .limit(pagination_limit)
+            )
+        ]
 
-        return [
-            RegisteredFunctionJobDB.model_validate(row) for row in rows
-        ], PageMetaInfoLimitOffset(
+        return results, PageMetaInfoLimitOffset(
             total=total_count_result,
             offset=pagination_offset,
             limit=pagination_limit,
-            count=len(rows),
+            count=len(results),
         )
 
 
@@ -550,40 +550,35 @@ async def list_function_job_collections(
             .select_from(function_job_collections_table)
             .where(filter_and_access_condition)
         )
-        query = function_job_collections_table.select().where(
-            filter_and_access_condition
-        )
-
-        result = await conn.stream(
-            query.offset(pagination_offset).limit(pagination_limit)
-        )
-        rows = await result.all()
-        if rows is None:
+        if total_count_result == 0:
             return [], PageMetaInfoLimitOffset(
                 total=0, offset=pagination_offset, limit=pagination_limit, count=0
             )
 
+        query = function_job_collections_table.select().where(
+            filter_and_access_condition
+        )
+
         collections = []
-        for row in rows:
+        async for row in await conn.stream(
+            query.offset(pagination_offset).limit(pagination_limit)
+        ):
             collection = RegisteredFunctionJobCollectionDB.model_validate(row)
-            job_result = await conn.stream(
-                function_job_collections_to_function_jobs_table.select().where(
-                    function_job_collections_to_function_jobs_table.c.function_job_collection_uuid
-                    == row["uuid"]
+            job_ids = [
+                job_row["function_job_uuid"]
+                async for job_row in await conn.stream(
+                    function_job_collections_to_function_jobs_table.select().where(
+                        function_job_collections_to_function_jobs_table.c.function_job_collection_uuid
+                        == row["uuid"]
+                    )
                 )
-            )
-            job_rows = await job_result.all()
-            job_ids = (
-                [job_row["function_job_uuid"] for job_row in job_rows]
-                if job_rows
-                else []
-            )
+            ]
             collections.append((collection, job_ids))
         return collections, PageMetaInfoLimitOffset(
             total=total_count_result,
             offset=pagination_offset,
             limit=pagination_limit,
-            count=len(rows),
+            count=len(collections),
         )
 
 
@@ -618,10 +613,10 @@ async def delete_function(
         )
 
         # Check if the function exists
-        result = await transaction.stream(
+        result = await transaction.execute(
             functions_table.select().where(functions_table.c.uuid == function_id)
         )
-        row = await result.one_or_none()
+        row = result.one_or_none()
 
         if row is None:
             raise FunctionIDNotFoundError(function_id=function_id)
@@ -825,19 +820,13 @@ async def find_cached_function_jobs(
             api_access_rights=[FunctionsApiAccessRights.READ_FUNCTION_JOBS],
         )
 
-        result = await conn.stream(
+        jobs: list[RegisteredFunctionJobDB] = []
+        async for row in await conn.stream(
             function_jobs_table.select().where(
                 function_jobs_table.c.function_uuid == function_id,
                 cast(function_jobs_table.c.inputs, Text) == json.dumps(inputs),
-            ),
-        )
-        rows = await result.all()
-
-        if rows is None or len(rows) == 0:
-            return None
-
-        jobs: list[RegisteredFunctionJobDB] = []
-        for row in rows:
+            )
+        ):
             job = RegisteredFunctionJobDB.model_validate(row)
             try:
                 await check_user_permissions(
@@ -899,17 +888,15 @@ async def get_function_job_collection(
             )
 
         # Retrieve associated job ids from the join table
-        job_result = await conn.stream(
-            function_job_collections_to_function_jobs_table.select().where(
-                function_job_collections_to_function_jobs_table.c.function_job_collection_uuid
-                == row["uuid"]
+        job_ids = [
+            job_row["function_job_uuid"]
+            async for job_row in await conn.stream(
+                function_job_collections_to_function_jobs_table.select().where(
+                    function_job_collections_to_function_jobs_table.c.function_job_collection_uuid
+                    == row["uuid"]
+                )
             )
-        )
-        job_rows = await job_result.all()
-
-        job_ids = (
-            [job_row["function_job_uuid"] for job_row in job_rows] if job_rows else []
-        )
+        ]
 
         job_collection = RegisteredFunctionJobCollectionDB.model_validate(row)
 
@@ -1000,13 +987,13 @@ async def set_group_permissions(
     async with transaction_context(get_asyncpg_engine(app), connection) as transaction:
         for object_id in object_ids:
             # Check if the group already has access rights for the function
-            result = await transaction.stream(
+            result = await transaction.execute(
                 access_rights_table.select().where(
                     getattr(access_rights_table.c, field_name) == object_id,
                     access_rights_table.c.group_id == group_id,
                 )
             )
-            row = await result.one_or_none()
+            row = result.one_or_none()
 
             if row is None:
                 # Insert new access rights if the group does not have any
@@ -1058,20 +1045,20 @@ async def get_user_api_access_rights(
         if not rows:
             return FunctionUserApiAccessRights(user_id=user_id)
         combined_permissions = {
-            "read_functions": any(row["read_functions"] for row in rows),
-            "write_functions": any(row["write_functions"] for row in rows),
-            "execute_functions": any(row["execute_functions"] for row in rows),
-            "read_function_jobs": any(row["read_function_jobs"] for row in rows),
-            "write_function_jobs": any(row["write_function_jobs"] for row in rows),
-            "execute_function_jobs": any(row["execute_function_jobs"] for row in rows),
+            "read_functions": any(row.read_functions for row in rows),
+            "write_functions": any(row.write_functions for row in rows),
+            "execute_functions": any(row.execute_functions for row in rows),
+            "read_function_jobs": any(row.read_function_jobs for row in rows),
+            "write_function_jobs": any(row.write_function_jobs for row in rows),
+            "execute_function_jobs": any(row.execute_function_jobs for row in rows),
             "read_function_job_collections": any(
-                row["read_function_job_collections"] for row in rows
+                row.read_function_job_collections for row in rows
             ),
             "write_function_job_collections": any(
-                row["write_function_job_collections"] for row in rows
+                row.write_function_job_collections for row in rows
             ),
             "execute_function_job_collections": any(
-                row["execute_function_job_collections"] for row in rows
+                row.execute_function_job_collections for row in rows
             ),
             "user_id": user_id,
         }
