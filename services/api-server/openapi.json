@@ -7604,6 +7604,42 @@
               "format": "uuid",
               "title": "Function Id"
             }
+          },
+          {
+            "name": "x-simcore-parent-project-uuid",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "const": "null",
+                  "type": "string"
+                }
+              ],
+              "title": "X-Simcore-Parent-Project-Uuid"
+            }
+          },
+          {
+            "name": "x-simcore-parent-node-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "const": "null",
+                  "type": "string"
+                }
+              ],
+              "title": "X-Simcore-Parent-Node-Id"
+            }
           }
         ],
         "requestBody": {
@@ -7699,6 +7735,42 @@
               "type": "string",
               "format": "uuid",
               "title": "Function Id"
+            }
+          },
+          {
+            "name": "x-simcore-parent-project-uuid",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "const": "null",
+                  "type": "string"
+                }
+              ],
+              "title": "X-Simcore-Parent-Project-Uuid"
+            }
+          },
+          {
+            "name": "x-simcore-parent-node-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "const": "null",
+                  "type": "string"
+                }
+              ],
+              "title": "X-Simcore-Parent-Node-Id"
             }
           }
         ],
