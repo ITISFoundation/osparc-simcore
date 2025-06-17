@@ -23,7 +23,6 @@ def app_environment(
 
     ln -s /path/to/osparc-config/deployments/mydeploy.com/repo.config .secrets
     pytest --external-envfile=.secrets tests/unit/test_core_settings.py
-
     """
     if external_envfile_dict:
         delenvs_from_dict(monkeypatch, app_environment, raising=False)
@@ -34,7 +33,17 @@ def app_environment(
     return app_environment
 
 
-def test_unit_app_environment(app_environment: EnvVarsDict):
+def test_valid_application_settings(app_environment: EnvVarsDict):
+    """
+    We can validate actual .env files (also refered as `repo.config` files) by passing them via the CLI
+
+    $ ln -s /path/to/osparc-config/deployments/mydeploy.com/repo.config .secrets
+    $ pytest --external-envfile=.secrets --pdb tests/unit/test_core_settings.py
+
+    """
     assert app_environment
-    settings = ApplicationSettings.create_from_envs()
-    print("captured settings: \n", settings.model_dump_json(indent=2))
+
+    settings = ApplicationSettings()  # type: ignore
+    assert settings
+
+    assert settings == ApplicationSettings.create_from_envs()

@@ -3,6 +3,7 @@
 # pylint: disable=unused-variable
 
 
+import logging
 import re
 from pathlib import Path
 from typing import Any
@@ -11,6 +12,8 @@ import pytest
 
 from .helpers.monkeypatch_envs import load_dotenv, setenvs_from_dict
 from .helpers.typing_env import EnvVarsDict
+
+_logger = logging.getLogger(__name__)
 
 
 def pytest_addoption(parser: pytest.Parser):
@@ -35,11 +38,19 @@ def external_envfile_dict(request: pytest.FixtureRequest) -> EnvVarsDict:
     """
     envs = {}
     if envfile := request.config.getoption("--external-envfile"):
-        print("🚨 EXTERNAL `envfile` option detected. Loading", envfile, "...")
+        _logger.warning(
+            "🚨 EXTERNAL `envfile` option detected. Loading '%s' ...", envfile
+        )
 
         assert isinstance(envfile, Path)
         assert envfile.exists()
         assert envfile.is_file()
+
+        if not any(term in envfile.name.lower() for term in ("ignore", "secret")):
+            _logger.warning(
+                "🚨 CAUTION: The provided envfile '%s' might be pushed in this repository. Please rename it with `secret` or `ignore`",
+                envfile.name,
+            )
 
         envs = load_dotenv(envfile)
 
