@@ -22,6 +22,7 @@ from pydantic import AnyUrl, ByteSize, PositiveInt, TypeAdapter, ValidationError
 from servicelib.aiohttp import client_session
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
+from simcore_sdk.node_ports_common.exceptions import StorageServerIssue
 from simcore_sdk.node_ports_common.file_io_utils import UploadableFileObject
 from simcore_sdk.node_ports_common.filemanager import (
     UploadedFile,
@@ -329,7 +330,7 @@ async def get_upload_links(
                 is_directory=False,
                 sha256_checksum=file_meta.sha256_checksum,
             )
-    except TimeoutError as exc:
+    except StorageServerIssue as exc:
         msg = "Request to storage service timed out"
         status_code = status.HTTP_504_GATEWAY_TIMEOUT
         _logger.exception(

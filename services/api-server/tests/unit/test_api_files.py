@@ -14,6 +14,7 @@ import httpx
 import pytest
 import respx
 import yarl
+from aiohttp import client_exceptions as aiohttp_client_exceptions
 from aioresponses import aioresponses as AioResponsesMock
 from faker import Faker
 from fastapi import status
@@ -293,8 +294,8 @@ async def test_get_upload_links_timeout(
     assert aioresponses_mocker  # nosec
     aioresponses_mocker.put(
         re.compile(r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files.+$"),
-        timeout=True,
         repeat=True,
+        exception=aiohttp_client_exceptions.ServerTimeoutError(),
     )
 
     msg = {
