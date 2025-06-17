@@ -889,7 +889,7 @@ async def get_function_job_collection(
 
         # Retrieve associated job ids from the join table
         job_ids = [
-            job_row["function_job_uuid"]
+            job_row.function_job_uuid
             async for job_row in await conn.stream(
                 function_job_collections_to_function_jobs_table.select().where(
                     function_job_collections_to_function_jobs_table.c.function_job_collection_uuid
