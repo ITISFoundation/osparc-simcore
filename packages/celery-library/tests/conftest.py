@@ -1,4 +1,5 @@
-import asyncio
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argumentimport asyncio
 import datetime
 from collections.abc import AsyncIterator, Callable
 from functools import partial
