@@ -22,6 +22,7 @@ from models_library.functions_errors import (
     FunctionJobCollectionReadAccessDeniedError,
     FunctionJobCollectionsReadApiAccessDeniedError,
     FunctionJobCollectionsWriteApiAccessDeniedError,
+    FunctionJobCollectionWriteAccessDeniedError,
     FunctionJobIDNotFoundError,
     FunctionJobReadAccessDeniedError,
     FunctionJobsReadApiAccessDeniedError,
@@ -283,6 +284,7 @@ async def delete_function_job(
     reraise_if_error_type=(
         FunctionJobCollectionIDNotFoundError,
         FunctionJobCollectionReadAccessDeniedError,
+        FunctionJobCollectionWriteAccessDeniedError,
         FunctionJobCollectionsWriteApiAccessDeniedError,
     )
 )
@@ -305,6 +307,7 @@ async def delete_function_job_collection(
     reraise_if_error_type=(
         FunctionIDNotFoundError,
         FunctionReadAccessDeniedError,
+        FunctionWriteAccessDeniedError,
     )
 )
 async def update_function_title(
@@ -325,7 +328,11 @@ async def update_function_title(
 
 
 @router.expose(
-    reraise_if_error_type=(FunctionIDNotFoundError, FunctionReadAccessDeniedError)
+    reraise_if_error_type=(
+        FunctionIDNotFoundError,
+        FunctionReadAccessDeniedError,
+        FunctionWriteAccessDeniedError,
+    )
 )
 async def update_function_description(
     app: web.Application,
