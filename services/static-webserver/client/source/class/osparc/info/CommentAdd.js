@@ -134,12 +134,13 @@ qx.Class.define("osparc.info.CommentAdd", {
     __notifyUserTapped: function() {
       const showOrganizations = false;
       const showAccessRights = false;
-      const recipientsManager = new osparc.share.NewCollaboratorsManager(this.__studyData, showOrganizations, showAccessRights).set({
+      const userManager = new osparc.share.NewCollaboratorsManager(this.__studyData, showOrganizations, showAccessRights).set({
         acceptOnlyOne: true,
       });
-      recipientsManager.setCaption(this.tr("Notify user"));
-      recipientsManager.getActionButton().setLabel(this.tr("Notify"));
-      recipientsManager.addListener("addCollaborators", e => {
+      userManager.setCaption(this.tr("Notify user"));
+      userManager.getActionButton().setLabel(this.tr("Notify"));
+      userManager.addListener("addCollaborators", e => {
+        userManager.close();
         const data = e.getData();
         const userGids = data["selectedGids"];
         if (userGids && userGids.length) {
@@ -187,7 +188,7 @@ qx.Class.define("osparc.info.CommentAdd", {
       if (userGroupId) {
         osparc.study.Conversations.notifyUser(this.__studyData["uuid"], this.__conversationId, userGroupId)
           .then(data => {
-            console.log(data);
+            this.fireDataEvent("commentAdded", data);
           });
       }
     },
