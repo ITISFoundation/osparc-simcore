@@ -6,6 +6,7 @@ import httpx
 import pytest
 import sqlalchemy as sa
 from faker import Faker
+from fastapi import FastAPI
 from models_library.api_schemas_resource_usage_tracker.credit_transactions import (
     CreditTransactionCreateBody,
     WalletTotalCredits,
@@ -529,7 +530,7 @@ async def test_sum_wallet_credits_db(
     resource_tracker_setup_db: None,
     rpc_client: RabbitMQRPCClient,
     product_name: ProductName,
-    initialized_app,
+    initialized_app: FastAPI,
 ):
     engine = initialized_app.state.engine
     output_including_pending_transaction = (

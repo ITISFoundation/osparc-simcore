@@ -295,9 +295,9 @@ async def _process_stop_event(
             msg.created_at,
             running_service.pricing_unit_cost,
         )
-        # NOTE: Include_pending_transactions=False will ensure that we do not count the current running transactions.
-        # This is important because we are closing the transaction now and we do not want to count it again.
         wallet_total_credits_without_pending_transactions = (
+            # NOTE: Include_pending_transactions=False will ensure that we do not count the current running transactions.
+            # This is important because we are closing the transaction now and we do not want to count it again.
             await credit_transactions_db.sum_wallet_credits(
                 db_engine,
                 product_name=running_service.product_name,
