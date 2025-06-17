@@ -36,8 +36,9 @@ async function runTutorial () {
     await utils.takeScreenshot(page, screenshotPrefix + 'service_started');
 
     const entitiesListed = [
-      "EM_02mm.vtk",
-      "CellDatatoPointData1",
+      "Vein.vtk",
+      "Artery.vtk",
+      "Bones.e",
     ];
     for (const text of entitiesListed) {
       const found = await utils.waitForLabelText(page, text);
