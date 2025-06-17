@@ -206,18 +206,18 @@ async def create_function_job(  # noqa: PLR0913
 
         registered_function_job = RegisteredFunctionJobDB.model_validate(row)
 
-    user_primary_group_id = await get_user_primary_group_id(app, user_id=user_id)
-    await set_group_permissions(
-        app,
-        connection=transaction,
-        group_id=user_primary_group_id,
-        product_name=product_name,
-        object_type="function_job",
-        object_ids=[registered_function_job.uuid],
-        read=True,
-        write=True,
-        execute=True,
-    )
+        user_primary_group_id = await get_user_primary_group_id(app, user_id=user_id)
+        await set_group_permissions(
+            app,
+            connection=transaction,
+            group_id=user_primary_group_id,
+            product_name=product_name,
+            object_type="function_job",
+            object_ids=[registered_function_job.uuid],
+            read=True,
+            write=True,
+            execute=True,
+        )
 
     return registered_function_job
 
