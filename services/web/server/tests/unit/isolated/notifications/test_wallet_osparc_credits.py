@@ -1,6 +1,6 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
-# pylint: disable=unused-importimport asyncio
+# pylint: disable=unused-import
 import asyncio
 from unittest.mock import AsyncMock, patch
 
