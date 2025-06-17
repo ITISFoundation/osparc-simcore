@@ -25,9 +25,10 @@ async function runTutorial () {
     const studyData = await tutorial.openStudyLink();
 
     const workbenchData = utils.extractWorkbenchData(studyData["data"]);
+    const vtkNodeId = workbenchData["nodeIds"][2];
     await tutorial.waitForServices(
       workbenchData["studyId"],
-      [workbenchData["nodeIds"][2]],
+      [vtkNodeId],
       startTimeout,
       false
     );
@@ -35,12 +36,13 @@ async function runTutorial () {
     await tutorial.waitFor(10000, 'Some time for starting the service');
     await utils.takeScreenshot(page, screenshotPrefix + 'service_started');
 
+    const iframe = await tutorial.getIframe(vtkNodeId);
     const entitiesListed = [
       "EM_02mm.vtk",
       "CellDatatoPointData1",
     ];
     for (const text of entitiesListed) {
-      const found = await utils.waitForLabelText(page, text);
+      const found = await utils.waitForLabelText(iframe, text);
       if (!found) {
         throw new Error(`Text "${text}" not visible on the page within timeout.`);
       }

@@ -25,9 +25,10 @@ async function runTutorial () {
     const studyData = await tutorial.openStudyLink();
 
     const workbenchData = utils.extractWorkbenchData(studyData["data"]);
+    const vtkNodeId = workbenchData["nodeIds"][1];
     await tutorial.waitForServices(
       workbenchData["studyId"],
-      [workbenchData["nodeIds"][1]],
+      [vtkNodeId],
       startTimeout,
       false
     );
