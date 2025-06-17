@@ -634,6 +634,31 @@ async function getButtonsWithText(page, text) {
   return buttons;
 }
 
+async function waitForLabelText(page, text, timeout = 10000) {
+  console.log("Waiting for label text:", text);
+  try {
+    await page.waitForFunction(
+      (text) => {
+        return [...document.body.querySelectorAll('*')].some(el => {
+          if (typeof el.innerText !== 'string') return false;
+
+          const lines = el.innerText.split('\n').map(line => line.trim());
+          return lines.some(line =>
+            line.includes(text) &&
+            !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length)
+          );
+        });
+      },
+      { timeout },
+      text
+    );
+    return true;
+  } catch (err) {
+    console.error("waitForLabelText failed:", err);
+    return false;
+  }
+}
+
 
 module.exports = {
   makeRequest,
@@ -671,4 +696,5 @@ module.exports = {
   isElementVisible,
   clickLoggerTitle,
   getButtonsWithText,
+  waitForLabelText,
 }
