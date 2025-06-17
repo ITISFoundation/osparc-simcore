@@ -132,16 +132,29 @@ qx.Class.define("osparc.info.CommentAdd", {
     },
 
     __notifyUserTapped: function() {
-      if (this.__conversationId) {
-        this.__postNotify();
-      } else {
-        // create new conversation first
-        osparc.study.Conversations.addConversation(this.__studyId)
-          .then(data => {
-            this.__conversationId = data["conversationId"];
-            this.__postNotify();
-          })
-      }
+      const showOrganizations = false;
+      const showAccessRights = false;
+      const recipientsManager = new osparc.share.NewCollaboratorsManager(currentStudy, showOrganizations, showAccessRights);
+      // OM: extend NewCollaboratorsManager to only allow one user selected
+      recipientsManager.setCaption(this.tr("Notify user"));
+      recipientsManager.getActionButton().setLabel(this.tr("Notify"));
+      recipientsManager.addListener("addCollaborators", e => {
+        const data = e.getData();
+        const userGids = data["selectedGids"];
+        if (userGids && userGids.length) {
+          const userGid = parseInt(userGids[0]);
+          if (this.__conversationId) {
+            this.__postNotify(userGid);
+          } else {
+            // create new conversation first
+            osparc.study.Conversations.addConversation(this.__studyId)
+              .then(data => {
+                this.__conversationId = data["conversationId"];
+                this.__postNotify(userGid);
+              });
+          }
+        }
+      });
     },
 
     __addComment: function() {
