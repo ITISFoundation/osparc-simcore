@@ -117,7 +117,9 @@ qx.Class.define("osparc.navigation.NavigationBar", {
 
       // right-items
       this.getChildControl("tasks-button");
-      this.getChildControl("jobs-button");
+      if (osparc.product.Utils.showComputationalActivity()) {
+        this.getChildControl("jobs-button");
+      }
       this.getChildControl("notifications-button");
       this.getChildControl("expiration-icon");
       this.getChildControl("help");
