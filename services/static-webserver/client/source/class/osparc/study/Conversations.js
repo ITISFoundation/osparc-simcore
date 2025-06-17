@@ -101,9 +101,7 @@ qx.Class.define("osparc.study.Conversations", {
           conversationId,
         },
         data: {
-          "content": {
-            "userGroupId": userGroupId,
-          },
+          "content": userGroupId,
           "type": "NOTIFICATION",
         }
       };

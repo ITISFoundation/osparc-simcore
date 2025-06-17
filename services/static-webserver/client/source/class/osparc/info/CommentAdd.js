@@ -169,7 +169,7 @@ qx.Class.define("osparc.info.CommentAdd", {
       }
     },
 
-    __postNotify: function(userGroupId) {
+    __postNotify: function(userGroupId = 10) {
       if (userGroupId) {
         osparc.study.Conversations.notifyUser(this.__studyId, this.__conversationId, userGroupId)
           .then(data => {
