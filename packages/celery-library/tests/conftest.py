@@ -56,6 +56,7 @@ def app_environment(
         monkeypatch,
         {
             **env_devel_dict,
+            "REDIS_SECURE": redis_service.REDIS_SECURE,
             "REDIS_HOST": redis_service.REDIS_HOST,
             "REDIS_PORT": f"{redis_service.REDIS_PORT}",
             "REDIS_PASSWORD": redis_service.REDIS_PASSWORD.get_secret_value(),
