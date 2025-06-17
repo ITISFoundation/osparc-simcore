@@ -6,6 +6,7 @@ from typing import IO, Annotated, Any, Final
 from uuid import UUID
 
 from aiohttp import ClientSession, ClientTimeout, TCPConnector
+from common_library.error_codes import create_error_code
 from fastapi import APIRouter, Body, Depends
 from fastapi import File as FileParam
 from fastapi import Header, Request, UploadFile, status
@@ -21,6 +22,7 @@ from models_library.projects_nodes_io import NodeID
 from pydantic import AnyUrl, ByteSize, PositiveInt, TypeAdapter, ValidationError
 from servicelib.aiohttp import client_session
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
+from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
 from simcore_sdk.node_ports_common.exceptions import StorageServerIssue
 from simcore_sdk.node_ports_common.file_io_utils import UploadableFileObject
@@ -331,14 +333,17 @@ async def get_upload_links(
                 sha256_checksum=file_meta.sha256_checksum,
             )
     except StorageServerIssue as exc:
-        msg = "Request to storage service timed out"
+        error_code = create_error_code(exc)
+        msg = f"Request to storage service timed out [{error_code}]"
         status_code = status.HTTP_504_GATEWAY_TIMEOUT
+
         _logger.exception(
-            "%s - responding with status code %s",
-            msg,
-            f"{status_code}",
-            exc_info=True,
-            stack_info=True,
+            **create_troubleshotting_log_kwargs(
+                msg,
+                error=exc,
+                error_code=error_code,
+                tip="Check if storage service is healthy",
+            )
         )
         raise HTTPException(status_code=status_code, detail=msg) from exc
     completion_url: URL = request.url_for(
