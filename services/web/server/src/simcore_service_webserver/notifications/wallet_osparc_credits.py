@@ -7,15 +7,19 @@ from servicelib.logging_utils import log_catch
 from servicelib.rabbitmq import RabbitMQClient
 
 from ..rabbitmq import get_rabbitmq_client
+from ._rabbitmq_exclusive_queue_consumers import (
+    APP_WALLET_SUBSCRIPTION_LOCK_KEY,
+    APP_WALLET_SUBSCRIPTIONS_KEY,
+)
 
 _logger = logging.getLogger(__name__)
 
 
 async def subscribe(app: web.Application, wallet_id: WalletID) -> None:
 
-    async with app["wallet_subscription_lock"]:
-        counter = app["wallet_subscriptions"][wallet_id]
-        app["wallet_subscriptions"][wallet_id] += 1
+    async with app[APP_WALLET_SUBSCRIPTION_LOCK_KEY]:
+        counter = app[APP_WALLET_SUBSCRIPTIONS_KEY][wallet_id]
+        app[APP_WALLET_SUBSCRIPTIONS_KEY][wallet_id] += 1
 
         if counter == 0:  # First subscriber
             rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
@@ -26,10 +30,10 @@ async def subscribe(app: web.Application, wallet_id: WalletID) -> None:
 
 async def unsubscribe(app: web.Application, wallet_id: WalletID) -> None:
 
-    async with app["wallet_subscription_lock"]:
-        counter = app["wallet_subscriptions"].get(wallet_id, 0)
+    async with app[APP_WALLET_SUBSCRIPTION_LOCK_KEY]:
+        counter = app[APP_WALLET_SUBSCRIPTIONS_KEY].get(wallet_id, 0)
         if counter > 0:
-            app["wallet_subscriptions"][wallet_id] -= 1
+            app[APP_WALLET_SUBSCRIPTIONS_KEY][wallet_id] -= 1
 
             if counter == 1:  # Last subscriber
                 rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
