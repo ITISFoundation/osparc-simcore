@@ -132,5 +132,5 @@ async def periodic_task_result(
             exception=e,
             traceback=f"check remote side for logs, HINT: service replying to: '{client._base_url}' for '{task_id=}'",  # noqa: SLF001  # pylint:disable=protected-access
         )
-        _logger.warning(f"{error}")
+        _logger.warning("%s", error)
         raise error from e
