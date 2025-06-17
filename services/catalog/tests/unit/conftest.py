@@ -15,10 +15,7 @@ import httpx
 import pytest
 import respx
 import simcore_service_catalog
-import simcore_service_catalog.core.application
 import simcore_service_catalog.core.events
-import simcore_service_catalog.repository
-import simcore_service_catalog.repository.events
 import yaml
 from asgi_lifespan import LifespanManager
 from faker import Faker
