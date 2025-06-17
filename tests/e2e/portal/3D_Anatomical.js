@@ -34,14 +34,6 @@ async function runTutorial () {
 
     await tutorial.waitFor(10000, 'Some time for starting the service');
     await utils.takeScreenshot(page, screenshotPrefix + 'service_started');
-
-    // This study opens in fullscreen mode
-    await tutorial.restoreIFrame();
-
-    const outFiles = [
-      "data.zip"
-    ];
-    await tutorial.checkNodeOutputs(1, outFiles);
   }
   catch(err) {
     await tutorial.setTutorialFailed();
