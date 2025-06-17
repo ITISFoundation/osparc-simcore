@@ -1153,7 +1153,7 @@ async def patch_project_node(
         partial_node=partial_node,
     )
 
-    # 4. Make calls to director-v2 to keep data in sync (ex. comp_pipeline and comp_tasks DB tables)
+    # 4. Make calls to director-v2 to keep data in sync (ex. comp_* DB tables)
     await director_v2_service.create_or_update_pipeline(
         app,
         user_id,
