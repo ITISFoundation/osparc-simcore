@@ -122,12 +122,10 @@ async def test_new_project_with_parent_project_node(
     primary_group: dict[str, str],
     user_project: ProjectDict,
     expected: ExpectedResponse,
-    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     request_create_project: Callable[..., Awaitable[ProjectDict]],
     aiopg_engine: aiopg.sa.Engine,
 ):
     """this is new way of setting parents by using request headers"""
-    catalog_subsystem_mock([user_project])
     parent_project = await request_create_project(
         client,
         expected.accepted,
@@ -199,13 +197,11 @@ async def test_new_project_with_invalid_parent_project_node(
     primary_group: dict[str, str],
     user_project: ProjectDict,
     expected: ExpectedResponse,
-    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     request_create_project: Callable[..., Awaitable[ProjectDict]],
     aiopg_engine: aiopg.sa.Engine,
     faker: Faker,
 ):
     """this is new way of setting parents by using request headers"""
-    catalog_subsystem_mock([user_project])
     parent_project = await request_create_project(
         client,
         expected.accepted,

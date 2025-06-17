@@ -2,7 +2,7 @@ import jsondiff  # type: ignore[import-untyped]
 from aiohttp import web
 from simcore_postgres_database.models.users import UserRole
 
-from ..security.api import get_access_model
+from ..security import security_service
 from ._projects_repository_legacy import ProjectDBAPI
 from .api import check_user_project_permission
 
@@ -52,7 +52,7 @@ def setup_projects_access(app: web.Application):
     """
     security - access : Inject permissions to rest API resources
     """
-    hrba = get_access_model(app)
+    hrba = security_service.get_access_model(app)
 
     hrba.roles[UserRole.GUEST].check[
         "project.workbench.node.inputs.update"

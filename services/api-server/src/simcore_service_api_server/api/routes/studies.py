@@ -1,9 +1,10 @@
 import logging
 from typing import Annotated, Final
 
-from fastapi import APIRouter, Depends, Header, status
+from fastapi import APIRouter, Body, Depends, Header, Query, status
 from fastapi_pagination.api import create_page
-from models_library.api_schemas_webserver.projects import ProjectGet
+from models_library.api_schemas_webserver.projects import ProjectGet, ProjectPatch
+from models_library.basic_types import LongTruncatedStr, ShortTruncatedStr
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 
@@ -94,13 +95,24 @@ async def clone_study(
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     x_simcore_parent_project_uuid: Annotated[ProjectID | None, Header()] = None,
     x_simcore_parent_node_id: Annotated[NodeID | None, Header()] = None,
+    hidden: Annotated[bool, Query()] = False,
+    title: Annotated[ShortTruncatedStr | None, Body(empty=True)] = None,
+    description: Annotated[LongTruncatedStr | None, Body(empty=True)] = None,
 ):
     project: ProjectGet = await webserver_api.clone_project(
         project_id=study_id,
-        hidden=False,
+        hidden=hidden,
         parent_project_uuid=x_simcore_parent_project_uuid,
         parent_node_id=x_simcore_parent_node_id,
     )
+    if title or description:
+        patch_params = ProjectPatch(
+            name=title,
+            description=description,
+        )
+        await webserver_api.patch_project(
+            project_id=study_id, patch_params=patch_params
+        )
     return _create_study_from_project(project)
 
 

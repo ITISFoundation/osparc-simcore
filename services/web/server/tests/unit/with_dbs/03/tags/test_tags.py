@@ -4,7 +4,7 @@
 # pylint: disable=too-many-arguments
 
 
-from collections.abc import AsyncIterator, Callable, Iterator
+from collections.abc import AsyncIterator, Iterator
 from typing import Any
 
 import pytest
@@ -52,9 +52,7 @@ async def test_tags_to_studies(
     client: TestClient,
     faker: Faker,
     user_project: ProjectDict,
-    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
 ):
-    catalog_subsystem_mock([user_project])
     assert client.app
 
     # Add test tags

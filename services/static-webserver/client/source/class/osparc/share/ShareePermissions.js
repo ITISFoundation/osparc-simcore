@@ -5,6 +5,12 @@
  * Authors: Odei Maiz (odeimaiz)
  */
 
+/**
+ * Data structure for showing sharee permissions. Array of objects with the following keys
+ * - accessible: boolean
+ * - gid: string // sharee group id
+ * - inaccessible_services: Array of objects with keys "key" and "version"
+ */
 qx.Class.define("osparc.share.ShareePermissions", {
   extend: qx.ui.core.Widget,
 
@@ -14,6 +20,37 @@ qx.Class.define("osparc.share.ShareePermissions", {
     this._setLayout(new qx.ui.layout.VBox(25));
 
     this.__populateLayout(shareesData);
+  },
+
+  statics: {
+    checkShareePermissions: function(studyId, gids) {
+      const promises = [];
+      gids.forEach(gid => {
+        const params = {
+          url: {
+            studyId,
+            gid,
+          }
+        };
+        promises.push(osparc.data.Resources.fetch("studies", "checkShareePermissions", params));
+      });
+      Promise.all(promises)
+        .then(shareesData => {
+          const inaccessibleShareesData = shareesData.filter(value => value["accessible"] === false);
+          if (inaccessibleShareesData.length) {
+            const shareePermissions = new osparc.share.ShareePermissions(inaccessibleShareesData);
+            const caption = qx.locale.Manager.tr("Sharee permissions");
+            const win = osparc.ui.window.Window.popUpInWindow(shareePermissions, caption, 500, 500, "@FontAwesome5Solid/exclamation-triangle/14").set({
+              clickAwayClose: false,
+              resizable: true,
+              showClose: true
+            });
+            win.getChildControl("icon").set({
+              textColor: "warning-yellow"
+            });
+          }
+        });
+    },
   },
 
   members: {
@@ -33,7 +70,7 @@ qx.Class.define("osparc.share.ShareePermissions", {
       this._add(layout);
       for (let i=0; i<shareesData.length; i++) {
         const shareeData = shareesData[i];
-        const group = osparc.store.Groups.getInstance().getGroup(shareeData.gid);
+        const group = osparc.store.Groups.getInstance().getGroup(shareeData["gid"]);
         if (group) {
           layout.add(new qx.ui.basic.Label(group.getLabel()), {
             row: i,
@@ -47,7 +84,9 @@ qx.Class.define("osparc.share.ShareePermissions", {
             });
             const infoButton = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/14");
             infoButton.setAppearance("strong-button");
-            const label = new qx.ui.basic.Label();
+            const label = new qx.ui.basic.Label().set({
+              alignY: "middle",
+            });
             hBox.add(infoButton);
             hBox.add(label);
             osparc.store.Services.getService(inaccessibleService.key, inaccessibleService.version)

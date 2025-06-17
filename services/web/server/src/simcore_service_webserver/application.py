@@ -7,7 +7,6 @@ from typing import Any
 
 from aiohttp import web
 from servicelib.aiohttp.application import create_safe_application
-from simcore_service_webserver.tasks.plugin import setup_tasks
 
 from ._meta import WELCOME_DB_LISTENER_MSG, WELCOME_GC_MSG, WELCOME_MSG, info
 from .activity.plugin import setup_activity
@@ -49,6 +48,7 @@ from .statics.plugin import setup_statics
 from .storage.plugin import setup_storage
 from .studies_dispatcher.plugin import setup_studies_dispatcher
 from .tags.plugin import setup_tags
+from .tasks.plugin import setup_tasks
 from .tracing import setup_app_tracing
 from .trash.plugin import setup_trash
 from .users.plugin import setup_users

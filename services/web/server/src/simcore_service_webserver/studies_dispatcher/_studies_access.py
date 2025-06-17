@@ -39,7 +39,7 @@ from ..projects.exceptions import (
     ProjectNotFoundError,
 )
 from ..projects.models import ProjectDict
-from ..security.api import is_anonymous, remember_identity
+from ..security import security_web
 from ..storage.api import copy_data_folders_from_project
 from ..utils import compose_support_error_msg
 from ..utils_aiohttp import create_redirect_to_page_response, get_api_base_url
@@ -300,7 +300,7 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
 
     # Checks USER
     user = None
-    is_anonymous_user = await is_anonymous(request)
+    is_anonymous_user = await security_web.is_anonymous(request)
     if not is_anonymous_user:
         # NOTE: covers valid cookie with unauthorized user (e.g. expired guest/banned)
         user = await get_authorized_user(request)
@@ -405,7 +405,7 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
     if is_anonymous_user:
         _logger.debug("Auto login for anonymous user %s", user["name"])
 
-        await remember_identity(
+        await security_web.remember_identity(
             request,
             response,
             user_email=user["email"],

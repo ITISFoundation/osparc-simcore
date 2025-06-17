@@ -3,8 +3,9 @@
 import logging
 import urllib.parse
 from dataclasses import dataclass
+from datetime import timedelta
 from functools import partial
-from typing import Any, Self
+from typing import Any, Final, Self
 from uuid import UUID
 
 import httpx
@@ -93,6 +94,8 @@ from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 _logger = logging.getLogger(__name__)
 
 _exception_mapper = partial(service_exception_mapper, service_name="Webserver")
+
+_POLL_TIMEOUT: Final[timedelta] = timedelta(minutes=10)
 
 _JOB_STATUS_MAP = {
     status.HTTP_402_PAYMENT_REQUIRED: PaymentRequiredError,
@@ -251,7 +254,7 @@ class AuthSession:
         # GET task status now until done
         async for attempt in AsyncRetrying(
             wait=wait_fixed(0.5),
-            stop=stop_after_delay(60),
+            stop=stop_after_delay(_POLL_TIMEOUT),
             reraise=True,
             retry=retry_if_exception_type(TryAgain),
             before_sleep=before_sleep_log(_logger, logging.INFO),

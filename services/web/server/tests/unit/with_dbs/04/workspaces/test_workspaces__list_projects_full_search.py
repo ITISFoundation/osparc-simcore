@@ -11,7 +11,6 @@ from http import HTTPStatus
 
 import pytest
 from aiohttp.test_utils import TestClient
-from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_projects import create_project
@@ -30,7 +29,6 @@ async def test_workspaces__list_projects_full_search(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     expected: HTTPStatus,
-    mock_catalog_api_get_services_for_user_in_product: MockerFixture,
     fake_project: ProjectDict,
     workspaces_clean_db: None,
 ):
@@ -150,7 +148,6 @@ async def test__list_projects_full_search_with_query_parameters(
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
-    mock_catalog_api_get_services_for_user_in_product: MockerFixture,
     fake_project: ProjectDict,
     workspaces_clean_db: None,
 ):

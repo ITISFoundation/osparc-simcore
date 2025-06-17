@@ -390,7 +390,6 @@ async def test_dispatch_study_anonymously(
     redirect_type: str,
     mocker: MockerFixture,
     storage_subsystem_mock,
-    catalog_subsystem_mock: None,
     mocks_on_projects_api,
 ):
     assert client.app
@@ -456,7 +455,6 @@ async def test_dispatch_logged_in_user(
     mocker: MockerFixture,
     mock_dynamic_scheduler: None,
     storage_subsystem_mock,
-    catalog_subsystem_mock: None,
     mocks_on_projects_api: None,
 ):
     assert client.app

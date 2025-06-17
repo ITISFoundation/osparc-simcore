@@ -277,7 +277,6 @@ async def test_share_project(
     expected: ExpectedResponse,
     storage_subsystem_mock,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
-    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     share_rights: dict,
     project_db_cleaner,
     request_create_project: Callable[..., Awaitable[ProjectDict]],

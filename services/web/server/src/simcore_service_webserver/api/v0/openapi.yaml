@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.68.1
+  version: 0.69.0
 servers:
 - url: ''
   description: webserver
@@ -1352,6 +1352,19 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_MyPermissionGet__'
+  /v0/me/function-permissions:
+    get:
+      tags:
+      - users
+      summary: List User Functions Permissions
+      operationId: list_user_functions_permissions
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_MyFunctionPermissionsGet_'
   /v0/users:search:
     post:
       tags:
@@ -10213,6 +10226,19 @@ components:
           title: Error
       type: object
       title: Envelope[LoginNextPage]
+    Envelope_MyFunctionPermissionsGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/MyFunctionPermissionsGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[MyFunctionPermissionsGet]
     Envelope_MyGroupsGet_:
       properties:
         data:
@@ -12642,6 +12668,15 @@ components:
       required:
       - color
       title: MarkerUI
+    MyFunctionPermissionsGet:
+      properties:
+        writeFunctions:
+          type: boolean
+          title: Writefunctions
+      type: object
+      required:
+      - writeFunctions
+      title: MyFunctionPermissionsGet
     MyGroupsGet:
       properties:
         me:

@@ -27,7 +27,8 @@ async function runTutorial () {
     const workbenchData = utils.extractWorkbenchData(studyData["data"]);
     console.log("Workbench Data:", workbenchData);
     const BIOSIdViewer = workbenchData["nodeIds"][0];
-    await tutorial.waitForServices(workbenchData["studyId"],
+    await tutorial.waitForServices(
+      workbenchData["studyId"],
       [BIOSIdViewer],
       startTimeout,
       false

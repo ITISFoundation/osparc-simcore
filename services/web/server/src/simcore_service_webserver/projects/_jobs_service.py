@@ -6,10 +6,10 @@ from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from pydantic import AfterValidator, validate_call
-from simcore_service_webserver.projects.models import ProjectJobDBGet
 
 from ._access_rights_service import check_user_project_permission
 from ._jobs_repository import ProjectJobsRepository
+from .models import ProjectJobDBGet
 
 _logger = logging.getLogger(__name__)
 

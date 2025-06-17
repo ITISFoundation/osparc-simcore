@@ -97,7 +97,7 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
         setup_prometheus_instrumentation(app)
 
     if settings.API_SERVER_TRACING:
-        initialize_fastapi_app_tracing(app)
+        initialize_fastapi_app_tracing(app, add_response_trace_id_header=True)
 
     if settings.API_SERVER_WEBSERVER:
         webserver.setup(

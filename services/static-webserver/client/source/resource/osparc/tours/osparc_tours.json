@@ -1,8 +1,8 @@
 {
-  "studies": {
-    "id": "studies",
-    "name": "Studies",
-    "description": "All you need to know about Study handling",
+  "projects": {
+    "id": "projects",
+    "name": "Projects",
+    "description": "All you need to know about Project handling",
     "context": "osparc-test-id=newPlusBtn",
     "steps": [{
       "beforeClick": {
@@ -10,13 +10,13 @@
         "action": "open"
       },
       "anchorEl": "osparc-test-id=newPlusMenu",
-      "title": "Create Studies",
-      "text": "Clicking on the (+) New button, allows you to create new Studies or new Folders to organize the studies",
+      "title": "Create Projects",
+      "text": "Clicking on the (+) New button, allows you to create new Projects, start your favourite Apps or create new Folders to organize the projects",
       "placement": "right"
     }, {
       "anchorEl": "osparc-test-id=searchBarFilter-textField-study",
       "title": "Filter and Search",
-      "text": "This tool allows you to search Studies, Tutorials and Services.<br>You can search and filter by:<br>- Title, description, owner, id...<br>- Tags<br>- Shared with",
+      "text": "This tool allows you to search Projects, Templates or Public Projects.<br>You can search and filter by:<br>- Title, description, owner, id...<br>- Tags<br>- Shared with",
       "placement": "bottom"
     }, {
       "beforeClick": {
@@ -25,13 +25,29 @@
       },
       "anchorEl": "osparc-test-id=studyItemMenuMenu",
       "title": "More options button",
-      "text": "On the Study card, you can use the three dots button to access more information and operation on the Study.",
+      "text": "On the Project card, you can use the three dots button to access more information and operation on the Project.",
       "placement": "left"
     }, {
       "anchorEl": "osparc-test-id=updateStudyBtn",
       "title": "Update Services",
-      "text": "On the Study card, you can use the Update button to update the corresponding service to the latest version.",
+      "text": "On the Project card, you can use the Update button to update the corresponding service to the latest version.",
       "placement": "bottom"
+    }, {
+      "beforeClick": {
+        "selector": "osparc-test-id=templatesFilterItem"
+      },
+      "anchorEl": "osparc-test-id=templatesFilterItem",
+      "title": "Templates",
+      "text": "Templates let you freeze a project and reuse it anytime. When you create a template, it saves a snapshot of your project. Later, you can click on it to start a fresh, independent copy.<br>Templates shared with you by others will also appear here, so you can build on their work too.",
+      "placement": "right"
+    }, {
+      "beforeClick": {
+        "selector": "osparc-test-id=publicProjectsFilterItem"
+      },
+      "anchorEl": "osparc-test-id=publicProjectsFilterItem",
+      "title": "Public Projects",
+      "text": "Just like templates, Public Projects are frozen snapshots—but they’re shared with the entire scientific community. Anyone can browse them and create their own copy and build upon.",
+      "placement": "right"
     }]
   },
   "dashboard": {
@@ -42,35 +58,35 @@
     "steps": [{
       "anchorEl": "osparc-test-id=dashboardTabs",
       "title": "Dashboard Menu",
-      "text": "The menu tabs give you quick access to a set of core elements of the platform, namely Studies, Templates, Services and Data.",
+      "text": "The menu tabs give you quick access to a set of core elements of the platform, namely Projects, Tutorials, Apps and Data.",
       "placement": "bottom"
     }, {
       "beforeClick": {
         "selector": "osparc-test-id=studiesTabBtn"
       },
       "anchorEl": "osparc-test-id=studiesTabBtn",
-      "text": "Any Study is accessible via the Dashboard. The Studies, which belong to or are shared with you, can be found here. You can also create Folders to help you organize the Studies",
+      "text": "Any Project is accessible via the Dashboard. The Projects, which belong to or are shared with you, can be found here. You can also create Folders to help you organize the Projects. Also, the Templates you have access to and Public Projects can be found in their own sections.",
       "placement": "bottom"
     }, {
       "beforeClick": {
         "selector": "osparc-test-id=tutorialsTabBtn"
       },
       "anchorEl": "osparc-test-id=tutorialsTabBtn",
-      "text": "Clicking on a Template will create a copy of that Study, which will appear in your own Studies tab with the same name as the Template. Any changes you make to this copy will not affect the original Template.",
+      "text": "Clicking on a Tutorial will create a copy of that Project, which will appear in your own Projects tab with the same name as the Tutorial. Any changes you make to this copy will not affect the original Tutorial.",
       "placement": "bottom"
     }, {
       "beforeClick": {
         "selector": "osparc-test-id=appsTabBtn"
       },
       "anchorEl": "osparc-test-id=appsTabBtn",
-      "text": "Every Study in oSparc is composed of so-called Services.<br>These are building blocks for Studies and can provide data/files, visualize results (2D, 3D), implement code in Jupyter notebooks or perform computations to execute simulations within a Study.",
+      "text": "Every Project in oSparc is composed of so-called Apps.<br>These are building blocks for Projects and can provide data/files, visualize results (2D, 3D), implement code in Jupyter notebooks or perform computations to execute simulations within a Project.",
       "placement": "bottom"
     }, {
       "beforeClick": {
         "selector": "osparc-test-id=dataTabBtn"
       },
       "anchorEl": "osparc-test-id=dataTabBtn",
-      "text": "All the Data of the Studies you have access to can bre explored here.",
+      "text": "All the Data of the Projects you have access to can be explored here.",
       "placement": "bottom"
     }]
   },
@@ -80,13 +96,18 @@
     "description": "Introduction to the Navigation Bar",
     "context": "osparc-test-id=navigationBar",
     "steps": [{
+      "anchorEl": "osparc-test-id=jobsButton",
+      "title": "Activity Center",
+      "text": "Here you can track all your running jobs, recent activity, and completed tasks. If you want to check the results once these are ready, you will find more details in the Activity Overview on the Project card.",
+      "placement": "bottom"
+    }, {
       "beforeClick": {
         "selector": "osparc-test-id=notificationsButton",
         "event": "tap"
       },
       "anchorEl": "osparc-test-id=notificationsContainer",
-      "text": "By clicking on the Bell, you will you see notifications about which Studies, Templates and Organizations have been shared with you.",
-      "placement": "bottom"
+      "text": "By clicking on the Bell, you will see notifications about which Projects, Templates and Organizations have been shared with you.",
+      "placement": "left"
     }, {
       "beforeClick": {
         "selector": "osparc-test-id=helpNavigationBtn",

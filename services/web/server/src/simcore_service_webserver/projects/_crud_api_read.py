@@ -22,7 +22,6 @@ from simcore_postgres_database.webserver_models import (
 )
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
-from ..catalog import catalog_service
 from ..folders import _folders_repository
 from ..workspaces.api import check_user_workspace_access
 from . import _projects_service
@@ -120,10 +119,6 @@ async def list_projects(  # pylint: disable=too-many-arguments
 ) -> tuple[list[ProjectDict], int]:
     db = ProjectDBAPI.get_from_app_context(app)
 
-    user_available_services = await catalog_service.get_services_for_user_in_product(
-        app, user_id=user_id, product_name=product_name
-    )
-
     workspace_is_private = True
     if workspace_id:
         await check_user_workspace_access(
@@ -165,7 +160,6 @@ async def list_projects(  # pylint: disable=too-many-arguments
         filter_by_template_type=(
             ProjectTemplateTypeDB(template_type) if template_type else None
         ),
-        filter_by_services=user_available_services,
         filter_trashed=trashed,
         filter_hidden=show_hidden,
         # composed attrs
@@ -202,17 +196,12 @@ async def list_projects_full_depth(
 ) -> tuple[list[ProjectDict], int]:
     db = ProjectDBAPI.get_from_app_context(app)
 
-    user_available_services = await catalog_service.get_services_for_user_in_product(
-        app, user_id=user_id, product_name=product_name
-    )
-
     db_projects, db_project_types, total_number_projects = await db.list_projects_dicts(
         product_name=product_name,
         user_id=user_id,
         workspace_query=WorkspaceQuery(workspace_scope=WorkspaceScope.ALL),
         folder_query=FolderQuery(folder_scope=FolderScope.ALL),
         filter_trashed=trashed,
-        filter_by_services=user_available_services,
         filter_by_project_type=ProjectType.STANDARD,
         search_by_multi_columns=search_by_multi_columns,
         search_by_project_name=search_by_project_name,

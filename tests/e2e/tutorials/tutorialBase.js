@@ -337,6 +337,7 @@ class TutorialBase {
     return appModeButtonIds;
   }
 
+  // the waitForConnected only works for old dynamic services
   async waitForServices(studyId, nodeIds, timeout = 40000, waitForConnected = true) {
     console.log("waitForServices timeout:", timeout);
     if (nodeIds.length < 1) {

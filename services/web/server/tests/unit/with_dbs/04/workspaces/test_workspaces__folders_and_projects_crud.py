@@ -28,7 +28,6 @@ async def test_workspaces_full_workflow_with_folders_and_projects(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     expected: HTTPStatus,
-    mock_catalog_api_get_services_for_user_in_product: MockerFixture,
     fake_project: ProjectDict,
     workspaces_clean_db: None,
 ):
@@ -257,7 +256,6 @@ async def test_workspaces_delete_folders(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     expected: HTTPStatus,
-    mock_catalog_api_get_services_for_user_in_product: MockerFixture,
     fake_project: ProjectDict,
     workspaces_clean_db: None,
     mock_storage_delete_data_folders: mock.Mock,
@@ -367,7 +365,6 @@ async def test_listing_folders_and_projects_in_workspace__multiple_workspaces_cr
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     expected: HTTPStatus,
-    mock_catalog_api_get_services_for_user_in_product: MockerFixture,
     fake_project: ProjectDict,
     workspaces_clean_db: None,
 ):

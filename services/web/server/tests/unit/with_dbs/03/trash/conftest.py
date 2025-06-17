@@ -7,7 +7,7 @@
 
 
 import logging
-from collections.abc import AsyncIterable, Callable
+from collections.abc import AsyncIterable
 from pathlib import Path
 
 import pytest
@@ -72,19 +72,15 @@ async def other_user_project(
 @pytest.fixture
 def mocked_catalog(
     user_project: ProjectDict,
-    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
-):
-    catalog_subsystem_mock([user_project])
+): ...
 
 
 @pytest.fixture
-def mocked_director_v2(director_v2_service_mock: aioresponses):
-    ...
+def mocked_director_v2(director_v2_service_mock: aioresponses): ...
 
 
 @pytest.fixture
-def mocked_storage(storage_subsystem_mock: MockedStorageSubsystem):
-    ...
+def mocked_storage(storage_subsystem_mock: MockedStorageSubsystem): ...
 
 
 @pytest.fixture

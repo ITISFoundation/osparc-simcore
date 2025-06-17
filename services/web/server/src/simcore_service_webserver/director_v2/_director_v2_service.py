@@ -21,7 +21,6 @@ from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraProperties,
     GroupExtraPropertiesRepo,
 )
-from simcore_service_webserver.director_v2._client import DirectorV2RestClient
 
 from ..application_settings import get_application_settings
 from ..db.plugin import get_database_engine
@@ -31,6 +30,7 @@ from ..projects import projects_wallets_service
 from ..users import preferences_api as user_preferences_service
 from ..users.exceptions import UserDefaultWalletNotFoundError
 from ..wallets import api as wallets_service
+from ._client import DirectorV2RestClient
 from ._client_base import DataType, request_director_v2
 from .exceptions import ComputationNotFoundError, DirectorV2ServiceError
 from .settings import DirectorV2Settings, get_plugin_settings

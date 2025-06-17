@@ -295,17 +295,24 @@ async def _process_stop_event(
             msg.created_at,
             running_service.pricing_unit_cost,
         )
-
-        wallet_total_credits = await credit_transactions_db.sum_wallet_credits(
-            db_engine,
-            product_name=running_service.product_name,
-            wallet_id=running_service.wallet_id,
+        wallet_total_credits_without_pending_transactions = (
+            # NOTE: Include_pending_transactions=False will ensure that we do not count the current running transactions.
+            # This is important because we are closing the transaction now and we do not want to count it again.
+            await credit_transactions_db.sum_wallet_credits(
+                db_engine,
+                product_name=running_service.product_name,
+                wallet_id=running_service.wallet_id,
+                include_pending_transactions=False,
+            )
         )
         _transaction_status = (
             CreditTransactionStatus.BILLED
-            if wallet_total_credits.available_osparc_credits - computed_credits >= 0
+            if wallet_total_credits_without_pending_transactions.available_osparc_credits
+            - computed_credits
+            >= 0
             else CreditTransactionStatus.IN_DEBT
         )
+
         # Adjust the status if the platform status is not OK
         if msg.simcore_platform_status != SimcorePlatformStatus.OK:
             _transaction_status = CreditTransactionStatus.NOT_BILLED

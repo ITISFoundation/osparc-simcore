@@ -6,7 +6,7 @@ from typing import Any
 from aiohttp import web
 from servicelib.logging_utils import get_log_record_extra, log_context
 
-from ..security import api as security_service
+from ..security import security_web
 from ._constants import MSG_LOGGED_IN
 from ._login_service import flash_response
 
@@ -36,7 +36,7 @@ async def login_granted_response(
         extra=get_log_record_extra(user_id=user_id),
     ):
         response = flash_response(MSG_LOGGED_IN, "INFO")
-        return await security_service.remember_identity(
+        return await security_web.remember_identity(
             request=request,
             response=response,
             user_email=email,

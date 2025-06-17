@@ -269,22 +269,12 @@ async def test_project_folder_movement_full_workflow(
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
 
-@pytest.fixture
-def mock_catalog_api_get_services_for_user_in_product(mocker: MockerFixture):
-    mocker.patch(
-        "simcore_service_webserver.projects._crud_api_read.catalog_service.get_services_for_user_in_product",
-        spec=True,
-        return_value=[],
-    )
-
-
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
 async def test_project_listing_inside_of_private_folder(
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     expected: HTTPStatus,
-    mock_catalog_api_get_services_for_user_in_product: MockerFixture,
 ):
     assert client.app
 
@@ -404,7 +394,6 @@ async def test_folders_deletion(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     expected: HTTPStatus,
-    mock_catalog_api_get_services_for_user_in_product: MockerFixture,
     mock_storage_delete_data_folders: mock.Mock,
 ):
     assert client.app

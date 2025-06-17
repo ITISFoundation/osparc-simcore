@@ -355,7 +355,9 @@ qx.Class.define("osparc.study.Utils", {
     },
 
     __getBlockedState: function(studyData) {
-      if (studyData["services"]) {
+      if (studyData["services"] === null) {
+        return "UNKNOWN_SERVICES";
+      } else if (studyData["services"]) {
         const cantReadServices = osparc.study.Utils.getCantReadServices(studyData["services"]);
         const inaccessibleServices = osparc.store.Services.getInaccessibleServices(studyData["workbench"]);
         if (cantReadServices.length || inaccessibleServices.length) {
@@ -440,8 +442,7 @@ qx.Class.define("osparc.study.Utils", {
         if (studyData["ui"]["mode"] === "pipeline") {
           resolve(osparc.data.model.StudyUI.PIPELINE_ICON);
         } else {
-          const defaultIcon = osparc.dashboard.CardBase.PRODUCT_ICON;
-          // the was to guess the TI type is to check the boot mode of the ti-postpro in the pipeline
+          const productIcon = osparc.dashboard.CardBase.PRODUCT_ICON;
           const wbServices = this.self().getNonFrontendNodes(studyData);
           if (wbServices.length === 1) {
             const wbService = wbServices[0];
@@ -450,8 +451,9 @@ qx.Class.define("osparc.study.Utils", {
                 if (serviceMetadata && serviceMetadata["icon"]) {
                   resolve(serviceMetadata["icon"]);
                 }
-                resolve(defaultIcon);
-              });
+                resolve(productIcon);
+              })
+              .catch(() => resolve(productIcon));
           } else {
             resolve(osparc.data.model.StudyUI.PIPELINE_ICON);
           }

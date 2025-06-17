@@ -236,6 +236,9 @@ qx.Class.define("osparc.workbench.NodeUI", {
       } else if (node.isProbe()) {
         this.setType("probe");
       }
+      this.addListener("resize", () => {
+        setTimeout(() => this.fireEvent("updateNodeDecorator"), 50);
+      });
     },
 
     __applyNode: function(node) {

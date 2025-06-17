@@ -1,4 +1,4 @@
-from typing import Any, Final, TypedDict
+from typing import Any, Final, TypedDict, TypeVar
 
 from aiohttp import web
 from aiohttp.web_exceptions import HTTPError
@@ -10,7 +10,7 @@ from ..aiohttp.status import HTTP_200_OK
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 from ..rest_constants import RESPONSE_MODEL_POLICY
 from ..rest_responses import is_enveloped
-from ..status_codes_utils import get_code_description, is_error
+from ..status_codes_utils import get_code_description, get_code_display_name, is_error
 
 
 class EnvelopeDict(TypedDict):
@@ -69,32 +69,38 @@ def safe_status_message(
     return flat_message[: max_length - 3] + "..."
 
 
+T_HTTPError = TypeVar("T_HTTPError", bound=HTTPError)
+
+
 def create_http_error(
     errors: list[Exception] | Exception,
     error_message: str | None = None,
-    http_error_cls: type[HTTPError] = web.HTTPInternalServerError,
+    http_error_cls: type[
+        T_HTTPError
+    ] = web.HTTPInternalServerError,  # type: ignore[assignment]
     *,
     status_reason: str | None = None,
     skip_internal_error_details: bool = False,
     error_code: ErrorCodeStr | None = None,
-) -> HTTPError:
+) -> T_HTTPError:
     """
     - Response body conforms OAS schema model
     - Can skip internal details when 500 status e.g. to avoid transmitting server
     exceptions to the client in production
     """
-    if not isinstance(errors, list):
-        errors = [errors]
 
-    is_internal_error = bool(http_error_cls == web.HTTPInternalServerError)
-
-    status_reason = status_reason or get_code_description(http_error_cls.status_code)
+    status_reason = status_reason or get_code_display_name(http_error_cls.status_code)
     error_message = error_message or get_code_description(http_error_cls.status_code)
 
     assert len(status_reason) < MAX_STATUS_MESSAGE_LENGTH  # nosec
 
+    # WARNING: do not refactor too much this function withouth considering how
+    # front-end handle errors. i.e. please sync with front-end developers before
+    # changing the workflows in this function
+
+    is_internal_error = bool(http_error_cls == web.HTTPInternalServerError)
     if is_internal_error and skip_internal_error_details:
-        error = ErrorGet.model_validate(
+        error_model = ErrorGet.model_validate(
             {
                 "status": http_error_cls.status_code,
                 "message": error_message,
@@ -102,8 +108,11 @@ def create_http_error(
             }
         )
     else:
+        if not isinstance(errors, list):
+            errors = [errors]
+
         items = [ErrorItemType.from_error(err) for err in errors]
-        error = ErrorGet.model_validate(
+        error_model = ErrorGet.model_validate(
             {
                 "errors": items,  # NOTE: deprecated!
                 "status": http_error_cls.status_code,
@@ -113,15 +122,14 @@ def create_http_error(
         )
 
     assert not http_error_cls.empty_body  # nosec
+
     payload = wrap_as_envelope(
-        error=error.model_dump(mode="json", **RESPONSE_MODEL_POLICY)
+        error=error_model.model_dump(mode="json", **RESPONSE_MODEL_POLICY)
     )
 
     return http_error_cls(
         reason=safe_status_message(status_reason),
-        text=json_dumps(
-            payload,
-        ),
+        text=json_dumps(payload),
         content_type=MIMETYPE_APPLICATION_JSON,
     )
 

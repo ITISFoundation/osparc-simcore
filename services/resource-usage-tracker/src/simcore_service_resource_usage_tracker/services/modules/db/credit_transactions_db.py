@@ -187,27 +187,31 @@ async def sum_wallet_credits(
     *,
     product_name: ProductName,
     wallet_id: WalletID,
+    include_pending_transactions: bool = True,
 ) -> WalletTotalCredits:
     async with transaction_context(engine, connection) as conn:
+        statuses = [
+            CreditTransactionStatus.BILLED,
+            CreditTransactionStatus.IN_DEBT,
+        ]
+        if include_pending_transactions:
+            statuses.append(CreditTransactionStatus.PENDING)
         sum_stmt = sa.select(
             sa.func.sum(resource_tracker_credit_transactions.c.osparc_credits)
         ).where(
             (resource_tracker_credit_transactions.c.product_name == product_name)
             & (resource_tracker_credit_transactions.c.wallet_id == wallet_id)
-            & (
-                resource_tracker_credit_transactions.c.transaction_status.in_(
-                    [
-                        CreditTransactionStatus.BILLED,
-                        CreditTransactionStatus.PENDING,
-                        CreditTransactionStatus.IN_DEBT,
-                    ]
-                )
-            )
+            & (resource_tracker_credit_transactions.c.transaction_status.in_(statuses))
         )
 
         result = await conn.execute(sum_stmt)
     row = result.first()
     if row is None or row[0] is None:
+        _logger.warning(
+            "No credits found for wallet %s with product %s",
+            wallet_id,
+            product_name,
+        )
         return WalletTotalCredits(
             wallet_id=wallet_id, available_osparc_credits=Decimal(0)
         )

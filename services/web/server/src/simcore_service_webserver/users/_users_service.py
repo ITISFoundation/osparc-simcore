@@ -18,7 +18,7 @@ from simcore_postgres_database.utils_groups_extra_properties import (
 )
 
 from ..db.plugin import get_asyncpg_engine
-from ..security.api import clean_auth_policy_cache
+from ..security import security_service
 from . import _preferences_service, _users_repository
 from ._common.models import (
     FullNameDict,
@@ -278,7 +278,7 @@ async def delete_user_without_projects(app: web.Application, user_id: UserID) ->
 
     # This user might be cached in the auth. If so, any request
     # with this user-id will get thru producing unexpected side-effects
-    await clean_auth_policy_cache(app)
+    await security_service.clean_auth_policy_cache(app)
 
 
 async def set_user_as_deleted(app: web.Application, *, user_id: UserID) -> None:

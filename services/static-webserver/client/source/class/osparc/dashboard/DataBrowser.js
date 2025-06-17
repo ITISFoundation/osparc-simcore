@@ -43,7 +43,9 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
       let control;
       switch (id) {
         case "tree-folder-view":
-          control = new osparc.file.TreeFolderView();
+          control = new osparc.file.TreeFolderView().set({
+            paddingBottom: 15,
+          });
           this._addToLayout(control, {
             flex: 1
           });

@@ -19,7 +19,6 @@ from models_library.folders import FolderID
 from models_library.projects import ProjectID, ProjectTemplateType
 from models_library.users import UserID
 from pydantic import BaseModel, PositiveInt
-from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_parametrizations import (
@@ -50,15 +49,6 @@ def standard_and_tester_user_roles() -> tuple[str, tuple[UserRole, ExpectedRespo
             pytest.param(*all_roles[1][2], id="standard_user_role"),
             pytest.param(*all_roles[1][3], id="tester_user_role"),
         ],
-    )
-
-
-@pytest.fixture
-def mock_catalog_api_get_services_for_user_in_product(mocker: MockerFixture):
-    mocker.patch(
-        "simcore_service_webserver.projects._crud_api_read.catalog_service.get_services_for_user_in_product",
-        spec=True,
-        return_value=[],
     )
 
 
@@ -119,7 +109,6 @@ async def test_list_projects_with_search_parameter(
     tests_data_dir: Path,
     osparc_product_name: str,
     project_db_cleaner: None,
-    mock_catalog_api_get_services_for_user_in_product,
 ):
     projects_info = [
         _ProjectInfo(
@@ -309,7 +298,6 @@ async def test_list_projects_with_order_by_parameter(
     tests_data_dir: Path,
     osparc_product_name: str,
     project_db_cleaner: None,
-    mock_catalog_api_get_services_for_user_in_product: None,
 ):
     projects_info = [
         _ProjectInfo(
@@ -449,7 +437,6 @@ async def test_list_projects_for_specific_folder_id(
     tests_data_dir: Path,
     osparc_product_name: str,
     project_db_cleaner: None,
-    mock_catalog_api_get_services_for_user_in_product: None,
     setup_folders_db: FolderID,
 ):
     projects_info = [
@@ -532,7 +519,6 @@ async def test_list_and_patch_projects_with_template_type(
     tests_data_dir: Path,
     osparc_product_name: str,
     project_db_cleaner: None,
-    mock_catalog_api_get_services_for_user_in_product,
 ):
     projects_type = [
         "STANDARD",

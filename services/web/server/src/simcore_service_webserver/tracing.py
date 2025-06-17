@@ -25,8 +25,9 @@ def setup_app_tracing(app: web.Application):
     tracing_settings: TracingSettings = get_plugin_settings(app)
     app.cleanup_ctx.append(
         get_tracing_lifespan(
-            app,
+            app=app,
             tracing_settings=tracing_settings,
             service_name=APP_NAME,
+            add_response_trace_id_header=True,
         )
     )

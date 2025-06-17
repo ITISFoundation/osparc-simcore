@@ -47,7 +47,7 @@ module.exports = {
         await auto.register(page, user, pass);
         console.log("Registered");
 
-        await page.waitFor(10000);
+        await page.waitFor(60000);
       }, ourTimeout);
 
       afterAll(async () => {

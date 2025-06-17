@@ -133,7 +133,6 @@ async def test_list_projects_with_invalid_pagination_parameters(
     primary_group: dict[str, str],
     expected: ExpectedResponse,
     storage_subsystem_mock,
-    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     director_v2_service_mock: aioresponses,
     project_db_cleaner,
     limit: int,
@@ -158,7 +157,6 @@ async def test_list_projects_with_pagination(
     primary_group: dict[str, str],
     expected: ExpectedResponse,
     storage_subsystem_mock,
-    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     director_v2_service_mock: aioresponses,
     project_db_cleaner,
     limit: int,
@@ -175,7 +173,6 @@ async def test_list_projects_with_pagination(
         ]
     )
     if expected.created == status.HTTP_201_CREATED:
-        catalog_subsystem_mock(created_projects)
 
         assert len(created_projects) == NUM_PROJECTS
         NUMBER_OF_CALLS = ceil(NUM_PROJECTS / limit)
