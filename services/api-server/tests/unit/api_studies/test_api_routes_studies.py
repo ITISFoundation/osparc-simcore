@@ -191,7 +191,7 @@ async def test_clone_study(
         _headers[X_SIMCORE_PARENT_NODE_ID] = f"{parent_node_id}"
 
     resp = await client.post(
-        f"/{API_VTAG}/studies/{study_id}:clone", headers=_headers, auth=auth, json=body
+        f"/{API_VTAG}/studies/{study_id}:clone", headers=_headers, auth=auth
     )
 
     assert mocked_webserver_rest_api_base["create_projects"].called
