@@ -893,7 +893,7 @@ async def get_function_job_collection(
             async for job_row in await conn.stream(
                 function_job_collections_to_function_jobs_table.select().where(
                     function_job_collections_to_function_jobs_table.c.function_job_collection_uuid
-                    == row["uuid"]
+                    == row.uuid
                 )
             )
         ]
