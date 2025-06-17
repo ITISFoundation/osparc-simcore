@@ -128,14 +128,17 @@ def test_valid_application_settings(
     $ pytest --external-envfile=.secrets --pdb tests/unit/test_core_settings.py
 
     """
+
+    # Mock
     assert app_environment
     if external_envfile_dict:
         delenvs_from_dict(monkeypatch, app_environment, raising=False)
-        return setenvs_from_dict(
+        setenvs_from_dict(
             monkeypatch,
             {**external_envfile_dict},
         )
 
+    # Test
     settings = ApplicationSettings()  # type: ignore
     assert settings
 
