@@ -1,6 +1,12 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
+"""
+We can validate actual .env files (also refered as `repo.config` files) by passing them via the CLI
+
+$ ln -s /path/to/osparc-config/deployments/mydeploy.com/repo.config .secrets
+$ pytest --external-envfile=.secrets --pdb tests/unit/test_core_settings.py
+"""
 
 from typing import Any
 
@@ -27,7 +33,7 @@ def _get_backend_type_options() -> set[str]:
 
 def test_supported_backends_did_not_change() -> None:
     _EXPECTED = {"AWS", "CEPH", "MINIO"}
-    assert _EXPECTED == _get_backend_type_options(), (
+    assert _get_backend_type_options() == _EXPECTED, (
         "Backend configuration change, please code support for "
         "it in volumes_resolver -> _get_s3_volume_driver_config. "
         "When done, adjust above list."

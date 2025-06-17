@@ -1,6 +1,13 @@
 # pylint: disable=unused-variable
 # pylint: disable=unused-argument
 # pylint: disable=redefined-outer-name
+"""
+We validate actual envfiles (e.g. repo.config files) by passing them via the CLI
+
+$ ln -s /path/to/osparc-config/deployments/mydeploy.com/repo.config .secrets
+$ pytest --external-envfile=.secrets --pdb tests/unit/test_core_settings.py
+
+"""
 
 
 import pytest
@@ -18,12 +25,10 @@ def app_environment(
     app_environment: EnvVarsDict,
     external_envfile_dict: EnvVarsDict,
 ) -> EnvVarsDict:
-    """
-    NOTE: To run against repo.config in osparc-config repo
+    """OVERRIDES app_environment fixture:
 
-    ln -s /path/to/osparc-config/deployments/mydeploy.com/repo.config .secrets
-    pytest --external-envfile=.secrets tests/unit/test_core_settings.py
-
+    Enables using external envfiles (e.g. repo.config files) to run tests against
+    within this test module.
     """
     if external_envfile_dict:
         delenvs_from_dict(monkeypatch, app_environment, raising=False)
@@ -34,9 +39,11 @@ def app_environment(
     return app_environment
 
 
-def test_unit_app_environment(app_environment: EnvVarsDict):
+def test_valid_application_settings(app_environment: EnvVarsDict):
     assert app_environment
-    settings = ApplicationSettings.create_from_envs()
-    print("captured settings: \n", settings.model_dump_json(indent=2))
+
+    settings = ApplicationSettings()  # type: ignore
+    assert settings
+    assert settings == ApplicationSettings.create_from_envs()
 
     assert settings.PENNSIEVE

@@ -9,7 +9,11 @@ import random
 import pytest
 from aws_library.ec2 import EC2InstanceBootSpecific
 from pydantic import ValidationError
-from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.monkeypatch_envs import (
+    EnvVarsDict,
+    delenvs_from_dict,
+    setenvs_from_dict,
+)
 from simcore_service_clusters_keeper.core.settings import ApplicationSettings
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
@@ -110,3 +114,29 @@ def test_valid_primary_custom_tags(
         {"PRIMARY_EC2_INSTANCES_CUSTOM_TAGS": json.dumps(valid_tag)},
     )
     ApplicationSettings.create_from_envs()
+
+
+def test_valid_application_settings(
+    monkeypatch: pytest.MonkeyPatch,
+    external_envfile_dict: EnvVarsDict,
+    app_environment: EnvVarsDict,
+):
+    """
+    We validate actual envfiles (e.g. repo.config files) by passing them via the CLI
+
+    $ ln -s /path/to/osparc-config/deployments/mydeploy.com/repo.config .secrets
+    $ pytest --external-envfile=.secrets --pdb tests/unit/test_core_settings.py
+
+    """
+    assert app_environment
+    if external_envfile_dict:
+        delenvs_from_dict(monkeypatch, app_environment, raising=False)
+        return setenvs_from_dict(
+            monkeypatch,
+            {**external_envfile_dict},
+        )
+
+    settings = ApplicationSettings()  # type: ignore
+    assert settings
+
+    assert settings == ApplicationSettings.create_from_envs()
