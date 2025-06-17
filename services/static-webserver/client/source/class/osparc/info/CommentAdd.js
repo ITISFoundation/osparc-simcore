@@ -140,6 +140,7 @@ qx.Class.define("osparc.info.CommentAdd", {
         const data = e.getData();
         const userGids = data["selectedGids"];
         if (userGids && userGids.length) {
+          // OM: suggest sharing the study first if the user is not a collaborator
           const userGid = parseInt(userGids[0]);
           if (this.__conversationId) {
             this.__postNotify(userGid);
@@ -185,6 +186,7 @@ qx.Class.define("osparc.info.CommentAdd", {
         osparc.study.Conversations.notifyUser(this.__studyData["uuid"], this.__conversationId, userGroupId)
           .then(data => {
             this.fireDataEvent("commentAdded", data);
+            // OM: add redis notification
           });
       }
     },
