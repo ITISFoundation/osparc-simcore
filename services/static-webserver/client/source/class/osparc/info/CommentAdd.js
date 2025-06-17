@@ -86,7 +86,7 @@ qx.Class.define("osparc.info.CommentAdd", {
           });
           break;
         }
-        case "comment-field": {
+        case "comment-field":
           control = new osparc.editor.MarkdownEditor();
           control.getChildControl("buttons").exclude();
           const layout = this.getChildControl("add-comment-layout");
@@ -95,22 +95,26 @@ qx.Class.define("osparc.info.CommentAdd", {
             column: 1
           });
           break;
-        }
-        case "buttons-layout": {
+        case "buttons-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
             alignX: "right"
           }));
           this._add(control);
           break;
-        }
-        case "add-comment-button": {
+        case "notify-user-button":
+          control = new qx.ui.form.Button(this.tr("Notify user")).set({
+            appearance: "form-button",
+            allowGrowX: false,
+          });
+          this.getChildControl("buttons-layout").add(control);
+          break;
+        case "add-comment-button":
           control = new qx.ui.form.Button(this.tr("Add message")).set({
             appearance: "form-button",
             allowGrowX: false,
           });
           this.getChildControl("buttons-layout").add(control);
           break;
-        }
       }
 
       return control || this.base(arguments, id);
@@ -119,22 +123,41 @@ qx.Class.define("osparc.info.CommentAdd", {
     __buildLayout: function() {
       this.getChildControl("thumbnail");
       this.getChildControl("comment-field");
-      const addButton = this.getChildControl("add-comment-button");
-      addButton.addListener("execute", () => {
-        if (this.__conversationId) {
-          this.__addComment();
-        } else {
-          // create new conversation first
-          osparc.study.Conversations.addConversation(this.__studyId)
-            .then(data => {
-              this.__conversationId = data["conversationId"];
-              this.__addComment();
-            })
-        }
-      });
+
+      const notifyUserButton = this.getChildControl("notify-user-button");
+      notifyUserButton.addListener("execute", () => this.__notifyUserTapped());
+
+      const addMessageButton = this.getChildControl("add-comment-button");
+      addMessageButton.addListener("execute", () => this.__addComment());
+    },
+
+    __notifyUserTapped: function() {
+      if (this.__conversationId) {
+        this.__postNotify();
+      } else {
+        // create new conversation first
+        osparc.study.Conversations.addConversation(this.__studyId)
+          .then(data => {
+            this.__conversationId = data["conversationId"];
+            this.__postNotify();
+          })
+      }
     },
 
     __addComment: function() {
+      if (this.__conversationId) {
+        this.__postMessage();
+      } else {
+        // create new conversation first
+        osparc.study.Conversations.addConversation(this.__studyId)
+          .then(data => {
+            this.__conversationId = data["conversationId"];
+            this.__postMessage();
+          })
+      }
+    },
+
+    __postMessage: function() {
       const commentField = this.getChildControl("comment-field");
       const comment = commentField.getChildControl("text-area").getValue();
       if (comment) {
@@ -142,6 +165,15 @@ qx.Class.define("osparc.info.CommentAdd", {
           .then(data => {
             this.fireDataEvent("commentAdded", data);
             commentField.getChildControl("text-area").setValue("");
+          });
+      }
+    },
+
+    __postNotify: function(userGroupId) {
+      if (userGroupId) {
+        osparc.study.Conversations.notifyUser(this.__studyId, this.__conversationId, userGroupId)
+          .then(data => {
+            console.log(data);
           });
       }
     },
