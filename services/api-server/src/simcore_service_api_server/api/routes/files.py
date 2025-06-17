@@ -72,7 +72,7 @@ router = APIRouter()
 #
 #
 
-_AIOHTTP_CLIENT_SESSION_TIMEOUT_SECONDS: Final[float] = 1.0
+_AIOHTTP_CLIENT_SESSION_TIMEOUT_SECONDS: Final[float] = 60.0
 
 _FILE_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     status.HTTP_404_NOT_FOUND: {
