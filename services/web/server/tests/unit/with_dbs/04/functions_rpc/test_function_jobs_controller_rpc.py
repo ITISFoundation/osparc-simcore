@@ -15,6 +15,7 @@ from models_library.functions_errors import (
     FunctionJobIDNotFoundError,
     FunctionJobReadAccessDeniedError,
     FunctionJobsReadApiAccessDeniedError,
+    FunctionJobWriteAccessDeniedError,
 )
 from models_library.products import ProductName
 from pytest_simcore.helpers.webserver_login import UserInfoDict
@@ -104,7 +105,7 @@ async def test_register_get_delete_function_job(
             product_name="this_is_not_osparc",
         )
 
-    with pytest.raises(FunctionJobReadAccessDeniedError):
+    with pytest.raises(FunctionJobWriteAccessDeniedError):
         # Attempt to delete the function job by another user
         await functions_rpc.delete_function_job(
             rabbitmq_rpc_client=rpc_client,
@@ -301,7 +302,6 @@ async def test_find_cached_function_jobs(
     mock_function: ProjectFunction,
     clean_functions: None,
 ):
-
     # Register the function first
     registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client,
