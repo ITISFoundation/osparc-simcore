@@ -18,11 +18,10 @@ def app_environment(
     app_environment: EnvVarsDict,
     external_envfile_dict: EnvVarsDict,
 ) -> EnvVarsDict:
-    """
-    NOTE: To run against repo.config in osparc-config repo
+    """OVERRIDES app_environment fixture:
 
-    ln -s /path/to/osparc-config/deployments/mydeploy.com/repo.config .secrets
-    pytest --external-envfile=.secrets tests/unit/test_core_settings.py
+    Enables using external envfiles (e.g. repo.config files) to run tests against
+    within this test module.
     """
     if external_envfile_dict:
         delenvs_from_dict(monkeypatch, app_environment, raising=False)
