@@ -119,14 +119,6 @@ async def periodic_task_result(
         _logger.debug("%s, %s", f"{task_id=}", f"{result=}")
 
         yield result
-    except Exception as e:
-        error = TaskExceptionError(
-            task_id=task_id,
-            exception=e,
-            traceback=f"check remote side for logs, HINT: service replying to: '{client._base_url}' for '{task_id=}'",
-        )
-        _logger.warning(f"{error}")
-        raise error from e
     except TimeoutError as e:
         await client.cancel_and_delete_task(task_id)
         raise TaskClientTimeoutError(
@@ -134,3 +126,11 @@ async def periodic_task_result(
             timeout=task_timeout,
             exception=e,
         ) from e
+    except Exception as e:
+        error = TaskExceptionError(
+            task_id=task_id,
+            exception=e,
+            traceback=f"check remote side for logs, HINT: service replying to: '{client._base_url}' for '{task_id=}'",  # noqa: SLF001  # pylint:disable=protected-access
+        )
+        _logger.warning(f"{error}")
+        raise error from e
