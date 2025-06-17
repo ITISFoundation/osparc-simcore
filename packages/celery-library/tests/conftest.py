@@ -1,11 +1,9 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
-import asyncio
 import datetime
 from collections.abc import AsyncIterator, Callable
 from functools import partial
-from threading import Event
 from typing import Any
 
 import pytest
@@ -32,19 +30,11 @@ pytest_plugins = [
 
 
 class FakeAppServer(BaseAppServer):
-    def __init__(self):
-        self._shutdown_event: asyncio.Event | None = None
+    async def on_startup(self) -> None:
+        pass
 
-    async def startup(
-        self, completed_event: Event, shutdown_event: asyncio.Event
-    ) -> None:
-        self._shutdown_event = shutdown_event
-        completed_event.set()
-        await self._shutdown_event.wait()
-
-    async def shutdown(self) -> None:
-        if self._shutdown_event is not None:
-            self._shutdown_event.set()
+    async def on_shutdown(self) -> None:
+        pass
 
 
 @pytest.fixture
@@ -80,13 +70,17 @@ def celery_settings(
     return CelerySettings.create_from_envs()
 
 
+@pytest.fixture
+def app_server() -> BaseAppServer:
+    return FakeAppServer()
+
+
 @pytest.fixture(scope="session")
 def celery_config() -> dict[str, Any]:
     return {
         "broker_connection_retry_on_startup": True,
         "broker_url": "memory://localhost//",
         "result_backend": "cache+memory://localhost//",
-        # "result_backend": celery_settings.CELERY_REDIS_RESULT_BACKEND.build_redis_dsn(RedisDatabase.CELERY_TASKS),
         "result_expires": datetime.timedelta(days=7),
         "result_extended": True,
         "pool": "threads",
@@ -100,13 +94,12 @@ def celery_config() -> dict[str, Any]:
 @pytest.fixture
 async def with_storage_celery_worker(
     celery_app: Celery,
+    app_server: BaseAppServer,
     celery_settings: CelerySettings,
     register_celery_tasks: Callable[[Celery], None],
 ) -> AsyncIterator[TestWorkController]:
     def _on_worker_init_wrapper(sender: WorkController, **_kwargs):
-        return partial(on_worker_init, FakeAppServer(), celery_settings)(
-            sender, **_kwargs
-        )
+        return partial(on_worker_init, app_server, celery_settings)(sender, **_kwargs)
 
     worker_init.connect(_on_worker_init_wrapper)
     worker_shutdown.connect(on_worker_shutdown)

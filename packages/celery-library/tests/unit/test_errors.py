@@ -13,7 +13,7 @@ from models_library.api_schemas_storage.export_data_async_jobs import AccessRigh
         AccessRightError(user_id=1, file_id="a/path/to/a/file.txt", location_id=0),
     ],
 )
-def test_workflow(original_error: Exception):
+def test_error(original_error: Exception):
     try:
         raise original_error  # noqa: TRY301
     except Exception as e:  # pylint: disable=broad-exception-caught

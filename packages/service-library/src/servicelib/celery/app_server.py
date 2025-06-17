@@ -17,6 +17,9 @@ STARTUP_TIMEOUT: Final[float] = datetime.timedelta(minutes=1).total_seconds()
 
 
 class BaseAppServer(ABC):
+    def __init__(self) -> None:
+        self._shutdown_event: asyncio.Event | None = None
+
     @property
     def fastapi_app(self) -> "FastAPI":
         raise NotImplementedError
@@ -34,11 +37,23 @@ class BaseAppServer(ABC):
         self._event_loop = loop
 
     @abstractmethod
+    async def on_startup(self) -> None:
+        raise NotImplementedError
+
     async def startup(
         self, completed_event: threading.Event, shutdown_event: asyncio.Event
     ) -> None:
-        pass
+        self._shutdown_event = shutdown_event
+        completed_event.set()
+        await self.on_startup()
+        await self._shutdown_event.wait()
 
     @abstractmethod
-    async def shutdown(self):
-        pass
+    async def on_shutdown(self) -> None:
+        raise NotImplementedError
+
+    async def shutdown(self) -> None:
+        if self._shutdown_event is not None:
+            self._shutdown_event.set()
+
+        await self.on_shutdown()
