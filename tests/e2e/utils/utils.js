@@ -634,10 +634,10 @@ async function getButtonsWithText(page, text) {
   return buttons;
 }
 
-async function waitForLabelText(frame, text, timeout = 10000) {
+async function waitForLabelText(page, text, timeout = 10000) {
   console.log("Waiting for label text:", text);
   try {
-    await frame.waitForFunction(
+    await page.waitForFunction(
       (text) => {
         return [...document.body.querySelectorAll('*')].some(el => {
           if (typeof el.innerText !== 'string') return false;
