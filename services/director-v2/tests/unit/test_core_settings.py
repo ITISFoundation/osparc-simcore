@@ -1,12 +1,6 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
-"""
-We can validate actual .env files (also refered as `repo.config` files) by passing them via the CLI
-
-$ ln -s /path/to/osparc-config/deployments/mydeploy.com/repo.config .secrets
-$ pytest --external-envfile=.secrets --pdb tests/unit/test_core_settings.py
-"""
 
 from typing import Any
 

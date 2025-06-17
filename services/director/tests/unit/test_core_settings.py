@@ -2,14 +2,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
-"""
-We validate actual envfiles (e.g. repo.config files) by passing them via the CLI
-
-$ ln -s /path/to/osparc-config/deployments/mydeploy.com/repo.config .secrets
-$ pytest --external-envfile=.secrets --pdb tests/unit/test_core_settings.py
-
-"""
-
 
 import datetime
 
