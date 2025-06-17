@@ -101,7 +101,7 @@ qx.Class.define("osparc.study.Conversations", {
           conversationId,
         },
         data: {
-          "content": userGroupId,
+          "content": userGroupId.toString(), // eventually the backend will accept integers
           "type": "NOTIFICATION",
         }
       };

@@ -223,15 +223,29 @@ qx.Class.define("osparc.info.Conversation", {
     },
 
     __addMessages: function(messages) {
-      if (messages.length === 1) {
+      const nMessages = messages.filter(msg => msg["type"] === "MESSAGE").length;
+      if (nMessages === 1) {
         this.__messagesTitle.setValue(this.tr("1 Message"));
-      } else if (messages.length > 1) {
-        this.__messagesTitle.setValue(messages.length + this.tr(" Messages"));
+      } else if (nMessages > 1) {
+        this.__messagesTitle.setValue(nMessages + this.tr(" Messages"));
       }
 
       messages.forEach(message => {
-        const messageUi = new osparc.info.CommentUI(message);
-        this.__messagesList.add(messageUi);
+        switch (message["type"]) {
+          case "NOTIFICATION": {
+            const notificationUi = new qx.ui.basic.Label().set({
+              value: `${message["userGroupId"]} notified ${message["content"]}`
+            });
+            this.__messagesList.add(notificationUi);
+            break;
+          }
+          case "MESSAGE": {
+            const messageUi = new osparc.info.CommentUI(message);
+            this.__messagesList.add(messageUi);
+            break;
+          }
+        }
+
       });
     },
   }
