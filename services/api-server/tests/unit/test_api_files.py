@@ -5,6 +5,7 @@
 # pylint: disable=unused-variable
 
 import datetime
+import re
 from pathlib import Path
 from typing import Any
 from uuid import UUID
@@ -25,6 +26,7 @@ from models_library.api_schemas_storage.storage_schemas import (
 )
 from models_library.basic_types import SHA256Str
 from pydantic import TypeAdapter
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.httpx_calls_capture_models import (
     CreateRespxMockCallback,
     HttpApiCallCaptureModel,
@@ -280,6 +282,30 @@ async def test_get_upload_links(
         assert response.status_code == status.HTTP_200_OK
     else:
         raise AssertionError
+
+
+async def test_get_upload_links_timeout(
+    client: AsyncClient,
+    auth: httpx.BasicAuth,
+    aioresponses_mocker: AioResponsesMock,
+    mocker: MockerFixture,
+):
+    assert aioresponses_mocker  # nosec
+    aioresponses_mocker.put(
+        re.compile(r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files.+$"),
+        timeout=True,
+        repeat=True,
+    )
+
+    msg = {
+        "filename": DummyFileData.file().filename,
+        "filesize": DummyFileData.file_size(),
+        "sha256_checksum": DummyFileData.checksum(),
+    }
+
+    response = await client.post(f"{API_VTAG}/files/content", json=msg, auth=auth)
+
+    assert response.status_code == status.HTTP_504_GATEWAY_TIMEOUT
 
 
 @pytest.mark.parametrize(

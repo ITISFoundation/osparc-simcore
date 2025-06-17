@@ -2,9 +2,10 @@ import asyncio
 import datetime
 import io
 import logging
-from typing import IO, Annotated, Any
+from typing import IO, Annotated, Any, Final
 from uuid import UUID
 
+from aiohttp import ClientSession, ClientTimeout, TCPConnector
 from fastapi import APIRouter, Body, Depends
 from fastapi import File as FileParam
 from fastapi import Header, Request, UploadFile, status
@@ -18,6 +19,7 @@ from models_library.api_schemas_storage.storage_schemas import (
 from models_library.basic_types import SHA256Str
 from models_library.projects_nodes_io import NodeID
 from pydantic import AnyUrl, ByteSize, PositiveInt, TypeAdapter, ValidationError
+from servicelib.aiohttp import client_session
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
 from simcore_sdk.node_ports_common.file_io_utils import UploadableFileObject
@@ -69,6 +71,8 @@ router = APIRouter()
 # - TODO: extend :search as https://cloud.google.com/apis/design/custom_methods ?
 #
 #
+
+_AIOHTTP_CLIENT_SESSION_TIMEOUT_SECONDS: Final[float] = 1.0
 
 _FILE_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     status.HTTP_404_NOT_FOUND: {
@@ -303,17 +307,40 @@ async def get_upload_links(
     file_meta = await _create_domain_file(
         webserver_api=webserver_api, file_id=None, client_file=client_file
     )
-    _, upload_links = await get_upload_links_from_s3(
-        user_id=user_id,
-        store_name=None,
-        store_id=SIMCORE_LOCATION,
-        s3_object=file_meta.storage_file_id,
-        client_session=None,
-        link_type=LinkType.PRESIGNED,
-        file_size=ByteSize(client_file.filesize),
-        is_directory=False,
-        sha256_checksum=file_meta.sha256_checksum,
-    )
+
+    try:
+        client_session = ClientSession(
+            connector=TCPConnector(force_close=True),
+            timeout=ClientTimeout(
+                total=_AIOHTTP_CLIENT_SESSION_TIMEOUT_SECONDS,
+                connect=_AIOHTTP_CLIENT_SESSION_TIMEOUT_SECONDS,
+                sock_connect=_AIOHTTP_CLIENT_SESSION_TIMEOUT_SECONDS,
+                sock_read=_AIOHTTP_CLIENT_SESSION_TIMEOUT_SECONDS,
+            ),
+        )
+        async with client_session:
+            _, upload_links = await get_upload_links_from_s3(
+                user_id=user_id,
+                store_name=None,
+                store_id=SIMCORE_LOCATION,
+                s3_object=file_meta.storage_file_id,
+                client_session=client_session,
+                link_type=LinkType.PRESIGNED,
+                file_size=ByteSize(client_file.filesize),
+                is_directory=False,
+                sha256_checksum=file_meta.sha256_checksum,
+            )
+    except TimeoutError as exc:
+        msg = "Request to storage service timed out"
+        status_code = status.HTTP_504_GATEWAY_TIMEOUT
+        _logger.exception(
+            "%s - responding with status code %s",
+            msg,
+            f"{status_code}",
+            exc_info=True,
+            stack_info=True,
+        )
+        raise HTTPException(status_code=status_code, detail=msg) from exc
     completion_url: URL = request.url_for(
         "complete_multipart_upload", file_id=file_meta.id
     )
