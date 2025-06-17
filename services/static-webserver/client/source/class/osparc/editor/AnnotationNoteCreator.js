@@ -88,7 +88,9 @@ qx.Class.define("osparc.editor.AnnotationNoteCreator", {
           control.addListener("execute", () => {
             const currentStudy = osparc.store.Store.getInstance().getCurrentStudy().serialize();
             currentStudy["resourceType"] = "study";
-            const recipientsManager = new osparc.share.NewCollaboratorsManager(currentStudy, false, false);
+            const recipientsManager = new osparc.share.NewCollaboratorsManager(currentStudy, false, false).set({
+              acceptOnlyOne: true,
+            });
             recipientsManager.setCaption("Recipient");
             recipientsManager.getActionButton().setLabel(this.tr("Add"));
             recipientsManager.addListener("addCollaborators", e => {
