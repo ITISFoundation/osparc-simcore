@@ -4460,6 +4460,16 @@
             }
           },
           {
+            "name": "hidden",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Hidden"
+            }
+          },
+          {
             "name": "x-simcore-parent-project-uuid",
             "in": "header",
             "required": false,
@@ -4494,6 +4504,15 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_clone_study_v0_studies__study_id__clone_post"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": "Successful Response",
@@ -7833,6 +7852,36 @@
           "client_file"
         ],
         "title": "Body_abort_multipart_upload_v0_files__file_id__abort_post"
+      },
+      "Body_clone_study_v0_studies__study_id__clone_post": {
+        "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title",
+            "empty": true
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "empty": true
+          }
+        },
+        "type": "object",
+        "title": "Body_clone_study_v0_studies__study_id__clone_post"
       },
       "Body_complete_multipart_upload_v0_files__file_id__complete_post": {
         "properties": {
