@@ -1100,7 +1100,7 @@ async def get_user_permissions(
         # Combine permissions for all groups the user belongs to
         result = await conn.stream(
             access_rights_table.select()
-            .with_only_columns(cols)
+            .with_only_columns(*cols)
             .where(
                 getattr(access_rights_table.c, f"{object_type}_uuid") == object_id,
                 access_rights_table.c.product_name == product_name,
@@ -1114,9 +1114,9 @@ async def get_user_permissions(
 
         # Combine permissions across all rows
         combined_permissions = {
-            "read": any(row["read"] for row in rows),
-            "write": any(row["write"] for row in rows),
-            "execute": any(row["execute"] for row in rows),
+            "read": any(row.read for row in rows),
+            "write": any(row.write for row in rows),
+            "execute": any(row.execute for row in rows),
         }
 
         return FunctionAccessRightsDB.model_validate(combined_permissions)
