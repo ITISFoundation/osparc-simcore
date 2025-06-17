@@ -123,17 +123,18 @@ qx.Class.define("osparc.info.CommentUI", {
 
       const commentContent = this.getChildControl("comment-content");
       if (this.__comment["type"] === "NOTIFICATION") {
+        const userGroupId = parseInt(this.__comment["content"]);
         commentContent.setValue("🔔 " + this.tr("Notified") + ": ");
-        osparc.store.Users.getInstance().getUser(parseInt(this.__comment["content"]))
+        osparc.store.Users.getInstance().getUser(userGroupId)
           .then(user => {
             if (user) {
               commentContent.setValue(commentContent.getValue() + user.getLabel());
             } else {
-              commentContent.setValue(commentContent.getValue() + parseInt(this.__comment["content"]));
+              commentContent.setValue(commentContent.getValue() + userGroupId);
             }
           })
           .catch(() => {
-            commentContent.setValue(commentContent.getValue() + parseInt(this.__comment["content"]));
+            commentContent.setValue(commentContent.getValue() + userGroupId);
           });
       } else if (this.__comment["type"] === "MESSAGE") {
         commentContent.setValue(this.__comment["content"]);
