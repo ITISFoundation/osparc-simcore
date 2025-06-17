@@ -1114,7 +1114,7 @@ async def patch_project_node(
         project_id=project_id,
         user_id=user_id,
         product_name=product_name,
-        permission="write",  # NOTE: MD: before only read was sufficient, double check this
+        permission="write",
     )
 
     # 2. If patching service key or version make sure it's valid
