@@ -634,6 +634,25 @@ async function getButtonsWithText(page, text) {
   return buttons;
 }
 
+async function waitForLabelText(page, text, timeout = 10000) {
+  try {
+    await page.waitForFunction(
+      (text) => {
+        return [...document.body.querySelectorAll('*')].some(el =>
+          el.innerText.includes(text) &&
+          !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length) // check if element is visible
+        );
+      },
+      { timeout },
+      text
+    );
+    return true;
+  } catch (err) {
+    // WaitForFunction throws if timeout is reached
+    return false;
+  }
+}
+
 
 module.exports = {
   makeRequest,
@@ -671,4 +690,5 @@ module.exports = {
   isElementVisible,
   clickLoggerTitle,
   getButtonsWithText,
+  waitForLabelText,
 }
