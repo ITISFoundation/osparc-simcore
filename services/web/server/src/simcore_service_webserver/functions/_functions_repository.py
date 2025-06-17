@@ -565,11 +565,11 @@ async def list_function_job_collections(
         ):
             collection = RegisteredFunctionJobCollectionDB.model_validate(row)
             job_ids = [
-                job_row["function_job_uuid"]
+                job_row.function_job_uuid
                 async for job_row in await conn.stream(
                     function_job_collections_to_function_jobs_table.select().where(
                         function_job_collections_to_function_jobs_table.c.function_job_collection_uuid
-                        == row["uuid"]
+                        == row.uuid
                     )
                 )
             ]
