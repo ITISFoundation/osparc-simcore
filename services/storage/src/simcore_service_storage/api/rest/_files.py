@@ -292,7 +292,7 @@ async def complete_upload_file(
         user_id=async_job_name_data.user_id,
         location_id=location_id,
         file_id=file_id,
-        body=body.model_dump(),
+        body=body,
     )
 
     route = (
@@ -356,7 +356,7 @@ async def is_completed_upload_file(
         assert new_fmd.file_id == file_id  # nosec
         response = FileUploadCompleteFutureResponse(
             state=FileUploadCompleteState.OK,
-            e_tag=FileMetaData.model_validate(new_fmd).entity_tag,
+            e_tag=new_fmd.entity_tag,
         )
     else:
         # the task is still running

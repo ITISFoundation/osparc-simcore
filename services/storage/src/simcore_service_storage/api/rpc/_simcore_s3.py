@@ -27,7 +27,7 @@ async def copy_folders_from_project(
         ),
         task_context=job_id_data.model_dump(),
         user_id=job_id_data.user_id,
-        body=body.model_dump(mode="json"),
+        body=body,
     )
 
     return AsyncJobGet(job_id=task_uuid, job_name=task_name)

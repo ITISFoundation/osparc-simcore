@@ -92,7 +92,7 @@ def celery_config() -> dict[str, Any]:
 
 
 @pytest.fixture
-async def with_storage_celery_worker(
+async def with_celery_worker(
     celery_app: Celery,
     app_server: BaseAppServer,
     celery_settings: CelerySettings,
@@ -121,7 +121,7 @@ async def with_storage_celery_worker(
 async def celery_task_manager(
     celery_app: Celery,
     celery_settings: CelerySettings,
-    with_storage_celery_worker: TestWorkController,
+    with_celery_worker: TestWorkController,
 ) -> CeleryTaskManager:
     return await create_task_manager(
         celery_app,
