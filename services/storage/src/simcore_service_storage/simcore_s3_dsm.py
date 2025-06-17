@@ -452,6 +452,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         # NOTE: if this gets called successively with the same file_id, and
         # there was a multipart upload in progress beforehand, it MUST be
         # cancelled to prevent unwanted costs in AWS
+        _logger.debug("Cleaning pending uploads for file_id=%s", file_id)
         await self._clean_pending_upload(
             TypeAdapter(SimcoreS3FileID).validate_python(file_id)
         )
@@ -461,6 +462,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         ):  # NOTE: Delete is not needed for directories that are synced via an external tool (rclone/aws s3 cli).
             # ensure file is deleted first in case it already exists
             # https://github.com/ITISFoundation/osparc-simcore/pull/5108
+            _logger.debug("Attempting to delete file_id=%s", file_id)
             await self.delete_file(
                 user_id=user_id,
                 file_id=file_id,
@@ -489,6 +491,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
             file_size_bytes
         ):
             # create multipart links
+            _logger.debug("Creating multipart upload links for file_id=%s", file_id)
             assert file_size_bytes  # nosec
             multipart_presigned_links = await get_s3_client(
                 self.app
@@ -512,6 +515,9 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
             )
         if link_type == LinkType.PRESIGNED:
             # create single presigned link
+            _logger.debug(
+                "Creating single presigned upload link for file_id=%s", file_id
+            )
             single_presigned_link = await get_s3_client(
                 self.app
             ).create_single_presigned_upload_link(
@@ -527,6 +533,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
             )
 
         # user wants just the s3 link
+        _logger.debug("Creating S3 link for file_id=%s", file_id)
         s3_link = get_s3_client(self.app).compute_s3_url(
             bucket=self.simcore_bucket_name,
             object_key=TypeAdapter(SimcoreS3FileID).validate_python(file_id),

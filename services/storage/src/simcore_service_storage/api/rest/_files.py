@@ -185,6 +185,9 @@ async def upload_file(
     """
     # NOTE: Used by legacy dynamic services with single presigned link -> MUST BE BACKWARDS COMPATIBLE
     dsm = get_dsm_provider(request.app).get(location_id)
+    _logger.debug(
+        "creating upload links for file %s at location %s", file_id, location_id
+    )
     links: UploadLinks = await dsm.create_file_upload_links(
         user_id=query_params.user_id,
         file_id=file_id,
