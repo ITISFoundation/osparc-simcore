@@ -588,7 +588,7 @@ class ProjectDBAPI(BaseProjectDB):
         limit: int | None = None,
         # order
         order_by: OrderBy = DEFAULT_ORDER_BY,
-    ) -> tuple[list[ProjectListAtDB], int]:
+    ) -> tuple[list[dict[str, Any]], int]:
         async with self.engine.acquire() as conn:
             user_groups_proxy: list[RowProxy] = await self._list_user_groups(
                 conn, user_id
@@ -671,12 +671,15 @@ class ProjectDBAPI(BaseProjectDB):
                     projects.c.id,
                 )
 
-            prjs_output = [
+            prjs_output = []
+            async for row in conn.execute(combined_query.offset(offset).limit(limit)):
+                # NOTE: Historically, projects were returned as a dictionary. I have created a model that
+                # validates the DB row, but this model includes some default values inside the Workbench Node model.
+                # Therefore, if we use this model, it will return those default values, which is not backward-compatible
+                # with the frontend. The frontend would need to check and adapt how it handles default values in
+                # Workbench nodes, which are currently not returned if not set in the DB.
                 ProjectListAtDB.model_validate(row)
-                async for row in conn.execute(
-                    combined_query.offset(offset).limit(limit)
-                )
-            ]
+                prjs_output.append(dict(row.items()))
 
             return (
                 prjs_output,

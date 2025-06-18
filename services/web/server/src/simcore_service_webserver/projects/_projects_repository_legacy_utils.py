@@ -8,13 +8,19 @@ from typing import Any, Literal, cast
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
-from models_library.projects import ProjectID, ProjectTemplateType
+from models_library.projects import ProjectID, ProjectType
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.utils.change_case import camel_to_snake, snake_to_camel
 from pydantic import ValidationError
 from simcore_postgres_database.models.project_to_groups import project_to_groups
-from simcore_postgres_database.webserver_models import ProjectType, projects
+from simcore_postgres_database.webserver_models import (
+    ProjectTemplateType as ProjectTemplateTypeDB,
+)
+from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
+from simcore_postgres_database.webserver_models import (
+    projects,
+)
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from ..db.models import GroupType, groups, projects_tags, user_to_groups, users
@@ -88,9 +94,9 @@ def convert_to_schema_names(
         if col_name == "prj_owner":
             # this entry has to be converted to the owner e-mail address
             converted_value = user_email
-        if col_name == "type" and isinstance(col_value, ProjectType):
+        if col_name == "type" and isinstance(col_value, ProjectTypeDB):
             converted_value = col_value.value
-        if col_name == "template_type" and isinstance(col_value, ProjectTemplateType):
+        if col_name == "template_type" and isinstance(col_value, ProjectTemplateTypeDB):
             converted_value = col_value.value
 
         if col_name in SCHEMA_NON_NULL_KEYS and col_value is None:
