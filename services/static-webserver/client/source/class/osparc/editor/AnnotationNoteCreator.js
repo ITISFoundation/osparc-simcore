@@ -132,9 +132,9 @@ qx.Class.define("osparc.editor.AnnotationNoteCreator", {
     },
 
     __selectRecipientTapped: function() {
-      const currentStudy = osparc.store.Store.getInstance().getCurrentStudy().serialize();
-      currentStudy["resourceType"] = "study";
-      const usersManager = new osparc.share.NewCollaboratorsManager(currentStudy, false, false).set({
+      const currentStudyData = osparc.store.Store.getInstance().getCurrentStudy().serialize();
+      currentStudyData["resourceType"] = "study";
+      const usersManager = new osparc.share.NewCollaboratorsManager(currentStudyData, false, false).set({
         acceptOnlyOne: true,
       });
       usersManager.setCaption("Recipient");
@@ -168,13 +168,14 @@ qx.Class.define("osparc.editor.AnnotationNoteCreator", {
             const newCollaborators = {
               [userGid]: osparc.data.Roles.STUDY["write"].accessRights
             };
-            osparc.store.Study.addCollaborators(this.__studyData, newCollaborators)
+            const currentStudyData = osparc.store.Store.getInstance().getCurrentStudy().serialize();
+            osparc.store.Study.addCollaborators(currentStudyData, newCollaborators)
               .then(() => {
                 this.__setRecipientGid(userGid);
                 const potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators()
                 if (userGid in potentialCollaborators && "getUserId" in potentialCollaborators[userGid]) {
                   const uid = potentialCollaborators[userGid].getUserId();
-                  osparc.notification.Notifications.pushStudyShared(uid, studyData["uuid"]);
+                  osparc.notification.Notifications.pushStudyShared(uid, currentStudyData["uuid"]);
                 }
               })
               .finally(() => collaboratorsManager.close());

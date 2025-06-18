@@ -187,7 +187,7 @@ qx.Class.define("osparc.info.CommentAdd", {
                 const potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators()
                 if (userGid in potentialCollaborators && "getUserId" in potentialCollaborators[userGid]) {
                   const uid = potentialCollaborators[userGid].getUserId();
-                  osparc.notification.Notifications.pushStudyShared(uid, studyData["uuid"]);
+                  osparc.notification.Notifications.pushStudyShared(uid, this.__studyData["uuid"]);
                 }
               })
               .catch(err => osparc.FlashMessenger.logError(err));
@@ -231,7 +231,7 @@ qx.Class.define("osparc.info.CommentAdd", {
             if (userGid in potentialCollaborators) {
               if ("getUserId" in potentialCollaborators[userGid]) {
                 const uid = potentialCollaborators[userGid].getUserId();
-                osparc.notification.Notifications.pushConversationNotification(uid, studyData["uuid"]);
+                osparc.notification.Notifications.pushConversationNotification(uid, this.__studyData["uuid"]);
               }
               const msg = "getLabel" in potentialCollaborators[userGid] ? potentialCollaborators[userGid].getLabel() + this.tr(" was notified") : this.tr("Notification sent");
               osparc.FlashMessenger.logAs(msg, "INFO");
