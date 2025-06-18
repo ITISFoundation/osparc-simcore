@@ -227,12 +227,15 @@ qx.Class.define("osparc.info.CommentAdd", {
         osparc.study.Conversations.notifyUser(this.__studyData["uuid"], this.__conversationId, userGroupId)
           .then(data => {
             this.fireDataEvent("commentAdded", data);
-            // OM: push redis notification
-            osparc.store.Users.getInstance().getUser(userGroupId)
-              .then(user => {
-                const msg = user ? user.getLabel() + this.tr(" was notified") : this.tr("Notification sent");
-                osparc.FlashMessenger.logAs(msg, "INFO");
-              });
+            const potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators();
+            if (userGid in potentialCollaborators) {
+              if ("getUserId" in potentialCollaborators[userGid]) {
+                const uid = potentialCollaborators[userGid].getUserId();
+                osparc.notification.Notifications.pushConversationNotification(uid, studyData["uuid"]);
+              }
+              const msg = "getLabel" in potentialCollaborators[userGid] ? potentialCollaborators[userGid].getLabel() + this.tr(" was notified") : this.tr("Notification sent");
+              osparc.FlashMessenger.logAs(msg, "INFO");
+            }
           });
       }
     },
