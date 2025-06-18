@@ -16754,7 +16754,6 @@ components:
         task_name:
           type: string
           title: Task Name
-          default: ''
         status_href:
           type: string
           title: Status Href
