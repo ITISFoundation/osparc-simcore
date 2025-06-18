@@ -44,7 +44,7 @@ async def _handler_director_service_error_as_503_or_4xx(
     if status_codes_utils.is_5xx_server_error(exception.status):
         # NOTE: All directorv2 5XX are mapped to 503
         status_code = status.HTTP_503_SERVICE_UNAVAILABLE
-        user_msg = (
+        user_msg = user_message(
             # Most likely the director service is down or misconfigured so the user is asked to try again later.
             "This service is temporarily unavailable. The incident was logged and will be investigated. "
             + MSG_TRY_AGAIN_OR_SUPPORT

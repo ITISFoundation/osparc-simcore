@@ -13,6 +13,7 @@ from aiohttp.web_request import Request
 from aiohttp.web_response import StreamResponse
 from common_library.error_codes import create_error_code
 from common_library.json_serialization import json_dumps, json_loads
+from common_library.user_messages import user_message
 from models_library.rest_error import ErrorGet, ErrorItemType, LogMessageType
 
 from ..logging_errors import create_troubleshotting_log_kwargs
@@ -31,7 +32,7 @@ from .typing_extension import Handler, Middleware
 from .web_exceptions_extension import get_http_error_class_or_none
 
 DEFAULT_API_VERSION = "v0"
-_FMSG_INTERNAL_ERROR_USER_FRIENDLY = (
+_FMSG_INTERNAL_ERROR_USER_FRIENDLY = user_message(
     "We apologize for the inconvenience. "
     "The issue has been recorded, please report it if it persists."
 )
