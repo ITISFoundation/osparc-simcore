@@ -108,6 +108,33 @@ async def get_wallet_with_available_credits_by_user_and_wallet(
     )
 
 
+async def get_wallet_with_available_credits(
+    app: web.Application,
+    *,
+    wallet_id: WalletID,
+    product_name: ProductName,
+) -> WalletGetWithAvailableCredits:
+    wallet_db: WalletDB = await db.get_wallet(
+        app=app, wallet_id=wallet_id, product_name=product_name
+    )
+
+    available_credits: WalletTotalCredits = await get_wallet_total_available_credits(
+        app, product_name, wallet_db.wallet_id
+    )
+
+    return WalletGetWithAvailableCredits(
+        wallet_id=wallet_db.wallet_id,
+        name=IDStr(wallet_db.name),
+        description=wallet_db.description,
+        owner=wallet_db.owner,
+        thumbnail=wallet_db.thumbnail,
+        status=wallet_db.status,
+        created=wallet_db.created,
+        modified=wallet_db.modified,
+        available_credits=available_credits.available_osparc_credits,
+    )
+
+
 async def get_user_default_wallet_with_available_credits(
     app: web.Application,
     *,

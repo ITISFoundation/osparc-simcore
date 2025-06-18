@@ -23,6 +23,8 @@ qx.Class.define("osparc.jobs.JobsButton", {
 
     this._setLayout(new qx.ui.layout.Canvas());
 
+    osparc.utils.Utils.setIdToWidget(this, "jobsButton");
+
     this.set({
       width: 30,
       alignX: "center",
