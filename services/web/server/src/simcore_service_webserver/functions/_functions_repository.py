@@ -627,14 +627,14 @@ async def delete_function(
         )
 
 
-async def update_function_title(
+async def _update_function_attribute(
     app: web.Application,
-    connection: AsyncConnection | None = None,
+    connection: AsyncConnection | None,
     *,
     user_id: UserID,
     product_name: ProductName,
     function_id: FunctionID,
-    title: str,
+    **update_kwargs,
 ) -> RegisteredFunctionDB:
     async with transaction_context(get_asyncpg_engine(app), connection) as transaction:
         await check_user_api_access_rights(
@@ -661,7 +661,7 @@ async def update_function_title(
         result = await transaction.execute(
             functions_table.update()
             .where(functions_table.c.uuid == function_id)
-            .values(title=title)
+            .values(**update_kwargs)
             .returning(*_FUNCTIONS_TABLE_COLS)
         )
         row = result.one_or_none()
@@ -670,6 +670,25 @@ async def update_function_title(
             raise FunctionIDNotFoundError(function_id=function_id)
 
         return RegisteredFunctionDB.model_validate(row)
+
+
+async def update_function_title(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_id: FunctionID,
+    title: str,
+) -> RegisteredFunctionDB:
+    return await _update_function_attribute(
+        app,
+        connection=connection,
+        user_id=user_id,
+        product_name=product_name,
+        function_id=function_id,
+        title=title,
+    )
 
 
 async def update_function_description(
@@ -681,39 +700,14 @@ async def update_function_description(
     function_id: FunctionID,
     description: str,
 ) -> RegisteredFunctionDB:
-    async with transaction_context(get_asyncpg_engine(app), connection) as transaction:
-        await check_user_api_access_rights(
-            app,
-            connection=transaction,
-            user_id=user_id,
-            product_name=product_name,
-            api_access_rights=[
-                FunctionsApiAccessRights.READ_FUNCTIONS,
-                FunctionsApiAccessRights.WRITE_FUNCTIONS,
-            ],
-        )
-        await check_user_permissions(
-            app,
-            transaction,
-            user_id=user_id,
-            product_name=product_name,
-            object_id=function_id,
-            object_type="function",
-            permissions=["write"],
-        )
-
-        result = await transaction.execute(
-            functions_table.update()
-            .where(functions_table.c.uuid == function_id)
-            .values(description=description)
-            .returning(*_FUNCTIONS_TABLE_COLS)
-        )
-        row = result.one_or_none()
-
-        if row is None:
-            raise FunctionIDNotFoundError(function_id=function_id)
-
-        return RegisteredFunctionDB.model_validate(row)
+    return await _update_function_attribute(
+        app,
+        connection=connection,
+        user_id=user_id,
+        product_name=product_name,
+        function_id=function_id,
+        description=description,
+    )
 
 
 async def get_function_job(
