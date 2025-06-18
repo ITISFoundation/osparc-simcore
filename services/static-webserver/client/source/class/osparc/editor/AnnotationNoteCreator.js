@@ -174,7 +174,7 @@ qx.Class.define("osparc.editor.AnnotationNoteCreator", {
                 const potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators()
                 if (userGid in potentialCollaborators && "getUserId" in potentialCollaborators[userGid]) {
                   const uid = potentialCollaborators[userGid].getUserId();
-                  osparc.notification.Notifications.postStudyShared(uid, studyData["uuid"]);
+                  osparc.notification.Notifications.pushStudyShared(uid, studyData["uuid"]);
                 }
               })
               .finally(() => collaboratorsManager.close());

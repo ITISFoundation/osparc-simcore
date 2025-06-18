@@ -122,7 +122,7 @@ qx.Class.define("osparc.notification.Notifications", {
       return osparc.data.Resources.fetch("notifications", "post", params);
     },
 
-    postStudyShared: function(userId, studyId) {
+    pushStudyShared: function(userId, studyId) {
       const params = {
         data: this.__newStudyObj(userId, studyId)
       };
