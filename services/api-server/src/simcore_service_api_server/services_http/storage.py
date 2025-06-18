@@ -16,6 +16,7 @@ from models_library.api_schemas_storage.storage_schemas import (
 )
 from models_library.api_schemas_storage.storage_schemas import (
     FileUploadSchema,
+    LinkType,
     PresignedLink,
 )
 from models_library.basic_types import SHA256Str
@@ -23,6 +24,8 @@ from models_library.generics import Envelope
 from models_library.rest_pagination import PageLimitInt, PageOffsetInt
 from pydantic import AnyUrl
 from settings_library.tracing import TracingSettings
+from simcore_service_api_server.models.schemas.files import UserFile
+from simcore_service_api_server.models.schemas.jobs import UserFileToProgramJob
 from starlette.datastructures import URL
 
 from ..core.settings import StorageSettings
@@ -157,15 +160,22 @@ class StorageApi(BaseServiceClientApi):
         response.raise_for_status()
 
     @_exception_mapper(http_status_map={})
-    async def get_upload_links(
-        self, *, user_id: int, file_id: UUID, file_name: str
+    async def get_file_upload_links(
+        self, *, user_id: int, file: File, client_file: UserFileToProgramJob | UserFile
     ) -> FileUploadSchema:
-        object_path = urllib.parse.quote_plus(f"api/{file_id}/{file_name}")
+
+        query_params = {
+            "user_id": f"{user_id}",
+            "link_type": LinkType.PRESIGNED.value,
+            "file_size": int(client_file.filesize),
+            "is_directory": "false",
+            "sha256_checksum": client_file.sha256_checksum,
+        }
 
         # complete_upload_file
         response = await self.client.put(
-            f"/locations/{self.SIMCORE_S3_ID}/files/{object_path}",
-            params={"user_id": user_id, "file_size": 0},
+            f"/locations/{self.SIMCORE_S3_ID}/files/{file.storage_file_id}",
+            params=query_params,
         )
         response.raise_for_status()
 
