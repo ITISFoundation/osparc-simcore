@@ -148,9 +148,9 @@ qx.Class.define("osparc.info.CommentAdd", {
             !(userGid in this.__studyData["accessRights"]) &&
             osparc.data.model.Study.canIWrite(this.__studyData["accessRights"])
           ) {
-            const newCollaborators = [{
-              userGid: osparc.data.Roles.STUDY["write"].accessRights
-            }];
+            const newCollaborators = {
+              [userGid]: osparc.data.Roles.STUDY["write"].accessRights
+            };
             osparc.store.Study.addCollaborators(this.__studyData, newCollaborators)
               .then(() => {
                 this.__addNotify(userGid);
