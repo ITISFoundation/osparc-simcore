@@ -149,13 +149,6 @@ class ProjectAtDB(BaseProjectModel):
 
 
 class ProjectListAtDB(BaseProjectModel):
-    # uuid  <- BaseProjectModel
-    # name  <- BaseProjectModel
-    # description  <- BaseProjectModel
-    # thumbnail  <- BaseProjectModel
-    # workbench  <- BaseProjectModel
-    # creation_date  <- BaseProjectModel
-    # last_change_date  <- BaseProjectModel
     id: int
     type: ProjectType
     template_type: ProjectTemplateType | None
