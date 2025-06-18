@@ -222,9 +222,9 @@ qx.Class.define("osparc.info.CommentAdd", {
       }
     },
 
-    __postNotify: function(userGroupId = 10) {
-      if (userGroupId) {
-        osparc.study.Conversations.notifyUser(this.__studyData["uuid"], this.__conversationId, userGroupId)
+    __postNotify: function(userGid) {
+      if (userGid) {
+        osparc.study.Conversations.notifyUser(this.__studyData["uuid"], this.__conversationId, userGid)
           .then(data => {
             this.fireDataEvent("commentAdded", data);
             const potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators();
