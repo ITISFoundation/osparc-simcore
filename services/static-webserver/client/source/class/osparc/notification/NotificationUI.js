@@ -114,17 +114,7 @@ qx.Class.define("osparc.notification.NotificationUI", {
     },
 
     __applyNotification: function(notification) {
-      let resourceId = null;
-      if (notification.getResourceId()) {
-        resourceId = notification.getResourceId();
-      } else if (notification.getActionablePath()) {
-        // extract it from the actionable path
-        const actionablePath = notification.getActionablePath();
-        resourceId = actionablePath.split("/")[1];
-      }
-
       const icon = this.getChildControl("icon");
-      const notification = this.getNotification();
       switch (notification.getCategory()) {
         case "NEW_ORGANIZATION":
           icon.setSource("@FontAwesome5Solid/users/14");
@@ -177,13 +167,22 @@ qx.Class.define("osparc.notification.NotificationUI", {
 
     __enrichTexts: function() {
       const notification = this.getNotification();
+
+      let resourceId = null;
+      if (notification.getResourceId()) {
+        resourceId = notification.getResourceId();
+      } else if (notification.getActionablePath()) {
+        // extract it from the actionable path
+        const actionablePath = notification.getActionablePath();
+        resourceId = actionablePath.split("/")[1];
+      }
+
       const userFromId = notification.getUserFromId();
       const titleLabel = this.getChildControl("title");
       const descriptionLabel = this.getChildControl("text");
 
       switch (notification.getCategory()) {
         case "NEW_ORGANIZATION":
-          icon.setSource("@FontAwesome5Solid/users/14");
           if (resourceId) {
             const org = osparc.store.Groups.getInstance().getOrganization(resourceId);
             if (org) {
@@ -194,7 +193,6 @@ qx.Class.define("osparc.notification.NotificationUI", {
           }
           break;
         case "STUDY_SHARED":
-          icon.setSource("@FontAwesome5Solid/file/14");
           if (resourceId) {
             const params = {
               url: {
@@ -218,7 +216,6 @@ qx.Class.define("osparc.notification.NotificationUI", {
           }
           break;
         case "TEMPLATE_SHARED":
-          icon.setSource("@FontAwesome5Solid/copy/14");
           if (resourceId) {
             osparc.store.Templates.fetchTemplate(resourceId)
               .then(templateData => {
@@ -236,7 +233,6 @@ qx.Class.define("osparc.notification.NotificationUI", {
           }
           break;
         case "CONVERSATION_NOTIFICATION":
-          icon.setSource("@FontAwesome5Solid/bell/14");
           if (resourceId) {
             const params = {
               url: {
@@ -255,7 +251,6 @@ qx.Class.define("osparc.notification.NotificationUI", {
           }
           break;
         case "ANNOTATION_NOTE":
-          icon.setSource("@FontAwesome5Solid/file/14");
           if (resourceId) {
             const params = {
               url: {
@@ -274,7 +269,6 @@ qx.Class.define("osparc.notification.NotificationUI", {
           }
           break;
         case "WALLET_SHARED":
-          icon.setSource("@MaterialIcons/account_balance_wallet/14");
           break;
       }
     },
