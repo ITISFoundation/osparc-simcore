@@ -65,9 +65,9 @@
         "tags": [
           "computations"
         ],
-        "summary": "Create Computation",
+        "summary": "Create Or Update Or Start Computation",
         "description": "Create and optionally start a new computation",
-        "operationId": "create_computation_v2_computations_post",
+        "operationId": "create_or_update_or_start_computation_v2_computations_post",
         "requestBody": {
           "content": {
             "application/json": {
