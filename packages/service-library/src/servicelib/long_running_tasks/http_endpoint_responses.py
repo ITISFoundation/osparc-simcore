@@ -1,6 +1,8 @@
 import logging
-import traceback
 from typing import Any
+
+from common_library.error_codes import create_error_code
+from servicelib.logging_errors import create_troubleshotting_log_kwargs
 
 from .errors import TaskNotCompletedError, TaskNotFoundError
 from .models import TaskBase, TaskId, TaskStatus
@@ -40,10 +42,14 @@ async def get_task_result(
     except (TaskNotFoundError, TaskNotCompletedError):
         raise
     except Exception as exc:
-        # the task raised an exception
-        formatted_traceback = "".join(traceback.format_exception(exc))
-        _logger.info("Task '%s' raised an exception: %s", task_id, formatted_traceback)
-
+        _logger.exception(
+            **create_troubleshotting_log_kwargs(
+                user_error_msg=f"{task_id=} raised an exception",
+                error=exc,
+                error_code=create_error_code(exc),
+                error_context={"task_context": task_context, "task_id": task_id},
+            ),
+        )
         # the task shall be removed in this case
         await tasks_manager.remove_task(
             task_id, with_task_context=task_context, reraise_errors=False

@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from typing import Any, Final
 
 from pydantic import PositiveFloat
+from servicelib.logging_errors import create_troubleshotting_log_message
 
 from ...long_running_tasks.errors import TaskClientTimeoutError, TaskExceptionError
 from ...long_running_tasks.models import (
@@ -127,10 +128,12 @@ async def periodic_task_result(
             exception=e,
         ) from e
     except Exception as e:
-        error = TaskExceptionError(
-            task_id=task_id,
-            exception=e,
-            traceback=f"check remote side for logs, HINT: service replying to: '{client._base_url}' for '{task_id=}'",  # noqa: SLF001  # pylint:disable=protected-access
+        error = TaskExceptionError(task_id=task_id, exception=e, traceback="")
+        _logger.warning(
+            create_troubleshotting_log_message(
+                user_error_msg=f"{task_id=} raised an exception",
+                error=e,
+                tip=f"Check the logs of the service responding to '{client.base_url}'",
+            )
         )
-        _logger.warning("%s", error)
         raise error from e
