@@ -120,7 +120,7 @@ class Client:
         """
         self.app = app
         self._async_client = async_client
-        self._base_url = base_url
+        self.base_url = base_url
 
     @property
     def _client_configuration(self) -> ClientConfiguration:
@@ -129,7 +129,7 @@ class Client:
 
     def _get_url(self, path: str) -> str:
         url_path = f"{self._client_configuration.router_prefix}{path}".lstrip("/")
-        url = TypeAdapter(AnyHttpUrl).validate_python(f"{self._base_url}{url_path}")
+        url = TypeAdapter(AnyHttpUrl).validate_python(f"{self.base_url}{url_path}")
         return f"{url}"
 
     @retry_on_http_errors
