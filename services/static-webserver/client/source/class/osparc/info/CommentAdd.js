@@ -129,6 +129,19 @@ qx.Class.define("osparc.info.CommentAdd", {
       notifyUserButton.addListener("execute", () => this.__notifyUserTapped());
     },
 
+    __addComment: function() {
+      if (this.__conversationId) {
+        this.__postMessage();
+      } else {
+        // create new conversation first
+        osparc.study.Conversations.addConversation(this.__studyData["uuid"])
+          .then(data => {
+            this.__conversationId = data["conversationId"];
+            this.__postMessage();
+          })
+      }
+    },
+
     __notifyUserTapped: function() {
       const showOrganizations = false;
       const showAccessRights = false;
@@ -146,19 +159,6 @@ qx.Class.define("osparc.info.CommentAdd", {
           this.__notifyUser(userGid);
         }
       });
-    },
-
-    __addComment: function() {
-      if (this.__conversationId) {
-        this.__postMessage();
-      } else {
-        // create new conversation first
-        osparc.study.Conversations.addConversation(this.__studyData["uuid"])
-          .then(data => {
-            this.__conversationId = data["conversationId"];
-            this.__postMessage();
-          })
-      }
     },
 
     __notifyUser: function(userGid) {
