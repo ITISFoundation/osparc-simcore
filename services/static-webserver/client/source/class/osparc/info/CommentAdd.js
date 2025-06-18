@@ -199,6 +199,7 @@ qx.Class.define("osparc.info.CommentAdd", {
           .then(data => {
             this.fireDataEvent("commentAdded", data);
             commentField.getChildControl("text-area").setValue("");
+            osparc.FlashMessenger.logAs(this.tr("Message added"), "INFO");
           });
       }
     },
@@ -208,7 +209,12 @@ qx.Class.define("osparc.info.CommentAdd", {
         osparc.study.Conversations.notifyUser(this.__studyData["uuid"], this.__conversationId, userGroupId)
           .then(data => {
             this.fireDataEvent("commentAdded", data);
-            // OM: add redis notification
+            // OM: push redis notification
+            osparc.store.Users.getInstance().getUser(userGroupId)
+              .then(user => {
+                const msg = user ? user.getLabel() + this.tr(" was notified") : this.tr("Notification sent");
+                osparc.FlashMessenger.logAs(msg, "INFO");
+              });
           });
       }
     },
