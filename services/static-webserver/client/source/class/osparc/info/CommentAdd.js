@@ -165,7 +165,9 @@ qx.Class.define("osparc.info.CommentAdd", {
       // Note!
       // This check only works if the project is directly shared with the user.
       // If it's shared through a group, it might be a bit confusing
-      if (!(userGid in this.__studyData["accessRights"])) {
+      if (userGid in this.__studyData["accessRights"]) {
+        this.__addNotify(userGid);
+      } else {
         const msg = this.tr("This user has no access to the project. Do you want to share it?");
         const win = new osparc.ui.window.Confirmation(msg).set({
           caption: this.tr("Share"),
@@ -180,12 +182,17 @@ qx.Class.define("osparc.info.CommentAdd", {
               [userGid]: osparc.data.Roles.STUDY["write"].accessRights
             };
             osparc.store.Study.addCollaborators(this.__studyData, newCollaborators)
-              .then(() => this.__addNotify(userGid))
+              .then(() => {
+                this.__addNotify(userGid);
+                const potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators()
+                if (userGid in potentialCollaborators && "getUserId" in potentialCollaborators[userGid]) {
+                  const uid = potentialCollaborators[userGid].getUserId();
+                  osparc.notification.Notifications.postNewStudy(uid, studyData["uuid"]);
+                }
+              })
               .catch(err => osparc.FlashMessenger.logError(err));
           }
         }, this);
-      } else {
-        this.__addNotify(userGid);
       }
     },
 
