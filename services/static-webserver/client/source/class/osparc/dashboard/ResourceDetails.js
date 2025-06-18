@@ -51,6 +51,10 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           return;
         }
         this.__resourceData = osparc.utils.Utils.deepCloneObject(latestResourceData);
+        // quick solution
+        if ("debt" in resourceData) {
+          this.__resourceData["debt"] = resourceData["debt"];
+        }
         this.__resourceData["resourceType"] = resourceData["resourceType"];
         switch (resourceData["resourceType"]) {
           case "study":
