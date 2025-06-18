@@ -3,7 +3,7 @@ from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from pydantic import TypeAdapter
 
 
-def _get_data_withut_task_name(task_id: str) -> dict:
+def _get_data_without_task_name(task_id: str) -> dict:
     return {
         "task_id": task_id,
         "status_href": "",
@@ -15,10 +15,10 @@ def _get_data_withut_task_name(task_id: str) -> dict:
 @pytest.mark.parametrize(
     "data, expected_task_name",
     [
-        (_get_data_withut_task_name("a.b.c.d"), "b"),
-        (_get_data_withut_task_name("a.b.c"), "b"),
-        (_get_data_withut_task_name("a.b"), "b"),
-        (_get_data_withut_task_name("a"), ""),
+        (_get_data_without_task_name("a.b.c.d"), "b"),
+        (_get_data_without_task_name("a.b.c"), "b"),
+        (_get_data_without_task_name("a.b"), "b"),
+        (_get_data_without_task_name("a"), "a"),
     ],
 )
 def test_try_extract_task_name(data: dict, expected_task_name: str) -> None:

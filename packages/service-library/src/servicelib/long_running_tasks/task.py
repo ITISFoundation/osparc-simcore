@@ -30,7 +30,7 @@ _logger = logging.getLogger(__name__)
 
 # NOTE: for now only this one is used, in future it will be unqiue per service
 # and this default will be removed and become mandatory
-_DEFAULT_NAMESPACE: Final = "lrt"
+_DEFAULT_NAMESPACE: Final[str] = "lrt"
 
 _CANCEL_TASK_TIMEOUT: Final[PositiveFloat] = datetime.timedelta(
     seconds=1

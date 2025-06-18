@@ -2,7 +2,8 @@ import urllib.parse
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, model_validator
+from common_library.exclude import Unset
+from pydantic import BaseModel, ConfigDict, model_validator
 
 from .base import TaskId, TaskProgress
 
@@ -20,7 +21,7 @@ class TaskResult(BaseModel):
 
 class TaskBase(BaseModel):
     task_id: TaskId
-    task_name: str = ""
+    task_name: str | Unset = Unset.VALUE
 
     @model_validator(mode="after")
     def try_populate_task_name_from_task_id(self) -> "TaskBase":
@@ -30,12 +31,17 @@ class TaskBase(BaseModel):
         # 2. if a task comes from long_running_tasks, it will extract it form
         #   the task_id, which looks like "{PREFIX}.{TASK_NAME}.UNIQUE|{UUID}"
 
-        if self.task_id and self.task_name == "":
+        if self.task_id and self.task_name == Unset.VALUE:
             parts = self.task_id.split(".")
             if len(parts) > 1:
                 self.task_name = urllib.parse.unquote(parts[1])
 
+        if self.task_name == Unset.VALUE:
+            self.task_name = self.task_id
+
         return self
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class TaskGet(TaskBase):
