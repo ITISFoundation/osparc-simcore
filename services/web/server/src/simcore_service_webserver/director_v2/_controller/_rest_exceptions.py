@@ -2,6 +2,7 @@ import logging
 
 from aiohttp import web
 from common_library.error_codes import create_error_code
+from common_library.user_messages import user_message
 from models_library.rest_error import ErrorGet
 from servicelib import status_codes_utils
 from servicelib.aiohttp import status
@@ -85,11 +86,11 @@ _exceptions_handlers_map[DirectorV2ServiceError] = (
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     UserDefaultWalletNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        "Default wallet not found but necessary for computations",
+        user_message("Default wallet not found but necessary for computations"),
     ),
     WalletNotEnoughCreditsError: HttpErrorInfo(
         status.HTTP_402_PAYMENT_REQUIRED,
-        "Wallet does not have enough credits for computations. {reason}",
+        user_message("Wallet does not have enough credits for computations. {reason}"),
     ),
 }
 

@@ -1,6 +1,8 @@
 import inspect
 import sys
 
+from common_library.user_messages import user_message
+
 from ...exception_handling import (
     ExceptionToHttpErrorMap,
     HttpErrorInfo,
@@ -20,7 +22,7 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     # Dynamically create error mappings for all function-related errors
     cls: HttpErrorInfo(
         status_code=cls.status_code,
-        msg_template=cls.msg_template,
+        msg_template=user_message(cls.msg_template),
     )
     for cls in function_error_classes
     if hasattr(cls, "status_code") and hasattr(cls, "msg_template")

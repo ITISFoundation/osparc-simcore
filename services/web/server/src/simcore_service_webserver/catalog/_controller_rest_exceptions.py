@@ -4,6 +4,7 @@ import logging
 
 from aiohttp import web
 from common_library.error_codes import create_error_code
+from common_library.user_messages import user_message
 from models_library.rest_error import ErrorGet
 from servicelib.aiohttp import status
 from servicelib.logging_errors import create_troubleshotting_log_kwargs
@@ -85,22 +86,23 @@ async def _handler_catalog_client_errors(
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     RemoteMethodNotRegisteredError: HttpErrorInfo(
         status.HTTP_503_SERVICE_UNAVAILABLE,
-        MSG_CATALOG_SERVICE_UNAVAILABLE,
+        user_message("Catalog service method unavailable. Please try again shortly."),
     ),
     CatalogForbiddenError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
-        "Forbidden catalog access",
+        user_message("Access to catalog denied."),
     ),
     CatalogItemNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        "Catalog item not found",
+        user_message("Catalog item not found."),
     ),
     DefaultPricingPlanNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        "Default pricing plan not found",
+        user_message("Default pricing plan not found."),
     ),
     DefaultPricingUnitForServiceNotFoundError: HttpErrorInfo(
-        status.HTTP_404_NOT_FOUND, "Default pricing unit not found"
+        status.HTTP_404_NOT_FOUND,
+        user_message("Default pricing unit for service not found."),
     ),
 }
 
