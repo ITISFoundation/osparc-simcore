@@ -101,6 +101,7 @@ qx.Class.define("osparc.info.CommentAdd", {
             allowGrowX: false,
             alignX: "right"
           });
+          control.setEnabled(osparc.data.model.Study.canIWrite(this.__studyData["accessRights"]));
           this._add(control);
           break;
         case "notify-user-button":
@@ -109,6 +110,7 @@ qx.Class.define("osparc.info.CommentAdd", {
             allowGrowX: false,
             alignX: "right"
           });
+          control.setEnabled(osparc.data.model.Study.canIWrite(this.__studyData["accessRights"]));
           this._add(control);
           break;
       }
@@ -141,26 +143,7 @@ qx.Class.define("osparc.info.CommentAdd", {
         const userGids = data["selectedGids"];
         if (userGids && userGids.length) {
           const userGid = parseInt(userGids[0]);
-          // Note:
-          // This check only works if the project is directly shared with the user.
-          // If it's shared through a group, it might be a bit confusing
-          if (
-            !(userGid in this.__studyData["accessRights"]) &&
-            osparc.data.model.Study.canIWrite(this.__studyData["accessRights"])
-          ) {
-            const newCollaborators = {
-              [userGid]: osparc.data.Roles.STUDY["write"].accessRights
-            };
-            osparc.store.Study.addCollaborators(this.__studyData, newCollaborators)
-              .then(() => {
-                this.__addNotify(userGid);
-              })
-              .catch(err => {
-                console.error("Failed to add collaborator:", err);
-              });
-          } else {
-            this.__addNotify(userGid);
-          }
+          this.__notifyUser(userGid);
         }
       });
     },
@@ -175,6 +158,34 @@ qx.Class.define("osparc.info.CommentAdd", {
             this.__conversationId = data["conversationId"];
             this.__postMessage();
           })
+      }
+    },
+
+    __notifyUser: function(userGid) {
+      // Note!
+      // This check only works if the project is directly shared with the user.
+      // If it's shared through a group, it might be a bit confusing
+      if (!(userGid in this.__studyData["accessRights"])) {
+        const msg = this.tr("This user has no access to the project. Do you want to share it?");
+        const win = new osparc.ui.window.Confirmation(msg).set({
+          caption: this.tr("Share"),
+          confirmText: this.tr("Share"),
+          confirmAction: "create"
+        });
+        win.center();
+        win.open();
+        win.addListener("close", () => {
+          if (win.getConfirmed()) {
+            const newCollaborators = {
+              [userGid]: osparc.data.Roles.STUDY["write"].accessRights
+            };
+            osparc.store.Study.addCollaborators(this.__studyData, newCollaborators)
+              .then(() => this.__addNotify(userGid))
+              .catch(err => osparc.FlashMessenger.logError(err));
+          }
+        }, this);
+      } else {
+        this.__addNotify(userGid);
       }
     },
 
