@@ -1,4 +1,5 @@
 import sqlalchemy as sa
+from simcore_postgres_database.models._common import RefActions
 
 from .base import metadata
 
@@ -10,7 +11,18 @@ file_meta_data = sa.Table(
     sa.Column("bucket_name", sa.String()),
     sa.Column("object_name", sa.String()),
     sa.Column("project_id", sa.String(), index=True),
-    sa.Column("node_id", sa.String()),
+    sa.Column(
+        "user_id",
+        sa.BigInteger(),
+        sa.ForeignKey(
+            "users.id",
+            name="fk_file_meta_data_user_id_users",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
+        ),
+        nullable=False,
+        doc="The user id with which the run entry is associated",
+    ),
     sa.Column("user_id", sa.String(), index=True),
     sa.Column("file_id", sa.String(), primary_key=True),
     sa.Column("created_at", sa.String()),
@@ -56,4 +68,5 @@ file_meta_data = sa.Table(
         doc="SHA256 checksum of the file content",
         index=True,
     ),
+    ###
 )
