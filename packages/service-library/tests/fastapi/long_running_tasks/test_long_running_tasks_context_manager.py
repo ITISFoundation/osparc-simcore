@@ -19,6 +19,7 @@ from servicelib.fastapi.long_running_tasks.server import setup as setup_server
 from servicelib.long_running_tasks import lrt_api
 from servicelib.long_running_tasks.errors import (
     TaskClientTimeoutError,
+    TaskExceptionError,
 )
 from servicelib.long_running_tasks.models import (
     ProgressMessage,
@@ -161,7 +162,7 @@ async def test_task_result_task_result_is_an_error(
 
     url = TypeAdapter(AnyHttpUrl).validate_python("http://backgroud.testserver.io/")
     client = Client(app=bg_task_app, async_client=async_client, base_url=url)
-    with pytest.raises(RuntimeError, match="I am failing as requested"):
+    with pytest.raises(TaskExceptionError, match="I am failing as requested"):
         async with periodic_task_result(
             client,
             task_id,
